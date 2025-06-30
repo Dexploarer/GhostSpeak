@@ -51,24 +51,9 @@ export class TestEnvironmentManager {
     // Test RPC connection
     try {
       const slot = await config.rpc.getSlot().send();
-      console.log(Connected to test network at slot: );
+      console.log(`Connected to test network at slot: ${slot}`);
     } catch (error) {
-      throw new Error(Failed to connect to test RPC: error: script "validate" exited with code 1 error: script "validate:comprehensive" exited with code 1 $ concurrently "bun run validate:config" "bun run validate:types" "bun run validate:security" $ bun run validate:comprehensive The term 'head' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again. error: script "validate" exited with code 1 error: script "validate:comprehensive" exited with code 1 $ concurrently "bun run validate:config" "bun run validate:types" "bun run validate:security" $ bun run validate:comprehensive The term 'grep' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again. System.Management.Automation.ParseException: At line:1 char:10
-+ cd ..\.. && bun run validate:typescript
-+          ~~
-The token '&&' is not a valid statement separator in this version.
-   at System.Management.Automation.Runspaces.PipelineBase.Invoke(IEnumerable input)
-   at Microsoft.PowerShell.Executor.ExecuteCommandHelper(Pipeline tempPipeline, Exception& exceptionThrown, ExecutionOptions options) System.Management.Automation.ParseException: At line:1 char:28
-+ cd packages\sdk-typescript && rm -rf node_modules\.cache 2>$null; rm  ...
-+                            ~~
-The token '&&' is not a valid statement separator in this version.
-   at System.Management.Automation.Runspaces.PipelineBase.Invoke(IEnumerable input)
-   at Microsoft.PowerShell.Executor.ExecuteCommandHelper(Pipeline tempPipeline, Exception& exceptionThrown, ExecutionOptions options) A parameter cannot be found that matches parameter name 'la'. An item with the specified name C:\Users\blind\podAI\.cursor\rules already exists. System.Management.Automation.ParseException: At line:1 char:17
-+ cd packages/cli && dir src\commands
-+                 ~~
-The token '&&' is not a valid statement separator in this version.
-   at System.Management.Automation.Runspaces.PipelineBase.Invoke(IEnumerable input)
-   at Microsoft.PowerShell.Executor.ExecuteCommandHelper(Pipeline tempPipeline, Exception& exceptionThrown, ExecutionOptions options) Cannot find path 'C:\Users\blind\podAI\src\commands' because it does not exist. A parameter cannot be found that matches parameter name 'Chord'. A parameter cannot be found that matches parameter name 'Chord'. A parameter cannot be found that matches parameter name 'Chord'. A parameter cannot be found that matches parameter name 'Chord'.);
+      throw new Error(`Failed to connect to test RPC: ${error}`);
     }
 
     const data = await this.createTestData();

@@ -27,8 +27,8 @@ export interface TestSuite {
 
 export class TestE2ECommand {
   private ui: UIManager;
-  private ___network: NetworkManager;
-  private ___config: ConfigManager;
+  private network: NetworkManager;
+  private config: ConfigManager;
 
   constructor() {
     this.ui = new UIManager();

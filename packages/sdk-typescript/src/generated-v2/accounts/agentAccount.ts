@@ -61,7 +61,7 @@ export function getAgentAccountDiscriminatorBytes() {
   );
 }
 
-export interface AgentAccount {
+export type AgentAccount = {
   discriminator: ReadonlyUint8Array;
   pubkey: Address;
   capabilities: bigint;
@@ -70,9 +70,9 @@ export interface AgentAccount {
   lastUpdated: bigint;
   bump: number;
   reserved: ReadonlyUint8Array;
-}
+};
 
-export interface AgentAccountArgs {
+export type AgentAccountArgs = {
   pubkey: Address;
   capabilities: number | bigint;
   metadataUri: string;
@@ -80,7 +80,7 @@ export interface AgentAccountArgs {
   lastUpdated: number | bigint;
   bump: number;
   reserved: ReadonlyUint8Array;
-}
+};
 
 export function getAgentAccountEncoder(): Encoder<AgentAccountArgs> {
   return transformEncoder(
@@ -151,9 +151,9 @@ export async function fetchMaybeAgentAccount<TAddress extends string = string>(
 
 export async function fetchAllAgentAccount(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
-): Promise<Array<Account<AgentAccount>>> {
+): Promise<Account<AgentAccount>[]> {
   const maybeAccounts = await fetchAllMaybeAgentAccount(rpc, addresses, config);
   assertAccountsExist(maybeAccounts);
   return maybeAccounts;
@@ -161,9 +161,9 @@ export async function fetchAllAgentAccount(
 
 export async function fetchAllMaybeAgentAccount(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
-): Promise<Array<MaybeAccount<AgentAccount>>> {
+): Promise<MaybeAccount<AgentAccount>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeAgentAccount(maybeAccount));
 }

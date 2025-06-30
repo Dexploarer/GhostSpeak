@@ -6,6 +6,6 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from './agentAccount';
-export * from './channelAccount';
-export * from './messageAccount';
+export * from './channelVisibility';
+export * from './messageStatus';
+export * from './messageType';

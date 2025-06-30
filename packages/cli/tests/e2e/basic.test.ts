@@ -13,6 +13,6 @@ describe('Basic E2E Test', () => {
   test('should test CLI structure exists', () => {
     // Basic structure test
     expect(typeof process.cwd).toBe('function');
-    expect(process.cwd()).toContain('podAI');
+    expect(process.cwd()).toContain('ghostspeak');
   });
 }); 

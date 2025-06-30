@@ -17,6 +17,7 @@ import { TestE2ECommand } from './commands/test-e2e.js';
 import { ViewAnalyticsCommand } from './commands/view-analytics.js';
 import { SettingsCommand } from './commands/settings.js';
 import { HelpCommand } from './commands/help.js';
+import { DeployProtocolCommand } from './commands/deploy-protocol.js';
 
 // Types
 interface MainMenuChoice {
@@ -96,6 +97,11 @@ class PodAICLI {
         description: 'Network statistics and agent performance metrics'
       },
       {
+        name: '🚀 Deploy Protocol',
+        value: 'deploy',
+        description: 'Deploy and validate protocol infrastructure'
+      },
+      {
         name: '⚙️  Settings',
         value: 'settings',
         description: 'Configure network, wallet, and preferences'
@@ -161,6 +167,11 @@ class PodAICLI {
             case 'analytics':
               const analyticsCommand = new ViewAnalyticsCommand();
               await analyticsCommand.execute();
+              break;
+              
+            case 'deploy':
+              const deployCommand = new DeployProtocolCommand();
+              await deployCommand.execute();
               break;
               
             case 'settings':

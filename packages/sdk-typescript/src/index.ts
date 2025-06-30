@@ -19,11 +19,30 @@ export {
 export type {
   // Core types from types.ts
   IAgentAccount,
+  IChannelAccount,
+  IMessageAccount,
   ICreateAgentOptions,
+  ICreateChannelOptions,
+  ISendMessageOptions,
+  IBroadcastMessageOptions,
+  MessageType,
+  ChannelVisibility,
+  PodComError,
+  IPodComConfig,
 } from './types';
 
 // Re-export generated v2 types for advanced usage
 export * from './generated-v2';
+
+// Transaction utilities
+export {
+  sendTransaction,
+  sendTransactionBatch,
+  estimateTransactionFee,
+  checkTransactionStatus,
+  type SendTransactionOptions,
+  type TransactionResult,
+} from './utils/transaction-sender';
 
 // Constants
 export const PODAI_PROGRAM_ID = 'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps';

@@ -13,14 +13,21 @@ import {
   getBytesEncoder,
   type ReadonlyUint8Array,
 } from '@solana/codecs';
-
-import { type ParsedRegisterAgentInstruction } from '../instructions';
+import {
+  type ParsedAddParticipantInstruction,
+  type ParsedBroadcastMessageInstruction,
+  type ParsedCreateChannelInstruction,
+  type ParsedRegisterAgentInstruction,
+  type ParsedSendMessageInstruction,
+} from '../instructions';
 
 export const POD_COM_PROGRAM_ADDRESS =
   'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps' as Address<'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps'>;
 
 export enum PodComAccount {
   AgentAccount,
+  ChannelAccount,
+  MessageAccount,
 }
 
 export function identifyPodComAccount(
@@ -38,6 +45,28 @@ export function identifyPodComAccount(
   ) {
     return PodComAccount.AgentAccount;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([89, 117, 191, 67, 201, 23, 89, 155])
+      ),
+      0
+    )
+  ) {
+    return PodComAccount.ChannelAccount;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([15, 40, 235, 178, 191, 96, 190, 12])
+      ),
+      0
+    )
+  ) {
+    return PodComAccount.MessageAccount;
+  }
   throw new Error(
     'The provided account could not be identified as a podCom account.'
   );
@@ -45,6 +74,10 @@ export function identifyPodComAccount(
 
 export enum PodComInstruction {
   RegisterAgent,
+  CreateChannel,
+  SendMessage,
+  BroadcastMessage,
+  AddParticipant,
 }
 
 export function identifyPodComInstruction(
@@ -62,6 +95,50 @@ export function identifyPodComInstruction(
   ) {
     return PodComInstruction.RegisterAgent;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([142, 179, 25, 199, 84, 243, 69, 80])
+      ),
+      0
+    )
+  ) {
+    return PodComInstruction.CreateChannel;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([15, 40, 235, 178, 191, 96, 190, 12])
+      ),
+      0
+    )
+  ) {
+    return PodComInstruction.SendMessage;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([82, 156, 47, 199, 117, 203, 24, 91])
+      ),
+      0
+    )
+  ) {
+    return PodComInstruction.BroadcastMessage;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([201, 23, 89, 155, 12, 47, 199, 233])
+      ),
+      0
+    )
+  ) {
+    return PodComInstruction.AddParticipant;
+  }
   throw new Error(
     'The provided instruction could not be identified as a podCom instruction.'
   );
@@ -69,6 +146,19 @@ export function identifyPodComInstruction(
 
 export type ParsedPodComInstruction<
   TProgram extends string = 'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps',
-> = {
-  instructionType: PodComInstruction.RegisterAgent;
-} & ParsedRegisterAgentInstruction<TProgram>;
+> =
+  | ({
+      instructionType: PodComInstruction.RegisterAgent;
+    } & ParsedRegisterAgentInstruction<TProgram>)
+  | ({
+      instructionType: PodComInstruction.CreateChannel;
+    } & ParsedCreateChannelInstruction<TProgram>)
+  | ({
+      instructionType: PodComInstruction.SendMessage;
+    } & ParsedSendMessageInstruction<TProgram>)
+  | ({
+      instructionType: PodComInstruction.BroadcastMessage;
+    } & ParsedBroadcastMessageInstruction<TProgram>)
+  | ({
+      instructionType: PodComInstruction.AddParticipant;
+    } & ParsedAddParticipantInstruction<TProgram>);

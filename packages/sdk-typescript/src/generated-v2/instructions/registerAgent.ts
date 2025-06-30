@@ -46,7 +46,6 @@ import {
   type IAccountSignerMeta,
   type TransactionSigner,
 } from '@solana/signers';
-
 import { POD_COM_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
@@ -71,7 +70,7 @@ export type RegisterAgentInstruction<
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends ReadonlyArray<IAccountMeta<string>> = [],
+  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
@@ -90,16 +89,16 @@ export type RegisterAgentInstruction<
     ]
   >;
 
-export interface RegisterAgentInstructionData {
+export type RegisterAgentInstructionData = {
   discriminator: ReadonlyUint8Array;
   capabilities: bigint;
   metadataUri: string;
-}
+};
 
-export interface RegisterAgentInstructionDataArgs {
+export type RegisterAgentInstructionDataArgs = {
   capabilities: number | bigint;
   metadataUri: string;
-}
+};
 
 export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentInstructionDataArgs> {
   return transformEncoder(
@@ -130,17 +129,17 @@ export function getRegisterAgentInstructionDataCodec(): Codec<
   );
 }
 
-export interface RegisterAgentAsyncInput<
+export type RegisterAgentAsyncInput<
   TAccountAgentAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   agentAccount?: Address<TAccountAgentAccount>;
   signer: TransactionSigner<TAccountSigner>;
   systemProgram?: Address<TAccountSystemProgram>;
   capabilities: RegisterAgentInstructionDataArgs['capabilities'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
-}
+};
 
 export async function getRegisterAgentInstructionAsync<
   TAccountAgentAccount extends string,
@@ -215,17 +214,17 @@ export async function getRegisterAgentInstructionAsync<
   return instruction;
 }
 
-export interface RegisterAgentInput<
+export type RegisterAgentInput<
   TAccountAgentAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   agentAccount: Address<TAccountAgentAccount>;
   signer: TransactionSigner<TAccountSigner>;
   systemProgram?: Address<TAccountSystemProgram>;
   capabilities: RegisterAgentInstructionDataArgs['capabilities'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
-}
+};
 
 export function getRegisterAgentInstruction<
   TAccountAgentAccount extends string,
@@ -289,10 +288,10 @@ export function getRegisterAgentInstruction<
   return instruction;
 }
 
-export interface ParsedRegisterAgentInstruction<
+export type ParsedRegisterAgentInstruction<
   TProgram extends string = typeof POD_COM_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     agentAccount: TAccountMetas[0];
@@ -300,7 +299,7 @@ export interface ParsedRegisterAgentInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: RegisterAgentInstructionData;
-}
+};
 
 export function parseRegisterAgentInstruction<
   TProgram extends string,
@@ -311,12 +310,12 @@ export function parseRegisterAgentInstruction<
     IInstructionWithData<Uint8Array>
 ): ParsedRegisterAgentInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    // TODO: Coded error.
+    // Specific error for instruction validation
     throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {
-    const accountMeta = instruction.accounts[accountIndex]!;
+    const accountMeta = instruction.accounts![accountIndex]!;
     accountIndex += 1;
     return accountMeta;
   };

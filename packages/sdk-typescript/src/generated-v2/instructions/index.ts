@@ -6,4 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './addParticipant';
+export * from './broadcastMessage';
+export * from './createChannel';
 export * from './registerAgent';
+export * from './sendMessage';

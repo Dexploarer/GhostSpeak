@@ -23,12 +23,12 @@ export interface ISDKProject {
 
 export class DevelopSDKCommand {
   private readonly ui: UIManager;
-  private readonly network: NetworkManager;
+  // private readonly network: NetworkManager;
   private readonly config: ConfigManager;
 
   constructor() {
     this.ui = new UIManager();
-    this.network = new NetworkManager();
+    // this.network = new NetworkManager();
     this.config = new ConfigManager();
   }
 

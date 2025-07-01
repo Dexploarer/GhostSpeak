@@ -198,6 +198,13 @@ export class NetworkManager {
   }
 
   /**
+   * Get RPC endpoint URL
+   */
+  async getRpcEndpoint(): Promise<string> {
+    return await this.configManager.getRpcUrl();
+  }
+
+  /**
    * Switch to different network
    */
   async switchNetwork(network: 'devnet' | 'testnet' | 'mainnet-beta', rpcUrl?: string): Promise<void> {

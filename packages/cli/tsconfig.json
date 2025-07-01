@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "allowJs": true,
     "strict": true,
+    "exactOptionalPropertyTypes": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,

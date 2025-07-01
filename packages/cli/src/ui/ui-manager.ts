@@ -88,6 +88,15 @@ export class UIManager {
   }
 
   /**
+   * Start a progress indicator
+   */
+  startProgress(message: string) {
+    const spinner = this.spinner(message);
+    spinner.start();
+    return spinner;
+  }
+
+  /**
    * Display a progress bar for multiple steps
    */
   displayProgress(steps: ProgressStep[]): void {

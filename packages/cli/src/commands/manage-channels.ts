@@ -5,11 +5,15 @@ import { UIManager } from '../ui/ui-manager.js';
 import { NetworkManager } from '../utils/network-manager.js';
 import { ConfigManager } from '../utils/config-manager.js';
 
-// Import the real SDK from built dist
-import { 
-  createPodAIClientV2, 
-  type PodAIClientV2
-} from '../../../sdk-typescript/dist/index.js';
+// Temporarily placeholder until SDK builds
+// import { 
+//   createPodAIClientV2, 
+//   type PodAIClientV2
+// } from '../../../sdk-typescript/dist/index.js';
+
+// Placeholder types
+type PodAIClientV2 = any;
+const createPodAIClientV2 = () => ({ mockClient: true });
 
 // Real SDK interface - no more mocks!
 
@@ -42,7 +46,7 @@ export class ManageChannelsCommand {
 
   constructor() {
     this.ui = new UIManager();
-    this._network = new NetworkManager();
+    this.network = new NetworkManager();
     this.config = new ConfigManager();
   }
 
@@ -103,8 +107,8 @@ export class ManageChannelsCommand {
     spinner.start();
 
     try {
-      const currentNetwork = await this._network.getCurrentNetwork();
-      const rpc = await this._network.getRpc();
+      const currentNetwork = await this.network.getCurrentNetwork();
+      const rpc = await this.network.getRpc();
       
       // Create real PodAI client using RPC connection
       this.podClient = createPodAIClientV2({

@@ -20,13 +20,13 @@ import { homedir } from 'os';
 
 export class DeployProtocolCommand {
   private ui: UIManager;
-  private network: NetworkManager;
-  private config: ConfigManager;
+  // private network: NetworkManager;
+  // private config: ConfigManager;
 
   constructor() {
     this.ui = new UIManager();
-    this.network = new NetworkManager();
-    this.config = new ConfigManager();
+    // this.network = new NetworkManager();
+    // this.config = new ConfigManager();
   }
 
   async execute(): Promise<void> {
@@ -153,7 +153,7 @@ export class DeployProtocolCommand {
       // Check network health
       spinner.start('Checking network health...');
       
-      const healthResponse = await rpc.getHealth().send();
+      await rpc.getHealth().send();
       const slotResponse = await rpc.getSlot().send();
       
       spinner.success(`Network healthy | Current slot: ${slotResponse}`);
@@ -261,7 +261,7 @@ export const deployProtocolCommand = new Command('deploy-protocol')
       // Check network health
       spinner.start('Checking network health...');
       
-      const healthResponse = await rpc.getHealth().send();
+      await rpc.getHealth().send();
       const slotResponse = await rpc.getSlot().send();
       
       spinner.success(`Network healthy | Current slot: ${slotResponse}`);

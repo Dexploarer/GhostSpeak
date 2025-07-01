@@ -14,11 +14,12 @@ anchor-spl = "0.31.1"
 spl-account-compression = { version = "1.0.0", features = ["cpi"], default-features = false }
 spl-concurrent-merkle-tree = "1.0.0"
 
-# Solana ecosystem - UNIFIED VERSION STRATEGY (2025 stable)
-solana-program = "2.1.13"
-solana-sdk = "2.1.13" 
-solana-client = "2.1.13"
-solana-transaction-status = "2.1.13"
+# Solana ecosystem - LATEST COMPATIBLE VERSIONS (2025 stable)
+solana-program = "2.1.15"
+solana-sdk = "2.1.15"
+solana-client = "2.1.15"
+solana-transaction-status = "2.1.15"
+solana-program-test = "2.1.15"
 
 # Cryptography
 blake3 = "1.5.0"

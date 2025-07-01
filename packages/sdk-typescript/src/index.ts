@@ -34,15 +34,22 @@ export type {
 // Re-export generated v2 types for advanced usage
 export * from './generated-v2';
 
-// Transaction utilities
+// Transaction utilities (Jupiter Swap patterns)
 export {
-  sendTransaction,
-  sendTransactionBatch,
-  estimateTransactionFee,
-  checkTransactionStatus,
-  type SendTransactionOptions,
+  buildTransaction,
+  simulateTransaction,
+  sendAndConfirmTransaction,
+  buildSimulateAndSendTransaction,
+  batchTransactions,
+  retryTransaction,
+  createTransactionConfig,
+  type TransactionConfig,
+  type SimulationResult,
   type TransactionResult,
-} from './utils/transaction-sender';
+} from './utils/transaction-utils';
+
+// Examples
+export * from './examples/jupiter-patterns-example';
 
 // Constants
 export const PODAI_PROGRAM_ID = 'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps';

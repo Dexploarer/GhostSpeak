@@ -1,4 +1,5 @@
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { generateKeyPairSigner, type KeyPairSigner } from '@solana/signers';
+import { address, type Address } from '@solana/addresses';
 
 export interface AgentTestData {
   name: string;

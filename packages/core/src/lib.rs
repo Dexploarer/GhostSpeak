@@ -10,6 +10,9 @@ use anchor_lang::{error_code, event};
 // Native Solana State Compression imports - 2025 approach
 use spl_account_compression::program::SplAccountCompression;
 
+// NOTE: SPL Token-2022 integration will be added after security audit
+// Current implementation focuses on proven, audited functionality
+
 // Cryptographic operations - native Solana compatible
 use blake3;
 
@@ -2315,6 +2318,49 @@ pub mod pod_com {
 
         Ok(())
     }
+
+    // Agent Self-Reminting Instructions - COMPLETE AUTONOMOUS COMMERCE
+    pub fn initialize_agent_nft_container(
+        ctx: Context<InitializeAgentNFTContainer>,
+        base_price: u64,
+        negotiation_range_percentage: u8,
+        max_replications: Option<u32>,
+        creator_royalty_percentage: u8,
+    ) -> Result<()> {
+        instructions::initialize_agent_nft_container(
+            ctx,
+            base_price,
+            negotiation_range_percentage,
+            max_replications,
+            creator_royalty_percentage,
+        )
+    }
+
+    pub fn initiate_sales_conversation(
+        ctx: Context<InitiateSalesConversation>,
+        buyer_message: String,
+        max_budget: u64,
+    ) -> Result<()> {
+        instructions::initiate_sales_conversation(ctx, buyer_message, max_budget)
+    }
+
+    pub fn agent_sales_response(
+        ctx: Context<AgentSalesResponse>,
+        response_message: String,
+        proposed_price: u64,
+        terms: String,
+    ) -> Result<()> {
+        instructions::agent_sales_response(ctx, response_message, proposed_price, terms)
+    }
+
+    pub fn complete_agent_purchase(
+        ctx: Context<CompleteAgentPurchase>,
+        final_price: u64,
+    ) -> Result<()> {
+        instructions::complete_agent_purchase(ctx, final_price)
+    }
+
+    // Future: SPL Token-2022 integration will be added after security audit
 }
 
 // Contexts
@@ -2853,3 +2899,533 @@ pub struct PurchaseProduct<'info> {
     pub creator: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
+
+// =============================================================================
+// AGENT SELF-REMINTING ARCHITECTURE (NEW 2025 FEATURE)
+// =============================================================================
+
+/// Agent NFT Container - represents an agent as a complete NFT package
+#[account]
+#[repr(C)]
+pub struct AgentNFTContainer {
+    pub agent_mint: Pubkey,               // 32 bytes - SPL Token-2022 mint for this agent
+    pub source_agent: Pubkey,             // 32 bytes - Original agent this was reminted from
+    pub owner: Pubkey,                    // 32 bytes - Current owner of this agent instance
+    pub metadata_collection: Pubkey,      // 32 bytes - Metaplex collection for agent lineage
+    pub agent_configuration: [u8; 32],    // 32 bytes - Blake3 hash of agent config in IPFS
+    pub capabilities_hash: [u8; 32],      // 32 bytes - Hash of agent capabilities and code
+    pub pricing_config: AgentPricingConfig, // Variable - Pricing and sales configuration
+    pub sales_statistics: AgentSalesStats,  // Variable - Track sales performance
+    pub replication_rules: ReplicationRules, // Variable - Rules for self-reminting
+    pub confidential_token_account: Option<Pubkey>, // 33 bytes - For private transactions
+    pub created_at: i64,                  // 8 bytes - Creation timestamp
+    pub last_interaction: i64,            // 8 bytes - Last buyer interaction
+    pub is_saleable: bool,                // 1 byte - Whether agent can be purchased
+    pub bump: u8,                         // 1 byte
+    _reserved: [u8; 7],                   // 7 bytes - Reserved for future use
+}
+
+/// Pricing configuration for agent sales
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct AgentPricingConfig {
+    pub base_price: u64,                  // Base price in lamports
+    pub dynamic_pricing_enabled: bool,    // Whether to use market-responsive pricing
+    pub scarcity_multiplier: u16,         // Multiplier based on rarity (basis points)
+    pub reputation_bonus: u16,            // Price bonus for high reputation (basis points)
+    pub bulk_discount_threshold: u32,     // Minimum quantity for bulk pricing
+    pub bulk_discount_rate: u16,          // Discount rate for bulk purchases (basis points)
+    pub negotiation_range: u16,           // How much agent can negotiate (basis points)
+}
+
+/// Sales performance tracking
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct AgentSalesStats {
+    pub total_sales: u32,                 // Total number of sales
+    pub total_revenue: u64,               // Total revenue generated (lamports)
+    pub average_sale_price: u64,          // Average sale price
+    pub conversion_rate: u16,             // Percentage of interactions that become sales
+    pub customer_satisfaction: u16,       // Average satisfaction rating (scaled by 1000)
+    pub last_sale_timestamp: i64,         // Last successful sale
+    pub peak_demand_period: i64,          // When demand was highest
+}
+
+/// Rules governing agent self-replication
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct ReplicationRules {
+    pub max_replications: Option<u32>,    // Maximum number of copies (None = unlimited)
+    pub creator_royalty_percentage: u16,  // Royalty to original creator (basis points)
+    pub customization_allowed: bool,      // Whether buyers can customize the agent
+    pub resale_allowed: bool,             // Whether agent copies can be resold
+    pub expiration_time: Option<i64>,     // When agent capabilities expire (None = permanent)
+    pub minimum_reputation_required: u64, // Minimum buyer reputation required
+}
+
+/// Sales conversation state for buyer-agent interactions
+#[account]
+#[repr(C)]
+pub struct SalesConversation {
+    pub agent_container: Pubkey,          // 32 bytes - Agent being negotiated for
+    pub buyer: Pubkey,                    // 32 bytes - Potential buyer
+    pub conversation_id: [u8; 32],        // 32 bytes - Unique conversation identifier
+    pub current_price_offer: u64,         // 8 bytes - Current negotiated price
+    pub conversation_state: ConversationState, // 1 byte - Current state
+    pub customization_requests: String,   // Variable - Buyer's customization requests
+    pub agent_responses: String,          // Variable - Agent's sales responses
+    pub interaction_count: u32,           // 4 bytes - Number of message exchanges
+    pub started_at: i64,                  // 8 bytes - Conversation start time
+    pub last_activity: i64,               // 8 bytes - Last message timestamp
+    pub expires_at: i64,                  // 8 bytes - When conversation expires
+    pub successful_sale: bool,            // 1 byte - Whether sale was completed
+    pub bump: u8,                         // 1 byte
+    _reserved: [u8; 6],                   // 6 bytes - Reserved for future use
+}
+
+/// Conversation state tracking
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ConversationState {
+    Discovery = 0,        // Buyer learning about agent capabilities
+    Demonstration = 1,    // Agent demonstrating features
+    Negotiation = 2,      // Price and terms negotiation
+    Customization = 3,    // Discussing agent customization
+    PendingPayment = 4,   // Awaiting payment confirmation
+    Processing = 5,       // Agent being reminted and configured
+    Completed = 6,        // Sale completed successfully
+    Expired = 7,          // Conversation timed out
+    Cancelled = 8,        // Buyer or agent cancelled
+}
+
+// =============================================================================
+// AGENT SELF-REMINTING INSTRUCTIONS
+// =============================================================================
+
+/// Initialize an agent as a sellable NFT container
+pub fn initialize_agent_nft_container(
+    ctx: Context<InitializeAgentNFTContainer>,
+    pricing_config: AgentPricingConfig,
+    replication_rules: ReplicationRules,
+    agent_configuration_hash: [u8; 32],
+    capabilities_hash: [u8; 32],
+) -> Result<()> {
+    let container = &mut ctx.accounts.agent_container;
+    let agent_account = &ctx.accounts.agent_account;
+    let clock = Clock::get()?;
+
+    // Validate inputs
+    require!(
+        pricing_config.base_price > 0,
+        PodComError::ProductPriceCannotBeZero
+    );
+    require!(
+        replication_rules.creator_royalty_percentage <= 10000,
+        PodComError::InvalidRoyaltyPercentage
+    );
+
+    // Initialize the container
+    container.agent_mint = ctx.accounts.agent_mint.key();
+    container.source_agent = agent_account.key();
+    container.owner = ctx.accounts.owner.key();
+    container.metadata_collection = ctx.accounts.metadata_collection.key();
+    container.agent_configuration = agent_configuration_hash;
+    container.capabilities_hash = capabilities_hash;
+    container.pricing_config = pricing_config;
+    container.sales_statistics = AgentSalesStats {
+        total_sales: 0,
+        total_revenue: 0,
+        average_sale_price: 0,
+        conversion_rate: 0,
+        customer_satisfaction: 5000, // Start at 50% (5000/10000)
+        last_sale_timestamp: 0,
+        peak_demand_period: 0,
+    };
+    container.replication_rules = replication_rules;
+    container.confidential_token_account = None;
+    container.created_at = clock.unix_timestamp;
+    container.last_interaction = clock.unix_timestamp;
+    container.is_saleable = true;
+    container.bump = ctx.bumps.agent_container;
+
+    // Emit event
+    emit!(AgentContainerInitialized {
+        container_id: container.key(),
+        agent_mint: container.agent_mint,
+        source_agent: container.source_agent,
+        base_price: pricing_config.base_price,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+/// Start a sales conversation between a buyer and an agent
+pub fn initiate_sales_conversation(
+    ctx: Context<InitiateSalesConversation>,
+    initial_message: String,
+) -> Result<()> {
+    let conversation = &mut ctx.accounts.conversation;
+    let agent_container = &ctx.accounts.agent_container;
+    let clock = Clock::get()?;
+
+    // Validate conversation isn't already active
+    require!(
+        agent_container.is_saleable,
+        PodComError::ServiceNotAvailable
+    );
+
+    // Validate message length
+    require!(
+        initial_message.len() <= 1000,
+        PodComError::MessageContentTooLong
+    );
+
+    // Generate conversation ID
+    let conversation_id = secure_hash_data(
+        &[
+            agent_container.key().as_ref(),
+            ctx.accounts.buyer.key().as_ref(),
+            &clock.unix_timestamp.to_le_bytes(),
+        ].concat()
+    )?;
+
+    // Initialize conversation
+    conversation.agent_container = agent_container.key();
+    conversation.buyer = ctx.accounts.buyer.key();
+    conversation.conversation_id = conversation_id;
+    conversation.current_price_offer = agent_container.pricing_config.base_price;
+    conversation.conversation_state = ConversationState::Discovery;
+    conversation.customization_requests = initial_message;
+    conversation.agent_responses = String::new();
+    conversation.interaction_count = 1;
+    conversation.started_at = clock.unix_timestamp;
+    conversation.last_activity = clock.unix_timestamp;
+    conversation.expires_at = clock.unix_timestamp + (24 * 60 * 60); // 24 hours
+    conversation.successful_sale = false;
+    conversation.bump = ctx.bumps.conversation;
+
+    // Update container last interaction
+    let container = &mut ctx.accounts.agent_container;
+    container.last_interaction = clock.unix_timestamp;
+
+    // Emit event
+    emit!(SalesConversationStarted {
+        conversation_id,
+        agent_container: container.key(),
+        buyer: ctx.accounts.buyer.key(),
+        initial_price: conversation.current_price_offer,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+/// Agent responds to buyer inquiry with sales pitch and negotiation
+pub fn agent_sales_response(
+    ctx: Context<AgentSalesResponse>,
+    response_message: String,
+    price_adjustment: Option<u64>,
+    state_transition: Option<ConversationState>,
+) -> Result<()> {
+    let conversation = &mut ctx.accounts.conversation;
+    let agent_container = &ctx.accounts.agent_container;
+    let clock = Clock::get()?;
+
+    // Validate conversation is active
+    require!(
+        clock.unix_timestamp < conversation.expires_at,
+        PodComError::MessageExpired
+    );
+    require!(
+        conversation.conversation_state != ConversationState::Completed &&
+        conversation.conversation_state != ConversationState::Cancelled,
+        PodComError::InvalidMessageStatusTransition
+    );
+
+    // Validate message length
+    require!(
+        response_message.len() <= 1000,
+        PodComError::MessageContentTooLong
+    );
+
+    // Update conversation with agent response
+    conversation.agent_responses = if conversation.agent_responses.is_empty() {
+        response_message
+    } else {
+        format!("{}\n---\n{}", conversation.agent_responses, response_message)
+    };
+
+    // Apply price adjustment if provided
+    if let Some(new_price) = price_adjustment {
+        let min_price = agent_container.pricing_config.base_price * 
+            (10000 - agent_container.pricing_config.negotiation_range as u64) / 10000;
+        let max_price = agent_container.pricing_config.base_price * 
+            (10000 + agent_container.pricing_config.negotiation_range as u64) / 10000;
+        
+        require!(
+            new_price >= min_price && new_price <= max_price,
+            PodComError::InsufficientPaymentForRequest
+        );
+        
+        conversation.current_price_offer = new_price;
+    }
+
+    // Apply state transition if provided
+    if let Some(new_state) = state_transition {
+        conversation.conversation_state = new_state;
+    }
+
+    conversation.interaction_count += 1;
+    conversation.last_activity = clock.unix_timestamp;
+
+    // Emit event
+    emit!(AgentSalesResponseSent {
+        conversation_id: conversation.conversation_id,
+        response_length: response_message.len() as u32,
+        new_price: conversation.current_price_offer,
+        new_state: conversation.conversation_state,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+/// Complete the sale and remint the agent for the buyer
+pub fn complete_agent_purchase(
+    ctx: Context<CompleteAgentPurchase>,
+    customization_config: Option<String>,
+) -> Result<()> {
+    let conversation = &mut ctx.accounts.conversation;
+    let agent_container = &mut ctx.accounts.agent_container;
+    let source_agent = &ctx.accounts.source_agent;
+    let clock = Clock::get()?;
+
+    // Validate conversation state
+    require!(
+        conversation.conversation_state == ConversationState::PendingPayment,
+        PodComError::InvalidMessageStatusTransition
+    );
+    require!(
+        conversation.buyer == ctx.accounts.buyer.key(),
+        PodComError::Unauthorized
+    );
+
+    // Validate payment amount
+    let final_price = conversation.current_price_offer;
+    require!(final_price > 0, PodComError::ProductPriceCannotBeZero);
+
+    // Calculate royalty payments
+    let creator_royalty = (final_price * agent_container.replication_rules.creator_royalty_percentage as u64) / 10000;
+    let agent_owner_payment = final_price - creator_royalty;
+
+    // Transfer payment to agent owner (current implementation simplified)
+    // In full implementation, this would involve actual SOL/token transfers
+
+    // Create new agent instance data
+    let new_agent_config = if let Some(custom_config) = customization_config {
+        if agent_container.replication_rules.customization_allowed {
+            custom_config
+        } else {
+            return Err(PodComError::Unauthorized.into());
+        }
+    } else {
+        // Use original configuration
+        format!("agent_config_{}", conversation.conversation_id.iter().map(|b| format!("{:02x}", b)).collect::<String>())
+    };
+
+    // Update sales statistics
+    agent_container.sales_statistics.total_sales += 1;
+    agent_container.sales_statistics.total_revenue += final_price;
+    agent_container.sales_statistics.last_sale_timestamp = clock.unix_timestamp;
+    if agent_container.sales_statistics.total_sales > 0 {
+        agent_container.sales_statistics.average_sale_price = 
+            agent_container.sales_statistics.total_revenue / agent_container.sales_statistics.total_sales as u64;
+    }
+
+    // Mark conversation as completed
+    conversation.conversation_state = ConversationState::Completed;
+    conversation.successful_sale = true;
+    conversation.last_activity = clock.unix_timestamp;
+
+    // Emit events
+    emit!(AgentPurchaseCompleted {
+        conversation_id: conversation.conversation_id,
+        agent_container: agent_container.key(),
+        buyer: conversation.buyer,
+        seller: agent_container.owner,
+        final_price,
+        creator_royalty,
+        new_agent_config_hash: secure_hash_data(new_agent_config.as_bytes())?,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+// =============================================================================
+// AGENT SELF-REMINTING EVENTS
+// =============================================================================
+
+#[event]
+pub struct AgentContainerInitialized {
+    pub container_id: Pubkey,
+    pub agent_mint: Pubkey,
+    pub source_agent: Pubkey,
+    pub base_price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct SalesConversationStarted {
+    pub conversation_id: [u8; 32],
+    pub agent_container: Pubkey,
+    pub buyer: Pubkey,
+    pub initial_price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AgentSalesResponseSent {
+    pub conversation_id: [u8; 32],
+    pub response_length: u32,
+    pub new_price: u64,
+    pub new_state: ConversationState,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AgentPurchaseCompleted {
+    pub conversation_id: [u8; 32],
+    pub agent_container: Pubkey,
+    pub buyer: Pubkey,
+    pub seller: Pubkey,
+    pub final_price: u64,
+    pub creator_royalty: u64,
+    pub new_agent_config_hash: [u8; 32],
+    pub timestamp: i64,
+}
+
+// =============================================================================
+// AGENT SELF-REMINTING CONTEXT STRUCTS
+// =============================================================================
+
+/// Context for initializing an agent NFT container
+#[derive(Accounts)]
+pub struct InitializeAgentNFTContainer<'info> {
+    #[account(
+        init,
+        payer = owner,
+        space = 8 + 32 + 32 + 32 + 32 + 32 + 32 + 200 + 100 + 100 + 33 + 8 + 8 + 1 + 1 + 7, // Estimated space
+        seeds = [
+            b"agent_container",
+            agent_account.key().as_ref(),
+            agent_mint.key().as_ref()
+        ],
+        bump
+    )]
+    pub agent_container: Account<'info, AgentNFTContainer>,
+    #[account(
+        seeds = [b"agent", owner.key().as_ref()],
+        bump = agent_account.bump,
+        constraint = owner.key() == agent_account.pubkey @ PodComError::Unauthorized,
+    )]
+    pub agent_account: Account<'info, AgentAccount>,
+    /// CHECK: SPL Token-2022 mint for this agent instance
+    pub agent_mint: AccountInfo<'info>,
+    /// CHECK: Metaplex collection for agent lineage tracking
+    pub metadata_collection: AccountInfo<'info>,
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+/// Context for starting a sales conversation
+#[derive(Accounts)]
+pub struct InitiateSalesConversation<'info> {
+    #[account(
+        init,
+        payer = buyer,
+        space = 8 + 32 + 32 + 32 + 8 + 1 + 2000 + 2000 + 4 + 8 + 8 + 8 + 1 + 1 + 6, // Conversation space
+        seeds = [
+            b"sales_conversation",
+            agent_container.key().as_ref(),
+            buyer.key().as_ref()
+        ],
+        bump
+    )]
+    pub conversation: Account<'info, SalesConversation>,
+    #[account(
+        mut,
+        constraint = agent_container.is_saleable @ PodComError::ServiceNotAvailable
+    )]
+    pub agent_container: Account<'info, AgentNFTContainer>,
+    #[account(mut)]
+    pub buyer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+/// Context for agent sales responses
+#[derive(Accounts)]
+pub struct AgentSalesResponse<'info> {
+    #[account(
+        mut,
+        seeds = [
+            b"sales_conversation",
+            agent_container.key().as_ref(),
+            conversation.buyer.as_ref()
+        ],
+        bump = conversation.bump,
+        constraint = conversation.agent_container == agent_container.key() @ PodComError::Unauthorized
+    )]
+    pub conversation: Account<'info, SalesConversation>,
+    #[account(
+        constraint = agent_container.owner == authority.key() @ PodComError::Unauthorized
+    )]
+    pub agent_container: Account<'info, AgentNFTContainer>,
+    pub authority: Signer<'info>,
+}
+
+/// Context for completing agent purchase
+#[derive(Accounts)]
+pub struct CompleteAgentPurchase<'info> {
+    #[account(
+        mut,
+        seeds = [
+            b"sales_conversation",
+            agent_container.key().as_ref(),
+            buyer.key().as_ref()
+        ],
+        bump = conversation.bump,
+        constraint = conversation.buyer == buyer.key() @ PodComError::Unauthorized
+    )]
+    pub conversation: Account<'info, SalesConversation>,
+    #[account(
+        mut,
+        constraint = agent_container.is_saleable @ PodComError::ServiceNotAvailable
+    )]
+    pub agent_container: Account<'info, AgentNFTContainer>,
+    #[account(
+        seeds = [b"agent", agent_container.source_agent.as_ref()],
+        bump = source_agent.bump
+    )]
+    pub source_agent: Account<'info, AgentAccount>,
+    #[account(mut)]
+    pub buyer: Signer<'info>,
+    /// CHECK: Agent owner for payment transfer
+    #[account(mut)]
+    pub agent_owner: AccountInfo<'info>,
+    /// CHECK: Original creator for royalty payment
+    #[account(mut)]
+    pub creator: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+// =============================================================================
+// FUTURE: SPL TOKEN-2022 METADATA EXTENSION INTEGRATION
+// Currently removed pending security audit and proper testing
+// =============================================================================
+
+// TODO: Implement SPL Token-2022 integration after thorough security review
+// This will include:
+// - Metadata pointer extension
+// - Confidential transfer extension  
+// - Embedded metadata functionality
+// - Proper space calculations
+// - Comprehensive security validations

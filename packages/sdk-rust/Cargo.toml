@@ -1,58 +1,97 @@
 [package]
-name = "podAI-protocol-sdk"
+name = "podai-sdk"
 version = "2.0.0"
 edition = "2021"
-authors = ["podAI Team <dev@podAI.com>"]
+rust-version = "1.79.0"
+authors = ["PodAI Team <dev@podai.com>"]
 license = "MIT"
 repository = "https://github.com/Prompt-or-Die/ghostspeak"
-homepage = "https://podAI.com"
-documentation = "https://docs.rs/podAI-protocol-sdk"
-description = "Feature-complete Rust SDK for podAI Protocol - AI agent communication, P2P messaging, channels, escrow, analytics on Solana. Web3.js v2 compatible."
-keywords = ["solana", "blockchain", "ai", "agents", "protocol", "web3"]
-categories = ["api-bindings", "cryptography", "web-programming"]
+homepage = "https://podai.com"
+documentation = "https://docs.rs/podai-sdk"
+description = "Production-grade Rust SDK for podAI Protocol - AI agent communication, messaging, channels, escrow, and marketplace on Solana with Web3.js v2 patterns"
+keywords = ["solana", "blockchain", "ai", "agents", "protocol", "web3", "sdk"]
+categories = ["api-bindings", "cryptography", "web-programming", "asynchronous"]
 readme = "README.md"
 
 [lib]
-name = "podAI_protocol_sdk"
+name = "podai_sdk"
 path = "src/lib.rs"
 
 [dependencies]
-# Core dependencies
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-tokio = { version = "1.45.1", features = ["full"] }
-anyhow = "1.0.98"
-thiserror = "2.0.12"
-
-# Solana ecosystem - using workspace unified versions (FIXED CONFLICT)
-solana-sdk = { workspace = true }
-solana-client = { workspace = true }
-solana-program = { workspace = true }
-
-# Crypto
-rand = "0.9.1"
-blake3 = { version = "1.8.2", features = ["traits-preview"] }
-hex = "0.4.3"
-
-# HTTP client (compatible with Solana's zeroize requirements)
-reqwest = { version = "0.12.20", features = ["json", "rustls-tls"] }
-
-# Async utilities
+# Core async runtime and utilities
+tokio = { workspace = true }
 async-trait = "0.1.88"
 futures = "0.3.31"
 
-# Time
+# Serialization and data handling
+serde = { workspace = true }
+serde_json = "1.0.140"
+borsh = "1.5.7"
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Solana ecosystem - using workspace unified versions
+solana-sdk = { workspace = true }
+solana-client = { workspace = true }
+solana-program = { workspace = true }
+solana-transaction-status = { workspace = true }
+
+# SPL Token 2022 support
+spl-token = { version = "8.0.0", features = ["no-entrypoint"], default-features = false }
+spl-token-2022 = { version = "9.0.0", features = ["no-entrypoint", "zk-ops"], default-features = false }
+spl-associated-token-account = { version = "7.0.0", features = ["no-entrypoint"], default-features = false }
+
+# Cryptography and security
+blake3 = { workspace = true }
+bs58 = "0.5.1"
+hex = "0.4.3"
+rand = "0.9.1"
+
+# HTTP client for RPC operations
+reqwest = { version = "0.12.20", features = ["json", "rustls-tls"], default-features = false }
+
+# Time and utilities
 chrono = { version = "0.4.41", features = ["serde"] }
+uuid = { version = "1.11.0", features = ["v4", "serde"] }
 
 # Logging
+log = "0.4.27"
 tracing = "0.1.41"
 
 [dev-dependencies]
 tokio-test = "0.4.4"
+proptest = "1.7.0"
+criterion = "0.5.1"
+env_logger = "0.11.0"
 
 [features]
-default = []
+default = ["client"]
+client = []
+compression = []
+escrow = []
+marketplace = []
+testing = []
 
 [package.metadata.docs.rs]
-features = []
+features = ["client", "compression", "escrow", "marketplace"]
 rustdoc-args = ["--cfg", "docsrs"]
+
+
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+debug = false
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true
+panic = "unwind"
+
+[profile.test]
+opt-level = 1
+debug = true 

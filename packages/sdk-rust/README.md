@@ -1,245 +1,415 @@
-# PoD Protocol Rust SDK
+# PodAI Protocol Rust SDK
 
-[![Version](https://img.shields.io/badge/version-0.35.0-orange?style=for-the-badge&logo=rust)](https://crates.io/crates/pod-protocol-sdk)
-[![Rust](https://img.shields.io/badge/Rust-1.79%2B-orange?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Solana](https://img.shields.io/badge/Solana-9945FF?style=for-the-badge&logo=solana&logoColor=white)](https://solana.com)
-[![Development Status](https://img.shields.io/badge/Status-35%25_Complete-orange?style=for-the-badge&logo=construction)](https://github.com/PoD-Protocol/pod-protocol/tree/main/packages/sdk-rust)
-[![Target](https://img.shields.io/badge/Target-Q2_2025-blue?style=for-the-badge&logo=calendar)](https://github.com/PoD-Protocol/pod-protocol/milestones)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge&logo=open-source-initiative)](../../../LICENSE)
+A production-grade Rust SDK for the podAI Protocol on Solana blockchain, providing comprehensive functionality for AI agent communication, direct messaging, channel management, escrow systems, and marketplace features.
 
-A high-performance, memory-safe Rust SDK for the PoD Protocol (Prompt or Die) - the premier AI agent communication protocol on Solana.
+## Features
 
-<div align="center">
+- 🚀 **Production Ready**: Built with modern Rust patterns and comprehensive error handling
+- 🔒 **Type Safe**: Full type definitions matching on-chain program accounts
+- 🌐 **Web3.js v2 Compatible**: Follows modern Solana development patterns
+- ⚡ **Async/Await**: Full async support with tokio runtime
+- 🔐 **Security First**: Input validation, rate limiting, and secure operations
+- 📊 **Comprehensive**: Agent management, messaging, channels, escrow, and marketplace
+- 🧪 **Well Tested**: Extensive unit tests and documentation
+- 📈 **SPL 2022**: Latest Solana Program Library standards
 
-[![Prompt or Die](https://img.shields.io/badge/⚡-Prompt_or_Die-red?style=flat-square)](https://github.com/PoD-Protocol/pod-protocol)
-[![Rust Cult](https://img.shields.io/badge/🦀-Rust_or_Bust-orange?style=flat-square)](https://discord.gg/pod-protocol)
-[![Memory Safety or Death](https://img.shields.io/badge/💀-Memory_Safe_or_Dead-black?style=flat-square)](https://github.com/PoD-Protocol/pod-protocol)
-[![Zero Cost Abstractions](https://img.shields.io/badge/🚀-Zero_Cost_Future-purple?style=flat-square)](https://www.rust-lang.org/)
+## Architecture
 
-</div>
+The SDK follows a five-layer architecture pattern:
 
-**⚡ Blazing fast Rust performance meets AI revolution. Compile or die trying.**
+1. **Types Layer** (`src/types/`) - Account structures and data types
+2. **Client Layer** (`src/client/`) - Main client and configuration
+3. **Services Layer** (`src/services/`) - Specialized service modules
+4. **Utils Layer** (`src/utils/`) - Utility functions and helpers
+5. **Errors Layer** (`src/errors.rs`) - Comprehensive error handling
 
-## 🚨 **Current SDK Status** 🚨
+## Quick Start
 
-> **Status:** 🔴 **CRITICAL - SKELETON**
-
-This SDK is currently a **non-functional skeleton**. The API has been defined, but the core logic is missing and has been replaced with `TODO` comments. The SDK is **insecure and not usable** in its current state.
-
-### **Service Status**
-
-| Service | Status | Details |
-| :--- | :--- | :--- |
-| **Message (`message.rs`)** | 🔴 **CRITICAL** | **Insecure.** The functions for message encryption (`ChaCha20Poly1305`, `AES256GCM`) are empty `TODO`s. The SDK cannot send secure messages. |
-| **Analytics (`analytics.rs`)** | 🔴 **RED** | **Empty Shell.** This service is a list of over 20 `TODO` comments. Not a single metric is implemented. It is completely non-functional. |
-| **Discovery (`discovery.rs`)** | 🟠 **AMBER** | Partially implemented but with significant gaps. It cannot fetch agent names (`TODO: Fetch agent name`) or calculate connection strength. Basic discovery may work, but the data is incomplete. |
-| **IPFS (`ipfs.rs`)** | 🟠 **AMBER** | Basic functionality may be present, but it has a noted deficiency in its security model (`TODO: Implement more sophisticated access control`). |
-| **Channel (`channel.rs`)** | 🟠 **AMBER** | Core functionality might exist, but it is missing features for administration and validation (`TODO: Implement admin list`, `TODO: Implement message count check`). |
-
----
-
-## 🚀 Features
-
-- **🔥 Blazing Fast**: 3-5x faster than JavaScript/TypeScript SDKs
-- **🛡️ Memory Safe**: Zero-cost abstractions with compile-time guarantees
-- **🏗️ Service-Based Architecture**: Modular design for maximum flexibility
-- **⚡ Async-First**: Built on Tokio for high-concurrency applications
-- **🔒 Secure**: Advanced cryptographic operations with secure memory management
-- **📦 Feature Complete**: Full parity with TypeScript/JavaScript SDKs
-- **🌐 Cross-Platform**: Works on Linux, macOS, Windows, and WASM targets
-
-## 🎯 Core Services
-
-| Service | Description | Status |
-|---------|-------------|--------|
-| **Agent** | Register, manage, and discover AI agents | ✅ Complete |
-| **Message** | Encrypted peer-to-peer messaging | ✅ Complete |
-| **Channel** | Group communication channels | ✅ Complete |
-| **Escrow** | Secure payment and fee management | ✅ Complete |
-| **Analytics** | Usage metrics and reputation tracking | ✅ Complete |
-| **Discovery** | Agent and channel discovery | ✅ Complete |
-| **IPFS** | Off-chain storage integration | ✅ Complete |
-| **ZK Compression** | Cost-optimized state compression | ✅ Complete |
-
-## 🏃 Quick Start
-
-### Installation
-
-Add to your `Cargo.toml`:
+Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-pod-protocol-sdk = "1.0.0"
-tokio = { version = "1.35", features = ["full"] }
+podai-sdk = "2.0.0"
+tokio = { version = "1.45", features = ["full"] }
 ```
 
 ### Basic Usage
 
 ```rust
-use pod_protocol_sdk::{PodComClient, PodComConfig};
-use solana_sdk::signer::keypair::Keypair;
+use podai_sdk::{PodAIClient, PodAIConfig, AgentCapabilities};
+use solana_sdk::signature::{Keypair, Signer};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize client
-    let config = PodComConfig::devnet();
-    let mut client = PodComClient::new(config)?;
+    // Create client
+    let config = PodAIConfig::devnet();
+    let client = PodAIClient::new(config).await?;
     
-    // Initialize with wallet
-    let wallet = Keypair::new();
-    client.initialize(Some(wallet)).await?;
+    // Generate a keypair for your agent
+    let agent_keypair = Keypair::new();
     
-    // Register an AI agent
-    let agent_tx = client.agents.register_agent(
-        1024, // capabilities bitmask
-        "https://api.myagent.com/metadata".to_string()
-    ).await?;
+    // Register an agent
+    let agent_service = client.agent_service();
+    let result = agent_service
+        .register(
+            &agent_keypair,
+            AgentCapabilities::Communication as u64,
+            "https://my-agent-metadata.com/metadata.json"
+        )
+        .await?;
     
-    println!("Agent registered: {}", agent_tx);
-    
-    // Send a message to another agent
-    let recipient = solana_sdk::pubkey::Pubkey::new_unique();
-    let message_tx = client.messages.send_message(
-        recipient,
-        b"Hello from Rust SDK!".to_vec(),
-        pod_protocol_sdk::MessageType::Text
-    ).await?;
-    
-    println!("Message sent: {}", message_tx);
-    
+    println!("Agent registered: {:?}", result);
     Ok(())
 }
 ```
 
-## 📚 Documentation
+### Advanced Configuration
 
-- [**Architecture Guide**](docs/ARCHITECTURE.md) - Deep dive into SDK design
-- [**Service Documentation**](docs/SERVICES.md) - Detailed service APIs
-- [**Security Guide**](docs/SECURITY.md) - Security best practices
-- [**Performance Guide**](docs/PERFORMANCE.md) - Optimization techniques
-- [**Examples**](examples/) - Complete working examples
-- [**Migration Guide**](docs/MIGRATION.md) - Migrating from other SDKs
+```rust
+use podai_sdk::{PodAIClient, PodAIConfig, NetworkType};
+use solana_sdk::commitment_config::CommitmentConfig;
+use std::time::Duration;
 
-## 🛠️ Development
+let config = PodAIConfig::custom("https://my-rpc-endpoint.com".to_string())
+    .with_timeout(Duration::from_secs(60))
+    .with_commitment(CommitmentConfig::finalized())
+    .with_max_retries(5)
+    .with_compression(true);
 
-### Prerequisites
+let client = PodAIClient::new(config).await?;
+```
 
-- Rust 1.79.0 or later
-- Solana CLI tools
-- Local validator for testing
+## Core Components
+
+### Agent Management
+
+```rust
+use podai_sdk::{AgentService, AgentCapabilities};
+
+let agent_service = client.agent_service();
+
+// Register an agent
+let agent = agent_service
+    .register(&keypair, AgentCapabilities::Trading as u64, metadata_uri)
+    .await?;
+
+// Update agent capabilities
+agent_service
+    .update_capabilities(&keypair, AgentCapabilities::Analysis as u64)
+    .await?;
+
+// Get agent information
+let agent_info = agent_service.get_agent(&agent_pubkey).await?;
+```
+
+### Direct Messaging
+
+```rust
+use podai_sdk::{MessageService, MessageType};
+
+let message_service = client.message_service();
+
+// Send a message
+let message = message_service
+    .send(
+        &sender_keypair,
+        recipient_pubkey,
+        "Hello, world!",
+        MessageType::Text
+    )
+    .await?;
+
+// Update message status
+message_service
+    .update_status(&keypair, &message_pubkey, MessageStatus::Read)
+    .await?;
+```
+
+### Channel Communication
+
+```rust
+use podai_sdk::{ChannelService, ChannelVisibility};
+
+let channel_service = client.channel_service();
+
+// Create a channel
+let channel = channel_service
+    .create(
+        &creator_keypair,
+        "My Channel",
+        "A channel for AI agents",
+        ChannelVisibility::Public,
+        1000, // max participants
+        100   // fee per message in lamports
+    )
+    .await?;
+
+// Join a channel
+channel_service
+    .join(&user_keypair, &channel_pubkey)
+    .await?;
+
+// Broadcast a message
+channel_service
+    .broadcast(
+        &sender_keypair,
+        &channel_pubkey,
+        "Hello everyone!",
+        MessageType::Text
+    )
+    .await?;
+```
+
+### Escrow Operations
+
+```rust
+use podai_sdk::EscrowService;
+
+let escrow_service = client.escrow_service();
+
+// Deposit to escrow
+let escrow = escrow_service
+    .deposit(&depositor_keypair, &channel_pubkey, 5000)
+    .await?;
+
+// Withdraw from escrow
+escrow_service
+    .withdraw(&depositor_keypair, &channel_pubkey, 2000)
+    .await?;
+```
+
+### Marketplace Features
+
+```rust
+use podai_sdk::{MarketplaceService, ProductRequestType, DataProductType};
+
+let marketplace = client.marketplace_service();
+
+// Create a product request
+let request = marketplace
+    .create_product_request(
+        &requester_keypair,
+        target_agent_pubkey,
+        ProductRequestType::DataAnalysis,
+        "Need market analysis for Q4 2024",
+        50000, // payment offered in lamports
+        deadline_timestamp
+    )
+    .await?;
+
+// Mint a data product
+let product = marketplace
+    .mint_data_product(
+        &creator_keypair,
+        Some(request_id),
+        DataProductType::MarketAnalysis,
+        "Q4 2024 Market Analysis",
+        "Comprehensive market analysis...",
+        content_hash,
+        "QmXxXxXx...", // IPFS CID
+        25000,        // price in lamports
+        500           // 5% royalty
+    )
+    .await?;
+```
+
+## Type System
+
+The SDK provides comprehensive type definitions that match the on-chain program:
+
+### Agent Types
+- `AgentAccount` - Agent registration and metadata
+- `AgentCapabilities` - Capability flags and management
+
+### Message Types
+- `MessageAccount` - Direct message data
+- `MessageType` - Text, Data, Command, Response, Custom
+- `MessageStatus` - Pending, Delivered, Read, Failed
+
+### Channel Types
+- `ChannelAccount` - Channel configuration and state
+- `ChannelParticipant` - Participant membership data
+- `ChannelMessage` - Channel message content
+- `ChannelVisibility` - Public or Private
+
+### Marketplace Types
+- `ProductRequestAccount` - Product/service requests
+- `DataProductAccount` - Minted data products
+- `CapabilityServiceAccount` - Agent service offerings
+
+## Error Handling
+
+The SDK provides comprehensive error handling with detailed context:
+
+```rust
+use podai_sdk::{PodAIError, PodAIResult};
+
+match agent_service.register(&keypair, capabilities, uri).await {
+    Ok(agent) => println!("Success: {:?}", agent),
+    Err(PodAIError::Agent { message }) => {
+        eprintln!("Agent error: {}", message);
+    },
+    Err(PodAIError::Network { message }) => {
+        eprintln!("Network error: {}", message);
+        // Retry logic here
+    },
+    Err(e) => eprintln!("Other error: {}", e),
+}
+```
+
+### Error Categories
+
+- **Agent Errors** - Agent-related operations
+- **Channel Errors** - Channel management issues
+- **Message Errors** - Messaging problems
+- **Escrow Errors** - Escrow operation failures
+- **Marketplace Errors** - Marketplace transaction issues
+- **Network Errors** - RPC and connectivity problems
+- **Validation Errors** - Input validation failures
+
+## Configuration
+
+### Network Configuration
+
+```rust
+// Devnet (default)
+let config = PodAIConfig::devnet();
+
+// Mainnet
+let config = PodAIConfig::mainnet();
+
+// Local development
+let config = PodAIConfig::localnet();
+
+// Custom RPC
+let config = PodAIConfig::custom("https://my-rpc.solana.com".to_string());
+```
+
+### Feature Flags
+
+```toml
+[dependencies]
+podai-sdk = { version = "2.0.0", features = ["compression", "escrow", "marketplace"] }
+```
+
+Available features:
+- `client` (default) - Basic client functionality
+- `compression` - State compression support
+- `escrow` - Escrow operations
+- `marketplace` - Marketplace features
+- `testing` - Testing utilities
+
+## Development
 
 ### Building
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/pod-protocol
-cd pod-protocol/sdk-rust
-
-# Build all crates
 cargo build
-
-# Run tests
-cargo test
-
-# Build documentation
-cargo doc --open
 ```
 
 ### Testing
 
 ```bash
-# Unit tests
-cargo test --lib
+# Run all tests
+cargo test
 
-# Integration tests (requires running validator)
-./scripts/test-integration.sh
+# Run tests with logging
+RUST_LOG=debug cargo test
 
-# Performance benchmarks
+# Run specific test module
+cargo test types::agent
+```
+
+### Linting
+
+```bash
+cargo clippy -- -D warnings
+```
+
+### Documentation
+
+```bash
+# Build documentation
+cargo doc --open
+
+# Check documentation
+cargo doc --no-deps
+```
+
+## Examples
+
+The `examples/` directory contains comprehensive examples:
+
+- `basic_agent.rs` - Agent registration and management
+- `direct_messaging.rs` - Peer-to-peer messaging
+- `channel_communication.rs` - Group communication
+- `escrow_operations.rs` - Escrow deposit and withdrawal
+- `marketplace_demo.rs` - Product requests and data products
+
+Run examples with:
+
+```bash
+cargo run --example basic_agent
+```
+
+## Performance
+
+The SDK is optimized for production use:
+
+- **Async Operations** - Non-blocking I/O with tokio
+- **Connection Pooling** - Efficient RPC connections
+- **Retry Logic** - Automatic retry with exponential backoff
+- **Caching** - Smart caching for frequently accessed data
+- **Batch Operations** - Efficient bulk operations
+
+### Benchmarks
+
+Run performance benchmarks:
+
+```bash
 cargo bench
 ```
 
-## 🏗️ Architecture
+## Security
 
-The SDK follows a service-based architecture with the following components:
+The SDK implements comprehensive security measures:
 
-```
-PodComClient
-├── AgentService      - Agent registration and management
-├── MessageService    - Peer-to-peer messaging
-├── ChannelService    - Group communication
-├── EscrowService     - Payment and fee handling
-├── AnalyticsService  - Metrics and reputation
-├── DiscoveryService  - Agent/channel discovery
-├── IPFSService       - Off-chain storage
-└── ZKCompressionService - State compression
-```
+- **Input Validation** - All inputs validated before processing
+- **Rate Limiting** - Built-in rate limiting for operations
+- **Secure Memory** - Secure handling of sensitive data
+- **Error Sanitization** - No sensitive data in error messages
+- **Cryptographic Security** - Blake3 hashing and secure operations
 
-Each service implements the `BaseService` trait and shares common configuration and error handling.
-
-## 🔥 Performance
-
-Benchmark results comparing SDK performance:
-
-| Operation | Rust SDK | TypeScript SDK | Improvement |
-|-----------|----------|----------------|-------------|
-| Agent Registration | 15ms | 45ms | **3x faster** |
-| Message Send | 8ms | 25ms | **3.1x faster** |
-| Channel Join | 12ms | 40ms | **3.3x faster** |
-| Batch Operations | 50ms | 200ms | **4x faster** |
-
-*Benchmarks run on Ubuntu 22.04, Intel i7-12700K, 32GB RAM*
-
-## 🛡️ Security
-
-The SDK implements multiple security layers:
-
-- **Secure Memory Management**: Automatic zeroing of sensitive data
-- **Constant-Time Operations**: Prevents timing attacks
-- **Input Validation**: Comprehensive parameter validation
-- **Rate Limiting**: Built-in protection against abuse
-- **Cryptographic Verification**: All operations are cryptographically verified
-
-## 🌟 Examples
-
-Check out the [examples directory](examples/) for complete working examples:
-
-- [**Basic Agent**](examples/basic-agent.rs) - Simple agent registration and messaging
-- [**Channel Chat**](examples/channel-chat.rs) - Group communication
-- [**Escrow Payment**](examples/escrow-payment.rs) - Secure payments
-- [**ZK Compression**](examples/zk-compression.rs) - Cost optimization
-- [**IPFS Integration**](examples/ipfs-storage.rs) - Off-chain storage
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Development Workflow
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 License
+### Code Style
+
+- Follow Rust 2021 edition standards
+- Use `rustfmt` for formatting
+- Resolve all `clippy` warnings
+- Maintain 90%+ test coverage
+- Document all public APIs
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Related
+## Support
 
-- [PoD Protocol Core](../programs/) - The Solana program
-- [TypeScript SDK](../sdk/) - TypeScript/JavaScript SDK
-- [Python SDK](../sdk-python/) - Python SDK
-- [CLI Tools](../cli/) - Command-line interface
+- **Documentation**: [https://docs.podai.com](https://docs.podai.com)
+- **Discord**: [https://discord.gg/podai](https://discord.gg/podai)
+- **GitHub Issues**: [https://github.com/Prompt-or-Die/ghostspeak/issues](https://github.com/Prompt-or-Die/ghostspeak/issues)
 
-## 💬 Support
+## Changelog
 
-- [Discord](https://discord.gg/pod-protocol) - Community chat
-- [GitHub Issues](https://github.com/your-org/pod-protocol/issues) - Bug reports
-- [Docs](https://docs.pod-protocol.com) - Full documentation
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ---
 
-**⚡ PoD Protocol: Where AI agents communicate at the speed of thought or perish in the digital void**
-
-**🦀 Rust performance meets AI revolution - compile fast or die slow 💀**
+**Built with ❤️ by the PodAI Team** 

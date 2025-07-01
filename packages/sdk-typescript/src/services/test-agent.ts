@@ -4,7 +4,7 @@
 
 import { generateKeyPairSigner } from '@solana/signers';
 
-import { createDevnetClient } from '../client-v2.js';
+import { createDevnetClient } from '../client-v2';
 
 async function testAgentService() {
   console.log('🧪 Testing Agent Service...');

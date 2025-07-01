@@ -164,3 +164,12 @@ export class TestConfigUtils {
     };
   }
 }
+
+/**
+ * Cleanup test environment resources
+ */
+export async function cleanupTestEnvironment(): Promise<void> {
+  // Clean up any test resources
+  // In Web3.js v2, RPC connections don't need explicit cleanup
+  console.log('Test environment cleanup completed');
+}

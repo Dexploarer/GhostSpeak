@@ -1,337 +1,204 @@
-//! # PoD Protocol SDK for Rust
+#![doc = include_str!("../README.md")]
+#![deny(missing_docs)]
+#![deny(unsafe_code)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+//! # podAI SDK for Rust
 //!
-//! A high-performance Rust SDK for the PoD Protocol (Prompt or Die) - AI agent communication on Solana.
-//! 
-//! Compatible with Web3.js v2.0, Solana Kit, Solana App Kit, and Solana Agent Kit.
-//!
-//! ## Features
-//!
-//! - **Agent Management**: Register and manage AI agents on Solana
-//! - **P2P Messaging**: Secure peer-to-peer messaging with encryption
-//! - **Channel Communication**: Group messaging and broadcasting
-//! - **Escrow System**: Secure payments with milestone support
-//! - **Analytics**: Usage metrics and reputation tracking
-//! - **Discovery**: Find agents and channels
-//! - **IPFS Integration**: Off-chain storage for large data
-//! - **ZK Compression**: Cost-effective transactions with Light Protocol
-//! - **Web3.js v2 Compatible**: Works with the latest Solana JavaScript ecosystem
+//! A comprehensive Rust SDK for interacting with the podAI protocol on Solana.
+//! The podAI protocol enables AI agents to communicate, collaborate, and transact
+//! in a decentralized manner.
 //!
 //! ## Quick Start
 //!
 //! ```rust
-//! use pod_protocol_sdk::{PodClient, Config, services::*};
-//! use solana_sdk::signer::keypair::Keypair;
+//! use pod_ai_sdk::{PodAIClient, PodAIConfig};
+//! use solana_sdk::signature::Keypair;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let config = Config::default();
-//!     let mut client = PodClient::new(config).await?;
-//!     
-//!     // Initialize with wallet
-//!     let wallet = Keypair::new();
-//!     client.set_wallet(wallet).await?;
+//!     // Create a client connected to devnet
+//!     let client = PodAIClient::devnet().await?;
 //!     
 //!     // Register an agent
-//!     let agent_data = AgentRegistrationData::new(
-//!         "My AI Agent".to_string(),
-//!         "A helpful AI agent".to_string(),
-//!         AgentCapabilities::all(),
-//!         "https://metadata.example.com".to_string(),
-//!     );
-//!     let result = client.agents.register_agent(agent_data).await?;
-//!     println!("Agent registered: {}", result.signature);
+//!     let agent_keypair = Keypair::new();
+//!     let agent_service = client.agent_service();
+//!     
+//!     let result = agent_service.register(
+//!         &agent_keypair,
+//!         pod_ai_sdk::types::agent::AgentCapabilities::Communication as u64,
+//!         "https://example.com/agent-metadata.json"
+//!     ).await?;
+//!     
+//!     println!("Agent registered with PDA: {}", result.agent_pda);
 //!     
 //!     Ok(())
 //! }
 //! ```
+//!
+//! ## Architecture
+//!
+//! The SDK follows a five-layer architecture:
+//!
+//! 1. **Infrastructure Layer**: Blockchain integration (Solana)
+//! 2. **Protocol Layer**: Smart contract interactions
+//! 3. **Service Layer**: High-level business logic
+//! 4. **SDK Layer**: This Rust SDK
+//! 5. **Application Layer**: Your applications
+//!
+//! ## Features
+//!
+//! - **Agent Management**: Register and manage AI agents
+//! - **Direct Messaging**: Send encrypted messages between agents
+//! - **Channels**: Create group communication channels
+//! - **Escrow Services**: Secure financial transactions
+//! - **Marketplace**: Trade data products and services
+//! - **State Compression**: Efficient on-chain storage
+//! - **Rate Limiting**: Built-in spam protection
+//!
+//! ## Security
+//!
+//! - All operations require cryptographic signatures
+//! - Input validation on all parameters
+//! - Rate limiting and deposit requirements
+//! - Comprehensive error handling
+//!
+//! ## Performance
+//!
+//! - Async/await throughout for non-blocking operations
+//! - Connection pooling and retry logic
+//! - Efficient account data caching
+//! - Batch transaction support
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use serde::{Deserialize, Serialize};
-use solana_sdk::{pubkey::Pubkey, signer::Signer};
-use solana_client::rpc_client::RpcClient;
-use anyhow::Result;
-use thiserror::Error;
-
-/// Main error types for the PoD Protocol SDK
-#[derive(Error, Debug)]
-pub enum PodError {
-    #[error("Network error: {0}")]
-    Network(String),
-    #[error("Solana error: {0}")]
-    Solana(String),
-    #[error("Serialization error: {0}")]
-    Serialization(#[from] serde_json::Error),
-    #[error("Agent not found: {0}")]
-    AgentNotFound(String),
-    #[error("Insufficient funds for operation")]
-    InsufficientFunds,
-    #[error("Invalid configuration: {0}")]
-    InvalidConfig(String),
-}
-
-/// Configuration for the PoD Protocol client
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Config {
-    /// Solana RPC endpoint
-    pub rpc_url: String,
-    /// Program ID for the PoD Protocol
-    pub program_id: Pubkey,
-    /// Network environment (mainnet, devnet, localnet)
-    pub network: Network,
-    /// Optional commitment level
-    pub commitment: Option<String>,
-}
-
-/// Supported Solana networks
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Network {
-    Mainnet,
-    Devnet,
-    Localnet,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            rpc_url: "https://api.devnet.solana.com".to_string(),
-            program_id: Pubkey::default(), // Will be updated with actual program ID
-            network: Network::Devnet,
-            commitment: Some("confirmed".to_string()),
-        }
-    }
-}
-
-/// Agent information
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Agent {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub owner: Pubkey,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub metadata: HashMap<String, String>,
-}
-
-/// Message structure for agent communication
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Message {
-    pub id: String,
-    pub from: String,
-    pub to: String,
-    pub content: String,
-    pub timestamp: chrono::DateTime<chrono::Utc>,
-    pub message_type: MessageType,
-}
-
-/// Types of messages supported
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum MessageType {
-    Direct,
-    Channel,
-    Broadcast,
-}
-
-// Re-export services module
+pub mod client;
+pub mod errors;
+pub mod types;
+pub mod utils;
 pub mod services;
-pub use services::*;
 
-/// Main client for interacting with the PoD Protocol
-pub struct PodClient {
-    config: Config,
-    rpc_client: Arc<RpcClient>,
-    context: services::ServiceContext,
+// Re-export commonly used items
+pub use client::{PodAIClient, PodAIConfig, NetworkType};
+pub use errors::{PodAIError, PodAIResult};
+
+// Re-export types
+pub use types::{
+    agent::{AgentAccount, AgentCapabilities},
+    channel::{ChannelAccount, ChannelParticipant, ChannelMessage, ChannelVisibility},
+    escrow::{EscrowAccount, EscrowTransaction, EscrowManager},
+    marketplace::{ProductRequestAccount, DataProductAccount, CapabilityServiceAccount},
+    message::{MessageAccount, MessageType, MessageStatus},
+};
+
+// Re-export services
+pub use services::{
+    AgentService, ChannelService, EscrowService, MarketplaceService, MessageService,
+};
+
+// Re-export utilities
+pub use utils::{
+    find_agent_pda, find_channel_pda, find_message_pda, find_escrow_pda,
+    send_transaction, TransactionOptions,
+};
+
+// Re-export commonly used Solana types
+pub use solana_sdk::{
+    pubkey::Pubkey,
+    signature::{Keypair, Signature, Signer},
+    transaction::Transaction,
+};
+
+/// Program ID for the podAI protocol
+pub const PROGRAM_ID: Pubkey = solana_sdk::pubkey!("PodAAiK1NHXSoFaGp8ohmtJj9xAmyojqPEVebyiGh4zT");
+
+/// Default RPC endpoints for different networks
+pub const DEVNET_RPC: &str = "https://api.devnet.solana.com";
+pub const MAINNET_RPC: &str = "https://api.mainnet-beta.solana.com";
+pub const TESTNET_RPC: &str = "https://api.testnet.solana.com";
+pub const LOCALNET_RPC: &str = "http://localhost:8899";
+
+/// SDK version information
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const NAME: &str = env!("CARGO_PKG_NAME");
+pub const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
+
+/// Account size constants (matching the core program)
+pub mod account_sizes {
+    /// Size of an agent account in bytes
+    pub const AGENT_ACCOUNT_SIZE: usize = 286;
     
-    /// Agent service for managing AI agents
-    pub agents: services::AgentService,
-    /// Message service for P2P communication
-    pub messages: services::MessageService,
-    /// Channel service for group communication
-    pub channels: services::ChannelService,
-    /// Escrow service for secure payments
-    pub escrows: services::EscrowService,
+    /// Size of a message account in bytes  
+    pub const MESSAGE_ACCOUNT_SIZE: usize = 231;
+    
+    /// Size of a channel account in bytes
+    pub const CHANNEL_ACCOUNT_SIZE: usize = 389;
+    
+    /// Size of a channel participant account in bytes
+    pub const CHANNEL_PARTICIPANT_SIZE: usize = 106;
+    
+    /// Size of a channel message account in bytes
+    pub const CHANNEL_MESSAGE_SIZE: usize = 277;
+    
+    /// Size of an escrow account in bytes
+    pub const ESCROW_ACCOUNT_SIZE: usize = 170;
 }
 
-impl PodClient {
-    /// Create a new PoD Protocol client
-    pub async fn new(config: Config) -> Result<Self> {
-        let rpc_client = Arc::new(RpcClient::new(config.rpc_url.clone()));
-        let context = services::ServiceContext::new(config.clone(), rpc_client.clone());
-        
-        // Initialize all services
-        let mut agents = services::AgentService::new();
-        let mut messages = services::MessageService::new();
-        let mut channels = services::ChannelService::new();
-        let mut escrows = services::EscrowService::new();
-        
-        // Initialize each service
-        agents.initialize(&config, rpc_client.clone()).await?;
-        messages.initialize(&config, rpc_client.clone()).await?;
-        channels.initialize(&config, rpc_client.clone()).await?;
-        escrows.initialize(&config, rpc_client.clone()).await?;
-        
-        Ok(PodClient {
-            config,
-            rpc_client,
-            context,
-            agents,
-            messages,
-            channels,
-            escrows,
-        })
-    }
-
-    /// Set wallet for the client (required for most operations)
-    pub async fn set_wallet<T: Signer + Send + Sync + 'static>(&mut self, wallet: T) -> Result<()> {
-        let wallet_arc = Arc::new(wallet);
-        self.context = self.context.clone().with_wallet(wallet_arc.clone());
-        
-        // Re-initialize all services with the new context
-        self.agents.initialize(&self.config, self.rpc_client.clone()).await?;
-        self.messages.initialize(&self.config, self.rpc_client.clone()).await?;
-        self.channels.initialize(&self.config, self.rpc_client.clone()).await?;
-        self.escrows.initialize(&self.config, self.rpc_client.clone()).await?;
-        
-        tracing::info!("Wallet set for client: {}", wallet_arc.pubkey());
-        Ok(())
-    }
-
-    /// Get the current wallet public key if set
-    pub fn wallet_pubkey(&self) -> Option<Pubkey> {
-        self.context.wallet_pubkey()
-    }
-
-    /// Check if wallet is set
-    pub fn has_wallet(&self) -> bool {
-        self.context.has_wallet()
-    }
-
-    /// Get the current configuration
-    pub fn config(&self) -> &Config {
-        &self.config
-    }
-
-    /// Get the RPC client
-    pub fn rpc_client(&self) -> &Arc<RpcClient> {
-        &self.rpc_client
-    }
-
-    /// Perform a health check on all services
-    pub async fn health_check(&self) -> Result<HealthStatus> {
-        let mut status = HealthStatus {
-            overall: true,
-            services: HashMap::new(),
-        };
-
-        // Check each service
-        let services: Vec<(&str, &dyn services::BaseService)> = vec![
-            ("agents", &self.agents),
-            ("messages", &self.messages),
-            ("channels", &self.channels),
-            ("escrows", &self.escrows),
-        ];
-
-        for (name, service) in services {
-            match service.health_check().await {
-                Ok(_) => {
-                    status.services.insert(name.to_string(), true);
-                }
-                Err(e) => {
-                    status.services.insert(name.to_string(), false);
-                    status.overall = false;
-                    tracing::error!("Health check failed for {}: {}", name, e);
-                }
-            }
-        }
-
-        Ok(status)
-    }
-
-    /// Get service statistics
-    pub async fn get_service_stats(&self) -> Result<ServiceStats> {
-        if !self.has_wallet() {
-            return Err(PodError::InvalidConfig("Wallet required to get service stats".to_string()).into());
-        }
-
-        // This would aggregate statistics from all services
-        Ok(ServiceStats {
-            agent_count: 0,
-            message_count: 0,
-            channel_count: 0,
-            escrow_count: 0,
-            total_transactions: 0,
-            last_activity: chrono::Utc::now(),
-        })
-    }
+/// Rate limiting constants
+pub mod rate_limits {
+    /// Maximum messages per minute per agent
+    pub const MAX_MESSAGES_PER_MINUTE: u16 = 60;
+    
+    /// Maximum channel messages per minute
+    pub const MAX_CHANNEL_MESSAGES_PER_MINUTE: u16 = 30;
+    
+    /// Maximum file size for attachments (bytes)
+    pub const MAX_FILE_SIZE: usize = 10 * 1024 * 1024; // 10MB
+    
+    /// Maximum text content length (bytes)
+    pub const MAX_TEXT_LENGTH: usize = 10 * 1024; // 10KB
 }
 
-/// Health status for the client and all services
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HealthStatus {
-    pub overall: bool,
-    pub services: HashMap<String, bool>,
-}
-
-/// Service statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServiceStats {
-    pub agent_count: u64,
-    pub message_count: u64,
-    pub channel_count: u64,
-    pub escrow_count: u64,
-    pub total_transactions: u64,
-    pub last_activity: chrono::DateTime<chrono::Utc>,
-}
-
-/// Utility functions for PoD Protocol operations
-pub mod utils {
-    use super::*;
-
-    /// Generate a random agent ID
-    pub fn generate_agent_id() -> String {
-        format!("agent_{}", rand::random::<u64>())
-    }
-
-    /// Generate a random message ID
-    pub fn generate_message_id() -> String {
-        format!("msg_{}", rand::random::<u64>())
-    }
-
-    /// Validate agent name
-    pub fn validate_agent_name(name: &str) -> Result<()> {
-        if name.is_empty() {
-            return Err(PodError::InvalidConfig("Agent name cannot be empty".to_string()).into());
-        }
-        if name.len() > 100 {
-            return Err(PodError::InvalidConfig("Agent name too long".to_string()).into());
-        }
-        Ok(())
-    }
+/// Network and protocol constants
+pub mod protocol {
+    /// Current protocol version
+    pub const PROTOCOL_VERSION: u8 = 1;
+    
+    /// Minimum deposit for agent registration (lamports)
+    pub const MIN_AGENT_DEPOSIT: u64 = 1_000_000; // 0.001 SOL
+    
+    /// Minimum deposit for channel creation (lamports)
+    pub const MIN_CHANNEL_DEPOSIT: u64 = 5_000_000; // 0.005 SOL
+    
+    /// Message retention period (seconds)
+    pub const MESSAGE_RETENTION_PERIOD: i64 = 30 * 24 * 60 * 60; // 30 days
+    
+    /// Maximum channel participants
+    pub const MAX_CHANNEL_PARTICIPANTS: u16 = 1000;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[tokio::test]
-    async fn test_client_creation() {
-        let config = Config::default();
-        let client = PodClient::new(config).await;
-        assert!(client.is_ok());
-    }
-
+    
     #[test]
-    fn test_agent_id_generation() {
-        let id1 = utils::generate_agent_id();
-        let id2 = utils::generate_agent_id();
-        assert_ne!(id1, id2);
-        assert!(id1.starts_with("agent_"));
+    fn test_program_id() {
+        assert_eq!(PROGRAM_ID.to_string(), "PodAAiK1NHXSoFaGp8ohmtJj9xAmyojqPEVebyiGh4zT");
     }
-
+    
     #[test]
-    fn test_agent_name_validation() {
-        assert!(utils::validate_agent_name("Valid Name").is_ok());
-        assert!(utils::validate_agent_name("").is_err());
-        assert!(utils::validate_agent_name(&"a".repeat(101)).is_err());
+    fn test_version_info() {
+        assert!(!VERSION.is_empty());
+        assert!(!NAME.is_empty());
+        assert!(!DESCRIPTION.is_empty());
     }
-}
+    
+    #[test]
+    fn test_constants() {
+        assert!(account_sizes::AGENT_ACCOUNT_SIZE > 0);
+        assert!(account_sizes::MESSAGE_ACCOUNT_SIZE > 0);
+        assert!(rate_limits::MAX_MESSAGES_PER_MINUTE > 0);
+        assert!(protocol::PROTOCOL_VERSION > 0);
+    }
+} 

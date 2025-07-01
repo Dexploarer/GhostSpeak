@@ -1,20 +1,17 @@
-/// Service modules for the PoD Protocol SDK
-pub mod base;
+//! Service layer for the podAI SDK
+//!
+//! This module contains specialized service implementations for different
+//! aspects of the podAI protocol, providing high-level APIs for common operations.
+
 pub mod agent;
-pub mod message;
 pub mod channel;
 pub mod escrow;
-pub mod analytics;
-pub mod discovery;
-pub mod ipfs;
-pub mod zk_compression;
+pub mod marketplace;
+pub mod message;
 
-pub use base::*;
-pub use agent::*;
-pub use message::*;
-pub use channel::*;
-pub use escrow::*;
-pub use analytics::*;
-pub use discovery::*;
-pub use ipfs::*;
-pub use zk_compression::*;
+// Re-export services for convenience
+pub use agent::AgentService;
+pub use channel::ChannelService;
+pub use escrow::EscrowService;
+pub use marketplace::MarketplaceService;
+pub use message::MessageService; 

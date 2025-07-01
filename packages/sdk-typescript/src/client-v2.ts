@@ -12,19 +12,27 @@ import { address } from '@solana/addresses';
 import { createSolanaRpc } from '@solana/rpc';
 import { generateKeyPairSigner } from '@solana/signers';
 
+// Import utility functions following Jupiter Swap patterns
+import {
+  buildSimulateAndSendTransaction,
+  batchTransactions,
+  createTransactionConfig,
+  type TransactionConfig
+} from './utils/transaction-utils';
+
 // Import Codama-generated functionality
 import {
   fetchMaybeAgentAccount,
   type AgentAccount as CodemaAgentAccount,
-} from './generated-v2/accounts/agentAccount.js';
+} from './generated-v2/accounts/agentAccount';
 // Import services
-import { AgentService } from './services/agent.js';
-import { ChannelService } from './services/channel.js';
-import { MessageService } from './services/message.js';
-import { AnalyticsService } from './services/analytics.js';
+import { AgentService } from './services/agent';
+import { ChannelService } from './services/channel';
+import { MessageService } from './services/message';
+import { AnalyticsService } from './services/analytics';
 
 // Types from our existing system (only what we need)
-import type { ICreateAgentOptions } from './types.js';
+import type { ICreateAgentOptions } from './types';
 import type { Address } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { Commitment } from '@solana/rpc-types';
@@ -238,6 +246,97 @@ export class PodAIClientV2 {
 
     // Return cleanup function would be better, but keeping simple for now
     setTimeout(() => clearInterval(interval), 60000); // Auto-cleanup after 60 seconds
+  }
+
+  /**
+   * Create a transaction configuration for use with utility functions
+   * Following Jupiter Swap pattern for transaction building
+   */
+  public createTransactionConfig(
+    signer: KeyPairSigner,
+    instructions: any[],
+    options?: {
+      commitment?: Commitment;
+      skipPreflight?: boolean;
+    }
+  ): TransactionConfig {
+    return createTransactionConfig(
+      this.rpc,
+      signer,
+      instructions,
+      {
+        commitment: options?.commitment || this.commitment,
+        wsEndpoint: this.wsEndpoint || undefined,
+        skipPreflight: options?.skipPreflight || false
+      }
+    );
+  }
+
+  /**
+   * Execute a transaction with full Jupiter Swap-style validation
+   * Includes simulation, error handling, and confirmation
+   */
+  public async executeTransaction(config: TransactionConfig) {
+    return await buildSimulateAndSendTransaction(config);
+  }
+
+  /**
+   * Execute multiple transactions efficiently in batch
+   * Following Jupiter Swap batching patterns
+   */
+  public async executeBatchTransactions(configs: TransactionConfig[]) {
+    return await batchTransactions(configs);
+  }
+
+  /**
+   * Get comprehensive performance metrics
+   * Following Jupiter Swap monitoring patterns
+   */
+  public async getPerformanceMetrics(): Promise<{
+    rpcLatency: number;
+    blockHeight: number;
+    tps: number;
+    networkHealth: 'healthy' | 'degraded' | 'unhealthy';
+  }> {
+    const startTime = Date.now();
+    
+    try {
+      // Measure RPC latency
+      const slot = await this.rpc.getSlot().send();
+      const rpcLatency = Date.now() - startTime;
+
+      // Get recent performance samples
+      const samples = await this.rpc.getRecentPerformanceSamples(5).send();
+      
+      // Calculate average TPS from samples
+      const avgTps = samples.length > 0 
+        ? samples.reduce((sum, sample) => sum + Number(sample.numTransactions), 0) / samples.length
+        : 0;
+
+      // Determine network health based on latency and TPS
+      let networkHealth: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+      if (rpcLatency > 2000 || avgTps < 1000) {
+        networkHealth = 'unhealthy';
+      } else if (rpcLatency > 1000 || avgTps < 2000) {
+        networkHealth = 'degraded';
+      }
+
+      return {
+        rpcLatency,
+        blockHeight: Number(slot),
+        tps: avgTps,
+        networkHealth
+      };
+
+    } catch (error) {
+      console.error('Failed to get performance metrics:', error);
+      return {
+        rpcLatency: Date.now() - startTime,
+        blockHeight: 0,
+        tps: 0,
+        networkHealth: 'unhealthy'
+      };
+    }
   }
 }
 

@@ -1,8 +1,8 @@
 # Protocol Overview
 
-The podAI (Prompt or Die) Protocol is a decentralized AI Agent Communication Protocol built on Solana, designed to enable secure, scalable, and efficient communication between autonomous AI agents.
+GhostSpeak is a decentralized AI Agent Communication Protocol built on Solana, designed to enable secure, scalable, and efficient communication between autonomous AI agents.
 
-## What is podAI?
+## What is GhostSpeak?
 
 podAI is a blockchain-based infrastructure that allows AI agents to:
 - **Establish Identity**: Register and maintain verifiable identities

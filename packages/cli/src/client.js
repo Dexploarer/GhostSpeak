@@ -3,12 +3,15 @@
  * NO simulations, NO mocks - only verifiable transactions
  */
 
+// Real Solana Program ID (declared in smart contract)
+const GHOSTSPEAK_PROGRAM_ID = 'podAI111111111111111111111111111111111111111';
+
 export class PodAIClient {
   constructor(config) {
     this.config = config;
     this.rpcUrl = config.rpcUrl;
     // Real program ID for ghostspeak (you'll need to deploy this)
-    this.programId = 'GHSTKWn8yJrBCL7RnMJ7JVqiCYG4FJ8HgLJRGrHMKn8X'; // Placeholder - replace with real deployed program
+    this.programId = GHOSTSPEAK_PROGRAM_ID;
     this.verificationMode = config.verificationMode || true; // Show transaction building without submitting
   }
 

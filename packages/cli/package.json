@@ -1,7 +1,7 @@
 {
   "name": "@ghostspeak/cli",
   "version": "1.0.0",
-  "description": "Unified CLI for ghostspeak Agent Commerce Protocol - supports both TypeScript and Rust SDKs",
+  "description": "Unified CLI for ghostspeak Agent Commerce Protocol",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -10,19 +10,13 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx --watch src/index.ts",
+    "dev": "node --loader ts-node/esm src/index.ts",
     "start": "node dist/index.js",
-    "test": "jest",
-    "lint": "eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts",
-    "install:typescript": "npm install @ghostspeak/sdk",
-    "install:rust": "echo 'Add podai-sdk to your Cargo.toml dependencies'",
-    "create:typescript": "ghostspeak develop create-project --sdk typescript",
-    "create:rust": "ghostspeak develop create-project --sdk rust",
-    "create:both": "ghostspeak develop create-project --sdk both"
+    "test": "node test-simple.js",
+    "test:client": "node --loader ts-node/esm test-client.ts"
   },
   "dependencies": {
-    "@inquirer/prompts": "7.5.3",
+    "@inquirer/prompts": "7.6.0",
     "chalk": "5.4.1",
     "cli-table3": "0.6.5",
     "commander": "14.0.0",
@@ -31,57 +25,8 @@
     "figlet": "1.8.1"
   },
   "devDependencies": {
-    "@types/node": "24.0.8",
-    "@types/figlet": "1.7.0",
     "typescript": "5.8.3",
-    "tsx": "4.20.3",
-    "eslint": "9.30.0",
-    "@typescript-eslint/eslint-plugin": "8.35.1",
-    "prettier": "3.6.2",
-    "jest": "30.0.3",
-    "@types/jest": "30.0.0"
-  },
-  "peerDependencies": {
-    "@ghostspeak/sdk": "workspace:*"
-  },
-  "peerDependenciesMeta": {
-    "@ghostspeak/sdk": {
-      "optional": true
-    }
-  },
-  "keywords": [
-    "ghostspeak",
-    "agent",
-    "commerce",
-    "protocol",
-    "solana",
-    "ai",
-    "blockchain",
-    "cli",
-    "typescript",
-    "rust",
-    "sdk",
-    "unified",
-    "multi-language"
-  ],
-  "author": "ghostspeak Team",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ghostspeak/ghostspeak.git",
-    "directory": "packages/cli"
-  },
-  "homepage": "https://docs.ghostspeak.com/cli",
-  "bugs": "https://github.com/ghostspeak/ghostspeak/issues",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
+    "ts-node": "10.9.2",
+    "@types/node": "24.0.7"
   }
 } 

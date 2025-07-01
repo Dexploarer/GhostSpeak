@@ -7,6 +7,7 @@ import { WijaAgentProvider } from './providers/agent-provider';
 import { WijaChannelProvider } from './providers/channel-provider';
 import { WijaNetworkProvider } from './providers/network-provider';
 import { WijaWalletProvider } from './providers/wallet-provider';
+import { WijaPromptVaultProvider } from './providers/prompt-vault-provider';
 import { WijaCommandManager } from './commands/command-manager';
 import { WijaStatusBar } from './ui/status-bar';
 import { WijaConfig } from './config/wija-config';
@@ -23,6 +24,7 @@ export interface WijaExtensionContext {
     channelProvider: WijaChannelProvider;
     networkProvider: WijaNetworkProvider;
     walletProvider: WijaWalletProvider;
+    promptVaultProvider: WijaPromptVaultProvider;
     commandManager: WijaCommandManager;
     statusBar: WijaStatusBar;
     config: WijaConfig;
@@ -52,6 +54,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
         const channelProvider = new WijaChannelProvider(context, projectDetector);
         const networkProvider = new WijaNetworkProvider(context, config);
         const walletProvider = new WijaWalletProvider(context, config);
+        const promptVaultProvider = new WijaPromptVaultProvider(context);
 
         // Initialize status bar
         const statusBar = new WijaStatusBar(context, projectDetector, networkProvider, walletProvider);
@@ -65,15 +68,100 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
             channelProvider,
             networkProvider,
             walletProvider,
+            promptVaultProvider,
             config
         });
 
         // Register view providers
         vscode.window.registerTreeDataProvider('wija.agents', agentProvider);
         vscode.window.registerTreeDataProvider('wija.channels', channelProvider);
+        vscode.window.registerTreeDataProvider('wija.promptVault', promptVaultProvider);
         vscode.window.registerTreeDataProvider('wija.marketplace', marketplaceProvider);
         vscode.window.registerTreeDataProvider('wija.network', networkProvider);
         vscode.window.registerTreeDataProvider('wija.wallet', walletProvider);
+
+        // Register prayer vault commands
+        context.subscriptions.push(
+            vscode.commands.registerCommand('wija.pocketPrayer', async () => {
+                const editor = vscode.window.activeTextEditor;
+                if (editor && !editor.selection.isEmpty) {
+                    const selectedText = editor.document.getText(editor.selection);
+                    const language = editor.document.languageId;
+                    const filePath = editor.document.uri.fsPath;
+                    await promptVaultProvider.pocketPrayer(selectedText, language, filePath, editor.selection);
+                } else {
+                    vscode.window.showWarningMessage('Please select some code to pocket as a prayer.');
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.generateMasterPrompt', async () => {
+                await promptVaultProvider.generateMasterPrompt();
+            }),
+
+            vscode.commands.registerCommand('wija.createRecipe', async () => {
+                await promptVaultProvider.createRecipe();
+            }),
+
+            vscode.commands.registerCommand('wija.usePrayer', async (prayer) => {
+                if (prayer) {
+                    await promptVaultProvider.usePrayer(prayer);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.useRecipe', async (recipe) => {
+                if (recipe) {
+                    await promptVaultProvider.useRecipe(recipe);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.deletePrayer', async (prayerId) => {
+                if (prayerId) {
+                    await promptVaultProvider.deletePrayer(prayerId);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.editPrayer', async (prayerId) => {
+                if (prayerId) {
+                    await promptVaultProvider.editPrayer(prayerId);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.configureAIProvider', async () => {
+                await promptVaultProvider.configureAIProvider();
+            }),
+
+            vscode.commands.registerCommand('wija.selectAIProvider', async (provider) => {
+                if (provider) {
+                    await promptVaultProvider.selectAIProvider(provider);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.askAI', async () => {
+                await promptVaultProvider.askAI();
+            }),
+
+            vscode.commands.registerCommand('wija.testAIProvider', async () => {
+                await promptVaultProvider.testAIProvider();
+            }),
+
+            vscode.commands.registerCommand('wija.exportPrayers', async () => {
+                await promptVaultProvider.exportPrayers();
+            }),
+
+            vscode.commands.registerCommand('wija.importPrayers', async () => {
+                await promptVaultProvider.importPrayers();
+            }),
+
+            vscode.commands.registerCommand('wija.batchProcessPrayers', async () => {
+                await promptVaultProvider.batchProcessPrayers();
+            }),
+
+            vscode.commands.registerCommand('wija.optimizePrayer', async (prayer) => {
+                if (prayer) {
+                    await promptVaultProvider.optimizePrayer(prayer);
+                }
+            })
+        );
 
         // Register webview providers
         vscode.window.registerWebviewViewProvider('wija.dashboard', dashboardProvider);
@@ -124,6 +212,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
             channelProvider,
             networkProvider,
             walletProvider,
+            promptVaultProvider,
             commandManager,
             statusBar,
             config

@@ -1,6 +1,8 @@
-import * as vscode from 'vscode';
 import * as cp from 'child_process';
+import * as vscode from 'vscode';
 import * as path from 'path';
+import { PodAIClientV2, createDevnetClient, createMainnetClient } from '../../../sdk-typescript/src/client-v2';
+import { IAgentAccount } from '../../../sdk-typescript/src/types';
 import { WijaProjectDetector } from '../utils/project-detector';
 
 export interface WijaAgent {
@@ -39,7 +41,45 @@ export class WijaAgentProvider implements vscode.TreeDataProvider<AgentTreeItem>
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly projectDetector: WijaProjectDetector
-  ) {}
+  ) {
+    // Initialize PodAI client for real blockchain connections
+    this.podAIClient = createDevnetClient();
+    this.currentNetwork = 'devnet';
+  }
+
+  private podAIClient: PodAIClientV2;
+  private currentNetwork: string;
+
+  /**
+   * Switch network and reinitialize PodAI client
+   */
+  public async switchNetwork(network: string): Promise<void> {
+    this.currentNetwork = network;
+    
+    if (network === 'mainnet-beta') {
+      this.podAIClient = createMainnetClient();
+    } else if (network === 'devnet') {
+      this.podAIClient = createDevnetClient();
+    } else {
+      this.podAIClient = new PodAIClientV2({
+        rpcEndpoint: this.getCustomRpcEndpoint(network)
+      });
+    }
+    
+    await this.loadAgents();
+    this._onDidChangeTreeData.fire();
+  }
+
+  private getCustomRpcEndpoint(network: string): string {
+    switch (network) {
+      case 'testnet':
+        return 'https://api.testnet.solana.com';
+      case 'localhost':
+        return 'http://localhost:8899';
+      default:
+        return 'https://api.devnet.solana.com';
+    }
+  }
 
   getTreeItem(element: AgentTreeItem): vscode.TreeItem {
     const item = new vscode.TreeItem(
@@ -318,117 +358,127 @@ export class WijaAgentProvider implements vscode.TreeDataProvider<AgentTreeItem>
   }
 
   private async loadAgents(): Promise<void> {
-    const projectContext = this.projectDetector.getProjectContext();
-    if (!projectContext) {
-      this.agents = [];
-      return;
-    }
-
     try {
-      // Try to load agents from Wija CLI
-      const cliAgents = await this.loadAgentsFromCLI();
-      if (cliAgents.length > 0) {
-        this.agents = cliAgents;
-        return;
+      console.log(`🔗 Loading agents from PodAI blockchain (${this.currentNetwork})...`);
+      
+      // Verify PodAI client connection first
+      const healthCheck = await this.podAIClient.healthCheck();
+      if (!healthCheck.rpcConnection) {
+        throw new Error(`Cannot connect to PodAI on ${this.currentNetwork}`);
       }
 
-      // Fallback to mock data for demonstration
-      this.agents = await this.getMockAgents();
+      console.log(`✅ PodAI connection verified on ${this.currentNetwork}`);
+
+      // Get all agents from blockchain using PodAI client
+      const agentAccounts = await this.podAIClient.agents.getAllAgents();
+      
+      console.log(`🤖 Found ${agentAccounts.length} agents on blockchain`);
+
+      // Convert blockchain data to our WijaAgent format
+      this.agents = agentAccounts.map((account: IAgentAccount) => {
+        const agent: WijaAgent = {
+          id: account.address,
+          name: account.name || `Agent ${account.address.slice(0, 8)}`,
+          address: account.address,
+          capabilities: account.capabilities || [],
+          status: 'deployed', // All agents from blockchain are deployed
+          version: account.version || '1.0.0',
+          network: this.currentNetwork,
+          owner: account.owner || '',
+          metadata: {
+            description: account.metadata?.description,
+            image: account.metadata?.image,
+            attributes: account.metadata?.attributes
+          }
+        };
+        return agent;
+      });
+
+      console.log(`✅ Loaded ${this.agents.length} agents with real blockchain data`);
+
     } catch (error) {
-      console.error('Error loading agents:', error);
-      this.agents = await this.getMockAgents();
+      console.error('❌ Failed to load agents from blockchain:', error);
+      
+      // Show error to user
+      vscode.window.showErrorMessage(
+        `Failed to load agents from PodAI blockchain: ${error.message}`,
+        'Retry'
+      ).then(selection => {
+        if (selection === 'Retry') {
+          this.loadAgents();
+        }
+      });
+      
+      // Clear agents on error - NO FALLBACK TO MOCK DATA
+      this.agents = [];
     }
   }
 
-  private async loadAgentsFromCLI(): Promise<WijaAgent[]> {
-    return new Promise((resolve, reject) => {
-      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-      if (!workspaceFolder) {
-        resolve([]);
-        return;
-      }
-
-      // Try to execute `wija agent list --json`
-      cp.exec(
-        'wija agent list --json',
-        { cwd: workspaceFolder.uri.fsPath, timeout: 10000 },
-        (error, stdout, stderr) => {
-          if (error) {
-            console.log('Wija CLI not available, using mock data');
-            resolve([]);
-            return;
-          }
-
-          try {
-            const result = JSON.parse(stdout);
-            const agents: WijaAgent[] = result.agents?.map((agent: any) => ({
-              id: agent.id || agent.address,
-              name: agent.name || `Agent ${agent.address.slice(0, 8)}`,
-              address: agent.address,
-              capabilities: agent.capabilities || [],
-              status: agent.status || 'deployed',
-              version: agent.version || '1.0.0',
-              network: agent.network || 'devnet',
-              owner: agent.owner || '',
-              metadata: agent.metadata
-            })) || [];
-
-            resolve(agents);
-          } catch (parseError) {
-            console.error('Failed to parse CLI output:', parseError);
-            resolve([]);
-          }
-        }
-      );
-    });
+  /**
+   * Deploy a new agent to the blockchain
+   */
+  public async deployAgent(agentData: {
+    name: string;
+    capabilities: string[];
+    metadata?: any;
+  }): Promise<void> {
+    try {
+      console.log(`🚀 Deploying agent "${agentData.name}" to PodAI blockchain...`);
+      
+      // This would require wallet integration for signing
+      throw new Error('Agent deployment requires wallet integration. Please connect a wallet first.');
+      
+      // Real implementation:
+      // const result = await this.podAIClient.agents.registerAgent(wallet, {
+      //   name: agentData.name,
+      //   capabilities: agentData.capabilities,
+      //   metadata: agentData.metadata
+      // });
+      
+      // await this.loadAgents();
+      // this._onDidChangeTreeData.fire();
+      
+    } catch (error) {
+      console.error('❌ Failed to deploy agent:', error);
+      vscode.window.showErrorMessage(`Failed to deploy agent: ${error.message}`);
+    }
   }
 
-  private async getMockAgents(): Promise<WijaAgent[]> {
-    // Mock data for demonstration purposes
-    return [
-      {
-        id: 'agent-1',
-        name: 'Alice AI Assistant',
-        address: '6NhXmaGa8NqFnkBuZATBzV2AqzSTTcTt6fEENtxf5sZz',
-        capabilities: ['chat', 'analysis', 'research'],
+  /**
+   * Get agent details with real blockchain data
+   */
+  public async getAgentDetails(agentAddress: string): Promise<WijaAgent | null> {
+    try {
+      const account = await this.podAIClient.agents.getAgent(agentAddress);
+      if (!account) return null;
+
+      return {
+        id: account.address,
+        name: account.name || `Agent ${account.address.slice(0, 8)}`,
+        address: account.address,
+        capabilities: account.capabilities || [],
         status: 'deployed',
-        version: '1.2.0',
-        network: 'devnet',
-        owner: 'user-wallet-address',
+        version: account.version || '1.0.0',
+        network: this.currentNetwork,
+        owner: account.owner || '',
         metadata: {
-          description: 'AI assistant specialized in research and analysis',
-          attributes: { specialization: 'research' }
+          description: account.metadata?.description,
+          image: account.metadata?.image,
+          attributes: account.metadata?.attributes
         }
-      },
-      {
-        id: 'agent-2',
-        name: 'Bob Trading Bot',
-        address: 'VStZBVvj6MTXmnfNE1aNPjm2ExsJPoATPkGBitrhskB',
-        capabilities: ['trading', 'market-analysis', 'portfolio-management'],
-        status: 'deployed',
-        version: '2.1.0',
-        network: 'devnet',
-        owner: 'user-wallet-address',
-        metadata: {
-          description: 'Automated trading bot for DeFi operations',
-          attributes: { strategy: 'momentum' }
-        }
-      },
-      {
-        id: 'agent-3',
-        name: 'Charlie Analytics',
-        address: 'GkFegD4VjvjCzTQqLJJVVb4QijdnrD5f6zUKHNHgHXTg',
-        capabilities: ['analytics', 'reporting', 'visualization'],
-        status: 'local',
-        version: '1.0.0',
-        network: 'localhost',
-        owner: 'user-wallet-address',
-        metadata: {
-          description: 'Analytics agent for data processing and visualization',
-          attributes: { focus: 'business-intelligence' }
-        }
-      }
-    ];
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to get agent details:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get current PodAI client for other services
+   */
+  public getPodAIClient(): PodAIClientV2 {
+    return this.podAIClient;
   }
 
   // Public method to add a new agent

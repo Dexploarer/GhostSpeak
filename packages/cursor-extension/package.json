@@ -116,6 +116,48 @@
         "title": "Switch Network",
         "category": "Wija",
         "icon": "$(globe)"
+      },
+      {
+        "command": "wija.pocketPrayer",
+        "title": "Pocket Prayer",
+        "category": "Wija",
+        "icon": "$(add)"
+      },
+      {
+        "command": "wija.generateMasterPrompt",
+        "title": "Generate Master Prompt",
+        "category": "Wija",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "wija.createRecipe",
+        "title": "Create Recipe",
+        "category": "Wija",
+        "icon": "$(book)"
+      },
+      {
+        "command": "wija.usePrayer",
+        "title": "Use Prayer",
+        "category": "Wija",
+        "icon": "$(symbol-method)"
+      },
+      {
+        "command": "wija.useRecipe",
+        "title": "Use Recipe",
+        "category": "Wija",
+        "icon": "$(bookmark)"
+      },
+      {
+        "command": "wija.deletePrayer",
+        "title": "Delete Prayer",
+        "category": "Wija",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "wija.editPrayer",
+        "title": "Edit Prayer",
+        "category": "Wija",
+        "icon": "$(edit)"
       }
     ],
     "menus": {
@@ -325,19 +367,11 @@
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "eslint": "^8.28.0",
-    "typescript": "^4.9.4",
+    "typescript": "^5.8.3",
     "@vscode/test-electron": "^2.2.0",
     "@vscode/vsce": "^2.15.0"
   },
-  "dependencies": {
-    "@solana/web3.js": "^2.0.0",
-    "@coral-xyz/anchor": "^0.31.1",
-    "@lightprotocol/zk-compression-sdk": "^0.8.0",
-    "vscode-languageclient": "^11.0.0",
-    "vscode-languageserver": "^11.0.0",
-    "ws": "^8.14.0",
-    "node-fetch": "^3.3.0"
-  },
+  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/wija/wija.git"

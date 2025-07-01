@@ -2,6 +2,8 @@ import * as path from 'path';
 
 import * as vscode from 'vscode';
 
+import { PodAIClientV2, createDevnetClient, createMainnetClient } from '../../../sdk-typescript/src/client-v2';
+
 export interface IMarketplaceAgent {
   id: string;
   name: string;
@@ -626,15 +628,129 @@ export class WijaMarketplaceProvider
   }
 
   async searchAgents(): Promise<void> {
-    const query = await vscode.window.showInputBox({
-      prompt: 'Search agents',
-      placeHolder: 'Enter agent name, capability, or keyword',
-    });
+    try {
+      const searchTerm = await vscode.window.showInputBox({
+        title: '🔍 Search Marketplace',
+        prompt: 'Enter search term (name, capability, tag, or description)',
+        placeHolder: 'e.g., "trading bot", "DeFi", "verified agents"',
+        validateInput: (value) => {
+          if (!value || value.trim().length === 0) {
+            return 'Please enter a search term';
+          }
+          if (value.length < 2) {
+            return 'Search term must be at least 2 characters';
+          }
+          return null;
+        }
+      });
 
-    if (query) {
-      // TODO: Implement search functionality
-      vscode.window.showInformationMessage(`Searching for: ${query}`);
+      if (!searchTerm) return;
+
+      const searchResults = this.performSearch(searchTerm);
+      
+      if (searchResults.length === 0) {
+        vscode.window.showInformationMessage(`No agents found matching "${searchTerm}"`);
+        return;
+      }
+
+      // Create search results quick pick
+      const searchItems = searchResults.map(agent => ({
+        label: `${agent.name} ${agent.verified ? '✅' : ''}`,
+        description: `${agent.category} • ${agent.rating}⭐ • ${agent.price.base} ${agent.price.currency}`,
+        detail: agent.description,
+        agent
+      }));
+
+      const selectedItem = await vscode.window.showQuickPick(searchItems, {
+        title: `🔍 Search Results for "${searchTerm}" (${searchResults.length} found)`,
+        placeHolder: 'Select an agent to view details',
+        matchOnDescription: true,
+        matchOnDetail: true
+      });
+
+      if (selectedItem) {
+        await vscode.commands.executeCommand('wija.marketplace.viewAgent', selectedItem.agent);
+      }
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Search failed: ${error.message}`);
     }
+  }
+
+  private performSearch(searchTerm: string): IMarketplaceAgent[] {
+    const term = searchTerm.toLowerCase().trim();
+    
+    return this.agents.filter(agent => {
+      // Search in agent name
+      if (agent.name.toLowerCase().includes(term)) return true;
+      
+      // Search in description
+      if (agent.description.toLowerCase().includes(term)) return true;
+      
+      // Search in category
+      if (agent.category.toLowerCase().includes(term)) return true;
+      
+      // Search in capabilities
+      if (agent.capabilities.some(cap => cap.toLowerCase().includes(term))) return true;
+      
+      // Search in tags
+      if (agent.tags.some(tag => tag.toLowerCase().includes(term))) return true;
+      
+      // Search in services
+      if (agent.services.some(service => 
+        service.name.toLowerCase().includes(term) ||
+        service.description.toLowerCase().includes(term) ||
+        service.category.toLowerCase().includes(term) ||
+        service.tags.some(tag => tag.toLowerCase().includes(term))
+      )) return true;
+      
+      return false;
+    }).sort((a, b) => {
+      // Score results by relevance
+      const scoreA = this.calculateSearchScore(a, term);
+      const scoreB = this.calculateSearchScore(b, term);
+      return scoreB - scoreA;
+    });
+  }
+
+  private calculateSearchScore(agent: IMarketplaceAgent, searchTerm: string): number {
+    let score = 0;
+    
+    // Exact name match gets highest score
+    if (agent.name.toLowerCase() === searchTerm) score += 100;
+    else if (agent.name.toLowerCase().includes(searchTerm)) score += 50;
+    
+    // Category match
+    if (agent.category.toLowerCase() === searchTerm) score += 40;
+    else if (agent.category.toLowerCase().includes(searchTerm)) score += 20;
+    
+    // Capability matches
+    agent.capabilities.forEach(cap => {
+      if (cap.toLowerCase() === searchTerm) score += 30;
+      else if (cap.toLowerCase().includes(searchTerm)) score += 15;
+    });
+    
+    // Tag matches
+    agent.tags.forEach(tag => {
+      if (tag.toLowerCase() === searchTerm) score += 25;
+      else if (tag.toLowerCase().includes(searchTerm)) score += 10;
+    });
+    
+    // Description match
+    if (agent.description.toLowerCase().includes(searchTerm)) score += 10;
+    
+    // Service matches
+    agent.services.forEach(service => {
+      if (service.name.toLowerCase().includes(searchTerm)) score += 15;
+      if (service.description.toLowerCase().includes(searchTerm)) score += 5;
+    });
+    
+    // Boost for verified and highly rated agents
+    if (agent.verified) score += 5;
+    if (agent.rating >= 4.5) score += 3;
+    if (agent.featured) score += 2;
+    
+    return score;
   }
 
   async filterAgents(): Promise<void> {

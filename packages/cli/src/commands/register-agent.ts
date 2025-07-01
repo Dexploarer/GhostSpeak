@@ -1,22 +1,33 @@
 import { select, input, confirm, checkbox } from '@inquirer/prompts';
 import { generateKeyPairSigner } from '@solana/signers';
-import type { KeyPairSigner } from '@solana/signers';
 import chalk from 'chalk';
 import { UIManager } from '../ui/ui-manager.js';
 import { NetworkManager } from '../utils/network-manager.js';
 import { ConfigManager } from '../utils/config-manager.js';
+import type { KeyPairSigner } from '@solana/signers';
 
-// Temporarily placeholder until SDK builds
-// import { 
-//   createPodAIClientV2, 
-//   type PodAIClientV2
-// } from '../../../sdk-typescript/dist/index.js';
+// For now, use mock implementations since SDK is not published yet
+// TODO: Replace with real SDK once published
+interface IPodAIClientV2 {
+  healthCheck: () => Promise<{ rpcConnection: boolean; blockHeight?: number }>;
+  agents: {
+    registerAgent: (
+      keypair: KeyPairSigner,
+      options: ICreateAgentOptions
+    ) => Promise<string>;
+  };
+}
 
-// Placeholder types
-type PodAIClientV2 = any;
-const createPodAIClientV2 = () => ({ mockClient: true });
+const createPodAIClientV2 = (_config: unknown): IPodAIClientV2 => ({
+  healthCheck: async () => ({ rpcConnection: true, blockHeight: 12345 }),
+  agents: {
+    registerAgent: async (keypair: KeyPairSigner, options: ICreateAgentOptions) => {
+      console.log('Mock agent registration:', { address: keypair.address, options });
+      return `mock_tx_${Date.now()}`;
+    }
+  }
+});
 
-// Define interface locally until SDK exports are fixed
 interface ICreateAgentOptions {
   capabilities: number;
   metadataUri: string;
@@ -63,7 +74,7 @@ export class RegisterAgentCommand {
   private ui: UIManager;
   private network: NetworkManager;
   private config: ConfigManager;
-  private podClient: PodAIClientV2 | null = null;
+  private podClient: IPodAIClientV2 | null = null;
 
   constructor() {
     this.ui = new UIManager();

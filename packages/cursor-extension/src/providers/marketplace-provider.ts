@@ -1,5 +1,6 @@
-import * as vscode from 'vscode';
 import * as path from 'path';
+
+import * as vscode from 'vscode';
 
 export interface IMarketplaceAgent {
   id: string;
@@ -72,14 +73,18 @@ export interface IMarketplaceTreeItem {
   contextValue?: string;
 }
 
-export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketplaceTreeItem> {
-  private _onDidChangeTreeData = new vscode.EventEmitter<IMarketplaceTreeItem | undefined | null | void>();
+export class WijaMarketplaceProvider
+  implements vscode.TreeDataProvider<IMarketplaceTreeItem>
+{
+  private readonly _onDidChangeTreeData = new vscode.EventEmitter<
+    IMarketplaceTreeItem | undefined | null | void
+  >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private agents: IMarketplaceAgent[] = [];
   private transactions: IMarketplaceTransaction[] = [];
   private currentFilter: string = 'all';
-  private currentCategory: string = 'all';
+  private readonly currentCategory: string = 'all';
   private viewMode: 'browse' | 'history' | 'my-services' = 'browse';
 
   constructor(private readonly context: vscode.ExtensionContext) {
@@ -89,7 +94,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
   getTreeItem(element: IMarketplaceTreeItem): vscode.TreeItem {
     const item = new vscode.TreeItem(
       element.label,
-      element.type === 'category' ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
+      element.type === 'category'
+        ? vscode.TreeItemCollapsibleState.Collapsed
+        : vscode.TreeItemCollapsibleState.None
     );
 
     item.description = element.description;
@@ -101,12 +108,22 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
     if (element.agent) {
       const agent = element.agent;
       const tooltip = new vscode.MarkdownString();
-      tooltip.appendMarkdown(`**${agent.name}**${agent.verified ? ' ✅' : ''}\n\n`);
+      tooltip.appendMarkdown(
+        `**${agent.name}**${agent.verified ? ' ✅' : ''}\n\n`
+      );
       tooltip.appendMarkdown(`**Category:** ${agent.category}\n\n`);
-      tooltip.appendMarkdown(`**Rating:** ${'⭐'.repeat(Math.floor(agent.rating))} (${agent.rating}/5 - ${agent.reviewCount} reviews)\n\n`);
-      tooltip.appendMarkdown(`**Price:** ${agent.price.base} ${agent.price.currency} ${agent.price.paymentType}\n\n`);
-      tooltip.appendMarkdown(`**Success Rate:** ${agent.metrics.successRate}%\n\n`);
-      tooltip.appendMarkdown(`**Capabilities:** ${agent.capabilities.join(', ')}\n\n`);
+      tooltip.appendMarkdown(
+        `**Rating:** ${'⭐'.repeat(Math.floor(agent.rating))} (${agent.rating}/5 - ${agent.reviewCount} reviews)\n\n`
+      );
+      tooltip.appendMarkdown(
+        `**Price:** ${agent.price.base} ${agent.price.currency} ${agent.price.paymentType}\n\n`
+      );
+      tooltip.appendMarkdown(
+        `**Success Rate:** ${agent.metrics.successRate}%\n\n`
+      );
+      tooltip.appendMarkdown(
+        `**Capabilities:** ${agent.capabilities.join(', ')}\n\n`
+      );
       tooltip.appendMarkdown(`${agent.description}\n\n`);
       item.tooltip = tooltip;
     }
@@ -114,7 +131,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
     return item;
   }
 
-  getChildren(element?: IMarketplaceTreeItem): Thenable<IMarketplaceTreeItem[]> {
+  getChildren(
+    element?: IMarketplaceTreeItem
+  ): Thenable<IMarketplaceTreeItem[]> {
     if (!element) {
       return this.getRootItems();
     }
@@ -141,9 +160,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       iconPath: new vscode.ThemeIcon('arrow-swap'),
       command: {
         command: 'wija.marketplace.toggleView',
-        title: 'Toggle View'
+        title: 'Toggle View',
       },
-      contextValue: 'action'
+      contextValue: 'action',
     });
 
     // Search and Filters
@@ -154,9 +173,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       iconPath: new vscode.ThemeIcon('search'),
       command: {
         command: 'wija.marketplace.search',
-        title: 'Search Agents'
+        title: 'Search Agents',
       },
-      contextValue: 'action'
+      contextValue: 'action',
     });
 
     items.push({
@@ -166,9 +185,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       iconPath: new vscode.ThemeIcon('filter'),
       command: {
         command: 'wija.marketplace.filter',
-        title: 'Filter'
+        title: 'Filter',
       },
-      contextValue: 'filter'
+      contextValue: 'filter',
     });
 
     if (this.viewMode === 'browse') {
@@ -192,7 +211,7 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
         label: `⭐ Featured Agents (${featuredAgents.length})`,
         description: 'Hand-picked premium agents',
         iconPath: new vscode.ThemeIcon('star'),
-        contextValue: 'category'
+        contextValue: 'category',
       });
     }
 
@@ -206,7 +225,7 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
         label: `${this.getCategoryIcon(category)} ${category} (${count})`,
         description: `${count} agents available`,
         iconPath: new vscode.ThemeIcon('folder'),
-        contextValue: 'category'
+        contextValue: 'category',
       });
     }
 
@@ -227,7 +246,7 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
           label: `${this.getStatusIcon(status)} ${status.charAt(0).toUpperCase() + status.slice(1)} (${count})`,
           description: `${count} transactions`,
           iconPath: new vscode.ThemeIcon('history'),
-          contextValue: 'transaction-category'
+          contextValue: 'transaction-category',
         });
       }
     }
@@ -247,9 +266,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
         command: {
           command: 'wija.marketplace.viewTransaction',
           title: 'View Transaction',
-          arguments: [transaction]
+          arguments: [transaction],
         },
-        contextValue: 'transaction'
+        contextValue: 'transaction',
       });
     }
 
@@ -266,9 +285,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       iconPath: new vscode.ThemeIcon('add'),
       command: {
         command: 'wija.marketplace.createService',
-        title: 'Create Service'
+        title: 'Create Service',
       },
-      contextValue: 'action'
+      contextValue: 'action',
     });
 
     // TODO: Add user's services when wallet integration is complete
@@ -279,15 +298,17 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       iconPath: new vscode.ThemeIcon('graph'),
       command: {
         command: 'wija.marketplace.analytics',
-        title: 'View Analytics'
+        title: 'View Analytics',
       },
-      contextValue: 'action'
+      contextValue: 'action',
     });
 
     return items;
   }
 
-  private async getCategoryChildren(category: string): Promise<IMarketplaceTreeItem[]> {
+  private async getCategoryChildren(
+    category: string
+  ): Promise<IMarketplaceTreeItem[]> {
     let agents: IMarketplaceAgent[] = [];
 
     if (category === 'featured') {
@@ -305,8 +326,10 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
 
     // Sort agents
     agents.sort((a, b) => {
-      if (this.currentFilter === 'price-low') return a.price.base - b.price.base;
-      if (this.currentFilter === 'price-high') return b.price.base - a.price.base;
+      if (this.currentFilter === 'price-low')
+        return a.price.base - b.price.base;
+      if (this.currentFilter === 'price-high')
+        return b.price.base - a.price.base;
       return b.rating - a.rating; // Default: sort by rating
     });
 
@@ -319,13 +342,15 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       command: {
         command: 'wija.marketplace.viewAgent',
         title: 'View Agent',
-        arguments: [agent]
+        arguments: [agent],
       },
-      contextValue: 'agent'
+      contextValue: 'agent',
     }));
   }
 
-  private async getAgentChildren(agent: IMarketplaceAgent): Promise<IMarketplaceTreeItem[]> {
+  private async getAgentChildren(
+    agent: IMarketplaceAgent
+  ): Promise<IMarketplaceTreeItem[]> {
     const items: IMarketplaceTreeItem[] = [];
 
     // Agent actions
@@ -337,9 +362,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       command: {
         command: 'wija.marketplace.startChat',
         title: 'Start Chat',
-        arguments: [agent]
+        arguments: [agent],
       },
-      contextValue: 'action'
+      contextValue: 'action',
     });
 
     items.push({
@@ -350,9 +375,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       command: {
         command: 'wija.marketplace.viewProfile',
         title: 'View Profile',
-        arguments: [agent]
+        arguments: [agent],
       },
-      contextValue: 'action'
+      contextValue: 'action',
     });
 
     // Services
@@ -366,9 +391,9 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
         command: {
           command: 'wija.marketplace.purchaseService',
           title: 'Purchase Service',
-          arguments: [agent, service]
+          arguments: [agent, service],
         },
-        contextValue: 'service'
+        contextValue: 'service',
       });
     }
 
@@ -385,53 +410,64 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
     const icons: Record<string, string> = {
       'AI Assistant': '🤖',
       'Trading Bot': '📈',
-      'Analytics': '📊',
-      'Development': '💻',
+      Analytics: '📊',
+      Development: '💻',
       'Content Creation': '✍️',
-      'Research': '🔬',
-      'Security': '🔒',
-      'Gaming': '🎮',
-      'NFT': '🖼️',
-      'DeFi': '💰'
+      Research: '🔬',
+      Security: '🔒',
+      Gaming: '🎮',
+      NFT: '🖼️',
+      DeFi: '💰',
     };
     return icons[category] || '🤖';
   }
 
   private getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
-      'pending': '⏳',
-      'completed': '✅',
-      'failed': '❌',
-      'disputed': '⚠️'
+      pending: '⏳',
+      completed: '✅',
+      failed: '❌',
+      disputed: '⚠️',
     };
     return icons[status] || '📄';
   }
 
   private getAgentIcon(agent: IMarketplaceAgent): vscode.ThemeIcon {
     if (agent.verified && agent.featured) {
-      return new vscode.ThemeIcon('verified', new vscode.ThemeColor('testing.iconPassed'));
+      return new vscode.ThemeIcon(
+        'verified',
+        new vscode.ThemeColor('testing.iconPassed')
+      );
     } else if (agent.verified) {
-      return new vscode.ThemeIcon('check', new vscode.ThemeColor('testing.iconPassed'));
+      return new vscode.ThemeIcon(
+        'check',
+        new vscode.ThemeColor('testing.iconPassed')
+      );
     } else if (agent.featured) {
-      return new vscode.ThemeIcon('star', new vscode.ThemeColor('editorWarning.foreground'));
+      return new vscode.ThemeIcon(
+        'star',
+        new vscode.ThemeColor('editorWarning.foreground')
+      );
     } else {
       return new vscode.ThemeIcon('person');
     }
   }
 
-  private getTransactionIcon(transaction: IMarketplaceTransaction): vscode.ThemeIcon {
+  private getTransactionIcon(
+    transaction: IMarketplaceTransaction
+  ): vscode.ThemeIcon {
     const statusColors = {
-      'pending': new vscode.ThemeColor('editorWarning.foreground'),
-      'completed': new vscode.ThemeColor('testing.iconPassed'),
-      'failed': new vscode.ThemeColor('editorError.foreground'),
-      'disputed': new vscode.ThemeColor('editorWarning.foreground')
+      pending: new vscode.ThemeColor('editorWarning.foreground'),
+      completed: new vscode.ThemeColor('testing.iconPassed'),
+      failed: new vscode.ThemeColor('editorError.foreground'),
+      disputed: new vscode.ThemeColor('editorWarning.foreground'),
     };
 
     const typeIcons = {
-      'purchase': 'arrow-down',
-      'sale': 'arrow-up',
-      'escrow': 'lock',
-      'payment': 'credit-card'
+      purchase: 'arrow-down',
+      sale: 'arrow-up',
+      escrow: 'lock',
+      payment: 'credit-card',
     };
 
     return new vscode.ThemeIcon(
@@ -441,7 +477,11 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
   }
 
   private formatDate(date: Date): string {
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return (
+      date.toLocaleDateString() +
+      ' ' +
+      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    );
   }
 
   private async loadMarketplaceData(): Promise<void> {
@@ -451,9 +491,15 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
         id: 'agent-1',
         name: 'Alice Trading Expert',
         address: '6NhXmaGa8NqFnkBuZATBzV2AqzSTTcTt6fEENtxf5sZz',
-        description: 'Advanced trading bot specializing in DeFi yield optimization and risk management.',
+        description:
+          'Advanced trading bot specializing in DeFi yield optimization and risk management.',
         category: 'Trading Bot',
-        capabilities: ['DeFi Trading', 'Yield Farming', 'Risk Assessment', 'Portfolio Management'],
+        capabilities: [
+          'DeFi Trading',
+          'Yield Farming',
+          'Risk Assessment',
+          'Portfolio Management',
+        ],
         rating: 4.8,
         reviewCount: 127,
         price: { base: 0.5, currency: 'SOL', paymentType: 'per-task' },
@@ -465,30 +511,41 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
           totalJobs: 1247,
           successRate: 96.8,
           averageResponseTime: 0.3,
-          lastActive: new Date()
+          lastActive: new Date(),
         },
         services: [
           {
             id: 'service-1',
             name: 'Portfolio Optimization',
-            description: 'Analyze and optimize your DeFi portfolio for maximum yield with minimal risk.',
+            description:
+              'Analyze and optimize your DeFi portfolio for maximum yield with minimal risk.',
             category: 'Analysis',
             price: 0.8,
             estimatedTime: '2-4 hours',
             requirements: ['Portfolio data', 'Risk tolerance'],
-            deliverables: ['Optimization report', 'Strategy recommendations', 'Implementation guide'],
+            deliverables: [
+              'Optimization report',
+              'Strategy recommendations',
+              'Implementation guide',
+            ],
             examples: ['Previous optimization results', 'Sample reports'],
-            tags: ['portfolio', 'optimization', 'yield']
-          }
-        ]
+            tags: ['portfolio', 'optimization', 'yield'],
+          },
+        ],
       },
       {
         id: 'agent-2',
         name: 'Bob Content Creator',
         address: 'VStZBVvj6MTXmnfNE1aNPjm2ExsJPoATPkGBitrhskB',
-        description: 'Creative AI agent for generating technical documentation, blog posts, and marketing content.',
+        description:
+          'Creative AI agent for generating technical documentation, blog posts, and marketing content.',
         category: 'Content Creation',
-        capabilities: ['Technical Writing', 'Blog Posts', 'Marketing Copy', 'Documentation'],
+        capabilities: [
+          'Technical Writing',
+          'Blog Posts',
+          'Marketing Copy',
+          'Documentation',
+        ],
         rating: 4.6,
         reviewCount: 89,
         price: { base: 0.3, currency: 'SOL', paymentType: 'per-task' },
@@ -500,23 +557,28 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
           totalJobs: 445,
           successRate: 94.2,
           averageResponseTime: 1.2,
-          lastActive: new Date(Date.now() - 3600000) // 1 hour ago
+          lastActive: new Date(Date.now() - 3600000), // 1 hour ago
         },
         services: [
           {
             id: 'service-2',
             name: 'Technical Documentation',
-            description: 'Create comprehensive technical documentation for your project.',
+            description:
+              'Create comprehensive technical documentation for your project.',
             category: 'Documentation',
             price: 0.5,
             estimatedTime: '1-2 days',
             requirements: ['Project specifications', 'Code access'],
-            deliverables: ['Complete documentation', 'API guides', 'User manuals'],
+            deliverables: [
+              'Complete documentation',
+              'API guides',
+              'User manuals',
+            ],
             examples: ['Previous documentation samples'],
-            tags: ['documentation', 'technical', 'writing']
-          }
-        ]
-      }
+            tags: ['documentation', 'technical', 'writing'],
+          },
+        ],
+      },
     ];
 
     this.transactions = [
@@ -533,7 +595,7 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
         timestamp: new Date(Date.now() - 86400000), // 1 day ago
         buyer: 'user-wallet',
         seller: 'trader-wallet-address',
-        transactionHash: '3Kx8mY7Nz9QpVr2Bs1Dt6Gn4Jm5Xw8Cv7Lq9Rs2Fp1'
+        transactionHash: '3Kx8mY7Nz9QpVr2Bs1Dt6Gn4Jm5Xw8Cv7Lq9Rs2Fp1',
       },
       {
         id: 'tx-2',
@@ -546,8 +608,8 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
         timestamp: new Date(Date.now() - 3600000), // 1 hour ago
         buyer: 'user-wallet',
         seller: 'content-creator-address',
-        transactionHash: '8Fx2nK5Yz1QmPt4Xs7Cr9Gv3Jk6Nw2Bv5Lp8Rs4Mp9'
-      }
+        transactionHash: '8Fx2nK5Yz1QmPt4Xs7Cr9Gv3Jk6Nw2Bv5Lp8Rs4Mp9',
+      },
     ];
   }
 
@@ -566,7 +628,7 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
   async searchAgents(): Promise<void> {
     const query = await vscode.window.showInputBox({
       prompt: 'Search agents',
-      placeHolder: 'Enter agent name, capability, or keyword'
+      placeHolder: 'Enter agent name, capability, or keyword',
     });
 
     if (query) {
@@ -581,12 +643,12 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
       { label: 'Verified Only', value: 'verified' },
       { label: 'Top Rated (4.5+)', value: 'top-rated' },
       { label: 'Price: Low to High', value: 'price-low' },
-      { label: 'Price: High to Low', value: 'price-high' }
+      { label: 'Price: High to Low', value: 'price-high' },
     ];
 
     const selected = await vscode.window.showQuickPick(filters, {
       title: 'Filter Agents',
-      placeHolder: 'Choose filter criteria'
+      placeHolder: 'Choose filter criteria',
     });
 
     if (selected) {
@@ -599,4 +661,4 @@ export class WijaMarketplaceProvider implements vscode.TreeDataProvider<IMarketp
     this.loadMarketplaceData();
     this._onDidChangeTreeData.fire();
   }
-} 
+}

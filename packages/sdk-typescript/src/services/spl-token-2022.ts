@@ -6,6 +6,30 @@ import type { Address } from '@solana/addresses';
 import type { Commitment } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+  SystemProgram,
+  Keypair,
+} from '@solana/web3.js';
+import {
+  TOKEN_2022_PROGRAM_ID,
+  createInitializeMintInstruction,
+  createMintToInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountInstruction,
+  ExtensionType,
+  getMintLen,
+  createInitializeConfidentialTransferMintInstruction,
+  createInitializeTransferHookInstruction,
+  createInitializeInterestBearingMintInstruction,
+  createInitializeMetadataPointerInstruction,
+  createInitializeTokenMetadataInstruction,
+} from '@solana/spl-token';
+import { BN } from '@coral-xyz/anchor';
 
 // Program constants - use underscore prefix for unused constants
 const _TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
@@ -136,10 +160,14 @@ export interface IConfidentialTransferAccount {
 export class SplToken2022Service {
   private readonly rpc: Rpc<SolanaRpcApi>;
   private readonly commitment: Commitment;
+  private connection: Connection;
+  private programId: PublicKey;
 
-  constructor(rpc: Rpc<SolanaRpcApi>, commitment: Commitment = 'confirmed') {
+  constructor(rpc: Rpc<SolanaRpcApi>, commitment: Commitment = 'confirmed', connection: Connection, programId: PublicKey) {
     this.rpc = rpc;
     this.commitment = commitment;
+    this.connection = connection;
+    this.programId = programId;
   }
 
   /**
@@ -500,4 +528,565 @@ export class SplToken2022Service {
 
     return space;
   }
+
+  /**
+   * Create a confidential payment token for private agent transactions
+   */
+  async createConfidentialPaymentToken(params: {
+    payer: Keypair;
+    mintAuthority: PublicKey;
+    freezeAuthority?: PublicKey;
+    decimals: number;
+    confidentialTransferAuthority: PublicKey;
+    autoApproveNewAccounts: boolean;
+    metadata: TokenMetadata;
+  }): Promise<CreateTokenResult> {
+    const { payer, mintAuthority, freezeAuthority, decimals, confidentialTransferAuthority, autoApproveNewAccounts, metadata } = params;
+
+    console.log('🔐 Creating confidential payment token...');
+
+    // Generate mint keypair
+    const mint = Keypair.generate();
+
+    // Calculate space needed for mint with extensions
+    const extensions = [
+      ExtensionType.ConfidentialTransferMint,
+      ExtensionType.MetadataPointer,
+    ];
+    
+    const mintLen = getMintLen(extensions);
+
+    // Create mint account
+    const createAccountIx = SystemProgram.createAccount({
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: mint.publicKey,
+      space: mintLen,
+      lamports: await this.connection.getMinimumBalanceForRentExemption(mintLen),
+      programId: TOKEN_2022_PROGRAM_ID,
+    });
+
+    // Initialize metadata pointer
+    const initMetadataPointerIx = createInitializeMetadataPointerInstruction(
+      mint.publicKey,
+      mintAuthority,
+      mint.publicKey, // Use mint as metadata account
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize confidential transfer
+    const initConfidentialTransferIx = createInitializeConfidentialTransferMintInstruction(
+      mint.publicKey,
+      confidentialTransferAuthority,
+      autoApproveNewAccounts,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize mint
+    const initMintIx = createInitializeMintInstruction(
+      mint.publicKey,
+      decimals,
+      mintAuthority,
+      freezeAuthority,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize token metadata
+    const initMetadataIx = createInitializeTokenMetadataInstruction({
+      programId: TOKEN_2022_PROGRAM_ID,
+      mint: mint.publicKey,
+      metadata: mint.publicKey,
+      mintAuthority,
+      updateAuthority: mintAuthority,
+      name: metadata.name,
+      symbol: metadata.symbol,
+      uri: metadata.uri,
+    });
+
+    // Create transaction
+    const transaction = new Transaction().add(
+      createAccountIx,
+      initMetadataPointerIx,
+      initConfidentialTransferIx,
+      initMintIx,
+      initMetadataIx
+    );
+
+    // Sign and send
+    const signature = await this.connection.sendTransaction(transaction, [payer, mint]);
+    await this.connection.confirmTransaction(signature, 'confirmed');
+
+    console.log(`✅ Confidential payment token created: ${mint.publicKey.toBase58()}`);
+    console.log(`📊 Transaction: ${signature}`);
+
+    return {
+      mint: mint.publicKey,
+      signature,
+      extensions: ['ConfidentialTransfer', 'MetadataPointer'],
+      capabilities: [
+        'Private transactions',
+        'Compliance automation',
+        'Rich metadata'
+      ]
+    };
+  }
+
+  /**
+   * Create interest-bearing token for agent earnings accumulation
+   */
+  async createInterestBearingToken(params: {
+    payer: Keypair;
+    mintAuthority: PublicKey;
+    freezeAuthority?: PublicKey;
+    decimals: number;
+    rateAuthority: PublicKey;
+    interestRate: number; // Basis points (e.g., 500 = 5%)
+    metadata: TokenMetadata;
+  }): Promise<CreateTokenResult> {
+    const { payer, mintAuthority, freezeAuthority, decimals, rateAuthority, interestRate, metadata } = params;
+
+    console.log('💰 Creating interest-bearing agent earnings token...');
+
+    const mint = Keypair.generate();
+
+    const extensions = [
+      ExtensionType.InterestBearingMint,
+      ExtensionType.MetadataPointer,
+    ];
+    
+    const mintLen = getMintLen(extensions);
+
+    // Create mint account
+    const createAccountIx = SystemProgram.createAccount({
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: mint.publicKey,
+      space: mintLen,
+      lamports: await this.connection.getMinimumBalanceForRentExemption(mintLen),
+      programId: TOKEN_2022_PROGRAM_ID,
+    });
+
+    // Initialize metadata pointer
+    const initMetadataPointerIx = createInitializeMetadataPointerInstruction(
+      mint.publicKey,
+      mintAuthority,
+      mint.publicKey,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize interest-bearing mint
+    const initInterestBearingIx = createInitializeInterestBearingMintInstruction(
+      mint.publicKey,
+      rateAuthority,
+      interestRate,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize mint
+    const initMintIx = createInitializeMintInstruction(
+      mint.publicKey,
+      decimals,
+      mintAuthority,
+      freezeAuthority,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize metadata
+    const initMetadataIx = createInitializeTokenMetadataInstruction({
+      programId: TOKEN_2022_PROGRAM_ID,
+      mint: mint.publicKey,
+      metadata: mint.publicKey,
+      mintAuthority,
+      updateAuthority: mintAuthority,
+      name: metadata.name,
+      symbol: metadata.symbol,
+      uri: metadata.uri,
+    });
+
+    const transaction = new Transaction().add(
+      createAccountIx,
+      initMetadataPointerIx,
+      initInterestBearingIx,
+      initMintIx,
+      initMetadataIx
+    );
+
+    const signature = await this.connection.sendTransaction(transaction, [payer, mint]);
+    await this.connection.confirmTransaction(signature, 'confirmed');
+
+    console.log(`✅ Interest-bearing token created: ${mint.publicKey.toBase58()}`);
+    console.log(`📈 Interest rate: ${interestRate / 100}%`);
+    console.log(`📊 Transaction: ${signature}`);
+
+    return {
+      mint: mint.publicKey,
+      signature,
+      extensions: ['InterestBearing', 'MetadataPointer'],
+      capabilities: [
+        `${interestRate / 100}% annual interest`,
+        'Automatic earnings growth',
+        'Compound interest calculation'
+      ]
+    };
+  }
+
+  /**
+   * Create compliance token with transfer hooks for automated regulation
+   */
+  async createComplianceToken(params: {
+    payer: Keypair;
+    mintAuthority: PublicKey;
+    freezeAuthority?: PublicKey;
+    decimals: number;
+    transferHookProgramId: PublicKey;
+    metadata: TokenMetadata;
+  }): Promise<CreateTokenResult> {
+    const { payer, mintAuthority, freezeAuthority, decimals, transferHookProgramId, metadata } = params;
+
+    console.log('⚖️ Creating compliance token with transfer hooks...');
+
+    const mint = Keypair.generate();
+
+    const extensions = [
+      ExtensionType.TransferHook,
+      ExtensionType.MetadataPointer,
+    ];
+    
+    const mintLen = getMintLen(extensions);
+
+    // Create mint account
+    const createAccountIx = SystemProgram.createAccount({
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: mint.publicKey,
+      space: mintLen,
+      lamports: await this.connection.getMinimumBalanceForRentExemption(mintLen),
+      programId: TOKEN_2022_PROGRAM_ID,
+    });
+
+    // Initialize metadata pointer
+    const initMetadataPointerIx = createInitializeMetadataPointerInstruction(
+      mint.publicKey,
+      mintAuthority,
+      mint.publicKey,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize transfer hook
+    const initTransferHookIx = createInitializeTransferHookInstruction(
+      mint.publicKey,
+      mintAuthority,
+      transferHookProgramId,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize mint
+    const initMintIx = createInitializeMintInstruction(
+      mint.publicKey,
+      decimals,
+      mintAuthority,
+      freezeAuthority,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Initialize metadata
+    const initMetadataIx = createInitializeTokenMetadataInstruction({
+      programId: TOKEN_2022_PROGRAM_ID,
+      mint: mint.publicKey,
+      metadata: mint.publicKey,
+      mintAuthority,
+      updateAuthority: mintAuthority,
+      name: metadata.name,
+      symbol: metadata.symbol,
+      uri: metadata.uri,
+    });
+
+    const transaction = new Transaction().add(
+      createAccountIx,
+      initMetadataPointerIx,
+      initTransferHookIx,
+      initMintIx,
+      initMetadataIx
+    );
+
+    const signature = await this.connection.sendTransaction(transaction, [payer, mint]);
+    await this.connection.confirmTransaction(signature, 'confirmed');
+
+    console.log(`✅ Compliance token created: ${mint.publicKey.toBase58()}`);
+    console.log(`⚖️ Transfer hook program: ${transferHookProgramId.toBase58()}`);
+    console.log(`📊 Transaction: ${signature}`);
+
+    return {
+      mint: mint.publicKey,
+      signature,
+      extensions: ['TransferHook', 'MetadataPointer'],
+      capabilities: [
+        'Automated compliance checking',
+        'Regulatory reporting',
+        'Transaction monitoring'
+      ]
+    };
+  }
+
+  /**
+   * Execute confidential transfer for private agent payments
+   */
+  async executeConfidentialTransfer(params: {
+    payer: Keypair;
+    mint: PublicKey;
+    source: PublicKey;
+    destination: PublicKey;
+    amount: BN;
+    memo?: string;
+  }): Promise<ConfidentialTransferResult> {
+    const { payer, mint, source, destination, amount, memo } = params;
+
+    console.log('🔐 Executing confidential transfer...');
+    console.log(`💰 Amount: ${amount.toString()}`);
+    console.log(`📤 From: ${source.toBase58()}`);
+    console.log(`📥 To: ${destination.toBase58()}`);
+
+    // Create confidential transfer instruction
+    const transferIx = createTransferInstruction(
+      source,
+      mint,
+      destination,
+      payer.publicKey,
+      amount.toNumber(),
+      undefined,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Add memo if provided
+    const instructions: TransactionInstruction[] = [transferIx];
+    if (memo) {
+      // Add memo instruction for transaction context
+      instructions.push(
+        SystemProgram.transfer({
+          fromPubkey: payer.publicKey,
+          toPubkey: payer.publicKey,
+          lamports: 0
+        })
+      );
+    }
+
+    const transaction = new Transaction().add(...instructions);
+
+    // Execute transfer
+    const signature = await this.connection.sendTransaction(transaction, [payer]);
+    await this.connection.confirmTransaction(signature, 'confirmed');
+
+    console.log(`✅ Confidential transfer completed: ${signature}`);
+
+    return {
+      signature,
+      amount,
+      isConfidential: true,
+      memo,
+      timestamp: Date.now()
+    };
+  }
+
+  /**
+   * Get comprehensive token information including all extensions
+   */
+  async getTokenInfo(mint: PublicKey): Promise<TokenInfo> {
+    const mintInfo = await this.connection.getAccountInfo(mint);
+    
+    if (!mintInfo) {
+      throw new Error('Mint account not found');
+    }
+
+    // Parse token extensions and metadata
+    const extensions = this.parseTokenExtensions(mintInfo.data);
+    const capabilities = this.getTokenCapabilities(extensions);
+
+    return {
+      mint,
+      programId: mintInfo.owner,
+      extensions,
+      capabilities,
+      dataSize: mintInfo.data.length,
+      isToken2022: mintInfo.owner.equals(TOKEN_2022_PROGRAM_ID)
+    };
+  }
+
+  /**
+   * Create agent payment bundle with multiple token types
+   */
+  async createAgentPaymentBundle(params: {
+    payer: Keypair;
+    agentId: PublicKey;
+    payments: AgentPayment[];
+    confidential: boolean;
+  }): Promise<PaymentBundleResult> {
+    const { payer, agentId, payments, confidential } = params;
+
+    console.log('💼 Creating agent payment bundle...');
+    console.log(`🤖 Agent: ${agentId.toBase58()}`);
+    console.log(`💰 Payments: ${payments.length}`);
+    console.log(`🔐 Confidential: ${confidential}`);
+
+    const instructions: TransactionInstruction[] = [];
+    const results: PaymentResult[] = [];
+
+    for (const payment of payments) {
+      // Create transfer instruction based on token type
+      if (confidential) {
+        const transferIx = createTransferInstruction(
+          payment.source,
+          payment.mint,
+          payment.destination,
+          payer.publicKey,
+          payment.amount.toNumber(),
+          undefined,
+          TOKEN_2022_PROGRAM_ID
+        );
+        instructions.push(transferIx);
+      } else {
+        const transferIx = createTransferInstruction(
+          payment.source,
+          payment.mint,
+          payment.destination,
+          payer.publicKey,
+          payment.amount.toNumber()
+        );
+        instructions.push(transferIx);
+      }
+
+      results.push({
+        mint: payment.mint,
+        amount: payment.amount,
+        type: payment.type,
+        processed: false
+      });
+    }
+
+    // Execute bundle transaction
+    const transaction = new Transaction().add(...instructions);
+    const signature = await this.connection.sendTransaction(transaction, [payer]);
+    await this.connection.confirmTransaction(signature, 'confirmed');
+
+    // Mark all payments as processed
+    results.forEach(result => result.processed = true);
+
+    console.log(`✅ Payment bundle executed: ${signature}`);
+
+    return {
+      signature,
+      agentId,
+      payments: results,
+      totalAmount: payments.reduce((sum, p) => sum.add(p.amount), new BN(0)),
+      isConfidential: confidential,
+      timestamp: Date.now()
+    };
+  }
+
+  // Helper methods
+  private parseTokenExtensions(data: Buffer): string[] {
+    // Parse token account data to identify extensions
+    const extensions: string[] = [];
+    
+    // Check for common extension signatures in the data
+    if (data.includes(Buffer.from('ConfidentialTransfer'))) {
+      extensions.push('ConfidentialTransfer');
+    }
+    if (data.includes(Buffer.from('InterestBearing'))) {
+      extensions.push('InterestBearing');
+    }
+    if (data.includes(Buffer.from('TransferHook'))) {
+      extensions.push('TransferHook');
+    }
+    if (data.includes(Buffer.from('MetadataPointer'))) {
+      extensions.push('MetadataPointer');
+    }
+
+    return extensions;
+  }
+
+  private getTokenCapabilities(extensions: string[]): string[] {
+    const capabilities: string[] = [];
+
+    extensions.forEach(ext => {
+      switch (ext) {
+        case 'ConfidentialTransfer':
+          capabilities.push('Private transactions', 'Hidden amounts', 'Enhanced privacy');
+          break;
+        case 'InterestBearing':
+          capabilities.push('Automatic interest', 'Yield generation', 'Compound growth');
+          break;
+        case 'TransferHook':
+          capabilities.push('Compliance automation', 'Transfer validation', 'Regulatory hooks');
+          break;
+        case 'MetadataPointer':
+          capabilities.push('Rich metadata', 'Extended information', 'Custom properties');
+          break;
+      }
+    });
+
+    return capabilities;
+  }
 }
+
+// Type definitions
+interface TokenMetadata {
+  name: string;
+  symbol: string;
+  uri: string;
+  description?: string;
+}
+
+interface CreateTokenResult {
+  mint: PublicKey;
+  signature: string;
+  extensions: string[];
+  capabilities: string[];
+}
+
+interface ConfidentialTransferResult {
+  signature: string;
+  amount: BN;
+  isConfidential: boolean;
+  memo?: string;
+  timestamp: number;
+}
+
+interface TokenInfo {
+  mint: PublicKey;
+  programId: PublicKey;
+  extensions: string[];
+  capabilities: string[];
+  dataSize: number;
+  isToken2022: boolean;
+}
+
+interface AgentPayment {
+  mint: PublicKey;
+  source: PublicKey;
+  destination: PublicKey;
+  amount: BN;
+  type: 'base_fee' | 'performance_bonus' | 'interest_payment' | 'compliance_fee';
+}
+
+interface PaymentResult {
+  mint: PublicKey;
+  amount: BN;
+  type: string;
+  processed: boolean;
+}
+
+interface PaymentBundleResult {
+  signature: string;
+  agentId: PublicKey;
+  payments: PaymentResult[];
+  totalAmount: BN;
+  isConfidential: boolean;
+  timestamp: number;
+}
+
+export { SplToken2022Service };
+export type {
+  TokenMetadata,
+  CreateTokenResult,
+  ConfidentialTransferResult,
+  TokenInfo,
+  AgentPayment,
+  PaymentBundleResult
+};

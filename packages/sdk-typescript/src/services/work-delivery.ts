@@ -95,7 +95,7 @@ export class WorkDeliveryService {
 
       // Generate a unique tree identifier
       const treeId = `tree_${Date.now()}_${signer.address.slice(0, 8)}`;
-      
+
       // In a real implementation, this would:
       // 1. Calculate exact rent requirements
       // 2. Create SPL Account Compression tree
@@ -125,17 +125,17 @@ export class WorkDeliveryService {
       // Calculate deliverable hash for uniqueness
       const deliverableHash = this.calculateDeliverableHash(deliverable);
       const assetId = `work_nft_${Date.now()}_${deliverableHash.slice(0, 8)}`;
-      
+
       // In a real implementation, this would:
       // 1. Upload metadata to IPFS/Arweave
       // 2. Create Metaplex Bubblegum mint instruction
       // 3. Add to merkle tree with proof
       // 4. Return actual asset ID from transaction logs
-      
+
       console.log(
         `Minting work delivery NFT for ${deliverable.outputs.length} outputs`
       );
-      
+
       return {
         assetId,
         treeAddress: signer.address, // Would be actual tree address
@@ -191,7 +191,7 @@ export class WorkDeliveryService {
       // 1. Query compressed NFT data from RPC
       // 2. Fetch metadata from IPFS/Arweave
       // 3. Return structured asset information
-      
+
       if (!assetId || assetId === 'invalid_address') {
         return null;
       }
@@ -295,9 +295,7 @@ export class WorkDeliveryService {
       // 4. Return transaction signature
 
       const burnId = `burn_${Date.now()}_${assetId.slice(-8)}`;
-      console.log(
-        `Burning NFT ${assetId} by ${signer.address} for cleanup`
-      );
+      console.log(`Burning NFT ${assetId} by ${signer.address} for cleanup`);
 
       return `work_delivery_burn_${burnId}`;
     } catch (error) {
@@ -416,7 +414,11 @@ export class WorkDeliveryService {
       let count = 1;
 
       // Count consecutive identical bytes
-      while (i + count < data.length && data[i + count] === currentByte && count < 255) {
+      while (
+        i + count < data.length &&
+        data[i + count] === currentByte &&
+        count < 255
+      ) {
         count++;
       }
 

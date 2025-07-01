@@ -175,6 +175,11 @@
           "when": "wija.projectDetected"
         },
         {
+          "id": "wija.promptVault",
+          "name": "Prompt Vault",
+          "when": "wija.projectDetected"
+        },
+        {
           "id": "wija.marketplace",
           "name": "Agent Marketplace",
           "when": "wija.projectDetected"

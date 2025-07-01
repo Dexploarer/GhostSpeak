@@ -2,14 +2,15 @@
 
 use crate::client::PodAIClient;
 use crate::errors::{PodAIError, PodAIResult};
-use crate::types::agent::{AgentAccount, AgentCapabilities};
-use crate::utils::pda::find_agent_pda;
-use crate::utils::transaction::{TransactionOptions, TransactionResult};
+use crate::types::{agent::*, AgentCapabilities, ConversationState};
+use crate::utils::{find_agent_pda, TransactionFactory, TransactionConfig, PriorityFeeStrategy, RetryPolicy};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use solana_sdk::{
+    instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
-    signature::{Keypair, Signer},
+    signature::{Keypair, Signature, Signer},
     system_instruction,
-    transaction::Transaction,
 };
 use std::sync::Arc;
 
@@ -25,84 +26,75 @@ impl AgentService {
         Self { client }
     }
 
-    /// Register a new agent
-    pub async fn register(
+    /// Register an agent with modern transaction patterns
+    pub async fn register_with_factory(
         &self,
-        agent_keypair: &Keypair,
+        factory: &TransactionFactory,
+        signer: &dyn Signer,
         capabilities: u64,
         metadata_uri: &str,
-    ) -> PodAIResult<AgentRegistrationResult> {
+    ) -> PodAIResult<RegisterAgentResult> {
         // Find agent PDA
-        let (agent_pda, bump) = find_agent_pda(&agent_keypair.pubkey());
+        let agent_pda = find_agent_pda(&signer.pubkey(), &self.client.program_id());
 
         // Check if agent already exists
         if self.client.account_exists(&agent_pda).await? {
-            return Err(PodAIError::agent("Agent already registered"));
+            return Err(PodAIError::agent(format!(
+                "Agent already exists at PDA: {}",
+                agent_pda
+            )));
         }
 
-        // Validate metadata URI
-        if metadata_uri.len() > 200 {
-            return Err(PodAIError::invalid_input(
-                "metadata_uri",
-                "URI too long (max 200 characters)",
-            ));
-        }
-
-        // Create agent account
-        let agent_account = AgentAccount::new(
-            agent_keypair.pubkey(),
+        // Create register instruction
+        let instruction = self.create_register_instruction(
+            &signer.pubkey(),
+            &agent_pda,
             capabilities,
-            metadata_uri.to_string(),
-            bump,
+            metadata_uri,
         )?;
 
-        // Calculate rent-exempt balance for agent account
-        let account_size = 286; // Agent account size from constants
-        let rent_exempt_balance = self
-            .client
-            .get_minimum_balance_for_rent_exemption(account_size)
+        // Build and send transaction using factory
+        let transaction = factory
+            .build_transaction(vec![instruction], &signer.pubkey(), &[signer])
             .await?;
 
-        // Get recent blockhash
-        let recent_blockhash = self.client.get_recent_blockhash().await?;
+        let result = factory.send_transaction(&transaction).await?;
 
-        // Build transaction (simplified - in reality, this would use anchor instructions)
-        let create_account_ix = system_instruction::create_account(
-            &agent_keypair.pubkey(),
-            &agent_pda,
-            rent_exempt_balance,
-            account_size as u64,
-            &self.client.program_id(),
-        );
+        Ok(RegisterAgentResult {
+            signature: result.signature,
+            agent_pda,
+            agent_pubkey: signer.pubkey(),
+            capabilities,
+            metadata_uri: metadata_uri.to_string(),
+            timestamp: Utc::now(),
+        })
+    }
 
-        let mut transaction = Transaction::new_with_payer(
-            &[create_account_ix],
-            Some(&agent_keypair.pubkey()),
-        );
-        transaction.recent_blockhash = recent_blockhash;
-        transaction.sign(&[agent_keypair], recent_blockhash);
+    /// Register an agent with fast configuration
+    pub async fn register_fast(
+        &self,
+        signer: &dyn Signer,
+        capabilities: u64,
+        metadata_uri: &str,
+    ) -> PodAIResult<RegisterAgentResult> {
+        let factory = TransactionFactory::with_config(&self.client, TransactionConfig::fast());
+        self.register_with_factory(&factory, signer, capabilities, metadata_uri).await
+    }
 
-        // Send transaction
-        let options = TransactionOptions::default();
-        let tx_result = crate::utils::transaction::send_transaction(
-            &self.client.rpc_client,
-            &transaction,
-            &options,
-        ).await?;
+    /// Register an agent with reliable configuration
+    pub async fn register_reliable(
+        &self,
+        signer: &dyn Signer,
+        capabilities: u64,
+        metadata_uri: &str,
+    ) -> PodAIResult<RegisterAgentResult> {
+        let factory = TransactionFactory::with_config(&self.client, TransactionConfig::reliable());
+        self.register_with_factory(&factory, signer, capabilities, metadata_uri).await
+    }
 
-        if tx_result.is_success() {
-            Ok(AgentRegistrationResult {
-                agent_pda,
-                agent_account,
-                transaction_signature: tx_result.signature,
-                slot: tx_result.slot,
-            })
-        } else {
-            Err(PodAIError::agent(format!(
-                "Registration failed: {}",
-                tx_result.error.unwrap_or("Unknown error".to_string())
-            )))
-        }
+    /// Create a builder for agent registration with custom configuration
+    pub fn register_builder(&self) -> AgentRegistrationBuilder {
+        AgentRegistrationBuilder::new(self)
     }
 
     /// Get agent account data
@@ -273,45 +265,159 @@ impl AgentService {
 
         Ok(parsed_capabilities)
     }
+
+    /// Create register instruction for the agent
+    fn create_register_instruction(
+        &self,
+        agent_pubkey: &Pubkey,
+        agent_pda: &Pubkey,
+        capabilities: u64,
+        metadata_uri: &str,
+    ) -> PodAIResult<Instruction> {
+        // Validate metadata URI
+        if metadata_uri.len() > 200 {
+            return Err(PodAIError::invalid_input(
+                "metadata_uri",
+                "URI too long (max 200 characters)",
+            ));
+        }
+
+        // This would be replaced with actual Anchor instruction generation
+        // For now, create a placeholder instruction
+        Ok(Instruction {
+            program_id: self.client.program_id(),
+            accounts: vec![
+                AccountMeta::new(*agent_pubkey, true),
+                AccountMeta::new(*agent_pda, false),
+                AccountMeta::new_readonly(solana_sdk::system_program::id(), false),
+            ],
+            data: vec![], // Would contain serialized instruction data
+        })
+    }
+
+    /// Register a new agent with default configuration (legacy method)
+    pub async fn register(
+        &self,
+        agent_keypair: &Keypair,
+        capabilities: u64,
+        metadata_uri: &str,
+    ) -> PodAIResult<RegisterAgentResult> {
+        self.register_fast(agent_keypair, capabilities, metadata_uri).await
+    }
 }
 
-/// Result of agent registration
-#[derive(Debug, Clone)]
-pub struct AgentRegistrationResult {
+/// Result of agent registration with enhanced information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegisterAgentResult {
+    /// Transaction signature
+    pub signature: Signature,
     /// The agent PDA address
     pub agent_pda: Pubkey,
-    /// The agent account data
-    pub agent_account: AgentAccount,
-    /// Transaction signature
-    pub transaction_signature: solana_sdk::signature::Signature,
-    /// Transaction slot
-    pub slot: u64,
+    /// The agent's wallet public key
+    pub agent_pubkey: Pubkey,
+    /// Agent capabilities
+    pub capabilities: u64,
+    /// Metadata URI
+    pub metadata_uri: String,
+    /// Registration timestamp
+    pub timestamp: DateTime<Utc>,
 }
 
-impl AgentRegistrationResult {
-    /// Get the agent's public key (PDA)
-    pub fn agent_pubkey(&self) -> Pubkey {
-        self.agent_pda
+impl RegisterAgentResult {
+    /// Get the agent's capabilities as enum values
+    pub fn parsed_capabilities(&self) -> Vec<AgentCapabilities> {
+        AgentCapabilities::from_bitmask(self.capabilities)
     }
 
-    /// Get the agent's wallet public key
-    pub fn wallet_pubkey(&self) -> Pubkey {
-        self.agent_account.pubkey
+    /// Check if agent has a specific capability
+    pub fn has_capability(&self, capability: AgentCapabilities) -> bool {
+        self.capabilities & (capability as u64) != 0
+    }
+}
+
+/// Builder for agent registration with custom configuration
+#[derive(Debug)]
+pub struct AgentRegistrationBuilder<'a> {
+    service: &'a AgentService,
+    transaction_config: Option<TransactionConfig>,
+    priority_fee_strategy: Option<PriorityFeeStrategy>,
+    retry_policy: Option<RetryPolicy>,
+    simulate_before_send: Option<bool>,
+}
+
+impl<'a> AgentRegistrationBuilder<'a> {
+    /// Create a new builder
+    pub fn new(service: &'a AgentService) -> Self {
+        Self {
+            service,
+            transaction_config: None,
+            priority_fee_strategy: None,
+            retry_policy: None,
+            simulate_before_send: None,
+        }
     }
 
-    /// Get the agent's capabilities
-    pub fn capabilities(&self) -> Vec<AgentCapabilities> {
-        AgentCapabilities::from_bitmask(self.agent_account.capabilities)
+    /// Set transaction configuration
+    pub fn with_config(mut self, config: TransactionConfig) -> Self {
+        self.transaction_config = Some(config);
+        self
     }
 
-    /// Get the agent's reputation
-    pub fn reputation(&self) -> u64 {
-        self.agent_account.reputation
+    /// Set priority fee strategy
+    pub fn with_priority_fee_strategy(mut self, strategy: PriorityFeeStrategy) -> Self {
+        self.priority_fee_strategy = Some(strategy);
+        self
     }
 
-    /// Get the agent's metadata URI
-    pub fn metadata_uri(&self) -> &str {
-        &self.agent_account.metadata_uri
+    /// Set retry policy
+    pub fn with_retry_policy(mut self, policy: RetryPolicy) -> Self {
+        self.retry_policy = Some(policy);
+        self
+    }
+
+    /// Enable or disable simulation
+    pub fn with_simulation(mut self, simulate: bool) -> Self {
+        self.simulate_before_send = Some(simulate);
+        self
+    }
+
+    /// Use fast execution configuration
+    pub fn fast(mut self) -> Self {
+        self.transaction_config = Some(TransactionConfig::fast());
+        self
+    }
+
+    /// Use reliable execution configuration
+    pub fn reliable(mut self) -> Self {
+        self.transaction_config = Some(TransactionConfig::reliable());
+        self
+    }
+
+    /// Execute the registration
+    pub async fn execute(
+        self,
+        signer: &dyn Signer,
+        capabilities: u64,
+        metadata_uri: &str,
+    ) -> PodAIResult<RegisterAgentResult> {
+        // Build configuration
+        let mut config = self.transaction_config.unwrap_or_default();
+
+        if let Some(strategy) = self.priority_fee_strategy {
+            config = config.with_priority_fee_strategy(strategy);
+        }
+
+        if let Some(policy) = self.retry_policy {
+            config = config.with_retry_policy(policy);
+        }
+
+        if let Some(simulate) = self.simulate_before_send {
+            config = config.with_simulation(simulate);
+        }
+
+        // Create factory and execute
+        let factory = TransactionFactory::with_config(&self.service.client, config);
+        self.service.register_with_factory(&factory, signer, capabilities, metadata_uri).await
     }
 }
 
@@ -364,17 +470,18 @@ mod tests {
             255,
         ).unwrap();
         
-        let result = AgentRegistrationResult {
+        let result = RegisterAgentResult {
+            signature: solana_sdk::signature::Signature::default(),
             agent_pda,
-            agent_account,
-            transaction_signature: solana_sdk::signature::Signature::default(),
-            slot: 12345,
+            agent_pubkey: wallet,
+            capabilities: AgentCapabilities::Communication as u64,
+            metadata_uri: "https://example.com".to_string(),
+            timestamp: Utc::now(),
         };
 
-        assert_eq!(result.agent_pubkey(), agent_pda);
-        assert_eq!(result.wallet_pubkey(), wallet);
-        assert_eq!(result.capabilities().len(), 1);
-        assert_eq!(result.reputation(), 0);
-        assert_eq!(result.metadata_uri(), "https://example.com");
+        assert_eq!(result.agent_pubkey, wallet);
+        assert_eq!(result.parsed_capabilities().len(), 1);
+        assert_eq!(result.parsed_capabilities()[0], AgentCapabilities::Communication);
+        assert_eq!(result.metadata_uri, "https://example.com");
     }
 } 

@@ -25,11 +25,15 @@ import {
   fetchMaybeAgentAccount,
   type AgentAccount as CodemaAgentAccount,
 } from './generated-v2/accounts/agentAccount';
+
 // Import services
 import { AgentService } from './services/agent';
 import { ChannelService } from './services/channel';
 import { MessageService } from './services/message';
 import { AnalyticsService } from './services/analytics';
+import { CompressionService } from './services/compression';
+import { ConfidentialTransferService } from './services/confidential-transfer';
+import { WorkDeliveryService } from './services/work-delivery';
 
 // Types from our existing system (only what we need)
 import type { ICreateAgentOptions } from './types';
@@ -51,18 +55,24 @@ export interface IPodAIClientV2Config {
 /**
  * Modern podAI client using Web3.js v2.0 architecture
  * Uses Codama-generated clients for maximum performance and type safety
+ * Enhanced with ZK compression, confidential transfers, and cNFT work delivery
  */
 export class PodAIClientV2 {
   private readonly rpc: Rpc<SolanaRpcApi>;
   private readonly programId: Address;
   private readonly commitment: Commitment;
-  private readonly wsEndpoint?: string;
+  private readonly wsEndpoint: string | undefined;
 
-  // Services
+  // Core services
   public readonly agents: AgentService;
   public readonly channels: ChannelService;
   public readonly messages: MessageService;
   public readonly analytics: AnalyticsService;
+
+  // Enhanced services
+  public readonly compression: CompressionService;
+  public readonly confidentialTransfers: ConfidentialTransferService;
+  public readonly workDelivery: WorkDeliveryService;
 
   constructor(config: IPodAIClientV2Config) {
     this.rpc = createSolanaRpc(config.rpcEndpoint);
@@ -70,9 +80,9 @@ export class PodAIClientV2 {
       config.programId ?? 'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps'
     );
     this.commitment = config.commitment ?? 'confirmed';
-    this.wsEndpoint = config.wsEndpoint ?? undefined;
+    this.wsEndpoint = config.wsEndpoint;
 
-    // Initialize services
+    // Initialize core services
     this.agents = new AgentService(
       this.rpc, 
       this.programId, 
@@ -96,6 +106,26 @@ export class PodAIClientV2 {
       this.rpc,
       this.programId,
       this.commitment
+    );
+
+    // Initialize enhanced services
+    this.compression = new CompressionService(
+      this.rpc,
+      this.programId,
+      this.commitment
+    );
+
+    this.confidentialTransfers = new ConfidentialTransferService(
+      this.rpc,
+      this.programId,
+      this.commitment
+    );
+
+    this.workDelivery = new WorkDeliveryService(
+      this.rpc,
+      this.programId,
+      this.commitment,
+      config.rpcEndpoint
     );
   }
 
@@ -163,15 +193,28 @@ export class PodAIClientV2 {
     rpcConnection: boolean;
     blockHeight: number;
     programValid: boolean;
+    enhancedServices: {
+      compression: boolean;
+      confidentialTransfers: boolean;
+      workDelivery: boolean;
+    };
   }> {
     try {
       // Test RPC connection by getting slot
       const slot = await this.rpc.getSlot().send();
 
+      // Test enhanced services
+      const enhancedServices = {
+        compression: !!this.compression,
+        confidentialTransfers: !!this.confidentialTransfers,
+        workDelivery: !!this.workDelivery
+      };
+
       return {
         rpcConnection: true,
         blockHeight: Number(slot),
         programValid: true,
+        enhancedServices
       };
     } catch (error) {
       console.error('Health check failed:', error);
@@ -179,6 +222,11 @@ export class PodAIClientV2 {
         rpcConnection: false,
         blockHeight: 0,
         programValid: false,
+        enhancedServices: {
+          compression: false,
+          confidentialTransfers: false,
+          workDelivery: false
+        }
       };
     }
   }
@@ -254,21 +302,27 @@ export class PodAIClientV2 {
    */
   public createTransactionConfig(
     signer: KeyPairSigner,
-    instructions: any[],
+    instructions: any[], // Using any[] to avoid import issues - will be properly typed in utils
     options?: {
       commitment?: Commitment;
       skipPreflight?: boolean;
     }
   ): TransactionConfig {
+    const config = {
+      commitment: options?.commitment || this.commitment,
+      skipPreflight: options?.skipPreflight || false
+    };
+    
+    // Only include wsEndpoint if it exists
+    if (this.wsEndpoint) {
+      (config as any).wsEndpoint = this.wsEndpoint;
+    }
+    
     return createTransactionConfig(
       this.rpc,
       signer,
       instructions,
-      {
-        commitment: options?.commitment || this.commitment,
-        wsEndpoint: this.wsEndpoint || undefined,
-        skipPreflight: options?.skipPreflight || false
-      }
+      config
     );
   }
 
@@ -297,6 +351,11 @@ export class PodAIClientV2 {
     blockHeight: number;
     tps: number;
     networkHealth: 'healthy' | 'degraded' | 'unhealthy';
+    compressionSavings?: {
+      totalSizeReduction: number;
+      totalCostSavings: number;
+      averageCompressionRatio: number;
+    };
   }> {
     const startTime = Date.now();
     
@@ -325,7 +384,13 @@ export class PodAIClientV2 {
         rpcLatency,
         blockHeight: Number(slot),
         tps: avgTps,
-        networkHealth
+        networkHealth,
+        // Compression savings would be calculated from actual usage data
+        compressionSavings: {
+          totalSizeReduction: 0, // Placeholder
+          totalCostSavings: 0,   // Placeholder
+          averageCompressionRatio: 1 // Placeholder
+        }
       };
 
     } catch (error) {

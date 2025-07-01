@@ -161,6 +161,16 @@ impl PodAIError {
         }
     }
 
+    /// Create a transaction simulation failed error
+    pub fn transaction_simulation_failed(logs: Vec<String>) -> Self {
+        Self::TransactionSimulationFailed { logs }
+    }
+
+    /// Create a transaction timeout error
+    pub fn transaction_timeout(seconds: u64) -> Self {
+        Self::TransactionTimeout { seconds }
+    }
+
     /// Create an account not found error
     pub fn account_not_found<S: Into<String>>(account_type: S, address: S) -> Self {
         Self::AccountNotFound {
@@ -175,16 +185,6 @@ impl PodAIError {
             account_type: account_type.into(),
             reason: reason.into(),
         }
-    }
-
-    /// Create a transaction simulation failed error
-    pub fn transaction_simulation_failed(logs: Vec<String>) -> Self {
-        Self::TransactionSimulationFailed { logs }
-    }
-
-    /// Create a transaction timeout error
-    pub fn transaction_timeout(seconds: u64) -> Self {
-        Self::TransactionTimeout { seconds }
     }
 
     /// Create an insufficient balance error

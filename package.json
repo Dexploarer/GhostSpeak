@@ -118,7 +118,7 @@
     "@coral-xyz/anchor": "0.31.1",
     "@jest/globals": "30.0.3",
     "@types/bun": "1.2.17",
-    "@types/node": "24.0.7",
+    "@types/node": "24.0.8",
     "@typescript-eslint/eslint-plugin": "8.35.1",
     "@typescript-eslint/parser": "8.35.1",
     "@vitest/ui": "3.2.4",
@@ -155,12 +155,13 @@
     "wasm-pack": "0.13.1"
   },
   "dependencies": {
-    "@solana/web3.js": "2.0.0",
     "@solana/addresses": "2.1.1",
     "@solana/rpc": "2.1.1",
     "@solana/signers": "2.1.1",
     "@solana/rpc-types": "2.1.1",
     "@solana/codecs": "2.1.1",
+    "@solana/transactions": "2.1.1",
+    "@solana/kit": "2.1.1",
     "@codama/nodes-from-anchor": "1.2.1",
     "@codama/renderers-js": "1.2.14",
     "@solana-program/compute-budget": "0.8.0",
@@ -175,7 +176,6 @@
     "zod": "3.25.67"
   },
   "peerDependencies": {
-    "@solana/web3.js": "2.0.0",
     "typescript": "5.8.3"
   },
   "config": {

@@ -34,6 +34,83 @@ export type {
 // Re-export generated v2 types for advanced usage
 export * from './generated-v2';
 
+// Services - Complete TypeScript SDK with full feature parity
+export {
+  AgentService,
+  AgentRegistrationBuilder,
+  type IAgentConfig,
+  type IAgentUpdateResult,
+  type IAgentFilter,
+  type IAgentStats,
+} from './services/agent';
+
+export { ChannelService } from './services/channel';
+
+export {
+  MessageService,
+  MessageSendBuilder,
+  type IMessageSendResult,
+  type IMessageReadResult,
+  type IMessageFilter,
+  type IMessageConfig,
+} from './services/message';
+
+export {
+  EscrowService,
+  EscrowCreationBuilder,
+  EscrowTransactionType,
+  type IEscrowCreationResult,
+  type IEscrowDepositResult,
+  type IEscrowWithdrawResult,
+  type IEscrowAccount,
+  type IEscrowConfig,
+} from './services/escrow';
+
+export {
+  WorkDeliveryService,
+  type IWorkOutput,
+  type IWorkDeliverable,
+} from './services/work-delivery';
+
+export {
+  SplToken2022Service,
+  type ITokenExtensions,
+  type IToken2022Account,
+} from './services/spl-token-2022';
+
+export {
+  ConfidentialTransferService,
+  type IConfidentialMintConfig,
+  type IConfidentialAccountConfig,
+} from './services/confidential-transfer';
+
+export {
+  CompressionService,
+  type ICompressionConfig,
+  type ICompressionProof,
+} from './services/compression';
+
+export {
+  AnalyticsService,
+  type IAnalyticsData,
+  type INetworkMetrics,
+} from './services/analytics';
+
+export {
+  MarketplaceService,
+  type IServiceListing,
+  type IJobPosting,
+  type IMarketplaceConfig,
+} from './services/marketplace';
+
+export {
+  AgentReplicationService,
+  type IReplicationTemplate,
+  type IReplicationRecord,
+  type IAgentCustomization,
+  type IReplicationConfig,
+} from './services/agent-replication';
+
 // Transaction utilities (Jupiter Swap patterns)
 export {
   buildTransaction,
@@ -43,9 +120,9 @@ export {
   batchTransactions,
   retryTransaction,
   createTransactionConfig,
-  type TransactionConfig,
-  type SimulationResult,
-  type TransactionResult,
+  type ITransactionConfig,
+  type ISimulationResult,
+  type ITransactionResult,
 } from './utils/transaction-utils';
 
 // Examples

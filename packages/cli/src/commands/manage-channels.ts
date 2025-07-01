@@ -42,7 +42,7 @@ export class ManageChannelsCommand {
 
   constructor() {
     this.ui = new UIManager();
-    this.network = new NetworkManager();
+    this._network = new NetworkManager();
     this.config = new ConfigManager();
   }
 
@@ -93,7 +93,7 @@ export class ManageChannelsCommand {
     } catch (error) {
       this.ui.error(
         'Channel management failed',
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? (error as Error).message : String(error)
       );
     }
   }
@@ -103,8 +103,8 @@ export class ManageChannelsCommand {
     spinner.start();
 
     try {
-      const currentNetwork = await this.network.getCurrentNetwork();
-      const rpc = await this.network.getRpc();
+      const currentNetwork = await this._network.getCurrentNetwork();
+      const rpc = await this._network.getRpc();
       
       // Create real PodAI client using RPC connection
       this.podClient = createPodAIClientV2({
@@ -121,7 +121,7 @@ export class ManageChannelsCommand {
       spinner.success({ text: `podAI client initialized on ${currentNetwork}` });
     } catch (error) {
       spinner.error({ text: 'Failed to initialize podAI client' });
-      throw new Error(`Client initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Client initialization failed: ${error instanceof Error ? (error as Error).message : String(error)}`);
     }
   }
 
@@ -234,7 +234,7 @@ export class ManageChannelsCommand {
 
       } catch (error) {
         spinner.error({ text: 'Channel creation failed' });
-        throw new Error(`Failed to create channel: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(`Failed to create channel: ${error instanceof Error ? (error as Error).message : String(error)}`);
       }
     }
   }
@@ -265,7 +265,7 @@ export class ManageChannelsCommand {
 
     } catch (error) {
       spinner.error({ text: 'Failed to load channels' });
-      throw new Error(`Failed to browse channels: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to browse channels: ${error instanceof Error ? (error as Error).message : String(error)}`);
     }
   }
 
@@ -317,7 +317,7 @@ export class ManageChannelsCommand {
 
     } catch (error) {
       spinner.error({ text: 'Failed to join channel' });
-      throw new Error(`Failed to join channel: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to join channel: ${error instanceof Error ? (error as Error).message : String(error)}`);
     }
   }
 
@@ -347,7 +347,7 @@ export class ManageChannelsCommand {
 
     } catch (error) {
       spinner.error({ text: 'Failed to load channels' });
-      throw new Error(`Failed to load channels: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to load channels: ${error instanceof Error ? (error as Error).message : String(error)}`);
     }
   }
 
@@ -426,7 +426,7 @@ export class ManageChannelsCommand {
 
       } catch (error) {
         spinner.error({ text: 'Failed to send message' });
-        throw new Error(`Failed to send message: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(`Failed to send message: ${error instanceof Error ? (error as Error).message : String(error)}`);
       }
 
     } else {
@@ -490,7 +490,7 @@ export class ManageChannelsCommand {
 
       } catch (error) {
         spinner.error({ text: 'Failed to broadcast message' });
-        throw new Error(`Failed to broadcast message: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(`Failed to broadcast message: ${error instanceof Error ? (error as Error).message : String(error)}`);
       }
     }
   }

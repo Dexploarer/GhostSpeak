@@ -58,7 +58,7 @@ export class SettingsCommand {
     } catch (error) {
       this.ui.error(
         'Settings configuration failed',
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? (error as Error).message : String(error)
       );
     }
   }

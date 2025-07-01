@@ -4,6 +4,7 @@ import { join, resolve } from 'path';
 import { promisify } from 'util';
 
 import { select, input, confirm, checkbox } from '@inquirer/prompts';
+import { Command } from 'commander';
 
 import { UIManager } from '../ui/ui-manager.js';
 import { ConfigManager } from '../utils/config-manager.js';
@@ -1309,4 +1310,16 @@ impl ChannelManager {
 `;
     await fs.writeFile(join(srcPath, 'channels.rs'), channelRs);
   }
+}
+
+export function createDevelopCommand() {
+  const program = new Command('develop')
+    .alias('dev')
+    .description('Interactive SDK development and project creation')
+    .action(async () => {
+      const sdkCommand = new DevelopSDKCommand();
+      await sdkCommand.execute();
+    });
+
+  return program;
 } 

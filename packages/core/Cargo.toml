@@ -38,7 +38,7 @@ spl-token-2022 = { version = "9.0.0", features = ["no-entrypoint"], default-feat
 spl-associated-token-account = { version = "7.0.0", features = ["no-entrypoint"], default-features = false }
 
 # SPL Token-2022 Metadata Interface - OFFICIAL IMPLEMENTATION
-spl-token-metadata-interface = { version = "0.6.0", default-features = false }
+spl-token-metadata-interface = { version = "0.7.0", default-features = false }
 
 # Error handling - using workspace versions
 thiserror = { workspace = true }

@@ -238,7 +238,7 @@ export class TestDataFactory {
       capabilities: Math.floor(Math.random() * 32), // Random capabilities
       metadata: {
         version: '1.0.0',
-        type: types[Math.floor(Math.random() * types.length)] || 'ai',
+        type: types[Math.floor(Math.random() * types.length)] || types[0] || 'ai',
         tags: ['test', 'generated', 'random']
       },
       keyPairSigner: await generateKeyPairSigner()

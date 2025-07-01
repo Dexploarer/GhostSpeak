@@ -97,7 +97,7 @@ export class RegisterAgentCommand {
     } catch (error) {
       this.ui.error(
         'Agent registration failed',
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? (error as Error).message : String(error)
       );
     }
   }
@@ -125,7 +125,7 @@ export class RegisterAgentCommand {
       spinner.success({ text: `podAI client initialized on ${currentNetwork}` });
     } catch (error) {
       spinner.error({ text: 'Failed to initialize podAI client' });
-      throw new Error(`Client initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Client initialization failed: ${error instanceof Error ? (error as Error).message : String(error)}`);
     }
   }
 
@@ -429,7 +429,7 @@ export class RegisterAgentCommand {
       }
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? (error as Error).message : String(error);
       const runningStepIndex = steps.findIndex(s => s.status === 'pending');
       if (runningStepIndex >= 0) {
         updateProgress(runningStepIndex, 'error', 'Failed', errorMessage);

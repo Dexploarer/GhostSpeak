@@ -9,8 +9,8 @@ export {
   hashPayload,
   MessageType,
   getMessageTypeIdFromObject as getMessageTypeId,
-} from "../sdk/src/utils.js";
-export { MessageType as MessageTypeObject } from "../sdk/src/types.js";
+} from "../packages/sdk-typescript/src/utils.js";
+export { MessageType as MessageTypeObject } from "../packages/sdk-typescript/src/types.js";
 
 import { } from "@solana/web3.js";
 import { } from "bun:test";

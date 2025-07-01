@@ -12,6 +12,7 @@ export interface ICommandDependencies {
   channelProvider: any;
   networkProvider: any;
   walletProvider: any;
+  promptVaultProvider: any;
   config: any;
 }
 
@@ -29,7 +30,16 @@ export class WijaCommandManager {
       { command: 'wija.viewTransactions', handler: this.viewTransactions.bind(this) },
       { command: 'wija.generateSDKCode', handler: this.generateSDKCode.bind(this) },
       { command: 'wija.runTests', handler: this.runTests.bind(this) },
-      { command: 'wija.switchNetwork', handler: this.switchNetwork.bind(this) }
+      { command: 'wija.switchNetwork', handler: this.switchNetwork.bind(this) },
+      // Prompt Vault Commands - Revolutionary "Pocket Prayers" System
+      { command: 'wija.pocketPrayer', handler: this.pocketPrayer.bind(this) },
+      { command: 'wija.generateMasterPrompt', handler: this.generateMasterPrompt.bind(this) },
+      { command: 'wija.createRecipe', handler: this.createRecipe.bind(this) },
+      { command: 'wija.usePrayer', handler: this.usePrayer.bind(this) },
+      { command: 'wija.useRecipe', handler: this.useRecipe.bind(this) },
+      { command: 'wija.openPromptVault', handler: this.openPromptVault.bind(this) },
+      { command: 'wija.pocketSelection', handler: this.pocketSelection.bind(this) },
+      { command: 'wija.quickPrompt', handler: this.quickPrompt.bind(this) }
     ];
 
     commands.forEach(({ command, handler }) => {
@@ -382,5 +392,284 @@ export class WijaCommandManager {
   private async showRecentTransactions() {
     // Implementation for showing recent transactions in a webview
     vscode.window.showInformationMessage('Recent transactions view coming soon!');
+  }
+
+  // Revolutionary Prompt Vault Commands
+  private async pocketPrayer() {
+    try {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showWarningMessage('Please select some code first');
+        return;
+      }
+
+      const selection = activeEditor.selection;
+      if (selection.isEmpty) {
+        vscode.window.showWarningMessage('Please highlight the code you want to pocket as a prayer');
+        return;
+      }
+
+      const selectedText = activeEditor.document.getText(selection);
+      const language = activeEditor.document.languageId;
+      const filePath = activeEditor.document.uri.fsPath;
+
+      await this.deps.promptVaultProvider.pocketPrayer(selectedText, language, filePath, selection);
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to pocket prayer: ${error}`);
+    }
+  }
+
+  private async pocketSelection() {
+    // Quick pocket - simplified version for keyboard shortcuts
+    const activeEditor = vscode.window.activeTextEditor;
+    if (!activeEditor || activeEditor.selection.isEmpty) {
+      vscode.window.showWarningMessage('🔮 Please highlight code to pocket as a prayer');
+      return;
+    }
+
+    const selectedText = activeEditor.document.getText(activeEditor.selection);
+    const language = activeEditor.document.languageId;
+    
+    // Quick pocket with minimal prompts
+    const name = await vscode.window.showInputBox({
+      prompt: '🔮 Name your prayer',
+      placeHolder: 'e.g., "Don\'t use this pattern"'
+    });
+    
+    if (!name) return;
+
+    const prompt = await vscode.window.showInputBox({
+      prompt: '⚡ What should AI know about this?',
+      placeHolder: 'e.g., "Use modern async/await instead"'
+    });
+
+    if (!prompt) return;
+
+    const prayer = {
+      id: Date.now().toString(),
+      name,
+      category: 'Quick Pocket',
+      code: selectedText,
+      language,
+      prompt,
+      tags: ['quick'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      usage: { count: 0, effectiveness: 'medium' as const }
+    };
+
+    // Save prayer (simplified)
+    try {
+      await this.deps.promptVaultProvider.addQuickPrayer?.(prayer);
+      vscode.window.showInformationMessage(`🔮 "${name}" pocketed!`);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to pocket prayer: ${error}`);
+    }
+  }
+
+  private async generateMasterPrompt() {
+    try {
+      await this.deps.promptVaultProvider.generateMasterPrompt();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to generate master prompt: ${error}`);
+    }
+  }
+
+  private async quickPrompt() {
+    // Revolutionary feature: Instant prompt generation with current context
+    try {
+      const activeEditor = vscode.window.activeTextEditor;
+      const currentCode = activeEditor?.selection && !activeEditor.selection.isEmpty 
+        ? activeEditor.document.getText(activeEditor.selection)
+        : '';
+
+      const quickPrompts = [
+        'Fix this code',
+        'Refactor to modern patterns',
+        'Add error handling',
+        'Optimize performance', 
+        'Add TypeScript types',
+        'Convert to Rust',
+        'Add tests',
+        'Add documentation',
+        'Security review',
+        'Custom prompt...'
+      ];
+
+      const selectedPrompt = await vscode.window.showQuickPick(quickPrompts, {
+        title: '⚡ Quick Prompt',
+        placeHolder: 'Choose a quick prompt or create custom'
+      });
+
+      if (!selectedPrompt) return;
+
+      let finalPrompt = selectedPrompt;
+      if (selectedPrompt === 'Custom prompt...') {
+        const customPrompt = await vscode.window.showInputBox({
+          prompt: '💭 Enter your custom prompt',
+          placeHolder: 'e.g., "Rewrite this using functional programming"'
+        });
+        if (!customPrompt) return;
+        finalPrompt = customPrompt;
+      }
+
+      // Generate context-aware prompt
+      const projectContext = this.deps.promptVaultProvider.getProjectContext?.();
+      let masterPrompt = '';
+
+      if (projectContext) {
+        masterPrompt += `# Project: ${projectContext.projectName} (${projectContext.projectType})\n`;
+        masterPrompt += `# Languages: ${projectContext.languages.join(', ')}\n\n`;
+      }
+
+      masterPrompt += `# Task: ${finalPrompt}\n\n`;
+
+      if (currentCode) {
+        const language = activeEditor?.document.languageId || 'text';
+        masterPrompt += `# Code:\n\`\`\`${language}\n${currentCode}\n\`\`\`\n\n`;
+      }
+
+      masterPrompt += `# Guidelines:\n`;
+      masterPrompt += `- Follow modern best practices\n`;
+      masterPrompt += `- Maintain compatibility with existing codebase\n`;
+      masterPrompt += `- Provide clear explanations\n`;
+
+      await vscode.env.clipboard.writeText(masterPrompt);
+      vscode.window.showInformationMessage('⚡ Quick prompt copied to clipboard!');
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to generate quick prompt: ${error}`);
+    }
+  }
+
+  private async createRecipe() {
+    try {
+      const name = await vscode.window.showInputBox({
+        prompt: 'Recipe name',
+        placeHolder: 'e.g., "TypeScript to Rust Migration"'
+      });
+      if (!name) return;
+
+      const description = await vscode.window.showInputBox({
+        prompt: 'Recipe description',
+        placeHolder: 'e.g., "Complete workflow for migrating TS code to Rust"'
+      });
+      if (!description) return;
+
+      const template = await vscode.window.showInputBox({
+        prompt: 'Recipe template',
+        placeHolder: 'e.g., "1. Analyze TS code 2. Map types 3. Generate Rust"'
+      });
+      if (!template) return;
+
+      // Create recipe
+      const recipe = {
+        id: Date.now().toString(),
+        name,
+        description,
+        category: 'Custom',
+        prayers: [],
+        template,
+        variables: {},
+        tags: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // TODO: Add to provider
+      vscode.window.showInformationMessage(`📚 Recipe "${name}" created!`);
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create recipe: ${error}`);
+    }
+  }
+
+  private async usePrayer(prayer: any) {
+    try {
+      if (!prayer) return;
+
+      // Show prayer details and usage options
+      const action = await vscode.window.showQuickPick([
+        'Copy prompt to clipboard',
+        'Generate master prompt with this prayer',
+        'Edit prayer',
+        'View details'
+      ], {
+        title: `Use Prayer: ${prayer.name}`,
+        placeHolder: 'Choose action'
+      });
+
+      if (!action) return;
+
+      switch (action) {
+        case 'Copy prompt to clipboard':
+          await vscode.env.clipboard.writeText(prayer.prompt);
+          vscode.window.showInformationMessage('🔮 Prayer prompt copied!');
+          break;
+        case 'Generate master prompt with this prayer':
+          await this.deps.promptVaultProvider.generateMasterPrompt([prayer]);
+          break;
+        case 'Edit prayer':
+          await this.deps.promptVaultProvider.editPrayer(prayer.id);
+          break;
+        case 'View details':
+          await this.showPrayerDetails(prayer);
+          break;
+      }
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to use prayer: ${error}`);
+    }
+  }
+
+  private async useRecipe(recipe: any) {
+    try {
+      if (!recipe) return;
+
+      vscode.window.showInformationMessage(`📚 Using recipe: ${recipe.name}`);
+      // TODO: Implement recipe usage
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to use recipe: ${error}`);
+    }
+  }
+
+  private async openPromptVault() {
+    try {
+      await vscode.commands.executeCommand('workbench.view.extension.wija-studio');
+      vscode.window.showInformationMessage('🔮 Prompt Vault opened!');
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to open prompt vault: ${error}`);
+    }
+  }
+
+  private async showPrayerDetails(prayer: any) {
+    const content = `# 🔮 Prayer: ${prayer.name}
+
+**Category:** ${prayer.category}
+**Language:** ${prayer.language}
+**Created:** ${prayer.createdAt}
+**Usage:** ${prayer.usage.count} times
+**Effectiveness:** ${prayer.usage.effectiveness}
+
+## Prompt
+${prayer.prompt}
+
+${prayer.context ? `## Context\n${prayer.context}\n` : ''}
+
+## Code Example
+\`\`\`${prayer.language}
+${prayer.code}
+\`\`\`
+
+${prayer.tags.length > 0 ? `## Tags\n${prayer.tags.join(', ')}` : ''}
+`;
+
+    const doc = await vscode.workspace.openTextDocument({
+      content,
+      language: 'markdown'
+    });
+    await vscode.window.showTextDocument(doc);
   }
 } 

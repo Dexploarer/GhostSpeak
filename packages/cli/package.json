@@ -1,80 +1,87 @@
 {
-  "name": "@podai/cli",
+  "name": "@ghostspeak/cli",
   "version": "1.0.0",
-  "description": "Interactive CLI for PodAI Protocol",
+  "description": "Unified CLI for ghostspeak Agent Commerce Protocol - supports both TypeScript and Rust SDKs",
   "type": "module",
+  "main": "dist/index.js",
   "bin": {
-    "podai": "./bin/podai.js"
+    "ghostspeak": "dist/index.js",
+    "ghostspeak-cli": "dist/index.js"
   },
-  "main": "./dist/index.js",
   "scripts": {
-    "build": "bun build src/index.ts --outdir=dist --target=node --format=esm && bun run build:types",
-    "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist || echo 'Type generation skipped'",
-    "dev": "bun --watch src/index.ts",
-    "start": "bun src/index.ts",
-    "test": "bun test",
-    "test:e2e": "bun test --timeout 30000 tests/e2e/",
-    "test:unit": "bun test tests/unit/",
-    "test:integration": "bun test tests/integration/",
-    "test:coverage": "bun test --coverage",
-    "test:watch": "bun test --watch",
-    "lint": "eslint src/**/*.ts || echo 'Linting skipped'",
-    "type-check": "tsc --noEmit || echo 'Type checking skipped'"
+    "build": "tsc",
+    "dev": "tsx --watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "install:typescript": "npm install @ghostspeak/sdk",
+    "install:rust": "echo 'Add podai-sdk to your Cargo.toml dependencies'",
+    "create:typescript": "ghostspeak develop create-project --sdk typescript",
+    "create:rust": "ghostspeak develop create-project --sdk rust",
+    "create:both": "ghostspeak develop create-project --sdk both"
   },
   "dependencies": {
-    "@inquirer/prompts": "7.5.3",
-    "@inquirer/select": "4.2.3",
-    "@inquirer/input": "4.1.12",
-    "@inquirer/confirm": "5.1.12",
-    "@inquirer/checkbox": "4.1.8",
-    "@inquirer/password": "4.0.15",
-    "commander": "14.0.0",
+    "@inquirer/prompts": "^6.0.1",
     "chalk": "^5.3.0",
-    "ora": "^8.1.0",
+    "cli-table3": "^0.6.3",
+    "commander": "^12.1.0",
+    "ora": "^8.1.1",
     "boxen": "^8.0.1",
-    "figlet": "^1.8.0",
-    "gradient-string": "^3.0.0",
-    "nanospinner": "^1.1.0",
-    "picocolors": "^1.1.1",
-    "terminal-link": "4.0.0",
-    "@solana/addresses": "2.1.1",
-    "@solana/rpc": "2.1.1",
-    "@solana/rpc-types": "2.1.1",
-    "@solana/signers": "2.1.1",
-    "@solana/codecs": "2.1.1",
-    "bs58": "^6.0.0",
-    "@podai/sdk": "workspace:*"
+    "figlet": "^1.8.0"
   },
   "devDependencies": {
-    "@types/node": "24.0.7",
-    "@types/figlet": "^1.5.8",
-    "@types/gradient-string": "^1.1.6",
-    "typescript": "^5.0.0",
+    "@types/node": "^22.7.7",
+    "@types/figlet": "^1.7.0",
+    "typescript": "^5.8.3",
+    "tsx": "^4.19.2",
     "eslint": "^9.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "tsx": "^4.19.2",
-    "bun-types": "^1.1.34"
+    "prettier": "^3.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0"
   },
-  "files": [
-    "dist",
-    "bin"
-  ],
-  "engines": {
-    "node": ">=18.0.0",
-    "bun": ">=1.0.0"
+  "peerDependencies": {
+    "@ghostspeak/sdk": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@ghostspeak/sdk": {
+      "optional": true
+    }
   },
   "keywords": [
-    "cli",
-    "podai",
+    "ghostspeak",
     "agent",
-    "blockchain",
-    "interactive",
-    "ai",
-    "agents",
+    "commerce",
+    "protocol",
     "solana",
-    "pod-protocol"
+    "ai",
+    "blockchain",
+    "cli",
+    "typescript",
+    "rust",
+    "sdk",
+    "unified",
+    "multi-language"
   ],
-  "author": "PodAI Team",
-  "license": "MIT"
+  "author": "ghostspeak Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghostspeak/ghostspeak.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://docs.ghostspeak.com/cli",
+  "bugs": "https://github.com/ghostspeak/ghostspeak/issues",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 } 

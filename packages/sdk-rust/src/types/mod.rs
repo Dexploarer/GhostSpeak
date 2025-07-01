@@ -177,34 +177,27 @@ pub trait AccountData: Serialize + for<'de> Deserialize<'de> + Clone + std::fmt:
     /// Get the account discriminator for this type
     fn discriminator() -> [u8; 8];
     
-    /// Serialize account data to bytes
-    fn to_bytes(&self) -> Result<Vec<u8>, crate::errors::PodAIError> {
+    /// Convert account data to bytes using Borsh serialization
+    fn to_bytes(&self) -> Result<Vec<u8>, crate::errors::PodAIError> 
+    where 
+        Self: borsh::BorshSerialize 
+    {
         borsh::to_vec(self).map_err(Into::into)
     }
     
-    /// Deserialize account data from bytes
-    fn from_bytes(data: &[u8]) -> Result<Self, crate::errors::PodAIError> {
+    /// Create account from bytes using Borsh deserialization
+    fn from_bytes(data: &[u8]) -> Result<Self, crate::errors::PodAIError> 
+    where 
+        Self: borsh::BorshDeserialize 
+    {
         if data.len() < 8 {
-            return Err(crate::errors::PodAIError::invalid_account_data(
-                std::any::type_name::<Self>(),
-                "Data too short for discriminator"
+            return Err(crate::errors::PodAIError::invalid_input(
+                "data",
+                "Account data too short for discriminator",
             ));
         }
         
-        let expected_discriminator = Self::discriminator();
-        let actual_discriminator: [u8; 8] = data[0..8].try_into()
-            .map_err(|_| crate::errors::PodAIError::invalid_account_data(
-                std::any::type_name::<Self>(),
-                "Invalid discriminator"
-            ))?;
-        
-        if actual_discriminator != expected_discriminator {
-            return Err(crate::errors::PodAIError::invalid_account_data(
-                std::any::type_name::<Self>(),
-                "Discriminator mismatch"
-            ));
-        }
-        
+        // Skip the 8-byte discriminator and deserialize the rest
         borsh::from_slice(&data[8..]).map_err(Into::into)
     }
 }

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/prettierrc",
-  "//": "=== BASIC FORMATTING ===",
+  "_comment1": "=== BASIC FORMATTING ===",
   "printWidth": 80,
   "tabWidth": 2,
   "useTabs": false,
@@ -13,14 +13,14 @@
   "arrowParens": "avoid",
   "endOfLine": "lf",
   
-  "//": "=== AI DEVELOPMENT OPTIMIZATIONS ===",
+  "_comment2": "=== AI DEVELOPMENT OPTIMIZATIONS ===",
   "proseWrap": "preserve",
   "htmlWhitespaceSensitivity": "css",
   "embeddedLanguageFormatting": "auto",
   "insertPragma": false,
   "requirePragma": false,
   
-  "//": "=== FILE TYPE OVERRIDES ===",
+  "_comment3": "=== FILE TYPE OVERRIDES ===",
   "overrides": [
     {
       "files": "*.md",

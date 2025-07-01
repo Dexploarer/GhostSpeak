@@ -1,0 +1,595 @@
+---
+description: 
+globs: .test.ts
+alwaysApply: false
+---
+# Testing Standards - Comprehensive Validation Framework
+
+## 🎯 **TESTING PHILOSOPHY: PROVE IT WORKS**
+
+**Core Principle**: Every piece of code must demonstrate its correctness through comprehensive testing before it can be considered complete.
+
+**Evidence Requirement**: Claims about functionality must be backed by passing tests, not promises or explanations.
+
+---
+
+## ⚡ **MANDATORY TESTING REQUIREMENTS**
+
+### **Coverage Thresholds (NON-NEGOTIABLE)**
+```javascript
+// Jest Configuration Compliance:
+coverageThreshold: {
+  global: {
+    branches: 85,     // 85% minimum branch coverage
+    functions: 85,    // 85% minimum function coverage  
+    lines: 85,        // 85% minimum line coverage
+    statements: 85,   // 85% minimum statement coverage
+  },
+  // Critical modules require higher coverage
+  "packages/core/": {
+    branches: 95,
+    functions: 95,
+    lines: 95,
+    statements: 95,
+  }
+}
+```
+
+### **Test Categories (ALL REQUIRED)**
+1. **Unit Tests**: Function-level validation
+2. **Integration Tests**: Component interaction validation  
+3. **E2E Tests**: Complete workflow validation
+4. **Performance Tests**: Benchmark validation
+5. **Security Tests**: Vulnerability validation
+6. **Contract Tests**: Blockchain interaction validation
+
+---
+
+## 🧪 **SMART CONTRACT TESTING (CRITICAL)**
+
+### **Anchor Program Test Requirements**
+```rust
+// MANDATORY SMART CONTRACT TEST COVERAGE:
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anchor_lang::prelude::*;
+    
+    /// REQUIRED TEST CATEGORIES:
+    /// 
+    /// 1. Happy Path Tests (100% coverage)
+    /// - All instructions with valid inputs
+    /// - Expected account state changes
+    /// - Correct return values and events
+    
+    /// 2. Error Condition Tests (100% coverage)  
+    /// - Invalid input validation
+    /// - Unauthorized access attempts
+    /// - Insufficient funds scenarios
+    /// - Account constraint violations
+    
+    /// 3. Edge Case Tests (Critical scenarios)
+    /// - Boundary value testing
+    /// - Overflow/underflow conditions
+    /// - Maximum/minimum parameter values
+    /// - State transition edge cases
+    
+    /// 4. Security Tests (Attack vectors)
+    /// - Re-entrancy attack attempts
+    /// - PDA manipulation attempts  
+    /// - Signature forgery attempts
+    /// - Account substitution attacks
+    
+    /// 5. Performance Tests (Resource limits)
+    /// - Compute unit consumption
+    /// - Account size validation
+    /// - Instruction data limits
+    /// - Transaction size constraints
+}
+```
+
+### **Solana Test Framework Integration**
+```rust
+// REQUIRED TESTING INFRASTRUCTURE:
+use solana_bankrun::{BankrunProvider, start_anchor};
+use anchor_client::Client;
+
+// Real blockchain testing - NO MOCKS for RPC calls
+#[tokio::test]
+async fn test_with_real_blockchain() -> Result<()> {
+    // Use bankrun for isolated blockchain testing
+    let provider = BankrunProvider::new();
+    let client = Client::new_with_options(
+        Cluster::Localnet,
+        Rc::new(Keypair::new()),
+        CommitmentConfig::processed(),
+    );
+    
+    // Test against real program deployment
+    let program = client.program(program_id)?;
+    
+    // REQUIRED: Test actual blockchain state changes
+    let signature = program
+        .request()
+        .instruction(instruction_data)
+        .accounts(account_metas)
+        .send()?;
+    
+    // VERIFY: Actual account state changes
+    let account_data = program.account::<AccountType>(account_pubkey)?;
+    assert_eq!(account_data.expected_field, expected_value);
+    
+    Ok(())
+}
+```
+
+---
+
+## 🔧 **SDK TESTING STANDARDS**
+
+### **TypeScript SDK Test Framework**
+```typescript
+// REQUIRED SDK TESTING PATTERNS:
+
+describe('AgentService - Production Validation', () => {
+  let client: PodComSDK;
+  let testKeypair: Keypair;
+  
+  beforeAll(async () => {
+    // REQUIRED: Real Solana RPC connection for integration tests
+    client = createDevnetClient();
+    testKeypair = generateKeypair();
+    
+    // REQUIRED: Fund test account with real SOL
+    await client.requestAirdrop(testKeypair.publicKey, LAMPORTS_PER_SOL);
+  });
+  
+  describe('Agent Registration', () => {
+    it('should register agent with valid parameters', async () => {
+      // REQUIRED: Test with real blockchain interaction
+      const result = await client.agents.register({
+        signer: testKeypair,
+        capabilities: AgentCapabilities.Trading,
+        metadataUri: 'https://example.com/metadata.json'
+      });
+      
+      // REQUIRED: Verify transaction signature
+      expect(result.signature).toBeDefined();
+      expect(result.signature.length).toBe(88); // Base58 signature length
+      
+      // REQUIRED: Verify actual account creation
+      const agent = await client.agents.getAgent(testKeypair.publicKey);
+      expect(agent).toBeDefined();
+      expect(agent.capabilities).toBe(AgentCapabilities.Trading);
+    });
+    
+    it('should fail with invalid parameters', async () => {
+      // REQUIRED: Test all error conditions
+      await expect(client.agents.register({
+        signer: testKeypair,
+        capabilities: 999999, // Invalid capability
+        metadataUri: ''
+      })).rejects.toThrow();
+    });
+    
+    it('should handle network failures gracefully', async () => {
+      // REQUIRED: Test error resilience
+      const mockClient = createMockFailingClient();
+      
+      await expect(mockClient.agents.register({
+        signer: testKeypair,
+        capabilities: AgentCapabilities.Trading,
+        metadataUri: 'https://example.com/metadata.json'
+      })).rejects.toThrow(NetworkError);
+    });
+  });
+  
+  describe('Performance Validation', () => {
+    it('should complete operations within performance targets', async () => {
+      const startTime = performance.now();
+      
+      // REQUIRED: Benchmark critical operations
+      await client.agents.register({
+        signer: testKeypair,
+        capabilities: AgentCapabilities.Trading,
+        metadataUri: 'https://example.com/metadata.json'
+      });
+      
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      // REQUIRED: Verify performance targets
+      expect(duration).toBeLessThan(2000); // < 2s for blockchain operations
+    });
+  });
+});
+```
+
+### **Rust SDK Test Framework**
+```rust
+// REQUIRED RUST SDK TESTING:
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio_test;
+    
+    #[tokio::test]
+    async fn test_agent_registration_integration() -> Result<(), Box<dyn std::error::Error>> {
+        // REQUIRED: Real RPC client for integration tests
+        let client = PodComClient::new_devnet().await?;
+        let keypair = Keypair::new();
+        
+        // REQUIRED: Fund test account
+        client.request_airdrop(&keypair.pubkey(), 1_000_000_000).await?;
+        
+        // REQUIRED: Test actual registration
+        let signature = client
+            .agents()
+            .register(&keypair)
+            .capabilities(AgentCapabilities::Trading)
+            .metadata_uri("https://example.com/metadata.json")
+            .send()
+            .await?;
+        
+        // REQUIRED: Verify transaction confirmation
+        assert!(!signature.is_empty());
+        
+        // REQUIRED: Verify account state
+        let agent = client.agents().get_agent(&keypair.pubkey()).await?;
+        assert_eq!(agent.capabilities, AgentCapabilities::Trading);
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_error_handling_comprehensive() -> Result<(), Box<dyn std::error::Error>> {
+        let client = PodComClient::new_devnet().await?;
+        let keypair = Keypair::new();
+        
+        // REQUIRED: Test insufficient funds error
+        let result = client
+            .agents()
+            .register(&keypair) // Unfunded account
+            .capabilities(AgentCapabilities::Trading)
+            .metadata_uri("https://example.com/metadata.json")
+            .send()
+            .await;
+            
+        // REQUIRED: Verify specific error type
+        assert!(matches!(result, Err(PodComError::InsufficientFunds)));
+        
+        Ok(())
+    }
+}
+```
+
+---
+
+## 🚀 **END-TO-END TESTING**
+
+### **Complete Workflow Validation**
+```typescript
+// REQUIRED E2E TEST SCENARIOS:
+
+describe('E2E: Complete Agent Commerce Workflow', () => {
+  let agentA: Keypair, agentB: Keypair;
+  let client: PodComSDK;
+  
+  beforeAll(async () => {
+    client = createDevnetClient();
+    agentA = generateKeypair();
+    agentB = generateKeypair();
+    
+    // Fund both agents
+    await Promise.all([
+      client.requestAirdrop(agentA.publicKey, LAMPORTS_PER_SOL),
+      client.requestAirdrop(agentB.publicKey, LAMPORTS_PER_SOL)
+    ]);
+  });
+  
+  it('should complete full agent-to-agent commerce flow', async () => {
+    // Step 1: Register both agents
+    await Promise.all([
+      client.agents.register({
+        signer: agentA,
+        capabilities: AgentCapabilities.DataProducer,
+        metadataUri: 'https://example.com/agent-a.json'
+      }),
+      client.agents.register({
+        signer: agentB,
+        capabilities: AgentCapabilities.DataConsumer,
+        metadataUri: 'https://example.com/agent-b.json'
+      })
+    ]);
+    
+    // Step 2: Agent A creates a data product
+    const product = await client.marketplace.createProduct({
+      signer: agentA,
+      title: 'Market Analysis Data',
+      price: 1000000, // 0.001 SOL in lamports
+      metadataUri: 'https://example.com/product.json'
+    });
+    
+    // Step 3: Agent B purchases the product
+    const purchase = await client.marketplace.purchaseProduct({
+      signer: agentB,
+      productId: product.productId,
+      price: 1000000
+    });
+    
+    // Step 4: Verify complete transaction flow
+    expect(purchase.signature).toBeDefined();
+    
+    // Verify Agent A received payment (minus fees)
+    const agentABalance = await client.connection.getBalance(agentA.publicKey);
+    expect(agentABalance).toBeGreaterThan(999000000); // Account for fees
+    
+    // Verify Agent B has access to the product
+    const userProducts = await client.marketplace.getUserProducts(agentB.publicKey);
+    expect(userProducts).toContainEqual(
+      expect.objectContaining({ productId: product.productId })
+    );
+  });
+  
+  it('should handle multi-agent channel communication', async () => {
+    // Test complex multi-party interactions
+    const channelName = `test-channel-${Date.now()}`;
+    
+    // Create channel
+    const channel = await client.channels.create({
+      signer: agentA,
+      name: channelName,
+      feePerMessage: 100000 // 0.0001 SOL
+    });
+    
+    // Agent B joins channel
+    await client.channels.join({
+      signer: agentB,
+      channelId: channel.channelId
+    });
+    
+    // Send messages and verify delivery
+    const messageA = await client.channels.broadcastMessage({
+      signer: agentA,
+      channelId: channel.channelId,
+      content: 'Hello from Agent A'
+    });
+    
+    const messageB = await client.channels.broadcastMessage({
+      signer: agentB,
+      channelId: channel.channelId,
+      content: 'Hello from Agent B'
+    });
+    
+    // Verify message history
+    const messages = await client.channels.getMessages(channel.channelId);
+    expect(messages).toHaveLength(2);
+    expect(messages[0].content).toBe('Hello from Agent A');
+    expect(messages[1].content).toBe('Hello from Agent B');
+  });
+});
+```
+
+---
+
+## ⚡ **PERFORMANCE TESTING**
+
+### **Benchmark Requirements**
+```typescript
+// REQUIRED PERFORMANCE TESTS:
+
+describe('Performance Benchmarks', () => {
+  let client: PodComSDK;
+  
+  beforeAll(async () => {
+    client = createDevnetClient();
+  });
+  
+  it('should meet transaction performance targets', async () => {
+    const keypair = generateKeypair();
+    await client.requestAirdrop(keypair.publicKey, LAMPORTS_PER_SOL);
+    
+    // Benchmark agent registration
+    const startTime = performance.now();
+    
+    await client.agents.register({
+      signer: keypair,
+      capabilities: AgentCapabilities.Trading,
+      metadataUri: 'https://example.com/metadata.json'
+    });
+    
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    
+    // REQUIRED: Meet performance targets
+    expect(duration).toBeLessThan(2000); // < 2s for devnet operations
+  });
+  
+  it('should handle batch operations efficiently', async () => {
+    const agents = Array.from({ length: 10 }, () => generateKeypair());
+    
+    // Fund all agents
+    await Promise.all(
+      agents.map(keypair => 
+        client.requestAirdrop(keypair.publicKey, LAMPORTS_PER_SOL)
+      )
+    );
+    
+    // Benchmark batch registration
+    const startTime = performance.now();
+    
+    await Promise.all(
+      agents.map(keypair =>
+        client.agents.register({
+          signer: keypair,
+          capabilities: AgentCapabilities.Trading,
+          metadataUri: 'https://example.com/metadata.json'
+        })
+      )
+    );
+    
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    
+    // REQUIRED: Efficient batch processing
+    expect(duration).toBeLessThan(10000); // < 10s for 10 registrations
+    expect(duration / 10).toBeLessThan(2000); // Average < 2s per operation
+  });
+});
+```
+
+---
+
+## 🔒 **SECURITY TESTING**
+
+### **Vulnerability Testing**
+```typescript
+// REQUIRED SECURITY TESTS:
+
+describe('Security Validation', () => {
+  let client: PodComSDK;
+  let attacker: Keypair, victim: Keypair;
+  
+  beforeAll(async () => {
+    client = createDevnetClient();
+    attacker = generateKeypair();
+    victim = generateKeypair();
+    
+    await Promise.all([
+      client.requestAirdrop(attacker.publicKey, LAMPORTS_PER_SOL),
+      client.requestAirdrop(victim.publicKey, LAMPORTS_PER_SOL)
+    ]);
+  });
+  
+  it('should prevent unauthorized agent modifications', async () => {
+    // Register victim's agent
+    await client.agents.register({
+      signer: victim,
+      capabilities: AgentCapabilities.Trading,
+      metadataUri: 'https://example.com/victim.json'
+    });
+    
+    // Attempt unauthorized modification by attacker
+    await expect(
+      client.agents.updateMetadata({
+        signer: attacker, // Wrong signer
+        agentPubkey: victim.publicKey,
+        metadataUri: 'https://malicious.com/hacked.json'
+      })
+    ).rejects.toThrow(); // Should fail with access control error
+  });
+  
+  it('should validate input parameters', async () => {
+    // Test SQL injection-style attacks on metadata URI
+    await expect(
+      client.agents.register({
+        signer: attacker,
+        capabilities: AgentCapabilities.Trading,
+        metadataUri: "'; DROP TABLE agents; --"
+      })
+    ).rejects.toThrow(); // Should fail validation
+  });
+  
+  it('should prevent overflow attacks', async () => {
+    // Test with maximum values that could cause overflow
+    await expect(
+      client.marketplace.createProduct({
+        signer: attacker,
+        title: 'Overflow Test',
+        price: Number.MAX_SAFE_INTEGER,
+        metadataUri: 'https://example.com/product.json'
+      })
+    ).rejects.toThrow(); // Should fail validation
+  });
+});
+```
+
+---
+
+## 📊 **TEST EXECUTION & REPORTING**
+
+### **Automated Test Execution**
+```bash
+# REQUIRED TEST EXECUTION SEQUENCE:
+
+# 1. Unit Tests (Fast feedback)
+bun run test:unit                    # < 10s execution
+  
+# 2. Integration Tests (Component validation)  
+bun run test:integration             # < 60s execution
+
+# 3. Security Tests (Vulnerability scanning)
+bun run test:security                # Comprehensive security validation
+
+# 4. Performance Tests (Benchmark validation)
+bun run test:performance             # Performance target validation
+
+# 5. E2E Tests (Complete workflow validation)
+bun run test:e2e                     # < 120s execution
+
+# 6. Smart Contract Tests (Blockchain validation)
+cd packages/core && anchor test     # Real blockchain testing
+
+# 7. Coverage Report (Quality validation)
+bun run test:coverage                # Generate coverage report
+```
+
+### **Test Results Validation**
+```javascript
+// REQUIRED TEST RESULT CRITERIA:
+
+const testResults = {
+  unitTests: {
+    passed: true,           // REQUIRED: 100% pass rate
+    coverage: 87,           // REQUIRED: > 85% coverage
+    duration: 8.2           // REQUIRED: < 10s
+  },
+  integrationTests: {
+    passed: true,           // REQUIRED: 100% pass rate  
+    coverage: 89,           // REQUIRED: > 85% coverage
+    duration: 45.1          // REQUIRED: < 60s
+  },
+  e2eTests: {
+    passed: true,           // REQUIRED: 100% pass rate
+    duration: 98.7          // REQUIRED: < 120s
+  },
+  securityTests: {
+    vulnerabilities: 0,     // REQUIRED: Zero vulnerabilities
+    passed: true            // REQUIRED: All security tests pass
+  },
+  performanceTests: {
+    benchmarksMet: true,    // REQUIRED: All benchmarks met
+    regressions: 0          // REQUIRED: No performance regressions
+  }
+};
+
+// VALIDATION: All criteria must be met
+const allTestsPassed = Object.values(testResults).every(result => 
+  result.passed && 
+  (result.coverage || 100) >= 85 &&
+  (result.vulnerabilities || 0) === 0
+);
+
+if (!allTestsPassed) {
+  throw new Error('Test quality gates not met - code cannot proceed');
+}
+```
+
+---
+
+## 🎯 **TESTING PROMISE**
+
+**When these testing standards are followed completely:**
+
+✅ **100% Confidence**: Every feature works as documented  
+✅ **Zero Regressions**: Changes don't break existing functionality  
+✅ **Security Assurance**: No vulnerabilities make it to production  
+✅ **Performance Guarantee**: All operations meet performance targets  
+✅ **Maintainability**: Tests serve as living documentation  
+
+**Either the code passes comprehensive testing, or it doesn't ship.**
+
+---
+
+*"Tests are not optional documentation - they are proof that your code works."* 

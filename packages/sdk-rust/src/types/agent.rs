@@ -6,6 +6,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use solana_sdk::pubkey::Pubkey;
+use crate::errors::PodAIError;
 
 /// Maximum length of metadata URI
 pub const MAX_METADATA_URI_LENGTH: usize = 200;
@@ -41,12 +42,12 @@ impl AgentAccount {
         capabilities: u64,
         metadata_uri: String,
         bump: u8,
-    ) -> Result<Self, crate::errors::PodAIError> {
+    ) -> Result<Self, PodAIError> {
         if metadata_uri.len() > MAX_METADATA_URI_LENGTH {
-            return Err(crate::errors::PodAIError::invalid_input(
-                "metadata_uri",
-                format!("URI too long: {} > {}", metadata_uri.len(), MAX_METADATA_URI_LENGTH),
-            ));
+            return Err(PodAIError::InvalidInput { 
+                field: "metadata_uri".to_string(),
+                message: format!("URI too long: {} > {}", metadata_uri.len(), MAX_METADATA_URI_LENGTH),
+            });
         }
 
         Ok(Self {
@@ -106,34 +107,34 @@ impl AgentAccount {
     }
 
     /// Validate metadata URI format
-    pub fn validate_metadata_uri(&self) -> Result<(), crate::errors::PodAIError> {
+    pub fn validate_metadata_uri(&self) -> Result<(), PodAIError> {
         if self.metadata_uri.is_empty() {
-            return Err(crate::errors::PodAIError::invalid_input(
-                "metadata_uri",
-                "URI cannot be empty",
-            ));
+            return Err(PodAIError::InvalidInput { 
+                field: "metadata_uri".to_string(),
+                message: "URI cannot be empty".to_string(),
+            });
         }
 
         if self.metadata_uri.len() > MAX_METADATA_URI_LENGTH {
-            return Err(crate::errors::PodAIError::invalid_input(
-                "metadata_uri",
-                format!("URI too long: {} > {}", self.metadata_uri.len(), MAX_METADATA_URI_LENGTH),
-            ));
+            return Err(PodAIError::InvalidInput { 
+                field: "metadata_uri".to_string(),
+                message: format!("URI too long: {} > {}", self.metadata_uri.len(), MAX_METADATA_URI_LENGTH),
+            });
         }
 
         // Basic URL validation
         if !self.metadata_uri.starts_with("http://") && !self.metadata_uri.starts_with("https://") {
-            return Err(crate::errors::PodAIError::invalid_input(
-                "metadata_uri",
-                "URI must start with http:// or https://",
-            ));
+            return Err(PodAIError::InvalidInput { 
+                field: "metadata_uri".to_string(),
+                message: "URI must start with http:// or https://".to_string(),
+            });
         }
 
         Ok(())
     }
 
     /// Update reputation safely (prevents overflow)
-    pub fn update_reputation(&mut self, delta: i64) -> Result<(), crate::errors::PodAIError> {
+    pub fn update_reputation(&mut self, delta: i64) -> Result<(), PodAIError> {
         if delta < 0 {
             let decrease = (-delta) as u64;
             if decrease > self.reputation {

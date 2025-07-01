@@ -2,8 +2,8 @@
 
 use crate::client::PodAIClient;
 use crate::errors::{PodAIError, PodAIResult};
-use crate::types::{agent::*, AgentCapabilities, ConversationState};
-use crate::utils::{find_agent_pda, TransactionFactory, TransactionConfig, PriorityFeeStrategy, RetryPolicy};
+use crate::types::{agent::*, AgentCapabilities};
+use crate::utils::{find_agent_pda, TransactionFactory, TransactionConfig, PriorityFeeStrategy, RetryPolicy, TransactionResult, TransactionOptions};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use solana_sdk::{
@@ -13,6 +13,7 @@ use solana_sdk::{
     system_instruction,
 };
 use std::sync::Arc;
+use tracing::{debug, info, instrument};
 
 /// Service for managing AI agents
 #[derive(Debug, Clone)]
@@ -26,48 +27,16 @@ impl AgentService {
         Self { client }
     }
 
-    /// Register an agent with modern transaction patterns
-    pub async fn register_with_factory(
-        &self,
-        factory: &TransactionFactory,
-        signer: &dyn Signer,
-        capabilities: u64,
-        metadata_uri: &str,
-    ) -> PodAIResult<RegisterAgentResult> {
-        // Find agent PDA
-        let agent_pda = find_agent_pda(&signer.pubkey(), &self.client.program_id());
+    /// Register a new agent using the modern builder pattern
+    #[instrument(skip(self), fields(capabilities))]
+    pub fn register_builder(&self) -> AgentRegistrationBuilder {
+        info!("Creating agent registration builder");
+        AgentRegistrationBuilder::new(self)
+    }
 
-        // Check if agent already exists
-        if self.client.account_exists(&agent_pda).await? {
-            return Err(PodAIError::agent(format!(
-                "Agent already exists at PDA: {}",
-                agent_pda
-            )));
-        }
-
-        // Create register instruction
-        let instruction = self.create_register_instruction(
-            &signer.pubkey(),
-            &agent_pda,
-            capabilities,
-            metadata_uri,
-        )?;
-
-        // Build and send transaction using factory
-        let transaction = factory
-            .build_transaction(vec![instruction], &signer.pubkey(), &[signer])
-            .await?;
-
-        let result = factory.send_transaction(&transaction).await?;
-
-        Ok(RegisterAgentResult {
-            signature: result.signature,
-            agent_pda,
-            agent_pubkey: signer.pubkey(),
-            capabilities,
-            metadata_uri: metadata_uri.to_string(),
-            timestamp: Utc::now(),
-        })
+    /// Create a builder for agent registration with custom configuration  
+    pub fn create_registration_builder(&self) -> AgentRegistrationBuilder {
+        AgentRegistrationBuilder::new(self)
     }
 
     /// Register an agent with fast configuration
@@ -92,9 +61,45 @@ impl AgentService {
         self.register_with_factory(&factory, signer, capabilities, metadata_uri).await
     }
 
-    /// Create a builder for agent registration with custom configuration
-    pub fn register_builder(&self) -> AgentRegistrationBuilder {
-        AgentRegistrationBuilder::new(self)
+    /// Register an agent with factory pattern
+    pub async fn register_with_factory(
+        &self,
+        factory: &TransactionFactory,
+        signer: &dyn Signer,
+        capabilities: u64,
+        metadata_uri: &str,
+    ) -> PodAIResult<RegisterAgentResult> {
+        let (agent_pda, bump) = find_agent_pda(&signer.pubkey());
+
+        // Check if agent already exists
+        if self.client.account_exists(&agent_pda).await? {
+            return Err(PodAIError::agent("Agent already registered"));
+        }
+
+        // Create registration instruction
+        let instruction = self.create_register_instruction(
+            &signer.pubkey(),
+            &agent_pda,
+            capabilities,
+            metadata_uri,
+            bump,
+        )?;
+
+        // Build and send transaction using factory
+        let transaction = factory
+            .build_transaction(vec![instruction], &signer.pubkey(), &[signer])
+            .await?;
+
+        let result = factory.send_transaction(&transaction).await?;
+
+        Ok(RegisterAgentResult {
+            signature: result.signature,
+            agent_pda,
+            agent_pubkey: signer.pubkey(),
+            capabilities,
+            metadata_uri: metadata_uri.to_string(),
+            timestamp: Utc::now(),
+        })
     }
 
     /// Get agent account data
@@ -269,10 +274,11 @@ impl AgentService {
     /// Create register instruction for the agent
     fn create_register_instruction(
         &self,
-        agent_pubkey: &Pubkey,
+        authority: &Pubkey,
         agent_pda: &Pubkey,
         capabilities: u64,
         metadata_uri: &str,
+        bump: u8,
     ) -> PodAIResult<Instruction> {
         // Validate metadata URI
         if metadata_uri.len() > 200 {
@@ -282,16 +288,30 @@ impl AgentService {
             ));
         }
 
-        // This would be replaced with actual Anchor instruction generation
-        // For now, create a placeholder instruction
+        // Build instruction discriminator for register_agent
+        let discriminator = [135, 157, 66, 195, 2, 113, 175, 30]; // register_agent discriminator
+
+        // Serialize instruction data following Anchor patterns
+        let mut instruction_data = Vec::with_capacity(
+            8 + 8 + 4 + metadata_uri.len() + 1
+        );
+        instruction_data.extend_from_slice(&discriminator);
+        instruction_data.extend_from_slice(&capabilities.to_le_bytes());
+        instruction_data.extend_from_slice(&(metadata_uri.len() as u32).to_le_bytes());
+        instruction_data.extend_from_slice(metadata_uri.as_bytes());
+        instruction_data.push(bump);
+
+        // Build account metas following Anchor patterns
+        let account_metas = vec![
+            AccountMeta::new(*agent_pda, false),             // agent_account (writable, PDA)
+            AccountMeta::new(*authority, true),              // authority (writable, signer)
+            AccountMeta::new_readonly(solana_sdk::system_program::ID, false), // system_program
+        ];
+
         Ok(Instruction {
             program_id: self.client.program_id(),
-            accounts: vec![
-                AccountMeta::new(*agent_pubkey, true),
-                AccountMeta::new(*agent_pda, false),
-                AccountMeta::new_readonly(solana_sdk::system_program::id(), false),
-            ],
-            data: vec![], // Would contain serialized instruction data
+            accounts: account_metas,
+            data: instruction_data,
         })
     }
 
@@ -303,6 +323,11 @@ impl AgentService {
         metadata_uri: &str,
     ) -> PodAIResult<RegisterAgentResult> {
         self.register_fast(agent_keypair, capabilities, metadata_uri).await
+    }
+
+    /// Create register builder for agent registration
+    pub fn register_builder(&self) -> AgentRegistrationBuilder {
+        AgentRegistrationBuilder::new(self)
     }
 }
 

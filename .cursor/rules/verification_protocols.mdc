@@ -1,0 +1,411 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Verification Protocols - Evidence-Based Development Standards
+
+## 🔬 **COMPREHENSIVE VERIFICATION FRAMEWORK**
+
+### **VERIFICATION HIERARCHY**
+1. **Self-Evaluation**: AI must validate its own work
+2. **Knowledge Validation**: Research current best practices  
+3. **Technical Review**: Simulate expert technical leader review
+4. **Evidence Collection**: Gather proof of correctness
+5. **Production Testing**: Real-world validation
+
+---
+
+## ⚡ **MANDATORY PRE-CODE VERIFICATION**
+
+### **Phase 1: Context & Research Validation**
+```bash
+# REQUIRED BEFORE ANY IMPLEMENTATION:
+Step 1: Context7 Integration
+  ✓ Query: "use context7 [library/framework] best practices 2025"
+  ✓ Verify: API changes, deprecated patterns, security updates
+  ✓ Document: Key findings in memory files
+
+Step 2: Multi-Source Web Research  
+  ✓ Search: "current best practices [technology] 2025"
+  ✓ Cross-reference: 3+ authoritative sources
+  ✓ Validate: Information consistency and currency
+  ✓ Document: Research findings and source links
+
+Step 3: Memory System Check
+  ✓ Review: .cursor/memory/decisionLog.md for past decisions
+  ✓ Check: Previous failures/successes with similar patterns
+  ✓ Validate: Consistency with established architecture
+  ✓ Update: Memory files with new context
+```
+
+### **Phase 2: Technical Validation**
+```typescript
+// REQUIRED VALIDATION CHECKLIST:
+interface ValidationChecklist {
+  codeCompliance: {
+    ✓ lintingPassed: boolean;           // ESLint/Clippy zero warnings
+    ✓ typeCheckPassed: boolean;         // TypeScript strict mode
+    ✓ securityScanPassed: boolean;      // No vulnerabilities
+    ✓ performanceMet: boolean;          // Benchmarks satisfied
+  };
+  
+  testingCompliance: {
+    ✓ unitTestsExist: boolean;          // All functions tested
+    ✓ integrationTestsExist: boolean;   // Real API calls tested
+    ✓ coverageThresholdMet: boolean;    // 85%+ coverage
+    ✓ edgeCasesTested: boolean;         // Error conditions covered
+  };
+  
+  documentationCompliance: {
+    ✓ apiDocumentation: boolean;        // JSDoc/rustdoc complete
+    ✓ usageExamples: boolean;           // Working code examples
+    ✓ securityNotes: boolean;           // Security considerations
+    ✓ performanceNotes: boolean;        // Performance characteristics
+  };
+}
+```
+
+---
+
+## 🧠 **SELF-EVALUATION PROTOCOLS**
+
+### **Code Quality Self-Assessment**
+```rust
+/// MANDATORY SELF-EVALUATION QUESTIONS:
+/// 
+/// 1. Compilation & Syntax
+/// - Does the code compile without errors?
+/// - Are all imports/dependencies available?
+/// - Are type annotations complete and correct?
+/// 
+/// 2. Logic & Functionality  
+/// - Does the implementation match the requirements?
+/// - Are all edge cases handled?
+/// - Is error handling comprehensive?
+/// 
+/// 3. Security & Safety
+/// - Are all inputs validated?
+/// - Are there potential injection vectors?
+/// - Is sensitive data properly protected?
+/// 
+/// 4. Performance & Efficiency
+/// - Are there obvious performance bottlenecks?
+/// - Is memory usage optimized?
+/// - Are there unnecessary computations?
+/// 
+/// 5. Maintainability & Standards
+/// - Does the code follow project conventions?
+/// - Is the code self-documenting?
+/// - Would this be easy to maintain?
+```
+
+### **Technical Leader Simulation**
+```typescript
+/**
+ * MANDATORY TECHNICAL REVIEW SIMULATION
+ * 
+ * Simulate an experienced technical leader asking:
+ */
+interface TechnicalLeaderQuestions {
+  // Proof Demands
+  "Show me this actually works": {
+    evidence: "Working demo, test results, benchmarks";
+    requirement: "Concrete proof, not promises";
+  };
+  
+  // Scalability Challenges  
+  "What breaks at scale?": {
+    analysis: "Performance under load, resource usage";
+    requirement: "Identify bottlenecks and limits";
+  };
+  
+  // Security Scrutiny
+  "How do you know this is secure?": {
+    evidence: "Security audit, vulnerability testing";
+    requirement: "Documented security analysis";
+  };
+  
+  // Maintenance Reality
+  "Can another developer maintain this?": {
+    evidence: "Clear documentation, logical structure";
+    requirement: "Maintainability demonstrated";
+  };
+}
+```
+
+---
+
+## 🔍 **EVIDENCE COLLECTION REQUIREMENTS**
+
+### **Proof of Correctness**
+```bash
+# MANDATORY EVIDENCE FOR EVERY IMPLEMENTATION:
+
+1. Compilation Evidence
+   ✓ Build logs showing successful compilation
+   ✓ Zero warnings from linters (ESLint/Clippy)
+   ✓ Type checking passed (TypeScript strict mode)
+
+2. Testing Evidence
+   ✓ Test suite execution logs (100% pass rate)
+   ✓ Coverage reports (85%+ coverage achieved)
+   ✓ Performance benchmarks (targets met)
+
+3. Security Evidence  
+   ✓ Security scan results (zero vulnerabilities)
+   ✓ Input validation testing (all vectors covered)
+   ✓ Dependency audit (all dependencies secure)
+
+4. Integration Evidence
+   ✓ Real blockchain testing (devnet/testnet)
+   ✓ End-to-end workflow validation
+   ✓ Cross-system compatibility verified
+```
+
+### **Performance Validation**
+```typescript
+// REQUIRED PERFORMANCE EVIDENCE:
+interface PerformanceEvidence {
+  // Smart Contract Performance
+  smartContract: {
+    computeUnits: number;           // < 200,000 CU
+    accountAllocations: number;     // Minimal allocations
+    instructionSize: number;        // Efficient instruction data
+  };
+  
+  // SDK Performance  
+  sdk: {
+    bundleSize: number;             // < 50KB for SDK, < 100KB for CLI
+    initializationTime: number;     // < 100ms for local operations
+    rpcResponseTime: number;        // < 2s for blockchain calls
+  };
+  
+  // Test Performance
+  testing: {
+    unitTestTime: number;           // < 10s total
+    integrationTestTime: number;    // < 60s total
+    e2eTestTime: number;           // < 120s total
+  };
+}
+```
+
+---
+
+## 🚨 **FAILURE MODE ANALYSIS**
+
+### **Root Cause Investigation Protocol**
+```mermaid
+graph TD
+    A[Code Failure Detected] --> B[Stop Development]
+    B --> C[Gather Evidence]
+    C --> D[5-Why Analysis]
+    D --> E[Research Similar Issues]
+    E --> F[Context7 Query]
+    F --> G[Web Search Validation]
+    G --> H[Memory Check for Patterns]
+    H --> I[Document Root Cause]
+    I --> J[Implement Systematic Fix]
+    J --> K[Validate Fix Works]
+    K --> L[Update Prevention Measures]
+```
+
+### **5-Why Analysis Template**
+```markdown
+# Root Cause Analysis - [Issue Description]
+
+## Problem Statement
+**What failed?** [Clear description of the issue]
+**When detected?** [Discovery time and context]
+**Impact level?** [Critical/High/Medium/Low]
+
+## 5-Why Analysis
+1. **Why did the issue occur?**
+   Answer: [Direct cause]
+
+2. **Why did that happen?**
+   Answer: [Underlying cause]
+
+3. **Why did that happen?**  
+   Answer: [System/process issue]
+
+4. **Why did that happen?**
+   Answer: [Root organizational/methodological cause]
+
+5. **Why did that happen?**
+   Answer: [Fundamental root cause]
+
+## Root Cause
+**Primary:** [The fundamental cause]
+**Contributing factors:** [Other relevant factors]
+
+## Solution Strategy
+**Immediate fix:** [Quick resolution]
+**Systematic fix:** [Long-term prevention]
+**Prevention measures:** [Process improvements]
+
+## Evidence Validation
+- [ ] Fix verified through testing
+- [ ] Root cause eliminated  
+- [ ] Prevention measures implemented
+- [ ] Team trained on new process
+```
+
+---
+
+## 🔄 **ITERATIVE VERIFICATION LOOP**
+
+### **Verification Iteration Process**
+```typescript
+async function verificationLoop(): Promise<VerificationResult> {
+  let attempt = 1;
+  const maxAttempts = 3;
+  
+  while (attempt <= maxAttempts) {
+    // Phase 1: Generate Code
+    const code = await generateImplementation();
+    
+    // Phase 2: Self-Evaluation
+    const selfEval = await selfEvaluate(code);
+    if (!selfEval.passed) {
+      console.log(`Attempt ${attempt}: Self-evaluation failed`);
+      attempt++;
+      continue;
+    }
+    
+    // Phase 3: Knowledge Validation
+    const knowledgeValidation = await validateWithContext7();
+    if (!knowledgeValidation.current) {
+      console.log(`Attempt ${attempt}: Knowledge validation failed`);
+      attempt++;
+      continue;
+    }
+    
+    // Phase 4: Technical Review
+    const technicalReview = await simulateTechnicalReview();
+    if (!technicalReview.approved) {
+      console.log(`Attempt ${attempt}: Technical review failed`);
+      attempt++;
+      continue;
+    }
+    
+    // Phase 5: Evidence Collection
+    const evidence = await collectEvidence();
+    if (!evidence.sufficient) {
+      console.log(`Attempt ${attempt}: Evidence insufficient`);
+      attempt++;
+      continue;
+    }
+    
+    return { success: true, attempt, evidence };
+  }
+  
+  // If we reach here, enter research mode
+  await enterResearchMode();
+  throw new Error("Verification failed after 3 attempts - research mode required");
+}
+```
+
+### **Research Mode Activation**
+```bash
+# TRIGGERED WHEN VERIFICATION FAILS 3+ TIMES:
+
+Research Mode Protocol:
+1. STOP all implementation work
+2. ANALYZE failure patterns across attempts
+3. RESEARCH root causes with Context7 + web search
+4. DOCUMENT findings in memory system
+5. UPDATE approach based on research
+6. RESTART verification loop with new strategy
+
+Research Areas:
+✓ Technology-specific best practices
+✓ Similar problem solutions in community
+✓ Alternative implementation approaches  
+✓ Performance optimization techniques
+✓ Security vulnerability patterns
+✓ Testing strategy improvements
+```
+
+---
+
+## 📊 **VERIFICATION METRICS & TRACKING**
+
+### **Quality Metrics Dashboard**
+```typescript
+interface VerificationMetrics {
+  // Code Quality
+  codeQuality: {
+    lintingErrors: number;          // Target: 0
+    typeErrors: number;             // Target: 0  
+    securityIssues: number;         // Target: 0
+    performanceIssues: number;      // Target: 0
+  };
+  
+  // Testing Quality
+  testingQuality: {
+    codeCoverage: number;           // Target: 85%+
+    testPassRate: number;           // Target: 100%
+    performanceTestsPass: number;   // Target: 100%
+    securityTestsPass: number;      // Target: 100%
+  };
+  
+  // Documentation Quality
+  documentationQuality: {
+    apiDocumentationComplete: boolean;    // Target: true
+    examplesWorking: boolean;            // Target: true
+    securityDocumented: boolean;         // Target: true
+    performanceDocumented: boolean;      // Target: true
+  };
+  
+  // Verification Efficiency
+  verificationEfficiency: {
+    firstAttemptSuccess: number;    // Track improvement
+    averageAttempts: number;        // Target: < 2
+    researchModeEntries: number;    // Target: minimize
+    rootCauseResolution: number;    // Target: maximize
+  };
+}
+```
+
+### **Success Indicators**
+```markdown
+# VERIFICATION SUCCESS CRITERIA:
+
+## Immediate Success (Per Implementation)
+- [x] Code compiles without errors
+- [x] All tests pass (100% pass rate)
+- [x] Security scan clean (zero issues)
+- [x] Performance benchmarks met
+- [x] Documentation complete
+
+## Quality Trend Success (Over Time)  
+- [x] First-attempt success rate increasing
+- [x] Research mode entries decreasing
+- [x] Root cause resolution improving
+- [x] Team knowledge growing
+
+## Production Success (Deployment)
+- [x] Zero production bugs from verified code
+- [x] Performance meets SLAs under load
+- [x] Security audits pass consistently  
+- [x] Maintainability confirmed by team
+```
+
+---
+
+## 🎯 **VERIFICATION PROMISE**
+
+**When this verification framework is followed completely:**
+
+✅ **Predictable Quality**: Every implementation meets standards  
+✅ **Evidence-Based**: All claims backed by concrete proof  
+✅ **Continuous Learning**: Failures become systematic improvements  
+✅ **Production Ready**: Code ships with confidence  
+✅ **Team Knowledge**: Collective expertise grows with each implementation  
+
+**Either the code passes comprehensive verification, or it doesn't proceed to production.**
+
+---
+
+*"Verification is not a checkbox - it's a commitment to excellence backed by evidence."* 

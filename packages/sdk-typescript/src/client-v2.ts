@@ -34,6 +34,7 @@ import { AnalyticsService } from './services/analytics';
 import { CompressionService } from './services/compression';
 import { ConfidentialTransferService } from './services/confidential-transfer';
 import { WorkDeliveryService } from './services/work-delivery';
+import { SplToken2022Service } from './services/spl-token-2022';
 
 // Types from our existing system (only what we need)
 import type { ICreateAgentOptions } from './types';
@@ -73,6 +74,7 @@ export class PodAIClientV2 {
   public readonly compression: CompressionService;
   public readonly confidentialTransfers: ConfidentialTransferService;
   public readonly workDelivery: WorkDeliveryService;
+  public readonly splToken2022: SplToken2022Service;
 
   constructor(config: IPodAIClientV2Config) {
     this.rpc = createSolanaRpc(config.rpcEndpoint);
@@ -126,6 +128,11 @@ export class PodAIClientV2 {
       this.programId,
       this.commitment,
       config.rpcEndpoint
+    );
+
+    this.splToken2022 = new SplToken2022Service(
+      this.rpc,
+      this.commitment
     );
   }
 

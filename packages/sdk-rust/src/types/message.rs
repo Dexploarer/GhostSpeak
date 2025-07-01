@@ -83,6 +83,34 @@ impl MessageType {
             Self::Custom(_) => "Custom",
         }
     }
+
+    /// Convert to u8 representation
+    pub fn to_u8(&self) -> u8 {
+        match self {
+            MessageType::Text => 0,
+            MessageType::Image => 1,
+            MessageType::File => 2,
+            MessageType::Audio => 3,
+            MessageType::Data => 4,
+            MessageType::Command => 5,
+            MessageType::Response => 6,
+            MessageType::Custom(val) => *val,
+        }
+    }
+
+    /// Create from u8 representation
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => MessageType::Text,
+            1 => MessageType::Image,
+            2 => MessageType::File,
+            3 => MessageType::Audio,
+            4 => MessageType::Data,
+            5 => MessageType::Command,
+            6 => MessageType::Response,
+            val => MessageType::Custom(val),
+        }
+    }
 }
 
 /// Message status enumeration

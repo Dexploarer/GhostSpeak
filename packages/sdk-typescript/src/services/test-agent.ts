@@ -1,43 +1,59 @@
 /**
- * Test script for agent service
+ * Test Agent Service - Utility for testing agent functionality
  */
 
-import { generateKeyPairSigner } from '@solana/signers';
+import type { ICreateAgentOptions } from '../types';
+import type { KeyPairSigner } from '@solana/signers';
 
-import { createDevnetClient } from '../client-v2';
+import { AgentService } from './agent';
 
-async function testAgentService() {
-  console.log('🧪 Testing Agent Service...');
+/**
+ * Service for testing agent operations
+ */
+export class TestAgentService {
+  constructor(private readonly agentService: AgentService) {}
 
-  try {
-    // Create client
-    const client = createDevnetClient();
-    console.log('✅ Client created');
+  /**
+   * Create a test agent with default configuration
+   */
+  async createTestAgent(
+    signer: KeyPairSigner,
+    overrides: Partial<ICreateAgentOptions> = {}
+  ): Promise<string> {
+    const defaultOptions: ICreateAgentOptions = {
+      capabilities: 1, // Basic capability
+      metadataUri: 'https://example.com/test-agent-metadata.json',
+      ...overrides,
+    };
 
-    // Test health check
-    const health = await client.healthCheck();
-    console.log('✅ Health check:', health);
+    return await this.agentService.registerAgent(signer, defaultOptions);
+  }
 
-    // Generate test keypair
-    const keypair = await generateKeyPairSigner();
-    console.log('✅ Test keypair generated:', keypair.address);
+  /**
+   * Run a comprehensive test of agent operations
+   */
+  async runAgentTest(signer: KeyPairSigner): Promise<void> {
+    try {
+      console.log('Starting agent test...');
 
-    // Test agent registration (mock for now)
-    const signature = await client.agents.registerAgent(keypair, {
-      capabilities: 1,
-      metadataUri: 'https://example.com/metadata.json',
-    });
-    console.log('✅ Agent registration signature:', signature);
+      // Test agent registration
+      const signature = await this.createTestAgent(signer);
+      console.log(`✅ Agent registered with signature: ${signature}`);
 
-    // Test getting agent PDA
-    const agentPDA = await client.agents.getAgentPDA(keypair.address);
-    console.log('✅ Agent PDA:', agentPDA);
+      // Test agent retrieval
+      const agentPDA = await this.agentService.getAgentPDA(signer.address);
+      const agent = await this.agentService.getAgent(agentPDA);
 
-    console.log('🎉 All tests passed!');
-  } catch (error) {
-    console.error('❌ Test failed:', error);
+      if (agent) {
+        console.log('✅ Agent retrieved successfully:', agent.metadataUri);
+      } else {
+        console.log('❌ Failed to retrieve agent');
+      }
+
+      console.log('✅ Agent test completed successfully');
+    } catch (error) {
+      console.error('❌ Agent test failed:', error);
+      throw error;
+    }
   }
 }
-
-// Run the test
-testAgentService();

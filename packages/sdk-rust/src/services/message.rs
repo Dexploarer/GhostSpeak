@@ -5,12 +5,14 @@ use crate::errors::{PodAIError, PodAIResult};
 use crate::types::message::{MessageAccount, MessageStatus, MessageType};
 use crate::utils::pda::{find_agent_pda, find_message_pda};
 use crate::utils::transaction::{TransactionOptions, TransactionResult};
+use crate::utils::{TransactionFactory, TransactionConfig, PriorityFeeStrategy, RetryPolicy};
 use blake3;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use solana_sdk::{
+    instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
-    signature::{Keypair, Signer},
+    signature::{Keypair, Signature, Signer},
     system_instruction,
     transaction::Transaction,
 };
@@ -28,16 +30,17 @@ impl MessageService {
         Self { client }
     }
 
-    /// Send a message to another agent
-    pub async fn send_message(
+    /// Send a message with modern transaction patterns
+    pub async fn send_message_with_factory(
         &self,
-        sender_keypair: &Keypair,
+        factory: &TransactionFactory,
+        sender: &dyn Signer,
         recipient: &Pubkey,
         content: &str,
         message_type: MessageType,
     ) -> PodAIResult<MessageSendResult> {
         // Verify both agents exist
-        let (sender_agent_pda, _) = find_agent_pda(&sender_keypair.pubkey());
+        let (sender_agent_pda, _) = find_agent_pda(&sender.pubkey());
         let (recipient_agent_pda, _) = find_agent_pda(recipient);
 
         if !self.client.account_exists(&sender_agent_pda).await? {
@@ -57,7 +60,7 @@ impl MessageService {
 
         // Find message PDA
         let (message_pda, bump) = find_message_pda(
-            &sender_keypair.pubkey(),
+            &sender.pubkey(),
             recipient,
             &payload_hash,
             message_type,
@@ -68,63 +71,61 @@ impl MessageService {
             return Err(PodAIError::message("Message already exists"));
         }
 
-        // Create message account
-        let message_account = MessageAccount::new(
-            sender_keypair.pubkey(),
-            *recipient,
+        // Create send message instruction
+        let instruction = self.create_send_message_instruction(
+            &sender.pubkey(),
+            recipient,
+            &message_pda,
             payload_hash,
             message_type,
             bump,
-        );
+        )?;
 
-        // Calculate rent-exempt balance
-        let account_size = 231; // Message account size
-        let rent_exempt_balance = self
-            .client
-            .get_minimum_balance_for_rent_exemption(account_size)
+        // Build and send transaction using factory
+        let transaction = factory
+            .build_transaction(vec![instruction], &sender.pubkey(), &[sender])
             .await?;
 
-        // Get recent blockhash
-        let recent_blockhash = self.client.get_recent_blockhash().await?;
+        let result = factory.send_transaction(&transaction).await?;
 
-        // Build transaction (simplified - would use anchor instructions)
-        let create_message_ix = system_instruction::create_account(
-            &sender_keypair.pubkey(),
-            &message_pda,
-            rent_exempt_balance,
-            account_size as u64,
-            &self.client.program_id(),
-        );
+        Ok(MessageSendResult {
+            signature: result.signature,
+            message_pda,
+            sender: sender.pubkey(),
+            recipient: *recipient,
+            content_hash: payload_hash,
+            message_type,
+            timestamp: Utc::now(),
+        })
+    }
 
-        let mut transaction = Transaction::new_with_payer(
-            &[create_message_ix],
-            Some(&sender_keypair.pubkey()),
-        );
-        transaction.recent_blockhash = recent_blockhash;
-        transaction.sign(&[sender_keypair], recent_blockhash);
+    /// Send a message with fast configuration
+    pub async fn send_message_fast(
+        &self,
+        sender: &dyn Signer,
+        recipient: &Pubkey,
+        content: &str,
+        message_type: MessageType,
+    ) -> PodAIResult<MessageSendResult> {
+        let factory = TransactionFactory::with_config(&self.client, TransactionConfig::fast());
+        self.send_message_with_factory(&factory, sender, recipient, content, message_type).await
+    }
 
-        // Send transaction
-        let options = TransactionOptions::default();
-        let tx_result = crate::utils::transaction::send_transaction(
-            &self.client.rpc_client,
-            &transaction,
-            &options,
-        ).await?;
+    /// Send a message with reliable configuration
+    pub async fn send_message_reliable(
+        &self,
+        sender: &dyn Signer,
+        recipient: &Pubkey,
+        content: &str,
+        message_type: MessageType,
+    ) -> PodAIResult<MessageSendResult> {
+        let factory = TransactionFactory::with_config(&self.client, TransactionConfig::reliable());
+        self.send_message_with_factory(&factory, sender, recipient, content, message_type).await
+    }
 
-        if tx_result.is_success() {
-            Ok(MessageSendResult {
-                message_pda,
-                message_account,
-                content: content.to_string(),
-                transaction_signature: tx_result.signature,
-                slot: tx_result.slot,
-            })
-        } else {
-            Err(PodAIError::message(format!(
-                "Send failed: {}",
-                tx_result.error.unwrap_or("Unknown error".to_string())
-            )))
-        }
+    /// Create a builder for sending messages with custom configuration
+    pub fn send_message_builder(&self) -> MessageSendBuilder {
+        MessageSendBuilder::new(self)
     }
 
     /// Read a message
@@ -298,6 +299,10 @@ impl MessageService {
             MessageType::Image => 1048576, // 1MB for images
             MessageType::File => 5242880,  // 5MB for files
             MessageType::Audio => 10485760, // 10MB for audio
+            MessageType::Data => 1048576,  // 1MB for data
+            MessageType::Command => 10240, // 10KB for commands
+            MessageType::Response => 10240, // 10KB for responses
+            MessageType::Custom(_) => 10240, // 10KB default for custom
         };
 
         if content.len() > max_length {
@@ -322,21 +327,72 @@ impl MessageService {
         // Additional capability checks would go here
         Ok(agent1_exists && agent2_exists)
     }
+
+    /// Create send message instruction
+    fn create_send_message_instruction(
+        &self,
+        sender: &Pubkey,
+        recipient: &Pubkey,
+        message_pda: &Pubkey,
+        payload_hash: [u8; 32],
+        message_type: MessageType,
+        bump: u8,
+    ) -> PodAIResult<Instruction> {
+        // Build instruction discriminator for send_message
+        let discriminator = [15, 40, 235, 178, 191, 96, 190, 12]; // send_message discriminator
+
+        // Serialize instruction data following Anchor patterns
+        let mut instruction_data = Vec::with_capacity(8 + 32 + 32 + 1 + 1);
+        instruction_data.extend_from_slice(&discriminator);
+        instruction_data.extend_from_slice(recipient.as_ref());
+        instruction_data.extend_from_slice(&payload_hash);
+        instruction_data.push(message_type.to_u8());
+        instruction_data.push(bump);
+
+        // Build account metas following Anchor patterns
+        let account_metas = vec![
+            AccountMeta::new(*message_pda, false),           // message_account (writable, PDA)
+            AccountMeta::new(*sender, true),                 // sender (writable, signer)
+            AccountMeta::new_readonly(*recipient, false),    // recipient (readonly)
+            AccountMeta::new_readonly(solana_sdk::system_program::ID, false), // system_program
+        ];
+
+        Ok(Instruction {
+            program_id: self.client.program_id(),
+            accounts: account_metas,
+            data: instruction_data,
+        })
+    }
+
+    /// Send a message to another agent (legacy method)
+    pub async fn send_message(
+        &self,
+        sender_keypair: &Keypair,
+        recipient: &Pubkey,
+        content: &str,
+        message_type: MessageType,
+    ) -> PodAIResult<MessageSendResult> {
+        self.send_message_fast(sender_keypair, recipient, content, message_type).await
+    }
 }
 
-/// Result of sending a message
-#[derive(Debug, Clone)]
+/// Result of sending a message with enhanced information
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageSendResult {
+    /// Transaction signature
+    pub signature: Signature,
     /// The message PDA address
     pub message_pda: Pubkey,
-    /// The message account data
-    pub message_account: MessageAccount,
-    /// The message content
-    pub content: String,
-    /// Transaction signature
-    pub transaction_signature: solana_sdk::signature::Signature,
-    /// Transaction slot
-    pub slot: u64,
+    /// Sender public key
+    pub sender: Pubkey,
+    /// Recipient public key
+    pub recipient: Pubkey,
+    /// Content hash
+    pub content_hash: [u8; 32],
+    /// Message type
+    pub message_type: MessageType,
+    /// Timestamp
+    pub timestamp: DateTime<Utc>,
 }
 
 impl MessageSendResult {
@@ -345,29 +401,101 @@ impl MessageSendResult {
         self.message_pda
     }
 
-    /// Get the sender
-    pub fn sender(&self) -> Pubkey {
-        self.message_account.sender
-    }
-
-    /// Get the recipient
-    pub fn recipient(&self) -> Pubkey {
-        self.message_account.recipient
-    }
-
-    /// Get the message type
-    pub fn message_type(&self) -> MessageType {
-        self.message_account.message_type
+    /// Get the transaction signature
+    pub fn transaction_signature(&self) -> Signature {
+        self.signature
     }
 
     /// Get the content hash
-    pub fn content_hash(&self) -> [u8; 32] {
-        self.message_account.payload_hash
+    pub fn get_content_hash(&self) -> [u8; 32] {
+        self.content_hash
+    }
+}
+
+/// Builder for sending messages with custom configuration
+#[derive(Debug)]
+pub struct MessageSendBuilder<'a> {
+    service: &'a MessageService,
+    transaction_config: Option<TransactionConfig>,
+    priority_fee_strategy: Option<PriorityFeeStrategy>,
+    retry_policy: Option<RetryPolicy>,
+    simulate_before_send: Option<bool>,
+}
+
+impl<'a> MessageSendBuilder<'a> {
+    /// Create a new builder
+    pub fn new(service: &'a MessageService) -> Self {
+        Self {
+            service,
+            transaction_config: None,
+            priority_fee_strategy: None,
+            retry_policy: None,
+            simulate_before_send: None,
+        }
     }
 
-    /// Check if message has expiration
-    pub fn has_expiration(&self) -> bool {
-        true // All messages have expiration
+    /// Set transaction configuration
+    pub fn with_config(mut self, config: TransactionConfig) -> Self {
+        self.transaction_config = Some(config);
+        self
+    }
+
+    /// Set priority fee strategy
+    pub fn with_priority_fee_strategy(mut self, strategy: PriorityFeeStrategy) -> Self {
+        self.priority_fee_strategy = Some(strategy);
+        self
+    }
+
+    /// Set retry policy
+    pub fn with_retry_policy(mut self, policy: RetryPolicy) -> Self {
+        self.retry_policy = Some(policy);
+        self
+    }
+
+    /// Enable or disable simulation
+    pub fn with_simulation(mut self, simulate: bool) -> Self {
+        self.simulate_before_send = Some(simulate);
+        self
+    }
+
+    /// Use fast execution configuration
+    pub fn fast(mut self) -> Self {
+        self.transaction_config = Some(TransactionConfig::fast());
+        self
+    }
+
+    /// Use reliable execution configuration
+    pub fn reliable(mut self) -> Self {
+        self.transaction_config = Some(TransactionConfig::reliable());
+        self
+    }
+
+    /// Execute the message send
+    pub async fn execute(
+        self,
+        sender: &dyn Signer,
+        recipient: &Pubkey,
+        content: &str,
+        message_type: MessageType,
+    ) -> PodAIResult<MessageSendResult> {
+        // Build configuration
+        let mut config = self.transaction_config.unwrap_or_default();
+
+        if let Some(strategy) = self.priority_fee_strategy {
+            config = config.with_priority_fee_strategy(strategy);
+        }
+
+        if let Some(policy) = self.retry_policy {
+            config = config.with_retry_policy(policy);
+        }
+
+        if let Some(simulate) = self.simulate_before_send {
+            config = config.with_simulation(simulate);
+        }
+
+        // Create factory and execute
+        let factory = TransactionFactory::with_config(&self.service.client, config);
+        self.service.send_message_with_factory(&factory, sender, recipient, content, message_type).await
     }
 }
 

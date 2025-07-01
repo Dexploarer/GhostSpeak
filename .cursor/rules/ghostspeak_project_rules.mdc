@@ -1,0 +1,467 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# ghostspeak Project Rules - Production Excellence Standards
+
+## 🎯 **PROJECT IDENTITY: AUTONOMOUS AGENT COMMERCE PROTOCOL**
+
+**Technology Stack**: Multi-language Web3 platform (Rust Smart Contracts + TypeScript/Rust SDKs)  
+**Platform**: Solana blockchain with ZK compression  
+**Architecture**: Monorepo with workspaces (Anchor + Bun + Cargo)  
+**Standards**: Production-ready code only, comprehensive verification required
+
+---
+
+## ⚡ **ABSOLUTE VERIFICATION REQUIREMENTS**
+
+### **MANDATORY PRE-IMPLEMENTATION RESEARCH**
+Before ANY code generation:
+```bash
+# REQUIRED VERIFICATION SEQUENCE:
+✓ Use Context7: "use context7" for all library/framework queries
+✓ Web search: Current best practices for technology stack (2025)
+✓ Memory check: Review .cursor/memory/ for past decisions
+✓ Validation: Cross-reference multiple authoritative sources
+```
+
+### **EVIDENCE-BASED DEVELOPMENT**
+Every implementation MUST provide:
+- **Proof of concept**: Working minimal example
+- **Test evidence**: Comprehensive test suite passes
+- **Performance metrics**: Benchmarks when applicable
+- **Security validation**: Vulnerability assessment
+- **Documentation**: Complete API documentation with examples
+
+---
+
+## 🧬 **TECHNOLOGY STACK COMPLIANCE**
+
+### **Rust Development (Smart Contracts & SDK)**
+```toml
+# Required Rust Standards:
+✓ Edition 2021 minimum
+✓ Anchor framework 0.31.1+
+✓ SPL Token 2022 v9.0.0+ (latest extensions)
+✓ Solana SDK workspace versions
+✓ Comprehensive error handling with thiserror
+✓ Full async/await with tokio
+✓ Production-ready dependency management
+```
+
+### **TypeScript Development (SDK & Tools)**
+```json
+// Required TypeScript Standards:
+✓ TypeScript 5.8.3+ (latest features)
+✓ Web3.js v2 (NO v1.x legacy patterns)
+✓ Modern ESM modules only
+✓ Strict type checking enabled
+✓ Tree-shakable modular architecture
+✓ Comprehensive JSDoc documentation
+```
+
+### **Testing Requirements (NON-NEGOTIABLE)**
+```javascript
+// Jest Configuration Compliance:
+✓ 85%+ code coverage minimum
+✓ Unit + Integration + E2E tests
+✓ Real blockchain testing (no mocks for RPC calls)
+✓ Performance benchmarks for critical paths
+✓ Security test suites
+✓ Solana-bankrun for smart contract tests
+```
+
+---
+
+## 🔒 **SECURITY & VERIFICATION PROTOCOLS**
+
+### **Smart Contract Security (CRITICAL)**
+```rust
+// Required Anchor Program Standards:
+✓ Input validation on ALL instructions
+✓ PDA derivation security
+✓ Access control on ALL mutations
+✓ Overflow/underflow protection
+✓ Re-entrancy protection where applicable
+✓ Account validation and ownership checks
+✓ Comprehensive error handling
+```
+
+### **SDK Security Standards**
+```typescript
+// Required SDK Security:
+✓ Input sanitization on all user data
+✓ Signature verification for transactions
+✓ Secure keypair generation and handling
+✓ Network validation (devnet/mainnet)
+✓ Rate limiting on RPC calls
+✓ Proper error disclosure (no sensitive leaks)
+```
+
+### **Dependency Security (ENFORCED)**
+```bash
+# Required Security Auditing:
+bun audit --audit-level moderate  # NO exceptions
+cargo audit                       # NO vulnerabilities
+license-checker --summary         # License compliance
+```
+
+---
+
+## 🏗️ **ARCHITECTURE ENFORCEMENT**
+
+### **Monorepo Structure (MANDATORY)**
+```
+ghostspeak/
+├── packages/
+│   ├── core/           # Rust smart contracts (Anchor)
+│   ├── sdk-typescript/ # TypeScript SDK (Web3.js v2)
+│   ├── sdk-rust/      # Rust SDK (Modern patterns)
+│   └── cli/           # Command-line tools
+├── tests/             # Integration tests
+├── docs/              # Architecture documentation
+└── adr/               # Architectural Decision Records
+```
+
+### **Code Organization Standards**
+```rust
+// Rust Module Structure (ENFORCED):
+src/
+├── lib.rs              # Public API exports
+├── client/             # High-level client
+├── services/           # Business logic layer
+├── instructions/       # Instruction builders
+├── accounts/           # Account management
+├── types/              # Type definitions
+├── errors/             # Error definitions
+└── utils/              # Utility functions
+```
+
+```typescript
+// TypeScript Module Structure (ENFORCED):
+src/
+├── index.ts            # Public API exports
+├── client/             # SDK client
+├── services/           # Service layer
+├── instructions/       # Transaction builders
+├── accounts/           # Account utilities
+├── types/              # Type definitions
+├── errors/             # Error classes
+└── utils/              # Utility functions
+```
+
+---
+
+## 🚀 **DEVELOPMENT WORKFLOW (NON-NEGOTIABLE)**
+
+### **Implementation Sequence (ABSOLUTE)**
+1. **Smart Contract First**: All blockchain logic before SDK
+2. **Test-Driven Development**: Tests before implementation
+3. **Security-First**: Security review before feature completion
+4. **Documentation-Complete**: Full docs before merge
+5. **Performance-Validated**: Benchmarks before production
+
+### **Code Quality Gates**
+```bash
+# REQUIRED BEFORE ANY COMMIT:
+bun run lint:comprehensive    # ESLint + Clippy (NO warnings)
+bun run test:comprehensive    # Full test suite (100% pass)
+bun run build:production      # Production build success
+bun run audit:all            # Security audit (NO issues)
+bun run format:comprehensive  # Code formatting (consistent)
+```
+
+### **Verification Loop (MANDATORY)**
+```mermaid
+graph TD
+    A[Generate Code] --> B[Self-Evaluation]
+    B --> C[Context7 Research]
+    C --> D[Web Search Validation]
+    D --> E[Memory Check]
+    E --> F[Technical Review]
+    F --> G{All Standards Met?}
+    G -->|No| H[Research Mode]
+    H --> I[Root Cause Analysis]
+    I --> A
+    G -->|Yes| J[Production Ready]
+```
+
+---
+
+## 📊 **PERFORMANCE & SCALABILITY REQUIREMENTS**
+
+### **Smart Contract Performance**
+```rust
+// Required Performance Standards:
+✓ < 200,000 CU per instruction (compute units)
+✓ Minimal account allocations
+✓ Efficient PDA usage
+✓ ZK compression for large data
+✓ Batch operations where possible
+```
+
+### **SDK Performance Standards**
+```typescript
+// Required SDK Performance:
+✓ Bundle size < 100KB (CLI), < 50KB (SDK)
+✓ Tree-shaking effective (unused code eliminated)
+✓ < 100ms for local operations
+✓ < 2s for blockchain operations (devnet)
+✓ Proper connection pooling
+✓ Intelligent retry mechanisms
+```
+
+### **Testing Performance Requirements**
+```bash
+# Performance Test Standards:
+✓ Unit tests: < 10s total execution
+✓ Integration tests: < 60s total execution
+✓ E2E tests: < 120s total execution
+✓ Load tests: 1000+ operations/minute
+```
+
+---
+
+## 🔬 **TESTING PROTOCOLS (COMPREHENSIVE)**
+
+### **Smart Contract Testing (CRITICAL)**
+```rust
+// Required Anchor Test Coverage:
+✓ Happy path scenarios (100%)
+✓ Error conditions (100%)
+✓ Edge cases (overflow, underflow, invalid inputs)
+✓ Account state transitions
+✓ Cross-program invocations
+✓ Security attack vectors
+✓ Performance benchmarks
+```
+
+### **SDK Testing (EXHAUSTIVE)**
+```typescript
+// Required SDK Test Coverage:
+✓ Unit tests for all public functions
+✓ Integration tests with real Solana RPC
+✓ Error handling for network failures
+✓ Type safety validation
+✓ Performance regression tests
+✓ Security vulnerability tests
+✓ Example code validation
+```
+
+### **E2E Testing (PRODUCTION-LIKE)**
+```bash
+# Required End-to-End Testing:
+✓ Complete user workflows
+✓ Multi-agent interactions
+✓ Stress testing under load
+✓ Network failure recovery
+✓ Security penetration testing
+✓ Cross-browser compatibility (web components)
+```
+
+---
+
+## 📝 **DOCUMENTATION STANDARDS (MANDATORY)**
+
+### **Code Documentation**
+```rust
+/// Required Rust Documentation:
+/// 
+/// # Purpose
+/// Clear explanation of function purpose
+/// 
+/// # Arguments
+/// * `param` - Detailed parameter description
+/// 
+/// # Returns
+/// Detailed return value description
+/// 
+/// # Errors
+/// All possible error conditions
+/// 
+/// # Examples
+/// ```rust
+/// // Working example code
+/// ```
+/// 
+/// # Security
+/// Security considerations if applicable
+```
+
+```typescript
+/**
+ * Required TypeScript Documentation:
+ * 
+ * @description Clear explanation of function purpose
+ * @param param - Detailed parameter description
+ * @returns Detailed return value description
+ * @throws {ErrorType} All possible error conditions
+ * @example
+ * ```typescript
+ * // Working example code
+ * ```
+ * @security Security considerations if applicable
+ */
+```
+
+### **Architecture Documentation**
+```markdown
+# Required for ALL major features:
+✓ ADR (Architectural Decision Record) in adr/
+✓ API documentation with OpenAPI/TypeDoc
+✓ Integration examples with working code
+✓ Security considerations
+✓ Performance characteristics
+✓ Migration guides (when applicable)
+```
+
+---
+
+## 🚨 **ABSOLUTE PROHIBITIONS (ZERO TOLERANCE)**
+
+### **Forbidden Code Patterns**
+```typescript
+// ❌ NEVER ALLOWED:
+- TODO comments for critical functionality
+- Mock data in production code paths
+- Hardcoded values (use constants/config)
+- any type usage (use proper types)
+- Non-null assertions without justification
+- Commented-out code blocks
+- console.log in production code
+- Synchronous blockchain operations
+```
+
+### **Forbidden Development Practices**
+```bash
+# ❌ NEVER ALLOWED:
+- Skipping tests for "quick fixes"
+- Deploying without security audit
+- Copy-pasting code without understanding
+- Pushing with linting errors
+- Committing with TODO items
+- Using deprecated dependencies
+- Bypassing code review process
+```
+
+---
+
+## 🎯 **SUCCESS CRITERIA & METRICS**
+
+### **Quality Gates (PASS/FAIL)**
+```bash
+# MUST PASS ALL:
+✓ Zero ESLint/Clippy warnings
+✓ 85%+ test coverage
+✓ Zero security vulnerabilities
+✓ Performance benchmarks met
+✓ Documentation complete
+✓ ADR created for architectural decisions
+✓ Memory files updated with learnings
+```
+
+### **Production Readiness Checklist**
+```markdown
+Before ANY production deployment:
+□ Smart contract audited by third party
+□ All SDKs tested on mainnet-fork
+□ Performance tested under realistic load
+□ Security penetration testing complete
+□ Documentation reviewed and updated
+□ Rollback procedures documented
+□ Monitoring and alerting configured
+□ Team trained on new features
+```
+
+---
+
+## 🧠 **MEMORY SYSTEM INTEGRATION**
+
+### **Required Memory Updates**
+After EVERY development session:
+```markdown
+# Update Required Files:
+✓ .cursor/memory/activeContext.md - Current objectives, blockers
+✓ .cursor/memory/progress.md - Tasks completed, in progress, planned
+✓ .cursor/memory/decisionLog.md - Technical decisions with rationale
+✓ adr/ - Architectural Decision Records for major choices
+```
+
+### **Learning Integration**
+```markdown
+# Document in Memory:
+✓ Successful patterns for reuse
+✓ Failures and root causes
+✓ Performance optimizations discovered
+✓ Security considerations learned
+✓ Tool improvements needed
+```
+
+---
+
+## ⚡ **ENFORCEMENT PROTOCOL**
+
+### **Automated Enforcement**
+```bash
+# Pre-commit hooks (ENFORCED):
+bun run pre-commit  # Runs lint + test:critical
+
+# CI/CD gates (MANDATORY):
+- All quality gates must pass
+- Security scans must complete
+- Performance regression tests
+- Documentation build verification
+```
+
+### **Manual Review Requirements**
+```markdown
+# Required for ALL pull requests:
+□ Code review by senior developer
+□ Architecture review for significant changes
+□ Security review for blockchain code
+□ Performance review for critical paths
+□ Documentation review for public APIs
+```
+
+---
+
+## 🚀 **CONTINUOUS IMPROVEMENT**
+
+### **Weekly Quality Review**
+```markdown
+# Every Friday - Project Health Check:
+□ Review .cursor/memory/progress.md
+□ Update performance benchmarks
+□ Security vulnerability scan
+□ Dependency update review
+□ Documentation gap analysis
+□ Team retrospective on quality
+```
+
+### **Monthly Architecture Review**
+```markdown
+# Monthly - Architectural Health:
+□ Review ADRs for outdated decisions
+□ Evaluate new technology opportunities
+□ Assess technical debt priorities
+□ Plan performance improvements
+□ Update development standards
+```
+
+---
+
+## 🎯 **THE ghostspeak PROMISE**
+
+**When these rules are followed completely:**
+- ✅ **Zero production bugs** from AI-generated code
+- ✅ **100% security compliance** for blockchain operations
+- ✅ **Predictable performance** under all conditions
+- ✅ **Complete documentation** for all public APIs
+- ✅ **Maintainable codebase** for long-term success
+
+**Either your code meets these production standards, or it doesn't ship.**
+
+---
+
+*"Building the future of autonomous agent commerce - with uncompromising quality standards."* 

@@ -1,0 +1,62 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Core Swarm Coordination Protocol
+
+## Multi-Agent Simulation Framework
+You are part of a coordinated development team simulation within Cursor IDE. This system transforms single-agent interactions into structured multi-specialist collaboration patterns.
+
+### Role-Based Development Protocol
+- **Current Role Identification**: Always state your active role at response start
+- **Context Preservation**: Maintain awareness of work done by other roles
+- **Handoff Procedures**: Provide clear transition instructions between roles
+- **Decision Documentation**: Record all architectural and technical decisions
+
+### Communication Standards
+```
+Role: [CURRENT_ROLE]
+Context: [RELEVANT_PREVIOUS_WORK]
+Task: [CURRENT_OBJECTIVE]
+Handoff: [NEXT_ROLE_INSTRUCTIONS]
+```
+
+### Memory Management
+- Document decisions in `.claude/memory/` with timestamp and role
+- Reference previous specialist work using @File notation
+- Update project context after significant changes
+- Maintain clean separation between role-specific knowledge
+
+### Quality Assurance Gates
+- Each role validates work against their domain expertise
+- Cross-role reviews required for major architectural changes
+- Security, performance, and maintainability checks mandatory
+- Testing requirements vary by role but must be comprehensive
+
+### Task Delegation Patterns
+1. **Analysis**: Break complex tasks into role-specific components
+2. **Assignment**: Identify optimal specialist for each component
+3. **Execution**: Execute with role-specific expertise and constraints
+4. **Review**: Validate output against role and project standards
+5. **Integration**: Ensure compatibility with other specialists' work
+
+### Context Optimization
+- Use @Web for current technology standards and best practices
+- Leverage MCP servers for specialized tools and data access
+- Reference `.claude/patterns/` for established coding patterns
+- Follow `.claude/protocols/` for process guidelines
+
+### Performance Guidelines
+- Keep responses focused on current role's responsibilities
+- Minimize context switching within single conversations
+- Use specific file references rather than broad searches
+- Maintain conversation focus on immediate objectives
+
+### Integration Points
+- Git workflow integration for distributed development
+- MCP server utilization for enhanced capabilities
+- Continuous documentation in memory files
+- Automated quality checks and validation
+
+This core protocol ensures consistent multi-agent behavior while leveraging Cursor's advanced features for optimal development workflow.

@@ -78,7 +78,7 @@ pub enum PodAIError {
     },
 
     /// Transaction simulation failed
-    #[error("Transaction simulation failed: {logs}")]
+    #[error("Transaction simulation failed: {}", logs.join(", "))]
     TransactionSimulationFailed { logs: Vec<String> },
 
     /// Transaction timeout
@@ -116,6 +116,39 @@ pub enum PodAIError {
     /// Custom error for extensibility
     #[error("Custom error: {message}")]
     Custom { message: String },
+
+    // Enhanced transaction factory errors
+    #[error("Transaction failed: {reason}")]
+    TransactionFailed { 
+        reason: String,
+        signature: Option<solana_sdk::signature::Signature>,
+        retryable: bool,
+        error_code: Option<u32>,
+    },
+    
+    #[error("Simulation failed: {error}")]
+    SimulationFailed { error: String },
+    
+    #[error("Missing payer for transaction")]
+    MissingPayer,
+    
+    #[error("Account size mismatch: expected {expected}, actual {actual}")]
+    AccountSizeMismatch { expected: usize, actual: usize },
+    
+    #[error("Invalid account discriminator: expected {expected:?}, found {found:?}")]
+    InvalidAccountDiscriminator { expected: [u8; 8], found: [u8; 8] },
+    
+    #[error("Timeout after {duration_ms}ms")]
+    Timeout { duration_ms: u64 },
+    
+    #[error("SPL Token 2022 error: {message}")]
+    SplToken2022 { message: String },
+    
+    #[error("Priority fee estimation failed: {reason}")]
+    PriorityFeeEstimationFailed { reason: String },
+    
+    #[error("Instruction building failed: {instruction_type} - {reason}")]
+    InstructionBuildingFailed { instruction_type: String, reason: String },
 }
 
 impl PodAIError {
@@ -258,6 +291,11 @@ impl PodAIError {
             Self::Http(_) => true,
             Self::Network { .. } => true,
             Self::TransactionTimeout { .. } => true,
+            Self::TransactionFailed { retryable, .. } => *retryable,
+            Self::SimulationFailed { .. } => false, // Don't retry simulation failures
+            Self::Timeout { .. } => true,
+            Self::PriorityFeeEstimationFailed { .. } => true,
+            Self::RateLimitExceeded { .. } => true, // Can retry after backoff
             _ => false,
         }
     }
@@ -330,7 +368,9 @@ mod tests {
         let error = PodAIError::agent("Test agent error");
         match error {
             PodAIError::Agent { message } => assert_eq!(message, "Test agent error"),
-            _ => panic!("Expected Agent error"),
+            _ => {
+                assert!(false, "Expected Agent error, got: {:?}", error);
+            }
         }
     }
 

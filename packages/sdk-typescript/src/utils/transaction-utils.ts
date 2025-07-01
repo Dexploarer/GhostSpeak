@@ -1,43 +1,45 @@
 /**
- * Transaction utilities following Jupiter Swap API and Web3.js v2 patterns
- * Provides common functionality for building, simulating, and sending transactions
+ * Transaction utilities following Jupiter Swap patterns
+ * Modern Web3.js v2 transaction building and management
  */
 
-import { pipe } from '@solana/functional';
+// Core Web3.js v2 imports
 import {
+  appendTransactionMessageInstructions,
   createTransactionMessage,
+  getSignatureFromTransaction,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
-  appendTransactionMessageInstructions,
   signTransactionMessageWithSigners,
-  getSignatureFromTransaction,
-  sendAndConfirmTransactionFactory,
-  createSolanaRpcSubscriptions
-} from '@solana/kit';
+} from '@solana/web3.js';
 
-import type { Address } from '@solana/addresses';
-import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+// Types and utilities
 import type { KeyPairSigner } from '@solana/signers';
 import type { Commitment } from '@solana/rpc-types';
-import type { TransactionMessage, TransactionMessageInstruction } from '@solana/transactions';
+import type {
+  TransactionMessage,
+  TransactionMessageInstruction,
+} from '@solana/transaction-messages';
+
+import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 
 /**
  * Configuration for transaction building
  */
-export interface TransactionConfig {
+export interface ITransactionConfig {
   rpc: Rpc<SolanaRpcApi>;
   signer: KeyPairSigner;
   instructions: TransactionMessageInstruction[];
   commitment?: Commitment;
-  wsEndpoint?: string;
   skipPreflight?: boolean;
-  computeBudget?: number;
+  maxRetries?: number;
+  wsEndpoint?: string;
 }
 
 /**
  * Result of transaction simulation
  */
-export interface SimulationResult {
+export interface ISimulationResult {
   success: boolean;
   error?: string;
   computeUnitsUsed?: number;
@@ -47,272 +49,229 @@ export interface SimulationResult {
 /**
  * Result of transaction execution
  */
-export interface TransactionResult {
+export interface ITransactionResult {
   signature: string;
-  success: boolean;
-  error?: string;
+  confirmed: boolean;
   computeUnitsUsed?: number;
+  slot?: number;
+  error?: string;
 }
 
 /**
- * Build a versioned transaction using the pipe pattern
- * Following Jupiter Swap API architecture
+ * Create a transaction configuration for Jupiter-style batching
+ */
+export function createTransactionConfig(
+  rpc: Rpc<SolanaRpcApi>,
+  signer: KeyPairSigner,
+  instructions: TransactionMessageInstruction[],
+  options: {
+    commitment?: Commitment;
+    skipPreflight?: boolean;
+    maxRetries?: number;
+    wsEndpoint?: string;
+  } = {}
+): ITransactionConfig {
+  return {
+    rpc,
+    signer,
+    instructions,
+    commitment: options.commitment ?? 'confirmed',
+    skipPreflight: options.skipPreflight ?? false,
+    maxRetries: options.maxRetries ?? 3,
+    wsEndpoint: options.wsEndpoint,
+  };
+}
+
+/**
+ * Build a transaction message from instructions
  */
 export async function buildTransaction(
-  config: TransactionConfig
+  config: ITransactionConfig
 ): Promise<TransactionMessage> {
-  // Get the latest blockhash for transaction lifetime
-  const { value: latestBlockhash } = await config.rpc.getLatestBlockhash().send();
+  const { rpc, signer, instructions } = config;
 
-  // Build the transaction using the pipe pattern
-  const transaction = pipe(
-    createTransactionMessage({ version: 0 }),
-    (tx) => setTransactionMessageFeePayerSigner(config.signer, tx),
-    (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-    (tx) => appendTransactionMessageInstructions(config.instructions, tx)
+  // Get latest blockhash
+  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+  // Build transaction using pipe pattern
+  const transactionMessage = createTransactionMessage({ version: 0 });
+  const withFeePayer = setTransactionMessageFeePayerSigner(
+    signer,
+    transactionMessage
+  );
+  const withBlockhash = setTransactionMessageLifetimeUsingBlockhash(
+    latestBlockhash,
+    withFeePayer
+  );
+  const withInstructions = appendTransactionMessageInstructions(
+    instructions,
+    withBlockhash
   );
 
-  return transaction;
+  return withInstructions;
 }
 
 /**
  * Simulate a transaction before sending
- * Following Jupiter Swap validation patterns
  */
 export async function simulateTransaction(
-  config: TransactionConfig
-): Promise<SimulationResult> {
+  config: ITransactionConfig
+): Promise<ISimulationResult> {
   try {
-    // Build the transaction
     const transaction = await buildTransaction(config);
+    const signedTransaction = await signTransactionMessageWithSigners(
+      transaction
+    );
 
-    // Sign the transaction for simulation
-    const signedTransaction = await signTransactionMessageWithSigners(transaction);
-
-    // Simulate the transaction
-    const simulation = await config.rpc.simulateTransaction(signedTransaction, {
-      commitment: config.commitment || 'confirmed',
-      replaceRecentBlockhash: true,
-      sigVerify: false,
-    }).send();
+    // Get simulation result
+    const simulation = await config.rpc
+      .simulateTransaction(signedTransaction, {
+        commitment: config.commitment ?? 'confirmed',
+        sigVerify: !(config.skipPreflight ?? false),
+        accounts: {
+          encoding: 'base64',
+          addresses: [],
+        },
+      })
+      .send();
 
     if (simulation.value.err) {
       return {
         success: false,
         error: `Simulation failed: ${JSON.stringify(simulation.value.err)}`,
-        logs: simulation.value.logs || []
       };
     }
 
     return {
       success: true,
-      computeUnitsUsed: simulation.value.unitsConsumed || 0,
-      logs: simulation.value.logs || []
+      computeUnitsUsed: Number(simulation.value.unitsConsumed ?? 0),
+      logs: simulation.value.logs ?? [],
     };
-
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
 
 /**
  * Send and confirm a transaction
- * Following Jupiter Swap execution patterns
  */
 export async function sendAndConfirmTransaction(
-  config: TransactionConfig
-): Promise<TransactionResult> {
+  config: ITransactionConfig
+): Promise<ITransactionResult> {
   try {
-    // Build the transaction
     const transaction = await buildTransaction(config);
-
-    // Sign the transaction
-    const signedTransaction = await signTransactionMessageWithSigners(transaction);
-
-    // Create WebSocket URL from RPC URL or use provided wsEndpoint
-    const wsUrl = config.wsEndpoint || 'wss://api.devnet.solana.com';
-    const rpcSubscriptions = createSolanaRpcSubscriptions(wsUrl);
-
-    // Create the send and confirm transaction factory
-    const sendAndConfirm = sendAndConfirmTransactionFactory({ 
-      rpc: config.rpc, 
-      rpcSubscriptions 
-    });
-
-    // Send and confirm the transaction
-    await sendAndConfirm(signedTransaction, {
-      commitment: config.commitment || 'confirmed',
-      skipPreflight: config.skipPreflight || false
-    });
-
-    // Get the transaction signature
-    const signature = getSignatureFromTransaction(signedTransaction);
-    
-    return {
-      signature,
-      success: true
-    };
-
-  } catch (error) {
-    return {
-      signature: '',
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-}
-
-/**
- * Build, simulate, and send transaction with full validation
- * Following Jupiter Swap complete transaction flow
- */
-export async function buildSimulateAndSendTransaction(
-  config: TransactionConfig
-): Promise<TransactionResult> {
-  try {
-    // First, simulate the transaction
-    const simulationResult = await simulateTransaction(config);
-    
-    if (!simulationResult.success) {
-      return {
-        signature: '',
-        success: false,
-        error: `Simulation failed: ${simulationResult.error}`,
-        computeUnitsUsed: simulationResult.computeUnitsUsed
-      };
-    }
-
-    console.log(`✅ Transaction simulation successful. Compute units: ${simulationResult.computeUnitsUsed}`);
-
-    // If simulation passes, send the actual transaction
-    const result = await sendAndConfirmTransaction(config);
-    
-    if (result.success) {
-      console.log(`✅ Transaction confirmed: ${result.signature}`);
-    }
-
-    return {
-      ...result,
-      computeUnitsUsed: simulationResult.computeUnitsUsed
-    };
-
-  } catch (error) {
-    return {
-      signature: '',
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-}
-
-/**
- * Batch multiple transactions efficiently
- * Following Jupiter Swap batching patterns
- */
-export async function batchTransactions(
-  configs: TransactionConfig[]
-): Promise<TransactionResult[]> {
-  const results: TransactionResult[] = [];
-
-  try {
-    // Execute all transactions in parallel using Promise.allSettled
-    const promises = configs.map(config => 
-      buildSimulateAndSendTransaction(config).catch(error => ({
-        signature: '',
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
-      }))
+    const signedTransaction = await signTransactionMessageWithSigners(
+      transaction
     );
 
-    const batchResults = await Promise.allSettled(promises);
+    // Send the transaction
+    const signature = getSignatureFromTransaction(signedTransaction);
+    await config.rpc
+      .sendTransaction(signedTransaction, {
+        commitment: config.commitment ?? 'confirmed',
+        skipPreflight: config.skipPreflight ?? false,
+        maxRetries: config.maxRetries ?? 3,
+      })
+      .send();
 
-    // Process results
-    batchResults.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        results.push(result.value);
-      } else {
-        results.push({
-          signature: '',
-          success: false,
-          error: `Transaction ${index} failed: ${result.reason}`
-        });
-      }
-    });
+    console.log(
+      `✅ Transaction simulation successful. Signature: ${signature}`
+    );
 
-    return results;
+    return {
+      signature,
+      confirmed: true,
+    };
   } catch (error) {
-    console.error('Batch transaction failed:', error);
-    // Return failed results for all transactions
-    return configs.map(() => ({
+    return {
       signature: '',
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }));
+      confirmed: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 
 /**
- * Utility function to create a basic transaction config
+ * Build, simulate and send transaction in one call
  */
-export function createTransactionConfig(
-  rpc: Rpc<SolanaRpcApi>,
-  signer: KeyPairSigner,
-  instructions: TransactionMessageInstruction[],
-  options?: {
-    commitment?: Commitment;
-    wsEndpoint?: string;
-    skipPreflight?: boolean;
+export async function buildSimulateAndSendTransaction(
+  config: ITransactionConfig
+): Promise<ITransactionResult> {
+  // First simulate
+  const simulation = await simulateTransaction(config);
+  if (!simulation.success) {
+    return {
+      signature: '',
+      confirmed: false,
+      error: simulation.error,
+    };
   }
-): TransactionConfig {
-  return {
-    rpc,
-    signer,
-    instructions,
-    commitment: options?.commitment || 'confirmed',
-    wsEndpoint: options?.wsEndpoint,
-    skipPreflight: options?.skipPreflight || false
-  };
+
+  // Then send
+  return await sendAndConfirmTransaction(config);
 }
 
 /**
- * Utility function to retry a transaction on failure
- * Following Jupiter Swap resilience patterns
+ * Execute multiple transactions in batch
+ */
+export async function batchTransactions(
+  configs: ITransactionConfig[]
+): Promise<ITransactionResult[]> {
+  const results: ITransactionResult[] = [];
+
+  for (const config of configs) {
+    try {
+      const result = await buildSimulateAndSendTransaction(config);
+      results.push(result);
+
+      // If a transaction fails, you might want to continue or stop
+      if (!result.confirmed) {
+        console.warn(`Transaction failed: ${result.error}`);
+      }
+    } catch (error) {
+      results.push({
+        signature: '',
+        confirmed: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Retry a transaction with exponential backoff
  */
 export async function retryTransaction(
-  config: TransactionConfig,
-  maxRetries: number = 3,
-  retryDelay: number = 1000
-): Promise<TransactionResult> {
-  let lastError: string = '';
+  config: ITransactionConfig,
+  maxRetries = 3
+): Promise<ITransactionResult> {
+  let lastError: string | undefined;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Transaction attempt ${attempt}/${maxRetries}`);
-      
       const result = await buildSimulateAndSendTransaction(config);
-      
-      if (result.success) {
+
+      if (result.confirmed) {
         return result;
       }
-      
-      lastError = result.error || `Attempt ${attempt} failed`;
-      
-      // Wait before retrying (exponential backoff)
+
+      lastError = result.error ?? 'Unknown error';
+
       if (attempt < maxRetries) {
-        const delay = retryDelay * Math.pow(2, attempt - 1);
-        console.log(`Waiting ${delay}ms before retry...`);
+        // Exponential backoff: wait 2^attempt seconds
+        const delay = Math.pow(2, attempt) * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
-      
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
-      console.error(`Transaction attempt ${attempt} failed:`, lastError);
-      
+
       if (attempt < maxRetries) {
-        const delay = retryDelay * Math.pow(2, attempt - 1);
+        const delay = Math.pow(2, attempt) * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -320,7 +279,34 @@ export async function retryTransaction(
 
   return {
     signature: '',
-    success: false,
-    error: `Transaction failed after ${maxRetries} attempts. Last error: ${lastError}`
+    confirmed: false,
+    error: `Failed after ${maxRetries} attempts. Last error: ${
+      lastError ?? 'Unknown error'
+    }`,
   };
+}
+
+/**
+ * Estimate transaction fee before sending
+ */
+export async function estimateTransactionFee(
+  config: ITransactionConfig
+): Promise<number> {
+  try {
+    const simulation = await simulateTransaction(config);
+
+    if (!simulation.success || !simulation.computeUnitsUsed) {
+      return 0;
+    }
+
+    // Simple fee estimation based on compute units
+    // This is a rough estimate - actual fees may vary
+    const baseFee = 5000; // Base transaction fee in lamports
+    const computeFee = simulation.computeUnitsUsed * 0.1; // Rough estimate
+
+    return baseFee + computeFee;
+  } catch (error) {
+    console.error('Failed to estimate transaction fee:', error);
+    return 0;
+  }
 }

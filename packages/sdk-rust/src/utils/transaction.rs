@@ -260,7 +260,7 @@ pub async fn send_transaction(
     ))
 }
 
-/// Send multiple transactions in batch
+/// Send multiple transactions in batch with parallel processing
 pub async fn send_transaction_batch(
     rpc_client: &RpcClient,
     transactions: &[Transaction],
@@ -268,14 +268,81 @@ pub async fn send_transaction_batch(
 ) -> PodAIResult<Vec<TransactionResult>> {
     let mut results = Vec::with_capacity(transactions.len());
 
-    // For now, send transactions sequentially
-    // TODO: Implement parallel sending with proper rate limiting
-    for transaction in transactions {
-        let result = send_transaction(rpc_client, transaction, options).await?;
-        results.push(result);
+    if transactions.is_empty() {
+        return Ok(results);
+    }
 
-        // Small delay between transactions to avoid rate limiting
-        tokio::time::sleep(Duration::from_millis(100)).await;
+    // For small batches, send sequentially to avoid overwhelming the RPC
+    if transactions.len() <= 3 {
+        for transaction in transactions {
+            let result = send_transaction(rpc_client, transaction, options).await?;
+            results.push(result);
+
+            // Small delay between transactions to avoid rate limiting
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        return Ok(results);
+    }
+
+    // For larger batches, implement parallel sending with proper rate limiting
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(5)); // Max 5 concurrent transactions
+    let rpc_client = std::sync::Arc::new(rpc_client);
+    let mut handles = Vec::new();
+
+    for (index, transaction) in transactions.iter().enumerate() {
+        let semaphore = semaphore.clone();
+        let rpc_client = rpc_client.clone();
+        let transaction = transaction.clone();
+        let options = options.clone();
+
+        let handle = tokio::spawn(async move {
+            let _permit = semaphore.acquire().await.map_err(|_| {
+                PodAIError::internal("Failed to acquire semaphore permit")
+            })?;
+
+            // Add staggered delay to spread out transaction submissions
+            let delay_ms = (index * 50) as u64; // 50ms per transaction index
+            tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+
+            send_transaction(&*rpc_client, &transaction, &options).await
+        });
+
+        handles.push(handle);
+    }
+
+    // Collect results in order
+    for handle in handles {
+        match handle.await {
+            Ok(result) => {
+                match result {
+                    Ok(tx_result) => results.push(tx_result),
+                    Err(e) => {
+                        log::warn!("Transaction in batch failed: {}", e);
+                        // Continue processing other transactions even if one fails
+                        // Create a failure result with default values
+                        results.push(TransactionResult::failure(
+                            Signature::default(),
+                            0,
+                            Duration::from_millis(0),
+                            0,
+                            e.to_string(),
+                            None,
+                        ));
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("Task join error in batch transaction: {}", e);
+                results.push(TransactionResult::failure(
+                    Signature::default(),
+                    0,
+                    Duration::from_millis(0),
+                    0,
+                    format!("Task error: {}", e),
+                    None,
+                ));
+            }
+        }
     }
 
     Ok(results)

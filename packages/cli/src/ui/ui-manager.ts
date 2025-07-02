@@ -3,6 +3,7 @@ import boxen from 'boxen';
 import { createSpinner } from 'nanospinner';
 import gradient from 'gradient-string';
 import figlet from 'figlet';
+import { ConfigManager } from '../utils/config-manager';
 
 export interface ProgressStep {
   name: string;
@@ -27,16 +28,24 @@ export class UIManager {
     info: chalk.white
   };
 
+  private configManager: ConfigManager;
+
+  constructor() {
+    this.configManager = new ConfigManager();
+  }
+
   /**
    * Display a section header
    */
   sectionHeader(title: string, subtitle?: string): void {
+    // Always print to stdout, never clear/overwrite
     console.log();
     console.log(this.theme.primary(chalk.bold(`📌 ${title}`)));
     if (subtitle) {
       console.log(this.theme.muted(`   ${subtitle}`));
     }
-    console.log(this.theme.muted('   ' + '─'.repeat(Math.max(title.length + 4, 40))));
+    const repeatLength = Math.max((title?.length ?? 0) + 4, 40);
+    console.log(this.theme.muted('   ' + '─'.repeat(repeatLength)));
     console.log();
   }
 
@@ -147,6 +156,13 @@ export class UIManager {
   }
 
   /**
+   * Helper to ensure column width is always a valid number
+   */
+  private safeWidth(val: number | undefined): number {
+    return typeof val === 'number' && isFinite(val) ? val : 1;
+  }
+
+  /**
    * Display a table of data
    */
   table(headers: string[], rows: TableRow[]): void {
@@ -156,7 +172,7 @@ export class UIManager {
     }
 
     // Calculate column widths
-    const widths = headers.map(header => header.length);
+    const widths: number[] = headers.map(header => header.length);
     rows.forEach(row => {
       headers.forEach((header, i) => {
         const value = String(row[header] || '');
@@ -166,19 +182,19 @@ export class UIManager {
 
     // Display header
     const headerRow = headers.map((header, i) => 
-      this.theme.primary(chalk.bold(header.padEnd(widths[i])))
+      this.theme.primary(chalk.bold(header.padEnd(this.safeWidth(widths[i]))))
     ).join('  ');
     console.log(`   ${headerRow}`);
     
     // Display separator
-    const separator = headers.map((_, i) => '─'.repeat(widths[i])).join('  ');
+    const separator = headers.map((_, i) => '─'.repeat(this.safeWidth(widths[i]))).join('  ');
     console.log(`   ${this.theme.muted(separator)}`);
     
     // Display rows
     rows.forEach(row => {
       const dataRow = headers.map((header, i) => {
         const value = String(row[header] || '');
-        return value.padEnd(widths[i]);
+        return value.padEnd(this.safeWidth(widths[i]));
       }).join('  ');
       console.log(`   ${dataRow}`);
     });
@@ -211,7 +227,7 @@ export class UIManager {
    * Display key-value pairs
    */
   keyValue(data: Record<string, any>, indent: number = 0): void {
-    const spaces = ' '.repeat(indent);
+    const spaces = ' '.repeat(indent || 0);
     
     Object.entries(data).forEach(([key, value]) => {
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
@@ -231,19 +247,17 @@ export class UIManager {
    * Display a large ASCII art title
    */
   bigTitle(text: string, subtitle?: string): void {
+    // Always print to stdout, never clear/overwrite
     const title = figlet.textSync(text, {
       font: 'Big',
       horizontalLayout: 'default',
       verticalLayout: 'default'
     });
-    
     console.log(gradient.cristal(title));
-    
     if (subtitle) {
       console.log();
       console.log(this.theme.muted(`   ${subtitle}`));
     }
-    
     console.log();
   }
 
@@ -251,13 +265,21 @@ export class UIManager {
    * Display a divider
    */
   divider(char: string = '─', length: number = 60): void {
-    console.log(this.theme.muted(char.repeat(length)));
+    console.log(this.theme.muted(char.repeat(Number.isFinite(length) ? length : 1)));
   }
 
   /**
-   * Clear the terminal
+   * Clear the terminal (no-op in test environments)
    */
   clear(): void {
+    if (this.isTestMode()) {
+      // In test mode, don't clear to preserve output for test capture
+      return;
+    }
+    if (process.env.NODE_ENV === 'test' || process.env.BUN_TESTING) {
+      // No-op for test output capture
+      return;
+    }
     console.clear();
   }
 
@@ -265,7 +287,7 @@ export class UIManager {
    * Add spacing
    */
   spacing(lines: number = 1): void {
-    console.log('\n'.repeat(lines - 1));
+    console.log('\n'.repeat(Number.isFinite(lines) && lines > 1 ? lines - 1 : 0));
   }
 
   /**
@@ -337,5 +359,9 @@ export class UIManager {
    */
   getTheme() {
     return this.theme;
+  }
+
+  private isTestMode(): boolean {
+    return this.configManager.isTestMode();
   }
 } 

@@ -11,12 +11,11 @@ use solana_sdk::{
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
     signature::{Keypair, Signature, Signer},
-    system_instruction,
 };
 use std::sync::Arc;
+use crate::types::AccountData;
 
 /// Service for managing escrow accounts
-#[derive(Debug, Clone)]
 pub struct EscrowService {
     client: Arc<PodAIClient>,
 }
@@ -143,8 +142,8 @@ impl EscrowService {
             *escrow_pda,
             EscrowOperation::Deposit,
             amount,
-            escrow.balance,
-            escrow.balance + amount,
+            escrow.amount,
+            escrow.amount + amount,
         ).with_signature(result.signature.to_string());
 
         Ok(EscrowDepositResult {
@@ -152,7 +151,7 @@ impl EscrowService {
             escrow_pda: *escrow_pda,
             depositor: depositor.pubkey(),
             amount,
-            new_balance: escrow.balance + amount,
+            new_balance: escrow.amount + amount,
             transaction: escrow_transaction,
             timestamp: Utc::now(),
         })
@@ -179,7 +178,7 @@ impl EscrowService {
             return Err(PodAIError::invalid_input("amount", "Withdraw amount must be greater than 0"));
         }
 
-        if amount > escrow.balance {
+        if amount > escrow.amount {
             return Err(PodAIError::escrow("Insufficient escrow balance"));
         }
 
@@ -204,8 +203,8 @@ impl EscrowService {
             *escrow_pda,
             EscrowOperation::Withdrawal,
             amount,
-            escrow.balance,
-            escrow.balance - amount,
+            escrow.amount,
+            escrow.amount - amount,
         ).with_signature(result.signature.to_string());
 
         Ok(EscrowWithdrawResult {
@@ -213,7 +212,7 @@ impl EscrowService {
             escrow_pda: *escrow_pda,
             withdrawer: withdrawer.pubkey(),
             amount,
-            new_balance: escrow.balance - amount,
+            new_balance: escrow.amount - amount,
             transaction: escrow_transaction,
             timestamp: Utc::now(),
         })
@@ -221,16 +220,16 @@ impl EscrowService {
 
     /// Get escrow account data
     pub async fn get_escrow(&self, escrow_pda: &Pubkey) -> PodAIResult<EscrowAccount> {
-        match self.client.rpc_client.get_account(escrow_pda) {
+        match self.client.rpc_client.get_account(escrow_pda).await {
             Ok(account) => EscrowAccount::from_bytes(&account.data),
-            Err(_) => Err(PodAIError::account_not_found("Escrow", escrow_pda.to_string())),
+            Err(_) => Err(PodAIError::account_not_found("Escrow", &escrow_pda.to_string())),
         }
     }
 
     /// Get escrow balance
     pub async fn get_balance(&self, escrow_pda: &Pubkey) -> PodAIResult<u64> {
         let escrow = self.get_escrow(escrow_pda).await?;
-        Ok(escrow.balance)
+        Ok(escrow.amount)
     }
 
     /// Get escrow PDA
@@ -306,6 +305,7 @@ impl EscrowService {
     }
 
     /// Create instruction for escrow release
+    #[allow(dead_code)]
     fn create_release_instruction(
         &self,
         releaser: &Pubkey,
@@ -349,6 +349,9 @@ impl EscrowService {
         amount: u64,
     ) -> PodAIResult<Instruction> {
         // This would be replaced with actual Anchor instruction generation
+        let mut instruction_data = vec![];
+        instruction_data.extend_from_slice(&amount.to_le_bytes()); // Include amount in instruction data
+        
         Ok(Instruction {
             program_id: self.client.program_id(),
             accounts: vec![
@@ -356,7 +359,7 @@ impl EscrowService {
                 AccountMeta::new(*escrow_pda, false),
                 AccountMeta::new_readonly(solana_sdk::system_program::id(), false),
             ],
-            data: vec![], // Would contain serialized instruction data with amount
+            data: instruction_data,
         })
     }
 
@@ -427,7 +430,6 @@ pub struct EscrowWithdrawResult {
 }
 
 /// Builder for escrow creation with custom configuration
-#[derive(Debug)]
 pub struct EscrowCreationBuilder<'a> {
     service: &'a EscrowService,
     transaction_config: Option<TransactionConfig>,

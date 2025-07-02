@@ -46,7 +46,7 @@ impl AgentAccount {
         if metadata_uri.len() > MAX_METADATA_URI_LENGTH {
             return Err(PodAIError::InvalidInput { 
                 field: "metadata_uri".to_string(),
-                message: format!("URI too long: {} > {}", metadata_uri.len(), MAX_METADATA_URI_LENGTH),
+                reason: format!("URI too long: {} > {}", metadata_uri.len(), MAX_METADATA_URI_LENGTH),
             });
         }
 
@@ -111,14 +111,14 @@ impl AgentAccount {
         if self.metadata_uri.is_empty() {
             return Err(PodAIError::InvalidInput { 
                 field: "metadata_uri".to_string(),
-                message: "URI cannot be empty".to_string(),
+                reason: "URI cannot be empty".to_string(),
             });
         }
 
         if self.metadata_uri.len() > MAX_METADATA_URI_LENGTH {
             return Err(PodAIError::InvalidInput { 
                 field: "metadata_uri".to_string(),
-                message: format!("URI too long: {} > {}", self.metadata_uri.len(), MAX_METADATA_URI_LENGTH),
+                reason: format!("URI too long: {} > {}", self.metadata_uri.len(), MAX_METADATA_URI_LENGTH),
             });
         }
 
@@ -126,7 +126,7 @@ impl AgentAccount {
         if !self.metadata_uri.starts_with("http://") && !self.metadata_uri.starts_with("https://") {
             return Err(PodAIError::InvalidInput { 
                 field: "metadata_uri".to_string(),
-                message: "URI must start with http:// or https://".to_string(),
+                reason: "URI must start with http:// or https://".to_string(),
             });
         }
 

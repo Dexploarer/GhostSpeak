@@ -159,6 +159,30 @@ impl PodAIError {
         }
     }
 
+    /// Create a connection error
+    pub fn connection<S: Into<String>>(message: S) -> Self {
+        Self::Network {
+            message: message.into(),
+        }
+    }
+
+    /// Create an RPC error
+    pub fn rpc<S: Into<String>>(message: S) -> Self {
+        Self::Network {
+            message: message.into(),
+        }
+    }
+
+    /// Create a transaction error
+    pub fn transaction<S: Into<String>>(message: S) -> Self {
+        Self::TransactionFailed {
+            reason: message.into(),
+            signature: None,
+            retryable: true,
+            error_code: None,
+        }
+    }
+
     /// Create an agent error
     pub fn agent<S: Into<String>>(message: S) -> Self {
         Self::Agent {
@@ -330,6 +354,16 @@ impl PodAIError {
             | Self::TransactionSimulationFailed { .. }
             | Self::FeatureNotSupported { .. }
             | Self::Custom { .. } => ErrorSeverity::Info,
+            
+            Self::TransactionFailed { .. } => ErrorSeverity::Error,
+            Self::SimulationFailed { .. } => ErrorSeverity::Warning,
+            Self::MissingPayer => ErrorSeverity::Error,
+            Self::AccountSizeMismatch { .. } => ErrorSeverity::Error,
+            Self::InvalidAccountDiscriminator { .. } => ErrorSeverity::Error,
+            Self::Timeout { .. } => ErrorSeverity::Warning,
+            Self::SplToken2022 { .. } => ErrorSeverity::Error,
+            Self::PriorityFeeEstimationFailed { .. } => ErrorSeverity::Warning,
+            Self::InstructionBuildingFailed { .. } => ErrorSeverity::Error,
         }
     }
 }

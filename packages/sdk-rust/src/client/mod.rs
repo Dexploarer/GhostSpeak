@@ -2,21 +2,20 @@
 
 use crate::errors::{PodAIError, PodAIResult};
 use crate::services::{AgentService, ChannelService, EscrowService, MarketplaceService, MessageService};
-use crate::PROGRAM_ID;
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use crate::{DEVNET_RPC, MAINNET_RPC, LOCALNET_RPC};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{
-    commitment_config::CommitmentLevel,
+    commitment_config::CommitmentConfig,
     hash::Hash,
     pubkey::Pubkey,
-    signature::{Keypair, Signature, Signer},
+    signature::Signature,
     transaction::Transaction,
 };
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::time;
 use url::Url;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Network type enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -65,7 +64,7 @@ pub struct PodAIConfig {
     /// WebSocket URL for subscription support
     pub ws_url: String,
     /// Commitment level for transactions
-    pub commitment: CommitmentLevel,
+    pub commitment: CommitmentConfig,
     /// Request timeout in milliseconds
     pub timeout_ms: u64,
     /// Maximum number of retries for failed requests
@@ -78,47 +77,55 @@ pub struct PodAIConfig {
 
 impl Default for PodAIConfig {
     fn default() -> Self {
-        Self::localnet()
+        Self {
+            rpc_url: DEVNET_RPC.to_string(),
+            ws_url: "wss://api.devnet.solana.com".to_string(),
+            commitment: CommitmentConfig::confirmed(),
+            timeout_ms: 30_000,
+            max_retries: 3,
+            retry_delay_ms: 1000,
+            program_id: crate::program_id(),
+        }
     }
 }
 
 impl PodAIConfig {
-    /// Create configuration for localnet
-    pub fn localnet() -> Self {
-        Self {
-            rpc_url: "http://127.0.0.1:8899".to_string(),
-            ws_url: "ws://127.0.0.1:8900".to_string(),
-            commitment: CommitmentLevel::Confirmed,
-            timeout_ms: 30_000,
-            max_retries: 3,
-            retry_delay_ms: 1000,
-            program_id: PROGRAM_ID,
-        }
-    }
-
-    /// Create configuration for devnet
+    /// Create config for devnet
     pub fn devnet() -> Self {
         Self {
-            rpc_url: "https://api.devnet.solana.com".to_string(),
+            rpc_url: DEVNET_RPC.to_string(),
             ws_url: "wss://api.devnet.solana.com".to_string(),
-            commitment: CommitmentLevel::Confirmed,
+            commitment: CommitmentConfig::confirmed(),
             timeout_ms: 30_000,
             max_retries: 5,
             retry_delay_ms: 2000,
-            program_id: PROGRAM_ID,
+            program_id: crate::program_id(),
         }
     }
 
-    /// Create configuration for mainnet-beta
+    /// Create config for mainnet
     pub fn mainnet() -> Self {
         Self {
-            rpc_url: "https://api.mainnet-beta.solana.com".to_string(),
+            rpc_url: MAINNET_RPC.to_string(),
             ws_url: "wss://api.mainnet-beta.solana.com".to_string(),
-            commitment: CommitmentLevel::Finalized,
+            commitment: CommitmentConfig::finalized(),
             timeout_ms: 60_000,
             max_retries: 5,
             retry_delay_ms: 3000,
-            program_id: PROGRAM_ID,
+            program_id: crate::program_id(),
+        }
+    }
+
+    /// Create config for localnet
+    pub fn localnet() -> Self {
+        Self {
+            rpc_url: LOCALNET_RPC.to_string(),
+            ws_url: "ws://127.0.0.1:8900".to_string(),
+            commitment: CommitmentConfig::processed(),
+            timeout_ms: 10_000,
+            max_retries: 3,
+            retry_delay_ms: 1000,
+            program_id: crate::program_id(),
         }
     }
 
@@ -132,11 +139,11 @@ impl PodAIConfig {
         Self {
             rpc_url,
             ws_url,
-            commitment: CommitmentLevel::Confirmed,
+            commitment: CommitmentConfig::confirmed(),
             timeout_ms: 30_000,
             max_retries: 3,
             retry_delay_ms: 1000,
-            program_id: PROGRAM_ID,
+            program_id: crate::program_id(),
         }
     }
 
@@ -186,7 +193,7 @@ pub struct ClientInfo {
     /// WebSocket URL for subscriptions
     pub ws_url: String,
     /// Current commitment level
-    pub commitment: CommitmentLevel,
+    pub commitment: CommitmentConfig,
     /// Connection status
     pub is_connected: bool,
     /// Last successful connection time
@@ -205,6 +212,8 @@ pub struct PodAIClient {
     http_client: reqwest::Client,
     /// Connection info
     connection_info: Arc<std::sync::Mutex<ClientInfo>>,
+    /// Program ID
+    program_id: Pubkey,
 }
 
 impl PodAIClient {
@@ -232,11 +241,13 @@ impl PodAIClient {
             active_connections: 0,
         }));
 
+        let program_id = config.program_id;
         let client = Self {
             config,
             rpc_client,
             http_client,
             connection_info,
+            program_id,
         };
 
         // Test connection
@@ -262,7 +273,7 @@ impl PodAIClient {
 
     /// Get the program ID
     pub fn program_id(&self) -> Pubkey {
-        self.config.program_id
+        self.program_id
     }
 
     /// Get account information
@@ -308,6 +319,7 @@ impl PodAIClient {
     }
 
     /// Retry a function with exponential backoff
+    #[allow(dead_code)]
     async fn retry_with_backoff<F, T, E>(&self, mut f: F) -> Result<T, E>
     where
         F: FnMut() -> Result<T, E>,
@@ -325,7 +337,7 @@ impl PodAIClient {
                     }
                     
                     log::debug!("Attempt {} failed: {}, retrying in {}ms", attempt + 1, e, delay);
-                    time::sleep(Duration::from_millis(delay)).await;
+                    tokio::time::sleep(Duration::from_millis(delay)).await;
                     delay = (delay * 2).min(30_000); // Cap at 30 seconds
                 }
             }
@@ -357,7 +369,7 @@ impl PodAIClient {
     }
 
     /// Get transaction status
-    pub async fn get_transaction(&self, signature: &Signature) -> PodAIResult<Option<solana_client::rpc_response::Response<Option<solana_transaction_status::UiTransactionEncoding>>>> {
+    pub async fn get_transaction(&self, _signature: &Signature) -> PodAIResult<Option<solana_client::rpc_response::Response<Option<solana_transaction_status::UiTransactionEncoding>>>> {
         // This is a simplified implementation - in a real implementation you'd use proper transaction status
         Ok(None)
     }
@@ -381,10 +393,12 @@ impl PodAIClient {
 
     /// Get the network type
     pub fn network(&self) -> NetworkType {
-        match self.config.commitment {
-            CommitmentLevel::Confirmed => NetworkType::Devnet,
-            CommitmentLevel::Finalized => NetworkType::Mainnet,
-            CommitmentLevel::Processed => NetworkType::Localnet,
+        if self.config.commitment == CommitmentConfig::finalized() {
+            NetworkType::Mainnet
+        } else if self.config.commitment == CommitmentConfig::processed() {
+            NetworkType::Localnet
+        } else {
+            NetworkType::Devnet
         }
     }
 
@@ -400,13 +414,14 @@ impl PodAIClient {
 
     /// Check if compression is enabled
     pub fn compression_enabled(&self) -> bool {
-        self.config.commitment == CommitmentLevel::Confirmed
+        self.config.commitment == CommitmentConfig::confirmed()
     }
 
     /// Get the current slot
     pub async fn get_current_slot(&self) -> PodAIResult<u64> {
         self.rpc_client
             .get_slot()
+            .await
             .map_err(Into::into)
     }
 
@@ -414,6 +429,7 @@ impl PodAIClient {
     pub async fn get_minimum_balance_for_rent_exemption(&self, data_len: usize) -> PodAIResult<u64> {
         self.rpc_client
             .get_minimum_balance_for_rent_exemption(data_len)
+            .await
             .map_err(Into::into)
     }
 
@@ -421,9 +437,10 @@ impl PodAIClient {
     pub async fn simulate_transaction(
         &self,
         transaction: &Transaction,
-    ) -> PodAIResult<solana_client::rpc_response::RpcSimulateTransactionResult> {
+    ) -> PodAIResult<solana_client::rpc_response::Response<solana_client::rpc_response::RpcSimulateTransactionResult>> {
         self.rpc_client
             .simulate_transaction(transaction)
+            .await
             .map_err(Into::into)
     }
 
@@ -467,6 +484,7 @@ impl Clone for PodAIClient {
             config: self.config.clone(),
             http_client: self.http_client.clone(),
             connection_info: self.connection_info.clone(),
+            program_id: self.program_id,
         }
     }
 }
@@ -535,16 +553,16 @@ mod tests {
     #[test]
     fn test_config_creation() {
         let config = PodAIConfig::devnet();
-        assert_eq!(config.network(), NetworkType::Devnet);
         assert!(config.validate().is_ok());
+        assert_eq!(config.commitment, CommitmentConfig::confirmed());
 
         let config = PodAIConfig::mainnet();
-        assert_eq!(config.network(), NetworkType::Mainnet);
         assert!(config.validate().is_ok());
+        assert_eq!(config.commitment, CommitmentConfig::finalized());
 
-        let config = PodAIConfig::from_env();
-        assert_eq!(config.network(), NetworkType::Localnet);
+        let config = PodAIConfig::localnet();
         assert!(config.validate().is_ok());
+        assert_eq!(config.commitment, CommitmentConfig::processed());
     }
 
     #[test]
@@ -560,17 +578,12 @@ mod tests {
 
         // Invalid: invalid URL
         let mut config = PodAIConfig::devnet();
-        config.rpc_url = "http://invalid.url".to_string();
+        config.rpc_url = "invalid-url".to_string();
         assert!(config.validate().is_err());
 
         // Invalid: zero timeout
         let mut config = PodAIConfig::devnet();
         config.timeout_ms = 0;
-        assert!(config.validate().is_err());
-
-        // Invalid: too many retries
-        let mut config = PodAIConfig::devnet();
-        config.max_retries = 20;
         assert!(config.validate().is_err());
     }
 

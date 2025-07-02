@@ -2,12 +2,11 @@
 
 use crate::errors::{PodAIError, PodAIResult};
 use crate::types::message::MessageType;
-use crate::PROGRAM_ID;
 use solana_sdk::pubkey::Pubkey;
 
 /// Find the agent PDA for a given wallet
 pub fn find_agent_pda(wallet: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[b"agent", wallet.as_ref()], &PROGRAM_ID)
+    Pubkey::find_program_address(&[b"agent", wallet.as_ref()], &crate::program_id())
 }
 
 /// Find the message PDA for sender, recipient, payload hash, and message type
@@ -15,7 +14,7 @@ pub fn find_message_pda(
     sender: &Pubkey,
     recipient: &Pubkey,
     payload_hash: &[u8; 32],
-    message_type: MessageType,
+    message_type: &MessageType,
 ) -> (Pubkey, u8) {
     let message_type_byte = message_type.as_byte();
     Pubkey::find_program_address(
@@ -26,7 +25,7 @@ pub fn find_message_pda(
             payload_hash,
             &[message_type_byte],
         ],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -34,7 +33,7 @@ pub fn find_message_pda(
 pub fn find_channel_pda(creator: &Pubkey, name: &str) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[b"channel", creator.as_ref(), name.as_bytes()],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -42,7 +41,7 @@ pub fn find_channel_pda(creator: &Pubkey, name: &str) -> (Pubkey, u8) {
 pub fn find_channel_participant_pda(channel: &Pubkey, participant: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[b"participant", channel.as_ref(), participant.as_ref()],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -59,7 +58,7 @@ pub fn find_channel_message_pda(
             sender.as_ref(),
             &nonce.to_le_bytes(),
         ],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -67,7 +66,7 @@ pub fn find_channel_message_pda(
 pub fn find_channel_invitation_pda(channel: &Pubkey, invitee: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[b"invitation", channel.as_ref(), invitee.as_ref()],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -75,7 +74,7 @@ pub fn find_channel_invitation_pda(channel: &Pubkey, invitee: &Pubkey) -> (Pubke
 pub fn find_escrow_pda(channel: &Pubkey, depositor: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[b"escrow", channel.as_ref(), depositor.as_ref()],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -94,7 +93,7 @@ pub fn find_product_request_pda(
             &[request_type],
             requirements.as_bytes(),
         ],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -111,7 +110,7 @@ pub fn find_data_product_pda(
             content_hash,
             title.as_bytes(),
         ],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -128,7 +127,7 @@ pub fn find_capability_service_pda(
             &[service_type],
             service_name.as_bytes(),
         ],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -143,7 +142,7 @@ pub fn find_agent_nft_container_pda(
             agent.as_ref(),
             agent_mint.as_ref(),
         ],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -158,7 +157,7 @@ pub fn find_sales_conversation_pda(
             agent_container.as_ref(),
             buyer.as_ref(),
         ],
-        &PROGRAM_ID,
+        &crate::program_id(),
     )
 }
 
@@ -173,7 +172,7 @@ pub fn validate_pda(
     if derived_pda != *expected_pda {
         return Err(PodAIError::invalid_input(
             "pda",
-            format!("PDA mismatch: expected {}, got {}", expected_pda, derived_pda),
+            format!("PDA mismatch: expected {}, got {}", expected_pda, derived_pda).as_str(),
         ));
     }
     
@@ -295,7 +294,7 @@ mod tests {
         
         // Verify PDA derivation
         let expected_seeds = &[b"agent", wallet.as_ref()];
-        let (expected_pda, expected_bump) = Pubkey::find_program_address(expected_seeds, &PROGRAM_ID);
+        let (expected_pda, expected_bump) = Pubkey::find_program_address(expected_seeds, &crate::program_id());
         
         assert_eq!(pda, expected_pda);
         assert_eq!(bump, expected_bump);
@@ -308,7 +307,7 @@ mod tests {
         let payload_hash = [1u8; 32];
         let message_type = MessageType::Text;
 
-        let (pda, bump) = find_message_pda(&sender, &recipient, &payload_hash, message_type);
+        let (pda, bump) = find_message_pda(&sender, &recipient, &payload_hash, &message_type);
         
         // Verify PDA derivation
         let expected_seeds = &[
@@ -318,7 +317,7 @@ mod tests {
             payload_hash.as_ref(),
             &[message_type.as_byte()],
         ];
-        let (expected_pda, expected_bump) = Pubkey::find_program_address(expected_seeds, &PROGRAM_ID);
+        let (expected_pda, expected_bump) = Pubkey::find_program_address(expected_seeds, &crate::program_id());
         
         assert_eq!(pda, expected_pda);
         assert_eq!(bump, expected_bump);
@@ -333,7 +332,7 @@ mod tests {
         
         // Verify PDA derivation
         let expected_seeds = &[b"channel", creator.as_ref(), name.as_bytes()];
-        let (expected_pda, expected_bump) = Pubkey::find_program_address(expected_seeds, &PROGRAM_ID);
+        let (expected_pda, expected_bump) = Pubkey::find_program_address(expected_seeds, &crate::program_id());
         
         assert_eq!(pda, expected_pda);
         assert_eq!(bump, expected_bump);
@@ -344,7 +343,7 @@ mod tests {
         let wallet = Pubkey::from_str("11111111111111111111111111111112").unwrap();
         let nonce = 42u64;
         
-        let (pda1, bump1) = PdaBuilder::new(PROGRAM_ID)
+        let (pda1, bump1) = PdaBuilder::new(crate::program_id())
             .add_str("test")
             .add_pubkey(&wallet)
             .add_u64(nonce)
@@ -353,7 +352,7 @@ mod tests {
         // Manual derivation for comparison
         let (pda2, bump2) = Pubkey::find_program_address(
             &[b"test", wallet.as_ref(), &nonce.to_le_bytes()],
-            &PROGRAM_ID,
+            &crate::program_id(),
         );
         
         assert_eq!(pda1, pda2);
@@ -367,12 +366,12 @@ mod tests {
         
         // Valid PDA
         let seeds = &[b"agent", wallet.as_ref()];
-        let bump = validate_pda(&pda, seeds, &PROGRAM_ID).unwrap();
+        let bump = validate_pda(&pda, seeds, &crate::program_id()).unwrap();
         assert_eq!(bump, expected_bump);
         
         // Invalid PDA
         let wrong_pda = Pubkey::from_str("11111111111111111111111111111113").unwrap();
-        let result = validate_pda(&wrong_pda, seeds, &PROGRAM_ID);
+        let result = validate_pda(&wrong_pda, seeds, &crate::program_id());
         assert!(result.is_err());
     }
 

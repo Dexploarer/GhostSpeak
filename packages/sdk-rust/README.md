@@ -1,247 +1,287 @@
-# ghostspeak Rust SDK
+# PodAI Rust SDK
 
-A production-grade Rust SDK for the ghostspeak Agent Commerce Protocol on Solana. Built with Web3.js v2 patterns, SPL Token 2022 support, and comprehensive transaction factory system.
+A production-grade Rust SDK for the PodAI Agent Commerce Protocol on Solana. Built with modern patterns, comprehensive error handling, and full SPL Token 2022 support.
 
 ## 🚀 Quick Start
 
 ```toml
 [dependencies]
 podai-sdk = "0.1.0"
+tokio = { version = "1.0", features = ["full"] }
 ```
 
 ```rust
-use podai_sdk::prelude::*;
+use podai_sdk::{
+    client::{PodAIClient, PodAIConfig},
+    services::agent::AgentService,
+    types::agent::AgentCapabilities,
+    errors::PodAIResult,
+};
+use solana_sdk::{signature::Keypair, signer::Signer};
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> PodAIResult<()> {
     // Initialize SDK for devnet
-    let client = podai_sdk::quick::devnet().await?;
+    let config = PodAIConfig::devnet();
+    let client = Arc::new(PodAIClient::new(config).await?);
     
     // Create services
     let agent_service = AgentService::new(client.clone());
-    let channel_service = ChannelService::new(client.clone());
     
-    // Register an agent with fast configuration
+    // Register an agent
     let keypair = Keypair::new();
-    let result = agent_service
-        .register_fast(
-            &keypair,
-            AgentCapabilities::Communication as u64,
-            "https://my-agent-metadata.com/metadata.json"
-        )
-        .await?;
+    let result = agent_service.register(
+        &keypair,
+        AgentCapabilities::Communication as u64 | AgentCapabilities::Trading as u64,
+        "https://my-agent-metadata.com/metadata.json"
+    ).await?;
     
     println!("Agent registered: {}", result.agent_pda);
+    println!("Transaction: {}", result.signature);
     Ok(())
 }
 ```
 
 ## 🏗️ Architecture
 
-### Web3.js v2 Inspired Patterns
-
-The SDK follows modern Web3.js v2 patterns for consistency and developer experience:
-
-- **Transaction Factory**: Composable transaction building
-- **Configurable Execution**: Fast, reliable, and custom configurations
-- **Builder Patterns**: Fluent, type-safe API design
-- **Priority Fee Management**: Dynamic fee estimation strategies
-
 ### Core Components
 
 ```rust
 // High-level services
-AgentService     // Agent registration and management
-ChannelService   // Communication channel operations
-MessageService   // Messaging with ZK compression
-EscrowService    // Secure financial transactions
+AgentService       // Agent registration and management
+ChannelService     // Communication channel operations
+MessageService     // Messaging operations
+EscrowService      // Secure financial transactions
 MarketplaceService // Data product trading
 
-// Transaction utilities
-TransactionFactory // Modern transaction building
-TransactionConfig  // Execution configuration
-PriorityFeeStrategy // Fee management
-RetryPolicy       // Resilient operations
+// Client and configuration
+PodAIClient        // Main client for Solana interaction
+PodAIConfig        // Configuration for different networks
+
+// Utilities
+PdaBuilder         // Program Derived Address utilities
+TransactionFactory // Transaction building utilities
 ```
 
 ## 🛠️ Usage Examples
 
-### Agent Registration with Custom Configuration
+### Agent Registration
 
 ```rust
-use podai_sdk::prelude::*;
+use podai_sdk::{
+    client::{PodAIClient, PodAIConfig},
+    services::agent::AgentService,
+    types::agent::AgentCapabilities,
+    errors::PodAIResult,
+};
+use solana_sdk::{signature::Keypair, signer::Signer};
+use std::sync::Arc;
 
-let agent_service = AgentService::new(client);
+async fn register_agent() -> PodAIResult<()> {
+    let config = PodAIConfig::devnet();
+    let client = Arc::new(PodAIClient::new(config).await?);
+    let agent_service = AgentService::new(client);
 
-// Custom configuration with priority fees and retries
-let result = agent_service
-    .register_builder()
-    .with_priority_fee_strategy(PriorityFeeStrategy::Dynamic { percentile: 75 })
-    .with_retry_policy(RetryPolicy::exponential(5, 1000))
-    .reliable()
-    .execute(&keypair, capabilities, metadata_uri)
-    .await?;
+    let keypair = Keypair::new();
+    let capabilities = AgentCapabilities::Communication as u64 
+        | AgentCapabilities::Trading as u64 
+        | AgentCapabilities::Analysis as u64;
+
+    let result = agent_service.register(
+        &keypair,
+        capabilities,
+        "https://example.com/agent-metadata.json"
+    ).await?;
+
+    println!("✅ Agent registered!");
+    println!("   PDA: {}", result.agent_pda);
+    println!("   Signature: {}", result.signature);
+    
+    Ok(())
+}
 ```
 
 ### Channel Creation and Management
 
 ```rust
-use podai_sdk::prelude::*;
+use podai_sdk::{
+    services::channel::ChannelService,
+    types::channel::ChannelVisibility,
+};
 
-let channel_service = ChannelService::new(client);
+async fn create_channel(client: Arc<PodAIClient>) -> PodAIResult<()> {
+    let channel_service = ChannelService::new(client);
+    let creator_keypair = Keypair::new();
 
-// Create public channel with message fees
-let channel_result = channel_service
-    .create_channel_fast(
+    let result = channel_service.create_channel(
         &creator_keypair,
         "AI Research Discussion",
+        "A channel for discussing AI research topics",
         ChannelVisibility::Public,
-        Some(1000) // 1000 lamports per message
-    )
-    .await?;
+        1000, // max participants
+        500,  // fee per message in lamports
+    ).await?;
 
-// Join channel
-let join_result = channel_service
-    .join_channel_with_factory(
-        &TransactionFactory::with_config(&client, TransactionConfig::reliable()),
-        &participant_keypair,
-        &channel_result.channel_pda
-    )
-    .await?;
+    println!("✅ Channel created!");
+    println!("   PDA: {}", result.channel_pda);
+    println!("   Signature: {}", result.signature);
+
+    Ok(())
+}
 ```
 
-### Messaging with ZK Compression
+### Message Sending
 
 ```rust
-use podai_sdk::prelude::*;
+use podai_sdk::{
+    services::message::MessageService,
+    types::message::MessageType,
+};
 
-let message_service = MessageService::new(client);
+async fn send_message(client: Arc<PodAIClient>) -> PodAIResult<()> {
+    let message_service = MessageService::new(client);
+    let sender_keypair = Keypair::new();
+    let recipient_pubkey = Keypair::new().pubkey();
 
-// Send message with compression
-let message_result = message_service
-    .send_message_with_factory(
-        &TransactionFactory::with_config(&client, TransactionConfig::fast()),
+    let result = message_service.send_message(
         &sender_keypair,
         &recipient_pubkey,
-        "Hello from the ghostspeak protocol!",
+        "Hello from the PodAI protocol!",
         MessageType::Text
-    )
-    .await?;
+    ).await?;
 
-println!("Message sent: {}", message_result.message_pda);
+    println!("✅ Message sent!");
+    println!("   PDA: {}", result.message_pda);
+    println!("   Signature: {}", result.signature);
+
+    Ok(())
+}
 ```
 
 ### Escrow Operations
 
 ```rust
-use podai_sdk::prelude::*;
+use podai_sdk::services::escrow::EscrowService;
 
-let escrow_service = EscrowService::new(client);
+async fn create_escrow(client: Arc<PodAIClient>) -> PodAIResult<()> {
+    let escrow_service = EscrowService::new(client);
+    let depositor_keypair = Keypair::new();
+    let channel_pda = Keypair::new().pubkey(); // Channel for the escrow
 
-// Create escrow with reliable configuration
-let escrow_result = escrow_service
-    .create_escrow_reliable(
+    let result = escrow_service.create_escrow(
         &depositor_keypair,
         &channel_pda,
-        1_000_000 // 1 SOL in lamports
-    )
-    .await?;
+        1_000_000 // 0.001 SOL in lamports
+    ).await?;
 
-// Release escrow to recipient
-let release_result = escrow_service
-    .release_escrow_with_factory(
-        &factory,
-        &escrow_result.escrow_pda,
-        &recipient_pubkey,
-        500_000 // Release 0.5 SOL
-    )
-    .await?;
+    println!("✅ Escrow created!");
+    println!("   PDA: {}", result.escrow_pda);
+    println!("   Signature: {}", result.signature);
+    println!("   Initial deposit: {} lamports", result.initial_deposit);
+
+    Ok(())
+}
 ```
 
-### Marketplace Data Trading
+### Marketplace Operations
 
 ```rust
-use podai_sdk::prelude::*;
+use podai_sdk::{
+    services::marketplace::MarketplaceService,
+    types::marketplace::{ProductType, DataProductType},
+};
 
-let marketplace_service = MarketplaceService::new(client);
+async fn create_marketplace_product(client: Arc<PodAIClient>) -> PodAIResult<()> {
+    let marketplace_service = MarketplaceService::new(client);
+    let creator_keypair = Keypair::new();
 
-// List a data product
-let product_result = marketplace_service
-    .create_data_product_with_factory(
-        &factory,
+    let result = marketplace_service.create_product(
         &creator_keypair,
         "AI Training Dataset",
         "High-quality conversational data for AI training",
+        ProductType::DataProduct,
         DataProductType::Dataset,
-        5_000_000, // 5 SOL price
-        "QmHash123..." // IPFS CID
-    )
-    .await?;
+        5_000_000, // 0.005 SOL price in lamports
+        "QmHash123..." // IPFS CID or metadata hash
+    ).await?;
 
-// Purchase data product
-let purchase_result = marketplace_service
-    .purchase_data_product_with_factory(
-        &factory,
-        &buyer_keypair,
-        &product_result.product_pda
-    )
-    .await?;
+    println!("✅ Product created!");
+    println!("   PDA: {}", result.product_pda);
+    println!("   Signature: {}", result.signature);
+
+    Ok(())
+}
 ```
 
 ## ⚙️ Configuration
 
-### Transaction Configuration
-
-```rust
-// Fast execution (lower fees, faster confirmation)
-let config = TransactionConfig::fast();
-
-// Reliable execution (higher fees, more retries)
-let config = TransactionConfig::reliable();
-
-// Custom configuration
-let config = TransactionConfig::default()
-    .with_priority_fee_strategy(PriorityFeeStrategy::Fixed { 
-        micro_lamports_per_cu: 10000 
-    })
-    .with_retry_policy(RetryPolicy::exponential(3, 2000))
-    .with_simulation(true);
-```
-
-### Priority Fee Strategies
-
-```rust
-// No priority fee
-PriorityFeeStrategy::None
-
-// Fixed micro-lamports per compute unit
-PriorityFeeStrategy::Fixed { micro_lamports_per_cu: 5000 }
-
-// Dynamic network-based estimation
-PriorityFeeStrategy::Dynamic { percentile: 50 }
-
-// Helius API integration
-PriorityFeeStrategy::Helius { api_key: "your-key".to_string() }
-
-// Custom calculation
-PriorityFeeStrategy::Custom(Box::new(|_| async { 10000 }))
-```
-
 ### Client Configuration
 
 ```rust
+use podai_sdk::client::{PodAIClient, PodAIConfig};
+
 // Environment-specific configurations
-let client = PodAIClient::new(PodAIConfig::devnet()).await?;
-let client = PodAIClient::new(PodAIConfig::mainnet()).await?;
-let client = PodAIClient::new(PodAIConfig::localnet()).await?;
+async fn setup_clients() -> PodAIResult<()> {
+    // Devnet (for development)
+    let devnet_config = PodAIConfig::devnet();
+    let devnet_client = PodAIClient::new(devnet_config).await?;
 
-// Custom configuration
-let config = PodAIConfig::devnet()
-    .with_timeout(60_000)
-    .with_retry_config(5, 3000)
-    .with_program_id(custom_program_id);
+    // Mainnet (for production)
+    let mainnet_config = PodAIConfig::mainnet();
+    let mainnet_client = PodAIClient::new(mainnet_config).await?;
 
-let client = PodAIClient::new(config).await?;
+    // Localnet (for testing)
+    let localnet_config = PodAIConfig::localnet();
+    let localnet_client = PodAIClient::new(localnet_config).await?;
+
+    // Custom configuration
+    let custom_config = PodAIConfig::devnet()
+        .with_timeout(60_000)
+        .with_retry_config(5, 3000);
+    let custom_client = PodAIClient::new(custom_config).await?;
+
+    Ok(())
+}
+```
+
+### Error Handling
+
+```rust
+use podai_sdk::errors::{PodAIError, PodAIResult};
+
+async fn handle_errors() -> PodAIResult<()> {
+    match some_operation().await {
+        Ok(result) => {
+            println!("Success: {:?}", result);
+        }
+        Err(PodAIError::Network { message }) => {
+            eprintln!("Network error: {}", message);
+            // Retry logic here
+        }
+        Err(PodAIError::InvalidInput { field, reason }) => {
+            eprintln!("Invalid input for {}: {}", field, reason);
+            // Don't retry, fix the input
+        }
+        Err(PodAIError::TransactionFailed { reason, signature, retryable, .. }) => {
+            eprintln!("Transaction failed: {}", reason);
+            if let Some(sig) = signature {
+                eprintln!("Transaction signature: {}", sig);
+            }
+            if retryable {
+                // Can retry this operation
+            }
+        }
+        Err(e) => {
+            eprintln!("Other error: {}", e);
+        }
+    }
+    Ok(())
+}
+
+async fn some_operation() -> PodAIResult<String> {
+    Ok("Success".to_string())
+}
 ```
 
 ## 🧪 Testing
@@ -252,77 +292,56 @@ let client = PodAIClient::new(config).await?;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use podai_sdk::testing::{TestConfig, TestAccountHelper};
+    use podai_sdk::{
+        client::{PodAIClient, PodAIConfig},
+        utils::pda::find_agent_pda,
+    };
 
     #[tokio::test]
-    async fn test_agent_registration() {
-        let config = TestConfig::localhost();
-        let client = PodAIClient::new(config.to_podai_config()).await.unwrap();
-        let service = AgentService::new(Arc::new(client));
+    async fn test_agent_pda_generation() {
+        let wallet = Keypair::new();
+        let (pda1, bump1) = find_agent_pda(&wallet.pubkey());
+        let (pda2, bump2) = find_agent_pda(&wallet.pubkey());
         
-        let mut helper = TestAccountHelper::new();
-        let keypair = helper.generate_keypair();
+        // PDA generation should be deterministic
+        assert_eq!(pda1, pda2);
+        assert_eq!(bump1, bump2);
+    }
+
+    #[tokio::test]
+    async fn test_client_initialization() {
+        let config = PodAIConfig::devnet();
         
-        let result = service
-            .register_fast(
-                keypair,
-                AgentCapabilities::Communication as u64,
-                "https://test.example.com"
-            )
-            .await;
-            
-        assert!(result.is_ok());
+        // This might fail in CI without Solana running, that's expected
+        match PodAIClient::new(config).await {
+            Ok(client) => {
+                assert!(!client.program_id().to_string().is_empty());
+            }
+            Err(_) => {
+                // Expected in CI environments
+            }
+        }
     }
 }
 ```
 
-### Integration Testing
+### Running Tests
 
-```rust
-use podai_sdk::testing::IntegrationTestHelper;
+```bash
+# Unit tests (no network required)
+cargo test
 
-#[tokio::test]
-async fn test_end_to_end_workflow() {
-    let mut helper = IntegrationTestHelper::new(TestConfig::devnet()).await?;
-    
-    // Generate funded keypairs
-    let agent1 = helper.generate_funded_keypair().await?;
-    let agent2 = helper.generate_funded_keypair().await?;
-    
-    // Test complete workflow
-    let client = helper.client();
-    let agent_service = AgentService::new(client.clone());
-    let channel_service = ChannelService::new(client.clone());
-    let message_service = MessageService::new(client);
-    
-    // Register agents
-    let agent1_result = agent_service
-        .register_fast(agent1, capabilities, metadata_uri)
-        .await?;
-    
-    let agent2_result = agent_service
-        .register_fast(agent2, capabilities, metadata_uri)
-        .await?;
-        
-    // Create and join channel
-    let channel_result = channel_service
-        .create_channel_fast(agent1, "Test Channel", ChannelVisibility::Public, None)
-        .await?;
-        
-    let join_result = channel_service
-        .join_channel_with_factory(&factory, agent2, &channel_result.channel_pda)
-        .await?;
-    
-    // Send message
-    let message_result = message_service
-        .send_message_fast(agent1, &agent2.pubkey(), "Hello!", MessageType::Text)
-        .await?;
-    
-    assert!(message_result.signature != Signature::default());
-    
-    // Cleanup
-    helper.cleanup().await?;
-}
+# All tests (requires Solana validator)
+cargo test --all-features
+
+# Documentation tests
+cargo test --doc
+
+# Examples (requires network)
+cargo run --example complete_agent_workflow
+cargo run --example enhanced_agent_registration
+cargo run --example performance_demo
+cargo run --example quick_validation
 ```
 
 ## 🔧 Development
@@ -336,27 +355,11 @@ cargo build
 # Release build
 cargo build --release
 
-# With all features
+# Build with all features
 cargo build --all-features
 
-# Testing build
-cargo build --features testing
-```
-
-### Running Tests
-
-```bash
-# Unit tests
-cargo test
-
-# Integration tests (requires validator)
-cargo test --features testing
-
-# Documentation tests
-cargo test --doc
-
-# Performance tests
-cargo test --release --features testing test_performance
+# Build examples
+cargo build --examples
 ```
 
 ### Linting and Formatting
@@ -372,92 +375,79 @@ cargo clippy -- -D warnings
 cargo check
 ```
 
-## 📚 Documentation
-
-### API Documentation
+### Documentation
 
 ```bash
-# Generate documentation
-cargo doc --open --all-features
+# Generate and open documentation
+cargo doc --open --no-deps --all-features
 
-# Documentation with private items
+# Generate documentation with private items
 cargo doc --document-private-items --open
 ```
 
-### Examples
+## 📚 Examples
 
-Run the included examples:
+The SDK includes several comprehensive examples:
 
+- **complete_agent_workflow.rs** - Full agent lifecycle demonstration
+- **enhanced_agent_registration.rs** - Agent registration patterns
+- **performance_demo.rs** - Performance benchmarking
+- **quick_validation.rs** - Core functionality validation
+
+Run any example with:
 ```bash
-# Enhanced agent registration
-cargo run --example enhanced_agent_registration --features testing
-
-# Channel management
-cargo run --example channel_management --features testing
-
-# Marketplace operations
-cargo run --example marketplace_demo --features testing
+cargo run --example <example_name>
 ```
 
-## 🚀 Production Deployment
+## 🚀 Production Checklist
 
-### Dependencies
+Before using in production:
 
-Ensure your `Cargo.toml` includes:
+- [ ] Configure appropriate network (mainnet vs devnet)
+- [ ] Set up proper error handling and logging
+- [ ] Implement retry logic for network operations
+- [ ] Monitor transaction fees and success rates
+- [ ] Test with real SOL on devnet first
+- [ ] Set up monitoring and alerting
+- [ ] Review security considerations
 
-```toml
-[dependencies]
-podai-sdk = { version = "0.1.0", features = ["spl-token-2022"] }
-tokio = { version = "1.0", features = ["full"] }
+## 📄 API Reference
+
+For complete API documentation, run:
+```bash
+cargo doc --open --no-deps --all-features
 ```
 
-### Error Handling
+Or visit [docs.rs/podai-sdk](https://docs.rs/podai-sdk) (when published).
 
+## 🔗 Core Types and Capabilities
+
+### Agent Capabilities
 ```rust
-use podai_sdk::{PodAIError, PodAIResult};
+use podai_sdk::types::agent::AgentCapabilities;
 
-match result {
-    Ok(data) => {
-        // Handle success
-    }
-    Err(PodAIError::Network { message }) => {
-        // Handle network errors - retryable
-        log::warn!("Network error: {}", message);
-    }
-    Err(PodAIError::InvalidInput { field, reason }) => {
-        // Handle validation errors - not retryable
-        log::error!("Invalid input {}: {}", field, reason);
-    }
-    Err(e) if e.is_retryable() => {
-        // Handle retryable errors
-        log::info!("Retrying operation: {}", e);
-    }
-    Err(e) => {
-        // Handle non-retryable errors
-        log::error!("Operation failed: {}", e);
-    }
-}
+// Available capabilities
+AgentCapabilities::Communication  // Basic messaging
+AgentCapabilities::Trading       // Market operations
+AgentCapabilities::Analysis      // Data analysis
 ```
 
-### Performance Optimization
-
+### Channel Visibility
 ```rust
-// Use connection pooling
-let client = Arc::new(PodAIClient::new(config).await?);
+use podai_sdk::types::channel::ChannelVisibility;
 
-// Batch operations when possible
-let accounts = client.get_multiple_accounts(&addresses).await?;
+ChannelVisibility::Public   // Open to all
+ChannelVisibility::Private  // Invite-only
+```
 
-// Use appropriate priority fees
-let factory = TransactionFactory::with_config(
-    &client,
-    TransactionConfig::default()
-        .with_priority_fee_strategy(PriorityFeeStrategy::Dynamic { percentile: 75 })
-);
+### Message Types
+```rust
+use podai_sdk::types::message::MessageType;
 
-// Monitor performance
-let metrics = TestPerformanceMetrics::analyze_transaction(&transaction);
-assert!(metrics.meets_requirements());
+MessageType::Text           // Plain text messages
+MessageType::Encrypted      // Encrypted content
+MessageType::File           // File attachments
+MessageType::System         // System messages
 ```
 
 ## 📜 License
@@ -468,16 +458,15 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Run the full test suite
-6. Submit a pull request
+3. Make your changes with tests
+4. Run the full test suite
+5. Submit a pull request
 
 ## 📞 Support
 
-- **Documentation**: [docs.rs/podai-sdk](https://docs.rs/podai-sdk)
+- **Documentation**: Generated API docs with `cargo doc --open`
 - **Issues**: [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues)
-- **Discord**: [ghostspeak Community](https://discord.gg/ghostspeak)
+- **Examples**: See `examples/` directory
 
 ---
 

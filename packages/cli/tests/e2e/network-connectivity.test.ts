@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { createSolanaRpc } from '@solana/web3.js';
+import { Connection } from '@solana/web3.js';
 
 describe('CLI Network Connectivity E2E Tests', () => {
   beforeAll(async () => {
@@ -12,19 +12,19 @@ describe('CLI Network Connectivity E2E Tests', () => {
 
   describe('RPC Connections', () => {
     test('should create RPC client instances', async () => {
-      const devnetRpc = createSolanaRpc('https://api.devnet.solana.com');
-      const mainnetRpc = createSolanaRpc('https://api.mainnet-beta.solana.com');
+      const devnetConnection = new Connection('https://api.devnet.solana.com');
+      const mainnetConnection = new Connection('https://api.mainnet-beta.solana.com');
       
-      expect(devnetRpc).toBeDefined();
-      expect(mainnetRpc).toBeDefined();
+      expect(devnetConnection).toBeDefined();
+      expect(mainnetConnection).toBeDefined();
     });
 
     test('should test devnet connectivity', async () => {
-      const rpc = createSolanaRpc('https://api.devnet.solana.com');
+      const connection = new Connection('https://api.devnet.solana.com');
       
       try {
-        const slot = await rpc.getSlot().send();
-        expect(typeof slot).toBe('bigint');
+        const slot = await connection.getSlot();
+        expect(typeof slot).toBe('number');
         console.log('✅ CLI can connect to devnet at slot:', slot.toString());
       } catch (error) {
         console.warn('⚠️ Devnet connection failed:', error);
@@ -32,10 +32,10 @@ describe('CLI Network Connectivity E2E Tests', () => {
     });
 
     test('should handle connection timeouts gracefully', async () => {
-      const rpc = createSolanaRpc('http://localhost:9999'); // Non-existent endpoint
+      const connection = new Connection('http://localhost:9999'); // Non-existent endpoint
       
       try {
-        await rpc.getSlot().send();
+        await connection.getSlot();
         expect(false).toBe(true); // Should not reach here
       } catch (error) {
         expect(error).toBeDefined();

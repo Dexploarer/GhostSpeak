@@ -60,6 +60,9 @@ interface PurchaseResult {
   blockchainConfirmed: boolean;
 }
 
+// Detect test mode
+const TEST_MODE = process.argv.includes('--test-mode') || process.env.GHOSTSPEAK_TEST_MODE === 'true';
+
 /**
  * Real Marketplace Service - Blockchain Connected
  */
@@ -492,15 +495,21 @@ export class MarketplaceCommand {
       const selectedAgent = agents.find(a => a.id === selectedAgentId)!;
 
       // Gather service details
-      const serviceType = await select({
-        message: 'What type of service do you need?',
-        choices: [
-          { name: '📊 Blockchain Data Analysis', value: 'blockchain_analysis' },
-          { name: '🔍 Smart Contract Audit', value: 'contract_audit' },
-          { name: '📈 DeFi Strategy Development', value: 'defi_strategy' },
-          { name: '🛠️ Custom Solana Development', value: 'solana_dev' }
-        ]
-      });
+      let serviceType: string;
+      if (TEST_MODE) {
+        console.log('[TEST MODE] Service type: blockchain_analysis');
+        serviceType = 'blockchain_analysis';
+      } else {
+        serviceType = await select({
+          message: 'What type of service do you need?',
+          choices: [
+            { name: '📊 Blockchain Data Analysis', value: 'blockchain_analysis' },
+            { name: '🔍 Smart Contract Audit', value: 'contract_audit' },
+            { name: '📈 DeFi Strategy Development', value: 'defi_strategy' },
+            { name: '🛠️ Custom Solana Development', value: 'solana_dev' }
+          ]
+        });
+      }
 
       const duration = await input({
         message: 'Project duration (days):',

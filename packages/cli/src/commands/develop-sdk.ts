@@ -12,6 +12,9 @@ import { NetworkManager } from '../utils/network-manager.js';
 
 const execAsync = promisify(exec);
 
+// Detect test mode
+const TEST_MODE = process.argv.includes('--test-mode') || process.env.GHOSTSPEAK_TEST_MODE === 'true';
+
 export interface ISDKProject {
   name: string;
   type: 'typescript' | 'rust' | 'both';
@@ -94,16 +97,22 @@ export class DevelopSDKCommand {
     );
 
     // Project basic info
-    const projectName = await input({
-      message: 'Project name:',
-      default: 'my-ghostspeak-app',
-      validate: value => {
-        if (!value.trim()) return 'Project name is required';
-        if (!/^[a-z0-9-_]+$/.test(value))
-          return 'Use only lowercase letters, numbers, hyphens, and underscores';
-        return true;
-      },
-    });
+    let projectName: string;
+    if (TEST_MODE) {
+      console.log('[TEST MODE] Project name: TestProject');
+      projectName = 'TestProject';
+    } else {
+      projectName = await input({
+        message: 'Project name:',
+        default: 'my-ghostspeak-app',
+        validate: value => {
+          if (!value.trim()) return 'Project name is required';
+          if (!/^[a-z0-9-_]+$/.test(value))
+            return 'Use only lowercase letters, numbers, hyphens, and underscores';
+          return true;
+        },
+      });
+    }
 
     const projectPath = await input({
       message: 'Project directory:',

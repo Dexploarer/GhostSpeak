@@ -3,6 +3,9 @@ import { UIManager } from '../ui/ui-manager.js';
 import { NetworkManager } from '../utils/network-manager.js';
 import { ConfigManager } from '../utils/config-manager.js';
 
+// Detect test mode
+const TEST_MODE = process.argv.includes('--test-mode') || process.env.GHOSTSPEAK_TEST_MODE === 'true';
+
 export class SettingsCommand {
   private ui: UIManager;
   private network: NetworkManager;

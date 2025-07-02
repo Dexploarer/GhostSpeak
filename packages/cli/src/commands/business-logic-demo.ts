@@ -134,6 +134,9 @@ class MockBusinessLogicService {
   }
 }
 
+// Detect test mode
+const TEST_MODE = process.argv.includes('--test-mode') || process.env.GHOSTSPEAK_TEST_MODE === 'true';
+
 export class BusinessLogicDemoCommand {
   private ui: UIManager;
   private network: NetworkManager;
@@ -241,10 +244,16 @@ export class BusinessLogicDemoCommand {
     console.log();
 
     // Gather subscription details
-    const planName = await input({
-      message: 'Subscription plan name:',
-      default: 'Premium Data Analysis Package'
-    });
+    let planName: string;
+    if (TEST_MODE) {
+      console.log('[TEST MODE] Subscription plan name: TestPlan');
+      planName = 'TestPlan';
+    } else {
+      planName = await input({
+        message: 'Subscription plan name:',
+        default: 'Premium Data Analysis Package'
+      });
+    }
 
     const monthlyPrice = await input({
       message: 'Monthly price (USD):',

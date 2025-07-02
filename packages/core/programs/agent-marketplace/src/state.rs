@@ -443,4 +443,7 @@ pub enum AgentMarketplaceError {
     
     #[msg("Marketplace fee calculation error")]
     MarketplaceFeeError,
+    
+    #[msg("Unauthorized access to session")]
+    UnauthorizedSessionAccess,
 }

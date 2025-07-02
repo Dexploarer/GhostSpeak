@@ -1888,7 +1888,7 @@ Feel free to ask follow-up questions or request specific examples!`;
   }
 
   // Enhanced AI Provider Statistics
-  getProviderStats(): { [providerId: string]: { totalUsage: number; avgResponseTime: number; effectivenesScore: number } } {
+  getProviderStats(): { [providerId: string]: { totalUsage: number; avgResponseTime: number; effectivenessScore: number } } {
     const stats: { [providerId: string]: { totalUsage: number; avgResponseTime: number; effectivenessScore: number } } = {};
 
     this.prayers.forEach(prayer => {
@@ -2422,5 +2422,519 @@ ${Object.keys(providerStats).length === 0 ? '- Configure an AI provider to enabl
     vscode.window.showInformationMessage(
       `✅ Batch optimization complete! Optimized: ${optimized}, Failed: ${failed}`
     );
+  }
+
+  async saveSelectionAsPrayer(code: string, language: string, filePath?: string, range?: vscode.Range): Promise<void> {
+    try {
+      // Generate a name for the prayer based on the code content
+      const name = await this.generatePrayerName(code, language);
+      
+      // Create the prayer object
+      const prayer: IPocketedPrayer = {
+        id: this.generateId(),
+        name,
+        category: this.detectCategory(code, language),
+        code,
+        language,
+        prompt: await this.generatePromptFromCode(code, language),
+        context: filePath ? `File: ${filePath}${range ? ` (lines ${range.start.line + 1}-${range.end.line + 1})` : ''}` : undefined,
+        variables: this.extractVariables(code),
+        tags: this.autoTagCode(code, language),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        filePath,
+        lineStart: range?.start.line,
+        lineEnd: range?.end.line,
+        usage: {
+          count: 0
+        }
+      };
+
+      // Add to prayers array
+      this.prayers.push(prayer);
+      await this.savePrayers();
+      this.refresh();
+
+      vscode.window.showInformationMessage(`Prayer "${name}" saved successfully!`);
+    } catch (error) {
+      console.error('Failed to save selection as prayer:', error);
+      vscode.window.showErrorMessage('Failed to save selection as prayer.');
+    }
+  }
+
+  async extractSelectionAsVariable(code: string, language: string, filePath?: string, range?: vscode.Range): Promise<void> {
+    try {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage('No active editor found.');
+        return;
+      }
+
+      // Analyze the code to suggest variable name and type
+      const analysis = await this.analyzeCodeForVariableExtraction(code, language);
+      
+      // Show input dialog for variable name
+      const variableName = await vscode.window.showInputBox({
+        prompt: 'Enter variable name:',
+        value: analysis.suggestedName,
+        placeHolder: 'e.g., userData, config, result'
+      });
+
+      if (!variableName) {
+        return; // User cancelled
+      }
+
+      // Generate the variable declaration
+      const variableDeclaration = this.generateVariableDeclaration(code, variableName, language, analysis.suggestedType);
+
+      // Insert the variable declaration before the selected code
+      const insertPosition = range ? range.start : editor.selection.start;
+      await editor.edit(editBuilder => {
+        editBuilder.insert(insertPosition, variableDeclaration + '\n');
+      });
+
+      // Replace the original code with the variable reference
+      const variableReference = this.generateVariableReference(variableName, language);
+      await editor.edit(editBuilder => {
+        editBuilder.replace(range || editor.selection, variableReference);
+      });
+
+      vscode.window.showInformationMessage(`Code extracted as variable "${variableName}" successfully!`);
+    } catch (error) {
+      console.error('Failed to extract selection as variable:', error);
+      vscode.window.showErrorMessage('Failed to extract selection as variable.');
+    }
+  }
+
+  async sendSelectionToAI(code: string, language: string, filePath?: string, range?: vscode.Range): Promise<void> {
+    try {
+      // Build a context-aware prompt for the AI
+      const context = this.buildCodeContext(code, language, filePath, range);
+      const prompt = this.buildAIPrompt(code, context);
+
+      // Show the prompt to the user for review/editing
+      const finalPrompt = await vscode.window.showInputBox({
+        prompt: 'Review and edit the AI prompt:',
+        value: prompt,
+        placeHolder: 'Enter your prompt for the AI agent...'
+      });
+
+      if (!finalPrompt) {
+        return; // User cancelled
+      }
+
+      // Send to AI and get response
+      const response = await this.callAIProviderWithCode(finalPrompt, code, language);
+      
+      // Show the response in a webview
+      await this.showAIResponse(response, 'AI Agent Response');
+
+      // Optionally save this interaction as a prayer
+      const saveAsPrayer = await vscode.window.showQuickPick(['Yes', 'No'], {
+        placeHolder: 'Save this interaction as a prayer for future use?'
+      });
+
+      if (saveAsPrayer === 'Yes') {
+        await this.saveSelectionAsPrayer(code, language, filePath, range);
+      }
+    } catch (error) {
+      console.error('Failed to send selection to AI:', error);
+      vscode.window.showErrorMessage('Failed to send selection to AI agent.');
+    }
+  }
+
+  async analyzeSelection(code: string, language: string, filePath?: string, range?: vscode.Range): Promise<void> {
+    try {
+      const analysis = await this.performCodeAnalysis(code, language);
+      
+      // Create a comprehensive analysis report
+      const report = this.generateAnalysisReport(analysis, code, language, filePath, range);
+      
+      // Show the analysis in a webview
+      await this.showAnalysisReport(report);
+    } catch (error) {
+      console.error('Failed to analyze selection:', error);
+      vscode.window.showErrorMessage('Failed to analyze code selection.');
+    }
+  }
+
+  private async generatePrayerName(code: string, language: string): Promise<string> {
+    // Extract a meaningful name from the code
+    const lines = code.trim().split('\n');
+    const firstLine = lines[0].trim();
+    
+    // Try to extract function/class names
+    const functionMatch = firstLine.match(/(?:function|const|let|var)\s+(\w+)/);
+    if (functionMatch) {
+      return functionMatch[1];
+    }
+    
+    // Try to extract class names
+    const classMatch = firstLine.match(/class\s+(\w+)/);
+    if (classMatch) {
+      return classMatch[1];
+    }
+    
+    // Fallback to a generic name
+    return `Code_${Date.now()}`;
+  }
+
+  private detectCategory(code: string, language: string): string {
+    const lowerCode = code.toLowerCase();
+    
+    if (lowerCode.includes('function') || lowerCode.includes('def ') || lowerCode.includes('fn ')) {
+      return 'Functions';
+    }
+    if (lowerCode.includes('class') || lowerCode.includes('struct')) {
+      return 'Classes';
+    }
+    if (lowerCode.includes('if ') || lowerCode.includes('for ') || lowerCode.includes('while ')) {
+      return 'Logic';
+    }
+    if (lowerCode.includes('import') || lowerCode.includes('require') || lowerCode.includes('use ')) {
+      return 'Imports';
+    }
+    if (lowerCode.includes('error') || lowerCode.includes('exception') || lowerCode.includes('catch')) {
+      return 'Error Handling';
+    }
+    if (lowerCode.includes('test') || lowerCode.includes('spec') || lowerCode.includes('it(')) {
+      return 'Testing';
+    }
+    
+    return 'General';
+  }
+
+  private async generatePromptFromCode(code: string, language: string): Promise<string> {
+    // Generate a prompt that describes what this code does
+    const analysis = await this.performCodeAnalysis(code, language);
+    
+    return `Generate code that ${analysis.purpose}. 
+    
+Requirements:
+- Language: ${language}
+- Functionality: ${analysis.description}
+- Patterns: ${analysis.patterns.join(', ')}
+- Complexity: ${analysis.complexity}
+
+Please provide clean, well-documented code that follows best practices.`;
+  }
+
+  private autoTagCode(code: string, language: string): string[] {
+    const tags: string[] = [];
+    const lowerCode = code.toLowerCase();
+    
+    // Language-specific tags
+    tags.push(language);
+    
+    // Pattern-based tags
+    if (lowerCode.includes('async') || lowerCode.includes('await')) {
+      tags.push('async');
+    }
+    if (lowerCode.includes('promise') || lowerCode.includes('then(')) {
+      tags.push('promises');
+    }
+    if (lowerCode.includes('regex') || lowerCode.includes('/.*/')) {
+      tags.push('regex');
+    }
+    if (lowerCode.includes('api') || lowerCode.includes('fetch') || lowerCode.includes('axios')) {
+      tags.push('api');
+    }
+    if (lowerCode.includes('database') || lowerCode.includes('sql') || lowerCode.includes('query')) {
+      tags.push('database');
+    }
+    
+    return tags;
+  }
+
+  private async analyzeCodeForVariableExtraction(code: string, language: string): Promise<{
+    suggestedName: string;
+    suggestedType: string;
+    complexity: string;
+  }> {
+    // Analyze the code to suggest appropriate variable name and type
+    const lines = code.trim().split('\n');
+    const firstLine = lines[0].trim();
+    
+    let suggestedName = 'extractedValue';
+    let suggestedType = 'any';
+    
+    // Try to infer type from code
+    if (firstLine.includes('{') && firstLine.includes('}')) {
+      suggestedType = 'object';
+      suggestedName = 'data';
+    } else if (firstLine.includes('[') && firstLine.includes(']')) {
+      suggestedType = 'array';
+      suggestedName = 'items';
+    } else if (firstLine.includes('"') || firstLine.includes("'")) {
+      suggestedType = 'string';
+      suggestedName = 'text';
+    } else if (firstLine.match(/\d+/)) {
+      suggestedType = 'number';
+      suggestedName = 'value';
+    }
+    
+    const complexity = lines.length > 5 ? 'complex' : 'simple';
+    
+    return { suggestedName, suggestedType, complexity };
+  }
+
+  private generateVariableDeclaration(code: string, variableName: string, language: string, type: string): string {
+    switch (language) {
+      case 'typescript':
+      case 'javascript':
+        return `const ${variableName}: ${type} = ${code};`;
+      case 'rust':
+        return `let ${variableName}: ${type} = ${code};`;
+      case 'python':
+        return `${variableName}: ${type} = ${code}`;
+      default:
+        return `const ${variableName} = ${code};`;
+    }
+  }
+
+  private generateVariableReference(variableName: string, language: string): string {
+    return variableName;
+  }
+
+  private buildCodeContext(code: string, language: string, filePath?: string, range?: vscode.Range): string {
+    let context = `Language: ${language}\n`;
+    
+    if (filePath) {
+      context += `File: ${filePath}\n`;
+    }
+    
+    if (range) {
+      context += `Lines: ${range.start.line + 1}-${range.end.line + 1}\n`;
+    }
+    
+    context += `Code:\n${code}`;
+    
+    return context;
+  }
+
+  private buildAIPrompt(code: string, context: string): string {
+    return `I have the following code that I want to improve or understand better:
+
+${context}
+
+Please help me by:
+1. Explaining what this code does
+2. Suggesting improvements
+3. Providing alternative approaches if applicable
+4. Pointing out any potential issues or best practices
+
+Please provide clear, actionable feedback.`;
+  }
+
+  private async callAIProviderWithCode(prompt: string, code: string, language: string): Promise<string> {
+    if (!this.currentProviderConfig) {
+      throw new Error('No AI provider configured. Please configure an AI provider first.');
+    }
+
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert ${language} developer. Provide clear, actionable advice and code examples.`
+      },
+      {
+        role: 'user',
+        content: `${prompt}\n\nCode:\n\`\`\`${language}\n${code}\n\`\`\``
+      }
+    ];
+
+    const provider = this.aiProviders.find(p => p.id === this.currentProviderConfig!.providerId);
+    if (!provider) {
+      throw new Error(`Provider ${this.currentProviderConfig.providerId} not found.`);
+    }
+
+    return await this.callAIProvider(provider, messages);
+  }
+
+  private async performCodeAnalysis(code: string, language: string): Promise<{
+    purpose: string;
+    description: string;
+    patterns: string[];
+    complexity: string;
+    lines: number;
+    functions: number;
+    variables: number;
+  }> {
+    const lines = code.split('\n');
+    const functionMatches = code.match(/(?:function|def|fn)\s+\w+/g) || [];
+    const variableMatches = code.match(/(?:const|let|var)\s+\w+/g) || [];
+    
+    return {
+      purpose: this.inferCodePurpose(code, language),
+      description: this.generateCodeDescription(code, language),
+      patterns: this.detectCodePatterns(code, language),
+      complexity: lines.length > 20 ? 'complex' : lines.length > 10 ? 'medium' : 'simple',
+      lines: lines.length,
+      functions: functionMatches.length,
+      variables: variableMatches.length
+    };
+  }
+
+  private inferCodePurpose(code: string, language: string): string {
+    const lowerCode = code.toLowerCase();
+    
+    if (lowerCode.includes('fetch') || lowerCode.includes('axios') || lowerCode.includes('http')) {
+      return 'makes HTTP requests or API calls';
+    }
+    if (lowerCode.includes('query') || lowerCode.includes('select') || lowerCode.includes('database')) {
+      return 'performs database operations';
+    }
+    if (lowerCode.includes('validate') || lowerCode.includes('check') || lowerCode.includes('verify')) {
+      return 'validates or checks data';
+    }
+    if (lowerCode.includes('transform') || lowerCode.includes('map') || lowerCode.includes('filter')) {
+      return 'transforms or processes data';
+    }
+    if (lowerCode.includes('render') || lowerCode.includes('display') || lowerCode.includes('ui')) {
+      return 'renders or displays UI components';
+    }
+    
+    return 'performs a specific task';
+  }
+
+  private generateCodeDescription(code: string, language: string): string {
+    const lines = code.trim().split('\n');
+    const firstLine = lines[0].trim();
+    
+    if (firstLine.includes('function') || firstLine.includes('def ') || firstLine.includes('fn ')) {
+      return `A function that ${this.inferCodePurpose(code, language)}`;
+    }
+    if (firstLine.includes('class')) {
+      return `A class definition with methods and properties`;
+    }
+    if (firstLine.includes('const') || firstLine.includes('let') || firstLine.includes('var')) {
+      return `A variable declaration or data structure`;
+    }
+    
+    return `Code block that ${this.inferCodePurpose(code, language)}`;
+  }
+
+  private detectCodePatterns(code: string, language: string): string[] {
+    const patterns: string[] = [];
+    const lowerCode = code.toLowerCase();
+    
+    if (lowerCode.includes('async') && lowerCode.includes('await')) {
+      patterns.push('async/await');
+    }
+    if (lowerCode.includes('promise') || lowerCode.includes('then(')) {
+      patterns.push('promises');
+    }
+    if (lowerCode.includes('map(') || lowerCode.includes('filter(') || lowerCode.includes('reduce(')) {
+      patterns.push('functional programming');
+    }
+    if (lowerCode.includes('try') && lowerCode.includes('catch')) {
+      patterns.push('error handling');
+    }
+    if (lowerCode.includes('if') && lowerCode.includes('else')) {
+      patterns.push('conditional logic');
+    }
+    if (lowerCode.includes('for') || lowerCode.includes('while')) {
+      patterns.push('loops');
+    }
+    
+    return patterns;
+  }
+
+  private generateAnalysisReport(analysis: any, code: string, language: string, filePath?: string, range?: vscode.Range): string {
+    return `# Code Analysis Report
+
+## Overview
+- **Language**: ${language}
+- **Lines of Code**: ${analysis.lines}
+- **Complexity**: ${analysis.complexity}
+- **Functions**: ${analysis.functions}
+- **Variables**: ${analysis.variables}
+
+## Purpose
+${analysis.purpose}
+
+## Description
+${analysis.description}
+
+## Detected Patterns
+${analysis.patterns.map((p: string) => `- ${p}`).join('\n')}
+
+## Code Context
+${filePath ? `**File**: ${filePath}` : ''}
+${range ? `**Lines**: ${range.start.line + 1}-${range.end.line + 1}` : ''}
+
+## Code
+\`\`\`${language}
+${code}
+\`\`\`
+
+## Recommendations
+1. **Consider extracting complex logic into separate functions**
+2. **Add error handling where appropriate**
+3. **Include JSDoc/TSDoc comments for better documentation**
+4. **Consider using TypeScript for better type safety**`;
+  }
+
+  private async showAnalysisReport(report: string): Promise<void> {
+    const panel = vscode.window.createWebviewPanel(
+      'codeAnalysis',
+      'Code Analysis Report',
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+
+    panel.webview.html = this.getAnalysisReportHtml(report);
+  }
+
+  private getAnalysisReportHtml(report: string): string {
+    const markdown = report.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Analysis Report</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+            padding: 20px;
+            margin: 0;
+        }
+        h1, h2, h3 {
+            color: var(--vscode-editor-foreground);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-bottom: 8px;
+        }
+        code {
+            background: var(--vscode-textCodeBlock-background);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+        pre {
+            background: var(--vscode-textCodeBlock-background);
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid var(--vscode-panel-border);
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    ${markdown}
+</body>
+</html>`;
   }
 } 

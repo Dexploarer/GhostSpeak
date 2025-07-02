@@ -30,6 +30,8 @@ serde = { version = "1.0.219", features = ["derive"] }
 thiserror = "2.0.12"
 anyhow = "1.0.98"
 
+borsh = "1.5.0"
+
 [profile.release]
 overflow-checks = true
 lto = "fat"

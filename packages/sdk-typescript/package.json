@@ -11,6 +11,22 @@
       "import": "./dist/index.esm.js",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./src": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./services/*": {
+      "import": "./src/services/*.ts",
+      "types": "./src/services/*.ts"
+    },
+    "./types": {
+      "import": "./src/types.ts",
+      "types": "./src/types.ts"
+    },
+    "./generated-v2/*": {
+      "import": "./src/generated-v2/*.ts",
+      "types": "./src/generated-v2/*.ts"
     }
   },
   "scripts": {
@@ -26,12 +42,15 @@
   "dependencies": {
     "@codama/nodes-from-anchor": "1.2.1",
     "@codama/renderers-js": "1.2.14",
+    "@solana-program/token-2022": "^0.4.2",
     "@solana/addresses": "2.1.1",
     "@solana/codecs": "2.1.1",
     "@solana/kit": "2.1.1",
     "@solana/rpc": "2.1.1",
     "@solana/rpc-types": "2.1.1",
     "@solana/signers": "2.1.1",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/spl-token-metadata": "^0.1.6",
     "bs58": "6.0.0",
     "codama": "1.3.0"
   },

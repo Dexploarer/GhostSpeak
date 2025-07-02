@@ -4,19 +4,16 @@ use crate::client::PodAIClient;
 use crate::errors::{PodAIError, PodAIResult};
 use crate::types::marketplace::{DataProductAccount, ProductRequestAccount, CapabilityServiceAccount};
 use crate::utils::pda::{find_data_product_pda, find_product_request_pda, find_capability_service_pda};
-use crate::utils::{TransactionFactory, TransactionConfig, PriorityFeeStrategy, RetryPolicy};
+use crate::utils::TransactionFactory;
 use solana_sdk::{
     pubkey::Pubkey, 
     signature::{Keypair, Signature, Signer},
     instruction::{AccountMeta, Instruction},
-    system_instruction,
-    transaction::Transaction,
 };
 use serde::{Serialize, Deserialize};
 use std::sync::Arc;
 
 /// Service for managing marketplace operations
-#[derive(Debug, Clone)]
 pub struct MarketplaceService {
     client: Arc<PodAIClient>,
 }
@@ -61,21 +58,26 @@ impl MarketplaceService {
         )?;
 
         // Build and send transaction using factory
-        let transaction = Transaction::new_with_payer(&[instruction], Some(&requester.pubkey()));
-        let signature = factory.send_transaction(&transaction, &[requester]).await?;
+        let transaction = factory.build_transaction(vec![instruction], &requester.pubkey(), &[requester]).await?;
+        let result = factory.send_transaction(&transaction).await?;
 
-        // Create result with actual account data
+        // Create result with actual account data (simplified for now)
         let request_account = ProductRequestAccount::new(
             requester.pubkey(),
             *target_agent,
-            request_type,
+            match request_type {
+                0 => crate::types::marketplace::ProductRequestType::DataProduct,
+                1 => crate::types::marketplace::ProductRequestType::Service,
+                _ => crate::types::marketplace::ProductRequestType::Custom,
+            },
             requirements.to_string(),
             budget,
-            bump,
+            chrono::Utc::now().timestamp(),
+            0, // bump - to be filled correctly in real implementation
         )?;
 
         Ok(ProductRequestResult {
-            signature,
+            signature: result.signature,
             request_pda,
             request_account,
             requester: requester.pubkey(),
@@ -118,20 +120,25 @@ impl MarketplaceService {
         )?;
 
         // Build and send transaction using factory
-        let transaction = Transaction::new_with_payer(&[instruction], Some(&creator.pubkey()));
-        let signature = factory.send_transaction(&transaction, &[creator]).await?;
+        let transaction = factory.build_transaction(vec![instruction], &creator.pubkey(), &[creator]).await?;
+        let result = factory.send_transaction(&transaction).await?;
 
         // Create result with actual account data
         let product_account = DataProductAccount::new(
             creator.pubkey(),
+            None, // request_id
+            crate::types::marketplace::DataProductType::Dataset, // product_type
             title.to_string(),
+            "Generated data product".to_string(), // description
             content_hash,
+            "QmPlaceholder".to_string(), // ipfs_cid placeholder
             price,
+            500, // royalty_percentage (5%)
             bump,
         )?;
 
         Ok(DataProductResult {
-            signature,
+            signature: result.signature,
             product_pda,
             product_account,
             creator: creator.pubkey(),
@@ -173,20 +180,31 @@ impl MarketplaceService {
         )?;
 
         // Build and send transaction using factory
-        let transaction = Transaction::new_with_payer(&[instruction], Some(&provider.pubkey()));
-        let signature = factory.send_transaction(&transaction, &[provider]).await?;
+        let transaction = factory.build_transaction(vec![instruction], &provider.pubkey(), &[provider]).await?;
+        let result = factory.send_transaction(&transaction).await?;
 
         // Create result with actual account data
         let service_account = CapabilityServiceAccount::new(
             provider.pubkey(),
-            service_type,
+            match service_type {
+                0 => crate::types::marketplace::CapabilityServiceType::DataProcessing,
+                1 => crate::types::marketplace::CapabilityServiceType::ModelTraining,
+                2 => crate::types::marketplace::CapabilityServiceType::Analysis,
+                3 => crate::types::marketplace::CapabilityServiceType::Consultation,
+                4 => crate::types::marketplace::CapabilityServiceType::Integration,
+                _ => crate::types::marketplace::CapabilityServiceType::Custom,
+            },
             service_name.to_string(),
-            rate_per_unit,
+            "Professional service".to_string(), // service_description
+            rate_per_unit, // base_price
+            3600, // estimated_completion_time (1 hour)
+            5, // max_concurrent_requests
+            true, // requires_escrow
             bump,
         )?;
 
         Ok(CapabilityServiceResult {
-            signature,
+            signature: result.signature,
             service_pda,
             service_account,
             provider: provider.pubkey(),
@@ -318,10 +336,7 @@ impl MarketplaceService {
         budget: u64,
     ) -> PodAIResult<ProductRequestResult> {
         // Use factory pattern with default config
-        let factory = TransactionFactory::new(
-            self.client.clone(),
-            TransactionConfig::default(),
-        );
+        let factory = TransactionFactory::new(&self.client);
 
         self.create_product_request_with_factory(
             &factory,
@@ -342,10 +357,7 @@ impl MarketplaceService {
         price: u64,
     ) -> PodAIResult<DataProductResult> {
         // Use factory pattern with default config
-        let factory = TransactionFactory::new(
-            self.client.clone(),
-            TransactionConfig::default(),
-        );
+        let factory = TransactionFactory::new(&self.client);
 
         self.create_data_product_with_factory(
             &factory,
@@ -365,10 +377,7 @@ impl MarketplaceService {
         rate_per_unit: u64,
     ) -> PodAIResult<CapabilityServiceResult> {
         // Use factory pattern with default config
-        let factory = TransactionFactory::new(
-            self.client.clone(),
-            TransactionConfig::default(),
-        );
+        let factory = TransactionFactory::new(&self.client);
 
         self.register_capability_service_with_factory(
             &factory,

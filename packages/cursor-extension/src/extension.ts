@@ -8,6 +8,7 @@ import { WijaChannelProvider } from './providers/channel-provider';
 import { WijaNetworkProvider } from './providers/network-provider';
 import { WijaWalletProvider } from './providers/wallet-provider';
 import { WijaPromptVaultProvider } from './providers/prompt-vault-provider';
+import { WijaSpiritEchoProvider } from './providers/spirit-echo-provider';
 import { WijaCommandManager } from './commands/command-manager';
 import { WijaStatusBar } from './ui/status-bar';
 import { WijaConfig } from './config/wija-config';
@@ -25,6 +26,7 @@ export interface WijaExtensionContext {
     networkProvider: WijaNetworkProvider;
     walletProvider: WijaWalletProvider;
     promptVaultProvider: WijaPromptVaultProvider;
+    spiritEchoProvider: WijaSpiritEchoProvider;
     commandManager: WijaCommandManager;
     statusBar: WijaStatusBar;
     config: WijaConfig;
@@ -51,10 +53,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
         const dashboardProvider = new WijaDashboardProvider(context, config);
         const marketplaceProvider = new WijaMarketplaceProvider(context, config);
         const agentProvider = new WijaAgentProvider(context, projectDetector);
-        const channelProvider = new WijaChannelProvider(context, projectDetector);
+        const channelProvider = new WijaChannelProvider(context);
         const networkProvider = new WijaNetworkProvider(context, config);
         const walletProvider = new WijaWalletProvider(context, config);
         const promptVaultProvider = new WijaPromptVaultProvider(context);
+        const spiritEchoProvider = new WijaSpiritEchoProvider(context, promptVaultProvider);
 
         // Initialize status bar
         const statusBar = new WijaStatusBar(context, projectDetector, networkProvider, walletProvider);
@@ -69,6 +72,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
             networkProvider,
             walletProvider,
             promptVaultProvider,
+            spiritEchoProvider,
             config
         });
 
@@ -76,6 +80,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
         vscode.window.registerTreeDataProvider('wija.agents', agentProvider);
         vscode.window.registerTreeDataProvider('wija.channels', channelProvider);
         vscode.window.registerTreeDataProvider('wija.promptVault', promptVaultProvider);
+        vscode.window.registerTreeDataProvider('wija.spiritEcho', spiritEchoProvider);
         vscode.window.registerTreeDataProvider('wija.marketplace', marketplaceProvider);
         vscode.window.registerTreeDataProvider('wija.network', networkProvider);
         vscode.window.registerTreeDataProvider('wija.wallet', walletProvider);
@@ -160,12 +165,99 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
                 if (prayer) {
                     await promptVaultProvider.optimizePrayer(prayer);
                 }
+            }),
+
+            vscode.commands.registerCommand('wija.saveSelectionAsPrayer', async () => {
+                const editor = vscode.window.activeTextEditor;
+                if (editor && !editor.selection.isEmpty) {
+                    const selectedText = editor.document.getText(editor.selection);
+                    const language = editor.document.languageId;
+                    const filePath = editor.document.uri.fsPath;
+                    await promptVaultProvider.saveSelectionAsPrayer(selectedText, language, filePath, editor.selection);
+                } else {
+                    vscode.window.showWarningMessage('Please select some code to save as a prayer.');
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.extractSelectionAsVariable', async () => {
+                const editor = vscode.window.activeTextEditor;
+                if (editor && !editor.selection.isEmpty) {
+                    const selectedText = editor.document.getText(editor.selection);
+                    const language = editor.document.languageId;
+                    const filePath = editor.document.uri.fsPath;
+                    await promptVaultProvider.extractSelectionAsVariable(selectedText, language, filePath, editor.selection);
+                } else {
+                    vscode.window.showWarningMessage('Please select some code to extract as a variable.');
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.sendSelectionToAI', async () => {
+                const editor = vscode.window.activeTextEditor;
+                if (editor && !editor.selection.isEmpty) {
+                    const selectedText = editor.document.getText(editor.selection);
+                    const language = editor.document.languageId;
+                    const filePath = editor.document.uri.fsPath;
+                    await promptVaultProvider.sendSelectionToAI(selectedText, language, filePath, editor.selection);
+                } else {
+                    vscode.window.showWarningMessage('Please select some code to send to AI agent.');
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.analyzeSelection', async () => {
+                const editor = vscode.window.activeTextEditor;
+                if (editor && !editor.selection.isEmpty) {
+                    const selectedText = editor.document.getText(editor.selection);
+                    const language = editor.document.languageId;
+                    const filePath = editor.document.uri.fsPath;
+                    await promptVaultProvider.analyzeSelection(selectedText, language, filePath, editor.selection);
+                } else {
+                    vscode.window.showWarningMessage('Please select some code to analyze.');
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.echoSpirits', async () => {
+                await spiritEchoProvider.echoSpirits();
+            }),
+
+            vscode.commands.registerCommand('wija.sendEchoToAI', async (echo) => {
+                if (echo) {
+                    await spiritEchoProvider.sendEchoToAI(echo);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.saveEchoAsPrayer', async (echo) => {
+                if (echo) {
+                    await spiritEchoProvider.saveEchoAsPrayer(echo);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.extractEchoAsVariable', async (echo) => {
+                if (echo) {
+                    await spiritEchoProvider.extractEchoAsVariable(echo);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.analyzeEcho', async (echo) => {
+                if (echo) {
+                    await spiritEchoProvider.analyzeEcho(echo);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.resolveEcho', async (echo) => {
+                if (echo) {
+                    await spiritEchoProvider.resolveEcho(echo.id);
+                }
+            }),
+
+            vscode.commands.registerCommand('wija.ignoreEcho', async (echo) => {
+                if (echo) {
+                    await spiritEchoProvider.ignoreEcho(echo.id);
+                }
             })
         );
 
         // Register webview providers
         vscode.window.registerWebviewViewProvider('wija.dashboard', dashboardProvider);
-        vscode.window.registerWebviewViewProvider('wija.marketplace', marketplaceProvider);
 
         // Register debug adapter
         const debugAdapterFactory = new WijaDebugAdapter(context, config);
@@ -213,6 +305,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<WijaEx
             networkProvider,
             walletProvider,
             promptVaultProvider,
+            spiritEchoProvider,
             commandManager,
             statusBar,
             config

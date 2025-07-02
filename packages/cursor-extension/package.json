@@ -28,16 +28,7 @@
     "rust"
   ],
   "activationEvents": [
-    "workspaceContains:**/Anchor.toml",
-    "workspaceContains:**/Cargo.toml",
-    "workspaceContains:**/.wija",
-    "workspaceContains:**/.ghostspeak",
-    "workspaceContains:**/package.json",
-    "onCommand:wija.initialize",
-    "onCommand:wija.openDashboard",
-    "onLanguage:rust",
-    "onLanguage:typescript",
-    "onLanguage:javascript"
+    "*"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -158,6 +149,78 @@
         "title": "Edit Prayer",
         "category": "Wija",
         "icon": "$(edit)"
+      },
+      {
+        "command": "wija.optimizePrayer",
+        "title": "Optimize Prayer",
+        "category": "Wija",
+        "icon": "$(lightbulb)"
+      },
+      {
+        "command": "wija.saveSelectionAsPrayer",
+        "title": "Save Selection as Prayer",
+        "category": "Wija",
+        "icon": "$(save)"
+      },
+      {
+        "command": "wija.extractSelectionAsVariable",
+        "title": "Extract Selection as Variable",
+        "category": "Wija",
+        "icon": "$(symbol-variable)"
+      },
+      {
+        "command": "wija.sendSelectionToAI",
+        "title": "Send Selection to AI Agent",
+        "category": "Wija",
+        "icon": "$(send)"
+      },
+      {
+        "command": "wija.analyzeSelection",
+        "title": "Analyze Code Selection",
+        "category": "Wija",
+        "icon": "$(search)"
+      },
+      {
+        "command": "wija.echoSpirits",
+        "title": "🔮 Echo the Spirits",
+        "category": "Wija",
+        "icon": "$(search)"
+      },
+      {
+        "command": "wija.sendEchoToAI",
+        "title": "Send Echo to AI",
+        "category": "Wija",
+        "icon": "$(send)"
+      },
+      {
+        "command": "wija.saveEchoAsPrayer",
+        "title": "Save Echo as Prayer",
+        "category": "Wija",
+        "icon": "$(save)"
+      },
+      {
+        "command": "wija.extractEchoAsVariable",
+        "title": "Extract Echo as Variable",
+        "category": "Wija",
+        "icon": "$(symbol-variable)"
+      },
+      {
+        "command": "wija.analyzeEcho",
+        "title": "Analyze Echo",
+        "category": "Wija",
+        "icon": "$(search)"
+      },
+      {
+        "command": "wija.resolveEcho",
+        "title": "Resolve Echo",
+        "category": "Wija",
+        "icon": "$(check)"
+      },
+      {
+        "command": "wija.ignoreEcho",
+        "title": "Ignore Echo",
+        "category": "Wija",
+        "icon": "$(eye-closed)"
       }
     ],
     "menus": {
@@ -192,6 +255,31 @@
           "command": "wija.generateSDKCode",
           "when": "wija.anchorIDL && resourceExtname == .json",
           "group": "wija@1"
+        },
+        {
+          "command": "wija.saveSelectionAsPrayer",
+          "when": "editorHasSelection",
+          "group": "wija@2"
+        },
+        {
+          "command": "wija.extractSelectionAsVariable",
+          "when": "editorHasSelection",
+          "group": "wija@3"
+        },
+        {
+          "command": "wija.sendSelectionToAI",
+          "when": "editorHasSelection",
+          "group": "wija@4"
+        },
+        {
+          "command": "wija.analyzeSelection",
+          "when": "editorHasSelection",
+          "group": "wija@5"
+        },
+        {
+          "command": "wija.echoSpirits",
+          "when": "wija.projectDetected",
+          "group": "wija@6"
         }
       ]
     },
@@ -234,6 +322,11 @@
         {
           "id": "wija.wallet",
           "name": "Wallet",
+          "when": "wija.projectDetected"
+        },
+        {
+          "id": "wija.spiritEcho",
+          "name": "🔮 Spirit Echo",
           "when": "wija.projectDetected"
         }
       ]

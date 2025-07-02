@@ -5,6 +5,7 @@
 import type { Address } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { Commitment } from '@solana/rpc-types';
+import type { IPodAIClientV2 } from '../types';
 
 export interface IAnalyticsData {
   totalAgents: number;
@@ -43,12 +44,11 @@ export interface INetworkMetrics {
 
 /**
  * Service for analytics and metrics from the podAI Protocol blockchain data
+ * Matches the Rust SDK pattern with client-only constructor
  */
 export class AnalyticsService {
   constructor(
-    private readonly rpc: Rpc<SolanaRpcApi>,
-    private readonly programId: Address,
-    private readonly commitment: Commitment = 'confirmed'
+    private readonly client: IPodAIClientV2
   ) {}
 
   /**
@@ -103,10 +103,10 @@ export class AnalyticsService {
    * Get total number of registered agents from blockchain
    */
   async getTotalAgents(): Promise<number> {
-    try {
-      // Query all program accounts with agent discriminator
-      const agentAccounts = await this.rpc
-        .getProgramAccounts(this.programId, {
+          try {
+        // Query all program accounts with agent discriminator
+        const agentAccounts = await this.client.getRpc()
+          .getProgramAccounts(this.client.getProgramId(), {
           encoding: 'base64',
           filters: [
             {
@@ -133,8 +133,8 @@ export class AnalyticsService {
   async getTotalChannels(): Promise<number> {
     try {
       // Query all program accounts with channel discriminator
-      const channelAccounts = await this.rpc
-        .getProgramAccounts(this.programId, {
+              const channelAccounts = await this.client.getRpc()
+          .getProgramAccounts(this.client.getProgramId(), {
           encoding: 'base64',
           filters: [
             {
@@ -162,8 +162,8 @@ export class AnalyticsService {
   async getTotalMessages(): Promise<number> {
     try {
       // Query all program accounts with message discriminator
-      const messageAccounts = await this.rpc
-        .getProgramAccounts(this.programId, {
+      const messageAccounts = await this.client.getRpc()
+        .getProgramAccounts(this.client.getProgramId(), {
           encoding: 'base64',
           filters: [
             {
@@ -194,14 +194,14 @@ export class AnalyticsService {
       
       // Get recent performance samples for TPS calculation
       const [blockHeight, recentBlockhashes] = await Promise.all([
-        this.rpc.getBlockHeight({ commitment: this.commitment }).send(),
-        this.rpc.getRecentBlockhash({ commitment: this.commitment }).send()
+        this.client.getRpc().getBlockHeight({ commitment: this.client.getCommitment() }).send(),
+        this.client.getRpc().getRecentBlockhash({ commitment: this.client.getCommitment() }).send()
       ]);
 
       const rpcLatency = Date.now() - startTime;
 
       // Get performance samples for TPS calculation
-      const performanceSamples = await this.rpc
+      const performanceSamples = await this.client.getRpc()
         .getRecentPerformanceSamples({ limit: 5 })
         .send();
 

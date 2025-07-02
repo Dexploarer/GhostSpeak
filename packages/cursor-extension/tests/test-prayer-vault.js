@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// 🧪 DEV NOTE: This is a developer test script for Prayer Vault features. Not part of the production extension. Run with `node test-prayer-vault.js`.
+//
 
 /**
  * Wija Prayer Vault Feature Demonstration

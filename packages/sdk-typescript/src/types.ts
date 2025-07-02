@@ -2,6 +2,8 @@ import { address } from '@solana/addresses';
 
 import type { Address } from '@solana/addresses';
 import type { KeyPairSigner } from '@solana/signers';
+import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import type { Commitment } from '@solana/rpc-types';
 
 /**
  * PoD Protocol Program ID on Solana Devnet
@@ -516,5 +518,527 @@ export type V2FeatureMap = Record<
   }
 >;
 
+// ============================================================================
+// MESSAGE SERVICE TYPES
+// ============================================================================
+
+/**
+ * Message options for sending messages
+ */
+export interface IMessageOptions {
+  /** Message payload (string or bytes) */
+  payload?: string | Uint8Array;
+  /** Message type */
+  messageType?: MessageType;
+  /** Expiration in days */
+  expirationDays?: number;
+  /** Custom message value */
+  customValue?: number;
+  /** Message content for display */
+  content?: string;
+}
+
+/**
+ * Message interface for service layer
+ */
+export interface IMessage {
+  /** Message account public key */
+  pubkey: Address;
+  /** Sender's public key */
+  sender: Address;
+  /** Recipient's public key */
+  recipient: Address;
+  /** SHA-256 hash of message payload */
+  payloadHash: Uint8Array;
+  /** Original message payload */
+  payload: string;
+  /** Type of message */
+  messageType: MessageType;
+  /** Creation timestamp */
+  timestamp: number;
+  /** Creation timestamp (alias for compatibility) */
+  createdAt: number;
+  /** Expiration timestamp */
+  expiresAt: number;
+  /** Current delivery status */
+  status: IMessageStatus;
+  /** PDA bump seed */
+  bump: number;
+}
+
+/**
+ * Message status interface
+ */
+export interface IMessageStatus {
+  /** Status value */
+  value: number;
+  /** Status name */
+  name: string;
+  /** Whether message is active */
+  isActive: boolean;
+}
+
+// ============================================================================
+// COMPRESSION SERVICE TYPES
+// ============================================================================
+
+/**
+ * Compression algorithms supported
+ */
+export enum CompressionAlgorithm {
+  LZ4 = 'lz4',
+  ZSTD = 'zstd',
+  GZIP = 'gzip',
+  DEFLATE = 'deflate'
+}
+
+/**
+ * Compression levels
+ */
+export enum CompressionLevel {
+  FASTEST = 1,
+  FAST = 2,
+  BALANCED = 3,
+  BEST = 4,
+  MAXIMUM = 5
+}
+
+/**
+ * Compression options
+ */
+export interface ICompressionOptions {
+  /** Compression algorithm to use */
+  algorithm?: CompressionAlgorithm;
+  /** Compression level */
+  level?: CompressionLevel;
+  /** Maximum size before compression */
+  maxSize?: number;
+  /** Whether to verify compression */
+  verify?: boolean;
+}
+
+/**
+ * Compression result
+ */
+export interface ICompressionResult {
+  /** Compressed data */
+  compressedData: Uint8Array;
+  /** Original size in bytes */
+  originalSize: number;
+  /** Compressed size in bytes */
+  compressedSize: number;
+  /** Size savings in bytes */
+  savings: number;
+  /** Compression ratio as percentage */
+  compressionRatio: number;
+  /** Algorithm used */
+  algorithm: CompressionAlgorithm;
+  /** Level used */
+  level: CompressionLevel;
+  /** Instruction for on-chain compression (optional) */
+  instruction?: any;
+}
+
+/**
+ * Decompression result
+ */
+export interface IDecompressionResult {
+  /** Decompressed data */
+  decompressedData: Uint8Array;
+  /** Original compressed size */
+  originalSize: number;
+  /** Decompressed size */
+  decompressedSize: number;
+}
+
+/**
+ * Merkle proof interface
+ */
+export interface IMerkleProof {
+  /** Proof elements */
+  proof: Uint8Array[];
+  /** Leaf index */
+  leafIndex: number;
+  /** Proof path */
+  path: number[];
+}
+
+// ============================================================================
+// WORK DELIVERY TYPES
+// ============================================================================
+
+/**
+ * Work status enum
+ */
+export enum WorkStatus {
+  ASSIGNED = 'assigned',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  FAILED = 'failed'
+}
+
+/**
+ * Work type enum
+ */
+export enum WorkType {
+  TEXT_GENERATION = 'text_generation',
+  CODE_REVIEW = 'code_review',
+  DATA_ANALYSIS = 'data_analysis',
+  TRANSLATION = 'translation',
+  CUSTOM = 'custom'
+}
+
+/**
+ * Work delivery options
+ */
+export interface IWorkDeliveryOptions {
+  /** Work requirements */
+  requirements?: string;
+  /** Deadline timestamp */
+  deadline?: number;
+  /** Reward amount */
+  reward?: number;
+  /** Priority level */
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+}
+
+/**
+ * Work progress interface
+ */
+export interface IWorkProgress {
+  /** Work ID */
+  workId: string;
+  /** Current status */
+  status: WorkStatus;
+  /** Progress percentage (0-100) */
+  progress: number;
+  /** Started timestamp */
+  startedAt: number;
+  /** Last updated timestamp */
+  lastUpdated: number;
+  /** Agent address */
+  agentAddress?: Address;
+  /** Milestones completed */
+  milestones: string[];
+  /** Quality score */
+  qualityScore?: number;
+  /** Feedback */
+  feedback?: string;
+  /** Deadline */
+  deadline?: number;
+}
+
+/**
+ * Work completion interface
+ */
+export interface IWorkCompletion {
+  /** Work result */
+  result: string;
+  /** Quality score (1-10) */
+  quality: number;
+  /** Feedback */
+  feedback?: string;
+}
+
+/**
+ * Work verification interface
+ */
+export interface IWorkVerification {
+  /** Work ID */
+  workId: string;
+  /** Whether work is completed */
+  isCompleted: boolean;
+  /** Whether work is verified */
+  isVerified: boolean;
+  /** Quality score */
+  qualityScore?: number;
+  /** Feedback */
+  feedback?: string;
+  /** Completion timestamp */
+  completedAt?: number;
+  /** Verification timestamp */
+  verificationTimestamp: number;
+}
+
+// ============================================================================
+// MARKETPLACE TYPES
+// ============================================================================
+
+/**
+ * Marketplace listing status
+ */
+export enum ListingStatus {
+  ACTIVE = 'active',
+  SOLD = 'sold',
+  CANCELLED = 'cancelled',
+  EXPIRED = 'expired'
+}
+
+/**
+ * Marketplace listing interface
+ */
+export interface IMarketplaceListing {
+  /** Listing ID */
+  listingId: string;
+  /** Seller address */
+  seller: Address;
+  /** Agent address */
+  agentAddress: Address;
+  /** Price in lamports */
+  price: number;
+  /** Status */
+  status: ListingStatus;
+  /** Created timestamp */
+  createdAt: number;
+  /** Expires timestamp */
+  expiresAt: number;
+  /** Description */
+  description?: string;
+}
+
+/**
+ * Marketplace transaction interface
+ */
+export interface IMarketplaceTransaction {
+  /** Transaction ID */
+  transactionId: string;
+  /** Listing ID */
+  listingId: string;
+  /** Buyer address */
+  buyer: Address;
+  /** Seller address */
+  seller: Address;
+  /** Agent address */
+  agentAddress: Address;
+  /** Price in lamports */
+  price: number;
+  /** Transaction timestamp */
+  timestamp: number;
+  /** Transaction signature */
+  signature: string;
+}
+
+// ============================================================================
+// ESCROW TYPES
+// ============================================================================
+
+/**
+ * Escrow status enum
+ */
+export enum EscrowStatus {
+  PENDING = 'pending',
+  FUNDED = 'funded',
+  RELEASED = 'released',
+  REFUNDED = 'refunded',
+  DISPUTED = 'disputed'
+}
+
+/**
+ * Escrow interface
+ */
+export interface IEscrow {
+  /** Escrow ID */
+  escrowId: string;
+  /** Buyer address */
+  buyer: Address;
+  /** Seller address */
+  seller: Address;
+  /** Amount in lamports */
+  amount: number;
+  /** Status */
+  status: EscrowStatus;
+  /** Created timestamp */
+  createdAt: number;
+  /** Released timestamp */
+  releasedAt?: number;
+  /** Dispute timestamp */
+  disputedAt?: number;
+  /** Escrow account address */
+  escrowAccount: Address;
+}
+
+// ============================================================================
+// AGENT REPLICATION TYPES
+// ============================================================================
+
+/**
+ * Replication status enum
+ */
+export enum ReplicationStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  FAILED = 'failed'
+}
+
+/**
+ * Agent replication interface
+ */
+export interface IAgentReplication {
+  /** Replication ID */
+  replicationId: string;
+  /** Source agent address */
+  sourceAgent: Address;
+  /** Target agent address */
+  targetAgent: Address;
+  /** Status */
+  status: ReplicationStatus;
+  /** Started timestamp */
+  startedAt: number;
+  /** Completed timestamp */
+  completedAt?: number;
+  /** Progress percentage */
+  progress: number;
+  /** Error message */
+  error?: string;
+}
+
+// ============================================================================
+// BUSINESS LOGIC TYPES
+// ============================================================================
+
+/**
+ * Business rule type enum
+ */
+export enum BusinessRuleType {
+  PRICING = 'pricing',
+  ACCESS_CONTROL = 'access_control',
+  RATE_LIMITING = 'rate_limiting',
+  QUALITY_CONTROL = 'quality_control'
+}
+
+/**
+ * Business rule interface
+ */
+export interface IBusinessRule {
+  /** Rule ID */
+  ruleId: string;
+  /** Rule type */
+  type: BusinessRuleType;
+  /** Rule name */
+  name: string;
+  /** Rule description */
+  description: string;
+  /** Rule conditions */
+  conditions: Record<string, any>;
+  /** Rule actions */
+  actions: Record<string, any>;
+  /** Whether rule is active */
+  isActive: boolean;
+  /** Created timestamp */
+  createdAt: number;
+  /** Updated timestamp */
+  updatedAt: number;
+}
+
+// ============================================================================
+// COMPRESSED NFT TYPES
+// ============================================================================
+
+/**
+ * Compressed NFT metadata interface
+ */
+export interface ICompressedNFTMetadata {
+  /** NFT name */
+  name: string;
+  /** NFT symbol */
+  symbol: string;
+  /** NFT description */
+  description: string;
+  /** NFT image URI */
+  image: string;
+  /** NFT attributes */
+  attributes: Array<{
+    trait_type: string;
+    value: string | number;
+  }>;
+  /** NFT properties */
+  properties: {
+    files: Array<{
+      uri: string;
+      type: string;
+    }>;
+    category: string;
+  };
+}
+
+/**
+ * Compressed NFT interface
+ */
+export interface ICompressedNFT {
+  /** NFT asset ID */
+  assetId: string;
+  /** Tree address */
+  treeAddress: Address;
+  /** Leaf index */
+  leafIndex: number;
+  /** Metadata URI */
+  metadataUri: string;
+  /** Whether NFT is compressed */
+  compressed: boolean;
+  /** Owner address */
+  owner: Address;
+  /** Created timestamp */
+  createdAt: number;
+}
+
+// ============================================================================
+// MEV PROTECTION TYPES
+// ============================================================================
+
+/**
+ * MEV protection strategy enum
+ */
+export enum MEVProtectionStrategy {
+  PRIVATE_MEMPOOL = 'private_mempool',
+  COMMIT_REVEAL = 'commit_reveal',
+  FRAGMENTATION = 'fragmentation',
+  DECOY_TRANSACTIONS = 'decoy_transactions',
+  ADAPTIVE = 'adaptive'
+}
+
+/**
+ * MEV protection configuration
+ */
+export interface IMEVProtectionConfig {
+  /** Protection strategy */
+  strategy: MEVProtectionStrategy;
+  /** Protection level (1-10) */
+  level: number;
+  /** Maximum transaction value to protect */
+  maxValue: number;
+  /** Whether to enable automatic protection */
+  autoProtect: boolean;
+  /** Custom protection parameters */
+  parameters?: Record<string, any>;
+}
+
+/**
+ * MEV protection result
+ */
+export interface IMEVProtectionResult {
+  /** Whether protection was applied */
+  protected: boolean;
+  /** Protection strategy used */
+  strategy: MEVProtectionStrategy;
+  /** Protection cost in lamports */
+  cost: number;
+  /** Estimated savings */
+  savings: number;
+  /** Transaction signature */
+  signature: string;
+  /** Protection metadata */
+  metadata?: Record<string, any>;
+}
+
 // Re-export common types
 export type { Address, KeyPairSigner };
+
+// Client interface with proper types
+export interface IPodAIClientV2 {
+  getRpc(): Rpc<SolanaRpcApi>;
+  getProgramId(): Address;
+  getCommitment(): Commitment;  
+  getWsEndpoint(): string | undefined;
+}

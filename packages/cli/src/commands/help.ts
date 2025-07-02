@@ -2,6 +2,9 @@ import { select } from '@inquirer/prompts';
 import { UIManager } from '../ui/ui-manager.js';
 import terminalLink from 'terminal-link';
 
+// Detect test mode
+const TEST_MODE = process.argv.includes('--test-mode') || process.env.GHOSTSPEAK_TEST_MODE === 'true';
+
 export class HelpCommand {
   private ui: UIManager;
 
@@ -14,22 +17,22 @@ export class HelpCommand {
       this.ui.clear();
       this.ui.bigTitle('Help & Documentation', 'Learn how to use podAI Protocol');
 
-      const choice = await select({
-        message: 'What would you like to learn about?',
-        choices: [
-          { name: '🚀 Getting Started', value: 'getting-started', description: 'Quick start guide' },
-          { name: '🤖 Agent Management', value: 'agents', description: 'How to create and manage agents' },
-          { name: '💬 Messaging & Channels', value: 'messaging', description: 'Communication features' },
-          { name: '🔧 SDK Development', value: 'sdk', description: 'Building with podAI SDKs' },
-          { name: '🌐 Network Configuration', value: 'network', description: 'Blockchain setup and configuration' },
-          { name: '🧪 Testing & Debugging', value: 'testing', description: 'Testing your implementations' },
-          { name: '🛠️  Troubleshooting', value: 'troubleshooting', description: 'Common issues and solutions' },
-          { name: '📚 External Resources', value: 'resources', description: 'Documentation links and resources' },
-          { name: '↩️  Back to Main Menu', value: 'back' }
-        ]
-      });
+      let topic: string;
+      if (TEST_MODE) {
+        console.log('[TEST MODE] Help topic: TestTopic');
+        topic = 'TestTopic';
+      } else {
+        topic = await select({
+          message: 'Help topic:',
+          choices: [
+            { name: 'Getting Started', value: 'getting-started' },
+            { name: 'Usage', value: 'usage' },
+            { name: 'Troubleshooting', value: 'troubleshooting' }
+          ]
+        });
+      }
 
-      switch (choice) {
+      switch (topic) {
         case 'getting-started':
           await this.showGettingStarted();
           break;

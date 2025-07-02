@@ -18,15 +18,15 @@
     "isolatedModules": true,
     "noEmit": false,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../../",
     "baseUrl": "../../",
     "paths": {
-      "@podai/sdk": ["./packages/sdk-typescript/dist"],
-      "@podai/sdk/*": ["./packages/sdk-typescript/dist/*"],
-      "@/*": ["./src/*"],
-      "@ui/*": ["./src/ui/*"],
-      "@commands/*": ["./src/commands/*"],
-      "@utils/*": ["./src/utils/*"]
+      "@podai/sdk": ["./packages/sdk-typescript/src"],
+      "@podai/sdk/*": ["./packages/sdk-typescript/src/*"],
+      "@/*": ["./packages/cli/src/*"],
+      "@ui/*": ["./packages/cli/src/ui/*"],
+      "@commands/*": ["./packages/cli/src/commands/*"],
+      "@utils/*": ["./packages/cli/src/utils/*"]
     },
     "types": ["node", "bun"],
     "declaration": true,
@@ -37,7 +37,8 @@
     "preserveConstEnums": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../sdk-typescript/src/**/*"
   ],
   "exclude": [
     "node_modules",

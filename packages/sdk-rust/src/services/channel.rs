@@ -11,12 +11,11 @@ use solana_sdk::{
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
     signature::{Keypair, Signature, Signer},
-    system_instruction,
 };
 use std::sync::Arc;
+use crate::types::AccountData;
 
 /// Service for managing channels
-#[derive(Debug, Clone)]
 pub struct ChannelService {
     client: Arc<PodAIClient>,
 }
@@ -56,7 +55,7 @@ impl ChannelService {
             &creator.pubkey(),
             &channel_pda,
             name,
-            visibility,
+            visibility.clone(),
             fee_per_message,
             bump,
         )?;
@@ -68,12 +67,14 @@ impl ChannelService {
 
         let result = factory.send_transaction(&transaction).await?;
 
-        // Create channel account for the result
-        let channel_account = ChannelAccount::new(
+        // Create channel account for the result (simplified validation)
+        let _channel_account = ChannelAccount::new(
             creator.pubkey(),
             name.to_string(),
-            visibility,
-            fee_per_message,
+            "".to_string(), // description
+            visibility.clone(),
+            1000, // max_participants
+            fee_per_message.unwrap_or(0),
             bump,
         )?;
 
@@ -125,7 +126,7 @@ impl ChannelService {
         channel_pda: &Pubkey,
     ) -> PodAIResult<ChannelJoinResult> {
         // Get channel info
-        let channel = self.get_channel(channel_pda).await?;
+        let _channel = self.get_channel(channel_pda).await?;
         
         // Find participant PDA
         let (participant_pda, bump) = find_channel_participant_pda(
@@ -164,9 +165,9 @@ impl ChannelService {
 
     /// Get channel account data
     pub async fn get_channel(&self, channel_pda: &Pubkey) -> PodAIResult<ChannelAccount> {
-        match self.client.rpc_client.get_account(channel_pda) {
+        match self.client.rpc_client.get_account(channel_pda).await {
             Ok(account) => ChannelAccount::from_bytes(&account.data),
-            Err(_) => Err(PodAIError::account_not_found("Channel", channel_pda.to_string())),
+            Err(_) => Err(PodAIError::account_not_found("Channel", &channel_pda.to_string())),
         }
     }
 
@@ -304,7 +305,6 @@ pub struct ChannelJoinResult {
 }
 
 /// Builder for channel creation with custom configuration
-#[derive(Debug)]
 pub struct ChannelCreationBuilder<'a> {
     service: &'a ChannelService,
     transaction_config: Option<TransactionConfig>,

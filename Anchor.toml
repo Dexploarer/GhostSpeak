@@ -15,13 +15,13 @@ skip-lint = false
 
 # Enhanced program configurations for different clusters
 [programs.localnet]
-pod_com = "HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps"
+podai = "PodAI111111111111111111111111111111111111111"
 
 [programs.devnet]
-pod_com = "HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps"
+podai = "PodAI111111111111111111111111111111111111111"
 
 [programs.mainnet-beta]
-pod_com = "HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps"  # Update with actual mainnet address
+podai = "PodAI111111111111111111111111111111111111111"  # Update with actual mainnet address
 
 # Registry configuration for Anchor programs
 [registry]

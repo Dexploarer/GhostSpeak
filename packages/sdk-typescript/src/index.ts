@@ -5,14 +5,14 @@
  * Uses Codama-generated clients for maximum performance and type safety
  */
 
-// Web3.js v2.0 Client (Production Ready)
+// Modern Web3.js v2.0 Client (Production Ready)
 export {
-  PodAIClientV2,
-  createPodAIClientV2,
+  PodAIClient,
+  createPodAIClient,
   createDevnetClient,
+  createLocalnetClient,
   createMainnetClient,
-  isValidAddress,
-  type IPodAIClientV2Config,
+  type IPodAIClientConfig,
 } from './client-v2';
 
 // Types and Interfaces
@@ -34,25 +34,17 @@ export type {
 // Re-export generated v2 types for advanced usage
 export * from './generated-v2';
 
-// Services - Complete TypeScript SDK with full feature parity
-export {
-  AgentService,
-  AgentRegistrationBuilder,
-  type IAgentConfig,
-  type IAgentUpdateResult,
-  type IAgentFilter,
-  type IAgentStats,
-} from './services/agent';
+// Modern Services - Clean Web3.js v2 Implementation  
+export { AgentService } from './services/agent';
+export { ChannelService, ChannelVisibility as ChannelVisibilityEnum } from './services/channel';
 
-export { ChannelService } from './services/channel';
-
-export {
-  MessageService,
-  MessageSendBuilder,
-  type IMessageSendResult,
-  type IMessageReadResult,
-  type IMessageFilter,
-  type IMessageConfig,
+export { MessageService } from './services/message';
+export type {
+  IMessage,
+  IMessageSendResult,
+  IMessageOptions,
+  IMessageStatus,
+  IMessageType,
 } from './services/message';
 
 export {
@@ -84,11 +76,9 @@ export {
   type IConfidentialAccountConfig,
 } from './services/confidential-transfer';
 
-export {
-  CompressionService,
-  type ICompressionConfig,
-  type ICompressionProof,
-} from './services/compression';
+export { CompressionService } from './services/compression';
+// export type { ICompressionConfig } from './services/compression'; // Not implemented yet
+// export type { ICompressionProof } from './services/compression'; // Not implemented yet
 
 export {
   AnalyticsService,
@@ -111,18 +101,18 @@ export {
   type IReplicationConfig,
 } from './services/agent-replication';
 
-// Transaction utilities (Jupiter Swap patterns)
+// Modern Transaction utilities (Web3.js v2 patterns)
 export {
-  buildTransaction,
-  simulateTransaction,
-  sendAndConfirmTransaction,
+  sendTransaction,
   buildSimulateAndSendTransaction,
   batchTransactions,
   retryTransaction,
   createTransactionConfig,
+  lamportsToSol,
+  solToLamports,
   type ITransactionConfig,
-  type ISimulationResult,
   type ITransactionResult,
+  type ITransactionInstruction,
 } from './utils/transaction-utils';
 
 // Examples

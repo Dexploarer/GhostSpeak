@@ -24,15 +24,30 @@ export interface AgentConfig {
   lastActive: Date;
 }
 
+export interface IConfig {
+  network: string;
+  rpcUrl: string;
+  walletPath?: string;
+  testMode?: boolean;
+}
+
 export class ConfigManager {
   private configDir: string;
   private configPath: string;
   private agentsPath: string;
+  private config: IConfig;
 
   constructor() {
     this.configDir = join(homedir(), '.podai');
     this.configPath = join(this.configDir, 'config.json');
     this.agentsPath = join(this.configDir, 'agents.json');
+    this.config = this.loadConfig();
+    
+    // Auto-detect test mode from environment
+    if (process.env.NODE_ENV === 'test' || process.env.GHOSTSPEAK_TEST_MODE === 'true') {
+      this.config.testMode = true;
+    }
+
     this.ensureConfigDir();
   }
 
@@ -203,4 +218,36 @@ export class ConfigManager {
       agentsPath: this.agentsPath
     };
   }
-} 
+
+  isTestMode(): boolean {
+    return this.config.testMode || false;
+  }
+
+  private loadConfig(): IConfig {
+    try {
+      if (!existsSync(this.configPath)) {
+        return {
+          network: 'devnet',
+          rpcUrl: 'https://api.devnet.solana.com',
+          testMode: false
+        };
+      }
+
+      const configData = readFileSync(this.configPath, 'utf-8');
+      const config = JSON.parse(configData);
+      
+      return {
+        network: config.network || 'devnet',
+        rpcUrl: config.rpcUrl || 'https://api.devnet.solana.com',
+        walletPath: config.walletPath,
+        testMode: config.testMode || false
+      };
+    } catch (error) {
+      return {
+        network: 'devnet',
+        rpcUrl: 'https://api.devnet.solana.com',
+        testMode: false
+      };
+    }
+  }
+}

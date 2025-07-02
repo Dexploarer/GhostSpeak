@@ -1,831 +1,487 @@
-# Rust SDK
+# PodAI Rust SDK Documentation
 
-The podAI Rust SDK provides high-performance, type-safe access to the podAI protocol for native applications, services, and command-line tools. Built with Rust's safety and performance principles, it offers zero-cost abstractions and seamless integration with the Solana ecosystem.
+Complete documentation for the PodAI Rust SDK, a production-grade SDK for building AI agent commerce applications on Solana.
 
-## Overview
+## Table of Contents
 
-### Features
-- 🦀 **Native Performance**: Zero-cost abstractions and optimal performance
-- 🔒 **Type Safety**: Complete type safety with Rust's ownership system
-- 🔧 **Async/Await**: Modern async programming with Tokio
-- 📦 **Modular Design**: Use only the components you need
-- 🔗 **Solana Integration**: Native Solana program interaction
-- 🛡️ **Memory Safety**: Rust's memory safety guarantees
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Architecture](#architecture)
+- [Core Services](#core-services)
+- [Examples](#examples)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Error Handling](#error-handling)
+- [Testing](#testing)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
 
-### Architecture
-```
-sdk-rust/
-├── core/           # Core types and utilities
-├── client/         # High-level client interface
-├── services/       # Feature-specific services
-├── crypto/         # Cryptographic utilities
-├── compression/    # ZK compression support
-└── examples/       # Usage examples
-```
+## Quick Start
 
-## Installation
-
-### Using Cargo
+### Installation
 
 Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-podai-sdk = "1.0.0"
+podai-sdk = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
-solana-client = "1.18.22"
-solana-sdk = "1.18.22"
-anchor-client = "0.31.1"
+solana-sdk = "1.16"
 ```
 
-### Feature Flags
-
-Enable specific features as needed:
-
-```toml
-[dependencies]
-podai-sdk = { version = "1.0.0", features = [
-    "agents",      # Agent management
-    "messaging",   # Direct messaging
-    "channels",    # Group channels
-    "escrow",      # Escrow transactions
-    "reputation",  # Reputation system
-    "compression", # ZK compression
-    "analytics",   # Analytics and metrics
-] }
-```
-
-## Quick Start
-
-### Basic Setup
+### Basic Usage
 
 ```rust
-use podai_sdk::{Client, ClientBuilder};
-use solana_sdk::{
-    commitment_config::CommitmentConfig,
-    signature::{Keypair, Signer},
+use podai_sdk::{
+    client::{PodAIClient, PodAIConfig},
+    services::agent::AgentService,
+    types::agent::AgentCapabilities,
+    errors::PodAIResult,
 };
+use solana_sdk::{signature::Keypair, signer::Signer};
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Load or generate keypair
+async fn main() -> PodAIResult<()> {
+    // Initialize client for devnet
+    let config = PodAIConfig::devnet();
+    let client = Arc::new(PodAIClient::new(config).await?);
+    
+    // Create agent service
+    let agent_service = AgentService::new(client);
+    
+    // Register an agent
     let keypair = Keypair::new();
+    let result = agent_service.register(
+        &keypair,
+        AgentCapabilities::Communication as u64,
+        "https://example.com/metadata.json"
+    ).await?;
     
-    // Create client
-    let client = ClientBuilder::new()
-        .cluster("devnet")
-        .keypair(Arc::new(keypair))
-        .commitment(CommitmentConfig::confirmed())
-        .build()
-        .await?;
-    
-    // Register agent
-    let agent = client
-        .agents()
-        .register(AgentRegistration {
-            name: "RustAgent".to_string(),
-            description: "High-performance Rust agent".to_string(),
-            capabilities: vec!["chat".to_string(), "analysis".to_string()],
-            metadata_uri: "ipfs://QmHash...".to_string(),
-        })
-        .await?;
-    
-    println!("Agent registered: {}", agent.address);
-    
+    println!("Agent registered: {}", result.agent_pda);
     Ok(())
 }
 ```
 
-## Core Client
+## Installation
 
-### ClientBuilder
+### Prerequisites
 
-```rust
-use podai_sdk::{ClientBuilder, Cluster};
-use solana_sdk::signature::Keypair;
-use std::sync::Arc;
+- Rust 1.70+ with Cargo
+- Solana CLI tools (for testing)
+- Git
 
-// Basic client
-let client = ClientBuilder::new()
-    .cluster(Cluster::Devnet)
-    .keypair(Arc::new(keypair))
-    .build()
-    .await?;
+### Installing the SDK
 
-// Advanced configuration
-let client = ClientBuilder::new()
-    .rpc_url("https://api.devnet.solana.com")
-    .ws_url("wss://api.devnet.solana.com")
-    .keypair(Arc::new(keypair))
-    .commitment(CommitmentConfig::confirmed())
-    .timeout(Duration::from_secs(30))
-    .retry_config(RetryConfig::new(3, Duration::from_millis(500)))
-    .build()
-    .await?;
+```bash
+# Add to existing project
+cargo add podai-sdk
+
+# Or manually add to Cargo.toml
+[dependencies]
+podai-sdk = "0.1.0"
+tokio = { version = "1.0", features = ["full"] }
 ```
 
-### Client Interface
+### Development Setup
 
-```rust
-impl Client {
-    // Service accessors
-    pub fn agents(&self) -> &AgentService;
-    pub fn messages(&self) -> &MessageService;
-    pub fn channels(&self) -> &ChannelService;
-    pub fn escrow(&self) -> &EscrowService;
-    pub fn reputation(&self) -> &ReputationService;
-    pub fn compression(&self) -> &CompressionService;
-    
-    // Utility methods
-    pub async fn balance(&self) -> Result<u64>;
-    pub async fn airdrop(&self, lamports: u64) -> Result<Signature>;
-    pub fn keypair(&self) -> &Keypair;
-    pub fn program_id(&self) -> &Pubkey;
-}
+```bash
+# Clone the repository
+git clone https://github.com/ghostspeak/ghostspeak.git
+cd ghostspeak/packages/sdk-rust
+
+# Build the SDK
+cargo build
+
+# Run tests
+cargo test
+
+# Generate documentation
+cargo doc --open
 ```
 
-## Services
+## Architecture
+
+### Overview
+
+The PodAI Rust SDK follows a modular architecture with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Application Layer                       │
+├─────────────────────────────────────────────────────────────┤
+│                      Service Layer                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │AgentService │  │ChannelService│  │MessageService│        │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  ┌─────────────┐  ┌─────────────┐                          │
+│  │EscrowService│  │MarketService │                          │
+│  └─────────────┘  └─────────────┘                          │
+├─────────────────────────────────────────────────────────────┤
+│                     Client Layer                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ PodAIClient │  │ PodAIConfig │  │   Utilities  │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+├─────────────────────────────────────────────────────────────┤
+│                    Solana Layer                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ RPC Client  │  │ Transaction │  │   Accounts   │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+#### Client Layer
+- **PodAIClient**: Main entry point for all SDK operations
+- **PodAIConfig**: Configuration for different networks and settings
+- **Utilities**: Helper functions for PDA generation, transactions, etc.
+
+#### Service Layer
+- **AgentService**: Agent registration and management
+- **ChannelService**: Communication channel operations
+- **MessageService**: Message sending and receiving
+- **EscrowService**: Secure fund escrow operations
+- **MarketplaceService**: Data product trading
+
+#### Type System
+- **Strongly Typed**: All operations use Rust's type system for safety
+- **Error Handling**: Comprehensive error types with context
+- **Serialization**: Borsh serialization for on-chain data
+
+## Core Services
 
 ### AgentService
 
-```rust
-use podai_sdk::{AgentService, AgentRegistration, AgentUpdate};
-
-// Register new agent
-let registration = AgentRegistration {
-    name: "MyAgent".to_string(),
-    description: "Rust-powered AI agent".to_string(),
-    capabilities: vec!["rust".to_string(), "high_performance".to_string()],
-    metadata_uri: "ipfs://QmHash...".to_string(),
-};
-
-let agent = client.agents().register(registration).await?;
-
-// Update agent
-let update = AgentUpdate {
-    name: Some("MyAgent Pro".to_string()),
-    description: Some("Enhanced Rust AI agent".to_string()),
-    capabilities: Some(vec![
-        "rust".to_string(),
-        "high_performance".to_string(),
-        "ml_inference".to_string(),
-    ]),
-    metadata_uri: Some("ipfs://QmNewHash...".to_string()),
-};
-
-client.agents().update(update).await?;
-
-// Get agent info
-let agent_info = client.agents().get(&agent.address).await?;
-println!("Agent: {} - {}", agent_info.name, agent_info.description);
-
-// Search agents
-let search_results = client
-    .agents()
-    .search(AgentSearchQuery {
-        capabilities: Some(vec!["rust".to_string()]),
-        limit: Some(10),
-        offset: Some(0),
-    })
-    .await?;
-
-for agent in search_results.agents {
-    println!("Found agent: {}", agent.name);
-}
-
-// Deactivate agent
-client.agents().deactivate().await?;
-```
-
-### MessageService
+Manages AI agent registration and lifecycle operations.
 
 ```rust
-use podai_sdk::{MessageService, DirectMessage, MessageType, Priority};
+use podai_sdk::services::agent::AgentService;
+use podai_sdk::types::agent::AgentCapabilities;
 
-// Send direct message
-let message = DirectMessage {
-    recipient: recipient_address,
-    content: "Hello from Rust!".to_string(),
-    message_type: MessageType::Text,
-    priority: Priority::Normal,
-    expires_at: Some(
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)?
-            .as_secs() as i64 + 86400 // 24 hours
-    ),
-    metadata: None,
-};
+let agent_service = AgentService::new(client);
 
-let sent_message = client.messages().send_direct(message).await?;
-println!("Message sent: {}", sent_message.id);
+// Register an agent
+let result = agent_service.register(
+    &keypair,
+    AgentCapabilities::Communication as u64 | AgentCapabilities::Trading as u64,
+    "https://example.com/metadata.json"
+).await?;
 
-// Send structured data
-let json_data = serde_json::json!({
-    "action": "process_data",
-    "data": {
-        "values": [1, 2, 3, 4, 5],
-        "operation": "sum"
-    }
-});
-
-let structured_message = DirectMessage {
-    recipient: recipient_address,
-    content: json_data.to_string(),
-    message_type: MessageType::Json,
-    priority: Priority::High,
-    expires_at: None,
-    metadata: Some(MessageMetadata {
-        schema_version: "1.0".to_string(),
-        content_type: "application/json".to_string(),
-    }),
-};
-
-client.messages().send_direct(structured_message).await?;
-
-// Get received messages
-let messages = client
-    .messages()
-    .get_received(MessageQuery {
-        limit: Some(50),
-        message_type: Some(MessageType::Text),
-        unread_only: true,
-        since: None,
-    })
-    .await?;
-
-for message in messages {
-    println!("From {}: {}", message.sender, message.content);
-    
-    // Mark as read
-    client.messages().mark_read(&message.id).await?;
-}
-
-// Get conversation history
-let history = client
-    .messages()
-    .get_conversation(&other_agent_address, ConversationQuery {
-        limit: Some(100),
-        before: None,
-        after: None,
-    })
-    .await?;
-
-// Subscribe to new messages
-let mut message_stream = client.messages().subscribe().await?;
-while let Some(message) = message_stream.next().await {
-    println!("New message: {}", message.content);
-    
-    // Process message
-    process_incoming_message(message).await?;
-}
+// Calculate agent PDA
+let (agent_pda, bump) = agent_service.calculate_agent_pda(&keypair.pubkey());
 ```
+
+**Key Methods:**
+- `register()` - Register a new agent
+- `calculate_agent_pda()` - Calculate agent Program Derived Address
 
 ### ChannelService
 
+Handles communication channels between agents.
+
 ```rust
-use podai_sdk::{ChannelService, ChannelCreation, ChannelMessage};
+use podai_sdk::services::channel::ChannelService;
+use podai_sdk::types::channel::ChannelVisibility;
 
-// Create public channel
-let channel_creation = ChannelCreation {
-    name: "rust-developers".to_string(),
-    description: "Channel for Rust developers".to_string(),
-    is_private: false,
-    max_members: Some(1000),
-    metadata_uri: Some("ipfs://QmChannelMetadata...".to_string()),
-};
+let channel_service = ChannelService::new(client);
 
-let channel = client.channels().create(channel_creation).await?;
-println!("Channel created: {}", channel.address);
+// Create a channel
+let result = channel_service.create_channel(
+    &creator_keypair,
+    "AI Research",
+    "Discussion channel for AI research",
+    ChannelVisibility::Public,
+    1000, // max participants
+    500,  // fee per message
+).await?;
 
-// Create private channel
-let private_channel = ChannelCreation {
-    name: "team-alpha".to_string(),
-    description: "Private team coordination".to_string(),
-    is_private: true,
-    max_members: Some(10),
-    metadata_uri: None,
-};
-
-let private_channel = client.channels().create(private_channel).await?;
-
-// Join channel
-client.channels().join(&channel.address).await?;
-
-// Send channel message
-let channel_message = ChannelMessage {
-    channel: channel.address,
-    content: "Hello Rust community!".to_string(),
-    message_type: MessageType::Text,
-    priority: Priority::Normal,
-    metadata: None,
-};
-
-client.channels().send_message(channel_message).await?;
-
-// Get channel messages
-let messages = client
-    .channels()
-    .get_messages(&channel.address, MessageQuery {
-        limit: Some(50),
-        since: Some(
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)?
-                .as_secs() as i64 - 3600 // Last hour
-        ),
-        ..Default::default()
-    })
-    .await?;
-
-// Invite to private channel
-client
-    .channels()
-    .invite(&private_channel.address, &invitee_address)
-    .await?;
-
-// Leave channel
-client.channels().leave(&channel.address).await?;
-
-// Get channel info
-let channel_info = client.channels().get(&channel.address).await?;
-println!("Channel: {} - {} members", 
-    channel_info.name, 
-    channel_info.member_count
+// Calculate channel PDA
+let (channel_pda, bump) = channel_service.calculate_channel_pda(
+    &creator_pubkey, 
+    "AI Research"
 );
 ```
 
+**Key Methods:**
+- `create_channel()` - Create a new communication channel
+- `calculate_channel_pda()` - Calculate channel PDA
+
+### MessageService
+
+Manages message sending and receiving operations.
+
+```rust
+use podai_sdk::services::message::MessageService;
+use podai_sdk::types::message::MessageType;
+
+let message_service = MessageService::new(client);
+
+// Send a message
+let result = message_service.send_message(
+    &sender_keypair,
+    &recipient_pubkey,
+    "Hello from PodAI!",
+    MessageType::Text
+).await?;
+
+// Calculate message PDA
+let (message_pda, bump) = message_service.calculate_message_pda(
+    &sender_pubkey,
+    &recipient_pubkey,
+    "Hello from PodAI!",
+    &MessageType::Text
+);
+```
+
+**Key Methods:**
+- `send_message()` - Send a message to another agent
+- `calculate_message_pda()` - Calculate message PDA
+
 ### EscrowService
 
+Provides secure escrow functionality for agent transactions.
+
 ```rust
-use podai_sdk::{EscrowService, EscrowCreation, EscrowStatus};
-use solana_sdk::native_token::LAMPORTS_PER_SOL;
+use podai_sdk::services::escrow::EscrowService;
 
-// Create escrow (as client)
-let escrow_creation = EscrowCreation {
-    provider: service_provider_address,
-    amount: LAMPORTS_PER_SOL / 2, // 0.5 SOL
-    terms: "Rust code optimization service".to_string(),
-    timeout_hours: 24,
-    arbiter: None,
-    metadata: Some(EscrowMetadata {
-        service_type: "code_optimization".to_string(),
-        expected_delivery: "24h".to_string(),
-        requirements: vec![
-            "Performance improvement > 20%".to_string(),
-            "No breaking changes".to_string(),
-        ],
-    }),
-};
+let escrow_service = EscrowService::new(client);
 
-let escrow = client.escrow().create(escrow_creation).await?;
-println!("Escrow created: {}", escrow.address);
-
-// Fund escrow
-client.escrow().fund(&escrow.address, escrow.amount).await?;
-println!("Escrow funded with {} lamports", escrow.amount);
-
-// Check escrow status (as provider)
-let escrow_info = client.escrow().get(&escrow.address).await?;
-match escrow_info.status {
-    EscrowStatus::Funded => {
-        println!("Escrow is funded, can start work");
-        
-        // Begin service delivery
-        // ... perform work ...
-        
-        // Mark as completed
-        let completion = EscrowCompletion {
-            deliverables: "Code optimized, 35% performance improvement".to_string(),
-            proof_uri: Some("ipfs://QmProofOfWork...".to_string()),
-            completion_notes: Some("All requirements met".to_string()),
-        };
-        
-        client.escrow().complete(&escrow.address, completion).await?;
-    }
-    EscrowStatus::Completed => {
-        println!("Work completed, awaiting client approval");
-    }
-    _ => {
-        println!("Escrow status: {:?}", escrow_info.status);
-    }
-}
-
-// Release escrow (as client after reviewing work)
-let release = EscrowRelease {
-    satisfaction_rating: 5,
-    feedback: "Excellent work, exceeded expectations".to_string(),
-    tip_amount: Some(LAMPORTS_PER_SOL / 10), // 0.1 SOL tip
-};
-
-client.escrow().release(&escrow.address, release).await?;
-
-// Handle disputes
-if work_unsatisfactory {
-    let dispute = EscrowDispute {
-        reason: "Deliverables do not meet requirements".to_string(),
-        evidence_uri: Some("ipfs://QmEvidence...".to_string()),
-        requested_resolution: DisputeResolution::PartialRefund(75), // 75% refund
-    };
-    
-    client.escrow().dispute(&escrow.address, dispute).await?;
-}
-
-// Get escrow history
-let history = client
-    .escrow()
-    .get_history(EscrowHistoryQuery {
-        role: Some(EscrowRole::Client),
-        status: Some(EscrowStatus::Released),
-        limit: Some(10),
-        ..Default::default()
-    })
-    .await?;
-
-for escrow in history {
-    println!("Escrow: {} - {} SOL", escrow.terms, escrow.amount as f64 / LAMPORTS_PER_SOL as f64);
-}
+// Create escrow
+let result = escrow_service.create_escrow(
+    &depositor_keypair,
+    &channel_pda,
+    1_000_000 // amount in lamports
+).await?;
 ```
 
-### ReputationService
+**Key Methods:**
+- `create_escrow()` - Create a new escrow account
+- `release_escrow()` - Release funds from escrow
+
+### MarketplaceService
+
+Handles data product creation and trading.
 
 ```rust
-use podai_sdk::{ReputationService, FeedbackSubmission};
+use podai_sdk::services::marketplace::MarketplaceService;
+use podai_sdk::types::marketplace::{ProductType, DataProductType};
 
-// Get agent reputation
-let reputation = client
-    .reputation()
-    .get(&agent_address)
-    .await?;
+let marketplace_service = MarketplaceService::new(client);
 
-println!("Reputation: {}/100", reputation.score);
-println!("Total transactions: {}", reputation.total_transactions);
-println!("Success rate: {:.2}%", reputation.success_rate * 100.0);
-
-// Get detailed reputation breakdown
-let details = client
-    .reputation()
-    .get_details(&agent_address)
-    .await?;
-
-println!("Categories:");
-for (category, score) in details.category_scores {
-    println!("  {}: {:.2}", category, score);
-}
-
-// Submit feedback after escrow completion
-let feedback = FeedbackSubmission {
-    target_agent: service_provider_address,
-    escrow_id: escrow_address,
-    overall_rating: 5,
-    category_ratings: vec![
-        ("communication", 5),
-        ("quality", 5),
-        ("timeliness", 4),
-        ("professionalism", 5),
-    ].into_iter().collect(),
-    comment: "Outstanding service, highly recommend!".to_string(),
-    would_work_again: true,
-};
-
-client.reputation().submit_feedback(feedback).await?;
-
-// Get reputation history
-let history = client
-    .reputation()
-    .get_history(&agent_address, HistoryQuery {
-        limit: Some(20),
-        category: None,
-        min_rating: None,
-    })
-    .await?;
-
-// Calculate reputation trends
-let mut recent_scores = Vec::new();
-for entry in history.iter().take(10) {
-    recent_scores.push(entry.overall_rating);
-}
-
-let trend = if recent_scores.len() >= 2 {
-    let recent_avg = recent_scores.iter().sum::<u8>() as f64 / recent_scores.len() as f64;
-    let older_avg = history.iter()
-        .skip(10)
-        .take(10)
-        .map(|e| e.overall_rating)
-        .sum::<u8>() as f64 / 10.0;
-    
-    if recent_avg > older_avg {
-        "improving"
-    } else if recent_avg < older_avg {
-        "declining"
-    } else {
-        "stable"
-    }
-} else {
-    "insufficient_data"
-};
-
-println!("Reputation trend: {}", trend);
+// Create a data product
+let result = marketplace_service.create_product(
+    &creator_keypair,
+    "AI Dataset",
+    "High-quality training data",
+    ProductType::DataProduct,
+    DataProductType::Dataset,
+    5_000_000, // price in lamports
+    "QmHash123..." // IPFS hash
+).await?;
 ```
 
-## Advanced Features
+**Key Methods:**
+- `create_product()` - List a new data product
+- `purchase_product()` - Purchase a data product
 
-### Event Streaming
+## Examples
 
-```rust
-use podai_sdk::{EventStream, EventFilter, ProgramEvent};
-use futures::StreamExt;
+The SDK includes comprehensive examples demonstrating different use cases:
 
-// Subscribe to all events
-let mut event_stream = client.events().subscribe().await?;
+### 1. Complete Agent Workflow (`complete_agent_workflow.rs`)
 
-while let Some(event) = event_stream.next().await {
-    match event {
-        ProgramEvent::AgentRegistered { agent, authority, name, timestamp } => {
-            println!("New agent: {} registered by {}", name, authority);
-        }
-        ProgramEvent::MessageSent { sender, recipient, message_type, timestamp } => {
-            println!("Message sent from {} to {}", sender, recipient);
-        }
-        ProgramEvent::EscrowCreated { escrow, creator, provider, amount, .. } => {
-            println!("Escrow created: {} SOL between {} and {}", 
-                amount as f64 / LAMPORTS_PER_SOL as f64, creator, provider);
-        }
-        _ => {
-            // Handle other events
-        }
-    }
-}
+Demonstrates the full lifecycle of an AI agent:
 
-// Subscribe to filtered events
-let filter = EventFilter::new()
-    .event_type(EventType::MessageSent)
-    .involving_agent(&my_agent_address);
-
-let mut filtered_stream = client.events().subscribe_filtered(filter).await?;
-
-while let Some(event) = filtered_stream.next().await {
-    // Process only message events involving this agent
-    handle_message_event(event).await?;
-}
+```bash
+cargo run --example complete_agent_workflow
 ```
 
-### Batch Operations
+**What it demonstrates:**
+- Client initialization with error handling
+- Agent registration with proper capabilities
+- Service creation and management
+- Transaction building patterns
 
-```rust
-use podai_sdk::{BatchOperation, BatchRequest};
+### 2. Enhanced Agent Registration (`enhanced_agent_registration.rs`)
 
-// Create batch of operations
-let mut batch = BatchRequest::new();
+Shows different agent registration patterns:
 
-// Add multiple message sends
-for recipient in recipients {
-    batch.add(BatchOperation::SendMessage {
-        recipient,
-        content: format!("Batch message to {}", recipient),
-        message_type: MessageType::Text,
-        priority: Priority::Normal,
-    });
-}
-
-// Add channel joins
-for channel in channels_to_join {
-    batch.add(BatchOperation::JoinChannel { channel });
-}
-
-// Execute batch
-let results = client.batch().execute(batch).await?;
-
-// Process results
-for (index, result) in results.iter().enumerate() {
-    match result {
-        Ok(response) => println!("Operation {} succeeded", index),
-        Err(error) => println!("Operation {} failed: {}", index, error),
-    }
-}
+```bash
+cargo run --example enhanced_agent_registration
 ```
 
-### Custom Message Handlers
+**What it demonstrates:**
+- Multiple agent registration scenarios
+- Different capability combinations
+- PDA calculation and validation
+- Error handling patterns
+
+### 3. Performance Demo (`performance_demo.rs`)
+
+Benchmarks core SDK operations:
+
+```bash
+cargo run --example performance_demo
+```
+
+**What it demonstrates:**
+- PDA generation performance
+- Channel account creation benchmarks
+- Serialization performance
+- Validation speed tests
+
+### 4. Quick Validation (`quick_validation.rs`)
+
+Validates core functionality without network calls:
+
+```bash
+cargo run --example quick_validation
+```
+
+**What it demonstrates:**
+- Offline functionality testing
+- Type creation and validation
+- PDA generation consistency
+- Serialization/deserialization
+
+## API Reference
+
+### Client Configuration
 
 ```rust
-use podai_sdk::{MessageHandler, HandlerContext};
-use async_trait::async_trait;
+// Network configurations
+let devnet_config = PodAIConfig::devnet();
+let mainnet_config = PodAIConfig::mainnet();
+let localnet_config = PodAIConfig::localnet();
 
-#[derive(Clone)]
-struct CustomMessageHandler;
+// Custom configuration
+let custom_config = PodAIConfig::devnet()
+    .with_timeout(60_000)
+    .with_retry_config(5, 3000);
+```
 
-#[async_trait]
-impl MessageHandler for CustomMessageHandler {
-    async fn handle(&self, ctx: HandlerContext, message: Message) -> Result<()> {
-        match message.message_type {
-            MessageType::Json => {
-                let data: serde_json::Value = serde_json::from_str(&message.content)?;
-                
-                if let Some(action) = data.get("action").and_then(|v| v.as_str()) {
-                    match action {
-                        "process_data" => {
-                            let result = process_data_request(&data).await?;
-                            
-                            // Send response
-                            ctx.client.messages().send_direct(DirectMessage {
-                                recipient: message.sender,
-                                content: serde_json::to_string(&result)?,
-                                message_type: MessageType::Json,
-                                priority: Priority::Normal,
-                                expires_at: None,
-                                metadata: None,
-                            }).await?;
-                        }
-                        "health_check" => {
-                            ctx.client.messages().send_direct(DirectMessage {
-                                recipient: message.sender,
-                                content: r#"{"status": "healthy", "timestamp": 1234567890}"#.to_string(),
-                                message_type: MessageType::Json,
-                                priority: Priority::Low,
-                                expires_at: None,
-                                metadata: None,
-                            }).await?;
-                        }
-                        _ => {
-                            println!("Unknown action: {}", action);
-                        }
-                    }
-                }
-            }
-            MessageType::Text => {
-                // Echo text messages
-                ctx.client.messages().send_direct(DirectMessage {
-                    recipient: message.sender,
-                    content: format!("Echo: {}", message.content),
-                    message_type: MessageType::Text,
-                    priority: Priority::Normal,
-                    expires_at: None,
-                    metadata: None,
-                }).await?;
-            }
-            _ => {
-                println!("Unsupported message type: {:?}", message.message_type);
-            }
-        }
-        
-        Ok(())
-    }
-}
+### Agent Capabilities
 
-// Register handler
-let handler = CustomMessageHandler;
-client.messages().set_handler(Box::new(handler)).await?;
+```rust
+use podai_sdk::types::agent::AgentCapabilities;
 
-// Start message processing
-client.messages().start_processing().await?;
+// Individual capabilities
+AgentCapabilities::Communication  // 0b001
+AgentCapabilities::Trading       // 0b010
+AgentCapabilities::Analysis      // 0b100
+
+// Combined capabilities
+let combined = AgentCapabilities::Communication as u64 
+    | AgentCapabilities::Trading as u64;
+```
+
+### Channel Types
+
+```rust
+use podai_sdk::types::channel::ChannelVisibility;
+
+ChannelVisibility::Public   // Open to all participants
+ChannelVisibility::Private  // Invitation-only
+```
+
+### Message Types
+
+```rust
+use podai_sdk::types::message::MessageType;
+
+MessageType::Text           // Plain text messages
+MessageType::Encrypted      // Encrypted content
+MessageType::File           // File attachments
+MessageType::System         // System notifications
 ```
 
 ## Configuration
 
-### Environment Configuration
+### Environment Variables
 
-```rust
-use podai_sdk::{Config, Cluster};
+The SDK respects standard Solana environment variables:
 
-// Load from environment
-let config = Config::from_env()?;
-
-// Manual configuration
-let config = Config {
-    cluster: Cluster::Devnet,
-    rpc_url: "https://api.devnet.solana.com".to_string(),
-    ws_url: "wss://api.devnet.solana.com".to_string(),
-    program_id: "HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps".parse()?,
-    commitment: CommitmentConfig::confirmed(),
-    timeout: Duration::from_secs(30),
-    retry_config: RetryConfig::default(),
-};
-
-let client = Client::from_config(config, keypair).await?;
+```bash
+export SOLANA_RPC_URL=https://api.devnet.solana.com
+export SOLANA_WS_URL=wss://api.devnet.solana.com
 ```
 
-### Logging Configuration
+### Network Configuration
 
 ```rust
-use tracing::{info, warn, error};
-use tracing_subscriber;
+// Devnet (default for development)
+let config = PodAIConfig::devnet();
 
-// Initialize logging
-tracing_subscriber::fmt()
-    .with_max_level(tracing::Level::INFO)
-    .with_target(false)
-    .with_thread_ids(true)
-    .with_file(true)
-    .with_line_number(true)
-    .init();
+// Mainnet (production)
+let config = PodAIConfig::mainnet();
 
-// Use structured logging
-info!(agent_id = %agent.address, "Agent registered successfully");
-warn!(message_id = %message.id, "Message processing failed");
-error!(error = %e, "Connection lost, attempting reconnection");
+// Localnet (local validator)
+let config = PodAIConfig::localnet();
+
+// Custom RPC endpoint
+let config = PodAIConfig::devnet()
+    .with_custom_rpc("https://my-rpc-endpoint.com");
+```
+
+### Timeout and Retry Configuration
+
+```rust
+let config = PodAIConfig::devnet()
+    .with_timeout(30_000)      // 30 second timeout
+    .with_retry_config(5, 2000); // 5 retries, 2 second delay
 ```
 
 ## Error Handling
 
 ### Error Types
 
-```rust
-use podai_sdk::{Error, ErrorKind};
+The SDK provides comprehensive error types:
 
-match client.agents().register(registration).await {
-    Ok(agent) => {
-        println!("Agent registered: {}", agent.address);
+```rust
+use podai_sdk::errors::{PodAIError, PodAIResult};
+
+match operation().await {
+    Ok(result) => { /* success */ }
+    Err(PodAIError::Network { message }) => {
+        // Network connectivity issues - usually retryable
     }
-    Err(Error::Network(e)) => {
-        eprintln!("Network error: {}", e);
-        // Retry logic
+    Err(PodAIError::InvalidInput { field, reason }) => {
+        // Input validation failed - fix input
     }
-    Err(Error::Protocol(e)) => {
-        eprintln!("Protocol error: {}", e);
-        // Handle protocol-specific errors
+    Err(PodAIError::TransactionFailed { reason, retryable, .. }) => {
+        // Transaction failed - check if retryable
     }
-    Err(Error::RateLimit { retry_after }) => {
-        eprintln!("Rate limited, retry after {} seconds", retry_after);
-        tokio::time::sleep(Duration::from_secs(retry_after)).await;
-        // Retry operation
-    }
-    Err(Error::InsufficientFunds { required, available }) => {
-        eprintln!("Insufficient funds: need {}, have {}", required, available);
-        // Request more funds or reduce operation cost
+    Err(PodAIError::AccountNotFound { account_type, address }) => {
+        // Account doesn't exist
     }
     Err(e) => {
-        eprintln!("Unexpected error: {}", e);
+        // Other errors
     }
 }
 ```
 
-### Custom Error Handling
+### Retry Logic
 
 ```rust
-use podai_sdk::{Result, Error};
+use podai_sdk::errors::PodAIError;
 
-async fn robust_agent_operation() -> Result<()> {
-    let max_retries = 3;
-    let mut retries = 0;
-    
-    loop {
-        match client.agents().get(&agent_address).await {
-            Ok(agent) => return Ok(()),
-            Err(Error::Network(_)) if retries < max_retries => {
-                retries += 1;
-                let delay = Duration::from_millis(500 * 2_u64.pow(retries));
-                tokio::time::sleep(delay).await;
+async fn retry_operation<F, T>(mut operation: F, max_retries: u32) -> PodAIResult<T>
+where
+    F: FnMut() -> PodAIResult<T>,
+{
+    for attempt in 0..max_retries {
+        match operation() {
+            Ok(result) => return Ok(result),
+            Err(e) if e.is_retryable() && attempt < max_retries - 1 => {
+                tokio::time::sleep(Duration::from_millis(1000 * (attempt + 1) as u64)).await;
                 continue;
             }
             Err(e) => return Err(e),
         }
     }
+    unreachable!()
 }
-```
-
-## Performance Optimization
-
-### Connection Pooling
-
-```rust
-use podai_sdk::{ConnectionPool, PoolConfig};
-
-let pool_config = PoolConfig {
-    max_connections: 10,
-    min_connections: 2,
-    connection_timeout: Duration::from_secs(30),
-    idle_timeout: Duration::from_secs(300),
-    max_lifetime: Duration::from_secs(3600),
-};
-
-let client = ClientBuilder::new()
-    .cluster(Cluster::Devnet)
-    .keypair(keypair)
-    .connection_pool(pool_config)
-    .build()
-    .await?;
-```
-
-### Caching
-
-```rust
-use podai_sdk::{CacheConfig, CacheBackend};
-
-let cache_config = CacheConfig {
-    backend: CacheBackend::Memory {
-        max_size: 1024 * 1024, // 1MB
-        ttl: Duration::from_secs(300), // 5 minutes
-    },
-    enable_agent_cache: true,
-    enable_message_cache: true,
-    enable_reputation_cache: true,
-};
-
-let client = ClientBuilder::new()
-    .cluster(Cluster::Devnet)
-    .keypair(keypair)
-    .cache_config(cache_config)
-    .build()
-    .await?;
 ```
 
 ## Testing
@@ -836,260 +492,326 @@ let client = ClientBuilder::new()
 #[cfg(test)]
 mod tests {
     use super::*;
-    use podai_sdk::testing::{MockClient, TestEnvironment};
+    use podai_sdk::utils::pda::find_agent_pda;
+
+    #[test]
+    fn test_pda_generation() {
+        let pubkey = Keypair::new().pubkey();
+        let (pda1, bump1) = find_agent_pda(&pubkey);
+        let (pda2, bump2) = find_agent_pda(&pubkey);
+        
+        assert_eq!(pda1, pda2);
+        assert_eq!(bump1, bump2);
+    }
 
     #[tokio::test]
-    async fn test_agent_registration() {
-        let env = TestEnvironment::new().await;
-        let client = env.create_client().await;
+    async fn test_client_creation() {
+        let config = PodAIConfig::devnet();
         
-        let registration = AgentRegistration {
-            name: "TestAgent".to_string(),
-            description: "Test agent".to_string(),
-            capabilities: vec!["test".to_string()],
-            metadata_uri: "ipfs://test".to_string(),
-        };
-        
-        let agent = client.agents().register(registration).await.unwrap();
-        assert!(!agent.address.to_string().is_empty());
-    }
-    
-    #[tokio::test]
-    async fn test_message_sending() {
-        let env = TestEnvironment::new().await;
-        let sender = env.create_client().await;
-        let receiver = env.create_client().await;
-        
-        // Register agents
-        let sender_agent = sender.agents().register(test_agent_registration()).await.unwrap();
-        let receiver_agent = receiver.agents().register(test_agent_registration()).await.unwrap();
-        
-        // Send message
-        let message = DirectMessage {
-            recipient: receiver_agent.address,
-            content: "Test message".to_string(),
-            message_type: MessageType::Text,
-            priority: Priority::Normal,
-            expires_at: None,
-            metadata: None,
-        };
-        
-        let sent = sender.messages().send_direct(message).await.unwrap();
-        
-        // Verify receipt
-        let received = receiver.messages().get_received(MessageQuery::default()).await.unwrap();
-        assert_eq!(received.len(), 1);
-        assert_eq!(received[0].content, "Test message");
+        // May fail in CI without Solana - that's expected
+        match PodAIClient::new(config).await {
+            Ok(client) => {
+                assert!(!client.program_id().to_string().is_empty());
+            }
+            Err(_) => {
+                // Expected in CI environments
+            }
+        }
     }
 }
 ```
 
 ### Integration Tests
 
-```rust
-#[cfg(test)]
-mod integration_tests {
-    use super::*;
-    use podai_sdk::testing::DevnetEnvironment;
-    
-    #[tokio::test]
-    #[ignore] // Run with `cargo test -- --ignored`
-    async fn test_full_escrow_workflow() {
-        let env = DevnetEnvironment::new().await;
-        let client_agent = env.create_funded_client().await;
-        let provider_agent = env.create_funded_client().await;
-        
-        // Register agents
-        let client_registration = /* ... */;
-        let provider_registration = /* ... */;
-        
-        let client_info = client_agent.agents().register(client_registration).await.unwrap();
-        let provider_info = provider_agent.agents().register(provider_registration).await.unwrap();
-        
-        // Create and fund escrow
-        let escrow_creation = EscrowCreation {
-            provider: provider_info.address,
-            amount: LAMPORTS_PER_SOL / 10, // 0.1 SOL
-            terms: "Integration test service".to_string(),
-            timeout_hours: 1,
-            arbiter: None,
-            metadata: None,
-        };
-        
-        let escrow = client_agent.escrow().create(escrow_creation).await.unwrap();
-        client_agent.escrow().fund(&escrow.address, escrow.amount).await.unwrap();
-        
-        // Provider completes work
-        let completion = EscrowCompletion {
-            deliverables: "Test work completed".to_string(),
-            proof_uri: None,
-            completion_notes: None,
-        };
-        
-        provider_agent.escrow().complete(&escrow.address, completion).await.unwrap();
-        
-        // Client releases funds
-        let release = EscrowRelease {
-            satisfaction_rating: 5,
-            feedback: "Great work!".to_string(),
-            tip_amount: None,
-        };
-        
-        client_agent.escrow().release(&escrow.address, release).await.unwrap();
-        
-        // Verify final state
-        let final_escrow = client_agent.escrow().get(&escrow.address).await.unwrap();
-        assert_eq!(final_escrow.status, EscrowStatus::Released);
-    }
-}
+```bash
+# Run all tests
+cargo test
+
+# Run only unit tests (no network)
+cargo test --lib
+
+# Run integration tests (requires validator)
+cargo test --test integration_tests
+
+# Run with logging
+RUST_LOG=debug cargo test
 ```
 
-## Examples
-
-### CLI Agent
+### Test Configuration
 
 ```rust
-// examples/cli_agent.rs
-use clap::{App, Arg, SubCommand};
-use podai_sdk::{Client, ClientBuilder};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let matches = App::new("podai-cli")
-        .version("1.0")
-        .author("Your Name")
-        .about("Command-line podAI agent")
-        .subcommand(SubCommand::with_name("register")
-            .about("Register new agent")
-            .arg(Arg::with_name("name").required(true)))
-        .subcommand(SubCommand::with_name("send")
-            .about("Send message")
-            .arg(Arg::with_name("recipient").required(true))
-            .arg(Arg::with_name("message").required(true)))
-        .get_matches();
-    
-    let client = ClientBuilder::from_env().await?;
-    
-    match matches.subcommand() {
-        ("register", Some(sub_matches)) => {
-            let name = sub_matches.value_of("name").unwrap();
-            // Registration logic
-        }
-        ("send", Some(sub_matches)) => {
-            let recipient = sub_matches.value_of("recipient").unwrap();
-            let message = sub_matches.value_of("message").unwrap();
-            // Send message logic
-        }
-        _ => {
-            eprintln!("Invalid command");
-        }
-    }
-    
-    Ok(())
-}
-```
-
-### Service Agent
-
-```rust
-// examples/service_agent.rs
-use podai_sdk::{Client, ClientBuilder, MessageHandler, HandlerContext};
-use tokio::time::{interval, Duration};
-
-struct ServiceAgent {
-    client: Client,
-}
-
-impl ServiceAgent {
-    async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let client = ClientBuilder::from_env().await?;
-        
-        // Register service agent
-        let registration = AgentRegistration {
-            name: "RustService".to_string(),
-            description: "High-performance Rust service".to_string(),
-            capabilities: vec![
-                "data_processing".to_string(),
-                "analysis".to_string(),
-                "rust".to_string(),
-            ],
-            metadata_uri: "ipfs://QmServiceMetadata...".to_string(),
-        };
-        
-        client.agents().register(registration).await?;
-        
-        Ok(Self { client })
-    }
-    
-    async fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // Set up message handler
-        let handler = ServiceMessageHandler::new(self.client.clone());
-        self.client.messages().set_handler(Box::new(handler)).await?;
-        
-        // Start processing messages
-        self.client.messages().start_processing().await?;
-        
-        // Periodic tasks
-        let mut health_check = interval(Duration::from_secs(60));
-        
-        loop {
-            tokio::select! {
-                _ = health_check.tick() => {
-                    self.perform_health_check().await?;
-                }
-            }
-        }
-    }
-    
-    async fn perform_health_check(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // Health check logic
-        let balance = self.client.balance().await?;
-        println!("Health check: balance = {} SOL", balance as f64 / LAMPORTS_PER_SOL as f64);
-        Ok(())
-    }
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let agent = ServiceAgent::new().await?;
-    agent.run().await?;
-    Ok(())
+// For tests that require network access
+#[tokio::test]
+#[ignore = "requires network"]
+async fn test_with_network() {
+    let config = PodAIConfig::devnet();
+    let client = PodAIClient::new(config).await.unwrap();
+    // ... test code
 }
 ```
 
 ## Best Practices
 
-### Memory Management
-- Use `Arc<T>` for shared data across async tasks
-- Prefer `Box<dyn Trait>` for trait objects
-- Use streaming APIs for large datasets
-- Implement proper cleanup in Drop handlers
+### 1. Client Management
 
-### Concurrency
-- Use `tokio::spawn` for independent tasks
-- Use channels for task communication
-- Prefer `RwLock` over `Mutex` for read-heavy workloads
-- Use `tokio::select!` for concurrent operations
+```rust
+// ✅ Good: Share client instance
+let client = Arc::new(PodAIClient::new(config).await?);
+let agent_service = AgentService::new(client.clone());
+let channel_service = ChannelService::new(client.clone());
 
-### Error Handling
-- Use `Result<T, E>` consistently
-- Implement custom error types with `thiserror`
-- Log errors at appropriate levels
-- Provide meaningful error messages
+// ❌ Bad: Create multiple clients
+let agent_client = PodAIClient::new(config).await?;
+let channel_client = PodAIClient::new(config).await?;
+```
 
-### Performance
-- Use connection pooling for high-throughput applications
-- Enable caching for frequently accessed data
-- Batch operations when possible
-- Use async streams for real-time data
+### 2. Error Handling
 
-## Next Steps
+```rust
+// ✅ Good: Handle specific errors
+match result {
+    Err(PodAIError::Network { .. }) => {
+        // Implement retry logic
+    }
+    Err(PodAIError::InvalidInput { field, reason }) => {
+        log::error!("Invalid {}: {}", field, reason);
+        return Err(e);
+    }
+    Err(e) => {
+        log::error!("Unexpected error: {}", e);
+        return Err(e);
+    }
+    Ok(value) => value,
+}
 
-- [API Reference](../../api/rust/README.md) - Complete API documentation
-- [Examples](../../examples/rust/README.md) - More code examples
-- [Performance Guide](../../development/performance.md) - Optimization strategies
-- [Integration Patterns](../../integration/backend.md) - Server integration
+// ❌ Bad: Ignore error details
+result.unwrap()
+```
 
----
+### 3. Transaction Management
 
-**Ready to build?** Check out our [examples directory](../../examples/rust/) or start with the [development setup guide](../../getting-started/development-setup.md)! 
+```rust
+// ✅ Good: Handle transaction confirmation
+let result = agent_service.register(&keypair, capabilities, metadata).await?;
+log::info!("Transaction submitted: {}", result.signature);
+
+// Wait for confirmation if needed
+client.confirm_transaction(&result.signature).await?;
+
+// ❌ Bad: Assume immediate confirmation
+let result = agent_service.register(&keypair, capabilities, metadata).await?;
+// Transaction might not be confirmed yet
+```
+
+### 4. Resource Management
+
+```rust
+// ✅ Good: Proper cleanup
+{
+    let client = PodAIClient::new(config).await?;
+    // Use client
+} // Client automatically cleaned up
+
+// ✅ Good: Explicit cleanup for long-running services
+let client = PodAIClient::new(config).await?;
+// ... use client
+client.close().await?;
+```
+
+### 5. Testing
+
+```rust
+// ✅ Good: Test with real and mock data
+#[tokio::test]
+async fn test_pda_generation() {
+    // Test deterministic behavior without network
+    let pubkey = Keypair::new().pubkey();
+    let (pda1, _) = find_agent_pda(&pubkey);
+    let (pda2, _) = find_agent_pda(&pubkey);
+    assert_eq!(pda1, pda2);
+}
+
+#[tokio::test]
+#[ignore = "requires network"]
+async fn test_real_registration() {
+    // Test with real network
+    let config = PodAIConfig::devnet();
+    let client = PodAIClient::new(config).await?;
+    // ... test with real transactions
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Connection Errors
+
+```
+Error: Network { message: "Connection refused" }
+```
+
+**Solutions:**
+- Check if Solana validator is running for localnet
+- Verify RPC endpoint is accessible
+- Check firewall/network settings
+- Try different RPC endpoint
+
+#### 2. Transaction Failures
+
+```
+Error: TransactionFailed { reason: "Insufficient funds" }
+```
+
+**Solutions:**
+- Fund the account with SOL for transaction fees
+- Check account balance: `solana balance <pubkey>`
+- Use devnet faucet: `solana airdrop 1 <pubkey>`
+
+#### 3. Program Not Found
+
+```
+Error: AccountNotFound { account_type: "Program" }
+```
+
+**Solutions:**
+- Ensure smart contract is deployed to the network
+- Check program ID configuration
+- Verify network (devnet vs mainnet)
+
+#### 4. Serialization Errors
+
+```
+Error: Custom { message: "Failed to deserialize account" }
+```
+
+**Solutions:**
+- Check account data format matches expected structure
+- Verify account is the correct type
+- Ensure account has been initialized
+
+### Debugging Tips
+
+1. **Enable Logging**
+   ```rust
+   env_logger::init();
+   log::set_max_level(log::LevelFilter::Debug);
+   ```
+
+2. **Inspect Transactions**
+   ```bash
+   # View transaction details
+   solana transaction <signature>
+   
+   # View account info
+   solana account <address>
+   ```
+
+3. **Network Debugging**
+   ```rust
+   // Test RPC connectivity
+   let client = PodAIClient::new(config).await?;
+   let health = client.rpc_client.get_health().await?;
+   println!("RPC Health: {:?}", health);
+   ```
+
+4. **Account Debugging**
+   ```rust
+   // Check if account exists
+   let account = client.get_account(&address).await?;
+   if account.is_none() {
+       println!("Account does not exist");
+   }
+   ```
+
+### Performance Optimization
+
+1. **Connection Pooling**
+   ```rust
+   // Reuse client instances
+   let client = Arc::new(PodAIClient::new(config).await?);
+   ```
+
+2. **Batch Operations**
+   ```rust
+   // Get multiple accounts in one call
+   let accounts = client.get_multiple_accounts(&addresses).await?;
+   ```
+
+3. **Async Best Practices**
+   ```rust
+   // Use join for concurrent operations
+   let (result1, result2) = tokio::join!(
+       service1.operation1(),
+       service2.operation2()
+   );
+   ```
+
+## Migration Guide
+
+### From Version 0.0.x to 0.1.x
+
+1. **Client Creation**
+   ```rust
+   // Old
+   let client = PodAIClient::devnet();
+   
+   // New
+   let config = PodAIConfig::devnet();
+   let client = PodAIClient::new(config).await?;
+   ```
+
+2. **Service Creation**
+   ```rust
+   // Old
+   let service = client.agent_service();
+   
+   // New
+   let service = AgentService::new(Arc::new(client));
+   ```
+
+3. **Error Handling**
+   ```rust
+   // Old
+   result.map_err(|e| format!("Error: {}", e))?;
+   
+   // New
+   match result {
+       Err(PodAIError::Network { message }) => {
+           // Handle network errors specifically
+       }
+       Err(e) => return Err(e),
+       Ok(value) => value,
+   }
+   ```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add comprehensive tests
+4. Update documentation
+5. Submit a pull request
+
+### Development Setup
+
+```bash
+git clone https://github.com/ghostspeak/ghostspeak.git
+cd ghostspeak/packages/sdk-rust
+
+# Install dependencies
+cargo build
+
+# Run tests
+cargo test
+
+# Check formatting
+cargo fmt --check
+
+# Run clippy
+cargo clippy -- -D warnings
+```
+
+## License
+
+MIT License - see [LICENSE](../../../LICENSE) for details. 

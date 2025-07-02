@@ -21,6 +21,9 @@ interface SubscriptionPlan {
 
 type BillingCycle = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
+// Detect test mode
+const TEST_MODE = process.argv.includes('--test-mode') || process.env.GHOSTSPEAK_TEST_MODE === 'true';
+
 export class SubscriptionManagementCommand {
   private ui: UIManager;
   private network: NetworkManager;
@@ -126,23 +129,35 @@ export class SubscriptionManagementCommand {
     if (!agentId) return;
 
     // Gather subscription plan details
-    const planName = await input({
-      message: 'Subscription plan name:',
-      validate: (value) => value.trim() ? true : 'Plan name is required'
-    });
+    let planName: string;
+    if (TEST_MODE) {
+      console.log('[TEST MODE] Subscription plan: TestPlan');
+      planName = 'TestPlan';
+    } else {
+      planName = await input({
+        message: 'Subscription plan name:',
+        validate: (value) => value.trim() ? true : 'Plan name is required'
+      });
+    }
 
     const description = await input({
       message: 'Plan description:',
       validate: (value) => value.trim() ? true : 'Description is required'
     });
 
-    const monthlyPrice = await input({
-      message: 'Monthly price (USD):',
-      validate: (value) => {
-        const price = parseFloat(value);
-        return (!isNaN(price) && price > 0) ? true : 'Enter a valid price';
-      }
-    });
+    let monthlyPrice: string;
+    if (TEST_MODE) {
+      console.log('[TEST MODE] Monthly price: 100');
+      monthlyPrice = '100';
+    } else {
+      monthlyPrice = await input({
+        message: 'Monthly price (USD):',
+        validate: (value) => {
+          const price = parseFloat(value);
+          return (!isNaN(price) && price > 0) ? true : 'Enter a valid price';
+        }
+      });
+    }
 
     const billingCycle = await select({
       message: 'Billing cycle:',

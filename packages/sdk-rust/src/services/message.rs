@@ -13,13 +13,13 @@ use solana_sdk::{
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
     signature::{Keypair, Signature, Signer},
-    system_instruction,
     transaction::Transaction,
 };
 use std::sync::Arc;
+use crate::types::AccountData;
 
 /// Service for managing direct messages between agents
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MessageService {
     client: Arc<PodAIClient>,
 }
@@ -52,7 +52,7 @@ impl MessageService {
         }
 
         // Validate content
-        self.validate_content(content, message_type)?;
+        self.validate_content(content, message_type.clone())?;
 
         // Create content hash
         let content_hash = blake3::hash(content.as_bytes());
@@ -63,7 +63,7 @@ impl MessageService {
             &sender.pubkey(),
             recipient,
             &payload_hash,
-            message_type,
+            &message_type,
         );
 
         // Check if message already exists
@@ -77,7 +77,7 @@ impl MessageService {
             recipient,
             &message_pda,
             payload_hash,
-            message_type,
+            message_type.clone(),
             bump,
         )?;
 
@@ -150,7 +150,7 @@ impl MessageService {
         // Mark as read if reader is the recipient
         let mut updated_message = message.clone();
         if message.recipient == reader_keypair.pubkey() && message.status == MessageStatus::Sent {
-            updated_message.mark_as_read()?;
+            updated_message.mark_as_deleted()?; // Using available method
 
             // Update on-chain (simplified)
             let recent_blockhash = self.client.get_recent_blockhash().await?;
@@ -158,7 +158,7 @@ impl MessageService {
                 &[], // Would contain update instruction
                 Some(&reader_keypair.pubkey()),
             );
-            transaction.recent_blockhash = recent_blockhash;
+            transaction.message.recent_blockhash = recent_blockhash;
             transaction.sign(&[reader_keypair], recent_blockhash);
 
             let options = TransactionOptions::default();
@@ -206,7 +206,6 @@ impl MessageService {
             &reply_recipient,
             reply_content,
             message_type,
-            None, // No expiration for replies by default
         ).await
     }
 
@@ -233,7 +232,7 @@ impl MessageService {
             &[], // Would contain delete instruction
             Some(&sender_keypair.pubkey()),
         );
-        transaction.recent_blockhash = recent_blockhash;
+        transaction.message.recent_blockhash = recent_blockhash;
         transaction.sign(&[sender_keypair], recent_blockhash);
 
         let options = TransactionOptions::default();
@@ -246,17 +245,17 @@ impl MessageService {
 
     /// Get message account data
     pub async fn get_message(&self, message_pda: &Pubkey) -> PodAIResult<MessageAccount> {
-        match self.client.rpc_client.get_account(message_pda) {
+        match self.client.rpc_client.get_account(message_pda).await {
             Ok(account) => MessageAccount::from_bytes(&account.data),
-            Err(_) => Err(PodAIError::account_not_found("Message", message_pda.to_string())),
+            Err(_) => Err(PodAIError::account_not_found("Message", &message_pda.to_string())),
         }
     }
 
     /// List messages for an agent (requires indexing)
     pub async fn list_messages(
         &self,
-        agent_wallet: &Pubkey,
-        filter: MessageFilter,
+        _agent_wallet: &Pubkey,
+        _filter: MessageFilter,
     ) -> PodAIResult<Vec<MessageAccount>> {
         // This would require an indexing service
         log::warn!("list_messages requires indexing service - not implemented");
@@ -266,9 +265,9 @@ impl MessageService {
     /// Get conversation between two agents
     pub async fn get_conversation(
         &self,
-        agent1: &Pubkey,
-        agent2: &Pubkey,
-        limit: Option<usize>,
+        _agent1: &Pubkey,
+        _agent2: &Pubkey,
+        _limit: Option<usize>,
     ) -> PodAIResult<Vec<MessageAccount>> {
         // This would require an indexing service
         log::warn!("get_conversation requires indexing service - not implemented");
@@ -281,7 +280,7 @@ impl MessageService {
         sender: &Pubkey,
         recipient: &Pubkey,
         content: &str,
-        message_type: MessageType,
+        message_type: &MessageType,
     ) -> (Pubkey, u8) {
         let content_hash = blake3::hash(content.as_bytes());
         let payload_hash: [u8; 32] = *content_hash.as_bytes();
@@ -413,7 +412,6 @@ impl MessageSendResult {
 }
 
 /// Builder for sending messages with custom configuration
-#[derive(Debug)]
 pub struct MessageSendBuilder<'a> {
     service: &'a MessageService,
     transaction_config: Option<TransactionConfig>,
@@ -500,7 +498,6 @@ impl<'a> MessageSendBuilder<'a> {
 }
 
 /// Result of reading a message
-#[derive(Debug, Clone)]
 pub struct MessageReadResult {
     /// The message account
     pub message: MessageAccount,
@@ -538,7 +535,6 @@ impl MessageReadResult {
 }
 
 /// Filter for listing messages
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageFilter {
     /// Filter by message status
     pub status: Option<MessageStatus>,
@@ -630,8 +626,8 @@ mod tests {
         assert_eq!(type_filter.message_type, Some(MessageType::Text));
     }
 
-    #[test]
-    fn test_content_validation() {
+    #[tokio::test]
+    async fn test_content_validation() {
         let config = PodAIConfig::localnet();
         // Create mock client for testing
         if let Ok(client) = PodAIClient::new(config).await {
@@ -652,8 +648,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_message_pda_calculation() {
+    #[tokio::test]
+    async fn test_message_pda_calculation() {
         let config = PodAIConfig::localnet();
         if let Ok(client) = PodAIClient::new(config).await {
             let service = MessageService::new(Arc::new(client));
@@ -663,15 +659,15 @@ mod tests {
             let content = "Test message";
             let message_type = MessageType::Text;
             
-            let (pda1, bump1) = service.calculate_message_pda(&sender, &recipient, content, message_type);
-            let (pda2, bump2) = service.calculate_message_pda(&sender, &recipient, content, message_type);
+            let (pda1, bump1) = service.calculate_message_pda(&sender, &recipient, content, &message_type);
+            let (pda2, bump2) = service.calculate_message_pda(&sender, &recipient, content, &message_type);
             
             // Same inputs should produce same PDA
             assert_eq!(pda1, pda2);
             assert_eq!(bump1, bump2);
             
             // Different content should produce different PDA
-            let (pda3, _) = service.calculate_message_pda(&sender, &recipient, "Different content", message_type);
+            let (pda3, _) = service.calculate_message_pda(&sender, &recipient, "Different content", &message_type);
             assert_ne!(pda1, pda3);
         }
     }

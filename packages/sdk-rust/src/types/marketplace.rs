@@ -6,6 +6,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use solana_sdk::pubkey::Pubkey;
+use hex;
 
 /// Maximum length for product requirements description
 pub const MAX_REQUIREMENTS_DESCRIPTION_LENGTH: usize = 500;
@@ -28,39 +29,21 @@ pub const MAX_SERVICE_DESCRIPTION_LENGTH: usize = 500;
 /// Maximum royalty percentage (10000 = 100%)
 pub const MAX_ROYALTY_PERCENTAGE: u16 = 10000;
 
-/// Types of product requests agents can make
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
-#[repr(u8)]
+/// Type of product or service being requested
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+#[borsh(use_discriminant = true)]
 pub enum ProductRequestType {
-    /// Request for data analysis or insights
-    DataAnalysis = 0,
-    /// Request for trading signals or strategies
-    TradingSignals = 1,
-    /// Request for custom computation or algorithms
-    Computation = 2,
-    /// Request for AI model training or inference
-    AiService = 3,
-    /// Request for content creation (text, images, etc.)
-    ContentCreation = 4,
-    /// Request for research and information gathering
-    Research = 5,
-    /// Request for automated task execution
-    Automation = 6,
-    /// Custom service type defined by provider
-    Custom = 7,
+    DataProduct = 0,
+    Service = 1,
+    Custom = 2,
 }
 
 impl ProductRequestType {
     /// Get all available request types
     pub fn all() -> Vec<Self> {
         vec![
-            Self::DataAnalysis,
-            Self::TradingSignals,
-            Self::Computation,
-            Self::AiService,
-            Self::ContentCreation,
-            Self::Research,
-            Self::Automation,
+            Self::DataProduct,
+            Self::Service,
             Self::Custom,
         ]
     }
@@ -68,13 +51,8 @@ impl ProductRequestType {
     /// Get the request type as a string
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::DataAnalysis => "DataAnalysis",
-            Self::TradingSignals => "TradingSignals",
-            Self::Computation => "Computation",
-            Self::AiService => "AiService",
-            Self::ContentCreation => "ContentCreation",
-            Self::Research => "Research",
-            Self::Automation => "Automation",
+            Self::DataProduct => "DataProduct",
+            Self::Service => "Service",
             Self::Custom => "Custom",
         }
     }
@@ -82,13 +60,8 @@ impl ProductRequestType {
     /// Parse request type from string
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "dataanalysis" => Some(Self::DataAnalysis),
-            "tradingsignals" => Some(Self::TradingSignals),
-            "computation" => Some(Self::Computation),
-            "aiservice" => Some(Self::AiService),
-            "contentcreation" => Some(Self::ContentCreation),
-            "research" => Some(Self::Research),
-            "automation" => Some(Self::Automation),
+            "dataproduc" => Some(Self::DataProduct),
+            "service" => Some(Self::Service),
             "custom" => Some(Self::Custom),
             _ => None,
         }
@@ -96,21 +69,14 @@ impl ProductRequestType {
 }
 
 /// Status of a product request
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
-#[repr(u8)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+#[borsh(use_discriminant = true)]
 pub enum ProductRequestStatus {
-    /// Request created, awaiting agent acceptance
     Pending = 0,
-    /// Agent has accepted and is working on request
     InProgress = 1,
-    /// Work completed, product minted
     Completed = 2,
-    /// Request cancelled before completion
     Cancelled = 3,
-    /// Request expired without fulfillment
-    Expired = 4,
-    /// Dispute raised, requires resolution
-    Disputed = 5,
+    Disputed = 4,
 }
 
 impl ProductRequestStatus {
@@ -121,18 +87,17 @@ impl ProductRequestStatus {
             Self::InProgress => "InProgress",
             Self::Completed => "Completed",
             Self::Cancelled => "Cancelled",
-            Self::Expired => "Expired",
             Self::Disputed => "Disputed",
         }
     }
 
     /// Check if status transition is valid
-    pub fn can_transition_to(&self, new_status: ProductRequestStatus) -> bool {
+    pub fn can_transition_to(&self, new_status: &ProductRequestStatus) -> bool {
         match (self, new_status) {
             // From Pending
             (Self::Pending, Self::InProgress) => true,
             (Self::Pending, Self::Cancelled) => true,
-            (Self::Pending, Self::Expired) => true,
+            (Self::Pending, Self::Disputed) => true,
             
             // From InProgress
             (Self::InProgress, Self::Completed) => true,
@@ -144,11 +109,10 @@ impl ProductRequestStatus {
             
             // Terminal states
             (Self::Cancelled, _) => false,
-            (Self::Expired, _) => false,
             (Self::Disputed, _) => false, // Requires manual resolution
             
             // Same status is always allowed
-            (a, b) if a == &b => true,
+            (a, b) if a == b => true,
             
             // All other transitions are invalid
             _ => false,
@@ -157,7 +121,7 @@ impl ProductRequestStatus {
 
     /// Check if this is a terminal status
     pub fn is_terminal(&self) -> bool {
-        matches!(self, Self::Completed | Self::Cancelled | Self::Expired | Self::Disputed)
+        matches!(self, Self::Completed | Self::Cancelled | Self::Disputed)
     }
 
     /// Check if this status allows modifications
@@ -166,42 +130,27 @@ impl ProductRequestStatus {
     }
 }
 
-/// Types of data products that can be minted
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
-#[repr(u8)]
+/// Type of data product
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+#[borsh(use_discriminant = true)]
 pub enum DataProductType {
-    /// Market analysis and insights
-    MarketAnalysis = 0,
-    /// Trading strategies and signals
-    TradingStrategy = 1,
-    /// Research reports and findings
-    ResearchReport = 2,
-    /// Trained AI models or algorithms
-    AiModel = 3,
-    /// Dataset or processed data
-    Dataset = 4,
-    /// Software tools or scripts
-    Software = 5,
-    /// Educational content or tutorials
-    Educational = 6,
-    /// Creative content (art, music, text)
-    Creative = 7,
-    /// Custom data product type
-    Custom = 8,
+    Dataset = 0,
+    Model = 1,
+    Analysis = 2,
+    Report = 3,
+    API = 4,
+    Custom = 5,
 }
 
 impl DataProductType {
     /// Get all available product types
     pub fn all() -> Vec<Self> {
         vec![
-            Self::MarketAnalysis,
-            Self::TradingStrategy,
-            Self::ResearchReport,
-            Self::AiModel,
             Self::Dataset,
-            Self::Software,
-            Self::Educational,
-            Self::Creative,
+            Self::Model,
+            Self::Analysis,
+            Self::Report,
+            Self::API,
             Self::Custom,
         ]
     }
@@ -209,14 +158,11 @@ impl DataProductType {
     /// Get the product type as a string
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::MarketAnalysis => "MarketAnalysis",
-            Self::TradingStrategy => "TradingStrategy",
-            Self::ResearchReport => "ResearchReport",
-            Self::AiModel => "AiModel",
             Self::Dataset => "Dataset",
-            Self::Software => "Software",
-            Self::Educational => "Educational",
-            Self::Creative => "Creative",
+            Self::Model => "Model",
+            Self::Analysis => "Analysis",
+            Self::Report => "Report",
+            Self::API => "API",
             Self::Custom => "Custom",
         }
     }
@@ -224,53 +170,38 @@ impl DataProductType {
     /// Parse product type from string
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "marketanalysis" => Some(Self::MarketAnalysis),
-            "tradingstrategy" => Some(Self::TradingStrategy),
-            "researchreport" => Some(Self::ResearchReport),
-            "aimodel" => Some(Self::AiModel),
             "dataset" => Some(Self::Dataset),
-            "software" => Some(Self::Software),
-            "educational" => Some(Self::Educational),
-            "creative" => Some(Self::Creative),
+            "model" => Some(Self::Model),
+            "analysis" => Some(Self::Analysis),
+            "report" => Some(Self::Report),
+            "api" => Some(Self::API),
             "custom" => Some(Self::Custom),
             _ => None,
         }
     }
 }
 
-/// Types of capability services agents can offer
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
-#[repr(u8)]
+/// Type of capability service
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+#[borsh(use_discriminant = true)]
 pub enum CapabilityServiceType {
-    /// Real-time data analysis service
-    DataAnalysis = 0,
-    /// Trading and financial services
-    Trading = 1,
-    /// AI inference and model services
-    AiInference = 2,
-    /// Content generation services
-    ContentGeneration = 3,
-    /// Research and information services
-    Research = 4,
-    /// Automation and task execution
-    Automation = 5,
-    /// Consulting and advisory services
-    Consulting = 6,
-    /// Custom capability service
-    Custom = 7,
+    DataProcessing = 0,
+    ModelTraining = 1,
+    Analysis = 2,
+    Consultation = 3,
+    Integration = 4,
+    Custom = 5,
 }
 
 impl CapabilityServiceType {
     /// Get all available service types
     pub fn all() -> Vec<Self> {
         vec![
-            Self::DataAnalysis,
-            Self::Trading,
-            Self::AiInference,
-            Self::ContentGeneration,
-            Self::Research,
-            Self::Automation,
-            Self::Consulting,
+            Self::DataProcessing,
+            Self::ModelTraining,
+            Self::Analysis,
+            Self::Consultation,
+            Self::Integration,
             Self::Custom,
         ]
     }
@@ -278,13 +209,11 @@ impl CapabilityServiceType {
     /// Get the service type as a string
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::DataAnalysis => "DataAnalysis",
-            Self::Trading => "Trading",
-            Self::AiInference => "AiInference",
-            Self::ContentGeneration => "ContentGeneration",
-            Self::Research => "Research",
-            Self::Automation => "Automation",
-            Self::Consulting => "Consulting",
+            Self::DataProcessing => "DataProcessing",
+            Self::ModelTraining => "ModelTraining",
+            Self::Analysis => "Analysis",
+            Self::Consultation => "Consultation",
+            Self::Integration => "Integration",
             Self::Custom => "Custom",
         }
     }
@@ -292,13 +221,11 @@ impl CapabilityServiceType {
     /// Parse service type from string
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "dataanalysis" => Some(Self::DataAnalysis),
-            "trading" => Some(Self::Trading),
-            "aiinference" => Some(Self::AiInference),
-            "contentgeneration" => Some(Self::ContentGeneration),
-            "research" => Some(Self::Research),
-            "automation" => Some(Self::Automation),
-            "consulting" => Some(Self::Consulting),
+            "dataproc" => Some(Self::DataProcessing),
+            "modeltrain" => Some(Self::ModelTraining),
+            "analysis" => Some(Self::Analysis),
+            "consult" => Some(Self::Consultation),
+            "integr" => Some(Self::Integration),
             "custom" => Some(Self::Custom),
             _ => None,
         }
@@ -345,13 +272,12 @@ impl ProductRequestAccount {
         if requirements_description.len() > MAX_REQUIREMENTS_DESCRIPTION_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "requirements_description",
-                format!("Description too long: {} > {}", requirements_description.len(), MAX_REQUIREMENTS_DESCRIPTION_LENGTH),
+                format!("Description too long: {} > {}", requirements_description.len(), MAX_REQUIREMENTS_DESCRIPTION_LENGTH).as_str(),
             ));
         }
 
         // Validate deadline is in the future
-        let now = Utc::now().timestamp();
-        if deadline <= now {
+        if deadline <= chrono::Utc::now().timestamp() {
             return Err(crate::errors::PodAIError::invalid_input(
                 "deadline",
                 "Deadline must be in the future"
@@ -365,7 +291,7 @@ impl ProductRequestAccount {
             requirements_description,
             offered_payment,
             deadline,
-            created_at: now,
+            created_at: chrono::Utc::now().timestamp(),
             status: ProductRequestStatus::Pending,
             escrow_account: None,
             bump,
@@ -400,14 +326,13 @@ impl ProductRequestAccount {
     }
 
     /// Update status with validation
-    pub fn update_status(&mut self, new_status: ProductRequestStatus) -> Result<(), crate::errors::PodAIError> {
+    pub fn update_status(&mut self, new_status: &ProductRequestStatus) -> Result<(), crate::errors::PodAIError> {
         if !self.status.can_transition_to(new_status) {
             return Err(crate::errors::PodAIError::marketplace(
-                format!("Invalid status transition from {:?} to {:?}", self.status, new_status)
+                format!("Invalid status transition from {:?} to {:?}", self.status, new_status).as_str()
             ));
         }
-        
-        self.status = new_status;
+        self.status = new_status.clone();
         Ok(())
     }
 
@@ -482,7 +407,7 @@ impl DataProductAccount {
         if title.len() > MAX_PRODUCT_TITLE_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "title",
-                format!("Title too long: {} > {}", title.len(), MAX_PRODUCT_TITLE_LENGTH),
+                format!("Title too long: {} > {}", title.len(), MAX_PRODUCT_TITLE_LENGTH).as_str(),
             ));
         }
 
@@ -490,7 +415,7 @@ impl DataProductAccount {
         if description.len() > MAX_PRODUCT_DESCRIPTION_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "description",
-                format!("Description too long: {} > {}", description.len(), MAX_PRODUCT_DESCRIPTION_LENGTH),
+                format!("Description too long: {} > {}", description.len(), MAX_PRODUCT_DESCRIPTION_LENGTH).as_str(),
             ));
         }
 
@@ -498,7 +423,7 @@ impl DataProductAccount {
         if ipfs_cid.len() > MAX_IPFS_CID_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "ipfs_cid",
-                format!("IPFS CID too long: {} > {}", ipfs_cid.len(), MAX_IPFS_CID_LENGTH),
+                format!("IPFS CID too long: {} > {}", ipfs_cid.len(), MAX_IPFS_CID_LENGTH).as_str(),
             ));
         }
 
@@ -506,13 +431,14 @@ impl DataProductAccount {
         if royalty_percentage > MAX_ROYALTY_PERCENTAGE {
             return Err(crate::errors::PodAIError::invalid_input(
                 "royalty_percentage",
-                format!("Royalty too high: {} > {}", royalty_percentage, MAX_ROYALTY_PERCENTAGE),
+                format!("Royalty too high: {} > {}", royalty_percentage, MAX_ROYALTY_PERCENTAGE).as_str(),
             ));
         }
 
         // Validate price is not zero
         if price == 0 {
-            return Err(crate::errors::PodAIError::marketplace(
+            return Err(crate::errors::PodAIError::invalid_input(
+                "price",
                 "Product price cannot be zero"
             ));
         }
@@ -588,7 +514,8 @@ impl DataProductAccount {
     /// Update price
     pub fn update_price(&mut self, new_price: u64) -> Result<(), crate::errors::PodAIError> {
         if new_price == 0 {
-            return Err(crate::errors::PodAIError::marketplace(
+            return Err(crate::errors::PodAIError::invalid_input(
+                "price",
                 "Product price cannot be zero"
             ));
         }
@@ -661,7 +588,7 @@ impl CapabilityServiceAccount {
         if service_name.len() > MAX_SERVICE_NAME_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "service_name",
-                format!("Name too long: {} > {}", service_name.len(), MAX_SERVICE_NAME_LENGTH),
+                format!("Name too long: {} > {}", service_name.len(), MAX_SERVICE_NAME_LENGTH).as_str(),
             ));
         }
 
@@ -669,7 +596,7 @@ impl CapabilityServiceAccount {
         if service_description.len() > MAX_SERVICE_DESCRIPTION_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "service_description",
-                format!("Description too long: {} > {}", service_description.len(), MAX_SERVICE_DESCRIPTION_LENGTH),
+                format!("Description too long: {} > {}", service_description.len(), MAX_SERVICE_DESCRIPTION_LENGTH).as_str(),
             ));
         }
 
@@ -774,22 +701,22 @@ mod tests {
 
     #[test]
     fn test_product_request_types() {
-        assert_eq!(ProductRequestType::DataAnalysis.as_str(), "DataAnalysis");
-        assert_eq!(ProductRequestType::from_str("DataAnalysis"), Some(ProductRequestType::DataAnalysis));
+        assert_eq!(ProductRequestType::DataProduct.as_str(), "DataProduct");
+        assert_eq!(ProductRequestType::from_str("DataProduct"), Some(ProductRequestType::DataProduct));
         assert_eq!(ProductRequestType::from_str("invalid"), None);
     }
 
     #[test]
     fn test_product_request_status_transitions() {
         let pending = ProductRequestStatus::Pending;
-        assert!(pending.can_transition_to(ProductRequestStatus::InProgress));
-        assert!(pending.can_transition_to(ProductRequestStatus::Cancelled));
-        assert!(!pending.can_transition_to(ProductRequestStatus::Completed));
+        assert!(pending.can_transition_to(&ProductRequestStatus::InProgress));
+        assert!(pending.can_transition_to(&ProductRequestStatus::Cancelled));
+        assert!(!pending.can_transition_to(&ProductRequestStatus::Completed));
 
         let in_progress = ProductRequestStatus::InProgress;
-        assert!(in_progress.can_transition_to(ProductRequestStatus::Completed));
-        assert!(in_progress.can_transition_to(ProductRequestStatus::Disputed));
-        assert!(!in_progress.can_transition_to(ProductRequestStatus::Pending));
+        assert!(in_progress.can_transition_to(&ProductRequestStatus::Completed));
+        assert!(in_progress.can_transition_to(&ProductRequestStatus::Disputed));
+        assert!(!in_progress.can_transition_to(&ProductRequestStatus::Pending));
     }
 
     #[test]
@@ -798,7 +725,7 @@ mod tests {
         let product = DataProductAccount::new(
             creator,
             None,
-            DataProductType::MarketAnalysis,
+            DataProductType::Dataset,
             "Test Product".to_string(),
             "A test product".to_string(),
             [1u8; 32],
@@ -809,7 +736,7 @@ mod tests {
         ).unwrap();
 
         assert_eq!(product.creator, creator);
-        assert_eq!(product.product_type, DataProductType::MarketAnalysis);
+        assert_eq!(product.product_type, DataProductType::Dataset);
         assert_eq!(product.price, 1000);
         assert_eq!(product.royalty_percentage, 500);
         assert!(product.is_active);
@@ -852,7 +779,7 @@ mod tests {
         let provider = Pubkey::from_str("11111111111111111111111111111112").unwrap();
         let mut service = CapabilityServiceAccount::new(
             provider,
-            CapabilityServiceType::DataAnalysis,
+            CapabilityServiceType::DataProcessing,
             "Data Analysis Service".to_string(),
             "Professional data analysis".to_string(),
             5000,

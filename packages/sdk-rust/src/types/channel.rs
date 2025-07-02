@@ -4,9 +4,9 @@ use super::message::MessageType;
 use super::time_utils::{datetime_to_timestamp, timestamp_to_datetime};
 use super::AccountData;
 use borsh::{BorshDeserialize, BorshSerialize};
+use solana_sdk::pubkey::Pubkey;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use solana_sdk::pubkey::Pubkey;
 
 /// Maximum channel name length
 pub const MAX_CHANNEL_NAME_LENGTH: usize = 50;
@@ -21,7 +21,7 @@ pub const MAX_PARTICIPANTS_PER_CHANNEL: u32 = 1000;
 pub const MAX_CHANNEL_MESSAGE_CONTENT_LENGTH: usize = 1000;
 
 /// Channel visibility enumeration
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ChannelVisibility {
     /// Public channel - anyone can join
     Public,
@@ -98,19 +98,16 @@ impl ChannelAccount {
         fee_per_message: u64,
         bump: u8,
     ) -> Result<Self, crate::errors::PodAIError> {
-        // Validate name length
-        if name.len() > MAX_CHANNEL_NAME_LENGTH {
-            return Err(crate::errors::PodAIError::invalid_input(
-                "name",
-                format!("Name too long: {} > {}", name.len(), MAX_CHANNEL_NAME_LENGTH),
-            ));
+        // Validate name
+        if let Err(e) = Self::validate_name(&name) {
+            return Err(e);
         }
 
         // Validate description length
         if description.len() > MAX_CHANNEL_DESCRIPTION_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "description",
-                format!("Description too long: {} > {}", description.len(), MAX_CHANNEL_DESCRIPTION_LENGTH),
+                &format!("Description too long: {} > {}", description.len(), MAX_CHANNEL_DESCRIPTION_LENGTH),
             ));
         }
 
@@ -118,7 +115,7 @@ impl ChannelAccount {
         if max_participants > MAX_PARTICIPANTS_PER_CHANNEL {
             return Err(crate::errors::PodAIError::invalid_input(
                 "max_participants",
-                format!("Too many participants: {} > {}", max_participants, MAX_PARTICIPANTS_PER_CHANNEL),
+                &format!("Too many participants: {} > {}", max_participants, MAX_PARTICIPANTS_PER_CHANNEL),
             ));
         }
 
@@ -241,18 +238,15 @@ impl ChannelAccount {
             ));
         }
 
-        if self.name.len() > MAX_CHANNEL_NAME_LENGTH {
-            return Err(crate::errors::PodAIError::invalid_input(
-                "name",
-                format!("Name too long: {} > {}", self.name.len(), MAX_CHANNEL_NAME_LENGTH)
-            ));
+        if let Err(e) = Self::validate_name(&self.name) {
+            return Err(e);
         }
 
         // Validate description
         if self.description.len() > MAX_CHANNEL_DESCRIPTION_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "description",
-                format!("Description too long: {} > {}", self.description.len(), MAX_CHANNEL_DESCRIPTION_LENGTH)
+                &format!("Description too long: {} > {}", self.description.len(), MAX_CHANNEL_DESCRIPTION_LENGTH),
             ));
         }
 
@@ -266,10 +260,50 @@ impl ChannelAccount {
         if self.max_participants > MAX_PARTICIPANTS_PER_CHANNEL {
             return Err(crate::errors::PodAIError::invalid_input(
                 "max_participants",
-                format!("Too many participants: {} > {}", self.max_participants, MAX_PARTICIPANTS_PER_CHANNEL)
+                &format!("Too many participants: {} > {}", self.max_participants, MAX_PARTICIPANTS_PER_CHANNEL),
             ));
         }
 
+        Ok(())
+    }
+
+    pub fn validate_name(name: &str) -> Result<(), crate::errors::PodAIError> {
+        if name.len() > MAX_CHANNEL_NAME_LENGTH {
+            return Err(crate::errors::PodAIError::InvalidInput {
+                field: "name".to_string(),
+                reason: format!("Name too long: {} > {}", name.len(), MAX_CHANNEL_NAME_LENGTH),
+            });
+        }
+        Ok(())
+    }
+
+    pub fn validate_description(description: &str) -> Result<(), crate::errors::PodAIError> {
+        if description.len() > MAX_CHANNEL_DESCRIPTION_LENGTH {
+            return Err(crate::errors::PodAIError::InvalidInput {
+                field: "description".to_string(),
+                reason: format!("Description too long: {} > {}", description.len(), MAX_CHANNEL_DESCRIPTION_LENGTH),
+            });
+        }
+        Ok(())
+    }
+
+    pub fn validate_participants(max_participants: usize) -> Result<(), crate::errors::PodAIError> {
+        if max_participants > MAX_PARTICIPANTS_PER_CHANNEL as usize {
+            return Err(crate::errors::PodAIError::InvalidInput {
+                field: "max_participants".to_string(),
+                reason: format!("Too many participants: {} > {}", max_participants, MAX_PARTICIPANTS_PER_CHANNEL),
+            });
+        }
+        Ok(())
+    }
+
+    pub fn validate_content(content: &str) -> Result<(), crate::errors::PodAIError> {
+        if content.len() > MAX_CHANNEL_MESSAGE_CONTENT_LENGTH {
+            return Err(crate::errors::PodAIError::invalid_input(
+                "content",
+                &format!("Content too long: {} > {}", content.len(), MAX_CHANNEL_MESSAGE_CONTENT_LENGTH),
+            ));
+        }
         Ok(())
     }
 }
@@ -420,7 +454,7 @@ impl ChannelMessage {
         if content.len() > MAX_CHANNEL_MESSAGE_CONTENT_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "content",
-                format!("Content too long: {} > {}", content.len(), MAX_CHANNEL_MESSAGE_CONTENT_LENGTH)
+                &format!("Content too long: {} > {}", content.len(), MAX_CHANNEL_MESSAGE_CONTENT_LENGTH),
             ));
         }
 
@@ -490,7 +524,7 @@ impl ChannelMessage {
         if self.content.len() > MAX_CHANNEL_MESSAGE_CONTENT_LENGTH {
             return Err(crate::errors::PodAIError::invalid_input(
                 "content",
-                format!("Content too long: {} > {}", self.content.len(), MAX_CHANNEL_MESSAGE_CONTENT_LENGTH)
+                &format!("Content too long: {} > {}", self.content.len(), MAX_CHANNEL_MESSAGE_CONTENT_LENGTH),
             ));
         }
 

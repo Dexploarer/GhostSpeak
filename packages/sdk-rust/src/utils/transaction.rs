@@ -3,12 +3,13 @@
 use crate::errors::{PodAIError, PodAIResult};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{
     commitment_config::CommitmentConfig,
     signature::{Signature, Signer},
     transaction::Transaction,
 };
+use solana_transaction_status::UiTransactionEncoding;
 use std::time::{Duration, Instant};
 
 /// Transaction options for customizing transaction behavior
@@ -182,9 +183,9 @@ pub async fn send_transaction(
 
     // Simulate transaction first if requested
     if options.simulate_first {
-        match rpc_client.simulate_transaction(transaction) {
+        match rpc_client.simulate_transaction(transaction).await {
             Ok(simulation_result) => {
-                if let Some(err) = simulation_result.value.err {
+                if let Some(_err) = simulation_result.value.err {
                     return Err(PodAIError::transaction_simulation_failed(
                         simulation_result.value.logs.unwrap_or_default(),
                     ));
@@ -201,16 +202,19 @@ pub async fn send_transaction(
     for attempt in 0..=options.max_retries {
         retry_attempts = attempt;
 
-        match rpc_client.send_and_confirm_transaction(transaction) {
+        match rpc_client.send_and_confirm_transaction(transaction).await {
             Ok(signature) => {
                 // Get transaction details
-                let slot = rpc_client.get_slot().unwrap_or(0);
+                let slot = rpc_client.get_slot().await.unwrap_or(0);
                 let execution_time = start_time.elapsed();
 
                 // Try to get transaction logs
-                let logs = match rpc_client.get_transaction(&signature, solana_sdk::transaction_status::UiTransactionEncoding::Json) {
+                let logs = match rpc_client.get_transaction(&signature, UiTransactionEncoding::Json).await {
                     Ok(tx_with_meta) => {
-                        tx_with_meta.transaction.meta.and_then(|meta| meta.log_messages)
+                        tx_with_meta.transaction.meta.and_then(|meta| {
+                            // Handle OptionSerializer properly - it has an into() method
+                            meta.log_messages.into()
+                        })
                     }
                     Err(_) => None,
                 };
@@ -248,7 +252,7 @@ pub async fn send_transaction(
 
     // Try to get the signature for failed transaction (might be partial)
     let signature = transaction.signatures.first().copied().unwrap_or_default();
-    let slot = rpc_client.get_slot().unwrap_or(0);
+    let slot = rpc_client.get_slot().await.unwrap_or(0);
 
     Ok(TransactionResult::failure(
         signature,
@@ -286,12 +290,12 @@ pub async fn send_transaction_batch(
 
     // For larger batches, implement parallel sending with proper rate limiting
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(5)); // Max 5 concurrent transactions
-    let rpc_client = std::sync::Arc::new(rpc_client);
+    let rpc_url = rpc_client.url(); // Get the URL to create new clients
     let mut handles = Vec::new();
 
     for (index, transaction) in transactions.iter().enumerate() {
         let semaphore = semaphore.clone();
-        let rpc_client = rpc_client.clone();
+        let rpc_url = rpc_url.clone();
         let transaction = transaction.clone();
         let options = options.clone();
 
@@ -300,11 +304,14 @@ pub async fn send_transaction_batch(
                 PodAIError::internal("Failed to acquire semaphore permit")
             })?;
 
+            // Create a new RPC client for this task
+            let task_rpc_client = RpcClient::new(rpc_url);
+
             // Add staggered delay to spread out transaction submissions
             let delay_ms = (index * 50) as u64; // 50ms per transaction index
             tokio::time::sleep(Duration::from_millis(delay_ms)).await;
 
-            send_transaction(&*rpc_client, &transaction, &options).await
+            send_transaction(&task_rpc_client, &transaction, &options).await
         });
 
         handles.push(handle);
@@ -354,8 +361,8 @@ pub async fn estimate_transaction_fee(
     transaction: &Transaction,
 ) -> PodAIResult<u64> {
     // Simulate transaction to get fee estimate
-    match rpc_client.simulate_transaction(transaction) {
-        Ok(simulation_result) => {
+    match rpc_client.simulate_transaction(transaction).await {
+        Ok(_simulation_result) => {
             // Extract fee from simulation if available
             // For now, return a default estimate
             Ok(5000) // 0.000005 SOL as base fee estimate
@@ -373,11 +380,11 @@ pub async fn check_transaction_status(
     rpc_client: &RpcClient,
     signature: &Signature,
 ) -> PodAIResult<TransactionStatus> {
-    match rpc_client.get_signature_status(signature) {
-        Ok(Some(status)) => {
-            let confirmed = status.is_ok();
-            let slot = status.slot;
-            let error = status.err.map(|e| e.to_string());
+    match rpc_client.get_signature_status(signature).await {
+        Ok(Some(result)) => {
+            let confirmed = result.is_ok();
+            let slot = 0; // Slot information not directly available from signature status
+            let error = result.err().map(|e| e.to_string());
 
             Ok(TransactionStatus {
                 signature: *signature,
@@ -483,7 +490,7 @@ impl TransactionBuilder {
         })?;
 
         let mut transaction = Transaction::new_with_payer(&self.instructions, Some(&payer.pubkey()));
-        transaction.recent_blockhash = recent_blockhash;
+        transaction.message.recent_blockhash = recent_blockhash;
 
         // Sign with payer
         transaction.sign(&[payer], recent_blockhash);
@@ -606,7 +613,7 @@ mod tests {
             .with_recent_blockhash(recent_blockhash);
 
         let transaction = builder.build(&payer).unwrap();
-        assert_eq!(transaction.instructions.len(), 1);
+        assert_eq!(transaction.message.instructions.len(), 1);
         assert!(!transaction.signatures.is_empty());
     }
 }

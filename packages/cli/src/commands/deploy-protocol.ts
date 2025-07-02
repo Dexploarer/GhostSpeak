@@ -18,6 +18,9 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
+// Detect test mode
+const TEST_MODE = process.argv.includes('--test-mode') || process.env.GHOSTSPEAK_TEST_MODE === 'true';
+
 export class DeployProtocolCommand {
   private ui: UIManager;
   // private network: NetworkManager;
@@ -35,14 +38,20 @@ export class DeployProtocolCommand {
       this.ui.bigTitle('Deploy Protocol', 'Deploy and validate podAI Protocol infrastructure');
 
       // Get deployment options
-      const networkChoice = await select({
-        message: 'Select deployment network:',
-        choices: [
-          { name: '🧪 Devnet (Recommended)', value: 'devnet' },
-          { name: '🔧 Testnet', value: 'testnet' },
-          { name: '🚀 Mainnet-Beta', value: 'mainnet' }
-        ]
-      });
+      let network: string;
+      if (TEST_MODE) {
+        console.log('[TEST MODE] Deploy network: devnet');
+        network = 'devnet';
+      } else {
+        network = await select({
+          message: 'Select deployment network:',
+          choices: [
+            { name: '🧪 Devnet (Recommended)', value: 'devnet' },
+            { name: '🔧 Testnet', value: 'testnet' },
+            { name: '🚀 Mainnet-Beta', value: 'mainnet' }
+          ]
+        });
+      }
 
       const programId = await input({
         message: 'Program ID (leave empty for default):',
@@ -50,7 +59,7 @@ export class DeployProtocolCommand {
       });
 
       const confirmed = await confirm({
-        message: `Deploy to ${networkChoice} with program ${programId}?`,
+        message: `Deploy to ${network} with program ${programId}?`,
         default: true
       });
 
@@ -60,7 +69,7 @@ export class DeployProtocolCommand {
       }
 
       await this.deployProtocol({
-        network: networkChoice,
+        network,
         programId,
         wallet: undefined
       });

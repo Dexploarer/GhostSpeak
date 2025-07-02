@@ -1,11 +1,13 @@
 //! Message account types and related functionality
 
-use super::time_utils::{datetime_to_timestamp, timestamp_to_datetime};
 use super::AccountData;
+use super::time_utils::{datetime_to_timestamp, timestamp_to_datetime};
 use borsh::{BorshDeserialize, BorshSerialize};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use solana_sdk::pubkey::Pubkey;
+use crate::errors::PodAIError;
+use hex;
 
 /// Message expiration time in seconds (7 days)
 pub const MESSAGE_EXPIRATION_SECONDS: i64 = 7 * 24 * 60 * 60;
@@ -14,7 +16,7 @@ pub const MESSAGE_EXPIRATION_SECONDS: i64 = 7 * 24 * 60 * 60;
 pub const MAX_MESSAGE_CONTENT_LENGTH: usize = 1000;
 
 /// Message type enumeration matching the on-chain program
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MessageType {
     /// Plain text message
     Text,
@@ -114,7 +116,7 @@ impl MessageType {
 }
 
 /// Message status enumeration
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MessageStatus {
     /// Message is pending delivery
     Pending,
@@ -126,6 +128,8 @@ pub enum MessageStatus {
     Read,
     /// Message delivery failed
     Failed,
+    /// Message has been marked as deleted
+    Deleted,
 }
 
 impl Default for MessageStatus {
@@ -143,11 +147,12 @@ impl MessageStatus {
             Self::Delivered => "Delivered",
             Self::Read => "Read",
             Self::Failed => "Failed",
+            Self::Deleted => "Deleted",
         }
     }
 
     /// Check if status transition is valid
-    pub fn can_transition_to(&self, new_status: MessageStatus) -> bool {
+    pub fn can_transition_to(&self, new_status: &MessageStatus) -> bool {
         match (self, new_status) {
             // From Pending
             (Self::Pending, Self::Sent) => true,
@@ -169,7 +174,7 @@ impl MessageStatus {
             (Self::Failed, _) => false,
             
             // Same status is always allowed
-            (a, b) if a == &b => true,
+            (a, b) if a == b => true,
             
             // All other transitions are invalid
             _ => false,
@@ -256,17 +261,13 @@ impl MessageAccount {
     }
 
     /// Update message status with validation
-    pub fn update_status(&mut self, new_status: MessageStatus) -> Result<(), crate::errors::PodAIError> {
+    pub fn update_status(&mut self, new_status: &MessageStatus) -> Result<(), PodAIError> {
         if !self.status.can_transition_to(new_status) {
-            return Err(crate::errors::PodAIError::message(
-                format!(
-                    "Invalid status transition from {:?} to {:?}",
-                    self.status, new_status
-                )
+            return Err(PodAIError::message(
+                &format!("Invalid status transition from {:?} to {:?}", self.status, new_status)
             ));
         }
-        
-        self.status = new_status;
+        self.status = new_status.clone();
         Ok(())
     }
 
@@ -276,13 +277,13 @@ impl MessageAccount {
     }
 
     /// Set payload hash from hex string
-    pub fn set_payload_hash_hex(&mut self, hex_str: &str) -> Result<(), crate::errors::PodAIError> {
+    pub fn set_payload_hash_hex(&mut self, hex_str: &str) -> Result<(), PodAIError> {
         let bytes = hex::decode(hex_str).map_err(|_| {
-            crate::errors::PodAIError::invalid_input("payload_hash", "Invalid hex string")
+            PodAIError::invalid_input("payload_hash", "Invalid hex string")
         })?;
         
         if bytes.len() != 32 {
-            return Err(crate::errors::PodAIError::invalid_input(
+            return Err(PodAIError::invalid_input(
                 "payload_hash",
                 "Hash must be 32 bytes"
             ));
@@ -310,28 +311,34 @@ impl MessageAccount {
     }
 
     /// Validate the message data
-    pub fn validate(&self) -> Result<(), crate::errors::PodAIError> {
+    pub fn validate(&self) -> Result<(), PodAIError> {
         // Check if sender and recipient are different
         if self.sender == self.recipient {
-            return Err(crate::errors::PodAIError::message(
+            return Err(PodAIError::message(
                 "Sender and recipient cannot be the same"
             ));
         }
 
         // Check if creation time is before expiration time
         if self.created_at >= self.expires_at {
-            return Err(crate::errors::PodAIError::message(
+            return Err(PodAIError::message(
                 "Creation time must be before expiration time"
             ));
         }
 
         // Check if payload hash is not empty
         if self.payload_hash == [0u8; 32] {
-            return Err(crate::errors::PodAIError::message(
+            return Err(PodAIError::message(
                 "Payload hash cannot be empty"
             ));
         }
 
+        Ok(())
+    }
+
+    /// Mark the message as deleted
+    pub fn mark_as_deleted(&mut self) -> Result<(), PodAIError> {
+        self.status = MessageStatus::Deleted;
         Ok(())
     }
 }
@@ -359,11 +366,11 @@ pub mod message_utils {
     }
 
     /// Validate message content length
-    pub fn validate_content_length(content: &str) -> Result<(), crate::errors::PodAIError> {
+    pub fn validate_content_length(content: &str) -> Result<(), PodAIError> {
         if content.len() > MAX_MESSAGE_CONTENT_LENGTH {
-            return Err(crate::errors::PodAIError::invalid_input(
+            return Err(PodAIError::invalid_input(
                 "content",
-                format!("Content too long: {} > {}", content.len(), MAX_MESSAGE_CONTENT_LENGTH)
+                &format!("Content too long: {} > {}", content.len(), MAX_MESSAGE_CONTENT_LENGTH)
             ));
         }
         Ok(())
@@ -382,6 +389,29 @@ pub mod message_utils {
         hasher.update(content.as_bytes());
         hasher.update(&nonce.to_le_bytes());
         *hasher.finalize().as_bytes()
+    }
+
+    /// Decode payload hash from hex string
+    pub fn decode_payload_hash(hex_string: &str) -> Result<[u8; 32], PodAIError> {
+        // Remove 0x prefix if present
+        let clean_hex = hex_string.strip_prefix("0x").unwrap_or(hex_string);
+        
+        // Try to decode hex
+        let bytes = hex::decode(clean_hex).map_err(|_| {
+            PodAIError::invalid_input("payload_hash", "Invalid hex string")
+        })?;
+        
+        // Ensure it's exactly 32 bytes
+        if bytes.len() != 32 {
+            return Err(PodAIError::invalid_input(
+                "payload_hash",
+                "Hash must be 32 bytes"
+            ));
+        }
+        
+        let mut hash = [0u8; 32];
+        hash.copy_from_slice(&bytes);
+        Ok(hash)
     }
 }
 
@@ -404,18 +434,18 @@ mod tests {
     #[test]
     fn test_message_status_transitions() {
         let pending = MessageStatus::Pending;
-        assert!(pending.can_transition_to(MessageStatus::Delivered));
-        assert!(pending.can_transition_to(MessageStatus::Failed));
-        assert!(!pending.can_transition_to(MessageStatus::Read));
+        assert!(pending.can_transition_to(&MessageStatus::Delivered));
+        assert!(pending.can_transition_to(&MessageStatus::Failed));
+        assert!(!pending.can_transition_to(&MessageStatus::Read));
 
         let delivered = MessageStatus::Delivered;
-        assert!(delivered.can_transition_to(MessageStatus::Read));
-        assert!(delivered.can_transition_to(MessageStatus::Failed));
-        assert!(!delivered.can_transition_to(MessageStatus::Pending));
+        assert!(delivered.can_transition_to(&MessageStatus::Read));
+        assert!(delivered.can_transition_to(&MessageStatus::Failed));
+        assert!(!delivered.can_transition_to(&MessageStatus::Pending));
 
         let failed = MessageStatus::Failed;
         assert!(failed.is_terminal());
-        assert!(!failed.can_transition_to(MessageStatus::Pending));
+        assert!(!failed.can_transition_to(&MessageStatus::Pending));
     }
 
     #[test]

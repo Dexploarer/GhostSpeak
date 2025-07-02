@@ -204,15 +204,12 @@ pub trait AccountData: Serialize + for<'de> Deserialize<'de> + Clone + std::fmt:
 
 /// Utility functions for working with timestamps
 pub mod time_utils {
-    use chrono::{DateTime, NaiveDateTime, Utc};
+    use chrono::{DateTime, Utc};
 
     /// Convert Unix timestamp to DateTime<Utc>
     pub fn timestamp_to_datetime(timestamp: i64) -> DateTime<Utc> {
-        DateTime::from_utc(
-            NaiveDateTime::from_timestamp_opt(timestamp, 0)
-                .unwrap_or_else(|| NaiveDateTime::from_timestamp(0, 0)),
-            Utc,
-        )
+        DateTime::from_timestamp(timestamp, 0)
+            .unwrap_or_else(|| DateTime::from_timestamp(0, 0).unwrap())
     }
 
     /// Convert DateTime<Utc> to Unix timestamp

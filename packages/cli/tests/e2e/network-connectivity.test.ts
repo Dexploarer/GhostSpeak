@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { Connection } from '@solana/web3.js';
+import { createSolanaRpc } from '@solana/rpc';
 
 describe('CLI Network Connectivity E2E Tests', () => {
   beforeAll(async () => {
@@ -12,30 +12,30 @@ describe('CLI Network Connectivity E2E Tests', () => {
 
   describe('RPC Connections', () => {
     test('should create RPC client instances', async () => {
-      const devnetConnection = new Connection('https://api.devnet.solana.com');
-      const mainnetConnection = new Connection('https://api.mainnet-beta.solana.com');
+      const devnetRpc = createSolanaRpc('https://api.devnet.solana.com');
+      const mainnetRpc = createSolanaRpc('https://api.mainnet-beta.solana.com');
       
-      expect(devnetConnection).toBeDefined();
-      expect(mainnetConnection).toBeDefined();
+      expect(devnetRpc).toBeDefined();
+      expect(mainnetRpc).toBeDefined();
     });
 
     test('should test devnet connectivity', async () => {
-      const connection = new Connection('https://api.devnet.solana.com');
+      const rpc = createSolanaRpc('https://api.devnet.solana.com');
       
       try {
-        const slot = await connection.getSlot();
-        expect(typeof slot).toBe('number');
-        console.log('✅ CLI can connect to devnet at slot:', slot.toString());
+        const slotResponse = await rpc.getSlot().send();
+        expect(typeof slotResponse).toBe('bigint');
+        console.log('✅ CLI can connect to devnet at slot:', slotResponse.toString());
       } catch (error) {
         console.warn('⚠️ Devnet connection failed:', error);
       }
     });
 
     test('should handle connection timeouts gracefully', async () => {
-      const connection = new Connection('http://localhost:9999'); // Non-existent endpoint
+      const rpc = createSolanaRpc('http://localhost:9999'); // Non-existent endpoint
       
       try {
-        await connection.getSlot();
+        await rpc.getSlot().send();
         expect(false).toBe(true); // Should not reach here
       } catch (error) {
         expect(error).toBeDefined();
@@ -43,4 +43,4 @@ describe('CLI Network Connectivity E2E Tests', () => {
       }
     });
   });
-}); 
+});

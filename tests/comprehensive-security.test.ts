@@ -1,12 +1,11 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN, AnchorProvider } from "@coral-xyz/anchor";
 import { PodCom } from "../target/types/pod_com";
-import {
-  PublicKey,
-  Keypair,
-  SystemProgram,
-  LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
+import { generateKeyPairSigner, type KeyPairSigner } from "@solana/signers";
+import { address, getProgramDerivedAddress, type Address } from "@solana/addresses";
+import { createSolanaRpc, type SolanaRpcApi } from "@solana/rpc";
+import { lamports } from "@solana/rpc-types";
+import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import { expect, test, beforeAll, describe } from "bun:test";
 import { exec } from "child_process";
 import { promisify } from "util";

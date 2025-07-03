@@ -118,11 +118,13 @@ let result = agent_service.register(
 ```
 
 **Parameters:**
+
 - `keypair`: Agent's keypair
 - `capabilities`: Bitfield of agent capabilities
 - `metadata_uri`: URI to agent metadata
 
 **Returns:** `AgentRegistrationResult`
+
 - `agent_pda`: Program Derived Address for the agent
 - `signature`: Transaction signature
 
@@ -168,6 +170,7 @@ let result = channel_service.create_channel(
 ```
 
 **Parameters:**
+
 - `creator`: Channel creator keypair
 - `name`: Channel name
 - `description`: Channel description
@@ -176,6 +179,7 @@ let result = channel_service.create_channel(
 - `fee_per_message`: Fee in lamports per message
 
 **Returns:** `ChannelCreationResult`
+
 - `channel_pda`: Program Derived Address for the channel
 - `signature`: Transaction signature
 
@@ -219,12 +223,14 @@ let result = message_service.send_message(
 ```
 
 **Parameters:**
+
 - `sender`: Sender's keypair
 - `recipient`: Recipient's public key
 - `content`: Message content
 - `message_type`: Type of message
 
 **Returns:** `MessageSendResult`
+
 - `message_pda`: Program Derived Address for the message
 - `signature`: Transaction signature
 
@@ -272,11 +278,13 @@ let result = escrow_service.create_escrow(
 ```
 
 **Parameters:**
+
 - `depositor`: Depositor's keypair
 - `channel`: Channel PDA
 - `amount`: Amount in lamports
 
 **Returns:** `EscrowCreationResult`
+
 - `escrow_pda`: Program Derived Address for the escrow
 - `signature`: Transaction signature
 - `initial_deposit`: Initial deposit amount
@@ -316,6 +324,7 @@ let result = marketplace_service.create_product(
 ```
 
 **Parameters:**
+
 - `creator`: Product creator keypair
 - `name`: Product name
 - `description`: Product description
@@ -325,6 +334,7 @@ let result = marketplace_service.create_product(
 - `metadata_hash`: IPFS hash or metadata identifier
 
 **Returns:** `ProductCreationResult`
+
 - `product_pda`: Program Derived Address for the product
 - `signature`: Transaction signature
 
@@ -365,6 +375,7 @@ let agent = AgentAccount::new(
 ```
 
 **Fields:**
+
 - `owner`: Agent owner public key
 - `capabilities`: Capability bitfield
 - `metadata_uri`: URI to metadata
@@ -401,6 +412,7 @@ let channel = ChannelAccount::new(
 ```
 
 **Fields:**
+
 - `creator`: Channel creator
 - `name`: Channel name
 - `description`: Channel description
@@ -448,6 +460,7 @@ use podai_sdk::types::message::MessageAccount;
 ```
 
 **Fields:**
+
 - `sender`: Message sender
 - `recipient`: Message recipient
 - `content_hash`: Hash of message content
@@ -764,4 +777,4 @@ let results = futures::future::try_join_all(
 - [Getting Started Guide](GETTING_STARTED.md)
 - [Examples Documentation](EXAMPLES.md)
 - [Best Practices](BEST_PRACTICES.md)
-- [Troubleshooting](TROUBLESHOOTING.md) 
+- [Troubleshooting](TROUBLESHOOTING.md)

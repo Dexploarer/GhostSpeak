@@ -17,6 +17,7 @@ pub const MAX_MESSAGE_CONTENT_LENGTH: usize = 1000;
 
 /// Message type enumeration matching the on-chain program
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+/// Message type enumeration matching the on-chain program
 pub enum MessageType {
     /// Plain text message
     Text,
@@ -117,6 +118,7 @@ impl MessageType {
 
 /// Message status enumeration
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+/// Message status enumeration
 pub enum MessageStatus {
     /// Message is pending delivery
     Pending,
@@ -189,6 +191,7 @@ impl MessageStatus {
 
 /// Message account data matching the on-chain program structure
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+/// Message account data matching the on-chain program structure
 pub struct MessageAccount {
     /// Sender agent public key
     pub sender: Pubkey,
@@ -424,19 +427,26 @@ mod tests {
     fn test_message_type_conversion() {
         assert_eq!(MessageType::Text.as_byte(), 0);
         assert_eq!(MessageType::Data.as_byte(), 1);
-        assert_eq!(MessageType::Custom(5).as_byte(), 9);
+        assert_eq!(MessageType::Custom(5).as_byte(), 12);
 
         assert_eq!(MessageType::from_byte(0), MessageType::Text);
         assert_eq!(MessageType::from_byte(1), MessageType::Data);
-        assert_eq!(MessageType::from_byte(9), MessageType::Custom(5));
+        assert_eq!(MessageType::from_byte(12), MessageType::Custom(5));
     }
 
     #[test]
     fn test_message_status_transitions() {
         let pending = MessageStatus::Pending;
-        assert!(pending.can_transition_to(&MessageStatus::Delivered));
+        assert!(pending.can_transition_to(&MessageStatus::Sent));
         assert!(pending.can_transition_to(&MessageStatus::Failed));
+        assert!(!pending.can_transition_to(&MessageStatus::Delivered));
         assert!(!pending.can_transition_to(&MessageStatus::Read));
+
+        let sent = MessageStatus::Sent;
+        assert!(sent.can_transition_to(&MessageStatus::Delivered));
+        assert!(sent.can_transition_to(&MessageStatus::Read));
+        assert!(sent.can_transition_to(&MessageStatus::Failed));
+        assert!(!sent.can_transition_to(&MessageStatus::Pending));
 
         let delivered = MessageStatus::Delivered;
         assert!(delivered.can_transition_to(&MessageStatus::Read));

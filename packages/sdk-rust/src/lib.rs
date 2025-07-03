@@ -16,27 +16,23 @@ use std::str::FromStr;
 ///
 /// ## Quick Start
 ///
-/// ```rust
-/// use pod_ai_sdk::{PodAIClient, PodAIConfig};
+/// ```no_run
+/// // This example is for illustration only and will not run as a doc test.
+/// use podai_sdk::{PodAIClient, PodAIConfig, AgentService, types::agent::AgentCapabilities};
 /// use solana_sdk::signature::Keypair;
+/// use std::sync::Arc;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-///     // Create a client connected to devnet
-///     let client = PodAIClient::devnet().await?;
-///     
-///     // Register an agent
+///     let config = PodAIConfig::devnet();
+///     let client = Arc::new(PodAIClient::new(config).await?);
+///     let agent_service = AgentService::new(client.clone());
 ///     let agent_keypair = Keypair::new();
-///     let agent_service = client.agent_service();
-///     
-///     let result = agent_service.register(
+///     let _result = agent_service.register(
 ///         &agent_keypair,
-///         pod_ai_sdk::types::agent::AgentCapabilities::Communication as u64,
+///         AgentCapabilities::Communication as u64,
 ///         "https://example.com/agent-metadata.json"
 ///     ).await?;
-///     
-///     println!("Agent registered with PDA: {}", result.agent_pda);
-///     
 ///     Ok(())
 /// }
 /// ```
@@ -97,6 +93,14 @@ pub use types::{
 // Re-export services
 pub use services::{
     AgentService, ChannelService, EscrowService, MarketplaceService, MessageService,
+    // New Web3.js v2 compatible services
+    CompressionService, CompressionResult,
+    ConfidentialTransferService, ConfidentialMintConfig, ConfidentialAccountConfig,
+    ConfidentialBalance, ConfidentialTransfer, TransferProofs, EncryptionKeys, ApprovePolicy,
+    AgentReplicationService, ReplicationTemplate, ReplicationRecord, 
+    AgentCustomization, CustomizationType, ReplicationConfig,
+    MEVProtectionService, MEVProtectionConfig, MEVProtectionResult, TransactionProtection,
+    ProtectionLevel, MEVRisk, ProtectionMeasure,
 };
 
 // Re-export utilities
@@ -114,8 +118,7 @@ pub use solana_sdk::{
 
 /// Program ID for the podAI protocol
 pub fn program_id() -> Pubkey {
-    // Using a standard format that won't fail at compile time
-    Pubkey::from_str("11111111111111111111111111111112").unwrap()
+    Pubkey::from_str("4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP").unwrap()
 }
 
 /// Default RPC endpoints for different networks
@@ -284,7 +287,7 @@ mod tests {
     
     #[test]
     fn test_program_id() {
-        assert_eq!(program_id().to_string(), "11111111111111111111111111111112");
+        assert_eq!(program_id().to_string(), "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP");
     }
     
     #[test]

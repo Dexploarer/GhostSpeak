@@ -476,4 +476,4 @@ After running the examples:
 
 - **Source Code**: All examples are in `examples/` directory
 - **Issues**: [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues)
-- **Documentation**: Run `cargo doc --open` for API docs 
+- **Documentation**: Run `cargo doc --open` for API docs

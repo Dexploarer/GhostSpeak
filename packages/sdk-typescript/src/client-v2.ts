@@ -3,13 +3,12 @@
  * Follows Rust SDK architecture patterns
  */
 
-import type { Address } from '@solana/addresses';
-import type { Rpc, SolanaRpcApi } from '@solana/rpc';
-import type { Commitment } from '@solana/rpc-types';
-
-// Import modern services
 import { AgentService } from './services/agent';
 import { ChannelService } from './services/channel';
+import type { Address } from '@solana/addresses';
+import { createSolanaRpc } from '@solana/rpc';
+import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import type { Commitment } from '@solana/rpc-types';
 
 /**
  * Client configuration interface
@@ -18,7 +17,7 @@ export interface IPodAIClientConfig {
   rpcEndpoint: string;
   programId?: string;
   commitment?: Commitment;
-  wsEndpoint?: string;
+  wsEndpoint?: string | undefined;
 }
 
 /**
@@ -28,7 +27,7 @@ export class PodAIClient {
   private readonly rpc: Rpc<SolanaRpcApi>;
   private readonly programId: Address;
   private readonly commitment: Commitment;
-  private readonly wsEndpoint?: string;
+  private readonly wsEndpoint?: string | undefined;
 
   // Service instances
   private _agentService?: AgentService;
@@ -36,7 +35,7 @@ export class PodAIClient {
 
   constructor(config: IPodAIClientConfig) {
     // Initialize RPC connection
-    this.rpc = this.createRpcConnection(config.rpcEndpoint);
+    this.rpc = createSolanaRpc(config.rpcEndpoint);
     
     // Set program ID
     this.programId = this.parseAddress(
@@ -61,10 +60,10 @@ export class PodAIClient {
   public get agents(): AgentService {
     if (!this._agentService) {
       this._agentService = new AgentService(
-        this.rpc,
-        this.programId,
-        this.commitment
-      );
+      this.rpc,
+      this.programId,
+      this.commitment
+    );
     }
     return this._agentService;
   }
@@ -75,10 +74,10 @@ export class PodAIClient {
   public get channels(): ChannelService {
     if (!this._channelService) {
       this._channelService = new ChannelService(
-        this.rpc,
-        this.programId,
-        this.commitment
-      );
+      this.rpc,
+      this.programId,
+      this.commitment
+    );
     }
     return this._channelService;
   }
@@ -139,7 +138,7 @@ export class PodAIClient {
 
       return {
         cluster: this.detectCluster(),
-        blockHeight,
+        blockHeight: Number(blockHeight),
         health,
       };
     } catch (error) {
@@ -169,9 +168,9 @@ export class PodAIClient {
   public async airdrop(address: Address, solAmount: number): Promise<string> {
     try {
       const lamports = BigInt(Math.floor(solAmount * 1_000_000_000));
-      
+
       const signature = await this.rpc
-        .requestAirdrop(address, lamports)
+        .requestAirdrop(address, lamports as any)
         .send();
 
       console.log(`💰 Airdropped ${solAmount} SOL to ${address}`);
@@ -193,13 +192,13 @@ export class PodAIClient {
     while (Date.now() - startTime < timeout) {
       try {
         const status = await this.rpc
-          .getSignatureStatuses([signature])
+          .getSignatureStatuses([signature as any])
           .send();
 
         const signatureStatus = status.value[0];
         if (signatureStatus?.confirmationStatus === this.commitment) {
           return !signatureStatus.err;
-        }
+      }
       } catch {
         // Continue trying
       }
@@ -212,31 +211,14 @@ export class PodAIClient {
   }
 
   /**
-   * Create RPC connection
-   */
-  private createRpcConnection(endpoint: string): Rpc<SolanaRpcApi> {
-    // This would use the actual Web3.js v2 RPC creation
-    // For now, return a mock RPC instance
-    return {
-      getHealth: () => ({ send: async () => 'ok' }),
-      getBlockHeight: () => ({ send: async () => 12345 }),
-      getBalance: () => ({ send: async () => ({ value: BigInt(1000000000) }) }),
-      getSignatureStatuses: () => ({ 
-        send: async () => ({ 
-          value: [{ confirmationStatus: 'confirmed', err: null }] 
-        })
-      }),
-      requestAirdrop: () => ({ send: async () => 'mock_signature' }),
-    } as any;
-  }
-
-  /**
    * Parse address string to Address type
    */
   private parseAddress(addressString: string): Address {
-    // This would use the actual address parsing
-    // For now, cast to Address type
-    return addressString as Address;
+    try {
+      return addressString as Address;
+    } catch (error) {
+      throw new Error(`Invalid address string: ${addressString}. Error: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**

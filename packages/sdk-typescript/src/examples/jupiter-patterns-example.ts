@@ -12,7 +12,7 @@ import {
   sendTransaction,
   retryTransaction,
   createTransactionConfig,
-} from '../utils/transaction-utils';
+} from '../utils/transaction-helpers';
 
 /**
  * Mock keypair generator (replace with actual implementation)
@@ -51,7 +51,7 @@ export async function exampleAgentRegistration() {
     const registrationResult = await client.agents.registerAgent(agentKeypair, agentOptions);
     console.log('✅ Agent registered:', registrationResult);
 
-    // Verify agent registration  
+    // Verify agent registration
     const registeredAgent = await client.agents.getAgent(registrationResult.agentPda);
     
     if (registeredAgent) {
@@ -91,7 +91,7 @@ export async function exampleBatchOperations() {
         return client.agents.getAgent(mockPda);
       })
     );
-
+    
     // Filter out already registered agents
     const unregisteredKeypairs = agentKeypairs.filter((_, index) => {
       const check = existingAgentsChecks[index];
@@ -117,7 +117,7 @@ export async function exampleBatchOperations() {
            console.log(`  ✅ Agent ${i + 1}: ${result.signature}`);
          } catch (error) {
            console.log(`  ❌ Agent ${i + 1}: Failed - ${String(error)}`);
-         }
+        }
        }
     }
 
@@ -153,7 +153,7 @@ export async function exampleHealthMonitoring() {
       const rpc = client.getRpc();
       // Mock RPC call since we don't have real implementation
       console.log('📊 RPC Client available:', !!rpc);
-      const rpcLatency = Date.now() - startTime;
+    const rpcLatency = Date.now() - startTime;
       console.log('📊 RPC Latency:', rpcLatency, 'ms');
     } catch (error) {
       console.log('📊 RPC Performance: Error -', error);
@@ -203,7 +203,7 @@ export async function exampleErrorHandling() {
       data: new Uint8Array([1, 2, 3, 4]) // mock instruction data
     };
 
-    const config = createTransactionConfig(rpc, agentKeypair, [mockInstruction], {
+    const config = createTransactionConfig({
       commitment: 'confirmed',
       skipPreflight: false
     });
@@ -222,7 +222,8 @@ export async function exampleErrorHandling() {
     console.log('🔄 Testing direct transaction sending...');
     
     try {
-      const directResult = await sendTransaction(config);
+      const txFactory = sendTransaction(rpc);
+      const directResult = await txFactory(mockInstruction);
       
       if (directResult.success) {
         console.log('✅ Direct transaction succeeded:', directResult.signature);

@@ -1,9 +1,11 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN, AnchorProvider } from "@coral-xyz/anchor";
 import { PodCom } from "../target/types/pod_com";
+import { generateKeyPairSigner, type KeyPairSigner } from "@solana/signers";
+import { address, type Address } from "@solana/addresses";
+// Keep legacy imports for Anchor compatibility
 import {
   PublicKey,
-  Keypair,
   SystemProgram,
   LAMPORTS_PER_SOL,
   ComputeBudgetProgram,
@@ -45,7 +47,7 @@ const benchmarkResults: BenchmarkResult[] = [];
 async function measureComputeUnits(
   instructionName: string,
   transaction: Transaction,
-  signers: Keypair[] = []
+  signers: KeyPairSigner[] = []
 ): Promise<BenchmarkResult> {
   // Add compute budget instruction to get precise CU measurement
   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({

@@ -18,27 +18,17 @@
     "isolatedModules": true,
     "noEmit": false,
     "outDir": "./dist",
-    "rootDir": "../../",
-    "baseUrl": "../../",
-    "paths": {
-      "@podai/sdk": ["./packages/sdk-typescript/src"],
-      "@podai/sdk/*": ["./packages/sdk-typescript/src/*"],
-      "@/*": ["./packages/cli/src/*"],
-      "@ui/*": ["./packages/cli/src/ui/*"],
-      "@commands/*": ["./packages/cli/src/commands/*"],
-      "@utils/*": ["./packages/cli/src/utils/*"]
-    },
-    "types": ["node", "bun"],
+    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "composite": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "preserveConstEnums": true
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+          "types": ["node", "bun"],
+      "composite": false
   },
   "include": [
-    "src/**/*",
-    "../sdk-typescript/src/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -46,4 +36,4 @@
     "**/*.test.ts",
     "**/*.spec.ts"
   ]
-} 
+}

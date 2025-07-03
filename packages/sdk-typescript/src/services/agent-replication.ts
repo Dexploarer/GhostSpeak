@@ -99,7 +99,10 @@ export class AgentReplicationService {
     },
     _config: IReplicationConfig = {}
   ): Promise<IReplicationTemplateResult> {
-    console.log('Creating replication template for agent:', templateData.sourceAgent);
+    console.log(
+      'Creating replication template for agent:',
+      templateData.sourceAgent
+    );
     
     try {
       const templatePda = await this.getReplicationTemplatePda(
@@ -139,6 +142,9 @@ export class AgentReplicationService {
     _config: IReplicationConfig = {}
   ): Promise<IAgentReplicationResult> {
     console.log('Replicating agent from template:', templatePda);
+    if (customizations && Object.keys(customizations).length > 0) {
+      console.log('Customizations:', customizations);
+    }
     
     try {
       const template = await this.getReplicationTemplate(templatePda);
@@ -155,7 +161,10 @@ export class AgentReplicationService {
       }
 
       const agentId = `replicated_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-      const replicatedAgent = await this.getReplicatedAgentPda(buyer.address, agentId);
+      const replicatedAgent = await this.getReplicatedAgentPda(
+        buyer.address,
+        agentId
+      );
 
       // Simulate transaction
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -180,7 +189,9 @@ export class AgentReplicationService {
   /**
    * Get replication template by PDA
    */
-  async getReplicationTemplate(templatePda: Address): Promise<IReplicationTemplate | null> {
+  async getReplicationTemplate(
+    templatePda: Address
+  ): Promise<IReplicationTemplate | null> {
     try {
       const accountInfo = await this.rpc
         .getAccountInfo(templatePda, {
@@ -193,7 +204,21 @@ export class AgentReplicationService {
         return null;
       }
 
-      return this.parseReplicationTemplate(accountInfo.value.data);
+      let data: string | Uint8Array;
+      if (
+        Array.isArray(accountInfo.value.data) &&
+        accountInfo.value.data[1] === 'base64'
+      ) {
+        data = Buffer.from(accountInfo.value.data[0], 'base64');
+      } else if (
+        typeof accountInfo.value.data === 'string' ||
+        accountInfo.value.data instanceof Uint8Array
+      ) {
+        data = accountInfo.value.data;
+      } else {
+        throw new Error('Unknown account data format');
+      }
+      return this.parseReplicationTemplate(data);
     } catch (error) {
       console.error('❌ Failed to get replication template:', error);
       return null;
@@ -203,23 +228,32 @@ export class AgentReplicationService {
   /**
    * List replication templates by creator
    */
-  async listCreatorTemplates(creator: Address): Promise<IReplicationTemplate[]> {
+  async listCreatorTemplates(
+    creator: Address
+  ): Promise<IReplicationTemplate[]> {
     try {
-      const accounts = await this.rpc
+      const accountsResult = await this.rpc
         .getProgramAccounts(this.programId, {
           commitment: this.commitment,
           filters: [
             {
               memcmp: {
-                offset: 8, // Skip discriminator
-                bytes: creator,
+                offset: BigInt(8),
+                bytes: creator as any, // TODO: Use correct branded type
+                encoding: 'base58',
               },
             },
           ],
         })
         .send();
 
-      return accounts.map(account => this.parseReplicationTemplate(account.account.data));
+      // Type for accountsResult.value is unknown, so use type guard
+      const accounts = (
+        accountsResult as {
+          value?: Array<{ account: { data: string | Uint8Array } }>;
+        }
+      ).value ?? [];
+      return accounts.map((account) => this.parseReplicationTemplate(account.account.data));
     } catch (error) {
       console.error('❌ Failed to list creator templates:', error);
       return [];

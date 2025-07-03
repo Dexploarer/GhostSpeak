@@ -15,10 +15,8 @@
     /* === MODULES === */
     "baseUrl": ".",
     "paths": {
-      "@podai/core/*": ["./packages/core/src/*"],
-      "@podai/sdk-rust/*": ["./packages/sdk-rust/src/*"],
-      "@podai/sdk-typescript/*": ["./packages/sdk-typescript/src/*"],
-      "@podai/cli/*": ["./packages/cli/src/*"],
+      "@ghostspeak/sdk-typescript/*": ["./packages/sdk-typescript/src/*"],
+      "@ghostspeak/cli/*": ["./packages/cli/src/*"],
       "@tests/*": ["./tests/*"],
       "@docs/*": ["./docs/*"],
       "@/*": ["./src/*"]
@@ -103,7 +101,7 @@
 
     /* === AI DEVELOPMENT OPTIMIZATIONS === */
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "composite": false,
     "disableSourceOfProjectReferenceRedirect": false,
     "disableSolutionSearching": false,

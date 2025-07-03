@@ -10,7 +10,7 @@ export interface AgentTestData {
     type: 'ai' | 'human' | 'hybrid';
     tags: string[];
   };
-  keypair: Keypair;
+  keypair: KeyPairSigner;
 }
 
 export interface ChannelTestData {
@@ -41,7 +41,7 @@ export const TEST_AGENTS: AgentTestData[] = [
       type: 'ai',
       tags: ['test', 'primary', 'full-featured']
     },
-    keypair: Keypair.generate() // Use generated keypair for now
+    keypair: await import('@solana/signers').then(m => m.generateKeyPairSigner()) // Web3.js v2 pattern
   },
   {
     name: 'TestBot Beta',
@@ -52,7 +52,7 @@ export const TEST_AGENTS: AgentTestData[] = [
       type: 'ai',
       tags: ['test', 'secondary', 'communication']
     },
-    keypair: Keypair.generate() // Use generated keypair for now
+    keypair: await import('@solana/signers').then(m => m.generateKeyPairSigner()) // Web3.js v2 pattern
   },
   {
     name: 'TestBot Gamma',
@@ -63,7 +63,7 @@ export const TEST_AGENTS: AgentTestData[] = [
       type: 'hybrid',
       tags: ['test', 'performance', 'trading', 'analysis']
     },
-    keypair: Keypair.generate() // Use generated keypair for now
+    keypair: await import('@solana/signers').then(m => m.generateKeyPairSigner()) // Web3.js v2 pattern
   }
 ];
 
@@ -210,7 +210,7 @@ export const PERFORMANCE_TESTS = {
  * Test data factory functions
  */
 export class TestDataFactory {
-  static createRandomAgent(): AgentTestData {
+  static async createRandomAgent(): Promise<AgentTestData> {
     const names = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'];
     const types: ('ai' | 'human' | 'hybrid')[] = ['ai', 'human', 'hybrid'];
     
@@ -223,7 +223,7 @@ export class TestDataFactory {
         type: types[Math.floor(Math.random() * types.length)],
         tags: ['test', 'generated', 'random']
       },
-      keypair: Keypair.generate()
+      keypair: await generateKeyPairSigner()
     };
   }
 

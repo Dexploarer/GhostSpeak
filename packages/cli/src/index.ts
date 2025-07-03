@@ -162,6 +162,70 @@ program
     }
   });
 
+// Financial services commands
+program
+  .command('escrow')
+  .description('Manage escrow services for secure transactions')
+  .option('-a, --action <action>', 'Action: create, deposit, release, cancel, list, status')
+  .option('-b, --beneficiary <address>', 'Beneficiary address for create action')
+  .option('-m, --amount <amount>', 'Amount in SOL')
+  .option('-e, --escrow-id <id>', 'Escrow ID for operations')
+  .option('-u, --user <address>', 'User address for list operations')
+  .action(async (options) => {
+    try {
+      const { EscrowManagementCommand } = await import('./commands/financial/escrow-management.js');
+      const command = new EscrowManagementCommand();
+      await command.execute(options);
+    } catch (error) {
+      console.error(chalk.red('Escrow management error:'), error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('work')
+  .description('Manage NFT-based work delivery system')
+  .option('-a, --action <action>', 'Action: create-tree, mint, transfer, verify, get, list-client, list-provider')
+  .option('-c, --config <config>', 'Tree configuration for create-tree')
+  .option('-d, --deliverable <deliverable>', 'Deliverable data for mint')
+  .option('-i, --asset-id <id>', 'Asset ID for operations')
+  .option('-r, --recipient <address>', 'Recipient address for transfer')
+  .option('-v, --delivery-id <id>', 'Delivery ID for verification')
+  .option('-p, --approved <boolean>', 'Approval status for verification')
+  .option('-A, --address <address>', 'Address for list operations')
+  .action(async (options) => {
+    try {
+      const { WorkDeliveryCommand } = await import('./commands/financial/work-delivery.js');
+      const command = new WorkDeliveryCommand();
+      await command.execute(options);
+    } catch (error) {
+      console.error(chalk.red('Work delivery error:'), error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('revenue')
+  .description('Production-ready revenue sharing and business logic')
+  .option('-a, --action <action>', 'Action: distribute, configure, analytics, history')
+  .option('-w, --work-order-id <id>', 'Work order ID for distribution')
+  .option('-m, --amount <amount>', 'Revenue amount in SOL')
+  .option('-p, --agent-percentage <percentage>', 'Agent percentage (default 70)')
+  .option('-r, --referral-percentage <percentage>', 'Referral percentage')
+  .option('-c, --config <config>', 'Configuration JSON for rules')
+  .option('-g, --agent-id <id>', 'Agent ID for analytics')
+  .option('-t, --timeframe <timeframe>', 'Timeframe for analytics')
+  .action(async (options) => {
+    try {
+      const { RevenueSharingCommand } = await import('./commands/financial/revenue-sharing.js');
+      const command = new RevenueSharingCommand();
+      await command.execute(options);
+    } catch (error) {
+      console.error(chalk.red('Revenue sharing error:'), error);
+      process.exit(1);
+    }
+  });
+
 // Add new real client demo command
 program
   .command('demo')
@@ -243,6 +307,11 @@ program.on('--help', () => {
   console.log(chalk.cyan('  $ podai settings'));
   console.log(chalk.cyan('  $ podai test-e2e'));
   console.log(chalk.cyan('  $ podai develop-sdk'));
+  console.log('');
+  console.log(chalk.gray('  Financial services:'));
+  console.log(chalk.cyan('  $ podai escrow --action create --beneficiary <address> --amount <amount>'));
+  console.log(chalk.cyan('  $ podai work --action mint --deliverable <data>'));
+  console.log(chalk.cyan('  $ podai revenue --action distribute --work-order-id <id> --amount <amount>'));
   console.log('');
   console.log(chalk.gray('  Real blockchain demo:'));
   console.log(chalk.cyan('  $ podai demo'));

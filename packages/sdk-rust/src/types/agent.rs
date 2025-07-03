@@ -16,6 +16,7 @@ pub const MIN_REPUTATION_FOR_CHANNELS: u64 = 50;
 
 /// Agent account data matching the on-chain program structure
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+/// Agent account data matching the on-chain program structure
 pub struct AgentAccount {
     /// The public key of the agent's wallet
     pub pubkey: Pubkey,
@@ -162,6 +163,7 @@ impl AccountData for AgentAccount {
 /// Agent capabilities enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u64)]
+/// Agent capabilities enumeration
 pub enum AgentCapabilities {
     /// No special capabilities
     None = 0,

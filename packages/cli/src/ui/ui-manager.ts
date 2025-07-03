@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import boxen from 'boxen';
 import { createSpinner } from 'nanospinner';
 import gradient from 'gradient-string';
-import figlet from 'figlet';
+// import figlet from 'figlet'; // Temporarily disabled
 import { ConfigManager } from '../utils/config-manager';
 
 export interface ProgressStep {
@@ -244,15 +244,23 @@ export class UIManager {
   }
 
   /**
+   * Display a banner with title and subtitle
+   */
+  showBanner(title: string, subtitle?: string): void {
+    this.bigTitle(title, subtitle);
+  }
+
+  /**
    * Display a large ASCII art title
    */
   bigTitle(text: string, subtitle?: string): void {
     // Always print to stdout, never clear/overwrite
-    const title = figlet.textSync(text, {
-      font: 'Big',
-      horizontalLayout: 'default',
-      verticalLayout: 'default'
-    });
+    // Simple ASCII art replacement
+    const title = `
+╔═══════════════════════════════════════╗
+║              ${text.toUpperCase().padEnd(20)}             ║
+╚═══════════════════════════════════════╝
+    `;
     console.log(gradient.cristal(title));
     if (subtitle) {
       console.log();

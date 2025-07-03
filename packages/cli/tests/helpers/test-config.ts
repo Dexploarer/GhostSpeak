@@ -1,221 +1,253 @@
-import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { createSolanaRpc } from '@solana/rpc';
+import { generateKeyPairSigner } from '@solana/signers';
+import { getAddressEncoder, address } from '@solana/addresses';
+import type { Address } from '@solana/addresses';
+import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import type { Commitment } from '@solana/rpc-types';
+import type { KeyPairSigner } from '@solana/signers';
 
+/**
+ * Test configuration interface
+ */
 export interface TestConfig {
-  network: 'localnet' | 'devnet';
   rpcUrl: string;
-  commitment: 'confirmed' | 'finalized';
+  commitment: Commitment;
+  programId: Address;
   timeout: number;
-  retryAttempts: number;
-}
-
-export interface TestAccounts {
-  payer: Keypair;
-  testAgents: Keypair[];
-  testChannels: PublicKey[];
-}
-
-export interface TestEnvironment {
-  config: TestConfig;
-  connection: Connection;
-  accounts: TestAccounts;
 }
 
 /**
- * Default test configuration following testing standards
+ * Default test configuration
  */
-export const DEFAULT_TEST_CONFIG: TestConfig = {
-  network: 'localnet',
-  rpcUrl: 'http://127.0.0.1:8899', // Local test validator
+export const defaultTestConfig: TestConfig = {
+  rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
   commitment: 'confirmed',
-  timeout: 30000, // 30 seconds for E2E tests
-  retryAttempts: 3
+  programId: address('podAI123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+  timeout: 30000
 };
 
 /**
- * Performance test limits following testing standards
+ * Test network configuration
  */
-export const PERFORMANCE_LIMITS = {
-  maxTransactionTime: 5000, // 5 seconds max
-  maxRpcResponseTime: 1000, // 1 second max
-  minTpsThreshold: 100, // Minimum transactions per second
-  maxMemoryUsage: 512 * 1024 * 1024, // 512MB max memory
-  maxCpuUsage: 80 // 80% max CPU usage
+export const testNetworks = {
+  devnet: 'https://api.devnet.solana.com',
+  testnet: 'https://api.testnet.solana.com',
+  mainnet: 'https://api.mainnet-beta.solana.com',
+  local: 'http://localhost:8899'
 };
 
 /**
- * Security test configuration
+ * Test environment checker
  */
-export const SECURITY_TEST_CONFIG = {
-  maliciousInputs: [
-    '', // Empty string
-    'x'.repeat(10000), // Very long string
-    '<script>alert("xss")</script>', // XSS attempt
-    '"; DROP TABLE agents; --', // SQL injection attempt
-    '../../etc/passwd', // Path traversal
-    '\x00\x01\x02\x03', // Binary data
-    '🚀'.repeat(1000), // Unicode spam
-  ],
-  invalidAddresses: [
-    'invalid',
-    '123',
-    'not-a-public-key',
-    '',
-    'x'.repeat(100),
-  ],
-  rateLimitTests: {
-    requestsPerSecond: 1000,
-    burstSize: 10000,
-    testDuration: 60000 // 1 minute
-  }
-};
-
-/**
- * Test data factory configuration
- */
-export const TEST_DATA_FACTORY = {
-  agentNames: [
-    'TestBot1',
-    'AnalysisAgent',
-    'TradingBot',
-    'ModeratorAI',
-    'CustomAgent'
-  ],
-  channelNames: [
-    'TestChannel',
-    'GeneralChat',
-    'TradingSignals',
-    'DevDiscussion',
-    'PrivateGroup'
-  ],
-  messageContents: [
-    'Hello world!',
-    'Test message from agent',
-    'Performance test message',
-    'Security validation test',
-    'Integration test communication'
-  ]
-};
-
-/**
- * Test coverage requirements following testing standards
- */
-export const COVERAGE_REQUIREMENTS = {
-  overall: 90, // 90% overall coverage
-  criticalPaths: 100, // 100% for security-critical functions
-  errorPaths: 100, // 100% error handling coverage
-  performancePaths: 95, // 95% performance-critical paths
-  integrationPaths: 85 // 85% integration test coverage
-};
-
-/**
- * Test execution configuration
- */
-export const TEST_EXECUTION = {
-  parallel: true,
-  maxConcurrency: 4,
-  retryFailedTests: true,
-  maxRetries: 3,
-  reportFormats: ['json', 'html', 'console'],
-  collectCoverage: true,
-  coverageThreshold: COVERAGE_REQUIREMENTS
-};
-
-/**
- * Environment validation configuration
- */
-export const ENV_VALIDATION = {
-  requiredEnvVars: [
-    'NODE_ENV',
-    'RPC_URL'
-  ],
-  optionalEnvVars: [
-    'WALLET_PATH',
-    'LOG_LEVEL',
-    'TEST_TIMEOUT'
-  ],
-  networkRequirements: {
-    minSolBalance: 1.0, // 1 SOL minimum for tests
-    requiredPrograms: [
-      // Add program IDs that need to be deployed
-    ]
-  }
-};
-
-/**
- * Load test configuration from environment or use defaults
- */
-export function loadTestConfig(): TestConfig {
-  return {
-    network: (process.env.TEST_NETWORK as 'localnet' | 'devnet') || DEFAULT_TEST_CONFIG.network,
-    rpcUrl: process.env.RPC_URL || DEFAULT_TEST_CONFIG.rpcUrl,
-    commitment: (process.env.COMMITMENT as 'confirmed' | 'finalized') || DEFAULT_TEST_CONFIG.commitment,
-    timeout: parseInt(process.env.TEST_TIMEOUT || '') || DEFAULT_TEST_CONFIG.timeout,
-    retryAttempts: parseInt(process.env.RETRY_ATTEMPTS || '') || DEFAULT_TEST_CONFIG.retryAttempts
-  };
+export function isTestEnvironment(): boolean {
+  return process.env.NODE_ENV === 'test' || 
+         process.env.JEST_WORKER_ID !== undefined ||
+         process.env.VITEST !== undefined ||
+         process.env.BUN_TEST !== undefined;
 }
 
 /**
- * Validate test environment setup
+ * Test mode detector
  */
-export async function validateTestEnvironment(config: TestConfig): Promise<boolean> {
+export function getTestMode(): 'unit' | 'integration' | 'e2e' {
+  const testFile = process.env.JEST_TEST_PATH || process.argv[1] || '';
+  
+  if (testFile.includes('unit') || testFile.includes('.spec.')) {
+    return 'unit';
+  } else if (testFile.includes('integration')) {
+    return 'integration';
+  } else if (testFile.includes('e2e')) {
+    return 'e2e';
+  }
+  
+  return 'unit'; // Default
+}
+
+/**
+ * Create test RPC client
+ */
+export function createTestRpc(config: TestConfig = defaultTestConfig): Rpc<SolanaRpcApi> {
+  return createSolanaRpc(config.rpcUrl);
+}
+
+/**
+ * Test keypair generator with error handling
+ */
+export async function createTestKeypair(): Promise<KeyPairSigner> {
   try {
-    const connection = new Connection(config.rpcUrl, config.commitment);
+    return await generateKeyPairSigner();
+  } catch (error) {
+    throw new Error(`Failed to generate test keypair: ${error}`);
+  }
+}
+
+/**
+ * Create multiple test keypairs
+ */
+export async function createTestKeypairs(count: number): Promise<KeyPairSigner[]> {
+  try {
+    return await Promise.all(
+      Array.from({ length: count }, () => generateKeyPairSigner())
+    );
+  } catch (error) {
+    throw new Error(`Failed to generate ${count} test keypairs: ${error}`);
+  }
+}
+
+/**
+ * Test address utilities
+ */
+export function createTestAddress(seed?: string): Address {
+  if (seed) {
+    // Create deterministic address from seed for testing
+    const encoder = new TextEncoder();
+    const seedBytes = encoder.encode(seed);
+    const hash = new Uint8Array(32);
     
-    // Test RPC connection
-    const slot = await connection.getSlot();
-    if (slot === 0) {
-      throw new Error('Invalid slot returned from RPC');
+    // Simple hash for testing (not cryptographically secure)
+    for (let i = 0; i < seedBytes.length && i < 32; i++) {
+      hash[i] = seedBytes[i];
     }
+    
+    return getAddressEncoder().decode(hash);
+  }
+  
+  // Generate random test address
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  return getAddressEncoder().decode(randomBytes);
+}
 
-    // Test network health
-    const blockTime = await connection.getBlockTime(slot);
-    if (!blockTime) {
-      throw new Error('Could not get block time');
-    }
+/**
+ * Test data cleanup utilities
+ */
+export class TestDataManager {
+  private createdAccounts: Address[] = [];
+  private createdKeypairs: KeyPairSigner[] = [];
 
+  async createKeypair(): Promise<KeyPairSigner> {
+    const keypair = await createTestKeypair();
+    this.createdKeypairs.push(keypair);
+    return keypair;
+  }
+
+  addAccount(address: Address): void {
+    this.createdAccounts.push(address);
+  }
+
+  async cleanup(): Promise<void> {
+    // Clear tracking arrays
+    this.createdAccounts.length = 0;
+    this.createdKeypairs.length = 0;
+    
+    console.log('🧹 Test data cleanup completed');
+  }
+
+  getCreatedAccounts(): Address[] {
+    return [...this.createdAccounts];
+  }
+
+  getCreatedKeypairs(): KeyPairSigner[] {
+    return [...this.createdKeypairs];
+  }
+}
+
+/**
+ * Test environment validator
+ */
+export async function validateTestEnvironment(config: TestConfig = defaultTestConfig): Promise<boolean> {
+  try {
+    const rpc = createTestRpc(config);
+    const slot = await rpc.getSlot().send();
+    
+    console.log(`✅ Test environment validated at slot ${slot}`);
     return true;
   } catch (error) {
-    console.error('Test environment validation failed:', error);
+    console.error('❌ Test environment validation failed:', error);
     return false;
   }
 }
 
 /**
- * Create isolated test environment
+ * Test fixtures
  */
-export async function createTestEnvironment(): Promise<TestEnvironment> {
-  const config = loadTestConfig();
-  const connection = new Connection(config.rpcUrl, config.commitment);
+export const testFixtures = {
+  async createBasicTestSetup() {
+    const config = defaultTestConfig;
+    const rpc = createTestRpc(config);
+    const payer = await generateKeyPairSigner();
+    const testAgents = await Promise.all(
+      Array.from({ length: 5 }, () => generateKeyPairSigner())
+    );
+    const testChannels = Array.from({ length: 3 }, (_, i) => 
+      createTestAddress(`test-channel-${i}`)
+    );
 
-  // Validate environment
-  const isValid = await validateTestEnvironment(config);
-  if (!isValid) {
-    throw new Error('Test environment validation failed');
-  }
-
-  // Generate test accounts
-  const payer = Keypair.generate();
-  const testAgents = Array.from({ length: 5 }, () => Keypair.generate());
-  const testChannels = Array.from({ length: 3 }, () => Keypair.generate().publicKey);
-
-  return {
-    config,
-    connection,
-    accounts: {
+    return {
+      config,
+      rpc,
       payer,
       testAgents,
       testChannels
+    };
+  },
+
+  async createIntegrationTestSetup() {
+    const config = defaultTestConfig;
+    const rpc = createTestRpc(config);
+    const dataManager = new TestDataManager();
+    
+    // Validate environment first
+    const isValid = await validateTestEnvironment(config);
+    if (!isValid) {
+      throw new Error('Test environment validation failed');
     }
-  };
+
+    return {
+      config,
+      rpc,
+      dataManager
+    };
+  }
+};
+
+/**
+ * Test timeout utilities
+ */
+export function withTimeout<T>(
+  promise: Promise<T>, 
+  timeoutMs: number = defaultTestConfig.timeout
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error(`Test timeout after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
 }
 
 /**
- * Cleanup test environment
+ * Test retry utilities
  */
-export async function cleanupTestEnvironment(env: TestEnvironment): Promise<void> {
-  // Close connection
-  // Note: web3.js Connection doesn't have a close method, but we can clear any timers/intervals
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delayMs: number = 1000
+): Promise<T> {
+  let lastError: Error;
   
-  // Clear any test data
-  console.log('Test environment cleaned up');
-} 
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (i < maxRetries) {
+        console.warn(`Test operation failed, retrying (${i + 1}/${maxRetries})...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  
+  throw lastError!;
+}

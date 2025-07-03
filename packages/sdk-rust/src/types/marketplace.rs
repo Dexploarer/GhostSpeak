@@ -32,9 +32,13 @@ pub const MAX_ROYALTY_PERCENTAGE: u16 = 10000;
 /// Type of product or service being requested
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
 #[borsh(use_discriminant = true)]
+/// Type of product or service being requested
 pub enum ProductRequestType {
+    /// Data product request
     DataProduct = 0,
+    /// Service request
     Service = 1,
+    /// Custom request type
     Custom = 2,
 }
 
@@ -60,7 +64,7 @@ impl ProductRequestType {
     /// Parse request type from string
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "dataproduc" => Some(Self::DataProduct),
+            "dataproduct" => Some(Self::DataProduct),
             "service" => Some(Self::Service),
             "custom" => Some(Self::Custom),
             _ => None,
@@ -71,11 +75,17 @@ impl ProductRequestType {
 /// Status of a product request
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
 #[borsh(use_discriminant = true)]
+/// Status of a product request
 pub enum ProductRequestStatus {
+    /// Request is pending
     Pending = 0,
+    /// Request is in progress
     InProgress = 1,
+    /// Request is completed
     Completed = 2,
+    /// Request is cancelled
     Cancelled = 3,
+    /// Request is disputed
     Disputed = 4,
 }
 
@@ -133,12 +143,19 @@ impl ProductRequestStatus {
 /// Type of data product
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
 #[borsh(use_discriminant = true)]
+/// Type of data product
 pub enum DataProductType {
+    /// Dataset
     Dataset = 0,
+    /// Model
     Model = 1,
+    /// Analysis
     Analysis = 2,
+    /// Report
     Report = 3,
+    /// API
     API = 4,
+    /// Custom data product
     Custom = 5,
 }
 
@@ -184,12 +201,19 @@ impl DataProductType {
 /// Type of capability service
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
 #[borsh(use_discriminant = true)]
+/// Type of capability service
 pub enum CapabilityServiceType {
+    /// Data processing service
     DataProcessing = 0,
+    /// Model training service
     ModelTraining = 1,
+    /// Analysis service
     Analysis = 2,
+    /// Consultation service
     Consultation = 3,
+    /// Integration service
     Integration = 4,
+    /// Custom service
     Custom = 5,
 }
 
@@ -234,6 +258,7 @@ impl CapabilityServiceType {
 
 /// Product request account data
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+/// Product request account data
 pub struct ProductRequestAccount {
     /// Agent making the request
     pub requester: Pubkey,
@@ -356,6 +381,7 @@ impl AccountData for ProductRequestAccount {
 
 /// Data product account data
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+/// Data product account data
 pub struct DataProductAccount {
     /// Agent who created the product
     pub creator: Pubkey,
@@ -540,6 +566,7 @@ impl AccountData for DataProductAccount {
 
 /// Capability service account data
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq)]
+/// Capability service account data
 pub struct CapabilityServiceAccount {
     /// Agent providing the service
     pub provider: Pubkey,

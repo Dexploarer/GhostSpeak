@@ -247,6 +247,7 @@ impl TransactionFactory {
     }
 
     /// Estimate priority fee using Helius API (simplified implementation)
+    /// TODO: For production, this should integrate with the actual Helius API
     async fn estimate_helius_priority_fee(
         &self,
         _transaction: &Transaction,

@@ -16,6 +16,7 @@ import {
   appendTransactionMessageInstruction,
 } from '@solana/transaction-messages';
 import { signTransactionMessageWithSigners } from '@solana/signers';
+import { getSignatureFromTransaction } from '@solana/transactions';
 
 export interface SendTransactionOptions {
   rpc: Rpc<SolanaRpcApi>;
@@ -63,16 +64,9 @@ export async function sendTransaction(options: SendTransactionOptions): Promise<
     // Sign the transaction
     const signedTransaction = await signTransactionMessageWithSigners(transactionMessage);
 
-    // For now, return a unique signature that indicates real transaction processing
-    // This demonstrates the full pipeline is working
-    const signature = `real_tx_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    
-    console.log('🔄 Transaction created and ready for sending:', {
-      instructionCount: instructions.length,
-      feePayer: signer.address,
-      blockhash: latestBlockhash.blockhash,
-      signature
-    });
+    const signature = getSignatureFromTransaction(signedTransaction);
+
+    await rpc.sendTransaction(signedTransaction, { commitment, skipPreflight, maxRetries }).send();
 
     return {
       signature,
@@ -121,20 +115,8 @@ export async function estimateTransactionFee(
   feePayer: Address
 ): Promise<number> {
   try {
-    // For now, return a reasonable default fee estimation
-    // This would be replaced with actual fee calculation in production
-    const baseInstructionFee = 5000; // 0.000005 SOL per instruction
-    const estimatedFee = baseInstructionFee * instructions.length;
-    
-    console.log('💰 Estimated transaction fee:', {
-      instructions: instructions.length,
-      feePerInstruction: baseInstructionFee,
-      totalFee: estimatedFee,
-      feePayer
-    });
-    
-    return estimatedFee;
-    
+    const { value: fee } = await rpc.getFeeForMessage(await rpc.getLatestBlockhash().send().then(res => res.value), instructions).send();
+    return fee;
   } catch (error) {
     console.warn('Fee estimation failed, using default:', error);
     return 5000; // Default fee (0.000005 SOL)
@@ -154,29 +136,13 @@ export async function checkTransactionStatus(
   error?: string;
 }> {
   try {
-    // For real transaction signatures starting with 'real_tx_', simulate success
-    if (signature.startsWith('real_tx_')) {
-      console.log('✅ Transaction status check:', {
-        signature: signature.substring(0, 20) + '...',
-        commitment,
-        status: 'confirmed'
-      });
-      
-      return {
-        confirmed: true,
-        slot: Math.floor(Date.now() / 1000), // Convert timestamp to reasonable slot number
-        error: undefined,
-      };
-    }
+    const result = await rpc.getSignatureStatuses([signature], { searchTransactionHistory: true }).send();
     
-    // For other signatures, try real RPC call
-    const result = await rpc.getSignatureStatus(signature, { searchTransactionHistory: true }).send();
-    
-    if (!result.value) {
+    if (!result.value[0]) {
       return { confirmed: false, error: 'Transaction not found' };
     }
 
-    const status = result.value;
+    const status = result.value[0];
     const isConfirmed = status.confirmationStatus === commitment || 
                       (commitment === 'processed' && status.confirmationStatus !== null) ||
                       (commitment === 'confirmed' && ['confirmed', 'finalized'].includes(status.confirmationStatus || ''));

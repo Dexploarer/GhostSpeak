@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { Keypair } from '@solana/web3.js';
+import { generateKeyPairSigner } from '@solana/signers';
+import { getAddressEncoder } from '@solana/addresses';
 
 describe('CLI Agent Management E2E Tests', () => {
   beforeAll(async () => {
@@ -12,20 +13,20 @@ describe('CLI Agent Management E2E Tests', () => {
 
   describe('Agent Keypair Operations', () => {
     test('should generate valid agent keypairs', async () => {
-      const agent = Keypair.generate();
+      const agent = await generateKeyPairSigner();
       
-      expect(agent.publicKey).toBeDefined();
-      expect(typeof agent.publicKey.toBase58()).toBe('string');
+      expect(agent.address).toBeDefined();
+      expect(typeof getAddressEncoder().encode(agent.address)).toBe('string');
     });
 
     test('should generate unique agent addresses', async () => {
       const agents = [
-        Keypair.generate(),
-        Keypair.generate(),
-        Keypair.generate()
+        await generateKeyPairSigner(),
+        await generateKeyPairSigner(),
+        await generateKeyPairSigner()
       ];
 
-      const addresses = agents.map(a => a.publicKey.toBase58());
+      const addresses = agents.map(a => getAddressEncoder().encode(a.address));
       const uniqueAddresses = new Set(addresses);
       
       expect(uniqueAddresses.size).toBe(3);
@@ -35,7 +36,9 @@ describe('CLI Agent Management E2E Tests', () => {
       const concurrentCount = 10;
       const startTime = Date.now();
       
-      const agents = Array.from({ length: concurrentCount }, () => Keypair.generate());
+      const agents = await Promise.all(
+        Array.from({ length: concurrentCount }, () => generateKeyPairSigner())
+      );
       
       const duration = Date.now() - startTime;
       

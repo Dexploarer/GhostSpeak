@@ -5,15 +5,15 @@ import { UIManager } from '../ui/ui-manager.js';
 import { NetworkManager } from '../utils/network-manager.js';
 import { ConfigManager } from '../utils/config-manager.js';
 
-// Temporarily placeholder until SDK builds
-// import { 
-//   createPodAIClientV2, 
-//   type PodAIClientV2
-// } from '../../../sdk-typescript/dist/index.js';
-
-// Placeholder types
-type PodAIClientV2 = any;
-const createPodAIClientV2 = () => ({ mockClient: true });
+// Real SDK integration for monorepo development
+import { 
+  createPodAIClient, 
+  ChannelService,
+  MessageService,
+  type PodAIClient,
+  type IChannelAccount,
+  type IMessage
+} from '../../../sdk-typescript/src/index.js';
 
 // Real SDK interface - no more mocks!
 
@@ -45,7 +45,7 @@ export class ManageChannelsCommand {
   private ui: UIManager;
   private network: NetworkManager;
   private config: ConfigManager;
-  private podClient: PodAIClientV2 | null = null;
+  private podClient: PodAIClient | null = null;
 
   constructor() {
     this.ui = new UIManager();
@@ -147,8 +147,9 @@ export class ManageChannelsCommand {
       const rpc = await this.network.getRpc();
       
       // Create real PodAI client using RPC connection
-      this.podClient = createPodAIClientV2({
-        rpcEndpoint: 'https://api.devnet.solana.com', // Simplified
+      this.podClient = createPodAIClient({
+        rpcEndpoint: 'https://api.devnet.solana.com',
+        network: 'devnet',
         commitment: 'confirmed'
       });
 

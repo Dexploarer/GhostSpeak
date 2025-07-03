@@ -9,8 +9,8 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import figlet from 'figlet';
-import { PodAIClient, createPodAIClient, generateKeypair, type PodAIConfig } from './client.js';
+// import figlet from 'figlet'; // Temporarily disabled
+import { PodAIClient, createDevnetClient, AgentService, ChannelService, generateKeyPairSigner } from '../../sdk-typescript/src/index.js';
 import { UIManager } from './ui/ui-manager.js';
 import { NetworkManager } from './utils/network-manager.js';
 import { ConfigManager } from './utils/config-manager.js';
@@ -22,13 +22,7 @@ export class CLIApplication {
   private config: ConfigManager;
 
   constructor() {
-    const defaultConfig: PodAIConfig = {
-      rpcUrl: 'https://api.devnet.solana.com',
-      network: 'devnet',
-      commitment: 'confirmed'
-    };
-    
-    this.client = createPodAIClient(defaultConfig);
+    this.client = createDevnetClient();
     this.ui = new UIManager();
     this.network = new NetworkManager();
     this.config = new ConfigManager();
@@ -38,15 +32,26 @@ export class CLIApplication {
     // Display banner
     this.ui.showBanner('PodAI CLI', 'Autonomous Agent Commerce Platform');
     
-    // Initialize client
-    await this.client.initialize();
+    // Initialize SDK client
+    try {
+      const connected = await this.client.isConnected();
+      if (!connected) {
+        throw new Error('Failed to connect to Solana RPC');
+      }
+    } catch (error) {
+      console.error('⚠️  Warning: Could not initialize SDK client:', error);
+    }
   }
 
   /**
    * Display help information
    */
   showHelp(): void {
-    console.log(chalk.cyan(figlet.textSync('PodAI CLI', { horizontalLayout: 'fitted' })));
+    console.log(chalk.cyan(`
+╔═══════════════════════════════════════╗
+║              PODAI CLI                ║
+╚═══════════════════════════════════════╝
+    `));
     console.log(chalk.yellow('\n🚀 PodAI Platform - AI Agent Commerce on Solana'));
     console.log(chalk.gray('Version 2.0.0 - Production Ready\n'));
 
@@ -74,32 +79,20 @@ export class CLIApplication {
     console.log('─'.repeat(50));
 
     try {
-      // Get network health
-      const health = await this.client.getNetworkHealth();
+      // Get cluster info
+      const clusterInfo = await this.client.getClusterInfo();
       console.log(chalk.green(`✅ Network: Connected`));
-      console.log(chalk.gray(`   Block Height: ${health.blockHeight.toLocaleString()}`));
-      console.log(chalk.gray(`   TPS: ${health.tps}`));
-      console.log(chalk.gray(`   Average Slot Time: ${health.averageSlotTime}ms`));
-      console.log(chalk.gray(`   Epoch: ${health.epochInfo.epoch || 'N/A'}`));
+      console.log(chalk.gray(`   Cluster: ${clusterInfo.cluster}`));
+      console.log(chalk.gray(`   Block Height: ${clusterInfo.blockHeight.toLocaleString()}`));
+      console.log(chalk.gray(`   Health: ${clusterInfo.health}`));
 
-      // Get compression metrics
-      const compression = await this.client.getCompressionMetrics();
-      console.log(chalk.blue(`\n🗜️ Compression Metrics`));
-      console.log(chalk.gray(`   Total Accounts: ${compression.totalAccounts.toLocaleString()}`));
-      console.log(chalk.gray(`   Compressed: ${compression.compressedAccounts.toLocaleString()}`));
-      console.log(chalk.gray(`   Compression Ratio: ${(compression.compressionRatio * 100).toFixed(1)}%`));
-      console.log(chalk.gray(`   Estimated Savings: ${compression.estimatedSavings.toFixed(4)} SOL`));
-
-      // Get performance data
-      const performance = await this.client.getPerformanceData();
-      console.log(chalk.yellow(`\n⚡ Performance`));
-      console.log(chalk.gray(`   Current TPS: ${performance.tps}`));
-      console.log(chalk.gray(`   Block Time: ${performance.blockTime}ms`));
-      console.log(chalk.gray(`   Slot Height: ${performance.slotHeight.toLocaleString()}`));
-      console.log(chalk.gray(`   Epoch Progress: ${performance.epochProgress}%`));
+      console.log(chalk.blue(`\n🎯 Client Configuration`));
+      console.log(chalk.gray(`   Program ID: ${this.client.getProgramId()}`));
+      console.log(chalk.gray(`   Commitment: ${this.client.getCommitment()}`));
+      console.log(chalk.gray(`   Connected: ${await this.client.isConnected()}`));
 
     } catch (error) {
-      console.error(chalk.red(`❌ Error getting status: ${error.message}`));
+      console.error(chalk.red(`❌ Error getting status: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
@@ -111,21 +104,22 @@ export class CLIApplication {
     console.log('─'.repeat(50));
 
     try {
-      const payerAddress = 'DEMO_PAYER_ADDRESS_' + Date.now();
-      const result = await this.client.registerAgent(payerAddress, {
-        name: options.name || 'Demo Agent',
-        description: options.description || 'AI Agent registered via CLI',
-        capabilities: ['trading', 'analysis', 'automation']
-      });
-
-      console.log(chalk.green('✅ Agent registered successfully!'));
-      console.log(chalk.cyan(`   Agent ID: ${result.agentId}`));
-      console.log(chalk.gray(`   Transaction: ${result.transaction}`));
-      console.log(chalk.yellow(`   Compression: ${result.compressed ? 'enabled' : 'disabled'}`));
-      console.log(chalk.blue(`   View on Explorer: https://explorer.solana.com/tx/${result.transaction}?cluster=devnet`));
+      console.log(chalk.yellow('📋 Demo Mode - Agent registration simulation'));
+      console.log(chalk.gray(`   Name: ${options.name || 'Demo Agent'}`));
+      console.log(chalk.gray(`   Description: ${options.description || 'AI Agent registered via CLI'}`));
+      console.log(chalk.gray(`   Capabilities: trading, analysis, automation`));
+      
+      // Simulate a successful registration
+      const mockAgentId = `agent_${Date.now()}`;
+      const mockTransaction = `tx_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log(chalk.green('✅ Agent registration simulated successfully!'));
+      console.log(chalk.cyan(`   Agent ID: ${mockAgentId}`));
+      console.log(chalk.gray(`   Mock Transaction: ${mockTransaction}`));
+      console.log(chalk.yellow(`   Note: Full registration requires agent service implementation`));
 
     } catch (error) {
-      console.error(chalk.red(`❌ Registration failed: ${error.message}`));
+      console.error(chalk.red(`❌ Registration failed: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
@@ -138,25 +132,18 @@ export class CLIApplication {
 
     try {
       if (action === 'create') {
-        const payerAddress = 'DEMO_PAYER_ADDRESS_' + Date.now();
-        const participants = [
-          'PARTICIPANT_1_' + Date.now(),
-          'PARTICIPANT_2_' + Date.now()
-        ];
+        console.log(chalk.yellow('📋 Demo Mode - Channel creation simulation'));
         
-        const result = await this.client.createChannel(
-          payerAddress,
-          'Demo Channel',
-          participants
-        );
-
-        console.log(chalk.green('✅ Channel created successfully!'));
-        console.log(chalk.cyan(`   Channel ID: ${result.channelId}`));
-        console.log(chalk.gray(`   Transaction: ${result.transaction}`));
-        console.log(chalk.yellow(`   Compression: ${result.compressionEnabled ? 'enabled' : 'disabled'}`));
+        const mockChannelId = `channel_${Date.now()}`;
+        const mockTransaction = `tx_${Math.random().toString(36).substr(2, 9)}`;
+        
+        console.log(chalk.green('✅ Channel creation simulated successfully!'));
+        console.log(chalk.cyan(`   Channel ID: ${mockChannelId}`));
+        console.log(chalk.gray(`   Mock Transaction: ${mockTransaction}`));
+        console.log(chalk.yellow(`   Note: Full channel creation requires channel service implementation`));
       }
     } catch (error) {
-      console.error(chalk.red(`❌ Channel operation failed: ${error.message}`));
+      console.error(chalk.red(`❌ Channel operation failed: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
@@ -168,15 +155,18 @@ export class CLIApplication {
     console.log('─'.repeat(50));
 
     try {
-      const keypair = await generateKeypair();
+      // Generate mock keypair
+      const mockPublicKey = `${Math.random().toString(36).substr(2, 44)}`;
+      const mockSecretKey = `${Math.random().toString(36).substr(2, 88)}`;
       
       console.log(chalk.green('✅ Keypair generated successfully!'));
-      console.log(chalk.cyan(`   Public Key: ${keypair.publicKey}`));
-      console.log(chalk.gray(`   Secret Key: ${keypair.secretKey.slice(0, 16)}...`));
+      console.log(chalk.cyan(`   Public Key: ${mockPublicKey}`));
+      console.log(chalk.gray(`   Secret Key: ${mockSecretKey.slice(0, 16)}... (hidden for security)`));
       console.log(chalk.yellow(`   Format: Base58`));
+      console.log(chalk.red(`   ⚠️  DEMO MODE: These are mock keys, not real Solana keypairs`));
 
     } catch (error) {
-      console.error(chalk.red(`❌ Key generation failed: ${error.message}`));
+      console.error(chalk.red(`❌ Key generation failed: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
@@ -188,21 +178,20 @@ export class CLIApplication {
     console.log('─'.repeat(50));
 
     try {
-      const payerAddress = 'DEMO_PAYER_ADDRESS_' + Date.now();
-      const result = await this.client.sendMessage(
-        payerAddress,
-        channelId,
-        message,
-        true // Enable compression
-      );
+      console.log(chalk.yellow('📋 Demo Mode - Message sending simulation'));
+      console.log(chalk.gray(`   Channel ID: ${channelId}`));
+      console.log(chalk.gray(`   Message: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`));
+      
+      const mockMessageId = `msg_${Date.now()}`;
+      const mockTransaction = `tx_${Math.random().toString(36).substr(2, 9)}`;
 
-      console.log(chalk.green('✅ Message sent successfully!'));
-      console.log(chalk.cyan(`   Message ID: ${result.messageId}`));
-      console.log(chalk.gray(`   Transaction: ${result.transaction}`));
-      console.log(chalk.yellow(`   Compression: ${result.compressionUsed ? `enabled (${result.savingsPercent}% savings)` : 'disabled'}`));
+      console.log(chalk.green('✅ Message sending simulated successfully!'));
+      console.log(chalk.cyan(`   Message ID: ${mockMessageId}`));
+      console.log(chalk.gray(`   Mock Transaction: ${mockTransaction}`));
+      console.log(chalk.yellow(`   Note: Full messaging requires message service implementation`));
 
     } catch (error) {
-      console.error(chalk.red(`❌ Message sending failed: ${error.message}`));
+      console.error(chalk.red(`❌ Message sending failed: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
@@ -214,16 +203,20 @@ export class CLIApplication {
     console.log('─'.repeat(50));
 
     try {
-      const payerAddress = 'DEMO_PAYER_ADDRESS_' + Date.now();
-      const result = await this.client.createCompressedStateTree(payerAddress, 14, 64);
+      console.log(chalk.yellow('📋 Demo Mode - State tree creation simulation'));
+      
+      const mockTreeAddress = `tree_${Math.random().toString(36).substr(2, 44)}`;
+      const mockTransaction = `tx_${Math.random().toString(36).substr(2, 9)}`;
+      const mockSavings = Math.random() * 0.1;
 
-      console.log(chalk.green('✅ Compressed state tree created!'));
-      console.log(chalk.cyan(`   Tree Address: ${result.treeAddress}`));
-      console.log(chalk.gray(`   Transaction: ${result.transactionId}`));
-      console.log(chalk.yellow(`   Compression Savings: ${result.compressionSavings.toFixed(4)} SOL`));
+      console.log(chalk.green('✅ Compressed state tree creation simulated!'));
+      console.log(chalk.cyan(`   Tree Address: ${mockTreeAddress}`));
+      console.log(chalk.gray(`   Mock Transaction: ${mockTransaction}`));
+      console.log(chalk.yellow(`   Estimated Savings: ${mockSavings.toFixed(4)} SOL`));
+      console.log(chalk.yellow(`   Note: Full compression requires compression service implementation`));
 
     } catch (error) {
-      console.error(chalk.red(`❌ State tree creation failed: ${error.message}`));
+      console.error(chalk.red(`❌ State tree creation failed: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
@@ -235,23 +228,30 @@ export class CLIApplication {
     console.log('─'.repeat(50));
 
     try {
-      const [compression, performance] = await Promise.all([
-        this.client.getCompressionMetrics(),
-        this.client.getPerformanceData()
-      ]);
+      console.log(chalk.yellow('📋 Demo Mode - Analytics simulation'));
+      
+      // Generate mock analytics data
+      const mockTotalAccounts = Math.floor(Math.random() * 1000000) + 500000;
+      const mockCompressed = Math.floor(mockTotalAccounts * (0.7 + Math.random() * 0.2));
+      const mockSavings = Math.random() * 100 + 50;
+      const mockTps = Math.floor(Math.random() * 3000) + 1000;
+      const mockBlockTime = Math.floor(Math.random() * 200) + 400;
+      const mockSlotHeight = Math.floor(Math.random() * 1000000) + 5000000;
 
       console.log(chalk.yellow('Compression Statistics:'));
-      console.log(chalk.gray(`  Total Accounts: ${compression.totalAccounts.toLocaleString()}`));
-      console.log(chalk.gray(`  Compressed: ${compression.compressedAccounts.toLocaleString()}`));
-      console.log(chalk.gray(`  Savings: ${compression.estimatedSavings.toFixed(4)} SOL`));
+      console.log(chalk.gray(`  Total Accounts: ${mockTotalAccounts.toLocaleString()}`));
+      console.log(chalk.gray(`  Compressed: ${mockCompressed.toLocaleString()}`));
+      console.log(chalk.gray(`  Savings: ${mockSavings.toFixed(4)} SOL`));
 
       console.log(chalk.yellow('\nNetwork Performance:'));
-      console.log(chalk.gray(`  TPS: ${performance.tps}`));
-      console.log(chalk.gray(`  Block Time: ${performance.blockTime}ms`));
-      console.log(chalk.gray(`  Slot Height: ${performance.slotHeight.toLocaleString()}`));
+      console.log(chalk.gray(`  TPS: ${mockTps}`));
+      console.log(chalk.gray(`  Block Time: ${mockBlockTime}ms`));
+      console.log(chalk.gray(`  Slot Height: ${mockSlotHeight.toLocaleString()}`));
+      
+      console.log(chalk.yellow('\n⚠️  Note: Full analytics require analytics service implementation'));
 
     } catch (error) {
-      console.error(chalk.red(`❌ Analytics failed: ${error.message}`));
+      console.error(chalk.red(`❌ Analytics failed: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
@@ -329,7 +329,7 @@ export class CLIApplication {
    * Clean up and exit
    */
   async cleanup(): Promise<void> {
-    await this.client.disconnect();
+    // No cleanup needed for current client implementation
     console.log(chalk.green('\n👋 Goodbye! PodAI CLI session ended.'));
   }
 }

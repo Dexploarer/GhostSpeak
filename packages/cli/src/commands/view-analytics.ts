@@ -3,15 +3,14 @@ import { UIManager } from '../ui/ui-manager.js';
 import { NetworkManager } from '../utils/network-manager.js';
 import { ConfigManager } from '../utils/config-manager.js';
 
-// Temporarily placeholder until SDK builds
-// import { 
-//   createPodAIClientV2, 
-//   type PodAIClientV2
-// } from '../../../sdk-typescript/dist/index.js';
-
-// Placeholder types
-type PodAIClientV2 = any;
-const createPodAIClientV2 = () => ({ mockClient: true });
+// Real SDK integration for monorepo development
+import { 
+  createPodAIClient, 
+  AnalyticsService,
+  type PodAIClient,
+  type IAnalyticsData,
+  type INetworkMetrics
+} from '../../../sdk-typescript/src/index.js';
 
 export interface NetworkAnalytics {
   totalAgents: number;
@@ -40,7 +39,7 @@ export class ViewAnalyticsCommand {
   private ui: UIManager;
   private network: NetworkManager;
   private config: ConfigManager;
-  private podClient: PodAIClientV2 | null = null;
+  private podClient: PodAIClient | null = null;
 
   constructor() {
     this.ui = new UIManager();
@@ -102,8 +101,9 @@ export class ViewAnalyticsCommand {
 
     try {
       // Create real PodAI client
-      this.podClient = createPodAIClientV2({
+      this.podClient = createPodAIClient({
         rpcEndpoint: 'https://api.devnet.solana.com',
+        network: 'devnet',
         commitment: 'confirmed'
       });
 

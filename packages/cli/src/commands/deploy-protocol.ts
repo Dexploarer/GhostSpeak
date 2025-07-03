@@ -12,7 +12,7 @@ import { address } from '@solana/addresses';
 import { createKeyPairSignerFromBytes } from '@solana/signers';
 // import { getAddressFromEnvironment } from '@solana/addresses';
 import chalk from 'chalk';
-import figlet from 'figlet';
+// import figlet from 'figlet'; // Removed to avoid build issues
 import { createSpinner } from 'nanospinner';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -92,7 +92,11 @@ export class DeployProtocolCommand {
     const { network, programId: inputProgramId, wallet: walletPath } = options;
 
     console.clear();
-    console.log(chalk.cyan(figlet.textSync('podAI Deploy', { horizontalLayout: 'full' })));
+    console.log(chalk.cyan(`
+╔═══════════════════════════════════════╗
+║             PODAI DEPLOY              ║
+╚═══════════════════════════════════════╝
+    `));
     console.log(chalk.yellow('🚀 Deploying podAI Protocol Infrastructure\n'));
 
     const spinner = createSpinner('Initializing deployment...').start();
@@ -200,7 +204,11 @@ export const deployProtocolCommand = new Command('deploy-protocol')
   .option('-w, --wallet <path>', 'Path to wallet keypair file')
   .action(async (options) => {
     console.clear();
-    console.log(chalk.cyan(figlet.textSync('podAI Deploy', { horizontalLayout: 'full' })));
+    console.log(chalk.cyan(`
+╔═══════════════════════════════════════╗
+║             PODAI DEPLOY              ║
+╚═══════════════════════════════════════╝
+    `));
     console.log(chalk.yellow('🚀 Deploying podAI Protocol Infrastructure\n'));
 
     const spinner = createSpinner('Initializing deployment...').start();

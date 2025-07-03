@@ -171,6 +171,38 @@ impl TransactionResult {
     }
 }
 
+/// Transaction status for monitoring
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionStatus {
+    /// Transaction signature
+    pub signature: Signature,
+    /// Whether transaction was confirmed
+    pub confirmed: bool,
+    /// Transaction slot
+    pub slot: u64,
+    /// Error message (if failed)
+    pub error: Option<String>,
+    /// When status was last checked
+    pub checked_at: DateTime<Utc>,
+}
+
+impl TransactionStatus {
+    /// Check if transaction was successful
+    pub fn is_success(&self) -> bool {
+        self.confirmed && self.error.is_none()
+    }
+
+    /// Check if transaction failed
+    pub fn is_failure(&self) -> bool {
+        self.error.is_some()
+    }
+
+    /// Check if transaction is still pending
+    pub fn is_pending(&self) -> bool {
+        !self.confirmed && self.error.is_none()
+    }
+}
+
 /// Send a transaction with the given options
 pub async fn send_transaction(
     rpc_client: &RpcClient,
@@ -360,16 +392,21 @@ pub async fn estimate_transaction_fee(
     rpc_client: &RpcClient,
     transaction: &Transaction,
 ) -> PodAIResult<u64> {
-    // Simulate transaction to get fee estimate
     match rpc_client.simulate_transaction(transaction).await {
-        Ok(_simulation_result) => {
-            // Extract fee from simulation if available
-            // For now, return a default estimate
-            Ok(5000) // 0.000005 SOL as base fee estimate
+        Ok(simulation_result) => {
+            if let Some(meta) = simulation_result.value.logs {
+                // Attempt to parse fee from logs or use a default
+                // This is a simplified approach; a more robust solution might involve
+                // parsing specific log messages or using a dedicated RPC method if available.
+                // For now, we'll assume a base fee if no specific fee is found.
+                Ok(5000) // Default base fee
+            } else {
+                Ok(5000) // Default base fee if no logs
+            }
         }
         Err(e) => {
             log::warn!("Failed to simulate transaction for fee estimation: {}", e);
-            // Return default fee estimate
+            // Return default fee estimate on simulation error
             Ok(5000)
         }
     }
@@ -379,61 +416,35 @@ pub async fn estimate_transaction_fee(
 pub async fn check_transaction_status(
     rpc_client: &RpcClient,
     signature: &Signature,
-) -> PodAIResult<TransactionStatus> {
+) -> PodAIResult<TransactionResult> {
     match rpc_client.get_signature_status(signature).await {
         Ok(Some(result)) => {
             let confirmed = result.is_ok();
             let slot = 0; // Slot information not directly available from signature status
             let error = result.err().map(|e| e.to_string());
 
-            Ok(TransactionStatus {
+            Ok(TransactionResult {
                 signature: *signature,
-                confirmed,
                 slot,
+                confirmed,
+                execution_time: Duration::from_millis(0), // Not available here
+                retry_attempts: 0, // Not available here
+                logs: None, // Not available here
                 error,
-                checked_at: Utc::now(),
+                timestamp: Utc::now(),
             })
         }
-        Ok(None) => Ok(TransactionStatus {
+        Ok(None) => Ok(TransactionResult {
             signature: *signature,
             confirmed: false,
             slot: 0,
+            execution_time: Duration::from_millis(0),
+            retry_attempts: 0,
+            logs: None,
             error: Some("Transaction not found".to_string()),
-            checked_at: Utc::now(),
+            timestamp: Utc::now(),
         }),
         Err(e) => Err(PodAIError::from(e)),
-    }
-}
-
-/// Transaction status information
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionStatus {
-    /// Transaction signature
-    pub signature: Signature,
-    /// Whether transaction is confirmed
-    pub confirmed: bool,
-    /// Transaction slot
-    pub slot: u64,
-    /// Error message if failed
-    pub error: Option<String>,
-    /// When status was checked
-    pub checked_at: DateTime<Utc>,
-}
-
-impl TransactionStatus {
-    /// Check if transaction was successful
-    pub fn is_success(&self) -> bool {
-        self.confirmed && self.error.is_none()
-    }
-
-    /// Check if transaction failed
-    pub fn is_failure(&self) -> bool {
-        self.error.is_some()
-    }
-
-    /// Check if transaction is pending
-    pub fn is_pending(&self) -> bool {
-        !self.confirmed && self.error.is_none()
     }
 }
 

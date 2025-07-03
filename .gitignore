@@ -1,4 +1,4 @@
-# podAI Platform - Comprehensive .gitignore for 2025
+# GhostSpeak Protocol - Comprehensive .gitignore for 2025
 
 # ============================================================================
 # DEPENDENCIES & PACKAGE MANAGERS
@@ -320,9 +320,9 @@ typedoc/
 # PROJECT SPECIFIC
 # ============================================================================
 
-# podAI specific ignores
-.podai/
-podai-debug.log
+# GhostSpeak specific ignores
+.ghostspeak/
+ghostspeak-debug.log
 
 # Agent data
 agent-data/

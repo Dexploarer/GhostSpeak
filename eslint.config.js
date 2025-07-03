@@ -121,7 +121,7 @@ export default [
       // SonarJS
       'sonarjs/cognitive-complexity': ['error', 15],
       'sonarjs/max-switch-cases': ['error', 30],
-      'sonarjs/no-duplicate-string': ['error', 5],
+      'sonarjs/no-duplicate-string': ['error', { threshold: 5 }],
       'sonarjs/no-identical-functions': 'error',
       'sonarjs/no-redundant-boolean': 'error',
       'sonarjs/no-unused-collection': 'error',

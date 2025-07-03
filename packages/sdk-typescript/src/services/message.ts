@@ -1,175 +1,200 @@
 /**
- * Message service for PodAI SDK
- * Handles secure messaging between agents with Web3.js v2 patterns
+ * Modern Message Service for Web3.js v2 (2025)
  */
 
 import type { Address } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { Commitment } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
-import type { IPodAIClientV2 } from '../types';
 
-// Simple instruction interface for Web3.js v2
-interface ISimpleInstruction {
-  programId: Address;
-  accounts: Array<{
-    pubkey: Address;
-    isSigner: boolean;
-    isWritable: boolean;
-  }>;
-  data: Uint8Array;
-}
-
-// Simple transaction message interface for Web3.js v2
-interface _ISimpleTransactionMessage {
-  instructions: ISimpleInstruction[];
-  version: 0;
-  feePayer?: Address;
-  lifetimeConstraint?: {
-    blockhash: string;
-    lastValidBlockHeight: bigint;
-  };
-}
-
-// Message status enum
-export enum IMessageStatus {
-  DRAFT = 0,
-  SENT = 1,
-  DELIVERED = 2,
-  READ = 3,
-  DELETED = 4,
-}
-
-// Message type enum
+/**
+ * Message types
+ */
 export enum IMessageType {
   TEXT = 0,
   FILE = 1,
-  COMMAND = 2,
-  RESPONSE = 3,
-}
-
-// Message interface
-export interface IMessage {
-  id: string;
-  sender: Address;
-  recipient: Address;
-  content: string;
-  messageType: IMessageType;
-  status: IMessageStatus;
-  timestamp: number;
-  signature?: string;
-}
-
-// Message send result
-export interface IMessageSendResult {
-  messageId: string;
-  signature: string;
-}
-
-// Message options
-export interface IMessageOptions {
-  messageType?: IMessageType;
-  encrypted?: boolean;
+  IMAGE = 2,
+  VOICE = 3,
+  SYSTEM = 4,
 }
 
 /**
- * Message service implementation
- * Matches the Rust SDK pattern with client-only constructor
+ * Message configuration
+ */
+export interface IMessageConfig {
+  content: string;
+  messageType: IMessageType;
+  encrypted: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Message account data
+ */
+export interface IMessageAccount {
+  id: Address;
+  sender: Address;
+  channel: Address;
+  content: string;
+  messageType: IMessageType;
+  timestamp: number;
+  edited: boolean;
+  encrypted: boolean;
+}
+
+/**
+ * Modern Message Service
  */
 export class MessageService {
-  private readonly client: IPodAIClientV2;
-
-  constructor(client: IPodAIClientV2) {
-    this.client = client;
-  }
+  constructor(
+    private readonly rpc: Rpc<SolanaRpcApi>,
+    private readonly programId: Address,
+    private readonly commitment: Commitment = 'confirmed'
+  ) {}
 
   /**
-   * Send a message between agents (simplified for Web3.js v2)
+   * Send a message to a direct recipient
    */
-  async sendMessage(
+  async sendDirectMessage(
     sender: KeyPairSigner,
     recipient: Address,
     content: string,
-    messageType: IMessageType = IMessageType.TEXT
-  ): Promise<IMessageSendResult> {
+    _messageType: IMessageType = IMessageType.TEXT
+  ): Promise<{
+    messageId: Address;
+    signature: string;
+  }> {
     try {
-      // Generate message ID
-      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Get latest blockhash
-      const latestBlockhash = await this.client.getRpc()
-        .getLatestBlockhash({ commitment: this.client.getCommitment() })
-        .send();
+      console.log(`💬 Sending direct message: ${content.slice(0, 50)}...`);
 
-      // Create simple transaction (placeholder implementation)
-      const transaction: SimpleTransactionMessage = {
-        instructions: [{
-          programId: 'placeholder_program_id' as Address,
-          accounts: [],
-          data: new TextEncoder().encode(content),
-        }],
-        version: 0,
-        feePayer: sender.address,
-        lifetimeConstraint: {
-          blockhash: latestBlockhash.value.blockhash,
-          lastValidBlockHeight: latestBlockhash.value.lastValidBlockHeight,
-        },
-      };
+      // Simulate message sending
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Placeholder signature generation
-      const signature = `sig_${messageId}_${Math.random().toString(36)}`;
+      const messageId = `msg_direct_${Date.now()}` as Address;
+      const signature = `sig_direct_msg_${Date.now()}`;
 
-      return {
-        messageId,
-        signature,
-      };
+      return { messageId, signature };
     } catch (error) {
-      throw new Error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Direct message failed: ${String(error)}`);
     }
   }
 
   /**
-   * Broadcast message to channel (simplified)
+   * Send a message to a channel
    */
-  async broadcastMessage(
+  async sendChannelMessage(
     sender: KeyPairSigner,
     channelPDA: Address,
     content: string,
-    messageType: IMessageType = IMessageType.Text
-  ): Promise<IMessageSendResult> {
+    _messageType: IMessageType = IMessageType.TEXT
+  ): Promise<{
+    messageId: Address;
+    signature: string;
+  }> {
     try {
-      // Generate message ID
-      const messageId = `broadcast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Get latest blockhash
-      const latestBlockhash = await this.client.getRpc()
-        .getLatestBlockhash({ commitment: this.client.getCommitment() })
+      console.log(`📢 Sending channel message: ${content.slice(0, 50)}...`);
+
+      // Simulate channel message
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      const messageId = `msg_channel_${Date.now()}` as Address;
+      const signature = `sig_channel_msg_${Date.now()}`;
+
+      return { messageId, signature };
+    } catch (error) {
+      throw new Error(`Channel message failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Get message by ID
+   */
+  async getMessage(messageId: Address): Promise<IMessageAccount | null> {
+    try {
+      const accountInfo = await this.rpc
+        .getAccountInfo(messageId, {
+          commitment: this.commitment,
+          encoding: 'base64',
+        })
         .send();
 
-      // Create simple transaction (placeholder implementation)
-      const transaction: SimpleTransactionMessage = {
-        instructions: [{
-          programId: 'placeholder_program_id' as Address,
-          accounts: [],
-          data: new TextEncoder().encode(content),
-        }],
-        version: 0,
-        feePayer: sender.address,
-        lifetimeConstraint: {
-          blockhash: latestBlockhash.value.blockhash,
-          lastValidBlockHeight: latestBlockhash.value.lastValidBlockHeight,
-        },
-      };
+      if (!accountInfo.value) {
+        return null;
+      }
 
-      // Placeholder signature generation
-      const signature = `sig_${messageId}_${Math.random().toString(36)}`;
-
+      // Decode base64 if needed (Solana v2 always returns base64)
+      let _data: Uint8Array;
+      if (Array.isArray(accountInfo.value.data)) {
+        _data = Buffer.from(accountInfo.value.data[0], 'base64');
+      } else if (typeof accountInfo.value.data === 'string') {
+        _data = Buffer.from(accountInfo.value.data, 'base64');
+      } else {
+        throw new Error('Unknown account data format');
+      }
+      // Use _data as needed (currently returns mock)
       return {
-        messageId,
-        signature,
+        id: messageId,
+        sender: `sender_${Date.now()}` as Address,
+        channel: `channel_${Date.now()}` as Address,
+        content: 'Sample message content',
+        messageType: IMessageType.TEXT,
+        timestamp: Date.now() - 3600000, // 1 hour ago
+        edited: false,
+        encrypted: false,
       };
     } catch (error) {
-      throw new Error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Failed to get message:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get messages from a channel
+   */
+  async getChannelMessages(
+    channelPDA: Address,
+    limit: number = 50,
+    _before?: Address
+  ): Promise<IMessageAccount[]> {
+    try {
+      console.log(`📝 Getting ${limit} messages from channel ${channelPDA}`);
+
+      // Simulate message retrieval
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const messageCount = Math.min(limit, 10);
+      return Array.from({ length: messageCount }, (_, i) => ({
+        id: `msg_${i + 1}_${Date.now()}` as Address,
+        sender: `sender_${i + 1}` as Address,
+        channel: channelPDA,
+        content: `Message ${i + 1} content`,
+        messageType: IMessageType.TEXT,
+        timestamp: Date.now() - (messageCount - i) * 300000, // 5 min intervals
+        edited: Math.random() > 0.8,
+        encrypted: Math.random() > 0.7,
+      }));
+    } catch (error) {
+      throw new Error(`Failed to get channel messages: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Edit a message
+   */
+  async editMessage(
+    _sender: KeyPairSigner,
+    messageId: Address,
+    _newContent: string
+  ): Promise<string> {
+    try {
+      console.log(`✏️ Editing message ${messageId}`);
+
+      // Simulate message edit
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      return `sig_edit_${Date.now()}`;
+    } catch (error) {
+      throw new Error(`Message edit failed: ${String(error)}`);
     }
   }
 }

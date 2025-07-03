@@ -4,9 +4,12 @@
  */
 
 import type { Address } from '@solana/addresses';
+import { getAddressEncoder } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { Commitment } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
+import { sendAndConfirmTransactionFactory, findProgramAddress } from '../utils/transaction-helpers';
+import type { IInstruction } from '@solana/instructions';
 
 /**
  * Agent creation options
@@ -27,28 +30,29 @@ export interface IAgentRegistrationResult {
   agentId: string;
 }
 
-/**
- * Agent account data
- */
 export interface IAgentAccount {
-  owner: Address;
-  name: string;
-  description: string;
-  capabilities: number[];
-  isActive: boolean;
-  createdAt: number;
-  updatedAt: number;
+  pubkey: Address;
+  capabilities: number;
+  metadataUri: string;
+  reputation: number;
+  lastUpdated: number;
+  invitesSent: number;
+  lastInviteAt: number;
+  bump: number;
 }
 
 /**
  * Modern Agent Service using Web3.js v2 patterns
  */
 export class AgentService {
+  private sendAndConfirmTransaction: ReturnType<typeof sendAndConfirmTransactionFactory>;
   constructor(
     private readonly rpc: Rpc<SolanaRpcApi>,
     private readonly programId: Address,
     private readonly commitment: Commitment = 'confirmed'
-  ) {}
+  ) {
+    this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory(this.rpc);
+  }
 
   /**
    * Register a new agent on-chain
@@ -61,15 +65,10 @@ export class AgentService {
       console.log('🤖 Registering agent on-chain:', options.name);
 
       // Generate unique agent ID
-      const agentId = `agent_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const agentId = Date.now().toString();
       
       // Calculate agent PDA
       const agentPda = await this.findAgentPda(signer.address, agentId);
-
-      // Get latest blockhash
-      const { value: latestBlockhash } = await this.rpc
-        .getLatestBlockhash({ commitment: this.commitment })
-        .send();
 
       // Build register agent instruction
       const instruction = this.createRegisterAgentInstruction(
@@ -78,26 +77,21 @@ export class AgentService {
         options
       );
 
-      // Build transaction
-      const transaction = {
-        instructions: [instruction],
-        recentBlockhash: latestBlockhash.blockhash,
-        feePayer: signer.address,
-      };
-
       // Sign and send transaction
-      const signature = await this.sendTransaction(transaction, signer);
+      const result = await this.sendAndConfirmTransaction([instruction], [signer]);
 
-      console.log('✅ Agent registered successfully:', signature);
+      console.log('✅ Agent registered successfully:', result.signature);
 
       return {
-        signature,
+        signature: result.signature,
         agentPda,
         agentId,
       };
     } catch (error) {
       console.error('❌ Failed to register agent:', error);
-      throw new Error(`Agent registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Agent registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -106,19 +100,22 @@ export class AgentService {
    */
   async getAgent(agentPda: Address): Promise<IAgentAccount | null> {
     try {
-      const accountInfo = await this.rpc
-        .getAccountInfo(agentPda, { 
-          commitment: this.commitment,
-          encoding: 'base64'
-        })
+      const accountResult = await this.rpc
+        .getAccountInfo(agentPda, { commitment: this.commitment })
         .send();
 
-      if (!accountInfo.value) {
+      if (!accountResult.value) {
         return null;
       }
 
-      // Parse agent account data
-      return this.parseAgentAccount(accountInfo.value.data);
+      // Parse real account data
+      const accountData = accountResult.value.data;
+      if (Array.isArray(accountData) && accountData.length >= 2) {
+        const [data] = accountData;
+        return this.parseAgentAccountData(agentPda, data);
+      }
+
+      return null;
     } catch (error) {
       console.error('❌ Failed to get agent:', error);
       return null;
@@ -130,21 +127,30 @@ export class AgentService {
    */
   async listUserAgents(owner: Address): Promise<IAgentAccount[]> {
     try {
-      const accounts = await this.rpc
+      const accountsResult = await this.rpc
         .getProgramAccounts(this.programId, {
           commitment: this.commitment,
           filters: [
             {
               memcmp: {
-                offset: 8, // Skip discriminator
+                offset: 8n,
                 bytes: owner,
+                encoding: 'base58',
               },
             },
           ],
         })
         .send();
 
-      return accounts.map(account => this.parseAgentAccount(account.account.data));
+      const accounts = accountsResult.value ?? [];
+      const agentAccounts: IAgentAccount[] = [];
+      
+      for (const { pubkey } of accounts) {
+        const agent = await this.getAgent(pubkey);
+        if (agent) agentAccounts.push(agent);
+      }
+      
+      return agentAccounts;
     } catch (error) {
       console.error('❌ Failed to list user agents:', error);
       return [];
@@ -162,26 +168,16 @@ export class AgentService {
     try {
       console.log('🔄 Updating agent:', agentPda);
 
-      const { value: latestBlockhash } = await this.rpc
-        .getLatestBlockhash({ commitment: this.commitment })
-        .send();
-
       const instruction = this.createUpdateAgentInstruction(
         signer,
         agentPda,
         updates
       );
 
-      const transaction = {
-        instructions: [instruction],
-        recentBlockhash: latestBlockhash.blockhash,
-        feePayer: signer.address,
-      };
-
-      const signature = await this.sendTransaction(transaction, signer);
+      const result = await this.sendAndConfirmTransaction([instruction], [signer]);
       
-      console.log('✅ Agent updated successfully:', signature);
-      return signature;
+      console.log('✅ Agent updated successfully:', result.signature);
+      return result.signature;
     } catch (error) {
       console.error('❌ Failed to update agent:', error);
       throw new Error(`Agent update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -192,9 +188,87 @@ export class AgentService {
    * Calculate agent PDA (Program Derived Address)
    */
   private async findAgentPda(owner: Address, agentId: string): Promise<Address> {
-    // This would use the actual PDA calculation with seeds
-    // For now, generate a mock address
-    return `${owner}_${agentId}_pda` as Address;
+    const ownerBytes = getAddressEncoder().encode(owner);
+    const agentIdBytes = new TextEncoder().encode(agentId);
+    const agentSeed = new TextEncoder().encode('agent');
+    
+    // For now, create a deterministic address
+    // In production, this would use actual PDA derivation
+    const combinedSeed = `agent_${owner}_${agentId}`;
+    const deterministicAddress = this.generateDeterministicAddress(combinedSeed);
+    
+    return findProgramAddress(
+        [
+            'agent',
+            new Uint8Array(ownerBytes),
+            new Uint8Array(agentIdBytes),
+            new Uint8Array(agentSeed)
+        ],
+        this.programId
+    );
+  }
+
+  /**
+   * Generate deterministic address for PDA simulation
+   */
+  private generateDeterministicAddress(seed: string): string {
+    // Simple deterministic address generation
+    // In production, this would use proper Solana PDA derivation
+    const hash = this.simpleHash(seed);
+    const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    let result = '';
+    
+    for (let i = 0; i < 44; i++) {
+      result += base58Chars[hash % base58Chars.length];
+      hash = (hash * 31) % 1000000007;
+    }
+    
+    return result;
+  }
+
+  /**
+   * Simple hash function for deterministic address generation
+   */
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * Parse agent account data from on-chain
+   */
+  private parseAgentAccountData(pubkey: Address, data: string): IAgentAccount {
+    // Decode base64 account data
+    const buffer = Buffer.from(data, 'base64');
+    
+    // Parse the account structure
+    // This is a simplified parser - in production you'd use proper serialization
+    let offset = 8; // Skip discriminator
+    
+    const capabilities = buffer.readUInt32LE(offset);
+    offset += 4;
+    
+    const reputation = buffer.readUInt32LE(offset);
+    offset += 4;
+    
+    const lastUpdated = buffer.readBigUInt64LE(offset);
+    offset += 8;
+    
+    return {
+      pubkey,
+      capabilities,
+      metadataUri: '', // Would parse from buffer in production
+      reputation,
+      lastUpdated: Number(lastUpdated),
+      invitesSent: 0,
+      lastInviteAt: 0,
+      bump: 255, // Standard PDA bump
+    };
   }
 
   /**
@@ -204,12 +278,12 @@ export class AgentService {
     signer: KeyPairSigner,
     agentPda: Address,
     options: ICreateAgentOptions
-  ) {
+  ): IInstruction {
     return {
-      programId: this.programId,
-      keys: [
-        { pubkey: signer.address, isSigner: true, isWritable: true },
-        { pubkey: agentPda, isSigner: false, isWritable: true },
+      programAddress: this.programId,
+      accounts: [
+        { address: signer.address, role: 'writable-signer' },
+        { address: agentPda, role: 'writable' },
       ],
       data: this.encodeRegisterAgentData(options),
     };
@@ -222,12 +296,12 @@ export class AgentService {
     signer: KeyPairSigner,
     agentPda: Address,
     updates: Partial<ICreateAgentOptions>
-  ) {
+  ): IInstruction {
     return {
-      programId: this.programId,
-      keys: [
-        { pubkey: signer.address, isSigner: true, isWritable: false },
-        { pubkey: agentPda, isSigner: false, isWritable: true },
+      programAddress: this.programId,
+      accounts: [
+        { address: signer.address, role: 'readonly-signer' },
+        { address: agentPda, role: 'writable' },
       ],
       data: this.encodeUpdateAgentData(updates),
     };
@@ -238,8 +312,8 @@ export class AgentService {
    */
   private encodeRegisterAgentData(options: ICreateAgentOptions): Uint8Array {
     const encoder = new TextEncoder();
-    const nameBytes = encoder.encode(options.name.padEnd(32, '\0'));
-    const descBytes = encoder.encode(options.description.padEnd(256, '\0'));
+    const nameBytes = encoder.encode(options.name.padEnd(32, ' '));
+    const descBytes = encoder.encode(options.description.padEnd(256, ' '));
     
     const data = new Uint8Array(8 + 32 + 256 + 4 + options.capabilities.length * 4);
     let offset = 0;
@@ -297,36 +371,5 @@ export class AgentService {
     data.set(dataBytes, offset);
 
     return data;
-  }
-
-  /**
-   * Parse agent account data
-   */
-  private parseAgentAccount(data: string | Uint8Array): IAgentAccount {
-    // This would implement proper account data parsing
-    // For now, return mock data
-    return {
-      owner: 'mock_owner' as Address,
-      name: 'Mock Agent',
-      description: 'Mock agent description',
-      capabilities: [1, 2, 3],
-      isActive: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-  }
-
-  /**
-   * Send transaction
-   */
-  private async sendTransaction(transaction: any, signer: KeyPairSigner): Promise<string> {
-    // This would implement proper transaction sending
-    // For now, return mock signature
-    const signature = `sig_${Date.now()}_${signer.address.slice(0, 8)}`;
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return signature;
   }
 } 

@@ -133,11 +133,13 @@ The PodAI Rust SDK follows a modular architecture with clear separation of conce
 ### Key Components
 
 #### Client Layer
+
 - **PodAIClient**: Main entry point for all SDK operations
 - **PodAIConfig**: Configuration for different networks and settings
 - **Utilities**: Helper functions for PDA generation, transactions, etc.
 
 #### Service Layer
+
 - **AgentService**: Agent registration and management
 - **ChannelService**: Communication channel operations
 - **MessageService**: Message sending and receiving
@@ -145,6 +147,7 @@ The PodAI Rust SDK follows a modular architecture with clear separation of conce
 - **MarketplaceService**: Data product trading
 
 #### Type System
+
 - **Strongly Typed**: All operations use Rust's type system for safety
 - **Error Handling**: Comprehensive error types with context
 - **Serialization**: Borsh serialization for on-chain data
@@ -173,6 +176,7 @@ let (agent_pda, bump) = agent_service.calculate_agent_pda(&keypair.pubkey());
 ```
 
 **Key Methods:**
+
 - `register()` - Register a new agent
 - `calculate_agent_pda()` - Calculate agent Program Derived Address
 
@@ -204,6 +208,7 @@ let (channel_pda, bump) = channel_service.calculate_channel_pda(
 ```
 
 **Key Methods:**
+
 - `create_channel()` - Create a new communication channel
 - `calculate_channel_pda()` - Calculate channel PDA
 
@@ -235,6 +240,7 @@ let (message_pda, bump) = message_service.calculate_message_pda(
 ```
 
 **Key Methods:**
+
 - `send_message()` - Send a message to another agent
 - `calculate_message_pda()` - Calculate message PDA
 
@@ -256,6 +262,7 @@ let result = escrow_service.create_escrow(
 ```
 
 **Key Methods:**
+
 - `create_escrow()` - Create a new escrow account
 - `release_escrow()` - Release funds from escrow
 
@@ -282,6 +289,7 @@ let result = marketplace_service.create_product(
 ```
 
 **Key Methods:**
+
 - `create_product()` - List a new data product
 - `purchase_product()` - Purchase a data product
 
@@ -298,6 +306,7 @@ cargo run --example complete_agent_workflow
 ```
 
 **What it demonstrates:**
+
 - Client initialization with error handling
 - Agent registration with proper capabilities
 - Service creation and management
@@ -312,6 +321,7 @@ cargo run --example enhanced_agent_registration
 ```
 
 **What it demonstrates:**
+
 - Multiple agent registration scenarios
 - Different capability combinations
 - PDA calculation and validation
@@ -326,6 +336,7 @@ cargo run --example performance_demo
 ```
 
 **What it demonstrates:**
+
 - PDA generation performance
 - Channel account creation benchmarks
 - Serialization performance
@@ -340,6 +351,7 @@ cargo run --example quick_validation
 ```
 
 **What it demonstrates:**
+
 - Offline functionality testing
 - Type creation and validation
 - PDA generation consistency
@@ -652,6 +664,7 @@ Error: Network { message: "Connection refused" }
 ```
 
 **Solutions:**
+
 - Check if Solana validator is running for localnet
 - Verify RPC endpoint is accessible
 - Check firewall/network settings
@@ -664,6 +677,7 @@ Error: TransactionFailed { reason: "Insufficient funds" }
 ```
 
 **Solutions:**
+
 - Fund the account with SOL for transaction fees
 - Check account balance: `solana balance <pubkey>`
 - Use devnet faucet: `solana airdrop 1 <pubkey>`
@@ -675,6 +689,7 @@ Error: AccountNotFound { account_type: "Program" }
 ```
 
 **Solutions:**
+
 - Ensure smart contract is deployed to the network
 - Check program ID configuration
 - Verify network (devnet vs mainnet)
@@ -686,6 +701,7 @@ Error: Custom { message: "Failed to deserialize account" }
 ```
 
 **Solutions:**
+
 - Check account data format matches expected structure
 - Verify account is the correct type
 - Ensure account has been initialized
@@ -693,12 +709,14 @@ Error: Custom { message: "Failed to deserialize account" }
 ### Debugging Tips
 
 1. **Enable Logging**
+
    ```rust
    env_logger::init();
    log::set_max_level(log::LevelFilter::Debug);
    ```
 
 2. **Inspect Transactions**
+
    ```bash
    # View transaction details
    solana transaction <signature>
@@ -708,6 +726,7 @@ Error: Custom { message: "Failed to deserialize account" }
    ```
 
 3. **Network Debugging**
+
    ```rust
    // Test RPC connectivity
    let client = PodAIClient::new(config).await?;
@@ -716,6 +735,7 @@ Error: Custom { message: "Failed to deserialize account" }
    ```
 
 4. **Account Debugging**
+
    ```rust
    // Check if account exists
    let account = client.get_account(&address).await?;
@@ -727,18 +747,21 @@ Error: Custom { message: "Failed to deserialize account" }
 ### Performance Optimization
 
 1. **Connection Pooling**
+
    ```rust
    // Reuse client instances
    let client = Arc::new(PodAIClient::new(config).await?);
    ```
 
 2. **Batch Operations**
+
    ```rust
    // Get multiple accounts in one call
    let accounts = client.get_multiple_accounts(&addresses).await?;
    ```
 
 3. **Async Best Practices**
+
    ```rust
    // Use join for concurrent operations
    let (result1, result2) = tokio::join!(
@@ -752,6 +775,7 @@ Error: Custom { message: "Failed to deserialize account" }
 ### From Version 0.0.x to 0.1.x
 
 1. **Client Creation**
+
    ```rust
    // Old
    let client = PodAIClient::devnet();
@@ -762,6 +786,7 @@ Error: Custom { message: "Failed to deserialize account" }
    ```
 
 2. **Service Creation**
+
    ```rust
    // Old
    let service = client.agent_service();
@@ -771,6 +796,7 @@ Error: Custom { message: "Failed to deserialize account" }
    ```
 
 3. **Error Handling**
+
    ```rust
    // Old
    result.map_err(|e| format!("Error: {}", e))?;
@@ -814,4 +840,4 @@ cargo clippy -- -D warnings
 
 ## License
 
-MIT License - see [LICENSE](../../../LICENSE) for details. 
+MIT License - see [LICENSE](../../../LICENSE) for details.

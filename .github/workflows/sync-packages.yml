@@ -11,14 +11,10 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      typescript: ${{ steps.changes.outputs.typescript }}
-      javascript: ${{ steps.changes.outputs.javascript }}
-      python: ${{ steps.changes.outputs.python }}
-      rust: ${{ steps.changes.outputs.rust }}
-      mcp-server: ${{ steps.changes.outputs.mcp-server }}
-      frontend: ${{ steps.changes.outputs.frontend }}
-      api-server: ${{ steps.changes.outputs.api-server }}
+      sdk-typescript: ${{ steps.changes.outputs.sdk-typescript }}
+      sdk-rust: ${{ steps.changes.outputs.sdk-rust }}
       cli: ${{ steps.changes.outputs.cli }}
+      core: ${{ steps.changes.outputs.core }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,26 +24,18 @@ jobs:
         id: changes
         with:
           filters: |
-            typescript:
+            sdk-typescript:
               - 'packages/sdk-typescript/**'
-            javascript:
-              - 'packages/sdk-javascript/**'
-            python:
-              - 'packages/sdk-python/**'
-            rust:
+            sdk-rust:
               - 'packages/sdk-rust/**'
-            mcp-server:
-              - 'packages/mcp-server/**'
-            frontend:
-              - 'packages/frontend/**'
-            api-server:
-              - 'packages/api-server/**'
             cli:
               - 'packages/cli/**'
+            core:
+              - 'packages/core/**'
 
   sync-typescript:
     needs: detect-changes
-    if: needs.detect-changes.outputs.typescript == 'true'
+    if: needs.detect-changes.outputs.sdk-typescript == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,12 +45,12 @@ jobs:
           
       - name: Configure Git
         run: |
-          git config user.name "Prompt or Die Bot"
-          git config user.email "bot@prompt-or-die.com"
+          git config user.name "GhostSpeak Bot"
+          git config user.email "bot@ghostspeak.dev"
           
       - name: Add TypeScript SDK remote
         run: |
-          git remote add typescript-sdk https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/Prompt-or-Die/pod-typescript-sdk.git || true
+          git remote add typescript-sdk https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ghostspeak/ghostspeak-typescript-sdk.git || true
           
       - name: Sync TypeScript SDK
         run: |
@@ -72,32 +60,9 @@ jobs:
         run: |
           echo "⚡ TypeScript SDK synced to individual repository"
 
-  sync-python:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.python == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.SYNC_TOKEN }}
-          
-      - name: Configure Git
-        run: |
-          git config user.name "Prompt or Die Bot"
-          git config user.email "bot@prompt-or-die.com"
-          
-      - name: Add Python SDK remote
-        run: |
-          git remote add python-sdk https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/Prompt-or-Die/pod-python-sdk.git || true
-          
-      - name: Sync Python SDK
-        run: |
-          git subtree push --prefix=packages/sdk-python python-sdk main
-
   sync-rust:
     needs: detect-changes
-    if: needs.detect-changes.outputs.rust == 'true'
+    if: needs.detect-changes.outputs.sdk-rust == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -107,62 +72,16 @@ jobs:
           
       - name: Configure Git
         run: |
-          git config user.name "Prompt or Die Bot"
-          git config user.email "bot@prompt-or-die.com"
+          git config user.name "GhostSpeak Bot"
+          git config user.email "bot@ghostspeak.dev"
           
       - name: Add Rust SDK remote
         run: |
-          git remote add rust-sdk https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/Prompt-or-Die/pod-rust-sdk.git || true
+          git remote add rust-sdk https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ghostspeak/ghostspeak-rust-sdk.git || true
           
       - name: Sync Rust SDK
         run: |
           git subtree push --prefix=packages/sdk-rust rust-sdk main
-
-  sync-mcp-server:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.mcp-server == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.SYNC_TOKEN }}
-          
-      - name: Configure Git
-        run: |
-          git config user.name "Prompt or Die Bot"
-          git config user.email "bot@prompt-or-die.com"
-          
-      - name: Add MCP Server remote
-        run: |
-          git remote add mcp-server https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/Prompt-or-Die/pod-mcp-server.git || true
-          
-      - name: Sync MCP Server
-        run: |
-          git subtree push --prefix=packages/mcp-server mcp-server main
-
-  sync-frontend:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.SYNC_TOKEN }}
-          
-      - name: Configure Git
-        run: |
-          git config user.name "Prompt or Die Bot"
-          git config user.email "bot@prompt-or-die.com"
-          
-      - name: Add Frontend remote
-        run: |
-          git remote add frontend https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/Prompt-or-Die/pod-frontend.git || true
-          
-      - name: Sync Frontend
-        run: |
-          git subtree push --prefix=packages/frontend frontend main
 
   sync-cli:
     needs: detect-changes
@@ -176,23 +95,23 @@ jobs:
           
       - name: Configure Git
         run: |
-          git config user.name "Prompt or Die Bot"
-          git config user.email "bot@prompt-or-die.com"
+          git config user.name "GhostSpeak Bot"
+          git config user.email "bot@ghostspeak.dev"
           
       - name: Add CLI remote
         run: |
-          git remote add cli https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/Prompt-or-Die/pod-cli.git || true
+          git remote add cli https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ghostspeak/ghostspeak-cli.git || true
           
       - name: Sync CLI
         run: |
           git subtree push --prefix=packages/cli cli main
 
   notify-success:
-    needs: [sync-typescript, sync-python, sync-rust, sync-mcp-server, sync-frontend, sync-cli]
+    needs: [sync-typescript, sync-rust, sync-cli]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Notification
         run: |
-          echo "⚡ Prompt or Die packages synced to individual repositories"
-          echo "🔮 The cult distribution network is operational" 
+          echo "⚡ GhostSpeak packages synced to individual repositories"
+          echo "🔮 The protocol distribution network is operational" 

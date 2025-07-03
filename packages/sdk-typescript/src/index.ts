@@ -15,6 +15,9 @@ export {
   type IPodAIClientConfig,
 } from './client-v2';
 
+// Alias for backwards compatibility
+export { createPodAIClient as createPodAIClientV2 } from './client-v2';
+
 // Types and Interfaces
 export type {
   // Core types from types.ts
@@ -29,46 +32,34 @@ export type {
   ChannelVisibility,
   PodComError,
   IPodComConfig,
+  IMessage,
+  IMessageOptions,
+  IMessageStatus,
+  INetworkMetrics,
+  IMarketplaceListing,
+  // Add more as needed from types.ts
 } from './types';
 
 // Re-export generated v2 types for advanced usage
 export * from './generated-v2';
 
-// Modern Services - Clean Web3.js v2 Implementation  
+// Modern Services - Clean Web3.js v2 Implementation
 export { AgentService } from './services/agent';
-export { ChannelService, ChannelVisibility as ChannelVisibilityEnum } from './services/channel';
+export {
+  ChannelService,
+  ChannelVisibility as ChannelVisibilityEnum,
+} from './services/channel';
 
 export { MessageService } from './services/message';
-export type {
-  IMessage,
-  IMessageSendResult,
-  IMessageOptions,
-  IMessageStatus,
-  IMessageType,
-} from './services/message';
+// export type {
+//   IMessage,
+//   IMessageSendResult,
+//   IMessageOptions,
+//   IMessageStatus,
+//   IMessageType,
+// } from './services/message';
 
-export {
-  EscrowService,
-  EscrowCreationBuilder,
-  EscrowTransactionType,
-  type IEscrowCreationResult,
-  type IEscrowDepositResult,
-  type IEscrowWithdrawResult,
-  type IEscrowAccount,
-  type IEscrowConfig,
-} from './services/escrow';
-
-export {
-  WorkDeliveryService,
-  type IWorkOutput,
-  type IWorkDeliverable,
-} from './services/work-delivery';
-
-export {
-  SplToken2022Service,
-  type ITokenExtensions,
-  type IToken2022Account,
-} from './services/spl-token-2022';
+export { EscrowService } from './services/escrow';
 
 export {
   ConfidentialTransferService,
@@ -80,18 +71,19 @@ export { CompressionService } from './services/compression';
 // export type { ICompressionConfig } from './services/compression'; // Not implemented yet
 // export type { ICompressionProof } from './services/compression'; // Not implemented yet
 
-export {
-  AnalyticsService,
-  type IAnalyticsData,
-  type INetworkMetrics,
-} from './services/analytics';
-
-export {
-  MarketplaceService,
-  type IServiceListing,
-  type IJobPosting,
-  type IMarketplaceConfig,
-} from './services/marketplace';
+// Remove duplicate and invalid type exports from './services/analytics' and './services/marketplace'
+// export {
+//   AnalyticsService,
+//   type IAnalyticsData,
+//   type INetworkMetrics,
+// } from './services/analytics';
+//
+// export {
+//   MarketplaceService,
+//   type IServiceListing,
+//   type IJobPosting,
+//   type IMarketplaceConfig,
+// } from './services/marketplace';
 
 export {
   AgentReplicationService,
@@ -110,10 +102,10 @@ export {
   createTransactionConfig,
   lamportsToSol,
   solToLamports,
-  type ITransactionConfig,
+  type ITransactionOptions,
   type ITransactionResult,
   type ITransactionInstruction,
-} from './utils/transaction-utils';
+} from './utils/transaction-helpers';
 
 // Examples
 export * from './examples/jupiter-patterns-example';

@@ -10,7 +10,7 @@ podai-sdk = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
-```rust
+```no_run
 use podai_sdk::{
     client::{PodAIClient, PodAIConfig},
     services::agent::AgentService,
@@ -47,28 +47,21 @@ async fn main() -> PodAIResult<()> {
 
 ### Core Components
 
-```rust
-// High-level services
-AgentService       // Agent registration and management
-ChannelService     // Communication channel operations
-MessageService     // Messaging operations
-EscrowService      // Secure financial transactions
-MarketplaceService // Data product trading
-
-// Client and configuration
-PodAIClient        // Main client for Solana interaction
-PodAIConfig        // Configuration for different networks
-
-// Utilities
-PdaBuilder         // Program Derived Address utilities
-TransactionFactory // Transaction building utilities
-```
+- **AgentService**: Agent registration and management
+- **ChannelService**: Communication channel operations
+- **MessageService**: Messaging operations
+- **EscrowService**: Secure financial transactions
+- **MarketplaceService**: Data product trading
+- **PodAIClient**: Main client for Solana interaction
+- **PodAIConfig**: Configuration for different networks
+- **PdaBuilder**: Program Derived Address utilities
+- **TransactionFactory**: Transaction building utilities
 
 ## 🛠️ Usage Examples
 
 ### Agent Registration
 
-```rust
+```no_run
 use podai_sdk::{
     client::{PodAIClient, PodAIConfig},
     services::agent::AgentService,
@@ -104,7 +97,7 @@ async fn register_agent() -> PodAIResult<()> {
 
 ### Channel Creation and Management
 
-```rust
+```no_run
 use podai_sdk::{
     services::channel::ChannelService,
     types::channel::ChannelVisibility,
@@ -133,7 +126,7 @@ async fn create_channel(client: Arc<PodAIClient>) -> PodAIResult<()> {
 
 ### Message Sending
 
-```rust
+```no_run
 use podai_sdk::{
     services::message::MessageService,
     types::message::MessageType,
@@ -161,7 +154,7 @@ async fn send_message(client: Arc<PodAIClient>) -> PodAIResult<()> {
 
 ### Escrow Operations
 
-```rust
+```no_run
 use podai_sdk::services::escrow::EscrowService;
 
 async fn create_escrow(client: Arc<PodAIClient>) -> PodAIResult<()> {
@@ -186,7 +179,7 @@ async fn create_escrow(client: Arc<PodAIClient>) -> PodAIResult<()> {
 
 ### Marketplace Operations
 
-```rust
+```no_run
 use podai_sdk::{
     services::marketplace::MarketplaceService,
     types::marketplace::{ProductType, DataProductType},
@@ -218,7 +211,7 @@ async fn create_marketplace_product(client: Arc<PodAIClient>) -> PodAIResult<()>
 
 ### Client Configuration
 
-```rust
+```no_run
 use podai_sdk::client::{PodAIClient, PodAIConfig};
 
 // Environment-specific configurations

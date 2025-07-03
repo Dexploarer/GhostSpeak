@@ -39,116 +39,203 @@ pub enum PodAIError {
     #[error("HTTP request error: {0}")]
     Http(#[from] reqwest::Error),
 
-    /// Configuration errors
+    /// Configuration error
     #[error("Configuration error: {message}")]
-    Configuration { message: String },
+    Configuration { 
+        /// Error message
+        message: String 
+    },
 
-    /// Agent-related errors
+    /// Agent error
     #[error("Agent error: {message}")]
-    Agent { message: String },
+    Agent { 
+        /// Error message
+        message: String 
+    },
 
-    /// Channel-related errors
+    /// Channel error
     #[error("Channel error: {message}")]
-    Channel { message: String },
+    Channel { 
+        /// Error message
+        message: String 
+    },
 
-    /// Message-related errors
+    /// Message error
     #[error("Message error: {message}")]
-    Message { message: String },
+    Message { 
+        /// Error message
+        message: String 
+    },
 
-    /// Escrow-related errors
+    /// Escrow error
     #[error("Escrow error: {message}")]
-    Escrow { message: String },
+    Escrow { 
+        /// Error message
+        message: String 
+    },
 
-    /// Marketplace-related errors
+    /// Marketplace error
     #[error("Marketplace error: {message}")]
-    Marketplace { message: String },
+    Marketplace { 
+        /// Error message
+        message: String 
+    },
 
-    /// Account not found
+    /// Account not found error
     #[error("Account not found: {account_type} at address {address}")]
-    AccountNotFound {
-        account_type: String,
+    AccountNotFound { 
+        /// Account type
+        account_type: String, 
+        /// Account address
         address: String,
     },
 
-    /// Invalid account data
+    /// Account validation error
     #[error("Invalid account data for {account_type}: {reason}")]
     InvalidAccountData {
+        /// Account type
         account_type: String,
+        /// Reason for validation failure
         reason: String,
     },
 
     /// Transaction simulation failed
     #[error("Transaction simulation failed: {}", logs.join(", "))]
-    TransactionSimulationFailed { logs: Vec<String> },
+    TransactionSimulationFailed { 
+        /// Simulation logs
+        logs: Vec<String> 
+    },
 
     /// Transaction timeout
     #[error("Transaction timeout after {seconds} seconds")]
-    TransactionTimeout { seconds: u64 },
+    TransactionTimeout { 
+        /// Timeout in seconds
+        seconds: u64 
+    },
 
     /// Insufficient balance
     #[error("Insufficient balance: required {required} lamports, available {available} lamports")]
-    InsufficientBalance { required: u64, available: u64 },
+    InsufficientBalance { 
+        /// Required amount
+        required: u64, 
+        /// Available amount
+        available: u64 
+    },
 
     /// Rate limit exceeded
     #[error("Rate limit exceeded: {operation}")]
-    RateLimitExceeded { operation: String },
+    RateLimitExceeded { 
+        /// Operation name
+        operation: String 
+    },
 
-    /// Invalid input parameters
+    /// Invalid input
     #[error("Invalid input: {field} - {reason}")]
-    InvalidInput { field: String, reason: String },
+    InvalidInput { 
+        /// Field name
+        field: String, 
+        /// Reason for invalid input
+        reason: String 
+    },
 
-    /// Network connectivity issues
+    /// Network error
     #[error("Network error: {message}")]
-    Network { message: String },
+    Network { 
+        /// Error message
+        message: String 
+    },
 
-    /// Cryptographic operation failed
+    /// Cryptography error
     #[error("Cryptographic operation failed: {operation}")]
-    Cryptography { operation: String },
+    Cryptography { 
+        /// Operation name
+        operation: String 
+    },
 
     /// Feature not supported
     #[error("Feature not supported: {feature}")]
-    FeatureNotSupported { feature: String },
+    FeatureNotSupported { 
+        /// Feature name
+        feature: String 
+    },
 
-    /// Internal SDK error
+    /// Internal error
     #[error("Internal SDK error: {message}")]
-    Internal { message: String },
+    Internal { 
+        /// Error message
+        message: String 
+    },
 
-    /// Custom error for extensibility
+    /// Custom error
     #[error("Custom error: {message}")]
-    Custom { message: String },
+    Custom { 
+        /// Error message
+        message: String 
+    },
 
-    // Enhanced transaction factory errors
+    /// Transaction failed
     #[error("Transaction failed: {reason}")]
     TransactionFailed { 
-        reason: String,
-        signature: Option<solana_sdk::signature::Signature>,
-        retryable: bool,
-        error_code: Option<u32>,
+        /// Reason for failure
+        reason: String, 
+        /// Optional transaction signature
+        signature: Option<solana_sdk::signature::Signature>, 
+        /// Whether the error is retryable
+        retryable: bool, 
+        /// Optional error code
+        error_code: Option<u32> 
     },
     
     #[error("Simulation failed: {error}")]
-    SimulationFailed { error: String },
+    SimulationFailed { 
+        /// Error message
+        error: String 
+    },
     
     #[error("Missing payer for transaction")]
     MissingPayer,
     
     #[error("Account size mismatch: expected {expected}, actual {actual}")]
-    AccountSizeMismatch { expected: usize, actual: usize },
+    AccountSizeMismatch { 
+        /// Expected size
+        expected: usize, 
+        /// Actual size
+        actual: usize 
+    },
     
     #[error("Invalid account discriminator: expected {expected:?}, found {found:?}")]
-    InvalidAccountDiscriminator { expected: [u8; 8], found: [u8; 8] },
+    InvalidAccountDiscriminator { 
+        /// Expected discriminator
+        expected: [u8; 8], 
+        /// Found discriminator
+        found: [u8; 8] 
+    },
     
     #[error("Timeout after {duration_ms}ms")]
-    Timeout { duration_ms: u64 },
+    Timeout { 
+        /// Timeout duration in ms
+        duration_ms: u64 
+    },
     
     #[error("SPL Token 2022 error: {message}")]
-    SplToken2022 { message: String },
+    SplToken2022 { 
+        /// Error message
+        message: String 
+    },
     
     #[error("Priority fee estimation failed: {reason}")]
-    PriorityFeeEstimationFailed { reason: String },
+    PriorityFeeEstimationFailed { 
+        /// Reason for failure
+        reason: String 
+    },
     
     #[error("Instruction building failed: {instruction_type} - {reason}")]
-    InstructionBuildingFailed { instruction_type: String, reason: String },
+    InstructionBuildingFailed { 
+        /// Instruction type
+        instruction_type: String, 
+        /// Reason for failure
+        reason: String 
+    },
 }
 
 impl PodAIError {

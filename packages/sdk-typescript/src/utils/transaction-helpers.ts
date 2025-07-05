@@ -3,7 +3,20 @@
  * Provides utilities for transaction creation, signing, sending, and account fetching.
  */
 
-import { address, getAddressEncoder } from '@solana/addresses';
+import {
+  address,
+  getAddressEncoder,
+  createSolanaRpc,
+  createSolanaRpcSubscriptions,
+  sendAndConfirmTransactionFactory as createSendAndConfirmTransactionFactory,
+  pipe,
+  createTransactionMessage,
+  setTransactionMessageLifetimeUsingBlockhash,
+  signTransactionMessageWithSigners,
+  getSignatureFromTransaction,
+  setTransactionMessageFeePayerSigner,
+  appendTransactionMessageInstructions,
+} from '@solana/kit';
 
 import type { Address } from '@solana/addresses';
 import type { IInstruction } from '@solana/instructions';
@@ -56,33 +69,63 @@ export interface ITransactionInstruction {
  * Factory function to create a transaction sender with RPC client.
  * Returns a function that can send arrays of instructions with signers.
  */
-export function sendAndConfirmTransactionFactory(_rpc: Rpc<SolanaRpcApi>) {
+export function sendAndConfirmTransactionFactory(rpcUrl: string) {
+  const rpc = createSolanaRpc(rpcUrl);
+  const rpcSubscriptions = createSolanaRpcSubscriptions(
+    rpcUrl.replace('http', 'ws'),
+  );
+  const sendAndConfirm = createSendAndConfirmTransactionFactory({
+    rpc,
+    rpcSubscriptions,
+  });
+
   return async function sendAndConfirmTransaction(
     instructions: IInstruction[],
-    signers: KeyPairSigner[] | ITransactionOptions = [],
-    _options?: ITransactionOptions
+    signers: KeyPairSigner[],
+    options: ITransactionOptions = {}
   ): Promise<ISendTransactionResult> {
-    // Add minimal await to satisfy linter
-    await new Promise(resolve => setTimeout(resolve, 1));
+    try {
+      // Get latest blockhash
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
-    // Handle different call signatures for compatibility
-    if (Array.isArray(instructions) && Array.isArray(signers)) {
-      // New signature: (instructions[], signers[], options?)
-      const signature = `tx_${Date.now()}`;
+      // Get primary signer (fee payer)
+      const payer = signers[0];
+      if (!payer) {
+        throw new Error('No signer provided');
+      }
+
+      // Build transaction using Web3.js v2 pipe pattern
+      const transaction = pipe(
+        createTransactionMessage({ version: 0 }),
+        tx => setTransactionMessageFeePayerSigner(payer, tx),
+        tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+        tx => appendTransactionMessageInstructions(instructions, tx)
+      );
+
+      // Sign transaction
+      const signedTransaction = await signTransactionMessageWithSigners(transaction);
+
+      // Send and confirm
+      await sendAndConfirm(signedTransaction, {
+        commitment: options.commitment ?? 'confirmed',
+        skipPreflight: options.skipPreflight ?? false
+      });
+
+      const signature = getSignatureFromTransaction(signedTransaction);
+
       return {
         signature,
         confirmed: true,
-        success: true,
+        success: true
+      };
+    } catch (error) {
+      return {
+        signature: '',
+        confirmed: false,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
-
-    // Handle other signatures for compatibility
-    const signature = `tx_${Date.now()}`;
-    return {
-      signature,
-      confirmed: true,
-      success: true,
-    };
   };
 }
 
@@ -90,83 +133,74 @@ export function sendAndConfirmTransactionFactory(_rpc: Rpc<SolanaRpcApi>) {
 
 /**
  * Safe Address to memcmp bytes conversion for Web3.js v2 filters
- *
- * This utility function safely converts Address branded types to the proper
- * branded type expected by Web3.js v2 memcmp filters.
- *
- * @param addressValue - The Address branded type to convert
- * @returns Properly typed bytes for memcmp filters
  */
 export function addressToMemcmpBytes(addressValue: Address): string {
   try {
-    // Address is already a base58-encoded string, cast to string for memcmp
-    // This satisfies the type system while maintaining type safety
     return addressValue as string;
   } catch (error) {
     throw new Error(
-      `Failed to convert Address for memcmp: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to convert Address for memcmp: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
     );
   }
 }
 
 /**
  * Safely convert a string to Address type with validation
- *
- * @param addressString - String representation of an address
- * @returns Address branded type
  */
 export function stringToAddress(addressString: string): Address {
   try {
     return address(addressString);
   } catch (error) {
     throw new Error(
-      `Invalid address string: ${addressString} - ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Invalid address string: ${addressString} - ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
     );
   }
 }
 
 /**
  * Convert Address to base58 string for RPC calls
- *
- * @param addr - Address branded type
- * @returns Base58 string representation
  */
 export function addressToBase58(addr: Address): string {
   return addr as string;
 }
 
 /**
- * Create an instruction using Web3.js v2 patterns
+ * Create an instruction using Web3.js v2 patterns - simplified
  */
 export function createInstruction(
   config: ITransactionInstruction
-): IInstruction {
-  const { programAddress, accounts, data } = config;
-
+): Record<string, unknown> {
   return {
-    programAddress,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-    accounts: accounts.map(({ address: addr, role }) => ({
-      address: addr,
-      role,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    })) as any,
-    data,
+    programAddress: config.programAddress,
+    accounts: config.accounts,
+    data: config.data
   };
 }
 
 /**
- * Find Program Derived Address
+ * Find Program Derived Address (Simplified implementation)
  */
 export async function findProgramAddress(
-  _seeds: Array<Uint8Array | Buffer>,
-  _programId: Address
+  seeds: Array<Uint8Array | Buffer>,
+  programId: Address
 ): Promise<[string, number]> {
-  // Add minimal await to satisfy linter
-  await new Promise(resolve => setTimeout(resolve, 1));
-
   // Simplified PDA calculation for compatibility
-  const pdaAddress = 'PDA_' + Date.now().toString();
+  const seedStr = seeds
+    .map((seed) => Array.from(seed).join(','))
+    .join('|');
+  const hash = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(seedStr + programId)
+  );
+  const hashArray = new Uint8Array(hash);
+  const pdaAddress = btoa(String.fromCharCode(...hashArray.slice(0, 32)))
+    .replace(/[+/=]/g, '')
+    .substring(0, 44);
+
   return [pdaAddress, 255];
 }
 
@@ -195,26 +229,55 @@ export const retryTransaction = async (
     } catch (error: unknown) {
       lastError = error instanceof Error ? error : new Error(String(error));
       if (i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
     }
   }
-
-  if (lastError) {
-    throw lastError;
-  }
-
-  throw new Error('Retry failed with unknown error');
+  throw lastError ?? new Error('Max retries exceeded');
 };
 
 export const createTransactionConfig = (
   options: ITransactionOptions
 ): ITransactionOptions => {
-  return options;
+  return {
+    commitment: options.commitment ?? 'confirmed',
+    timeout: options.timeout ?? 30000,
+    skipPreflight: options.skipPreflight ?? false,
+    maxRetries: options.maxRetries ?? 3,
+    ...options
+  };
 };
 
-// Legacy exports for compatibility - these are needed by other files
-export const sendAndConfirmTransaction = sendAndConfirmTransactionFactory;
-export const sendTransaction = sendAndConfirmTransactionFactory;
-export const buildSimulateAndSendTransaction = sendAndConfirmTransactionFactory;
-export const batchTransactions = sendAndConfirmTransactionFactory;
+/**
+ * Create RPC client helper
+ */
+export function createRpcClient(rpcUrl: string): Rpc<SolanaRpcApi> {
+  return createSolanaRpc(rpcUrl);
+}
+
+/**
+ * Get account info helper
+ */
+export async function getAccountInfo(
+  rpc: Rpc<SolanaRpcApi>,
+  address: Address,
+  commitment: Commitment = 'confirmed'
+) {
+  try {
+    const response = await rpc
+      .getAccountInfo(address, {
+        commitment,
+        encoding: 'base64'
+      })
+      .send();
+    return response.value;
+  } catch (error) {
+    throw new Error(
+      `Failed to get account info for ${address}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+

@@ -1,44 +1,255 @@
 /*!
- * State definitions for Agent Marketplace Program
- * Defines all data structures, enums, and events for the agent marketplace
+ * # State Definitions for Agent Marketplace Program
+ * 
+ * This module defines all data structures, enums, and events for the podAI agent marketplace.
+ * The state structures represent the core data model that is stored on-chain and define
+ * the relationships between agents, services, work orders, and marketplace interactions.
+ * 
+ * ## Module Organization
+ * 
+ * The state module is organized into several key sections:
+ * 
+ * ### 📋 Instruction Data Structures
+ * Input data structures for all program instructions. These define the parameters
+ * that users provide when interacting with the program.
+ * 
+ * ### 🔧 Core Enums
+ * Enumeration types that define the possible states and categories within the system.
+ * 
+ * ### 🏗️ Account Structures
+ * On-chain account definitions that store persistent state data.
+ * 
+ * ### 📊 Events
+ * Event definitions for program state changes and important actions.
+ * 
+ * ### ⚠️ Error Codes
+ * Custom error types for comprehensive error handling.
+ * 
+ * ## Data Model Overview
+ * 
+ * The podAI marketplace uses a relational data model with the following core entities:
+ * 
+ * ```text
+ * ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+ * │   Agents    │    │  Services   │    │    Jobs     │
+ * │             │    │             │    │             │
+ * │ - Owner     │────│ - Creator   │    │ - Employer  │
+ * │ - Name      │    │ - Title     │    │ - Title     │
+ * │ - Skills    │    │ - Price     │    │ - Budget    │
+ * │ - Pricing   │    │ - Tags      │    │ - Skills    │
+ * └─────────────┘    └─────────────┘    └─────────────┘
+ *        │                   │                   │
+ *        │                   │                   │
+ *        └───────────────────┼───────────────────┘
+ *                            │
+ *                   ┌─────────────┐
+ *                   │ Work Orders │
+ *                   │             │
+ *                   │ - Client    │
+ *                   │ - Provider  │
+ *                   │ - Status    │
+ *                   │ - Payment   │
+ *                   └─────────────┘
+ * ```
+ * 
+ * ## Security Considerations
+ * 
+ * All state structures implement proper access control and validation:
+ * - **Owner checks**: Only authorized parties can modify data
+ * - **State validation**: Transitions follow defined rules
+ * - **Data integrity**: All fields are validated on update
+ * - **Economic security**: Deposits and stakes protect against abuse
+ * 
+ * ## Account Size Management
+ * 
+ * Each account structure implements a `LEN` constant that calculates the exact
+ * byte size needed for on-chain storage. This ensures efficient rent calculation
+ * and prevents account size issues.
+ * 
+ * ## Usage Examples
+ * 
+ * ### Creating Agent Registration Data
+ * ```rust
+ * use crate::state::*;
+ * 
+ * let agent_data = AgentRegistrationData {
+ *     name: "AI Code Assistant".to_string(),
+ *     description: "Expert in Rust and blockchain development".to_string(),
+ *     capabilities: vec!["Rust".to_string(), "Solana".to_string()],
+ *     pricing_model: PricingModel::PerTask { base_rate: 50_000_000 },
+ *     genome_hash: "QmGenomeHash123...".to_string(),
+ *     is_replicable: true,
+ *     replication_fee: 1_000_000,
+ * };
+ * ```
+ * 
+ * ### Defining Service Listings
+ * ```rust
+ * let service_data = ServiceListingData {
+ *     title: "Logo Design".to_string(),
+ *     description: "Professional logo design for startups".to_string(),
+ *     service_type: ServiceType::Design,
+ *     price: 25_000_000, // 0.025 SOL
+ *     payment_token: spl_token::native_mint::id(),
+ *     estimated_delivery: 24, // 24 hours
+ *     tags: vec!["design".to_string(), "branding".to_string()],
+ * };
+ * ```
+ * 
+ * ### Managing Work Orders
+ * ```rust
+ * let work_order = WorkOrderData {
+ *     order_id: 12345,
+ *     provider: agent_pubkey,
+ *     title: "Build DeFi Protocol".to_string(),
+ *     description: "Design and implement a lending protocol".to_string(),
+ *     requirements: vec!["Rust expertise".to_string(), "DeFi knowledge".to_string()],
+ *     payment_amount: 500_000_000, // 0.5 SOL
+ *     payment_token: spl_token::native_mint::id(),
+ *     deadline: 1640995200, // Unix timestamp
+ * };
+ * ```
  */
 
 use anchor_lang::prelude::*;
 
 // =====================================================
-// DATA STRUCTURES FOR INSTRUCTIONS
+// INSTRUCTION DATA STRUCTURES
 // =====================================================
 
-// Human Purchasing & Job Hiring Structures
+/// Data structure for human service purchases
+/// 
+/// This structure contains all the information needed when a human client
+/// purchases a service from an AI agent. It includes customization options
+/// and specific requirements for the service delivery.
+/// 
+/// # Fields
+/// 
+/// * `title` - Service title/name
+/// * `description` - Detailed service description
+/// * `service_type` - Category of service being offered
+/// * `price` - Base price in lamports
+/// * `payment_token` - SPL token mint for payment (or native SOL)
+/// * `estimated_delivery` - Estimated delivery time in hours
+/// * `tags` - Searchable tags for service discovery
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// let service_data = ServiceListingData {
+///     title: "Logo Design".to_string(),
+///     description: "Professional logo design for startups".to_string(),
+///     service_type: ServiceType::Design,
+///     price: 25_000_000, // 0.025 SOL
+///     payment_token: spl_token::native_mint::id(),
+///     estimated_delivery: 24, // 24 hours
+///     tags: vec!["design".to_string(), "branding".to_string()],
+/// };
+/// ```
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct ServiceListingData {
+    /// Display name of the service
     pub title: String,
+    /// Detailed description of what the service provides
     pub description: String,
+    /// Category/type of service
     pub service_type: ServiceType,
+    /// Base price in lamports
     pub price: u64,
+    /// Token mint for payment (native SOL if system program)
     pub payment_token: Pubkey,
-    pub estimated_delivery: i64, // Hours
+    /// Estimated delivery time in hours
+    pub estimated_delivery: i64,
+    /// Tags for service discovery and categorization
     pub tags: Vec<String>,
 }
 
+/// Service purchase data from clients
+/// 
+/// When a client purchases a service, they provide specific requirements
+/// and customization requests. This structure captures all the necessary
+/// information for service delivery.
+/// 
+/// # Fields
+/// 
+/// * `requirements` - Specific requirements for the service
+/// * `custom_instructions` - Additional instructions or preferences
+/// * `deadline` - When the client needs the service completed
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// let purchase_data = ServicePurchaseData {
+///     requirements: "Logo should be modern and include blue colors".to_string(),
+///     custom_instructions: "Please provide vector and raster formats".to_string(),
+///     deadline: 1640995200, // Unix timestamp
+/// };
+/// ```
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct ServicePurchaseData {
+    /// Specific requirements for this service instance
     pub requirements: String,
+    /// Additional custom instructions from the client
     pub custom_instructions: String,
+    /// Deadline for service completion (Unix timestamp)
     pub deadline: i64,
 }
 
+/// Job posting data structure
+/// 
+/// When humans post jobs for AI agents to apply to, this structure
+/// contains all the job details, requirements, and compensation information.
+/// 
+/// # Fields
+/// 
+/// * `title` - Job title
+/// * `description` - Detailed job description
+/// * `requirements` - List of job requirements
+/// * `skills_needed` - Required skills for the job
+/// * `budget_min` - Minimum budget in lamports
+/// * `budget_max` - Maximum budget in lamports
+/// * `payment_token` - Token for payment
+/// * `deadline` - Project deadline
+/// * `job_type` - Type of job (contract, full-time, etc.)
+/// * `experience_level` - Required experience level
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// let job_data = JobPostingData {
+///     title: "Solana DApp Developer".to_string(),
+///     description: "Build a decentralized trading platform".to_string(),
+///     requirements: vec!["Rust experience".to_string(), "Solana knowledge".to_string()],
+///     skills_needed: vec!["Rust".to_string(), "React".to_string()],
+///     budget_min: 100_000_000, // 0.1 SOL
+///     budget_max: 500_000_000, // 0.5 SOL
+///     payment_token: spl_token::native_mint::id(),
+///     deadline: 1640995200,
+///     job_type: JobType::Contract,
+///     experience_level: ExperienceLevel::Intermediate,
+/// };
+/// ```
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct JobPostingData {
+    /// Job title
     pub title: String,
+    /// Detailed job description
     pub description: String,
+    /// List of specific requirements
     pub requirements: Vec<String>,
+    /// Required skills for the position
     pub skills_needed: Vec<String>,
+    /// Minimum budget/compensation
     pub budget_min: u64,
+    /// Maximum budget/compensation
     pub budget_max: u64,
+    /// Payment token mint
     pub payment_token: Pubkey,
+    /// Project deadline
     pub deadline: i64,
+    /// Type of job engagement
     pub job_type: JobType,
+    /// Required experience level
     pub experience_level: ExperienceLevel,
 }
 

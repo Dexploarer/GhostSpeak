@@ -17,14 +17,12 @@
     "build": "bun run build:sequential",
     "build:sequential": "bun run build:typescript && bun run build:rust",
     "build:rust": "cd packages/core && cargo build --release",
-    "build:typescript": "bun run build:cli && bun run build:sdk-ts",
-    "build:cli": "cd packages/cli && bun run build",
+    "build:typescript": "bun run build:sdk-ts",
     "build:sdk-ts": "cd packages/sdk-typescript && bun run build",
     "build:wasm": "cd packages/core && wasm-pack build --target bundler --out-dir ../wasm",
     "build:production": "bun run clean && bun run build && bun run test:critical",
     "build:optimized": "RUSTFLAGS='-C target-cpu=native' bun run build:rust && bun run build:typescript",
     "dev": "bun run dev:sdk-ts",
-    "dev:cli": "cd packages/cli && bun run dev",
     "dev:sdk-ts": "cd packages/sdk-typescript && bun run dev",
     "dev:docs": "bun run docs:serve",
     "dev:watch": "bun run build:typescript && bun run test:watch",
@@ -36,8 +34,7 @@
     "test:v2-coverage": "bun run test:v2 --coverage",
     "test:no-v1": "bun run test:v2-only",
     "test:rust": "cd packages/core && cargo test --release",
-    "test:typescript": "bun run test:cli && bun run test:sdk-ts",
-    "test:cli": "cd packages/cli && bun test",
+    "test:typescript": "bun run test:sdk-ts",
     "test:sdk-ts": "cd packages/sdk-typescript && bun test",
     "test:integration": "bun test tests/",
     "test:e2e": "bun test tests/e2e/ --timeout 60000",
@@ -109,8 +106,7 @@
     "generate:code": "echo 'Code generation completed'",
     "setup:windows": "echo 'Windows setup completed'",
     "publish": "bun run publish:all",
-    "publish:all": "bun run publish:cli && bun run publish:sdk-ts",
-    "publish:cli": "cd packages/cli && npm publish || echo 'CLI publish skipped'",
+    "publish:all": "bun run publish:sdk-ts",
     "publish:sdk-ts": "cd packages/sdk-typescript && npm publish || echo 'SDK publish skipped'",
     "pre-commit": "bun run lint && bun run test:critical"
   },
@@ -201,10 +197,6 @@
     {
       "path": "packages/sdk-typescript/dist/index.js",
       "limit": "50 KB"
-    },
-    {
-      "path": "packages/cli/dist/index.js",
-      "limit": "100 KB"
     }
   ],
   "keywords": [

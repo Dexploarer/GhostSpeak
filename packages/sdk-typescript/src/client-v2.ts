@@ -70,11 +70,11 @@ export class PodAIClient {
   public get agents(): AgentService {
     if (!this._agentService) {
       this._agentService = new AgentService(
-        this.rpc,
+      this.rpc,
         this.rpcSubscriptions,
-        this.programId,
-        this.commitment
-      );
+      this.programId,
+      this.commitment
+    );
     }
     return this._agentService;
   }
@@ -85,11 +85,11 @@ export class PodAIClient {
   public get channels(): ChannelService {
     if (!this._channelService) {
       this._channelService = new ChannelService(
-        this.rpc,
+      this.rpc,
         this.rpcSubscriptions,
-        this.programId,
-        this.commitment
-      );
+      this.programId,
+      this.commitment
+    );
     }
     return this._channelService;
   }

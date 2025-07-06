@@ -212,4 +212,4 @@ export class MarketplaceService {
       throw new Error(`Failed to get sales history: ${String(error)}`);
     }
   }
-}
+} 

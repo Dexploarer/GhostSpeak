@@ -6,16 +6,7 @@
  */
 
 import {
-  combineCodec,
-  getStructDecoder,
-  getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
-  transformEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
   type IAccountMeta,
   type IInstruction,
   type IInstructionWithAccounts,
@@ -24,7 +15,21 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { getArrayDecoder, getArrayEncoder, getStringDecoder, getStringEncoder } from '@solana/codecs';
+import { 
+  combineCodec,
+  getArrayDecoder, 
+  getArrayEncoder, 
+  getStructDecoder,
+  getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
+  getUtf8Decoder, 
+  getUtf8Encoder,
+  transformEncoder,
+  type Codec,
+  type Decoder,
+  type Encoder,
+} from '@solana/codecs';
 
 export const CREATE_SERVICE_LISTING_DISCRIMINATOR = new Uint8Array([
   123, 200, 88, 156, 92, 201, 77, 45,
@@ -121,14 +126,14 @@ export function getCreateServiceListingInstructionDataCodec(): Codec<
 
 export function getServiceListingDataEncoder(): Encoder<ServiceListingDataArgs> {
   return getStructEncoder([
-    ['title', getStringEncoder()],
-    ['description', getStringEncoder()],
+    ['title', getUtf8Encoder()],
+    ['description', getUtf8Encoder()],
     ['price', getU64Encoder()],
-    ['tokenMint', getStringEncoder()],
-    ['serviceType', getStringEncoder()],
-    ['paymentToken', getStringEncoder()],
+    ['tokenMint', getUtf8Encoder()],
+    ['serviceType', getUtf8Encoder()],
+    ['paymentToken', getUtf8Encoder()],
     ['estimatedDelivery', getU64Encoder()],
-    ['tags', getArrayEncoder(getStringEncoder())],
+    ['tags', getArrayEncoder(getUtf8Encoder())],
   ]);
 }
 

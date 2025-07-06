@@ -34,13 +34,10 @@ import {
   type ReadonlyUint8Array,
 } from '@solana/codecs';
 import {
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
 } from '@solana/instructions';
 import {
   type IAccountSignerMeta,
@@ -53,6 +50,11 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
+
+// Define missing types for compatibility
+type ReadonlyAccount<T> = T;
+type WritableAccount<T> = T;
+type WritableSignerAccount<T> = T;
 
 export const SEND_MESSAGE_DISCRIMINATOR = new Uint8Array([
   15, 40, 235, 178, 191, 96, 190, 12,
@@ -95,7 +97,7 @@ export type SendMessageInstruction<
   >;
 
 export type SendMessageInstructionData = {
-  discriminator: ReadonlyUint8Array;
+  discriminator: Uint8Array;
   messageId: string;
   payload: string;
   messageType: number;

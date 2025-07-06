@@ -5,6 +5,19 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import type { Address } from '@solana/addresses';
+import type {
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
+
+// Define missing types for compatibility
+type ReadonlyAccount<T> = T;
+type WritableAccount<T> = T;
+type WritableSignerAccount<T> = T;
+
 import {
   combineCodec,
   getStructDecoder,
@@ -12,19 +25,16 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
-  type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/web3.js';
-import { getArrayDecoder, getArrayEncoder, getUtf8Decoder, getUtf8Encoder } from '@solana/codecs';
+} from '@solana/codecs';
+import {
+  getArrayDecoder,
+  getArrayEncoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
+} from '@solana/codecs';
 
 export const CREATE_JOB_POSTING_DISCRIMINATOR = new Uint8Array([
   77, 92, 201, 88, 156, 45, 123, 200,
@@ -39,7 +49,7 @@ export type CreateJobPostingInstruction<
   TAccountJobPosting extends string | IAccountMeta<string> = string,
   TAccountEmployer extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends string | IAccountMeta<string> = string,
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
+  TRemainingAccounts extends ReadonlyArray<IAccountMeta<string>> = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
@@ -57,12 +67,12 @@ export type CreateJobPostingInstruction<
     ]
   >;
 
-export type CreateJobPostingInstructionData = {
-  discriminator: ReadonlyUint8Array;
+export interface CreateJobPostingInstructionData {
+  discriminator: Uint8Array;
   jobData: JobPostingData;
-};
+}
 
-export type JobPostingData = {
+export interface JobPostingData {
   title: string;
   description: string;
   requirements: string[];
@@ -74,13 +84,13 @@ export type JobPostingData = {
   paymentToken: Address;
   jobType: string;
   experienceLevel: string;
-};
+}
 
-export type CreateJobPostingInstructionDataArgs = {
+export interface CreateJobPostingInstructionDataArgs {
   jobData: JobPostingDataArgs;
-};
+}
 
-export type JobPostingDataArgs = {
+export interface JobPostingDataArgs {
   title: string;
   description: string;
   requirements: string[];
@@ -92,7 +102,7 @@ export type JobPostingDataArgs = {
   paymentToken: Address;
   jobType: string;
   experienceLevel: string;
-};
+}
 
 export function getCreateJobPostingInstructionDataEncoder(): Encoder<CreateJobPostingInstructionDataArgs> {
   return transformEncoder(
@@ -100,7 +110,10 @@ export function getCreateJobPostingInstructionDataEncoder(): Encoder<CreateJobPo
       ['discriminator', getCreateJobPostingDiscriminatorBytes()],
       ['jobData', getJobPostingDataEncoder()],
     ]),
-    (value) => ({ ...value, discriminator: getCreateJobPostingDiscriminatorBytes() })
+    value => ({
+      ...value,
+      discriminator: getCreateJobPostingDiscriminatorBytes(),
+    })
   );
 }
 
@@ -153,27 +166,34 @@ export function getJobPostingDataDecoder(): Decoder<JobPostingData> {
   ]);
 }
 
-export function getJobPostingDataCodec(): Codec<JobPostingDataArgs, JobPostingData> {
+export function getJobPostingDataCodec(): Codec<
+  JobPostingDataArgs,
+  JobPostingData
+> {
   return combineCodec(getJobPostingDataEncoder(), getJobPostingDataDecoder());
 }
 
-export type CreateJobPostingInput<
+export interface CreateJobPostingInput<
   TAccountJobPosting extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   jobPosting: Address<TAccountJobPosting>;
   employer: Address<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
   jobData: JobPostingDataArgs;
-};
+}
 
 export function getCreateJobPostingInstruction<
   TAccountJobPosting extends string,
   TAccountEmployer extends string,
   TAccountSystemProgram extends string,
 >(
-  input: CreateJobPostingInput<TAccountJobPosting, TAccountEmployer, TAccountSystemProgram>
+  input: CreateJobPostingInput<
+    TAccountJobPosting,
+    TAccountEmployer,
+    TAccountSystemProgram
+  >
 ): CreateJobPostingInstruction<
   'PodAI111111111111111111111111111111111111111',
   TAccountJobPosting,
@@ -181,7 +201,8 @@ export function getCreateJobPostingInstruction<
   TAccountSystemProgram
 > {
   // Program ID
-  const programId = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
+  const programId =
+    'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
 
   // Accounts
   const accounts: CreateJobPostingInstruction<
@@ -200,7 +221,9 @@ export function getCreateJobPostingInstruction<
       signer: true,
     },
     {
-      address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<TAccountSystemProgram>),
+      address:
+        input.systemProgram ??
+        ('11111111111111111111111111111111' as Address<TAccountSystemProgram>),
       role: 'readonly',
     },
   ];
@@ -222,12 +245,32 @@ export async function getCreateJobPostingInstructionAsync<
   TAccountEmployer extends string,
   TAccountSystemProgram extends string,
 >(
-  input: CreateJobPostingInput<TAccountJobPosting, TAccountEmployer, TAccountSystemProgram>
-): Promise<CreateJobPostingInstruction<
-  'PodAI111111111111111111111111111111111111111',
-  TAccountJobPosting,
-  TAccountEmployer,
-  TAccountSystemProgram
->> {
+  input: CreateJobPostingInput<
+    TAccountJobPosting,
+    TAccountEmployer,
+    TAccountSystemProgram
+  >
+): Promise<
+  CreateJobPostingInstruction<
+    'PodAI111111111111111111111111111111111111111',
+    TAccountJobPosting,
+    TAccountEmployer,
+    TAccountSystemProgram
+  >
+> {
   return getCreateJobPostingInstruction(input);
-} 
+}
+
+export function getCreateJobPostingInstructionData(
+  instruction: CreateJobPostingInstruction<any, any, any, any>
+): CreateJobPostingInstructionData {
+  return {
+    programAddress: instruction.programAddress,
+    accounts: {
+      jobPosting: getNextAccount(),
+      client: getNextAccount(),
+      systemProgram: getNextAccount(),
+    },
+    data: getCreateJobPostingInstructionDataDecoder().decode(instruction.data),
+  };
+}

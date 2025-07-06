@@ -5,16 +5,14 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import {
-  type Address,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/web3.js';
+import type { Address } from '@solana/addresses';
+import type {
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
+import { AccountRole } from '@solana/instructions';
 import {
   combineCodec,
   getArrayDecoder,
@@ -27,10 +25,13 @@ import {
   getU64Encoder,
   getUtf8Decoder,
   getUtf8Encoder,
+  getBytesEncoder,
+  getBytesDecoder,
   transformEncoder,
+  transformDecoder,
   type Codec,
   type Decoder,
-  type Encoder,
+  type Encoder
 } from '@solana/codecs';
 
 export const PURCHASE_SERVICE_DISCRIMINATOR = new Uint8Array([
@@ -53,23 +54,23 @@ export type PurchaseServiceInstruction<
   IInstructionWithAccounts<
     [
       TAccountServicePurchase extends string
-        ? WritableAccount<TAccountServicePurchase>
+        ? IAccountMeta<string>
         : TAccountServicePurchase,
       TAccountServiceListing extends string
-        ? WritableAccount<TAccountServiceListing>
+        ? IAccountMeta<string>
         : TAccountServiceListing,
       TAccountBuyer extends string
-        ? WritableSignerAccount<TAccountBuyer>
+        ? IAccountMeta<string>
         : TAccountBuyer,
       TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
+        ? IAccountMeta<string>
         : TAccountSystemProgram,
       ...TRemainingAccounts,
     ]
   >;
 
 export type PurchaseServiceInstructionData = {
-  discriminator: ReadonlyUint8Array;
+  discriminator: Uint8Array;
   purchaseData: ServicePurchaseData;
 };
 
@@ -96,7 +97,7 @@ export type ServicePurchaseDataArgs = {
 export function getPurchaseServiceInstructionDataEncoder(): Encoder<PurchaseServiceInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', getPurchaseServiceDiscriminatorBytes()],
+      ['discriminator', getBytesEncoder()],
       ['purchaseData', getServicePurchaseDataEncoder()],
     ]),
     (value) => ({ ...value, discriminator: getPurchaseServiceDiscriminatorBytes() })
@@ -104,10 +105,16 @@ export function getPurchaseServiceInstructionDataEncoder(): Encoder<PurchaseServ
 }
 
 export function getPurchaseServiceInstructionDataDecoder(): Decoder<PurchaseServiceInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getPurchaseServiceDiscriminatorBytes()],
-    ['purchaseData', getServicePurchaseDataDecoder()],
-  ]);
+  return transformDecoder(
+    getStructDecoder([
+      ['discriminator', getBytesDecoder()],
+      ['purchaseData', getServicePurchaseDataDecoder()],
+    ]),
+    (value) => ({
+      ...value,
+      discriminator: value.discriminator instanceof Uint8Array ? value.discriminator : new Uint8Array(value.discriminator),
+    })
+  );
 }
 
 export function getPurchaseServiceInstructionDataCodec(): Codec<
@@ -171,52 +178,41 @@ export function getPurchaseServiceInstruction<
   TAccountBuyer,
   TAccountSystemProgram
 > {
-  // Program ID
-  const programId = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
-
-  // Accounts
-  const accounts: PurchaseServiceInstruction<
+  const programAddress = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
+  const accounts = [
+    { address: input.servicePurchase, role: AccountRole.WRITABLE },
+    { address: input.serviceListing, role: AccountRole.WRITABLE },
+    { address: input.buyer, role: AccountRole.WRITABLE_SIGNER },
+    { address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<string>), role: AccountRole.READONLY },
+  ] as unknown as [
+    TAccountServicePurchase extends string ? IAccountMeta<string> : TAccountServicePurchase,
+    TAccountServiceListing extends string ? IAccountMeta<string> : TAccountServiceListing,
+    TAccountBuyer extends string ? IAccountMeta<string> : TAccountBuyer,
+    TAccountSystemProgram extends string ? IAccountMeta<string> : TAccountSystemProgram
+  ];
+  const args = { purchaseData: input.purchaseData };
+  let data = getPurchaseServiceInstructionDataEncoder().encode(args);
+  if (!(data instanceof Uint8Array)) {
+    data = new Uint8Array(data);
+  }
+  return {
+    programAddress,
+    accounts,
+    data: data as Uint8Array & ArrayBufferLike,
+  } as PurchaseServiceInstruction<
     'PodAI111111111111111111111111111111111111111',
     TAccountServicePurchase,
     TAccountServiceListing,
     TAccountBuyer,
     TAccountSystemProgram
-  >['accounts'] = [
-    {
-      address: input.servicePurchase,
-      role: 'writable',
-    },
-    {
-      address: input.serviceListing,
-      role: 'writable',
-    },
-    {
-      address: input.buyer,
-      role: 'writable',
-      signer: true,
-    },
-    {
-      address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<TAccountSystemProgram>),
-      role: 'readonly',
-    },
-  ];
-
-  // Instruction data
-  const args = { purchaseData: input.purchaseData };
-  const data = getPurchaseServiceInstructionDataEncoder().encode(args);
-
-  return {
-    programId,
-    accounts,
-    data,
-  };
+  >;
 }
 
 export type ParsedPurchaseServiceInstruction<
   TProgram extends string = 'PodAI111111111111111111111111111111111111111',
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
-  programId: Address<TProgram>;
+  programAddress: Address<TProgram>;
   accounts: {
     servicePurchase: TAccountMetas[0];
     serviceListing: TAccountMetas[1];
@@ -233,7 +229,7 @@ export function parsePurchaseServiceInstruction<
   instruction: IInstruction<TProgram> & IInstructionWithAccounts<TAccountMetas> & IInstructionWithData<Uint8Array>
 ): ParsedPurchaseServiceInstruction<TProgram, TAccountMetas> {
   return {
-    programId: instruction.programId,
+    programAddress: instruction.programAddress,
     accounts: {
       servicePurchase: instruction.accounts[0]!,
       serviceListing: instruction.accounts[1]!,

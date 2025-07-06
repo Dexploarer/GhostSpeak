@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/cjs",
+    "module": "CommonJS",
+    "declaration": true,
+    "declarationDir": "./dist/cjs",
+    "emitDeclarationOnly": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "tests", "dist"]
+} 

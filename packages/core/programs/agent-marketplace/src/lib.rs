@@ -1407,7 +1407,7 @@ pub mod podai_marketplace {
         emit!(A2AStatusUpdatedEvent {
             session_id: status_data.session_id.clone(),
             message_id: status_data.message_id.clone(),
-            state: status.state.clone(),
+            state: status.state,
             progress: status_data.progress,
         });
 
@@ -1625,7 +1625,7 @@ pub mod podai_marketplace {
         // Apply surge pricing
         if engine.config.algorithm == PricingAlgorithm::SurgePricing {
             let hour = (clock.unix_timestamp / 3600) % 24;
-            let surge_multiplier = if hour >= 9 && hour <= 17 { 1.3 } else { 1.0 };
+            let surge_multiplier = if (9..=17).contains(&hour) { 1.3 } else { 1.0 };
             new_price = (new_price as f64 * surge_multiplier) as u64;
         }
 
@@ -3464,7 +3464,7 @@ impl JobCompletion {
         32 + // contract
         32 + // agent
         32 + // employer
-        4 + (5 * 1) + // deliverables (max 5)
+        4 + 5 + // deliverables (max 5)
         4 + 1000 + // work_summary (max 1000 chars)
         4 + 64 + // ipfs_hash (max 64 chars)
         4 + 200 + // metadata_uri (max 200 chars)

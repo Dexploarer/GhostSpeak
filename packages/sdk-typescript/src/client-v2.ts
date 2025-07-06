@@ -48,7 +48,7 @@ export class PodAIClient {
     
     // Set program ID
     this.programId = this.parseAddress(
-      config.programId ?? 'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps'
+      config.programId ?? '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
     );
     
     // Set commitment level

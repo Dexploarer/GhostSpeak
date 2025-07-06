@@ -15,8 +15,6 @@ import {
   addDecoderSizePrefix,
   addEncoderSizePrefix,
   combineCodec,
-  fixDecoderSize,
-  fixEncoderSize,
   getBytesDecoder,
   getBytesEncoder,
   getStructDecoder,
@@ -28,20 +26,18 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  transformDecoder,
   type Codec,
   type Decoder,
   type Encoder,
-  type ReadonlyUint8Array,
 } from '@solana/codecs';
-import {
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
+import type {
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
 } from '@solana/instructions';
+import { AccountRole } from '@solana/instructions';
 import {
   type IAccountSignerMeta,
   type TransactionSigner,
@@ -49,8 +45,6 @@ import {
 import { POD_COM_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
-  getAccountMetaFactory,
-  type ResolvedAccount,
 } from '../shared';
 
 export const REGISTER_AGENT_DISCRIMINATOR = new Uint8Array([
@@ -58,9 +52,7 @@ export const REGISTER_AGENT_DISCRIMINATOR = new Uint8Array([
 ]);
 
 export function getRegisterAgentDiscriminatorBytes() {
-  return fixEncoderSize(getBytesEncoder(), 8).encode(
-    REGISTER_AGENT_DISCRIMINATOR
-  );
+  return REGISTER_AGENT_DISCRIMINATOR;
 }
 
 export type RegisterAgentInstruction<
@@ -76,21 +68,20 @@ export type RegisterAgentInstruction<
   IInstructionWithAccounts<
     [
       TAccountAgentAccount extends string
-        ? WritableAccount<TAccountAgentAccount>
+        ? IAccountMeta<string>
         : TAccountAgentAccount,
       TAccountSigner extends string
-        ? WritableSignerAccount<TAccountSigner> &
-            IAccountSignerMeta<TAccountSigner>
+        ? IAccountMeta<string> & IAccountSignerMeta<TAccountSigner>
         : TAccountSigner,
       TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
+        ? IAccountMeta<string>
         : TAccountSystemProgram,
       ...TRemainingAccounts,
     ]
   >;
 
 export type RegisterAgentInstructionData = {
-  discriminator: ReadonlyUint8Array;
+  discriminator: Uint8Array;
   capabilities: bigint;
   metadataUri: string;
 };
@@ -103,7 +94,7 @@ export type RegisterAgentInstructionDataArgs = {
 export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
+      ['discriminator', getBytesEncoder()],
       ['capabilities', getU64Encoder()],
       ['metadataUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ]),
@@ -112,11 +103,17 @@ export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentI
 }
 
 export function getRegisterAgentInstructionDataDecoder(): Decoder<RegisterAgentInstructionData> {
-  return getStructDecoder([
-    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['capabilities', getU64Decoder()],
-    ['metadataUri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-  ]);
+  return transformDecoder(
+    getStructDecoder([
+      ['discriminator', getBytesDecoder()],
+      ['capabilities', getU64Decoder()],
+      ['metadataUri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ]),
+    (value) => ({
+      ...value,
+      discriminator: value.discriminator instanceof Uint8Array ? value.discriminator : new Uint8Array(value.discriminator),
+    })
+  );
 }
 
 export function getRegisterAgentInstructionDataCodec(): Codec<
@@ -161,57 +158,41 @@ export async function getRegisterAgentInstructionAsync<
     TAccountSystemProgram
   >
 > {
-  // Program address.
   const programAddress = config?.programAddress ?? POD_COM_PROGRAM_ADDRESS;
-
-  // Original accounts.
-  const originalAccounts = {
-    agentAccount: { value: input.agentAccount ?? null, isWritable: true },
-    signer: { value: input.signer ?? null, isWritable: true },
-    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-  };
-  const accounts = originalAccounts as Record<
-    keyof typeof originalAccounts,
-    ResolvedAccount
-  >;
-
-  // Original args.
-  const args = { ...input };
-
-  // Resolve default values.
-  if (!accounts.agentAccount.value) {
-    accounts.agentAccount.value = await getProgramDerivedAddress({
+  let agentAccount: Address<string>;
+  if (input.agentAccount) {
+    agentAccount = input.agentAccount as Address<string>;
+  } else {
+    const derived = await getProgramDerivedAddress({
       programAddress,
       seeds: [
         getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])),
-        getAddressEncoder().encode(expectAddress(accounts.signer.value)),
+        getAddressEncoder().encode(expectAddress(input.signer.address)),
       ],
     });
+    agentAccount = Array.isArray(derived) ? (derived[0] as unknown as Address<string>) : (derived as Address<string>);
   }
-  if (!accounts.systemProgram.value) {
-    accounts.systemProgram.value =
-      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
-  }
-
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
-  const instruction = {
-    accounts: [
-      getAccountMeta(accounts.agentAccount),
-      getAccountMeta(accounts.signer),
-      getAccountMeta(accounts.systemProgram),
-    ],
+  const systemProgram = input.systemProgram ?? ('11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>);
+  const accounts: [
+    IAccountMeta<string>,
+    IAccountSignerMeta<TAccountSigner, TransactionSigner<TAccountSigner>>,
+    IAccountMeta<string>
+  ] = [
+    { address: agentAccount, role: AccountRole.WRITABLE },
+    { address: input.signer.address, role: AccountRole.WRITABLE_SIGNER, signer: input.signer } as IAccountSignerMeta<TAccountSigner, TransactionSigner<TAccountSigner>>,
+    { address: systemProgram, role: AccountRole.READONLY },
+  ];
+  const data = getRegisterAgentInstructionDataEncoder().encode(input as RegisterAgentInstructionDataArgs);
+  return ({
     programAddress,
-    data: getRegisterAgentInstructionDataEncoder().encode(
-      args as RegisterAgentInstructionDataArgs
-    ),
-  } as RegisterAgentInstruction<
+    accounts,
+    data: data as Uint8Array & ArrayBufferLike,
+  } as unknown) as RegisterAgentInstruction<
     TProgramAddress,
     TAccountAgentAccount,
     TAccountSigner,
     TAccountSystemProgram
   >;
-
-  return instruction;
 }
 
 export type RegisterAgentInput<
@@ -244,48 +225,28 @@ export function getRegisterAgentInstruction<
   TAccountSigner,
   TAccountSystemProgram
 > {
-  // Program address.
   const programAddress = config?.programAddress ?? POD_COM_PROGRAM_ADDRESS;
-
-  // Original accounts.
-  const originalAccounts = {
-    agentAccount: { value: input.agentAccount ?? null, isWritable: true },
-    signer: { value: input.signer ?? null, isWritable: true },
-    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-  };
-  const accounts = originalAccounts as Record<
-    keyof typeof originalAccounts,
-    ResolvedAccount
-  >;
-
-  // Original args.
-  const args = { ...input };
-
-  // Resolve default values.
-  if (!accounts.systemProgram.value) {
-    accounts.systemProgram.value =
-      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
-  }
-
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
-  const instruction = {
-    accounts: [
-      getAccountMeta(accounts.agentAccount),
-      getAccountMeta(accounts.signer),
-      getAccountMeta(accounts.systemProgram),
-    ],
+  const systemProgram = input.systemProgram ?? ('11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>);
+  const accounts: [
+    IAccountMeta<string>,
+    IAccountSignerMeta<TAccountSigner, TransactionSigner<TAccountSigner>>,
+    IAccountMeta<string>
+  ] = [
+    { address: input.agentAccount, role: AccountRole.WRITABLE },
+    { address: input.signer.address, role: AccountRole.WRITABLE_SIGNER, signer: input.signer } as IAccountSignerMeta<TAccountSigner, TransactionSigner<TAccountSigner>>,
+    { address: systemProgram, role: AccountRole.READONLY },
+  ];
+  const data = getRegisterAgentInstructionDataEncoder().encode(input as RegisterAgentInstructionDataArgs);
+  return ({
     programAddress,
-    data: getRegisterAgentInstructionDataEncoder().encode(
-      args as RegisterAgentInstructionDataArgs
-    ),
-  } as RegisterAgentInstruction<
+    accounts,
+    data: data as Uint8Array & ArrayBufferLike,
+  } as unknown) as RegisterAgentInstruction<
     TProgramAddress,
     TAccountAgentAccount,
     TAccountSigner,
     TAccountSystemProgram
   >;
-
-  return instruction;
 }
 
 export type ParsedRegisterAgentInstruction<

@@ -3,8 +3,8 @@
   "version": "2.0.4",
   "author": "PodAI Team",
   "type": "module",
-  "main": "./dist/index.esm.js",
-  "module": "./dist/index.esm.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
   "dependencies": {
     "@codama/nodes-from-anchor": "1.2.1",
     "@codama/renderers-js": "1.2.14",
@@ -32,9 +32,9 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     },
     "./src": {
       "import": "./src/index.ts",
@@ -77,8 +77,10 @@
   ],
   "license": "MIT",
   "scripts": {
-    "build": "bun build src/index.ts --outdir=dist --target=node --format=esm --outfile=index.esm.js && bun build src/index.ts --outdir=dist --target=node --format=cjs --outfile=index.js && bun run build:types",
-    "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist || echo 'Type generation skipped'",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "npm run build:esm && npm run build:cjs",
+    "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/esm || echo 'Type generation skipped'",
     "codama": "node scripts/codama-generate.mjs || echo 'Codama generation skipped'",
     "generate": "bun run codama",
     "dev": "bun --watch src/index.ts",
@@ -86,5 +88,5 @@
     "lint": "eslint src/**/*.ts || echo 'Linting skipped'",
     "type-check": "tsc --noEmit || echo 'Type checking skipped'"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/esm/index.d.ts"
 }

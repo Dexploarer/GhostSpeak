@@ -1,1 +1,21 @@
 # Workspace disabled for Anchor compatibility - moved dependencies to individual Cargo.toml files 
+
+[workspace]
+members = [
+    "programs/podai"
+]
+resolver = "2" 
+
+[workspace.dependencies]
+anchor-lang = "0.31.1"
+spl-account-compression = "1.0.0"
+spl-concurrent-merkle-tree = "1.0.0"
+thiserror = "2.0.12"
+anyhow = "1.0.98"
+blake3 = "1.8.2"
+serde = { version = "1.0.219", features = ["derive"] }
+solana-sdk = "2.3.1"
+solana-program-test = "2.3.3"
+
+[profile.release]
+overflow-checks = true 

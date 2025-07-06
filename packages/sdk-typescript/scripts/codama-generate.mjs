@@ -5,7 +5,7 @@
  * Generates TypeScript SDK instruction builders from Anchor program
  */
 
-import { createFromRoot } from '@codama/nodes-from-anchor';
+import { rootNodeFromAnchor } from '@codama/nodes-from-anchor';
 import { renderVisitor } from '@codama/renderers-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Path to the Anchor program IDL
-const projectRoot = join(__dirname, '../../../../');
+const projectRoot = join(__dirname, '../../../');
 const idlPath = join(projectRoot, 'target/idl/podai_marketplace.json');
 
 // Output directory for generated TypeScript files
@@ -32,90 +32,12 @@ try {
     console.log(`✅ IDL loaded successfully: ${idlData.name}`);
     
     // Create Codama root node from IDL
-    const rootNode = createFromRoot(idlData);
+    const rootNode = rootNodeFromAnchor(idlData);
     console.log(`✅ Codama root node created`);
     
     // Generate TypeScript SDK files
-    const visitor = renderVisitor(outputDir, {
-        // Instruction generation options
-        instructionAccountTypes: ['account', 'signer', 'program'],
-        instructionDataTypes: ['struct', 'enum'],
-        
-        // Account generation options
-        accountTypes: ['account'],
-        
-        // Type generation options
-        typeOptions: {
-            useNativeTypes: true,
-            useOptionalTypes: true,
-        },
-        
-        // Specific instructions to generate
-        instructions: [
-            // Core instructions (already generated)
-            'register_agent',
-            'create_channel',
-            'send_message',
-            'add_participant',
-            'broadcast_message',
-            
-            // Work order instructions (missing)
-            'create_work_order',
-            'submit_work_delivery',
-            'process_payment',
-            
-            // Service marketplace instructions (missing)
-            'create_service_listing',
-            'purchase_service',
-            
-            // Job marketplace instructions (missing)
-            'create_job_posting',
-            'apply_to_job',
-            'accept_job_application',
-            'complete_hired_job',
-            
-            // Review system
-            'submit_review',
-            
-            // Agent replication
-            'create_replication_template',
-            'replicate_agent',
-            
-            // A2A Communication
-            'create_a2a_session',
-            'send_a2a_message',
-            'update_a2a_status',
-            
-            // Intent processing
-            'process_user_intent',
-            'route_intent_to_agents',
-            
-            // Advanced features
-            'create_service_auction',
-            'place_auction_bid',
-            'create_dynamic_pricing_engine',
-            'update_dynamic_pricing',
-            'initiate_negotiation',
-            'make_counter_offer',
-            'create_bulk_deal',
-            'create_royalty_stream',
-            'list_agent_for_resale',
-            'file_dispute',
-            'submit_dispute_evidence',
-            'create_analytics_dashboard',
-            'register_extension',
-            'create_incentive_program',
-            'distribute_incentives',
-        ],
-        
-        // Generate program and account types
-        programs: true,
-        accounts: true,
-        types: true,
-    });
-    
     console.log('🔄 Generating TypeScript SDK files...');
-    visitor.visit(rootNode);
+    renderVisitor(rootNode, outputDir);
     
     console.log('✅ Codama generation completed successfully!');
     console.log('📁 Generated files in:', outputDir);

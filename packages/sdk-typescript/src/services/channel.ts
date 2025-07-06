@@ -301,7 +301,7 @@ export class ChannelService {
     return (
       value instanceof Uint8Array ||
       (typeof value === 'object' &&
-        value !== null &&
+      value !== null &&
         'constructor' in value &&
         value.constructor === Uint8Array)
     );
@@ -402,17 +402,17 @@ export class ChannelService {
     // we would use the generated account parsers
     try {
       // Mock parsing for now - real implementation would decode the account data
-      return {
+    return {
         creator: 'mock_creator_address' as Address,
         name: 'Mock Channel',
         description: 'Mock Description',
-        visibility: ChannelVisibility.PUBLIC,
-        maxParticipants: 100,
-        currentParticipants: 0,
-        isActive: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
+      visibility: ChannelVisibility.PUBLIC,
+      maxParticipants: 100,
+      currentParticipants: 0,
+      isActive: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
     } catch (error) {
       console.error('❌ Failed to parse channel account data:', error);
       throw new Error('Failed to parse channel account data');
@@ -433,7 +433,7 @@ export class ChannelService {
   }
 }
 
-/**
+  /**
  * Channel Creation Builder - Updated for Real Smart Contract Implementation
  */
 export class ChannelCreationBuilder {

@@ -5,15 +5,14 @@
  * vs what's still using mock implementations due to codec compatibility issues.
  */
 
-import { generateKeyPairSigner, address } from '@solana/web3.js';
+import { generateKeyPairSigner } from '@solana/signers';
+import { address } from '@solana/addresses';
 
-// These imports work - no build issues
+// Working account parsers (core types only)
 import { fetchMaybeAgentAccount } from './generated-v2/accounts/agentAccount';
 import { fetchMaybeChannelAccount } from './generated-v2/accounts/channelAccount';
 import { fetchMaybeMessageAccount } from './generated-v2/accounts/messageAccount';
-import { fetchMaybeWorkOrderAccount } from './generated-v2/accounts/workOrderAccount';
-import { fetchMaybeListingAccount } from './generated-v2/accounts/listingAccount';
-import { fetchMaybeJobAccount } from './generated-v2/accounts/jobAccount';
+// Temporarily disabled: WorkOrder, Listing, and Job account parsers due to codec issues
 
 // These services work with real smart contract integration
 import { AgentService } from './services/agent';
@@ -48,17 +47,18 @@ async function workingIntegrationDemo() {
     // ✅ WORKING: Fully Integrated Services
     console.log('✅ FULLY INTEGRATED SERVICES');
     
-    const agentService = new AgentService(mockRpc, programId);
+    const agentService = new AgentService(mockRpc, mockRpc, programId, 'confirmed');
+    console.log('AgentService initialized:', agentService);
     console.log('   • AgentService - ✅ Real smart contract calls');
     console.log('     - registerAgent() uses real instruction builder');
     console.log('     - All methods use blockchain transactions');
     
-    const channelService = new ChannelService(mockRpc, programId);
+    const channelService = new ChannelService(mockRpc, mockRpc, programId, 'confirmed');
     console.log('   • ChannelService - ✅ Real smart contract calls');
     console.log('     - createChannel() uses real instruction builder');
     console.log('     - sendMessage() uses real instruction builder');
     
-    const messageService = new MessageService(mockRpc, programId);
+    const messageService = new MessageService(mockRpc, mockRpc, programId, 'confirmed');
     console.log('   • MessageService - ✅ Real smart contract calls');
     console.log('     - broadcastMessage() uses real instruction builder');
     console.log('');
@@ -66,7 +66,8 @@ async function workingIntegrationDemo() {
     // 🔄 PARTIALLY WORKING: EscrowService
     console.log('🔄 PARTIALLY INTEGRATED SERVICES');
     
-    const escrowService = new EscrowService(mockRpc, programId);
+    const escrowService = new EscrowService(mockRpc, programId, 'confirmed');
+    console.log('EscrowService initialized:', escrowService);
     console.log('   • EscrowService - 🔄 Partially integrated');
     console.log('     - ✅ createWorkOrder() uses real instruction builder');
     console.log('     - ✅ Uses sendAndConfirmTransactionFactory');
@@ -77,7 +78,8 @@ async function workingIntegrationDemo() {
     // ❌ BLOCKED: MarketplaceService
     console.log('❌ BLOCKED SERVICES (Codec Issues)');
     
-    const marketplaceService = new MarketplaceService(mockRpc, programId);
+    const marketplaceService = new MarketplaceService(mockRpc, programId, 'confirmed');
+    console.log('MarketplaceService initialized:', marketplaceService);
     console.log('   • MarketplaceService - ❌ Mock implementations only');
     console.log('     - ❌ createServiceListing blocked by codec issues');
     console.log('     - ❌ purchaseService blocked by codec issues');
@@ -144,7 +146,8 @@ async function usageExample() {
 
     // ✅ Working: AgentService
     console.log('\n✅ AgentService Example:');
-    const agentService = new AgentService(mockRpc, programId);
+    const agentService = new AgentService(mockRpc, mockRpc, programId, 'confirmed');
+    console.log('AgentService initialized:', agentService);
     // const agentTx = await agentService.registerAgent(
     //   signer, 'TestAgent', 'Test agent description', 'https://example.com/metadata'
     // );
@@ -152,7 +155,7 @@ async function usageExample() {
 
     // ✅ Working: ChannelService  
     console.log('\n✅ ChannelService Example:');
-    const channelService = new ChannelService(mockRpc, programId);
+    const channelService = new ChannelService(mockRpc, mockRpc, programId, 'confirmed');
     // const channelTx = await channelService.createChannel(
     //   signer, 'TestChannel', 'public', 100
     // );
@@ -160,7 +163,7 @@ async function usageExample() {
 
     // ✅ Working: MessageService
     console.log('\n✅ MessageService Example:');
-    const messageService = new MessageService(mockRpc, programId);
+    const messageService = new MessageService(mockRpc, mockRpc, programId, 'confirmed');
     // const messageTx = await messageService.broadcastMessage(
     //   signer, address('channel123'), 'Hello World', 'text'
     // );
@@ -168,7 +171,8 @@ async function usageExample() {
 
     // 🔄 Partially Working: EscrowService
     console.log('\n🔄 EscrowService Example:');
-    const escrowService = new EscrowService(mockRpc, programId);
+    const escrowService = new EscrowService(mockRpc, programId, 'confirmed');
+    console.log('EscrowService initialized:', escrowService);
     // const workOrderTx = await escrowService.createWorkOrder(
     //   signer, address('provider123'), 'Build a website', 
     //   ['HTML', 'CSS', 'JavaScript'], 1000000000, 

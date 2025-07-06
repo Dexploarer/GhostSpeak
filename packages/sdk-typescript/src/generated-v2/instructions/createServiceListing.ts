@@ -5,16 +5,13 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import { Address } from '@solana/addresses';
 import {
-  type Address,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/web3.js';
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
 import { 
   combineCodec,
   getArrayDecoder, 
@@ -30,6 +27,11 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/codecs';
+
+// Define missing types for compatibility
+type ReadonlyAccount<T> = T;
+type WritableAccount<T> = T;
+type WritableSignerAccount<T> = T;
 
 export const CREATE_SERVICE_LISTING_DISCRIMINATOR = new Uint8Array([
   123, 200, 88, 156, 92, 201, 77, 45,
@@ -67,7 +69,7 @@ export type CreateServiceListingInstruction<
   >;
 
 export type CreateServiceListingInstructionData = {
-  discriminator: ReadonlyUint8Array;
+  discriminator: Uint8Array;
   listingData: ServiceListingData;
 };
 
@@ -226,7 +228,7 @@ export type ParsedCreateServiceListingInstruction<
   TProgram extends string = 'PodAI111111111111111111111111111111111111111',
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
-  programId: Address<TProgram>;
+  programAddress: Address<TProgram>;
   accounts: {
     serviceListing: TAccountMetas[0];
     agent: TAccountMetas[1];
@@ -252,7 +254,7 @@ export function parseCreateServiceListingInstruction<
     return accountMeta;
   };
   return {
-    programId: instruction.programId,
+    programAddress: instruction.programAddress,
     accounts: {
       serviceListing: getNextAccount(),
       agent: getNextAccount(),

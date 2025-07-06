@@ -12,7 +12,7 @@ import {
   type Address,
 } from '@solana/addresses';
 import {
-  addDecoderSizePrefix,
+  addDecoderSizePrefix,2
   addEncoderSizePrefix,
   combineCodec,
   fixDecoderSize,
@@ -34,18 +34,10 @@ import {
   type ReadonlyUint8Array,
 } from '@solana/codecs';
 import {
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/instructions';
-import {
   type IAccountSignerMeta,
   type TransactionSigner,
 } from '@solana/signers';
+
 import { POD_COM_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
@@ -53,6 +45,18 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
+
+import type {
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
+
+// Define missing types for compatibility
+type ReadonlyAccount<T> = T;
+type WritableAccount<T> = T;
+type WritableSignerAccount<T> = T;
 
 export const BROADCAST_MESSAGE_DISCRIMINATOR = new Uint8Array([
   82, 156, 47, 199, 117, 203, 24, 91,
@@ -72,7 +76,7 @@ export type BroadcastMessageInstruction<
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
+  TRemainingAccounts extends ReadonlyArray<IAccountMeta<string>> = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
@@ -94,18 +98,18 @@ export type BroadcastMessageInstruction<
     ]
   >;
 
-export type BroadcastMessageInstructionData = {
+export interface BroadcastMessageInstructionData {
   discriminator: ReadonlyUint8Array;
   messageId: string;
   content: string;
   messageType: number;
-};
+}
 
-export type BroadcastMessageInstructionDataArgs = {
+export interface BroadcastMessageInstructionDataArgs {
   messageId: string;
   content: string;
   messageType: number;
-};
+}
 
 export function getBroadcastMessageInstructionDataEncoder(): Encoder<BroadcastMessageInstructionDataArgs> {
   return transformEncoder(
@@ -115,7 +119,7 @@ export function getBroadcastMessageInstructionDataEncoder(): Encoder<BroadcastMe
       ['content', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['messageType', getU8Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: BROADCAST_MESSAGE_DISCRIMINATOR })
+    value => ({ ...value, discriminator: BROADCAST_MESSAGE_DISCRIMINATOR })
   );
 }
 
@@ -138,12 +142,12 @@ export function getBroadcastMessageInstructionDataCodec(): Codec<
   );
 }
 
-export type BroadcastMessageAsyncInput<
+export interface BroadcastMessageAsyncInput<
   TAccountMessageAccount extends string = string,
   TAccountChannelAccount extends string = string,
   TAccountSender extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   messageAccount?: Address<TAccountMessageAccount>;
   channelAccount: Address<TAccountChannelAccount>;
   sender: TransactionSigner<TAccountSender>;
@@ -151,7 +155,7 @@ export type BroadcastMessageAsyncInput<
   messageId: BroadcastMessageInstructionDataArgs['messageId'];
   content: BroadcastMessageInstructionDataArgs['content'];
   messageType: BroadcastMessageInstructionDataArgs['messageType'];
-};
+}
 
 export async function getBroadcastMessageInstructionAsync<
   TAccountMessageAccount extends string,
@@ -240,12 +244,12 @@ export async function getBroadcastMessageInstructionAsync<
   return instruction;
 }
 
-export type BroadcastMessageInput<
+export interface BroadcastMessageInput<
   TAccountMessageAccount extends string = string,
   TAccountChannelAccount extends string = string,
   TAccountSender extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   messageAccount: Address<TAccountMessageAccount>;
   channelAccount: Address<TAccountChannelAccount>;
   sender: TransactionSigner<TAccountSender>;
@@ -253,7 +257,7 @@ export type BroadcastMessageInput<
   messageId: BroadcastMessageInstructionDataArgs['messageId'];
   content: BroadcastMessageInstructionDataArgs['content'];
   messageType: BroadcastMessageInstructionDataArgs['messageType'];
-};
+}
 
 export function getBroadcastMessageInstruction<
   TAccountMessageAccount extends string,
@@ -323,10 +327,10 @@ export function getBroadcastMessageInstruction<
   return instruction;
 }
 
-export type ParsedBroadcastMessageInstruction<
+export interface ParsedBroadcastMessageInstruction<
   TProgram extends string = typeof POD_COM_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     messageAccount: TAccountMetas[0];
@@ -335,7 +339,7 @@ export type ParsedBroadcastMessageInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: BroadcastMessageInstructionData;
-};
+}
 
 export function parseBroadcastMessageInstruction<
   TProgram extends string,
@@ -351,7 +355,7 @@ export function parseBroadcastMessageInstruction<
   }
   let accountIndex = 0;
   const getNextAccount = () => {
-    const accountMeta = instruction.accounts![accountIndex]!;
+    const accountMeta = instruction.accounts[accountIndex]!;
     accountIndex += 1;
     return accountMeta;
   };

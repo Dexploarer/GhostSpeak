@@ -10,6 +10,7 @@ import {
 // Import real instruction builders from generated code
 import { 
   getRegisterAgentInstructionAsync,
+  type RegisterAgentAsyncInput,
   type RegisterAgentInstructionDataArgs 
 } from '../generated-v2/instructions/registerAgent';
 

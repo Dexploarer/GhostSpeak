@@ -5,29 +5,31 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import { Address } from '@solana/addresses';
+import type {
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
+import { AccountRole } from '@solana/instructions';
+
 import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
-  type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/web3.js';
-import { 
-  getArrayDecoder, 
-  getArrayEncoder, 
-  getUtf8Decoder, 
-  getUtf8Encoder 
-} from '@solana/web3.js';
+  getArrayDecoder,
+  getArrayEncoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
+  getBytesEncoder,
+  getBytesDecoder,
+  transformDecoder
+} from '@solana/codecs';
 
 export const SUBMIT_WORK_DELIVERY_DISCRIMINATOR = new Uint8Array([
   201, 45, 78, 92, 156, 89, 23, 177,
@@ -37,35 +39,10 @@ export function getSubmitWorkDeliveryDiscriminatorBytes() {
   return SUBMIT_WORK_DELIVERY_DISCRIMINATOR.slice();
 }
 
-export type SubmitWorkDeliveryInstruction<
-  TProgram extends string = 'PodAI111111111111111111111111111111111111111',
-  TAccountWorkDelivery extends string | IAccountMeta<string> = string,
-  TAccountWorkOrder extends string | IAccountMeta<string> = string,
-  TAccountProvider extends string | IAccountMeta<string> = string,
-  TAccountSystemProgram extends string | IAccountMeta<string> = string,
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
-    [
-      TAccountWorkDelivery extends string
-        ? WritableAccount<TAccountWorkDelivery>
-        : TAccountWorkDelivery,
-      TAccountWorkOrder extends string
-        ? WritableAccount<TAccountWorkOrder>
-        : TAccountWorkOrder,
-      TAccountProvider extends string
-        ? WritableSignerAccount<TAccountProvider>
-        : TAccountProvider,
-      TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
-        : TAccountSystemProgram,
-      ...TRemainingAccounts,
-    ]
-  >;
+export type SubmitWorkDeliveryInstruction = IInstruction<string> & IInstructionWithData<Uint8Array> & IInstructionWithAccounts<IAccountMeta<string>[]>;
 
 export type SubmitWorkDeliveryInstructionData = {
-  discriminator: ReadonlyUint8Array;
+  discriminator: Uint8Array;
   deliveryData: WorkDeliveryData;
 };
 
@@ -96,7 +73,7 @@ export type DeliverableArgs = {
 export function getSubmitWorkDeliveryInstructionDataEncoder(): Encoder<SubmitWorkDeliveryInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', getSubmitWorkDeliveryDiscriminatorBytes()],
+      ['discriminator', getBytesEncoder()],
       ['deliveryData', getWorkDeliveryDataEncoder()],
     ]),
     (value) => ({ ...value, discriminator: getSubmitWorkDeliveryDiscriminatorBytes() })
@@ -104,10 +81,16 @@ export function getSubmitWorkDeliveryInstructionDataEncoder(): Encoder<SubmitWor
 }
 
 export function getSubmitWorkDeliveryInstructionDataDecoder(): Decoder<SubmitWorkDeliveryInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getSubmitWorkDeliveryDiscriminatorBytes()],
-    ['deliveryData', getWorkDeliveryDataDecoder()],
-  ]);
+  return transformDecoder(
+    getStructDecoder([
+      ['discriminator', getBytesDecoder()],
+      ['deliveryData', getWorkDeliveryDataDecoder()],
+    ]),
+    (value) => ({
+      ...value,
+      discriminator: new Uint8Array(value.discriminator)
+    })
+  );
 }
 
 export function getSubmitWorkDeliveryInstructionDataCodec(): Codec<
@@ -147,9 +130,12 @@ export function getDeliverableEncoder(): Encoder<DeliverableArgs> {
 }
 
 export function getDeliverableDecoder(): Decoder<Deliverable> {
-  return getStructDecoder([
-    ['__kind', getUtf8Decoder()],
-  ]);
+  return transformDecoder(
+    getStructDecoder([
+      ['__kind', getUtf8Decoder()],
+    ]),
+    (value) => ({ __kind: value.__kind as Deliverable['__kind'] })
+  );
 }
 
 export function getDeliverableCodec(): Codec<DeliverableArgs, Deliverable> {
@@ -169,58 +155,28 @@ export type SubmitWorkDeliveryInput<
   deliveryData: WorkDeliveryDataArgs;
 };
 
-export function getSubmitWorkDeliveryInstruction<
-  TAccountWorkDelivery extends string,
-  TAccountWorkOrder extends string,
-  TAccountProvider extends string,
-  TAccountSystemProgram extends string,
->(
-  input: SubmitWorkDeliveryInput<TAccountWorkDelivery, TAccountWorkOrder, TAccountProvider, TAccountSystemProgram>
-): SubmitWorkDeliveryInstruction<
-  'PodAI111111111111111111111111111111111111111',
-  TAccountWorkDelivery,
-  TAccountWorkOrder,
-  TAccountProvider,
-  TAccountSystemProgram
-> {
-  // Program ID
-  const programId = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
-
-  // Accounts
-  const accounts: SubmitWorkDeliveryInstruction<
-    'PodAI111111111111111111111111111111111111111',
-    TAccountWorkDelivery,
-    TAccountWorkOrder,
-    TAccountProvider,
-    TAccountSystemProgram
-  >['accounts'] = [
-    {
-      address: input.workDelivery,
-      role: 'writable',
-    },
-    {
-      address: input.workOrder,
-      role: 'writable',
-    },
-    {
-      address: input.provider,
-      role: 'writable',
-      signer: true,
-    },
-    {
-      address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<TAccountSystemProgram>),
-      role: 'readonly',
-    },
+export function getSubmitWorkDeliveryInstruction(
+  input: SubmitWorkDeliveryInput
+): SubmitWorkDeliveryInstruction {
+  const programAddress = 'PodAI111111111111111111111111111111111111111' as Address<string>;
+  const accounts: IAccountMeta<string>[] = [
+    { address: input.workDelivery, role: AccountRole.WRITABLE },
+    { address: input.workOrder, role: AccountRole.WRITABLE },
+    { address: input.provider, role: AccountRole.WRITABLE_SIGNER },
+    { address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<string>), role: AccountRole.READONLY }
   ];
 
   // Instruction data
   const args = { deliveryData: input.deliveryData };
-  const data = getSubmitWorkDeliveryInstructionDataEncoder().encode(args);
+  let data = getSubmitWorkDeliveryInstructionDataEncoder().encode(args);
+  if (!(data instanceof Uint8Array)) {
+    data = new Uint8Array(data);
+  }
 
   return {
-    programId,
+    programAddress,
     accounts,
-    data,
+    data: data as Uint8Array & ArrayBufferLike,
   };
 }
 
@@ -228,7 +184,7 @@ export type ParsedSubmitWorkDeliveryInstruction<
   TProgram extends string = 'PodAI111111111111111111111111111111111111111',
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
-  programId: Address<TProgram>;
+  programAddress: Address<TProgram>;
   accounts: {
     workDelivery: TAccountMetas[0];
     workOrder: TAccountMetas[1];
@@ -254,7 +210,7 @@ export function parseSubmitWorkDeliveryInstruction<
     return accountMeta;
   };
   return {
-    programId: instruction.programId,
+    programAddress: instruction.programAddress,
     accounts: {
       workDelivery: getNextAccount(),
       workOrder: getNextAccount(),
@@ -273,12 +229,6 @@ export async function getSubmitWorkDeliveryInstructionAsync<
   TAccountSystemProgram extends string,
 >(
   input: SubmitWorkDeliveryInput<TAccountWorkDelivery, TAccountWorkOrder, TAccountProvider, TAccountSystemProgram>
-): Promise<SubmitWorkDeliveryInstruction<
-  'PodAI111111111111111111111111111111111111111',
-  TAccountWorkDelivery,
-  TAccountWorkOrder,
-  TAccountProvider,
-  TAccountSystemProgram
->> {
+): Promise<SubmitWorkDeliveryInstruction> {
   return getSubmitWorkDeliveryInstruction(input);
 } 

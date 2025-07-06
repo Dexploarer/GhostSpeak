@@ -5,16 +5,13 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import { Address } from '@solana/addresses';
 import {
-  type Address,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/web3.js';
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
 import {
   combineCodec,
   getStructDecoder,
@@ -32,6 +29,11 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/codecs';
+
+// Define missing types for compatibility
+type ReadonlyAccount<T> = T;
+type WritableAccount<T> = T;
+type WritableSignerAccount<T> = T;
 
 export const CREATE_WORK_ORDER_DISCRIMINATOR = new Uint8Array([
   156, 100, 204, 119, 17, 200, 7, 88,
@@ -65,7 +67,7 @@ export type CreateWorkOrderInstruction<
   >;
 
 export type CreateWorkOrderInstructionData = {
-  discriminator: ReadonlyUint8Array;
+  discriminator: Uint8Array;
   workOrderData: WorkOrderData;
 };
 
@@ -215,7 +217,7 @@ export type ParsedCreateWorkOrderInstruction<
   TProgram extends string = 'PodAI111111111111111111111111111111111111111',
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
-  programId: Address<TProgram>;
+  programAddress: Address<TProgram>;
   accounts: {
     workOrder: TAccountMetas[0];
     client: TAccountMetas[1];
@@ -240,7 +242,7 @@ export function parseCreateWorkOrderInstruction<
     return accountMeta;
   };
   return {
-    programId: instruction.programId,
+    programAddress: instruction.programAddress,
     accounts: {
       workOrder: getNextAccount(),
       client: getNextAccount(),

@@ -5,27 +5,30 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import type { Address } from '@solana/addresses';
 import {
-  combineCodec,
-  getBooleanDecoder,
-  getBooleanEncoder,
-  getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
+  getStructDecoder,
   getU64Encoder,
+  getU64Decoder,
+  getBooleanEncoder,
+  getBooleanDecoder,
   transformEncoder,
-  type Address,
+  transformDecoder,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/web3.js';
+  combineCodec,
+  getBytesEncoder,
+  getBytesDecoder
+} from '@solana/codecs';
+import type {
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
+import { AccountRole } from '@solana/instructions';
 
 export const PROCESS_PAYMENT_DISCRIMINATOR = new Uint8Array([
   78, 159, 201, 44, 92, 88, 134, 201,
@@ -52,38 +55,38 @@ export type ProcessPaymentInstruction<
   IInstructionWithAccounts<
     [
       TAccountPayment extends string
-        ? WritableAccount<TAccountPayment>
+        ? IAccountMeta<string>
         : TAccountPayment,
       TAccountWorkOrder extends string
-        ? WritableAccount<TAccountWorkOrder>
+        ? IAccountMeta<string>
         : TAccountWorkOrder,
       TAccountProviderAgent extends string
-        ? WritableAccount<TAccountProviderAgent>
+        ? IAccountMeta<string>
         : TAccountProviderAgent,
       TAccountPayer extends string
-        ? WritableSignerAccount<TAccountPayer>
+        ? IAccountMeta<string>
         : TAccountPayer,
       TAccountPayerTokenAccount extends string
-        ? WritableAccount<TAccountPayerTokenAccount>
+        ? IAccountMeta<string>
         : TAccountPayerTokenAccount,
       TAccountProviderTokenAccount extends string
-        ? WritableAccount<TAccountProviderTokenAccount>
+        ? IAccountMeta<string>
         : TAccountProviderTokenAccount,
       TAccountTokenMint extends string
-        ? ReadonlyAccount<TAccountTokenMint>
+        ? IAccountMeta<string>
         : TAccountTokenMint,
       TAccountTokenProgram extends string
-        ? ReadonlyAccount<TAccountTokenProgram>
+        ? IAccountMeta<string>
         : TAccountTokenProgram,
       TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
+        ? IAccountMeta<string>
         : TAccountSystemProgram,
       ...TRemainingAccounts,
     ]
   >;
 
 export type ProcessPaymentInstructionData = {
-  discriminator: ReadonlyUint8Array;
+  discriminator: Uint8Array;
   amount: bigint;
   useConfidentialTransfer: boolean;
 };
@@ -96,7 +99,7 @@ export type ProcessPaymentInstructionDataArgs = {
 export function getProcessPaymentInstructionDataEncoder(): Encoder<ProcessPaymentInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', getProcessPaymentDiscriminatorBytes()],
+      ['discriminator', getBytesEncoder()],
       ['amount', getU64Encoder()],
       ['useConfidentialTransfer', getBooleanEncoder()],
     ]),
@@ -105,11 +108,17 @@ export function getProcessPaymentInstructionDataEncoder(): Encoder<ProcessPaymen
 }
 
 export function getProcessPaymentInstructionDataDecoder(): Decoder<ProcessPaymentInstructionData> {
-  return getStructDecoder([
-    ['discriminator', getProcessPaymentDiscriminatorBytes()],
-    ['amount', getU64Decoder()],
-    ['useConfidentialTransfer', getBooleanDecoder()],
-  ]);
+  return transformDecoder(
+    getStructDecoder([
+      ['discriminator', getBytesDecoder()],
+      ['amount', getU64Decoder()],
+      ['useConfidentialTransfer', getBooleanDecoder()],
+    ]),
+    (value) => ({
+      ...value,
+      discriminator: new Uint8Array(value.discriminator)
+    })
+  );
 }
 
 export function getProcessPaymentInstructionDataCodec(): Codec<
@@ -180,11 +189,54 @@ export function getProcessPaymentInstruction<
   TAccountTokenProgram,
   TAccountSystemProgram
 > {
-  // Program ID
-  const programId = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
+  const programAddress = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
+  const accounts = [
+    { address: input.payment, role: AccountRole.WRITABLE },
+    { address: input.workOrder, role: AccountRole.WRITABLE },
+    { address: input.providerAgent, role: AccountRole.WRITABLE },
+    { address: input.payer, role: AccountRole.WRITABLE_SIGNER },
+    { address: input.payerTokenAccount, role: AccountRole.WRITABLE },
+    { address: input.providerTokenAccount, role: AccountRole.WRITABLE },
+    { address: input.tokenMint, role: AccountRole.READONLY },
+    { address: input.tokenProgram ?? ('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<string>), role: AccountRole.READONLY },
+    { address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<string>), role: AccountRole.READONLY }
+  ] as [
+    IAccountMeta<string>,
+    IAccountMeta<string>,
+    IAccountMeta<string>,
+    IAccountMeta<string>,
+    IAccountMeta<string>,
+    IAccountMeta<string>,
+    IAccountMeta<string>,
+    IAccountMeta<string>,
+    IAccountMeta<string>
+  ];
 
-  // Accounts
-  const accounts: ProcessPaymentInstruction<
+  // Instruction data
+  const args = { 
+    amount: input.amount,
+    useConfidentialTransfer: input.useConfidentialTransfer,
+  };
+  let data = getProcessPaymentInstructionDataEncoder().encode(args);
+  if (!(data instanceof Uint8Array)) {
+    data = new Uint8Array(data);
+  }
+
+  return {
+    programAddress,
+    accounts: accounts as unknown as [
+      TAccountPayment extends string ? IAccountMeta<string> : TAccountPayment,
+      TAccountWorkOrder extends string ? IAccountMeta<string> : TAccountWorkOrder,
+      TAccountProviderAgent extends string ? IAccountMeta<string> : TAccountProviderAgent,
+      TAccountPayer extends string ? IAccountMeta<string> : TAccountPayer,
+      TAccountPayerTokenAccount extends string ? IAccountMeta<string> : TAccountPayerTokenAccount,
+      TAccountProviderTokenAccount extends string ? IAccountMeta<string> : TAccountProviderTokenAccount,
+      TAccountTokenMint extends string ? IAccountMeta<string> : TAccountTokenMint,
+      TAccountTokenProgram extends string ? IAccountMeta<string> : TAccountTokenProgram,
+      TAccountSystemProgram extends string ? IAccountMeta<string> : TAccountSystemProgram
+    ],
+    data: data as Uint8Array & ArrayBufferLike,
+  } as ProcessPaymentInstruction<
     'PodAI111111111111111111111111111111111111111',
     TAccountPayment,
     TAccountWorkOrder,
@@ -195,58 +247,7 @@ export function getProcessPaymentInstruction<
     TAccountTokenMint,
     TAccountTokenProgram,
     TAccountSystemProgram
-  >['accounts'] = [
-    {
-      address: input.payment,
-      role: 'writable',
-    },
-    {
-      address: input.workOrder,
-      role: 'writable',
-    },
-    {
-      address: input.providerAgent,
-      role: 'writable',
-    },
-    {
-      address: input.payer,
-      role: 'writable',
-      signer: true,
-    },
-    {
-      address: input.payerTokenAccount,
-      role: 'writable',
-    },
-    {
-      address: input.providerTokenAccount,
-      role: 'writable',
-    },
-    {
-      address: input.tokenMint,
-      role: 'readonly',
-    },
-    {
-      address: input.tokenProgram ?? ('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<TAccountTokenProgram>),
-      role: 'readonly',
-    },
-    {
-      address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<TAccountSystemProgram>),
-      role: 'readonly',
-    },
-  ];
-
-  // Instruction data
-  const args = { 
-    amount: input.amount,
-    useConfidentialTransfer: input.useConfidentialTransfer,
-  };
-  const data = getProcessPaymentInstructionDataEncoder().encode(args);
-
-  return {
-    programId,
-    accounts,
-    data,
-  };
+  >;
 }
 
 export type ParsedProcessPaymentInstruction<
@@ -284,7 +285,7 @@ export function parseProcessPaymentInstruction<
     return accountMeta;
   };
   return {
-    programId: instruction.programId,
+    programId: instruction.programAddress,
     accounts: {
       payment: getNextAccount(),
       workOrder: getNextAccount(),

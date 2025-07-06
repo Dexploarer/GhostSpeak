@@ -59,7 +59,7 @@ export {
 } from './utils/transaction-helpers';
 
 // ===== CONSTANTS =====
-export const PODAI_PROGRAM_ID = 'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps';
+export const PODAI_PROGRAM_ID = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
 export const DEVNET_RPC = 'https://api.devnet.solana.com';
 export const MAINNET_RPC = 'https://api.mainnet-beta.solana.com';
 export const VERSION = '2.0.4';

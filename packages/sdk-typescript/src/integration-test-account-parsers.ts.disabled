@@ -3,7 +3,7 @@
  * Demonstrates the complete functionality of account data parsers and service integrations
  */
 
-import { createSolanaRpc } from '@solana/web3.js';
+import { createSolanaRpc } from '@solana/rpc';
 import type { Address } from '@solana/addresses';
 
 // Import account parsers
@@ -22,24 +22,25 @@ import {
   fetchMaybeMessageAccount,
   type MessageAccount,
 } from './generated-v2/accounts/messageAccount';
-import {
-  fetchWorkOrderAccount,
-  fetchMaybeWorkOrderAccount,
-  type WorkOrderAccount,
-  WorkOrderStatus,
-} from './generated-v2/accounts/workOrderAccount';
-import {
-  fetchListingAccount,
-  fetchMaybeListingAccount,
-  type ListingAccount,
-  ListingStatus,
-} from './generated-v2/accounts/listingAccount';
-import {
-  fetchJobAccount,
-  fetchMaybeJobAccount,
-  type JobAccount,
-  JobStatus,
-} from './generated-v2/accounts/jobAccount';
+// Temporarily disabled due to codec compatibility issues
+// import {
+//   fetchWorkOrderAccount,
+//   fetchMaybeWorkOrderAccount,
+//   type WorkOrderAccount,
+//   WorkOrderStatus,
+// } from './generated-v2/accounts/workOrderAccount';
+// import {
+//   fetchListingAccount,
+//   fetchMaybeListingAccount,
+//   type ListingAccount,
+//   ListingStatus,
+// } from './generated-v2/accounts/listingAccount';
+// import {
+//   fetchJobAccount,
+//   fetchMaybeJobAccount,
+//   type JobAccount,
+//   JobStatus,
+// } from './generated-v2/accounts/jobAccount';
 
 // Import services
 import { AgentService } from './services/agent';

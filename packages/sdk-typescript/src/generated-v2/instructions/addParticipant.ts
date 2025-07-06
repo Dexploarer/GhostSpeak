@@ -6,7 +6,6 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { type Address } from '@solana/addresses';
 import {
   combineCodec,
   fixDecoderSize,
@@ -22,20 +21,25 @@ import {
   type ReadonlyUint8Array,
 } from '@solana/codecs';
 import {
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
-  type ReadonlyAccount,
-  type WritableAccount,
-  type WritableSignerAccount,
-} from '@solana/instructions';
-import {
   type IAccountSignerMeta,
   type TransactionSigner,
 } from '@solana/signers';
+
 import { POD_COM_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+
+import type { Address } from '@solana/addresses';
+import type {
+  IAccountMeta,
+  IInstruction,
+  IInstructionWithAccounts,
+  IInstructionWithData,
+} from '@solana/instructions';
+
+// Define missing types for compatibility
+type ReadonlyAccount<T> = T;
+type WritableAccount<T> = T;
+type WritableSignerAccount<T> = T;
 
 export const ADD_PARTICIPANT_DISCRIMINATOR = new Uint8Array([
   201, 23, 89, 155, 12, 47, 199, 233,
@@ -55,7 +59,7 @@ export type AddParticipantInstruction<
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
+  TRemainingAccounts extends ReadonlyArray<IAccountMeta<string>> = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
@@ -77,16 +81,16 @@ export type AddParticipantInstruction<
     ]
   >;
 
-export type AddParticipantInstructionData = {
+export interface AddParticipantInstructionData {
   discriminator: ReadonlyUint8Array;
-};
+}
 
-export type AddParticipantInstructionDataArgs = {};
+export interface AddParticipantInstructionDataArgs {}
 
 export function getAddParticipantInstructionDataEncoder(): Encoder<AddParticipantInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
-    (value) => ({ ...value, discriminator: ADD_PARTICIPANT_DISCRIMINATOR })
+    value => ({ ...value, discriminator: ADD_PARTICIPANT_DISCRIMINATOR })
   );
 }
 
@@ -106,17 +110,17 @@ export function getAddParticipantInstructionDataCodec(): Codec<
   );
 }
 
-export type AddParticipantInput<
+export interface AddParticipantInput<
   TAccountChannelAccount extends string = string,
   TAccountAdmin extends string = string,
   TAccountNewParticipant extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   channelAccount: Address<TAccountChannelAccount>;
   admin: TransactionSigner<TAccountAdmin>;
   newParticipant: Address<TAccountNewParticipant>;
   systemProgram?: Address<TAccountSystemProgram>;
-};
+}
 
 export function getAddParticipantInstruction<
   TAccountChannelAccount extends string,
@@ -181,10 +185,10 @@ export function getAddParticipantInstruction<
   return instruction;
 }
 
-export type ParsedAddParticipantInstruction<
+export interface ParsedAddParticipantInstruction<
   TProgram extends string = typeof POD_COM_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     channelAccount: TAccountMetas[0];
@@ -193,7 +197,7 @@ export type ParsedAddParticipantInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: AddParticipantInstructionData;
-};
+}
 
 export function parseAddParticipantInstruction<
   TProgram extends string,
@@ -209,7 +213,7 @@ export function parseAddParticipantInstruction<
   }
   let accountIndex = 0;
   const getNextAccount = () => {
-    const accountMeta = instruction.accounts![accountIndex]!;
+    const accountMeta = instruction.accounts[accountIndex]!;
     accountIndex += 1;
     return accountMeta;
   };

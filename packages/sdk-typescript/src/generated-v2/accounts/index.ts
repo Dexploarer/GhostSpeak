@@ -6,16 +6,13 @@
  * @see https://github.com/codama-idl/codama
  */
 
-// Core account types
+// Core account types (working)
 export * from './agentAccount';
 export * from './channelAccount';
 export * from './messageAccount';
 
-// Work order account types
-export * from './workOrderAccount';
-
-// Marketplace account types
-export * from './listingAccount';
-
-// Job marketplace account types
-export * from './jobAccount';
+// Temporarily disabled due to codec compatibility issues
+// These will be re-enabled once the Codama generation is fixed
+// export * from './workOrderAccount';
+// export * from './listingAccount';
+// export * from './jobAccount';

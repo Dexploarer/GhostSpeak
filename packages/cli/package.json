@@ -1,0 +1,62 @@
+{
+  "name": "@ghostspeak/cli",
+  "version": "1.0.0",
+  "description": "Modern CLI for ghostspeak - Autonomous Agent Commerce Protocol",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ghostspeak": "./bin/ghostspeak.js",
+    "gs": "./bin/ghostspeak.js"
+  },
+  "scripts": {
+    "build": "bun run clean && bun run compile",
+    "compile": "bun build src/index.tsx --outdir dist --target node --external react --external ink",
+    "dev": "bun run src/index.tsx",
+    "dev:watch": "nodemon --exec 'bun run src/index.tsx' --ext tsx,ts",
+    "test": "bun test src/**/*.test.ts",
+    "lint": "eslint src/ --ext .ts,.tsx --fix",
+    "clean": "rimraf dist coverage",
+    "type-check": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "prepack": "bun run build"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "keywords": [
+    "cli",
+    "solana",
+    "blockchain",
+    "ai-agents",
+    "ghostspeak"
+  ],
+  "author": "ghostspeak Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "bun": ">=1.2.15"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "@types/react": "19.1.8",
+    "chalk": "5.4.1",
+    "commander": "14.0.0",
+    "conf": "14.0.0",
+    "ink": "6.0.1",
+    "ink-select-input": "6.2.0",
+    "ink-spinner": "5.0.0",
+    "ink-text-input": "6.0.0",
+    "nodemon": "3.1.10",
+    "ora": "8.2.0",
+    "picocolors": "1.1.1",
+    "react": "19.1.0",
+    "rimraf": "6.0.1",
+    "typescript": "5.8.3"
+  },
+  "dependencies": {
+    "@podai/sdk": "workspace:*",
+    "@solana/signers": "2.1.1"
+  }
+}

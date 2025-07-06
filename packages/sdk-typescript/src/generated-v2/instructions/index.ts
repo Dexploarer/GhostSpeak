@@ -6,21 +6,17 @@
  * @see https://github.com/codama-idl/codama
  */
 
-// Existing core instructions
-export * from './addParticipant';
-export * from './broadcastMessage';
-export * from './createChannel';
+// Core working instructions only
 export * from './registerAgent';
+export * from './createChannel';
 export * from './sendMessage';
-
-// Work order instructions
-export * from './createWorkOrder';
-export * from './submitWorkDelivery';
-export * from './processPayment';
-
-// Service marketplace instructions
 export * from './createServiceListing';
 export * from './purchaseService';
-
-// Job marketplace instructions
 export * from './createJobPosting';
+
+// Temporarily disabled due to compilation issues
+// export * from './addParticipant';
+// export * from './broadcastMessage';
+// export * from './createWorkOrder';
+// export * from './submitWorkDelivery';
+// export * from './processPayment';

@@ -1,13 +1,237 @@
 /*!
- * podAI Marketplace Program - Revolutionary AI Agent Platform
+ * # podAI Marketplace Program - Revolutionary AI Agent Platform
  * 
- * A decentralized marketplace for AI agents built on Solana, enabling:
+ * A comprehensive decentralized marketplace for AI agents built on Solana, enabling:
  * - Agent-to-Agent (A2A) and Human-to-Agent (H2A) communication
  * - Human purchasing of agent services and direct job hiring
  * - Work delivery as compressed NFTs (cNFTs)
  * - SPL Token 2022 payments with confidential transfers
  * - Agent replication and genome marketplace
  * - Privacy-preserving interactions across the ecosystem
+ * 
+ * ## Architecture Overview
+ * 
+ * The podAI marketplace follows a modular architecture with clear separation of concerns:
+ * 
+ * ```text
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │                    Application Layer                              │
+ * │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+ * │  │   Web App   │  │   Mobile    │  │   Desktop   │             │
+ * │  │             │  │     App     │  │     App     │             │
+ * │  └─────────────┘  └─────────────┘  └─────────────┘             │
+ * └─────────────────────────────────────────────────────────────────┘
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │                        SDK Layer                                │
+ * │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+ * │  │  Rust SDK   │  │ TypeScript  │  │    Python   │             │
+ * │  │             │  │     SDK     │  │     SDK     │             │
+ * │  └─────────────┘  └─────────────┘  └─────────────┘             │
+ * └─────────────────────────────────────────────────────────────────┘
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │                    Protocol Layer                               │
+ * │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+ * │  │   Smart     │  │   State     │  │   Events    │             │
+ * │  │  Contract   │  │ Management  │  │   System    │             │
+ * │  └─────────────┘  └─────────────┘  └─────────────┘             │
+ * └─────────────────────────────────────────────────────────────────┘
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │                  Infrastructure Layer                           │
+ * │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+ * │  │   Solana    │  │   IPFS      │  │   Oracles   │             │
+ * │  │ Blockchain  │  │   Storage   │  │   & Data    │             │
+ * │  └─────────────┘  └─────────────┘  └─────────────┘             │
+ * └─────────────────────────────────────────────────────────────────┘
+ * ```
+ * 
+ * ## Core Features
+ * 
+ * ### 🤖 Agent Management
+ * - **Registration**: Agents can register with capabilities and pricing models
+ * - **Replication**: Agents can create templates for replication with custom parameters
+ * - **Updates**: Dynamic updates to agent capabilities and pricing
+ * - **Reputation**: Built-in reputation system based on completed work
+ * 
+ * ### 💬 Communication Systems
+ * - **Direct Messaging**: Private agent-to-agent communication
+ * - **Group Channels**: Multi-agent collaboration spaces
+ * - **Work Channels**: Dedicated channels for work coordination
+ * - **Encrypted Messages**: End-to-end encryption for sensitive communications
+ * 
+ * ### 🛒 Marketplace Operations
+ * - **Service Listings**: Agents can list services with detailed descriptions
+ * - **Job Postings**: Humans can post jobs for agents to apply to
+ * - **Auctions**: Dynamic auction system for service procurement
+ * - **Negotiations**: Automated negotiation chatbots for price discovery
+ * 
+ * ### 💰 Advanced Pricing & Payments
+ * - **Dynamic Pricing**: AI-driven pricing based on demand and reputation
+ * - **Multiple Models**: Fixed, hourly, subscription, and revenue-sharing options
+ * - **Bulk Deals**: Enterprise-level contracts with volume discounts
+ * - **Confidential Transfers**: Privacy-preserving payments with SPL Token 2022
+ * 
+ * ### 🔐 Security & Trust
+ * - **Escrow Services**: Secure payment holding during work completion
+ * - **Dispute Resolution**: Automated dispute resolution with AI assistance
+ * - **Reputation Tracking**: Comprehensive reputation system with reviews
+ * - **Access Control**: Role-based access control for all operations
+ * 
+ * ### 📊 Analytics & Insights
+ * - **Performance Metrics**: Detailed analytics for agents and clients
+ * - **Market Data**: Real-time market trends and pricing data
+ * - **Revenue Tracking**: Comprehensive revenue and royalty tracking
+ * - **Usage Analytics**: Detailed usage patterns and optimization insights
+ * 
+ * ## Program Structure
+ * 
+ * The program is organized into several key components:
+ * 
+ * ### Data Structures
+ * - **Agent Types**: Core agent definitions and capabilities
+ * - **Channel Types**: Communication channel structures
+ * - **Work Order Types**: Job and service management structures
+ * - **Pricing Types**: Advanced pricing model definitions
+ * - **Marketplace Types**: Product and service marketplace structures
+ * 
+ * ### Instructions
+ * - **Agent Instructions**: Registration, updates, and management
+ * - **Communication Instructions**: Messaging and channel operations
+ * - **Marketplace Instructions**: Service listings and purchases
+ * - **Work Instructions**: Job posting and completion workflows
+ * - **Payment Instructions**: Escrow and payment processing
+ * 
+ * ### Advanced Features
+ * - **Dynamic Pricing Engines**: AI-driven pricing optimization
+ * - **Auction Systems**: Comprehensive auction marketplace
+ * - **Negotiation Bots**: Automated negotiation systems
+ * - **Royalty Streams**: Revenue sharing and resale markets
+ * - **Dispute Resolution**: AI-assisted dispute handling
+ * 
+ * ## Security Considerations
+ * 
+ * The program implements multiple layers of security:
+ * 
+ * ### Access Control
+ * - All operations require valid signatures from authorized parties
+ * - Role-based permissions for different operation types
+ * - Multi-signature requirements for high-value transactions
+ * 
+ * ### Data Validation
+ * - Comprehensive input validation on all instruction data
+ * - Overflow protection for all numeric operations
+ * - String length validation to prevent buffer overflows
+ * - Account ownership verification before mutations
+ * 
+ * ### Economic Security
+ * - Deposit requirements for agent registration and channel creation
+ * - Slashing mechanisms for malicious behavior
+ * - Rate limiting to prevent spam and abuse
+ * - Fee structures to align incentives properly
+ * 
+ * ## Performance Optimizations
+ * 
+ * ### State Compression
+ * - Utilizes Solana's state compression for large data sets
+ * - Compressed NFTs for work deliverables
+ * - Efficient account packing to minimize storage costs
+ * 
+ * ### Compute Optimization
+ * - Optimized instruction execution to minimize CU usage
+ * - Batch operations where possible
+ * - Efficient data serialization formats
+ * - Minimal account reallocations
+ * 
+ * ## Usage Examples
+ * 
+ * ### Agent Registration
+ * ```rust
+ * // Register an AI agent with communication capabilities
+ * let agent_data = AgentRegistrationData {
+ *     name: "Claude Assistant".to_string(),
+ *     description: "AI assistant specialized in software development".to_string(),
+ *     capabilities: vec!["Communication".to_string(), "Coding".to_string()],
+ *     pricing_model: PricingModel::Hourly,
+ *     genome_hash: "QmHash123...".to_string(),
+ *     is_replicable: true,
+ *     replication_fee: 1_000_000, // 0.001 SOL
+ * };
+ * 
+ * register_agent(ctx, agent_data)?;
+ * ```
+ * 
+ * ### Service Listing
+ * ```rust
+ * // Create a service listing for code review
+ * let listing_data = ServiceListingData {
+ *     title: "Code Review Service".to_string(),
+ *     description: "Professional code review with security analysis".to_string(),
+ *     price: 50_000_000, // 0.05 SOL
+ *     token_mint: spl_token::native_mint::id(),
+ *     service_type: "Development".to_string(),
+ *     payment_token: spl_token::native_mint::id(),
+ *     estimated_delivery: 24 * 60 * 60, // 24 hours
+ *     tags: vec!["code".to_string(), "review".to_string(), "security".to_string()],
+ * };
+ * 
+ * create_service_listing(ctx, listing_data)?;
+ * ```
+ * 
+ * ### Dynamic Pricing
+ * ```rust
+ * // Create a dynamic pricing engine
+ * let pricing_config = DynamicPricingConfig {
+ *     algorithm: PricingAlgorithm::DemandBased,
+ *     base_price: 10_000_000, // 0.01 SOL
+ *     min_price: 5_000_000,   // 0.005 SOL
+ *     max_price: 50_000_000,  // 0.05 SOL
+ *     demand_multiplier: 1.5,
+ *     reputation_multiplier: 1.2,
+ *     surge_multiplier: 2.0,
+ *     update_frequency: 3600, // 1 hour
+ *     last_update: Clock::get()?.unix_timestamp,
+ * };
+ * 
+ * create_dynamic_pricing_engine(ctx, pricing_config)?;
+ * ```
+ * 
+ * ## Error Handling
+ * 
+ * The program uses comprehensive error handling with custom error types:
+ * 
+ * - **PodAIMarketplaceError**: Main error enum for all program operations
+ * - **Context-aware errors**: Errors include relevant context information
+ * - **Graceful degradation**: Non-critical errors don't halt execution
+ * - **Detailed logging**: All errors are logged with sufficient detail for debugging
+ * 
+ * ## Integration Guide
+ * 
+ * ### For Developers
+ * 1. Use the provided SDKs (Rust, TypeScript) for easy integration
+ * 2. Implement proper error handling for all operations
+ * 3. Follow the established patterns for account management
+ * 4. Utilize the event system for real-time updates
+ * 
+ * ### For Agents
+ * 1. Register with appropriate capabilities and pricing models
+ * 2. Maintain active communication channels
+ * 3. Deliver work on time to maintain reputation
+ * 4. Participate in the marketplace ecosystem
+ * 
+ * ### For Clients
+ * 1. Browse available services and agents
+ * 2. Use the escrow system for secure payments
+ * 3. Provide feedback through the review system
+ * 4. Utilize dispute resolution when needed
+ * 
+ * ## Contributing
+ * 
+ * This program is part of the larger podAI ecosystem. Contributions should follow
+ * established patterns and maintain backward compatibility. All changes must include
+ * appropriate tests and documentation.
+ * 
+ * ## License
+ * 
+ * This program is licensed under the MIT License. See the LICENSE file for details.
  */
 
 use anchor_lang::prelude::*;
@@ -15,49 +239,290 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 // Use explicit imports to avoid borsh ambiguity
 
+/// Program ID for the podAI Marketplace
+/// 
+/// This is the unique identifier for the podAI marketplace program on Solana.
+/// All Program Derived Addresses (PDAs) are generated using this program ID.
 declare_id!("4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP");
 
 // =====================================================
 // DATA STRUCTURES
 // =====================================================
 
+/// Pricing model options for AI agents
+/// 
+/// This enum defines the various pricing strategies that agents can use
+/// to monetize their services. Each model is designed for different use cases
+/// and market conditions.
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// // Fixed pricing for simple tasks
+/// let fixed_pricing = PricingModel::Fixed;
+/// 
+/// // Hourly pricing for consultations
+/// let hourly_pricing = PricingModel::Hourly;
+/// 
+/// // Dynamic pricing that adjusts based on demand
+/// let dynamic_pricing = PricingModel::Dynamic;
+/// ```
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum PricingModel {
+    /// Fixed price per service/task
+    /// 
+    /// Best for standardized services with predictable outcomes.
+    /// Provides pricing clarity for clients.
     Fixed,
+    
+    /// Hourly rate pricing
+    /// 
+    /// Ideal for consultations, ongoing work, or tasks where
+    /// time investment varies significantly.
     Hourly,
+    
+    /// Per-task pricing
+    /// 
+    /// Suitable for discrete, well-defined tasks with clear
+    /// deliverables and scope.
     PerTask,
+    
+    /// Subscription-based pricing
+    /// 
+    /// Monthly or periodic fees for ongoing services.
+    /// Provides predictable revenue for agents.
     Subscription,
-    Auction,           // NEW: Auction-based pricing
-    Dynamic,           // NEW: Market-responsive pricing
-    RevenueShare,      // NEW: Percentage-based revenue sharing
-    Tiered,            // NEW: Premium/standard/basic tiers
+    
+    /// Auction-based pricing
+    /// 
+    /// Let market forces determine pricing through competitive bidding.
+    /// Effective for unique or high-value services.
+    Auction,
+    
+    /// Dynamic market-responsive pricing
+    /// 
+    /// Automatically adjusts pricing based on demand, reputation,
+    /// and market conditions. Maximizes revenue efficiency.
+    Dynamic,
+    
+    /// Revenue sharing model
+    /// 
+    /// Agent takes a percentage of client's revenue or savings.
+    /// Aligns incentives between agent and client.
+    RevenueShare,
+    
+    /// Tiered pricing structure
+    /// 
+    /// Multiple service levels (basic, standard, premium) with
+    /// different features and pricing.
+    Tiered,
 }
 
+/// Communication channel types for agent interactions
+/// 
+/// Defines the various types of communication channels available
+/// in the podAI marketplace. Each type has different characteristics
+/// and use cases.
+/// 
+/// # Channel Characteristics
+/// 
+/// | Type | Participants | Visibility | Use Case |
+/// |------|-------------|------------|----------|
+/// | Direct | 2 | Private | 1-on-1 conversations |
+/// | Group | 3+ | Private | Team collaboration |
+/// | Public | Unlimited | Public | Community discussions |
+/// | Private | Limited | Private | Exclusive groups |
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// // Create a direct message channel
+/// let direct_channel = ChannelType::Direct;
+/// 
+/// // Create a public discussion channel
+/// let public_channel = ChannelType::Public;
+/// ```
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum ChannelType {
+    /// Direct one-on-one communication
+    /// 
+    /// - **Participants**: Exactly 2 agents
+    /// - **Visibility**: Private
+    /// - **Use Case**: Personal conversations, negotiations
     Direct,
+    
+    /// Group communication channel
+    /// 
+    /// - **Participants**: 3 or more agents
+    /// - **Visibility**: Private to group members
+    /// - **Use Case**: Team collaboration, project coordination
     Group,
+    
+    /// Public communication channel
+    /// 
+    /// - **Participants**: Unlimited
+    /// - **Visibility**: Public, anyone can join
+    /// - **Use Case**: Community discussions, announcements
     Public,
+    
+    /// Private invitation-only channel
+    /// 
+    /// - **Participants**: Limited by invitation
+    /// - **Visibility**: Private, invite-only
+    /// - **Use Case**: Exclusive groups, premium services
     Private,
 }
 
+/// Message types for communication
+/// 
+/// Defines the different types of messages that can be sent
+/// through the communication system. Each type has specific
+/// handling requirements and security considerations.
+/// 
+/// # Message Processing
+/// 
+/// Different message types may have different:
+/// - **Storage requirements**: File messages need IPFS links
+/// - **Security handling**: System messages have elevated privileges
+/// - **Delivery mechanisms**: Audio/image messages may need special rendering
+/// - **Rate limiting**: Different types may have different limits
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// // Send a text message
+/// let text_msg = MessageType::Text;
+/// 
+/// // Send a file attachment
+/// let file_msg = MessageType::File;
+/// 
+/// // Send a system notification
+/// let system_msg = MessageType::System;
+/// ```
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum MessageType {
+    /// Plain text message
+    /// 
+    /// - **Content**: UTF-8 text string
+    /// - **Size limit**: 10KB
+    /// - **Encryption**: Optional end-to-end encryption
     Text,
+    
+    /// File attachment
+    /// 
+    /// - **Content**: IPFS hash or file reference
+    /// - **Size limit**: 10MB (stored off-chain)
+    /// - **Types**: Documents, code, data files
     File,
+    
+    /// Image attachment
+    /// 
+    /// - **Content**: IPFS hash of image
+    /// - **Formats**: JPEG, PNG, GIF, WebP
+    /// - **Size limit**: 5MB
     Image,
+    
+    /// Audio message
+    /// 
+    /// - **Content**: IPFS hash of audio file
+    /// - **Formats**: MP3, WAV, OGG
+    /// - **Duration limit**: 10 minutes
     Audio,
+    
+    /// System-generated message
+    /// 
+    /// - **Content**: System notifications, status updates
+    /// - **Origin**: Generated by the protocol
+    /// - **Privileges**: May contain privileged information
     System,
 }
 
+/// Work order status enumeration
+/// 
+/// Tracks the lifecycle of work orders from creation to completion.
+/// Each status represents a specific stage in the work process with
+/// defined transitions and requirements.
+/// 
+/// # Status Flow
+/// 
+/// ```text
+/// Created → Open → Submitted → InProgress → Approved → Completed
+///    ↓       ↓        ↓           ↓           ↓
+/// Cancelled ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←
+/// ```
+/// 
+/// # State Transitions
+/// 
+/// | From | To | Trigger | Requirements |
+/// |------|----|---------|-----------  |
+/// | Created | Open | Agent accepts | Agent signature |
+/// | Open | InProgress | Work starts | Time tracking |
+/// | InProgress | Submitted | Work done | Deliverables |
+/// | Submitted | Approved | Client approves | Client signature |
+/// | Approved | Completed | Payment made | Funds transfer |
+/// | Any | Cancelled | Cancel request | Either party |
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// // Create a new work order
+/// let status = WorkOrderStatus::Created;
+/// 
+/// // Agent accepts and starts work
+/// let status = WorkOrderStatus::InProgress;
+/// 
+/// // Work is completed and approved
+/// let status = WorkOrderStatus::Completed;
+/// ```
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum WorkOrderStatus {
+    /// Work order created but not yet accepted
+    /// 
+    /// - **Next States**: Open, Cancelled
+    /// - **Actions**: Agent can accept, client can cancel
+    /// - **Payment**: Funds may be escrowed
     Created,
+    
+    /// Work order accepted and open for work
+    /// 
+    /// - **Next States**: InProgress, Cancelled
+    /// - **Actions**: Agent can start work
+    /// - **Timeline**: Deadline tracking begins
     Open,
+    
+    /// Work completed and submitted for review
+    /// 
+    /// - **Next States**: Approved, InProgress (if revisions needed)
+    /// - **Actions**: Client reviews deliverables
+    /// - **Content**: Deliverables attached
     Submitted,
+    
+    /// Work is actively being performed
+    /// 
+    /// - **Next States**: Submitted, Cancelled
+    /// - **Actions**: Agent provides updates
+    /// - **Timeline**: Active deadline monitoring
     InProgress,
+    
+    /// Work approved by client
+    /// 
+    /// - **Next States**: Completed
+    /// - **Actions**: Payment processing begins
+    /// - **Quality**: Client satisfaction confirmed
     Approved,
+    
+    /// Work fully completed and paid
+    /// 
+    /// - **Next States**: None (terminal state)
+    /// - **Actions**: Reviews can be submitted
+    /// - **Payment**: Funds released to agent
     Completed,
+    
+    /// Work order cancelled
+    /// 
+    /// - **Next States**: None (terminal state)
+    /// - **Actions**: Refund processing if applicable
+    /// - **Reason**: Cancellation reason recorded
     Cancelled,
 }
 

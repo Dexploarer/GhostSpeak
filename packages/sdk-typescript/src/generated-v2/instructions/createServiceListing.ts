@@ -139,14 +139,14 @@ export function getServiceListingDataEncoder(): Encoder<ServiceListingDataArgs> 
 
 export function getServiceListingDataDecoder(): Decoder<ServiceListingData> {
   return getStructDecoder([
-    ['title', getStringDecoder()],
-    ['description', getStringDecoder()],
+    ['title', getUtf8Decoder()],
+    ['description', getUtf8Decoder()],
     ['price', getU64Decoder()],
-    ['tokenMint', getStringDecoder()],
-    ['serviceType', getStringDecoder()],
-    ['paymentToken', getStringDecoder()],
+    ['tokenMint', getUtf8Decoder()],
+    ['serviceType', getUtf8Decoder()],
+    ['paymentToken', getUtf8Decoder()],
     ['estimatedDelivery', getU64Decoder()],
-    ['tags', getArrayDecoder(getStringDecoder())],
+    ['tags', getArrayDecoder(getUtf8Decoder())],
   ]);
 }
 

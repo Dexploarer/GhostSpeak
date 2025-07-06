@@ -123,16 +123,16 @@ export function getSubmitWorkDeliveryInstructionDataCodec(): Codec<
 export function getWorkDeliveryDataEncoder(): Encoder<WorkDeliveryDataArgs> {
   return getStructEncoder([
     ['deliverables', getArrayEncoder(getDeliverableEncoder())],
-    ['ipfsHash', getStringEncoder()],
-    ['metadataUri', getStringEncoder()],
+    ['ipfsHash', getUtf8Encoder()],
+    ['metadataUri', getUtf8Encoder()],
   ]);
 }
 
 export function getWorkDeliveryDataDecoder(): Decoder<WorkDeliveryData> {
   return getStructDecoder([
     ['deliverables', getArrayDecoder(getDeliverableDecoder())],
-    ['ipfsHash', getStringDecoder()],
-    ['metadataUri', getStringDecoder()],
+    ['ipfsHash', getUtf8Decoder()],
+    ['metadataUri', getUtf8Decoder()],
   ]);
 }
 
@@ -142,13 +142,13 @@ export function getWorkDeliveryDataCodec(): Codec<WorkDeliveryDataArgs, WorkDeli
 
 export function getDeliverableEncoder(): Encoder<DeliverableArgs> {
   return getStructEncoder([
-    ['__kind', getStringEncoder()],
+    ['__kind', getUtf8Encoder()],
   ]);
 }
 
 export function getDeliverableDecoder(): Decoder<Deliverable> {
   return getStructDecoder([
-    ['__kind', getStringDecoder()],
+    ['__kind', getUtf8Decoder()],
   ]);
 }
 

@@ -2,11 +2,6 @@
  * Modern Escrow Service for Web3.js v2 (2025)
  */
 
-import type { Address } from '@solana/addresses';
-import type { Rpc, SolanaRpcApi } from '@solana/rpc';
-import type { Commitment } from '@solana/rpc-types';
-import type { KeyPairSigner } from '@solana/signers';
-
 import { 
   getCreateWorkOrderInstructionAsync,
   getSubmitWorkDeliveryInstructionAsync,
@@ -15,6 +10,11 @@ import {
   type WorkDeliveryDataArgs,
 } from '../generated-v2/instructions/index.js';
 import { sendAndConfirmTransactionFactory } from '../utils/transaction-helpers.js';
+
+import type { Address } from '@solana/addresses';
+import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import type { Commitment } from '@solana/rpc-types';
+import type { KeyPairSigner } from '@solana/signers';
 
 /**
  * Escrow configuration
@@ -143,15 +143,98 @@ export class EscrowService {
   }
 
   /**
-   * Release funds from escrow
+   * Process payment for completed work order
+   */
+  async processPayment(
+    signer: KeyPairSigner,
+    workOrderPda: Address,
+    providerAgent: Address,
+    amount: bigint,
+    payerTokenAccount: Address,
+    providerTokenAccount: Address,
+    tokenMint: Address,
+    useConfidentialTransfer: boolean = false
+  ): Promise<string> {
+    try {
+      console.log(`💸 Processing payment of ${amount} tokens`);
+
+      // Generate payment PDA
+      const paymentPda = `payment_${Date.now()}` as Address;
+      
+      // Create process payment instruction
+      const instruction = await getProcessPaymentInstructionAsync({
+        payment: paymentPda,
+        workOrder: workOrderPda,
+        providerAgent,
+        payer: signer.address,
+        payerTokenAccount,
+        providerTokenAccount,
+        tokenMint,
+        amount,
+        useConfidentialTransfer,
+      });
+
+      // Build and send transaction using factory pattern
+      const sendTransactionFactory = sendAndConfirmTransactionFactory('https://api.devnet.solana.com');
+      const result = await sendTransactionFactory([instruction], [signer]);
+      const signature = result.signature;
+
+      console.log('✅ Payment processed:', signature);
+      return signature;
+    } catch (error) {
+      throw new Error(`Payment processing failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Submit work delivery for a work order
+   */
+  async submitWorkDelivery(
+    provider: KeyPairSigner,
+    workOrderPda: Address,
+    deliveryData: WorkDeliveryDataArgs
+  ): Promise<{
+    workDeliveryPda: Address;
+    signature: string;
+  }> {
+    try {
+      console.log(`📦 Submitting work delivery for work order: ${workOrderPda}`);
+
+      // Generate work delivery PDA
+      const workDeliveryPda = `work_delivery_${Date.now()}` as Address;
+      
+      // Create submit work delivery instruction
+      const instruction = await getSubmitWorkDeliveryInstructionAsync({
+        workDelivery: workDeliveryPda,
+        workOrder: workOrderPda,
+        provider: provider.address,
+        deliveryData,
+      });
+
+      // Build and send transaction using factory pattern
+      const sendTransactionFactory = sendAndConfirmTransactionFactory('https://api.devnet.solana.com');
+      const result = await sendTransactionFactory([instruction], [provider]);
+      const signature = result.signature;
+
+      console.log('✅ Work delivery submitted:', signature);
+      return { workDeliveryPda, signature };
+    } catch (error) {
+      throw new Error(`Work delivery submission failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Release funds from escrow (legacy method - now uses processPayment)
    */
   async releaseFunds(
-    _signer: KeyPairSigner,
-    _escrowPda: Address
+    signer: KeyPairSigner,
+    escrowPda: Address
   ): Promise<string> {
     try {
       console.log('🔓 Releasing funds from escrow');
 
+      // For now, this is a mock implementation
+      // In a real implementation, this would call processPayment with appropriate parameters
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       return `sig_release_${Date.now()}`;

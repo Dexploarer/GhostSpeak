@@ -24,7 +24,7 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { getArrayDecoder, getArrayEncoder, getStringDecoder, getStringEncoder } from '@solana/codecs';
+import { getArrayDecoder, getArrayEncoder, getUtf8Decoder, getUtf8Encoder } from '@solana/codecs';
 
 export const CREATE_JOB_POSTING_DISCRIMINATOR = new Uint8Array([
   77, 92, 201, 88, 156, 45, 123, 200,
@@ -123,33 +123,33 @@ export function getCreateJobPostingInstructionDataCodec(): Codec<
 
 export function getJobPostingDataEncoder(): Encoder<JobPostingDataArgs> {
   return getStructEncoder([
-    ['title', getStringEncoder()],
-    ['description', getStringEncoder()],
-    ['requirements', getArrayEncoder(getStringEncoder())],
+    ['title', getUtf8Encoder()],
+    ['description', getUtf8Encoder()],
+    ['requirements', getArrayEncoder(getUtf8Encoder())],
     ['budget', getU64Encoder()],
     ['deadline', getU64Encoder()],
-    ['skillsNeeded', getArrayEncoder(getStringEncoder())],
+    ['skillsNeeded', getArrayEncoder(getUtf8Encoder())],
     ['budgetMin', getU64Encoder()],
     ['budgetMax', getU64Encoder()],
-    ['paymentToken', getStringEncoder()],
-    ['jobType', getStringEncoder()],
-    ['experienceLevel', getStringEncoder()],
+    ['paymentToken', getUtf8Encoder()],
+    ['jobType', getUtf8Encoder()],
+    ['experienceLevel', getUtf8Encoder()],
   ]);
 }
 
 export function getJobPostingDataDecoder(): Decoder<JobPostingData> {
   return getStructDecoder([
-    ['title', getStringDecoder()],
-    ['description', getStringDecoder()],
-    ['requirements', getArrayDecoder(getStringDecoder())],
+    ['title', getUtf8Decoder()],
+    ['description', getUtf8Decoder()],
+    ['requirements', getArrayDecoder(getUtf8Decoder())],
     ['budget', getU64Decoder()],
     ['deadline', getU64Decoder()],
-    ['skillsNeeded', getArrayDecoder(getStringDecoder())],
+    ['skillsNeeded', getArrayDecoder(getUtf8Decoder())],
     ['budgetMin', getU64Decoder()],
     ['budgetMax', getU64Decoder()],
-    ['paymentToken', getStringDecoder()],
-    ['jobType', getStringDecoder()],
-    ['experienceLevel', getStringDecoder()],
+    ['paymentToken', getUtf8Decoder()],
+    ['jobType', getUtf8Decoder()],
+    ['experienceLevel', getUtf8Decoder()],
   ]);
 }
 

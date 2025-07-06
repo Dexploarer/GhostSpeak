@@ -6,18 +6,7 @@
  */
 
 import {
-  combineCodec,
-  getStructDecoder,
-  getStructEncoder,
-  getU32Decoder,
-  getU32Encoder,
-  getU64Decoder,
-  getU64Encoder,
-  transformEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
   type IAccountMeta,
   type IInstruction,
   type IInstructionWithAccounts,
@@ -26,7 +15,23 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/web3.js';
-import { getArrayDecoder, getArrayEncoder, getStringDecoder, getStringEncoder } from '@solana/codecs';
+import {
+  combineCodec,
+  getArrayDecoder,
+  getArrayEncoder,
+  getStructDecoder,
+  getStructEncoder,
+  getU32Decoder,
+  getU32Encoder,
+  getU64Decoder,
+  getU64Encoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
+  transformEncoder,
+  type Codec,
+  type Decoder,
+  type Encoder,
+} from '@solana/codecs';
 
 export const PURCHASE_SERVICE_DISCRIMINATOR = new Uint8Array([
   201, 156, 88, 123, 45, 92, 200, 77,
@@ -119,8 +124,8 @@ export function getServicePurchaseDataEncoder(): Encoder<ServicePurchaseDataArgs
   return getStructEncoder([
     ['listingId', getU64Encoder()],
     ['quantity', getU32Encoder()],
-    ['requirements', getArrayEncoder(getStringEncoder())],
-    ['customInstructions', getStringEncoder()],
+    ['requirements', getArrayEncoder(getUtf8Encoder())],
+    ['customInstructions', getUtf8Encoder()],
     ['deadline', getU64Encoder()],
   ]);
 }
@@ -129,8 +134,8 @@ export function getServicePurchaseDataDecoder(): Decoder<ServicePurchaseData> {
   return getStructDecoder([
     ['listingId', getU64Decoder()],
     ['quantity', getU32Decoder()],
-    ['requirements', getArrayDecoder(getStringDecoder())],
-    ['customInstructions', getStringDecoder()],
+    ['requirements', getArrayDecoder(getUtf8Decoder())],
+    ['customInstructions', getUtf8Decoder()],
     ['deadline', getU64Decoder()],
   ]);
 }
@@ -207,7 +212,38 @@ export function getPurchaseServiceInstruction<
   };
 }
 
-// Async version for modern Web3.js v2 usage
+export type ParsedPurchaseServiceInstruction<
+  TProgram extends string = 'PodAI111111111111111111111111111111111111111',
+  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
+> = {
+  programId: Address<TProgram>;
+  accounts: {
+    servicePurchase: TAccountMetas[0];
+    serviceListing: TAccountMetas[1];
+    buyer: TAccountMetas[2];
+    systemProgram: TAccountMetas[3];
+  };
+  data: PurchaseServiceInstructionData;
+};
+
+export function parsePurchaseServiceInstruction<
+  TProgram extends string,
+  TAccountMetas extends readonly IAccountMeta[],
+>(
+  instruction: IInstruction<TProgram> & IInstructionWithAccounts<TAccountMetas> & IInstructionWithData<Uint8Array>
+): ParsedPurchaseServiceInstruction<TProgram, TAccountMetas> {
+  return {
+    programId: instruction.programId,
+    accounts: {
+      servicePurchase: instruction.accounts[0]!,
+      serviceListing: instruction.accounts[1]!,
+      buyer: instruction.accounts[2]!,
+      systemProgram: instruction.accounts[3]!,
+    },
+    data: getPurchaseServiceInstructionDataDecoder().decode(instruction.data),
+  };
+}
+
 export async function getPurchaseServiceInstructionAsync<
   TAccountServicePurchase extends string,
   TAccountServiceListing extends string,
@@ -222,5 +258,6 @@ export async function getPurchaseServiceInstructionAsync<
   TAccountBuyer,
   TAccountSystemProgram
 >> {
+  // NOTE: This instruction does not need any account resolution
   return getPurchaseServiceInstruction(input);
 } 

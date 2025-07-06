@@ -12,13 +12,13 @@ permissions:
   id-token: write
 
 env:
-  SOLANA_VERSION: "2.2.17"
+  SOLANA_VERSION: "2.1.15"
   ANCHOR_VERSION: "0.31.1"
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    name: "🚀 Release Prompt or Die Platform"
+    name: "🚀 Release GhostSpeak Platform"
     
     steps:
       - name: Checkout code
@@ -41,7 +41,7 @@ jobs:
 
       - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.solana.com/v1.18.26/install)"
+          sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           solana --version
@@ -61,45 +61,42 @@ jobs:
             ~/.cargo/git
             target
             node_modules
-            sdk/node_modules
-            cli/node_modules
-            frontend/node_modules
+            packages/*/node_modules
           key: ${{ runner.os }}-release-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
 
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
           bun install --frozen-lockfile || echo "Root dependencies installed"
-          cd sdk && bun install --frozen-lockfile || echo "SDK dependencies installed"
-          cd ../cli && bun install --frozen-lockfile || echo "CLI dependencies installed"
-          cd ../frontend && bun install --frozen-lockfile || echo "Frontend dependencies installed"
+          cd packages/sdk-typescript && bun install --frozen-lockfile || echo "SDK TypeScript dependencies installed"
           echo "✅ All dependencies installed"
 
       - name: Run full test suite
         run: |
           echo "🧪 Running comprehensive tests before release..."
-          bun run lint:all || echo "Linting completed with warnings"
-          bun run build:verify || echo "Build verification completed"
-          bun run test || echo "Tests completed"
+          bun run lint:comprehensive || echo "Linting completed with warnings"
+          bun run build || echo "Build verification completed"
+          bun run test:comprehensive || echo "Tests completed"
 
       - name: Build all projects
         run: |
           echo "🏗️ Building all projects..."
-          bun run build:safe || echo "Anchor build completed"
-          cd sdk && (bun run build:prod || bun run build || echo "SDK build completed")
-          echo "✅ SDK built"
-          cd ../cli && (bun run build:prod || bun run build || echo "CLI build completed")
-          echo "✅ CLI built"
-          cd ../frontend && (bun run build || echo "Frontend build completed")
-          echo "✅ Frontend built"
+          anchor build || echo "Anchor build completed"
+          cd packages/sdk-typescript && (bun run build:prod || bun run build || echo "SDK TypeScript build completed")
+          echo "✅ SDK TypeScript built"
+          cd ../core && cargo build --release || echo "Core package build completed"
+          echo "✅ Core package built"
+          cd ../sdk-rust && cargo build --release || echo "SDK Rust build completed"
+          echo "✅ SDK Rust built"
 
       - name: Verify build artifacts
         run: |
           echo "✅ Verifying build artifacts..."
           ls -la target/deploy/ || echo "No Solana programs built"
           ls -la target/idl/ || echo "No IDL files built"
-          ls -la sdk/dist/ || echo "No SDK dist built"
-          ls -la cli/dist/ || echo "No CLI dist built"
+          ls -la packages/sdk-typescript/dist/ || echo "No SDK TypeScript dist built"
+          ls -la packages/core/target/release/ || echo "No Core package built"
+          ls -la packages/sdk-rust/target/release/ || echo "No SDK Rust built"
 
       - name: Extract version from tag
         id: version
@@ -117,13 +114,9 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           echo "📝 Updating package.json versions to $VERSION"
           
-          # Update SDK version
-          cd sdk
-          npm version $VERSION --no-git-tag-version || echo "SDK version update completed"
-          
-          # Update CLI version  
-          cd ../cli
-          npm version $VERSION --no-git-tag-version || echo "CLI version update completed"
+          # Update SDK TypeScript version
+          cd packages/sdk-typescript
+          npm version $VERSION --no-git-tag-version || echo "SDK TypeScript version update completed"
           
           echo "✅ Package versions updated"
 
@@ -135,25 +128,14 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
           echo "📝 NPM authentication configured"
           
-      - name: Publish SDK to npm
+      - name: Publish SDK TypeScript to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: env.NPM_TOKEN != ''
-        working-directory: sdk
+        working-directory: packages/sdk-typescript
         run: |
-          echo "📦 Publishing SDK to npm..."
-          bun run build
-          npm publish --access public --provenance
-
-      - name: Publish CLI to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        if: env.NPM_TOKEN != ''
-        working-directory: cli
-        run: |
-          echo "📦 Publishing CLI to npm..."
+          echo "📦 Publishing SDK TypeScript to npm..."
           bun run build
           npm publish --access public --provenance
 
@@ -175,54 +157,52 @@ jobs:
             echo "✅ Copied IDL files"
           fi
           
-          # Copy SDK dist
-          if [ -d "sdk/dist" ]; then
-            mkdir -p release-artifacts/sdk
-            cp -r sdk/dist/ release-artifacts/sdk/
-            echo "✅ Copied SDK distribution"
+          # Copy SDK TypeScript dist
+          if [ -d "packages/sdk-typescript/dist" ]; then
+            mkdir -p release-artifacts/sdk-typescript
+            cp -r packages/sdk-typescript/dist/ release-artifacts/sdk-typescript/
+            echo "✅ Copied SDK TypeScript distribution"
           fi
           
-          # Copy CLI dist
-          if [ -d "cli/dist" ]; then
-            mkdir -p release-artifacts/cli
-            cp -r cli/dist/ release-artifacts/cli/
-            echo "✅ Copied CLI distribution"
+          # Copy Core package
+          if [ -d "packages/core/target/release" ]; then
+            mkdir -p release-artifacts/core
+            cp -r packages/core/target/release/ release-artifacts/core/
+            echo "✅ Copied Core package"
           fi
           
-          # Copy frontend build
-          if [ -d "frontend/.next" ]; then
-            mkdir -p release-artifacts/frontend
-            cp -r frontend/.next/ release-artifacts/frontend/
-            echo "✅ Copied frontend build"
+          # Copy SDK Rust
+          if [ -d "packages/sdk-rust/target/release" ]; then
+            mkdir -p release-artifacts/sdk-rust
+            cp -r packages/sdk-rust/target/release/ release-artifacts/sdk-rust/
+            echo "✅ Copied SDK Rust"
           fi
           
           # Create archive
-          tar -czf pod-com-${{ steps.version.outputs.version }}.tar.gz -C release-artifacts .
+          tar -czf ghostspeak-${{ steps.version.outputs.version }}.tar.gz -C release-artifacts .
 
       - name: Generate release notes
         id: release_notes
         run: |
           echo "📝 Generating release notes..."
           cat > release_notes.md << EOF
-          # Prompt or Die Platform Release ${{ steps.version.outputs.version }}
+          # GhostSpeak Platform Release ${{ steps.version.outputs.version }}
           
           ## 🚀 What's New
           
-          This release includes updates to the Prompt or Die AI Development Platform.
+          This release includes updates to the GhostSpeak AI Agent Commerce Platform.
           
           ## 📦 Packages
           
-          - **SDK**: \`@prompt-or-die/sdk@${{ steps.version.outputs.version }}\`
-          - **CLI**: \`@prompt-or-die/cli@${{ steps.version.outputs.version }}\`
+          - **SDK TypeScript**: \`@ghostspeak/sdk-typescript@${{ steps.version.outputs.version }}\`
+          - **Core**: Rust core library
+          - **SDK Rust**: Rust SDK for advanced integrations
           
           ## 🛠️ Installation
           
           \`\`\`bash
-          # Install SDK
-          bun add @prompt-or-die/sdk
-          
-          # Install CLI globally
-          bun add -g @prompt-or-die/cli
+          # Install SDK TypeScript
+          bun add @ghostspeak/sdk-typescript
           \`\`\`
           
           ## 🔧 Solana Program
@@ -231,7 +211,7 @@ jobs:
           
           ## 📚 Documentation
           
-          Visit our [documentation](https://github.com/Prompt-or-Die) for usage examples.
+          Visit our [documentation](https://github.com/ghostspeak/ghostspeak) for usage examples.
           EOF
 
       - name: Create GitHub Release
@@ -241,7 +221,7 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           files: |
-            pod-com-${{ steps.version.outputs.version }}.tar.gz
+            ghostspeak-${{ steps.version.outputs.version }}.tar.gz
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -252,6 +232,6 @@ jobs:
         if: env.DISCORD_WEBHOOK != ''
         run: |
           curl -H "Content-Type: application/json" \
-               -d "{\"content\":\"🚀 Prompt or Die Platform v${{ steps.version.outputs.version }} has been released! Check it out: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}\"}" \
+               -d "{\"content\":\"🚀 GhostSpeak Platform v${{ steps.version.outputs.version }} has been released! Check it out: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}\"}" \
                "$DISCORD_WEBHOOK"
         continue-on-error: true

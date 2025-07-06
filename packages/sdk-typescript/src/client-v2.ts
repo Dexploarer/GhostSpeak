@@ -5,9 +5,12 @@
 
 import { AgentService } from './services/agent';
 import { ChannelService } from './services/channel';
+import { MessageService } from './services/message';
 import type { Address } from '@solana/addresses';
 import { createSolanaRpc } from '@solana/rpc';
+import { createSolanaRpcSubscriptions } from '@solana/rpc-subscriptions';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import type { RpcSubscriptions, SolanaRpcSubscriptionsApi } from '@solana/rpc-subscriptions';
 import type { Commitment } from '@solana/rpc-types';
 
 /**
@@ -25,6 +28,7 @@ export interface IPodAIClientConfig {
  */
 export class PodAIClient {
   private readonly rpc: Rpc<SolanaRpcApi>;
+  private readonly rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>;
   private readonly programId: Address;
   private readonly commitment: Commitment;
   private readonly wsEndpoint?: string | undefined;
@@ -32,10 +36,15 @@ export class PodAIClient {
   // Service instances
   private _agentService?: AgentService;
   private _channelService?: ChannelService;
+  private _messageService?: MessageService;
 
   constructor(config: IPodAIClientConfig) {
     // Initialize RPC connection
     this.rpc = createSolanaRpc(config.rpcEndpoint);
+    
+    // Initialize RPC subscriptions - use WebSocket endpoint if provided, otherwise derive from RPC endpoint
+    const wsEndpoint = config.wsEndpoint ?? config.rpcEndpoint.replace('https://', 'wss://').replace('http://', 'ws://');
+    this.rpcSubscriptions = createSolanaRpcSubscriptions(wsEndpoint);
     
     // Set program ID
     this.programId = this.parseAddress(
@@ -50,6 +59,7 @@ export class PodAIClient {
 
     console.log('🚀 PodAI Client initialized successfully');
     console.log(`📡 RPC Endpoint: ${config.rpcEndpoint}`);
+    console.log(`🔗 WS Endpoint: ${wsEndpoint}`);
     console.log(`🎯 Program ID: ${String(this.programId)}`);
     console.log(`⚙️ Commitment: ${this.commitment}`);
   }
@@ -60,10 +70,11 @@ export class PodAIClient {
   public get agents(): AgentService {
     if (!this._agentService) {
       this._agentService = new AgentService(
-      this.rpc,
-      this.programId,
-      this.commitment
-    );
+        this.rpc,
+        this.rpcSubscriptions,
+        this.programId,
+        this.commitment
+      );
     }
     return this._agentService;
   }
@@ -74,12 +85,28 @@ export class PodAIClient {
   public get channels(): ChannelService {
     if (!this._channelService) {
       this._channelService = new ChannelService(
-      this.rpc,
-      this.programId,
-      this.commitment
-    );
+        this.rpc,
+        this.rpcSubscriptions,
+        this.programId,
+        this.commitment
+      );
     }
     return this._channelService;
+  }
+
+  /**
+   * Get Message Service (lazy-loaded)
+   */
+  public get messages(): MessageService {
+    if (!this._messageService) {
+      this._messageService = new MessageService(
+        this.rpc,
+        this.rpcSubscriptions,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._messageService;
   }
 
   /**
@@ -87,6 +114,13 @@ export class PodAIClient {
    */
   public getRpc(): Rpc<SolanaRpcApi> {
     return this.rpc;
+  }
+
+  /**
+   * Get RPC subscriptions client
+   */
+  public getRpcSubscriptions(): RpcSubscriptions<SolanaRpcSubscriptionsApi> {
+    return this.rpcSubscriptions;
   }
 
   /**

@@ -55,8 +55,8 @@ export interface IConfidentialBalance {
  */
 export class ConfidentialTransferService {
   constructor(
-    private readonly rpc: Rpc<SolanaRpcApi>,
-    private readonly programId: Address,
+    private readonly _rpc: Rpc<SolanaRpcApi>,
+    private readonly _programId: Address,
     private readonly commitment: Commitment = 'confirmed'
   ) {}
 
@@ -171,7 +171,7 @@ export class ConfidentialTransferService {
     availableBalance: string;
   }> {
     try {
-      const accountInfo = await this.rpc
+      const accountInfo = await this._rpc
         .getAccountInfo(tokenAccount, {
           commitment: this.commitment,
           encoding: 'base64',
@@ -195,8 +195,8 @@ export class ConfidentialTransferService {
    * Apply pending balance to available balance
    */
   async applyPendingBalance(
-    signer: KeyPairSigner,
-    tokenAccount: Address,
+    _signer: KeyPairSigner,
+    _tokenAccount: Address,
     pendingBalanceInstructions: {
       amount: bigint;
       decryptionKey: string;
@@ -229,9 +229,9 @@ export class ConfidentialTransferService {
    * Generate zero-knowledge proofs for confidential transfer
    */
   async generateTransferProofs(
-    amount: bigint,
-    sourceBalance: bigint,
-    encryptionKeys: {
+    _amount: bigint,
+    _sourceBalance: bigint,
+    _encryptionKeys: {
       sourceKey: string;
       destinationKey: string;
     }

@@ -41,9 +41,9 @@ export interface ICompressedNftMetadata {
  */
 export class CompressedNftService {
   constructor(
-    private readonly rpc: Rpc<SolanaRpcApi>,
-    private readonly programId: Address,
-    private readonly commitment: Commitment = 'confirmed'
+    private readonly _rpc: Rpc<SolanaRpcApi>,
+    private readonly _programId: Address,
+    private readonly _commitment: Commitment = 'confirmed'
   ) {}
 
   /**
@@ -52,7 +52,7 @@ export class CompressedNftService {
   async createCompressedNft(
     _signer: KeyPairSigner,
     _merkleTree: Address,
-    config: ICompressedNftConfig
+    _config: ICompressedNftConfig
   ): Promise<{ mint: Address; signature: string }> {
     // TODO: Implement the logic for creating a compressed NFT
     throw new Error('createCompressedNft is not yet implemented.');

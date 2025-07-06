@@ -16,11 +16,13 @@ import {
   getSignatureFromTransaction,
   setTransactionMessageFeePayerSigner,
   appendTransactionMessageInstructions,
+  getBase64EncodedWireTransaction,
 } from '@solana/kit';
 
 import type { Address } from '@solana/addresses';
 import type { IInstruction } from '@solana/instructions';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import type { RpcSubscriptions, SolanaRpcSubscriptionsApi } from '@solana/rpc-subscriptions';
 import type { Commitment } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
 
@@ -169,14 +171,20 @@ export function addressToBase58(addr: Address): string {
 }
 
 /**
- * Create an instruction using Web3.js v2 patterns - simplified
+ * Create an instruction using Web3.js v2 patterns - fixed type conversion
  */
 export function createInstruction(
   config: ITransactionInstruction
-): Record<string, unknown> {
+): IInstruction {
+  // Convert our account format to the expected IAccountMeta format
+  const accounts = config.accounts.map(account => ({
+    address: account.address,
+    role: account.role as any // Type assertion to handle role compatibility
+  }));
+
   return {
     programAddress: config.programAddress,
-    accounts: config.accounts,
+    accounts,
     data: config.data
   };
 }
@@ -244,7 +252,6 @@ export const createTransactionConfig = (
     timeout: options.timeout ?? 30000,
     skipPreflight: options.skipPreflight ?? false,
     maxRetries: options.maxRetries ?? 3,
-    ...options
   };
 };
 
@@ -278,6 +285,171 @@ export async function getAccountInfo(
       }`
     );
   }
+}
+
+/**
+ * Send transaction (wrapper around sendAndConfirmTransaction) - Fixed factory pattern
+ */
+export function sendTransaction(
+  rpc: Rpc<SolanaRpcApi>,
+  rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>
+): (instructions: IInstruction[], signers: KeyPairSigner[], options?: ITransactionOptions) => Promise<ISendTransactionResult> {
+  const sendAndConfirm = createSendAndConfirmTransactionFactory({
+    rpc,
+    rpcSubscriptions,
+  });
+
+  return async function(
+    instructions: IInstruction[],
+    signers: KeyPairSigner[],
+    options: ITransactionOptions = {}
+  ): Promise<ISendTransactionResult> {
+    try {
+      // Get latest blockhash
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+      // Get primary signer (fee payer)
+      const payer = signers[0];
+      if (!payer) {
+        throw new Error('No signer provided');
+      }
+
+      // Build transaction using Web3.js v2 pipe pattern
+      const transaction = pipe(
+        createTransactionMessage({ version: 0 }),
+        tx => setTransactionMessageFeePayerSigner(payer, tx),
+        tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+        tx => appendTransactionMessageInstructions(instructions, tx)
+      );
+
+      // Sign transaction
+      const signedTransaction = await signTransactionMessageWithSigners(transaction);
+      
+      await sendAndConfirm(signedTransaction, {
+        commitment: options.commitment ?? 'confirmed',
+        skipPreflight: options.skipPreflight ?? false,
+        maxRetries: BigInt(options.maxRetries ?? 3)
+      });
+
+      const signature = getSignatureFromTransaction(signedTransaction);
+      
+      return {
+        signature,
+        confirmed: true,
+        success: true
+      };
+    } catch (error) {
+      return {
+        signature: '',
+        confirmed: false,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  };
+}
+
+/**
+ * Build, simulate, and send transaction - Fixed with proper RPC subscription handling
+ */
+export function buildSimulateAndSendTransaction(
+  rpc: Rpc<SolanaRpcApi>,
+  rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>
+): (instructions: IInstruction[], signers: KeyPairSigner[], options?: ITransactionOptions) => Promise<ISendTransactionResult> {
+  const sendAndConfirm = createSendAndConfirmTransactionFactory({
+    rpc,
+    rpcSubscriptions,
+  });
+
+  return async function(
+    instructions: IInstruction[],
+    signers: KeyPairSigner[],
+    options: ITransactionOptions = {}
+  ): Promise<ISendTransactionResult> {
+    try {
+      // Get latest blockhash
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+      // Get primary signer (fee payer)
+      const payer = signers[0];
+      if (!payer) {
+        throw new Error('No signer provided');
+      }
+
+      // Build transaction using Web3.js v2 pipe pattern
+      const transaction = pipe(
+        createTransactionMessage({ version: 0 }),
+        tx => setTransactionMessageFeePayerSigner(payer, tx),
+        tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+        tx => appendTransactionMessageInstructions(instructions, tx)
+      );
+
+      // Sign for simulation
+      const signedTransaction = await signTransactionMessageWithSigners(transaction);
+
+      // Simulate transaction first - fix the base64 encoding issue
+      const encodedTransaction = getBase64EncodedWireTransaction(signedTransaction);
+      const simulateResult = await rpc.simulateTransaction(encodedTransaction, {
+        commitment: options.commitment ?? 'confirmed',
+        sigVerify: false,
+        encoding: 'base64'
+      }).send();
+
+      if (simulateResult.value.err) {
+        throw new Error(`Transaction simulation failed: ${JSON.stringify(simulateResult.value.err)}`);
+      }
+
+      // Send and confirm the transaction
+      await sendAndConfirm(signedTransaction, {
+        commitment: options.commitment ?? 'confirmed',
+        skipPreflight: options.skipPreflight ?? false,
+        maxRetries: BigInt(options.maxRetries ?? 3)
+      });
+
+      const signature = getSignatureFromTransaction(signedTransaction);
+      
+      return {
+        signature,
+        confirmed: true,
+        success: true
+      };
+    } catch (error) {
+      return {
+        signature: '',
+        confirmed: false,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  };
+}
+
+/**
+ * Batch multiple transactions - Fixed with proper RPC client usage
+ */
+export async function batchTransactions(
+  rpc: Rpc<SolanaRpcApi>,
+  rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>,
+  transactionBatches: Array<{
+    instructions: IInstruction[];
+    signers: KeyPairSigner[];
+    options?: ITransactionOptions;
+  }>
+): Promise<ISendTransactionResult[]> {
+  const results: ISendTransactionResult[] = [];
+  const sendTx = sendTransaction(rpc, rpcSubscriptions);
+  
+  for (const batch of transactionBatches) {
+    const result = await sendTx(batch.instructions, batch.signers, batch.options);
+    results.push(result);
+    
+    // If a transaction fails, stop processing
+    if (!result.success) {
+      break;
+    }
+  }
+  
+  return results;
 }
 
 

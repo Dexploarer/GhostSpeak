@@ -13,7 +13,7 @@ import type { KeyPairSigner } from '@solana/signers';
 export class CompressionService {
   constructor(
     private readonly rpc: Rpc<SolanaRpcApi>,
-    private readonly programId: Address,
+    private readonly _programId: Address,
     private readonly commitment: Commitment = 'confirmed'
   ) {}
 

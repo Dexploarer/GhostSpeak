@@ -48,9 +48,9 @@ export interface IProtectionStatus {
  */
 export class MevProtectionService {
   constructor(
-    private readonly rpc: Rpc<SolanaRpcApi>,
-    private readonly programId: Address,
-    private readonly commitment: Commitment = 'confirmed'
+    private readonly _rpc: Rpc<SolanaRpcApi>,
+    private readonly _programId: Address,
+    private readonly _commitment: Commitment = 'confirmed'
   ) {}
 
   /**

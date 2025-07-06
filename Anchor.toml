@@ -2,8 +2,8 @@
 # Enhanced toolchain configuration for 2025
 anchor_version = "0.31.1"
 solana_version = "2.1.0"  # Latest Agave version
-# Using bun as the preferred package manager for faster performance
-package_manager = "bun"
+# Using npm as package manager for Anchor compatibility
+package_manager = "npm"
 
 [features]
 # Enable resolution of Anchor feature flags
@@ -15,13 +15,13 @@ skip-lint = false
 
 # Enhanced program configurations for different clusters
 [programs.localnet]
-podai = "PodAI111111111111111111111111111111111111111"
+podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"
 
 [programs.devnet]
-podai = "PodAI111111111111111111111111111111111111111"
+podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"
 
-[programs.mainnet-beta]
-podai = "PodAI111111111111111111111111111111111111111"  # Update with actual mainnet address
+[programs.mainnet]
+podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"  # Update with actual mainnet address
 
 # Registry configuration for Anchor programs
 [registry]
@@ -29,7 +29,7 @@ url = "https://api.apr.dev"
 
 # Enhanced provider configuration
 [provider]
-# Default cluster to use (devnet, testnet, mainnet-beta, or localnet)
+# Default cluster to use (devnet, testnet, mainnet, or localnet)
 cluster = "devnet"
 # Path to the wallet to use for deployment
 wallet = "~/.config/solana/id.json"
@@ -50,7 +50,7 @@ ledger = ".anchor/test-ledger"
 bind_address = "0.0.0.0"
 rpc_port = 8899
 rpc_bind_address = "0.0.0.0"
-limit_ledger_size = 10000
+limit_ledger_size = "10000"
 quiet = false
 # Enable features for modern Solana development
 reset = true
@@ -92,24 +92,7 @@ opt-level = 3
 # Enable Link Time Optimization
 lto = true
 
-# Enhanced workspace configuration
-[workspace]
-# Exclude certain directories from workspace
-exclude = [
-    "target",
-    "node_modules",
-    ".git",
-    ".anchor"
-]
-
-# Include all relevant packages
-members = [
-    "programs/*",
-    "sdk",
-    "sdk-js",
-    "cli",
-    "frontend"
-]
+# Workspace configuration removed for simpler setup
 
 # Development configuration
 [dev]

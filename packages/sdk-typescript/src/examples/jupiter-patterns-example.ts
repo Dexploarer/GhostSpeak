@@ -3,16 +3,19 @@
  * Demonstrates Web3.js v2 best practices for transaction handling
  */
 
+import { createSolanaRpcSubscriptions } from '@solana/rpc-subscriptions';
+
+import { createDevnetClient } from '../client-v2';
+import {
+  sendTransaction,
+  retryTransaction,
+  // createTransactionConfig, // Commented out as it's not used
+} from '../utils/transaction-helpers';
+
 import type { Address } from '@solana/addresses';
 import type { KeyPairSigner } from '@solana/signers';
 
 // Import our enhanced services
-import { createDevnetClient } from '../client-v2';
-import { 
-  sendTransaction,
-  retryTransaction,
-  createTransactionConfig,
-} from '../utils/transaction-helpers';
 
 /**
  * Mock keypair generator (replace with actual implementation)
@@ -20,7 +23,8 @@ import {
 async function generateMockKeypair(): Promise<KeyPairSigner> {
   // This would use actual Web3.js v2 keypair generation
   return {
-    address: `mock_address_${Date.now()}_${Math.random().toString(36).substr(2, 8)}` as Address,
+    address:
+      `mock_address_${Date.now()}_${Math.random().toString(36).substr(2, 8)}` as Address,
   } as KeyPairSigner;
 }
 
@@ -36,7 +40,7 @@ export async function exampleAgentRegistration() {
 
     // Generate a new keypair for the agent
     const agentKeypair = await generateMockKeypair();
-    
+
     console.log('✅ Generated agent keypair:', agentKeypair.address);
 
     // Define agent capabilities (following Web3.js v2 patterns)
@@ -44,22 +48,26 @@ export async function exampleAgentRegistration() {
       name: 'Test Agent',
       description: 'Agent created for testing',
       capabilities: [1], // Array of capabilities
-      metadata: { source: 'jupiter-example' }
+      metadata: { source: 'jupiter-example' },
     };
 
     // Method 1: Direct registration (with built-in retry and validation)
-    const registrationResult = await client.agents.registerAgent(agentKeypair, agentOptions);
+    const registrationResult = await client.agents.registerAgent(
+      agentKeypair,
+      agentOptions
+    );
     console.log('✅ Agent registered:', registrationResult);
 
     // Verify agent registration
-    const registeredAgent = await client.agents.getAgent(registrationResult.agentPda);
-    
+    const registeredAgent = await client.agents.getAgent(
+      registrationResult.agentPda
+    );
+
     if (registeredAgent) {
       console.log('✅ Agent successfully registered:', registeredAgent);
     } else {
       console.error('❌ Agent registration verification failed');
     }
-
   } catch (error) {
     console.error('❌ Agent registration example failed:', error);
   }
@@ -78,24 +86,27 @@ export async function exampleBatchOperations() {
     const agentKeypairs = await Promise.all([
       generateMockKeypair(),
       generateMockKeypair(),
-      generateMockKeypair()
+      generateMockKeypair(),
     ]);
 
     console.log('✅ Generated', agentKeypairs.length, 'agent keypairs');
 
     // Check if agents exist (simplified approach)
     const existingAgentsChecks = await Promise.allSettled(
-      agentKeypairs.map(async (kp) => {
+      agentKeypairs.map(async kp => {
         // Create mock PDA for checking
         const mockPda = `${kp.address}_agent_pda` as Address;
         return client.agents.getAgent(mockPda);
       })
     );
-    
+
     // Filter out already registered agents
     const unregisteredKeypairs = agentKeypairs.filter((_, index) => {
       const check = existingAgentsChecks[index];
-      return check?.status === 'rejected' || (check?.status === 'fulfilled' && check.value === null);
+      return (
+        check?.status === 'rejected' ||
+        (check?.status === 'fulfilled' && check.value === null)
+      );
     });
 
     console.log('📊 Found', unregisteredKeypairs.length, 'unregistered agents');
@@ -103,24 +114,23 @@ export async function exampleBatchOperations() {
     if (unregisteredKeypairs.length > 0) {
       // Register agents one by one (batch registration would require more complex setup)
       console.log('🔄 Registering agents...');
-      
-             for (let i = 0; i < unregisteredKeypairs.length; i++) {
-         const kp = unregisteredKeypairs[i];
-         if (!kp) continue;
-         
-         try {
-           const result = await client.agents.registerAgent(kp, {
-             name: `Batch Agent ${i + 1}`,
-             description: 'Agent created in batch operation',
-             capabilities: [1],
-           });
-           console.log(`  ✅ Agent ${i + 1}: ${result.signature}`);
-         } catch (error) {
-           console.log(`  ❌ Agent ${i + 1}: Failed - ${String(error)}`);
-        }
-       }
-    }
 
+      for (let i = 0; i < unregisteredKeypairs.length; i++) {
+        const kp = unregisteredKeypairs[i];
+        if (!kp) continue;
+
+        try {
+          const result = await client.agents.registerAgent(kp, {
+            name: `Batch Agent ${i + 1}`,
+            description: 'Agent created in batch operation',
+            capabilities: [1],
+          });
+          console.log(`  ✅ Agent ${i + 1}: ${result.signature}`);
+        } catch (error) {
+          console.log(`  ❌ Agent ${i + 1}: Failed - ${String(error)}`);
+        }
+      }
+    }
   } catch (error) {
     console.error('❌ Batch operations example failed:', error);
   }
@@ -153,7 +163,7 @@ export async function exampleHealthMonitoring() {
       const rpc = client.getRpc();
       // Mock RPC call since we don't have real implementation
       console.log('📊 RPC Client available:', !!rpc);
-    const rpcLatency = Date.now() - startTime;
+      const rpcLatency = Date.now() - startTime;
       console.log('📊 RPC Latency:', rpcLatency, 'ms');
     } catch (error) {
       console.log('📊 RPC Performance: Error -', error);
@@ -166,7 +176,7 @@ export async function exampleHealthMonitoring() {
       programValid: true,
       programAccessible: true,
       canCreateInstructions: true,
-      rpcLatency: 50
+      rpcLatency: 50,
     });
 
     console.log('📊 Overall Health Score:', healthScore, '/100');
@@ -176,7 +186,6 @@ export async function exampleHealthMonitoring() {
     } else {
       console.log('✅ System health is optimal');
     }
-
   } catch (error) {
     console.error('❌ Health monitoring example failed:', error);
   }
@@ -194,55 +203,81 @@ export async function exampleErrorHandling() {
 
     // Create transaction config for testing
     const rpc = client.getRpc();
-    
+
     const mockInstruction = {
       programAddress: client.getProgramId(),
       accounts: [
         { address: agentKeypair.address, role: 1 }, // signer
       ],
-      data: new Uint8Array([1, 2, 3, 4]) // mock instruction data
+      data: new Uint8Array([1, 2, 3, 4]), // mock instruction data
     };
 
-    const config = createTransactionConfig({
-      commitment: 'confirmed',
-      skipPreflight: false
-    });
+    // Transaction config for potential future use
+    // const config = createTransactionConfig({
+    //   commitment: 'confirmed',
+    //   skipPreflight: false
+    // });
 
     // Method 1: Simple retry with exponential backoff
     console.log('🔄 Testing retry mechanism...');
-    const retryResult = await retryTransaction(config, 3, 1000);
-    
-    if (retryResult.success) {
-      console.log('✅ Transaction succeeded with retry:', retryResult.signature);
+    const retryResult = await retryTransaction(
+      async () => {
+        // Create RPC subscriptions for transaction confirmation
+        const rpcSubscriptions = createSolanaRpcSubscriptions(
+          'wss://api.devnet.solana.com/'
+        );
+        const txFactory = sendTransaction(rpc, rpcSubscriptions);
+        return txFactory([mockInstruction], [agentKeypair]);
+      },
+      3,
+      1000
+    );
+
+    if (
+      retryResult &&
+      typeof retryResult === 'object' &&
+      'success' in retryResult
+    ) {
+      console.log(
+        '✅ Transaction succeeded with retry:',
+        (retryResult as any).signature
+      );
     } else {
-      console.log('❌ Transaction failed after retries:', retryResult.error);
+      console.log('❌ Transaction failed after retries:', retryResult);
     }
 
     // Method 2: Direct transaction sending
     console.log('🔄 Testing direct transaction sending...');
-    
+
     try {
-      const txFactory = sendTransaction(rpc);
-      const directResult = await txFactory(mockInstruction);
-      
+      const rpcSubscriptions = createSolanaRpcSubscriptions(
+        'wss://api.devnet.solana.com/'
+      );
+      const txFactory = sendTransaction(rpc, rpcSubscriptions);
+      const directResult = await txFactory([mockInstruction], [agentKeypair]);
+
       if (directResult.success) {
         console.log('✅ Direct transaction succeeded:', directResult.signature);
       } else {
         console.log('❌ Direct transaction failed:', directResult.error);
-        
+
         // Custom error handling based on error type
         if (directResult.error?.includes('blockhash')) {
-          console.log('🔄 Blockhash expired, would implement fresh blockhash retry...');
+          console.log(
+            '🔄 Blockhash expired, would implement fresh blockhash retry...'
+          );
         } else if (directResult.error?.includes('insufficient')) {
-          console.log('💰 Insufficient funds detected - transaction would need funding');
-          console.log('💡 In production, implement airdrop or funding mechanism here');
+          console.log(
+            '💰 Insufficient funds detected - transaction would need funding'
+          );
+          console.log(
+            '💡 In production, implement airdrop or funding mechanism here'
+          );
         }
       }
-      
     } catch (error) {
       console.error('❌ Unexpected error:', error);
     }
-
   } catch (error) {
     console.error('❌ Error handling example failed:', error);
   }
@@ -297,4 +332,3 @@ export async function runAllExamples() {
   await exampleErrorHandling();
   console.log('\n✅ All examples completed!');
 }
-

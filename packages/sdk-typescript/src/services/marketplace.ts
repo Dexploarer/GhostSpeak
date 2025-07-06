@@ -7,6 +7,21 @@ import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { Commitment } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
 
+// Import real instruction builders
+import { 
+  getCreateServiceListingInstructionAsync,
+  type ServiceListingDataArgs 
+} from '../generated-v2/instructions/createServiceListing';
+import { 
+  getPurchaseServiceInstructionAsync,
+  type ServicePurchaseDataArgs 
+} from '../generated-v2/instructions/purchaseService';
+import { 
+  getCreateJobPostingInstructionAsync,
+  type JobPostingDataArgs 
+} from '../generated-v2/instructions/createJobPosting';
+import { sendAndConfirmTransactionFactory } from '../utils/transaction-sender';
+
 /**
  * Marketplace listing
  */
@@ -37,7 +52,7 @@ export interface ISaleTransaction {
 export class MarketplaceService {
   constructor(
     private readonly rpc: Rpc<SolanaRpcApi>,
-    private readonly programId: Address,
+    private readonly _programId: Address,
     private readonly commitment: Commitment = 'confirmed'
   ) {}
 
@@ -70,7 +85,7 @@ export class MarketplaceService {
    * Purchase an agent from marketplace
    */
   async purchaseAgent(
-    buyer: KeyPairSigner,
+    _buyer: KeyPairSigner,
     _listingId: Address
   ): Promise<string> {
     try {
@@ -197,4 +212,4 @@ export class MarketplaceService {
       throw new Error(`Failed to get sales history: ${String(error)}`);
     }
   }
-} 
+}

@@ -6,6 +6,16 @@
  * @see https://github.com/codama-idl/codama
  */
 
+// Core account types
 export * from './agentAccount';
 export * from './channelAccount';
 export * from './messageAccount';
+
+// Work order account types
+export * from './workOrderAccount';
+
+// Marketplace account types
+export * from './listingAccount';
+
+// Job marketplace account types
+export * from './jobAccount';

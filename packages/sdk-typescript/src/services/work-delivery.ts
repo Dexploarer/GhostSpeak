@@ -168,65 +168,7 @@ export class WorkDeliveryService {
     }
   }
 
-  /**
-   * Decompress data
-   */
-  private decompressData(compressedData: Uint8Array): Uint8Array {
-    try {
-      const decompressed: number[] = [];
+  // Removed unused decompression method - use compressData() instead
 
-      for (let i = 0; i < compressedData.length; i += 2) {
-        const count = compressedData[i];
-        const byte = compressedData[i + 1];
-
-        if (count !== undefined && byte !== undefined) {
-          for (let j = 0; j < count; j++) {
-            decompressed.push(byte);
-          }
-        }
-      }
-
-      return new Uint8Array(decompressed);
-    } catch (error) {
-      console.error('Decompression failed:', error);
-      return compressedData; // Return original if decompression fails
-    }
-  }
-
-  /**
-   * Calculate tree height from size
-   */
-  private calculateTreeHeight(_treeSize: number): number {
-    // Simplified calculation
-    return Math.ceil(Math.log2(_treeSize || 1));
-  }
-
-  /**
-   * Generate work proof hash
-   */
-  private generateProofHash(data: Uint8Array): string {
-    // Simple hash function for demonstration
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const byte = data[i];
-      if (byte !== undefined) {
-        hash = ((hash << 5) - hash + byte) & 0xffffffff;
-      }
-    }
-    return hash.toString(16);
-  }
-
-  /**
-   * Convert bytes to number
-   */
-  private bytesToNumber(bytes: Uint8Array): bigint {
-    let num = 0n;
-    for (let i = 0; i < bytes.length; i++) {
-      const byte = bytes[i];
-      if (byte !== undefined) {
-        num = num * BigInt(256) + BigInt(byte);
-      }
-    }
-    return num;
-  }
+  // Removed unused utility methods - simplified for production
 }

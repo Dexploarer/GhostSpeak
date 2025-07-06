@@ -179,7 +179,7 @@ export class BusinessLogicService {
     responseTime: number; // in hours
   }> {
     try {
-      console.log(`📊 Getting performance metrics for agent ${agentId}`);
+      console.log(`📊 Getting performance metrics for agent ${agentId} on program ${this._programId}`);
 
       // Simulate metrics retrieval
       await new Promise(resolve => setTimeout(resolve, 800));

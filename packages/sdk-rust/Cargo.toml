@@ -45,7 +45,7 @@ uuid = { version = "1.17.0", features = ["v4", "serde"] }
 url = "2.5.4"
 
 # HTTP client
-reqwest = { version = "0.12.21", features = ["json"] }
+reqwest = { version = "0.12.21", features = ["json", "rustls-tls"], default-features = false }
 
 # Logging
 log = "0.4.27"

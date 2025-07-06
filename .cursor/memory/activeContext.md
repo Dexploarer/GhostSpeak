@@ -232,3 +232,69 @@ const instruction = createServiceListing({
 
 **Next Session Focus**: 🎯 **CODEC COMPATIBILITY RESOLUTION & MARKETPLACE SERVICE INTEGRATION**
 
+# Active Context - CI/CD Pipeline Fixes
+
+## Current Session Objectives
+- ✅ COMPLETED: Fix CI/CD pipeline to work with actual project structure
+- ✅ COMPLETED: Update GitHub Actions workflows to match directory structure
+- ✅ COMPLETED: Remove references to non-existent CLI package
+- ✅ COMPLETED: Update Solana/Anchor versions to current best practices
+
+## Changes Made
+
+### 1. Fixed CI Workflow (.github/workflows/ci.yml)
+- Updated Solana CLI installation to use Anza release (v2.1.15) instead of deprecated Solana Labs release
+- Fixed directory structure references:
+  - `sdk/` → `packages/sdk-typescript/`
+  - `programs/pod-com/` → `programs/podai/`
+  - Removed `cli/` and `frontend/` references (don't exist)
+- Updated dependency installation to match actual package structure
+- Fixed build steps to work with monorepo structure
+- Updated test execution to use comprehensive test suite
+
+### 2. Fixed Package.json Scripts
+- Removed CLI-related scripts that referenced non-existent `packages/cli/`
+- Updated build pipeline to focus on existing packages
+- Fixed size-limit configuration to remove CLI references
+- Updated publish scripts to only include existing packages
+
+### 3. Fixed Publish Workflow (.github/workflows/publish-packages.yml)
+- Removed CLI package publishing (doesn't exist)
+- Updated SDK references to use `packages/sdk-typescript/`
+- Fixed package names to use @ghostspeak namespace
+- Updated build verification to check correct directories
+
+### 4. Fixed Release Workflow (.github/workflows/release.yml)
+- Updated project branding from "Prompt or Die" to "GhostSpeak"
+- Fixed Solana version to use Anza release
+- Removed CLI and frontend references
+- Updated package structure to match actual monorepo
+- Fixed artifact collection to use correct directories
+
+### 5. Fixed Sync Packages Workflow (.github/workflows/sync-packages.yml)
+- Removed CLI synchronization (package doesn't exist)
+- Added Core package synchronization
+- Updated repository references to use ghostspeak namespace
+
+## Project Structure Confirmed
+```
+ghostspeak/
+├── packages/
+│   ├── core/           # Rust core library
+│   ├── sdk-typescript/ # TypeScript SDK
+│   └── sdk-rust/       # Rust SDK
+├── programs/
+│   └── podai/          # Anchor program
+├── tests/              # Integration tests
+└── .github/workflows/  # Fixed CI/CD workflows
+```
+
+## Current State
+- All CI/CD workflows updated to match actual project structure
+- Package.json scripts cleaned up and working
+- Removed all references to non-existent CLI and frontend packages
+- Updated to use current Solana/Anchor best practices for 2025
+
+## Next Steps
+The CI/CD pipeline is now properly configured and should work with the actual project structure. All workflows have been updated to use the correct directory paths and package references.
+

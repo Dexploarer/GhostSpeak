@@ -34,8 +34,7 @@ jobs:
         path: |
           ~/.bun/install/cache
           node_modules
-          sdk/node_modules
-          cli/node_modules
+          packages/*/node_modules
         key: ${{ runner.os }}-publish-${{ hashFiles('**/bun.lock') }}
         restore-keys: |
           ${{ runner.os }}-publish-
@@ -50,11 +49,11 @@ jobs:
         }
         echo "✅ Root dependencies installed successfully"
       
-    - name: Build SDK
+    - name: Build SDK TypeScript
       run: |
-        echo "📦 Building SDK for publishing..."
+        echo "📦 Building SDK TypeScript for publishing..."
         set -e
-        cd sdk
+        cd packages/sdk-typescript
         
         echo "🔧 Installing SDK dependencies..."
         bun install --frozen-lockfile || {
@@ -73,42 +72,18 @@ jobs:
         fi
         echo "✅ SDK built successfully"
         
-    - name: Build CLI
-      run: |
-        echo "📦 Building CLI for publishing..."
-        set -e
-        cd cli
-        
-        echo "🔧 Installing CLI dependencies..."
-        bun install --frozen-lockfile || {
-          echo "❌ Failed to install CLI dependencies"
-          exit 1
-        }
-        echo "✅ CLI dependencies installed successfully"
-        
-        echo "🏗️ Building CLI..."
-        if ! bun run build:prod; then
-          echo "⚠️ Production build failed, trying standard build..."
-          bun run build || {
-            echo "❌ CLI build failed"
-            exit 1
-          }
-        fi
-        echo "✅ CLI built successfully"
-        
     - name: Verify build artifacts
       run: |
         echo "✅ Verifying build artifacts..."
-        ls -la sdk/dist/ || (echo "❌ SDK dist not found" && exit 1)
-        ls -la cli/dist/ || (echo "❌ CLI dist not found" && exit 1)
+        ls -la packages/sdk-typescript/dist/ || (echo "❌ SDK dist not found" && exit 1)
         echo "✅ Build artifacts verified"
         
     - name: Publish SDK to NPM
       if: env.NPM_TOKEN != ''
       run: |
-        echo "📦 Publishing SDK to NPM..."
+        echo "📦 Publishing SDK TypeScript to NPM..."
         set -e
-        cd sdk
+        cd packages/sdk-typescript
         npm publish --access public || {
           echo "❌ Failed to publish SDK to NPM"
           exit 1
@@ -118,31 +93,16 @@ jobs:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         
-    - name: Publish CLI to NPM
-      if: env.NPM_TOKEN != ''
-      run: |
-        echo "📦 Publishing CLI to NPM..."
-        set -e
-        cd cli
-        npm publish --access public || {
-          echo "❌ Failed to publish CLI to NPM"
-          exit 1
-        }
-        echo "✅ CLI published to NPM successfully"
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        
     - name: Publish SDK to GitHub Packages
       run: |
-        echo "📦 Publishing SDK to GitHub Packages..."
+        echo "📦 Publishing SDK TypeScript to GitHub Packages..."
         set -e
-        cd sdk
+        cd packages/sdk-typescript
         echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > .npmrc || {
           echo "❌ Failed to configure GitHub Packages authentication"
           exit 1
         }
-        echo "@prompt-or-die:registry=https://npm.pkg.github.com" >> .npmrc || {
+        echo "@ghostspeak:registry=https://npm.pkg.github.com" >> .npmrc || {
           echo "❌ Failed to configure GitHub Packages registry"
           exit 1
         }
@@ -154,34 +114,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: Publish CLI to GitHub Packages  
-      run: |
-        echo "📦 Publishing CLI to GitHub Packages..."
-        set -e
-        cd cli
-        echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > .npmrc || {
-          echo "❌ Failed to configure GitHub Packages authentication"
-          exit 1
-        }
-        echo "@prompt-or-die:registry=https://npm.pkg.github.com" >> .npmrc || {
-          echo "❌ Failed to configure GitHub Packages registry"
-          exit 1
-        }
-        npm publish --registry=https://npm.pkg.github.com || {
-          echo "❌ Failed to publish CLI to GitHub Packages"
-          exit 1
-        }
-        echo "✅ CLI published to GitHub Packages successfully"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
     - name: Create publish summary
       run: |
         echo "## 📦 Package Publishing Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### ✅ Published Packages" >> $GITHUB_STEP_SUMMARY
-        echo "- **SDK**: @prompt-or-die/sdk" >> $GITHUB_STEP_SUMMARY
-        echo "- **CLI**: @prompt-or-die/cli" >> $GITHUB_STEP_SUMMARY
+        echo "- **SDK TypeScript**: @ghostspeak/sdk-typescript" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📍 Registries" >> $GITHUB_STEP_SUMMARY
         echo "- NPM Registry" >> $GITHUB_STEP_SUMMARY

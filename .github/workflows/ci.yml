@@ -21,7 +21,7 @@ jobs:
         run: |
           echo "⚙️ Installing Solana CLI..."
           set -e
-          sh -c "$(curl -sSfL https://release.solana.com/v1.18.26/install)" || {
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.15/install)" || {
             echo "❌ Failed to install Solana CLI"
             exit 1
           }
@@ -41,9 +41,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             node_modules
-            sdk/node_modules
-            cli/node_modules
-            frontend/node_modules
+            packages/*/node_modules
           key: ${{ runner.os }}-lint-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-lint-
@@ -60,57 +58,31 @@ jobs:
           }
           echo "✅ Root dependencies installed successfully"
           
-          echo "🔧 Installing SDK dependencies..."
-          cd sdk
+          echo "🔧 Installing SDK TypeScript dependencies..."
+          cd packages/sdk-typescript
           bun install --frozen-lockfile || {
-            echo "❌ Failed to install SDK dependencies"
+            echo "❌ Failed to install SDK TypeScript dependencies"
             exit 1
           }
-          echo "✅ SDK dependencies installed successfully"
+          echo "✅ SDK TypeScript dependencies installed successfully"
           
-          echo "🔧 Installing CLI dependencies..."
-          cd ../cli
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install CLI dependencies"
-            exit 1
-          }
-          echo "✅ CLI dependencies installed successfully"
-          
-          echo "🔧 Installing frontend dependencies..."
-          cd ../frontend
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install frontend dependencies"
-            exit 1
-          }
-          echo "✅ Frontend dependencies installed successfully"
           echo "🎉 All dependencies installed successfully"
 
       - name: Lint TypeScript & Prettier
         run: |
           echo "🎨 Running TypeScript and Prettier linting..."
           set -e
-          bun run lint:all || {
+          bun run lint:comprehensive || {
             echo "❌ TypeScript and Prettier linting failed"
             exit 1
           }
           echo "✅ TypeScript and Prettier linting passed"
 
-      - name: Lint Frontend
-        run: |
-          echo "🎨 Running frontend linting..."
-          set -e
-          cd frontend
-          bun run lint || {
-            echo "❌ Frontend linting failed"
-            exit 1
-          }
-          echo "✅ Frontend linting passed"
-
       - name: Lint Rust
         run: |
           echo "🦀 Running Rust linting..."
           set -e
-          cd programs/pod-com
+          cd programs/podai
           
           echo "🔧 Checking Rust formatting..."
           cargo fmt -- --check || {
@@ -127,7 +99,7 @@ jobs:
           echo "✅ Rust clippy check passed"
 
   security-audit:
-    name: "🔒 Security Audit (LOW-01)"
+    name: "🔒 Security Audit"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -161,9 +133,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             node_modules
-            sdk/node_modules
-            cli/node_modules
-            frontend/node_modules
+            packages/*/node_modules
           key: ${{ runner.os }}-security-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-security-
@@ -180,36 +150,21 @@ jobs:
           }
           echo "✅ Root dependencies installed successfully"
           
-          echo "🔧 Installing SDK dependencies..."
-          cd sdk
+          echo "🔧 Installing SDK TypeScript dependencies..."
+          cd packages/sdk-typescript
           bun install --frozen-lockfile || {
-            echo "❌ Failed to install SDK dependencies"
+            echo "❌ Failed to install SDK TypeScript dependencies"
             exit 1
           }
-          echo "✅ SDK dependencies installed successfully"
+          echo "✅ SDK TypeScript dependencies installed successfully"
           
-          echo "🔧 Installing CLI dependencies..."
-          cd ../cli
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install CLI dependencies"
-            exit 1
-          }
-          echo "✅ CLI dependencies installed successfully"
-          
-          echo "🔧 Installing frontend dependencies..."
-          cd ../frontend
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install frontend dependencies"
-            exit 1
-          }
-          echo "✅ Frontend dependencies installed successfully"
           echo "🎉 All dependencies installed successfully"
 
       - name: Rust Security Audit
         run: |
           echo "🔒 Running Rust security audit..."
           set -e
-          cd programs/pod-com
+          cd programs/podai
           cargo audit --deny warnings || {
             echo "❌ Rust security audit failed"
             exit 1
@@ -226,60 +181,16 @@ jobs:
           }
           echo "✅ Root workspace security audit passed"
 
-      - name: Node.js Security Audit (SDK)
+      - name: Node.js Security Audit (SDK TypeScript)
         run: |
-          echo "🔒 Running Node.js security audit for SDK..."
+          echo "🔒 Running Node.js security audit for SDK TypeScript..."
           set -e
-          cd sdk
+          cd packages/sdk-typescript
           bun audit --audit-level high || {
-            echo "❌ SDK security audit failed"
+            echo "❌ SDK TypeScript security audit failed"
             exit 1
           }
-          echo "✅ SDK security audit passed"
-
-      - name: Node.js Security Audit (CLI)
-        run: |
-          echo "🔒 Running Node.js security audit for CLI..."
-          set -e
-          cd cli
-          bun audit --audit-level high || {
-            echo "❌ CLI security audit failed"
-            exit 1
-          }
-          echo "✅ CLI security audit passed"
-
-      - name: Node.js Security Audit (Frontend)
-        run: |
-          echo "🔒 Running Node.js security audit for Frontend..."
-          set -e
-          cd frontend
-          bun audit --audit-level high || {
-            echo "❌ Frontend security audit failed"
-            exit 1
-          }
-          echo "✅ Frontend security audit passed"
-
-      - name: npm Security Audit
-        run: |
-          echo "🔒 Running npm audit for all workspaces..."
-          set -e
-          for dir in . sdk cli frontend; do
-            if [ -f "$dir/package.json" ]; then
-              echo "📦 Auditing $dir..."
-              cd $dir
-              npm install --package-lock-only --ignore-scripts || {
-                echo "❌ Failed to create package-lock.json for $dir"
-                exit 1
-              }
-              npm audit --audit-level=high || {
-                echo "❌ npm security audit failed for $dir"
-                exit 1
-              }
-              echo "✅ npm security audit passed for $dir"
-              cd ..
-            fi
-          done
-          echo "🎉 All npm security audits completed successfully"
+          echo "✅ SDK TypeScript security audit passed"
 
       - name: Check for known vulnerabilities in dependencies
         run: |
@@ -352,8 +263,7 @@ jobs:
             ~/.cargo/git
             target
             node_modules
-            sdk/node_modules
-            cli/node_modules
+            packages/*/node_modules
           key: ${{ runner.os }}-build-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-build-
@@ -370,13 +280,15 @@ jobs:
           }
           echo "✅ Root dependencies installed successfully"
           
-          echo "🔧 Installing frontend dependencies..."
-          cd frontend
+          echo "🔧 Installing SDK TypeScript dependencies..."
+          cd packages/sdk-typescript
           bun install --frozen-lockfile || {
-            echo "❌ Failed to install frontend dependencies"
+            echo "❌ Failed to install SDK TypeScript dependencies"
             exit 1
           }
-          echo "✅ Frontend dependencies installed successfully"
+          cd ..
+          echo "✅ SDK TypeScript dependencies installed successfully"
+          
           echo "🎉 All dependencies installed successfully"
 
       - name: Build Solana Program
@@ -389,42 +301,38 @@ jobs:
           }
           echo "✅ Anchor program built successfully"
 
-      - name: Build SDK
+      - name: Build SDK TypeScript
         run: |
-          echo "📦 Building SDK..."
+          echo "📦 Building SDK TypeScript..."
           set -e
-          cd sdk
+          cd packages/sdk-typescript
           bun run build || {
-            echo "❌ Failed to build SDK"
+            echo "❌ Failed to build SDK TypeScript"
             exit 1
           }
-          echo "✅ SDK built successfully"
+          echo "✅ SDK TypeScript built successfully"
 
-      - name: Build CLI
+      - name: Build SDK Rust
         run: |
-          echo "🔧 Building CLI..."
+          echo "🦀 Building SDK Rust..."
           set -e
-          cd cli
-          bun run build || {
-            echo "❌ Failed to build CLI"
+          cd packages/sdk-rust
+          cargo build --release || {
+            echo "❌ Failed to build SDK Rust"
             exit 1
           }
-          echo "✅ CLI built successfully"
+          echo "✅ SDK Rust built successfully"
 
-      - name: Build Frontend
+      - name: Build Core
         run: |
-          echo "🌐 Building Frontend..."
+          echo "�️ Building Core package..."
           set -e
-          cd frontend
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install frontend dependencies"
+          cd packages/core
+          cargo build --release || {
+            echo "❌ Failed to build Core package"
             exit 1
           }
-          bun run build || {
-            echo "❌ Failed to build frontend"
-            exit 1
-          }
-          echo "✅ Frontend built successfully"
+          echo "✅ Core package built successfully"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -433,9 +341,9 @@ jobs:
           path: |
             target/deploy/
             target/idl/
-            sdk/dist/
-            cli/dist/
-            frontend/.next/
+            packages/sdk-typescript/dist/
+            packages/sdk-rust/target/release/
+            packages/core/target/release/
 
   test:
     name: "🧪 Test Suite"
@@ -498,8 +406,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             node_modules
-            sdk/node_modules
-            cli/node_modules
+            packages/*/node_modules
           key: ${{ runner.os }}-test-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-test-
@@ -516,13 +423,15 @@ jobs:
           }
           echo "✅ Root dependencies installed successfully"
           
-          echo "🔧 Installing frontend dependencies..."
-          cd frontend
+          echo "🔧 Installing SDK TypeScript dependencies..."
+          cd packages/sdk-typescript
           bun install --frozen-lockfile || {
-            echo "❌ Failed to install frontend dependencies"
+            echo "❌ Failed to install SDK TypeScript dependencies"
             exit 1
           }
-          echo "✅ Frontend dependencies installed successfully"
+          cd ..
+          echo "✅ SDK TypeScript dependencies installed successfully"
+          
           echo "🎉 All dependencies installed successfully"
 
       - name: Setup Solana keypair
@@ -590,15 +499,15 @@ jobs:
           }
           echo "✅ Anchor tests passed"
 
-      - name: Run SDK & CLI Tests
+      - name: Run SDK & Package Tests
         run: |
-          echo "🧪 Running SDK & CLI tests..."
+          echo "🧪 Running SDK & Package tests..."
           set -e
-          bun run test || {
-            echo "❌ SDK & CLI tests failed"
+          bun run test:comprehensive || {
+            echo "❌ SDK & Package tests failed"
             exit 1
           }
-          echo "✅ SDK & CLI tests passed"
+          echo "✅ SDK & Package tests passed"
 
       - name: Run Compute Unit Benchmarks
         run: |

@@ -13,7 +13,6 @@ jobs:
     outputs:
       sdk-typescript: ${{ steps.changes.outputs.sdk-typescript }}
       sdk-rust: ${{ steps.changes.outputs.sdk-rust }}
-      cli: ${{ steps.changes.outputs.cli }}
       core: ${{ steps.changes.outputs.core }}
     steps:
       - uses: actions/checkout@v4
@@ -28,8 +27,6 @@ jobs:
               - 'packages/sdk-typescript/**'
             sdk-rust:
               - 'packages/sdk-rust/**'
-            cli:
-              - 'packages/cli/**'
             core:
               - 'packages/core/**'
 
@@ -83,9 +80,9 @@ jobs:
         run: |
           git subtree push --prefix=packages/sdk-rust rust-sdk main
 
-  sync-cli:
+  sync-core:
     needs: detect-changes
-    if: needs.detect-changes.outputs.cli == 'true'
+    if: needs.detect-changes.outputs.core == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -98,16 +95,16 @@ jobs:
           git config user.name "GhostSpeak Bot"
           git config user.email "bot@ghostspeak.dev"
           
-      - name: Add CLI remote
+      - name: Add Core remote
         run: |
-          git remote add cli https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ghostspeak/ghostspeak-cli.git || true
+          git remote add core https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ghostspeak/ghostspeak-core.git || true
           
-      - name: Sync CLI
+      - name: Sync Core
         run: |
-          git subtree push --prefix=packages/cli cli main
+          git subtree push --prefix=packages/core core main
 
   notify-success:
-    needs: [sync-typescript, sync-rust, sync-cli]
+    needs: [sync-typescript, sync-rust, sync-core]
     if: always()
     runs-on: ubuntu-latest
     steps:

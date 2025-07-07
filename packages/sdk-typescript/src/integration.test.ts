@@ -6,21 +6,31 @@
 import { describe, it, expect, beforeAll } from 'bun:test';
 import { createDevnetClient } from './client-v2';
 import { generateKeyPair } from '@solana/keys';
+import { getAddressFromPublicKey } from '@solana/addresses';
 import type { KeyPairSigner } from '@solana/signers';
 
 describe('Real Smart Contract Integration Tests', () => {
   let client: ReturnType<typeof createDevnetClient>;
-  let testSigner: KeyPairSigner;
+  let testSigner: KeyPairSigner & { address: string };
 
   beforeAll(async () => {
     // Create devnet client
     client = createDevnetClient();
     
     // Generate test keypair
-    testSigner = await generateKeyPair();
+    const baseSigner = await generateKeyPair();
+    
+    // Get the address from the public key
+    const signerAddress = await getAddressFromPublicKey(baseSigner.publicKey);
+    
+    // Create extended signer with address property
+    testSigner = {
+      ...baseSigner,
+      address: signerAddress
+    };
     
     console.log('🧪 Test setup complete');
-    console.log(`🔑 Test signer: ${testSigner.address}`);
+    console.log(`🔑 Test signer address: ${signerAddress}`);
   });
 
   it('should create PodAI client with real RPC connections', async () => {
@@ -113,10 +123,7 @@ describe('Real Smart Contract Integration Tests', () => {
       
       // Create a register agent instruction to verify it works
       const instruction = await getRegisterAgentInstructionAsync({
-        creator: testSigner,
-        agentId: 'test-agent-id',
-        name: 'Test Agent',
-        description: 'Test agent description',
+        signer: testSigner,
         capabilities: BigInt(0),
         metadataUri: 'https://example.com/metadata.json'
       });

@@ -14,9 +14,7 @@ export * from './createServiceListing';
 export * from './purchaseService';
 export * from './createJobPosting';
 
-// Temporarily disabled due to compilation issues
-// export * from './addParticipant';
-// export * from './broadcastMessage';
-// export * from './createWorkOrder';
-// export * from './submitWorkDelivery';
-// export * from './processPayment';
+// Working instructions - addParticipant and broadcastMessage need fixes
+export * from './processPayment';
+export * from './createWorkOrder';
+export * from './submitWorkDelivery';

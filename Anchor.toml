@@ -18,7 +18,7 @@ skip-lint = false
 podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"
 
 [programs.devnet]
-podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"
+podai = "4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385"
 
 [programs.mainnet]
 podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"  # Update with actual mainnet address

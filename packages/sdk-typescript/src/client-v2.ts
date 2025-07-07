@@ -6,6 +6,11 @@
 import { AgentService } from './services/agent';
 import { ChannelService } from './services/channel';
 import { MessageService } from './services/message';
+import { EscrowService } from './services/escrow';
+import { AuctionService } from './services/auction';
+import { BulkDealsService } from './services/bulk-deals';
+import { ReputationService } from './services/reputation';
+import { RealtimeCommunicationService } from './services/realtime-communication';
 import type { Address } from '@solana/addresses';
 import { createSolanaRpc } from '@solana/rpc';
 import { createSolanaRpcSubscriptions } from '@solana/rpc-subscriptions';
@@ -32,13 +37,21 @@ export class PodAIClient {
   private readonly programId: Address;
   private readonly commitment: Commitment;
   private readonly wsEndpoint?: string | undefined;
+  private readonly rpcEndpoint: string;
 
   // Service instances
   private _agentService?: AgentService;
   private _channelService?: ChannelService;
   private _messageService?: MessageService;
+  private _escrowService?: EscrowService;
+  private _auctionService?: AuctionService;
+  private _bulkDealsService?: BulkDealsService;
+  private _reputationService?: ReputationService;
 
   constructor(config: IPodAIClientConfig) {
+    // Store the RPC endpoint
+    this.rpcEndpoint = config.rpcEndpoint;
+    
     // Initialize RPC connection
     this.rpc = createSolanaRpc(config.rpcEndpoint);
     
@@ -48,7 +61,7 @@ export class PodAIClient {
     
     // Set program ID
     this.programId = this.parseAddress(
-      config.programId ?? '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
+      config.programId ?? '4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385'
     );
     
     // Set commitment level
@@ -107,6 +120,62 @@ export class PodAIClient {
       );
     }
     return this._messageService;
+  }
+
+  /**
+   * Get Escrow Service (lazy-loaded)
+   */
+  public get escrow(): EscrowService {
+    if (!this._escrowService) {
+      this._escrowService = new EscrowService(
+        this.rpc,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._escrowService;
+  }
+
+  /**
+   * Get Auction Service (lazy-loaded)
+   */
+  public get auctions(): AuctionService {
+    if (!this._auctionService) {
+      this._auctionService = new AuctionService(
+        this.rpc,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._auctionService;
+  }
+
+  /**
+   * Get Bulk Deals Service (lazy-loaded)
+   */
+  public get bulkDeals(): BulkDealsService {
+    if (!this._bulkDealsService) {
+      this._bulkDealsService = new BulkDealsService(
+        this.rpc,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._bulkDealsService;
+  }
+
+  /**
+   * Get Reputation Service (lazy-loaded)
+   */
+  public get reputation(): ReputationService {
+    if (!this._reputationService) {
+      this._reputationService = new ReputationService(
+        this.rpc,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._reputationService;
   }
 
   /**
@@ -259,14 +328,12 @@ export class PodAIClient {
    * Detect cluster from RPC endpoint
    */
   private detectCluster(): string {
-    const endpoint = this.rpc.toString();
+    if (this.rpcEndpoint.includes('devnet')) return 'devnet';
+    if (this.rpcEndpoint.includes('testnet')) return 'testnet';
+    if (this.rpcEndpoint.includes('mainnet') || this.rpcEndpoint.includes('api.mainnet')) return 'mainnet-beta';
+    if (this.rpcEndpoint.includes('localhost') || this.rpcEndpoint.includes('127.0.0.1')) return 'localnet';
     
-    if (endpoint.includes('devnet')) return 'devnet';
-    if (endpoint.includes('testnet')) return 'testnet';
-    if (endpoint.includes('mainnet') || endpoint.includes('api.mainnet')) return 'mainnet-beta';
-    if (endpoint.includes('localhost') || endpoint.includes('127.0.0.1')) return 'localnet';
-    
-    return 'unknown';
+    return 'devnet'; // Default to devnet if can't detect
   }
 }
 

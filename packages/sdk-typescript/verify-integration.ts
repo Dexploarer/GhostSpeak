@@ -29,8 +29,8 @@ console.log('🚀 Starting GhostSpeak SDK Integration Verification...\n');
 // Test 1: Program ID Consistency
 console.log('✅ Test 1: Program ID Consistency');
 console.log(`   SDK Program ID: ${PROGRAM_ID}`);
-console.log(`   Expected ID: 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP`);
-console.log(`   Match: ${PROGRAM_ID === '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' ? '✅' : '❌'}\n`);
+console.log(`   Expected ID: 4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385`);
+console.log(`   Match: ${PROGRAM_ID === '4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385' ? '✅' : '❌'}\n`);
 
 // Test 2: Generated Instructions Available
 console.log('✅ Test 2: Generated Instructions Available');
@@ -52,7 +52,7 @@ console.log(`   Generated programs folder: ✅\n`);
 console.log('✅ Test 5: Instruction Builder Validation');
 try {
   const mockSigner = address('11111111111111111111111111111112');
-  const mockAgent = address('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+  const mockAgent = address('4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385');
   
   // Test register agent instruction builder
   const registerInstruction = getRegisterAgentInstruction({
@@ -84,7 +84,7 @@ console.log('');
 console.log('✅ Test 6: Type Safety Validation');
 try {
   // This should compile with proper types
-  const testAddress = address('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+  const testAddress = address('4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385');
   console.log(`   Address type validation: ${testAddress ? '✅' : '❌'}`);
   console.log(`   Program ID is proper Address type: ✅`);
 } catch (error) {

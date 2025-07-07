@@ -1,5 +1,5 @@
 [package]
-name = "podai"
+name = "podai_core"
 version = "0.1.0"
 description = "podAI Marketplace: Revolutionary AI Agent Platform"
 edition = "2021"
@@ -7,7 +7,7 @@ rust-version = "1.79.0"
 
 [lib]
 crate-type = ["cdylib"]
-name = "podai"
+name = "podai_core"
 path = "programs/agent-marketplace/src/lib.rs"
 
 [features]

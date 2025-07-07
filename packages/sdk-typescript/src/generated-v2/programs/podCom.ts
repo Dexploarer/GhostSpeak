@@ -22,7 +22,7 @@ import {
 } from '../instructions';
 
 export const POD_COM_PROGRAM_ADDRESS =
-  '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as Address<'4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'>;
+  '4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385' as Address<'4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385'>;
 
 export enum PodComAccount {
   AgentAccount,
@@ -145,7 +145,7 @@ export function identifyPodComInstruction(
 }
 
 export type ParsedPodComInstruction<
-  TProgram extends string = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
+  TProgram extends string = '4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385',
 > =
   | ({
       instructionType: PodComInstruction.RegisterAgent;

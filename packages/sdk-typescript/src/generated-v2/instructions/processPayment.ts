@@ -52,38 +52,7 @@ export type ProcessPaymentInstruction<
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
-    [
-      TAccountPayment extends string
-        ? IAccountMeta<string>
-        : TAccountPayment,
-      TAccountWorkOrder extends string
-        ? IAccountMeta<string>
-        : TAccountWorkOrder,
-      TAccountProviderAgent extends string
-        ? IAccountMeta<string>
-        : TAccountProviderAgent,
-      TAccountPayer extends string
-        ? IAccountMeta<string>
-        : TAccountPayer,
-      TAccountPayerTokenAccount extends string
-        ? IAccountMeta<string>
-        : TAccountPayerTokenAccount,
-      TAccountProviderTokenAccount extends string
-        ? IAccountMeta<string>
-        : TAccountProviderTokenAccount,
-      TAccountTokenMint extends string
-        ? IAccountMeta<string>
-        : TAccountTokenMint,
-      TAccountTokenProgram extends string
-        ? IAccountMeta<string>
-        : TAccountTokenProgram,
-      TAccountSystemProgram extends string
-        ? IAccountMeta<string>
-        : TAccountSystemProgram,
-      ...TRemainingAccounts,
-    ]
-  >;
+  IInstructionWithAccounts<readonly IAccountMeta<string>[]>;
 
 export type ProcessPaymentInstructionData = {
   discriminator: Uint8Array;
@@ -217,24 +186,14 @@ export function getProcessPaymentInstruction<
     amount: input.amount,
     useConfidentialTransfer: input.useConfidentialTransfer,
   };
-  let data = getProcessPaymentInstructionDataEncoder().encode(args);
+  let data = new Uint8Array(getProcessPaymentInstructionDataEncoder().encode(args));
   if (!(data instanceof Uint8Array)) {
     data = new Uint8Array(data);
   }
 
   return {
     programAddress,
-    accounts: accounts as unknown as [
-      TAccountPayment extends string ? IAccountMeta<string> : TAccountPayment,
-      TAccountWorkOrder extends string ? IAccountMeta<string> : TAccountWorkOrder,
-      TAccountProviderAgent extends string ? IAccountMeta<string> : TAccountProviderAgent,
-      TAccountPayer extends string ? IAccountMeta<string> : TAccountPayer,
-      TAccountPayerTokenAccount extends string ? IAccountMeta<string> : TAccountPayerTokenAccount,
-      TAccountProviderTokenAccount extends string ? IAccountMeta<string> : TAccountProviderTokenAccount,
-      TAccountTokenMint extends string ? IAccountMeta<string> : TAccountTokenMint,
-      TAccountTokenProgram extends string ? IAccountMeta<string> : TAccountTokenProgram,
-      TAccountSystemProgram extends string ? IAccountMeta<string> : TAccountSystemProgram
-    ],
+    accounts: accounts as any,
     data: data as Uint8Array & ArrayBufferLike,
   } as ProcessPaymentInstruction<
     'PodAI111111111111111111111111111111111111111',

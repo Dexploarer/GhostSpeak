@@ -12,7 +12,7 @@ import {
   type Address,
 } from '@solana/addresses';
 import {
-  addDecoderSizePrefix,2
+  addDecoderSizePrefix,
   addEncoderSizePrefix,
   combineCodec,
   fixDecoderSize,
@@ -79,24 +79,7 @@ export type BroadcastMessageInstruction<
   TRemainingAccounts extends ReadonlyArray<IAccountMeta<string>> = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
-    [
-      TAccountMessageAccount extends string
-        ? WritableAccount<TAccountMessageAccount>
-        : TAccountMessageAccount,
-      TAccountChannelAccount extends string
-        ? WritableAccount<TAccountChannelAccount>
-        : TAccountChannelAccount,
-      TAccountSender extends string
-        ? WritableSignerAccount<TAccountSender> &
-            IAccountSignerMeta<TAccountSender>
-        : TAccountSender,
-      TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
-        : TAccountSystemProgram,
-      ...TRemainingAccounts,
-    ]
-  >;
+  IInstructionWithAccounts<readonly IAccountMeta<string>[]>;
 
 export interface BroadcastMessageInstructionData {
   discriminator: ReadonlyUint8Array;
@@ -228,11 +211,11 @@ export async function getBroadcastMessageInstructionAsync<
       getAccountMeta(accounts.channelAccount),
       getAccountMeta(accounts.sender),
       getAccountMeta(accounts.systemProgram),
-    ],
+    ] as any,
     programAddress,
-    data: getBroadcastMessageInstructionDataEncoder().encode(
+    data: new Uint8Array(getBroadcastMessageInstructionDataEncoder().encode(
       args as BroadcastMessageInstructionDataArgs
-    ),
+    )),
   } as BroadcastMessageInstruction<
     TProgramAddress,
     TAccountMessageAccount,
@@ -311,11 +294,11 @@ export function getBroadcastMessageInstruction<
       getAccountMeta(accounts.channelAccount),
       getAccountMeta(accounts.sender),
       getAccountMeta(accounts.systemProgram),
-    ],
+    ] as any,
     programAddress,
-    data: getBroadcastMessageInstructionDataEncoder().encode(
+    data: new Uint8Array(getBroadcastMessageInstructionDataEncoder().encode(
       args as BroadcastMessageInstructionDataArgs
-    ),
+    )),
   } as BroadcastMessageInstruction<
     TProgramAddress,
     TAccountMessageAccount,

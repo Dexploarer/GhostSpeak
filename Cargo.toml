@@ -2,7 +2,8 @@
 
 [workspace]
 members = [
-    "programs/podai"
+    "programs/podai",
+    "packages/core"
 ]
 resolver = "2" 
 

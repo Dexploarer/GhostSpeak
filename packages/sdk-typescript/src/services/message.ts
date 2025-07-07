@@ -11,6 +11,7 @@ import {
   getSendMessageInstructionAsync,
   type SendMessageInstructionDataArgs
 } from '../generated-v2/instructions/sendMessage';
+import { fetchMaybeMessageAccount, type MessageAccount } from '../generated-v2/accounts/messageAccount.js';
 
 import type { Address } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
@@ -187,37 +188,27 @@ export class MessageService {
    */
   async getMessage(messageId: Address): Promise<IMessageAccount | null> {
     try {
-      const accountInfo = await this.rpc
-        .getAccountInfo(messageId, {
-          commitment: this.commitment,
-          encoding: 'base64',
-        })
-        .send();
+      // Use the generated account fetcher
+      const maybeAccount = await fetchMaybeMessageAccount(this.rpc, messageId, {
+        commitment: this.commitment,
+      });
 
-      if (!accountInfo.value) {
+      if (!maybeAccount.exists) {
         return null;
       }
 
-      // Handle Web3.js v2 account data format
-      let data: Uint8Array;
-      const accountData = accountInfo.value.data;
-
-      if (Array.isArray(accountData)) {
-        // Web3.js v2 returns [data, encoding] tuple
-        const [dataString] = accountData;
-        if (typeof dataString === 'string') {
-          data = Buffer.from(dataString, 'base64');
-        } else {
-          throw new Error('Invalid data format in account info');
-        }
-      } else if (typeof accountData === 'string') {
-        data = Buffer.from(accountData, 'base64');
-      } else {
-        throw new Error('Unknown account data format');
-      }
-
-      // Parse message account data (simplified parser)
-      return this.parseMessageAccount(messageId, data);
+      // Convert real account data to our interface
+      const messageData = maybeAccount.data;
+      return {
+        id: messageId,
+        sender: messageData.sender,
+        channel: messageData.recipient, // Using recipient as channel for now
+        content: messageData.messageId, // Using messageId as content for now 
+        messageType: messageData.messageType,
+        timestamp: Number(messageData.timestamp),
+        edited: false, // Not in the smart contract data
+        encrypted: false, // Not in the smart contract data
+      };
     } catch (error) {
       console.error('❌ Failed to get message:', error);
       return null;
@@ -255,10 +246,12 @@ export class MessageService {
 
       // Parse real account data if accounts found
       if (programAccounts.length > 0) {
-        return programAccounts
-          .slice(0, limit)
-          .map(account => this.parseMessageAccount(account.pubkey, account.account.data as Uint8Array))
-          .sort((a, b) => b.timestamp - a.timestamp);
+        const messages = await Promise.all(
+          programAccounts
+            .slice(0, limit)
+            .map(account => this.parseMessageAccount(account.pubkey))
+        );
+        return messages.sort((a, b) => b.timestamp - a.timestamp);
       }
 
       const messageCount = Math.min(limit, 10);
@@ -320,18 +313,28 @@ export class MessageService {
   /**
    * Parse message account data from chain (simplified parser)
    */
-  private parseMessageAccount(messageId: Address, data: Uint8Array): IMessageAccount {
-    // This is a simplified parser - in a real implementation,
-    // we would use the generated account parsers
+  /**
+   * Parse message account data using real decoder
+   */
+  private async parseMessageAccount(messageId: Address): Promise<IMessageAccount> {
     try {
-      // Mock parsing for now - real implementation would decode the account data
+      // Use the real message account fetcher
+      const maybeAccount = await fetchMaybeMessageAccount(this.rpc, messageId, {
+        commitment: this.commitment,
+      });
+
+      if (!maybeAccount.exists) {
+        throw new Error('Message account not found');
+      }
+
+      const messageData = maybeAccount.data;
       return {
         id: messageId,
-        sender: 'mock_sender_address' as Address,
-        channel: 'mock_channel_address' as Address,
-        content: 'Sample message content',
-        messageType: IMessageType.TEXT,
-        timestamp: Date.now() - 3600000, // 1 hour ago
+        sender: messageData.sender,
+        channel: messageData.recipient,
+        content: messageData.messageId, // Using messageId as content placeholder
+        messageType: messageData.messageType,
+        timestamp: Number(messageData.timestamp),
         edited: false,
         encrypted: false,
       };

@@ -62,24 +62,7 @@ export type AddParticipantInstruction<
   TRemainingAccounts extends ReadonlyArray<IAccountMeta<string>> = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
-    [
-      TAccountChannelAccount extends string
-        ? WritableAccount<TAccountChannelAccount>
-        : TAccountChannelAccount,
-      TAccountAdmin extends string
-        ? WritableSignerAccount<TAccountAdmin> &
-            IAccountSignerMeta<TAccountAdmin>
-        : TAccountAdmin,
-      TAccountNewParticipant extends string
-        ? ReadonlyAccount<TAccountNewParticipant>
-        : TAccountNewParticipant,
-      TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
-        : TAccountSystemProgram,
-      ...TRemainingAccounts,
-    ]
-  >;
+  IInstructionWithAccounts<readonly IAccountMeta<string>[]>;
 
 export interface AddParticipantInstructionData {
   discriminator: ReadonlyUint8Array;
@@ -171,9 +154,9 @@ export function getAddParticipantInstruction<
       getAccountMeta(accounts.admin),
       getAccountMeta(accounts.newParticipant),
       getAccountMeta(accounts.systemProgram),
-    ],
+    ] as any,
     programAddress,
-    data: getAddParticipantInstructionDataEncoder().encode({}),
+    data: new Uint8Array(getAddParticipantInstructionDataEncoder().encode({})),
   } as AddParticipantInstruction<
     TProgramAddress,
     TAccountChannelAccount,

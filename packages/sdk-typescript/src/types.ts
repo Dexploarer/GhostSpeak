@@ -9,7 +9,7 @@ import type { Commitment } from '@solana/rpc-types';
  * PoD Protocol Program ID on Solana Devnet
  */
 export const PROGRAM_ID = address(
-  '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
+  '4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385'
 );
 
 /**

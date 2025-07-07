@@ -13,9 +13,15 @@ import {
   IInstructionWithData,
 } from '@solana/instructions';
 import {
+  addDecoderSizePrefix,
+  addEncoderSizePrefix,
   combineCodec,
+  getBytesDecoder,
+  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU32Decoder,
+  getU32Encoder,
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
@@ -100,16 +106,16 @@ export type WorkOrderDataArgs = {
 export function getCreateWorkOrderInstructionDataEncoder(): Encoder<CreateWorkOrderInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', getCreateWorkOrderDiscriminatorBytes()],
+      ['discriminator', getBytesEncoder()],
       ['workOrderData', getWorkOrderDataEncoder()],
     ]),
-    (value) => ({ ...value, discriminator: getCreateWorkOrderDiscriminatorBytes() })
+    (value) => ({ ...value, discriminator: CREATE_WORK_ORDER_DISCRIMINATOR })
   );
 }
 
 export function getCreateWorkOrderInstructionDataDecoder(): Decoder<CreateWorkOrderInstructionData> {
   return getStructDecoder([
-    ['discriminator', getCreateWorkOrderDiscriminatorBytes()],
+    ['discriminator', getBytesDecoder()],
     ['workOrderData', getWorkOrderDataDecoder()],
   ]);
 }
@@ -127,12 +133,12 @@ export function getCreateWorkOrderInstructionDataCodec(): Codec<
 export function getWorkOrderDataEncoder(): Encoder<WorkOrderDataArgs> {
   return getStructEncoder([
     ['orderId', getU64Encoder()],
-    ['provider', getUtf8Encoder()],
-    ['title', getUtf8Encoder()],
-    ['description', getUtf8Encoder()],
-    ['requirements', getArrayEncoder(getUtf8Encoder())],
+    ['provider', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['title', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['description', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['requirements', addEncoderSizePrefix(getArrayEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())), getU32Encoder())],
     ['paymentAmount', getU64Encoder()],
-    ['paymentToken', getUtf8Encoder()],
+    ['paymentToken', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ['deadline', getU64Encoder()],
   ]);
 }
@@ -140,12 +146,12 @@ export function getWorkOrderDataEncoder(): Encoder<WorkOrderDataArgs> {
 export function getWorkOrderDataDecoder(): Decoder<WorkOrderData> {
   return getStructDecoder([
     ['orderId', getU64Decoder()],
-    ['provider', getUtf8Decoder()],
-    ['title', getUtf8Decoder()],
-    ['description', getUtf8Decoder()],
-    ['requirements', getArrayDecoder(getUtf8Decoder())],
+    ['provider', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['title', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['description', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['requirements', addDecoderSizePrefix(getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())), getU32Decoder())],
     ['paymentAmount', getU64Decoder()],
-    ['paymentToken', getUtf8Decoder()],
+    ['paymentToken', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ['deadline', getU64Decoder()],
   ]);
 }

@@ -122,8 +122,10 @@ export class ChannelService {
     try {
       console.log('📢 Creating channel on-chain:', options.name);
 
-      // Generate unique channel ID
-      const channelId = `channel_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      // Generate unique channel ID (must be ≤32 bytes when UTF-8 encoded)
+      const timestamp = Date.now().toString(36); // Base36 for shorter string
+      const random = Math.random().toString(36).substr(2, 6); // 6 chars max
+      const channelId = `ch_${timestamp}_${random}`; // Much shorter format
 
       // Create the create channel instruction using the real generated instruction builder
       const instruction = await getCreateChannelInstructionAsync(

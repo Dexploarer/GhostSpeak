@@ -3,7 +3,7 @@
  */
 
 import { 
-  getCreateWorkOrderInstructionAsync,
+  getCreateWorkOrderInstruction,
   getSubmitWorkDeliveryInstructionAsync,
   getProcessPaymentInstructionAsync,
   type WorkOrderDataArgs,
@@ -58,20 +58,38 @@ export class EscrowService {
    */
   async createWorkOrder(
     signer: KeyPairSigner,
-    provider: Address,
-    workOrderData: WorkOrderDataArgs
+    options: {
+      agentAddress: Address;
+      taskDescription: string;
+      paymentAmount: bigint;
+      deadline: number;
+      requirements: string;
+      deliverables: string;
+    }
   ): Promise<{
     workOrderPda: Address;
     signature: string;
   }> {
     try {
-      console.log(`💰 Creating work order for ${workOrderData.title}`);
+      console.log(`💰 Creating work order: ${options.taskDescription}`);
 
       // Generate work order PDA
       const workOrderPda = `work_order_${Date.now()}` as Address;
       
+      // Convert to WorkOrderDataArgs format expected by instruction
+      const workOrderData: WorkOrderDataArgs = {
+        orderId: BigInt(Date.now()),
+        provider: String(options.agentAddress), // Convert Address to string
+        title: options.taskDescription.substring(0, 50), // Limit title length
+        description: options.taskDescription,
+        requirements: [options.requirements],
+        paymentAmount: options.paymentAmount,
+        paymentToken: '11111111111111111111111111111111', // SOL as string
+        deadline: BigInt(options.deadline),
+      };
+      
       // Create work order instruction
-      const instruction = await getCreateWorkOrderInstructionAsync({
+      const instruction = getCreateWorkOrderInstruction({
         workOrder: workOrderPda,
         client: signer.address,
         workOrderData,

@@ -11,6 +11,9 @@ import { AuctionService } from './services/auction';
 import { BulkDealsService } from './services/bulk-deals';
 import { ReputationService } from './services/reputation';
 import { RealtimeCommunicationService } from './services/realtime-communication';
+import { CrossPlatformBridgeService } from './services/cross-platform-bridge';
+import { MessageRouterService } from './services/message-router';
+import { OfflineSyncService } from './services/offline-sync';
 import type { Address } from '@solana/addresses';
 import { createSolanaRpc } from '@solana/rpc';
 import { createSolanaRpcSubscriptions } from '@solana/rpc-subscriptions';
@@ -47,6 +50,10 @@ export class PodAIClient {
   private _auctionService?: AuctionService;
   private _bulkDealsService?: BulkDealsService;
   private _reputationService?: ReputationService;
+  private _realtimeCommunicationService?: RealtimeCommunicationService;
+  private _crossPlatformBridgeService?: CrossPlatformBridgeService;
+  private _messageRouterService?: MessageRouterService;
+  private _offlineSyncService?: OfflineSyncService;
 
   constructor(config: IPodAIClientConfig) {
     // Store the RPC endpoint
@@ -61,7 +68,7 @@ export class PodAIClient {
     
     // Set program ID
     this.programId = this.parseAddress(
-      config.programId ?? '4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385'
+      config.programId ?? '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
     );
     
     // Set commitment level
@@ -176,6 +183,67 @@ export class PodAIClient {
       );
     }
     return this._reputationService;
+  }
+
+  /**
+   * Get Real-time Communication Service (lazy-loaded)
+   */
+  public get realtime(): RealtimeCommunicationService {
+    if (!this._realtimeCommunicationService) {
+      this._realtimeCommunicationService = new RealtimeCommunicationService(
+        this.rpc,
+        this.rpcSubscriptions,
+        this.programId,
+        this.commitment,
+        this.wsEndpoint
+      );
+    }
+    return this._realtimeCommunicationService;
+  }
+
+  /**
+   * Get Cross-Platform Bridge Service (lazy-loaded)
+   */
+  public get crossPlatform(): CrossPlatformBridgeService {
+    if (!this._crossPlatformBridgeService) {
+      this._crossPlatformBridgeService = new CrossPlatformBridgeService(
+        this.rpc,
+        this.rpcSubscriptions,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._crossPlatformBridgeService;
+  }
+
+  /**
+   * Get Message Router Service (lazy-loaded)
+   */
+  public get messageRouter(): MessageRouterService {
+    if (!this._messageRouterService) {
+      this._messageRouterService = new MessageRouterService(
+        this.rpc,
+        this.rpcSubscriptions,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._messageRouterService;
+  }
+
+  /**
+   * Get Offline Sync Service (lazy-loaded)
+   */
+  public get offlineSync(): OfflineSyncService {
+    if (!this._offlineSyncService) {
+      this._offlineSyncService = new OfflineSyncService(
+        this.rpc,
+        this.rpcSubscriptions,
+        this.programId,
+        this.commitment
+      );
+    }
+    return this._offlineSyncService;
   }
 
   /**

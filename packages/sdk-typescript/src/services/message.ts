@@ -76,6 +76,55 @@ export class MessageService {
   }
 
   /**
+   * Send message to a channel (main method used by tests)
+   */
+  async sendMessage(
+    sender: KeyPairSigner,
+    options: {
+      channelAddress: Address;
+      content: string;
+      messageType: string;
+      metadata?: Record<string, any>;
+    }
+  ): Promise<{
+    messagePda: Address;
+    signature: string;
+  }> {
+    try {
+      console.log(`💬 Sending message to channel: ${options.content.slice(0, 50)}...`);
+
+      // Generate unique message ID
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+
+      // Convert string messageType to enum
+      const messageTypeEnum = this.stringToMessageType(options.messageType);
+
+      // Create the send message instruction using the real generated instruction builder
+      const instruction = await getSendMessageInstructionAsync({
+        sender,
+        recipient: options.channelAddress,
+        messageId,
+        payload: options.content,
+        messageType: messageTypeEnum,
+        expirationDays: 30, // Default expiration
+      });
+
+      // Build and send transaction
+      const result = await this.buildSimulateAndSendTransactionFn([instruction], [sender]);
+      const signature = result.signature;
+
+      console.log('✅ Message sent successfully:', signature);
+      return { 
+        messagePda: messageId as Address, 
+        signature 
+      };
+    } catch (error) {
+      console.error('❌ Failed to send message:', error);
+      throw new Error(`Message sending failed: ${String(error)}`);
+    }
+  }
+
+  /**
    * Send a message to a direct recipient using real smart contract instruction
    */
   async sendDirectMessage(
@@ -267,6 +316,26 @@ export class MessageService {
       }));
     } catch (error) {
       throw new Error(`Failed to get channel messages: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Helper method to convert string message type to enum
+   */
+  private stringToMessageType(messageType: string): IMessageType {
+    switch (messageType.toLowerCase()) {
+      case 'text':
+        return IMessageType.TEXT;
+      case 'file':
+        return IMessageType.FILE;
+      case 'image':
+        return IMessageType.IMAGE;
+      case 'voice':
+        return IMessageType.VOICE;
+      case 'system':
+        return IMessageType.SYSTEM;
+      default:
+        return IMessageType.TEXT;
     }
   }
 

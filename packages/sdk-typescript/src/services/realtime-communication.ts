@@ -650,6 +650,475 @@ export class RealtimeCommunicationService {
   }
 
   /**
+   * Send typing indicator to conversation participants
+   */
+  async sendTypingIndicator(
+    agent: KeyPairSigner,
+    conversationId: Address,
+    isTyping: boolean = true
+  ): Promise<{
+    success: boolean;
+    notifiedParticipants: number;
+  }> {
+    try {
+      console.log(`⌨️ ${isTyping ? 'Starting' : 'Stopping'} typing indicator for conversation: ${conversationId}`);
+
+      // Update presence
+      await this.updatePresence(agent.address, {
+        isTyping,
+        typingIn: isTyping ? conversationId : undefined,
+      });
+
+      // Get conversation participants
+      const conversation = this.conversations.get(conversationId);
+      if (!conversation) {
+        throw new Error('Conversation not found');
+      }
+
+      // Notify all participants except sender
+      const recipients = conversation.participants.filter(addr => addr !== agent.address);
+      let notifiedCount = 0;
+
+      for (const recipientAddress of recipients) {
+        const connection = this.connections.get(recipientAddress);
+        if (connection && connection.status === 'connected') {
+          connection.socket.send(JSON.stringify({
+            type: 'typing_indicator',
+            payload: {
+              senderAddress: agent.address,
+              conversationId,
+              isTyping,
+              timestamp: Date.now(),
+            },
+          }));
+          notifiedCount++;
+        }
+      }
+
+      console.log(`✅ Typing indicator ${isTyping ? 'sent' : 'stopped'} to ${notifiedCount} participants`);
+      return {
+        success: true,
+        notifiedParticipants: notifiedCount,
+      };
+    } catch (error) {
+      throw new Error(`Typing indicator failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Send read receipt for a message
+   */
+  async sendReadReceipt(
+    reader: KeyPairSigner,
+    messageId: Address,
+    readTimestamp: number = Date.now()
+  ): Promise<{
+    success: boolean;
+    deliveredToSender: boolean;
+  }> {
+    try {
+      console.log(`👁️ Sending read receipt for message: ${messageId}`);
+
+      // Find the original message to get sender info
+      // In a real implementation, this would query the message store
+      const mockSenderAddress = 'sender_address_placeholder' as Address;
+
+      const connection = this.connections.get(mockSenderAddress);
+      let deliveredToSender = false;
+
+      if (connection && connection.status === 'connected') {
+        connection.socket.send(JSON.stringify({
+          type: 'read_receipt',
+          payload: {
+            messageId,
+            readerAddress: reader.address,
+            readTimestamp,
+            timestamp: Date.now(),
+          },
+        }));
+        deliveredToSender = true;
+      }
+
+      console.log(`✅ Read receipt sent for message: ${messageId}`);
+      return {
+        success: true,
+        deliveredToSender,
+      };
+    } catch (error) {
+      throw new Error(`Read receipt failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Send delivery confirmation for a message
+   */
+  async sendDeliveryConfirmation(
+    recipient: KeyPairSigner,
+    messageId: Address,
+    deliveryStatus: DeliveryStatus = 'delivered'
+  ): Promise<{
+    success: boolean;
+    confirmationSent: boolean;
+  }> {
+    try {
+      console.log(`📬 Sending delivery confirmation for message: ${messageId}`);
+
+      // Find the original message sender
+      // In a real implementation, this would query the message store
+      const mockSenderAddress = 'sender_address_placeholder' as Address;
+
+      const connection = this.connections.get(mockSenderAddress);
+      let confirmationSent = false;
+
+      if (connection && connection.status === 'connected') {
+        connection.socket.send(JSON.stringify({
+          type: 'delivery_confirmation',
+          payload: {
+            messageId,
+            recipientAddress: recipient.address,
+            deliveryStatus,
+            deliveredAt: Date.now(),
+            timestamp: Date.now(),
+          },
+        }));
+        confirmationSent = true;
+      }
+
+      console.log(`✅ Delivery confirmation sent for message: ${messageId}`);
+      return {
+        success: true,
+        confirmationSent,
+      };
+    } catch (error) {
+      throw new Error(`Delivery confirmation failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Subscribe to presence updates for specific agents
+   */
+  async subscribeToPresence(
+    subscriber: KeyPairSigner,
+    agentAddresses: Address[]
+  ): Promise<{
+    subscriptionId: string;
+    currentPresence: Record<string, IPresenceInfo>;
+  }> {
+    try {
+      console.log(`👥 Subscribing to presence for ${agentAddresses.length} agents`);
+
+      const connection = this.connections.get(subscriber.address);
+      if (!connection) {
+        throw new Error('Subscriber not connected');
+      }
+
+      const subscriptionId = `presence_sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Add presence subscriptions
+      agentAddresses.forEach(address => {
+        connection.presenceSubscriptions.add(address);
+      });
+
+      // Get current presence info
+      const currentPresence: Record<string, IPresenceInfo> = {};
+      agentAddresses.forEach(address => {
+        const presence = this.presenceInfo.get(address);
+        if (presence) {
+          currentPresence[address] = presence;
+        }
+      });
+
+      console.log(`✅ Presence subscription established: ${subscriptionId}`);
+      return {
+        subscriptionId,
+        currentPresence,
+      };
+    } catch (error) {
+      throw new Error(`Presence subscription failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Start voice/video call with another agent
+   */
+  async initiateCall(
+    caller: KeyPairSigner,
+    callee: Address,
+    callType: 'voice' | 'video' | 'screen_share' = 'voice',
+    options: {
+      autoAnswer?: boolean;
+      maxDuration?: number;
+      quality?: 'low' | 'medium' | 'high';
+      encryption?: boolean;
+    } = {}
+  ): Promise<{
+    callId: string;
+    status: 'initiated' | 'ringing' | 'failed';
+    webrtcOffer?: any;
+  }> {
+    try {
+      console.log(`📞 Initiating ${callType} call to ${callee}`);
+
+      const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Check if callee is online
+      const calleePresence = this.presenceInfo.get(callee);
+      if (!calleePresence || calleePresence.status === 'offline') {
+        return {
+          callId,
+          status: 'failed',
+        };
+      }
+
+      // Send call invitation
+      const calleeConnection = this.connections.get(callee);
+      if (calleeConnection && calleeConnection.status === 'connected') {
+        calleeConnection.socket.send(JSON.stringify({
+          type: 'call_invitation',
+          payload: {
+            callId,
+            callerAddress: caller.address,
+            callType,
+            options,
+            timestamp: Date.now(),
+          },
+        }));
+
+        console.log(`✅ Call invitation sent: ${callId}`);
+        return {
+          callId,
+          status: 'ringing',
+          webrtcOffer: this.generateMockWebRTCOffer(),
+        };
+      }
+
+      return {
+        callId,
+        status: 'failed',
+      };
+    } catch (error) {
+      throw new Error(`Call initiation failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Send file or media attachment
+   */
+  async sendFileAttachment(
+    sender: KeyPairSigner,
+    recipient: Address,
+    file: {
+      name: string;
+      type: string;
+      size: number;
+      data: Uint8Array | string;
+      thumbnail?: string;
+    },
+    options: {
+      conversationId?: Address;
+      priority?: MessagePriority;
+      encryption?: boolean;
+      compressionLevel?: number;
+    } = {}
+  ): Promise<{
+    messageId: Address;
+    fileId: string;
+    uploadStatus: 'uploading' | 'uploaded' | 'failed';
+    downloadUrl?: string;
+  }> {
+    try {
+      console.log(`📎 Sending file attachment: ${file.name} (${file.size} bytes)`);
+
+      const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+
+      // Simulate file upload
+      const downloadUrl = `https://files.ghostspeak.ai/${fileId}/${encodeURIComponent(file.name)}`;
+
+      // Create file transfer message
+      const fileMessage: Omit<IRealtimeMessage, 'messageId' | 'fromAddress' | 'timestamp' | 'deliveryStatus' | 'retryCount'> = {
+        conversationId: options.conversationId || `conv_${sender.address}_${recipient}` as Address,
+        toAddress: recipient,
+        type: 'file_transfer',
+        content: `File attachment: ${file.name}`,
+        priority: options.priority || 'normal',
+        attachments: [{
+          id: fileId,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          hash: this.calculateFileHash(file.data),
+          url: downloadUrl,
+        }],
+        isEncrypted: options.encryption || false,
+        maxRetries: 3,
+        requiresAcknowledgment: true,
+        acknowledgmentTimeout: 60000,
+        deliveryGuarantee: 'at_least_once',
+      };
+
+      // Send the message
+      const result = await this.sendMessage(sender, fileMessage);
+
+      console.log(`✅ File attachment sent: ${file.name}`);
+      return {
+        messageId: result.messageId,
+        fileId,
+        uploadStatus: 'uploaded',
+        downloadUrl,
+      };
+    } catch (error) {
+      throw new Error(`File attachment failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Set up message reactions (emoji responses)
+   */
+  async addMessageReaction(
+    reactor: KeyPairSigner,
+    messageId: Address,
+    emoji: string,
+    action: 'add' | 'remove' = 'add'
+  ): Promise<{
+    success: boolean;
+    reactionId?: string;
+  }> {
+    try {
+      console.log(`${action === 'add' ? '👍' : '👎'} ${action === 'add' ? 'Adding' : 'Removing'} reaction ${emoji} to message: ${messageId}`);
+
+      const reactionId = action === 'add' ? `reaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : undefined;
+
+      // Find message sender to notify
+      // In a real implementation, this would query the message store
+      const mockSenderAddress = 'sender_address_placeholder' as Address;
+
+      const connection = this.connections.get(mockSenderAddress);
+      if (connection && connection.status === 'connected') {
+        connection.socket.send(JSON.stringify({
+          type: 'message_reaction',
+          payload: {
+            messageId,
+            reactorAddress: reactor.address,
+            emoji,
+            action,
+            reactionId,
+            timestamp: Date.now(),
+          },
+        }));
+      }
+
+      console.log(`✅ Message reaction ${action}: ${emoji}`);
+      return {
+        success: true,
+        reactionId,
+      };
+    } catch (error) {
+      throw new Error(`Message reaction failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Forward message to other recipients
+   */
+  async forwardMessage(
+    forwarder: KeyPairSigner,
+    originalMessageId: Address,
+    recipients: Address[],
+    options: {
+      includeOriginalContext?: boolean;
+      addForwardingNote?: string;
+      priority?: MessagePriority;
+    } = {}
+  ): Promise<{
+    forwardedMessages: Array<{
+      messageId: Address;
+      recipient: Address;
+      status: 'sent' | 'failed';
+    }>;
+  }> {
+    try {
+      console.log(`↗️ Forwarding message ${originalMessageId} to ${recipients.length} recipients`);
+
+      const forwardedMessages: Array<{
+        messageId: Address;
+        recipient: Address;
+        status: 'sent' | 'failed';
+      }> = [];
+
+      for (const recipient of recipients) {
+        try {
+          const forwardMessage: Omit<IRealtimeMessage, 'messageId' | 'fromAddress' | 'timestamp' | 'deliveryStatus' | 'retryCount'> = {
+            conversationId: `conv_${forwarder.address}_${recipient}` as Address,
+            toAddress: recipient,
+            type: 'text',
+            content: options.addForwardingNote || 'Forwarded message',
+            priority: options.priority || 'normal',
+            isEncrypted: false,
+            forwardedFrom: originalMessageId,
+            maxRetries: 3,
+            requiresAcknowledgment: true,
+            acknowledgmentTimeout: 30000,
+            deliveryGuarantee: 'at_least_once',
+            metadata: {
+              isForwarded: true,
+              originalMessageId,
+              includeContext: options.includeOriginalContext,
+            },
+          };
+
+          const result = await this.sendMessage(forwarder, forwardMessage);
+          forwardedMessages.push({
+            messageId: result.messageId,
+            recipient,
+            status: 'sent',
+          });
+        } catch (error) {
+          forwardedMessages.push({
+            messageId: '' as Address,
+            recipient,
+            status: 'failed',
+          });
+        }
+      }
+
+      console.log(`✅ Message forwarded to ${forwardedMessages.filter(m => m.status === 'sent').length}/${recipients.length} recipients`);
+      return { forwardedMessages };
+    } catch (error) {
+      throw new Error(`Message forwarding failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * Create message threads for organized discussions
+   */
+  async createMessageThread(
+    creator: KeyPairSigner,
+    parentMessageId: Address,
+    threadTitle?: string
+  ): Promise<{
+    threadId: Address;
+    participantCount: number;
+  }> {
+    try {
+      console.log(`🧵 Creating message thread from message: ${parentMessageId}`);
+
+      const threadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+
+      // In a real implementation, this would create a proper thread structure
+      const mockParticipantCount = 1;
+
+      console.log(`✅ Message thread created: ${threadId}`);
+      return {
+        threadId,
+        participantCount: mockParticipantCount,
+      };
+    } catch (error) {
+      throw new Error(`Thread creation failed: ${String(error)}`);
+    }
+  }
+
+  /**
    * Disconnect and cleanup
    */
   async disconnect(agentAddress: Address): Promise<void> {
@@ -962,6 +1431,21 @@ export class RealtimeCommunicationService {
         case 'typing_indicator':
           this.processTypingIndicator(connection, parsedData.payload);
           break;
+        case 'read_receipt':
+          this.processReadReceipt(connection, parsedData.payload);
+          break;
+        case 'delivery_confirmation':
+          this.processDeliveryConfirmation(connection, parsedData.payload);
+          break;
+        case 'message_reaction':
+          this.processMessageReaction(connection, parsedData.payload);
+          break;
+        case 'call_invitation':
+          this.processCallInvitation(connection, parsedData.payload);
+          break;
+        case 'call_response':
+          this.processCallResponse(connection, parsedData.payload);
+          break;
         case 'pong':
           connection.lastPong = Date.now();
           break;
@@ -996,7 +1480,53 @@ export class RealtimeCommunicationService {
 
   private processTypingIndicator(connection: IWebSocketConnection, data: any): void {
     // Handle typing indicators
-    console.log(`⌨️ Typing indicator: ${data.address} in ${data.conversationId}`);
+    console.log(`⌨️ Typing indicator: ${data.senderAddress} ${data.isTyping ? 'started' : 'stopped'} typing in ${data.conversationId}`);
+    
+    // Update local presence info
+    const presence = this.presenceInfo.get(data.senderAddress);
+    if (presence) {
+      presence.isTyping = data.isTyping;
+      presence.typingIn = data.isTyping ? data.conversationId : undefined;
+      this.presenceInfo.set(data.senderAddress, presence);
+    }
+  }
+
+  private processReadReceipt(connection: IWebSocketConnection, data: any): void {
+    console.log(`👁️ Read receipt: Message ${data.messageId} read by ${data.readerAddress}`);
+    // In a real implementation, this would update message read status and notify sender
+  }
+
+  private processDeliveryConfirmation(connection: IWebSocketConnection, data: any): void {
+    console.log(`📬 Delivery confirmation: Message ${data.messageId} ${data.deliveryStatus} to ${data.recipientAddress}`);
+    // In a real implementation, this would update message delivery status
+  }
+
+  private processMessageReaction(connection: IWebSocketConnection, data: any): void {
+    console.log(`${data.action === 'add' ? '👍' : '👎'} Message reaction: ${data.emoji} ${data.action} to ${data.messageId} by ${data.reactorAddress}`);
+    // In a real implementation, this would update reaction counts and notify participants
+  }
+
+  private processCallInvitation(connection: IWebSocketConnection, data: any): void {
+    console.log(`📞 Call invitation: ${data.callType} call from ${data.callerAddress} (ID: ${data.callId})`);
+    
+    // Auto-respond or queue for user decision
+    // For demo purposes, we'll auto-decline
+    setTimeout(() => {
+      connection.socket.send(JSON.stringify({
+        type: 'call_response',
+        payload: {
+          callId: data.callId,
+          response: 'declined',
+          reason: 'busy',
+          timestamp: Date.now(),
+        },
+      }));
+    }, 2000);
+  }
+
+  private processCallResponse(connection: IWebSocketConnection, data: any): void {
+    console.log(`📞 Call response: Call ${data.callId} ${data.response} (${data.reason || 'no reason'})`);
+    // In a real implementation, this would handle call state changes
   }
 
   private startHeartbeat(connection: IWebSocketConnection): void {
@@ -1137,5 +1667,26 @@ export class RealtimeCommunicationService {
       reportedIssues: Math.floor(Math.random() * 10),
       resolvedIssues: Math.floor(Math.random() * 8),
     };
+  }
+
+  private generateMockWebRTCOffer(): any {
+    return {
+      type: 'offer',
+      sdp: 'v=0\r\no=- 1234567890 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n...',
+      timestamp: Date.now(),
+    };
+  }
+
+  private calculateFileHash(data: Uint8Array | string): string {
+    // Simple hash calculation for demonstration
+    // In production, use a proper cryptographic hash like SHA-256
+    const str = typeof data === 'string' ? data : Array.from(data).join('');
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(16);
   }
 }

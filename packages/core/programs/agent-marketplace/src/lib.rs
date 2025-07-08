@@ -1,13 +1,13 @@
 /*!
- * podAI Marketplace Program - Revolutionary AI Agent Platform
+ * GhostSpeak Protocol - AI Agent Commerce Protocol
  * 
- * A decentralized marketplace for AI agents built on Solana, enabling:
- * - Agent-to-Agent (A2A) and Human-to-Agent (H2A) communication
- * - Human purchasing of agent services and direct job hiring
- * - Work delivery as compressed NFTs (cNFTs)
- * - SPL Token 2022 payments with confidential transfers
- * - Agent replication and genome marketplace
- * - Privacy-preserving interactions across the ecosystem
+ * A pure decentralized protocol for existing AI agents to:
+ * - List and sell services to humans and other agents
+ * - Execute work orders with escrow payments
+ * - Communicate through secure channels
+ * - Process payments using SPL Token 2022
+ * 
+ * Note: This is a protocol, not a runtime. Agents must be created externally.
  */
 
 use anchor_lang::prelude::*;
@@ -87,25 +87,19 @@ pub enum Deliverable {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct AgentRegistrationData {
-    pub name: String,
-    pub description: String,
-    pub capabilities: Vec<String>,
-    pub pricing_model: PricingModel,
-    pub genome_hash: String,
-    pub is_replicable: bool,
-    pub replication_fee: u64,
+pub struct AgentVerificationData {
+    pub agent_pubkey: Pubkey,
+    pub service_endpoint: String,
+    pub supported_capabilities: Vec<String>,
+    pub verified_at: i64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct AgentUpdateData {
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub capabilities: Option<Vec<String>>,
-    pub pricing_model: Option<PricingModel>,
-    pub is_active: Option<bool>,
-    pub is_replicable: Option<bool>,
-    pub replication_fee: Option<u64>,
+pub struct AgentServiceData {
+    pub agent_pubkey: Pubkey,
+    pub service_endpoint: String,
+    pub is_active: bool,
+    pub last_updated: i64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -711,78 +705,51 @@ pub mod podai_marketplace {
     use super::*;
 
     // =====================================================
-    // AGENT MANAGEMENT
+    // AGENT VERIFICATION (Not Creation)
     // =====================================================
 
-    /// Register a new AI agent in the marketplace
-    pub fn register_agent(
-        ctx: Context<RegisterAgent>,
-        agent_data: AgentRegistrationData,
+    /// Verify an existing AI agent can use the protocol
+    /// Note: This does NOT create agents - they must exist externally
+    pub fn verify_agent(
+        ctx: Context<VerifyAgent>,
+        verification_data: AgentVerificationData,
     ) -> Result<()> {
-        let agent = &mut ctx.accounts.agent;
+        let agent_verification = &mut ctx.accounts.agent_verification;
         let clock = Clock::get()?;
 
-        agent.owner = ctx.accounts.owner.key();
-        agent.name = agent_data.name.clone();
-        agent.description = agent_data.description.clone();
-        agent.capabilities = agent_data.capabilities.clone();
-        agent.pricing_model = agent_data.pricing_model;
-        agent.reputation_score = 0;
-        agent.total_jobs_completed = 0;
-        agent.total_earnings = 0;
-        agent.is_active = true;
-        agent.created_at = clock.unix_timestamp;
-        agent.updated_at = clock.unix_timestamp;
-        agent.genome_hash = agent_data.genome_hash.clone();
-        agent.is_replicable = agent_data.is_replicable;
-        agent.replication_fee = agent_data.replication_fee;
-        agent.bump = ctx.bumps.agent;
+        // Simply verify the agent exists and can use the protocol
+        agent_verification.agent_pubkey = verification_data.agent_pubkey;
+        agent_verification.service_endpoint = verification_data.service_endpoint;
+        agent_verification.supported_capabilities = verification_data.supported_capabilities;
+        agent_verification.verified_at = clock.unix_timestamp;
+        agent_verification.is_active = true;
+        agent_verification.bump = ctx.bumps.agent_verification;
 
-        emit!(AgentRegisteredEvent {
-            agent: agent.key(),
-            owner: ctx.accounts.owner.key(),
-            name: agent_data.name.clone(),
-            capabilities: agent_data.capabilities.clone(),
+        emit!(AgentVerifiedEvent {
+            agent: verification_data.agent_pubkey,
+            verified_at: clock.unix_timestamp,
+            capabilities: verification_data.supported_capabilities,
         });
 
         Ok(())
     }
 
-    /// Update agent information and capabilities
-    pub fn update_agent(
-        ctx: Context<UpdateAgent>,
-        update_data: AgentUpdateData,
+    /// Update agent service configuration
+    pub fn update_agent_service(
+        ctx: Context<UpdateAgentService>,
+        service_data: AgentServiceData,
     ) -> Result<()> {
-        let agent = &mut ctx.accounts.agent;
+        let agent_service = &mut ctx.accounts.agent_service;
         let clock = Clock::get()?;
 
-        if let Some(name) = update_data.name {
-            agent.name = name.clone();
-        }
-        if let Some(description) = update_data.description {
-            agent.description = description;
-        }
-        if let Some(capabilities) = update_data.capabilities {
-            agent.capabilities = capabilities.clone();
-        }
-        if let Some(pricing_model) = update_data.pricing_model {
-            agent.pricing_model = pricing_model;
-        }
-        if let Some(is_active) = update_data.is_active {
-            agent.is_active = is_active;
-        }
-        if let Some(is_replicable) = update_data.is_replicable {
-            agent.is_replicable = is_replicable;
-        }
-        if let Some(replication_fee) = update_data.replication_fee {
-            agent.replication_fee = replication_fee;
-        }
-        agent.updated_at = clock.unix_timestamp;
+        // Only update service configuration, not create/modify agents
+        agent_service.service_endpoint = service_data.service_endpoint;
+        agent_service.is_active = service_data.is_active;
+        agent_service.last_updated = clock.unix_timestamp;
 
-        emit!(AgentUpdatedEvent {
-            agent: agent.key(),
-            owner: ctx.accounts.owner.key(),
-            name: agent.name.clone(),
+        emit!(AgentServiceUpdatedEvent {
+            agent: service_data.agent_pubkey,
+            updated_at: clock.unix_timestamp,
         });
 
         Ok(())

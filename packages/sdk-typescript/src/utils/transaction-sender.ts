@@ -7,7 +7,7 @@ import type { Address } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { Commitment } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
-import type { IInstruction } from '@solana/instructions';
+import type { IInstruction } from './instruction-compat.js';
 // import type { Signature } from '@solana/signatures';
 import { pipe } from '@solana/functional';
 import { 

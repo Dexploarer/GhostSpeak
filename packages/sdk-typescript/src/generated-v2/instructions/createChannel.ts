@@ -40,7 +40,7 @@ import {
   IInstruction,
   IInstructionWithAccounts,
   IInstructionWithData,
-} from '@solana/instructions';
+} from '../../utils/instruction-compat';
 import {
   type IAccountSignerMeta,
   type TransactionSigner,
@@ -95,7 +95,7 @@ export type CreateChannelInstruction<
   >;
 
 export type CreateChannelInstructionData = {
-  discriminator: Uint8Array;
+  discriminator: ReadonlyUint8Array;
   channelId: string;
   name: string;
   description: string;
@@ -231,9 +231,9 @@ export async function getCreateChannelInstructionAsync<
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getCreateChannelInstructionDataEncoder().encode(
+    data: new Uint8Array(getCreateChannelInstructionDataEncoder().encode(
       args as CreateChannelInstructionDataArgs
-    ),
+    )),
   } as CreateChannelInstruction<
     TProgramAddress,
     TAccountChannelAccount,
@@ -309,9 +309,9 @@ export function getCreateChannelInstruction<
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getCreateChannelInstructionDataEncoder().encode(
+    data: new Uint8Array(getCreateChannelInstructionDataEncoder().encode(
       args as CreateChannelInstructionDataArgs
-    ),
+    )),
   } as CreateChannelInstruction<
     TProgramAddress,
     TAccountChannelAccount,

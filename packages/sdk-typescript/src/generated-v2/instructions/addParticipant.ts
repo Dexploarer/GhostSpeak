@@ -34,7 +34,7 @@ import type {
   IInstruction,
   IInstructionWithAccounts,
   IInstructionWithData,
-} from '@solana/instructions';
+} from '../../utils/instruction-compat';
 
 // Define missing types for compatibility
 type ReadonlyAccount<T> = T;

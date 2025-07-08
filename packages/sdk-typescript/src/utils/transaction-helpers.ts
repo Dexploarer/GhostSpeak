@@ -20,7 +20,7 @@ import {
 } from '@solana/kit';
 
 import type { Address } from '@solana/addresses';
-import type { IInstruction } from '@solana/instructions';
+import type { IInstruction } from './instruction-compat.js';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { RpcSubscriptions, SolanaRpcSubscriptionsApi } from '@solana/rpc-subscriptions';
 import type { Commitment } from '@solana/rpc-types';

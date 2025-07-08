@@ -11,7 +11,7 @@ import {
   IInstruction,
   IInstructionWithAccounts,
   IInstructionWithData,
-} from '@solana/instructions';
+} from '../../utils/instruction-compat';
 import { 
   combineCodec,
   getArrayDecoder, 

@@ -24,6 +24,11 @@
     "noImplicitAny": false,
     "isolatedModules": true,
     "preserveConstEnums": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
     "types": ["node", "bun"],
     "baseUrl": "../../",
     "paths": {

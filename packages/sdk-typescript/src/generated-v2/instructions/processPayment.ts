@@ -27,8 +27,8 @@ import type {
   IInstruction,
   IInstructionWithAccounts,
   IInstructionWithData,
-} from '@solana/instructions';
-import { AccountRole } from '@solana/instructions';
+} from '../../utils/instruction-compat';
+import { AccountRole } from '../../utils/instruction-compat';
 
 export const PROCESS_PAYMENT_DISCRIMINATOR = new Uint8Array([
   78, 159, 201, 44, 92, 88, 134, 201,
@@ -160,15 +160,15 @@ export function getProcessPaymentInstruction<
 > {
   const programAddress = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
   const accounts = [
-    { address: input.payment, role: AccountRole.WRITABLE },
-    { address: input.workOrder, role: AccountRole.WRITABLE },
-    { address: input.providerAgent, role: AccountRole.WRITABLE },
-    { address: input.payer, role: AccountRole.WRITABLE_SIGNER },
-    { address: input.payerTokenAccount, role: AccountRole.WRITABLE },
-    { address: input.providerTokenAccount, role: AccountRole.WRITABLE },
-    { address: input.tokenMint, role: AccountRole.READONLY },
-    { address: input.tokenProgram ?? ('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<string>), role: AccountRole.READONLY },
-    { address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<string>), role: AccountRole.READONLY }
+    { address: input.payment, role: 'writable' },
+    { address: input.workOrder, role: 'writable' },
+    { address: input.providerAgent, role: 'writable' },
+    { address: input.payer, role: 'writable', signer: true },
+    { address: input.payerTokenAccount, role: 'writable' },
+    { address: input.providerTokenAccount, role: 'writable' },
+    { address: input.tokenMint, role: 'readonly' },
+    { address: input.tokenProgram ?? ('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<string>), role: 'readonly' },
+    { address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<string>), role: 'readonly' }
   ] as [
     IAccountMeta<string>,
     IAccountMeta<string>,

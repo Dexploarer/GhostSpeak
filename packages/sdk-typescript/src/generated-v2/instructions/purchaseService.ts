@@ -11,8 +11,8 @@ import type {
   IInstruction,
   IInstructionWithAccounts,
   IInstructionWithData,
-} from '@solana/instructions';
-import { AccountRole } from '@solana/instructions';
+} from '../../utils/instruction-compat';
+import { AccountRole } from '../../utils/instruction-compat';
 import {
   combineCodec,
   getArrayDecoder,
@@ -180,10 +180,10 @@ export function getPurchaseServiceInstruction<
 > {
   const programAddress = 'PodAI111111111111111111111111111111111111111' as Address<'PodAI111111111111111111111111111111111111111'>;
   const accounts = [
-    { address: input.servicePurchase, role: AccountRole.WRITABLE },
-    { address: input.serviceListing, role: AccountRole.WRITABLE },
-    { address: input.buyer, role: AccountRole.WRITABLE_SIGNER },
-    { address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<string>), role: AccountRole.READONLY },
+    { address: input.servicePurchase, role: 'writable' },
+    { address: input.serviceListing, role: 'writable' },
+    { address: input.buyer, role: 'writable', signer: true },
+    { address: input.systemProgram ?? ('11111111111111111111111111111111' as Address<string>), role: 'readonly' },
   ] as unknown as [
     TAccountServicePurchase extends string ? IAccountMeta<string> : TAccountServicePurchase,
     TAccountServiceListing extends string ? IAccountMeta<string> : TAccountServiceListing,

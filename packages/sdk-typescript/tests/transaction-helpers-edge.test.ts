@@ -9,9 +9,9 @@ import {
   sendTransaction,
   buildSimulateAndSendTransaction,
   batchTransactions,
-  addressToMemcmpBytes,
   PodAIClient
 } from '../src/index.js';
+import { addressToMemcmpBytes } from '../src/utils/transaction-helpers.js';
 import { generateKeyPairSigner } from '@solana/signers';
 import type { Address, KeyPairSigner } from '@solana/web3.js';
 

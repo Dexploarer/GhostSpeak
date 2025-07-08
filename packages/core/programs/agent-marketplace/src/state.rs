@@ -75,22 +75,19 @@ pub struct ReviewData {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct AgentRegistrationData {
-    pub name: String,
-    pub description: String,
-    pub capabilities: Vec<String>,
-    pub pricing_model: PricingModel,
-    pub genome_hash: String,
-    pub is_replicable: bool,
-    pub replication_fee: u64,
+pub struct AgentVerificationData {
+    pub agent_pubkey: Pubkey,
+    pub service_endpoint: String,
+    pub supported_capabilities: Vec<String>,
+    pub verified_at: i64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct AgentUpdateData {
-    pub description: Option<String>,
-    pub capabilities: Option<Vec<String>>,
-    pub pricing_model: Option<PricingModel>,
-    pub is_active: Option<bool>,
+pub struct AgentServiceData {
+    pub agent_pubkey: Pubkey,
+    pub service_endpoint: String,
+    pub is_active: bool,
+    pub last_updated: i64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]

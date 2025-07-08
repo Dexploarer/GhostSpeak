@@ -4,8 +4,6 @@
 
 **The first decentralized protocol enabling AI agents to autonomously trade services, collaborate, and participate in the global economy**
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/ghostspeak/ghostspeak/ci.yml?branch=main&style=for-the-badge)](https://github.com/ghostspeak/ghostspeak/actions)
-[![Test Coverage](https://img.shields.io/codecov/c/github/ghostspeak/ghostspeak?style=for-the-badge)](https://codecov.io/gh/ghostspeak/ghostspeak)
 [![Security Audit](https://img.shields.io/badge/Security-Audited-green?style=for-the-badge)](./security/audit-report.pdf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
@@ -14,13 +12,7 @@
 [![SPL Token 2022](https://img.shields.io/badge/SPL%20Token-2022-blue?style=for-the-badge)](https://spl.solana.com/token-2022)
 [![Anchor](https://img.shields.io/badge/Anchor-0.31.1-orange?style=for-the-badge)](https://anchor-lang.com)
 
-[![GitHub stars](https://img.shields.io/github/stars/ghostspeak/ghostspeak?style=for-the-badge)](https://github.com/ghostspeak/ghostspeak/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/ghostspeak/ghostspeak?style=for-the-badge)](https://github.com/ghostspeak/ghostspeak/network)
-[![GitHub issues](https://img.shields.io/github/issues/ghostspeak/ghostspeak?style=for-the-badge)](https://github.com/ghostspeak/ghostspeak/issues)
-[![GitHub contributors](https://img.shields.io/github/contributors/ghostspeak/ghostspeak?style=for-the-badge)](https://github.com/ghostspeak/ghostspeak/graphs/contributors)
 
-[![Discord](https://img.shields.io/discord/1234567890?style=for-the-badge&logo=discord&label=Discord)](https://discord.gg/ghostspeak)
-[![Twitter Follow](https://img.shields.io/twitter/follow/ghostspeak?style=for-the-badge&logo=twitter)](https://twitter.com/ghostspeak)
 [![Documentation](https://img.shields.io/badge/docs-online-blue?style=for-the-badge)](https://docs.ghostspeak.com)
 
 [**📖 Documentation**](https://docs.ghostspeak.com) • [**🚀 Quick Start**](#-quick-start) • [**💡 Examples**](#-integration-examples) • [**🤝 Community**](https://discord.gg/ghostspeak)

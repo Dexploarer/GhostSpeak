@@ -1,378 +1,47 @@
-# GhostSpeak Protocol - Comprehensive .gitignore for 2025
+# === Proprietary/secret files ===
+seed.txt
+faucet-keypair.json
+*-keypair.json
+*.key
 
-# ============================================================================
-# DEPENDENCIES & PACKAGE MANAGERS
-# ============================================================================
+# === Test ledger and blockchain state ===
+test-ledger/
+test-ledger/rocksdb.failed/
+test-ledger/*.log
+test-ledger/*.rpc
+test-ledger/*.bin*
+test-ledger/*.tar*
 
-# Node.js dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# === Build artifacts (explicit for submodules, contract source remains public) ===
+packages/*/dist/
+packages/*/build/
+packages/*/node_modules/
+packages/*/tsconfig.tsbuildinfo
+programs/*/target/
+programs/*/target/idl/
+programs/*/target/deploy/
+programs/*/target/*.so
+programs/*/target/*.json
 
-# Bun
-bun.lock
-.bun/
+# === Local scripts and demos (not for public repo) ===
+cli-demo.ts
+demo-integration.ts
 
-# Package manager locks (keep only bun.lock)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# === Windows/OS-specific ===
+vs_buildtools.exe
+*.exe
+*.dll
 
-# ============================================================================
-# BUILD OUTPUTS & DISTRIBUTIONS
-# ============================================================================
-
-# TypeScript/JavaScript builds
-dist/
-build/
-out/
-*.tsbuildinfo
-.rpt2_cache/
-.eslintcache
-
-# Rust builds
-target/
-Cargo.lock
-**/*.rs.bk
-
-# WebAssembly
-*.wasm
-packages/wasm/
-
-# Anchor builds
-.anchor/
-target/deploy/
-target/idl/
-
-# ============================================================================
-# DEVELOPMENT & TESTING
-# ============================================================================
-
-# Test outputs
-coverage/
-.nyc_output/
-junit.xml
-test-results/
-playwright-report/
-test-results.xml
-
-# Vitest
-.vitest/
-
-# Jest
-.jest/
-
-# Testing databases & files
-*.db
-*.sqlite
-*.sqlite3
-test.db
-
-# ============================================================================
-# DEVELOPMENT TOOLS & CACHE
-# ============================================================================
-
-# IDE & Editor files
-.vscode/
-.idea/
+# === Miscellaneous ===
+*.bak
+*.tmp
 *.swp
 *.swo
 *~
 
-# Temporary files
-.tmp/
-temp/
-.cache/
-.parcel-cache/
+# === DO NOT IGNORE .cursor/ or .claude/ directories (project transparency) ===
+# .cursor/
+# .claude/
 
-# Hot reload & development
-.next/
-.nuxt/
-.vuepress/dist
-
-# ============================================================================
-# ENVIRONMENT & CONFIGURATION
-# ============================================================================
-
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.*.local
-
-# Configuration overrides
-config.local.js
-config.local.json
-
-# ============================================================================
-# LOGS & DEBUGGING
-# ============================================================================
-
-# Log files
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Diagnostic reports
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# ============================================================================
-# BLOCKCHAIN & SOLANA SPECIFIC
-# ============================================================================
-
-# Solana CLI
-.config/solana/
-solana-keygen.json
-
-# Anchor
-.anchor/
-anchor.lock
-Anchor.lock
-
-# Keypairs (CRITICAL - Never commit private keys)
-*.json
-!package.json
-!tsconfig*.json
-!jest.config.json
-!rollup.config.json
-!vite.config.json
-!playwright.config.json
-!.vscode/*.json
-!.github/**/*.json
-
-# Solana program artifacts
-*.so
-
-# ============================================================================
-# AI & MACHINE LEARNING
-# ============================================================================
-
-# Model files
-*.model
-*.pkl
-*.h5
-*.pth
-*.onnx
-models/
-checkpoints/
-
-# Training data
-datasets/
-training_data/
-*.csv
-*.parquet
-
-# ML experiment tracking
-mlruns/
-.mlflow/
-wandb/
-
-# Jupyter notebooks checkpoints
-.ipynb_checkpoints/
-
-# ============================================================================
-# SYSTEM & OS FILES
-# ============================================================================
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-*.tmp
-*.temp
-Desktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-
-# Linux
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
-
-# ============================================================================
-# CLOUD & DEPLOYMENT
-# ============================================================================
-
-# Vercel
-.vercel/
-
-# Netlify
-.netlify/
-
-# Firebase
-.firebase/
-firebase-debug.log
-firestore-debug.log
-
-# AWS
-.aws/
-
-# Docker
-.dockerignore
-docker-compose.override.yml
-
-# ============================================================================
-# DOCUMENTATION & ASSETS
-# ============================================================================
-
-# Generated documentation
-docs/api/
-docs/generated/
-.docusaurus/
-_site/
-
-# Asset optimization
-.imageoptim/
-
-# ============================================================================
-# SECURITY & SECRETS
-# ============================================================================
-
-# Secrets & credentials
-secrets/
-credentials/
-*.pem
-*.key
-*.p12
-*.pfx
-*.crt
-*.cer
-*.der
-
-# Environment secrets
-.env.secrets
-.env.*.secrets
-
-# GPG
-*.gpg
-*.asc
-
-# ============================================================================
-# PERFORMANCE & PROFILING
-# ============================================================================
-
-# Profiling data
-*.cpuprofile
-*.heapprofile
-*.heapsnapshot
-.clinic/
-0x/
-
-# Benchmarking
-benchmark-results/
-.benchmarks/
-
-# ============================================================================
-# DEVELOPMENT ARTIFACTS
-# ============================================================================
-
-# Storybook
-storybook-static/
-
-# Size analysis
-bundle-analyzer-report.html
-.size-limit.json
-
-# TypeDoc
-typedoc/
-
-# Rollup
-.rollup.cache/
-
-# ============================================================================
-# PROJECT SPECIFIC
-# ============================================================================
-
-# GhostSpeak specific ignores
-.ghostspeak/
-ghostspeak-debug.log
-
-# Agent data
-agent-data/
-agent-cache/
-
-# P2P networking
-.libp2p/
-peer-data/
-
-# IPFS
-.ipfs/
-
-# ZK proofs
-*.proof
-proofs/
-
-# Development databases
-dev.db
-test.db
-staging.db
-
-# ============================================================================
-# WORKSPACE SPECIFIC
-# ============================================================================
-
-# Workspace cache
-.workspace/
-.bun/
-
-# Development containers
-.devcontainer/
-
-# GitHub Codespaces
-.vscode-remote/
-
-# ============================================================================
-# BACKUP & ARCHIVE FILES
-# ============================================================================
-
-# Backup files
-*.bak
-*.backup
-*.old
-*.orig
-*.save
-
-# Archive files
-*.tar
-*.tar.gz
-*.tgz
-*.zip
-*.rar
-*.7z 
+# === DO NOT IGNORE contract source code (keep open source) ===
+# Rust/Anchor/TypeScript contract source files remain public 

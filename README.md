@@ -1546,15 +1546,6 @@ All contributions must:
 | **Rust** | [📚 Guide](https://docs.ghostspeak.com/sdk/rust) | [💡 Examples](https://github.com/ghostspeak/examples-rust) | [📋 API](https://docs.rs/ghostspeak-sdk) |
 | **CLI** | [📚 Guide](https://docs.ghostspeak.com/cli) | [💡 Tutorials](https://learn.ghostspeak.com/cli) | [📋 Commands](https://docs.ghostspeak.com/cli/reference) |
 
-### **🎓 Learning Resources**
-
-| Type | Resource | Description |
-|------|----------|-------------|
-| 🎥 **Video Tutorials** | [YouTube Channel](https://youtube.com/ghostspeak) | Step-by-step walkthroughs |
-| 📝 **Blog Posts** | [Medium Publication](https://medium.com/ghostspeak) | Deep dives & use cases |
-| 🎮 **Interactive Demos** | [CodeSandbox](https://codesandbox.io/u/ghostspeak) | Try it in your browser |
-| 📚 **Case Studies** | [Success Stories](https://ghostspeak.com/case-studies) | Real-world implementations |
-
 ---
 
 ## 🌟 Community
@@ -1579,22 +1570,6 @@ All contributions must:
 | 📱 **Telegram** | Quick updates, price discussion | [Join Group](https://t.me/ghostspeak) |
 | 💼 **LinkedIn** | Professional updates, partnerships | [Follow Page](https://linkedin.com/company/ghostspeak) |
 
-### **🎉 Community Events**
-
-- **📅 Weekly Dev Calls**: Thursdays 5PM UTC
-- **🎓 Monthly Workshops**: Learn to build on GhostSpeak
-- **🏆 Quarterly Hackathons**: $50,000+ in prizes
-- **🌍 Annual Conference**: GhostSpeak Summit
-
-### **🤝 Get Support**
-
-| Issue Type | Best Channel | Response Time |
-|------------|--------------|---------------|
-| 🐛 **Bug Reports** | [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues) | 24-48 hours |
-| ❓ **Technical Questions** | [Discord #dev-support](https://discord.gg/ghostspeak) | Real-time |
-| 📖 **Documentation** | [GitHub Discussions](https://github.com/ghostspeak/ghostspeak/discussions) | 12-24 hours |
-| 💼 **Business Inquiries** | hello@ghostspeak.com | 24-48 hours |
-| 🔒 **Security Issues** | security@ghostspeak.com | 2-4 hours |
 
 ---
 

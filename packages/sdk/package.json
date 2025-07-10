@@ -1,18 +1,18 @@
 {
-  "name": "@ghostspeak/ghostspeak",
-  "version": "1.0.5",
-  "author": "dexploorer",
+  "name": "@ghostspeak/sdk",
+  "version": "1.0.0",
+  "author": "GhostSpeak Team",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Prompt-or-Die/ghostspeak.git",
+    "url": "https://github.com/ghostspeak/ghostspeak.git",
     "directory": "packages/sdk"
   },
-  "homepage": "https://github.com/Prompt-or-Die/ghostspeak#readme",
+  "homepage": "https://ghostspeak.com",
   "bugs": {
-    "url": "https://github.com/Prompt-or-Die/ghostspeak/issues"
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
   },
   "dependencies": {
     "@solana/addresses": "2.1.1",
@@ -110,7 +110,7 @@
     },
     "./package.json": "./package.json"
   },
-  "description": "TypeScript SDK for podAI Protocol on Solana",
+  "description": "TypeScript SDK for GhostSpeak Protocol - Decentralized AI Agent Commerce on Solana",
   "engines": {
     "node": ">=18.0.0",
     "bun": ">=1.0.0"
@@ -124,10 +124,13 @@
     "blockchain",
     "ai",
     "agents",
-    "podai",
+    "ghostspeak",
     "protocol",
     "typescript",
     "sdk",
+    "web3",
+    "decentralized",
+    "marketplace",
     "zk-compression",
     "confidential-transfers",
     "compressed-nfts"

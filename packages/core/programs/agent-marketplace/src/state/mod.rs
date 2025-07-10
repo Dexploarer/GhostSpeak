@@ -32,6 +32,7 @@ pub mod royalty;
 pub mod security_governance;
 pub mod stubs;
 pub mod work_order;
+pub mod user_registry;
 
 // Re-export all types
 pub use agent::*;
@@ -58,6 +59,7 @@ pub use royalty::*;
 pub use security_governance::*;
 pub use stubs::*;
 pub use work_order::*;
+pub use user_registry::*;
 
 // Re-export error types from main lib
 pub use crate::PodAIMarketplaceError;

@@ -6,6 +6,7 @@
 import type { Address } from '@solana/addresses';
 import type { IAccountMeta, IInstruction, AccountRole } from './instruction-compat';
 import { getFlexibleU64Encoder, safeNumberToBigInt } from './bigint-serialization';
+import { getEnhancedStructEncoder, type EnhancedEncoder } from './codec-compat';
 
 /**
  * Enhanced account resolver with proper type checking
@@ -107,8 +108,8 @@ export class InstructionDataEncoder {
           // Add discriminator to the beginning
           const data = { ...transformedArgs, discriminator };
           
-          // Use the struct encoder with the transformed data
-          const encoder = getStructEncoder(structFields);
+          // Use the enhanced struct encoder with the transformed data
+          const encoder = getEnhancedStructEncoder(structFields as Array<[string, EnhancedEncoder<any>]>);
           return encoder.encode(data);
         } catch (error) {
           throw new Error(`Failed to encode instruction data: ${error}`);

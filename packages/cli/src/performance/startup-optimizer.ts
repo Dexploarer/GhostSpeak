@@ -8,7 +8,7 @@
 import { performance } from 'perf_hooks';
 import { existsSync, statSync } from 'fs';
 import { join } from 'path';
-import { logger } from '../../../../shared/logger';
+import { logger } from '../utils/logger.js';
 
 /**
  * Startup metrics for monitoring

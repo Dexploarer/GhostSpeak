@@ -7,7 +7,7 @@
 import chalk from 'chalk';
 import { ConfigManager } from '../core/ConfigManager.js';
 import { Logger } from '../core/Logger.js';
-import { logger } from '../../../../shared/logger';
+import { logger } from '../utils/logger.js';
 import { execSync } from 'child_process';
 
 interface SystemHealth {

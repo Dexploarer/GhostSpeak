@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError};
+use super::PodAIMarketplaceError;
 
 // PDA Seeds
 pub const MARKET_ANALYTICS_SEED: &[u8] = b"market_analytics";

@@ -165,6 +165,24 @@ pub fn send_message(
     let channel = &mut ctx.accounts.channel;
     let clock = Clock::get()?;
 
+    // SECURITY FIX: Verify sender is a participant in the channel
+    require!(
+        channel.participants.contains(&ctx.accounts.sender.key()),
+        PodAIMarketplaceError::UnauthorizedAccess
+    );
+
+    // SECURITY FIX: Check channel is active
+    require!(
+        channel.is_active,
+        PodAIMarketplaceError::ChannelNotFound
+    );
+
+    // SECURITY FIX: Check message count limit
+    require!(
+        channel.message_count < 10000, // MAX_MESSAGES_PER_CHANNEL
+        PodAIMarketplaceError::TooManyAuditEntries
+    );
+
     message.channel = channel.key();
     message.sender = ctx.accounts.sender.key();
     message.content = message_data.content.clone();

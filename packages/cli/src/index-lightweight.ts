@@ -11,7 +11,7 @@ import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { Command } from 'commander';
-import { logger } from '../../../shared/logger';
+import { logger } from './utils/logger.js';
 
 // Minimal logging without heavy pino
 const log = {

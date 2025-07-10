@@ -23,6 +23,15 @@ pub struct RegisterAgent<'info> {
     )]
     pub agent_account: Account<'info, Agent>,
     
+    #[account(
+        init_if_needed,
+        payer = signer,
+        space = UserRegistry::LEN,
+        seeds = [b"user_registry", signer.key().as_ref()],
+        bump
+    )]
+    pub user_registry: Account<'info, UserRegistry>,
+    
     #[account(mut)]
     pub signer: Signer<'info>,
     
@@ -89,6 +98,7 @@ pub fn register_agent(
         // Compute budget optimization placeholder
         
         let agent = &mut ctx.accounts.agent_account;
+        let user_registry = &mut ctx.accounts.user_registry;
         let clock = Clock::get()?;
 
         // SECURITY: Enhanced input validation with context
@@ -102,6 +112,25 @@ pub fn register_agent(
             agent_type <= 10, // Assuming max 10 agent types
             PodAIMarketplaceError::InvalidConfiguration
         );
+
+        // Initialize user registry if needed
+        if user_registry.user == Pubkey::default() {
+            user_registry.user = ctx.accounts.signer.key();
+            user_registry.agent_count = 0;
+            user_registry.listing_count = 0;
+            user_registry.work_order_count = 0;
+            user_registry.channel_count = 0;
+            user_registry.total_volume_traded = 0;
+            user_registry.last_activity = clock.unix_timestamp;
+            user_registry.created_at = clock.unix_timestamp;
+            user_registry.is_rate_limited = false;
+            user_registry.rate_limit_expiry = 0;
+            user_registry.bump = ctx.bumps.user_registry;
+        }
+
+        // SECURITY FIX: Check resource limits
+        user_registry.increment_agents()?;
+        user_registry.check_rate_limit(clock.unix_timestamp)?;
         
         // Initialize agent account with memory-optimized defaults
         agent.owner = ctx.accounts.signer.key();

@@ -45,3 +45,5 @@ vs_buildtools.exe
 
 # === DO NOT IGNORE contract source code (keep open source) ===
 # Rust/Anchor/TypeScript contract source files remain public 
+node_modules
+node_modules

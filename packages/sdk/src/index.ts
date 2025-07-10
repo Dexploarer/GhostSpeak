@@ -23,13 +23,15 @@ export const loadAdvancedServices = async () => {
     { ChannelService },
     { MessageService },
     { EscrowService },
+    { MarketplaceService },
   ] = await Promise.all([
     import('./services/agent'),
     import('./services/channel'),
     import('./services/message'),
     import('./services/escrow'),
+    import('./services/marketplace'),
   ]);
-  return { AgentService, ChannelService, MessageService, EscrowService };
+  return { AgentService, ChannelService, MessageService, EscrowService, MarketplaceService };
 };
 
 export const loadOptionalServices = async () => {
@@ -45,6 +47,64 @@ export const loadOptionalServices = async () => {
 export const loadAnalytics = async () => {
   const { AnalyticsService } = await import('./services/analytics');
   return { AnalyticsService };
+};
+
+// ===== FIXED INSTRUCTION BUILDERS (Enhanced Codec Support) =====
+export {
+  FixedInstructionBuilder,
+  InstructionFactory,
+  createVerifyAgentInstruction,
+  createCreateChannelInstruction,
+  createSendMessageInstruction,
+  createCreateServiceListingInstruction,
+  createPurchaseServiceInstruction,
+} from './utils/instruction-wrappers';
+
+// ===== ENHANCED CODEC UTILITIES =====
+export {
+  codecs,
+  isValidBase58Address,
+  createAddress,
+  toBigInt,
+  type EnhancedCodec,
+  type EnhancedEncoder,
+} from './utils/codec-compat';
+
+// ===== INSTRUCTION INPUT TYPES =====
+export type {
+  VerifyAgentInput,
+  CreateChannelInput,
+  SendMessageInput,
+  CreateServiceListingInput,
+  PurchaseServiceInput,
+} from './utils/instruction-wrappers';
+
+// ===== SECURITY MODULES (Tree-shakeable) =====
+export const loadSecurityModules = async () => {
+  const [
+    { InputValidator, ValidationError },
+    { SecurityMiddleware, securityMiddleware },
+    { AccessControlManager, accessControl, ChannelType, PermissionLevel },
+  ] = await Promise.all([
+    import('./utils/input-validator'),
+    import('./utils/security-middleware'),
+    import('./utils/access-control'),
+  ]);
+  return { 
+    InputValidator, 
+    ValidationError, 
+    SecurityMiddleware, 
+    securityMiddleware,
+    AccessControlManager,
+    accessControl,
+    ChannelType,
+    PermissionLevel,
+  };
+};
+
+export const loadMarketplace = async () => {
+  const { MarketplaceImpl, ServiceListingStatus, OrderStatus } = await import('./services/marketplace-impl');
+  return { MarketplaceImpl, ServiceListingStatus, OrderStatus };
 };
 
 // ===== ESSENTIAL TYPES =====
@@ -127,8 +187,8 @@ export const createDashboard = async () => {
 };
 
 // ===== CONSTANTS =====
-export const PODAI_PROGRAM_ID =
-  '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as const; // Updated to correct program ID
+export const GHOSTSPEAK_PROGRAM_ID =
+  '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as const; // GhostSpeak Protocol Program ID
 export const DEVNET_RPC = 'https://api.devnet.solana.com' as const;
-export const VERSION = '2.0.4' as const;
-export const SDK_NAME = 'ghostspeak-sdk' as const;
+export const VERSION = '1.0.0' as const;
+export const SDK_NAME = '@ghostspeak/sdk' as const;

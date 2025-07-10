@@ -7,8 +7,11 @@ import {
   sendAndConfirmTransactionFactory,
   buildSimulateAndSendTransaction,
 } from '../utils/transaction-helpers';
-// Import real instruction builders from generated code
-import { getVerifyAgentInstruction } from '../generated-v2/instructions/verifyAgent';
+// Import fixed instruction builders
+import { 
+  FixedInstructionBuilder, 
+  type VerifyAgentInput 
+} from '../utils/instruction-wrappers';
 import { fetchMaybeAgentAccount } from '../generated-v2/accounts/agentAccount.js';
 import { logger } from '../utils/logger.js';
 

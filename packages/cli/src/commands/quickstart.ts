@@ -11,7 +11,7 @@ import { homedir } from 'os';
 import chalk from 'chalk';
 import { ConfigManager } from '../core/ConfigManager.js';
 import { Logger } from '../core/Logger.js';
-import { logger } from '../../../../shared/logger';
+import { logger } from '../utils/logger.js';
 
 interface QuickstartOptions {
   skipWallet?: boolean;

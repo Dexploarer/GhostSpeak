@@ -37,7 +37,7 @@ wallet = "~/.config/solana/id.json"
 # Enhanced test configuration
 [scripts]
 # Use bun for faster testing and enhanced features
-test = "bun run test:enhanced"
+test = "bun run test:rust"
 lint = "bun run lint:all"
 build = "bun run build:optimized"
 deploy = "bun run deploy:safe"

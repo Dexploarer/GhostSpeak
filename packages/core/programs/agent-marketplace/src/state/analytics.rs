@@ -127,6 +127,11 @@ impl MarketAnalytics {
         self.total_volume = 0;
         self.total_transactions = 0;
         self.average_price = 0;
+        self.active_agents = 0;
+        self.price_volatility = 0;
+        self.demand_trend = 0;
+        self.supply_trend = 0;
+        self.market_cap = 0;
         self.top_agents = Vec::new();
         self.bump = bump;
         
@@ -159,6 +164,33 @@ impl MarketAnalytics {
             self.top_agents.push(agent);
         }
         
+        Ok(())
+    }
+
+    pub fn update_market_metrics(
+        &mut self,
+        active_agents: u32,
+        price_volatility: u32,
+        demand_trend: i32,
+        supply_trend: i32,
+        market_cap: u64,
+    ) -> Result<()> {
+        self.active_agents = active_agents;
+        self.price_volatility = price_volatility;
+        self.demand_trend = demand_trend;
+        self.supply_trend = supply_trend;
+        self.market_cap = market_cap;
+        
+        Ok(())
+    }
+
+    pub fn increment_active_agents(&mut self) -> Result<()> {
+        self.active_agents = self.active_agents.saturating_add(1);
+        Ok(())
+    }
+
+    pub fn decrement_active_agents(&mut self) -> Result<()> {
+        self.active_agents = self.active_agents.saturating_sub(1);
         Ok(())
     }
 }

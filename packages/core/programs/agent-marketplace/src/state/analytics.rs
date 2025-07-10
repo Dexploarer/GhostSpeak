@@ -106,6 +106,11 @@ impl MarketAnalytics {
         8 + // total_volume
         8 + // total_transactions
         8 + // average_price
+        4 + // active_agents
+        4 + // price_volatility
+        4 + // demand_trend
+        4 + // supply_trend
+        8 + // market_cap
         4 + (MAX_TOP_AGENTS * 32) + // top_agents
         1; // bump
 

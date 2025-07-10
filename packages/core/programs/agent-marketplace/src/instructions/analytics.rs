@@ -6,7 +6,7 @@
  */
 
 use anchor_lang::prelude::*;
-use crate::{AnalyticsDashboard, MarketAnalytics};
+use crate::state::*;
 
 /// Creates an analytics dashboard for performance tracking
 /// 

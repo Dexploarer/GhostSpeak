@@ -1,8 +1,0 @@
-/Users/michelleeidschun/ghostspeak-1/target/debug/deps/solana_tpu_client-44bbb6a2b20ad565.d: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/nonblocking/mod.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/nonblocking/tpu_client.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/tpu_client.rs
-
-/Users/michelleeidschun/ghostspeak-1/target/debug/deps/libsolana_tpu_client-44bbb6a2b20ad565.rmeta: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/nonblocking/mod.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/nonblocking/tpu_client.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/tpu_client.rs
-
-/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/lib.rs:
-/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/nonblocking/mod.rs:
-/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/nonblocking/tpu_client.rs:
-/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-tpu-client-2.3.3/src/tpu_client.rs:

@@ -45,6 +45,11 @@ pub struct MarketAnalytics {
     pub total_volume: u64,
     pub total_transactions: u64,
     pub average_price: u64,
+    pub active_agents: u32,
+    pub price_volatility: u32,
+    pub demand_trend: i32,
+    pub supply_trend: i32,
+    pub market_cap: u64,
     pub top_agents: Vec<Pubkey>,
     pub bump: u8,
 }

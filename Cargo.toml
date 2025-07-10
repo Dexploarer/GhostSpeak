@@ -2,7 +2,7 @@
 
 [workspace]
 members = [
-    "programs/podai",
+    "packages/core/programs/agent-marketplace",
     "packages/core"
 ]
 resolver = "2" 

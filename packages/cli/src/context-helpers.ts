@@ -1,6 +1,6 @@
+import { POD_COM_PROGRAM_ADDRESS } from '@ghostspeak/ghostspeak/generated-v2/programs/podCom';
 import { createSolanaRpc } from '@solana/rpc';
 import { generateKeyPairSigner, type KeyPairSigner } from '@solana/signers';
-import { POD_COM_PROGRAM_ADDRESS } from '@podai/sdk/generated-v2/programs/podCom';
 
 import { ConfigManager } from './core/ConfigManager';
 
@@ -13,7 +13,7 @@ export async function getRpc() {
   // Default URLs for each network
   const urls: Record<string, string> = {
     devnet: 'https://api.devnet.solana.com',
-    'testnet': 'https://api.testnet.solana.com',
+    testnet: 'https://api.testnet.solana.com',
     'mainnet-beta': 'https://api.mainnet-beta.solana.com',
   };
   return createSolanaRpc(rpcUrl || urls[network] || urls['devnet']);
@@ -49,15 +49,40 @@ export async function getKeypair(): Promise<KeyPairSigner> {
 /**
  * Get the commitment level from config or default
  */
-export async function getCommitment(): Promise<'confirmed' | 'finalized' | 'processed'> {
+export async function getCommitment(): Promise<
+  'confirmed' | 'finalized' | 'processed'
+> {
   const configManager = await ConfigManager.load();
   // In the future, allow user to set this in config
   return 'confirmed';
 }
 
 /**
- * Stub for RPC subscriptions (not implemented)
+ * Stub for RPC subscriptions (not implemented in CLI)
+ * Returns null to indicate subscriptions are not available
  */
 export function getRpcSubscriptions() {
-  throw new Error('getRpcSubscriptions is not implemented in the CLI yet.');
-} 
+  // Return null instead of throwing to allow graceful degradation
+  // SDKs can check for null and skip subscription features
+  return null;
+}
+
+/**
+ * Dynamically import the Ghostspeak SDK, preferring the published package.
+ * Falls back to the local workspace SDK if the published package is not available.
+ */
+export async function getGhostspeakSdk() {
+  try {
+    // Try published package first
+    return await import('@ghostspeak/ghostspeak');
+  } catch (e) {
+    try {
+      // Fallback to local workspace SDK (for monorepo/dev)
+      return await import('../../sdk/src/index.ts');
+    } catch (err) {
+      throw new Error(
+        'Ghostspeak SDK could not be loaded from either published package or workspace.'
+      );
+    }
+  }
+}

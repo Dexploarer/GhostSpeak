@@ -1,0 +1,62 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "noErrorTruncation": false,
+    "composite": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    
+    // Enhanced strict mode settings
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    
+    // Additional strict checks
+    "isolatedModules": true,
+    "preserveConstEnums": true,
+    "useDefineForClassFields": true,
+    "verbatimModuleSyntax": false,
+    
+    // Type checking enhancements
+    "checkJs": false,
+    "allowJs": false,
+    "maxNodeModuleJsDepth": 0,
+    
+    "types": ["node", "bun"],
+    "baseUrl": "../../",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@services/*": ["./src/services/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@types/*": ["./src/types/*"],
+      "@generated/*": ["./src/generated/*"]
+    }
+  },
+  "include": ["src/**/*", "src/**/*.ts", "src/**/*.json"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+}

@@ -7,6 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "allowJs": true,
+    "checkJs": false,
     "strict": true,
     "noEmit": true,
     "declaration": true,
@@ -20,23 +21,9 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "typeRoots": [
-      "node_modules/@types",
-      "src/types"
-    ],
-    "types": [
-      "node"
-    ]
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*",
-    "src/types/**/*"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules",
-    "coverage",
-    "**/*.test.ts",
-    "**/*.test.tsx"
-  ],
-} 
+  "include": ["src/**/*", "src/types/**/*"],
+  "exclude": ["dist", "node_modules", "coverage", "**/*.test.ts", "**/*.test.tsx", "**/*.js"]
+}

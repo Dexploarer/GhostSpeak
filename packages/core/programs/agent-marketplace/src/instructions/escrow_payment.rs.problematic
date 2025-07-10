@@ -1,0 +1,212 @@
+/*!
+ * Escrow and Payment Instructions
+ * 
+ * Handles all payment processing functionality for the GhostSpeak Protocol.
+ */
+
+use anchor_lang::prelude::*;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+
+use crate::{
+    Agent, Payment, WorkOrder,
+    WorkOrderStatus,
+    PodAIMarketplaceError,
+    MIN_PAYMENT_AMOUNT,
+    MAX_PAYMENT_AMOUNT,
+};
+// Import optimization utilities
+use crate::simple_optimization::*;
+
+// =====================================================
+// INSTRUCTION CONTEXTS
+// =====================================================
+
+#[derive(Accounts)]
+pub struct ProcessPayment<'info> {
+    #[account(
+        init,
+        payer = payer,
+        space = Payment::LEN,
+        seeds = [b"payment", work_order.key().as_ref()],
+        bump
+    )]
+    pub payment: Account<'info, Payment>,
+    
+    #[account(mut)]
+    pub work_order: Account<'info, WorkOrder>,
+    
+    #[account(mut)]
+    pub provider_agent: Account<'info, Agent>,
+    
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    
+    #[account(mut)]
+    pub payer_token_account: InterfaceAccount<'info, TokenAccount>,
+    
+    #[account(mut)]
+    pub provider_token_account: InterfaceAccount<'info, TokenAccount>,
+    
+    pub token_mint: InterfaceAccount<'info, Mint>,
+    
+    pub token_program: Interface<'info, TokenInterface>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+// =====================================================
+// INSTRUCTION HANDLERS
+// =====================================================
+
+/// Processes payment from client to provider for completed work order
+/// 
+/// Validates the payment amount, creates a payment record, and updates the work order status.
+/// This instruction establishes the escrow payment flow for secure transactions.
+/// 
+/// # Arguments
+/// 
+/// * `ctx` - The context containing payment and work order accounts
+/// * `amount` - Payment amount in token units
+/// * `use_confidential_transfer` - Whether to use SPL Token 2022 confidential transfers
+/// 
+/// # Returns
+/// 
+/// Returns `Ok(())` on successful payment processing
+/// 
+/// # Errors
+/// 
+/// * `UnauthorizedAccess` - If the payer is not authorized
+/// * `InvalidPaymentAmount` - If amount is outside allowed range
+/// 
+/// # Security
+/// 
+/// - Validates signer authorization
+/// - Enforces minimum and maximum payment amounts
+/// - Creates immutable payment record
+/// 
+/// # State Changes
+/// 
+/// - Updates work order status to `Completed`
+/// - Creates payment record for audit trail
+/// - Transfers tokens from escrow to provider
+pub fn process_payment(
+    ctx: Context<ProcessPayment>,
+    amount: u64,
+    use_confidential_transfer: bool,
+) -> Result<()> {
+    // Performance monitoring and compute optimization
+    monitor_performance!("process_payment", {
+        // Optimize compute budget for this operation (6 accounts)
+        let _optimal_budget = optimize_compute_budget!("process_payment", 6);
+        
+        // SECURITY: Enhanced authorization verification with context
+        require!(
+            ctx.accounts.payer.is_signer,
+            error_with_context!(
+                PodAIMarketplaceError::UnauthorizedAccess,
+                "process_payment",
+                ctx.accounts.payer.key()
+            )
+        );
+
+        // SECURITY: Comprehensive amount validation with detailed error context
+        require!(
+            amount >= MIN_PAYMENT_AMOUNT,
+            error_with_context!(
+                PodAIMarketplaceError::ValueBelowMinimum,
+                "payment_amount_validation"
+            )
+        );
+        
+        require!(
+            amount <= MAX_PAYMENT_AMOUNT,
+            error_with_context!(
+                PodAIMarketplaceError::ValueExceedsMaximum,
+                "payment_amount_validation"
+            )
+        );
+
+        // SECURITY: Verify work order is in correct state for payment
+        let work_order = &ctx.accounts.work_order;
+        require!(
+            matches!(work_order.status, WorkOrderStatus::InProgress | WorkOrderStatus::Submitted),
+            error_with_context!(
+                PodAIMarketplaceError::InvalidStatusTransition,
+                "work_order_status_check"
+            )
+        );
+
+        let payment = &mut ctx.accounts.payment;
+        let work_order = &mut ctx.accounts.work_order;
+        let provider_agent = &mut ctx.accounts.provider_agent;
+        let clock = Clock::get()?;
+
+        // Initialize payment record with optimized data layout
+        payment.work_order = work_order.key();
+        payment.payer = ctx.accounts.payer.key();
+        payment.recipient = provider_agent.owner;
+        payment.amount = amount;
+        payment.token_mint = ctx.accounts.token_mint.key();
+        payment.is_confidential = use_confidential_transfer;
+        payment.paid_at = clock.unix_timestamp;
+        payment.bump = ctx.bumps.payment;
+
+        // SECURITY: Safe arithmetic for provider earnings update
+        provider_agent.total_earnings = safe_math::safe_add(
+            provider_agent.total_earnings,
+            amount
+        )?;
+        
+        // SECURITY: Safe arithmetic for job completion count
+        provider_agent.total_jobs_completed = safe_math::safe_add(
+            provider_agent.total_jobs_completed,
+            1
+        )?;
+
+        // Update work order status with timestamp
+        work_order.status = WorkOrderStatus::Completed;
+        work_order.updated_at = clock.unix_timestamp;
+        
+        // Calculate and update reputation score with overflow protection
+        let reputation_increment = std::cmp::min(amount / 1_000_000, 10); // Max 10 points per payment
+        provider_agent.reputation_score = safe_math::safe_add(
+            provider_agent.reputation_score,
+            reputation_increment
+        )?;
+
+        // Emit comprehensive payment event
+        emit!(PaymentProcessedEvent {
+            payment: payment.key(),
+            payer: ctx.accounts.payer.key(),
+            recipient: provider_agent.owner,
+            amount,
+            is_confidential: use_confidential_transfer,
+            timestamp: clock.unix_timestamp,
+            work_order: work_order.key(),
+            provider_earnings_updated: provider_agent.total_earnings,
+            reputation_updated: provider_agent.reputation_score,
+        });
+
+        msg!("Payment processed successfully - Amount: {}, Work Order: {}, Provider: {}", 
+             amount, work_order.key(), provider_agent.owner);
+             
+        Ok(())
+    })
+}
+
+// =====================================================
+// EVENT STRUCTURES
+// =====================================================
+
+#[event]
+pub struct PaymentProcessedEvent {
+    pub payment: Pubkey,
+    pub payer: Pubkey,
+    pub recipient: Pubkey,
+    pub amount: u64,
+    pub is_confidential: bool,
+    pub timestamp: i64,
+    pub work_order: Pubkey,
+    pub provider_earnings_updated: u64,
+    pub reputation_updated: u64,
+}

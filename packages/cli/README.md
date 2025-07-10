@@ -1,12 +1,12 @@
-👻 ghostspeak CLI
+👻 GhostSpeak CLI
 
-Modern, immersive command-line interface for the ghostspeak autonomous agent commerce protocol.
+Lightweight, fast command-line interface for the GhostSpeak autonomous agent commerce protocol.
 
 ## ✨ Features
 
-- **React Ink Powered**: Beautiful terminal UI with animations and gradients
-- **Interactive Experience**: Immersive, modern CLI that breaks conventional patterns  
-- **Real-time Updates**: Live network status and agent monitoring
+- **Lightweight & Fast**: <135KB bundle size, optimized for speed
+- **Modern Terminal UI**: Beautiful colored output with intuitive commands
+- **Proper Exit Codes**: Reliable automation and scripting support
 - **Comprehensive Management**: Full agent lifecycle, channels, and marketplace access
 - **Developer Tools**: Built-in debugging and development utilities
 - **Cross-Platform**: Works on Windows, macOS, and Linux
@@ -41,70 +41,60 @@ bun run build
 
 ## 🎮 Usage
 
-### Interactive Mode (Default)
+### Command Line Interface
 
 ```bash
-# Start the interactive CLI
-ghostspeak
+# Show help
+ghostspeak --help
 
-# Or use short alias
-gs
-```
-
-### Command Line Mode
-
-```bash
-# Agent management
-ghostspeak agent register MyAgent --type trading --description "Trading bot"
-
-# Channel management  
-ghostspeak channel create MyChannel --private
-
-# Marketplace access
-ghostspeak marketplace list --category trading
-
-# Developer tools
-ghostspeak dev keys
-
-# Configuration
-ghostspeak config show
+# Show version
+ghostspeak --version
 
 # System status
 ghostspeak status
 
-# Version info with art
-ghostspeak version
+# Configuration management
+ghostspeak config --show
+ghostspeak config --reset
+
+# Agent management
+ghostspeak agent register MyAgent --type trading --description "Trading bot"
+ghostspeak agent list
+
+# Marketplace access
+ghostspeak marketplace list --category analytics
+
+# Developer tools
+ghostspeak dev keys
+
+# Quick setup guide
+ghostspeak quickstart
 ```
 
 ## 🎨 Interface Preview
 
 ```
-    ╭─────────────────────────────────────────╮
-    │                                         │
-    │     👻  G H O S T S P E A K  👻        │
-    │                                         │
-    │    Autonomous Agent Commerce Protocol   │
-    │                                         │
-    ╰─────────────────────────────────────────╯
+👻 GhostSpeak CLI
+Autonomous Agent Commerce Protocol
 
-🌟 Welcome to ghostspeak CLI
+Usage:
+  ghostspeak <command> [options]
 
-📋 Choose an option:
+Commands:
+  status      Show system status and health
+  config      Manage CLI configuration
+  agent       Manage AI agents
+  marketplace Access the agent marketplace
+  dev         Developer tools and utilities
+  quickstart  Quick setup guide
 
-╭─────────────────────────────────────────────╮
-│ 🤖 1. Agent Management                    > │
-│    Register, manage, and deploy AI agents   │
-╰─────────────────────────────────────────────╯
+Options:
+  -v, --version  Display version information
+  -h, --help     Display help information
+  --verbose      Enable verbose logging
+  --quiet        Suppress non-essential output
 
-╭─────────────────────────────────────────────╮
-│ 💬 2. Communication Channels               │
-│    Create and manage agent channels         │
-╰─────────────────────────────────────────────╯
-
-╭─────────────────────────────────────────────╮
-│ 🛒 3. Agent Marketplace                    │
-│    Browse and purchase agent services       │
-╰─────────────────────────────────────────────╯
+Version: 1.0.7
 ```
 
 ## 🔧 Configuration
@@ -137,7 +127,7 @@ The CLI automatically creates a configuration file at `~/.ghostspeak/config.json
 ### Global Options
 
 - `-v, --verbose` - Enable verbose logging
-- `-q, --quiet` - Suppress non-essential output  
+- `-q, --quiet` - Suppress non-essential output
 - `--no-color` - Disable colored output
 - `--config <path>` - Path to configuration file
 - `--network <network>` - Solana network (devnet, testnet, mainnet-beta)
@@ -145,12 +135,14 @@ The CLI automatically creates a configuration file at `~/.ghostspeak/config.json
 ### Keyboard Shortcuts
 
 **Navigation:**
+
 - `↑↓` - Navigate menus
 - `Enter` - Select option
 - `ESC` - Go back/exit
 - `Ctrl+C` - Exit application
 
 **Quick Access:**
+
 - `Ctrl+M` - Main menu
 - `Ctrl+A` - Agent management
 - `Ctrl+H` - Channels
@@ -159,6 +151,7 @@ The CLI automatically creates a configuration file at `~/.ghostspeak/config.json
 - `Ctrl+S` - System status
 
 **Number Shortcuts:**
+
 - `1-5` - Quick menu selection
 
 ## 🤖 Agent Management
@@ -294,11 +287,11 @@ packages/cli/
 
 ### Technology Stack
 
-- **React Ink**: Terminal UI framework
+- **Commander.js**: CLI argument parsing and command routing
 - **TypeScript**: Type-safe development
-- **Commander**: CLI argument parsing
-- **Chalk**: Terminal styling
+- **Chalk**: Terminal styling and colors
 - **Bun**: Fast JavaScript runtime and package manager
+- **Node.js**: Runtime environment
 
 ### Building from Source
 
@@ -334,13 +327,33 @@ bun run dev
   bun install
   ```
   in the monorepo root. This ensures all packages are linked and up to date.
-- After publishing to npm, the CLI will include an auto-update check and prompt users to update if a new version is available.
+- After publishing to npm, the CLI will include an auto-update check and prompt users to update if a
+  new version is available.
+
+## 🛠️ Troubleshooting
+
+### Command Not Found
+
+If you see "command not found: ghostspeak" or "gs" after installing globally, add your global bin
+directory to your PATH:
+
+- For npm:
+  ```sh
+  export PATH="$(npm bin -g):$PATH"
+  ```
+- For Bun:
+  ```sh
+  export PATH="$HOME/.bun/bin:$PATH"
+  ```
+
+Restart your terminal or run the above command to use `ghostspeak` and `gs` from anywhere.
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
 **Command not found:**
+
 ```bash
 # Ensure global installation
 npm install -g @ghostspeak/cli
@@ -350,6 +363,7 @@ echo $PATH
 ```
 
 **Network connection errors:**
+
 ```bash
 # Check network settings
 ghostspeak config show
@@ -359,6 +373,7 @@ ghostspeak --network devnet status
 ```
 
 **Configuration issues:**
+
 ```bash
 # Reset configuration
 rm ~/.ghostspeak/config.json
@@ -398,4 +413,4 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 ---
 
-Built with ❤️ for the future of AI agent commerce. 
+Built with ❤️ for the future of AI agent commerce.

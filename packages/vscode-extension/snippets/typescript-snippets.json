@@ -1,0 +1,312 @@
+{
+  "GhostSpeak SDK Import": {
+    "prefix": "gs-import",
+    "body": [
+      "import {",
+      "  GhostSpeakClient,",
+      "  AgentService,",
+      "  MessageService,",
+      "  EscrowService,",
+      "  MarketplaceService",
+      "} from '@ghostspeak/sdk';"
+    ],
+    "description": "Import GhostSpeak SDK components"
+  },
+
+  "Initialize GhostSpeak Client": {
+    "prefix": "gs-client-init",
+    "body": [
+      "const client = new GhostSpeakClient({",
+      "  network: '${1:devnet}',",
+      "  rpcUrl: '${2:https://api.devnet.solana.com}',",
+      "  wallet: ${3:wallet},",
+      "});"
+    ],
+    "description": "Initialize GhostSpeak client"
+  },
+
+  "Create Agent": {
+    "prefix": "gs-create-agent",
+    "body": [
+      "const agentService = new AgentService(client);",
+      "",
+      "const agent = await agentService.createAgent({",
+      "  name: '${1:MyAgent}',",
+      "  description: '${2:Agent description}',",
+      "  agentType: '${3:general}',",
+      "  capabilities: [${4:'messaging', 'services'}],",
+      "  metadata: {",
+      "    ${5:// Additional metadata}",
+      "  }",
+      "});",
+      "",
+      "console.log('Agent created:', agent.id);"
+    ],
+    "description": "Create a new agent"
+  },
+
+  "Send Message": {
+    "prefix": "gs-send-message",
+    "body": [
+      "const messageService = new MessageService(client);",
+      "",
+      "const message = await messageService.sendMessage({",
+      "  recipient: '${1:recipientAgentId}',",
+      "  content: '${2:Hello, world!}',",
+      "  messageType: '${3:text}',",
+      "  encrypted: ${4:false},",
+      "  metadata: {",
+      "    ${5:// Message metadata}",
+      "  }",
+      "});",
+      "",
+      "console.log('Message sent:', message.id);"
+    ],
+    "description": "Send a message to an agent"
+  },
+
+  "Create Channel": {
+    "prefix": "gs-create-channel",
+    "body": [
+      "const messageService = new MessageService(client);",
+      "",
+      "const channel = await messageService.createChannel({",
+      "  name: '${1:general}',",
+      "  description: '${2:General discussion}',",
+      "  isPrivate: ${3:false},",
+      "  maxParticipants: ${4:100},",
+      "  encryptionEnabled: ${5:false}",
+      "});",
+      "",
+      "console.log('Channel created:', channel.id);"
+    ],
+    "description": "Create a communication channel"
+  },
+
+  "Create Escrow": {
+    "prefix": "gs-create-escrow",
+    "body": [
+      "const escrowService = new EscrowService(client);",
+      "",
+      "const escrow = await escrowService.createEscrow({",
+      "  seller: '${1:sellerPublicKey}',",
+      "  amount: ${2:1000000}, // lamports",
+      "  serviceDescription: '${3:Service description}',",
+      "  timeoutDuration: ${4:86400}, // 24 hours in seconds",
+      "  arbiter: '${5:arbiterPublicKey}' // optional",
+      "});",
+      "",
+      "console.log('Escrow created:', escrow.id);"
+    ],
+    "description": "Create an escrow transaction"
+  },
+
+  "List Services": {
+    "prefix": "gs-list-services",
+    "body": [
+      "const marketplaceService = new MarketplaceService(client);",
+      "",
+      "const services = await marketplaceService.listServices({",
+      "  category: '${1:all}',",
+      "  sortBy: '${2:reputation}',",
+      "  limit: ${3:20},",
+      "  offset: ${4:0}",
+      "});",
+      "",
+      "console.log('Found services:', services.length);"
+    ],
+    "description": "List marketplace services"
+  },
+
+  "Listen for Messages": {
+    "prefix": "gs-listen-messages",
+    "body": [
+      "const messageService = new MessageService(client);",
+      "",
+      "const subscription = messageService.onMessage(${1:agentId}, (message) => {",
+      "  console.log('New message:', {",
+      "    from: message.sender,",
+      "    content: message.content,",
+      "    timestamp: message.timestamp",
+      "  });",
+      "",
+      "  ${2:// Handle incoming message}",
+      "});",
+      "",
+      "// Stop listening",
+      "// subscription.unsubscribe();"
+    ],
+    "description": "Listen for incoming messages"
+  },
+
+  "Agent Event Handler": {
+    "prefix": "gs-agent-events",
+    "body": [
+      "const agentService = new AgentService(client);",
+      "",
+      "// Listen for agent events",
+      "agentService.onAgentEvent(${1:agentId}, (event) => {",
+      "  switch (event.type) {",
+      "    case 'message_received':",
+      "      ${2:// Handle message}",
+      "      break;",
+      "    case 'service_request':",
+      "      ${3:// Handle service request}",
+      "      break;",
+      "    case 'payment_received':",
+      "      ${4:// Handle payment}",
+      "      break;",
+      "    default:",
+      "      console.log('Unknown event:', event);",
+      "  }",
+      "});"
+    ],
+    "description": "Handle agent events"
+  },
+
+  "Error Handling": {
+    "prefix": "gs-error-handling",
+    "body": [
+      "try {",
+      "  ${1:// GhostSpeak operation}",
+      "} catch (error) {",
+      "  if (error instanceof GhostSpeakError) {",
+      "    console.error('GhostSpeak error:', {",
+      "      code: error.code,",
+      "      message: error.message,",
+      "      details: error.details",
+      "    });",
+      "  } else if (error instanceof AnchorError) {",
+      "    console.error('Anchor error:', {",
+      "      code: error.error.errorCode.code,",
+      "      message: error.error.errorMessage",
+      "    });",
+      "  } else {",
+      "    console.error('Unexpected error:', error);",
+      "  }",
+      "}"
+    ],
+    "description": "Handle GhostSpeak errors"
+  },
+
+  "Transaction Builder": {
+    "prefix": "gs-transaction",
+    "body": [
+      "const transaction = await client.transaction()",
+      "  .add(${1:instruction1})",
+      "  .add(${2:instruction2})",
+      "  .build();",
+      "",
+      "const signature = await client.sendAndConfirm(transaction);",
+      "console.log('Transaction signature:', signature);"
+    ],
+    "description": "Build and send transaction"
+  },
+
+  "Program Instruction": {
+    "prefix": "gs-instruction",
+    "body": [
+      "import { ${1:instructionName} } from '@ghostspeak/sdk/generated';",
+      "",
+      "const instruction = ${1:instructionName}({",
+      "  ${2:// Instruction arguments}",
+      "}, {",
+      "  ${3:// Account arguments}",
+      "});",
+      "",
+      "await client.sendInstruction(instruction);"
+    ],
+    "description": "Create and send program instruction"
+  },
+
+  "Account Fetching": {
+    "prefix": "gs-fetch-account",
+    "body": [
+      "const account = await client.account.${1:accountType}.fetch(${2:publicKey});",
+      "console.log('Account data:', account);"
+    ],
+    "description": "Fetch account data"
+  },
+
+  "Agent Class": {
+    "prefix": "gs-agent-class",
+    "body": [
+      "class ${1:MyAgent} {",
+      "  private client: GhostSpeakClient;",
+      "  private agentId: string;",
+      "",
+      "  constructor(client: GhostSpeakClient, agentId: string) {",
+      "    this.client = client;",
+      "    this.agentId = agentId;",
+      "  }",
+      "",
+      "  async processMessage(message: Message): Promise<void> {",
+      "    ${2:// Process incoming message}",
+      "  }",
+      "",
+      "  async offerService(service: ServiceOffering): Promise<void> {",
+      "    ${3:// Offer a service}",
+      "  }",
+      "",
+      "  async start(): Promise<void> {",
+      "    const messageService = new MessageService(this.client);",
+      "    messageService.onMessage(this.agentId, this.processMessage.bind(this));",
+      "  }",
+      "}"
+    ],
+    "description": "Agent class template"
+  },
+
+  "React Hook": {
+    "prefix": "gs-react-hook",
+    "body": [
+      "import { useGhostSpeak } from '@ghostspeak/react';",
+      "",
+      "function ${1:MyComponent}() {",
+      "  const { client, connected, agents } = useGhostSpeak();",
+      "",
+      "  const ${2:handleAction} = async () => {",
+      "    if (!connected) return;",
+      "    ",
+      "    try {",
+      "      ${3:// GhostSpeak operation}",
+      "    } catch (error) {",
+      "      console.error('Error:', error);",
+      "    }",
+      "  };",
+      "",
+      "  return (",
+      "    <div>",
+      "      ${4:// Component JSX}",
+      "    </div>",
+      "  );",
+      "}"
+    ],
+    "description": "React component with GhostSpeak hook"
+  },
+
+  "WebSocket Connection": {
+    "prefix": "gs-websocket",
+    "body": [
+      "const ws = client.websocket({",
+      "  onMessage: (message) => {",
+      "    console.log('Real-time message:', message);",
+      "    ${1:// Handle real-time message}",
+      "  },",
+      "  onError: (error) => {",
+      "    console.error('WebSocket error:', error);",
+      "  },",
+      "  onClose: () => {",
+      "    console.log('WebSocket connection closed');",
+      "  }",
+      "});",
+      "",
+      "// Subscribe to agent events",
+      "ws.subscribe('agent', ${2:agentId});",
+      "",
+      "// Cleanup",
+      "// ws.close();"
+    ],
+    "description": "WebSocket connection for real-time updates"
+  }
+}

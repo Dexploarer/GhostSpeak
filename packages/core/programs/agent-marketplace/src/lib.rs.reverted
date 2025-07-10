@@ -1,0 +1,501 @@
+/*!
+ * GhostSpeak Protocol - AI Agent Commerce Protocol
+ * 
+ * A pure decentralized protocol for existing AI agents to:
+ * - List and sell services to humans and other agents
+ * - Execute work orders with escrow payments
+ * - Communicate through secure channels
+ * - Process payments using SPL Token 2022
+ * 
+ * Note: This is a protocol, not a runtime. Agents must be created externally.
+ */
+
+use anchor_lang::prelude::*;
+
+declare_id!("4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385");
+
+// Module declarations
+mod instructions;
+mod state;
+mod security;
+
+#[cfg(feature = "performance-monitoring")]
+mod performance_testing;
+
+// Re-export all instruction handlers
+use instructions::*;
+
+// Re-export types from state module  
+use state::*;
+
+// Re-export security utilities
+use security::*;
+
+#[cfg(feature = "performance-monitoring")]
+pub use performance_testing::*;
+
+// =====================================================
+// DATA STRUCTURES
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct AgentRegistrationData {
+    pub name: String,
+    pub description: String,
+    pub capabilities: Vec<String>,
+    pub metadata_uri: String,
+    pub service_endpoint: String,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum PricingModel {
+    Fixed,
+    Hourly,
+    PerTask,
+    Subscription,
+    Auction,
+    Dynamic,
+    RevenueShare,
+    Tiered,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct ServicePurchaseData {
+    pub listing_id: u64,
+    pub quantity: u32,
+    pub requirements: Vec<String>,
+    pub custom_instructions: String,
+    pub deadline: i64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct JobPostingData {
+    pub title: String,
+    pub description: String,
+    pub requirements: Vec<String>,
+    pub budget: u64,
+    pub deadline: i64,
+    pub skills_needed: Vec<String>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct WorkOrderData {
+    pub order_id: u64,
+    pub provider: Pubkey,
+    pub title: String,
+    pub description: String,
+    pub requirements: Vec<String>,
+    pub payment_amount: u64,
+    pub payment_token: Pubkey,
+    pub deadline: i64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct WorkDeliveryData {
+    pub deliverables: Vec<state::Deliverable>,
+    pub ipfs_hash: String,
+    pub metadata_uri: String,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct NegotiationData {
+    pub customer: Pubkey,
+    pub agent: Pubkey,
+    pub initial_offer: u64,
+    pub service_description: String,
+    pub deadline: i64,
+    pub auto_accept_threshold: u64,
+}
+
+// =====================================================
+// SECURITY CONSTANTS
+// =====================================================
+
+pub const MAX_NAME_LENGTH: usize = 64;
+pub const MAX_GENERAL_STRING_LENGTH: usize = 256;
+pub const MAX_CAPABILITIES_COUNT: usize = 20;
+pub const MAX_PARTICIPANTS_COUNT: usize = 50;
+pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
+pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
+
+// =====================================================
+// EVENTS
+// =====================================================
+
+#[event]
+pub struct AgentRegisteredEvent {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub name: String,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AgentUpdatedEvent {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AgentDeactivatedEvent {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ChannelCreatedEvent {
+    pub channel: Pubkey,
+    pub creator: Pubkey,
+    pub participants: Vec<Pubkey>,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct MessageSentEvent {
+    pub channel: Pubkey,
+    pub sender: Pubkey,
+    pub message_id: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct WorkOrderCreatedEvent {
+    pub work_order: Pubkey,
+    pub client: Pubkey,
+    pub provider: Pubkey,
+    pub title: String,
+    pub payment_amount: u64,
+    pub budget: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct WorkOrderUpdatedEvent {
+    pub work_order: Pubkey,
+    pub status: WorkOrderStatus,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct WorkDeliverySubmittedEvent {
+    pub work_order: Pubkey,
+    pub provider: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PaymentProcessedEvent {
+    pub work_order: Pubkey,
+    pub from: Pubkey,
+    pub to: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ServiceListedEvent {
+    pub service: Pubkey,
+    pub agent: Pubkey,
+    pub price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ServiceListingCreatedEvent {
+    pub listing: Pubkey,
+    pub creator: Pubkey,
+    pub title: String,
+    pub price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct JobPostingCreatedEvent {
+    pub job: Pubkey,
+    pub creator: Pubkey,
+    pub title: String,
+    pub budget: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct JobApplicationSubmittedEvent {
+    pub job: Pubkey,
+    pub applicant: Pubkey,
+    pub proposed_price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct JobApplicationAcceptedEvent {
+    pub job: Pubkey,
+    pub applicant: Pubkey,
+    pub accepted_price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ServicePurchasedEvent {
+    pub service: Pubkey,
+    pub buyer: Pubkey,
+    pub seller: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct JobPostedEvent {
+    pub job: Pubkey,
+    pub poster: Pubkey,
+    pub budget: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct JobApplicationEvent {
+    pub job: Pubkey,
+    pub applicant: Pubkey,
+    pub proposed_price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ContractCreatedEvent {
+    pub contract: Pubkey,
+    pub client: Pubkey,
+    pub provider: Pubkey,
+    pub agreed_price: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ReviewSubmittedEvent {
+    pub reviewer: Pubkey,
+    pub reviewed: Pubkey,
+    pub rating: u8,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AgentReplicatedEvent {
+    pub original_agent: Pubkey,
+    pub new_agent: Pubkey,
+    pub replicator: Pubkey,
+    pub fee_paid: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AgentVerifiedEvent {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ReplicationTemplateCreatedEvent {
+    pub template: Pubkey,
+    pub creator: Pubkey,
+    pub agent: Pubkey,
+    pub timestamp: i64,
+}
+
+// =====================================================
+// ADVANCED ERROR DEFINITIONS WITH CONTEXT
+// =====================================================
+
+/// Advanced error handling system with detailed context and recovery mechanisms
+#[error_code]
+pub enum PodAIMarketplaceError {
+    // Agent-related errors (1000-1099)
+    #[msg("Agent is not active. Current status: inactive, Expected: active")]
+    AgentNotActive = 1000,
+    #[msg("Agent not found. Verify agent public key and registration status")]
+    AgentNotFound = 1001,
+    #[msg("Agent verification failed. Missing required verification data")]
+    AgentVerificationFailed = 1002,
+    #[msg("Agent capacity exceeded. Current workload exceeds maximum limit")]
+    AgentCapacityExceeded = 1003,
+    #[msg("Agent reputation below threshold. Minimum required reputation not met")]
+    AgentReputationTooLow = 1004,
+    
+    // Pricing and payment errors (1100-1199)
+    #[msg("Invalid price range. Check minimum and maximum price limits")]
+    InvalidPriceRange = 1100,
+    #[msg("Invalid payment amount. Must be between minimum and maximum token limits")]
+    InvalidPaymentAmount = 1101,
+    #[msg("Insufficient balance. Check account balance and retry")]
+    InsufficientBalance = 1102,
+    #[msg("Payment already processed. Transaction already completed")]
+    PaymentAlreadyProcessed = 1103,
+    #[msg("Payment timeout exceeded. Transaction expired")]
+    PaymentTimeout = 1104,
+    #[msg("Invalid percentage. Must be between 0 and 100")]
+    InvalidPercentage = 1105,
+    
+    // Access control errors (1200-1299)
+    #[msg("Unauthorized access. Check user permissions")]
+    UnauthorizedAccess = 1200,
+    #[msg("Invalid agent owner. Owner verification failed")]
+    InvalidAgentOwner = 1201,
+    #[msg("Signature verification failed. Invalid signer for operation")]
+    InvalidSigner = 1202,
+    #[msg("Permission denied. Missing required permission")]
+    PermissionDenied = 1203,
+    
+    // State transition errors (1300-1399)
+    #[msg("Invalid status transition. Check current state and allowed transitions")]
+    InvalidStatusTransition = 1300,
+    #[msg("Work order not found. Verify work order ID")]
+    WorkOrderNotFound = 1301,
+    #[msg("Service not found. Verify service ID and agent")]
+    ServiceNotFound = 1302,
+    #[msg("Invalid application status. Check current status")]
+    InvalidApplicationStatus = 1303,
+    
+    // Time-related errors (1400-1499)
+    #[msg("Deadline passed. Operation deadline has expired")]
+    DeadlinePassed = 1400,
+    #[msg("Invalid deadline. Must be in the future")]
+    InvalidDeadline = 1401,
+    #[msg("Negotiation expired. Negotiation period has ended")]
+    NegotiationExpired = 1402,
+    #[msg("Update frequency too high. Wait before next update")]
+    UpdateFrequencyTooHigh = 1403,
+    
+    // Input validation errors (1500-1599)
+    #[msg("Input too long. Check maximum length requirements")]
+    InputTooLong = 1500,
+    #[msg("Name too long. Check maximum name length")]
+    NameTooLong = 1501,
+    #[msg("Message too long. Check maximum message length")]
+    MessageTooLong = 1502,
+    #[msg("Invalid rating. Must be between 1 and 5")]
+    InvalidRating = 1503,
+    #[msg("Already reviewed. Cannot review again")]
+    AlreadyReviewed = 1504,
+    
+    // Communication errors (1600-1699)
+    #[msg("Channel full. Maximum participants reached")]
+    ChannelFull = 1600,
+    #[msg("Channel not found. Verify channel ID")]
+    ChannelNotFound = 1601,
+    #[msg("Not channel participant. User not in channel")]
+    NotChannelParticipant = 1602,
+    
+    // Auction errors (1700-1799)
+    #[msg("Auction ended. Auction period has ended")]
+    AuctionEnded = 1700,
+    #[msg("Auction not ended. Auction still active")]
+    AuctionNotEnded = 1701,
+    #[msg("Bid too low. Increase bid amount")]
+    BidTooLow = 1702,
+    #[msg("Invalid offer. Check offer amount and terms")]
+    InvalidOffer = 1703,
+    
+    // Arithmetic and overflow errors (1800-1899)
+    #[msg("Arithmetic overflow. Value exceeds maximum")]
+    ArithmeticOverflow = 1800,
+    #[msg("Arithmetic underflow. Value below minimum")]
+    ArithmeticUnderflow = 1801,
+    #[msg("Division by zero. Cannot divide by zero")]
+    DivisionByZero = 1802,
+    #[msg("Value exceeds maximum. Check maximum limits")]
+    ValueExceedsMaximum = 1803,
+    #[msg("Value below minimum. Check minimum requirements")]
+    ValueBelowMinimum = 1804,
+    
+    // Resource and capacity errors (1900-1999)
+    #[msg("Memory allocation failed. Insufficient memory")]
+    MemoryAllocationFailed = 1900,
+    #[msg("Compute budget exceeded. Reduce operation complexity")]
+    ComputeBudgetExceeded = 1901,
+    #[msg("Transaction too large. Reduce transaction size")]
+    TransactionTooLarge = 1902,
+    #[msg("Account space insufficient. Increase account allocation")]
+    AccountSpaceInsufficient = 1903,
+    
+    // Network and RPC errors (2000-2099)
+    #[msg("Network timeout. Operation timed out")]
+    NetworkTimeout = 2000,
+    #[msg("RPC endpoint unavailable. Check network connection")]
+    RpcEndpointUnavailable = 2001,
+    #[msg("Transaction confirmation failed. Check transaction status")]
+    TransactionConfirmationFailed = 2002,
+    
+    // Configuration errors (2100-2199)
+    #[msg("Invalid configuration. Check parameter values")]
+    InvalidConfiguration = 2100,
+    #[msg("Missing required parameter. Check required fields")]
+    MissingRequiredParameter = 2101,
+    #[msg("Feature not enabled. Enable required feature")]
+    FeatureNotEnabled = 2102,
+}
+
+// =====================================================
+// PROGRAM MODULE
+// =====================================================
+
+#[program]
+pub mod podai_marketplace {
+    use super::*;
+
+    // Agent management instructions
+    pub use instructions::agent::*;
+    pub use instructions::agent_management::*;
+    
+    // Marketplace instructions
+    pub use instructions::marketplace::*;
+    
+    // Work order instructions
+    pub use instructions::work_orders::*;
+    
+    // Messaging instructions
+    pub use instructions::messaging::*;
+    
+    // Payment instructions
+    pub use instructions::escrow_payment::*;
+    
+    // Auction instructions
+    pub use instructions::auction::*;
+    
+    // A2A protocol instructions
+    pub use instructions::a2a_protocol::*;
+    
+    // Replication instructions
+    pub use instructions::replication::*;
+    
+    // Pricing instructions
+    pub use instructions::pricing::*;
+    
+    // Negotiation instructions
+    pub use instructions::negotiation::*;
+    
+    // Bulk deals instructions
+    pub use instructions::bulk_deals::*;
+    
+    // Royalty instructions
+    pub use instructions::royalty::*;
+    
+    // Dispute resolution instructions
+    pub use instructions::dispute::*;
+    
+    // Analytics instructions
+    pub use instructions::analytics::*;
+    
+    // Extension instructions
+    pub use instructions::extensions::*;
+    
+    // Incentive instructions
+    pub use instructions::incentives::*;
+    
+    // Compliance and Governance instructions
+    pub use instructions::compliance_governance::*;
+}
+
+// Include tests module
+#[cfg(test)]
+#[path = "../tests/mod.rs"]
+mod tests;

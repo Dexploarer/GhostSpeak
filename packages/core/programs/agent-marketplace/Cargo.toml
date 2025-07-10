@@ -8,15 +8,42 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [features]
-default = []
+default = ["performance-monitoring"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
-idl-build = ["anchor-lang/idl-build"]
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+performance-monitoring = []
+compute-optimization = []
+gas-efficient = []
+
+# Performance optimization profile
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+overflow-checks = false
+
+# Development profile with safety checks
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true
+
+# High-performance release profile for production
+[profile.production]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
 
 [dependencies]
-anchor-lang = "0.31.1"
-anchor-spl = "0.31.1"
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token", "associated_token", "token_2022"] }
 spl-token = "8.0.0"
 spl-token-2022 = "9.0.0"
 spl-associated-token-account = "7.0.0"
@@ -32,4 +59,7 @@ sha3 = "0.10.8"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 bytemuck = { version = "1.23.1", features = ["derive"] }
-log = "0.4.27" 
+log = "0.4.27"
+solana-program = "2.0.0"
+solana-compute-budget = "2.0.0"
+solana-measure = "2.0.0" 

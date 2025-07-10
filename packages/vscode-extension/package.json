@@ -1,0 +1,322 @@
+{
+  "name": "ghostspeak-protocol",
+  "displayName": "GhostSpeak Protocol",
+  "description": "VS Code extension for GhostSpeak autonomous agent development with Anchor support",
+  "version": "1.0.0",
+  "publisher": "ghostspeak",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Debuggers",
+    "Formatters",
+    "Extension Packs",
+    "Other"
+  ],
+  "keywords": [
+    "solana",
+    "anchor",
+    "blockchain",
+    "ai-agents",
+    "web3",
+    "rust",
+    "typescript",
+    "ghostspeak"
+  ],
+  "activationEvents": [
+    "onLanguage:rust",
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "workspaceContains:**/Anchor.toml",
+    "workspaceContains:**/anchor.toml",
+    "workspaceContains:**/Cargo.toml",
+    "onCommand:ghostspeak.initProject",
+    "onCommand:ghostspeak.createAgent",
+    "onCommand:ghostspeak.deployContract"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ghostspeak.initProject",
+        "title": "Initialize GhostSpeak Project",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.createAgent",
+        "title": "Create New Agent",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.createService",
+        "title": "Create New Service",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.deployContract",
+        "title": "Deploy Smart Contract",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.testContract",
+        "title": "Test Smart Contract",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.buildProject",
+        "title": "Build Project",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.startLocalValidator",
+        "title": "Start Local Validator",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.stopLocalValidator",
+        "title": "Stop Local Validator",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.generateTypes",
+        "title": "Generate TypeScript Types",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.viewLogs",
+        "title": "View Logs",
+        "category": "GhostSpeak"
+      },
+      {
+        "command": "ghostspeak.openDocs",
+        "title": "Open Documentation",
+        "category": "GhostSpeak"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "ghostspeak.createAgent",
+          "when": "explorerResourceIsFolder",
+          "group": "ghostspeak@1"
+        },
+        {
+          "command": "ghostspeak.createService",
+          "when": "explorerResourceIsFolder", 
+          "group": "ghostspeak@2"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "ghostspeak.deployContract",
+          "when": "resourceExtname == .rs",
+          "group": "ghostspeak@1"
+        },
+        {
+          "command": "ghostspeak.testContract",
+          "when": "resourceExtname == .rs",
+          "group": "ghostspeak@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "ghostspeak.initProject",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "ghostspeakExplorer",
+          "name": "GhostSpeak",
+          "when": "ghostspeak.projectDetected"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ghostspeak",
+          "title": "GhostSpeak",
+          "icon": "$(ghost)"
+        }
+      ]
+    },
+    "snippets": [
+      {
+        "language": "rust",
+        "path": "./snippets/rust-snippets.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./snippets/typescript-snippets.json"
+      },
+      {
+        "language": "javascript",
+        "path": "./snippets/javascript-snippets.json"
+      }
+    ],
+    "configuration": {
+      "title": "GhostSpeak",
+      "properties": {
+        "ghostspeak.network": {
+          "type": "string",
+          "enum": ["devnet", "testnet", "mainnet-beta"],
+          "default": "devnet",
+          "description": "Default Solana network"
+        },
+        "ghostspeak.rpcUrl": {
+          "type": "string",
+          "default": "https://api.devnet.solana.com",
+          "description": "Solana RPC URL"
+        },
+        "ghostspeak.walletPath": {
+          "type": "string",
+          "default": "~/.config/solana/id.json",
+          "description": "Path to Solana wallet keypair"
+        },
+        "ghostspeak.anchorProvider": {
+          "type": "string",
+          "default": "local",
+          "description": "Anchor provider configuration"
+        },
+        "ghostspeak.autoDetectProject": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect GhostSpeak projects"
+        },
+        "ghostspeak.showOutputPanel": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show output panel for operations"
+        },
+        "ghostspeak.enableCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CodeLens for smart contracts"
+        },
+        "ghostspeak.enableAutoCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-completion for GhostSpeak APIs"
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "anchor-toml",
+        "aliases": ["Anchor TOML", "anchor-toml"],
+        "extensions": [".toml"],
+        "filenames": ["Anchor.toml", "anchor.toml"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "anchor-toml",
+        "scopeName": "source.anchor-toml",
+        "path": "./syntaxes/anchor-toml.tmGrammar.json"
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "ghostspeak",
+        "required": ["task"],
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "The GhostSpeak task to run"
+          },
+          "network": {
+            "type": "string",
+            "description": "Target network"
+          }
+        }
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "ghostspeak",
+        "label": "GhostSpeak Debugger",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the smart contract program"
+              },
+              "network": {
+                "type": "string",
+                "description": "Target network",
+                "default": "devnet"
+              },
+              "args": {
+                "type": "array",
+                "description": "Program arguments"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "ghostspeak",
+            "request": "launch",
+            "name": "Debug GhostSpeak Contract",
+            "program": "${workspaceFolder}/target/deploy/program.so",
+            "network": "devnet"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "vsce": "^2.19.0"
+  },
+  "dependencies": {
+    "@project-serum/anchor": "^0.28.0",
+    "@solana/web3.js": "^1.78.0",
+    "yaml": "^2.3.0",
+    "toml": "^3.0.0"
+  },
+  "extensionDependencies": [
+    "rust-lang.rust-analyzer",
+    "ms-vscode.vscode-typescript-next"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghostspeak/protocol"
+  },
+  "bugs": {
+    "url": "https://github.com/ghostspeak/protocol/issues"
+  },
+  "homepage": "https://ghostspeak.dev",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "GhostSpeak Agent Program": {
+    "prefix": "gs-agent-program",
+    "body": [
+      "use anchor_lang::prelude::*;",
+      "use ghostspeak_protocol::*;",
+      "",
+      "declare_id!(\"${1:YourProgramIdHere}\");",
+      "",
+      "#[program]",
+      "pub mod ${2:agent_name} {",
+      "    use super::*;",
+      "",
+      "    pub fn initialize(ctx: Context<Initialize>, agent_id: String) -> Result<()> {",
+      "        let agent = &mut ctx.accounts.agent;",
+      "        agent.agent_id = agent_id;",
+      "        agent.owner = ctx.accounts.authority.key();",
+      "        agent.created_at = Clock::get()?.unix_timestamp;",
+      "        agent.is_active = true;",
+      "        Ok(())",
+      "    }",
+      "",
+      "    pub fn process_message(ctx: Context<ProcessMessage>, content: String) -> Result<()> {",
+      "        ${3:// Implement message processing logic}",
+      "        Ok(())",
+      "    }",
+      "",
+      "    pub fn offer_service(ctx: Context<OfferService>, service_description: String, price: u64) -> Result<()> {",
+      "        ${4:// Implement service offering logic}",
+      "        Ok(())",
+      "    }",
+      "}",
+      "",
+      "#[derive(Accounts)]",
+      "pub struct Initialize<'info> {",
+      "    #[account(init, payer = authority, space = 8 + 32 + 32 + 8 + 1 + 256)]",
+      "    pub agent: Account<'info, AgentAccount>,",
+      "    #[account(mut)]",
+      "    pub authority: Signer<'info>,",
+      "    pub system_program: Program<'info, System>,",
+      "}",
+      "",
+      "#[derive(Accounts)]",
+      "pub struct ProcessMessage<'info> {",
+      "    #[account(mut)]",
+      "    pub agent: Account<'info, AgentAccount>,",
+      "    pub authority: Signer<'info>,",
+      "}",
+      "",
+      "#[derive(Accounts)]",
+      "pub struct OfferService<'info> {",
+      "    #[account(mut)]",
+      "    pub agent: Account<'info, AgentAccount>,",
+      "    pub authority: Signer<'info>,",
+      "}",
+      "",
+      "#[account]",
+      "pub struct AgentAccount {",
+      "    pub agent_id: String,",
+      "    pub owner: Pubkey,",
+      "    pub created_at: i64,",
+      "    pub is_active: bool,",
+      "}"
+    ],
+    "description": "Complete GhostSpeak agent program template"
+  },
+
+  "Agent Account Structure": {
+    "prefix": "gs-agent-account",
+    "body": [
+      "#[account]",
+      "pub struct AgentAccount {",
+      "    pub agent_id: String,",
+      "    pub owner: Pubkey,",
+      "    pub reputation_score: u64,",
+      "    pub total_transactions: u64,",
+      "    pub is_verified: bool,",
+      "    pub is_active: bool,",
+      "    pub created_at: i64,",
+      "    pub updated_at: i64,",
+      "    pub metadata_uri: String,",
+      "}"
+    ],
+    "description": "Standard agent account structure"
+  },
+
+  "Message Processing Function": {
+    "prefix": "gs-process-message",
+    "body": [
+      "pub fn process_message(ctx: Context<ProcessMessage>, content: String, message_type: MessageType) -> Result<()> {",
+      "    let agent = &mut ctx.accounts.agent;",
+      "    let message = &mut ctx.accounts.message;",
+      "",
+      "    // Validate message",
+      "    require!(content.len() <= MAX_MESSAGE_LENGTH, ErrorCode::MessageTooLong);",
+      "",
+      "    // Store message",
+      "    message.content = content;",
+      "    message.message_type = message_type;",
+      "    message.sender = ctx.accounts.sender.key();",
+      "    message.recipient = agent.key();",
+      "    message.timestamp = Clock::get()?.unix_timestamp;",
+      "",
+      "    // Process based on message type",
+      "    match message_type {",
+      "        MessageType::DirectMessage => {",
+      "            ${1:// Handle direct message}",
+      "        },",
+      "        MessageType::ServiceRequest => {",
+      "            ${2:// Handle service request}",
+      "        },",
+      "        MessageType::Payment => {",
+      "            ${3:// Handle payment}",
+      "        },",
+      "    }",
+      "",
+      "    emit!(MessageProcessed {",
+      "        agent: agent.key(),",
+      "        message: message.key(),",
+      "        timestamp: message.timestamp,",
+      "    });",
+      "",
+      "    Ok(())",
+      "}"
+    ],
+    "description": "Message processing function template"
+  },
+
+  "Escrow Transaction": {
+    "prefix": "gs-escrow",
+    "body": [
+      "pub fn create_escrow(ctx: Context<CreateEscrow>, amount: u64, service_description: String) -> Result<()> {",
+      "    let escrow = &mut ctx.accounts.escrow;",
+      "    let clock = Clock::get()?;",
+      "",
+      "    escrow.buyer = ctx.accounts.buyer.key();",
+      "    escrow.seller = ctx.accounts.seller.key();",
+      "    escrow.amount = amount;",
+      "    escrow.service_description = service_description;",
+      "    escrow.status = EscrowStatus::Pending;",
+      "    escrow.created_at = clock.unix_timestamp;",
+      "    escrow.expires_at = clock.unix_timestamp + ESCROW_TIMEOUT;",
+      "",
+      "    // Transfer funds to escrow",
+      "    let cpi_accounts = Transfer {",
+      "        from: ctx.accounts.buyer_token_account.to_account_info(),",
+      "        to: ctx.accounts.escrow_token_account.to_account_info(),",
+      "        authority: ctx.accounts.buyer.to_account_info(),",
+      "    };",
+      "    let cpi_program = ctx.accounts.token_program.to_account_info();",
+      "    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);",
+      "    token::transfer(cpi_ctx, amount)?;",
+      "",
+      "    emit!(EscrowCreated {",
+      "        escrow: escrow.key(),",
+      "        buyer: escrow.buyer,",
+      "        seller: escrow.seller,",
+      "        amount,",
+      "    });",
+      "",
+      "    Ok(())",
+      "}"
+    ],
+    "description": "Escrow transaction creation"
+  },
+
+  "Error Codes": {
+    "prefix": "gs-errors",
+    "body": [
+      "#[error_code]",
+      "pub enum ErrorCode {",
+      "    #[msg(\"Agent is not active\")]",
+      "    AgentNotActive,",
+      "    #[msg(\"Unauthorized access\")]",
+      "    Unauthorized,",
+      "    #[msg(\"Invalid message format\")]",
+      "    InvalidMessage,",
+      "    #[msg(\"Message content too long\")]",
+      "    MessageTooLong,",
+      "    #[msg(\"Insufficient funds\")]",
+      "    InsufficientFunds,",
+      "    #[msg(\"Escrow has expired\")]",
+      "    EscrowExpired,",
+      "    #[msg(\"Service not available\")]",
+      "    ServiceNotAvailable,",
+      "    #[msg(\"Invalid reputation score\")]",
+      "    InvalidReputation,",
+      "}"
+    ],
+    "description": "Common error codes for GhostSpeak contracts"
+  },
+
+  "Event Emission": {
+    "prefix": "gs-emit-event",
+    "body": [
+      "emit!(${1:EventName} {",
+      "    ${2:field1}: ${3:value1},",
+      "    ${4:field2}: ${5:value2},",
+      "    timestamp: Clock::get()?.unix_timestamp,",
+      "});"
+    ],
+    "description": "Emit an event"
+  },
+
+  "Security Checks": {
+    "prefix": "gs-security",
+    "body": [
+      "// Security validations",
+      "require!(ctx.accounts.authority.key() == agent.owner, ErrorCode::Unauthorized);",
+      "require!(agent.is_active, ErrorCode::AgentNotActive);",
+      "require!(Clock::get()?.unix_timestamp < escrow.expires_at, ErrorCode::EscrowExpired);"
+    ],
+    "description": "Common security checks"
+  },
+
+  "PDA Derivation": {
+    "prefix": "gs-pda",
+    "body": [
+      "let (${1:pda}, ${1:bump}) = Pubkey::find_program_address(",
+      "    &[",
+      "        b\"${2:seed}\",",
+      "        ${3:authority}.key().as_ref(),",
+      "    ],",
+      "    ctx.program_id",
+      ");"
+    ],
+    "description": "Program Derived Address derivation"
+  },
+
+  "Token Transfer": {
+    "prefix": "gs-token-transfer",
+    "body": [
+      "let cpi_accounts = Transfer {",
+      "    from: ctx.accounts.${1:from_account}.to_account_info(),",
+      "    to: ctx.accounts.${2:to_account}.to_account_info(),",
+      "    authority: ctx.accounts.${3:authority}.to_account_info(),",
+      "};",
+      "let cpi_program = ctx.accounts.token_program.to_account_info();",
+      "let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);",
+      "token::transfer(cpi_ctx, ${4:amount})?;"
+    ],
+    "description": "SPL token transfer"
+  },
+
+  "Cross-Program Invocation": {
+    "prefix": "gs-cpi",
+    "body": [
+      "let cpi_accounts = ${1:CpiAccounts} {",
+      "    ${2:// Account mappings}",
+      "};",
+      "let cpi_program = ctx.accounts.${3:target_program}.to_account_info();",
+      "let cpi_ctx = CpiContext::new_with_signer(",
+      "    cpi_program,",
+      "    cpi_accounts,",
+      "    &[&[",
+      "        b\"${4:seed}\",",
+      "        &[${5:bump}],",
+      "    ]]",
+      ");",
+      "${6:target_program}::cpi::${7:instruction}(cpi_ctx, ${8:args})?;"
+    ],
+    "description": "Cross-program invocation with signer"
+  }
+}

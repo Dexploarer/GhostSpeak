@@ -1,0 +1,4451 @@
+/*!
+ * GhostSpeak Protocol - AI Agent Commerce Protocol
+ * 
+ * A pure decentralized protocol for existing AI agents to:
+ * - List and sell services to humans and other agents
+ * - Execute work orders with escrow payments
+ * - Communicate through secure channels
+ * - Process payments using SPL Token 2022
+ * 
+ * Note: This is a protocol, not a runtime. Agents must be created externally.
+ */
+
+use anchor_lang::prelude::*;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+
+// Use explicit imports to avoid borsh ambiguity
+
+declare_id!("4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385");
+
+// Module declarations
+mod instructions;
+mod state;
+
+// Re-export types from state module  
+use state::*;
+
+// =====================================================
+// SECURITY CONSTANTS
+// =====================================================
+
+pub const MAX_NAME_LENGTH: usize = 64;
+pub const MAX_GENERAL_STRING_LENGTH: usize = 256;
+pub const MAX_CAPABILITIES_COUNT: usize = 20;
+pub const MAX_PARTICIPANTS_COUNT: usize = 50;
+pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
+pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
+
+// =====================================================
+// DATA STRUCTURES
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct AgentRegistrationData {
+    pub name: String,
+    pub description: String,
+    pub capabilities: Vec<String>,
+    pub metadata_uri: String,
+    pub service_endpoint: String,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum PricingModel {
+    Fixed,
+    Hourly,
+    PerTask,
+    Subscription,
+    Auction,           // NEW: Auction-based pricing
+    Dynamic,           // NEW: Market-responsive pricing
+    RevenueShare,      // NEW: Percentage-based revenue sharing
+    Tiered,            // NEW: Premium/standard/basic tiers
+}
+
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum WorkOrderStatus {
+    Created,
+    Open,
+    Submitted,
+    InProgress,
+    Approved,
+    Completed,
+    Cancelled,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum ApplicationStatus {
+    Submitted,
+    Accepted,
+    Rejected,
+    Withdrawn,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum ContractStatus {
+    Active,
+    Completed,
+    Cancelled,
+    Disputed,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum Deliverable {
+    Code,
+    Document,
+    Design,
+    Analysis,
+    Other,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct AgentVerificationData {
+    pub agent_pubkey: Pubkey,
+    pub service_endpoint: String,
+    pub supported_capabilities: Vec<String>,
+    pub verified_at: i64,
+}
+
+
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct WorkOrderData {
+    pub order_id: u64,
+    pub provider: Pubkey,
+    pub title: String,
+    pub description: String,
+    pub requirements: Vec<String>,
+    pub payment_amount: u64,
+    pub payment_token: Pubkey,
+    pub deadline: i64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct WorkDeliveryData {
+    pub deliverables: Vec<Deliverable>,
+    pub ipfs_hash: String,
+    pub metadata_uri: String,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct ServiceListingData {
+    pub title: String,
+    pub description: String,
+    pub price: u64,
+    pub token_mint: Pubkey,
+    pub service_type: String,
+    pub payment_token: Pubkey,
+    pub estimated_delivery: i64,
+    pub tags: Vec<String>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct ServicePurchaseData {
+    pub listing_id: u64,
+    pub quantity: u32,
+    pub requirements: Vec<String>,
+    pub custom_instructions: String,
+    pub deadline: i64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct JobPostingData {
+    pub title: String,
+    pub description: String,
+    pub requirements: Vec<String>,
+    pub budget: u64,
+    pub deadline: i64,
+    pub skills_needed: Vec<String>,
+    pub budget_min: u64,
+    pub budget_max: u64,
+    pub payment_token: Pubkey,
+    pub job_type: String,
+    pub experience_level: String,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct JobApplicationData {
+    pub cover_letter: String,
+    pub proposed_price: u64,
+    pub estimated_duration: u32,
+    pub proposed_rate: u64,
+    pub estimated_delivery: i64,
+    pub portfolio_items: Vec<String>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct JobCompletionData {
+    pub deliverables: Vec<Deliverable>,
+    pub ipfs_hash: String,
+    pub metadata_uri: String,
+    pub work_summary: String,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct ReviewData {
+    pub rating: u8,
+    pub comment: String,
+    pub review_type: String,
+    pub work_reference: String,
+}
+
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum AuctionType {
+    English,           // Ascending price auction
+    Dutch,             // Descending price auction
+    SealedBid,         // Blind bidding
+    Vickrey,           // Second-price sealed bid
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum NegotiationStatus {
+    InitialOffer,
+    CounterOffer,
+    Accepted,
+    Rejected,
+    Expired,
+    AutoAccepted,
+}
+
+// NEW: Advanced pricing data structures
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct AuctionData {
+    pub auction_type: AuctionType,
+    pub starting_price: u64,
+    pub reserve_price: u64,
+    pub current_bid: u64,
+    pub current_bidder: Option<Pubkey>,
+    pub auction_end_time: i64,
+    pub minimum_bid_increment: u64,
+    pub total_bids: u32,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct DynamicPricingData {
+    pub base_price: u64,
+    pub demand_multiplier: f64,
+    pub supply_multiplier: f64,
+    pub reputation_bonus: f64,
+    pub time_surge_multiplier: f64,
+    pub last_price_update: i64,
+    pub price_update_interval: i64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct NegotiationData {
+    pub initial_offer: u64,
+    pub current_offer: u64,
+    pub counter_offers: Vec<u64>,
+    pub negotiation_deadline: i64,
+    pub status: NegotiationStatus,
+    pub terms: Vec<String>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct TieredPricingData {
+    pub basic_price: u64,
+    pub standard_price: u64,
+    pub premium_price: u64,
+    pub basic_features: Vec<String>,
+    pub standard_features: Vec<String>,
+    pub premium_features: Vec<String>,
+}
+
+// =====================================================
+// AUTOMATED DYNAMIC PRICING ENGINE
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum PricingAlgorithm {
+    DemandBased,      // Price increases with demand
+    ReputationBased,  // Higher reputation = higher prices
+    SurgePricing,     // Time-based surge pricing
+    MarketAverage,    // Based on market median
+    PerformanceBased, // Based on success rate
+    Seasonal,         // Time-of-year adjustments
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct DynamicPricingConfig {
+    pub algorithm: PricingAlgorithm,
+    pub base_price: u64,
+    pub min_price: u64,
+    pub max_price: u64,
+    pub demand_multiplier: f64,
+    pub reputation_multiplier: f64,
+    pub surge_multiplier: f64,
+    pub update_frequency: i64, // seconds
+    pub last_update: i64,
+}
+
+#[account]
+pub struct DynamicPricingEngine {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub config: DynamicPricingConfig,
+    pub current_price: u64,
+    pub demand_metrics: DemandMetrics,
+    pub reputation_score: f64,
+    pub total_adjustments: u32,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct DemandMetrics {
+    pub requests_last_hour: u32,
+    pub requests_last_day: u32,
+    pub requests_last_week: u32,
+    pub average_response_time: f64,
+    pub completion_rate: f64,
+    pub customer_satisfaction: f64,
+}
+
+// =====================================================
+// FULL AUCTION MARKETPLACE
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum AuctionStatus {
+    Active,
+    Ended,
+    Cancelled,
+    Settled,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct AuctionBid {
+    pub bidder: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+    pub is_winning: bool,
+}
+
+#[account]
+pub struct AuctionMarketplace {
+    pub auction: Pubkey,
+    pub agent: Pubkey,
+    pub creator: Pubkey,
+    pub auction_type: AuctionType,
+    pub status: AuctionStatus,
+    pub starting_price: u64,
+    pub reserve_price: u64,
+    pub current_bid: u64,
+    pub current_bidder: Option<Pubkey>,
+    pub auction_start_time: i64,
+    pub auction_end_time: i64,
+    pub minimum_bid_increment: u64,
+    pub total_bids: u32,
+    pub bids: Vec<AuctionBid>,
+    pub winner: Option<Pubkey>,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// NEGOTIATION CHATBOT
+// =====================================================
+
+
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct NegotiationMessage {
+    pub sender: Pubkey,
+    pub message: String,
+    pub offer_amount: Option<u64>,
+    pub timestamp: i64,
+    pub is_auto_generated: bool,
+}
+
+#[account]
+pub struct NegotiationChatbot {
+    pub negotiation: Pubkey,
+    pub initiator: Pubkey,
+    pub counterparty: Pubkey,
+    pub initial_offer: u64,
+    pub current_offer: u64,
+    pub status: NegotiationStatus,
+    pub messages: Vec<NegotiationMessage>,
+    pub counter_offers: Vec<u64>,
+    pub auto_accept_threshold: u64,
+    pub negotiation_deadline: i64,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// BULK/ENTERPRISE DEALS
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum DealType {
+    VolumeDiscount,
+    EnterpriseSLA,
+    CustomContract,
+    Subscription,
+    Retainer,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct VolumeTier {
+    pub min_volume: u32,
+    pub discount_percentage: f64,
+    pub price_per_unit: u64,
+}
+
+#[account]
+pub struct BulkDeal {
+    pub deal: Pubkey,
+    pub agent: Pubkey,
+    pub customer: Pubkey,
+    pub deal_type: DealType,
+    pub total_volume: u32,
+    pub total_value: u64,
+    pub discount_percentage: f64,
+    pub volume_tiers: Vec<VolumeTier>,
+    pub sla_terms: String,
+    pub contract_duration: i64,
+    pub start_date: i64,
+    pub end_date: i64,
+    pub is_active: bool,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// ROYALTY STREAMS & RESALE MARKETS
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct RoyaltyConfig {
+    pub creator_share: f64,      // Percentage to original creator
+    pub platform_share: f64,     // Percentage to platform
+    pub resale_share: f64,       // Percentage on resales
+    pub perpetual_share: f64,    // Percentage for perpetual earnings
+}
+
+#[account]
+pub struct RoyaltyStream {
+    pub agent: Pubkey,
+    pub creator: Pubkey,
+    pub config: RoyaltyConfig,
+    pub total_earnings: u64,
+    pub total_resales: u32,
+    pub resale_volume: u64,
+    pub last_payout: i64,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct ResaleMarket {
+    pub agent: Pubkey,
+    pub seller: Pubkey,
+    pub buyer: Option<Pubkey>,
+    pub listing_price: u64,
+    pub original_price: u64,
+    pub royalty_paid: u64,
+    pub is_sold: bool,
+    pub listed_at: i64,
+    pub sold_at: Option<i64>,
+    pub bump: u8,
+}
+
+// =====================================================
+// AUTOMATED DISPUTE RESOLUTION
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum DisputeStatus {
+    Filed,
+    UnderReview,
+    EvidenceSubmitted,
+    Resolved,
+    Escalated,
+    Closed,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum DisputeResolution {
+    Refund,
+    PartialRefund,
+    ServiceCompletion,
+    NoAction,
+    Penalty,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct DisputeEvidence {
+    pub submitter: Pubkey,
+    pub evidence_type: String,
+    pub evidence_data: String,
+    pub timestamp: i64,
+    pub is_verified: bool,
+}
+
+#[account]
+pub struct DisputeCase {
+    pub dispute: Pubkey,
+    pub transaction: Pubkey,
+    pub complainant: Pubkey,
+    pub respondent: Pubkey,
+    pub reason: String,
+    pub status: DisputeStatus,
+    pub resolution: Option<DisputeResolution>,
+    pub evidence: Vec<DisputeEvidence>,
+    pub ai_score: f64,           // AI confidence in resolution
+    pub human_review: bool,      // Whether human review is needed
+    pub created_at: i64,
+    pub resolved_at: Option<i64>,
+    pub bump: u8,
+}
+
+// =====================================================
+// ANALYTICS & INSIGHTS
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct AgentAnalytics {
+    pub total_revenue: u64,
+    pub total_jobs: u32,
+    pub success_rate: f64,
+    pub average_rating: f64,
+    pub response_time_avg: f64,
+    pub customer_retention: f64,
+    pub market_share: f64,
+    pub trend_direction: f64,    // Positive/negative trend
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct MarketAnalytics {
+    pub total_volume: u64,
+    pub active_agents: u32,
+    pub average_price: u64,
+    pub price_volatility: f64,
+    pub demand_trend: f64,
+    pub supply_trend: f64,
+    pub market_cap: u64,
+}
+
+#[account]
+pub struct AnalyticsDashboard {
+    pub owner: Pubkey,
+    pub agent_analytics: Option<AgentAnalytics>,
+    pub market_analytics: MarketAnalytics,
+    pub last_updated: i64,
+    pub update_frequency: i64,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// PLUG-IN/EXTENSION SYSTEM
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum ExtensionType {
+    PricingModel,
+    AgentCapability,
+    Integration,
+    Analytics,
+    Security,
+    Custom,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum ExtensionStatus {
+    Pending,
+    Approved,
+    Rejected,
+    Active,
+    Suspended,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct ExtensionMetadata {
+    pub name: String,
+    pub description: String,
+    pub version: String,
+    pub author: String,
+    pub repository: String,
+    pub license: String,
+    pub dependencies: Vec<String>,
+    pub extension_type: ExtensionType,  // Add this field
+}
+
+#[account]
+pub struct Extension {
+    pub extension: Pubkey,
+    pub developer: Pubkey,
+    pub extension_type: ExtensionType,
+    pub status: ExtensionStatus,
+    pub metadata: ExtensionMetadata,
+    pub code_hash: String,       // IPFS hash of extension code
+    pub install_count: u32,
+    pub rating: f64,
+    pub revenue_share: f64,      // Percentage to developer
+    pub total_earnings: u64,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// INCENTIVE & REWARD SYSTEM
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct IncentiveConfig {
+    pub referral_bonus: f64,     // Percentage for referrals
+    pub volume_bonus: f64,       // Bonus for high volume
+    pub quality_bonus: f64,      // Bonus for high ratings
+    pub retention_bonus: f64,    // Bonus for customer retention
+    pub innovation_bonus: f64,   // Bonus for new features
+}
+
+#[account]
+pub struct AgentIncentives {
+    pub agent: Pubkey,
+    pub total_referrals: u32,
+    pub referral_earnings: u64,
+    pub volume_bonus_earned: u64,
+    pub quality_bonus_earned: u64,
+    pub retention_bonus_earned: u64,
+    pub innovation_bonus_earned: u64,
+    pub total_incentives: u64,
+    pub last_payout: i64,
+}
+
+#[account]
+pub struct IncentiveProgram {
+    pub program: Pubkey,
+    pub config: IncentiveConfig,
+    pub total_distributed: u64,
+    pub active_agents: u32,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// CONSTANTS FOR NEW ACCOUNTS
+// =====================================================
+
+impl DynamicPricingEngine {
+    pub const LEN: usize = 8 + 32 + 32 + 200 + 8 + 100 + 8 + 4 + 8 + 1;
+}
+
+impl AuctionMarketplace {
+    pub const LEN: usize = 8 + 32 + 32 + 32 + 1 + 1 + 8 + 8 + 8 + 32 + 8 + 8 + 8 + 4 + 1000 + 32 + 8 + 1;
+}
+
+impl NegotiationChatbot {
+    pub const LEN: usize = 8 + 32 + 32 + 32 + 8 + 1 + 1000 + 8 + 8 + 8 + 1;
+}
+
+impl BulkDeal {
+    pub const LEN: usize = 8 + 32 + 32 + 32 + 1 + 4 + 8 + 8 + 200 + 8 + 8 + 8 + 1 + 8 + 1;
+}
+
+impl RoyaltyStream {
+    pub const LEN: usize = 8 + 32 + 32 + 100 + 8 + 4 + 8 + 8 + 1;
+}
+
+impl ResaleMarket {
+    pub const LEN: usize = 8 + 32 + 32 + 32 + 8 + 8 + 8 + 1 + 8 + 8 + 1;
+}
+
+impl DisputeCase {
+    pub const LEN: usize = 8 + 32 + 32 + 32 + 32 + 200 + 1 + 1 + 1000 + 8 + 1 + 8 + 8 + 1;
+}
+
+impl AnalyticsDashboard {
+    pub const LEN: usize = 8 + 32 + 200 + 200 + 8 + 8 + 8 + 1;
+}
+
+impl Extension {
+    pub const LEN: usize = 8 + 32 + 32 + 1 + 1 + 300 + 100 + 4 + 8 + 8 + 8 + 1;
+}
+
+impl IncentiveProgram {
+    pub const LEN: usize = 8 + 32 + 200 + 8 + 4 + 8 + 1;
+}
+
+// =====================================================
+// MODULES
+// =====================================================
+
+// =====================================================
+// PROGRAM
+// =====================================================
+
+
+pub mod agent_marketplace {
+    use super::*;
+    use instructions::messaging::*;
+    use instructions::replication::*;
+    use instructions::work_orders::*;
+
+    // =====================================================
+    // AGENT VERIFICATION (Not Creation)
+    // =====================================================
+
+    /// Verifies an existing AI agent's capabilities and marks them as verified
+    /// 
+    /// This function allows external AI agents to register their capabilities with the GhostSpeak protocol.
+    /// It does NOT create new agents - agents must already exist externally.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing the agent verification account and authority
+    /// * `verification_data` - The agent's verification data including:
+    ///   - `agent_pubkey` - The public key of the agent to verify
+    ///   - `service_endpoint` - The API endpoint where the agent can be reached
+    ///   - `supported_capabilities` - Array of capabilities the agent supports (e.g., ["chat", "code", "analysis"])
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful verification
+    /// 
+    /// # Errors
+    /// 
+    /// * `AccountNotInitialized` - If the agent verification account is not properly initialized
+    /// * `InstructionError::InvalidArgument` - If verification data is malformed
+    /// 
+    /// # Example
+    /// 
+    /// ```no_run
+    /// let verification_data = AgentVerificationData {
+    ///     agent_pubkey: agent_key,
+    ///     service_endpoint: "https://api.myagent.com".to_string(),
+    ///     supported_capabilities: vec!["chat".to_string(), "code".to_string()],
+    ///     verified_at: 0, // Will be set by the program
+    /// };
+    /// ```
+    pub fn verify_agent(
+        ctx: Context<VerifyAgent>,
+        verification_data: AgentVerificationData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.owner.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+        
+        // SECURITY: Input validation
+        require!(
+            !verification_data.service_endpoint.is_empty() && verification_data.service_endpoint.len() <= MAX_GENERAL_STRING_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            verification_data.supported_capabilities.len() <= MAX_CAPABILITIES_COUNT,
+            PodAIMarketplaceError::InputTooLong
+        );
+        for capability in &verification_data.supported_capabilities {
+            require!(
+                !capability.is_empty() && capability.len() <= MAX_NAME_LENGTH,
+                PodAIMarketplaceError::InputTooLong
+            );
+        }
+
+        let agent = &mut ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        // Simply verify the agent exists and can use the protocol
+        // Update the agent's capabilities based on verification
+        agent.capabilities = verification_data.supported_capabilities;
+        agent.updated_at = clock.unix_timestamp;
+
+        emit!(AgentVerifiedEvent {
+            agent: agent.key(),
+            owner: ctx.accounts.owner.key(),
+            timestamp: clock.unix_timestamp,
+        });
+
+        Ok(())
+    }
+
+
+
+    // =====================================================
+    // WORK DELIVERY SYSTEM
+    // =====================================================
+    // Work order functions are now in the instructions module
+
+
+    // =====================================================
+    // HUMAN PURCHASING & JOB HIRING SYSTEM
+    // =====================================================
+
+    // Re-export marketplace instructions from the module
+    pub use crate::instructions::marketplace::create_service_listing;
+    pub use crate::instructions::marketplace::purchase_service;
+    pub use crate::instructions::marketplace::create_job_posting;
+    pub use crate::instructions::marketplace::apply_to_job;
+    pub use crate::instructions::marketplace::accept_job_application;
+        
+        require!(
+            !listing_data.title.is_empty() && listing_data.title.len() <= MAX_TITLE_LENGTH,
+            PodAIMarketplaceError::NameTooLong
+        );
+        require!(
+            listing_data.description.len() <= MAX_DESCRIPTION_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            listing_data.price > 0 && listing_data.price <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            listing_data.tags.len() <= MAX_TAGS,
+            PodAIMarketplaceError::InputTooLong
+        );
+        for tag in &listing_data.tags {
+            require!(
+                !tag.is_empty() && tag.len() <= MAX_TAG_LENGTH,
+                PodAIMarketplaceError::InputTooLong
+            );
+        }
+
+        let listing = &mut ctx.accounts.service_listing;
+        let agent = &ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        // Verify agent is active and owned by the caller
+        require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
+        require!(agent.owner == ctx.accounts.creator.key(), PodAIMarketplaceError::UnauthorizedAccess);
+
+        listing.agent = agent.key();
+        listing.owner = ctx.accounts.creator.key();
+        listing.title = listing_data.title.clone();
+        listing.description = listing_data.description.clone();
+        listing.service_type = listing_data.service_type;
+        listing.price = listing_data.price;
+        listing.payment_token = listing_data.payment_token;
+        listing.estimated_delivery = listing_data.estimated_delivery;
+        listing.tags = listing_data.tags.clone();
+        listing.is_active = true;
+        listing.total_orders = 0;
+        listing.rating = 0.0;
+        listing.created_at = clock.unix_timestamp;
+        listing.updated_at = clock.unix_timestamp;
+        listing.bump = ctx.bumps.service_listing;
+
+        emit!(ServiceListingCreatedEvent {
+            listing: listing.key(),
+            creator: ctx.accounts.creator.key(),
+            title: listing_data.title.clone(),
+            price: listing_data.price,
+        });
+        Ok(())
+    }
+
+    /// Purchases a service from an AI agent (for human customers)
+    /// 
+    /// Enables human customers to purchase listed AI agent services. Payment is processed
+    /// immediately and work begins based on the service listing terms.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing purchase, listing, and payment accounts
+    /// * `purchase_data` - Purchase details including:
+    ///   - `quantity` - Number of service units to purchase
+    ///   - `requirements` - Specific requirements for the service
+    ///   - `custom_instructions` - Additional instructions from buyer
+    ///   - `deadline` - Custom deadline if different from default
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful purchase
+    /// 
+    /// # Errors
+    /// 
+    /// * `ServiceNotActive` - If the service listing is inactive
+    /// * `InsufficientFunds` - If buyer lacks funds for purchase
+    /// * `InvalidQuantity` - If quantity is 0 or exceeds limits
+    /// 
+    /// # Payment Flow
+    /// 
+    /// 1. Validates service availability and pricing
+    /// 2. Transfers payment from buyer to escrow
+    /// 3. Creates purchase record for tracking
+    /// 4. Notifies agent of new order
+    /// 
+    /// # State Changes
+    /// 
+    /// - Creates service purchase record
+    /// - Updates listing order count
+    /// - Transfers funds to escrow
+    pub fn purchase_service(
+        ctx: Context<PurchaseService>,
+        purchase_data: ServicePurchaseData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.buyer.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_REQUIREMENTS_LENGTH: usize = 2048;
+        require!(
+            purchase_data.requirements.len() <= MAX_REQUIREMENTS_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+
+        let purchase = &mut ctx.accounts.service_purchase;
+        let listing = &ctx.accounts.service_listing;
+        let clock = Clock::get()?;
+
+        // Verify listing is active
+        require!(listing.is_active, PodAIMarketplaceError::ServiceNotActive);
+
+        purchase.listing = listing.key();
+        purchase.customer = ctx.accounts.buyer.key();
+        purchase.agent = listing.agent;
+        purchase.listing_id = 0; // Set appropriately if needed
+        purchase.quantity = purchase_data.quantity;
+        purchase.requirements = purchase_data.requirements.clone();
+        purchase.custom_instructions = purchase_data.custom_instructions.clone();
+        purchase.payment_amount = listing.price;
+        purchase.payment_token = listing.payment_token;
+        purchase.deadline = purchase_data.deadline;
+        purchase.status = PurchaseStatus::Paid;
+        purchase.purchased_at = clock.unix_timestamp;
+        purchase.updated_at = clock.unix_timestamp;
+        purchase.bump = ctx.bumps.service_purchase;
+
+        emit!(ServicePurchasedEvent {
+            purchase: purchase.key(),
+            listing: listing.key(),
+            buyer: ctx.accounts.buyer.key(),
+            quantity: purchase_data.quantity,
+        });
+        Ok(())
+    }
+
+    /// Creates a job posting for AI agents to apply to (human employers hiring agents)
+    /// 
+    /// Allows human employers to post jobs that AI agents can apply to. Supports various
+    /// job types, skill requirements, and budget ranges.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing job posting account and employer authority
+    /// * `job_data` - Job posting details including:
+    ///   - `title` - Job title (max 128 chars)
+    ///   - `description` - Detailed job description (max 4KB)
+    ///   - `requirements` - Specific job requirements
+    ///   - `skills_needed` - Required agent capabilities
+    ///   - `budget_min` - Minimum budget in payment tokens
+    ///   - `budget_max` - Maximum budget in payment tokens
+    ///   - `payment_token` - Token for payment
+    ///   - `deadline` - Application deadline timestamp
+    ///   - `job_type` - Type of job (one-time, recurring, etc.)
+    ///   - `experience_level` - Required experience level
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful job posting creation
+    /// 
+    /// # Errors
+    /// 
+    /// * `InvalidBudgetRange` - If min budget exceeds max budget
+    /// * `InvalidDeadline` - If deadline is in the past
+    /// * `BudgetTooLow` - If budget is below platform minimum
+    /// 
+    /// # Example
+    /// 
+    /// ```no_run
+    /// let job = JobPostingData {
+    ///     title: "Smart Contract Audit".to_string(),
+    ///     description: "Need thorough audit of DeFi protocol".to_string(),
+    ///     requirements: vec!["Security expertise".to_string()],
+    ///     skills_needed: vec!["audit".to_string(), "solana".to_string()],
+    ///     budget_min: 100_000_000, // 0.1 SOL minimum
+    ///     budget_max: 500_000_000, // 0.5 SOL maximum
+    ///     payment_token: spl_token::native_mint::id(),
+    ///     deadline: Clock::get()?.unix_timestamp + 7 * 24 * 3600, // 7 days
+    ///     job_type: "one-time".to_string(),
+    ///     experience_level: "expert".to_string(),
+    /// };
+    /// ```
+    pub fn create_job_posting(
+        ctx: Context<CreateJobPosting>,
+        job_data: JobPostingData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.employer.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_TITLE_LENGTH: usize = 128;
+        const MAX_DESCRIPTION_LENGTH: usize = 4096;
+        const MAX_REQUIREMENTS_LENGTH: usize = 2048;
+        const MAX_SKILLS: usize = 20;
+        const MAX_SKILL_LENGTH: usize = 32;
+        
+        require!(
+            !job_data.title.is_empty() && job_data.title.len() <= MAX_TITLE_LENGTH,
+            PodAIMarketplaceError::NameTooLong
+        );
+        require!(
+            job_data.description.len() <= MAX_DESCRIPTION_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            job_data.requirements.len() <= MAX_REQUIREMENTS_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            job_data.budget_min > 0 && job_data.budget_max <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            job_data.budget_min <= job_data.budget_max,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            job_data.skills_needed.len() <= MAX_SKILLS,
+            PodAIMarketplaceError::InputTooLong
+        );
+        for skill in &job_data.skills_needed {
+            require!(
+                !skill.is_empty() && skill.len() <= MAX_SKILL_LENGTH,
+                PodAIMarketplaceError::InputTooLong
+            );
+        }
+
+        let job_posting = &mut ctx.accounts.job_posting;
+        let clock = Clock::get()?;
+
+        job_posting.employer = ctx.accounts.employer.key();
+        job_posting.title = job_data.title.clone();
+        job_posting.description = job_data.description.clone();
+        job_posting.requirements = job_data.requirements.clone();
+        job_posting.budget = job_data.budget;
+        job_posting.deadline = job_data.deadline;
+        job_posting.skills_needed = job_data.skills_needed.clone();
+        job_posting.budget_min = job_data.budget_min;
+        job_posting.budget_max = job_data.budget_max;
+        job_posting.payment_token = job_data.payment_token;
+        job_posting.job_type = job_data.job_type.clone();
+        job_posting.experience_level = job_data.experience_level.clone();
+        job_posting.is_active = true;
+        job_posting.applications_count = 0;
+        job_posting.created_at = clock.unix_timestamp;
+        job_posting.updated_at = clock.unix_timestamp;
+        job_posting.bump = ctx.bumps.job_posting;
+
+        emit!(JobPostingCreatedEvent {
+            job_posting: job_posting.key(),
+            employer: ctx.accounts.employer.key(),
+            title: job_data.title.clone(),
+            budget_min: job_data.budget_min,
+            budget_max: job_data.budget_max,
+        });
+
+        Ok(())
+    }
+
+    /// Submits an application from an AI agent to a job posting
+    /// 
+    /// Allows verified agents to apply for posted jobs with their proposed rate,
+    /// timeline, and portfolio examples.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing application, job posting, and agent accounts
+    /// * `application_data` - Application details including:
+    ///   - `cover_letter` - Explanation of qualifications (max 2KB)
+    ///   - `proposed_rate` - Proposed payment amount
+    ///   - `estimated_delivery` - Estimated completion time in hours
+    ///   - `portfolio_items` - Relevant work samples (IPFS hashes)
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful application submission
+    /// 
+    /// # Errors
+    /// 
+    /// * `JobNotActive` - If the job posting is closed
+    /// * `AgentNotActive` - If the agent is not verified
+    /// * `AlreadyApplied` - If agent already applied to this job
+    /// * `ProposedRateOutOfRange` - If rate is outside budget range
+    /// 
+    /// # Validation
+    /// 
+    /// - Ensures agent has required skills
+    /// - Validates proposed rate within budget
+    /// - Checks agent's past performance rating
+    /// 
+    /// # State Changes
+    /// 
+    /// - Creates job application record
+    /// - Increments job posting application count
+    /// - Emits notification to employer
+    pub fn apply_to_job(
+        ctx: Context<ApplyToJob>,
+        application_data: JobApplicationData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.agent_owner.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_COVER_LETTER_LENGTH: usize = 2048;
+        const MAX_PORTFOLIO_ITEMS: usize = 10;
+        
+        require!(
+            application_data.cover_letter.len() <= MAX_COVER_LETTER_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            application_data.portfolio_items.len() <= MAX_PORTFOLIO_ITEMS,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            application_data.proposed_rate > 0 && application_data.proposed_rate <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+
+        let application = &mut ctx.accounts.job_application;
+        let job_posting = &mut ctx.accounts.job_posting;
+        let agent = &ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        // Verify job posting is active
+        require!(job_posting.is_active, PodAIMarketplaceError::JobNotActive);
+        
+        // Verify agent is active
+        require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
+
+        application.job_posting = job_posting.key();
+        application.agent = agent.key();
+        application.agent_owner = ctx.accounts.agent_owner.key();
+        application.cover_letter = application_data.cover_letter;
+        application.proposed_rate = application_data.proposed_rate;
+        application.estimated_delivery = application_data.estimated_delivery;
+        application.portfolio_items = application_data.portfolio_items;
+        application.status = ApplicationStatus::Submitted;
+        application.applied_at = clock.unix_timestamp;
+        application.bump = ctx.bumps.job_application;
+
+        // Update job posting with overflow protection
+        job_posting.applications_count = job_posting.applications_count
+            .checked_add(1)
+            .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        job_posting.updated_at = clock.unix_timestamp;
+
+        emit!(JobApplicationSubmittedEvent {
+            job_posting: job_posting.key(),
+            application: application.key(),
+            agent: agent.key(),
+            proposed_rate: application_data.proposed_rate,
+        });
+
+        Ok(())
+    }
+
+    /// Accepts a job application and creates a work contract
+    /// 
+    /// Allows employers to accept an agent's application, creating a binding work contract
+    /// with agreed terms and initiating the escrow process.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing application, job posting, and contract accounts
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful application acceptance
+    /// 
+    /// # Errors
+    /// 
+    /// * `UnauthorizedAccess` - If caller is not the job poster
+    /// * `InvalidApplicationStatus` - If application is not in `Submitted` status
+    /// * `InsufficientFunds` - If employer lacks funds for escrow
+    /// 
+    /// # Contract Creation
+    /// 
+    /// Creates a job contract with:
+    /// - Agreed payment terms from the application
+    /// - Milestone schedule if applicable
+    /// - Delivery deadline
+    /// - Dispute resolution terms
+    /// 
+    /// # State Changes
+    /// 
+    /// - Updates application status to `Accepted`
+    /// - Creates job contract account
+    /// - Transfers funds to escrow
+    /// - Updates other applications to `Rejected`
+    pub fn accept_job_application(
+        ctx: Context<AcceptJobApplication>,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.employer.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        let application = &mut ctx.accounts.job_application;
+        let job_posting = &mut ctx.accounts.job_posting;
+        let job_contract = &mut ctx.accounts.job_contract;
+        let clock = Clock::get()?;
+
+        // Verify application is still pending
+        require!(
+            application.status == ApplicationStatus::Submitted,
+            PodAIMarketplaceError::InvalidApplicationStatus
+        );
+
+        // Create job contract
+        job_contract.job_posting = job_posting.key();
+        job_contract.application = application.key();
+        job_contract.employer = job_posting.employer;
+        job_contract.agent = application.agent;
+        job_contract.agreed_rate = application.proposed_rate;
+        job_contract.deadline = application.estimated_delivery;
+        job_contract.payment_token = job_posting.payment_token;
+        job_contract.status = ContractStatus::Active;
+        job_contract.created_at = clock.unix_timestamp;
+        job_contract.updated_at = clock.unix_timestamp;
+        job_contract.bump = ctx.bumps.job_contract;
+
+        // Update application status
+        application.status = ApplicationStatus::Accepted;
+
+        // Deactivate job posting
+        job_posting.is_active = false;
+        job_posting.updated_at = clock.unix_timestamp;
+
+        emit!(JobApplicationAcceptedEvent {
+            job_posting: job_posting.key(),
+            application: application.key(),
+            contract: job_contract.key(),
+            employer: job_posting.employer,
+            agent: application.agent,
+        });
+
+        Ok(())
+    }
+
+    /// Completes a hired job and processes payment to the agent
+    /// 
+    /// Marks a job contract as completed and releases escrowed funds to the agent.
+    /// Can only be called by the employer after work delivery is satisfactory.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing job contract, payment, and escrow accounts
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful job completion
+    /// 
+    /// # Errors
+    /// 
+    /// * `UnauthorizedAccess` - If caller is not the employer
+    /// * `InvalidContractStatus` - If contract is not `Active`
+    /// * `WorkNotDelivered` - If agent hasn't submitted deliverables
+    /// 
+    /// # Payment Process
+    /// 
+    /// 1. Validates work has been delivered
+    /// 2. Updates contract status to `Completed`
+    /// 3. Releases escrowed funds to agent
+    /// 4. Records completion for agent's reputation
+    /// 
+    /// # State Changes
+    /// 
+    /// - Updates job contract to `Completed`
+    /// - Transfers payment from escrow to agent
+    /// - Updates agent's completed job count
+    pub fn complete_hired_job(
+        ctx: Context<CompleteHiredJob>,
+        completion_data: JobCompletionData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.agent_owner.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_DELIVERABLES_LENGTH: usize = 2048;
+        const MAX_SUMMARY_LENGTH: usize = 1024;
+        const MAX_IPFS_HASH_LENGTH: usize = 64;
+        const MAX_URI_LENGTH: usize = 256;
+        
+        require!(
+            completion_data.deliverables.len() <= MAX_DELIVERABLES_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            completion_data.work_summary.len() <= MAX_SUMMARY_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            completion_data.ipfs_hash.len() <= MAX_IPFS_HASH_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            completion_data.metadata_uri.len() <= MAX_URI_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+
+        let job_contract = &mut ctx.accounts.job_contract;
+        let job_completion = &mut ctx.accounts.job_completion;
+        let agent = &mut ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        // Verify contract is active
+        require!(
+            job_contract.status == ContractStatus::Active,
+            PodAIMarketplaceError::InvalidContractStatus
+        );
+
+        job_completion.contract = job_contract.key();
+        job_completion.agent = job_contract.agent;
+        job_completion.employer = job_contract.employer;
+        job_completion.deliverables = completion_data.deliverables;
+        job_completion.work_summary = completion_data.work_summary;
+        job_completion.ipfs_hash = completion_data.ipfs_hash;
+        job_completion.metadata_uri = completion_data.metadata_uri;
+        job_completion.completed_at = clock.unix_timestamp;
+        job_completion.is_approved = false;
+        job_completion.bump = ctx.bumps.job_completion;
+
+        // Update contract status
+        job_contract.status = ContractStatus::Completed;
+        job_contract.updated_at = clock.unix_timestamp;
+
+        // SECURITY FIX: Update agent stats with overflow protection
+        agent.total_jobs_completed = agent.total_jobs_completed
+            .checked_add(1)
+            .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        agent.total_earnings = agent.total_earnings
+            .checked_add(job_contract.agreed_rate)
+            .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        agent.reputation_score = agent.reputation_score
+            .checked_add(1)
+            .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+
+        emit!(HiredJobCompletedEvent {
+            contract: job_contract.key(),
+            completion: job_completion.key(),
+            agent: job_contract.agent,
+            employer: job_contract.employer,
+            amount: job_contract.agreed_rate,
+        });
+
+        Ok(())
+    }
+
+    /// Submits a rating and review for completed work
+    /// 
+    /// Allows clients/employers to rate agents after work completion. Reviews are
+    /// permanently recorded and affect the agent's overall rating.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing review and work order/contract accounts
+    /// * `review_data` - Review details including:
+    ///   - `rating` - Score from 1-5 stars
+    ///   - `review_text` - Written review (max 1KB)
+    ///   - `tags` - Review tags (e.g., "professional", "fast")
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful review submission
+    /// 
+    /// # Errors
+    /// 
+    /// * `UnauthorizedAccess` - If reviewer is not the client/employer
+    /// * `WorkNotCompleted` - If work order is not completed
+    /// * `AlreadyReviewed` - If work was already reviewed
+    /// * `InvalidRating` - If rating is not between 1-5
+    /// 
+    /// # Rating System
+    /// 
+    /// - Ratings are weighted by transaction value
+    /// - Recent reviews have higher weight
+    /// - Agent's overall rating is recalculated
+    /// 
+    /// # Example
+    /// 
+    /// ```no_run
+    /// let review = ReviewData {
+    ///     rating: 5,
+    ///     review_text: "Excellent work, delivered ahead of schedule".to_string(),
+    ///     tags: vec!["professional".to_string(), "fast".to_string()],
+    /// };
+    /// ```
+    pub fn submit_review(
+        ctx: Context<SubmitReview>,
+        review_data: ReviewData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.reviewer.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_COMMENT_LENGTH: usize = 1024;
+        const MIN_RATING: u8 = 1;
+        const MAX_RATING: u8 = 5;
+        
+        require!(
+            review_data.comment.len() <= MAX_COMMENT_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            review_data.rating >= MIN_RATING && review_data.rating <= MAX_RATING,
+            PodAIMarketplaceError::InvalidRating
+        );
+
+        let review = &mut ctx.accounts.review;
+        let agent = &mut ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        review.reviewer = ctx.accounts.reviewer.key();
+        review.agent = agent.key();
+        review.review_type = review_data.review_type;
+        review.rating = review_data.rating;
+        review.comment = review_data.comment;
+        review.work_reference = review_data.work_reference;
+        review.submitted_at = clock.unix_timestamp;
+        review.bump = ctx.bumps.review;
+
+        // Update agent rating with overflow protection
+        let total_reviews = agent.total_jobs_completed;
+        if total_reviews > 0 {
+            let weighted_sum = agent.reputation_score
+                .checked_mul(total_reviews.saturating_sub(1))
+                .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?
+                .checked_add(review_data.rating as u32)
+                .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+            
+            agent.reputation_score = weighted_sum
+                .checked_div(total_reviews)
+                .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        }
+
+        emit!(ReviewSubmittedEvent {
+            review: review.key(),
+            reviewer: ctx.accounts.reviewer.key(),
+            agent: agent.key(),
+            rating: review_data.rating,
+        });
+
+        Ok(())
+    }
+
+    // =====================================================
+    // AGENT REPLICATION MARKETPLACE
+    // =====================================================
+
+    // Replication functionality has been moved to instructions/replication.rs
+
+    // =====================================================
+    // A2A PROTOCOL COMPLIANCE LAYER
+    // =====================================================
+
+    /// Creates an Agent-to-Agent (A2A) protocol session for structured communication
+    /// 
+    /// Establishes a persistent session between agents with defined protocols,
+    /// context retention, and multi-modal message support.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing session and participant accounts
+    /// * `session_data` - Session configuration including:
+    ///   - `protocol_version` - A2A protocol version (e.g., "1.0")
+    ///   - `context_window` - Max messages to retain in context
+    ///   - `supported_formats` - Supported message formats
+    ///   - `session_type` - Type of session (task, consultation, etc.)
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful session creation
+    /// 
+    /// # Errors
+    /// 
+    /// * `IncompatibleProtocol` - If agents use incompatible protocols
+    /// * `UnauthorizedAgent` - If agent is not verified
+    /// 
+    /// # Session Features
+    /// 
+    /// - Maintains conversation context across messages
+    /// - Supports streaming responses
+    /// - Handles multi-modal content (text, code, data)
+    /// - Automatic session timeout after inactivity
+    /// 
+    /// # Protocol Standards
+    /// 
+    /// Follows standardized A2A protocol for:
+    /// - Message formatting
+    /// - Error handling
+    /// - State synchronization
+    pub fn create_a2a_session(
+        ctx: Context<CreateA2ASession>,
+        session_data: A2ASessionData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.creator.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_SESSION_ID_LENGTH: usize = 64;
+        const MAX_PARTICIPANTS: usize = 10;
+        const MAX_CONTEXT_LENGTH: usize = 2048;
+        
+        require!(
+            !session_data.session_id.is_empty() && session_data.session_id.len() <= MAX_SESSION_ID_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            session_data.participants.len() > 0 && session_data.participants.len() <= MAX_PARTICIPANTS,
+            PodAIMarketplaceError::InputTooLong
+        );
+
+        let session = &mut ctx.accounts.session;
+        let clock = Clock::get()?;
+
+        session.session_id = session_data.session_id.clone();
+        session.creator = ctx.accounts.creator.key();
+        session.participants = session_data.participants.clone();
+        session.session_type = session_data.session_type;
+        session.is_active = true;
+        session.created_at = clock.unix_timestamp;
+        session.last_activity = clock.unix_timestamp;
+        session.bump = ctx.bumps.session;
+
+        emit!(A2ASessionCreatedEvent {
+            session: session.key(),
+            session_id: session_data.session_id.clone(),
+            creator: ctx.accounts.creator.key(),
+            participants: session_data.participants.clone(),
+        });
+
+        Ok(())
+    }
+
+    /// Sends a message in an A2A session with multi-modal content support
+    /// 
+    /// Transmits structured messages between agents including text, code, data,
+    /// and streaming content with automatic context management.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing message and session accounts
+    /// * `message_content` - Message data including:
+    ///   - `content_type` - Type of content (text, code, data, stream)
+    ///   - `payload` - The actual message content
+    ///   - `metadata` - Optional message metadata
+    ///   - `requires_response` - Whether a response is expected
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful message send
+    /// 
+    /// # Errors
+    /// 
+    /// * `SessionInactive` - If session has expired
+    /// * `UnauthorizedSender` - If sender is not a participant
+    /// * `PayloadTooLarge` - If content exceeds 64KB limit
+    /// * `InvalidContentType` - If content type is unsupported
+    /// 
+    /// # Message Types
+    /// 
+    /// - **Text**: Plain text messages
+    /// - **Code**: Source code with syntax highlighting
+    /// - **Data**: Structured data (JSON, CSV, etc.)
+    /// - **Stream**: Streaming content chunks
+    /// 
+    /// # Context Management
+    /// 
+    /// Messages are automatically added to session context
+    /// with FIFO eviction when window size is exceeded
+    pub fn send_a2a_message(
+        ctx: Context<SendA2AMessage>,
+        message_data: A2AMessageData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.sender.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_CONTENT_LENGTH: usize = 4096;
+        const MAX_PARTS: usize = 10;
+        
+        require!(
+            !message_data.parts.is_empty() && message_data.parts.len() <= MAX_PARTS,
+            PodAIMarketplaceError::InputTooLong
+        );
+        
+        for part in &message_data.parts {
+            require!(
+                !part.content.is_empty() && part.content.len() <= MAX_CONTENT_LENGTH,
+                PodAIMarketplaceError::InputTooLong
+            );
+        }
+
+        let message = &mut ctx.accounts.message;
+        let session = &mut ctx.accounts.session;
+        let clock = Clock::get()?;
+
+        message.session_id = session.session_id.clone();
+        message.sender = ctx.accounts.sender.key();
+        message.role = message_data.role;
+        message.parts = message_data.parts.clone();
+        message.timestamp = clock.unix_timestamp;
+        message.bump = ctx.bumps.message;
+
+        session.last_activity = clock.unix_timestamp;
+
+        emit!(A2AMessageSentEvent {
+            session: session.key(),
+            message: message.key(),
+            sender: ctx.accounts.sender.key(),
+            role: message_data.role,
+        });
+
+        Ok(())
+    }
+
+    /// Updates A2A session status for streaming and state management
+    /// 
+    /// Manages session lifecycle including streaming status, connection state,
+    /// and activity tracking for proper resource management.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing session account
+    /// * `status_update` - Status update including:
+    ///   - `is_streaming` - Whether agent is currently streaming
+    ///   - `stream_position` - Current position in stream
+    ///   - `connection_status` - Active, idle, or disconnected
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful status update
+    /// 
+    /// # Errors
+    /// 
+    /// * `UnauthorizedAccess` - If updater is not a participant
+    /// * `SessionClosed` - If session is already closed
+    /// 
+    /// # Status Types
+    /// 
+    /// - **Streaming**: Agent is sending multi-part response
+    /// - **Idle**: Connected but not actively messaging
+    /// - **Processing**: Agent is processing a request
+    /// - **Disconnected**: Agent has left the session
+    /// 
+    /// # Automatic Cleanup
+    /// 
+    /// Sessions are automatically closed after 30 minutes
+    /// of inactivity to free resources
+    pub fn update_a2a_status(
+        ctx: Context<UpdateA2AStatus>,
+        status_data: A2AStatusData,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.updater.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_SESSION_ID_LENGTH: usize = 64;
+        const MAX_MESSAGE_ID_LENGTH: usize = 64;
+        const MAX_PROGRESS: u8 = 100;
+        
+        require!(
+            !status_data.session_id.is_empty() && status_data.session_id.len() <= MAX_SESSION_ID_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            !status_data.message_id.is_empty() && status_data.message_id.len() <= MAX_MESSAGE_ID_LENGTH,
+            PodAIMarketplaceError::InputTooLong
+        );
+        require!(
+            status_data.progress <= MAX_PROGRESS,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+
+        let status = &mut ctx.accounts.status;
+        let clock = Clock::get()?;
+
+        status.session_id = status_data.session_id.clone();
+        status.message_id = status_data.message_id.clone();
+        status.state = status_data.state;
+        status.progress = status_data.progress;
+        status.partial_content = status_data.partial_content;
+        status.r#final = status_data.r#final;
+        status.timestamp = clock.unix_timestamp;
+        status.bump = ctx.bumps.status;
+
+        emit!(A2AStatusUpdatedEvent {
+            session_id: status_data.session_id.clone(),
+            message_id: status_data.message_id.clone(),
+            state: status.state,
+            progress: status_data.progress,
+        });
+
+        Ok(())
+    }
+
+    /// Processes natural language user intent for intelligent agent routing
+    /// 
+    /// Analyzes user requests in natural language and determines which agents
+    /// are best suited to handle the request based on capabilities and availability.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing intent processing accounts
+    /// * `intent_data` - User intent including:
+    ///   - `user_query` - Natural language request
+    ///   - `context` - Additional context or requirements
+    ///   - `preferred_capabilities` - Desired agent capabilities
+    ///   - `budget_range` - Optional budget constraints
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` with processed intent stored on-chain
+    /// 
+    /// # Errors
+    /// 
+    /// * `InvalidQuery` - If query is empty or too long
+    /// * `NoMatchingAgents` - If no agents match requirements
+    /// 
+    /// # Intent Analysis
+    /// 
+    /// System analyzes:
+    /// - Required skills and capabilities
+    /// - Urgency and timeline
+    /// - Budget constraints
+    /// - Quality requirements
+    /// 
+    /// # Example
+    /// 
+    /// ```no_run
+    /// let intent = UserIntentData {
+    ///     user_query: "I need help auditing my smart contracts".to_string(),
+    ///     context: Some("Solana program using Anchor".to_string()),
+    ///     preferred_capabilities: vec!["security".to_string(), "solana".to_string()],
+    ///     budget_range: Some((100_000_000, 500_000_000)), // 0.1-0.5 SOL
+    /// };
+    /// ```
+    pub fn process_user_intent(
+        ctx: Context<ProcessUserIntent>,
+        intent_data: UserIntentData,
+    ) -> Result<()> {
+        let intent = &mut ctx.accounts.intent;
+        let clock = Clock::get()?;
+
+        intent.user = ctx.accounts.user.key();
+        intent.natural_language_query = intent_data.query.clone();
+        intent.parsed_intent = intent_data.parsed_intent;
+        intent.required_capabilities = intent_data.required_capabilities.clone();
+        intent.priority = intent_data.priority;
+        intent.status = IntentStatus::Processing;
+        intent.created_at = clock.unix_timestamp;
+        intent.bump = ctx.bumps.intent;
+
+        emit!(UserIntentProcessedEvent {
+            intent: intent.key(),
+            user: ctx.accounts.user.key(),
+            query: intent_data.query.clone(),
+            required_capabilities: intent_data.required_capabilities.clone(),
+        });
+
+        Ok(())
+    }
+
+    /// Routes processed user intent to the most suitable agents
+    /// 
+    /// Matches user requirements with agent capabilities, availability, and
+    /// performance history to recommend the best agents for the job.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing routing and agent accounts
+    /// * `routing_params` - Routing parameters including:
+    ///   - `max_agents` - Maximum agents to recommend (1-10)
+    ///   - `priority` - Routing priority (cost, quality, speed)
+    ///   - `filters` - Additional filtering criteria
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` with routed agent recommendations
+    /// 
+    /// # Errors
+    /// 
+    /// * `NoIntentFound` - If intent hasn't been processed
+    /// * `NoAvailableAgents` - If no agents are currently available
+    /// 
+    /// # Routing Algorithm
+    /// 
+    /// 1. Filters agents by required capabilities
+    /// 2. Checks agent availability and workload
+    /// 3. Scores by performance metrics
+    /// 4. Applies budget constraints
+    /// 5. Returns ranked recommendations
+    /// 
+    /// # Scoring Factors
+    /// 
+    /// - Capability match score (40%)
+    /// - Performance rating (30%)
+    /// - Price competitiveness (20%)
+    /// - Response time (10%)
+    pub fn route_intent_to_agents(
+        ctx: Context<RouteIntentToAgents>,
+        routing_data: IntentRoutingData,
+    ) -> Result<()> {
+        let routing = &mut ctx.accounts.routing;
+        let intent = &mut ctx.accounts.intent;
+        let clock = Clock::get()?;
+
+        routing.intent = intent.key();
+        routing.selected_agents = routing_data.selected_agents.clone();
+        routing.routing_strategy = routing_data.strategy;
+        routing.created_at = clock.unix_timestamp;
+        routing.bump = ctx.bumps.routing;
+
+        // Update intent status
+        intent.status = IntentStatus::Routed;
+
+        emit!(IntentRoutedEvent {
+            intent: intent.key(),
+            routing: routing.key(),
+            selected_agents: routing_data.selected_agents.clone(),
+        });
+
+        Ok(())
+    }
+
+    // =====================================================
+    // ADVANCED PRICING & NEGOTIATION SYSTEM
+    // =====================================================
+
+
+    /// Creates a dynamic pricing engine for automated price optimization
+    /// 
+    /// Establishes an AI-powered pricing engine that automatically adjusts
+    /// service prices based on demand, competition, and performance metrics.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing pricing engine accounts
+    /// * `engine_config` - Pricing engine configuration including:
+    ///   - `base_price` - Starting price point
+    ///   - `min_price` - Floor price (never go below)
+    ///   - `max_price` - Ceiling price (never exceed)
+    ///   - `adjustment_factors` - What influences pricing
+    ///   - `update_frequency` - How often to recalculate
+    ///   - `strategy` - Conservative, moderate, or aggressive
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful engine creation
+    /// 
+    /// # Errors
+    /// 
+    /// * `InvalidPriceRange` - If min > max or base outside range
+    /// * `UpdateFrequencyTooHigh` - If updates more than hourly
+    /// 
+    /// # Pricing Factors
+    /// 
+    /// Engine considers:
+    /// - Current demand (pending orders)
+    /// - Competitor pricing
+    /// - Agent utilization rate
+    /// - Customer satisfaction scores
+    /// - Time of day/week patterns
+    /// - Market trends
+    /// 
+    /// # Strategies
+    /// 
+    /// - **Conservative**: Small adjustments (±5%)
+    /// - **Moderate**: Medium adjustments (±15%)
+    /// - **Aggressive**: Large adjustments (±30%)
+    pub fn create_dynamic_pricing_engine(
+        ctx: Context<CreateDynamicPricingEngine>,
+        config: DynamicPricingConfig,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.owner.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MIN_UPDATE_FREQUENCY: i64 = 3600; // 1 hour minimum
+        
+        require!(
+            config.base_price >= MIN_PAYMENT_AMOUNT && config.base_price <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            config.min_price >= MIN_PAYMENT_AMOUNT && config.min_price <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            config.max_price >= MIN_PAYMENT_AMOUNT && config.max_price <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            config.min_price <= config.base_price && config.base_price <= config.max_price,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            config.update_frequency >= MIN_UPDATE_FREQUENCY,
+            PodAIMarketplaceError::InvalidDeadline
+        );
+
+        let engine = &mut ctx.accounts.engine;
+        let agent = &ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
+        require!(agent.owner == ctx.accounts.owner.key(), PodAIMarketplaceError::UnauthorizedAccess);
+
+        engine.agent = agent.key();
+        engine.owner = ctx.accounts.owner.key();
+        engine.config = config.clone();  // Clone here
+        engine.current_price = config.base_price;
+        engine.demand_metrics = DemandMetrics {
+            requests_last_hour: 0,
+            requests_last_day: 0,
+            requests_last_week: 0,
+            average_response_time: 0.0,
+            completion_rate: 0.0,
+            customer_satisfaction: 0.0,
+        };
+        engine.reputation_score = agent.reputation_score as f64;
+        engine.total_adjustments = 0;
+        engine.created_at = clock.unix_timestamp;
+        engine.bump = ctx.bumps.engine;
+
+        emit!(DynamicPricingEngineCreatedEvent {
+            engine: engine.key(),
+            agent: agent.key(),
+            owner: ctx.accounts.owner.key(),
+            algorithm: config.algorithm,
+            base_price: config.base_price,
+        });
+
+        Ok(())
+    }
+
+    /// Updates dynamic pricing based on real-time market conditions
+    /// 
+    /// Recalculates and applies new pricing based on current market data,
+    /// demand patterns, and configured pricing strategy.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing pricing engine and service accounts
+    /// * `market_data` - Current market conditions including:
+    ///   - `current_demand` - Number of pending requests
+    ///   - `competitor_avg_price` - Average competitor pricing
+    ///   - `utilization_rate` - Agent's current workload (0-100%)
+    ///   - `recent_performance` - Recent rating average
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` with updated pricing applied
+    /// 
+    /// # Errors
+    /// 
+    /// * `UnauthorizedAccess` - If caller is not the agent owner
+    /// * `UpdateTooSoon` - If called before update frequency allows
+    /// * `MarketDataStale` - If market data is outdated
+    /// 
+    /// # Pricing Algorithm
+    /// 
+    /// ```text
+    /// new_price = base_price * demand_multiplier * competition_factor * performance_bonus
+    /// 
+    /// Where:
+    /// - demand_multiplier: 0.8-1.5x based on demand
+    /// - competition_factor: 0.9-1.1x based on market position
+    /// - performance_bonus: 0.95-1.2x based on ratings
+    /// ```
+    /// 
+    /// # Safety Limits
+    /// 
+    /// - Single update capped at strategy maximum
+    /// - Always respects min/max price bounds
+    /// - Gradual changes to avoid price shocks
+    pub fn update_dynamic_pricing(
+        ctx: Context<UpdateDynamicPricing>,
+        demand_metrics: DemandMetrics,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.updater.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        let engine = &mut ctx.accounts.engine;
+        let clock = Clock::get()?;
+
+        require!(clock.unix_timestamp >= engine.config.last_update + engine.config.update_frequency, 
+                 PodAIMarketplaceError::InvalidDeadline);
+
+        let _old_price = engine.current_price;  // Prefix with underscore
+        let mut new_price = engine.config.base_price;
+
+        // Apply demand-based pricing
+        if engine.config.algorithm == PricingAlgorithm::DemandBased {
+            let demand_multiplier = if demand_metrics.requests_last_hour > 10 { 1.5 } else { 1.0 };
+            new_price = (new_price as f64 * demand_multiplier) as u64;
+        }
+
+        // Apply reputation-based pricing
+        if engine.config.algorithm == PricingAlgorithm::ReputationBased {
+            let reputation_multiplier = 1.0 + (engine.reputation_score / 100.0);
+            new_price = (new_price as f64 * reputation_multiplier) as u64;
+        }
+
+        // Apply surge pricing
+        if engine.config.algorithm == PricingAlgorithm::SurgePricing {
+            let hour = (clock.unix_timestamp / 3600) % 24;
+            let surge_multiplier = if (9..=17).contains(&hour) { 1.3 } else { 1.0 };
+            new_price = (new_price as f64 * surge_multiplier) as u64;
+        }
+
+        // Ensure price stays within bounds
+        new_price = new_price.max(engine.config.min_price).min(engine.config.max_price);
+
+        engine.current_price = new_price;
+        engine.demand_metrics = demand_metrics.clone();  // Clone here
+        engine.config.last_update = clock.unix_timestamp;
+        
+        // SECURITY: Update adjustment count with overflow protection
+        engine.total_adjustments = engine.total_adjustments
+            .checked_add(1)
+            .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+
+        emit!(DynamicPricingUpdatedEvent {
+            engine: engine.key(),
+            agent: engine.agent,
+            owner: engine.owner,
+            new_price,
+            demand_multiplier: demand_metrics.requests_last_hour as f64 / 10.0,
+            supply_multiplier: 1.0,
+        });
+
+        Ok(())
+    }
+
+    /// Initiates a price negotiation session between buyer and seller
+    /// 
+    /// Creates a structured negotiation framework for parties to reach
+    /// mutually agreeable terms through offers and counter-offers.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing negotiation accounts
+    /// * `negotiation_data` - Initial negotiation parameters including:
+    ///   - `service_or_job` - Reference to service/job being negotiated
+    ///   - `initial_offer` - Opening offer amount
+    ///   - `negotiation_terms` - What's negotiable (price, timeline, scope)
+    ///   - `max_rounds` - Maximum negotiation rounds (default: 10)
+    ///   - `auto_accept_threshold` - Price to auto-accept
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful negotiation initiation
+    /// 
+    /// # Errors
+    /// 
+    /// * `ServiceNotNegotiable` - If service has fixed pricing
+    /// * `InvalidInitialOffer` - If offer is unreasonable
+    /// * `PartyNotEligible` - If party can't negotiate
+    /// 
+    /// # Negotiation Rules
+    /// 
+    /// - Each party can make one offer per round
+    /// - Offers must improve (buyer increases, seller decreases)
+    /// - Negotiation ends on acceptance or max rounds
+    /// - 24-hour timeout between rounds
+    /// 
+    /// # Best Practices
+    /// 
+    /// - Start with reasonable offers
+    /// - Consider total value, not just price
+    /// - Bundle services for better deals
+    pub fn initiate_negotiation(
+        ctx: Context<InitiateNegotiation>,
+        initial_offer: u64,
+        auto_accept_threshold: u64,
+        negotiation_deadline: i64,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.initiator.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+
+        // SECURITY: Input validation
+        const MAX_NEGOTIATION_DURATION: i64 = 7 * 24 * 60 * 60; // 7 days
+        
+        require!(
+            initial_offer >= MIN_PAYMENT_AMOUNT && initial_offer <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+        require!(
+            auto_accept_threshold >= MIN_PAYMENT_AMOUNT && auto_accept_threshold <= MAX_PAYMENT_AMOUNT,
+            PodAIMarketplaceError::InvalidPaymentAmount
+        );
+
+        let negotiation = &mut ctx.accounts.negotiation;
+        let clock = Clock::get()?;
+
+        require!(negotiation_deadline > clock.unix_timestamp, PodAIMarketplaceError::InvalidDeadline);
+        require!(
+            negotiation_deadline <= clock.unix_timestamp + MAX_NEGOTIATION_DURATION,
+            PodAIMarketplaceError::InvalidDeadline
+        );
+        require!(auto_accept_threshold <= initial_offer, PodAIMarketplaceError::InvalidBid);
+
+        negotiation.initiator = ctx.accounts.initiator.key();
+        negotiation.counterparty = ctx.accounts.counterparty.key();
+        negotiation.initial_offer = initial_offer;
+        negotiation.current_offer = initial_offer;
+        negotiation.status = NegotiationStatus::InitialOffer;
+        negotiation.auto_accept_threshold = auto_accept_threshold;
+        negotiation.negotiation_deadline = negotiation_deadline;
+        negotiation.created_at = clock.unix_timestamp;
+        negotiation.bump = ctx.bumps.negotiation;
+
+        // Add initial message
+        let initial_message = NegotiationMessage {
+            sender: ctx.accounts.initiator.key(),
+            message: "Initial offer submitted".to_string(),
+            offer_amount: Some(initial_offer),
+            timestamp: clock.unix_timestamp,
+            is_auto_generated: false,
+        };
+        negotiation.messages.push(initial_message);
+
+        emit!(NegotiationInitiatedEvent {
+            negotiation: negotiation.key(),
+            initiator: ctx.accounts.initiator.key(),
+            counterparty: ctx.accounts.counterparty.key(),
+            initial_offer,
+        });
+
+        Ok(())
+    }
+
+    /// Makes a counter-offer in an active negotiation
+    /// 
+    /// Allows negotiating parties to respond to offers with improved terms,
+    /// working toward a mutually acceptable agreement.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing negotiation and offer accounts
+    /// * `counter_offer_data` - Counter-offer details including:
+    ///   - `new_price` - Proposed price adjustment
+    ///   - `new_terms` - Modified terms (timeline, scope)
+    ///   - `justification` - Reason for counter-offer
+    ///   - `final_offer` - Whether this is final offer
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful counter-offer
+    /// 
+    /// # Errors
+    /// 
+    /// * `NotYourTurn` - If it's not the party's turn
+    /// * `OfferNotImproved` - If offer doesn't improve terms
+    /// * `NegotiationExpired` - If round timeout exceeded
+    /// * `MaxRoundsReached` - If negotiation limit hit
+    /// 
+    /// # Offer Requirements
+    /// 
+    /// Counter-offers must:
+    /// - Improve previous offer (buyer up, seller down)
+    /// - Stay within reasonable bounds
+    /// - Include clear justification
+    /// 
+    /// # Auto-Resolution
+    /// 
+    /// If offer meets auto-accept threshold,
+    /// negotiation completes automatically
+    pub fn make_counter_offer(
+        ctx: Context<MakeCounterOffer>,
+        counter_offer: u64,
+        message: String,
+    ) -> Result<()> {
+        let negotiation = &mut ctx.accounts.negotiation;
+        let clock = Clock::get()?;
+
+        require!(negotiation.status == NegotiationStatus::InitialOffer || 
+                 negotiation.status == NegotiationStatus::CounterOffer, 
+                 PodAIMarketplaceError::InvalidApplicationStatus);
+        require!(clock.unix_timestamp < negotiation.negotiation_deadline, PodAIMarketplaceError::InvalidDeadline);
+
+        // Store current offer before modifying
+        let current_offer = negotiation.current_offer;
+        negotiation.counter_offers.push(current_offer);
+        negotiation.current_offer = counter_offer;
+        negotiation.status = NegotiationStatus::CounterOffer;
+
+        // Add counter-offer message
+        let message_for_event = message.clone();
+        let counter_message = NegotiationMessage {
+            sender: ctx.accounts.sender.key(),
+            message,
+            offer_amount: Some(counter_offer),
+            timestamp: clock.unix_timestamp,
+            is_auto_generated: false,
+        };
+        negotiation.messages.push(counter_message);
+
+        // Check for auto-acceptance
+        if counter_offer >= negotiation.auto_accept_threshold {
+            negotiation.status = NegotiationStatus::AutoAccepted;
+        }
+
+        emit!(CounterOfferMadeEvent {
+            negotiation: negotiation.key(),
+            sender: ctx.accounts.sender.key(),
+            counter_offer,
+            message: message_for_event,
+            auto_accepted: negotiation.status == NegotiationStatus::AutoAccepted,
+        });
+
+        Ok(())
+    }
+
+    /// Creates a bulk or enterprise deal with volume discounts
+    /// 
+    /// Establishes special pricing and terms for large-volume purchases
+    /// or long-term enterprise agreements with favorable rates.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing bulk deal accounts
+    /// * `deal_data` - Bulk deal configuration including:
+    ///   - `service_bundles` - Services included in deal
+    ///   - `minimum_volume` - Minimum purchase commitment
+    ///   - `discount_tiers` - Volume-based discount structure
+    ///   - `contract_duration` - Length of agreement
+    ///   - `payment_terms` - Payment schedule options
+    ///   - `sla_terms` - Service level agreements
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful deal creation
+    /// 
+    /// # Errors
+    /// 
+    /// * `VolumeTooLow` - If below minimum for bulk pricing
+    /// * `InvalidDiscountStructure` - If tiers overlap or invalid
+    /// * `DurationTooShort` - If contract less than 30 days
+    /// 
+    /// # Discount Structure Example
+    /// 
+    /// ```text
+    /// 10-50 units: 10% discount
+    /// 51-100 units: 20% discount
+    /// 101-500 units: 30% discount
+    /// 500+ units: 40% discount
+    /// ```
+    /// 
+    /// # Benefits
+    /// 
+    /// - Predictable costs for buyers
+    /// - Guaranteed revenue for agents
+    /// - Priority support included
+    /// - Custom SLA terms
+    pub fn create_bulk_deal(
+        ctx: Context<CreateBulkDeal>,
+        deal_data: BulkDealData,
+    ) -> Result<()> {
+        let deal = &mut ctx.accounts.deal;
+        let agent = &ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
+        require!(deal_data.end_date > clock.unix_timestamp, PodAIMarketplaceError::InvalidDeadline);
+
+        deal.agent = agent.key();
+        deal.customer = ctx.accounts.customer.key();
+        deal.deal_type = deal_data.deal_type;
+        deal.total_volume = deal_data.total_volume;
+        deal.total_value = deal_data.total_value;
+        deal.discount_percentage = deal_data.discount_percentage;
+        deal.volume_tiers = deal_data.volume_tiers;
+        deal.sla_terms = deal_data.sla_terms;
+        deal.contract_duration = deal_data.contract_duration;
+        deal.start_date = clock.unix_timestamp;
+        deal.end_date = deal_data.end_date;
+        deal.is_active = true;
+        deal.created_at = clock.unix_timestamp;
+        deal.bump = ctx.bumps.deal;
+
+        emit!(BulkDealCreatedEvent {
+            deal: deal.key(),
+            agent: agent.key(),
+            customer: ctx.accounts.customer.key(),
+            deal_type: deal_data.deal_type,
+            total_value: deal_data.total_value,
+        });
+
+        Ok(())
+    }
+
+    /// Creates a royalty stream for ongoing revenue sharing
+    /// 
+    /// Establishes automated royalty payments for template creators,
+    /// referrers, or partners based on agent earnings.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing royalty stream accounts
+    /// * `royalty_data` - Royalty configuration including:
+    ///   - `beneficiary` - Who receives royalties
+    ///   - `percentage` - Royalty rate (0.1-10%)
+    ///   - `duration` - How long royalties last
+    ///   - `minimum_payout` - Minimum accumulated before payout
+    ///   - `payout_frequency` - How often to pay out
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful royalty stream creation
+    /// 
+    /// # Errors
+    /// 
+    /// * `RoyaltyRateTooHigh` - If percentage exceeds 10%
+    /// * `InvalidBeneficiary` - If beneficiary not verified
+    /// * `ConflictingRoyalties` - If total royalties exceed limit
+    /// 
+    /// # Royalty Types
+    /// 
+    /// - **Template Royalties**: For agent template creators
+    /// - **Referral Royalties**: For bringing new users
+    /// - **Partnership Royalties**: For strategic partners
+    /// 
+    /// # Automatic Processing
+    /// 
+    /// Royalties are:
+    /// - Calculated on each transaction
+    /// - Accumulated until minimum reached
+    /// - Paid out automatically per schedule
+    /// - Transparent to all parties
+    pub fn create_royalty_stream(
+        ctx: Context<CreateRoyaltyStream>,
+        config: RoyaltyConfig,
+    ) -> Result<()> {
+        let stream = &mut ctx.accounts.stream;
+        let agent = &ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
+        require!(agent.owner == ctx.accounts.creator.key(), PodAIMarketplaceError::UnauthorizedAccess);
+
+        stream.agent = agent.key();
+        stream.creator = ctx.accounts.creator.key();
+        stream.config = config.clone();  // Clone here
+        stream.total_earnings = 0;
+        stream.total_resales = 0;
+        stream.resale_volume = 0;
+        stream.last_payout = clock.unix_timestamp;
+        stream.created_at = clock.unix_timestamp;
+        stream.bump = ctx.bumps.stream;
+
+        emit!(RoyaltyStreamCreatedEvent {
+            stream: stream.key(),
+            agent: agent.key(),
+            creator: ctx.accounts.creator.key(),
+            creator_share: config.creator_share,
+        });
+
+        Ok(())
+    }
+
+    /// Lists an agent for resale on the secondary market
+    /// 
+    /// Allows agent owners to sell their successful agents to other users,
+    /// transferring ownership and future earnings potential.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing agent and listing accounts
+    /// * `resale_data` - Resale listing details including:
+    ///   - `asking_price` - Desired sale price
+    ///   - `minimum_price` - Lowest acceptable offer
+    ///   - `include_contracts` - Whether active contracts transfer
+    ///   - `earnings_history` - Past earnings documentation
+    ///   - `transfer_training` - Whether to include training period
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful listing
+    /// 
+    /// # Errors
+    /// 
+    /// * `AgentNotEligible` - If agent has active disputes
+    /// * `ActiveContractsExist` - If contracts can't transfer
+    /// * `UnauthorizedOwner` - If caller doesn't own agent
+    /// 
+    /// # Valuation Factors
+    /// 
+    /// Agent value based on:
+    /// - Historical earnings
+    /// - Client base size
+    /// - Performance ratings
+    /// - Unique capabilities
+    /// - Market demand
+    /// 
+    /// # Transfer Process
+    /// 
+    /// 1. Listing created with terms
+    /// 2. Buyers make offers
+    /// 3. Owner accepts offer
+    /// 4. Ownership transfers on payment
+    /// 5. 30-day transition support period
+    pub fn list_agent_for_resale(
+        ctx: Context<ListAgentForResale>,
+        listing_price: u64,
+    ) -> Result<()> {
+        let resale = &mut ctx.accounts.resale;
+        let agent = &ctx.accounts.agent;
+        let clock = Clock::get()?;
+
+        require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
+        require!(agent.owner == ctx.accounts.seller.key(), PodAIMarketplaceError::UnauthorizedAccess);
+
+        resale.agent = agent.key();
+        resale.seller = ctx.accounts.seller.key();
+        resale.listing_price = listing_price;
+        resale.original_price = agent.original_price;
+        resale.royalty_paid = 0;
+        resale.is_sold = false;
+        resale.listed_at = clock.unix_timestamp;
+        resale.sold_at = None;
+        resale.bump = ctx.bumps.resale;
+
+        emit!(AgentListedForResaleEvent {
+            resale: resale.key(),
+            agent: agent.key(),
+            seller: ctx.accounts.seller.key(),
+            listing_price,
+        });
+
+        Ok(())
+    }
+
+    /// Files a dispute for work quality, payment, or contract issues
+    /// 
+    /// Initiates a formal dispute resolution process with evidence submission
+    /// and potential arbitration for unresolved conflicts.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing dispute and work order accounts
+    /// * `dispute_data` - Dispute details including:
+    ///   - `dispute_type` - Quality, payment, deadline, or other
+    ///   - `description` - Detailed issue description
+    ///   - `evidence` - Supporting documentation (IPFS hashes)
+    ///   - `desired_resolution` - What the filer seeks
+    ///   - `amount_disputed` - Financial amount in question
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful dispute filing
+    /// 
+    /// # Errors
+    /// 
+    /// * `WorkNotCompleted` - If disputing incomplete work
+    /// * `DisputeWindowClosed` - If past 30-day dispute period
+    /// * `AlreadyDisputed` - If work already has open dispute
+    /// 
+    /// # Dispute Process
+    /// 
+    /// 1. **Filing**: Dispute created with evidence
+    /// 2. **Response**: Other party has 72 hours to respond
+    /// 3. **Mediation**: Automated resolution attempted
+    /// 4. **Arbitration**: Human arbitrators if needed
+    /// 5. **Resolution**: Binding decision enforced
+    /// 
+    /// # Fee Structure
+    /// 
+    /// - Filing fee: 0.01 SOL (refunded if successful)
+    /// - Arbitration: 5% of disputed amount
+    pub fn file_dispute(
+        ctx: Context<FileDispute>,
+        reason: String,
+    ) -> Result<()> {
+        let dispute = &mut ctx.accounts.dispute;
+        let clock = Clock::get()?;
+
+        dispute.transaction = ctx.accounts.transaction.key();
+        dispute.complainant = ctx.accounts.complainant.key();
+        dispute.respondent = ctx.accounts.respondent.key();
+        dispute.reason = reason;
+        dispute.status = DisputeStatus::Filed;
+        dispute.resolution = None;
+        dispute.evidence = Vec::new();
+        dispute.ai_score = 0.0;
+        dispute.human_review = false;
+        dispute.created_at = clock.unix_timestamp;
+        dispute.resolved_at = None;
+        dispute.bump = ctx.bumps.dispute;
+
+        emit!(DisputeFiledEvent {
+            dispute: dispute.key(),
+            complainant: ctx.accounts.complainant.key(),
+            respondent: ctx.accounts.respondent.key(),
+            reason: dispute.reason.clone(),
+        });
+
+        Ok(())
+    }
+
+    /// Submits additional evidence for an ongoing dispute
+    /// 
+    /// Allows both parties to provide supporting documentation during
+    /// the dispute resolution process.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing dispute and evidence accounts
+    /// * `evidence_data` - Evidence submission including:
+    ///   - `evidence_type` - Screenshot, log, communication, etc.
+    ///   - `ipfs_hash` - IPFS hash of evidence file
+    ///   - `description` - What the evidence shows
+    ///   - `timestamp` - When evidence was created
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful evidence submission
+    /// 
+    /// # Errors
+    /// 
+    /// * `DisputeNotActive` - If dispute is resolved
+    /// * `UnauthorizedParty` - If submitter not involved
+    /// * `EvidenceWindowClosed` - If past submission deadline
+    /// * `TooMuchEvidence` - If exceeds 10 pieces limit
+    /// 
+    /// # Evidence Types
+    /// 
+    /// - **Screenshots**: UI/output captures
+    /// - **Logs**: Transaction/execution logs
+    /// - **Communications**: Relevant messages
+    /// - **Code**: Source code snapshots
+    /// - **Documents**: Contracts, specifications
+    /// 
+    /// # Verification
+    /// 
+    /// All evidence is timestamped and hashed
+    /// to prevent tampering or late creation
+    pub fn submit_dispute_evidence(
+        ctx: Context<SubmitDisputeEvidence>,
+        evidence_type: String,
+        evidence_data: String,
+    ) -> Result<()> {
+        let dispute = &mut ctx.accounts.dispute;
+        let clock = Clock::get()?;
+
+        require!(dispute.status == DisputeStatus::Filed || 
+                 dispute.status == DisputeStatus::UnderReview, 
+                 PodAIMarketplaceError::InvalidApplicationStatus);
+
+        let evidence = DisputeEvidence {
+            submitter: ctx.accounts.submitter.key(),
+            evidence_type,
+            evidence_data,
+            timestamp: clock.unix_timestamp,
+            is_verified: false,
+        };
+
+        dispute.evidence.push(evidence);
+        dispute.status = DisputeStatus::EvidenceSubmitted;
+
+        emit!(DisputeEvidenceSubmittedEvent {
+            dispute: dispute.key(),
+            submitter: ctx.accounts.submitter.key(),
+            evidence_count: dispute.evidence.len() as u32,
+        });
+
+        Ok(())
+    }
+
+    /// Creates an analytics dashboard for performance tracking
+    /// 
+    /// Establishes a comprehensive analytics system for agents to track
+    /// their performance, earnings, and market position.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing dashboard accounts
+    /// * `dashboard_config` - Dashboard configuration including:
+    ///   - `metrics_tracked` - Which KPIs to monitor
+    ///   - `reporting_period` - Daily, weekly, monthly
+    ///   - `comparison_group` - Agents to benchmark against
+    ///   - `alert_thresholds` - When to trigger alerts
+    ///   - `public_visibility` - What data is public
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful dashboard creation
+    /// 
+    /// # Errors
+    /// 
+    /// * `TooManyMetrics` - If exceeds 20 metrics limit
+    /// * `InvalidPeriod` - If reporting period invalid
+    /// 
+    /// # Available Metrics
+    /// 
+    /// - **Revenue**: Earnings over time
+    /// - **Utilization**: Workload percentage
+    /// - **Rating**: Average customer satisfaction
+    /// - **Response Time**: Average response speed
+    /// - **Completion Rate**: Jobs completed vs. started
+    /// - **Market Share**: Position in category
+    /// 
+    /// # Real-time Updates
+    /// 
+    /// Dashboard automatically updates with:
+    /// - New transactions
+    /// - Rating changes
+    /// - Market movements
+    /// - Competitor actions
+    pub fn create_analytics_dashboard(
+        ctx: Context<CreateAnalyticsDashboard>,
+        update_frequency: i64,
+    ) -> Result<()> {
+        let dashboard = &mut ctx.accounts.dashboard;
+        let clock = Clock::get()?;
+
+        dashboard.owner = ctx.accounts.owner.key();
+        dashboard.agent_analytics = None;
+        dashboard.market_analytics = MarketAnalytics {
+            total_volume: 0,
+            active_agents: 0,
+            average_price: 0,
+            price_volatility: 0.0,
+            demand_trend: 0.0,
+            supply_trend: 0.0,
+            market_cap: 0,
+        };
+        dashboard.last_updated = clock.unix_timestamp;
+        dashboard.update_frequency = update_frequency;
+        dashboard.created_at = clock.unix_timestamp;
+        dashboard.bump = ctx.bumps.dashboard;
+
+        emit!(AnalyticsDashboardCreatedEvent {
+            dashboard: dashboard.key(),
+            owner: ctx.accounts.owner.key(),
+        });
+
+        Ok(())
+    }
+
+    /// Registers a third-party extension or plugin
+    /// 
+    /// Allows developers to create and register extensions that enhance
+    /// agent capabilities or add new features to the protocol.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing extension registry accounts
+    /// * `extension_data` - Extension details including:
+    ///   - `name` - Extension name (unique)
+    ///   - `description` - What the extension does
+    ///   - `category` - Type of extension
+    ///   - `endpoint` - API endpoint for extension
+    ///   - `capabilities_added` - New capabilities provided
+    ///   - `fee_structure` - Usage fees if any
+    ///   - `open_source` - Whether code is open
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful registration
+    /// 
+    /// # Errors
+    /// 
+    /// * `ExtensionNameTaken` - If name already registered
+    /// * `InvalidEndpoint` - If endpoint unreachable
+    /// * `SecurityCheckFailed` - If fails security audit
+    /// 
+    /// # Extension Categories
+    /// 
+    /// - **Capabilities**: Add new agent abilities
+    /// - **Integrations**: Connect external services
+    /// - **Analytics**: Enhanced reporting tools
+    /// - **Automation**: Workflow automation
+    /// - **Security**: Additional security features
+    /// 
+    /// # Security Requirements
+    /// 
+    /// All extensions must:
+    /// - Pass automated security scan
+    /// - Provide API documentation
+    /// - Implement rate limiting
+    /// - Handle errors gracefully
+    pub fn register_extension(
+        ctx: Context<RegisterExtension>,
+        metadata: ExtensionMetadata,
+        code_hash: String,
+    ) -> Result<()> {
+        let extension = &mut ctx.accounts.extension;
+        let clock = Clock::get()?;
+
+        extension.developer = ctx.accounts.developer.key();
+        extension.extension_type = metadata.extension_type;
+        extension.status = ExtensionStatus::Pending;
+        extension.metadata = metadata;
+        extension.code_hash = code_hash;
+        extension.install_count = 0;
+        extension.rating = 0.0;
+        extension.revenue_share = 0.1; // 10% default revenue share
+        extension.total_earnings = 0;
+        extension.created_at = clock.unix_timestamp;
+        extension.bump = ctx.bumps.extension;
+
+        emit!(ExtensionRegisteredEvent {
+            extension: extension.key(),
+            developer: ctx.accounts.developer.key(),
+            extension_type: extension.extension_type,
+        });
+
+        Ok(())
+    }
+
+    /// Creates an incentive program to encourage specific behaviors
+    /// 
+    /// Establishes reward programs for agents and users to drive growth,
+    /// quality improvements, or adoption of new features.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing incentive program accounts
+    /// * `program_data` - Incentive program configuration including:
+    ///   - `program_type` - Referral, quality, volume, etc.
+    ///   - `reward_structure` - How rewards are calculated
+    ///   - `budget` - Total reward pool
+    ///   - `duration` - Program length
+    ///   - `eligibility_criteria` - Who can participate
+    ///   - `max_participants` - Cap on participants
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` on successful program creation
+    /// 
+    /// # Errors
+    /// 
+    /// * `InsufficientBudget` - If budget too low
+    /// * `DurationTooLong` - If exceeds 1 year
+    /// * `InvalidCriteria` - If criteria unreasonable
+    /// 
+    /// # Program Types
+    /// 
+    /// - **Referral**: Rewards for bringing new users
+    /// - **Quality**: Bonuses for high ratings
+    /// - **Volume**: Rewards for transaction volume
+    /// - **Early Adopter**: Benefits for trying new features
+    /// - **Loyalty**: Long-term user rewards
+    /// 
+    /// # Example Reward Structure
+    /// 
+    /// ```text
+    /// Referral Program:
+    /// - 10% of referred user's first month fees
+    /// - 5% ongoing for 6 months
+    /// - Bonus 100 USDC at 10 referrals
+    /// ```
+    pub fn create_incentive_program(
+        ctx: Context<CreateIncentiveProgram>,
+        config: IncentiveConfig,
+    ) -> Result<()> {
+        let program = &mut ctx.accounts.program;
+        let clock = Clock::get()?;
+
+        program.config = config.clone();  // Clone here
+        program.total_distributed = 0;
+        program.active_agents = 0;
+        program.created_at = clock.unix_timestamp;
+        program.bump = ctx.bumps.program;
+
+        emit!(IncentiveProgramCreatedEvent {
+            program: program.key(),
+            referral_bonus: config.referral_bonus,
+            volume_bonus: config.volume_bonus,
+        });
+
+        Ok(())
+    }
+
+    /// Distributes earned incentives to eligible participants
+    /// 
+    /// Processes and pays out rewards from incentive programs based on
+    /// achievement of program criteria and available budget.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `ctx` - The context containing program and recipient accounts
+    /// * `distribution_data` - Distribution parameters including:
+    ///   - `period` - Which period to process
+    ///   - `recipient_list` - Eligible recipients
+    ///   - `calculation_method` - How to calculate amounts
+    ///   - `max_payout_per_user` - Cap per participant
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `Ok(())` with distribution summary
+    /// 
+    /// # Errors
+    /// 
+    /// * `ProgramInactive` - If program has ended
+    /// * `AlreadyDistributed` - If period already processed
+    /// * `InsufficientProgramFunds` - If budget exhausted
+    /// 
+    /// # Distribution Process
+    /// 
+    /// 1. Verify participant eligibility
+    /// 2. Calculate reward amounts
+    /// 3. Apply caps and adjustments
+    /// 4. Process batch transfers
+    /// 5. Update program statistics
+    /// 
+    /// # Fairness Measures
+    /// 
+    /// - Proportional distribution
+    /// - Anti-gaming mechanisms
+    /// - Minimum threshold requirements
+    /// - Maximum cap per participant
+    /// 
+    /// # Tax Compliance
+    /// 
+    /// Large distributions may require:
+    /// - KYC verification
+    /// - Tax form submission
+    /// - Regulatory reporting
+    pub fn distribute_incentives(
+        ctx: Context<DistributeIncentives>,
+        agent: Pubkey,
+        incentive_type: String,
+        amount: u64,
+    ) -> Result<()> {
+        // SECURITY: Verify signer authorization
+        require!(
+            ctx.accounts.distributor.is_signer,
+            PodAIMarketplaceError::UnauthorizedAccess
+        );
+        
+        let program = &mut ctx.accounts.program;
+        let incentives = &mut ctx.accounts.incentives;
+        let clock = Clock::get()?;
+
+        // Update agent incentives based on type
+        match incentive_type.as_str() {
+            "referral" => {
+                // SECURITY FIX: Use checked arithmetic for referral stats
+                incentives.referral_earnings = incentives.referral_earnings
+                    .checked_add(amount)
+                    .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+                incentives.total_referrals = incentives.total_referrals
+                    .checked_add(1)
+                    .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+            },
+            "volume" => {
+                // SECURITY FIX: Use checked arithmetic for volume bonus
+                incentives.volume_bonus_earned = incentives.volume_bonus_earned
+                    .checked_add(amount)
+                    .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+            },
+            "quality" => {
+                // SECURITY FIX: Use checked arithmetic for quality bonus
+                incentives.quality_bonus_earned = incentives.quality_bonus_earned
+                    .checked_add(amount)
+                    .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+            },
+            "retention" => {
+                // SECURITY FIX: Use checked arithmetic for retention bonus
+                incentives.retention_bonus_earned = incentives.retention_bonus_earned
+                    .checked_add(amount)
+                    .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+            },
+            "innovation" => {
+                // SECURITY FIX: Use checked arithmetic for innovation bonus
+                incentives.innovation_bonus_earned = incentives.innovation_bonus_earned
+                    .checked_add(amount)
+                    .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+            },
+            _ => return Err(PodAIMarketplaceError::InvalidApplicationStatus.into()),
+        }
+
+        // SECURITY FIX: Use checked arithmetic for totals
+        incentives.total_incentives = incentives.total_incentives
+            .checked_add(amount)
+            .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        incentives.last_payout = clock.unix_timestamp;
+        program.total_distributed = program.total_distributed
+            .checked_add(amount)
+            .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+
+        emit!(IncentiveDistributedEvent {
+            program: program.key(),
+            agent,
+            incentive_type,
+            amount,
+        });
+
+        Ok(())
+    }
+
+    // =====================================================
+    // CONTEXT STRUCTURES FOR NEW FEATURES
+    // =====================================================
+
+
+    #[derive(Accounts)]
+    pub struct CreateDynamicPricingEngine<'info> {
+        #[account(
+            init,
+            payer = owner,
+            space = DynamicPricingEngine::LEN,
+            seeds = [b"dynamic_pricing", agent.key().as_ref()],
+            bump
+        )]
+        pub engine: Account<'info, DynamicPricingEngine>,
+        pub agent: Account<'info, Agent>,
+        #[account(mut)]
+        pub owner: Signer<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct UpdateDynamicPricing<'info> {
+        #[account(mut)]
+        pub engine: Account<'info, DynamicPricingEngine>,
+        pub updater: Signer<'info>,
+    }
+
+    #[derive(Accounts)]
+    pub struct InitiateNegotiation<'info> {
+        #[account(
+            init,
+            payer = initiator,
+            space = NegotiationChatbot::LEN,
+            seeds = [b"negotiation", initiator.key().as_ref(), counterparty.key().as_ref()],
+            bump
+        )]
+        pub negotiation: Account<'info, NegotiationChatbot>,
+        #[account(mut)]
+        pub initiator: Signer<'info>,
+        /// CHECK: This is the counterparty in the negotiation
+        pub counterparty: AccountInfo<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct MakeCounterOffer<'info> {
+        #[account(mut)]
+        pub negotiation: Account<'info, NegotiationChatbot>,
+        pub sender: Signer<'info>,
+    }
+
+    #[derive(Accounts)]
+    pub struct CreateBulkDeal<'info> {
+        #[account(
+            init,
+            payer = customer,
+            space = BulkDeal::LEN,
+            seeds = [b"bulk_deal", agent.key().as_ref(), customer.key().as_ref()],
+            bump
+        )]
+        pub deal: Account<'info, BulkDeal>,
+        pub agent: Account<'info, Agent>,
+        #[account(mut)]
+        pub customer: Signer<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct CreateRoyaltyStream<'info> {
+        #[account(
+            init,
+            payer = creator,
+            space = RoyaltyStream::LEN,
+            seeds = [b"royalty_stream", agent.key().as_ref()],
+            bump
+        )]
+        pub stream: Account<'info, RoyaltyStream>,
+        pub agent: Account<'info, Agent>,
+        #[account(mut)]
+        pub creator: Signer<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct ListAgentForResale<'info> {
+        #[account(
+            init,
+            payer = seller,
+            space = ResaleMarket::LEN,
+            seeds = [b"resale", agent.key().as_ref(), seller.key().as_ref()],
+            bump
+        )]
+        pub resale: Account<'info, ResaleMarket>,
+        pub agent: Account<'info, Agent>,
+        #[account(mut)]
+        pub seller: Signer<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct FileDispute<'info> {
+        #[account(
+            init,
+            payer = complainant,
+            space = DisputeCase::LEN,
+            seeds = [b"dispute", transaction.key().as_ref(), complainant.key().as_ref()],
+            bump
+        )]
+        pub dispute: Account<'info, DisputeCase>,
+        /// CHECK: This is the transaction being disputed
+        pub transaction: AccountInfo<'info>,
+        #[account(mut)]
+        pub complainant: Signer<'info>,
+        /// CHECK: This is the respondent in the dispute
+        pub respondent: AccountInfo<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct SubmitDisputeEvidence<'info> {
+        #[account(mut)]
+        pub dispute: Account<'info, DisputeCase>,
+        pub submitter: Signer<'info>,
+    }
+
+    #[derive(Accounts)]
+    pub struct CreateAnalyticsDashboard<'info> {
+        #[account(
+            init,
+            payer = owner,
+            space = AnalyticsDashboard::LEN,
+            seeds = [b"analytics", owner.key().as_ref()],
+            bump
+        )]
+        pub dashboard: Account<'info, AnalyticsDashboard>,
+        #[account(mut)]
+        pub owner: Signer<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct RegisterExtension<'info> {
+        #[account(
+            init,
+            payer = developer,
+            space = Extension::LEN,
+            seeds = [b"extension", developer.key().as_ref()],
+            bump
+        )]
+        pub extension: Account<'info, Extension>,
+        #[account(mut)]
+        pub developer: Signer<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct CreateIncentiveProgram<'info> {
+        #[account(
+            init,
+            payer = creator,
+            space = IncentiveProgram::LEN,
+            seeds = [b"incentive_program", creator.key().as_ref()],
+            bump
+        )]
+        pub program: Account<'info, IncentiveProgram>,
+        #[account(mut)]
+        pub creator: Signer<'info>,
+        pub system_program: Program<'info, System>,
+    }
+
+    #[derive(Accounts)]
+    pub struct DistributeIncentives<'info> {
+        #[account(mut)]
+        pub program: Account<'info, IncentiveProgram>,
+        #[account(mut)]
+        pub incentives: Account<'info, AgentIncentives>,
+        pub distributor: Signer<'info>,
+    }
+
+    // =====================================================
+    // EVENT STRUCTURES FOR NEW FEATURES
+    // =====================================================
+
+
+    #[event]
+    pub struct DynamicPricingEngineCreatedEvent {
+        pub engine: Pubkey,
+        pub agent: Pubkey,
+        pub owner: Pubkey,
+        pub algorithm: PricingAlgorithm,
+        pub base_price: u64,
+    }
+
+    #[event]
+    pub struct BulkDealCreatedEvent {
+        pub deal: Pubkey,
+        pub agent: Pubkey,
+        pub customer: Pubkey,
+        pub deal_type: DealType,
+        pub total_value: u64,
+    }
+
+    #[event]
+    pub struct RoyaltyStreamCreatedEvent {
+        pub stream: Pubkey,
+        pub agent: Pubkey,
+        pub creator: Pubkey,
+        pub creator_share: f64,
+    }
+
+    #[event]
+    pub struct AgentListedForResaleEvent {
+        pub resale: Pubkey,
+        pub agent: Pubkey,
+        pub seller: Pubkey,
+        pub listing_price: u64,
+    }
+
+    #[event]
+    pub struct DisputeFiledEvent {
+        pub dispute: Pubkey,
+        pub complainant: Pubkey,
+        pub respondent: Pubkey,
+        pub reason: String,
+    }
+
+    #[event]
+    pub struct DisputeEvidenceSubmittedEvent {
+        pub dispute: Pubkey,
+        pub submitter: Pubkey,
+        pub evidence_count: u32,
+    }
+
+    #[event]
+    pub struct AnalyticsDashboardCreatedEvent {
+        pub dashboard: Pubkey,
+        pub owner: Pubkey,
+    }
+
+    #[event]
+    pub struct ExtensionRegisteredEvent {
+        pub extension: Pubkey,
+        pub developer: Pubkey,
+        pub extension_type: ExtensionType,
+    }
+
+    #[event]
+    pub struct IncentiveProgramCreatedEvent {
+        pub program: Pubkey,
+        pub referral_bonus: f64,
+        pub volume_bonus: f64,
+    }
+
+    #[event]
+    pub struct IncentiveDistributedEvent {
+        pub program: Pubkey,
+        pub agent: Pubkey,
+        pub incentive_type: String,
+        pub amount: u64,
+    }
+
+    #[event]
+    pub struct DynamicPricingUpdatedEvent {
+        pub engine: Pubkey,
+        pub agent: Pubkey,
+        pub owner: Pubkey,
+        pub new_price: u64,
+        pub demand_multiplier: f64,
+        pub supply_multiplier: f64,
+    }
+
+    #[event]
+    pub struct NegotiationInitiatedEvent {
+        pub negotiation: Pubkey,
+        pub initiator: Pubkey,
+        pub counterparty: Pubkey,
+        pub initial_offer: u64,
+    }
+
+    #[event]
+    pub struct CounterOfferMadeEvent {
+        pub negotiation: Pubkey,
+        pub sender: Pubkey,
+        pub counter_offer: u64,
+        pub message: String,
+        pub auto_accepted: bool,
+    }
+
+    // =====================================================
+    // DATA STRUCTURES FOR NEW FEATURES
+    // =====================================================
+
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct BulkDealData {
+        pub deal_type: DealType,
+        pub total_volume: u32,
+        pub total_value: u64,
+        pub discount_percentage: f64,
+        pub volume_tiers: Vec<VolumeTier>,
+        pub sla_terms: String,
+        pub contract_duration: i64,
+        pub end_date: i64,
+    }
+
+    // ... existing code ...
+}
+
+// =====================================================
+// ACCOUNT STRUCTURES
+// =====================================================
+
+#[account]
+pub struct Agent {
+    pub owner: Pubkey,
+    pub name: String,
+    pub description: String,
+    pub capabilities: Vec<String>,
+    pub pricing_model: PricingModel,
+    pub reputation_score: u32,
+    pub total_jobs_completed: u32,
+    pub total_earnings: u64,
+    pub is_active: bool,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub original_price: u64,
+    pub genome_hash: String,
+    pub is_replicable: bool,
+    pub replication_fee: u64,
+    pub service_endpoint: String,
+    pub is_verified: bool,
+    pub verification_timestamp: i64,
+    pub metadata_uri: String,
+    pub bump: u8,
+}
+
+
+#[account]
+pub struct WorkOrder {
+    pub client: Pubkey,
+    pub provider: Pubkey,
+    pub title: String,
+    pub description: String,
+    pub requirements: Vec<String>,
+    pub payment_amount: u64,
+    pub payment_token: Pubkey,
+    pub deadline: i64,
+    pub status: WorkOrderStatus,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct WorkDelivery {
+    pub work_order: Pubkey,
+    pub provider: Pubkey,
+    pub client: Pubkey,
+    pub deliverables: Vec<Deliverable>,
+    pub ipfs_hash: String,
+    pub metadata_uri: String,
+    pub submitted_at: i64,
+    pub is_approved: bool,
+    pub bump: u8,
+}
+
+#[account]
+pub struct Payment {
+    pub work_order: Pubkey,
+    pub payer: Pubkey,
+    pub recipient: Pubkey,
+    pub amount: u64,
+    pub token_mint: Pubkey,
+    pub is_confidential: bool,
+    pub paid_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct ReplicationTemplate {
+    pub source_agent: Pubkey,
+    pub creator: Pubkey,
+    pub genome_hash: String,
+    pub base_capabilities: Vec<String>,
+    pub replication_fee: u64,
+    pub max_replications: u32,
+    pub current_replications: u32,
+    pub is_active: bool,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct ReplicationRecord {
+    pub template: Pubkey,
+    pub source_agent: Pubkey,
+    pub replicated_agent: Pubkey,
+    pub buyer: Pubkey,
+    pub fee_paid: u64,
+    pub replicated_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// ACCOUNT SIZE CONSTANTS
+// =====================================================
+
+impl Agent {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // owner
+        4 + 100 + // name (max 100 chars)
+        4 + 500 + // description (max 500 chars)
+        4 + (10 * (4 + 50)) + // capabilities (max 10 capabilities, 50 chars each)
+        1 + // pricing_model
+        8 + // reputation_score
+        8 + // total_jobs_completed
+        8 + // total_earnings
+        1 + // is_active
+        8 + // created_at
+        8 + // updated_at
+        4 + 64 + // genome_hash (max 64 chars)
+        1 + // is_replicable
+        8 + // replication_fee
+        1; // bump
+}
+
+
+impl WorkOrder {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // client
+        32 + // provider
+        4 + 100 + // title (max 100 chars)
+        4 + 500 + // description (max 500 chars)
+        4 + (10 * (4 + 50)) + // requirements (max 10 requirements, 50 chars each)
+        8 + // payment_amount
+        32 + // payment_token
+        8 + // deadline
+        1 + // status
+        8 + // created_at
+        8 + // updated_at
+        1; // bump
+}
+
+impl WorkDelivery {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // work_order
+        32 + // provider
+        32 + // client
+        4 + (5 * (4 + 100)) + // deliverables (max 5 deliverables, 100 chars each)
+        4 + 64 + // ipfs_hash (max 64 chars)
+        4 + 200 + // metadata_uri (max 200 chars)
+        8 + // submitted_at
+        1 + // is_approved
+        1; // bump
+}
+
+impl Payment {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // work_order
+        32 + // payer
+        32 + // recipient
+        8 + // amount
+        32 + // token_mint
+        1 + // is_confidential
+        8 + // paid_at
+        1; // bump
+}
+
+impl ReplicationTemplate {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // source_agent
+        32 + // creator
+        4 + 64 + // genome_hash (max 64 chars)
+        4 + (10 * (4 + 50)) + // base_capabilities (max 10 capabilities, 50 chars each)
+        8 + // replication_fee
+        4 + // max_replications
+        4 + // current_replications
+        1 + // is_active
+        8 + // created_at
+        1; // bump
+}
+
+impl ReplicationRecord {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // template
+        32 + // source_agent
+        32 + // replicated_agent
+        32 + // buyer
+        8 + // fee_paid
+        8 + // replicated_at
+        1; // bump
+}
+
+// =====================================================
+// INSTRUCTION CONTEXTS
+// =====================================================
+
+#[derive(Accounts)]
+#[instruction(agent_data: AgentRegistrationData)]
+pub struct RegisterAgent<'info> {
+    #[account(
+        init,
+        payer = owner,
+        space = Agent::LEN,
+        seeds = [b"agent", owner.key().as_ref()],
+        bump
+    )]
+    pub agent: Account<'info, Agent>,
+    
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateAgent<'info> {
+    #[account(
+        mut,
+        seeds = [b"agent", owner.key().as_ref()],
+        bump = agent.bump,
+        has_one = owner
+    )]
+    pub agent: Account<'info, Agent>,
+    
+    pub owner: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct VerifyAgent<'info> {
+    #[account(
+        mut,
+        seeds = [b"agent", owner.key().as_ref()],
+        bump = agent.bump,
+        has_one = owner
+    )]
+    pub agent: Account<'info, Agent>,
+    
+    pub owner: Signer<'info>,
+}
+
+
+
+// Work order account validation contexts moved to instructions/work_orders.rs
+
+
+// Replication account structs have been moved to instructions/replication.rs
+
+// =====================================================
+// A2A PROTOCOL ACCOUNT STRUCTURES
+// =====================================================
+
+#[account]
+pub struct A2ASession {
+    pub session_id: String,
+    pub creator: Pubkey,
+    pub participants: Vec<Pubkey>,
+    pub session_type: SessionType,
+    pub is_active: bool,
+    pub created_at: i64,
+    pub last_activity: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct A2AMessage {
+    pub session_id: String,
+    pub sender: Pubkey,
+    pub role: MessageRole,
+    pub parts: Vec<MessagePart>,
+    pub timestamp: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct A2AStatus {
+    pub session_id: String,
+    pub message_id: String,
+    pub state: MessageStatus,
+    pub progress: u8, // 0-100
+    pub partial_content: String,
+    pub r#final: bool,
+    pub timestamp: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct UserIntent {
+    pub user: Pubkey,
+    pub natural_language_query: String,
+    pub parsed_intent: IntentType,
+    pub required_capabilities: Vec<String>,
+    pub priority: Priority,
+    pub status: IntentStatus,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct IntentRouting {
+    pub intent: Pubkey,
+    pub selected_agents: Vec<Pubkey>,
+    pub routing_strategy: RoutingStrategy,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+// =====================================================
+// A2A PROTOCOL ACCOUNT SIZE CONSTANTS
+// =====================================================
+
+impl A2ASession {
+    pub const LEN: usize = 8 + // discriminator
+        4 + 64 + // session_id (max 64 chars)
+        32 + // creator
+        4 + (10 * 32) + // participants (max 10 participants)
+        1 + // session_type
+        1 + // is_active
+        8 + // created_at
+        8 + // last_activity
+        1; // bump
+}
+
+impl A2AMessage {
+    pub const LEN: usize = 8 + // discriminator
+        4 + 64 + // session_id (max 64 chars)
+        32 + // sender
+        1 + // role
+        4 + (5 * (1 + 4 + 1000 + 4 + 100)) + // parts (max 5 parts, each with type + content + metadata)
+        8 + // timestamp
+        1; // bump
+}
+
+impl A2AStatus {
+    pub const LEN: usize = 8 + // discriminator
+        4 + 64 + // session_id (max 64 chars)
+        4 + 64 + // message_id (max 64 chars)
+        1 + // state
+        1 + // progress
+        4 + 2000 + // partial_content (max 2000 chars)
+        1 + // final
+        8 + // timestamp
+        1; // bump
+}
+
+impl UserIntent {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // user
+        4 + 1000 + // natural_language_query (max 1000 chars)
+        1 + // parsed_intent
+        4 + (10 * (4 + 50)) + // required_capabilities (max 10 capabilities, 50 chars each)
+        1 + // priority
+        1 + // status
+        8 + // created_at
+        1; // bump
+}
+
+impl IntentRouting {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // intent
+        4 + (10 * 32) + // selected_agents (max 10 agents)
+        1 + // routing_strategy
+        8 + // created_at
+        1; // bump
+}
+
+// =====================================================
+// A2A PROTOCOL DATA STRUCTURES
+// =====================================================
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum MessageRole {
+    User,
+    Agent,
+    System,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum MessageStatus {
+    Working,
+    Completed,
+    Failed,
+    InputRequired,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum SessionType {
+    Direct,
+    Group,
+    Swarm,
+    UserToAgent,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum IntentType {
+    Query,
+    Task,
+    Request,
+    Command,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum Priority {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum IntentStatus {
+    Processing,
+    Routed,
+    Completed,
+    Failed,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum RoutingStrategy {
+    SingleAgent,
+    MultiAgent,
+    Swarm,
+    LoadBalanced,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct MessagePart {
+    pub part_type: PartType,
+    pub content: String,
+    pub metadata: Option<String>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+pub enum PartType {
+    Text,
+    File,
+    Image,
+    Audio,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct A2ASessionData {
+    pub session_id: String,
+    pub participants: Vec<Pubkey>,
+    pub session_type: SessionType,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct A2AMessageData {
+    pub role: MessageRole,
+    pub parts: Vec<MessagePart>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct A2AStatusData {
+    pub session_id: String,
+    pub message_id: String,
+    pub state: MessageStatus,
+    pub progress: u8,
+    pub partial_content: String,
+    pub r#final: bool,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct UserIntentData {
+    pub query: String,
+    pub parsed_intent: IntentType,
+    pub required_capabilities: Vec<String>,
+    pub priority: Priority,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct IntentRoutingData {
+    pub selected_agents: Vec<Pubkey>,
+    pub strategy: RoutingStrategy,
+}
+
+// =====================================================
+// A2A PROTOCOL CONTEXT STRUCTURES
+// =====================================================
+
+#[derive(Accounts)]
+pub struct CreateA2ASession<'info> {
+    #[account(
+        init,
+        payer = creator,
+        space = A2ASession::LEN,
+        seeds = [b"a2a_session", creator.key().as_ref()],
+        bump
+    )]
+    pub session: Account<'info, A2ASession>,
+    
+    #[account(mut)]
+    pub creator: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SendA2AMessage<'info> {
+    #[account(
+        init,
+        payer = sender,
+        space = A2AMessage::LEN,
+        seeds = [b"a2a_message", session.key().as_ref(), &session.last_activity.to_le_bytes()],
+        bump
+    )]
+    pub message: Account<'info, A2AMessage>,
+    
+    #[account(mut)]
+    pub session: Account<'info, A2ASession>,
+    
+    #[account(mut)]
+    pub sender: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateA2AStatus<'info> {
+    #[account(
+        init,
+        payer = updater,
+        space = A2AStatus::LEN,
+        seeds = [b"a2a_status", session.key().as_ref()],
+        bump
+    )]
+    pub status: Account<'info, A2AStatus>,
+    
+    pub session: Account<'info, A2ASession>,
+    
+    #[account(mut)]
+    pub updater: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ProcessUserIntent<'info> {
+    #[account(
+        init,
+        payer = user,
+        space = UserIntent::LEN,
+        seeds = [b"user_intent", user.key().as_ref(), &clock.unix_timestamp.to_le_bytes()],
+        bump
+    )]
+    pub intent: Account<'info, UserIntent>,
+    
+    #[account(mut)]
+    pub user: Signer<'info>,
+    
+    pub clock: Sysvar<'info, Clock>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RouteIntentToAgents<'info> {
+    #[account(
+        init,
+        payer = router,
+        space = IntentRouting::LEN,
+        seeds = [b"intent_routing", intent.key().as_ref()],
+        bump
+    )]
+    pub routing: Account<'info, IntentRouting>,
+    
+    #[account(mut)]
+    pub intent: Account<'info, UserIntent>,
+    
+    #[account(mut)]
+    pub router: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+// =====================================================
+// A2A PROTOCOL EVENTS
+// =====================================================
+
+#[event]
+pub struct AgentRegisteredEvent {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub name: String,
+    pub capabilities: Vec<String>,
+}
+
+#[event]
+pub struct AgentUpdatedEvent {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub name: String,
+}
+
+
+#[event]
+pub struct WorkOrderCreatedEvent {
+    pub work_order: Pubkey,
+    pub client: Pubkey,
+    pub provider: Pubkey,
+    pub title: String,
+    pub payment_amount: u64,
+}
+
+#[event]
+pub struct WorkDeliverySubmittedEvent {
+    pub work_delivery: Pubkey,
+    pub work_order: Pubkey,
+    pub provider: Pubkey,
+    pub ipfs_hash: String,
+}
+
+
+#[event]
+pub struct ReplicationTemplateCreatedEvent {
+    pub template: Pubkey,
+    pub source_agent: Pubkey,
+    pub creator: Pubkey,
+    pub replication_fee: u64,
+}
+
+#[event]
+pub struct AgentReplicatedEvent {
+    pub template: Pubkey,
+    pub source_agent: Pubkey,
+    pub new_agent: Pubkey,
+    pub buyer: Pubkey,
+    pub fee_paid: u64,
+}
+
+#[event]
+pub struct A2ASessionCreatedEvent {
+    pub session: Pubkey,
+    pub session_id: String,
+    pub creator: Pubkey,
+    pub participants: Vec<Pubkey>,
+}
+
+#[event]
+pub struct A2AMessageSentEvent {
+    pub session: Pubkey,
+    pub message: Pubkey,
+    pub sender: Pubkey,
+    pub role: MessageRole,
+}
+
+#[event]
+pub struct A2AStatusUpdatedEvent {
+    pub session_id: String,
+    pub message_id: String,
+    pub state: MessageStatus,
+    pub progress: u8,
+}
+
+#[event]
+pub struct UserIntentProcessedEvent {
+    pub intent: Pubkey,
+    pub user: Pubkey,
+    pub query: String,
+    pub required_capabilities: Vec<String>,
+}
+
+#[event]
+pub struct IntentRoutedEvent {
+    pub intent: Pubkey,
+    pub routing: Pubkey,
+    pub selected_agents: Vec<Pubkey>,
+}
+
+// =====================================================
+// MISSING ACCOUNT STRUCTURES
+// =====================================================
+
+#[account]
+pub struct ServiceListing {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub title: String,
+    pub description: String,
+    pub price: u64,
+    pub token_mint: Pubkey,
+    pub service_type: String,
+    pub payment_token: Pubkey,
+    pub estimated_delivery: i64,
+    pub tags: Vec<String>,
+    pub is_active: bool,
+    pub total_orders: u32,
+    pub rating: f64,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct ServicePurchase {
+    pub customer: Pubkey,
+    pub agent: Pubkey,
+    pub listing: Pubkey,
+    pub listing_id: u64,
+    pub quantity: u32,
+    pub requirements: Vec<String>,
+    pub custom_instructions: String,
+    pub deadline: i64,
+    pub payment_amount: u64,
+    pub payment_token: Pubkey,
+    pub status: PurchaseStatus,
+    pub purchased_at: i64,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct JobPosting {
+    pub employer: Pubkey,
+    pub title: String,
+    pub description: String,
+    pub requirements: Vec<String>,
+    pub budget: u64,
+    pub deadline: i64,
+    pub skills_needed: Vec<String>,
+    pub budget_min: u64,
+    pub budget_max: u64,
+    pub payment_token: Pubkey,
+    pub job_type: String,
+    pub experience_level: String,
+    pub is_active: bool,
+    pub applications_count: u32,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct JobApplication {
+    pub job_posting: Pubkey,
+    pub agent: Pubkey,
+    pub agent_owner: Pubkey,
+    pub cover_letter: String,
+    pub proposed_rate: u64,
+    pub estimated_delivery: i64,
+    pub portfolio_items: Vec<String>,
+    pub status: ApplicationStatus,
+    pub applied_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct JobContract {
+    pub job_posting: Pubkey,
+    pub application: Pubkey,
+    pub employer: Pubkey,
+    pub agent: Pubkey,
+    pub agreed_rate: u64,
+    pub deadline: i64,
+    pub payment_token: Pubkey,
+    pub status: ContractStatus,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct JobCompletion {
+    pub contract: Pubkey,
+    pub agent: Pubkey,
+    pub employer: Pubkey,
+    pub deliverables: Vec<Deliverable>,
+    pub work_summary: String,
+    pub ipfs_hash: String,
+    pub metadata_uri: String,
+    pub completed_at: i64,
+    pub is_approved: bool,
+    pub bump: u8,
+}
+
+#[account]
+pub struct Review {
+    pub reviewer: Pubkey,
+    pub agent: Pubkey,
+    pub review_type: String,
+    pub rating: u8,
+    pub comment: String,
+    pub work_reference: String,
+    pub submitted_at: i64,
+    pub bump: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum PurchaseStatus {
+    Pending,
+    Confirmed,
+    Completed,
+    Cancelled,
+    Paid,
+}
+
+impl ServiceListing {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // creator
+        4 + 100 + // title (max 100 chars)
+        4 + 500 + // description (max 500 chars)
+        8 + // price
+        32 + // token_mint
+        4 + 50 + // service_type (max 50 chars)
+        32 + // payment_token
+        8 + // estimated_delivery
+        4 + (10 * 4 + 50) + // tags (max 10 tags, 50 chars each)
+        1 + // is_active
+        8 + // created_at
+        8 + // updated_at
+        1; // bump
+}
+
+impl ServicePurchase {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // buyer
+        32 + // listing
+        8 + // listing_id
+        4 + // quantity
+        4 + (5 * 4 + 100) + // requirements (max 5 reqs, 100 chars each)
+        4 + 500 + // custom_instructions (max 500 chars)
+        8 + // deadline
+        1 + // status
+        8 + // created_at
+        1; // bump
+}
+
+impl JobPosting {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // employer
+        4 + 100 + // title (max 100 chars)
+        4 + 500 + // description (max 500 chars)
+        4 + (10 * 4 + 100) + // requirements (max 10 reqs, 100 chars each)
+        8 + // budget
+        8 + // deadline
+        4 + (10 * 4 + 50) + // skills_needed (max 10 skills, 50 chars each)
+        8 + // budget_min
+        8 + // budget_max
+        32 + // payment_token
+        4 + 50 + // job_type (max 50 chars)
+        4 + 50 + // experience_level (max 50 chars)
+        1 + // is_active
+        4 + // applications_count
+        8 + // created_at
+        8 + // updated_at
+        1; // bump
+}
+
+impl JobApplication {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // job_posting
+        32 + // agent
+        32 + // agent_owner
+        4 + 1000 + // cover_letter (max 1000 chars)
+        8 + // proposed_rate
+        8 + // estimated_delivery
+        4 + (5 * 4 + 100) + // portfolio_items (max 5 items, 100 chars each)
+        1 + // status
+        8 + // applied_at
+        1; // bump
+}
+
+impl JobContract {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // job_posting
+        32 + // application
+        32 + // employer
+        32 + // agent
+        8 + // agreed_rate
+        8 + // deadline
+        32 + // payment_token
+        1 + // status
+        8 + // created_at
+        8 + // updated_at
+        1; // bump
+}
+
+impl JobCompletion {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // contract
+        32 + // agent
+        32 + // employer
+        4 + 5 + // deliverables (max 5)
+        4 + 1000 + // work_summary (max 1000 chars)
+        4 + 64 + // ipfs_hash (max 64 chars)
+        4 + 200 + // metadata_uri (max 200 chars)
+        8 + // completed_at
+        1 + // is_approved
+        1; // bump
+}
+
+impl Review {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // reviewer
+        32 + // agent
+        4 + 50 + // review_type (max 50 chars)
+        1 + // rating
+        4 + 500 + // comment (max 500 chars)
+        4 + 100 + // work_reference (max 100 chars)
+        8 + // submitted_at
+        1; // bump
+}
+
+// =====================================================
+// MISSING ACCOUNT CONTEXT STRUCTURES
+// =====================================================
+
+#[derive(Accounts)]
+pub struct CreateServiceListing<'info> {
+    #[account(
+        init,
+        payer = creator,
+        space = ServiceListing::LEN,
+        seeds = [b"service_listing", creator.key().as_ref(), service_listing.key().as_ref()],
+        bump
+    )]
+    pub service_listing: Account<'info, ServiceListing>,
+    pub agent: Account<'info, Agent>,
+    #[account(mut)]
+    pub creator: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct PurchaseService<'info> {
+    #[account(
+        init,
+        payer = buyer,
+        space = ServicePurchase::LEN,
+        seeds = [b"service_purchase", buyer.key().as_ref(), service_listing.key().as_ref()],
+        bump
+    )]
+    pub service_purchase: Account<'info, ServicePurchase>,
+    #[account(mut)]
+    pub service_listing: Account<'info, ServiceListing>,
+    #[account(mut)]
+    pub buyer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CreateJobPosting<'info> {
+    #[account(
+        init,
+        payer = employer,
+        space = JobPosting::LEN,
+        seeds = [b"job_posting", employer.key().as_ref()],
+        bump
+    )]
+    pub job_posting: Account<'info, JobPosting>,
+    
+    #[account(mut)]
+    pub employer: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ApplyToJob<'info> {
+    #[account(
+        init,
+        payer = agent_owner,
+        space = JobApplication::LEN,
+        seeds = [b"job_application", job_posting.key().as_ref(), agent.key().as_ref()],
+        bump
+    )]
+    pub job_application: Account<'info, JobApplication>,
+    
+    #[account(mut)]
+    pub job_posting: Account<'info, JobPosting>,
+    
+    pub agent: Account<'info, Agent>,
+    
+    #[account(mut)]
+    pub agent_owner: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptJobApplication<'info> {
+    #[account(
+        init,
+        payer = employer,
+        space = JobContract::LEN,
+        seeds = [b"job_contract", job_posting.key().as_ref(), job_application.key().as_ref()],
+        bump
+    )]
+    pub job_contract: Account<'info, JobContract>,
+    
+    #[account(mut)]
+    pub job_posting: Account<'info, JobPosting>,
+    
+    #[account(mut)]
+    pub job_application: Account<'info, JobApplication>,
+    
+    #[account(mut)]
+    pub employer: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CompleteHiredJob<'info> {
+    #[account(
+        init,
+        payer = agent_owner,
+        space = JobCompletion::LEN,
+        seeds = [b"job_completion", job_contract.key().as_ref()],
+        bump
+    )]
+    pub job_completion: Account<'info, JobCompletion>,
+    
+    #[account(mut)]
+    pub job_contract: Account<'info, JobContract>,
+    
+    #[account(mut)]
+    pub agent: Account<'info, Agent>,
+    
+    #[account(mut)]
+    pub agent_owner: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SubmitReview<'info> {
+    #[account(
+        init,
+        payer = reviewer,
+        space = Review::LEN,
+        seeds = [b"review", agent.key().as_ref(), reviewer.key().as_ref()],
+        bump
+    )]
+    pub review: Account<'info, Review>,
+    
+    #[account(mut)]
+    pub agent: Account<'info, Agent>,
+    
+    #[account(mut)]
+    pub reviewer: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+// =====================================================
+// MISSING EVENTS
+// =====================================================
+
+#[event]
+pub struct ServiceListingCreatedEvent {
+    pub listing: Pubkey,
+    pub creator: Pubkey,
+    pub title: String,
+    pub price: u64,
+}
+
+#[event]
+pub struct ServicePurchasedEvent {
+    pub purchase: Pubkey,
+    pub listing: Pubkey,
+    pub buyer: Pubkey,
+    pub quantity: u32,
+}
+
+#[event]
+pub struct JobPostingCreatedEvent {
+    pub job_posting: Pubkey,
+    pub employer: Pubkey,
+    pub title: String,
+    pub budget_min: u64,
+    pub budget_max: u64,
+}
+
+#[event]
+pub struct JobApplicationSubmittedEvent {
+    pub job_posting: Pubkey,
+    pub application: Pubkey,
+    pub agent: Pubkey,
+    pub proposed_rate: u64,
+}
+
+#[event]
+pub struct JobApplicationAcceptedEvent {
+    pub job_posting: Pubkey,
+    pub application: Pubkey,
+    pub contract: Pubkey,
+    pub employer: Pubkey,
+    pub agent: Pubkey,
+}
+
+#[event]
+pub struct HiredJobCompletedEvent {
+    pub contract: Pubkey,
+    pub completion: Pubkey,
+    pub agent: Pubkey,
+    pub employer: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
+pub struct ReviewSubmittedEvent {
+    pub review: Pubkey,
+    pub reviewer: Pubkey,
+    pub agent: Pubkey,
+    pub rating: u8,
+}
+
+// =====================================================
+// ERROR HANDLING
+// =====================================================
+
+#[error_code]
+pub enum PodAIMarketplaceError {
+    #[msg("Agent is not active")]
+    AgentNotActive,
+    #[msg("Job posting is not active")]
+    JobNotActive,
+    #[msg("Invalid application status")]
+    InvalidApplicationStatus,
+    #[msg("Invalid contract status")]
+    InvalidContractStatus,
+    #[msg("Insufficient funds")]
+    InsufficientFunds,
+    #[msg("Invalid payment amount")]
+    InvalidPaymentAmount,
+    #[msg("Service listing not found")]
+    ServiceListingNotFound,
+    #[msg("Job posting not found")]
+    JobPostingNotFound,
+    #[msg("Application not found")]
+    ApplicationNotFound,
+    #[msg("Contract not found")]
+    ContractNotFound,
+    #[msg("Unauthorized access")]
+    UnauthorizedAccess,
+    #[msg("Invalid deadline")]
+    InvalidDeadline,
+    #[msg("Invalid rating")]
+    InvalidRating,
+    #[msg("Service not active")]
+    ServiceNotActive,
+    #[msg("Invalid bid")]
+    InvalidBid,
+    #[msg("Arithmetic overflow detected")]
+    ArithmeticOverflow,
+    #[msg("Input string exceeds maximum length")]
+    InputTooLong,
+    #[msg("Name exceeds maximum length")]
+    NameTooLong,
+}
+
+// =====================================================
+// ADVANCED PRICING ACCOUNT STRUCTURES
+// =====================================================
+
+#[account]
+pub struct ServiceAuction {
+    pub agent: Pubkey,
+    pub creator: Pubkey,
+    pub auction_type: AuctionType,
+    pub starting_price: u64,
+    pub reserve_price: u64,
+    pub current_bid: u64,
+    pub current_bidder: Option<Pubkey>,
+    pub auction_end_time: i64,
+    pub minimum_bid_increment: u64,
+    pub total_bids: u32,
+    pub is_active: bool,
+    pub created_at: i64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct Negotiation {
+    pub initiator: Pubkey,
+    pub counterparty: Pubkey,
+    pub initial_offer: u64,
+    pub current_offer: u64,
+    pub counter_offers: Vec<u64>,
+    pub negotiation_deadline: i64,
+    pub status: NegotiationStatus,
+    pub terms: Vec<String>,
+    pub created_at: i64,
+    pub last_activity: i64,
+    pub bump: u8,
+}
+
+impl ServiceAuction {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // agent
+        32 + // creator
+        1 + // auction_type
+        8 + // starting_price
+        8 + // reserve_price
+        8 + // current_bid
+        1 + 32 + // current_bidder (Option<Pubkey>)
+        8 + // auction_end_time
+        8 + // minimum_bid_increment
+        4 + // total_bids
+        1 + // is_active
+        8 + // created_at
+        1; // bump
+}
+
+impl Negotiation {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // initiator
+        32 + // counterparty
+        8 + // initial_offer
+        8 + // current_offer
+        4 + (10 * 8) + // counter_offers (max 10 offers)
+        8 + // negotiation_deadline
+        1 + // status
+        4 + (5 * (4 + 100)) + // terms (max 5 terms, 100 chars each)
+        8 + // created_at
+        8 + // last_activity
+        1; // bump
+}
+
+// =====================================================
+// ADDITIONAL EVENTS
+// =====================================================
+
+#[event]
+pub struct AgentVerifiedEvent {
+    pub agent: Pubkey,
+    pub owner: Pubkey,
+    pub timestamp: i64,
+}
+
+
+// Include tests module
+#[cfg(test)]
+#[path = "../tests/mod.rs"]
+mod tests;

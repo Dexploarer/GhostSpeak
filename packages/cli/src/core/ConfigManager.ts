@@ -93,47 +93,85 @@ export class ConfigManager {
       let config: GhostSpeakConfig;
 
       if (existsSync(configPath)) {
-        const configData = await readFile(configPath, 'utf8');
-        const loadedConfig = JSON.parse(configData);
+        try {
+          const configData = await readFile(configPath, 'utf8');
+          const loadedConfig = JSON.parse(configData);
 
-        // Merge with defaults to ensure all fields exist
-        config = {
-          ...DEFAULT_CONFIG,
-          ...loadedConfig,
-          agents: { ...DEFAULT_CONFIG.agents, ...loadedConfig.agents },
-          channels: { ...DEFAULT_CONFIG.channels, ...loadedConfig.channels },
-          developer: { ...DEFAULT_CONFIG.developer, ...loadedConfig.developer },
-          security: { ...DEFAULT_CONFIG.security, ...loadedConfig.security },
-        };
+          // Merge with defaults to ensure all fields exist
+          config = {
+            ...DEFAULT_CONFIG,
+            ...loadedConfig,
+            agents: { ...DEFAULT_CONFIG.agents, ...loadedConfig.agents },
+            channels: { ...DEFAULT_CONFIG.channels, ...loadedConfig.channels },
+            developer: { ...DEFAULT_CONFIG.developer, ...loadedConfig.developer },
+            security: { ...DEFAULT_CONFIG.security, ...loadedConfig.security },
+          };
+        } catch (parseError) {
+          console.warn(`Warning: Config file corrupted, using defaults. Error: ${parseError}`);
+          config = { ...DEFAULT_CONFIG };
+          
+          // Try to back up the corrupted file
+          try {
+            const backupPath = `${configPath}.backup.${Date.now()}`;
+            await writeFile(backupPath, await readFile(configPath, 'utf8'), 'utf8');
+          } catch {
+            // Ignore backup errors
+          }
+        }
       } else {
         config = { ...DEFAULT_CONFIG };
 
         // Create config directory if it doesn't exist
         const configDir = dirname(configPath);
-        if (!existsSync(configDir)) {
-          await mkdir(configDir, { recursive: true });
-        }
+        try {
+          if (!existsSync(configDir)) {
+            await mkdir(configDir, { recursive: true });
+          }
 
-        // Save default config
-        await writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
+          // Save default config
+          await writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
+        } catch (fsError) {
+          // If we can't write the config, continue with defaults
+          console.warn(`Warning: Could not save default config: ${fsError}`);
+        }
       }
 
       ConfigManager.instance = new ConfigManager(config, configPath);
       return ConfigManager.instance;
     } catch (error) {
-      throw new Error(
-        `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`
-      );
+      // For critical errors, return instance with defaults
+      console.error(`Error loading configuration: ${error}`);
+      ConfigManager.instance = new ConfigManager(DEFAULT_CONFIG, configPath);
+      return ConfigManager.instance;
     }
   }
 
   async save(): Promise<void> {
     try {
       const configDir = dirname(this.configPath);
-      if (!existsSync(configDir)) {
-        await mkdir(configDir, { recursive: true });
+      
+      // Ensure directory exists
+      try {
+        if (!existsSync(configDir)) {
+          await mkdir(configDir, { recursive: true });
+        }
+      } catch (mkdirError) {
+        throw new Error(
+          `Cannot create config directory ${configDir}: ${mkdirError instanceof Error ? mkdirError.message : String(mkdirError)}`
+        );
       }
 
+      // Create a backup of existing config before saving
+      if (existsSync(this.configPath)) {
+        try {
+          const backupPath = `${this.configPath}.backup`;
+          await writeFile(backupPath, await readFile(this.configPath, 'utf8'), 'utf8');
+        } catch {
+          // Non-critical: continue even if backup fails
+        }
+      }
+
+      // Write the new config
       await writeFile(
         this.configPath,
         JSON.stringify(this.config, null, 2),
@@ -294,19 +332,42 @@ export class ConfigManager {
 
   async import(configJson: string): Promise<void> {
     try {
-      const importedConfig = JSON.parse(configJson);
+      let importedConfig;
+      try {
+        importedConfig = JSON.parse(configJson);
+      } catch (parseError) {
+        throw new Error(
+          `Invalid JSON format: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+        );
+      }
 
-      // Validate imported config has required structure
-      this.config = {
-        ...DEFAULT_CONFIG,
-        ...importedConfig,
-        agents: { ...DEFAULT_CONFIG.agents, ...importedConfig.agents },
-        channels: { ...DEFAULT_CONFIG.channels, ...importedConfig.channels },
-        developer: { ...DEFAULT_CONFIG.developer, ...importedConfig.developer },
-        security: { ...DEFAULT_CONFIG.security, ...importedConfig.security },
-      };
+      // Validate imported config has basic structure
+      if (typeof importedConfig !== 'object' || importedConfig === null) {
+        throw new Error('Configuration must be a valid object');
+      }
 
-      await this.save();
+      // Backup current config before importing
+      const backupConfig = { ...this.config };
+
+      try {
+        // Merge imported config with defaults to ensure all required fields exist
+        this.config = {
+          ...DEFAULT_CONFIG,
+          ...importedConfig,
+          agents: { ...DEFAULT_CONFIG.agents, ...(importedConfig.agents || {}) },
+          channels: { ...DEFAULT_CONFIG.channels, ...(importedConfig.channels || {}) },
+          developer: { ...DEFAULT_CONFIG.developer, ...(importedConfig.developer || {}) },
+          security: { ...DEFAULT_CONFIG.security, ...(importedConfig.security || {}) },
+        };
+
+        await this.save();
+      } catch (saveError) {
+        // Restore backup on save failure
+        this.config = backupConfig;
+        throw new Error(
+          `Failed to save imported configuration: ${saveError instanceof Error ? saveError.message : String(saveError)}`
+        );
+      }
     } catch (error) {
       throw new Error(
         `Failed to import configuration: ${error instanceof Error ? error.message : String(error)}`

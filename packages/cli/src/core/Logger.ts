@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { writeFile, appendFile, mkdir } from 'fs/promises';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
+import { logger } from '../utils/logger.js';
 
 import chalk from 'chalk';
 
@@ -11,7 +12,7 @@ export interface LogEntry {
   timestamp: Date;
   level: LogLevel;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export class Logger {
@@ -34,22 +35,8 @@ export class Logger {
   }
 
   private formatMessage(level: LogLevel, message: string): string {
-    const timestamp = new Date().toISOString();
-
-    switch (level) {
-      case 'debug':
-        return chalk.gray(`[${timestamp}] 🐛 DEBUG: ${message}`);
-      case 'info':
-        return chalk.blue(`[${timestamp}] ℹ️  INFO: ${message}`);
-      case 'warn':
-        return chalk.yellow(`[${timestamp}] ⚠️  WARN: ${message}`);
-      case 'error':
-        return chalk.red(`[${timestamp}] ❌ ERROR: ${message}`);
-      case 'success':
-        return chalk.green(`[${timestamp}] ✅ SUCCESS: ${message}`);
-      default:
-        return `[${timestamp}] ${message}`;
-    }
+    // For CLI output, we don't need timestamps - just the formatted message
+    return message;
   }
 
   private async writeToFile(entry: LogEntry): Promise<void> {
@@ -66,14 +53,16 @@ export class Logger {
       await appendFile(this.logFile, `${logLine}${contextLine}\n`, 'utf8');
     } catch (error) {
       // Silently fail file logging to avoid infinite loops
-      console.error('Failed to write to log file:', error);
+      if (this.verbose) {
+        console.error('Failed to write to log file:', error);
+      }
     }
   }
 
   private async log(
     level: LogLevel,
     message: string,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): Promise<void> {
     const entry: LogEntry = {
       timestamp: new Date(),
@@ -90,7 +79,7 @@ export class Logger {
 
     // Console output based on level and verbose setting
     const shouldOutput =
-      this.verbose || ['warn', 'error', 'success'].includes(level);
+      this.verbose || ['warn', 'error', 'success', 'info'].includes(level);
 
     if (shouldOutput) {
       console.log(this.formatMessage(level, message));
@@ -101,23 +90,23 @@ export class Logger {
     }
   }
 
-  debug(message: string, context?: Record<string, any>): Promise<void> {
+  debug(message: string, context?: Record<string, unknown>): Promise<void> {
     return this.log('debug', message, context);
   }
 
-  info(message: string, context?: Record<string, any>): Promise<void> {
+  info(message: string, context?: Record<string, unknown>): Promise<void> {
     return this.log('info', message, context);
   }
 
-  warn(message: string, context?: Record<string, any>): Promise<void> {
+  warn(message: string, context?: Record<string, unknown>): Promise<void> {
     return this.log('warn', message, context);
   }
 
-  error(message: string, context?: Record<string, any>): Promise<void> {
+  error(message: string, context?: Record<string, unknown>): Promise<void> {
     return this.log('error', message, context);
   }
 
-  success(message: string, context?: Record<string, any>): Promise<void> {
+  success(message: string, context?: Record<string, unknown>): Promise<void> {
     return this.log('success', message, context);
   }
 
@@ -164,7 +153,7 @@ export class Logger {
   async logTransaction(
     transactionId: string,
     status: 'pending' | 'confirmed' | 'failed',
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     const message = `Transaction ${transactionId}: ${status}`;
     const context = { transactionId, status, ...details };
@@ -186,7 +175,7 @@ export class Logger {
     agentName: string,
     action: string,
     result: 'success' | 'failure',
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     const message = `Agent ${agentName} ${action}: ${result}`;
     const context = { agentName, action, result, ...details };
@@ -201,7 +190,7 @@ export class Logger {
   async logNetworkEvent(
     event: string,
     network: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     const message = `Network ${network}: ${event}`;
     const context = { event, network, ...details };
@@ -222,7 +211,7 @@ export class Logger {
   async logPerformance(
     operation: string,
     duration: number,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     const message = `Performance ${operation}: ${duration}ms`;
     const context = { operation, duration, ...details };

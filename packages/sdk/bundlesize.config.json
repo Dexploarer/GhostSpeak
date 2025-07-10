@@ -1,0 +1,28 @@
+{
+  "files": [
+    {
+      "path": "./dist/optimized/*.js",
+      "maxSize": "50kb",
+      "compression": "gzip"
+    },
+    {
+      "path": "./dist/esm/index.js",
+      "maxSize": "100kb",
+      "compression": "gzip"
+    },
+    {
+      "path": "./dist/cjs/index.js",
+      "maxSize": "100kb",
+      "compression": "gzip"
+    },
+    {
+      "path": "./dist/browser/*.js",
+      "maxSize": "75kb",
+      "compression": "gzip"
+    }
+  ],
+  "ci": {
+    "trackBranches": ["main", "develop"],
+    "repoBranchBase": "main"
+  }
+}

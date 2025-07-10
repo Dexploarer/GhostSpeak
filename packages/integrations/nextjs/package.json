@@ -1,0 +1,73 @@
+{
+  "name": "@ghostspeak/nextjs",
+  "version": "1.0.0",
+  "description": "Next.js integration for GhostSpeak Protocol",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "plugin.js"
+  ],
+  "keywords": [
+    "ghostspeak",
+    "nextjs",
+    "solana",
+    "blockchain",
+    "ai-agents",
+    "web3"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghostspeak/protocol",
+    "directory": "packages/integrations/nextjs"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "jest",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "peerDependencies": {
+    "next": ">=12.0.0",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "dependencies": {
+    "@ghostspeak/sdk": "workspace:*",
+    "@ghostspeak/react": "workspace:*",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/web3.js": "^1.78.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "next": "^13.0.0",
+    "rollup": "^3.0.0",
+    "rollup-plugin-typescript2": "^0.35.0",
+    "typescript": "^5.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./plugin": {
+      "import": "./plugin.js",
+      "require": "./plugin.js"
+    },
+    "./api": {
+      "import": "./dist/api.esm.js",
+      "require": "./dist/api.js",
+      "types": "./dist/api.d.ts"
+    }
+  }
+}

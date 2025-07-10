@@ -1,0 +1,8 @@
+/Users/michelleeidschun/ghostspeak-1/target/debug/deps/tracing_opentelemetry-873501271672306a.d: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/layer.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/span_ext.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/tracer.rs
+
+/Users/michelleeidschun/ghostspeak-1/target/debug/deps/libtracing_opentelemetry-873501271672306a.rmeta: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/layer.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/span_ext.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/tracer.rs
+
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/lib.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/layer.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/span_ext.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tracing-opentelemetry-0.17.4/src/tracer.rs:

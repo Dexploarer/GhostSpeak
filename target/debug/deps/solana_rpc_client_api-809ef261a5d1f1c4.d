@@ -1,0 +1,8 @@
+/Users/michelleeidschun/ghostspeak-1/target/debug/deps/solana_rpc_client_api-809ef261a5d1f1c4.d: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/client_error.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/custom_error.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/response.rs
+
+/Users/michelleeidschun/ghostspeak-1/target/debug/deps/libsolana_rpc_client_api-809ef261a5d1f1c4.rmeta: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/client_error.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/custom_error.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/response.rs
+
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/lib.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/client_error.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/custom_error.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-rpc-client-api-2.3.3/src/response.rs:

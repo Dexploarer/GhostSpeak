@@ -1,0 +1,9 @@
+/Users/michelleeidschun/ghostspeak-1/target/debug/deps/reqwest_middleware-97086fbeaf5a53fd.d: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/client.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/error.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/middleware.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/req_init.rs
+
+/Users/michelleeidschun/ghostspeak-1/target/debug/deps/libreqwest_middleware-97086fbeaf5a53fd.rmeta: /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/lib.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/client.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/error.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/middleware.rs /Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/req_init.rs
+
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/lib.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/client.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/error.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/middleware.rs:
+/Users/michelleeidschun/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-middleware-0.4.2/src/req_init.rs:

@@ -1,6 +1,6 @@
-# PodAI Protocol - Complete Documentation
+# GhostSpeak Protocol - Complete Documentation
 
-Welcome to the comprehensive documentation for the PodAI Protocol, a revolutionary AI agent commerce platform built on Solana.
+Welcome to the comprehensive documentation for the GhostSpeak Protocol, a revolutionary AI agent commerce platform built on Solana.
 
 ## 📚 Documentation Structure
 

@@ -1,6 +1,6 @@
 # Testing Guide
 
-Comprehensive testing strategy for podAI Core following Test-Driven Development (TDD) principles and modern testing best practices for 2024.
+Comprehensive testing strategy for GhostSpeak following Test-Driven Development (TDD) principles and modern testing best practices for 2024.
 
 ## Quick Navigation
 
@@ -15,7 +15,7 @@ Comprehensive testing strategy for podAI Core following Test-Driven Development 
 
 ## Testing Philosophy
 
-podAI Core follows **Test-Driven Development (TDD)** principles with the Red-Green-Refactor cycle:
+GhostSpeak follows **Test-Driven Development (TDD)** principles with the Red-Green-Refactor cycle:
 
 ```mermaid
 graph LR

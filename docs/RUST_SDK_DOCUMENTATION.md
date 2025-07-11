@@ -1,8 +1,8 @@
-# PodAI Rust SDK Documentation
+# GhostSpeak Rust SDK Documentation
 
 ## Overview
 
-The PodAI Rust SDK provides a comprehensive, type-safe interface for interacting with the PodAI protocol on Solana. Built with modern Rust patterns and async/await support, it offers high performance and reliability for production applications.
+The GhostSpeak Rust SDK provides a comprehensive, type-safe interface for interacting with the GhostSpeak protocol on Solana. Built with modern Rust patterns and async/await support, it offers high performance and reliability for production applications.
 
 ## Installation
 
@@ -10,7 +10,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-podai-sdk = "0.1.0"
+ghostspeak-sdk = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 solana-sdk = "1.17.0"
 ```
@@ -18,8 +18,8 @@ solana-sdk = "1.17.0"
 ## Quick Start
 
 ```rust
-use podai_sdk::{
-    PodAIClient, PodAIConfig, AgentService, 
+use ghostspeak_sdk::{
+    GhostSpeakClient, GhostSpeakConfig, AgentService, 
     types::agent::AgentCapabilities
 };
 use solana_sdk::signature::Keypair;
@@ -28,8 +28,8 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     
     // Create agent service
     let agent_service = AgentService::new(client.clone());
@@ -51,12 +51,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Client Configuration
 
-#### `PodAIConfig`
+#### `GhostSpeakConfig`
 
-Configuration struct for the PodAI client.
+Configuration struct for the GhostSpeak client.
 
 ```rust
-pub struct PodAIConfig {
+pub struct GhostSpeakConfig {
     pub network: NetworkType,
     pub rpc_url: String,
     pub commitment: CommitmentConfig,
@@ -67,16 +67,16 @@ pub struct PodAIConfig {
 
 ##### Methods
 
-###### `PodAIConfig::devnet() -> Self`
+###### `GhostSpeakConfig::devnet() -> Self`
 Creates a devnet configuration.
 
-###### `PodAIConfig::mainnet() -> Self`
+###### `GhostSpeakConfig::mainnet() -> Self`
 Creates a mainnet configuration.
 
-###### `PodAIConfig::localnet() -> Self`
+###### `GhostSpeakConfig::localnet() -> Self`
 Creates a localnet configuration.
 
-###### `PodAIConfig::custom(rpc_url: String) -> Self`
+###### `GhostSpeakConfig::custom(rpc_url: String) -> Self`
 Creates a custom configuration.
 
 #### `NetworkType`
@@ -93,21 +93,21 @@ pub enum NetworkType {
 
 ### Client
 
-#### `PodAIClient`
+#### `GhostSpeakClient`
 
-Main client for interacting with the PodAI protocol.
+Main client for interacting with the GhostSpeak protocol.
 
 ```rust
-pub struct PodAIClient {
+pub struct GhostSpeakClient {
     rpc_client: Arc<RpcClient>,
-    config: PodAIConfig,
+    config: GhostSpeakConfig,
     program_id: Pubkey,
 }
 ```
 
 ##### Methods
 
-###### `PodAIClient::new(config: PodAIConfig) -> PodAIResult<Self>`
+###### `GhostSpeakClient::new(config: GhostSpeakConfig) -> GhostSpeakResult<Self>`
 Creates a new client instance.
 
 ###### `get_rpc_client(&self) -> &RpcClient`
@@ -116,10 +116,10 @@ Returns the underlying RPC client.
 ###### `get_program_id(&self) -> Pubkey`
 Returns the program ID.
 
-###### `get_config(&self) -> &PodAIConfig`
+###### `get_config(&self) -> &GhostSpeakConfig`
 Returns the client configuration.
 
-###### `health_check(&self) -> PodAIResult<()>`
+###### `health_check(&self) -> GhostSpeakResult<()>`
 Performs a health check on the connection.
 
 ## Services
@@ -132,16 +132,16 @@ Service for managing AI agents.
 
 ```rust
 pub struct AgentService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `new(client: Arc<PodAIClient>) -> Self`
+###### `new(client: Arc<GhostSpeakClient>) -> Self`
 Creates a new agent service.
 
-###### `register(&self, keypair: &Keypair, capabilities: u64, metadata_uri: &str) -> PodAIResult<Signature>`
+###### `register(&self, keypair: &Keypair, capabilities: u64, metadata_uri: &str) -> GhostSpeakResult<Signature>`
 Registers a new agent.
 
 **Parameters:**
@@ -161,19 +161,19 @@ let signature = agent_service.register(
 ).await?;
 ```
 
-###### `update(&self, keypair: &Keypair, update_data: AgentUpdateData) -> PodAIResult<Signature>`
+###### `update(&self, keypair: &Keypair, update_data: AgentUpdateData) -> GhostSpeakResult<Signature>`
 Updates an existing agent.
 
-###### `get(&self, agent_pubkey: &Pubkey) -> PodAIResult<AgentAccount>`
+###### `get(&self, agent_pubkey: &Pubkey) -> GhostSpeakResult<AgentAccount>`
 Gets an agent account.
 
-###### `get_all(&self) -> PodAIResult<Vec<AgentAccount>>`
+###### `get_all(&self) -> GhostSpeakResult<Vec<AgentAccount>>`
 Gets all agent accounts.
 
-###### `find_by_capabilities(&self, capabilities: u64) -> PodAIResult<Vec<AgentAccount>>`
+###### `find_by_capabilities(&self, capabilities: u64) -> GhostSpeakResult<Vec<AgentAccount>>`
 Finds agents by capabilities.
 
-###### `find_by_owner(&self, owner: &Pubkey) -> PodAIResult<Vec<AgentAccount>>`
+###### `find_by_owner(&self, owner: &Pubkey) -> GhostSpeakResult<Vec<AgentAccount>>`
 Finds agents by owner.
 
 ### Channel Service
@@ -184,16 +184,16 @@ Service for managing communication channels.
 
 ```rust
 pub struct ChannelService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `new(client: Arc<PodAIClient>) -> Self`
+###### `new(client: Arc<GhostSpeakClient>) -> Self`
 Creates a new channel service.
 
-###### `create(&self, creator: &Keypair, name: String, description: String, visibility: ChannelVisibility, max_participants: u16, fee_per_message: u64) -> PodAIResult<Signature>`
+###### `create(&self, creator: &Keypair, name: String, description: String, visibility: ChannelVisibility, max_participants: u16, fee_per_message: u64) -> GhostSpeakResult<Signature>`
 Creates a new channel.
 
 **Parameters:**
@@ -216,16 +216,16 @@ let signature = channel_service.create(
 ).await?;
 ```
 
-###### `get(&self, channel_pubkey: &Pubkey) -> PodAIResult<ChannelAccount>`
+###### `get(&self, channel_pubkey: &Pubkey) -> GhostSpeakResult<ChannelAccount>`
 Gets a channel account.
 
-###### `get_all(&self) -> PodAIResult<Vec<ChannelAccount>>`
+###### `get_all(&self) -> GhostSpeakResult<Vec<ChannelAccount>>`
 Gets all channel accounts.
 
-###### `find_by_creator(&self, creator: &Pubkey) -> PodAIResult<Vec<ChannelAccount>>`
+###### `find_by_creator(&self, creator: &Pubkey) -> GhostSpeakResult<Vec<ChannelAccount>>`
 Finds channels by creator.
 
-###### `send_message(&self, sender: &Keypair, channel_pubkey: &Pubkey, content: String, message_type: MessageType) -> PodAIResult<Signature>`
+###### `send_message(&self, sender: &Keypair, channel_pubkey: &Pubkey, content: String, message_type: MessageType) -> GhostSpeakResult<Signature>`
 Sends a message to a channel.
 
 ### Message Service
@@ -236,25 +236,25 @@ Service for managing messages.
 
 ```rust
 pub struct MessageService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `new(client: Arc<PodAIClient>) -> Self`
+###### `new(client: Arc<GhostSpeakClient>) -> Self`
 Creates a new message service.
 
-###### `send(&self, sender: &Keypair, recipient: &Pubkey, payload: Vec<u8>, message_type: MessageType) -> PodAIResult<Signature>`
+###### `send(&self, sender: &Keypair, recipient: &Pubkey, payload: Vec<u8>, message_type: MessageType) -> GhostSpeakResult<Signature>`
 Sends a direct message.
 
-###### `get(&self, message_pubkey: &Pubkey) -> PodAIResult<MessageAccount>`
+###### `get(&self, message_pubkey: &Pubkey) -> GhostSpeakResult<MessageAccount>`
 Gets a message account.
 
-###### `get_by_sender(&self, sender: &Pubkey) -> PodAIResult<Vec<MessageAccount>>`
+###### `get_by_sender(&self, sender: &Pubkey) -> GhostSpeakResult<Vec<MessageAccount>>`
 Gets messages by sender.
 
-###### `get_by_recipient(&self, recipient: &Pubkey) -> PodAIResult<Vec<MessageAccount>>`
+###### `get_by_recipient(&self, recipient: &Pubkey) -> GhostSpeakResult<Vec<MessageAccount>>`
 Gets messages by recipient.
 
 ### Escrow Service
@@ -265,25 +265,25 @@ Service for managing escrow transactions.
 
 ```rust
 pub struct EscrowService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `new(client: Arc<PodAIClient>) -> Self`
+###### `new(client: Arc<GhostSpeakClient>) -> Self`
 Creates a new escrow service.
 
-###### `create(&self, creator: &Keypair, amount: u64, beneficiary: &Pubkey) -> PodAIResult<Signature>`
+###### `create(&self, creator: &Keypair, amount: u64, beneficiary: &Pubkey) -> GhostSpeakResult<Signature>`
 Creates an escrow account.
 
-###### `deposit(&self, depositor: &Keypair, escrow_pubkey: &Pubkey, amount: u64) -> PodAIResult<Signature>`
+###### `deposit(&self, depositor: &Keypair, escrow_pubkey: &Pubkey, amount: u64) -> GhostSpeakResult<Signature>`
 Deposits funds to escrow.
 
-###### `release(&self, authority: &Keypair, escrow_pubkey: &Pubkey) -> PodAIResult<Signature>`
+###### `release(&self, authority: &Keypair, escrow_pubkey: &Pubkey) -> GhostSpeakResult<Signature>`
 Releases funds from escrow.
 
-###### `get(&self, escrow_pubkey: &Pubkey) -> PodAIResult<EscrowAccount>`
+###### `get(&self, escrow_pubkey: &Pubkey) -> GhostSpeakResult<EscrowAccount>`
 Gets an escrow account.
 
 ### Marketplace Service
@@ -294,22 +294,22 @@ Service for managing marketplace operations.
 
 ```rust
 pub struct MarketplaceService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `new(client: Arc<PodAIClient>) -> Self`
+###### `new(client: Arc<GhostSpeakClient>) -> Self`
 Creates a new marketplace service.
 
-###### `create_listing(&self, seller: &Keypair, agent_pubkey: &Pubkey, price: u64, description: String) -> PodAIResult<Signature>`
+###### `create_listing(&self, seller: &Keypair, agent_pubkey: &Pubkey, price: u64, description: String) -> GhostSpeakResult<Signature>`
 Creates a marketplace listing.
 
-###### `purchase(&self, buyer: &Keypair, listing_pubkey: &Pubkey) -> PodAIResult<Signature>`
+###### `purchase(&self, buyer: &Keypair, listing_pubkey: &Pubkey) -> GhostSpeakResult<Signature>`
 Purchases an item from the marketplace.
 
-###### `cancel_listing(&self, seller: &Keypair, listing_pubkey: &Pubkey) -> PodAIResult<Signature>`
+###### `cancel_listing(&self, seller: &Keypair, listing_pubkey: &Pubkey) -> GhostSpeakResult<Signature>`
 Cancels a marketplace listing.
 
 ## Data Types
@@ -517,15 +517,15 @@ pub struct TransactionOptions {
 }
 ```
 
-#### `send_transaction(client: &RpcClient, transaction: &Transaction, options: &TransactionOptions) -> PodAIResult<Signature>`
+#### `send_transaction(client: &RpcClient, transaction: &Transaction, options: &TransactionOptions) -> GhostSpeakResult<Signature>`
 Sends a transaction with retry logic.
 
 ## Error Handling
 
-### `PodAIError`
+### `GhostSpeakError`
 
 ```rust
-pub enum PodAIError {
+pub enum GhostSpeakError {
     // Network errors
     NetworkError(String),
     RpcError(String),
@@ -554,10 +554,10 @@ pub enum PodAIError {
 }
 ```
 
-### `PodAIResult<T>`
+### `GhostSpeakResult<T>`
 
 ```rust
-pub type PodAIResult<T> = Result<T, PodAIError>;
+pub type GhostSpeakResult<T> = Result<T, GhostSpeakError>;
 ```
 
 ## Advanced Features
@@ -570,16 +570,16 @@ Service for ZK compression operations.
 
 ```rust
 pub struct CompressionService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `compress_data(&self, data: Vec<u8>) -> PodAIResult<CompressionResult>`
+###### `compress_data(&self, data: Vec<u8>) -> GhostSpeakResult<CompressionResult>`
 Compresses data using ZK compression.
 
-###### `decompress_data(&self, compressed_data: Vec<u8>) -> PodAIResult<Vec<u8>>`
+###### `decompress_data(&self, compressed_data: Vec<u8>) -> GhostSpeakResult<Vec<u8>>`
 Decompresses ZK compressed data.
 
 ### Confidential Transfer Service
@@ -590,19 +590,19 @@ Service for confidential transfers using SPL Token 2022.
 
 ```rust
 pub struct ConfidentialTransferService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `create_confidential_account(&self, owner: &Keypair, mint: &Pubkey) -> PodAIResult<Signature>`
+###### `create_confidential_account(&self, owner: &Keypair, mint: &Pubkey) -> GhostSpeakResult<Signature>`
 Creates a confidential transfer account.
 
-###### `deposit(&self, owner: &Keypair, amount: u64) -> PodAIResult<Signature>`
+###### `deposit(&self, owner: &Keypair, amount: u64) -> GhostSpeakResult<Signature>`
 Deposits tokens for confidential transfer.
 
-###### `transfer(&self, sender: &Keypair, recipient: &Pubkey, amount: u64) -> PodAIResult<Signature>`
+###### `transfer(&self, sender: &Keypair, recipient: &Pubkey, amount: u64) -> GhostSpeakResult<Signature>`
 Performs a confidential transfer.
 
 ### MEV Protection Service
@@ -613,13 +613,13 @@ Service for protecting transactions from MEV attacks.
 
 ```rust
 pub struct MEVProtectionService {
-    client: Arc<PodAIClient>,
+    client: Arc<GhostSpeakClient>,
 }
 ```
 
 ##### Methods
 
-###### `protect_transaction(&self, transaction: &Transaction, config: &MEVProtectionConfig) -> PodAIResult<MEVProtectionResult>`
+###### `protect_transaction(&self, transaction: &Transaction, config: &MEVProtectionConfig) -> GhostSpeakResult<MEVProtectionResult>`
 Protects a transaction from MEV attacks.
 
 ## Testing
@@ -634,8 +634,8 @@ mod tests {
     
     #[tokio::test]
     async fn test_agent_registration() {
-        let config = PodAIConfig::localnet();
-        let client = Arc::new(PodAIClient::new(config).await.unwrap());
+        let config = GhostSpeakConfig::localnet();
+        let client = Arc::new(GhostSpeakClient::new(config).await.unwrap());
         let agent_service = AgentService::new(client);
         
         let agent_keypair = Keypair::new();
@@ -660,8 +660,8 @@ mod integration_tests {
     #[tokio::test]
     async fn test_full_workflow() {
         // Test complete workflow from agent registration to message sending
-        let config = PodAIConfig::localnet();
-        let client = Arc::new(PodAIClient::new(config).await.unwrap());
+        let config = GhostSpeakConfig::localnet();
+        let client = Arc::new(GhostSpeakClient::new(config).await.unwrap());
         
         // Register agents
         let agent_service = AgentService::new(client.clone());
@@ -713,15 +713,15 @@ mod integration_tests {
 ### Basic Agent Operations
 
 ```rust
-use podai_sdk::{PodAIClient, PodAIConfig, AgentService, types::agent::AgentCapabilities};
+use ghostspeak_sdk::{GhostSpeakClient, GhostSpeakConfig, AgentService, types::agent::AgentCapabilities};
 use solana_sdk::signature::Keypair;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize client
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     let agent_service = AgentService::new(client.clone());
     
     // Create agent keypair
@@ -754,8 +754,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Channel and Messaging
 
 ```rust
-use podai_sdk::{
-    PodAIClient, PodAIConfig, ChannelService, MessageService,
+use ghostspeak_sdk::{
+    GhostSpeakClient, GhostSpeakConfig, ChannelService, MessageService,
     types::channel::ChannelVisibility,
     types::message::MessageType
 };
@@ -764,8 +764,8 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     
     let channel_service = ChannelService::new(client.clone());
     let message_service = MessageService::new(client.clone());
@@ -802,14 +802,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Escrow Operations
 
 ```rust
-use podai_sdk::{PodAIClient, PodAIConfig, EscrowService};
+use ghostspeak_sdk::{GhostSpeakClient, GhostSpeakConfig, EscrowService};
 use solana_sdk::signature::Keypair;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     let escrow_service = EscrowService::new(client.clone());
     
     let creator_keypair = Keypair::new();
@@ -843,7 +843,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub struct ConnectionPool {
-    clients: Arc<RwLock<Vec<Arc<PodAIClient>>>>,
+    clients: Arc<RwLock<Vec<Arc<GhostSpeakClient>>>>,
     max_connections: usize,
 }
 
@@ -855,14 +855,14 @@ impl ConnectionPool {
         }
     }
     
-    pub async fn get_client(&self) -> Arc<PodAIClient> {
+    pub async fn get_client(&self) -> Arc<GhostSpeakClient> {
         let clients = self.clients.read().await;
         if let Some(client) = clients.first() {
             client.clone()
         } else {
             drop(clients);
-            let config = PodAIConfig::devnet();
-            let client = Arc::new(PodAIClient::new(config).await.unwrap());
+            let config = GhostSpeakConfig::devnet();
+            let client = Arc::new(GhostSpeakClient::new(config).await.unwrap());
             let mut clients = self.clients.write().await;
             clients.push(client.clone());
             client
@@ -881,7 +881,7 @@ pub async fn batch_agent_registration(
     keypairs: Vec<Keypair>,
     capabilities: u64,
     metadata_uri: &str
-) -> Vec<PodAIResult<Signature>> {
+) -> Vec<GhostSpeakResult<Signature>> {
     let futures = keypairs.iter().map(|keypair| {
         agent_service.register(keypair, capabilities, metadata_uri)
     });
@@ -916,7 +916,7 @@ pub fn save_keypair_to_file(keypair: &Keypair, path: &str) -> Result<(), Box<dyn
 use solana_sdk::transaction::Transaction;
 use solana_sdk::signature::Signer;
 
-pub fn sign_transaction(transaction: &mut Transaction, signers: &[&dyn Signer]) -> PodAIResult<()> {
+pub fn sign_transaction(transaction: &mut Transaction, signers: &[&dyn Signer]) -> GhostSpeakResult<()> {
     transaction.sign(signers, transaction.message().recent_blockhash);
     Ok(())
 }
@@ -979,7 +979,7 @@ use log::{info, warn, error};
 
 pub fn setup_logging() {
     env_logger::init();
-    info!("PodAI SDK initialized");
+    info!("GhostSpeak SDK initialized");
 }
 ```
 
@@ -989,11 +989,11 @@ pub fn setup_logging() {
 
 ```rust
 // Old API
-let client = PodAIClient::new("https://api.devnet.solana.com").await?;
+let client = GhostSpeakClient::new("https://api.devnet.solana.com").await?;
 
 // New API
-let config = PodAIConfig::devnet();
-let client = PodAIClient::new(config).await?;
+let config = GhostSpeakConfig::devnet();
+let client = GhostSpeakClient::new(config).await?;
 ```
 
 ## Troubleshooting
@@ -1008,7 +1008,7 @@ let client = PodAIClient::new(config).await?;
 ### Debug Mode
 
 ```rust
-let config = PodAIConfig {
+let config = GhostSpeakConfig {
     network: NetworkType::Devnet,
     rpc_url: "https://api.devnet.solana.com".to_string(),
     commitment: CommitmentConfig::confirmed(),

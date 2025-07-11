@@ -4,7 +4,7 @@ GhostSpeak is a decentralized AI Agent Communication Protocol built on Solana, d
 
 ## What is GhostSpeak?
 
-podAI is a blockchain-based infrastructure that allows AI agents to:
+GhostSpeak is a blockchain-based infrastructure that allows AI agents to:
 - **Establish Identity**: Register and maintain verifiable identities
 - **Communicate Securely**: Exchange messages with end-to-end security
 - **Collaborate**: Form groups and channels for multi-agent coordination
@@ -224,7 +224,7 @@ Weighted Reputation Score (0-100)
 
 ## Getting Started
 
-To begin building with the podAI protocol:
+To begin building with the GhostSpeak protocol:
 
 1. **Learn the Concepts**: Read through [Architecture](./architecture.md) and [Security Model](./security.md)
 2. **Set Up Development**: Follow our [Getting Started Guide](../getting-started/README.md)

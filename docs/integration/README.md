@@ -1,6 +1,6 @@
 # Integration Guides
 
-Complete guides for integrating podAI Core into different platforms, frameworks, and deployment environments.
+Complete guides for integrating GhostSpeak into different platforms, frameworks, and deployment environments.
 
 ## Platform Integration
 
@@ -27,11 +27,11 @@ Complete guides for integrating podAI Core into different platforms, frameworks,
 ### React Integration
 
 ```typescript
-// hooks/usePodAI.ts
+// hooks/useGhostSpeak.ts
 import { useState, useEffect } from 'react';
-import { AgentService, MessageService } from '@podai/sdk-typescript';
+import { AgentService, MessageService } from '@ghostspeak/sdk-typescript';
 
-export function usePodAI() {
+export function useGhostSpeak() {
   const [agentService, setAgentService] = useState<AgentService | null>(null);
   const [messageService, setMessageService] = useState<MessageService | null>(null);
   const [connected, setConnected] = useState(false);
@@ -44,7 +44,7 @@ export function usePodAI() {
         setMessageService(new MessageService(provider));
         setConnected(true);
       } catch (error) {
-        console.error('Failed to initialize podAI:', error);
+        console.error('Failed to initialize GhostSpeak:', error);
       }
     }
 
@@ -56,7 +56,7 @@ export function usePodAI() {
 
 // components/AgentManager.tsx
 export function AgentManager() {
-  const { agentService, connected } = usePodAI();
+  const { agentService, connected } = useGhostSpeak();
   const [agents, setAgents] = useState([]);
 
   const registerAgent = async (data: AgentRegistration) => {
@@ -67,7 +67,7 @@ export function AgentManager() {
   };
 
   if (!connected) {
-    return <div>Connecting to podAI...</div>;
+    return <div>Connecting to GhostSpeak...</div>;
   }
 
   return (
@@ -85,7 +85,7 @@ export function AgentManager() {
 ```typescript
 // pages/api/agents/register.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { AgentService } from '@podai/sdk-typescript';
+import { AgentService } from '@ghostspeak/sdk-typescript';
 
 export default async function handler(
   req: NextApiRequest,
@@ -108,7 +108,7 @@ export default async function handler(
   }
 }
 
-// lib/podai-server.ts
+// lib/ghostspeak-server.ts
 import { Connection, Keypair } from '@solana/web3.js';
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 
@@ -130,7 +130,7 @@ export async function createServerAgentService() {
 // server.ts
 import express from 'express';
 import cors from 'cors';
-import { AgentService, MessageService } from '@podai/sdk-typescript';
+import { AgentService, MessageService } from '@ghostspeak/sdk-typescript';
 
 const app = express();
 app.use(cors());
@@ -213,7 +213,7 @@ CMD ["npm", "start"]
 version: '3.8'
 
 services:
-  podai-app:
+  ghostspeak-app:
     build: .
     ports:
       - "3000:3000"
@@ -244,20 +244,20 @@ volumes:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: podai-app
+  name: ghostspeak-app
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: podai-app
+      app: ghostspeak-app
   template:
     metadata:
       labels:
-        app: podai-app
+        app: ghostspeak-app
     spec:
       containers:
-      - name: podai-app
-        image: podai/app:latest
+      - name: ghostspeak-app
+        image: ghostspeak/app:latest
         ports:
         - containerPort: 3000
         env:
@@ -266,7 +266,7 @@ spec:
         - name: SERVER_PRIVATE_KEY
           valueFrom:
             secretKeyRef:
-              name: podai-secrets
+              name: ghostspeak-secrets
               key: private-key
         livenessProbe:
           httpGet:
@@ -284,10 +284,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: podai-service
+  name: ghostspeak-service
 spec:
   selector:
-    app: podai-app
+    app: ghostspeak-app
   ports:
   - port: 80
     targetPort: 3000
@@ -373,11 +373,11 @@ export class ApiKeyAuth {
 ### WebSocket Integration
 
 ```typescript
-// websocket/podai-ws.ts
+// websocket/ghostspeak-ws.ts
 import { WebSocketServer } from 'ws';
 import { EventEmitter } from 'events';
 
-export class PodAIWebSocketServer extends EventEmitter {
+export class GhostSpeakWebSocketServer extends EventEmitter {
   private wss: WebSocketServer;
   private clients: Map<string, WebSocket> = new Map();
   
@@ -447,7 +447,7 @@ export class PodAIWebSocketServer extends EventEmitter {
 ### Server-Sent Events
 
 ```typescript
-// sse/podai-sse.ts
+// sse/ghostspeak-sse.ts
 import express from 'express';
 
 export function setupSSE(app: express.Application) {

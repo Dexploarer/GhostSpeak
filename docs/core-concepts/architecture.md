@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This document explains the podAI Core architecture, covering system design, component interactions, and technical implementation patterns.
+This document explains the GhostSpeak architecture, covering system design, component interactions, and technical implementation patterns.
 
 ## System Architecture
 

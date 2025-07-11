@@ -1,13 +1,13 @@
 # Code Examples
 
-Practical examples for building with podAI Core, from basic operations to complete applications.
+Practical examples for building with GhostSpeak, from basic operations to complete applications.
 
 ## Quick Start Examples
 
 ### Basic Agent Registration
 
 ```typescript
-import { AgentService } from '@podai/sdk-typescript';
+import { AgentService } from '@ghostspeak/sdk-typescript';
 
 async function registerAgent() {
   const agentService = new AgentService(provider);
@@ -348,7 +348,7 @@ export class ChannelBot {
 ```typescript
 // React component
 import React, { useState, useEffect } from 'react';
-import { AgentService } from '@podai/sdk-typescript';
+import { AgentService } from '@ghostspeak/sdk-typescript';
 
 export function AgentDashboard() {
   const [agents, setAgents] = useState([]);
@@ -439,7 +439,7 @@ program.parse();
 ```typescript
 // Express.js API
 import express from 'express';
-import { AgentService, MessageService } from '@podai/sdk-typescript';
+import { AgentService, MessageService } from '@ghostspeak/sdk-typescript';
 
 const app = express();
 app.use(express.json());
@@ -490,7 +490,7 @@ app.post('/messages', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('podAI API server running on port 3000');
+  console.log('GhostSpeak API server running on port 3000');
   initializeServices();
 });
 ```

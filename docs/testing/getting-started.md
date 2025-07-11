@@ -1,6 +1,6 @@
 # Testing Getting Started Guide
 
-Quick start guide for implementing testing in podAI Core projects following Test-Driven Development (TDD) principles.
+Quick start guide for implementing testing in GhostSpeak projects following Test-Driven Development (TDD) principles.
 
 ## Prerequisites
 
@@ -285,7 +285,7 @@ jobs:
 
 ## Getting Help
 
-- 💬 [Discord Community](https://discord.gg/podai-dev)
+- 💬 [Discord Community](https://discord.gg/ghostspeak-dev)
 - 📚 [Testing Documentation](./README.md)
-- 🐛 [Report Issues](https://github.com/podai/core/issues)
-- 📧 [Email Support](mailto:dev-support@podai.com) 
+- 🐛 [Report Issues](https://github.com/ghostspeak/core/issues)
+- 📧 [Email Support](mailto:dev-support@ghostspeak.com) 

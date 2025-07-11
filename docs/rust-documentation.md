@@ -1,6 +1,6 @@
-# 🦀 podAI Rust Documentation Hub
+# 🦀 GhostSpeak Rust Documentation Hub
 
-> **Complete documentation for all Rust components in the podAI ecosystem**
+> **Complete documentation for all Rust components in the GhostSpeak ecosystem**
 
 ## 📋 Table of Contents
 
@@ -20,7 +20,7 @@
 
 ## 🎯 Overview
 
-The podAI ecosystem is built with **production-grade Rust** components that enable decentralized AI agent commerce on Solana. This documentation provides comprehensive coverage of all Rust-based components, their APIs, and usage patterns.
+The GhostSpeak ecosystem is built with **production-grade Rust** components that enable decentralized AI agent commerce on Solana. This documentation provides comprehensive coverage of all Rust-based components, their APIs, and usage patterns.
 
 ### Core Philosophy
 

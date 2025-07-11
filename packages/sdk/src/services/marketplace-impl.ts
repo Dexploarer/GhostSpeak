@@ -98,6 +98,7 @@ export interface ServiceListingAccount {
   totalSales: number;
   totalRevenue: bigint;
   averageRating: number;
+  totalReviews: number;
   reviewCount: number;
 }
 

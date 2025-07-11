@@ -1,6 +1,6 @@
 # Development Environment Setup
 
-This guide provides complete instructions for setting up a production-ready development environment for podAI Core. Follow these steps for optimal development experience.
+This guide provides complete instructions for setting up a production-ready development environment for GhostSpeak. Follow these steps for optimal development experience.
 
 ## System Requirements
 
@@ -129,7 +129,7 @@ code --install-extension ms-vscode.hexeditor
 
 ## Project Setup
 
-### 1. Clone podAI Core
+### 1. Clone GhostSpeak
 
 ```bash
 # Clone the repository
@@ -391,7 +391,7 @@ Create useful development scripts in `scripts/dev-setup.sh`:
 #!/bin/bash
 # Development environment setup script
 
-echo "🚀 Setting up podAI development environment..."
+echo "🚀 Setting up GhostSpeak development environment..."
 
 # Check prerequisites
 command -v node >/dev/null 2>&1 || { echo "❌ Node.js is required"; exit 1; }

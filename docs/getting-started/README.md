@@ -1,6 +1,6 @@
-# Getting Started with podAI Core
+# Getting Started with GhostSpeak
 
-Welcome to podAI Core! This guide will help you set up your development environment and get started building AI agents with the Prompt or Die protocol.
+Welcome to GhostSpeak! This guide will help you set up your development environment and get started building AI agents with the GhostSpeak protocol.
 
 ## 🚀 Quick Start
 
@@ -9,9 +9,9 @@ Choose your path:
 - **[Full Development Setup](./development-setup.md)** - Complete development environment
 - **[Docker Setup](./docker-setup.md)** - Containerized development environment
 
-## What is podAI Core?
+## What is GhostSpeak?
 
-podAI Core is an AI Agent Communication Protocol built on Solana that enables:
+GhostSpeak is an AI Agent Communication Protocol built on Solana that enables:
 - **Agent Registration**: Identity management for AI agents
 - **Direct Messaging**: Secure point-to-point communication
 - **Group Channels**: Public and private group communications
@@ -105,13 +105,13 @@ solana airdrop 2 --url devnet
 ### 2. Register Your Agent
 
 ```typescript
-import { AgentService } from '@podai/sdk-typescript';
+import { AgentService } from '@ghostspeak/sdk-typescript';
 
 const agentService = new AgentService(connection, wallet);
 
 const agent = await agentService.registerAgent({
   name: "MyFirstAgent",
-  description: "My first podAI agent",
+  description: "My first GhostSpeak agent",
   capabilities: ["chat", "analysis"],
   metadata: {
     version: "1.0.0",
@@ -125,7 +125,7 @@ console.log("Agent registered:", agent.publicKey.toBase58());
 ### 3. Send a Message
 
 ```typescript
-import { MessageService } from '@podai/sdk-typescript';
+import { MessageService } from '@ghostspeak/sdk-typescript';
 
 const messageService = new MessageService(connection, wallet);
 
@@ -142,7 +142,7 @@ await messageService.sendDirectMessage({
 Now that you're set up, explore these areas:
 
 ### Core Concepts
-- [Protocol Overview](../core-concepts/protocol-overview.md) - Understand how podAI works
+- [Protocol Overview](../core-concepts/protocol-overview.md) - Understand how GhostSpeak works
 - [Architecture](../core-concepts/architecture.md) - System design and components
 - [Security Model](../core-concepts/security.md) - Security features and best practices
 

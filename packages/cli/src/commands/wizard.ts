@@ -57,7 +57,7 @@ export async function runWizard(options: WizardOptions = {}): Promise<void> {
     cliLogger.general.info(chalk.cyan('🎉 You\'re ready to start using GhostSpeak!'));
 
   } catch (error) {
-    cliLogger.error('Wizard failed:', error);
+    cliLogger.general.error('Wizard failed:', error instanceof Error ? error : { error: String(error) });
     throw error;
   }
 }
@@ -187,7 +187,7 @@ async function executeWizardSteps(steps: WizardStep[], cliLogger: Logger): Promi
 async function checkPrerequisites(cliLogger: Logger): Promise<void> {
   const checks = [
     { name: 'Node.js', command: 'node --version', minVersion: '20.0.0' },
-    { name: 'Solana CLI', command: 'solana --version', minVersion: '1.18.0' },
+    { name: 'Solana CLI', command: 'solana --version', minVersion: '1.18.0', optional: true },
     { name: 'Bun (optional)', command: 'bun --version', minVersion: '1.2.0', optional: true }
   ];
 
@@ -213,6 +213,9 @@ async function checkPrerequisites(cliLogger: Logger): Promise<void> {
       const message = `${check.name} not found`;
       if (check.optional) {
         cliLogger.general.info(chalk.yellow(`    ⚠ ${message} (optional)`));
+        if (check.name === 'Solana CLI') {
+          cliLogger.general.info(chalk.gray('      Install from: https://docs.solana.com/cli/install-solana-cli-tools'));
+        }
       } else {
         cliLogger.general.info(chalk.red(`    ✗ ${message}`));
         throw new Error(`${check.name} is required. Please install it first.`);
@@ -225,6 +228,15 @@ async function configureNetwork(cliLogger: Logger): Promise<void> {
   cliLogger.general.info(chalk.blue('  Setting up Solana network connection...'));
 
   try {
+    // Check if Solana CLI is available
+    try {
+      execSync('solana --version', { stdio: 'pipe' });
+    } catch {
+      cliLogger.general.info(chalk.yellow('    ⚠ Solana CLI not found - skipping network configuration'));
+      cliLogger.general.info(chalk.gray('      You can configure it later with: solana config set --url https://api.devnet.solana.com'));
+      return;
+    }
+    
     // Set to devnet for quickstart
     execSync('solana config set --url https://api.devnet.solana.com', {
       stdio: 'pipe',
@@ -249,6 +261,14 @@ async function setupWallet(cliLogger: Logger): Promise<void> {
   cliLogger.general.info(chalk.blue('  Setting up your Solana wallet...'));
 
   try {
+    // Check if Solana CLI is available
+    try {
+      execSync('solana --version', { stdio: 'pipe' });
+    } catch {
+      cliLogger.general.info(chalk.yellow('    ⚠ Solana CLI not found - skipping wallet setup'));
+      cliLogger.general.info(chalk.gray('      You can set up a wallet later with: solana-keygen new'));
+      return;
+    }
     const walletPath = join(homedir(), '.config', 'solana', 'id.json');
 
     if (!existsSync(walletPath)) {
@@ -295,6 +315,14 @@ async function testConnection(cliLogger: Logger): Promise<void> {
   cliLogger.general.info(chalk.blue('  Testing connection to Solana network...'));
 
   try {
+    // Check if Solana CLI is available
+    try {
+      execSync('solana --version', { stdio: 'pipe' });
+    } catch {
+      cliLogger.general.info(chalk.yellow('    ⚠ Solana CLI not found - skipping connection test'));
+      cliLogger.general.info(chalk.gray('      Install Solana CLI to test blockchain connectivity'));
+      return;
+    }
     const blockHeight = execSync('solana block-height', {
       encoding: 'utf8',
       stdio: 'pipe'

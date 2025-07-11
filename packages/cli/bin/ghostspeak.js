@@ -7,12 +7,10 @@
  * It handles Node.js compatibility and error reporting.
  */
 
-import { createRequire } from 'module';
+import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { logger } from '../../../shared/logger';
 
-const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -21,7 +19,7 @@ const nodeVersion = process.version;
 const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0], 10);
 
 if (majorVersion < 20) {
-  logger.general.error(`
+  console.error(`
 ❌ ghostspeak CLI requires Node.js v20.0.0 or higher.
    Current version: ${nodeVersion}
    
@@ -30,23 +28,17 @@ if (majorVersion < 20) {
   process.exit(1);
 }
 
-// Handle unhandled rejections and exceptions
-process.on('unhandledRejection', (reason, promise) => {
-  logger.general.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+// Launch the CLI by spawning node with the dist file
+const cliPath = join(__dirname, '../dist/index.js');
+const args = process.argv.slice(2);
+
+const child = spawn(process.execPath, [cliPath, ...args], {
+  stdio: 'inherit',
+  env: process.env
 });
 
-process.on('uncaughtException', error => {
-  logger.general.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-// Launch the CLI
-try {
-  const cliPath = join(__dirname, '../dist/index.js');
-  await import(cliPath);
-} catch (error) {
-  logger.general.error(`
+child.on('error', (error) => {
+  console.error(`
 ❌ Failed to start ghostspeak CLI:
 
 ${error.message}
@@ -55,4 +47,8 @@ If this error persists, please report it at:
 https://github.com/ghostspeak/ghostspeak/issues
 `);
   process.exit(1);
-}
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

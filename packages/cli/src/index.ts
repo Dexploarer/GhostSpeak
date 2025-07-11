@@ -176,10 +176,26 @@ marketplaceCommand
   .command('list')
   .description('List available services')
   .option('-c, --category <category>', 'Filter by category')
+  .option('-s, --sort-by <sort>', 'Sort by: price, rating, sales, created', 'created')
+  .option('-l, --limit <number>', 'Number of results to show', '20')
+  .option('--min-price <price>', 'Minimum price in SOL')
+  .option('--max-price <price>', 'Maximum price in SOL')
+  .option('--min-rating <rating>', 'Minimum rating (0-5)')
   .action(async options => {
     try {
       const { listServices } = await import('./commands/marketplace.js');
-      await listServices(options);
+      
+      // Parse numeric options
+      const parsedOptions = {
+        category: options.category,
+        sortBy: options.sortBy as 'price' | 'rating' | 'sales' | 'created',
+        limit: options.limit ? parseInt(options.limit, 10) : 20,
+        minPrice: options.minPrice ? parseFloat(options.minPrice) : undefined,
+        maxPrice: options.maxPrice ? parseFloat(options.maxPrice) : undefined,
+        minRating: options.minRating ? parseFloat(options.minRating) : undefined,
+      };
+      
+      await listServices(parsedOptions);
       process.exit(0);
     } catch (error) {
       logger.general.error(
@@ -687,6 +703,9 @@ program
         chalk.red('❌ Quickstart failed:'),
         error instanceof Error ? error.message : String(error)
       );
+      if (error instanceof Error && process.env.NODE_ENV !== 'production') {
+        console.error(chalk.gray('Stack trace:'), error.stack);
+      }
       process.exit(1);
     }
   });
@@ -707,6 +726,9 @@ program
         chalk.red('❌ Wizard failed:'),
         error instanceof Error ? error.message : String(error)
       );
+      if (error instanceof Error && process.env.NODE_ENV !== 'production') {
+        console.error(chalk.gray('Stack trace:'), error.stack);
+      }
       process.exit(1);
     }
   });

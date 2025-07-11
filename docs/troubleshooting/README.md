@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Comprehensive troubleshooting guide for podAI Core development and deployment issues.
+Comprehensive troubleshooting guide for GhostSpeak development and deployment issues.
 
 ## 🔍 Quick Diagnosis
 
@@ -14,7 +14,7 @@ Comprehensive troubleshooting guide for podAI Core development and deployment is
 | [Smart Contract Issues](#smart-contract-issues) | Transaction failures, account errors | Verify account states, check balances |
 
 ### Emergency Checklist
-- [ ] Check [podAI Status Page](https://status.podai.com) for known issues
+- [ ] Check [GhostSpeak Status Page](https://status.ghostspeak.com) for known issues
 - [ ] Verify your environment variables are correct
 - [ ] Ensure all services are running
 - [ ] Check recent changes that might have caused the issue
@@ -88,7 +88,7 @@ npm ls @solana/web3.js
 # Check Node.js version
 node --version
 
-# podAI requires Node.js 18+
+# GhostSpeak requires Node.js 18+
 # Use nvm to manage versions
 nvm install 18
 nvm use 18
@@ -411,7 +411,7 @@ NODE_ENV=development
 SOLANA_RPC_URL=https://api.devnet.solana.com
 SOLANA_WS_URL=ws://api.devnet.solana.com
 PROGRAM_ID=YourProgramIdHere
-DATABASE_URL=postgresql://user:pass@localhost:5432/podai
+DATABASE_URL=postgresql://user:pass@localhost:5432/ghostspeak
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-secret-key
 LOG_LEVEL=info
@@ -539,18 +539,18 @@ async function verifyAgentPermissions(
 
 ### Self-Service Resources
 1. **Check this troubleshooting guide** for common solutions
-2. **Search [GitHub Issues](https://github.com/podai/core/issues)** for similar problems
+2. **Search [GitHub Issues](https://github.com/ghostspeak/core/issues)** for similar problems
 3. **Review [API Documentation](../api/README.md)** for usage examples
-4. **Check [Status Page](https://status.podai.com)** for known issues
+4. **Check [Status Page](https://status.ghostspeak.com)** for known issues
 
 ### Community Support
-1. **[Discord #help](https://discord.gg/podai-dev)** - Community assistance
-2. **[GitHub Discussions](https://github.com/podai/core/discussions)** - Technical discussions
-3. **[Stack Overflow](https://stackoverflow.com/questions/tagged/podai)** - Programming questions
+1. **[Discord #help](https://discord.gg/ghostspeak-dev)** - Community assistance
+2. **[GitHub Discussions](https://github.com/ghostspeak/core/discussions)** - Technical discussions
+3. **[Stack Overflow](https://stackoverflow.com/questions/tagged/ghostspeak)** - Programming questions
 
 ### Professional Support
-1. **[Create GitHub Issue](https://github.com/podai/core/issues/new)** - Bug reports
-2. **[Enterprise Support](mailto:enterprise@podai.com)** - Priority support for enterprise customers
+1. **[Create GitHub Issue](https://github.com/ghostspeak/core/issues/new)** - Bug reports
+2. **[Enterprise Support](mailto:enterprise@ghostspeak.com)** - Priority support for enterprise customers
 
 ### Information to Include When Seeking Help
 - **Environment details** (OS, Node.js version, Solana CLI version)

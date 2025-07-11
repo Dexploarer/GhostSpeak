@@ -1,6 +1,6 @@
 # Smart Contract Documentation
 
-The podAI smart contract (`pod-com`) is the core protocol implementation built with Solana and Anchor. This document provides comprehensive technical documentation for developers integrating with or extending the protocol.
+The GhostSpeak smart contract (`ghost-com`) is the core protocol implementation built with Solana and Anchor. This document provides comprehensive technical documentation for developers integrating with or extending the protocol.
 
 ## Overview
 

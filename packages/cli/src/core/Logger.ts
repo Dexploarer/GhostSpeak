@@ -3,7 +3,6 @@ import { writeFile, appendFile, mkdir } from 'fs/promises';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
 import { logger } from '../utils/logger.js';
-
 import chalk from 'chalk';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'success';
@@ -19,6 +18,22 @@ export class Logger {
   private verbose: boolean;
   private readonly logFile?: string;
   private logs: LogEntry[] = [];
+  
+  // Add general logger property for compatibility
+  public readonly general = {
+    info: (message: string, context?: Record<string, unknown>) => {
+      this.info(message, context);
+    },
+    error: (message: string, context?: Record<string, unknown>) => {
+      this.error(message, context);
+    },
+    warn: (message: string, context?: Record<string, unknown>) => {
+      this.warn(message, context);
+    },
+    debug: (message: string, context?: Record<string, unknown>) => {
+      this.debug(message, context);
+    },
+  };
 
   constructor(verbose: boolean = false, logFile?: string) {
     this.verbose = verbose;
@@ -74,12 +89,9 @@ export class Logger {
     // Store in memory
     this.logs.push(entry);
 
-    // Write to file
-    await this.writeToFile(entry);
-
-    // Console output based on level and verbose setting
+    // Console output based on level and verbose setting - do this FIRST and synchronously
     const shouldOutput =
-      this.verbose || ['warn', 'error', 'success', 'info'].includes(level);
+      this.verbose || ['warn', 'error', 'success'].includes(level);
 
     if (shouldOutput) {
       console.log(this.formatMessage(level, message));
@@ -88,6 +100,11 @@ export class Logger {
         console.log(chalk.gray('Context:'), context);
       }
     }
+
+    // Write to file asynchronously (don't await to avoid blocking)
+    this.writeToFile(entry).catch(() => {
+      // Silently fail file logging
+    });
   }
 
   debug(message: string, context?: Record<string, unknown>): Promise<void> {

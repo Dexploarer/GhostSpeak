@@ -1,6 +1,6 @@
 # 5-Minute Quick Start
 
-Get up and running with podAI Core in just 5 minutes! This tutorial will have you registering an agent and sending your first message.
+Get up and running with GhostSpeak in just 5 minutes! This tutorial will have you registering an agent and sending your first message.
 
 ## Prerequisites Check
 
@@ -74,7 +74,7 @@ async function createAgent() {
     // Register your agent
     const agent = await agentService.registerAgent({
       name: "QuickStartAgent",
-      description: "My first podAI agent from the quick start guide",
+      description: "My first GhostSpeak agent from the quick start guide",
       capabilities: ["chat", "quickstart"],
       metadata: {
         version: "1.0.0",
@@ -116,7 +116,7 @@ const messageService = new MessageService(provider);
 // Create a simple message to yourself (for testing)
 await messageService.sendDirectMessage({
   recipient: agent.publicKey, // Send to yourself for testing
-  content: "Hello podAI! This is my first message.",
+  content: "Hello GhostSpeak! This is my first message.",
   messageType: "text",
   expiration: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
 });
@@ -131,7 +131,7 @@ return agent;
 ## 🎉 Congratulations!
 
 You've just:
-- ✅ Set up podAI Core
+- ✅ Set up GhostSpeak
 - ✅ Created your first AI agent
 - ✅ Sent your first message
 - ✅ Learned the basic development workflow
@@ -141,7 +141,7 @@ You've just:
 1. **Agent Registration**: How to create and register AI agents on Solana
 2. **Messaging System**: How to send messages between agents
 3. **Wallet Integration**: How to connect and use Solana wallets
-4. **Development Flow**: Basic podAI development patterns
+4. **Development Flow**: Basic GhostSpeak development patterns
 
 ## Next Steps (Choose Your Adventure)
 
@@ -151,7 +151,7 @@ You've just:
 - [Add Escrow Features](../guides/escrow.md) - Secure financial transactions
 
 ### 📚 Learn More
-- [Core Concepts](../core-concepts/README.md) - Understand how podAI works
+- [Core Concepts](../core-concepts/README.md) - Understand how GhostSpeak works
 - [Architecture Overview](../core-concepts/architecture.md) - System design
 - [Security Best Practices](../core-concepts/security.md) - Keep your agents secure
 

@@ -41,6 +41,7 @@ const EXTERNALS = [
   'url',
   'stream',
   'buffer',
+  'http',
   
   // Other common externals
   'bs58',
@@ -279,64 +280,73 @@ async function buildAll() {
  * Generate bundle size report
  */
 async function generateBundleReport() {
-  const fs = await import('fs');
-  const glob = await import('glob');
-  
-  const report = {
-    timestamp: new Date().toISOString(),
-    bundles: {},
-    recommendations: [],
-  };
-  
-  // Analyze each bundle
-  for (const [name, config] of Object.entries(configs)) {
-    const distPath = path.join(__dirname, config.outdir);
+  try {
+    const fs = await import('fs');
     
-    if (fs.default.existsSync(distPath)) {
-      const files = glob.default.sync('**/*.{js,css}', { cwd: distPath });
-      let totalSize = 0;
-      const fileDetails = [];
+    const report = {
+      timestamp: new Date().toISOString(),
+      bundles: {},
+      recommendations: [],
+    };
+    
+    // Analyze each bundle
+    for (const [name, config] of Object.entries(configs)) {
+      const distPath = path.join(__dirname, config.outdir);
       
-      files.forEach(file => {
-        const filePath = path.join(distPath, file);
-        const size = fs.default.statSync(filePath).size;
-        totalSize += size;
+      if (fs.default.existsSync(distPath)) {
+        const files = fs.default.readdirSync(distPath, { recursive: true })
+          .filter(file => file.endsWith('.js') || file.endsWith('.css'))
+          .map(file => typeof file === 'string' ? file : file.name);
         
-        fileDetails.push({
-          name: file,
-          size,
-          sizeKB: (size / 1024).toFixed(2),
+        let totalSize = 0;
+        const fileDetails = [];
+        
+        files.forEach(file => {
+          const filePath = path.join(distPath, file);
+          const stats = fs.default.statSync(filePath);
+          if (stats.isFile()) {
+            const size = stats.size;
+            totalSize += size;
+            
+            fileDetails.push({
+              name: file,
+              size,
+              sizeKB: (size / 1024).toFixed(2),
+            });
+          }
         });
-      });
-      
-      report.bundles[name] = {
-        totalSize,
-        totalSizeKB: (totalSize / 1024).toFixed(2),
-        files: fileDetails,
-      };
-      
-      // Add recommendations
-      if (totalSize > 100 * 1024) { // > 100KB
-        report.recommendations.push(`Consider code splitting for ${name} bundle (${(totalSize / 1024).toFixed(2)} KB)`);
+        
+        report.bundles[name] = {
+          totalSize,
+          totalSizeKB: (totalSize / 1024).toFixed(2),
+          files: fileDetails,
+        };
+        
+        // Add recommendations
+        if (totalSize > 100 * 1024) { // > 100KB
+          report.recommendations.push(`Consider code splitting for ${name} bundle (${(totalSize / 1024).toFixed(2)} KB)`);
+        }
       }
     }
-  }
-  
-  // Write report
-  const reportPath = path.join(__dirname, 'dist/bundle-report.json');
-  fs.default.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-  
-  console.log('📊 Bundle report generated: dist/bundle-report.json');
-  
-  // Print summary
-  console.log('\n📈 Bundle Summary:');
-  Object.entries(report.bundles).forEach(([name, info]) => {
-    console.log(`  ${name}: ${info.totalSizeKB} KB`);
-  });
-  
-  if (report.recommendations.length > 0) {
-    console.log('\n💡 Recommendations:');
-    report.recommendations.forEach(rec => console.log(`  - ${rec}`));
+    
+    // Write report
+    const reportPath = path.join(__dirname, 'dist/bundle-report.json');
+    fs.default.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+    
+    console.log('📊 Bundle report generated: dist/bundle-report.json');
+    
+    // Print summary
+    console.log('\n📈 Bundle Summary:');
+    Object.entries(report.bundles).forEach(([name, info]) => {
+      console.log(`  ${name}: ${info.totalSizeKB} KB`);
+    });
+    
+    if (report.recommendations.length > 0) {
+      console.log('\n💡 Recommendations:');
+      report.recommendations.forEach(rec => console.log(`  - ${rec}`));
+    }
+  } catch (error) {
+    console.log('📊 Bundle report generation skipped (optional dependency missing)');
   }
 }
 

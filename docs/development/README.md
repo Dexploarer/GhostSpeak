@@ -1,13 +1,13 @@
 # Development Documentation
 
-Complete guide for developers contributing to podAI Core protocol development.
+Complete guide for developers contributing to GhostSpeak protocol development.
 
 ## 🚀 Quick Start for Contributors
 
 ### Repository Setup
 ```bash
 # Clone the repository
-git clone https://github.com/podai/core.git
+git clone https://github.com/ghostspeak/core.git
 cd core
 
 # Install dependencies

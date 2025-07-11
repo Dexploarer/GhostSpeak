@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "author": "GhostSpeak Team",
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
+  "main": "./dist/cjs-fixed/index.js",
+  "module": "./dist/esm-fixed/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/ghostspeak/ghostspeak.git",
@@ -64,8 +64,8 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm-fixed/index.js",
+      "require": "./dist/cjs-fixed/index.js",
       "types": "./dist/types/index.d.ts"
     },
     "./optimized": {
@@ -140,13 +140,13 @@
     "access": "public"
   },
   "scripts": {
-    "build:esm": "bun build --target=node --outdir=dist/esm src/index.ts --splitting --minify --external @solana/rpc-subscriptions --external @solana/functional --external @solana/transaction-messages --external @solana/transactions --external @solana/keys --external @solana/accounts",
-    "build:cjs": "bun build --target=node --format=cjs --outdir=dist/cjs src/index.ts --splitting --minify --external @solana/rpc-subscriptions --external @solana/functional --external @solana/transaction-messages --external @solana/transactions --external @solana/keys --external @solana/accounts",
-    "build:minimal": "bun build --target=node --outdir=dist/minimal src/index-minimal.ts --splitting --minify --external @solana/rpc-subscriptions --external @solana/functional --external @solana/transaction-messages --external @solana/transactions --external @solana/keys --external @solana/accounts",
-    "build:optimized": "node bundle.config.js",
-    "build:core": "bun build --target=node --outdir=dist/optimized src/index-optimized.ts --splitting --minify --external @solana/addresses --external @solana/codecs --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external bs58",
-    "build:performance": "bun build --target=node --outdir=dist/performance src/performance/index.ts --splitting --minify",
-    "build:full": "npm run clean && npm run build:esm && npm run build:cjs && npm run build:minimal && npm run build:optimized && npm run build:performance",
+    "build:esm": "node build-fixed.js",
+    "build:cjs": "node build-fixed.js",
+    "build:minimal": "bun build --target=node --outdir=dist/minimal src/index-minimal.ts --splitting --external @solana/rpc-subscriptions --external @solana/functional --external @solana/transaction-messages --external @solana/transactions --external @solana/keys --external @solana/accounts",
+    "build:optimized": "node build-fixed.js",
+    "build:core": "bun build --target=node --outdir=dist/optimized src/index-optimized.ts --splitting --external @solana/addresses --external @solana/codecs --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external bs58",
+    "build:performance": "bun build --target=node --outdir=dist/performance src/performance/index.ts --splitting",
+    "build:full": "npm run clean && npm run build:esm",
     "build": "npm run build:full",
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/types || echo 'Type generation skipped'",
     "build:production": "npm run clean && npm run build:optimized && npm run build:types && npm run analyze:bundle",

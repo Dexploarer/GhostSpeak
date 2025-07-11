@@ -4,7 +4,7 @@
 
 ## 📋 Overview
 
-This document tracks the current status of Rust documentation across the podAI ecosystem and provides a roadmap for achieving complete documentation coverage.
+This document tracks the current status of Rust documentation across the GhostSpeak ecosystem and provides a roadmap for achieving complete documentation coverage.
 
 **Last Updated**: `2025-01-08`  
 **Overall Progress**: `75%` ✅
@@ -40,7 +40,7 @@ This document tracks the current status of Rust documentation across the podAI e
 
 ## 📁 Component Documentation Status
 
-### 🔗 Smart Contract (`programs/podai/`)
+### 🔗 Smart Contract (`programs/ghostspeak/`)
 
 | File | Status | Coverage | Quality | Notes |
 |------|--------|----------|---------|-------|

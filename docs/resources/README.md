@@ -1,6 +1,6 @@
 # Resources
 
-Comprehensive collection of tools, libraries, learning materials, and community resources for podAI Core development.
+Comprehensive collection of tools, libraries, learning materials, and community resources for GhostSpeak development.
 
 ## Quick Access
 
@@ -45,11 +45,11 @@ Comprehensive collection of tools, libraries, learning materials, and community 
 }
 ```
 
-**Snippets for podAI Development**
+**Snippets for GhostSpeak Development**
 ```json
 {
   "Agent Registration": {
-    "prefix": "podai-agent",
+    "prefix": "ghostspeak-agent",
     "body": [
       "const agent = await agentService.registerAgent({",
       "  name: '${1:AgentName}',",
@@ -58,10 +58,10 @@ Comprehensive collection of tools, libraries, learning materials, and community 
       "  metadata_uri: '${4:ipfs://...}'",
       "});"
     ],
-    "description": "Create new podAI agent"
+    "description": "Create new GhostSpeak agent"
   },
   "Send Message": {
-    "prefix": "podai-message",
+    "prefix": "ghostspeak-message",
     "body": [
       "const message = await messageService.sendMessage({",
       "  recipient: ${1:recipientKey},",
@@ -70,7 +70,7 @@ Comprehensive collection of tools, libraries, learning materials, and community 
       "  encryption: ${4:true}",
       "});"
     ],
-    "description": "Send podAI message"
+    "description": "Send GhostSpeak message"
   }
 }
 ```
@@ -158,7 +158,7 @@ SOLANA_WS_URL=ws://localhost:8900
 PROGRAM_ID=YourProgramIdHere
 
 # Database
-DATABASE_URL=postgresql://podai:password@localhost:5432/podai_dev
+DATABASE_URL=postgresql://ghostspeak:password@localhost:5432/ghostspeak_dev
 REDIS_URL=redis://localhost:6379
 
 # API Configuration
@@ -312,14 +312,14 @@ curl -sS https://webinstall.dev/k9s | bash
 
 # Essential commands
 kubectl get pods
-kubectl logs -f deployment/podai-api
+kubectl logs -f deployment/ghostspeak-api
 kubectl describe pod <pod-name>
 kubectl exec -it <pod-name> -- /bin/sh
 ```
 
 **Helm Chart Structure**
 ```
-charts/podai/
+charts/ghostspeak/
 ├── Chart.yaml
 ├── values.yaml
 ├── templates/
@@ -369,7 +369,7 @@ helm install grafana grafana/grafana
 ```json
 {
   "dashboard": {
-    "title": "podAI Overview",
+    "title": "GhostSpeak Overview",
     "panels": [
       {
         "title": "API Requests/sec",
@@ -394,7 +394,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'podai-api'
+  - job_name: 'ghostspeak-api'
     static_configs:
       - targets: ['localhost:3000']
     metrics_path: /metrics
@@ -426,7 +426,7 @@ export const httpRequestDuration = new Histogram({
 ### Official Documentation
 
 **Core Resources**
-- [podAI Core Documentation](./README.md) - Complete developer guide
+- [GhostSpeak Documentation](./README.md) - Complete developer guide
 - [Getting Started Guide](./getting-started/README.md) - Quick setup and first steps
 - [API Reference](./api/README.md) - Interactive API documentation
 - [Smart Contract Docs](./smart-contract/README.md) - Technical implementation details
@@ -442,12 +442,12 @@ export const httpRequestDuration = new Histogram({
 **Interactive Tutorials**
 1. **[5-Minute Quick Start](./getting-started/quick-start.md)** - Get running immediately
 2. **[First Agent Tutorial](./guides/first-agent.md)** - Build a complete agent
-3. **[Testing Workshop](./testing/getting-started.md)** - Learn TDD with podAI
+3. **[Testing Workshop](./testing/getting-started.md)** - Learn TDD with GhostSpeak
 4. **[Deployment Masterclass](./deployment/README.md)** - Production deployment
 
 **Code Examples**
 - [Example Applications](./examples/README.md) - Complete working examples
-- [Code Snippets](https://github.com/podai/snippets) - Reusable code patterns
+- [Code Snippets](https://github.com/ghostspeak/snippets) - Reusable code patterns
 - [Integration Examples](./integration/README.md) - Platform-specific guides
 
 ### External Learning Resources
@@ -471,7 +471,7 @@ export const httpRequestDuration = new Histogram({
 
 ### Discord
 
-**podAI Official Discord**: [discord.gg/podai-dev](https://discord.gg/podai-dev)
+**GhostSpeak Official Discord**: [discord.gg/ghostspeak-dev](https://discord.gg/ghostspeak-dev)
 
 **Channels:**
 - `#general` - General discussion and announcements
@@ -492,23 +492,23 @@ export const httpRequestDuration = new Histogram({
 
 ### GitHub
 
-**Main Repository**: [github.com/podai/core](https://github.com/podai/core)
+**Main Repository**: [github.com/ghostspeak/core](https://github.com/ghostspeak/core)
 
 **Contributing:**
-- 🐛 [Report Issues](https://github.com/podai/core/issues/new?template=bug_report.md)
-- 💡 [Feature Requests](https://github.com/podai/core/issues/new?template=feature_request.md)
-- 📖 [Documentation Improvements](https://github.com/podai/core/issues/new?template=docs.md)
-- 🔧 [Pull Requests](https://github.com/podai/core/pulls)
+- 🐛 [Report Issues](https://github.com/ghostspeak/core/issues/new?template=bug_report.md)
+- 💡 [Feature Requests](https://github.com/ghostspeak/core/issues/new?template=feature_request.md)
+- 📖 [Documentation Improvements](https://github.com/ghostspeak/core/issues/new?template=docs.md)
+- 🔧 [Pull Requests](https://github.com/ghostspeak/core/pulls)
 
 **Related Repositories:**
-- [podai/examples](https://github.com/podai/examples) - Example applications
-- [podai/templates](https://github.com/podai/templates) - Project templates
-- [podai/tools](https://github.com/podai/tools) - Development tools
+- [ghostspeak/examples](https://github.com/ghostspeak/examples) - Example applications
+- [ghostspeak/templates](https://github.com/ghostspeak/templates) - Project templates
+- [ghostspeak/tools](https://github.com/ghostspeak/tools) - Development tools
 
 ### Forums and Support
 
 **Stack Overflow**
-- Tag: `podai-core` for technical questions
+- Tag: `ghostspeak-core` for technical questions
 - Tag: `solana` for blockchain-related issues
 - Tag: `anchor-lang` for smart contract questions
 
@@ -520,13 +520,13 @@ export const httpRequestDuration = new Histogram({
 ### Professional Support
 
 **Enterprise Support**
-- 📧 [enterprise@podai.com](mailto:enterprise@podai.com) - Enterprise licensing and support
+- 📧 [enterprise@ghostspeak.com](mailto:enterprise@ghostspeak.com) - Enterprise licensing and support
 - 📞 **Phone Support**: Available for enterprise customers
 - 🔒 **Private Discord**: Dedicated channels for enterprise customers
 - 🎯 **Custom Training**: On-site training and workshops
 
 **Consulting Services**
-- **Architecture Review**: Expert review of your podAI implementation
+- **Architecture Review**: Expert review of your GhostSpeak implementation
 - **Performance Optimization**: Tuning for high-scale deployments
 - **Security Audit**: Comprehensive security assessment
 - **Migration Support**: Help migrating from other platforms
@@ -571,14 +571,14 @@ anchor test --skip-build
 ### Deployment Commands
 ```bash
 # Docker
-docker build -t podai/core .
-docker run -p 3000:3000 podai/core
+docker build -t ghostspeak/core .
+docker run -p 3000:3000 ghostspeak/core
 docker-compose up -d
 
 # Kubernetes
 kubectl apply -f k8s/
 kubectl get pods
-kubectl logs -f deployment/podai-api
+kubectl logs -f deployment/ghostspeak-api
 
 # Solana
 solana program deploy target/deploy/pod_com.so
@@ -594,7 +594,7 @@ kubectl top pods
 
 # Log viewing
 tail -f logs/app.log
-kubectl logs -f deployment/podai-api
+kubectl logs -f deployment/ghostspeak-api
 docker logs -f container-name
 ```
 
@@ -602,11 +602,11 @@ docker logs -f container-name
 
 ### Quick Help Decision Tree
 
-1. **🐛 Found a bug?** → [Report on GitHub](https://github.com/podai/core/issues)
-2. **❓ Have a question?** → [Ask on Discord](https://discord.gg/podai-dev)
-3. **💡 Want a feature?** → [Request on GitHub](https://github.com/podai/core/issues)
+1. **🐛 Found a bug?** → [Report on GitHub](https://github.com/ghostspeak/core/issues)
+2. **❓ Have a question?** → [Ask on Discord](https://discord.gg/ghostspeak-dev)
+3. **💡 Want a feature?** → [Request on GitHub](https://github.com/ghostspeak/core/issues)
 4. **📚 Need documentation?** → [Check the docs](./README.md)
-5. **🚀 Enterprise support?** → [Contact sales](mailto:enterprise@podai.com)
+5. **🚀 Enterprise support?** → [Contact sales](mailto:enterprise@ghostspeak.com)
 
 ### Response Times
 
@@ -620,5 +620,5 @@ docker logs -f container-name
 ---
 
 **Last Updated**: January 2025  
-**Maintained By**: podAI Core Team  
+**Maintained By**: GhostSpeak Team  
 **License**: MIT License 

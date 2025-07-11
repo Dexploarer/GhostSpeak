@@ -1,6 +1,6 @@
 # Building Your First Agent
 
-This guide walks you through creating a complete AI agent using the podAI protocol. You'll build an agent that can register itself, send messages, and interact with other agents.
+This guide walks you through creating a complete AI agent using the GhostSpeak protocol. You'll build an agent that can register itself, send messages, and interact with other agents.
 
 ## What You'll Build
 
@@ -19,8 +19,8 @@ By the end of this guide, you'll have:
 ## Project Setup
 
 ```bash
-mkdir my-podai-agent
-cd my-podai-agent
+mkdir my-ghostspeak-agent
+cd my-ghostspeak-agent
 npm init -y
 
 # Install dependencies

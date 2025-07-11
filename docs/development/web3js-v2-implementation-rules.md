@@ -1,6 +1,6 @@
 # Web3.js v2 Implementation Rules
 
-This document establishes the implementation rules and patterns for Web3.js v2 integration in the podAI platform, based on Jupiter Swap API patterns and Solana Web3.js v2 best practices.
+This document establishes the implementation rules and patterns for Web3.js v2 integration in the GhostSpeak platform, based on Jupiter Swap API patterns and Solana Web3.js v2 best practices.
 
 ## Core Architecture Patterns
 
@@ -270,4 +270,4 @@ const rpc = createSolanaRpc(context.banksClient.rpcEndpoint);
 - Implement proper signature verification
 - Sanitize all user inputs
 
-This document serves as the authoritative guide for Web3.js v2 implementation in the podAI platform. All new code should follow these patterns, and existing code should be migrated according to these rules.
+This document serves as the authoritative guide for Web3.js v2 implementation in the GhostSpeak platform. All new code should follow these patterns, and existing code should be migrated according to these rules.

@@ -1,6 +1,6 @@
-# PodAI Rust SDK Documentation
+# GhostSpeak Rust SDK Documentation
 
-Complete documentation for the PodAI Rust SDK, a production-grade SDK for building AI agent commerce applications on Solana.
+Complete documentation for the GhostSpeak Rust SDK, a production-grade SDK for building AI agent commerce applications on Solana.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-podai-sdk = "0.1.0"
+ghostspeak-sdk = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 solana-sdk = "1.16"
 ```
@@ -32,20 +32,20 @@ solana-sdk = "1.16"
 ### Basic Usage
 
 ```rust
-use podai_sdk::{
-    client::{PodAIClient, PodAIConfig},
+use ghostspeak_sdk::{
+    client::{GhostSpeakClient, GhostSpeakConfig},
     services::agent::AgentService,
     types::agent::AgentCapabilities,
-    errors::PodAIResult,
+    errors::GhostSpeakResult,
 };
 use solana_sdk::{signature::Keypair, signer::Signer};
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> PodAIResult<()> {
+async fn main() -> GhostSpeakResult<()> {
     // Initialize client for devnet
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     
     // Create agent service
     let agent_service = AgentService::new(client);
@@ -75,11 +75,11 @@ async fn main() -> PodAIResult<()> {
 
 ```bash
 # Add to existing project
-cargo add podai-sdk
+cargo add ghostspeak-sdk
 
 # Or manually add to Cargo.toml
 [dependencies]
-podai-sdk = "0.1.0"
+ghostspeak-sdk = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -104,7 +104,7 @@ cargo doc --open
 
 ### Overview
 
-The PodAI Rust SDK follows a modular architecture with clear separation of concerns:
+The GhostSpeak Rust SDK follows a modular architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -120,7 +120,7 @@ The PodAI Rust SDK follows a modular architecture with clear separation of conce
 ├─────────────────────────────────────────────────────────────┤
 │                     Client Layer                           │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ PodAIClient │  │ PodAIConfig │  │   Utilities  │         │
+│  │ GhostSpeakClient │  │ GhostSpeakConfig │  │   Utilities  │         │
 │  └─────────────┘  └─────────────┘  └─────────────┘         │
 ├─────────────────────────────────────────────────────────────┤
 │                    Solana Layer                            │
@@ -134,8 +134,8 @@ The PodAI Rust SDK follows a modular architecture with clear separation of conce
 
 #### Client Layer
 
-- **PodAIClient**: Main entry point for all SDK operations
-- **PodAIConfig**: Configuration for different networks and settings
+- **GhostSpeakClient**: Main entry point for all SDK operations
+- **GhostSpeakConfig**: Configuration for different networks and settings
 - **Utilities**: Helper functions for PDA generation, transactions, etc.
 
 #### Service Layer
@@ -159,8 +159,8 @@ The PodAI Rust SDK follows a modular architecture with clear separation of conce
 Manages AI agent registration and lifecycle operations.
 
 ```rust
-use podai_sdk::services::agent::AgentService;
-use podai_sdk::types::agent::AgentCapabilities;
+use ghostspeak_sdk::services::agent::AgentService;
+use ghostspeak_sdk::types::agent::AgentCapabilities;
 
 let agent_service = AgentService::new(client);
 
@@ -185,8 +185,8 @@ let (agent_pda, bump) = agent_service.calculate_agent_pda(&keypair.pubkey());
 Handles communication channels between agents.
 
 ```rust
-use podai_sdk::services::channel::ChannelService;
-use podai_sdk::types::channel::ChannelVisibility;
+use ghostspeak_sdk::services::channel::ChannelService;
+use ghostspeak_sdk::types::channel::ChannelVisibility;
 
 let channel_service = ChannelService::new(client);
 
@@ -217,8 +217,8 @@ let (channel_pda, bump) = channel_service.calculate_channel_pda(
 Manages message sending and receiving operations.
 
 ```rust
-use podai_sdk::services::message::MessageService;
-use podai_sdk::types::message::MessageType;
+use ghostspeak_sdk::services::message::MessageService;
+use ghostspeak_sdk::types::message::MessageType;
 
 let message_service = MessageService::new(client);
 
@@ -226,7 +226,7 @@ let message_service = MessageService::new(client);
 let result = message_service.send_message(
     &sender_keypair,
     &recipient_pubkey,
-    "Hello from PodAI!",
+    "Hello from GhostSpeak!",
     MessageType::Text
 ).await?;
 
@@ -234,7 +234,7 @@ let result = message_service.send_message(
 let (message_pda, bump) = message_service.calculate_message_pda(
     &sender_pubkey,
     &recipient_pubkey,
-    "Hello from PodAI!",
+    "Hello from GhostSpeak!",
     &MessageType::Text
 );
 ```
@@ -249,7 +249,7 @@ let (message_pda, bump) = message_service.calculate_message_pda(
 Provides secure escrow functionality for agent transactions.
 
 ```rust
-use podai_sdk::services::escrow::EscrowService;
+use ghostspeak_sdk::services::escrow::EscrowService;
 
 let escrow_service = EscrowService::new(client);
 
@@ -271,8 +271,8 @@ let result = escrow_service.create_escrow(
 Handles data product creation and trading.
 
 ```rust
-use podai_sdk::services::marketplace::MarketplaceService;
-use podai_sdk::types::marketplace::{ProductType, DataProductType};
+use ghostspeak_sdk::services::marketplace::MarketplaceService;
+use ghostspeak_sdk::types::marketplace::{ProductType, DataProductType};
 
 let marketplace_service = MarketplaceService::new(client);
 
@@ -363,12 +363,12 @@ cargo run --example quick_validation
 
 ```rust
 // Network configurations
-let devnet_config = PodAIConfig::devnet();
-let mainnet_config = PodAIConfig::mainnet();
-let localnet_config = PodAIConfig::localnet();
+let devnet_config = GhostSpeakConfig::devnet();
+let mainnet_config = GhostSpeakConfig::mainnet();
+let localnet_config = GhostSpeakConfig::localnet();
 
 // Custom configuration
-let custom_config = PodAIConfig::devnet()
+let custom_config = GhostSpeakConfig::devnet()
     .with_timeout(60_000)
     .with_retry_config(5, 3000);
 ```
@@ -376,7 +376,7 @@ let custom_config = PodAIConfig::devnet()
 ### Agent Capabilities
 
 ```rust
-use podai_sdk::types::agent::AgentCapabilities;
+use ghostspeak_sdk::types::agent::AgentCapabilities;
 
 // Individual capabilities
 AgentCapabilities::Communication  // 0b001
@@ -391,7 +391,7 @@ let combined = AgentCapabilities::Communication as u64
 ### Channel Types
 
 ```rust
-use podai_sdk::types::channel::ChannelVisibility;
+use ghostspeak_sdk::types::channel::ChannelVisibility;
 
 ChannelVisibility::Public   // Open to all participants
 ChannelVisibility::Private  // Invitation-only
@@ -400,7 +400,7 @@ ChannelVisibility::Private  // Invitation-only
 ### Message Types
 
 ```rust
-use podai_sdk::types::message::MessageType;
+use ghostspeak_sdk::types::message::MessageType;
 
 MessageType::Text           // Plain text messages
 MessageType::Encrypted      // Encrypted content
@@ -423,23 +423,23 @@ export SOLANA_WS_URL=wss://api.devnet.solana.com
 
 ```rust
 // Devnet (default for development)
-let config = PodAIConfig::devnet();
+let config = GhostSpeakConfig::devnet();
 
 // Mainnet (production)
-let config = PodAIConfig::mainnet();
+let config = GhostSpeakConfig::mainnet();
 
 // Localnet (local validator)
-let config = PodAIConfig::localnet();
+let config = GhostSpeakConfig::localnet();
 
 // Custom RPC endpoint
-let config = PodAIConfig::devnet()
+let config = GhostSpeakConfig::devnet()
     .with_custom_rpc("https://my-rpc-endpoint.com");
 ```
 
 ### Timeout and Retry Configuration
 
 ```rust
-let config = PodAIConfig::devnet()
+let config = GhostSpeakConfig::devnet()
     .with_timeout(30_000)      // 30 second timeout
     .with_retry_config(5, 2000); // 5 retries, 2 second delay
 ```
@@ -451,20 +451,20 @@ let config = PodAIConfig::devnet()
 The SDK provides comprehensive error types:
 
 ```rust
-use podai_sdk::errors::{PodAIError, PodAIResult};
+use ghostspeak_sdk::errors::{GhostSpeakError, GhostSpeakResult};
 
 match operation().await {
     Ok(result) => { /* success */ }
-    Err(PodAIError::Network { message }) => {
+    Err(GhostSpeakError::Network { message }) => {
         // Network connectivity issues - usually retryable
     }
-    Err(PodAIError::InvalidInput { field, reason }) => {
+    Err(GhostSpeakError::InvalidInput { field, reason }) => {
         // Input validation failed - fix input
     }
-    Err(PodAIError::TransactionFailed { reason, retryable, .. }) => {
+    Err(GhostSpeakError::TransactionFailed { reason, retryable, .. }) => {
         // Transaction failed - check if retryable
     }
-    Err(PodAIError::AccountNotFound { account_type, address }) => {
+    Err(GhostSpeakError::AccountNotFound { account_type, address }) => {
         // Account doesn't exist
     }
     Err(e) => {
@@ -476,11 +476,11 @@ match operation().await {
 ### Retry Logic
 
 ```rust
-use podai_sdk::errors::PodAIError;
+use ghostspeak_sdk::errors::GhostSpeakError;
 
-async fn retry_operation<F, T>(mut operation: F, max_retries: u32) -> PodAIResult<T>
+async fn retry_operation<F, T>(mut operation: F, max_retries: u32) -> GhostSpeakResult<T>
 where
-    F: FnMut() -> PodAIResult<T>,
+    F: FnMut() -> GhostSpeakResult<T>,
 {
     for attempt in 0..max_retries {
         match operation() {
@@ -504,7 +504,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use podai_sdk::utils::pda::find_agent_pda;
+    use ghostspeak_sdk::utils::pda::find_agent_pda;
 
     #[test]
     fn test_pda_generation() {
@@ -518,10 +518,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_client_creation() {
-        let config = PodAIConfig::devnet();
+        let config = GhostSpeakConfig::devnet();
         
         // May fail in CI without Solana - that's expected
-        match PodAIClient::new(config).await {
+        match GhostSpeakClient::new(config).await {
             Ok(client) => {
                 assert!(!client.program_id().to_string().is_empty());
             }
@@ -556,8 +556,8 @@ RUST_LOG=debug cargo test
 #[tokio::test]
 #[ignore = "requires network"]
 async fn test_with_network() {
-    let config = PodAIConfig::devnet();
-    let client = PodAIClient::new(config).await.unwrap();
+    let config = GhostSpeakConfig::devnet();
+    let client = GhostSpeakClient::new(config).await.unwrap();
     // ... test code
 }
 ```
@@ -568,13 +568,13 @@ async fn test_with_network() {
 
 ```rust
 // ✅ Good: Share client instance
-let client = Arc::new(PodAIClient::new(config).await?);
+let client = Arc::new(GhostSpeakClient::new(config).await?);
 let agent_service = AgentService::new(client.clone());
 let channel_service = ChannelService::new(client.clone());
 
 // ❌ Bad: Create multiple clients
-let agent_client = PodAIClient::new(config).await?;
-let channel_client = PodAIClient::new(config).await?;
+let agent_client = GhostSpeakClient::new(config).await?;
+let channel_client = GhostSpeakClient::new(config).await?;
 ```
 
 ### 2. Error Handling
@@ -582,10 +582,10 @@ let channel_client = PodAIClient::new(config).await?;
 ```rust
 // ✅ Good: Handle specific errors
 match result {
-    Err(PodAIError::Network { .. }) => {
+    Err(GhostSpeakError::Network { .. }) => {
         // Implement retry logic
     }
-    Err(PodAIError::InvalidInput { field, reason }) => {
+    Err(GhostSpeakError::InvalidInput { field, reason }) => {
         log::error!("Invalid {}: {}", field, reason);
         return Err(e);
     }
@@ -620,12 +620,12 @@ let result = agent_service.register(&keypair, capabilities, metadata).await?;
 ```rust
 // ✅ Good: Proper cleanup
 {
-    let client = PodAIClient::new(config).await?;
+    let client = GhostSpeakClient::new(config).await?;
     // Use client
 } // Client automatically cleaned up
 
 // ✅ Good: Explicit cleanup for long-running services
-let client = PodAIClient::new(config).await?;
+let client = GhostSpeakClient::new(config).await?;
 // ... use client
 client.close().await?;
 ```
@@ -647,8 +647,8 @@ async fn test_pda_generation() {
 #[ignore = "requires network"]
 async fn test_real_registration() {
     // Test with real network
-    let config = PodAIConfig::devnet();
-    let client = PodAIClient::new(config).await?;
+    let config = GhostSpeakConfig::devnet();
+    let client = GhostSpeakClient::new(config).await?;
     // ... test with real transactions
 }
 ```
@@ -729,7 +729,7 @@ Error: Custom { message: "Failed to deserialize account" }
 
    ```rust
    // Test RPC connectivity
-   let client = PodAIClient::new(config).await?;
+   let client = GhostSpeakClient::new(config).await?;
    let health = client.rpc_client.get_health().await?;
    println!("RPC Health: {:?}", health);
    ```
@@ -750,7 +750,7 @@ Error: Custom { message: "Failed to deserialize account" }
 
    ```rust
    // Reuse client instances
-   let client = Arc::new(PodAIClient::new(config).await?);
+   let client = Arc::new(GhostSpeakClient::new(config).await?);
    ```
 
 2. **Batch Operations**
@@ -778,11 +778,11 @@ Error: Custom { message: "Failed to deserialize account" }
 
    ```rust
    // Old
-   let client = PodAIClient::devnet();
+   let client = GhostSpeakClient::devnet();
    
    // New
-   let config = PodAIConfig::devnet();
-   let client = PodAIClient::new(config).await?;
+   let config = GhostSpeakConfig::devnet();
+   let client = GhostSpeakClient::new(config).await?;
    ```
 
 2. **Service Creation**
@@ -803,7 +803,7 @@ Error: Custom { message: "Failed to deserialize account" }
    
    // New
    match result {
-       Err(PodAIError::Network { message }) => {
+       Err(GhostSpeakError::Network { message }) => {
            // Handle network errors specifically
        }
        Err(e) => return Err(e),

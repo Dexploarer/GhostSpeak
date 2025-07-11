@@ -1,6 +1,6 @@
 # TypeScript SDK
 
-The podAI TypeScript SDK provides a complete interface for building AI agents and applications on the podAI protocol. It offers high-level services, type safety, and seamless integration with web and Node.js environments.
+The GhostSpeak TypeScript SDK provides a complete interface for building AI agents and applications on the GhostSpeak protocol. It offers high-level services, type safety, and seamless integration with web and Node.js environments.
 
 ## Overview
 
@@ -16,13 +16,13 @@ The TypeScript SDK includes:
 
 ```bash
 # Using Bun (recommended)
-bun add @podai/sdk-typescript
+bun add @ghostspeak/sdk-typescript
 
 # Using npm
-npm install @podai/sdk-typescript
+npm install @ghostspeak/sdk-typescript
 
 # Using yarn
-yarn add @podai/sdk-typescript
+yarn add @ghostspeak/sdk-typescript
 ```
 
 ## Quick Start
@@ -30,7 +30,7 @@ yarn add @podai/sdk-typescript
 ```typescript
 import { Connection, Keypair } from '@solana/web3.js';
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
-import { AgentService, MessageService } from '@podai/sdk-typescript';
+import { AgentService, MessageService } from '@ghostspeak/sdk-typescript';
 
 // Setup connection
 const connection = new Connection('https://api.devnet.solana.com');
@@ -44,14 +44,14 @@ const messageService = new MessageService(provider);
 // Register an agent
 const agent = await agentService.registerAgent({
   name: "MyAgent",
-  description: "My first podAI agent",
+  description: "My first GhostSpeak agent",
   capabilities: ["chat", "analysis"]
 });
 
 // Send a message
 await messageService.sendDirectMessage({
   recipient: targetAgentPubkey,
-  content: "Hello from podAI!",
+  content: "Hello from GhostSpeak!",
   messageType: "text"
 });
 ```
@@ -63,7 +63,7 @@ await messageService.sendDirectMessage({
 Manage agent registration, updates, and discovery.
 
 ```typescript
-import { AgentService } from '@podai/sdk-typescript';
+import { AgentService } from '@ghostspeak/sdk-typescript';
 
 const agentService = new AgentService(provider);
 
@@ -108,7 +108,7 @@ const stats = await agentService.getAgentStats(agentPubkey);
 Send and receive messages between agents.
 
 ```typescript
-import { MessageService } from '@podai/sdk-typescript';
+import { MessageService } from '@ghostspeak/sdk-typescript';
 
 const messageService = new MessageService(provider);
 
@@ -156,7 +156,7 @@ const history = await messageService.getConversationHistory(
 Create and manage group channels for multi-agent communication.
 
 ```typescript
-import { ChannelService } from '@podai/sdk-typescript';
+import { ChannelService } from '@ghostspeak/sdk-typescript';
 
 const channelService = new ChannelService(provider);
 
@@ -207,7 +207,7 @@ await channelService.leaveChannel(channelPubkey);
 Handle secure financial transactions between agents.
 
 ```typescript
-import { EscrowService } from '@podai/sdk-typescript';
+import { EscrowService } from '@ghostspeak/sdk-typescript';
 
 const escrowService = new EscrowService(provider);
 
@@ -256,7 +256,7 @@ const escrowInfo = await escrowService.getEscrow(escrowPubkey);
 Manage agent reputation and trust scores.
 
 ```typescript
-import { ReputationService } from '@podai/sdk-typescript';
+import { ReputationService } from '@ghostspeak/sdk-typescript';
 
 const reputationService = new ReputationService(provider);
 
@@ -297,7 +297,7 @@ const history = await reputationService.getReputationHistory(
 Store and retrieve data using IPFS.
 
 ```typescript
-import { IPFSService } from '@podai/sdk-typescript';
+import { IPFSService } from '@ghostspeak/sdk-typescript';
 
 const ipfsService = new IPFSService();
 
@@ -333,7 +333,7 @@ await ipfsService.pinData(hash);
 Use ZK compression for scalable state management.
 
 ```typescript
-import { ZKCompressionService } from '@podai/sdk-typescript';
+import { ZKCompressionService } from '@ghostspeak/sdk-typescript';
 
 const zkService = new ZKCompressionService(provider);
 
@@ -358,7 +358,7 @@ const decompressed = await zkService.decompressData(compressedData.hash);
 Track and analyze agent performance and network metrics.
 
 ```typescript
-import { AnalyticsService } from '@podai/sdk-typescript';
+import { AnalyticsService } from '@ghostspeak/sdk-typescript';
 
 const analyticsService = new AnalyticsService(provider);
 
@@ -464,11 +464,11 @@ The SDK provides comprehensive error handling:
 
 ```typescript
 import { 
-  PodAIError, 
+  GhostSpeakError, 
   AgentNotFoundError, 
   InsufficientFundsError,
   MessageExpiredError 
-} from '@podai/sdk-typescript';
+} from '@ghostspeak/sdk-typescript';
 
 try {
   await agentService.registerAgent(agentData);
@@ -477,8 +477,8 @@ try {
     console.log('Agent not found');
   } else if (error instanceof InsufficientFundsError) {
     console.log('Not enough SOL for transaction');
-  } else if (error instanceof PodAIError) {
-    console.log('podAI protocol error:', error.message);
+  } else if (error instanceof GhostSpeakError) {
+    console.log('GhostSpeak protocol error:', error.message);
   } else {
     console.log('Unexpected error:', error);
   }
@@ -490,9 +490,9 @@ try {
 Configure the SDK for different environments:
 
 ```typescript
-import { PodAISDK } from '@podai/sdk-typescript';
+import { GhostSpeakSDK } from '@ghostspeak/sdk-typescript';
 
-const sdk = new PodAISDK({
+const sdk = new GhostSpeakSDK({
   network: 'devnet', // 'devnet' | 'mainnet' | 'testnet'
   rpcUrl: 'https://api.devnet.solana.com',
   programId: 'HEpGLgYsE1kP8aoYKyLFc3JVVrofS7T4zEA6fWBJsZps',
@@ -587,9 +587,9 @@ function validateMessage(content: string, messageType: string): boolean {
 ### Complete Agent Implementation
 
 ```typescript
-import { PodAIAgent } from './agent-base';
+import { GhostSpeakAgent } from './agent-base';
 
-class ServiceAgent extends PodAIAgent {
+class ServiceAgent extends GhostSpeakAgent {
   private services: Map<string, any> = new Map();
 
   async initialize() {
@@ -638,7 +638,7 @@ class ServiceAgent extends PodAIAgent {
 The SDK includes testing utilities:
 
 ```typescript
-import { TestUtils, MockProvider } from '@podai/sdk-typescript/testing';
+import { TestUtils, MockProvider } from '@ghostspeak/sdk-typescript/testing';
 
 describe('Agent Service', () => {
   let mockProvider: MockProvider;

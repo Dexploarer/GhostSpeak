@@ -1,6 +1,6 @@
 # Common Issues & Solutions
 
-Quick solutions for the most frequently encountered podAI development issues.
+Quick solutions for the most frequently encountered GhostSpeak development issues.
 
 ## Build & Setup Issues
 

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Comprehensive deployment strategy for podAI Core across multiple environments using modern DevOps practices and cloud-native technologies.
+Comprehensive deployment strategy for GhostSpeak across multiple environments using modern DevOps practices and cloud-native technologies.
 
 ## Quick Navigation
 
@@ -77,7 +77,7 @@ graph TB
 
 **1. Clone and Setup**
 ```bash
-git clone https://github.com/podai/core.git
+git clone https://github.com/ghostspeak/core.git
 cd core
 
 # Install dependencies
@@ -96,8 +96,8 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: podai_dev
-      POSTGRES_USER: podai
+      POSTGRES_DB: ghostspeak_dev
+      POSTGRES_USER: ghostspeak
       POSTGRES_PASSWORD: development_password
     ports:
       - "5432:5432"
@@ -162,7 +162,7 @@ bun run dev
     "dev:frontend": "vite dev",
     "test:local": "vitest --watch",
     "deploy:local": "anchor deploy --provider.cluster localnet",
-    "build:docker": "docker build -t podai/core:dev ."
+    "build:docker": "docker build -t ghostspeak/core:dev ."
   }
 }
 ```
@@ -177,20 +177,20 @@ bun run dev
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: podai-staging
+  name: ghostspeak-staging
   labels:
     env: staging
-    app: podai-core
+    app: ghostspeak-core
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app-config
-  namespace: podai-staging
+  namespace: ghostspeak-staging
 data:
   NODE_ENV: "staging"
   LOG_LEVEL: "info"
-  DATABASE_URL: "postgresql://podai:$(DB_PASSWORD)@postgres:5432/podai_staging"
+  DATABASE_URL: "postgresql://ghostspeak:$(DB_PASSWORD)@postgres:5432/ghostspeak_staging"
   REDIS_URL: "redis://redis:6379"
   SOLANA_RPC_URL: "https://api.devnet.solana.com"
 ```
@@ -201,21 +201,21 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: podai-api
-  namespace: podai-staging
+  name: ghostspeak-api
+  namespace: ghostspeak-staging
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: podai-api
+      app: ghostspeak-api
   template:
     metadata:
       labels:
-        app: podai-api
+        app: ghostspeak-api
     spec:
       containers:
       - name: api
-        image: podai/core:staging
+        image: ghostspeak/core:staging
         ports:
         - containerPort: 3000
         env:
@@ -250,11 +250,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: podai-api-service
-  namespace: podai-staging
+  name: ghostspeak-api-service
+  namespace: ghostspeak-staging
 spec:
   selector:
-    app: podai-api
+    app: ghostspeak-api
   ports:
   - protocol: TCP
     port: 80
@@ -268,8 +268,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: podai-ingress
-  namespace: podai-staging
+  name: ghostspeak-ingress
+  namespace: ghostspeak-staging
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     cert-manager.io/cluster-issuer: "letsencrypt-staging"
@@ -277,17 +277,17 @@ metadata:
 spec:
   tls:
   - hosts:
-    - staging.api.podai.com
-    secretName: podai-staging-tls
+    - staging.api.ghostspeak.com
+    secretName: ghostspeak-staging-tls
   rules:
-  - host: staging.api.podai.com
+  - host: staging.api.ghostspeak.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: podai-api-service
+            name: ghostspeak-api-service
             port:
               number: 80
 ```
@@ -372,7 +372,7 @@ jobs:
       - name: Deploy to Kubernetes
         uses: azure/k8s-deploy@v1
         with:
-          namespace: 'podai-staging'
+          namespace: 'ghostspeak-staging'
           manifests: |
             k8s/staging/namespace.yaml
             k8s/staging/configmap.yaml
@@ -393,8 +393,8 @@ jobs:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: podai-api
-  namespace: podai-production
+  name: ghostspeak-api
+  namespace: ghostspeak-production
 spec:
   replicas: 5
   strategy:
@@ -404,11 +404,11 @@ spec:
       maxUnavailable: 1
   selector:
     matchLabels:
-      app: podai-api
+      app: ghostspeak-api
   template:
     metadata:
       labels:
-        app: podai-api
+        app: ghostspeak-api
         version: v1
     spec:
       affinity:
@@ -421,11 +421,11 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - podai-api
+                  - ghostspeak-api
               topologyKey: kubernetes.io/hostname
       containers:
       - name: api
-        image: podai/core:v1.0.0
+        image: ghostspeak/core:v1.0.0
         ports:
         - containerPort: 3000
         env:
@@ -474,13 +474,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: podai-api-hpa
-  namespace: podai-production
+  name: ghostspeak-api-hpa
+  namespace: ghostspeak-production
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: podai-api
+    name: ghostspeak-api
   minReplicas: 3
   maxReplicas: 20
   metrics:
@@ -540,21 +540,21 @@ jobs:
       - name: Deploy to Blue Environment
         run: |
           # Deploy new version to blue environment
-          kubectl apply -f k8s/production/blue/ --namespace=podai-production
+          kubectl apply -f k8s/production/blue/ --namespace=ghostspeak-production
           
           # Wait for blue deployment to be ready
-          kubectl rollout status deployment/podai-api-blue --namespace=podai-production --timeout=600s
+          kubectl rollout status deployment/ghostspeak-api-blue --namespace=ghostspeak-production --timeout=600s
           
       - name: Run Smoke Tests
         run: |
           # Run comprehensive smoke tests against blue environment
-          bun run test:smoke --endpoint=https://blue.api.podai.com
+          bun run test:smoke --endpoint=https://blue.api.ghostspeak.com
           
       - name: Switch Traffic to Blue
         if: success()
         run: |
           # Update service to point to blue deployment
-          kubectl patch service podai-api-service --namespace=podai-production \
+          kubectl patch service ghostspeak-api-service --namespace=ghostspeak-production \
             --patch '{"spec":{"selector":{"version":"blue"}}}'
             
       - name: Verify Production Health
@@ -566,7 +566,7 @@ jobs:
         if: success()
         run: |
           # Scale down green deployment
-          kubectl scale deployment podai-api-green --replicas=0 --namespace=podai-production
+          kubectl scale deployment ghostspeak-api-green --replicas=0 --namespace=ghostspeak-production
 ```
 
 ## Database Management
@@ -640,7 +640,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
-  namespace: podai-production
+  namespace: ghostspeak-production
 spec:
   schedule: "0 2 * * *"  # Daily at 2 AM
   jobTemplate:
@@ -655,12 +655,12 @@ spec:
             - -c
             - |
               TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-              BACKUP_FILE="podai_backup_${TIMESTAMP}.sql"
+              BACKUP_FILE="ghostspeak_backup_${TIMESTAMP}.sql"
               
               pg_dump "${DATABASE_URL}" > "/backups/${BACKUP_FILE}"
               
               # Upload to S3
-              aws s3 cp "/backups/${BACKUP_FILE}" "s3://podai-backups/database/"
+              aws s3 cp "/backups/${BACKUP_FILE}" "s3://ghostspeak-backups/database/"
               
               # Keep only last 30 days of local backups
               find /backups -name "*.sql" -mtime +30 -delete
@@ -692,12 +692,12 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'podai-api'
+  - job_name: 'ghostspeak-api'
     kubernetes_sd_configs:
     - role: pod
       namespaces:
         names:
-        - podai-production
+        - ghostspeak-production
     relabel_configs:
     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
       action: keep
@@ -726,7 +726,7 @@ alerting:
 ```yaml
 # monitoring/alert-rules.yml
 groups:
-- name: podai.alerts
+- name: ghostspeak.alerts
   rules:
   - alert: HighErrorRate
     expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
@@ -762,7 +762,7 @@ groups:
 ```json
 {
   "dashboard": {
-    "title": "podAI API Performance",
+    "title": "GhostSpeak API Performance",
     "panels": [
       {
         "title": "Request Rate",
@@ -789,7 +789,7 @@ groups:
         "type": "stat",
         "targets": [
           {
-            "expr": "podai_agents_active_total",
+            "expr": "ghostspeak_agents_active_total",
             "legendFormat": "Active Agents"
           }
         ]
@@ -809,12 +809,12 @@ groups:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: podai-network-policy
-  namespace: podai-production
+  name: ghostspeak-network-policy
+  namespace: ghostspeak-production
 spec:
   podSelector:
     matchLabels:
-      app: podai-api
+      app: ghostspeak-api
   policyTypes:
   - Ingress
   - Egress
@@ -857,8 +857,8 @@ spec:
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: podai-secrets
-  namespace: podai-production
+  name: ghostspeak-secrets
+  namespace: ghostspeak-production
 spec:
   refreshInterval: 15s
   secretStoreRef:
@@ -870,15 +870,15 @@ spec:
   data:
   - secretKey: database-url
     remoteRef:
-      key: podai/production
+      key: ghostspeak/production
       property: database_url
   - secretKey: redis-url
     remoteRef:
-      key: podai/production
+      key: ghostspeak/production
       property: redis_url
   - secretKey: jwt-secret
     remoteRef:
-      key: podai/production
+      key: ghostspeak/production
       property: jwt_secret
 ```
 
@@ -903,8 +903,8 @@ kubectl run postgres-restore --image=postgres:15-alpine --rm -it -- \
   psql "${DATABASE_URL}" < backup.sql
 
 # Application Recovery
-kubectl rollout undo deployment/podai-api --namespace=podai-production
-kubectl rollout status deployment/podai-api --namespace=podai-production
+kubectl rollout undo deployment/ghostspeak-api --namespace=ghostspeak-production
+kubectl rollout status deployment/ghostspeak-api --namespace=ghostspeak-production
 ```
 
 **3. Regional Failover**
@@ -913,15 +913,15 @@ kubectl rollout status deployment/podai-api --namespace=podai-production
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
-  name: podai-ssl-cert
+  name: ghostspeak-ssl-cert
 spec:
   domains:
-    - api.podai.com
+    - api.ghostspeak.com
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: podai-global-service
+  name: ghostspeak-global-service
   annotations:
     cloud.google.com/global-access: "true"
 spec:
@@ -931,7 +931,7 @@ spec:
   - port: 80
     targetPort: 3000
   selector:
-    app: podai-api
+    app: ghostspeak-api
 ```
 
 ## Performance Optimization
@@ -945,7 +945,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
-  namespace: podai-production
+  namespace: ghostspeak-production
 spec:
   serviceName: redis
   replicas: 3
@@ -993,12 +993,12 @@ spec:
 **CloudFlare Setup**
 ```yaml
 # terraform/cloudflare.tf
-resource "cloudflare_zone" "podai" {
-  zone = "podai.com"
+resource "cloudflare_zone" "ghostspeak" {
+  zone = "ghostspeak.com"
 }
 
 resource "cloudflare_record" "api" {
-  zone_id = cloudflare_zone.podai.id
+  zone_id = cloudflare_zone.ghostspeak.id
   name    = "api"
   value   = var.load_balancer_ip
   type    = "A"
@@ -1007,8 +1007,8 @@ resource "cloudflare_record" "api" {
 }
 
 resource "cloudflare_page_rule" "api_cache" {
-  zone_id  = cloudflare_zone.podai.id
-  target   = "api.podai.com/static/*"
+  zone_id  = cloudflare_zone.ghostspeak.id
+  target   = "api.ghostspeak.com/static/*"
   priority = 1
 
   actions {
@@ -1025,40 +1025,40 @@ resource "cloudflare_page_rule" "api_cache" {
 **Pod Startup Issues**
 ```bash
 # Check pod status
-kubectl get pods -n podai-production
+kubectl get pods -n ghostspeak-production
 
 # View pod logs
-kubectl logs -f deployment/podai-api -n podai-production
+kubectl logs -f deployment/ghostspeak-api -n ghostspeak-production
 
 # Describe pod for events
-kubectl describe pod <pod-name> -n podai-production
+kubectl describe pod <pod-name> -n ghostspeak-production
 
 # Check resource usage
-kubectl top pods -n podai-production
+kubectl top pods -n ghostspeak-production
 ```
 
 **Network Connectivity Issues**
 ```bash
 # Test internal service connectivity
-kubectl exec -it deployment/podai-api -n podai-production -- wget -qO- http://postgres:5432
+kubectl exec -it deployment/ghostspeak-api -n ghostspeak-production -- wget -qO- http://postgres:5432
 
 # Test external connectivity
-kubectl exec -it deployment/podai-api -n podai-production -- wget -qO- https://api.devnet.solana.com/health
+kubectl exec -it deployment/ghostspeak-api -n ghostspeak-production -- wget -qO- https://api.devnet.solana.com/health
 
 # Check DNS resolution
-kubectl exec -it deployment/podai-api -n podai-production -- nslookup postgres
+kubectl exec -it deployment/ghostspeak-api -n ghostspeak-production -- nslookup postgres
 ```
 
 **Performance Debugging**
 ```bash
 # Check resource limits
-kubectl describe deployment podai-api -n podai-production
+kubectl describe deployment ghostspeak-api -n ghostspeak-production
 
 # Monitor real-time metrics
-kubectl top pods -n podai-production --watch
+kubectl top pods -n ghostspeak-production --watch
 
 # Check HPA status
-kubectl describe hpa podai-api-hpa -n podai-production
+kubectl describe hpa ghostspeak-api-hpa -n ghostspeak-production
 ```
 
 ## Useful Commands
@@ -1072,13 +1072,13 @@ kubectl apply -k k8s/staging/
 kubectl apply -k k8s/production/
 
 # Check deployment status
-kubectl rollout status deployment/podai-api -n podai-production
+kubectl rollout status deployment/ghostspeak-api -n ghostspeak-production
 
 # Scale deployment
-kubectl scale deployment podai-api --replicas=10 -n podai-production
+kubectl scale deployment ghostspeak-api --replicas=10 -n ghostspeak-production
 
 # Update image
-kubectl set image deployment/podai-api api=podai/core:v1.1.0 -n podai-production
+kubectl set image deployment/ghostspeak-api api=ghostspeak/core:v1.1.0 -n ghostspeak-production
 ```
 
 ### Monitoring Commands
@@ -1090,19 +1090,19 @@ kubectl port-forward svc/grafana 3000:3000 -n monitoring
 kubectl port-forward svc/prometheus 9090:9090 -n monitoring
 
 # Check alerts
-kubectl exec -it prometheus-0 -n monitoring -- promtool query instant 'up{job="podai-api"}'
+kubectl exec -it prometheus-0 -n monitoring -- promtool query instant 'up{job="ghostspeak-api"}'
 ```
 
 ### Backup Commands
 ```bash
 # Trigger manual backup
-kubectl create job --from=cronjob/postgres-backup manual-backup-$(date +%s) -n podai-production
+kubectl create job --from=cronjob/postgres-backup manual-backup-$(date +%s) -n ghostspeak-production
 
 # List backups
-aws s3 ls s3://podai-backups/database/
+aws s3 ls s3://ghostspeak-backups/database/
 
 # Download backup
-aws s3 cp s3://podai-backups/database/podai_backup_20240115_020000.sql ./
+aws s3 cp s3://ghostspeak-backups/database/ghostspeak_backup_20240115_020000.sql ./
 ```
 
 ## Support
@@ -1111,6 +1111,6 @@ Need help with deployment?
 
 - 📚 [Kubernetes Documentation](https://kubernetes.io/docs/)
 - 🔧 [Troubleshooting Guide](./troubleshooting.md)
-- 💬 [DevOps Discord](https://discord.gg/podai-devops)
-- 📧 [Infrastructure Support](mailto:infra-support@podai.com)
-- 🐛 [Report Issues](https://github.com/podai/core/issues) 
+- 💬 [DevOps Discord](https://discord.gg/ghostspeak-devops)
+- 📧 [Infrastructure Support](mailto:infra-support@ghostspeak.com)
+- 🐛 [Report Issues](https://github.com/ghostspeak/core/issues) 

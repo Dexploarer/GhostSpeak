@@ -15,9 +15,10 @@ import {
   type Address
 } from '@ghostspeak/sdk';
 import { createKeyPairSignerFromBytes } from '@solana/signers';
-import { generateKeyPair } from '@solana/keys';
+import { Keypair } from '@solana/web3.js';
 import fs from 'fs';
 import path from 'path';
+import { ensureSufficientBalance, getAirdropHelp } from './utils/airdrop-helper';
 
 // Configuration
 const RPC_ENDPOINT = 'https://api.devnet.solana.com';
@@ -31,21 +32,40 @@ async function loadOrCreateWallet() {
     // Try to load existing wallet
     if (fs.existsSync(WALLET_PATH)) {
       const walletData = JSON.parse(fs.readFileSync(WALLET_PATH, 'utf-8'));
-      return await createKeyPairSignerFromBytes(new Uint8Array(walletData));
+      
+      // We expect 64-byte format for Ed25519 keypair
+      if (walletData.length === 64) {
+        // 64-byte format (private + public key)
+        const fullKeyPairBytes = new Uint8Array(walletData);
+        const signer = await createKeyPairSignerFromBytes(fullKeyPairBytes);
+        
+        console.log('✅ Wallet loaded from:', WALLET_PATH);
+        return signer;
+      } else {
+        throw new Error(`Invalid wallet data length: ${walletData.length}. Expected 64 bytes.`);
+      }
     }
   } catch (error) {
     console.log('Could not load existing wallet, creating new one...');
   }
 
-  // Create new wallet
-  const keyPair = await generateKeyPair();
-  const walletData = Array.from(keyPair.privateKey);
+  // Create new wallet using Solana's Keypair
+  const solanaKeypair = Keypair.generate();
   
-  // Save wallet for future use
+  // Get the full 64-byte secret key (32 bytes private + 32 bytes public)
+  const fullKeyPairBytes = solanaKeypair.secretKey;
+  
+  // Create signer from the keypair bytes
+  const signer = await createKeyPairSignerFromBytes(fullKeyPairBytes);
+  
+  // Save the full keypair for future use
+  const walletData = Array.from(fullKeyPairBytes);
   fs.writeFileSync(WALLET_PATH, JSON.stringify(walletData, null, 2));
-  console.log('✅ New wallet created and saved to:', WALLET_PATH);
   
-  return await createKeyPairSignerFromBytes(keyPair.privateKey);
+  console.log('✅ New wallet created and saved to:', WALLET_PATH);
+  console.log('   Address:', signer.address);
+  
+  return signer;
 }
 
 /**
@@ -53,22 +73,30 @@ async function loadOrCreateWallet() {
  */
 async function ensureSolBalance(client: any, wallet: any) {
   try {
-    const balance = await client.getBalance(wallet.address);
-    const solBalance = lamportsToSol(balance);
+    console.log('💰 Checking SOL balance...');
     
-    console.log(`Current balance: ${solBalance.toFixed(4)} SOL`);
+    // Try automatic airdrop if balance is low
+    const hasBalance = await ensureSufficientBalance(wallet.address, {
+      minBalance: 0.01,
+      airdropAmount: 1,
+      verbose: true,
+      rpcEndpoint: RPC_ENDPOINT
+    });
     
-    if (solBalance < 0.01) {
-      console.log('⚠️  Low balance detected. You may need to:');
-      console.log(`   1. Airdrop SOL: solana airdrop 1 ${wallet.address}`);
-      console.log(`   2. Or transfer SOL to: ${wallet.address}`);
-      console.log('   3. Minimum 0.01 SOL recommended for transactions');
+    if (!hasBalance) {
+      console.log('\n❌ Unable to automatically airdrop SOL.');
+      getAirdropHelp(wallet.address);
       return false;
     }
     
     return true;
   } catch (error) {
     console.error('Error checking balance:', error);
+    
+    // Show manual airdrop instructions as fallback
+    console.log('\n💡 Automatic airdrop failed. Here are manual options:');
+    getAirdropHelp(wallet.address);
+    
     return false;
   }
 }
@@ -95,13 +123,13 @@ async function runBasicAgentRegistration() {
     console.log('   Note: Save your wallet file securely!\n');
 
     // 3. Check balance
-    console.log('💰 Checking SOL balance...');
     const hasBalance = await ensureSolBalance(client, agentWallet);
     if (!hasBalance) {
       console.log('\n❌ Insufficient balance. Please add SOL to continue.');
+      console.log('   Run the example again after funding your wallet.');
       process.exit(1);
     }
-    console.log('✅ Sufficient balance available\n');
+    console.log('');
 
     // 4. Check if agent is already verified
     console.log('🔍 Checking agent verification status...');

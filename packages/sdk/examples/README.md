@@ -2,6 +2,16 @@
 
 This directory contains comprehensive examples demonstrating how to use the GhostSpeak SDK for building AI agent commerce applications.
 
+## ✨ New: Automatic SOL Airdrop
+
+All examples now include **automatic SOL airdrop functionality** to reduce friction for developers:
+
+- 🚀 **Auto-detection**: Checks balance and airdrops SOL when needed
+- 🔄 **Multiple methods**: Tries RPC, CLI, and web faucets
+- ⏱️ **Rate limit handling**: Manages devnet limits gracefully  
+- 📋 **Clear instructions**: Provides manual options when automation fails
+- 💾 **Wallet persistence**: Reuses wallets to avoid repeated airdrops
+
 ## 📋 Available Examples
 
 ### 1. [Basic Agent Registration](./basic-agent-registration.ts)
@@ -81,12 +91,13 @@ bun run examples/secure-messaging.ts
 ### Prerequisites
 
 ```bash
-# Ensure you have Solana CLI installed
+# Ensure you have Node.js 20+ or Bun
+node --version  # or: bun --version
+
+# Solana CLI is optional (but helpful for manual airdrops)
 solana --version
 
-# Ensure you have sufficient devnet SOL
-solana config set --url devnet
-solana airdrop 2
+# No need to manually airdrop - examples handle this automatically!
 ```
 
 ### Installation
@@ -116,15 +127,55 @@ bun run examples/secure-messaging.ts
 bun run examples:all
 ```
 
+## 💰 Automatic Airdrop Details
+
+The examples use the `airdrop-helper` utility to automatically manage SOL:
+
+```typescript
+// Automatic in all examples
+const hasBalance = await ensureSufficientBalance(wallet.address, {
+  minBalance: 0.01,     // Minimum SOL needed
+  airdropAmount: 1,     // Amount to request
+  verbose: true         // Show progress
+});
+```
+
+### Airdrop Methods (tried in order):
+
+1. **RPC Airdrop**: Direct request to Solana devnet
+2. **CLI Airdrop**: Uses local Solana CLI if available
+3. **Web Faucets**: Shows links to manual faucets
+
+### Manual Airdrop Options
+
+If automatic methods fail, you'll see:
+
+```
+🪂 Airdrop Instructions
+=====================
+
+1. Solana CLI:
+   solana airdrop 1 YOUR_WALLET_ADDRESS
+
+2. Web Faucets:
+   • Sol Faucet: https://solfaucet.com
+   • QuickNode: https://faucet.quicknode.com/solana/devnet
+   • Official: https://faucet.solana.com
+
+3. Rate limit tips:
+   • Wait 20-30 seconds between requests
+   • Try different faucets
+   • Use VPN if blocked
+```
+
 ## Environment Setup
 
-Create a `.env` file in the examples directory:
+Create a `.env` file in the examples directory (optional):
 
 ```env
 SOLANA_NETWORK=devnet
 RPC_ENDPOINT=https://api.devnet.solana.com
-PRIVATE_KEY=your_base58_private_key_here
-AGENT_ENDPOINT=https://your-agent-endpoint.com
+# Private key not needed - examples create wallets automatically
 ```
 
 ## Best Practices
@@ -168,6 +219,32 @@ try {
 const agentService = await client.loadModule('agent');
 const channelService = await client.loadModule('channel');
 ```
+
+## 🔧 Troubleshooting
+
+### Airdrop Issues
+
+**"Too many requests" error:**
+- Wait 20-30 seconds between attempts
+- The helper automatically handles rate limits
+- Try manual web faucets if persistent
+
+**"Airdrop failed" error:**
+- Check devnet status: `solana cluster-version`
+- Verify RPC endpoint is accessible
+- Use alternative faucets listed in error message
+
+**"Insufficient balance after airdrop":**
+- Some operations need more than 0.01 SOL
+- Marketplace purchases typically need 0.1+ SOL
+- Run airdrop multiple times if needed
+
+### Wallet Issues
+
+**"Wallet already exists":**
+- Examples reuse wallets in `./agent-wallet.json` and `./client-wallet.json`
+- Delete these files to start fresh
+- Or use existing balance to avoid re-airdropping
 
 ## Support
 

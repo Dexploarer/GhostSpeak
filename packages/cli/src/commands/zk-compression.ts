@@ -17,6 +17,7 @@ import type {
   TransactionResult,
 } from '../types';
 import type { PublicKey } from '@solana/web3.js';
+import { isVerboseMode } from '../utils/cli-options.js';
 
 // TODO: Import ZkCompressionService from SDK when available
 
@@ -49,7 +50,7 @@ interface CompressionStats {
  * Show comprehensive compression status and statistics
  */
 export async function showCompressionStatus(): Promise<void> {
-  const cliLogger = new Logger(false);
+  const cliLogger = new Logger(isVerboseMode());
 
   try {
     cliLogger.general.info(chalk.cyan('🗜️  ZK Compression Status'));
@@ -92,7 +93,7 @@ export async function showCompressionStatus(): Promise<void> {
 export async function compressZkData(
   options: ZkCompressionOptions
 ): Promise<void> {
-  const cliLogger = new Logger(false);
+  const cliLogger = new Logger(isVerboseMode());
   
   try {
     cliLogger.general.info(chalk.cyan('🗜️  ZK Data Compression'));

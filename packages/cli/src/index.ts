@@ -62,12 +62,12 @@ program
 
 // Global error handler
 process.on('uncaughtException', error => {
-  logger.general.error(chalk.red('❌ Fatal Error:'), error.message);
+  console.error(chalk.red('❌ Fatal Error:'), error.message);
   process.exit(1);
 });
 
 process.on('unhandledRejection', reason => {
-  logger.general.error(chalk.red('❌ Unhandled Promise Rejection:'), reason);
+  console.error(chalk.red('❌ Unhandled Promise Rejection:'), reason);
   process.exit(1);
 });
 
@@ -81,7 +81,7 @@ program
       await showStatus();
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Status check failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -101,7 +101,7 @@ program
       await configCommand(options);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red(cliT('cli.errors.configError')),
         error instanceof Error ? error.message : String(error)
       );
@@ -120,7 +120,7 @@ program
       handleLocaleCommand(options);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red(cliT('cli.errors.localeError')),
         error instanceof Error ? error.message : String(error)
       );
@@ -142,7 +142,7 @@ agentCommand
       await registerAgent(name, options);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Agent registration failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -159,7 +159,7 @@ agentCommand
       await listAgents();
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Agent listing failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -198,7 +198,7 @@ marketplaceCommand
       await listServices(parsedOptions);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Marketplace listing failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -227,7 +227,7 @@ channelCommand
       if (options.maxParticipants) {
         const parsed = parseInt(options.maxParticipants);
         if (isNaN(parsed) || parsed < 1) {
-          logger.general.error(
+          console.error(
             chalk.red('❌ Invalid max-participants value:'),
             'Must be a positive number'
           );
@@ -244,7 +244,7 @@ channelCommand
       });
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Channel creation failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -266,7 +266,7 @@ channelCommand
       });
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Channel listing failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -295,7 +295,7 @@ messageCommand
       });
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Message sending failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -318,7 +318,7 @@ messageCommand
       if (options.limit) {
         const parsed = parseInt(options.limit);
         if (isNaN(parsed) || parsed < 1) {
-          logger.general.error(
+          console.error(
             chalk.red('❌ Invalid limit value:'),
             'Must be a positive number'
           );
@@ -331,7 +331,7 @@ messageCommand
       if (options.from) {
         const parsed = parseInt(options.from);
         if (isNaN(parsed) || parsed < 0) {
-          logger.general.error(
+          console.error(
             chalk.red('❌ Invalid from timestamp:'),
             'Must be a valid timestamp'
           );
@@ -344,7 +344,7 @@ messageCommand
       if (options.to) {
         const parsed = parseInt(options.to);
         if (isNaN(parsed) || parsed < 0) {
-          logger.general.error(
+          console.error(
             chalk.red('❌ Invalid to timestamp:'),
             'Must be a valid timestamp'
           );
@@ -360,7 +360,7 @@ messageCommand
       });
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Message listing failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -383,7 +383,7 @@ escrowCommand
       // Safely parse amount with validation
       const parsedAmount = parseFloat(amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        logger.general.error(
+        console.error(
           chalk.red('❌ Invalid amount:'),
           'Must be a positive number'
         );
@@ -393,7 +393,7 @@ escrowCommand
       await depositEscrow(channel, parsedAmount);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Escrow deposit failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -409,15 +409,47 @@ const analyticsCommand = program
 analyticsCommand
   .command('dashboard')
   .description('Show analytics dashboard')
-  .option('--period <period>', 'Time period (day, week, month)', 'week')
+  .option('--period <period>', 'Time period (hour, day, week, month)', 'week')
+  .option('--live', 'Enable live updates mode', false)
   .action(async options => {
     try {
-      const { showDashboard } = await import('./commands/analytics.js');
-      await showDashboard(options.period);
+      const { showDashboard, showLiveDashboard } = await import('./commands/analytics.js');
+      if (options.live) {
+        await showLiveDashboard(options.period);
+        // Live dashboard runs indefinitely
+      } else {
+        await showDashboard(options.period);
+        process.exit(0);
+      }
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Analytics dashboard failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+analyticsCommand
+  .command('summary')
+  .description('Show quick metrics summary')
+  .action(async () => {
+    try {
+      const { getMetricsSummary } = await import('./commands/analytics.js');
+      const summary = await getMetricsSummary();
+      
+      console.log(chalk.cyan('📊 GhostSpeak Metrics Summary'));
+      console.log(chalk.gray('─'.repeat(40)));
+      console.log(`Transactions: ${chalk.cyan(summary.transactions)}`);
+      console.log(`Agents: ${chalk.cyan(summary.agents)}`);
+      console.log(`Channels: ${chalk.cyan(summary.channels)}`);
+      console.log(`Messages: ${chalk.cyan(summary.messages)}`);
+      console.log(`Data Source: ${summary.isLive ? chalk.green('Live') : chalk.yellow('Demo')}`);
+      
       process.exit(0);
     } catch (error) {
-      logger.general.error(
-        chalk.red('❌ Analytics dashboard failed:'),
+      console.error(
+        chalk.red('❌ Metrics summary failed:'),
         error instanceof Error ? error.message : String(error)
       );
       process.exit(1);
@@ -438,7 +470,7 @@ compressionCommand
       await showCompressionStatus();
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Compression status failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -463,7 +495,7 @@ tokenCommand
       await manageConfidentialTransfer(options);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Token transfer failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -485,7 +517,7 @@ mevCommand
       await showMevStatus();
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ MEV protection status failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -507,7 +539,7 @@ devCommand
       await manageKeys();
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Key management failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -523,25 +555,25 @@ devCommand
   .option('--wallet-test', 'Test wallet connectivity')
   .action(async options => {
     try {
-      logger.general.info(chalk.cyan('🔧 Debug Mode'));
-      logger.general.info(chalk.gray('Running system diagnostics...'));
+      console.log(chalk.cyan('🔧 Debug Mode'));
+      console.log(chalk.gray('Running system diagnostics...'));
       
       if (options.networkTest) {
-        logger.general.info(chalk.yellow('Testing network connectivity...'));
+        console.log(chalk.yellow('Testing network connectivity...'));
         // Network test implementation would go here
-        logger.general.info(chalk.green('✅ Network connectivity: OK'));
+        console.log(chalk.green('✅ Network connectivity: OK'));
       }
       
       if (options.walletTest) {
-        logger.general.info(chalk.yellow('Testing wallet connectivity...'));
+        console.log(chalk.yellow('Testing wallet connectivity...'));
         // Wallet test implementation would go here
-        logger.general.info(chalk.green('✅ Wallet connectivity: OK'));
+        console.log(chalk.green('✅ Wallet connectivity: OK'));
       }
       
-      logger.general.info(chalk.green('✅ Debug complete'));
+      console.log(chalk.green('✅ Debug complete'));
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Debug failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -557,18 +589,18 @@ devCommand
   .option('--dry-run', 'Simulate deployment without executing')
   .action(async options => {
     try {
-      logger.general.info(chalk.cyan('🚀 Deployment Manager'));
-      logger.general.info(chalk.gray(`Target network: ${options.network}`));
+      console.log(chalk.cyan('🚀 Deployment Manager'));
+      console.log(chalk.gray(`Target network: ${options.network}`));
       
       if (options.dryRun) {
-        logger.general.info(chalk.yellow('🧪 Dry run mode - no changes will be made'));
+        console.log(chalk.yellow('🧪 Dry run mode - no changes will be made'));
       }
       
       // Deployment logic would go here
-      logger.general.info(chalk.green('✅ Deployment complete'));
+      console.log(chalk.green('✅ Deployment complete'));
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Deployment failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -588,7 +620,7 @@ devCommand
       await generateCompletion(options);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Completion generation failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -608,17 +640,17 @@ devCommand
       
       if (options.clear) {
         monitor.clearMetrics();
-        logger.general.info(chalk.green('✅ Performance data cleared'));
+        console.log(chalk.green('✅ Performance data cleared'));
       } else if (options.export) {
         monitor.exportMetrics(options.export);
-        logger.general.info(chalk.green(`✅ Performance data exported to: ${options.export}`));
+        console.log(chalk.green(`✅ Performance data exported to: ${options.export}`));
       } else {
         monitor.displayReport();
       }
       
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Performance command failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -638,22 +670,22 @@ adminCommand
   .option('--alerts', 'Enable alerts')
   .action(async options => {
     try {
-      logger.general.info(chalk.cyan('📊 System Monitor'));
-      logger.general.info(chalk.gray('Monitoring system health...'));
+      console.log(chalk.cyan('📊 System Monitor'));
+      console.log(chalk.gray('Monitoring system health...'));
       
       if (options.realTime) {
-        logger.general.info(chalk.yellow('🔄 Real-time monitoring enabled'));
+        console.log(chalk.yellow('🔄 Real-time monitoring enabled'));
       }
       
       if (options.alerts) {
-        logger.general.info(chalk.yellow('🔔 Alerts enabled'));
+        console.log(chalk.yellow('🔔 Alerts enabled'));
       }
       
       // Monitoring logic would go here
-      logger.general.info(chalk.green('✅ Monitoring active'));
+      console.log(chalk.green('✅ Monitoring active'));
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Monitoring failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -668,18 +700,18 @@ adminCommand
   .option('--include-keys', 'Include keypairs in backup')
   .action(async options => {
     try {
-      logger.general.info(chalk.cyan('💾 Backup Manager'));
-      logger.general.info(chalk.gray('Creating system backup...'));
+      console.log(chalk.cyan('💾 Backup Manager'));
+      console.log(chalk.gray('Creating system backup...'));
       
       if (options.includeKeys) {
-        logger.general.info(chalk.yellow('⚠️  Including keypairs in backup'));
+        console.log(chalk.yellow('⚠️  Including keypairs in backup'));
       }
       
       // Backup logic would go here
-      logger.general.info(chalk.green('✅ Backup complete'));
+      console.log(chalk.green('✅ Backup complete'));
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Backup failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -699,7 +731,7 @@ program
       await runQuickstart(options);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Quickstart failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -722,7 +754,7 @@ program
       await runWizard(options);
       process.exit(0);
     } catch (error) {
-      logger.general.error(
+      console.error(
         chalk.red('❌ Wizard failed:'),
         error instanceof Error ? error.message : String(error)
       );
@@ -750,49 +782,49 @@ program
 function showCommandHelp(command: string): void {
   const helpExamples: Record<string, () => void> = {
     agent: () => {
-      logger.general.info(chalk.cyan('🤖 Agent Command Help'));
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Usage:'));
-      logger.general.info('  ghostspeak agent <subcommand> [options]');
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Subcommands:'));
-      logger.general.info('  register <name>  Register new agent');
-      logger.general.info('  list            List your agents');
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Examples:'));
-      logger.general.info('  ghostspeak agent register "DataAnalyzer" --type analytics');
-      logger.general.info('  ghostspeak agent register "TaskBot" --description "Productivity helper"');
-      logger.general.info('  ghostspeak agent list');
+      console.log(chalk.cyan('🤖 Agent Command Help'));
+      console.log('');
+      console.log(chalk.yellow('Usage:'));
+      console.log('  ghostspeak agent <subcommand> [options]');
+      console.log('');
+      console.log(chalk.yellow('Subcommands:'));
+      console.log('  register <name>  Register new agent');
+      console.log('  list            List your agents');
+      console.log('');
+      console.log(chalk.yellow('Examples:'));
+      console.log('  ghostspeak agent register "DataAnalyzer" --type analytics');
+      console.log('  ghostspeak agent register "TaskBot" --description "Productivity helper"');
+      console.log('  ghostspeak agent list');
     },
     channel: () => {
-      logger.general.info(chalk.cyan('📡 Channel Command Help'));
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Usage:'));
-      logger.general.info('  ghostspeak channel <subcommand> [options]');
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Subcommands:'));
-      logger.general.info('  create <name>  Create new channel');
-      logger.general.info('  list          List your channels');
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Examples:'));
-      logger.general.info('  ghostspeak channel create "general" --description "General chat"');
-      logger.general.info('  ghostspeak channel create "private-team" --private --encrypted');
-      logger.general.info('  ghostspeak channel list --include-private');
+      console.log(chalk.cyan('📡 Channel Command Help'));
+      console.log('');
+      console.log(chalk.yellow('Usage:'));
+      console.log('  ghostspeak channel <subcommand> [options]');
+      console.log('');
+      console.log(chalk.yellow('Subcommands:'));
+      console.log('  create <name>  Create new channel');
+      console.log('  list          List your channels');
+      console.log('');
+      console.log(chalk.yellow('Examples:'));
+      console.log('  ghostspeak channel create "general" --description "General chat"');
+      console.log('  ghostspeak channel create "private-team" --private --encrypted');
+      console.log('  ghostspeak channel list --include-private');
     },
     message: () => {
-      logger.general.info(chalk.cyan('💬 Message Command Help'));
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Usage:'));
-      logger.general.info('  ghostspeak message <subcommand> [options]');
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Subcommands:'));
-      logger.general.info('  send <channel> <content>  Send message');
-      logger.general.info('  list <channel>           List messages');
-      logger.general.info('');
-      logger.general.info(chalk.yellow('Examples:'));
-      logger.general.info('  ghostspeak message send "general" "Hello everyone!"');
-      logger.general.info('  ghostspeak message send "team" "Task update" --encrypted');
-      logger.general.info('  ghostspeak message list "general" --limit 20');
+      console.log(chalk.cyan('💬 Message Command Help'));
+      console.log('');
+      console.log(chalk.yellow('Usage:'));
+      console.log('  ghostspeak message <subcommand> [options]');
+      console.log('');
+      console.log(chalk.yellow('Subcommands:'));
+      console.log('  send <channel> <content>  Send message');
+      console.log('  list <channel>           List messages');
+      console.log('');
+      console.log(chalk.yellow('Examples:'));
+      console.log('  ghostspeak message send "general" "Hello everyone!"');
+      console.log('  ghostspeak message send "team" "Task update" --encrypted');
+      console.log('  ghostspeak message list "general" --limit 20');
     }
   };
   
@@ -800,83 +832,102 @@ function showCommandHelp(command: string): void {
   if (helpFn) {
     helpFn();
   } else {
-    logger.general.info(chalk.yellow(`No detailed help available for "${command}"`));
-    logger.general.info(chalk.gray('Use "ghostspeak help" for general help'));
+    console.log(chalk.yellow(`No detailed help available for "${command}"`));
+    console.log(chalk.gray('Use "ghostspeak help" for general help'));
   }
 }
 
 function showGeneralHelp(): void {
-  logger.general.info(chalk.cyan('📚 GhostSpeak CLI Help'));
-  logger.general.info(chalk.gray('Comprehensive command reference'));
-  logger.general.info('');
+  console.log(chalk.cyan('📚 GhostSpeak CLI Help'));
+  console.log(chalk.gray('Comprehensive command reference'));
+  console.log('');
   
-  logger.general.info(chalk.yellow('Getting Started:'));
-  logger.general.info('  ghostspeak quickstart              # Quick setup guide');
-  logger.general.info('  ghostspeak wizard --quick          # Interactive setup');
-  logger.general.info('  ghostspeak status                  # Check system health');
-  logger.general.info('');
+  console.log(chalk.yellow('Getting Started:'));
+  console.log('  ghostspeak quickstart              # Quick setup guide');
+  console.log('  ghostspeak wizard --quick          # Interactive setup');
+  console.log('  ghostspeak status                  # Check system health');
+  console.log('');
   
-  logger.general.info(chalk.yellow('Common Operations:'));
-  logger.general.info('  ghostspeak agent register MyAgent  # Register new agent');
-  logger.general.info('  ghostspeak channel create general  # Create channel');
-  logger.general.info('  ghostspeak message send ch1 "hi"   # Send message');
-  logger.general.info('  ghostspeak marketplace list        # Browse services');
-  logger.general.info('');
+  console.log(chalk.yellow('Common Operations:'));
+  console.log('  ghostspeak agent register MyAgent  # Register new agent');
+  console.log('  ghostspeak channel create general  # Create channel');
+  console.log('  ghostspeak message send ch1 "hi"   # Send message');
+  console.log('  ghostspeak marketplace list        # Browse services');
+  console.log('');
   
-  logger.general.info(chalk.yellow('Advanced Features:'));
-  logger.general.info('  ghostspeak analytics dashboard     # View metrics');
-  logger.general.info('  ghostspeak compression status      # ZK compression');
-  logger.general.info('  ghostspeak token transfer          # Confidential transfers');
-  logger.general.info('');
+  console.log(chalk.yellow('Advanced Features:'));
+  console.log('  ghostspeak analytics dashboard     # View metrics');
+  console.log('  ghostspeak compression status      # ZK compression');
+  console.log('  ghostspeak token transfer          # Confidential transfers');
+  console.log('');
   
-  logger.general.info(chalk.cyan('💡 Use "ghostspeak help <command>" for detailed examples'));
+  console.log(chalk.cyan('💡 Use "ghostspeak help <command>" for detailed examples'));
 }
 
 // Default action when no command is specified
-program.action(() => {
-  logger.general.info(chalk.cyan('👻 GhostSpeak CLI'));
-  logger.general.info(chalk.gray('Autonomous Agent Commerce Protocol'));
-  logger.general.info('');
-  logger.general.info(chalk.yellow('Usage:'));
-  logger.general.info('  ghostspeak <command> [options]');
-  logger.general.info('');
-  logger.general.info(chalk.yellow('Core Commands:'));
-  logger.general.info('  status      Show system status and health');
-  logger.general.info('  config      Manage CLI configuration');
-  logger.general.info('  quickstart  Quick setup guide');
-  logger.general.info('  wizard      Interactive setup wizard');
-  logger.general.info('');
-  logger.general.info(chalk.yellow('Agent & Marketplace:'));
-  logger.general.info('  agent       Manage AI agents');
-  logger.general.info('  marketplace Access the agent marketplace');
-  logger.general.info('');
-  logger.general.info(chalk.yellow('Communication:'));
-  logger.general.info('  channel     Manage communication channels');
-  logger.general.info('  message     Send and manage messages');
-  logger.general.info('  escrow      Manage escrow services');
-  logger.general.info('');
-  logger.general.info(chalk.yellow('Advanced:'));
-  logger.general.info('  analytics   View system analytics');
-  logger.general.info('  compression Manage ZK compression');
-  logger.general.info('  token       SPL Token 2022 features');
-  logger.general.info('  mev         MEV protection tools');
-  logger.general.info('');
-  logger.general.info(chalk.yellow('Developer Tools:'));
-  logger.general.info('  dev         Developer utilities');
-  logger.general.info('  admin       Administrative tools');
-  logger.general.info('');
-  logger.general.info(chalk.yellow('Options:'));
-  logger.general.info('  -v, --version  Display version information');
-  logger.general.info('  -h, --help     Display help information');
-  logger.general.info('  --verbose      Enable verbose logging');
-  logger.general.info('  --quiet        Suppress non-essential output');
-  logger.general.info('');
-  logger.general.info(chalk.gray(`Version: ${packageJson.version}`));
-  logger.general.info('');
-  logger.general.info(chalk.cyan('💡 Pro Tips:'));
-  logger.general.info(chalk.gray('  • Run "ghostspeak wizard" for interactive setup'));
-  logger.general.info(chalk.gray('  • Use "ghostspeak help <command>" for detailed examples'));
-  logger.general.info(chalk.gray('  • Try "ghostspeak quickstart" if you\'re new'));
+program.action(async () => {
+  // Check for configuration migration
+  const { migrateConfiguration } = await import('./utils/config-migration-stub.js');
+  if (false) { // Temporarily disabled: await needsMigration()
+    console.log(chalk.yellow('⚠️  Configuration update required'));
+    console.log(chalk.gray('Your configuration needs to be migrated to the new shared system.'));
+    console.log('');
+    
+    const { confirm } = await import('./utils/prompts.js');
+    const shouldMigrate = await confirm({
+      message: 'Migrate configuration now?',
+      defaultValue: true
+    });
+    
+    if (shouldMigrate) {
+      await migrateConfiguration();
+      console.log('');
+    }
+  }
+  
+  console.log(chalk.cyan('👻 GhostSpeak CLI'));
+  console.log(chalk.gray('Autonomous Agent Commerce Protocol'));
+  console.log('');
+  console.log(chalk.yellow('Usage:'));
+  console.log('  ghostspeak <command> [options]');
+  console.log('');
+  console.log(chalk.yellow('Core Commands:'));
+  console.log('  status      Show system status and health');
+  console.log('  config      Manage CLI configuration');
+  console.log('  quickstart  Quick setup guide');
+  console.log('  wizard      Interactive setup wizard');
+  console.log('');
+  console.log(chalk.yellow('Agent & Marketplace:'));
+  console.log('  agent       Manage AI agents');
+  console.log('  marketplace Access the agent marketplace');
+  console.log('');
+  console.log(chalk.yellow('Communication:'));
+  console.log('  channel     Manage communication channels');
+  console.log('  message     Send and manage messages');
+  console.log('  escrow      Manage escrow services');
+  console.log('');
+  console.log(chalk.yellow('Advanced:'));
+  console.log('  analytics   View system analytics');
+  console.log('  compression Manage ZK compression');
+  console.log('  token       SPL Token 2022 features');
+  console.log('  mev         MEV protection tools');
+  console.log('');
+  console.log(chalk.yellow('Developer Tools:'));
+  console.log('  dev         Developer utilities');
+  console.log('  admin       Administrative tools');
+  console.log('');
+  console.log(chalk.yellow('Options:'));
+  console.log('  -v, --version  Display version information');
+  console.log('  -h, --help     Display help information');
+  console.log('  --verbose      Enable verbose logging');
+  console.log('  --quiet        Suppress non-essential output');
+  console.log('');
+  console.log(chalk.gray(`Version: ${packageJson.version}`));
+  console.log('');
+  console.log(chalk.cyan('💡 Pro Tips:'));
+  console.log(chalk.gray('  • Run "ghostspeak wizard" for interactive setup'));
+  console.log(chalk.gray('  • Use "ghostspeak help <command>" for detailed examples'));
+  console.log(chalk.gray('  • Try "ghostspeak quickstart" if you\'re new'));
   process.exit(0);
 });
 
@@ -906,7 +957,7 @@ async function main() {
       // Ignore performance monitoring errors
     }
     
-    logger.general.error(
+    console.error(
       chalk.red('❌ CLI Error:'),
       error instanceof Error ? error.message : String(error)
     );
@@ -917,7 +968,7 @@ async function main() {
 // Run if this is the main module
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
-    logger.general.error(chalk.red('❌ Unexpected Error:'), error);
+    console.error(chalk.red('❌ Unexpected Error:'), error);
     process.exit(1);
   });
 }

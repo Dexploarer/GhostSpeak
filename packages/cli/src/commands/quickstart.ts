@@ -12,6 +12,7 @@ import chalk from 'chalk';
 import { ConfigManager } from '../core/ConfigManager.js';
 import { Logger } from '../core/Logger.js';
 import { logger } from '../utils/logger.js';
+import { isVerboseMode } from '../utils/cli-options.js';
 
 interface QuickstartOptions {
   skipWallet?: boolean;
@@ -21,7 +22,7 @@ interface QuickstartOptions {
 export async function runQuickstart(
   options: QuickstartOptions = {}
 ): Promise<void> {
-  const cliLogger = new Logger(false);
+  const cliLogger = new Logger(isVerboseMode());
 
   try {
     cliLogger.general.info(chalk.cyan('🚀 GhostSpeak Quickstart Guide'));

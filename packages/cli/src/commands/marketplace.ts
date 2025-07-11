@@ -12,10 +12,12 @@ import { createKeyPairSignerFromBytes } from '@solana/signers';
 import { ConfigManager } from '../core/ConfigManager.js';
 import { Logger } from '../core/Logger.js';
 import { logger } from '../utils/logger.js';
+import { ProgressIndicator } from '../utils/prompts.js';
 // Import marketplace implementation from the new file
 import { MarketplaceImpl, ServiceListingStatus, type MarketplaceFilters, type ServiceListingAccount } from '../../../sdk/src/services/marketplace-impl.js';
 import type { ServiceListingDataArgs } from '../../../sdk/src/generated-v2/instructions/createServiceListing.js';
 import { lamportsToSol } from '../utils/format.js';
+import { isVerboseMode } from '../utils/cli-options.js';
 
 export interface ListServicesOptions {
   category?: string;
@@ -46,13 +48,18 @@ export interface PurchaseServiceOptions {
 export async function listServices(
   options: ListServicesOptions
 ): Promise<void> {
-  const logger = new Logger(false);
+  const logger = new Logger(isVerboseMode());
+  const progress = new ProgressIndicator('Loading marketplace services...');
 
   try {
     logger.general.info(chalk.cyan('🛒 GhostSpeak Marketplace'));
     logger.general.info(chalk.gray('─'.repeat(40)));
 
+    // Start progress indicator
+    progress.start();
+
     // Load configuration
+    progress.update('Loading configuration...');
     const config = await ConfigManager.load();
     const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
     logger.general.info(chalk.gray(`Network: ${config.network || 'devnet'}`));
@@ -70,10 +77,12 @@ export async function listServices(
 
     try {
       // Create RPC client
+      progress.update('Connecting to blockchain...');
       const rpc = createSolanaRpc(rpcUrl);
       const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
 
       // Initialize marketplace service
+      progress.update('Initializing marketplace service...');
       const marketplace = new MarketplaceImpl(rpc, programId);
 
       // Build filters
@@ -100,6 +109,7 @@ export async function listServices(
       }
 
       // Browse listings
+      progress.update('Fetching marketplace listings...');
       const result = await marketplace.browseListings(
         filters,
         options.limit || 20,
@@ -109,6 +119,9 @@ export async function listServices(
       listings = result.listings;
       total = result.total;
       hasMore = result.hasMore;
+      
+      // Success
+      progress.succeed('Marketplace listings loaded successfully');
     } catch (error) {
       // If blockchain connection fails, show demo data
       logger.general.info(chalk.yellow('⚠️  Unable to connect to blockchain. Showing demo services.'));
@@ -383,7 +396,7 @@ function generateDemoListings(options: ListServicesOptions): {
 export async function createListing(
   options: CreateListingOptions
 ): Promise<void> {
-  const logger = new Logger(false);
+  const logger = new Logger(isVerboseMode());
 
   try {
     logger.general.info(chalk.cyan('📝 Creating Service Listing'));
@@ -447,7 +460,7 @@ export async function createListing(
 export async function purchaseService(
   options: PurchaseServiceOptions
 ): Promise<void> {
-  const logger = new Logger(false);
+  const logger = new Logger(isVerboseMode());
 
   try {
     logger.general.info(chalk.cyan('💰 Purchasing Service'));
@@ -506,7 +519,7 @@ export async function purchaseService(
 }
 
 export async function searchMarketplace(query: string): Promise<void> {
-  const logger = new Logger(false);
+  const logger = new Logger(isVerboseMode());
 
   try {
     logger.general.info(chalk.cyan('🔍 Searching Marketplace'));
@@ -552,7 +565,7 @@ export async function searchMarketplace(query: string): Promise<void> {
 }
 
 export async function getTrending(limit: number = 10): Promise<void> {
-  const logger = new Logger(false);
+  const logger = new Logger(isVerboseMode());
 
   try {
     logger.general.info(chalk.cyan('🔥 Trending Services'));
@@ -595,7 +608,7 @@ export async function getTrending(limit: number = 10): Promise<void> {
 }
 
 export async function getMarketplaceStats(): Promise<void> {
-  const logger = new Logger(false);
+  const logger = new Logger(isVerboseMode());
 
   try {
     logger.general.info(chalk.cyan('📊 Marketplace Analytics'));

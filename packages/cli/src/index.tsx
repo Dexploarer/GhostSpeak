@@ -122,16 +122,36 @@ program
   });
 
 // Channel management commands
-program
+const channelCommand = program
   .command('channel')
-  .description('Manage communication channels')
+  .description('Manage communication channels');
+
+channelCommand
   .command('create <name>')
   .description('Create a new channel')
   .option('-p, --private', 'Create private channel')
   .option('-d, --description <desc>', 'Channel description')
+  .option('-m, --max-participants <number>', 'Maximum number of participants', parseInt)
+  .option('-e, --encryption', 'Enable end-to-end encryption')
   .action(async (name, options) => {
     const { createChannel } = await import('./commands/channel.js');
-    await createChannel(name, options);
+    await createChannel(name, {
+      description: options.description,
+      isPrivate: options.private || false,
+      maxParticipants: options.maxParticipants,
+      encryptionEnabled: options.encryption || false
+    });
+  });
+
+channelCommand
+  .command('list')
+  .description('List all channels')
+  .option('-p, --include-private', 'Include private channels')
+  .action(async (options) => {
+    const { listChannels } = await import('./commands/channel.js');
+    await listChannels({
+      includePrivate: options.includePrivate || false
+    });
   });
 
 // Marketplace commands

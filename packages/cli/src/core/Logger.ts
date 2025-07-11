@@ -90,8 +90,9 @@ export class Logger {
     this.logs.push(entry);
 
     // Console output based on level and verbose setting - do this FIRST and synchronously
+    // Show info, warn, error, and success by default. Only debug requires verbose mode.
     const shouldOutput =
-      this.verbose || ['warn', 'error', 'success'].includes(level);
+      this.verbose || ['info', 'warn', 'error', 'success'].includes(level);
 
     if (shouldOutput) {
       console.log(this.formatMessage(level, message));
@@ -125,6 +126,26 @@ export class Logger {
 
   success(message: string, context?: Record<string, unknown>): Promise<void> {
     return this.log('success', message, context);
+  }
+
+  // Always show this message regardless of verbose setting
+  display(message: string, context?: Record<string, unknown>): Promise<void> {
+    // For display messages, we always output to console
+    console.log(message);
+    if (context && this.verbose) {
+      console.log(chalk.gray('Context:'), context);
+    }
+    
+    // Still log to file for record keeping
+    const entry: LogEntry = {
+      timestamp: new Date(),
+      level: 'info',
+      message,
+      context,
+    };
+    this.logs.push(entry);
+    this.writeToFile(entry).catch(() => {});
+    return Promise.resolve();
   }
 
   // Utility methods

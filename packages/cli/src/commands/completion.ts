@@ -9,6 +9,7 @@ import { Logger } from '../core/Logger.js';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { isVerboseMode } from '../utils/cli-options.js';
 
 interface CompletionOptions {
   shell?: 'bash' | 'zsh' | 'fish';
@@ -20,7 +21,7 @@ interface CompletionOptions {
  * Generate and optionally install shell completion scripts
  */
 export async function generateCompletion(options: CompletionOptions = {}): Promise<void> {
-  const cliLogger = new Logger(false);
+  const cliLogger = new Logger(isVerboseMode());
 
   try {
     cliLogger.general.info(chalk.cyan('🔧 Shell Completion Generator'));

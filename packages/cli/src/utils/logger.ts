@@ -13,7 +13,7 @@ const isVerbose = process.argv.includes('--verbose') || process.argv.includes('-
 
 // Configure pino based on environment
 const pinoConfig: pino.LoggerOptions = {
-  level: isTest ? 'error' : isVerbose ? 'debug' : 'warn',
+  level: isTest ? 'error' : isVerbose ? 'debug' : 'info',
   ...(isDevelopment && {
     transport: {
       target: 'pino-pretty',
@@ -56,6 +56,9 @@ export const logger = {
   dev: createLogger('dev'),
   status: createLogger('status'),
   general: createLogger('general'),
+  message: createLogger('message'),
+  escrow: createLogger('escrow'),
+  channel: createLogger('channel'),
 };
 
 // Utility functions for common logging patterns

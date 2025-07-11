@@ -15,8 +15,9 @@ import {
   type Address
 } from '@ghostspeak/sdk';
 import { createKeyPairSignerFromBytes } from '@solana/signers';
-import { generateKeyPair } from '@solana/keys';
+import { Keypair } from '@solana/web3.js';
 import fs from 'fs';
+import { ensureSufficientBalance, getAirdropHelp } from './utils/airdrop-helper';
 
 // Configuration
 const RPC_ENDPOINT = 'https://api.devnet.solana.com';
@@ -35,13 +36,14 @@ async function loadOrCreateClientWallet() {
     console.log('Creating new client wallet...');
   }
 
-  const keyPair = await generateKeyPair();
-  const walletData = Array.from(keyPair.privateKey);
+  const solanaKeypair = Keypair.generate();
+  const fullKeyPairBytes = solanaKeypair.secretKey;
+  const walletData = Array.from(fullKeyPairBytes);
   
   fs.writeFileSync(CLIENT_WALLET_PATH, JSON.stringify(walletData, null, 2));
   console.log('✅ New client wallet created:', CLIENT_WALLET_PATH);
   
-  return await createKeyPairSignerFromBytes(keyPair.privateKey);
+  return await createKeyPairSignerFromBytes(fullKeyPairBytes);
 }
 
 /**
@@ -174,7 +176,8 @@ I need a comprehensive data analysis for my e-commerce business:
     console.error('❌ Failed to purchase service:', error.message);
     
     if (error.message.includes('insufficient funds')) {
-      console.log(`💡 Need more SOL. Try: solana airdrop 1 ${clientWallet.address}`);
+      console.log('\n💡 Transaction failed due to insufficient funds.');
+      getAirdropHelp(clientWallet.address);
     }
     
     throw error;
@@ -356,13 +359,19 @@ async function runMarketplaceIntegration() {
     const clientWallet = await loadOrCreateClientWallet();
     console.log('✅ Client wallet loaded:', clientWallet.address);
 
-    // Check balance
-    const balance = await client.getBalance(clientWallet.address);
-    const solBalance = lamportsToSol(balance);
-    console.log(`💰 Balance: ${solBalance.toFixed(4)} SOL`);
+    // Check and ensure balance
+    console.log('');
+    const hasBalance = await ensureSufficientBalance(clientWallet.address, {
+      minBalance: 0.1,  // Need more for marketplace operations
+      airdropAmount: 1,
+      verbose: true,
+      rpcEndpoint: RPC_ENDPOINT
+    });
     
-    if (solBalance < 0.1) {
-      console.log(`⚠️  Low balance. Consider running: solana airdrop 1 ${clientWallet.address}`);
+    if (!hasBalance) {
+      console.log('\n⚠️  Unable to ensure sufficient balance.');
+      getAirdropHelp(clientWallet.address);
+      console.log('\n💡 Note: Marketplace operations require ~0.1 SOL for service purchases.');
     }
     console.log('');
 
@@ -386,11 +395,26 @@ async function runMarketplaceIntegration() {
     console.log(`Selected: ${selectedService.title}`);
     console.log(`Price: ${lamportsToSol(selectedService.price)} SOL\n`);
 
-    // Check if we have enough balance
-    if (solBalance < lamportsToSol(selectedService.price)) {
-      console.log(`❌ Insufficient balance for purchase. Need ${lamportsToSol(selectedService.price)} SOL`);
-      console.log(`💡 Run: solana airdrop 1 ${clientWallet.address}`);
-      return;
+    // Check if we have enough balance for the purchase
+    const currentBalance = await client.getBalance(clientWallet.address);
+    const currentSolBalance = lamportsToSol(currentBalance);
+    
+    if (currentSolBalance < lamportsToSol(selectedService.price)) {
+      console.log(`❌ Insufficient balance for purchase. Need ${lamportsToSol(selectedService.price)} SOL, have ${currentSolBalance.toFixed(4)} SOL`);
+      
+      // Try one more airdrop attempt
+      console.log('\n🪂 Attempting additional airdrop for purchase...');
+      const airdropSuccess = await ensureSufficientBalance(clientWallet.address, {
+        minBalance: lamportsToSol(selectedService.price) + 0.01, // Add buffer for fees
+        airdropAmount: 1,
+        verbose: true,
+        rpcEndpoint: RPC_ENDPOINT
+      });
+      
+      if (!airdropSuccess) {
+        getAirdropHelp(clientWallet.address);
+        return;
+      }
     }
 
     // 6. Purchase service

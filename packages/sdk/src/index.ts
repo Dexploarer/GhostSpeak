@@ -186,6 +186,11 @@ export const createDashboard = async () => {
   return { createDashboardServer };
 };
 
+// ===== INTEGRATION (CLI/SDK Unified) =====
+export { UnifiedClient, type UnifiedClientOptions } from './integration/UnifiedClient';
+export { SharedConfig, type SharedConfiguration, type NetworkConfig, type WalletConfig, type AgentInfo, type ChannelInfo } from './config/SharedConfig';
+export { SharedStateManager, type SessionState, type RuntimeState, type StateChangeEvent, type TransactionRecord } from './state/SharedStateManager';
+
 // ===== CONSTANTS =====
 export const GHOSTSPEAK_PROGRAM_ID =
   '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as const; // GhostSpeak Protocol Program ID

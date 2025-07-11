@@ -11,6 +11,7 @@ import { execSync } from 'child_process';
 import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { isVerboseMode } from '../utils/cli-options.js';
 
 interface WizardOptions {
   full?: boolean;
@@ -29,7 +30,7 @@ interface WizardStep {
  * Main wizard entry point
  */
 export async function runWizard(options: WizardOptions = {}): Promise<void> {
-  const cliLogger = new Logger(false);
+  const cliLogger = new Logger(isVerboseMode());
 
   try {
     cliLogger.general.info(chalk.cyan('🧙 GhostSpeak Setup Wizard'));
@@ -398,9 +399,9 @@ async function showLearningResources(cliLogger: Logger): Promise<void> {
   cliLogger.general.info('');
   
   cliLogger.general.info(chalk.yellow('📚 Documentation:'));
-  cliLogger.general.info('    • https://docs.ghostspeak.ai');
-  cliLogger.general.info('    • https://docs.ghostspeak.ai/cli');
-  cliLogger.general.info('    • https://docs.ghostspeak.ai/quickstart');
+  cliLogger.general.info('    • GitHub: https://github.com/ghostspeak/ghostspeak');
+  cliLogger.general.info('    • CLI Help: ghostspeak help');
+  cliLogger.general.info('    • Quick Start: ghostspeak quickstart');
   cliLogger.general.info('');
   
   cliLogger.general.info(chalk.yellow('🎯 Next Steps:'));

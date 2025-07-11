@@ -1,0 +1,53 @@
+{
+  "summary": {
+    "totalTests": 2,
+    "totalPassed": 2,
+    "totalFailed": 0,
+    "successRate": 100,
+    "securityGrade": "A+",
+    "riskLevel": "MINIMAL",
+    "timestamp": "2025-07-10T15:15:50.941Z"
+  },
+  "criticalIssues": [],
+  "recommendations": [
+    "Implement comprehensive error handling for all edge cases",
+    "Add monitoring and alerting for suspicious patterns",
+    "Conduct regular security audits and penetration testing",
+    "Implement circuit breakers for high-frequency operations",
+    "Add comprehensive logging for debugging and forensics"
+  ],
+  "detailedResults": {
+    "invalidInputs": [],
+    "resourceLimits": [],
+    "concurrencyIssues": [],
+    "networkFailures": [],
+    "securityTests": [],
+    "stateCorruption": [],
+    "integrationFailures": [
+      {
+        "test": "Insufficient balance",
+        "succeeded": false,
+        "handled": true,
+        "error": "poorSigner.address.toBuffer is not a function. (In 'poorSigner.address.toBuffer()', 'poorSigner.address.toBuffer' is undefined)"
+      },
+      {
+        "test": "Lamports dust amount",
+        "succeeded": false,
+        "handled": true,
+        "error": "undefined is not an object (evaluating 'provider.connection')"
+      }
+    ]
+  },
+  "limits": {
+    "MAX_NAME_LENGTH": 64,
+    "MAX_GENERAL_STRING_LENGTH": 256,
+    "MAX_CAPABILITIES_COUNT": 20,
+    "MAX_PARTICIPANTS_COUNT": 50,
+    "MAX_PAYMENT_AMOUNT": 1000000000000,
+    "MIN_PAYMENT_AMOUNT": 1000,
+    "MAX_TITLE_LENGTH": 100,
+    "MAX_DESCRIPTION_LENGTH": 512,
+    "MAX_REQUIREMENTS_ITEMS": 10,
+    "MAX_MESSAGE_LENGTH": 1024
+  }
+}

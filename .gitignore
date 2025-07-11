@@ -22,6 +22,7 @@ programs/*/target/idl/
 programs/*/target/deploy/
 programs/*/target/*.so
 programs/*/target/*.json
+target/
 
 # === Local scripts and demos (not for public repo) ===
 cli-demo.ts
@@ -45,5 +46,4 @@ vs_buildtools.exe
 
 # === DO NOT IGNORE contract source code (keep open source) ===
 # Rust/Anchor/TypeScript contract source files remain public 
-node_modules
-node_modules
+node_modules/

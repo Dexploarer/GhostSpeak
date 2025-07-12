@@ -10,10 +10,16 @@ import { ConfigManager } from '../core/ConfigManager.js';
 import { logger } from '../utils/logger.js';
 import { UnifiedClient } from '@ghostspeak/sdk';
 import type { Address } from '@solana/addresses';
+import { TimeoutError } from '../utils/timeout.js';
+import { ErrorHandler } from '../services/error-handler.js';
+import { withTimeout, TIMEOUTS, withTimeoutAndRetry } from '../utils/timeout.js';
+import { preOperationCheck, getNetworkRetryConfig } from '../utils/network-diagnostics.js';
 
 export interface RegisterAgentOptions {
   type?: string;
   description?: string;
+  yes?: boolean;
+  nonInteractive?: boolean;
 }
 
 // Get or create unified client instance
@@ -21,9 +27,25 @@ let unifiedClient: UnifiedClient | null = null;
 
 async function getUnifiedClient(): Promise<UnifiedClient> {
   if (!unifiedClient) {
-    unifiedClient = await UnifiedClient.create({
-      autoStartSession: true,
-    });
+    try {
+      logger.general.debug('Initializing GhostSpeak SDK...');
+      
+      // Create client with timeout protection
+      unifiedClient = await withTimeout(
+        UnifiedClient.create({
+          autoStartSession: true,
+        }),
+        TIMEOUTS.SDK_INIT,
+        'SDK initialization'
+      );
+      
+      logger.general.debug('SDK initialized successfully');
+    } catch (error) {
+      ErrorHandler.handle(error, {
+        operation: 'SDK initialization',
+        suggestion: 'Run "ghostspeak doctor" to diagnose connection issues'
+      });
+    }
   }
   return unifiedClient;
 }
@@ -32,88 +54,133 @@ export async function registerAgent(
   name: string,
   options: RegisterAgentOptions
 ): Promise<void> {
-
   try {
+    // Validate agent name early to fail fast
+    const trimmedName = name?.trim() || '';
+    
+    if (!trimmedName) {
+      logger.general.error(chalk.red('❌ Error: Agent name cannot be empty'));
+      logger.general.info(chalk.gray('Please provide a valid agent name'));
+      logger.general.info(chalk.gray('Example: ghostspeak agent register MyAgent'));
+      // Force immediate exit to prevent any hanging
+      process.exit(1);
+    }
+    
+    // Validate name length
+    if (trimmedName.length < 2) {
+      logger.general.error(chalk.red('❌ Error: Agent name must be at least 2 characters long'));
+      process.exit(1);
+    }
+    
+    if (trimmedName.length > 50) {
+      logger.general.error(chalk.red('❌ Error: Agent name must be 50 characters or less'));
+      process.exit(1);
+    }
+    
+    // Validate name format (alphanumeric, underscores, hyphens)
+    const nameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!nameRegex.test(trimmedName)) {
+      logger.general.error(chalk.red('❌ Error: Agent name can only contain letters, numbers, underscores, and hyphens'));
+      logger.general.info(chalk.gray('Invalid characters detected in: ' + name));
+      logger.general.info(chalk.gray('Valid examples: MyAgent, agent_123, ai-helper'));
+      process.exit(1);
+    }
+    
+    // Check for reserved names
+    const reservedNames = ['agent', 'system', 'admin', 'test', 'null', 'undefined'];
+    if (reservedNames.includes(trimmedName.toLowerCase())) {
+      logger.general.error(chalk.red(`❌ Error: "${trimmedName}" is a reserved name`));
+      logger.general.info(chalk.gray('Please choose a different name'));
+      process.exit(1);
+    }
+    
+    // Use the validated trimmed name
+    const validatedName = trimmedName;
+    
     logger.general.info(chalk.cyan('🤖 Registering AI Agent'));
     logger.general.info(chalk.gray('─'.repeat(40)));
 
-    // Interactive prompts if options not provided
+    // Check if we're in non-interactive mode
+    const isNonInteractive = options.nonInteractive || options.yes || process.env.CI === 'true';
+    
+    // Interactive prompts if options not provided and not in non-interactive mode
     const { prompt, confirm, ProgressIndicator } = await import('../utils/prompts.js');
 
-    let agentType = options.type;
+    let agentType = options.type || 'general';
     let agentDescription = options.description;
 
-    // Prompt for missing information
-    if (!agentType) {
-      const { select } = await import('../utils/prompts.js');
-      agentType = await select({
-        message: 'Select agent type:',
-        choices: [
-          { name: 'General Purpose', value: 'general', description: 'Multi-purpose AI agent' },
-          { name: 'Analytics', value: 'analytics', description: 'Data analysis and insights' },
-          { name: 'Productivity', value: 'productivity', description: 'Task automation and management' },
-          { name: 'Creative', value: 'creative', description: 'Content creation and design' },
-          { name: 'Trading', value: 'trading', description: 'DeFi and trading operations' },
-          { name: 'Custom', value: 'custom', description: 'Specialized custom agent' }
-        ],
-        defaultIndex: 0
-      });
+    // Prompt for missing information only in interactive mode
+    if (!isNonInteractive) {
+      if (!options.type) {
+        const { select } = await import('../utils/prompts.js');
+        agentType = await select({
+          message: 'Select agent type:',
+          choices: [
+            { name: 'General Purpose', value: 'general', description: 'Multi-purpose AI agent' },
+            { name: 'Analytics', value: 'analytics', description: 'Data analysis and insights' },
+            { name: 'Productivity', value: 'productivity', description: 'Task automation and management' },
+            { name: 'Creative', value: 'creative', description: 'Content creation and design' },
+            { name: 'Trading', value: 'trading', description: 'DeFi and trading operations' },
+            { name: 'Custom', value: 'custom', description: 'Specialized custom agent' }
+          ],
+          defaultIndex: 0
+        });
+      }
+
+      if (!agentDescription) {
+        agentDescription = await prompt({
+          message: 'Enter agent description',
+          defaultValue: `A ${agentType} AI agent`,
+          required: false
+        });
+      }
+    } else {
+      // In non-interactive mode, use defaults if not provided
+      if (!agentDescription) {
+        agentDescription = `A ${agentType} AI agent`;
+      }
     }
 
-    if (!agentDescription) {
-      agentDescription = await prompt({
-        message: 'Enter agent description',
-        defaultValue: `A ${agentType} AI agent`,
-        required: false
-      });
-    }
-
-    // Try to get unified client configuration
-    let config: any;
-    let keypair: any;
-    let client: UnifiedClient | null = null;
+    // Get unified client configuration - required for blockchain operations
+    const client = await getUnifiedClient();
+    const config = client.getConfig();
+    const keypair = client.getKeypair();
     
-    try {
-      client = await getUnifiedClient();
-      config = client.getConfig();
-      keypair = client.getKeypair();
-    } catch (error) {
-      logger.general.debug('Could not initialize unified client:', error);
-      // Continue with simulation mode
+    // Check if wallet is configured
+    if (!keypair) {
+      logger.general.error(chalk.red('❌ Error: No wallet configured'));
+      logger.general.info('');
+      logger.general.info(chalk.yellow('💡 To register agents on the blockchain, you need a wallet:'));
+      logger.general.info(chalk.gray('  • Run "ghostspeak quickstart" to set up your wallet'));
+      logger.general.info(chalk.gray('  • Or configure manually with "solana-keygen new"'));
+      logger.general.info('');
+      process.exit(1);
     }
 
     // Show configuration summary
     logger.general.info('');
     logger.general.info(chalk.yellow('Agent Configuration:'));
-    logger.general.info(`  Name: ${chalk.cyan(name)}`);
+    logger.general.info(`  Name: ${chalk.cyan(validatedName)}`);
     logger.general.info(`  Type: ${chalk.cyan(agentType)}`);
     logger.general.info(`  Description: ${chalk.gray(agentDescription || 'No description')}`);
-    
-    if (config) {
-      logger.general.info(`  Network: ${chalk.blue(config.network.network)}`);
-    } else {
-      logger.general.info(`  Network: ${chalk.blue('devnet (simulated)')}`);
-    }
-    
-    // Check if wallet is configured
-    if (!keypair) {
-      logger.general.info('');
-      logger.general.info(chalk.yellow('⚠️  No wallet configured - Running in simulation mode'));
-      logger.general.info(chalk.gray('Run "ghostspeak quickstart" to set up your wallet for real blockchain integration'));
-    } else {
-      logger.general.info(`  Wallet: ${chalk.gray(keypair.publicKey.toBase58())}`);
-    }
+    logger.general.info(`  Network: ${chalk.blue(config.network.network)}`);
+    logger.general.info(`  Wallet: ${chalk.gray(keypair.publicKey.toBase58())}`);
     logger.general.info('');
 
-    // Confirm registration
-    const shouldProceed = await confirm({
-      message: keypair ? 'Proceed with agent registration?' : 'Proceed with simulated agent registration?',
-      defaultValue: true
-    });
+    // Confirm registration (skip in non-interactive mode)
+    let shouldProceed = true;
+    if (!isNonInteractive) {
+      shouldProceed = await confirm({
+        message: 'Proceed with agent registration on-chain?',
+        defaultValue: true
+      });
 
-    if (!shouldProceed) {
-      logger.general.info(chalk.yellow('Agent registration cancelled'));
-      return;
+      if (!shouldProceed) {
+        logger.general.info(chalk.yellow('Agent registration cancelled'));
+        return;
+      }
+    } else {
+      logger.general.info(chalk.gray('Non-interactive mode: proceeding with registration...'));
     }
 
     // Show registration process with progress
@@ -126,80 +193,33 @@ export async function registerAgent(
       // Define capabilities based on agent type
       const capabilities = getCapabilitiesForType(agentType);
       
-      // Simulate a small delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      progress.update('Connecting to Solana network...');
+      progress.update('Registering agent on-chain...');
       
-      let result: { address: string; signature: string };
-      
-      if (client && keypair) {
-        // Try real registration
-        try {
-          progress.update('Connecting to Solana network...');
-          progress.update('Registering agent on-chain...');
-          
-          result = await client.registerAgent(
-            name,
-            agentType,
-            agentDescription,
-            capabilities
-          );
-        } catch (error: any) {
-          logger.general.debug('Failed to register on-chain:', error);
-          
-          // Fallback to simulation
-          progress.update('Simulating agent registration...');
-          await new Promise(resolve => setTimeout(resolve, 1200));
-          
-          // Generate simulated values
-          result = {
-            address: generateMockAgentAddress(),
-            signature: generateMockTxHash()
-          };
-          
-          // Store locally
-          if (config) {
-            const configManager = ConfigManager.getInstance();
-            configManager.addAgent(
-              name,
-              result.address,
-              agentType,
-              agentDescription
-            );
-            configManager.save();
-          }
-        }
-      } else {
-        // Pure simulation mode
-        progress.update('Simulating agent registration...');
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        
-        // Generate simulated values
-        result = {
-          address: generateMockAgentAddress(),
-          signature: generateMockTxHash()
-        };
-        
-        // Store locally
-        const configManager = ConfigManager.getInstance();
-        configManager.addAgent(
-          name,
-          result.address,
+      // Register agent on blockchain with retry logic
+      const result = await withTimeoutAndRetry(
+        () => client.registerAgent(
+          validatedName,
           agentType,
-          agentDescription
-        );
-        configManager.save();
-      }
+          agentDescription,
+          capabilities
+        ),
+        'Agent registration',
+        TIMEOUTS.AGENT_REGISTER,
+        getNetworkRetryConfig({
+          maxRetries: 2,  // Less retries for registration to avoid duplicates
+        }),
+        {
+          showRetryHint: true,
+          warningThreshold: 70
+        }
+      );
       
       progress.succeed('Agent registered successfully');
 
       // Show success details
       logger.general.info('');
-      logger.general.info(chalk.green('🎉 Registration Complete!'));
-      
-      if (!keypair) {
-        logger.general.info(chalk.yellow('📋 Simulation Mode - Agent created locally'));
-      }
-      
+      logger.general.info(chalk.green('🎉 Agent Successfully Registered on Blockchain!'));
       logger.general.info(chalk.gray(`Agent Address: ${result.address}`));
       logger.general.info(chalk.gray(`Transaction: ${result.signature}`));
       logger.general.info('');
@@ -209,18 +229,10 @@ export async function registerAgent(
       logger.general.info(chalk.gray('  • Configure capabilities with "ghostspeak agent configure"'));
       logger.general.info(chalk.gray('  • Set up service endpoints'));
       logger.general.info(chalk.gray('  • Test agent functionality'));
-      
-      if (!keypair) {
-        logger.general.info('');
-        logger.general.info(chalk.cyan('💡 Enable Blockchain Integration:'));
-        logger.general.info(chalk.gray('  • Run "ghostspeak quickstart" to set up your wallet'));
-        logger.general.info(chalk.gray('  • Then re-register your agents to deploy them on-chain'));
-      } else {
-        logger.general.info('');
-        logger.general.info(chalk.cyan('💡 Pro Tips:'));
-        logger.general.info(chalk.gray('  • Check "ghostspeak marketplace list" to see similar agents'));
-        logger.general.info(chalk.gray('  • Use "ghostspeak help agent" for more information'));
-      }
+      logger.general.info('');
+      logger.general.info(chalk.cyan('💡 Pro Tips:'));
+      logger.general.info(chalk.gray('  • Check "ghostspeak marketplace list" to see similar agents'));
+      logger.general.info(chalk.gray('  • Use "ghostspeak help agent" for more information'));
       
     } catch (error) {
       progress.fail('Agent registration failed');
@@ -233,54 +245,42 @@ export async function registerAgent(
   }
 }
 
-function generateMockTxHash(): string {
-  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  let hash = '';
-  for (let i = 0; i < 64; i++) {
-    hash += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return hash;
-}
 
 export async function listAgents(): Promise<void> {
-
   try {
     logger.general.info(chalk.cyan('📋 Registered AI Agents'));
     logger.general.info(chalk.gray('─'.repeat(40)));
 
-    let agents: any[] = [];
-    let networkName = 'devnet (simulated)';
+    // Get unified client - required for blockchain operations
+    const client = await getUnifiedClient();
+    const config = client.getConfig();
+    const keypair = client.getKeypair();
     
-    try {
-      // Try to get unified client
-      const client = await getUnifiedClient();
-      const config = client.getConfig();
-      networkName = config.network.network;
-      
-      // Get agents from unified client (combines local and on-chain data)
-      agents = await client.listAgents();
-    } catch (error) {
-      logger.general.debug('Could not get agents from unified client:', error);
-      
-      // Fallback to local config
-      const configManager = ConfigManager.getInstance();
-      const localAgents = configManager.listAgents();
-      
-      agents = localAgents.map(({ name, agent }) => ({
-        name: name,
-        address: agent.address,
-        type: agent.type,
-        description: agent.description,
-        onChain: false,
-        status: 'simulated'
-      }));
+    // Check if wallet is configured
+    if (!keypair) {
+      logger.general.error(chalk.red('\u274c Error: No wallet configured'));
+      logger.general.info('');
+      logger.general.info(chalk.yellow('💡 To view blockchain agents, you need a wallet:'));
+      logger.general.info(chalk.gray('  • Run "ghostspeak quickstart" to set up your wallet'));
+      logger.general.info(chalk.gray('  • Or configure manually with "solana-keygen new"'));
+      logger.general.info('');
+      process.exit(1);
     }
     
-    logger.general.info(chalk.gray(`Network: ${networkName}`));
+    // Get agents from blockchain with retry logic
+    const agents = await withTimeoutAndRetry(
+      () => client.listAgents(),
+      'Agent listing',
+      TIMEOUTS.ACCOUNT_FETCH,
+      getNetworkRetryConfig(),
+      { showRetryHint: true }
+    );
+    
+    logger.general.info(chalk.gray(`Network: ${config.network.network}`));
     logger.general.info('');
 
     if (agents.length === 0) {
-      logger.general.info(chalk.yellow('No agents registered yet'));
+      logger.general.info(chalk.yellow('No agents registered on blockchain yet'));
       logger.general.info('');
       logger.general.info(
         chalk.gray(
@@ -288,44 +288,16 @@ export async function listAgents(): Promise<void> {
         )
       );
     } else {
-      logger.general.info(chalk.yellow('Your Agents:'));
+      logger.general.info(chalk.yellow('Your On-Chain Agents:'));
       agents.forEach((agent, index) => {
-        let statusColor = chalk.yellow;
-        let status = 'local only';
-        
-        if (agent.onChain) {
-          statusColor = chalk.green;
-          status = 'on-chain';
-        } else if (agent.status === 'simulated') {
-          statusColor = chalk.blue;
-          status = 'simulated';
-        }
-        
         logger.general.info(`  ${index + 1}. ${agent.name} (${agent.type})`);
         logger.general.info(`     Address: ${chalk.gray(agent.address)}`);
-        logger.general.info(`     Status: ${statusColor(status)}`);
+        logger.general.info(`     Status: ${chalk.green('on-chain')}`);
         if (agent.description) {
           logger.general.info(`     Description: ${chalk.gray(agent.description)}`);
         }
         logger.general.info('');
       });
-      
-      // Show sync status
-      const onChainCount = agents.filter(a => a.onChain).length;
-      const simulatedCount = agents.filter(a => a.status === 'simulated').length;
-      const localOnlyCount = agents.length - onChainCount - simulatedCount;
-      
-      if (simulatedCount > 0) {
-        logger.general.info(chalk.blue(`ℹ️  ${simulatedCount} agent(s) in simulation mode`));
-        logger.general.info(chalk.gray('   Run "ghostspeak quickstart" to enable blockchain integration'));
-        logger.general.info('');
-      }
-      
-      if (localOnlyCount > 0) {
-        logger.general.info(chalk.yellow(`⚠️  ${localOnlyCount} agent(s) not yet synced`));
-        logger.general.info(chalk.gray('   These agents may need to be re-registered'));
-        logger.general.info('');
-      }
     }
 
     logger.general.info(chalk.green('✅ Agent listing completed'));
@@ -335,19 +307,6 @@ export async function listAgents(): Promise<void> {
   }
 }
 
-function generateMockAgentId(): string {
-  return `agent_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function generateMockAgentAddress(): string {
-  // Generate a mock Solana-like address (base58, 44 characters)
-  const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  let address = '';
-  for (let i = 0; i < 44; i++) {
-    address += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return address;
-}
 
 function getCapabilitiesForType(type: string): string[] {
   const capabilityMap: Record<string, string[]> = {

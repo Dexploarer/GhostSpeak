@@ -46,8 +46,15 @@
     "typescript": "5.8.3"
   },
   "dependencies": {
+    "@ghostspeak/sdk": "1.0.0",
+    "@solana/addresses": "2.1.1",
+    "@solana/codecs": "2.1.1",
+    "@solana/rpc": "2.1.1",
+    "@solana/rpc-types": "2.1.1",
+    "@solana/signers": "2.1.1",
     "chalk": "5.4.1",
     "commander": "14.0.0",
-    "conf": "14.0.0"
+    "conf": "14.0.0",
+    "semver": "7.6.3"
   }
 }

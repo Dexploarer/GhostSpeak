@@ -377,60 +377,82 @@ export function buildSimulateAndSendTransaction(
     signers: KeyPairSigner[],
     options: ITransactionOptions = {}
   ): Promise<ISendTransactionResult> {
+    const timeout = options.timeout ?? 30000; // Default 30 second timeout
+    const timeoutError = new Error(`Transaction timed out after ${timeout}ms`);
+    let timeoutId: NodeJS.Timeout | undefined;
+
+    // Create timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(timeoutError), timeout);
+    });
+
     try {
-      // Get latest blockhash
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+      // Wrap the entire operation in a timeout
+      const result = await Promise.race([
+        (async () => {
+          // Get latest blockhash
+          const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
-      // Get primary signer (fee payer)
-      const payer = signers[0];
-      if (!payer) {
-        throw new Error('No signer provided');
-      }
+          // Get primary signer (fee payer)
+          const payer = signers[0];
+          if (!payer) {
+            throw new Error('No signer provided');
+          }
 
-      // Build transaction using Web3.js v2 pipe pattern
-      const transaction = pipe(
-        createTransactionMessage({ version: 0 }),
-        tx => setTransactionMessageFeePayerSigner(payer, tx),
-        tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        tx => appendTransactionMessageInstructions(instructions, tx)
-      );
+          // Build transaction using Web3.js v2 pipe pattern
+          const transaction = pipe(
+            createTransactionMessage({ version: 0 }),
+            tx => setTransactionMessageFeePayerSigner(payer, tx),
+            tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+            tx => appendTransactionMessageInstructions(instructions, tx)
+          );
 
-      // Sign for simulation
-      const signedTransaction =
-        await signTransactionMessageWithSigners(transaction);
+          // Sign for simulation
+          const signedTransaction =
+            await signTransactionMessageWithSigners(transaction);
 
-      // Simulate transaction first - fix the base64 encoding issue
-      const encodedTransaction =
-        getBase64EncodedWireTransaction(signedTransaction);
-      const simulateResult = await rpc
-        .simulateTransaction(encodedTransaction, {
-          commitment: options.commitment ?? 'confirmed',
-          sigVerify: false,
-          encoding: 'base64',
-        })
-        .send();
+          // Simulate transaction first - fix the base64 encoding issue
+          const encodedTransaction =
+            getBase64EncodedWireTransaction(signedTransaction);
+          const simulateResult = await rpc
+            .simulateTransaction(encodedTransaction, {
+              commitment: options.commitment ?? 'confirmed',
+              sigVerify: false,
+              encoding: 'base64',
+            })
+            .send();
 
-      if (simulateResult.value.err) {
-        throw new Error(
-          `Transaction simulation failed: ${JSON.stringify(simulateResult.value.err)}`
-        );
-      }
+          if (simulateResult.value.err) {
+            throw new Error(
+              `Transaction simulation failed: ${JSON.stringify(simulateResult.value.err)}`
+            );
+          }
 
-      // Send and confirm the transaction
-      await sendAndConfirm(signedTransaction, {
-        commitment: options.commitment ?? 'confirmed',
-        skipPreflight: options.skipPreflight ?? false,
-        maxRetries: BigInt(options.maxRetries ?? 3),
-      });
+          // Send and confirm the transaction
+          await sendAndConfirm(signedTransaction, {
+            commitment: options.commitment ?? 'confirmed',
+            skipPreflight: options.skipPreflight ?? false,
+            maxRetries: BigInt(options.maxRetries ?? 3),
+          });
 
-      const signature = getSignatureFromTransaction(signedTransaction);
+          const signature = getSignatureFromTransaction(signedTransaction);
 
-      return {
-        signature,
-        confirmed: true,
-        success: true,
-      };
+          return {
+            signature,
+            confirmed: true,
+            success: true,
+          };
+        })(),
+        timeoutPromise
+      ]);
+
+      // Clear timeout if successful
+      if (timeoutId) clearTimeout(timeoutId);
+      return result;
     } catch (error) {
+      // Clear timeout on error
+      if (timeoutId) clearTimeout(timeoutId);
+      
       return {
         signature: '',
         confirmed: false,

@@ -174,8 +174,8 @@ async function displayNetworkStatus(config: any, cliLogger: Logger): Promise<voi
                          latency < 2000 ? chalk.yellow('Fair') : chalk.red('Poor');
     await cliLogger.display(`  Connection Quality: ${latencyStatus}`);
   } catch (error) {
-    await cliLogger.display(`  Connection: ${chalk.red('❌ Failed')}`);
-    await cliLogger.display(`  Error: ${chalk.gray('Unable to connect to RPC endpoint')}`);
+    await cliLogger.display(`  Connection: ${chalk.red('❌ No blockchain connection')}`);
+    await cliLogger.display(`  Status: ${chalk.gray('Blockchain unavailable')}`);
   }
 }
 

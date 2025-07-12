@@ -86,7 +86,7 @@ const defaultTranslations: TranslationMessages = {
     },
     commands: {
       config: {
-        description: 'Manage CLI configuration',
+        description: 'Manage CLI configuration (use --show or --reset flags)',
         show: 'Show current configuration',
         reset: 'Reset configuration to defaults'
       },

@@ -9,10 +9,10 @@ import {
 } from '../utils/transaction-helpers';
 // Import real instruction builders from generated code
 import { 
-  getRegisterAgentInstructionAsync,
-  type RegisterAgentAsyncInput,
-  type RegisterAgentInstructionDataArgs 
-} from '../generated-v2/instructions/registerAgent';
+  getVerifyAgentInstructionAsync,
+  type VerifyAgentAsyncInput,
+  type VerifyAgentInstructionDataArgs 
+} from '../generated-v2/instructions/verifyAgent';
 import { fetchMaybeAgentAccount, type AgentAccount } from '../generated-v2/accounts/agentAccount.js';
 
 import type { Address } from '@solana/addresses';

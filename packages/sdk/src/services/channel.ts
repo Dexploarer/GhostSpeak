@@ -461,117 +461,62 @@ export class ChannelService {
   }
 
   /**
-   * Join a channel - Real implementation with proper error handling
+   * Join a channel
+   * @throws {Error} Always throws - join functionality not implemented in smart contract
    */
   async joinChannel(
     signer: KeyPairSigner,
     channelPda: Address
   ): Promise<string> {
-    try {
-      logger.channel.info('🔗 Joining channel:', channelPda);
-
-      // Note: The smart contract doesn't have a specific joinChannel instruction
-      // Channel participation is managed through direct messaging to the channel
-      // This is by design - channels are open messaging endpoints
-
-      // Verify the channel exists first
-      const channelInfo = await this.rpc
-        .getAccountInfo(channelPda, { commitment: this.commitment })
-        .send();
-
-      if (!channelInfo.value) {
-        throw new Error(`Channel ${channelPda} does not exist`);
-      }
-
-      // For now, we simulate joining by checking channel access
-      // In practice, users "join" by sending their first message to the channel
-      logger.channel.info('✅ Channel access verified - ready to participate');
-
-      return `join_${channelPda}_${Date.now()}`;
-    } catch (error) {
-      logger.channel.error('❌ Failed to join channel:', error);
-      throw new Error(
-        `Join channel failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    logger.channel.error('Join channel operation not available');
+    throw new Error(
+      'Channel join functionality is not implemented in the smart contract. ' +
+      'Channels are open messaging endpoints - simply send a message to participate.'
+    );
   }
 
   /**
-   * Leave a channel - Real implementation with proper error handling
+   * Leave a channel
+   * @throws {Error} Always throws - leave functionality not implemented in smart contract
    */
   async leaveChannel(
     signer: KeyPairSigner,
     channelPda: Address
   ): Promise<string> {
-    try {
-      logger.channel.info('🚪 Leaving channel:', channelPda);
-
-      // Note: The smart contract doesn't have a specific leaveChannel instruction
-      // Channel participation is implicit - users simply stop sending messages
-      // This is by design for a decentralized messaging protocol
-
-      // Verify the channel exists first
-      const channelInfo = await this.rpc
-        .getAccountInfo(channelPda, { commitment: this.commitment })
-        .send();
-
-      if (!channelInfo.value) {
-        throw new Error(`Channel ${channelPda} does not exist`);
-      }
-
-      // Simulate leaving by confirming channel access removal
-      logger.channel.info('✅ Left channel successfully');
-
-      return `leave_${channelPda}_${Date.now()}`;
-    } catch (error) {
-      logger.channel.error('❌ Failed to leave channel:', error);
-      throw new Error(
-        `Leave channel failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    logger.channel.error('Leave channel operation not available');
+    throw new Error(
+      'Channel leave functionality is not implemented in the smart contract. ' +
+      'Channel participation is implicit - simply stop sending messages to leave.'
+    );
   }
 
   /**
    * Parse channel account data from chain
-   * TODO: Implement proper account parser when channel account structure is finalized
+   * @throws {Error} If account data cannot be parsed
    */
   private parseChannelAccount(data: Uint8Array): IChannelAccount {
-    // NOTE: Channel account parsing requires the account discriminator and layout
-    // from the smart contract. This is a temporary implementation that returns
-    // placeholder data to maintain API compatibility
-
-    logger.channel.info(
-      '⚠️  Channel account parsing uses placeholder implementation'
+    // Channel account parsing is not yet implemented in the smart contract
+    // This requires the account discriminator and layout from the finalized contract
+    logger.channel.error(
+      'Channel account parsing not implemented - smart contract account structure pending'
     );
-    logger.channel.info(
-      '    Real parser pending smart contract account structure finalization'
+    
+    throw new Error(
+      'Channel account data parsing not available. The smart contract account structure is not yet finalized.'
     );
-    logger.channel.info('    Data length:', data.length, 'bytes');
-
-    // Return placeholder data for API compatibility
-    return {
-      creator: '11111111111111111111111111111111' as Address,
-      name: 'Channel (data parsing pending)',
-      description:
-        'Account data parsing will be implemented when contract structure is finalized',
-      visibility: ChannelVisibility.PUBLIC,
-      maxParticipants: 100,
-      currentParticipants: 0,
-      isActive: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
   }
 
   /**
-   * Deserialize channel data (placeholder implementation)
+   * Deserialize channel data
+   * @throws {Error} If account data cannot be parsed
    */
   private deserializeChannelData(data: Uint8Array): IChannelAccount | null {
     try {
-      // Use parseChannelAccount as fallback
       return this.parseChannelAccount(data);
     } catch (error) {
       logger.channel.error('❌ Failed to deserialize channel data:', error);
+      // Return null to indicate parsing failure rather than throwing
+      // This allows listUserChannels to continue processing other accounts
       return null;
     }
   }

@@ -6,7 +6,13 @@ import {
   getCommitment,
   getKeypair,
   getGhostspeakSdk,
-} from '../context-helpers';
+} from '../context-helpers.js';
+import { withTimeout, TIMEOUTS, TimeoutError } from '../utils/timeout.js';
+import { createChannelServiceWrapper } from '../services/channel-wrapper.js';
+import { getTimeoutMessage } from '../utils/timeout-messages.js';
+import { preOperationCheck, getNetworkErrorMessage } from '../utils/network-diagnostics.js';
+import { createChannelDirect, listUserChannelsDirect } from '../services/sdk-direct.js';
+import { address } from '@solana/addresses';
 import { 
   confirm, 
   ProgressIndicator,
@@ -15,6 +21,11 @@ import {
   info,
   createTable
 } from '../utils/prompts.js';
+import { 
+  createEnhancedProgress,
+  EnhancedProgressIndicator,
+  OPERATION_ESTIMATES 
+} from '../utils/enhanced-progress.js';
 import chalk from 'chalk';
 
 import type {
@@ -34,6 +45,8 @@ export interface CreateChannelOptions {
   maxParticipants?: number;
   encryptionEnabled?: boolean;
   metadata?: Record<string, unknown>;
+  yes?: boolean;
+  nonInteractive?: boolean;
 }
 
 /**
@@ -86,81 +99,164 @@ export async function createChannel(
       return;
     }
     
-    // Show channel details before creation
-    console.log('\n' + chalk.cyan('📋 Channel Details:'));
-    console.log(chalk.gray('─'.repeat(40)));
-    console.log(`${chalk.bold('Name:')} ${trimmedName}`);
-    console.log(`${chalk.bold('Description:')} ${options.description || 'No description provided'}`);
-    console.log(`${chalk.bold('Visibility:')} ${options.isPrivate ? '🔒 Private' : '🌍 Public'}`);
-    console.log(`${chalk.bold('Max Participants:')} ${options.maxParticipants || 'Unlimited'}`);
-    console.log(`${chalk.bold('Encryption:')} ${options.encryptionEnabled ? '✅ Enabled' : '❌ Disabled'}`);
+    // Check if we're in non-interactive mode
+    const isNonInteractive = options.nonInteractive || options.yes || process.env.CI === 'true';
     
-    if (options.metadata && Object.keys(options.metadata).length > 0) {
-      console.log(`${chalk.bold('Metadata:')} ${JSON.stringify(options.metadata, null, 2)}`);
+    // Show channel details before creation (skip in non-interactive mode)
+    if (!isNonInteractive) {
+      console.log('\n' + chalk.cyan('📋 Channel Details:'));
+      console.log(chalk.gray('─'.repeat(40)));
+      console.log(`${chalk.bold('Name:')} ${trimmedName}`);
+      console.log(`${chalk.bold('Description:')} ${options.description || 'No description provided'}`);
+      console.log(`${chalk.bold('Visibility:')} ${options.isPrivate ? '🔒 Private' : '🌍 Public'}`);
+      console.log(`${chalk.bold('Max Participants:')} ${options.maxParticipants || 'Unlimited'}`);
+      console.log(`${chalk.bold('Encryption:')} ${options.encryptionEnabled ? '✅ Enabled' : '❌ Disabled'}`);
+      
+      if (options.metadata && Object.keys(options.metadata).length > 0) {
+        console.log(`${chalk.bold('Metadata:')} ${JSON.stringify(options.metadata, null, 2)}`);
+      }
+      console.log(chalk.gray('─'.repeat(40)) + '\n');
     }
-    console.log(chalk.gray('─'.repeat(40)) + '\n');
+    
+    // Ask for confirmation (skip in non-interactive mode)
+    let shouldCreate = true;
+    if (!isNonInteractive) {
+      shouldCreate = await confirm({
+        message: `Create channel "${trimmedName}" with these settings?`,
+        defaultValue: true
+      });
 
-    // Ask for confirmation
-    const shouldCreate = await confirm({
-      message: `Create channel "${trimmedName}" with these settings?`,
-      defaultValue: true
-    });
-
-    if (!shouldCreate) {
-      info('Channel creation cancelled');
-      return;
+      if (!shouldCreate) {
+        info('Channel creation cancelled');
+        return;
+      }
+    } else {
+      console.log(chalk.gray('Non-interactive mode: proceeding with channel creation...'));
     }
 
-    // Show progress indicator
-    const progress = new ProgressIndicator(`Creating channel "${trimmedName}"...`);
+    // Show enhanced progress indicator
+    const progress = createEnhancedProgress(
+      `Creating channel "${trimmedName}"...`,
+      'CREATE_CHANNEL',
+      {
+        steps: [
+          { name: 'Initializing services', weight: 1 },
+          { name: 'Checking network connection', weight: 2 },
+          { name: 'Preparing channel service', weight: 1 },
+          { name: 'Sending transaction to blockchain', weight: 4 },
+          { name: 'Confirming transaction', weight: 2 }
+        ]
+      }
+    );
     progress.start();
 
     try {
-      const sdk = await getGhostspeakSdk();
-      const rpc = await getRpc();
-      const programId = getProgramId('channel');
+      // Initialize SDK and services with timeout
+      progress.startStep(0);
+      progress.updateStatus('Loading SDK and wallet configuration...');
+      const [sdk, rpc, signer] = await withTimeout(
+        Promise.all([
+          getGhostspeakSdk(),
+          getRpc(),
+          getKeypair()
+        ]),
+        TIMEOUTS.SDK_INIT,
+        'Service initialization'
+      );
+      
+      const programId = await getProgramId('channel');
       const commitment = await getCommitment();
-      const signer = await getKeypair();
+      
+      // Perform network health check
+      progress.completeStep();
+      progress.startStep(1);
+      progress.updateStatus('Verifying blockchain connectivity...');
+      const networkCheck = await preOperationCheck(rpc, 'channel creation');
+      
+      if (!networkCheck.proceed) {
+        progress.fail('Cannot create channel - no network connection');
+        return;
+      }
+      
+      if (networkCheck.warning) {
+        logger.general.warn(chalk.yellow('\n💡 Network performance may be degraded'));
+      }
       
       // Update progress
-      progress.update('Initializing channel service...');
-      const channelService = new sdk.ChannelService(rpc, programId, commitment);
+      progress.completeStep();
+      progress.startStep(2);
+      progress.updateStatus('Setting up channel service instance...');
+      
+      // Convert program ID to proper address type
+      const programIdAddress = address(programId);
       
       // Update progress
-      progress.update('Sending transaction to blockchain...');
-      const result = await channelService.createChannel(
-        signer,
+      progress.completeStep();
+      progress.startStep(3);
+      progress.updateStatus('Building and signing transaction...');
+      
+      // Use direct SDK approach to avoid UnifiedClient issues
+      const result = await withTimeout(
+        createChannelDirect(
+          rpc,
+          signer,
+          programIdAddress,
+          {
+            name: trimmedName,
+            description: options.description || '',
+            visibility: options.isPrivate ? 1 : 0, // 1 for private, 0 for public
+            maxParticipants: options.maxParticipants || 100,
+            metadata: options.metadata || {},
+          }
+        ),
+        TIMEOUTS.CHANNEL_CREATE,
+        'Channel creation',
         {
-          name: trimmedName,
-          description: options.description || '',
-          visibility: options.isPrivate ? 1 : 0, // 1 for private, 0 for public
-          maxParticipants: options.maxParticipants || 100,
-          metadata: options.metadata || {},
+          warningThreshold: 70,
+          onWarning: () => {
+            progress.updateStatus('Transaction is taking longer than expected...');
+            logger.general.info(chalk.yellow('\n💡 This is normal during network congestion'));
+          }
         }
       );
       
+      // Complete final steps
+      progress.completeStep();
+      progress.startStep(4);
+      progress.updateStatus('Waiting for blockchain confirmation...');
+      
+      // Small delay to show confirmation step
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Stop progress and show success
+      progress.completeStep();
       progress.succeed(`Channel "${trimmedName}" created successfully!`);
       
-      // Display channel information
-      console.log('\n' + chalk.green('✨ Channel Created Successfully!'));
-      console.log(chalk.gray('─'.repeat(50)));
-      
-      // Create a nice table display
-      const details = [
-        ['Channel ID', result.channelId],
-        ['Channel Address', result.channelPda],
-        ['Transaction Signature', result.signature],
-        ['Status', '✅ Active'],
-        ['Created By', signer.address]
-      ];
-      
-      createTable(['Property', 'Value'], details);
-      
-      console.log('\n' + chalk.yellow('💡 Next Steps:'));
-      console.log('  • Invite participants using: ' + chalk.cyan(`ghostspeak channel invite ${result.channelId} <address>`));
-      console.log('  • Send a message: ' + chalk.cyan(`ghostspeak channel message ${result.channelId} "Hello!"`));
-      console.log('  • View channel details: ' + chalk.cyan(`ghostspeak channel info ${result.channelId}`));
+      // Display channel information (concise in non-interactive mode)
+      if (!isNonInteractive) {
+        console.log('\n' + chalk.green('✨ Channel Created Successfully!'));
+        console.log(chalk.gray('─'.repeat(50)));
+        
+        // Create a nice table display
+        const details = [
+          ['Channel ID', result.channelId],
+          ['Channel Address', result.channelPda],
+          ['Transaction Signature', result.signature],
+          ['Status', '✅ Active'],
+          ['Created By', signer.address]
+        ];
+        
+        createTable(['Property', 'Value'], details);
+        
+        console.log('\n' + chalk.yellow('💡 Next Steps:'));
+        console.log('  • Invite participants using: ' + chalk.cyan(`ghostspeak channel invite ${result.channelId} <address>`));
+        console.log('  • Send a message: ' + chalk.cyan(`ghostspeak channel message ${result.channelId} "Hello!"`));
+        console.log('  • View channel details: ' + chalk.cyan(`ghostspeak channel info ${result.channelId}`));
+      } else {
+        // Minimal output for non-interactive mode
+        console.log(`Channel ID: ${result.channelId}`);
+        console.log(`Transaction: ${result.signature}`);
+      }
       
       // Log for debugging if verbose mode
       logger.channel.debug('Channel creation result:', result);
@@ -174,7 +270,12 @@ export async function createChannel(
     const errorMessage = error instanceof Error ? error.message : String(error);
     
     // Show user-friendly error messages
-    if (errorMessage.includes('insufficient')) {
+    if (error instanceof TimeoutError) {
+      showError(
+        'Channel creation timed out',
+        getTimeoutMessage('channel create', error.timeoutMs)
+      );
+    } else if (errorMessage.includes('insufficient')) {
       showError(
         'Insufficient SOL balance',
         'You need more SOL to create a channel. Please fund your wallet and try again.'
@@ -184,10 +285,10 @@ export async function createChannel(
         'Channel already exists',
         'A channel with this name already exists. Please choose a different name.'
       );
-    } else if (errorMessage.includes('network')) {
+    } else if (errorMessage.includes('network') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ETIMEDOUT')) {
       showError(
         'Network connection error',
-        'Unable to connect to Solana network. Please check your internet connection and try again.'
+        getNetworkErrorMessage(error)
       );
     } else {
       showError(
@@ -217,94 +318,82 @@ export interface ListChannelsOptions extends FilterParams {
 export async function listChannels(
   options?: ListChannelsOptions
 ): Promise<void> {
-  const progress = new ProgressIndicator('Fetching channels...');
+  const progress = createEnhancedProgress(
+    'Fetching channels...',
+    'FETCH_ACCOUNTS',
+    {
+      steps: [
+        { name: 'Initializing services', weight: 1 },
+        { name: 'Connecting to channel service', weight: 1 },
+        { name: 'Loading your channels', weight: 2 }
+      ]
+    }
+  );
   
   try {
     progress.start();
     
-    const sdk = await getGhostspeakSdk();
-    const rpc = await getRpc();
-    const programId = getProgramId('channel');
+    // Initialize SDK and services with timeout
+    progress.startStep(0);
+    progress.updateStatus('Loading configuration...');
+    const [sdk, rpc, signer] = await withTimeout(
+      Promise.all([
+        getGhostspeakSdk(),
+        getRpc(),
+        getKeypair()
+      ]),
+      TIMEOUTS.SDK_INIT,
+      'Service initialization'
+    );
+    
+    const programId = await getProgramId('channel');
     const commitment = await getCommitment();
-    const signer = await getKeypair();
     
     // Update progress
-    progress.update('Connecting to channel service...');
+    progress.completeStep();
+    progress.startStep(1);
+    progress.updateStatus('Establishing service connection...');
     
-    // Note: CLI doesn't support subscriptions, so we create service without them
-    const channelService = new sdk.ChannelService(
-      rpc,
-      programId,
-      commitment
-    );
+    // Convert program ID and address to proper types
+    const programIdAddress = address(programId);
+    const signerAddress = address(signer.address);
     
     // Update progress
-    progress.update('Loading your channels...');
+    progress.completeStep();
+    progress.startStep(2);
+    progress.updateStatus('Retrieving channel data from blockchain...');
     
-    const channels: Channel[] = await channelService.listUserChannels(
-      signer.address
+    // Use direct SDK approach
+    const channels: Channel[] = await withTimeout(
+      listUserChannelsDirect(rpc, programIdAddress, signerAddress),
+      TIMEOUTS.ACCOUNT_FETCH,
+      'Channel list fetch'
     );
     
+    progress.completeStep();
     progress.succeed('Channels loaded successfully');
     
-    // Display channels
+    // Display channels or parsing error
     if (channels.length === 0) {
       console.log('\n' + chalk.yellow('📭 No channels found'));
-      console.log(chalk.gray('You haven\'t created or joined any channels yet.'));
+      console.log(chalk.gray('No channels were found on the blockchain.'));
+      console.log(chalk.gray('This could mean:'));
+      console.log(chalk.gray('  • You haven\'t created any channels yet'));
+      console.log(chalk.gray('  • Channel data parsing is not yet available'));
+      console.log(chalk.gray('  • The blockchain query returned no results'));
       console.log('\n' + chalk.cyan('💡 Get started:'));
       console.log('  • Create a channel: ' + chalk.cyan('ghostspeak channel create <name>'));
-      console.log('  • Join a channel: ' + chalk.cyan('ghostspeak channel join <channel-id>'));
+      
+      // Note about channel data parsing
+      console.log('\n' + chalk.yellow('⚠️  Note:'));
+      console.log(chalk.gray('Channel account data parsing is not yet implemented.'));
+      console.log(chalk.gray('Created channels exist on-chain but cannot be listed until'));
+      console.log(chalk.gray('the smart contract account structure is finalized.'));
     } else {
-      console.log('\n' + chalk.green(`📡 Found ${channels.length} channel${channels.length > 1 ? 's' : ''}:`));
-      console.log(chalk.gray('─'.repeat(80)));
-      
-      // Apply filters if provided
-      let filteredChannels = channels;
-      
-      if (options?.includePrivate === false) {
-        filteredChannels = filteredChannels.filter(ch => !ch.metadata.isPrivate);
-      }
-      
-      if (options?.participantFilter) {
-        filteredChannels = filteredChannels.filter(ch => 
-          ch.participants.some(p => p.toString() === options.participantFilter?.toString())
-        );
-      }
-      
-      // Sort by last activity (most recent first)
-      filteredChannels.sort((a, b) => 
-        b.lastActivity.toNumber() - a.lastActivity.toNumber()
-      );
-      
-      // Create table data
-      const tableData = filteredChannels.map((channel, index) => {
-        const visibility = channel.metadata.isPrivate ? '🔒 Private' : '🌍 Public';
-        const participants = `${channel.participants.length}${channel.metadata.maxParticipants ? `/${channel.metadata.maxParticipants}` : ''}`;
-        const lastActivity = new Date(channel.lastActivity.toNumber() * 1000).toLocaleDateString();
-        
-        return [
-          (index + 1).toString(),
-          channel.metadata.name,
-          visibility,
-          participants,
-          lastActivity,
-          channel.id.toString().substring(0, 8) + '...'
-        ];
-      });
-      
-      createTable(
-        ['#', 'Name', 'Visibility', 'Participants', 'Last Activity', 'Channel ID'],
-        tableData
-      );
-      
-      if (filteredChannels.length < channels.length) {
-        console.log('\n' + chalk.gray(`(Showing ${filteredChannels.length} of ${channels.length} channels based on filters)`));
-      }
-      
-      console.log('\n' + chalk.yellow('💡 Actions:'));
-      console.log('  • View channel details: ' + chalk.cyan('ghostspeak channel info <channel-id>'));
-      console.log('  • Send a message: ' + chalk.cyan('ghostspeak channel message <channel-id> "Hello!"'));
-      console.log('  • Leave a channel: ' + chalk.cyan('ghostspeak channel leave <channel-id>'));
+      // This branch is currently unreachable due to parsing limitations
+      // but kept for future when parsing is implemented
+      console.log('\n' + chalk.red('❌ Unexpected state: Channel data received but parsing not implemented'));
+      console.log(chalk.gray('This should not happen. Please report this issue.'));
     }
     
     // Log debug info
@@ -316,10 +405,15 @@ export async function listChannels(
     const errorMessage = error instanceof Error ? error.message : String(error);
     
     // Show user-friendly error messages
-    if (errorMessage.includes('network')) {
+    if (error instanceof TimeoutError) {
+      showError(
+        'Channel fetch timed out',
+        getTimeoutMessage('account fetch', error.timeoutMs)
+      );
+    } else if (errorMessage.includes('network') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ETIMEDOUT')) {
       showError(
         'Network connection error',
-        'Unable to connect to Solana network. Please check your internet connection and try again.'
+        getNetworkErrorMessage(error)
       );
     } else if (errorMessage.includes('wallet')) {
       showError(

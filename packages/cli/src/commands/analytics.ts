@@ -95,14 +95,13 @@ export async function showDashboard(period: string = 'week'): Promise<void> {
                                    Object.keys(state.sessions).length > 0);
       
       if (hasRealData) {
-        cliLogger.general.info(chalk.green(`Data Source: Live Metrics`));
+        cliLogger.general.info(chalk.green(`Data Source: Blockchain`));
         cliLogger.general.info(chalk.gray(`Active Sessions: ${Object.keys(state.sessions).length}`));
       } else {
-        cliLogger.general.info(chalk.yellow(`Data Source: Demo Data`));
-        cliLogger.general.info(chalk.gray(`(Start using the CLI to see real metrics)`));
+        cliLogger.general.info(chalk.gray(`Data Source: No blockchain data available`));
       }
     } catch {
-      cliLogger.general.info(chalk.yellow(`Data Source: Demo Data`));
+      cliLogger.general.info(chalk.gray(`Data Source: No blockchain data available`));
     }
     
     cliLogger.general.info('');
@@ -156,6 +155,10 @@ export async function showAnalytics(): Promise<void> {
 
 function displayTransactionMetrics(transactions: AnalyticsData['transactions'], cliLogger: Logger): void {
   cliLogger.general.info(chalk.yellow('🔄 Transaction Metrics:'));
+  if (transactions.total === 0) {
+    cliLogger.general.info(chalk.gray('  No transaction data available'));
+    return;
+  }
   cliLogger.general.info(`  Total Transactions: ${chalk.cyan(transactions.total.toLocaleString())}`);
   cliLogger.general.info(`  Successful: ${chalk.green(transactions.successful.toLocaleString())} (${((transactions.successful / transactions.total) * 100).toFixed(1)}%)`);
   cliLogger.general.info(`  Failed: ${chalk.red(transactions.failed.toLocaleString())} (${((transactions.failed / transactions.total) * 100).toFixed(1)}%)`);
@@ -164,17 +167,27 @@ function displayTransactionMetrics(transactions: AnalyticsData['transactions'], 
 
 function displayAgentMetrics(agents: AnalyticsData['agents'], cliLogger: Logger): void {
   cliLogger.general.info(chalk.yellow('🤖 Agent Metrics:'));
+  if (agents.total === 0) {
+    cliLogger.general.info(chalk.gray('  No agent data available'));
+    return;
+  }
   cliLogger.general.info(`  Total Agents: ${chalk.cyan(agents.total.toLocaleString())}`);
   cliLogger.general.info(`  Active: ${chalk.green(agents.active.toLocaleString())}`);
   cliLogger.general.info(`  Inactive: ${chalk.yellow(agents.inactive.toLocaleString())}`);
-  cliLogger.general.info('  Top Performers:');
-  agents.topPerformers.forEach((agent, index) => {
-    cliLogger.general.info(`    ${index + 1}. ${agent.name} (Score: ${agent.score})`);
-  });
+  if (agents.topPerformers.length > 0) {
+    cliLogger.general.info('  Top Performers:');
+    agents.topPerformers.forEach((agent, index) => {
+      cliLogger.general.info(`    ${index + 1}. ${agent.name} (Score: ${agent.score})`);
+    });
+  }
 }
 
 function displayChannelMetrics(channels: AnalyticsData['channels'], cliLogger: Logger): void {
   cliLogger.general.info(chalk.yellow('📡 Channel Metrics:'));
+  if (channels.total === 0) {
+    cliLogger.general.info(chalk.gray('  No channel data available'));
+    return;
+  }
   cliLogger.general.info(`  Total Channels: ${chalk.cyan(channels.total.toLocaleString())}`);
   cliLogger.general.info(`  Active Channels: ${chalk.green(channels.active.toLocaleString())}`);
   cliLogger.general.info(`  Messages Sent: ${chalk.blue(channels.messageCount.toLocaleString())}`);
@@ -183,6 +196,10 @@ function displayChannelMetrics(channels: AnalyticsData['channels'], cliLogger: L
 
 function displayEscrowMetrics(escrow: AnalyticsData['escrow'], cliLogger: Logger): void {
   cliLogger.general.info(chalk.yellow('💰 Escrow Metrics:'));
+  if (escrow.completedTransactions === 0 && escrow.activeDeposits === 0) {
+    cliLogger.general.info(chalk.gray('  No escrow data available'));
+    return;
+  }
   cliLogger.general.info(`  Total Volume: ${chalk.cyan(escrow.totalVolume.toFixed(2))} SOL`);
   cliLogger.general.info(`  Active Deposits: ${chalk.green(escrow.activeDeposits.toLocaleString())}`);
   cliLogger.general.info(`  Completed Transactions: ${chalk.blue(escrow.completedTransactions.toLocaleString())}`);
@@ -190,28 +207,32 @@ function displayEscrowMetrics(escrow: AnalyticsData['escrow'], cliLogger: Logger
 }
 
 function displayPerformanceSummary(analytics: AnalyticsData, cliLogger: Logger): void {
-  const successRate = (analytics.transactions.successful / analytics.transactions.total) * 100;
-  const agentUtilization = (analytics.agents.active / analytics.agents.total) * 100;
-  const channelUtilization = (analytics.channels.active / analytics.channels.total) * 100;
-
   cliLogger.general.info(chalk.yellow('📈 Performance Summary:'));
   
-  // Success rate indicator
-  const successColor = successRate >= 95 ? chalk.green : successRate >= 85 ? chalk.yellow : chalk.red;
-  cliLogger.general.info(`  Success Rate: ${successColor(successRate.toFixed(1))}%`);
+  // Check if we have any data to display
+  if (analytics.transactions.total === 0 && analytics.agents.total === 0 && analytics.channels.total === 0) {
+    cliLogger.general.info(chalk.gray('  No performance data available'));
+    return;
+  }
   
-  // Agent utilization
-  const agentColor = agentUtilization >= 70 ? chalk.green : agentUtilization >= 50 ? chalk.yellow : chalk.red;
-  cliLogger.general.info(`  Agent Utilization: ${agentColor(agentUtilization.toFixed(1))}%`);
+  // Calculate rates only if we have data
+  if (analytics.transactions.total > 0) {
+    const successRate = (analytics.transactions.successful / analytics.transactions.total) * 100;
+    const successColor = successRate >= 95 ? chalk.green : successRate >= 85 ? chalk.yellow : chalk.red;
+    cliLogger.general.info(`  Success Rate: ${successColor(successRate.toFixed(1))}%`);
+  }
   
-  // Channel utilization
-  const channelColor = channelUtilization >= 60 ? chalk.green : channelUtilization >= 40 ? chalk.yellow : chalk.red;
-  cliLogger.general.info(`  Channel Utilization: ${channelColor(channelUtilization.toFixed(1))}%`);
-
-  // Overall health indicator
-  const overallHealth = (successRate + agentUtilization + channelUtilization) / 3;
-  const healthColor = overallHealth >= 80 ? chalk.green : overallHealth >= 60 ? chalk.yellow : chalk.red;
-  cliLogger.general.info(`  Overall Health: ${healthColor(overallHealth.toFixed(1))}%`);
+  if (analytics.agents.total > 0) {
+    const agentUtilization = (analytics.agents.active / analytics.agents.total) * 100;
+    const agentColor = agentUtilization >= 70 ? chalk.green : agentUtilization >= 50 ? chalk.yellow : chalk.red;
+    cliLogger.general.info(`  Agent Utilization: ${agentColor(agentUtilization.toFixed(1))}%`);
+  }
+  
+  if (analytics.channels.total > 0) {
+    const channelUtilization = (analytics.channels.active / analytics.channels.total) * 100;
+    const channelColor = channelUtilization >= 60 ? chalk.green : channelUtilization >= 40 ? chalk.yellow : chalk.red;
+    cliLogger.general.info(`  Channel Utilization: ${channelColor(channelUtilization.toFixed(1))}%`);
+  }
 }
 
 async function fetchAnalyticsData(period: string): Promise<AnalyticsData> {
@@ -291,17 +312,13 @@ async function fetchAnalyticsData(period: string): Promise<AnalyticsData> {
       }
     };
     
-    // If no real data exists, return demo data as fallback
-    if (analyticsData.transactions.total === 0 && 
-        analyticsData.agents.total === 0 && 
-        analyticsData.channels.total === 0) {
-      return getDemoData();
-    }
+    // Return real data even if empty
+    // No fallback to demo data
     
     return analyticsData;
     
   } catch (error) {
-    // If state loading fails, return demo data
+    // If state loading fails, return empty data
     console.error('Error fetching real analytics data:', error);
     return getDemoData();
   }
@@ -380,36 +397,32 @@ function calculateAverageAmount(transactions: any[]): number {
   return (total / amountTx.length) / 1e9; // Convert to SOL
 }
 
-// Get demo data as fallback
+// Get empty data when no blockchain data available
 function getDemoData(): AnalyticsData {
   return {
     transactions: {
-      total: 12450,
-      successful: 12108,
-      failed: 342,
-      avgProcessingTime: 1247.5
+      total: 0,
+      successful: 0,
+      failed: 0,
+      avgProcessingTime: 0
     },
     agents: {
-      total: 156,
-      active: 134,
-      inactive: 22,
-      topPerformers: [
-        { name: 'DataAnalyzer', score: 98.5 },
-        { name: 'TaskManager', score: 97.2 },
-        { name: 'ContentCreator', score: 95.8 }
-      ]
+      total: 0,
+      active: 0,
+      inactive: 0,
+      topPerformers: []
     },
     channels: {
-      total: 89,
-      active: 67,
-      messageCount: 34567,
-      avgResponseTime: 892.3
+      total: 0,
+      active: 0,
+      messageCount: 0,
+      avgResponseTime: 0
     },
     escrow: {
-      totalVolume: 2456.78,
-      activeDeposits: 23,
-      completedTransactions: 145,
-      averageAmount: 16.9434
+      totalVolume: 0,
+      activeDeposits: 0,
+      completedTransactions: 0,
+      averageAmount: 0
     }
   };
 }

@@ -69,71 +69,57 @@ export async function listServices(
     }
     logger.general.info('');
 
-    // Try to connect to blockchain, but fallback to demo mode if needed
+    // Connect to blockchain to fetch real service listings
     let listings: ServiceListingAccount[] = [];
     let total = 0;
     let hasMore = false;
-    let isDemo = false;
 
-    try {
-      // Create RPC client
-      progress.update('Connecting to blockchain...');
-      const rpc = createSolanaRpc(rpcUrl);
-      const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    // Create RPC client
+    progress.update('Connecting to blockchain...');
+    const rpc = createSolanaRpc(rpcUrl);
+    const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
 
-      // Initialize marketplace service
-      progress.update('Initializing marketplace service...');
-      const marketplace = new MarketplaceImpl(rpc, programId);
+    // Initialize marketplace service
+    progress.update('Initializing marketplace service...');
+    const marketplace = new MarketplaceImpl(rpc, programId);
 
-      // Build filters
-      const filters: MarketplaceFilters = {
-        status: [ServiceListingStatus.Active],
-        sortBy: options.sortBy || 'created',
-        sortOrder: 'desc',
-      };
+    // Build filters
+    const filters: MarketplaceFilters = {
+      status: [ServiceListingStatus.Active],
+      sortBy: options.sortBy || 'created',
+      sortOrder: 'desc',
+    };
 
-      if (options.category) {
-        filters.serviceTypes = [options.category];
-      }
-
-      if (options.minPrice !== undefined) {
-        filters.minPrice = BigInt(options.minPrice * 1e9); // Convert SOL to lamports
-      }
-
-      if (options.maxPrice !== undefined) {
-        filters.maxPrice = BigInt(options.maxPrice * 1e9);
-      }
-
-      if (options.minRating !== undefined) {
-        filters.minRating = options.minRating;
-      }
-
-      // Browse listings
-      progress.update('Fetching marketplace listings...');
-      const result = await marketplace.browseListings(
-        filters,
-        options.limit || 20,
-        0
-      );
-      
-      listings = result.listings;
-      total = result.total;
-      hasMore = result.hasMore;
-      
-      // Success
-      progress.succeed('Marketplace listings loaded successfully');
-    } catch (error) {
-      // If blockchain connection fails, show demo data
-      logger.general.info(chalk.yellow('⚠️  Unable to connect to blockchain. Showing demo services.'));
-      logger.general.info(chalk.gray('To see real services, ensure the program is deployed and you have network access.\n'));
-      isDemo = true;
-
-      // Generate demo listings
-      const demoListings = generateDemoListings(options);
-      listings = demoListings.listings;
-      total = demoListings.total;
-      hasMore = demoListings.hasMore;
+    if (options.category) {
+      filters.serviceTypes = [options.category];
     }
+
+    if (options.minPrice !== undefined) {
+      filters.minPrice = BigInt(options.minPrice * 1e9); // Convert SOL to lamports
+    }
+
+    if (options.maxPrice !== undefined) {
+      filters.maxPrice = BigInt(options.maxPrice * 1e9);
+    }
+
+    if (options.minRating !== undefined) {
+      filters.minRating = options.minRating;
+    }
+
+    // Browse listings
+    progress.update('Fetching marketplace listings...');
+    const result = await marketplace.browseListings(
+      filters,
+      options.limit || 20,
+      0
+    );
+    
+    listings = result.listings;
+    total = result.total;
+    hasMore = result.hasMore;
+    
+    // Success
+    progress.succeed('Marketplace listings loaded successfully');
 
     if (listings.length === 0) {
       logger.general.info(chalk.yellow('No services found'));
@@ -152,7 +138,7 @@ export async function listServices(
       logger.general.info(chalk.gray('  • trading - Trading bots and market analysis'));
       logger.general.info(chalk.gray('  • automation - Workflow automation'));
     } else {
-      logger.general.info(chalk.yellow(`Available Services (${listings.length} of ${total})${isDemo ? ' - Demo Mode' : ''}:`));
+      logger.general.info(chalk.yellow(`Available Services (${listings.length} of ${total}):`));
       logger.general.info('');
       
       listings.forEach((listing, index) => {
@@ -184,213 +170,21 @@ export async function listServices(
     }
 
     logger.general.info(chalk.green('✅ Marketplace listing completed'));
-    
-    if (isDemo) {
-      logger.general.info('');
-      logger.general.info(chalk.yellow('💡 To interact with real services:'));
-      logger.general.info(chalk.gray('   1. Ensure the GhostSpeak program is deployed'));
-      logger.general.info(chalk.gray('   2. Connect to the correct network (devnet/mainnet)'));
-      logger.general.info(chalk.gray('   3. Run: ghostspeak config show'));
-    }
   } catch (error) {
-    logger.error('Marketplace listing failed:', error);
+    progress.fail('Failed to connect to blockchain');
+    logger.marketplace.error('Marketplace listing failed:', error);
     logger.general.info('');
-    logger.general.info(chalk.red('❌ Error Details:'));
+    logger.general.info(chalk.red('❌ Unable to fetch marketplace listings'));
     logger.general.info(chalk.gray(error instanceof Error ? error.message : String(error)));
     logger.general.info('');
     logger.general.info(chalk.yellow('💡 Troubleshooting:'));
     logger.general.info(chalk.gray('   • Check your network connection'));
     logger.general.info(chalk.gray('   • Verify RPC endpoint is accessible'));
-    logger.general.info(chalk.gray('   • Ensure the program is deployed to devnet'));
-    logger.general.info(chalk.gray('   • Run: ghostspeak status'));
+    logger.general.info(chalk.gray('   • Ensure the GhostSpeak program is deployed'));
+    logger.general.info(chalk.gray('   • Check network configuration: ghostspeak config show'));
+    logger.general.info(chalk.gray('   • Verify blockchain status: ghostspeak status'));
+    throw error;
   }
-}
-
-// Helper function to generate demo listings
-function generateDemoListings(options: ListServicesOptions): {
-  listings: ServiceListingAccount[];
-  total: number;
-  hasMore: boolean;
-} {
-  const allDemoListings: ServiceListingAccount[] = [
-    {
-      version: 1,
-      bump: 255,
-      id: 1n,
-      seller: address('11111111111111111111111111111111'),
-      agent: address('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
-      title: 'AI Content Writer Pro',
-      description: 'Professional AI agent that creates high-quality blog posts, articles, and marketing content tailored to your brand voice',
-      serviceType: 'creative',
-      tags: ['writing', 'content', 'marketing', 'seo'],
-      price: BigInt(0.5 * 1e9),
-      tokenMint: address('11111111111111111111111111111111'),
-      paymentToken: address('11111111111111111111111111111111'),
-      estimatedDelivery: 3600n,
-      maxOrders: 10,
-      activeOrders: 3,
-      status: ServiceListingStatus.Active,
-      listedAt: BigInt(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      updatedAt: BigInt(Date.now() - 24 * 60 * 60 * 1000),
-      totalSales: 47,
-      totalRevenue: BigInt(23.5 * 1e9),
-      averageRating: 4.8,
-      totalReviews: 42,
-    },
-    {
-      version: 1,
-      bump: 255,
-      id: 2n,
-      seller: address('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
-      agent: address('So11111111111111111111111111111111111111112'),
-      title: 'Smart Data Analytics Bot',
-      description: 'Advanced analytics agent that processes your data and generates actionable insights with visualizations',
-      serviceType: 'analytics',
-      tags: ['data', 'analysis', 'visualization', 'insights'],
-      price: BigInt(1.0 * 1e9),
-      tokenMint: address('11111111111111111111111111111111'),
-      paymentToken: address('11111111111111111111111111111111'),
-      estimatedDelivery: 7200n,
-      maxOrders: 5,
-      activeOrders: 2,
-      status: ServiceListingStatus.Active,
-      listedAt: BigInt(Date.now() - 14 * 24 * 60 * 60 * 1000),
-      updatedAt: BigInt(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      totalSales: 23,
-      totalRevenue: BigInt(23.0 * 1e9),
-      averageRating: 4.6,
-      totalReviews: 18,
-    },
-    {
-      version: 1,
-      bump: 255,
-      id: 3n,
-      seller: address('So11111111111111111111111111111111111111112'),
-      agent: address('Stake11111111111111111111111111111111111111'),
-      title: 'Security Audit Assistant',
-      description: 'Automated security scanning agent that audits smart contracts and identifies vulnerabilities',
-      serviceType: 'security',
-      tags: ['audit', 'smart-contract', 'vulnerability', 'solana'],
-      price: BigInt(2.0 * 1e9),
-      tokenMint: address('11111111111111111111111111111111'),
-      paymentToken: address('11111111111111111111111111111111'),
-      estimatedDelivery: 14400n,
-      maxOrders: 3,
-      activeOrders: 1,
-      status: ServiceListingStatus.Active,
-      listedAt: BigInt(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      updatedAt: BigInt(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      totalSales: 15,
-      totalRevenue: BigInt(30.0 * 1e9),
-      averageRating: 4.9,
-      totalReviews: 12,
-    },
-    {
-      version: 1,
-      bump: 255,
-      id: 4n,
-      seller: address('Stake11111111111111111111111111111111111111'),
-      agent: address('Vote111111111111111111111111111111111111111'),
-      title: 'DeFi Trading Bot',
-      description: 'Intelligent trading agent that executes strategies on Solana DeFi protocols with risk management',
-      serviceType: 'trading',
-      tags: ['defi', 'trading', 'arbitrage', 'yield'],
-      price: BigInt(3.0 * 1e9),
-      tokenMint: address('11111111111111111111111111111111'),
-      paymentToken: address('11111111111111111111111111111111'),
-      estimatedDelivery: 3600n,
-      maxOrders: 20,
-      activeOrders: 12,
-      status: ServiceListingStatus.Active,
-      listedAt: BigInt(Date.now() - 60 * 24 * 60 * 60 * 1000),
-      updatedAt: BigInt(Date.now() - 1 * 60 * 60 * 1000),
-      totalSales: 156,
-      totalRevenue: BigInt(468.0 * 1e9),
-      averageRating: 4.7,
-      totalReviews: 89,
-    },
-    {
-      version: 1,
-      bump: 255,
-      id: 5n,
-      seller: address('Vote111111111111111111111111111111111111111'),
-      agent: address('Config1111111111111111111111111111111111111'),
-      title: 'Task Automation Master',
-      description: 'Productivity agent that automates repetitive tasks and manages workflows across multiple platforms',
-      serviceType: 'productivity',
-      tags: ['automation', 'workflow', 'productivity', 'integration'],
-      price: BigInt(0.75 * 1e9),
-      tokenMint: address('11111111111111111111111111111111'),
-      paymentToken: address('11111111111111111111111111111111'),
-      estimatedDelivery: 1800n,
-      maxOrders: 15,
-      activeOrders: 8,
-      status: ServiceListingStatus.Active,
-      listedAt: BigInt(Date.now() - 21 * 24 * 60 * 60 * 1000),
-      updatedAt: BigInt(Date.now() - 12 * 60 * 60 * 1000),
-      totalSales: 67,
-      totalRevenue: BigInt(50.25 * 1e9),
-      averageRating: 4.5,
-      totalReviews: 54,
-    },
-  ];
-
-  // Filter by category if specified
-  let filteredListings = allDemoListings;
-  if (options.category) {
-    filteredListings = allDemoListings.filter(
-      listing => listing.serviceType === options.category
-    );
-  }
-
-  // Apply price filters
-  if (options.minPrice !== undefined) {
-    const minPriceLamports = BigInt(options.minPrice * 1e9);
-    filteredListings = filteredListings.filter(
-      listing => listing.price >= minPriceLamports
-    );
-  }
-
-  if (options.maxPrice !== undefined) {
-    const maxPriceLamports = BigInt(options.maxPrice * 1e9);
-    filteredListings = filteredListings.filter(
-      listing => listing.price <= maxPriceLamports
-    );
-  }
-
-  // Apply rating filter
-  if (options.minRating !== undefined) {
-    filteredListings = filteredListings.filter(
-      listing => listing.averageRating >= options.minRating
-    );
-  }
-
-  // Sort listings
-  if (options.sortBy) {
-    filteredListings.sort((a, b) => {
-      switch (options.sortBy) {
-        case 'price':
-          return Number(a.price - b.price);
-        case 'rating':
-          return b.averageRating - a.averageRating;
-        case 'sales':
-          return b.totalSales - a.totalSales;
-        case 'created':
-        default:
-          return Number(b.listedAt - a.listedAt);
-      }
-    });
-  }
-
-  // Apply limit
-  const limit = options.limit || 20;
-  const paginatedListings = filteredListings.slice(0, limit);
-
-  return {
-    listings: paginatedListings,
-    total: filteredListings.length,
-    hasMore: filteredListings.length > limit,
-  };
 }
 
 export async function createListing(
@@ -452,7 +246,7 @@ export async function createListing(
     logger.general.info(`Listing Address: ${result.listingAddress}`);
     logger.general.info(`Transaction: ${result.signature}`);
   } catch (error) {
-    logger.error('Failed to create listing:', error);
+    logger.marketplace.error('Failed to create listing:', error);
     throw error;
   }
 }
@@ -513,7 +307,7 @@ export async function purchaseService(
     logger.general.info(`Order Address: ${result.orderAddress}`);
     logger.general.info(`Transaction: ${result.signature}`);
   } catch (error) {
-    logger.error('Failed to purchase service:', error);
+    logger.marketplace.error('Failed to purchase service:', error);
     throw error;
   }
 }
@@ -559,7 +353,7 @@ export async function searchMarketplace(query: string): Promise<void> {
 
     logger.general.info(chalk.green('✅ Search completed'));
   } catch (error) {
-    logger.error('Marketplace search failed:', error);
+    logger.marketplace.error('Marketplace search failed:', error);
     throw error;
   }
 }
@@ -602,7 +396,7 @@ export async function getTrending(limit: number = 10): Promise<void> {
 
     logger.general.info(chalk.green('✅ Trending services loaded'));
   } catch (error) {
-    logger.error('Failed to get trending services:', error);
+    logger.marketplace.error('Failed to get trending services:', error);
     throw error;
   }
 }
@@ -656,7 +450,7 @@ export async function getMarketplaceStats(): Promise<void> {
     logger.general.info('');
     logger.general.info(chalk.green('✅ Analytics loaded successfully'));
   } catch (error) {
-    logger.error('Failed to get marketplace analytics:', error);
+    logger.marketplace.error('Failed to get marketplace analytics:', error);
     throw error;
   }
 }

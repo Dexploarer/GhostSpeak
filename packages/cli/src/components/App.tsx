@@ -74,7 +74,7 @@ export const GhostSpeakApp: React.FC<GhostSpeakAppProps> = ({
         setState(prev => ({ ...prev, loading: false }));
 
         if (verbose) {
-          logger.info(`Connected to Solana ${network}`);
+          logger.ui.info(`Connected to Solana ${network}`);
         }
       } catch (error) {
         setConnectionStatus('error');

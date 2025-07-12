@@ -24,11 +24,12 @@ pub struct RegisterAgent<'info> {
     pub agent_account: Account<'info, Agent>,
     
     #[account(
-        init_if_needed,
+        init,
         payer = signer,
         space = UserRegistry::LEN,
         seeds = [b"user_registry", signer.key().as_ref()],
-        bump
+        bump,
+        constraint = user_registry.key() == user_registry.key()
     )]
     pub user_registry: Account<'info, UserRegistry>,
     

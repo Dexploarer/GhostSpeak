@@ -8,6 +8,7 @@
 
 use anchor_lang::prelude::*;
 use std::collections::BTreeMap;
+use super::security_governance::NotificationMethod;
 
 // =====================================================
 // RISK MANAGEMENT STRUCTURES
@@ -1403,17 +1404,8 @@ pub enum ThresholdLevel {
     Emergency,
 }
 
-/// Notification methods
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NotificationMethod {
-    OnChain,
-    Email,
-    Sms,
-    Push,
-    InApp,
-    Phone,
-    All,
-}
+// NotificationMethod is imported from security_governance module
+// Removed duplicate definition to fix compilation error
 
 // =====================================================
 // PLACEHOLDER IMPLEMENTATIONS FOR COMPLEX STRUCTURES

@@ -10,7 +10,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
 import { ConfigManager, type GhostSpeakConfig } from '../core/ConfigManager.js';
-// import { SharedConfig } from '@ghostspeak/sdk/config';
+import { SharedConfig } from '@ghostspeak/sdk';
 import { logger } from './logger.js';
 
 export async function migrateConfiguration(): Promise<boolean> {

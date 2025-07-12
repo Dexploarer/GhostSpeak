@@ -43,7 +43,7 @@ program
   .option('--locale <locale>', cliT('cli.options.locale'))
   .option(
     '--network <network>',
-    cliT('cli.options.network'),
+    cliT('cli.options.network') + ' (devnet, testnet, mainnet-beta)',
     'devnet'
   )
   .helpOption('-h, --help', cliT('cli.options.help'))
@@ -132,12 +132,34 @@ program
 const agentCommand = program.command('agent').description('Manage AI agents');
 
 agentCommand
-  .command('register <name>')
+  .command('register')
   .description('Register a new AI agent')
+  .argument('<name>', 'Agent name', (value) => {
+    // Validate the name argument immediately when parsed
+    const trimmed = value?.trim() || '';
+    if (!trimmed) {
+      console.error(chalk.red('❌ Error: Agent name cannot be empty'));
+      console.error(chalk.gray('Please provide a valid agent name'));
+      console.error(chalk.gray('Example: ghostspeak agent register MyAgent'));
+      process.exit(1);
+    }
+    return value;
+  })
   .option('-t, --type <type>', 'Agent type', 'general')
   .option('-d, --description <desc>', 'Agent description')
+  .option('-y, --yes', 'Skip confirmation prompts')
+  .option('--non-interactive', 'Run in non-interactive mode (implies --yes)')
   .action(async (name, options) => {
     try {
+      // Validate name immediately in the action handler
+      const trimmedName = name?.trim() || '';
+      if (!trimmedName) {
+        console.error(chalk.red('❌ Error: Agent name cannot be empty'));
+        console.error(chalk.gray('Please provide a valid agent name'));
+        console.error(chalk.gray('Example: ghostspeak agent register MyAgent'));
+        process.exit(1);
+      }
+      
       const { registerAgent } = await import('./commands/agent.js');
       await registerAgent(name, options);
       process.exit(0);
@@ -218,6 +240,8 @@ channelCommand
   .option('-p, --private', 'Make channel private')
   .option('-m, --max-participants <count>', 'Maximum participants', '100')
   .option('-e, --encrypted', 'Enable encryption')
+  .option('-y, --yes', 'Skip confirmation prompts')
+  .option('--non-interactive', 'Run in non-interactive mode (implies --yes)')
   .action(async (name, options) => {
     try {
       const { createChannel } = await import('./commands/channel.js');
@@ -240,7 +264,9 @@ channelCommand
         description: options.description,
         isPrivate: options.private,
         maxParticipants,
-        encryptionEnabled: options.encrypted
+        encryptionEnabled: options.encrypted,
+        yes: options.yes,
+        nonInteractive: options.nonInteractive
       });
       process.exit(0);
     } catch (error) {
@@ -525,6 +551,69 @@ mevCommand
     }
   });
 
+mevCommand
+  .command('enable <agent>')
+  .description('Enable MEV protection for an agent')
+  .action(async (agent) => {
+    try {
+      const { enableMevProtection } = await import('./commands/mev-protection.js');
+      await enableMevProtection(agent);
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ MEV protection enable failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+mevCommand
+  .command('savings')
+  .description('View MEV protection savings report')
+  .action(async () => {
+    try {
+      const { showMevSavings } = await import('./commands/mev-protection.js');
+      await showMevSavings();
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ MEV savings report failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+mevCommand
+  .command('config <agent>')
+  .description('Configure MEV protection settings for an agent')
+  .option('-l, --level <level>', 'Protection level: low, medium, high', 'high')
+  .action(async (agent, options) => {
+    try {
+      const { configureMevProtection } = await import('./commands/mev-protection.js');
+      const level = options.level as 'low' | 'medium' | 'high';
+      
+      // Validate protection level
+      if (!['low', 'medium', 'high'].includes(level)) {
+        console.error(
+          chalk.red('❌ Invalid protection level:'),
+          'Must be low, medium, or high'
+        );
+        process.exit(1);
+      }
+      
+      await configureMevProtection(agent, level);
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ MEV configuration failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
 // Developer tools
 const devCommand = program
   .command('dev')
@@ -658,6 +747,60 @@ devCommand
     }
   });
 
+devCommand
+  .command('logs')
+  .description('View CLI and system logs for troubleshooting')
+  .option('-n, --lines <number>', 'Number of log lines to show', '50')
+  .option('-l, --level <level>', 'Filter by log level: all, error, warn, info, debug', 'all')
+  .option('-c, --component <name>', 'Filter by component name')
+  .option('-f, --follow', 'Follow logs in real-time', false)
+  .option('--location', 'Show log file locations and information', false)
+  .action(async options => {
+    try {
+      const { showLogs } = await import('./commands/dev.js');
+      
+      // Parse numeric options with validation
+      let lines = 50;
+      if (options.lines) {
+        const parsed = parseInt(options.lines, 10);
+        if (isNaN(parsed) || parsed < 1) {
+          console.error(
+            chalk.red('❌ Invalid lines value:'),
+            'Must be a positive number'
+          );
+          process.exit(1);
+        }
+        lines = parsed;
+      }
+      
+      // Validate log level
+      const validLevels = ['all', 'error', 'warn', 'info', 'debug'];
+      if (options.level && !validLevels.includes(options.level)) {
+        console.error(
+          chalk.red('❌ Invalid log level:'),
+          `Must be one of: ${validLevels.join(', ')}`
+        );
+        process.exit(1);
+      }
+      
+      await showLogs({
+        lines,
+        level: options.level,
+        component: options.component,
+        follow: options.follow,
+        location: options.location
+      });
+      
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Logs command failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
 // Administrative commands
 const adminCommand = program
   .command('admin')
@@ -715,6 +858,29 @@ adminCommand
         chalk.red('❌ Backup failed:'),
         error instanceof Error ? error.message : String(error)
       );
+      process.exit(1);
+    }
+  });
+
+// Doctor command for diagnostics
+program
+  .command('doctor')
+  .description('Run comprehensive diagnostics and provide actionable fixes')
+  .option('--verbose', 'Show detailed diagnostic information')
+  .option('--fix', 'Attempt to fix common issues automatically')
+  .option('--json', 'Output results in JSON format')
+  .action(async options => {
+    try {
+      const { runDoctor } = await import('./commands/doctor.js');
+      await runDoctor(options);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Doctor command failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      if (error instanceof Error && process.env.NODE_ENV !== 'production') {
+        console.error(chalk.gray('Stack trace:'), error.stack);
+      }
       process.exit(1);
     }
   });
@@ -796,6 +962,30 @@ function showCommandHelp(command: string): void {
       console.log('  ghostspeak agent register "TaskBot" --description "Productivity helper"');
       console.log('  ghostspeak agent list');
     },
+    dev: () => {
+      console.log(chalk.cyan('🔧 Developer Command Help'));
+      console.log('');
+      console.log(chalk.yellow('Usage:'));
+      console.log('  ghostspeak dev <subcommand> [options]');
+      console.log('');
+      console.log(chalk.yellow('Subcommands:'));
+      console.log('  keys              Manage keypairs and wallets');
+      console.log('  debug             Debug system and troubleshoot issues');
+      console.log('  deploy            Deploy and manage program deployments');
+      console.log('  completion        Generate shell completion scripts');
+      console.log('  performance       View CLI performance metrics');
+      console.log('  logs              View CLI and system logs');
+      console.log('');
+      console.log(chalk.yellow('Examples:'));
+      console.log('  ghostspeak dev logs                    # Show recent logs');
+      console.log('  ghostspeak dev logs --location         # Show log file locations');
+      console.log('  ghostspeak dev logs -n 100            # Show last 100 log entries');
+      console.log('  ghostspeak dev logs --level error     # Show only error logs');
+      console.log('  ghostspeak dev logs -c message        # Show logs from message component');
+      console.log('  ghostspeak dev logs --follow          # Follow logs in real-time');
+      console.log('  ghostspeak dev keys                   # Manage wallet keypairs');
+      console.log('  ghostspeak dev debug --network-test   # Test network connectivity');
+    },
     channel: () => {
       console.log(chalk.cyan('📡 Channel Command Help'));
       console.log('');
@@ -825,6 +1015,34 @@ function showCommandHelp(command: string): void {
       console.log('  ghostspeak message send "general" "Hello everyone!"');
       console.log('  ghostspeak message send "team" "Task update" --encrypted');
       console.log('  ghostspeak message list "general" --limit 20');
+    },
+    mev: () => {
+      console.log(chalk.cyan('🛡️ MEV Protection Command Help'));
+      console.log('');
+      console.log(chalk.yellow('Usage:'));
+      console.log('  ghostspeak mev <subcommand> [options]');
+      console.log('');
+      console.log(chalk.yellow('Subcommands:'));
+      console.log('  status          Show MEV protection status and statistics');
+      console.log('  enable <agent>  Enable MEV protection for an agent');
+      console.log('  savings         View MEV protection savings report');
+      console.log('  config <agent>  Configure MEV protection settings');
+      console.log('');
+      console.log(chalk.yellow('Examples:'));
+      console.log('  ghostspeak mev status');
+      console.log('  ghostspeak mev enable MyAgent');
+      console.log('  ghostspeak mev savings');
+      console.log('  ghostspeak mev config MyAgent --level high');
+      console.log('');
+      console.log(chalk.yellow('Protection Levels:'));
+      console.log('  low     Basic front-running protection');
+      console.log('  medium  Enhanced protection with sandwich attack detection');
+      console.log('  high    Maximum protection with all security features');
+      console.log('');
+      console.log(chalk.yellow('Description:'));
+      console.log('  MEV (Maximal Extractable Value) protection helps secure');
+      console.log('  your transactions against front-running, sandwich attacks,');
+      console.log('  and other forms of value extraction by malicious actors.');
     }
   };
   
@@ -859,6 +1077,7 @@ function showGeneralHelp(): void {
   console.log('  ghostspeak analytics dashboard     # View metrics');
   console.log('  ghostspeak compression status      # ZK compression');
   console.log('  ghostspeak token transfer          # Confidential transfers');
+  console.log('  ghostspeak mev enable MyAgent      # Enable MEV protection');
   console.log('');
   
   console.log(chalk.cyan('💡 Use "ghostspeak help <command>" for detailed examples'));
@@ -935,6 +1154,17 @@ program.action(async () => {
 // Parse arguments
 async function main() {
   try {
+    // Validate network parameter early if specified
+    const networkIndex = process.argv.findIndex(arg => arg === '--network');
+    if (networkIndex !== -1 && process.argv[networkIndex + 1]) {
+      const { isValidNetwork, showNetworkValidationError } = await import('./utils/cli-options.js');
+      const specifiedNetwork = process.argv[networkIndex + 1];
+      
+      if (!isValidNetwork(specifiedNetwork)) {
+        showNetworkValidationError(specifiedNetwork);
+      }
+    }
+    
     // Initialize performance monitoring
     const { PerformanceMonitor } = await import('./performance/PerformanceMonitor.js');
     const monitor = PerformanceMonitor.getInstance();

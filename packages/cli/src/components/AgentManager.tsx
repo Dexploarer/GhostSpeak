@@ -68,7 +68,7 @@ export const AgentManager: React.FC<AgentManagerProps> = ({
       }));
 
       setAgents(agentList);
-      await logger.info(`Loaded ${agentList.length} agents`);
+      await logger.ui.info(`Loaded ${agentList.length} agents`);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to load agents');
     } finally {
@@ -79,7 +79,7 @@ export const AgentManager: React.FC<AgentManagerProps> = ({
   const registerAgent = async () => {
     try {
       setLoading(true);
-      await logger.info(`Registering agent: ${agentName}`);
+      await logger.ui.info(`Registering agent: ${agentName}`);
 
       // Simulate agent registration on blockchain
       await new Promise(resolve => setTimeout(resolve, 2000));

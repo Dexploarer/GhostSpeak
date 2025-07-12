@@ -17,7 +17,8 @@ export async function configCommand(options: ConfigOptions): Promise<void> {
   try {
     if (options.reset) {
       await resetConfig();
-    } else {
+    } else if (options.show || (!options.reset && !options.show)) {
+      // Show config by default or when --show is explicitly provided
       await showConfig();
     }
   } catch (error) {

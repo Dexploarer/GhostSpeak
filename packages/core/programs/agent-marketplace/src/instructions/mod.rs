@@ -14,8 +14,7 @@ pub mod analytics;
 pub mod auction;
 pub mod bulk_deals;
 pub mod dispute;
-// TODO: Re-enable when Anchor 0.32+ supports token_interface IDL generation
-// pub mod escrow_payment;
+pub mod escrow_payment;
 pub mod extensions;
 pub mod incentives;
 pub mod marketplace;
@@ -25,8 +24,7 @@ pub mod pricing;
 pub mod replication;
 pub mod royalty;
 pub mod work_orders;
-// TODO: Complete state dependencies before enabling
-// pub mod compliance_governance;
+pub mod compliance_governance;
 
 // Re-export instruction handlers
 use anchor_lang::prelude::*;

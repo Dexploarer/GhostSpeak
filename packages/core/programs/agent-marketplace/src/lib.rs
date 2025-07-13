@@ -122,7 +122,12 @@ pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 deci
 pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
 
 // Protocol admin for governance and critical operations
-pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([0u8; 32]); // TODO: Replace with actual admin key
+// For devnet/testnet: Use a development admin key
+// For mainnet: This should be set to a multisig or governance-controlled account
+#[cfg(feature = "devnet")]
+pub const PROTOCOL_ADMIN: Pubkey = anchor_lang::solana_program::pubkey!("11111111111111111111111111111111");
+#[cfg(not(feature = "devnet"))]
+pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([1u8; 32]);
 
 // Additional constants for various operations
 pub const MAX_TITLE_LENGTH: usize = 100;
@@ -727,8 +732,8 @@ pub mod ghostspeak_marketplace {
     // Messaging instructions
     pub use instructions::messaging::*;
     
-    // TODO: Re-enable when Anchor 0.32+ supports token_interface IDL generation
-    // pub use instructions::escrow_payment::*;
+    // Escrow payment instructions
+    pub use instructions::escrow_payment::*;
     
     // Auction instructions
     pub use instructions::auction::*;
@@ -763,6 +768,6 @@ pub mod ghostspeak_marketplace {
     // Incentive instructions
     pub use instructions::incentives::*;
     
-    // TODO: Enable when state dependencies are complete
-    // pub use instructions::compliance_governance::*;
+    // Compliance and governance instructions
+    pub use instructions::compliance_governance::*;
 }

@@ -154,5 +154,3 @@ MIT - See [LICENSE](../../../LICENSE) file for details.
 ## Support
 
 - [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues)
-- [Documentation](https://docs.ghostspeak.dev)
-- [Discord Community](https://discord.gg/ghostspeak)

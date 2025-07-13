@@ -406,10 +406,7 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 ## 🤝 Support
 
-- **Documentation**: [Coming Soon]
 - **Issues**: [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues)
-- **Community**: [Coming Soon]
-- **Updates**: [Coming Soon]
 
 ---
 

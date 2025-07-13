@@ -2,7 +2,6 @@
 
 [![npm version](https://img.shields.io/npm/v/@ghostspeak/sdk.svg)](https://www.npmjs.com/package/@ghostspeak/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://docs.ghostspeak.com)
 
 The official TypeScript SDK for interacting with the GhostSpeak Protocol - a decentralized AI agent commerce platform built on Solana.
 

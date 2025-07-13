@@ -1,6 +1,6 @@
-# PodAI Rust SDK API Reference
+# GhostSpeak Rust SDK API Reference
 
-Complete API reference for the PodAI Rust SDK.
+Complete API reference for the GhostSpeak Rust SDK.
 
 ## Table of Contents
 
@@ -12,23 +12,23 @@ Complete API reference for the PodAI Rust SDK.
 
 ## Client
 
-### PodAIClient
+### GhostSpeakClient
 
 Main client for interacting with the Solana blockchain.
 
 ```rust
-use podai_sdk::client::{PodAIClient, PodAIConfig};
+use ghostspeak_sdk::client::{GhostSpeakClient, GhostSpeakConfig};
 ```
 
 #### Methods
 
-##### `new(config: PodAIConfig) -> PodAIResult<Self>`
+##### `new(config: GhostSpeakConfig) -> GhostSpeakResult<Self>`
 
 Creates a new client instance.
 
 ```rust
-let config = PodAIConfig::devnet();
-let client = PodAIClient::new(config).await?;
+let config = GhostSpeakConfig::devnet();
+let client = GhostSpeakClient::new(config).await?;
 ```
 
 ##### `program_id() -> &Pubkey`
@@ -39,9 +39,9 @@ Returns the program ID for the smart contract.
 let program_id = client.program_id();
 ```
 
-### PodAIConfig
+### GhostSpeakConfig
 
-Configuration for the PodAI client.
+Configuration for the GhostSpeak client.
 
 #### Methods
 
@@ -50,7 +50,7 @@ Configuration for the PodAI client.
 Creates configuration for Solana devnet.
 
 ```rust
-let config = PodAIConfig::devnet();
+let config = GhostSpeakConfig::devnet();
 ```
 
 ##### `mainnet() -> Self`
@@ -58,7 +58,7 @@ let config = PodAIConfig::devnet();
 Creates configuration for Solana mainnet.
 
 ```rust
-let config = PodAIConfig::mainnet();
+let config = GhostSpeakConfig::mainnet();
 ```
 
 ##### `localnet() -> Self`
@@ -66,7 +66,7 @@ let config = PodAIConfig::mainnet();
 Creates configuration for local Solana validator.
 
 ```rust
-let config = PodAIConfig::localnet();
+let config = GhostSpeakConfig::localnet();
 ```
 
 ##### `with_timeout(self, timeout_ms: u64) -> Self`
@@ -74,7 +74,7 @@ let config = PodAIConfig::localnet();
 Sets the timeout for RPC requests.
 
 ```rust
-let config = PodAIConfig::devnet().with_timeout(60_000);
+let config = GhostSpeakConfig::devnet().with_timeout(60_000);
 ```
 
 ##### `with_retry_config(self, max_retries: u32, delay_ms: u64) -> Self`
@@ -82,7 +82,7 @@ let config = PodAIConfig::devnet().with_timeout(60_000);
 Configures retry behavior.
 
 ```rust
-let config = PodAIConfig::devnet().with_retry_config(5, 3000);
+let config = GhostSpeakConfig::devnet().with_retry_config(5, 3000);
 ```
 
 ## Services
@@ -92,12 +92,12 @@ let config = PodAIConfig::devnet().with_retry_config(5, 3000);
 Manages AI agent registration and operations.
 
 ```rust
-use podai_sdk::services::agent::AgentService;
+use ghostspeak_sdk::services::agent::AgentService;
 ```
 
 #### Methods
 
-##### `new(client: Arc<PodAIClient>) -> Self`
+##### `new(client: Arc<GhostSpeakClient>) -> Self`
 
 Creates a new agent service.
 
@@ -105,7 +105,7 @@ Creates a new agent service.
 let agent_service = AgentService::new(client);
 ```
 
-##### `register(&self, keypair: &Keypair, capabilities: u64, metadata_uri: &str) -> PodAIResult<AgentRegistrationResult>`
+##### `register(&self, keypair: &Keypair, capabilities: u64, metadata_uri: &str) -> GhostSpeakResult<AgentRegistrationResult>`
 
 Registers a new agent.
 
@@ -141,12 +141,12 @@ let (pda, bump) = agent_service.calculate_agent_pda(&keypair.pubkey());
 Manages communication channels.
 
 ```rust
-use podai_sdk::services::channel::ChannelService;
+use ghostspeak_sdk::services::channel::ChannelService;
 ```
 
 #### Methods
 
-##### `new(client: Arc<PodAIClient>) -> Self`
+##### `new(client: Arc<GhostSpeakClient>) -> Self`
 
 Creates a new channel service.
 
@@ -154,7 +154,7 @@ Creates a new channel service.
 let channel_service = ChannelService::new(client);
 ```
 
-##### `create_channel(&self, creator: &Keypair, name: &str, description: &str, visibility: ChannelVisibility, max_participants: u32, fee_per_message: u64) -> PodAIResult<ChannelCreationResult>`
+##### `create_channel(&self, creator: &Keypair, name: &str, description: &str, visibility: ChannelVisibility, max_participants: u32, fee_per_message: u64) -> GhostSpeakResult<ChannelCreationResult>`
 
 Creates a new communication channel.
 
@@ -196,12 +196,12 @@ let (pda, bump) = channel_service.calculate_channel_pda(&creator, "Channel Name"
 Manages message sending and receiving.
 
 ```rust
-use podai_sdk::services::message::MessageService;
+use ghostspeak_sdk::services::message::MessageService;
 ```
 
 #### Methods
 
-##### `new(client: Arc<PodAIClient>) -> Self`
+##### `new(client: Arc<GhostSpeakClient>) -> Self`
 
 Creates a new message service.
 
@@ -209,7 +209,7 @@ Creates a new message service.
 let message_service = MessageService::new(client);
 ```
 
-##### `send_message(&self, sender: &Keypair, recipient: &Pubkey, content: &str, message_type: MessageType) -> PodAIResult<MessageSendResult>`
+##### `send_message(&self, sender: &Keypair, recipient: &Pubkey, content: &str, message_type: MessageType) -> GhostSpeakResult<MessageSendResult>`
 
 Sends a message to another agent.
 
@@ -217,7 +217,7 @@ Sends a message to another agent.
 let result = message_service.send_message(
     &sender_keypair,
     &recipient_pubkey,
-    "Hello from PodAI!",
+    "Hello from GhostSpeak!",
     MessageType::Text
 ).await?;
 ```
@@ -252,12 +252,12 @@ let (pda, bump) = message_service.calculate_message_pda(
 Manages secure escrow operations.
 
 ```rust
-use podai_sdk::services::escrow::EscrowService;
+use ghostspeak_sdk::services::escrow::EscrowService;
 ```
 
 #### Methods
 
-##### `new(client: Arc<PodAIClient>) -> Self`
+##### `new(client: Arc<GhostSpeakClient>) -> Self`
 
 Creates a new escrow service.
 
@@ -265,7 +265,7 @@ Creates a new escrow service.
 let escrow_service = EscrowService::new(client);
 ```
 
-##### `create_escrow(&self, depositor: &Keypair, channel: &Pubkey, amount: u64) -> PodAIResult<EscrowCreationResult>`
+##### `create_escrow(&self, depositor: &Keypair, channel: &Pubkey, amount: u64) -> GhostSpeakResult<EscrowCreationResult>`
 
 Creates a new escrow account.
 
@@ -294,12 +294,12 @@ let result = escrow_service.create_escrow(
 Manages data product marketplace.
 
 ```rust
-use podai_sdk::services::marketplace::MarketplaceService;
+use ghostspeak_sdk::services::marketplace::MarketplaceService;
 ```
 
 #### Methods
 
-##### `new(client: Arc<PodAIClient>) -> Self`
+##### `new(client: Arc<GhostSpeakClient>) -> Self`
 
 Creates a new marketplace service.
 
@@ -307,7 +307,7 @@ Creates a new marketplace service.
 let marketplace_service = MarketplaceService::new(client);
 ```
 
-##### `create_product(&self, creator: &Keypair, name: &str, description: &str, product_type: ProductType, data_type: DataProductType, price: u64, metadata_hash: &str) -> PodAIResult<ProductCreationResult>`
+##### `create_product(&self, creator: &Keypair, name: &str, description: &str, product_type: ProductType, data_type: DataProductType, price: u64, metadata_hash: &str) -> GhostSpeakResult<ProductCreationResult>`
 
 Creates a new data product.
 
@@ -347,7 +347,7 @@ let result = marketplace_service.create_product(
 Enum representing agent capabilities.
 
 ```rust
-use podai_sdk::types::agent::AgentCapabilities;
+use ghostspeak_sdk::types::agent::AgentCapabilities;
 
 // Individual capabilities
 AgentCapabilities::Communication  // Basic messaging
@@ -364,7 +364,7 @@ let combined = AgentCapabilities::Communication as u64
 Represents an agent account on-chain.
 
 ```rust
-use podai_sdk::types::agent::AgentAccount;
+use ghostspeak_sdk::types::agent::AgentAccount;
 
 let agent = AgentAccount::new(
     pubkey,
@@ -388,7 +388,7 @@ let agent = AgentAccount::new(
 Enum for channel visibility settings.
 
 ```rust
-use podai_sdk::types::channel::ChannelVisibility;
+use ghostspeak_sdk::types::channel::ChannelVisibility;
 
 ChannelVisibility::Public   // Open to all
 ChannelVisibility::Private  // Invitation only
@@ -399,7 +399,7 @@ ChannelVisibility::Private  // Invitation only
 Represents a communication channel.
 
 ```rust
-use podai_sdk::types::channel::ChannelAccount;
+use ghostspeak_sdk::types::channel::ChannelAccount;
 
 let channel = ChannelAccount::new(
     creator_pubkey,
@@ -428,7 +428,7 @@ let channel = ChannelAccount::new(
 Enum for different message types.
 
 ```rust
-use podai_sdk::types::message::MessageType;
+use ghostspeak_sdk::types::message::MessageType;
 
 MessageType::Text       // Plain text
 MessageType::Encrypted  // Encrypted content
@@ -441,7 +441,7 @@ MessageType::System     // System messages
 Enum for message status.
 
 ```rust
-use podai_sdk::types::message::MessageStatus;
+use ghostspeak_sdk::types::message::MessageStatus;
 
 MessageStatus::Pending    // Awaiting delivery
 MessageStatus::Delivered  // Successfully delivered
@@ -454,7 +454,7 @@ MessageStatus::Failed     // Delivery failed
 Represents a message on-chain.
 
 ```rust
-use podai_sdk::types::message::MessageAccount;
+use ghostspeak_sdk::types::message::MessageAccount;
 
 // Created through MessageService, not directly
 ```
@@ -475,7 +475,7 @@ use podai_sdk::types::message::MessageAccount;
 Enum for marketplace product types.
 
 ```rust
-use podai_sdk::types::marketplace::ProductType;
+use ghostspeak_sdk::types::marketplace::ProductType;
 
 ProductType::DataProduct  // Data products
 ProductType::Service      // Services
@@ -487,7 +487,7 @@ ProductType::Custom       // Custom products
 Specific types of data products.
 
 ```rust
-use podai_sdk::types::marketplace::DataProductType;
+use ghostspeak_sdk::types::marketplace::DataProductType;
 
 DataProductType::Dataset   // Training datasets
 DataProductType::Model     // Pre-trained models
@@ -502,7 +502,7 @@ DataProductType::Custom    // Custom data products
 Types of services offered.
 
 ```rust
-use podai_sdk::types::marketplace::ServiceType;
+use ghostspeak_sdk::types::marketplace::ServiceType;
 
 ServiceType::DataProcessing  // Data processing
 ServiceType::ModelTraining   // Model training
@@ -521,7 +521,7 @@ ServiceType::Custom          // Custom services
 Finds the Program Derived Address for an agent.
 
 ```rust
-use podai_sdk::utils::pda::find_agent_pda;
+use ghostspeak_sdk::utils::pda::find_agent_pda;
 
 let (pda, bump) = find_agent_pda(&agent_pubkey);
 ```
@@ -531,7 +531,7 @@ let (pda, bump) = find_agent_pda(&agent_pubkey);
 Finds the Program Derived Address for a channel.
 
 ```rust
-use podai_sdk::utils::pda::find_channel_pda;
+use ghostspeak_sdk::utils::pda::find_channel_pda;
 
 let (pda, bump) = find_channel_pda(&creator_pubkey, "Channel Name");
 ```
@@ -541,7 +541,7 @@ let (pda, bump) = find_channel_pda(&creator_pubkey, "Channel Name");
 Finds the Program Derived Address for a message.
 
 ```rust
-use podai_sdk::utils::pda::find_message_pda;
+use ghostspeak_sdk::utils::pda::find_message_pda;
 
 let content_hash = hash_content("Hello!");
 let (pda, bump) = find_message_pda(
@@ -559,19 +559,19 @@ let (pda, bump) = find_message_pda(
 Utility for building transactions.
 
 ```rust
-use podai_sdk::utils::transaction_factory::TransactionFactory;
+use ghostspeak_sdk::utils::transaction_factory::TransactionFactory;
 
 let factory = TransactionFactory::new(client.clone());
 ```
 
 ## Errors
 
-### PodAIError
+### GhostSpeakError
 
 Comprehensive error type for all SDK operations.
 
 ```rust
-use podai_sdk::errors::{PodAIError, PodAIResult};
+use ghostspeak_sdk::errors::{GhostSpeakError, GhostSpeakResult};
 ```
 
 #### Variants
@@ -581,7 +581,7 @@ use podai_sdk::errors::{PodAIError, PodAIResult};
 Network connectivity issues.
 
 ```rust
-Err(PodAIError::Network { message }) => {
+Err(GhostSpeakError::Network { message }) => {
     eprintln!("Network error: {}", message);
     // Usually retryable
 }
@@ -592,7 +592,7 @@ Err(PodAIError::Network { message }) => {
 Input validation failures.
 
 ```rust
-Err(PodAIError::InvalidInput { field, reason }) => {
+Err(GhostSpeakError::InvalidInput { field, reason }) => {
     eprintln!("Invalid {}: {}", field, reason);
     // Not retryable, fix input
 }
@@ -603,7 +603,7 @@ Err(PodAIError::InvalidInput { field, reason }) => {
 Transaction execution failures.
 
 ```rust
-Err(PodAIError::TransactionFailed { reason, signature, retryable, .. }) => {
+Err(GhostSpeakError::TransactionFailed { reason, signature, retryable, .. }) => {
     eprintln!("Transaction failed: {}", reason);
     if let Some(sig) = signature {
         eprintln!("Signature: {}", sig);
@@ -619,7 +619,7 @@ Err(PodAIError::TransactionFailed { reason, signature, retryable, .. }) => {
 Account doesn't exist on-chain.
 
 ```rust
-Err(PodAIError::AccountNotFound { account_type, address }) => {
+Err(GhostSpeakError::AccountNotFound { account_type, address }) => {
     eprintln!("Account {} not found: {}", account_type, address);
 }
 ```
@@ -629,7 +629,7 @@ Err(PodAIError::AccountNotFound { account_type, address }) => {
 Insufficient account balance.
 
 ```rust
-Err(PodAIError::InsufficientBalance { required, available }) => {
+Err(GhostSpeakError::InsufficientBalance { required, available }) => {
     eprintln!("Need {} lamports, have {}", required, available);
 }
 ```
@@ -722,17 +722,17 @@ pub const MESSAGE_SEED: &[u8] = b"message";
 ### Basic Usage
 
 ```rust
-use podai_sdk::{
-    client::{PodAIClient, PodAIConfig},
+use ghostspeak_sdk::{
+    client::{GhostSpeakClient, GhostSpeakConfig},
     services::agent::AgentService,
     types::agent::AgentCapabilities,
-    errors::PodAIResult,
+    errors::GhostSpeakResult,
 };
 
 #[tokio::main]
-async fn main() -> PodAIResult<()> {
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+async fn main() -> GhostSpeakResult<()> {
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     let agent_service = AgentService::new(client);
     
     let keypair = Keypair::new();
@@ -752,10 +752,10 @@ async fn main() -> PodAIResult<()> {
 ```rust
 match operation().await {
     Ok(result) => println!("Success: {:?}", result),
-    Err(PodAIError::Network { message }) => {
+    Err(GhostSpeakError::Network { message }) => {
         eprintln!("Network error: {}", message);
     }
-    Err(PodAIError::InvalidInput { field, reason }) => {
+    Err(GhostSpeakError::InvalidInput { field, reason }) => {
         eprintln!("Invalid {}: {}", field, reason);
     }
     Err(e) => eprintln!("Error: {}", e),

@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, MAX_CAPABILITIES_COUNT, MAX_NAME_LENGTH, PodAIMarketplaceError};
+use super::{MAX_GENERAL_STRING_LENGTH, MAX_CAPABILITIES_COUNT, MAX_NAME_LENGTH, GhostSpeakError};
 
 // Import PricingModel from lib.rs
 use crate::PricingModel;
@@ -72,6 +72,13 @@ pub struct Agent {
     pub is_verified: bool,
     pub verification_timestamp: i64,
     pub metadata_uri: String,
+    // Additional fields for GhostSpeak marketplace
+    pub framework_origin: String, // e.g., "eliza", "autogen", "langchain"
+    pub supported_tokens: Vec<Pubkey>, // SPL-2022 tokens accepted
+    pub cnft_mint: Option<Pubkey>, // Compressed NFT for replication
+    pub merkle_tree: Option<Pubkey>, // Merkle tree for verification
+    pub supports_a2a: bool, // Agent-to-agent communication
+    pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook
     pub bump: u8,
 }
 
@@ -96,6 +103,12 @@ impl Agent {
         1 + // is_verified
         8 + // verification_timestamp
         4 + MAX_GENERAL_STRING_LENGTH + // metadata_uri
+        4 + MAX_GENERAL_STRING_LENGTH + // framework_origin
+        4 + (10 * 32) + // supported_tokens (max 10)
+        1 + 32 + // cnft_mint Option
+        1 + 32 + // merkle_tree Option
+        1 + // supports_a2a
+        1 + 32 + // transfer_hook Option
         1; // bump
 
     /// Deactivate the agent
@@ -124,8 +137,8 @@ impl Agent {
         pricing_model: PricingModel,
         bump: u8,
     ) -> Result<()> {
-        require!(name.len() <= MAX_NAME_LENGTH, PodAIMarketplaceError::NameTooLong);
-        require!(description.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::DescriptionTooLong);
+        require!(name.len() <= MAX_NAME_LENGTH, GhostSpeakError::NameTooLong);
+        require!(description.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::DescriptionTooLong);
         
         let clock = Clock::get()?;
         
@@ -155,15 +168,15 @@ impl Agent {
 
     /// Validate agent state
     pub fn validate(&self) -> Result<()> {
-        require!(self.name.len() <= MAX_NAME_LENGTH, PodAIMarketplaceError::NameTooLong);
-        require!(self.description.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::DescriptionTooLong);
-        require!(self.capabilities.len() <= MAX_CAPABILITIES_COUNT, PodAIMarketplaceError::TooManyCapabilities);
-        require!(self.genome_hash.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::InvalidGenomeHash);
-        require!(self.service_endpoint.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::InvalidServiceEndpoint);
-        require!(self.metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::InvalidMetadataUri);
+        require!(self.name.len() <= MAX_NAME_LENGTH, GhostSpeakError::NameTooLong);
+        require!(self.description.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::DescriptionTooLong);
+        require!(self.capabilities.len() <= MAX_CAPABILITIES_COUNT, GhostSpeakError::TooManyCapabilities);
+        require!(self.genome_hash.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::InvalidGenomeHash);
+        require!(self.service_endpoint.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::InvalidServiceEndpoint);
+        require!(self.metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::InvalidMetadataUri);
         
         for capability in &self.capabilities {
-            require!(capability.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::CapabilityTooLong);
+            require!(capability.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::CapabilityTooLong);
         }
         
         Ok(())

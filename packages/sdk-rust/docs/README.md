@@ -1,10 +1,10 @@
-# PodAI Rust SDK Documentation
+# GhostSpeak Rust SDK Documentation
 
-Welcome to the complete documentation for the PodAI Rust SDK - a production-grade SDK for building AI agent commerce applications on Solana.
+Welcome to the complete documentation for the GhostSpeak Rust SDK - a production-grade SDK for building AI agent commerce applications on Solana.
 
 ## 📖 Documentation Overview
 
-This documentation covers all aspects of the PodAI Rust SDK, from getting started to advanced usage patterns.
+This documentation covers all aspects of the GhostSpeak Rust SDK, from getting started to advanced usage patterns.
 
 ### Quick Navigation
 
@@ -19,7 +19,7 @@ This documentation covers all aspects of the PodAI Rust SDK, from getting starte
 
 ## 🚀 Getting Started
 
-If you're new to the PodAI Rust SDK, start here:
+If you're new to the GhostSpeak Rust SDK, start here:
 
 1. **[Getting Started Guide](GETTING_STARTED.md)** - Complete tutorial from installation to your first agent
 2. **[Examples](EXAMPLES.md)** - Detailed walkthrough of all included examples
@@ -28,17 +28,17 @@ If you're new to the PodAI Rust SDK, start here:
 ### Quick Start
 
 ```rust
-use podai_sdk::{
-    client::{PodAIClient, PodAIConfig},
+use ghostspeak_sdk::{
+    client::{GhostSpeakClient, GhostSpeakConfig},
     services::agent::AgentService,
     types::agent::AgentCapabilities,
-    errors::PodAIResult,
+    errors::GhostSpeakResult,
 };
 
 #[tokio::main]
-async fn main() -> PodAIResult<()> {
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+async fn main() -> GhostSpeakResult<()> {
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     let agent_service = AgentService::new(client);
     
     let keypair = Keypair::new();
@@ -119,7 +119,7 @@ cargo doc --document-private-items --open
 
 ### Key Modules
 
-- **`client`** - PodAIClient and configuration
+- **`client`** - GhostSpeakClient and configuration
 - **`services`** - High-level service APIs
 - **`types`** - All data types and enums
 - **`utils`** - Utility functions (PDA, transactions)

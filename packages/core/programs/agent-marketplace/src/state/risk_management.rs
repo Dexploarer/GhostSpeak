@@ -7,7 +7,7 @@
  */
 
 use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
+// use std::collections::BTreeMap; // Commented out - using Vec<(K,V)> for Anchor compatibility
 use super::security_governance::NotificationMethod;
 
 // =====================================================
@@ -1124,7 +1124,7 @@ pub enum ImplementationStatus {
     InProgress,
     Implemented,
     UnderReview,
-    Requires_Enhancement,
+    RequiresEnhancement,
     Retired,
 }
 
@@ -1467,7 +1467,7 @@ pub struct RiskMitigationStrategy {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct RiskAppetite {
     pub overall_risk_appetite: u8,
-    pub category_appetites: BTreeMap<String, u8>,
+    pub category_appetites: Vec<(String, u8)>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]

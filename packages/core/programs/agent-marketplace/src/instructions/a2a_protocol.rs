@@ -6,7 +6,8 @@
  */
 
 use anchor_lang::prelude::*;
-use crate::{*, PodAIMarketplaceError};
+use crate::GhostSpeakError;
+use crate::state::protocol_structures::{A2ASession, A2AMessage, A2AStatus, A2ASessionData, A2AMessageData, A2AStatusData};
 
 // =====================================================
 // A2A PROTOCOL INSTRUCTIONS
@@ -67,26 +68,32 @@ pub fn create_a2a_session(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.creator.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
     // SECURITY: Input validation
-    const MAX_SESSION_ID_LENGTH: usize = 64;
+    #[allow(dead_code)]
     const MAX_PARTICIPANTS: usize = 10;
     const MAX_CONTEXT_LENGTH: usize = 2048;
     
     // Validate session_id is non-zero (since it's u64)
     require!(
         session_data.session_id > 0,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
     // Validate session has both initiator and responder
     require!(
         session_data.initiator != Pubkey::default() && session_data.responder != Pubkey::default(),
-        PodAIMarketplaceError::InvalidConfiguration
+        GhostSpeakError::InvalidConfiguration
+    );
+    
+    // Validate session metadata length
+    require!(
+        session_data.metadata.len() <= MAX_CONTEXT_LENGTH,
+        GhostSpeakError::InputTooLong
     );
     let session = &mut ctx.accounts.session;
     let clock = Clock::get()?;
-    // Set session fields from the stub structure
+    // Initialize session fields
     session.session_id = session_data.session_id;
     session.initiator = session_data.initiator;
     session.responder = session_data.responder;
@@ -162,7 +169,7 @@ pub fn send_a2a_message(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.sender.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
     
     let session = &ctx.accounts.session;
@@ -171,13 +178,13 @@ pub fn send_a2a_message(
     require!(
         session.initiator == ctx.accounts.sender.key() || 
         session.responder == ctx.accounts.sender.key(),
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
     
     // SECURITY: Verify session is still active
     require!(
         session.is_active,
-        PodAIMarketplaceError::InvalidStatusTransition
+        GhostSpeakError::InvalidStatusTransition
     );
     
     // SECURITY: Input validation
@@ -185,12 +192,12 @@ pub fn send_a2a_message(
     
     require!(
         !message_data.content.is_empty() && message_data.content.len() <= MAX_CONTENT_LENGTH,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
     let message = &mut ctx.accounts.message;
     let clock = Clock::get()?;
     
-    // Set message fields from the stub structure
+    // Initialize message fields
     message.message_id = message_data.message_id;
     message.session = ctx.accounts.session.key();
     message.sender = ctx.accounts.sender.key();
@@ -263,7 +270,7 @@ pub fn update_a2a_status(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.updater.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
     // SECURITY: Input validation
     const MAX_STATUS_LENGTH: usize = 256;
@@ -272,16 +279,16 @@ pub fn update_a2a_status(
     
     require!(
         !status_data.status.is_empty() && status_data.status.len() <= MAX_STATUS_LENGTH,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
     require!(
         status_data.capabilities.len() <= MAX_CAPABILITIES,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
     for capability in &status_data.capabilities {
         require!(
             !capability.is_empty() && capability.len() <= MAX_CAPABILITY_LENGTH,
-            PodAIMarketplaceError::InputTooLong
+            GhostSpeakError::InputTooLong
         );
     }
     let status = &mut ctx.accounts.status;

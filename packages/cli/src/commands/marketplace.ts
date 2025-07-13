@@ -13,11 +13,52 @@ import { ConfigManager } from '../core/ConfigManager.js';
 import { Logger } from '../core/Logger.js';
 import { logger } from '../utils/logger.js';
 import { ProgressIndicator } from '../utils/prompts.js';
-// Import marketplace implementation from the new file
-import { MarketplaceImpl, ServiceListingStatus, type MarketplaceFilters, type ServiceListingAccount } from '../../../sdk/src/services/marketplace-impl.js';
-import type { ServiceListingDataArgs } from '../../../sdk/src/generated-v2/instructions/createServiceListing.js';
+import { LazyModules } from '@ghostspeak/sdk';
 import { lamportsToSol } from '../utils/format.js';
 import { isVerboseMode } from '../utils/cli-options.js';
+
+// Real marketplace service instance
+let marketplaceService: any = null;
+let rpcClient: any = null;
+
+async function getMarketplaceService() {
+  if (!marketplaceService) {
+    try {
+      // Load configuration
+      const config = await ConfigManager.load();
+      const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
+      const programId = address(config.programId || '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
+      
+      // Create RPC client
+      rpcClient = createSolanaRpc(rpcUrl);
+      
+      // Load marketplace service from SDK
+      const marketplaceModule = await LazyModules.marketplace;
+      marketplaceService = new marketplaceModule.MarketplaceService(rpcClient, programId);
+      
+      logger.general.debug('Marketplace service initialized successfully');
+    } catch (error) {
+      logger.general.error('Failed to initialize marketplace service:', error);
+      throw error;
+    }
+  }
+  return marketplaceService;
+}
+
+async function getKeypairFromConfig() {
+  const config = await ConfigManager.load();
+  
+  if (!config.walletPath) {
+    throw new Error('No wallet configured. Run "ghostspeak wallet create" first.');
+  }
+  
+  try {
+    const walletData = await import(config.walletPath);
+    return createKeyPairSignerFromBytes(new Uint8Array(walletData.default));
+  } catch (error) {
+    throw new Error(`Failed to load wallet from ${config.walletPath}. Please check your wallet configuration.`);
+  }
+}
 
 export interface ListServicesOptions {
   category?: string;
@@ -70,28 +111,23 @@ export async function listServices(
     logger.general.info('');
 
     // Connect to blockchain to fetch real service listings
-    let listings: ServiceListingAccount[] = [];
+    let listings: any[] = [];
     let total = 0;
     let hasMore = false;
 
-    // Create RPC client
-    progress.update('Connecting to blockchain...');
-    const rpc = createSolanaRpc(rpcUrl);
-    const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
-
     // Initialize marketplace service
     progress.update('Initializing marketplace service...');
-    const marketplace = new MarketplaceImpl(rpc, programId);
+    const marketplace = await getMarketplaceService();
 
     // Build filters
-    const filters: MarketplaceFilters = {
-      status: [ServiceListingStatus.Active],
+    const filters: any = {
+      status: 'Active',
       sortBy: options.sortBy || 'created',
       sortOrder: 'desc',
     };
 
     if (options.category) {
-      filters.serviceTypes = [options.category];
+      filters.serviceType = options.category;
     }
 
     if (options.minPrice !== undefined) {
@@ -108,15 +144,15 @@ export async function listServices(
 
     // Browse listings
     progress.update('Fetching marketplace listings...');
-    const result = await marketplace.browseListings(
+    const result = await marketplace.browseListings({
       filters,
-      options.limit || 20,
-      0
-    );
+      limit: options.limit || 20,
+      offset: 0
+    });
     
-    listings = result.listings;
-    total = result.total;
-    hasMore = result.hasMore;
+    listings = result.listings || [];
+    total = result.total || 0;
+    hasMore = result.hasMore || false;
     
     // Success
     progress.succeed('Marketplace listings loaded successfully');
@@ -141,25 +177,27 @@ export async function listServices(
       logger.general.info(chalk.yellow(`Available Services (${listings.length} of ${total}):`));
       logger.general.info('');
       
-      listings.forEach((listing, index) => {
-        logger.general.info(`  ${index + 1}. ${chalk.bold(listing.title)}`);
-        logger.general.info(`     ID: ${listing.id}`);
-        logger.general.info(`     Seller: ${listing.seller.slice(0, 8)}...${listing.seller.slice(-4)}`);
-        logger.general.info(`     Category: ${chalk.cyan(listing.serviceType)}`);
-        logger.general.info(`     Price: ${chalk.green(lamportsToSol(listing.price) + ' SOL')}`);
+      listings.forEach((listing: any, index: number) => {
+        const account = listing.account || listing;
+        logger.general.info(`  ${index + 1}. ${chalk.bold(account.title)}`);
+        logger.general.info(`     ID: ${listing.publicKey || account.id}`);
+        logger.general.info(`     Seller: ${account.seller?.slice(0, 8)}...${account.seller?.slice(-4)}`);
+        logger.general.info(`     Category: ${chalk.cyan(account.serviceType)}`);
+        logger.general.info(`     Price: ${chalk.green(lamportsToSol(Number(account.price)) + ' SOL')}`);
         
-        const stars = Math.floor(listing.averageRating);
-        const halfStar = listing.averageRating - stars >= 0.5;
+        const rating = account.averageRating || 0;
+        const stars = Math.floor(rating);
+        const halfStar = rating - stars >= 0.5;
         const ratingDisplay = '★'.repeat(stars) + (halfStar ? '☆' : '');
         logger.general.info(
-          `     Rating: ${chalk.yellow(ratingDisplay)} (${listing.averageRating.toFixed(1)}/5.0)`
+          `     Rating: ${chalk.yellow(ratingDisplay)} (${rating.toFixed(1)}/5.0)`
         );
         
-        logger.general.info(`     Sales: ${listing.totalSales} completed`);
-        logger.general.info(`     Available: ${listing.maxOrders - listing.activeOrders} slots`);
-        logger.general.info(`     ${chalk.gray(listing.description.substring(0, 60))}...`);
-        if (listing.tags.length > 0) {
-          logger.general.info(`     Tags: ${chalk.gray(listing.tags.join(', '))}`);
+        logger.general.info(`     Sales: ${account.totalSales || 0} completed`);
+        logger.general.info(`     Available: ${(account.maxOrders || 0) - (account.activeOrders || 0)} slots`);
+        logger.general.info(`     ${chalk.gray((account.description || '').substring(0, 60))}...`);
+        if (account.tags && account.tags.length > 0) {
+          logger.general.info(`     Tags: ${chalk.gray(account.tags.join(', '))}`);
         }
         logger.general.info('');
       });
@@ -172,7 +210,7 @@ export async function listServices(
     logger.general.info(chalk.green('✅ Marketplace listing completed'));
   } catch (error) {
     progress.fail('Failed to connect to blockchain');
-    logger.marketplace.error('Marketplace listing failed:', error);
+    logger.general.error('Marketplace listing failed:', error);
     logger.general.info('');
     logger.general.info(chalk.red('❌ Unable to fetch marketplace listings'));
     logger.general.info(chalk.gray(error instanceof Error ? error.message : String(error)));
@@ -196,57 +234,40 @@ export async function createListing(
     logger.general.info(chalk.cyan('📝 Creating Service Listing'));
     logger.general.info(chalk.gray('─'.repeat(40)));
 
-    // Load configuration
+    // Load configuration and wallet
     const config = await ConfigManager.load();
-    const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
-    
-    // Load wallet
-    if (!config.walletPath) {
-      throw new Error('No wallet configured. Run "ghostspeak wallet create" first.');
-    }
-
-    const walletData = await import(config.walletPath);
-    const keypair = createKeyPairSignerFromBytes(new Uint8Array(walletData.default));
-
-    // Create RPC client
-    const rpc = createSolanaRpc(rpcUrl);
-    const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    const keypair = await getKeypairFromConfig();
 
     // Initialize marketplace service
-    const marketplace = new MarketplaceImpl(rpc, programId);
+    const marketplace = await getMarketplaceService();
 
     // Prepare listing data
-    const listingData: ServiceListingDataArgs = {
+    const listingData = {
       title: options.title,
       description: options.description,
       price: BigInt(options.price * 1e9), // Convert SOL to lamports
-      tokenMint: address('11111111111111111111111111111111'), // Native SOL
       serviceType: options.category,
-      paymentToken: address('11111111111111111111111111111111'), // Native SOL
       estimatedDelivery: BigInt((options.estimatedDelivery || 24) * 3600), // Convert hours to seconds
       tags: options.tags || [],
+      maxOrders: options.maxOrders || 100,
     };
-
-    // Get agent address (for now, use a default)
-    const agentAddress = address('11111111111111111111111111111111'); // TODO: Get actual agent
 
     logger.general.info(`Creating listing: ${options.title}`);
     logger.general.info(`Price: ${options.price} SOL`);
     logger.general.info(`Category: ${options.category}`);
 
     // Create the listing
-    const result = await marketplace.createListing(
-      keypair,
-      agentAddress,
+    const result = await marketplace.createListing({
+      authority: keypair,
       listingData
-    );
+    });
 
     logger.general.info(chalk.green('✅ Service listing created successfully!'));
     logger.general.info(`Listing ID: ${result.listingId}`);
     logger.general.info(`Listing Address: ${result.listingAddress}`);
     logger.general.info(`Transaction: ${result.signature}`);
   } catch (error) {
-    logger.marketplace.error('Failed to create listing:', error);
+    logger.general.error('Failed to create listing:', error);
     throw error;
   }
 }
@@ -260,24 +281,12 @@ export async function purchaseService(
     logger.general.info(chalk.cyan('💰 Purchasing Service'));
     logger.general.info(chalk.gray('─'.repeat(40)));
 
-    // Load configuration
+    // Load configuration and wallet
     const config = await ConfigManager.load();
-    const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
-    
-    // Load wallet
-    if (!config.walletPath) {
-      throw new Error('No wallet configured. Run "ghostspeak wallet create" first.');
-    }
-
-    const walletData = await import(config.walletPath);
-    const keypair = createKeyPairSignerFromBytes(new Uint8Array(walletData.default));
-
-    // Create RPC client
-    const rpc = createSolanaRpc(rpcUrl);
-    const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    const keypair = await getKeypairFromConfig();
 
     // Initialize marketplace service
-    const marketplace = new MarketplaceImpl(rpc, programId);
+    const marketplace = await getMarketplaceService();
 
     const listingId = BigInt(options.listingId);
     const quantity = options.quantity || 1;
@@ -294,20 +303,20 @@ export async function purchaseService(
     }
 
     // Purchase the service
-    const result = await marketplace.purchaseService(
-      keypair,
-      listingId,
-      quantity,
-      options.requirements,
-      options.instructions
-    );
+    const result = await marketplace.purchaseService({
+      buyer: keypair,
+      listingId: listingId,
+      quantity: quantity,
+      requirements: options.requirements,
+      instructions: options.instructions
+    });
 
     logger.general.info(chalk.green('✅ Service purchased successfully!'));
     logger.general.info(`Order ID: ${result.orderId}`);
     logger.general.info(`Order Address: ${result.orderAddress}`);
     logger.general.info(`Transaction: ${result.signature}`);
   } catch (error) {
-    logger.marketplace.error('Failed to purchase service:', error);
+    logger.general.error('Failed to purchase service:', error);
     throw error;
   }
 }
@@ -323,17 +332,16 @@ export async function searchMarketplace(query: string): Promise<void> {
 
     // Load configuration
     const config = await ConfigManager.load();
-    const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
-
-    // Create RPC client
-    const rpc = createSolanaRpc(rpcUrl);
-    const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
 
     // Initialize marketplace service
-    const marketplace = new MarketplaceImpl(rpc, programId);
+    const marketplace = await getMarketplaceService();
 
     // Search listings
-    const results = await marketplace.searchListings(query, {}, 20);
+    const results = await marketplace.searchListings({
+      query: query,
+      filters: {},
+      limit: 20
+    });
 
     if (results.length === 0) {
       logger.general.info(chalk.yellow('No results found'));
@@ -341,19 +349,21 @@ export async function searchMarketplace(query: string): Promise<void> {
     } else {
       logger.general.info(chalk.yellow(`Found ${results.length} results:`));
       
-      results.forEach((listing, index) => {
-        logger.general.info(`  ${index + 1}. ${chalk.bold(listing.title)}`);
-        logger.general.info(`     Category: ${listing.serviceType}`);
-        logger.general.info(`     Price: ${chalk.green(lamportsToSol(listing.price) + ' SOL')}`);
-        logger.general.info(`     Rating: ${chalk.yellow('★'.repeat(Math.floor(listing.averageRating)))} (${listing.averageRating.toFixed(1)})`);
-        logger.general.info(`     ${listing.description.substring(0, 80)}...`);
+      results.forEach((listing: any, index: number) => {
+        const account = listing.account || listing;
+        logger.general.info(`  ${index + 1}. ${chalk.bold(account.title)}`);
+        logger.general.info(`     Category: ${account.serviceType}`);
+        logger.general.info(`     Price: ${chalk.green(lamportsToSol(Number(account.price)) + ' SOL')}`);
+        const rating = account.averageRating || 0;
+        logger.general.info(`     Rating: ${chalk.yellow('★'.repeat(Math.floor(rating)))} (${rating.toFixed(1)})`);
+        logger.general.info(`     ${(account.description || '').substring(0, 80)}...`);
         logger.general.info('');
       });
     }
 
     logger.general.info(chalk.green('✅ Search completed'));
   } catch (error) {
-    logger.marketplace.error('Marketplace search failed:', error);
+    logger.general.error('Marketplace search failed:', error);
     throw error;
   }
 }
@@ -367,36 +377,33 @@ export async function getTrending(limit: number = 10): Promise<void> {
 
     // Load configuration
     const config = await ConfigManager.load();
-    const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
-
-    // Create RPC client
-    const rpc = createSolanaRpc(rpcUrl);
-    const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
 
     // Initialize marketplace service
-    const marketplace = new MarketplaceImpl(rpc, programId);
+    const marketplace = await getMarketplaceService();
 
     // Get trending listings
-    const listings = await marketplace.getTrendingListings(limit);
+    const listings = await marketplace.getTrendingListings({ limit });
 
     if (listings.length === 0) {
       logger.general.info(chalk.yellow('No trending services found'));
     } else {
       logger.general.info(chalk.yellow(`Top ${listings.length} Trending Services:`));
       
-      listings.forEach((listing, index) => {
-        logger.general.info(`  ${chalk.bold('#' + (index + 1))} ${listing.title}`);
-        logger.general.info(`     Sales: ${chalk.green(listing.totalSales.toString())}`);
-        logger.general.info(`     Revenue: ${chalk.green(lamportsToSol(listing.totalRevenue) + ' SOL')}`);
-        logger.general.info(`     Rating: ${chalk.yellow('★'.repeat(Math.floor(listing.averageRating)))} (${listing.averageRating.toFixed(1)})`);
-        logger.general.info(`     Category: ${listing.serviceType}`);
+      listings.forEach((listing: any, index: number) => {
+        const account = listing.account || listing;
+        logger.general.info(`  ${chalk.bold('#' + (index + 1))} ${account.title}`);
+        logger.general.info(`     Sales: ${chalk.green((account.totalSales || 0).toString())}`);
+        logger.general.info(`     Revenue: ${chalk.green(lamportsToSol(Number(account.totalRevenue || 0)) + ' SOL')}`);
+        const rating = account.averageRating || 0;
+        logger.general.info(`     Rating: ${chalk.yellow('★'.repeat(Math.floor(rating)))} (${rating.toFixed(1)})`);
+        logger.general.info(`     Category: ${account.serviceType}`);
         logger.general.info('');
       });
     }
 
     logger.general.info(chalk.green('✅ Trending services loaded'));
   } catch (error) {
-    logger.marketplace.error('Failed to get trending services:', error);
+    logger.general.error('Failed to get trending services:', error);
     throw error;
   }
 }
@@ -410,14 +417,9 @@ export async function getMarketplaceStats(): Promise<void> {
 
     // Load configuration
     const config = await ConfigManager.load();
-    const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
-
-    // Create RPC client
-    const rpc = createSolanaRpc(rpcUrl);
-    const programId = address(config.programId || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
 
     // Initialize marketplace service
-    const marketplace = new MarketplaceImpl(rpc, programId);
+    const marketplace = await getMarketplaceService();
 
     // Get analytics
     const stats = await marketplace.getAnalytics();
@@ -450,7 +452,7 @@ export async function getMarketplaceStats(): Promise<void> {
     logger.general.info('');
     logger.general.info(chalk.green('✅ Analytics loaded successfully'));
   } catch (error) {
-    logger.marketplace.error('Failed to get marketplace analytics:', error);
+    logger.general.error('Failed to get marketplace analytics:', error);
     throw error;
   }
 }

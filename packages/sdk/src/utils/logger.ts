@@ -88,7 +88,7 @@ export const logTransactionError = (
 ) => {
   const log = createLogger(component);
   log.error(
-    { operation, error: error.message, context },
+    { operation, error: error instanceof Error ? error : new Error(String(error)), context },
     `Failed ${operation}`
   );
 };

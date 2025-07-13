@@ -245,7 +245,7 @@ export class AlertingSystem {
           {
             ruleId: rule.id,
             condition: rule.condition,
-            error: error instanceof Error ? error.message : String(error),
+            error: error instanceof Error ? error : new Error(String(error)),
           },
           `Failed to evaluate alert rule: ${rule.name}`
         );
@@ -340,7 +340,7 @@ export class AlertingSystem {
         {
           actionType: action.type,
           alertId: alert.id,
-          error: error instanceof Error ? error.message : String(error),
+          error: error instanceof Error ? error : new Error(String(error)),
         },
         `Failed to execute alert action`
       );

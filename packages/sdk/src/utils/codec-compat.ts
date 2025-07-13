@@ -34,15 +34,19 @@ import {
 /**
  * Enhanced codec that includes getSizeFromValue method
  */
-export interface EnhancedCodec<TFrom, TTo = TFrom> extends Codec<TFrom, TTo> {
+export interface EnhancedCodec<TFrom, TTo = TFrom> {
+  encode: Encoder<TFrom>['encode'];
+  decode: Decoder<TTo>['decode'];
   getSizeFromValue?: (value: TFrom) => number;
 }
 
 /**
  * Enhanced encoder with getSizeFromValue
  */
-export interface EnhancedEncoder<TFrom> extends Encoder<TFrom> {
+export interface EnhancedEncoder<TFrom> {
+  encode: Encoder<TFrom>['encode'];
   getSizeFromValue?: (value: TFrom) => number;
+  fixedSize?: number;
 }
 
 /**
@@ -67,7 +71,7 @@ export function getEnhancedStructEncoder<T extends object>(
 ): EnhancedEncoder<T> {
   const baseEncoder = getStructEncoder(fields as any);
   
-  return withGetSize(baseEncoder, (value: T) => {
+  return withGetSize(baseEncoder as any, (value: T) => {
     let size = 0;
     for (const [key, fieldEncoder] of fields) {
       if (fieldEncoder.getSizeFromValue) {
@@ -100,7 +104,7 @@ export function getEnhancedAddressEncoder(): EnhancedEncoder<Address> {
           if (!isValidBase58Address(value)) {
             throw new Error(`Invalid address format: ${value}`);
           }
-          return baseEncoder.encode(value);
+          return baseEncoder.encode(value) as Uint8Array;
         } catch (error) {
           throw new Error(`Address encoding failed: ${error}`);
         }
@@ -125,7 +129,7 @@ export function getEnhancedUtf8Encoder(): EnhancedEncoder<string> {
  * Create enhanced bytes encoder with getSizeFromValue
  */
 export function getEnhancedBytesEncoder(config: { size: number }): EnhancedEncoder<Uint8Array> {
-  const baseEncoder = getBytesEncoder(config);
+  const baseEncoder = getBytesEncoder();
   
   return withGetSize(baseEncoder, () => config.size);
 }
@@ -144,7 +148,7 @@ export function getEnhancedU64Encoder(): EnhancedEncoder<bigint> {
         if (bigIntValue < 0n || bigIntValue > 0xFFFFFFFFFFFFFFFFn) {
           throw new Error(`Value ${bigIntValue} is out of range for u64`);
         }
-        return baseEncoder.encode(bigIntValue);
+        return baseEncoder.encode(bigIntValue) as Uint8Array;
       },
     },
     () => 8 // U64 is always 8 bytes

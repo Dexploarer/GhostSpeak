@@ -251,7 +251,7 @@ export class SerializationValidator {
     obj: T, 
     fields: string[]
   ): T {
-    const result = { ...obj };
+    const result = { ...obj } as any;
     
     for (const field of fields) {
       if (result[field] !== undefined && result[field] !== null) {

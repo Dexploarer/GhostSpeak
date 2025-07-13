@@ -7,7 +7,7 @@ Complete guide for developers contributing to GhostSpeak protocol development.
 ### Repository Setup
 ```bash
 # Clone the repository
-git clone https://github.com/ghostspeak/core.git
+git clone https://github.com/ghostspeak/ghostspeak.git
 cd core
 
 # Install dependencies

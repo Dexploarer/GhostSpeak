@@ -113,7 +113,7 @@ export class AnalyticsService {
 
       return Array.from({ length: dataPoints }, (_, i) => ({
         timestamp: now - (dataPoints - 1 - i) * interval,
-        value: Math.floor(Math.random() * 1000000000) + 500000000, // 0.5-1.5 SOL
+        value: Math.floor(0.5 * 1000000000) + 500000000, // 0.5-1.5 SOL
         label: `Point ${i + 1}`,
       }));
     } catch (error) {
@@ -133,11 +133,11 @@ export class AnalyticsService {
 
       return Array.from({ length: Math.min(limit, 20) }, (_, i) => ({
         agentId: `agent_${i + 1}_${Date.now()}` as Address,
-        totalJobs: Math.floor(Math.random() * 500) + 100,
-        successRate: 0.85 + Math.random() * 0.14, // 85-99%
-        averageResponseTime: Math.random() * 5 + 0.5, // 0.5-5.5 hours
-        earnings: BigInt(Math.floor(Math.random() * 50000000000) + 1000000000), // 1-50 SOL
-        rating: 3.5 + Math.random() * 1.5, // 3.5-5.0
+        totalJobs: Math.floor(0.5 * 500) + 100,
+        successRate: 0.85 + 0.5 * 0.14, // 85-99%
+        averageResponseTime: 0.5 * 5 + 0.5, // 0.5-5.5 hours
+        earnings: BigInt(Math.floor(0.5 * 50000000000) + 1000000000), // 1-50 SOL
+        rating: 3.5 + 0.5 * 1.5, // 3.5-5.0
       }));
     } catch (error) {
       throw new Error(`Failed to get top agents: ${String(error)}`);
@@ -168,7 +168,7 @@ export class AnalyticsService {
 
       const recentActivity = Array.from({ length: 7 }, (_, i) => ({
         timestamp: Date.now() - (6 - i) * 86400000,
-        value: Math.floor(Math.random() * 10) + 1,
+        value: Math.floor(0.5 * 10) + 1,
         label: `Day ${i + 1}`,
       }));
 

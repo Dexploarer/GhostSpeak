@@ -6,14 +6,16 @@
  */
 
 import chalk from 'chalk';
-import { ConfigManager } from '../core/ConfigManager.js';
 import { logger } from '../utils/logger.js';
-import { UnifiedClient } from '@ghostspeak/sdk';
+import { createSolanaRpc } from '@solana/rpc';
+import { address } from '@solana/addresses';
 import type { Address } from '@solana/addresses';
-import { TimeoutError } from '../utils/timeout.js';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import { ConfigManager } from '../core/ConfigManager.js';
+import { LazyModules } from '@ghostspeak/sdk';
 import { ErrorHandler } from '../services/error-handler.js';
 import { withTimeout, TIMEOUTS, withTimeoutAndRetry } from '../utils/timeout.js';
-import { preOperationCheck, getNetworkRetryConfig } from '../utils/network-diagnostics.js';
+import { getNetworkRetryConfig } from '../utils/network-diagnostics.js';
 
 export interface RegisterAgentOptions {
   type?: string;
@@ -22,32 +24,55 @@ export interface RegisterAgentOptions {
   nonInteractive?: boolean;
 }
 
-// Get or create unified client instance
-let unifiedClient: UnifiedClient | null = null;
+// Real SDK agent service instance
+let agentService: any = null;
+let rpcClient: any = null;
 
-async function getUnifiedClient(): Promise<UnifiedClient> {
-  if (!unifiedClient) {
+async function getAgentService() {
+  if (!agentService) {
     try {
-      logger.general.debug('Initializing GhostSpeak SDK...');
+      logger.general.debug('Initializing GhostSpeak Agent Service...');
       
-      // Create client with timeout protection
-      unifiedClient = await withTimeout(
-        UnifiedClient.create({
-          autoStartSession: true,
-        }),
-        TIMEOUTS.SDK_INIT,
-        'SDK initialization'
-      );
+      // Load configuration
+      const config = await ConfigManager.load();
+      const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
+      const programId = address(config.programId || '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       
-      logger.general.debug('SDK initialized successfully');
+      // Create RPC client
+      rpcClient = createSolanaRpc(rpcUrl);
+      
+      // Load agent service from SDK - connecting to actual PodAI program
+      const agentModule = await LazyModules.agent;
+      agentService = new agentModule.AgentService(rpcClient, programId);
+      
+      // Note: Connecting to actual deployed program 'podai_marketplace' at programId
+      // Program ID 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK is the real deployed GhostSpeak program
+      
+      logger.general.debug('Agent service initialized successfully');
     } catch (error) {
       ErrorHandler.handle(error, {
-        operation: 'SDK initialization',
+        operation: 'Agent service initialization',
         suggestion: 'Run "ghostspeak doctor" to diagnose connection issues'
       });
+      throw error;
     }
   }
-  return unifiedClient;
+  return agentService;
+}
+
+async function getKeypairFromConfig() {
+  const config = await ConfigManager.load();
+  
+  if (!config.walletPath) {
+    throw new Error('No wallet configured. Run "ghostspeak wallet create" first.');
+  }
+  
+  try {
+    const walletData = await import(config.walletPath);
+    return createKeyPairSignerFromBytes(new Uint8Array(walletData.default));
+  } catch (error) {
+    throw new Error(`Failed to load wallet from ${config.walletPath}. Please check your wallet configuration.`);
+  }
 }
 
 export async function registerAgent(
@@ -141,14 +166,16 @@ export async function registerAgent(
       }
     }
 
-    // Get unified client configuration - required for blockchain operations
-    const client = await getUnifiedClient();
-    const config = client.getConfig();
-    const keypair = client.getKeypair();
+    // Get real agent service and configuration
+    const agentService = await getAgentService();
+    const config = await ConfigManager.load();
     
-    // Check if wallet is configured
-    if (!keypair) {
-      logger.general.error(chalk.red('❌ Error: No wallet configured'));
+    // Load wallet keypair
+    let keypair;
+    try {
+      keypair = await getKeypairFromConfig();
+    } catch (error) {
+      logger.general.error(chalk.red('❌ Error: ' + (error as Error).message));
       logger.general.info('');
       logger.general.info(chalk.yellow('💡 To register agents on the blockchain, you need a wallet:'));
       logger.general.info(chalk.gray('  • Run "ghostspeak quickstart" to set up your wallet'));
@@ -163,8 +190,8 @@ export async function registerAgent(
     logger.general.info(`  Name: ${chalk.cyan(validatedName)}`);
     logger.general.info(`  Type: ${chalk.cyan(agentType)}`);
     logger.general.info(`  Description: ${chalk.gray(agentDescription || 'No description')}`);
-    logger.general.info(`  Network: ${chalk.blue(config.network.network)}`);
-    logger.general.info(`  Wallet: ${chalk.gray(keypair.publicKey.toBase58())}`);
+    logger.general.info(`  Network: ${chalk.blue(config.network || 'devnet')}`);
+    logger.general.info(`  Wallet: ${chalk.gray(keypair.address)}`);
     logger.general.info('');
 
     // Confirm registration (skip in non-interactive mode)
@@ -198,12 +225,13 @@ export async function registerAgent(
       
       // Register agent on blockchain with retry logic
       const result = await withTimeoutAndRetry(
-        () => client.registerAgent(
-          validatedName,
-          agentType,
-          agentDescription,
-          capabilities
-        ),
+        () => agentService.registerAgent({
+          authority: keypair,
+          name: validatedName,
+          agentType: agentType,
+          description: agentDescription,
+          capabilities: capabilities
+        }),
         'Agent registration',
         TIMEOUTS.AGENT_REGISTER,
         getNetworkRetryConfig({
@@ -220,7 +248,7 @@ export async function registerAgent(
       // Show success details
       logger.general.info('');
       logger.general.info(chalk.green('🎉 Agent Successfully Registered on Blockchain!'));
-      logger.general.info(chalk.gray(`Agent Address: ${result.address}`));
+      logger.general.info(chalk.gray(`Agent Address: ${result.agentAddress}`));
       logger.general.info(chalk.gray(`Transaction: ${result.signature}`));
       logger.general.info('');
       
@@ -251,14 +279,16 @@ export async function listAgents(): Promise<void> {
     logger.general.info(chalk.cyan('📋 Registered AI Agents'));
     logger.general.info(chalk.gray('─'.repeat(40)));
 
-    // Get unified client - required for blockchain operations
-    const client = await getUnifiedClient();
-    const config = client.getConfig();
-    const keypair = client.getKeypair();
+    // Get real agent service
+    const agentService = await getAgentService();
+    const config = await ConfigManager.load();
     
-    // Check if wallet is configured
-    if (!keypair) {
-      logger.general.error(chalk.red('\u274c Error: No wallet configured'));
+    // Load wallet keypair for filtering (optional)
+    let keypair;
+    try {
+      keypair = await getKeypairFromConfig();
+    } catch (error) {
+      logger.general.error(chalk.red('❌ Error: ' + (error as Error).message));
       logger.general.info('');
       logger.general.info(chalk.yellow('💡 To view blockchain agents, you need a wallet:'));
       logger.general.info(chalk.gray('  • Run "ghostspeak quickstart" to set up your wallet'));
@@ -269,14 +299,16 @@ export async function listAgents(): Promise<void> {
     
     // Get agents from blockchain with retry logic
     const agents = await withTimeoutAndRetry(
-      () => client.listAgents(),
+      () => agentService.listAgents({
+        authority: keypair.address // Filter by current user's agents
+      }),
       'Agent listing',
       TIMEOUTS.ACCOUNT_FETCH,
       getNetworkRetryConfig(),
       { showRetryHint: true }
     );
     
-    logger.general.info(chalk.gray(`Network: ${config.network.network}`));
+    logger.general.info(chalk.gray(`Network: ${config.network || 'devnet'}`));
     logger.general.info('');
 
     if (agents.length === 0) {
@@ -289,13 +321,14 @@ export async function listAgents(): Promise<void> {
       );
     } else {
       logger.general.info(chalk.yellow('Your On-Chain Agents:'));
-      agents.forEach((agent, index) => {
-        logger.general.info(`  ${index + 1}. ${agent.name} (${agent.type})`);
-        logger.general.info(`     Address: ${chalk.gray(agent.address)}`);
+      agents.forEach((agent: any, index: number) => {
+        logger.general.info(`  ${index + 1}. ${agent.account.name} (${agent.account.agentType})`);
+        logger.general.info(`     Address: ${chalk.gray(agent.publicKey)}`);
         logger.general.info(`     Status: ${chalk.green('on-chain')}`);
-        if (agent.description) {
-          logger.general.info(`     Description: ${chalk.gray(agent.description)}`);
+        if (agent.account.description) {
+          logger.general.info(`     Description: ${chalk.gray(agent.account.description)}`);
         }
+        logger.general.info(`     Created: ${chalk.gray(new Date(Number(agent.account.timestamp) * 1000).toLocaleDateString())}`);
         logger.general.info('');
       });
     }
@@ -318,5 +351,5 @@ function getCapabilitiesForType(type: string): string[] {
     custom: ['custom-capability'],
   };
   
-  return capabilityMap[type] || capabilityMap.general;
+  return capabilityMap[type] || capabilityMap.general || ['custom-capability'];
 }

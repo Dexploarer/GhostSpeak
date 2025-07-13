@@ -63,7 +63,7 @@ pub fn create_replication_template(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.creator.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     // SECURITY: Input validation
@@ -72,19 +72,19 @@ pub fn create_replication_template(
     
     require!(
         !template_data.genome_hash.is_empty() && template_data.genome_hash.len() <= MAX_GENOME_HASH_LENGTH,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
     require!(
         template_data.base_capabilities.len() <= MAX_CAPABILITIES,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
     require!(
         template_data.replication_fee > 0 && template_data.replication_fee <= MAX_PAYMENT_AMOUNT,
-        PodAIMarketplaceError::InvalidPaymentAmount
+        GhostSpeakError::InvalidPaymentAmount
     );
     require!(
         template_data.max_replications > 0,
-        PodAIMarketplaceError::InvalidPaymentAmount
+        GhostSpeakError::InvalidPaymentAmount
     );
 
     let template = &mut ctx.accounts.replication_template;
@@ -93,7 +93,7 @@ pub fn create_replication_template(
     // Verify agent allows replication
     require!(
         agent.is_replicable,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
     template.source_agent = agent.key();
     template.creator = ctx.accounts.creator.key();
@@ -160,7 +160,7 @@ pub fn replicate_agent(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.buyer.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     // SECURITY: Input validation
@@ -169,20 +169,20 @@ pub fn replicate_agent(
     
     require!(
         !customization.name.is_empty() && customization.name.len() <= MAX_NAME_LENGTH,
-        PodAIMarketplaceError::NameTooLong
+        GhostSpeakError::NameTooLong
     );
     require!(
         customization.description.as_ref().map_or(true, |desc| desc.len() <= MAX_CUSTOM_CONFIG_LENGTH),
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
 
     let template = &mut ctx.accounts.replication_template;
     let new_agent = &mut ctx.accounts.new_agent;
     let replication_record = &mut ctx.accounts.replication_record;
-    let clock = Clock::get()?;
+    let _clock = Clock::get()?;
 
-    require!(template.is_active, PodAIMarketplaceError::AgentNotActive);
-    require!(template.current_replications < template.max_replications, PodAIMarketplaceError::InsufficientFunds);
+    require!(template.is_active, GhostSpeakError::AgentNotActive);
+    require!(template.current_replications < template.max_replications, GhostSpeakError::InsufficientFunds);
 
     new_agent.owner = ctx.accounts.buyer.key();
     new_agent.name = customization.name.clone();
@@ -212,7 +212,7 @@ pub fn replicate_agent(
     // SECURITY: Update replication count with overflow protection
     template.current_replications = template.current_replications
         .checked_add(1)
-        .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
     emit!(crate::state::replication::AgentReplicatedEvent {
         original_agent: template.source_agent,

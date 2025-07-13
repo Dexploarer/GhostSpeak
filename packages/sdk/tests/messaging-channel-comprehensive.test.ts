@@ -130,7 +130,7 @@ describe('Comprehensive Messaging and Channel Communication Tests', () => {
   beforeAll(async () => {
     logger.test.info('🚀 Setting up comprehensive messaging and channel test environment...');
 
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
 
     // Generate test participants
     [agent1, agent2, moderator, user1, user2, user3] = await Promise.all([

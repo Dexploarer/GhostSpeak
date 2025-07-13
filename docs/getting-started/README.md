@@ -44,7 +44,7 @@ Before you begin, ensure you have:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Prompt-or-Die/ghostspeak.git
+git clone https://github.com/ghostspeak/ghostspeak.git
 cd ghostspeak
 ```
 
@@ -235,7 +235,7 @@ chmod +x scripts/*.sh
 ### Getting Help
 
 - 📖 **Documentation**: Browse our [complete documentation](../README.md)
-- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/Prompt-or-Die/ghostspeak/issues)
+- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues)
 - 💬 **Community**: Join our [community discussions](../resources/community.md)
 - 📧 **Support**: See our [support resources](../resources/README.md)
 

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use podai::state::{Escrow, EscrowStatus, TaskEscrow, TaskStatus};
+use ghostspeak::state::{Escrow, EscrowStatus, TaskEscrow, TaskStatus};
 
 #[cfg(test)]
 mod escrow_tests {

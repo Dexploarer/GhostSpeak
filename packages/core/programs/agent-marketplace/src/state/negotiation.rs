@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use crate::PodAIMarketplaceError;
+use crate::GhostSpeakError;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct NegotiationMessage {
@@ -58,11 +58,11 @@ impl NegotiationChatbot {
     ) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(negotiation_deadline > clock.unix_timestamp, PodAIMarketplaceError::InvalidDeadline);
-        require!(terms.len() <= super::auction::MAX_TERMS_COUNT, PodAIMarketplaceError::TooManyTerms);
+        require!(negotiation_deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
+        require!(terms.len() <= super::auction::MAX_TERMS_COUNT, GhostSpeakError::TooManyTerms);
         
         for term in &terms {
-            require!(term.len() <= super::auction::MAX_TERM_LENGTH, PodAIMarketplaceError::TermTooLong);
+            require!(term.len() <= super::auction::MAX_TERM_LENGTH, GhostSpeakError::TermTooLong);
         }
         
         self.initiator = initiator;
@@ -84,12 +84,12 @@ impl NegotiationChatbot {
     pub fn make_counter_offer(&mut self, offer: u64) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(clock.unix_timestamp < self.negotiation_deadline, PodAIMarketplaceError::NegotiationExpired);
+        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
         require!(
             matches!(self.status, super::auction::NegotiationStatus::InitialOffer | super::auction::NegotiationStatus::CounterOffer),
-            PodAIMarketplaceError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidNegotiationStatus
         );
-        require!(self.counter_offers.len() < super::auction::MAX_COUNTER_OFFERS, PodAIMarketplaceError::TooManyCounterOffers);
+        require!(self.counter_offers.len() < super::auction::MAX_COUNTER_OFFERS, GhostSpeakError::TooManyCounterOffers);
         
         self.counter_offers.push(offer);
         self.current_offer = offer;
@@ -102,10 +102,10 @@ impl NegotiationChatbot {
     pub fn accept_offer(&mut self) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(clock.unix_timestamp < self.negotiation_deadline, PodAIMarketplaceError::NegotiationExpired);
+        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
         require!(
             matches!(self.status, super::auction::NegotiationStatus::InitialOffer | super::auction::NegotiationStatus::CounterOffer),
-            PodAIMarketplaceError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidNegotiationStatus
         );
         
         self.status = super::auction::NegotiationStatus::Accepted;

@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::PodAIMarketplaceError;
+use super::GhostSpeakError;
 
 // PDA Seeds
 pub const MARKET_ANALYTICS_SEED: &[u8] = b"market_analytics";
@@ -80,7 +80,7 @@ impl AnalyticsDashboard {
         metrics: String,
         bump: u8,
     ) -> Result<()> {
-        require!(metrics.len() <= MAX_METRICS_LENGTH, PodAIMarketplaceError::MetricsTooLong);
+        require!(metrics.len() <= MAX_METRICS_LENGTH, GhostSpeakError::MetricsTooLong);
         
         let clock = Clock::get()?;
         
@@ -95,7 +95,7 @@ impl AnalyticsDashboard {
     }
 
     pub fn update_metrics(&mut self, metrics: String) -> Result<()> {
-        require!(metrics.len() <= MAX_METRICS_LENGTH, PodAIMarketplaceError::MetricsTooLong);
+        require!(metrics.len() <= MAX_METRICS_LENGTH, GhostSpeakError::MetricsTooLong);
         
         self.metrics = metrics;
         self.updated_at = Clock::get()?.unix_timestamp;
@@ -125,7 +125,7 @@ impl MarketAnalytics {
         period_end: i64,
         bump: u8,
     ) -> Result<()> {
-        require!(period_end > period_start, PodAIMarketplaceError::InvalidPeriod);
+        require!(period_end > period_start, GhostSpeakError::InvalidPeriod);
         
         self.period_start = period_start;
         self.period_end = period_end;
@@ -163,7 +163,7 @@ impl MarketAnalytics {
     }
 
     pub fn add_top_agent(&mut self, agent: Pubkey) -> Result<()> {
-        require!(self.top_agents.len() < MAX_TOP_AGENTS, PodAIMarketplaceError::TooManyTopAgents);
+        require!(self.top_agents.len() < MAX_TOP_AGENTS, GhostSpeakError::TooManyTopAgents);
         
         if !self.top_agents.contains(&agent) {
             self.top_agents.push(agent);

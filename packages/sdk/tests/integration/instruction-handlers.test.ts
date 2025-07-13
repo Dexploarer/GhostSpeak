@@ -61,7 +61,7 @@ import { safeBigIntToU64, safeNumberToBigInt } from '../../src/utils/bigint-seri
 import { SecureBigIntBuffer } from '../../src/utils/secure-bigint-buffer';
 
 // Test configuration
-const PROGRAM_ID = address('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+const PROGRAM_ID = address('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
 const TEST_TIMEOUT = 60000; // 60 seconds
 
 describe('Instruction Handler Integration Tests', () => {

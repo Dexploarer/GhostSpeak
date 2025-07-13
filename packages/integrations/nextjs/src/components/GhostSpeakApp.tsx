@@ -14,7 +14,7 @@ import {
   SolflareWalletAdapter,
   TorusWalletAdapter
 } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
+// Remove clusterApiUrl import as it's from Web3.js v1
 import { GhostSpeakProvider } from '@ghostspeak/react';
 
 // Import CSS only on client side to avoid SSR issues
@@ -52,15 +52,22 @@ export function GhostSpeakApp({
   const rpcEndpoint = useMemo(() => {
     if (endpoint) return endpoint;
     
+    // Use environment variable or default RPC endpoints
+    const defaultEndpoints = {
+      [WalletAdapterNetwork.Devnet]: 'https://api.devnet.solana.com',
+      [WalletAdapterNetwork.Testnet]: 'https://api.testnet.solana.com',
+      [WalletAdapterNetwork.Mainnet]: 'https://api.mainnet-beta.solana.com'
+    };
+    
     // Use environment variable if available
     if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(network);
+      return process.env.NEXT_PUBLIC_SOLANA_RPC_URL || defaultEndpoints[network];
     }
     
     return (
       process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
       (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_SOLANA_RPC_URL ||
-      clusterApiUrl(network)
+      defaultEndpoints[network]
     );
   }, [endpoint, network]);
 

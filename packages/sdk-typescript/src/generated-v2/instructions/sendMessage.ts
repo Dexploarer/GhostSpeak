@@ -234,7 +234,7 @@ export async function getSendMessageInstructionAsync<
     data: getSendMessageInstructionDataEncoder().encode(
       args as SendMessageInstructionDataArgs
     ),
-  } as SendMessageInstruction<
+  } as any as SendMessageInstruction<
     TProgramAddress,
     TAccountMessageAccount,
     TAccountSender,
@@ -318,7 +318,7 @@ export function getSendMessageInstruction<
     data: getSendMessageInstructionDataEncoder().encode(
       args as SendMessageInstructionDataArgs
     ),
-  } as SendMessageInstruction<
+  } as any as SendMessageInstruction<
     TProgramAddress,
     TAccountMessageAccount,
     TAccountSender,

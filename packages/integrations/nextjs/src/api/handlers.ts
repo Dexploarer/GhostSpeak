@@ -7,7 +7,9 @@
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { GhostSpeakClient, AgentService, MessageService, EscrowService } from '@ghostspeak/sdk';
-import { Connection, Keypair } from '@solana/web3.js';
+import type { Rpc } from '@solana/rpc';
+import type { Address } from '@solana/addresses';
+import type { KeyPairSigner } from '@solana/signers';
 
 export interface GhostSpeakApiConfig {
   /** Solana network */
@@ -15,7 +17,7 @@ export interface GhostSpeakApiConfig {
   /** RPC endpoint */
   rpcUrl: string;
   /** Server keypair for signing transactions */
-  serverKeypair?: Keypair;
+  serverKeypair?: KeyPairSigner;
   /** Program IDs */
   programIds?: Record<string, string>;
   /** Rate limiting */
@@ -29,8 +31,6 @@ export interface GhostSpeakApiConfig {
  * Create a server-side GhostSpeak client
  */
 export function createServerClient(config: GhostSpeakApiConfig): GhostSpeakClient {
-  const connection = new Connection(config.rpcUrl);
-  
   return new GhostSpeakClient({
     network: config.network,
     rpcUrl: config.rpcUrl,
@@ -230,8 +230,7 @@ export function createHealthHandler(config: GhostSpeakApiConfig) {
       const client = createServerClient(config);
       
       // Test connection
-      const connection = new Connection(config.rpcUrl);
-      const slot = await connection.getSlot();
+      const slot = await client.getSlot();
       
       return res.status(200).json({
         status: 'healthy',

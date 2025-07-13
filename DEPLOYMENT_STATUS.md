@@ -12,7 +12,7 @@
 - ✅ **Workspace Configuration**: Fixed Cargo.toml for proper Anchor compatibility
 
 ### 2. **Program ID Consistency**
-- ✅ **Canonical Program ID**: `4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP`
+- ✅ **Canonical Program ID**: `367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK`
 - ✅ **TypeScript SDK Updated**: All files use consistent program ID
 - ✅ **IDL Metadata**: Contains correct program address
 - ✅ **No Mismatched IDs**: Eliminated previous inconsistencies

@@ -14,6 +14,10 @@ import {
 } from '../../utils/instruction-compat';
 import { 
   combineCodec,
+  fixEncoderSize,
+  fixDecoderSize,
+  getBytesDecoder,
+  getBytesEncoder,
   getArrayDecoder, 
   getArrayEncoder, 
   getStructDecoder,
@@ -102,16 +106,16 @@ export type ServiceListingDataArgs = {
 export function getCreateServiceListingInstructionDataEncoder(): Encoder<CreateServiceListingInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', getCreateServiceListingDiscriminatorBytes()],
+      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['listingData', getServiceListingDataEncoder()],
     ]),
-    (value) => ({ ...value, discriminator: getCreateServiceListingDiscriminatorBytes() })
+    (value) => ({ ...value, discriminator: CREATE_SERVICE_LISTING_DISCRIMINATOR })
   );
 }
 
 export function getCreateServiceListingInstructionDataDecoder(): Decoder<CreateServiceListingInstructionData> {
   return getStructDecoder([
-    ['discriminator', getCreateServiceListingDiscriminatorBytes()],
+    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['listingData', getServiceListingDataDecoder()],
   ]);
 }

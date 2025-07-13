@@ -28,7 +28,7 @@ describe('Performance and Stress Testing', () => {
   beforeAll(async () => {
     console.log('⚡ Setting up performance and stress test environment...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate multiple test agents and users for load testing
     const agentCount = 10; // Reasonable number for testing

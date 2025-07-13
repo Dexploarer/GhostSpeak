@@ -31,7 +31,7 @@ import {
 import { safeBigIntToU64 } from '../../src/utils/bigint-serialization';
 import { PublicKey } from '@solana/web3.js';
 
-const PROGRAM_ID = address('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+const PROGRAM_ID = address('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
 
 describe('PDA Derivation Validation', () => {
   const testAuthority = address('11111111111111111111111111111111');

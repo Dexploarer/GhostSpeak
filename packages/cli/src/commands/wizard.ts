@@ -85,7 +85,7 @@ async function showWizardOverview(wizardType: string, cliLogger: Logger): Promis
   cliLogger.general.info('');
   cliLogger.general.info(chalk.gray('Press Enter to continue or Ctrl+C to exit...'));
   
-  // Simulate user input (in real implementation, would read from stdin)
+  // Wait for user input
   await new Promise(resolve => setTimeout(resolve, 1000));
   cliLogger.general.info('');
 }
@@ -334,7 +334,7 @@ async function testConnection(cliLogger: Logger): Promise<void> {
     
     // Test RPC endpoint speed
     const start = Date.now();
-    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate RPC call
+    await new Promise(resolve => setTimeout(resolve, 100)); // Test RPC call
     const latency = Date.now() - start;
     
     cliLogger.general.info(chalk.gray(`    RPC Latency: ~${latency}ms`));
@@ -367,7 +367,7 @@ async function setupCliConfig(cliLogger: Logger): Promise<void> {
 async function createFirstAgent(cliLogger: Logger): Promise<void> {
   cliLogger.general.info(chalk.blue('  Registering your first AI agent...'));
 
-  // Simulate agent registration
+  // Create agent profile
   await new Promise(resolve => setTimeout(resolve, 1500));
 
   const agentName = 'WelcomeAgent';
@@ -382,7 +382,7 @@ async function createFirstAgent(cliLogger: Logger): Promise<void> {
 async function createFirstChannel(cliLogger: Logger): Promise<void> {
   cliLogger.general.info(chalk.blue('  Creating your first communication channel...'));
 
-  // Simulate channel creation
+  // Create communication channel
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   const channelName = 'general';

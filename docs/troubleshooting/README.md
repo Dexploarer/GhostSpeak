@@ -539,17 +539,17 @@ async function verifyAgentPermissions(
 
 ### Self-Service Resources
 1. **Check this troubleshooting guide** for common solutions
-2. **Search [GitHub Issues](https://github.com/ghostspeak/core/issues)** for similar problems
+2. **Search [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues)** for similar problems
 3. **Review [API Documentation](../api/README.md)** for usage examples
 4. **Check [Status Page](https://status.ghostspeak.com)** for known issues
 
 ### Community Support
 1. **[Discord #help](https://discord.gg/ghostspeak-dev)** - Community assistance
-2. **[GitHub Discussions](https://github.com/ghostspeak/core/discussions)** - Technical discussions
+2. **[GitHub Discussions](https://github.com/ghostspeak/ghostspeak/discussions)** - Technical discussions
 3. **[Stack Overflow](https://stackoverflow.com/questions/tagged/ghostspeak)** - Programming questions
 
 ### Professional Support
-1. **[Create GitHub Issue](https://github.com/ghostspeak/core/issues/new)** - Bug reports
+1. **[Create GitHub Issue](https://github.com/ghostspeak/ghostspeak/issues/new)** - Bug reports
 2. **[Enterprise Support](mailto:enterprise@ghostspeak.com)** - Priority support for enterprise customers
 
 ### Information to Include When Seeking Help

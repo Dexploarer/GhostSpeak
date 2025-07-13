@@ -14,7 +14,7 @@ import {
   EscrowService, 
   MarketplaceService 
 } from '@ghostspeak/sdk';
-import { Connection } from '@solana/web3.js';
+import type { Rpc } from '@solana/rpc';
 
 export interface GhostSpeakContextValue {
   /** GhostSpeak client instance */

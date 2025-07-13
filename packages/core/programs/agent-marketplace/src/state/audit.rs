@@ -6,8 +6,8 @@
  */
 
 use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
-use super::PodAIMarketplaceError;
+// use std::collections::BTreeMap; // Commented out - using Vec<(K,V)> for Anchor compatibility
+use super::GhostSpeakError;
 
 // Note: BTreeMap is not available in Anchor/BPF environment
 // We'll use Vec<(String, String)> instead for key-value pairs
@@ -767,7 +767,7 @@ impl AuditTrail {
         context: AuditContext,
         compliance_flags: ComplianceFlags,
     ) -> Result<()> {
-        require!(self.entries.len() < MAX_AUDIT_ENTRIES, PodAIMarketplaceError::TooManyAuditEntries);
+        require!(self.entries.len() < MAX_AUDIT_ENTRIES, GhostSpeakError::TooManyAuditEntries);
         
         let clock = Clock::get()?;
         let entry_id = self.entries.len() as u64;
@@ -955,7 +955,7 @@ impl ComplianceReport {
         period_start: i64,
         period_end: i64,
     ) -> Result<()> {
-        require!(period_end > period_start, PodAIMarketplaceError::InvalidPeriod);
+        require!(period_end > period_start, GhostSpeakError::InvalidPeriod);
         
         let clock = Clock::get()?;
         
@@ -995,7 +995,7 @@ impl ComplianceReport {
 
     /// Approve the report
     pub fn approve(&mut self) -> Result<()> {
-        require!(self.status == ReportStatus::Reviewed, PodAIMarketplaceError::InvalidReportStatus);
+        require!(self.status == ReportStatus::Reviewed, GhostSpeakError::InvalidReportStatus);
         
         self.status = ReportStatus::Approved;
         
@@ -1008,7 +1008,7 @@ impl ComplianceReport {
         regulatory_body: String,
         submission_reference: String,
     ) -> Result<()> {
-        require!(self.status == ReportStatus::Approved, PodAIMarketplaceError::InvalidReportStatus);
+        require!(self.status == ReportStatus::Approved, GhostSpeakError::InvalidReportStatus);
         
         let clock = Clock::get()?;
         

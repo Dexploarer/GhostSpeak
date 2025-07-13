@@ -1,0 +1,136 @@
+{
+  "GhostSpeak SDK Import": {
+    "prefix": "gs-import",
+    "body": [
+      "const {",
+      "  GhostSpeakClient,",
+      "  AgentService,",
+      "  MessageService,",
+      "  EscrowService,",
+      "  MarketplaceService",
+      "} = require('@ghostspeak/sdk');"
+    ],
+    "description": "Import GhostSpeak SDK components (CommonJS)"
+  },
+
+  "Initialize GhostSpeak Client": {
+    "prefix": "gs-client-init",
+    "body": [
+      "const client = new GhostSpeakClient({",
+      "  network: '${1:devnet}',",
+      "  rpcUrl: '${2:https://api.devnet.solana.com}',",
+      "  wallet: ${3:wallet},",
+      "});"
+    ],
+    "description": "Initialize GhostSpeak client"
+  },
+
+  "Create Agent": {
+    "prefix": "gs-create-agent",
+    "body": [
+      "const agentService = new AgentService(client);",
+      "",
+      "const agent = await agentService.createAgent({",
+      "  name: '${1:MyAgent}',",
+      "  description: '${2:Agent description}',",
+      "  agentType: '${3:general}',",
+      "  capabilities: [${4:'messaging', 'services'}],",
+      "  metadata: {",
+      "    ${5:// Additional metadata}",
+      "  }",
+      "});",
+      "",
+      "console.log('Agent created:', agent.id);"
+    ],
+    "description": "Create a new agent"
+  },
+
+  "Send Message": {
+    "prefix": "gs-send-message",
+    "body": [
+      "const messageService = new MessageService(client);",
+      "",
+      "const message = await messageService.sendMessage({",
+      "  recipient: '${1:recipientAgentId}',",
+      "  content: '${2:Hello, world!}',",
+      "  messageType: '${3:text}',",
+      "  encrypted: ${4:false},",
+      "  metadata: {",
+      "    ${5:// Message metadata}",
+      "  }",
+      "});",
+      "",
+      "console.log('Message sent:', message.id);"
+    ],
+    "description": "Send a message to an agent"
+  },
+
+  "Create Escrow": {
+    "prefix": "gs-create-escrow",
+    "body": [
+      "const escrowService = new EscrowService(client);",
+      "",
+      "const escrow = await escrowService.createEscrow({",
+      "  seller: '${1:sellerPublicKey}',",
+      "  amount: ${2:1000000}, // lamports",
+      "  serviceDescription: '${3:Service description}',",
+      "  timeoutDuration: ${4:86400}, // 24 hours in seconds",
+      "  arbiter: '${5:arbiterPublicKey}' // optional",
+      "});",
+      "",
+      "console.log('Escrow created:', escrow.id);"
+    ],
+    "description": "Create an escrow transaction"
+  },
+
+  "Error Handling": {
+    "prefix": "gs-error-handling",
+    "body": [
+      "try {",
+      "  ${1:// GhostSpeak operation}",
+      "} catch (error) {",
+      "  if (error instanceof GhostSpeakError) {",
+      "    console.error('GhostSpeak error:', {",
+      "      code: error.code,",
+      "      message: error.message,",
+      "      details: error.details",
+      "    });",
+      "  } else if (error.error && error.error.errorCode) {",
+      "    console.error('Anchor error:', {",
+      "      code: error.error.errorCode.code,",
+      "      message: error.error.errorMessage",
+      "    });",
+      "  } else {",
+      "    console.error('Unexpected error:', error);",
+      "  }",
+      "}"
+    ],
+    "description": "Handle GhostSpeak errors"
+  },
+
+  "Agent Class": {
+    "prefix": "gs-agent-class",
+    "body": [
+      "class ${1:MyAgent} {",
+      "  constructor(client, agentId) {",
+      "    this.client = client;",
+      "    this.agentId = agentId;",
+      "  }",
+      "",
+      "  async processMessage(message) {",
+      "    ${2:// Process incoming message}",
+      "  }",
+      "",
+      "  async offerService(service) {",
+      "    ${3:// Offer a service}",
+      "  }",
+      "",
+      "  async start() {",
+      "    const messageService = new MessageService(this.client);",
+      "    messageService.onMessage(this.agentId, this.processMessage.bind(this));",
+      "  }",
+      "}"
+    ],
+    "description": "Agent class template"
+  }
+}

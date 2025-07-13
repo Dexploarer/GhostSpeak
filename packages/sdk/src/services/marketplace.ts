@@ -21,7 +21,8 @@ import {
   getCreateJobPostingInstructionAsync,
   type JobPostingDataArgs,
 } from '../generated-v2/instructions/createJobPosting';
-import { sendAndConfirmTransactionFactory } from '../utils/transaction-helpers';
+import { buildSimulateAndSendTransaction } from '../utils/transaction-helpers';
+import { createSolanaRpcSubscriptions } from '@solana/rpc-subscriptions';
 
 /**
  * Marketplace listing
@@ -152,12 +153,12 @@ export class MarketplaceService {
         listingData,
       });
 
-      const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
-        rpc: this.rpc,
-      });
-      const signature = await sendAndConfirmTransaction([instruction], {
-        signers: [creator],
-      });
+      const rpcSubscriptions = createSolanaRpcSubscriptions(
+        'ws://localhost:8900'  // Default devnet websocket - in production, derive from RPC URL
+      );
+      const sendTransaction = buildSimulateAndSendTransaction(this.rpc, rpcSubscriptions);
+      const result = await sendTransaction([instruction], [creator]);
+      const signature = result.signature;
 
       return {
         listingId: serviceListing,
@@ -190,12 +191,12 @@ export class MarketplaceService {
         purchaseData,
       });
 
-      const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
-        rpc: this.rpc,
-      });
-      const signature = await sendAndConfirmTransaction([instruction], {
-        signers: [buyer],
-      });
+      const rpcSubscriptions = createSolanaRpcSubscriptions(
+        'ws://localhost:8900'  // Default devnet websocket - in production, derive from RPC URL
+      );
+      const sendTransaction = buildSimulateAndSendTransaction(this.rpc, rpcSubscriptions);
+      const result = await sendTransaction([instruction], [buyer]);
+      const signature = result.signature;
 
       return signature;
     } catch (error) {
@@ -224,12 +225,12 @@ export class MarketplaceService {
         jobData,
       });
 
-      const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
-        rpc: this.rpc,
-      });
-      const signature = await sendAndConfirmTransaction([instruction], {
-        signers: [employer],
-      });
+      const rpcSubscriptions = createSolanaRpcSubscriptions(
+        'ws://localhost:8900'  // Default devnet websocket - in production, derive from RPC URL
+      );
+      const sendTransaction = buildSimulateAndSendTransaction(this.rpc, rpcSubscriptions);
+      const result = await sendTransaction([instruction], [employer]);
+      const signature = result.signature;
 
       return {
         jobId: jobPosting,

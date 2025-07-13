@@ -92,7 +92,7 @@ const observability = initializeObservability();
 // Setup Solana monitoring
 observability.setupSolanaMonitoring(
   'https://api.devnet.solana.com',
-  '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
+  '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK'
 );
 
 // Start monitoring

@@ -7,7 +7,7 @@
 
 use anchor_lang::prelude::*;
 use crate::state::*;
-use crate::PodAIMarketplaceError;
+use crate::GhostSpeakError;
 
 /// Creates a royalty stream for ongoing revenue sharing
 /// 
@@ -55,8 +55,8 @@ pub fn create_royalty_stream(
     let agent = &ctx.accounts.agent;
     let clock = Clock::get()?;
 
-    require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
-    require!(agent.owner == ctx.accounts.creator.key(), PodAIMarketplaceError::UnauthorizedAccess);
+    require!(agent.is_active, GhostSpeakError::AgentNotActive);
+    require!(agent.owner == ctx.accounts.creator.key(), GhostSpeakError::UnauthorizedAccess);
 
     stream.agent = agent.key();
     stream.original_creator = ctx.accounts.creator.key();
@@ -126,8 +126,8 @@ pub fn list_agent_for_resale(
     let agent = &ctx.accounts.agent;
     let clock = Clock::get()?;
 
-    require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
-    require!(agent.owner == ctx.accounts.seller.key(), PodAIMarketplaceError::UnauthorizedAccess);
+    require!(agent.is_active, GhostSpeakError::AgentNotActive);
+    require!(agent.owner == ctx.accounts.seller.key(), GhostSpeakError::UnauthorizedAccess);
 
     resale.agent = agent.key();
     resale.seller = ctx.accounts.seller.key();

@@ -7,7 +7,7 @@
  */
 
 use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
+// use std::collections::BTreeMap; // Commented out - using Vec<(K,V)> for Anchor compatibility
 
 // =====================================================
 // MULTI-SIGNATURE STRUCTURES
@@ -115,7 +115,7 @@ pub struct MultisigConfig {
     pub allowed_transaction_types: Vec<TransactionType>,
     
     /// Daily transaction limits
-    pub daily_limits: BTreeMap<String, u64>,
+    pub daily_limits: Vec<(String, u64)>,
 }
 
 /// Emergency configuration for multisig

@@ -103,7 +103,8 @@ export async function confidentialTransfer(options: {
       signer = await getKeypair();
       useRealBlockchain = true;
     } catch (sdkError) {
-      cliLogger.general.info(chalk.yellow('⚠️  SDK not available, using simulation mode'));
+      cliLogger.general.error(chalk.red('❌ SDK not available'));
+      throw new Error('GhostSpeak SDK is required for confidential transfers');
     }
     
     if (useRealBlockchain && sdk) {
@@ -136,70 +137,17 @@ export async function confidentialTransfer(options: {
         
         displayTransferSuccess(record, cliLogger);
       } catch (blockchainError) {
-        cliLogger.general.warn('Blockchain transaction failed, using simulation');
-        useRealBlockchain = false;
+        cliLogger.general.error('Blockchain transaction failed');
+        throw blockchainError;
       }
     }
     
-    if (!useRealBlockchain) {
-      // Simulation mode
-      await simulateConfidentialTransfer(options, cliLogger);
-    }
     
   } catch (error) {
     logger.cli.error(chalk.red('❌ Failed to execute confidential transfer:'), error);
   }
 }
 
-async function simulateConfidentialTransfer(
-  options: { source: Address; destination: Address; amount: bigint },
-  cliLogger: Logger
-): Promise<void> {
-  cliLogger.general.info(chalk.blue('🔄 Preparing confidential transfer...'));
-  
-  // Step 1: Generate encryption keys
-  cliLogger.general.info(chalk.blue('🔐 Generating encryption keys...'));
-  await new Promise(resolve => setTimeout(resolve, 800));
-  cliLogger.general.info(chalk.green('  ✓ Ephemeral keys generated'));
-  
-  // Step 2: Encrypt transaction data
-  cliLogger.general.info(chalk.blue('🔐 Encrypting transaction data...'));
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  cliLogger.general.info(chalk.green('  ✓ Amount encrypted: ****'));
-  cliLogger.general.info(chalk.green('  ✓ Recipient encrypted: ****'));
-  
-  // Step 3: Generate zero-knowledge proof
-  cliLogger.general.info(chalk.blue('🧬 Generating zero-knowledge proof...'));
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  cliLogger.general.info(chalk.green('  ✓ Range proof generated'));
-  cliLogger.general.info(chalk.green('  ✓ Balance proof verified'));
-  
-  // Step 4: Submit transaction
-  cliLogger.general.info(chalk.blue('📡 Submitting confidential transaction...'));
-  await new Promise(resolve => setTimeout(resolve, 1200));
-  
-  // Create transfer record
-  const record: TransferRecord = {
-    id: generateTransferId(),
-    from: options.source.toString(),
-    to: options.destination.toString(),
-    amount: options.amount.toString(),
-    timestamp: Date.now(),
-    confidential: true,
-    signature: generateMockSignature(),
-    status: 'confirmed',
-    privacy: {
-      amountHidden: true,
-      recipientHidden: true,
-      zkProofGenerated: true
-    }
-  };
-  
-  transferHistory.push(record);
-  
-  cliLogger.general.info('');
-  displayTransferSuccess(record, cliLogger);
-}
 
 function displayTransferSuccess(record: TransferRecord, cliLogger: Logger): void {
   cliLogger.general.info(chalk.green('✅ Confidential Transfer Complete'));
@@ -245,7 +193,7 @@ async function executeConfidentialTransfer(
 
   // Convert to proper types for the actual transfer
   const transferOptions = {
-    source: options.recipient as unknown as Address, // Mock conversion
+    source: signer.address, // Use signer as source for confidential transfers
     destination: options.recipient as unknown as Address,
     amount: BigInt(Math.floor(parseFloat(options.amount) * 1e9)) // Convert SOL to lamports
   };
@@ -254,30 +202,10 @@ async function executeConfidentialTransfer(
     // Use the confidentialTransfer function
     await confidentialTransfer(transferOptions);
   } else {
-    // Standard transfer simulation
-    cliLogger.general.info(chalk.blue('🔄 Processing standard transfer...'));
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    cliLogger.general.info(chalk.blue('📡 Broadcasting transaction...'));
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const record: TransferRecord = {
-      id: generateTransferId(),
-      from: 'YourWallet...', // Mock
-      to: options.recipient,
-      amount: options.amount,
-      timestamp: Date.now(),
-      confidential: false,
-      signature: generateMockSignature(),
-      status: 'confirmed'
-    };
-    
-    transferHistory.push(record);
-    
-    cliLogger.general.info(chalk.green('✅ Standard transfer completed'));
-    cliLogger.general.info(`  Transaction: ${chalk.gray(record.signature)}`);
-    cliLogger.general.info(`  Amount: ${chalk.cyan(options.amount + ' SOL')}`);
-    cliLogger.general.info(`  Recipient: ${chalk.blue(options.recipient)}`);
+    // Standard transfer via blockchain
+    cliLogger.general.error(chalk.red('❌ Blockchain transfers not yet implemented'));
+    cliLogger.general.info(chalk.gray('This feature requires blockchain integration to be completed'));
+    throw new Error('Blockchain transfers not yet implemented');
   }
 }
 
@@ -321,18 +249,6 @@ async function showTransferOptions(cliLogger: Logger): Promise<void> {
   cliLogger.general.info('  • Recipient must support confidential transfers');
 }
 
-function generateMockSignature(): string {
-  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  let signature = '';
-  for (let i = 0; i < 88; i++) {
-    signature += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return signature;
-}
-
-function generateTransferId(): string {
-  return 'TXF-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 5);
-}
 
 // Additional helper functions for token operations
 export async function showTransferHistory(
@@ -385,4 +301,4 @@ export async function showTransferHistory(
   cliLogger.general.info(`  Standard: ${chalk.yellow(standardCount)} (${((standardCount / transferHistory.length) * 100).toFixed(1)}%)`);
 }
 
-// TODO: Add more confidential transfer operations as SDK expands
+// Future enhancement: Additional operations will be added as SDK capabilities expand

@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { ServiceListingAccount, ServiceListingStatus } from '@podai/sdk';
+import { ServiceListingAccount, ServiceListingStatus } from '@ghostspeak/sdk';
 
 export interface MarketplaceListingCardProps {
   listing: ServiceListingAccount;

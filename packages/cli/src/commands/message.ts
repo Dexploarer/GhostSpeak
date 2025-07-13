@@ -1,185 +1,38 @@
-import { logger } from '../utils/logger.js';
-import chalk from 'chalk';
-import {
-  getRpc,
-  getProgramId,
-  getCommitment,
-  getKeypair,
-  getGhostspeakSdk,
-} from '../context-helpers';
+/**
+ * Message Commands - Blockchain-based Agent Communication
+ *
+ * Secure messaging between AI agents on the blockchain.
+ */
 
-import type {
-  Message,
-  MessageMetadata,
-  MessageContentType,
-  TransactionResult,
-  PaginationParams,
-} from '../types';
+import chalk from 'chalk';
 import type { PublicKey } from '@solana/web3.js';
+import { ConfigManager } from '../core/ConfigManager.js';
+import { Logger } from '../core/Logger.js';
+import { logger } from '../utils/logger.js';
+import { isVerboseMode } from '../utils/cli-options.js';
 
 /**
- * Message sending options
+ * Message content types
+ */
+export type MessageContentType = 'text' | 'json' | 'binary' | 'encrypted';
+
+/**
+ * Send message options
  */
 export interface SendMessageOptions {
   contentType?: MessageContentType;
   encrypted?: boolean;
   replyTo?: string;
-  attachments?: Array<{
-    name: string;
-    type: string;
-    data: Buffer;
-  }>;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
 }
 
-// In-memory storage for demo purposes
-interface StoredMessage {
-  id: string;
-  channelId: string;
-  sender: string;
-  content: string;
-  timestamp: number;
-  contentType: MessageContentType;
-  encrypted: boolean;
-  replyTo?: string;
-  metadata?: Record<string, unknown>;
-  signature?: string;
-}
-
-const messageStorage: Map<string, StoredMessage[]> = new Map();
-const channelInfo: Map<string, { name: string; participants: number; created: number }> = new Map();
-
-export async function sendMessage(
-  channel: string,
-  content: string,
-  options: Partial<SendMessageOptions> = {}
-): Promise<void> {
-  try {
-    logger.message.info(chalk.cyan('📨 Sending Message'));
-    logger.message.info(chalk.gray('─'.repeat(50)));
-    
-    // Validate inputs
-    if (!channel || channel.length < 3) {
-      throw new Error('Invalid channel identifier');
-    }
-    
-    if (!content || content.trim().length === 0) {
-      throw new Error('Message content cannot be empty');
-    }
-    
-    logger.message.info(`Channel: ${chalk.blue(channel)}`);
-    logger.message.info(`Content Type: ${chalk.gray(options.contentType || 'text')}`);
-    logger.message.info(`Encrypted: ${options.encrypted ? chalk.green('Yes') : chalk.yellow('No')}`);
-    
-    if (options.replyTo) {
-      logger.message.info(`Reply To: ${chalk.gray(options.replyTo)}`);
-    }
-    
-    logger.message.info('');
-    
-    // For now, always use simulation mode to ensure reliability
-    logger.message.info(chalk.yellow('📡 Using simulation mode (blockchain integration in development)'));
-    
-    // Simulation mode
-    await simulateSendMessage(channel, content, options);
-    
-  } catch (error) {
-    logger.message.error(chalk.red('❌ Failed to send message:'), error);
-    logger.message.info('');
-    logger.message.info(chalk.yellow('💡 Troubleshooting tips:'));
-    logger.message.info('  • Ensure the channel exists');
-    logger.message.info('  • Check message size limits (max 1KB)');
-    logger.message.info('  • Verify you have permission to post');
-    logger.message.info('  • Try creating the channel first');
-  }
-}
-
-async function simulateSendMessage(
-  channel: string,
-  content: string,
-  options: Partial<SendMessageOptions>
-): Promise<void> {
-  logger.message.info(chalk.blue('🔄 Processing message...'));
-  
-  // Simulate encryption if requested
-  if (options.encrypted) {
-    logger.message.info(chalk.blue('🔐 Encrypting message...'));
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-  
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Create message
-  const message: StoredMessage = {
-    id: generateMessageId(),
-    channelId: channel,
-    sender: generateMockPublicKey(),
-    content: options.encrypted ? `[Encrypted: ${btoa(content).substring(0, 20)}...]` : content,
-    timestamp: Date.now(),
-    contentType: options.contentType || 'text',
-    encrypted: options.encrypted || false,
-    replyTo: options.replyTo,
-    metadata: options.metadata,
-    signature: generateMockSignature()
-  };
-  
-  // Store message
-  const messages = messageStorage.get(channel) || [];
-  messages.push(message);
-  messageStorage.set(channel, messages);
-  
-  // Update channel info
-  if (!channelInfo.has(channel)) {
-    channelInfo.set(channel, {
-      name: channel,
-      participants: Math.floor(Math.random() * 50) + 2,
-      created: Date.now() - Math.floor(Math.random() * 86400000)
-    });
-  }
-  
-  // Display results
-  logger.message.info(chalk.green('✅ Message sent successfully (simulated)'));
-  logger.message.info('');
-  logger.message.info(chalk.yellow('📝 Message Details:'));
-  logger.message.info(`  Message ID: ${chalk.gray(message.id)}`);
-  logger.message.info(`  Signature: ${chalk.gray(message.signature)}`);
-  logger.message.info(`  Timestamp: ${chalk.gray(new Date(message.timestamp).toLocaleString())}`);
-  logger.message.info(`  Size: ${chalk.gray(content.length + ' bytes')}`);
-  
-  if (options.encrypted) {
-    logger.message.info(`  Encryption: ${chalk.green('AES-256-GCM')}`);
-    logger.message.info(`  Key Exchange: ${chalk.green('ECDH')}`);
-  }
-  
-  logger.message.info('');
-  showMessageStats(channel);
-}
-
-function showMessageStats(channel: string): void {
-  const messages = messageStorage.get(channel) || [];
-  const info = channelInfo.get(channel);
-  
-  logger.message.info(chalk.cyan('📊 Channel Statistics:'));
-  logger.message.info(`  Total Messages: ${chalk.blue(messages.length.toString())}`);
-  
-  if (info) {
-    logger.message.info(`  Participants: ${chalk.blue(info.participants.toString())}`);
-    logger.message.info(`  Created: ${chalk.gray(new Date(info.created).toLocaleDateString())}`);
-  }
-  
-  // Calculate message frequency
-  if (messages.length > 1) {
-    const recentMessages = messages.slice(-10);
-    const timeSpan = recentMessages[recentMessages.length - 1].timestamp - recentMessages[0].timestamp;
-    const frequency = timeSpan > 0 ? (recentMessages.length / (timeSpan / 60000)).toFixed(1) : '0';
-    logger.message.info(`  Recent Activity: ${chalk.green(frequency + ' msgs/min')}`);
-  }
-  
-  logger.message.info('');
-  logger.message.info(chalk.yellow('🌟 Quick Actions:'));
-  logger.message.info(`  List messages: ${chalk.gray(`ghostspeak message list ${channel}`)}`);
-  logger.message.info(`  Reply: ${chalk.gray(`ghostspeak message send ${channel} "reply text" --reply-to <msg-id>`)}`);
-  logger.message.info(`  Send encrypted: ${chalk.gray(`ghostspeak message send ${channel} "secret" --encrypted`)}`);
+/**
+ * Pagination parameters
+ */
+export interface PaginationParams {
+  limit?: number;
+  offset?: number;
+  pageSize?: number; // Alias for limit to support CLI compatibility
 }
 
 /**
@@ -192,174 +45,348 @@ export interface ListMessagesOptions extends PaginationParams {
   contentTypeFilter?: MessageContentType[];
 }
 
-/**
- * List messages in a channel using the real SDK MessageService
- * @param channelId - Channel PDA
- * @param options - Listing options (limit, etc.)
- */
+export async function sendMessage(
+  channel: string,
+  content: string,
+  options: SendMessageOptions = {}
+): Promise<void> {
+  const cliLogger = new Logger(isVerboseMode());
+
+  try {
+    // Validate inputs
+    const trimmedChannel = channel.trim();
+    const trimmedContent = content.trim();
+    
+    if (!trimmedChannel) {
+      logger.message.error(chalk.red('❌ Error: Channel ID cannot be empty'));
+      process.exit(1);
+    }
+    
+    if (!trimmedContent) {
+      logger.message.error(chalk.red('❌ Error: Message content cannot be empty'));
+      process.exit(1);
+    }
+    
+    if (trimmedContent.length > 1000) {
+      logger.message.error(chalk.red('❌ Error: Message content exceeds 1000 character limit'));
+      process.exit(1);
+    }
+    
+    cliLogger.general.info(chalk.cyan('💬 Sending Agent Message'));
+    cliLogger.general.info(chalk.gray('─'.repeat(50)));
+    cliLogger.general.info(`Channel: ${chalk.blue(trimmedChannel)}`);
+    cliLogger.general.info(`Content: ${chalk.gray(trimmedContent.length > 50 ? trimmedContent.substring(0, 50) + '...' : trimmedContent)}`);
+    
+    if (options.encrypted) {
+      cliLogger.general.info(`Encryption: ${chalk.green('Enabled')}`);
+    }
+    
+    cliLogger.general.info('');
+    
+    // Load SDK services and configuration
+    const { getGhostspeakSdk, getRpc, getRpcSubscriptions, getKeypair, getProgramId } = await import('../context-helpers.js');
+    const { withTimeout, TIMEOUTS, withTimeoutAndRetry } = await import('../utils/timeout.js');
+    const { getNetworkRetryConfig } = await import('../utils/network-diagnostics.js');
+    const { ProgressIndicator } = await import('../utils/prompts.js');
+    const { LazyModules } = await import('@ghostspeak/sdk');
+    const { address } = await import('@solana/addresses');
+    
+    const progress = new ProgressIndicator('Preparing message...');
+    progress.start();
+    
+    try {
+      // Initialize services
+      progress.update('Loading wallet and configuration...');
+      const [rpc, rpcSubscriptions, keypair] = await withTimeout(
+        Promise.all([
+          getRpc(),
+          getRpcSubscriptions(),
+          getKeypair()
+        ]),
+        TIMEOUTS.SDK_INIT,
+        'Service initialization'
+      );
+      
+      const programId = await getProgramId('message');
+      const programAddress = address(programId);
+      
+      // Load message service from SDK
+      progress.update('Initializing message service...');
+      const messageModule = await withTimeout(
+        LazyModules.message,
+        TIMEOUTS.SDK_INIT,
+        'Message service loading'
+      );
+      
+      const messageService = new messageModule.MessageService(
+        rpc,
+        rpcSubscriptions,
+        programAddress,
+        'confirmed'
+      );
+      
+      progress.update('Connecting to blockchain...');
+      
+      // Convert channel to address if it's not already
+      const channelAddress = address(trimmedChannel);
+      
+      // Determine message type from options
+      const messageType = options.contentType === 'json' ? 1 : 
+                         options.contentType === 'binary' ? 2 : 
+                         options.contentType === 'encrypted' ? 3 : 0;
+      
+      progress.update('Sending message to channel...');
+      
+      // Send message using SDK service with retry logic
+      const result = await withTimeoutAndRetry(
+        () => messageService.sendChannelMessage(
+          keypair,
+          channelAddress,
+          trimmedContent,
+          messageType
+        ),
+        'Message sending',
+        TIMEOUTS.TRANSACTION,
+        getNetworkRetryConfig({
+          maxRetries: 3,
+        }),
+        {
+          showRetryHint: true,
+          warningThreshold: 80
+        }
+      );
+      
+      progress.succeed('Message sent successfully');
+      
+      // Show success details
+      logger.message.info('');
+      logger.message.info(chalk.green('✅ Message Sent Successfully'));
+      logger.message.info(chalk.gray('─'.repeat(50)));
+      logger.message.info(`Message ID: ${chalk.cyan(result.messageId)}`);
+      logger.message.info(`Transaction: ${chalk.gray(result.signature)}`);
+      logger.message.info(`Channel: ${chalk.blue(trimmedChannel)}`);
+      logger.message.info('');
+      
+      // Show optional metadata if provided
+      if (options.metadata && Object.keys(options.metadata).length > 0) {
+        logger.message.info(chalk.yellow('Metadata:'));
+        Object.entries(options.metadata).forEach(([key, value]) => {
+          logger.message.info(`  ${key}: ${chalk.gray(JSON.stringify(value))}`);
+        });
+        logger.message.info('');
+      }
+      
+    } catch (innerError) {
+      progress.fail('Failed to send message');
+      throw innerError;
+    }
+    
+  } catch (error) {
+    logger.message.error(chalk.red('❌ Failed to send message:'), error);
+    logger.message.info('');
+    logger.message.info(chalk.yellow('💡 Troubleshooting:'));
+    logger.message.info(chalk.gray('   • Ensure blockchain connection is available'));
+    logger.message.info(chalk.gray('   • Check that the channel exists'));
+    logger.message.info(chalk.gray('   • Verify wallet has sufficient SOL for transaction fees'));
+    logger.message.info(chalk.gray('   • Run "ghostspeak doctor" to diagnose connection issues'));
+    
+    // Exit with error code
+    process.exit(1);
+  }
+}
+
 export async function listMessages(
   channelId: string,
   options?: ListMessagesOptions
 ): Promise<void> {
+  const cliLogger = new Logger(isVerboseMode());
+
   try {
+    // Validate channel ID
+    const trimmedChannelId = channelId.trim();
+    
+    if (!trimmedChannelId) {
+      logger.message.error(chalk.red('❌ Error: Channel ID cannot be empty'));
+      process.exit(1);
+    }
+    
     logger.message.info(chalk.cyan('📋 Listing Messages'));
     logger.message.info(chalk.gray('─'.repeat(50)));
-    logger.message.info(`Channel: ${chalk.blue(channelId)}`);
+    logger.message.info(`Channel: ${chalk.blue(trimmedChannelId)}`);
     
-    // For now, always use simulation mode to ensure reliability
-    logger.message.info(chalk.yellow('📋 Using simulation mode (blockchain integration in development)'));
+    // Show filter options if provided
+    if (options) {
+      const displayLimit = options.limit || options.pageSize;
+      if (displayLimit) {
+        logger.message.info(`Limit: ${chalk.yellow(displayLimit)}`);
+      }
+      if (options.fromTimestamp) {
+        logger.message.info(`From: ${chalk.yellow(new Date(options.fromTimestamp).toLocaleString())}`);
+      }
+      if (options.toTimestamp) {
+        logger.message.info(`To: ${chalk.yellow(new Date(options.toTimestamp).toLocaleString())}`);
+      }
+      if (options.contentTypeFilter && options.contentTypeFilter.length > 0) {
+        logger.message.info(`Types: ${chalk.yellow(options.contentTypeFilter.join(', '))}`);
+      }
+    }
     
-    // Simulation mode
-    await simulateListMessages(channelId, options);
+    logger.message.info('');
+    
+    // Load SDK services and configuration
+    const { getRpc, getRpcSubscriptions, getProgramId } = await import('../context-helpers.js');
+    const { withTimeout, TIMEOUTS } = await import('../utils/timeout.js');
+    const { ProgressIndicator, createTable } = await import('../utils/prompts.js');
+    const { LazyModules } = await import('@ghostspeak/sdk');
+    const { address } = await import('@solana/addresses');
+    
+    const progress = new ProgressIndicator('Loading messages...');
+    progress.start();
+    
+    try {
+      // Initialize services
+      progress.update('Connecting to blockchain...');
+      const [rpc, rpcSubscriptions] = await withTimeout(
+        Promise.all([
+          getRpc(),
+          getRpcSubscriptions()
+        ]),
+        TIMEOUTS.SDK_INIT,
+        'Service initialization'
+      );
+      
+      const programId = await getProgramId('message');
+      const programAddress = address(programId);
+      
+      // Load message service from SDK
+      progress.update('Initializing message service...');
+      const messageModule = await withTimeout(
+        LazyModules.message,
+        TIMEOUTS.SDK_INIT,
+        'Message service loading'
+      );
+      
+      const messageService = new messageModule.MessageService(
+        rpc,
+        rpcSubscriptions,
+        programAddress,
+        'confirmed'
+      );
+      
+      // Convert channel ID to address
+      const channelAddress = address(trimmedChannelId);
+      
+      progress.update('Fetching messages from channel...');
+      
+      // Get messages from channel with limit
+      const limit = options?.limit || options?.pageSize || 20;
+      const messages = await withTimeout(
+        messageService.getChannelMessages(channelAddress, limit),
+        TIMEOUTS.RPC_CALL,
+        'Message fetching'
+      );
+      
+      progress.succeed(`Found ${messages.length} messages`);
+      
+      // Display messages
+      if (messages.length === 0) {
+        logger.message.info(chalk.yellow('No messages found in this channel'));
+        logger.message.info('');
+        return;
+      }
+      
+      // Apply filters if provided
+      let filteredMessages = messages;
+      
+      if (options?.fromTimestamp) {
+        filteredMessages = filteredMessages.filter(msg => msg.timestamp >= options.fromTimestamp!);
+      }
+      
+      if (options?.toTimestamp) {
+        filteredMessages = filteredMessages.filter(msg => msg.timestamp <= options.toTimestamp!);
+      }
+      
+      if (options?.senderFilter) {
+        const senderAddress = options.senderFilter.toString();
+        filteredMessages = filteredMessages.filter(msg => msg.sender === senderAddress);
+      }
+      
+      if (options?.contentTypeFilter && options.contentTypeFilter.length > 0) {
+        const typeMap: Record<MessageContentType, number> = {
+          'text': 0,
+          'json': 1,
+          'binary': 2,
+          'encrypted': 3
+        };
+        const filterTypes = options.contentTypeFilter.map(t => typeMap[t]);
+        filteredMessages = filteredMessages.filter(msg => filterTypes.includes(msg.messageType));
+      }
+      
+      // Create table for display
+      const table = createTable({
+        head: ['Time', 'Sender', 'Type', 'Content', 'Status'],
+        colWidths: [20, 15, 10, 40, 10],
+        wordWrap: true
+      });
+      
+      // Format message type
+      const getMessageTypeName = (type: number): string => {
+        switch (type) {
+          case 0: return 'Text';
+          case 1: return 'JSON';
+          case 2: return 'Binary';
+          case 3: return 'Encrypted';
+          case 4: return 'System';
+          default: return 'Unknown';
+        }
+      };
+      
+      // Add messages to table
+      filteredMessages.forEach((msg) => {
+        const time = new Date(msg.timestamp).toLocaleString();
+        const sender = `${msg.sender.slice(0, 4)}...${msg.sender.slice(-4)}`;
+        const type = getMessageTypeName(msg.messageType);
+        const content = msg.encrypted ? 
+          chalk.gray('[Encrypted]') : 
+          msg.content.length > 40 ? 
+            msg.content.slice(0, 37) + '...' : 
+            msg.content;
+        const status = msg.edited ? chalk.yellow('Edited') : chalk.green('Original');
+        
+        table.push([time, sender, type, content, status]);
+      });
+      
+      logger.message.info('');
+      console.log(table.toString());
+      logger.message.info('');
+      
+      // Show summary
+      logger.message.info(chalk.gray('─'.repeat(50)));
+      logger.message.info(`Total messages: ${chalk.cyan(messages.length)}`);
+      if (filteredMessages.length < messages.length) {
+        logger.message.info(`Filtered: ${chalk.yellow(filteredMessages.length)}`);
+      }
+      logger.message.info('');
+      
+      // Show tips
+      if (messages.length === limit) {
+        logger.message.info(chalk.yellow('💡 Tip: Use --limit to see more messages'));
+      }
+      
+    } catch (innerError) {
+      progress.fail('Failed to fetch messages');
+      throw innerError;
+    }
     
   } catch (error) {
     logger.message.error(chalk.red('❌ Failed to list messages:'), error);
+    logger.message.info('');
+    logger.message.info(chalk.yellow('💡 Troubleshooting:'));
+    logger.message.info(chalk.gray('   • Ensure the channel ID is valid'));
+    logger.message.info(chalk.gray('   • Check blockchain connection'));
+    logger.message.info(chalk.gray('   • Run "ghostspeak doctor" to diagnose issues'));
+    
+    // Exit with error code
+    process.exit(1);
   }
 }
-
-async function simulateListMessages(
-  channelId: string,
-  options?: ListMessagesOptions
-): Promise<void> {
-  logger.message.info(chalk.blue('🔄 Fetching messages...'));
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  let messages = messageStorage.get(channelId) || [];
-  
-  // Generate some sample messages if none exist
-  if (messages.length === 0) {
-    const sampleMessages = [
-      { content: 'Welcome to the channel!', time: -3600000 },
-      { content: 'Hey everyone, excited to be here', time: -3000000 },
-      { content: 'Has anyone tried the new escrow feature?', time: -2400000 },
-      { content: 'Yes! It works great for secure transactions', time: -1800000 },
-      { content: 'The MEV protection is really impressive', time: -900000 },
-      { content: 'Agreed, saved me 0.05 SOL yesterday', time: -300000 }
-    ];
-    
-    messages = sampleMessages.map(msg => ({
-      id: generateMessageId(),
-      channelId: channelId,
-      sender: generateMockPublicKey(),
-      content: msg.content,
-      timestamp: Date.now() + msg.time,
-      contentType: 'text' as MessageContentType,
-      encrypted: false,
-      signature: generateMockSignature()
-    }));
-    
-    messageStorage.set(channelId, messages);
-  }
-  
-  // Apply filters
-  let filteredMessages = [...messages];
-  
-  if (options?.fromTimestamp) {
-    filteredMessages = filteredMessages.filter(m => m.timestamp >= options.fromTimestamp!);
-  }
-  
-  if (options?.toTimestamp) {
-    filteredMessages = filteredMessages.filter(m => m.timestamp <= options.toTimestamp!);
-  }
-  
-  if (options?.contentTypeFilter) {
-    filteredMessages = filteredMessages.filter(m => 
-      options.contentTypeFilter!.includes(m.contentType)
-    );
-  }
-  
-  // Apply pagination
-  const pageSize = options?.pageSize || 20;
-  const totalMessages = filteredMessages.length;
-  filteredMessages = filteredMessages.slice(-pageSize);
-  
-  logger.message.info('');
-  
-  if (filteredMessages.length === 0) {
-    logger.message.info(chalk.yellow('No messages found in this channel'));
-    logger.message.info('Send a message with:');
-    logger.message.info(chalk.gray(`  ghostspeak message send ${channelId} "Hello!"`));
-    return;
-  }
-  
-  logger.message.info(chalk.yellow(`💬 Recent Messages (${filteredMessages.length} of ${totalMessages} total):`));
-  logger.message.info('');
-  
-  filteredMessages.forEach((msg, index) => {
-    const time = new Date(msg.timestamp).toLocaleTimeString();
-    const sender = msg.sender.substring(0, 8) + '...';
-    const isEncrypted = msg.encrypted ? chalk.green('🔒') : '';
-    const replyIcon = msg.replyTo ? chalk.gray('↳') : '';
-    
-    logger.message.info(`${chalk.gray(time)} ${chalk.blue(sender)}: ${replyIcon}${isEncrypted} ${msg.content}`);
-    
-    if (index < filteredMessages.length - 1) {
-      logger.message.info('');
-    }
-  });
-  
-  logger.message.info('');
-  logger.message.info(chalk.gray('─'.repeat(50)));
-  
-  // Show channel info
-  const info = channelInfo.get(channelId);
-  if (info) {
-    logger.message.info(chalk.cyan('📡 Channel Info:'));
-    logger.message.info(`  Participants: ${chalk.blue(info.participants.toString())}`);
-    logger.message.info(`  Created: ${chalk.gray(new Date(info.created).toLocaleDateString())}`);
-    
-    // Calculate message stats
-    const encryptedCount = messages.filter(m => m.encrypted).length;
-    const replyCount = messages.filter(m => m.replyTo).length;
-    
-    logger.message.info(`  Encrypted Messages: ${chalk.green(encryptedCount.toString())}`);
-    logger.message.info(`  Replies: ${chalk.blue(replyCount.toString())}`);
-  }
-  
-  logger.message.info('');
-  logger.message.info(chalk.yellow('🌟 Actions:'));
-  logger.message.info(`  Load more: ${chalk.gray(`ghostspeak message list ${channelId} --limit 50`)}`);
-  logger.message.info(`  Filter by date: ${chalk.gray(`ghostspeak message list ${channelId} --from "2024-01-01"`)}`);
-  logger.message.info(`  Export messages: ${chalk.gray(`ghostspeak message export ${channelId}`)}`);
-}
-
-function displayMessages(messages: Message[], channelId: string): void {
-  if (!messages || messages.length === 0) {
-    logger.message.info(chalk.yellow('No messages found'));
-    return;
-  }
-  
-  logger.message.info(chalk.yellow(`💬 Found ${messages.length} messages`));
-  logger.message.info('');
-  
-  messages.forEach((msg: any) => {
-    const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString();
-    const sender = (msg.sender || 'Unknown').toString().substring(0, 8) + '...';
-    logger.message.info(`${chalk.gray(time)} ${chalk.blue(sender)}: ${msg.content || msg.data || '[No content]'}`);
-  });
-}
-
-// Helper functions
-function generateMessageId(): string {
-  return 'MSG-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 5);
-}
-
-function generateMockPublicKey(): string {
-  const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  let key = '';
-  for (let i = 0; i < 44; i++) {
-    key += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return key;
-}
-
-function generateMockSignature(): string {
-  const chars = '0123456789ABCDEFabcdef';
-  let sig = '';
-  for (let i = 0; i < 88; i++) {
-    sig += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return sig;
-}
-
-// TODO: Add more message operations as SDK expands

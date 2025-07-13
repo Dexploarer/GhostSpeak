@@ -24,7 +24,7 @@ describe('GhostSpeak Core Protocol', () => {
 
   beforeAll(async () => {
     // Initialize client with correct program ID
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate test keypairs
     agentSigner = await generateKeyPairSigner();
@@ -51,7 +51,7 @@ describe('GhostSpeak Core Protocol', () => {
   test('Core Protocol Configuration', async () => {
     // Verify program ID consistency
     const programId = client.getProgramId();
-    expect(programId).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    expect(programId).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     console.log('✅ Program ID verified:', programId);
 
     // Verify commitment level

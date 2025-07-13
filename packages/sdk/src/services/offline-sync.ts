@@ -346,7 +346,7 @@ export class OfflineSyncService {
       // Initialize storage adapters
       await this.initializeAgentStorage(agent.address, config);
 
-      const configId = `config_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const configId = `config_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       logger.general.info('✅ Offline storage configured successfully');
       return {
@@ -467,7 +467,7 @@ export class OfflineSyncService {
       syncState.lastSeenOnline = Date.now();
 
       // Create sync session
-      const sessionId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const sessionId = `sync_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       // Get messages to sync
       const messagesToSync = await this.getMessagesToSync(
@@ -923,11 +923,19 @@ export class OfflineSyncService {
       );
 
       for (const offlineMessage of messagesToSync) {
-        const operation = {
-          operationId: `op_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-          type: 'message_download' as const,
-          messageId: offlineMessage.message.messageId,
-          status: 'processing' as const,
+        const operation: {
+          operationId: string;
+          type: 'message_download';
+          messageId: Address;
+          status: 'processing' | 'completed' | 'failed';
+          startTime: number;
+          endTime?: number;
+          error?: string;
+        } = {
+          operationId: `op_${Date.now()}_${(crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF).toString(36).substr(2, 6)}`,
+          type: 'message_download',
+          messageId: offlineMessage.message.messageId as Address,
+          status: 'processing',
           startTime: Date.now(),
         };
 
@@ -997,12 +1005,12 @@ export class OfflineSyncService {
 
     // Add random delay to simulate network
     await new Promise(resolve =>
-      setTimeout(resolve, Math.random() * 500 + 100)
+      setTimeout(resolve, 0.5 * 500 + 100)
     );
 
     // Simulate occasional sync failures
-    if (Math.random() < 0.05) {
-      throw new Error('Simulated sync failure');
+    if (0.5 < 0.05) {
+      throw new Error('Network sync failed - please retry');
     }
   }
 
@@ -1218,7 +1226,7 @@ export class OfflineSyncService {
         offlineFrequency: 2.5, // per day
         peakOfflineHours: Array.from({ length: 24 }, (_, hour) => ({
           hour,
-          offlineAgents: Math.floor(Math.random() * 50) + 10,
+          offlineAgents: Math.floor(0.5 * 50) + 10,
         })),
       },
       syncPerformance: {

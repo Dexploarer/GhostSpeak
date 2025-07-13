@@ -1,6 +1,6 @@
-# PodAI Rust SDK Examples
+# GhostSpeak Rust SDK Examples
 
-This document provides detailed explanations of all examples included with the PodAI Rust SDK.
+This document provides detailed explanations of all examples included with the GhostSpeak Rust SDK.
 
 ## Overview
 
@@ -21,8 +21,8 @@ The SDK includes 4 comprehensive examples that demonstrate different aspects of 
 
 ```rust
 // 1. Client Setup with Error Handling
-let config = PodAIConfig::devnet();
-let client = Arc::new(PodAIClient::new(config).await?);
+let config = GhostSpeakConfig::devnet();
+let client = Arc::new(GhostSpeakClient::new(config).await?);
 
 // 2. Service Creation
 let agent_service = AgentService::new(client.clone());
@@ -189,7 +189,7 @@ cargo run --example performance_demo
 ### Expected Output
 
 ```
-🚀 PodAI Rust SDK Performance Demo
+🚀 GhostSpeak Rust SDK Performance Demo
 =================================
 
 🔍 Testing PDA generation performance...
@@ -259,7 +259,7 @@ cargo run --example quick_validation
 ### Expected Output
 
 ```
-🔍 PodAI Rust SDK - Quick Validation
+🔍 GhostSpeak Rust SDK - Quick Validation
 ====================================
 
 ✅ Agent account creation validation
@@ -399,7 +399,7 @@ Error: Network { message: "Connection refused" }
 #### 2. Missing Dependencies
 
 ```
-error[E0432]: unresolved import `podai_sdk`
+error[E0432]: unresolved import `ghostspeak_sdk`
 ```
 
 **Solution**: Run `cargo build` first to download dependencies.
@@ -426,17 +426,17 @@ RUST_LOG=debug cargo run --example complete_agent_workflow
 
 ```rust
 // Copy patterns from examples into your code
-use podai_sdk::{
-    client::{PodAIClient, PodAIConfig},
+use ghostspeak_sdk::{
+    client::{GhostSpeakClient, GhostSpeakConfig},
     services::agent::AgentService,
     types::agent::AgentCapabilities,
-    errors::PodAIResult,
+    errors::GhostSpeakResult,
 };
 
 // Follow the client setup pattern from complete_agent_workflow
-async fn setup_my_agent() -> PodAIResult<()> {
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+async fn setup_my_agent() -> GhostSpeakResult<()> {
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     let agent_service = AgentService::new(client);
     
     // Your custom logic here

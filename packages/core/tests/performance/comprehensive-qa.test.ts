@@ -2207,7 +2207,7 @@ function generateComprehensiveReport() {
   console.log('='.repeat(100));
   console.log(`Generated: ${new Date().toISOString()}`);
   console.log(`Protocol: GhostSpeak AI Agent Commerce Protocol`);
-  console.log(`Program ID: 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP`);
+  console.log(`Program ID: 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK`);
   
   // Category summaries
   const categories = [

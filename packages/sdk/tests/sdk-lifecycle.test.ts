@@ -32,7 +32,7 @@ import {
 
 // Test configuration
 const TEST_CLUSTER = 'http://localhost:8899';
-const PROGRAM_ID = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
+const PROGRAM_ID = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK';
 
 describe('SDK Lifecycle Tests', () => {
   let rpc: any;

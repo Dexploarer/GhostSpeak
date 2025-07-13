@@ -1,9 +1,13 @@
 /**
- * Optimized SDK Entry Point with Code Splitting and Tree Shaking
- * Provides the best possible bundle size for production applications
+ * Optimized Core SDK Entry Point
+ * Tree-shakeable, minimal bundle for production use
+ * Target: <500KB
  */
 
-// Core types (always included)
+import type { Address } from '@solana/addresses';
+import type { Rpc } from '@solana/rpc';
+
+// Core Solana types only (external dependencies)
 export type { Address } from '@solana/addresses';
 export type { Rpc } from '@solana/rpc';
 export type { TransactionSigner } from '@solana/signers';
@@ -69,112 +73,112 @@ export const LazyModules = {
    * Lazy load agent-related functionality
    */
   get agent() {
-    return import('./services/agent').then(m => m.default || m);
+    return import('./services/agent');
   },
 
   /**
    * Lazy load channel-related functionality
    */
   get channel() {
-    return import('./services/channel').then(m => m.default || m);
+    return import('./services/channel');
   },
 
   /**
    * Lazy load messaging functionality
    */
   get message() {
-    return import('./services/message').then(m => m.default || m);
+    return import('./services/message');
   },
 
   /**
    * Lazy load escrow functionality
    */
   get escrow() {
-    return import('./services/escrow').then(m => m.default || m);
+    return import('./services/escrow');
   },
 
   /**
    * Lazy load marketplace functionality
    */
   get marketplace() {
-    return import('./services/marketplace').then(m => m.default || m);
+    return import('./services/marketplace');
   },
 
   /**
    * Lazy load analytics functionality
    */
   get analytics() {
-    return import('./services/analytics').then(m => m.default || m);
+    return import('./services/analytics');
   },
 
   /**
    * Lazy load reputation functionality
    */
   get reputation() {
-    return import('./services/reputation').then(m => m.default || m);
+    return import('./services/reputation');
   },
 
   /**
    * Lazy load compression functionality
    */
   get compression() {
-    return import('./services/compression').then(m => m.default || m);
+    return import('./services/compression');
   },
 
   /**
    * Lazy load confidential transfers
    */
   get confidentialTransfer() {
-    return import('./services/confidential-transfer').then(m => m.default || m);
+    return import('./services/confidential-transfer');
   },
 
   /**
    * Lazy load SPL Token 2022 functionality
    */
   get splToken2022() {
-    return import('./services/spl-token-2022').then(m => m.default || m);
+    return import('./services/spl-token-2022');
   },
 
   /**
    * Lazy load ZK compression
    */
   get zkCompression() {
-    return import('./services/zk-compression').then(m => m.default || m);
+    return import('./services/zk-compression');
   },
 
   /**
    * Lazy load compressed NFTs
    */
   get compressedNfts() {
-    return import('./services/compressed-nfts').then(m => m.default || m);
+    return import('./services/compressed-nfts');
   },
 
   /**
    * Lazy load MEV protection
    */
   get mevProtection() {
-    return import('./services/mev-protection').then(m => m.default || m);
+    return import('./services/mev-protection');
   },
 
   /**
    * Lazy load cross-platform bridge
    */
   get crossPlatformBridge() {
-    return import('./services/cross-platform-bridge').then(m => m.default || m);
+    return import('./services/cross-platform-bridge');
   },
 
   /**
    * Lazy load real-time communication
    */
   get realtimeCommunication() {
-    return import('./services/realtime-communication').then(m => m.default || m);
+    return import('./services/realtime-communication');
   },
 
   /**
    * Lazy load offline sync
    */
   get offlineSync() {
-    return import('./services/offline-sync').then(m => m.default || m);
+    return import('./services/offline-sync');
   },
 
   /**
@@ -294,14 +298,14 @@ export class OptimizedClient {
   /**
    * Load module on demand
    */
-  async loadModule<T>(name: keyof typeof LazyModules): Promise<T> {
+  async loadModule<T = any>(name: keyof typeof LazyModules): Promise<T> {
     if (this.loadedModules.has(name)) {
-      return this.loadedModules.get(name);
+      return this.loadedModules.get(name) as T;
     }
 
     const module = await LazyModules[name];
     this.loadedModules.set(name, module);
-    return module;
+    return module as T;
   }
 
   /**

@@ -922,7 +922,7 @@ export const CORE_BENCHMARK_SUITES: BenchmarkSuite[] = [
 export class RegressionDetector {
   private runner: BenchmarkRunner;
   private alertThreshold: number;
-  private monitoringInterval?: number;
+  private monitoringInterval?: NodeJS.Timeout;
 
   constructor(config: Partial<BenchmarkConfig> = {}, alertThreshold = 15) {
     this.runner = new BenchmarkRunner(config);

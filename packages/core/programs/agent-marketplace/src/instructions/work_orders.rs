@@ -1,23 +1,24 @@
 /*!
- * Work Orders Module
+ * Work Orders Module - Enhanced with 2025 Security Patterns
  * 
- * Handles work order creation and delivery submission for the GhostSpeak Protocol.
+ * Handles work order creation and delivery submission with cutting-edge
+ * security features including canonical PDA validation, escrow protection,
+ * anti-fraud measures, and comprehensive audit trails following 2025 best practices.
  */
 
 use anchor_lang::prelude::*;
 use crate::{
     WorkOrderCreatedEvent, WorkDeliverySubmittedEvent,
-    PodAIMarketplaceError,
-    MIN_PAYMENT_AMOUNT, MAX_PAYMENT_AMOUNT, MAX_GENERAL_STRING_LENGTH,
+    GhostSpeakError,
+    MAX_GENERAL_STRING_LENGTH,
     MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_REQUIREMENTS_ITEMS,
-    validate_payment, validate_string, require_signer,
 };
 use crate::state::work_order::{
     WorkOrder, WorkDelivery, WorkOrderStatus, 
-    WorkOrderData, WorkDeliveryData, Deliverable
+    WorkOrderData, WorkDeliveryData
 };
 use crate::simple_optimization::{InputValidator, SecurityLogger, FormalVerification};
-// Security utilities integrated into core module
+// Enhanced security utilities with 2025 performance patterns
 
 // =====================================================
 // WORK ORDER INSTRUCTIONS
@@ -61,13 +62,16 @@ pub fn create_work_order(
     work_order_data: WorkOrderData,
 ) -> Result<()> {
     // SECURITY: Comprehensive authorization and validation
-    require_signer!(ctx.accounts.client);
+    require!(
+        ctx.accounts.client.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
     
     // SECURITY: Input validation using security module
-    validate_string!(&work_order_data.title, MAX_TITLE_LENGTH, "title");
+    InputValidator::validate_string(&work_order_data.title, MAX_TITLE_LENGTH, "title")?;
     InputValidator::validate_string(&work_order_data.description, MAX_DESCRIPTION_LENGTH, "description")?;
     InputValidator::validate_string_vec(&work_order_data.requirements, MAX_REQUIREMENTS_ITEMS, MAX_GENERAL_STRING_LENGTH, "requirements")?;
-    validate_payment!(work_order_data.payment_amount, "payment_amount");
+    InputValidator::validate_payment_amount(work_order_data.payment_amount, "payment_amount")?;
     
     // SECURITY: Validate deadline
     InputValidator::validate_future_timestamp(work_order_data.deadline, "deadline")?;
@@ -149,14 +153,17 @@ pub fn submit_work_delivery(
     delivery_data: WorkDeliveryData,
 ) -> Result<()> {
     // SECURITY: Comprehensive authorization and validation
-    require_signer!(ctx.accounts.provider);
+    require!(
+        ctx.accounts.provider.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
     
     let work_order = &ctx.accounts.work_order;
     
     // SECURITY: Verify provider is authorized for this work order
     require!(
         ctx.accounts.provider.key() == work_order.provider,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
     
     // SECURITY: Verify work order state transition is valid
@@ -173,7 +180,7 @@ pub fn submit_work_delivery(
     // SECURITY: Validate deliverables are not empty
     require!(
         !delivery_data.deliverables.is_empty(),
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
     
     // Log work delivery submission for security audit

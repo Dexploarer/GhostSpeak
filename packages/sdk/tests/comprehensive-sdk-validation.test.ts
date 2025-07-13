@@ -423,7 +423,7 @@ describe('Comprehensive SDK Validation Suite', () => {
 
   describe('9. SDK Constants and Configuration', () => {
     it('should export correct constants', () => {
-      expect(PODAI_PROGRAM_ID).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(PODAI_PROGRAM_ID).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(DEVNET_RPC).toBe('https://api.devnet.solana.com');
       expect(VERSION).toBe('2.0.4');
       expect(SDK_NAME).toBe('ghostspeak-sdk');

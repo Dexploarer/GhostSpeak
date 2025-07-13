@@ -5,22 +5,21 @@
  * integration with GhostSpeak Protocol in React applications.
  */
 
+// Core context and providers
 export * from './context/GhostSpeakProvider';
+
+// Hooks
 export * from './hooks/useGhostSpeak';
 export * from './hooks/useAgent';
-export * from './hooks/useMessage';
-export * from './hooks/useEscrow';
-export * from './hooks/useMarketplace';
-export * from './hooks/useWallet';
+
+// Components
 export * from './components/AgentCard';
-export * from './components/MessageList';
-export * from './components/ServiceCard';
-export * from './components/WalletButton';
-export * from './components/StatusIndicator';
-export * from './components/Marketplace';
-export * from './components/MarketplaceListingCard';
-export * from './components/MarketplaceFilters';
-export * from './components/ShoppingCart';
-export * from './components/OrderHistory';
-export * from './types';
-export * from './utils/formatting';
+
+// Re-export types from SDK
+export type {
+  Agent,
+  CreateAgentParams,
+  Message,
+  Escrow,
+  MarketplaceListing
+} from '@ghostspeak/sdk';

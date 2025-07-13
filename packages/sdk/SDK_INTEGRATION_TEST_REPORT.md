@@ -10,7 +10,7 @@ This report documents the comprehensive testing of the TypeScript SDK integratio
 - **Status**: Mostly Passing (1 issue identified)
 - **Tests**: 3 total, 2 passing, 1 failing
 - **Issues**:
-  - **Program ID Inconsistency**: The main SDK index exports program ID `4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385` while generated code uses canonical ID `4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP`
+  - **Program ID Inconsistency**: The main SDK index exports program ID `4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385` while generated code uses canonical ID `367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK`
 - **Passing**: Utility functions (lamportsToSol, solToLamports), RPC endpoint constants
 
 ### ✅ 2. Client Initialization  
@@ -113,7 +113,7 @@ This report documents the comprehensive testing of the TypeScript SDK integratio
 ### 1. Program ID Consistency (HIGH PRIORITY)
 **Problem**: Multiple program IDs in use across the codebase
 - Main SDK: `4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385`
-- Generated code: `4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP`
+- Generated code: `367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK`
 - Configuration: Mixed values
 
 **Impact**: SDK will connect to wrong program, causing all transactions to fail
@@ -154,7 +154,7 @@ This report documents the comprehensive testing of the TypeScript SDK integratio
 3. **Verify Deployment Status**
    ```bash
    # Confirm which program ID is actually deployed
-   solana program show 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP --url devnet
+   solana program show 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK --url devnet
    ```
 
 ### Developer Experience Improvements

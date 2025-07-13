@@ -338,7 +338,7 @@ class CommunityManager {
 
     contribution.status = status;
     contribution.reviewer = reviewer;
-    contribution.reviewComments = comments;
+    contribution.reviewComments = comments || '';
     
     if (rewardAmount !== undefined) {
       contribution.rewardAmount = rewardAmount;
@@ -480,7 +480,7 @@ class CommunityManager {
       choice,
       power,
       timestamp: now,
-      reason
+      ...(reason && { reason })
     });
 
     // Check if proposal should be executed

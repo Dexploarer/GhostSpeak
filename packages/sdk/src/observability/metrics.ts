@@ -312,8 +312,8 @@ export class PerformanceMetrics {
       metric.value,
       { 
         component: metric.component,
-        operation: metric.operation,
-        unit: metric.unit,
+        operation: metric.operation || '',
+        unit: metric.unit || '',
         ...metric.labels
       },
       ['performance']
@@ -327,7 +327,7 @@ export class PerformanceMetrics {
           value,
           { 
             component: metric.component,
-            operation: metric.operation,
+            operation: metric.operation || '',
             ...metric.labels
           },
           ['percentile']
@@ -393,8 +393,8 @@ export class BusinessMetrics {
       metric.name,
       metric.value,
       {
-        unit: metric.unit,
-        period: metric.period,
+        unit: metric.unit || '',
+        period: metric.period || '',
         ...metric.dimensions,
       },
       ['business']

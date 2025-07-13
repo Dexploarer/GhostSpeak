@@ -216,7 +216,7 @@ export class PerformanceMonitor {
   private dashboardWidgets: DashboardWidget[] = [];
   private collectors: Array<() => Partial<PerformanceMetrics>> = [];
   private readonly config: MonitoringConfig;
-  private monitoringInterval?: number;
+  private monitoringInterval?: NodeJS.Timeout;
   private responseTimes: number[] = [];
   private lastAlertTime = new Map<string, number>();
 
@@ -609,6 +609,7 @@ export class PerformanceMonitor {
 
       return {
         responseTime: {
+          current: sorted.length > 0 ? sorted[sorted.length - 1] : 0,
           average: avg,
           p50,
           p95,
@@ -635,6 +636,7 @@ export class PerformanceMonitor {
           requestsPerSecond: recentRequests,
           requestsPerMinute: minuteRequests,
           requestsPerHour: hourRequests,
+          totalRequests: 0, // This would be tracked separately
         },
       };
     });
@@ -647,6 +649,9 @@ export class PerformanceMonitor {
       return {
         errors: {
           rate: errorRate,
+          count: this.metrics.errors.count || 0,
+          types: this.metrics.errors.types || new Map(),
+          criticalErrors: this.metrics.errors.criticalErrors || 0,
         },
       };
     });
@@ -660,6 +665,7 @@ export class PerformanceMonitor {
         health: {
           score: healthScore,
           status,
+          uptime: Date.now() - (this.metrics.health.uptime || Date.now()),
           lastHealthCheck: Date.now(),
         },
       };
@@ -860,7 +866,7 @@ export class PerformanceMonitor {
     }
   }
 
-  private createAlert(type: string, alert: Omit<PerformanceAlert, 'id' | 'timestamp' | 'resolved' | 'context'>): void {
+  private createAlert(type: string, alert: Omit<PerformanceAlert, 'id' | 'timestamp' | 'resolved' | 'context' | 'type'>): void {
     // Check cooldown period
     const lastAlert = this.lastAlertTime.get(type);
     const now = Date.now();

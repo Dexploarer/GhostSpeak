@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { MarketplaceFilters as IMarketplaceFilters, ServiceListingStatus } from '@podai/sdk';
+import { MarketplaceFilters as IMarketplaceFilters, ServiceListingStatus } from '@ghostspeak/sdk';
 
 export interface MarketplaceFiltersProps {
   filters: IMarketplaceFilters;

@@ -15,13 +15,13 @@ skip-lint = false
 
 # Enhanced program configurations for different clusters
 [programs.localnet]
-podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"
+ghostspeak_marketplace = "367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK"
 
 [programs.devnet]
-podai = "4ufTpHynyoWzSL3d2EL4PU1hSra1tKvQrQiBwJ82x385"
+ghostspeak_marketplace = "367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK"
 
 [programs.mainnet]
-podai = "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"  # Update with actual mainnet address
+ghostspeak_marketplace = "367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK"  # Will be updated for mainnet deployment
 
 # Registry configuration for Anchor programs
 [registry]

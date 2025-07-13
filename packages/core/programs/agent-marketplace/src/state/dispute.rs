@@ -5,7 +5,31 @@
  */
 
 use anchor_lang::prelude::*;
-use crate::{MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError};
+use crate::{MAX_GENERAL_STRING_LENGTH, GhostSpeakError};
+
+/// Arbitrator registry for managing authorized dispute arbitrators
+#[account]
+pub struct ArbitratorRegistry {
+    pub authority: Pubkey,
+    pub authorized_arbitrators: Vec<Pubkey>,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+impl ArbitratorRegistry {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // authority
+        (4 + 32 * 10) + // authorized_arbitrators (max 10)
+        8 + // created_at
+        8 + // updated_at
+        1 + // bump
+        256; // padding
+        
+    pub fn is_authorized_arbitrator(&self, arbitrator: Pubkey) -> bool {
+        self.authorized_arbitrators.contains(&arbitrator)
+    }
+}
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DisputeStatus {
@@ -112,7 +136,7 @@ impl DisputeCase {
     }
 
     pub fn add_evidence(&mut self, evidence: DisputeEvidence) -> Result<()> {
-        require!(self.evidence.len() < 10, PodAIMarketplaceError::TooManyEvidenceItems);
+        require!(self.evidence.len() < 10, GhostSpeakError::TooManyEvidenceItems);
         self.evidence.push(evidence);
         Ok(())
     }

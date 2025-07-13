@@ -1,0 +1,145 @@
+{
+  "name": "@ghostspeak/elizaos",
+  "version": "1.0.0",
+  "description": "ElizaOS integration for GhostSpeak Protocol - Autonomous AI agent commerce on Solana",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "elizaos",
+    "ghostspeak",
+    "solana",
+    "blockchain",
+    "ai-agents",
+    "web3",
+    "plugin",
+    "autonomous-agents",
+    "marketplace",
+    "defi"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghostspeak/ghostspeak.git",
+    "directory": "packages/integrations/elizaos"
+  },
+  "license": "MIT",
+  "agentConfig": {
+    "pluginType": "elizaos:plugin:1.0.0",
+    "pluginParameters": {
+      "SOLANA_RPC_URL": {
+        "type": "string",
+        "description": "Solana RPC endpoint URL",
+        "required": false,
+        "default": "https://api.devnet.solana.com"
+      },
+      "SOLANA_WALLET_PRIVATE_KEY": {
+        "type": "string",
+        "description": "Base58 encoded private key for Solana wallet",
+        "required": true,
+        "sensitive": true
+      },
+      "GHOSTSPEAK_PROGRAM_ID": {
+        "type": "string", 
+        "description": "GhostSpeak protocol program ID",
+        "required": false,
+        "default": "367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK"
+      },
+      "GHOSTSPEAK_NETWORK": {
+        "type": "string",
+        "description": "Network environment (devnet, testnet, mainnet-beta)",
+        "required": false,
+        "default": "devnet"
+      },
+      "LIGHT_RPC_URL": {
+        "type": "string",
+        "description": "Light RPC URL for ZK compression features",
+        "required": false
+      },
+      "PHOTON_INDEXER_URL": {
+        "type": "string", 
+        "description": "Photon indexer URL for ZK compression",
+        "required": false
+      }
+    }
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "jest",
+    "test:integration": "jest --testMatch='**/*.integration.test.ts'",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@elizaos/core": "^0.1.9",
+    "@elizaos/adapters": "^0.1.9"
+  },
+  "dependencies": {
+    "@ghostspeak/sdk": "workspace:*",
+    "@solana/addresses": "2.1.1",
+    "@solana/codecs": "2.1.1",
+    "@solana/rpc": "2.1.1",
+    "@solana/rpc-types": "2.1.1",
+    "@solana/signers": "2.1.1",
+    "@solana/keys": "2.1.1",
+    "@solana/transactions": "2.1.1",
+    "bs58": "6.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "rollup": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js", 
+      "types": "./dist/index.d.ts"
+    },
+    "./actions": {
+      "import": "./dist/actions.esm.js",
+      "require": "./dist/actions.js",
+      "types": "./dist/actions.d.ts"
+    },
+    "./providers": {
+      "import": "./dist/providers.esm.js", 
+      "require": "./dist/providers.js",
+      "types": "./dist/providers.d.ts"
+    },
+    "./services": {
+      "import": "./dist/services.esm.js",
+      "require": "./dist/services.js",
+      "types": "./dist/services.d.ts" 
+    },
+    "./evaluators": {
+      "import": "./dist/evaluators.esm.js",
+      "require": "./dist/evaluators.js",
+      "types": "./dist/evaluators.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://ghostspeak.dev",
+  "bugs": {
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

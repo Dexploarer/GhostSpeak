@@ -31,7 +31,7 @@ describe('Service Coverage Tests', () => {
   beforeAll(async () => {
     console.log('🔧 Setting up service coverage test environment...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     testAgent = await generateKeyPairSigner();
     testUser = await generateKeyPairSigner();
 
@@ -40,7 +40,7 @@ describe('Service Coverage Tests', () => {
     analyticsService = new AnalyticsService(rpc, 'confirmed');
     compressedNftService = new CompressedNftService(
       rpc,
-      '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as Address,
+      '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address,
       'confirmed'
     );
 
@@ -344,7 +344,7 @@ describe('Service Coverage Tests', () => {
       console.log('🏗️ Testing compressed NFT service construction...');
 
       const rpc = createSolanaRpc('https://api.devnet.solana.com');
-      const programId = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as Address;
+      const programId = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address;
       
       // Test different commitment levels
       const commitments = ['processed', 'confirmed', 'finalized'] as const;
@@ -485,7 +485,7 @@ describe('Service Coverage Tests', () => {
         new TextEncoder().encode('agent'),
         new TextEncoder().encode(testAgent.address)
       ];
-      const programId = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as Address;
+      const programId = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address;
       
       const [pda, bump] = await findProgramAddress(seeds, programId);
       expect(pda).toBeDefined();
@@ -597,7 +597,7 @@ describe('Service Coverage Tests', () => {
         const analytics = new AnalyticsService(rpc, commitment);
         const compressedNft = new CompressedNftService(
           rpc,
-          '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as Address,
+          '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address,
           commitment
         );
         

@@ -38,7 +38,7 @@ describe('SDK API Consistency', () => {
     test('Constants have correct values and types', async () => {
       const { PODAI_PROGRAM_ID, DEVNET_RPC, VERSION, SDK_NAME } = await import('../src/index');
       
-      expect(PODAI_PROGRAM_ID).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(PODAI_PROGRAM_ID).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(DEVNET_RPC).toBe('https://api.devnet.solana.com');
       expect(typeof VERSION).toBe('string');
       expect(VERSION).toMatch(/^\d+\.\d+\.\d+/); // Semantic version format
@@ -79,7 +79,7 @@ describe('SDK API Consistency', () => {
       const programsExports = await import('../src/generated-v2/programs');
       
       expect(programsExports.POD_COM_PROGRAM_ADDRESS).toBeDefined();
-      expect(programsExports.POD_COM_PROGRAM_ADDRESS).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(programsExports.POD_COM_PROGRAM_ADDRESS).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     });
 
     test('Instructions index exports all instructions', async () => {

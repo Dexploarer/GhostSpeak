@@ -50,7 +50,9 @@ export class AnalyticsTracker {
     this.events.get(type)!.push(event);
 
     // Update session
-    this.updateSession(event.sessionId, event);
+    if (event.sessionId) {
+      this.updateSession(event.sessionId, event);
+    }
 
     // Update metrics
     this.metricsCollector.increment('ghostspeak_analytics_events_total', {

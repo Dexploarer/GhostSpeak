@@ -287,5 +287,5 @@ jobs:
 
 - 💬 [Discord Community](https://discord.gg/ghostspeak-dev)
 - 📚 [Testing Documentation](./README.md)
-- 🐛 [Report Issues](https://github.com/ghostspeak/core/issues)
+- 🐛 [Report Issues](https://github.com/ghostspeak/ghostspeak/issues)
 - 📧 [Email Support](mailto:dev-support@ghostspeak.com) 

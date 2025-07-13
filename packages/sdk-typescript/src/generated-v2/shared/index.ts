@@ -15,7 +15,7 @@ import {
   AccountRole,
   type IAccountMeta,
   upgradeRoleToSigner,
-} from '@solana/instructions';
+} from '../../utils/instruction-compat';
 import {
   isTransactionSigner as kitIsTransactionSigner,
   type IAccountSignerMeta,

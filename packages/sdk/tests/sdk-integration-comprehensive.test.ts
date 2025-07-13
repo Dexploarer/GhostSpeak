@@ -45,13 +45,13 @@ describe('SDK Integration Tests', () => {
   describe('1. SDK Constants and Utilities', () => {
     test('Program ID consistency', () => {
       // Main SDK exports correct program ID
-      expect(PODAI_PROGRAM_ID).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(PODAI_PROGRAM_ID).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       
       // Generated program matches
-      expect(POD_COM_PROGRAM_ADDRESS).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(POD_COM_PROGRAM_ADDRESS).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       
       // Client uses correct program ID
-      expect(client.getProgramId()).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(client.getProgramId()).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     });
 
     test('Utility functions work correctly', () => {
@@ -84,7 +84,7 @@ describe('SDK Integration Tests', () => {
       const devnetClient = createDevnetClient();
       
       expect(devnetClient).toBeInstanceOf(PodAIClient);
-      expect(devnetClient.getProgramId()).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(devnetClient.getProgramId()).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     });
 
     test('Client provides core methods', () => {

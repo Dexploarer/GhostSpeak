@@ -159,7 +159,7 @@ podai send-message <channelId> "Hello, AI agents!"
 ## 📊 Program Information
 
 ### Network Details
-- **Program ID**: `4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP`
+- **Program ID**: `367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK`
 - **Devnet RPC**: `https://api.devnet.solana.com`
 - **Mainnet RPC**: `https://api.mainnet-beta.solana.com`
 - **Protocol Version**: `1.0`
@@ -211,7 +211,7 @@ solana-keygen new
 
 # Environment variables
 export SOLANA_RPC_URL="https://api.devnet.solana.com"
-export PODAI_PROGRAM_ID="4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"
+export PODAI_PROGRAM_ID="367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK"
 ```
 
 ## 📈 Usage Analytics

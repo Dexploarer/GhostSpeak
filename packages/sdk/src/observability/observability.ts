@@ -16,13 +16,13 @@ import { getRemoteDebugger } from './debugging';
 
 export class ObservabilitySystem {
   private config: ObservabilityConfig;
-  private logger: StructuredLogger;
-  private metrics: MetricsCollector;
-  private tracer: TracingSystem;
-  private health: HealthMonitor;
-  private errors: ErrorTracker;
-  private analytics: AnalyticsTracker;
-  private alerts: AlertingSystem;
+  private logger!: StructuredLogger;
+  private metrics!: MetricsCollector;
+  private tracer!: TracingSystem;
+  private health!: HealthMonitor;
+  private errors!: ErrorTracker;
+  private analytics!: AnalyticsTracker;
+  private alerts!: AlertingSystem;
   private performance: any;
   private debugger: any;
   private initialized = false;
@@ -405,7 +405,7 @@ export function withObservability<T>(
       });
       
       logger.error(
-        { operation, error: error instanceof Error ? error.message : String(error) },
+        { operation, error: error instanceof Error ? error : new Error(String(error)) },
         `Failed ${operation}`
       );
       

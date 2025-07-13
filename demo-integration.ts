@@ -20,7 +20,7 @@ async function runDemo() {
   try {
     // 1. Create client instance
     console.log('1️⃣ Creating GhostSpeak client...');
-    const client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    const client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     console.log(`   ✅ Client initialized: ${client.rpcEndpoint}`);
     console.log(`   📡 Program ID: ${client.programId}`);
     console.log(`   ⚙️ Commitment: ${client.getCommitment()}\n`);

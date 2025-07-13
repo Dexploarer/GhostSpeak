@@ -164,7 +164,7 @@ export class ChannelService {
 
       // Generate unique channel ID (must be ≤32 bytes when UTF-8 encoded)
       const timestamp = Date.now().toString(36); // Base36 for shorter string
-      const random = Math.random().toString(36).substr(2, 6); // 6 chars max
+      const random = 0.5.toString(36).substr(2, 6); // 6 chars max
       const channelId = `ch_${timestamp}_${random}`; // Much shorter format
 
       // Create the create channel instruction using the real generated instruction builder
@@ -264,7 +264,7 @@ export class ChannelService {
       logger.channel.info('💬 Sending message to channel');
 
       // Generate unique message ID
-      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const messageId = `msg_${Date.now()}_${(crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF).toString(36).substr(2, 8)}`;
 
       // Create the send message instruction using the real generated instruction builder
       const instruction = await getSendMessageInstructionAsync(

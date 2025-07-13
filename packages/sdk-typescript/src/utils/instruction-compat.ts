@@ -53,6 +53,21 @@ export const AccountRole = {
   WRITABLE_SIGNER: 'writable_signer' as const
 } as const;
 
+// Utility function to upgrade role to signer equivalent
+export function upgradeRoleToSigner(role: AccountRole): AccountRole {
+  switch (role) {
+    case 'readonly':
+      return 'readonly_signer';
+    case 'writable':
+      return 'writable_signer';
+    case 'readonly_signer':
+    case 'writable_signer':
+      return role;
+    default:
+      return role;
+  }
+}
+
 // Re-export for convenience
 export type {
   Address,

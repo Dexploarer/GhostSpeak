@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ghostspeak/protocol",
+    "url": "https://github.com/ghostspeak/ghostspeak.git",
     "directory": "packages/integrations/react"
   },
   "license": "MIT",
@@ -30,14 +30,18 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "dependencies": {
     "@ghostspeak/sdk": "workspace:*",
+    "@solana/addresses": "2.1.1",
+    "@solana/codecs": "2.1.1",
+    "@solana/rpc": "2.1.1",
+    "@solana/rpc-types": "2.1.1",
+    "@solana/signers": "2.1.1",
     "@solana/wallet-adapter-base": "^0.9.23",
-    "@solana/wallet-adapter-react": "^0.15.35",
-    "@solana/web3.js": "^1.78.0"
+    "@solana/wallet-adapter-react": "^0.15.35"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
@@ -48,8 +52,10 @@
     "eslint-plugin-react": "^7.33.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "jest": "^29.0.0",
-    "rollup": "^3.0.0",
-    "rollup-plugin-typescript2": "^0.35.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rollup": "^4.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
     "typescript": "^5.0.0"
   },
   "exports": {
@@ -68,5 +74,12 @@
       "require": "./dist/components.js",
       "types": "./dist/components.d.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://ghostspeak.dev",
+  "bugs": {
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
   }
 }

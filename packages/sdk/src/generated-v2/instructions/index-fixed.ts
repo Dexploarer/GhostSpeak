@@ -27,7 +27,7 @@ export {
 } from '../../utils/instruction-wrappers';
 
 // Export fixed individual instruction
-export * from './verifyAgent-fixed';
+// export * from './verifyAgent-fixed'; // Removed due to conflict
 
 // Export codec compatibility utilities
 export {

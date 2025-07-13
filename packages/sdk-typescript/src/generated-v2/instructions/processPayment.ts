@@ -195,7 +195,7 @@ export function getProcessPaymentInstruction<
     programAddress,
     accounts: accounts as any,
     data: data as Uint8Array & ArrayBufferLike,
-  } as ProcessPaymentInstruction<
+  } as any as ProcessPaymentInstruction<
     'PodAI111111111111111111111111111111111111111',
     TAccountPayment,
     TAccountWorkOrder,

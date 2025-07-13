@@ -57,7 +57,7 @@ describe('End-to-End Complete Workflow Tests', () => {
     await writeFile(join(tempDir, '.ghostspeak-config.json'), JSON.stringify({
       network: 'devnet',
       rpcEndpoint: 'https://api.devnet.solana.com',
-      programId: '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
+      programId: '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
       keyPath: join(tempDir, 'test-keypair.json'),
     }));
   });

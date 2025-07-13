@@ -7,7 +7,7 @@
  */
 
 use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
+// use std::collections::BTreeMap; // Commented out - using Vec<(K,V)> for Anchor compatibility
 
 // =====================================================
 // REGULATORY COMPLIANCE STRUCTURES
@@ -794,7 +794,7 @@ pub struct RiskFactor {
     pub scoring_method: ScoringMethod,
     
     /// Factor parameters
-    pub parameters: BTreeMap<String, String>,
+    pub parameters: Vec<(String, String)>,
 }
 
 /// Types of risk factors
@@ -1431,7 +1431,7 @@ pub struct ConsentExpiration {
     pub default_expiration: i64,
     
     /// Purpose-specific expiration
-    pub purpose_expiration: BTreeMap<String, i64>,
+    pub purpose_expiration: Vec<(String, i64)>,
     
     /// Auto-renewal enabled
     pub auto_renewal: bool,

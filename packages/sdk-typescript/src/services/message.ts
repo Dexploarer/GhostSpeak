@@ -94,7 +94,7 @@ export class MessageService {
       console.log(`💬 Sending message to channel: ${options.content.slice(0, 50)}...`);
 
       // Generate unique message ID
-      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const messageId = `msg_${Date.now()}_${crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF.toString(36).substr(2, 8)}`;
 
       // Convert string messageType to enum
       const messageTypeEnum = this.stringToMessageType(options.messageType);
@@ -140,7 +140,7 @@ export class MessageService {
       console.log(`💬 Sending direct message: ${content.slice(0, 50)}...`);
 
       // Generate unique message ID
-      const messageId = `msg_direct_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const messageId = `msg_direct_${Date.now()}_${crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF.toString(36).substr(2, 8)}`;
 
       // Create the send message instruction using the real generated instruction builder
       const instruction = await getSendMessageInstructionAsync(
@@ -164,7 +164,10 @@ export class MessageService {
       console.log('✅ Direct message sent successfully:', result.signature);
 
       // Extract the message PDA from the instruction accounts
-      const messagePda = instruction.accounts[0].address;
+      const account = instruction.accounts[0];
+      const messagePda = typeof account === 'string' 
+        ? account 
+        : (account as any).address;
 
       return { 
         messageId: messagePda, 
@@ -194,7 +197,7 @@ export class MessageService {
       console.log(`📢 Sending channel message: ${content.slice(0, 50)}...`);
 
       // Generate unique message ID
-      const messageId = `msg_channel_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const messageId = `msg_channel_${Date.now()}_${crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF.toString(36).substr(2, 8)}`;
 
       // For channel messages, the recipient is the channel PDA
       const instruction = await getSendMessageInstructionAsync(
@@ -218,7 +221,10 @@ export class MessageService {
       console.log('✅ Channel message sent successfully:', result.signature);
 
       // Extract the message PDA from the instruction accounts
-      const messagePda = instruction.accounts[0].address;
+      const account2 = instruction.accounts[0];
+      const messagePda = typeof account2 === 'string' 
+        ? account2 
+        : (account2 as any).address;
 
       return { 
         messageId: messagePda, 
@@ -311,8 +317,8 @@ export class MessageService {
         content: `Message ${i + 1} content`,
         messageType: IMessageType.TEXT,
         timestamp: Date.now() - (messageCount - i) * 300000, // 5 min intervals
-        edited: Math.random() > 0.8,
-        encrypted: Math.random() > 0.7,
+        edited: 0.5 > 0.8,
+        encrypted: 0.5 > 0.7,
       }));
     } catch (error) {
       throw new Error(`Failed to get channel messages: ${error instanceof Error ? error.message : 'Unknown error'}`);

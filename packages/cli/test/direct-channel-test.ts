@@ -19,7 +19,7 @@ async function testChannelCreation() {
     console.log(`✅ Test keypair generated: ${signer.address}`);
     
     // Program ID
-    const programId = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
+    const programId = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK';
     console.log(`✅ Using program ID: ${programId}`);
     
     // Try to create instruction

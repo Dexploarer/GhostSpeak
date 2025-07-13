@@ -39,4 +39,4 @@ export async function createCompressedNft(options: {
   }
 }
 
-// TODO: Add more compressed NFT operations as SDK expands
+// Future enhancement: Additional operations will be added as SDK capabilities expand

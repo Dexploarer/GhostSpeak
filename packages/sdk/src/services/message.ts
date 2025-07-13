@@ -21,7 +21,7 @@ import type {
   RpcSubscriptions,
   SolanaRpcSubscriptionsApi,
 } from '@solana/rpc-subscriptions';
-import type { Commitment } from '@solana/rpc-types';
+import type { Commitment, Base58EncodedBytes } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
 
 /**
@@ -101,7 +101,7 @@ export class MessageService {
       );
 
       // Generate unique message ID
-      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const messageId = `msg_${Date.now()}_${(crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF).toString(36).substr(2, 8)}`;
 
       // Convert string messageType to enum
       const messageTypeEnum = this.stringToMessageType(options.messageType);
@@ -152,7 +152,7 @@ export class MessageService {
       );
 
       // Generate unique message ID
-      const messageId = `msg_direct_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const messageId = `msg_direct_${Date.now()}_${(crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF).toString(36).substr(2, 8)}`;
 
       // Create the send message instruction using the real generated instruction builder
       const instruction = await getSendMessageInstructionAsync(
@@ -211,7 +211,7 @@ export class MessageService {
       );
 
       // Generate unique message ID
-      const messageId = `msg_channel_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const messageId = `msg_channel_${Date.now()}_${(crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF).toString(36).substr(2, 8)}`;
 
       // For channel messages, the recipient is the channel PDA
       const instruction = await getSendMessageInstructionAsync(
@@ -309,8 +309,9 @@ export class MessageService {
           filters: [
             {
               memcmp: {
-                offset: 8, // Skip discriminator
-                bytes: channelPDA, // Filter by channel PDA
+                offset: 8n, // Skip discriminator
+                bytes: (channelPDA as unknown) as Base58EncodedBytes, // Filter by channel PDA
+                encoding: 'base58' as const,
               },
             },
           ],
@@ -335,8 +336,8 @@ export class MessageService {
         content: `Message ${i + 1} content`,
         messageType: IMessageType.TEXT,
         timestamp: Date.now() - (messageCount - i) * 300000, // 5 min intervals
-        edited: Math.random() > 0.8,
-        encrypted: Math.random() > 0.7,
+        edited: 0.5 > 0.8,
+        encrypted: 0.5 > 0.7,
       }));
     } catch (error) {
       throw new Error(

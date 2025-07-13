@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
-use podai::state::*;
-use podai::PodAIMarketplaceError;
+use ghostspeak::state::*;
+use ghostspeak::GhostSpeakError;
 
 #[cfg(test)]
 mod security_tests {

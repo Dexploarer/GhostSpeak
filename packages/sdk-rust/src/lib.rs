@@ -121,6 +121,13 @@ pub fn program_id() -> Pubkey {
     Pubkey::from_str("4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP").unwrap()
 }
 
+/// Program ID constant for the podAI protocol
+pub const PROGRAM_ID: Pubkey = Pubkey::new_from_array([
+    61, 184, 144, 119, 225, 81, 80, 195, 195, 7, 97, 10, 
+    149, 200, 170, 226, 234, 99, 77, 202, 29, 113, 181, 
+    68, 220, 163, 124, 83, 36, 119, 73, 252
+]);
+
 /// Default RPC endpoints for different networks
 
 /// Devnet RPC endpoint URL

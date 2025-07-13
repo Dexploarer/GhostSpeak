@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_REQUIREMENTS_ITEMS, PodAIMarketplaceError};
+use super::{MAX_GENERAL_STRING_LENGTH, MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_REQUIREMENTS_ITEMS, GhostSpeakError};
 
 // PDA Seeds
 pub const WORK_ORDER_SEED: &[u8] = b"work_order";
@@ -110,17 +110,17 @@ impl WorkOrder {
         deadline: i64,
         bump: u8,
     ) -> Result<()> {
-        require!(title.len() <= MAX_TITLE_LENGTH, PodAIMarketplaceError::TitleTooLong);
-        require!(description.len() <= MAX_DESCRIPTION_LENGTH, PodAIMarketplaceError::DescriptionTooLong);
-        require!(requirements.len() <= MAX_REQUIREMENTS_ITEMS, PodAIMarketplaceError::TooManyRequirements);
+        require!(title.len() <= MAX_TITLE_LENGTH, GhostSpeakError::TitleTooLong);
+        require!(description.len() <= MAX_DESCRIPTION_LENGTH, GhostSpeakError::DescriptionTooLong);
+        require!(requirements.len() <= MAX_REQUIREMENTS_ITEMS, GhostSpeakError::TooManyRequirements);
         
         for req in &requirements {
-            require!(req.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::RequirementTooLong);
+            require!(req.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::RequirementTooLong);
         }
         
         let clock = Clock::get()?;
-        require!(deadline > clock.unix_timestamp, PodAIMarketplaceError::InvalidDeadline);
-        require!(payment_amount > 0, PodAIMarketplaceError::InvalidPaymentAmount);
+        require!(deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
+        require!(payment_amount > 0, GhostSpeakError::InvalidPaymentAmount);
         
         self.client = client;
         self.provider = provider;
@@ -140,7 +140,7 @@ impl WorkOrder {
     }
 
     pub fn open(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Created, PodAIMarketplaceError::InvalidWorkOrderStatus);
+        require!(self.status == WorkOrderStatus::Created, GhostSpeakError::InvalidWorkOrderStatus);
         
         self.status = WorkOrderStatus::Open;
         self.updated_at = Clock::get()?.unix_timestamp;
@@ -149,7 +149,7 @@ impl WorkOrder {
     }
 
     pub fn submit(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Open, PodAIMarketplaceError::InvalidWorkOrderStatus);
+        require!(self.status == WorkOrderStatus::Open, GhostSpeakError::InvalidWorkOrderStatus);
         
         self.status = WorkOrderStatus::Submitted;
         self.updated_at = Clock::get()?.unix_timestamp;
@@ -158,7 +158,7 @@ impl WorkOrder {
     }
 
     pub fn start(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Submitted, PodAIMarketplaceError::InvalidWorkOrderStatus);
+        require!(self.status == WorkOrderStatus::Submitted, GhostSpeakError::InvalidWorkOrderStatus);
         
         self.status = WorkOrderStatus::InProgress;
         self.updated_at = Clock::get()?.unix_timestamp;
@@ -167,7 +167,7 @@ impl WorkOrder {
     }
 
     pub fn approve(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::InProgress, PodAIMarketplaceError::InvalidWorkOrderStatus);
+        require!(self.status == WorkOrderStatus::InProgress, GhostSpeakError::InvalidWorkOrderStatus);
         
         let clock = Clock::get()?;
         self.status = WorkOrderStatus::Approved;
@@ -178,7 +178,7 @@ impl WorkOrder {
     }
 
     pub fn complete(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Approved, PodAIMarketplaceError::InvalidWorkOrderStatus);
+        require!(self.status == WorkOrderStatus::Approved, GhostSpeakError::InvalidWorkOrderStatus);
         
         self.status = WorkOrderStatus::Completed;
         self.updated_at = Clock::get()?.unix_timestamp;
@@ -189,7 +189,7 @@ impl WorkOrder {
     pub fn cancel(&mut self) -> Result<()> {
         require!(
             matches!(self.status, WorkOrderStatus::Created | WorkOrderStatus::Open | WorkOrderStatus::Submitted),
-            PodAIMarketplaceError::InvalidWorkOrderStatus
+            GhostSpeakError::InvalidWorkOrderStatus
         );
         
         self.status = WorkOrderStatus::Cancelled;
@@ -218,10 +218,10 @@ impl WorkDelivery {
         metadata_uri: String,
         bump: u8,
     ) -> Result<()> {
-        require!(deliverables.len() > 0, PodAIMarketplaceError::NoDeliverables);
-        require!(deliverables.len() <= MAX_DELIVERABLES, PodAIMarketplaceError::TooManyDeliverables);
-        require!(ipfs_hash.len() <= MAX_IPFS_HASH_LENGTH, PodAIMarketplaceError::IpfsHashTooLong);
-        require!(metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::MetadataUriTooLong);
+        require!(deliverables.len() > 0, GhostSpeakError::NoDeliverables);
+        require!(deliverables.len() <= MAX_DELIVERABLES, GhostSpeakError::TooManyDeliverables);
+        require!(ipfs_hash.len() <= MAX_IPFS_HASH_LENGTH, GhostSpeakError::IpfsHashTooLong);
+        require!(metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::MetadataUriTooLong);
         
         self.work_order = work_order;
         self.provider = provider;

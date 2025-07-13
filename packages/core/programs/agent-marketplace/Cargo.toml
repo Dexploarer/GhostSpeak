@@ -1,11 +1,12 @@
 [package]
-name = "podai"
+name = "ghostspeak-marketplace"
 version = "0.1.0"
-description = "podAI Marketplace: Revolutionary AI Agent Platform"
+description = "GhostSpeak Marketplace: Decentralized AI Agent Commerce Protocol"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
+name = "ghostspeak_marketplace"
 
 [features]
 default = ["performance-monitoring"]
@@ -43,7 +44,7 @@ strip = true
 
 [dependencies]
 anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
-anchor-spl = { version = "0.31.1", features = ["token", "associated_token", "token_2022"] }
+anchor-spl = { version = "0.31.1", features = ["token", "associated_token", "token_2022", "idl-build"] }
 spl-token = "8.0.0"
 spl-token-2022 = "9.0.0"
 spl-associated-token-account = "7.0.0"

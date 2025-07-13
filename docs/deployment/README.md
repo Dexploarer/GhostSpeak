@@ -77,7 +77,7 @@ graph TB
 
 **1. Clone and Setup**
 ```bash
-git clone https://github.com/ghostspeak/core.git
+git clone https://github.com/ghostspeak/ghostspeak.git
 cd core
 
 # Install dependencies
@@ -1113,4 +1113,4 @@ Need help with deployment?
 - 🔧 [Troubleshooting Guide](./troubleshooting.md)
 - 💬 [DevOps Discord](https://discord.gg/ghostspeak-devops)
 - 📧 [Infrastructure Support](mailto:infra-support@ghostspeak.com)
-- 🐛 [Report Issues](https://github.com/ghostspeak/core/issues) 
+- 🐛 [Report Issues](https://github.com/ghostspeak/ghostspeak/issues) 

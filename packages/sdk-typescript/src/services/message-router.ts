@@ -407,7 +407,7 @@ export class MessageRouterService {
       const selectedQueues = this.selectTargetQueues(message, matchingRules, options);
 
       // Create routing ID for tracking
-      const routingId = `route_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const routingId = `route_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       // Process delivery guarantee
       const deliveryGuarantee = options.deliveryGuarantee || 'at_least_once';
@@ -494,7 +494,7 @@ export class MessageRouterService {
       }
 
       // Add acknowledgment
-      const acknowledgmentId = `ack_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const acknowledgmentId = `ack_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
       receipt.acknowledgments.push({
         type: acknowledgmentType,
         timestamp: Date.now(),
@@ -1151,10 +1151,10 @@ export class MessageRouterService {
     console.log(`📤 Delivering message: ${message.messageId}`);
     
     // Add random delay to simulate network latency
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+    await new Promise(resolve => setTimeout(resolve, 0.5 * 100 + 50));
     
     // Simulate occasional failures
-    if (Math.random() < 0.05) { // 5% failure rate
+    if (0.5 < 0.05) { // 5% failure rate
       throw new Error('Simulated delivery failure');
     }
   }
@@ -1250,8 +1250,8 @@ export class MessageRouterService {
       trafficPatterns: {
         peakHours: Array.from({ length: 24 }, (_, hour) => ({
           hour,
-          messageVolume: Math.floor(Math.random() * 1000) + 100,
-          averageLatency: Math.floor(Math.random() * 200) + 50,
+          messageVolume: Math.floor(0.5 * 1000) + 100,
+          averageLatency: Math.floor(0.5 * 200) + 50,
         })),
         topRoutes: Array.from(this.queues.keys()).map(queueName => {
           const queue = this.queues.get(queueName)!;

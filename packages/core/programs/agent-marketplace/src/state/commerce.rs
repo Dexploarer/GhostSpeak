@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use crate::{MAX_GENERAL_STRING_LENGTH, Deliverable};
+use crate::Deliverable;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct ServiceListingData {

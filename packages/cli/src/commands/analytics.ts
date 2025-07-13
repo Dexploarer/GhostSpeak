@@ -9,15 +9,41 @@ import { ConfigManager } from '../core/ConfigManager.js';
 import { Logger } from '../core/Logger.js';
 import { logger } from '../utils/logger.js';
 import { isVerboseMode } from '../utils/cli-options.js';
-import {
-  getRpc,
-  getProgramId,
-  getCommitment,
-  getGhostspeakSdk,
-} from '../context-helpers';
+import { ProgressIndicator } from '../utils/prompts.js';
+import { createSolanaRpc } from '@solana/rpc';
+import { address } from '@solana/addresses';
+import { LazyModules } from '@ghostspeak/sdk';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+
+// Real analytics service instance
+let analyticsService: any = null;
+let rpcClient: any = null;
+
+async function getAnalyticsService() {
+  if (!analyticsService) {
+    try {
+      // Load configuration
+      const config = await ConfigManager.load();
+      const rpcUrl = config.rpcUrl || 'https://api.devnet.solana.com';
+      const programId = address(config.programId || '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
+      
+      // Create RPC client
+      rpcClient = createSolanaRpc(rpcUrl);
+      
+      // Load analytics service from SDK - connecting to actual PodAI program
+      const analyticsModule = await LazyModules.analytics;
+      analyticsService = new analyticsModule.AnalyticsService(rpcClient, programId);
+      
+      logger.general.debug('Analytics service initialized successfully');
+    } catch (error) {
+      logger.general.error('Failed to initialize analytics service:', error);
+      throw error;
+    }
+  }
+  return analyticsService;
+}
 
 interface TransactionRecord {
   signature: string;
@@ -137,19 +163,13 @@ export async function showDashboard(period: string = 'week'): Promise<void> {
 
 export async function showAnalytics(): Promise<void> {
   try {
-    const sdk = await getGhostspeakSdk();
-    const rpc = await getRpc();
-    const programId = getProgramId('analytics');
-    const commitment = await getCommitment();
-    const analyticsService = new sdk.AnalyticsService(
-      rpc,
-      programId,
-      commitment
-    );
+    // Get real analytics service connected to deployed PodAI program
+    const analyticsService = await getAnalyticsService();
     const result = await analyticsService.getAnalytics();
     logger.analytics.info('📊 Analytics:', result);
   } catch (error) {
     logger.analytics.error('❌ Failed to show analytics:', error);
+    throw error;
   }
 }
 
@@ -237,91 +257,119 @@ function displayPerformanceSummary(analytics: AnalyticsData, cliLogger: Logger):
 
 async function fetchAnalyticsData(period: string): Promise<AnalyticsData> {
   try {
-    // Get real data from shared state file
-    const state = await loadSharedState();
+    // Get real analytics data from blockchain
+    const analyticsService = await getAnalyticsService();
+    const blockchainData = await analyticsService.getAnalytics({
+      period: period,
+      includeTransactions: true,
+      includeAgents: true,
+      includeChannels: true,
+      includeEscrow: true
+    });
     
-    if (!state) {
-      return getDemoData();
-    }
-    
-    // Calculate real metrics from state
-    const allTransactions: any[] = [];
-    const activeSessions: string[] = [];
-    const recentAgents = new Set<string>();
-    const recentChannels = new Set<string>();
-    
-    // Process all sessions to gather metrics
-    const now = new Date().getTime();
-    const periodMillis = getPeriodMillis(period);
-    
-    for (const [sessionId, session] of Object.entries(state.sessions)) {
-      const sessionAge = now - new Date(session.lastActivity).getTime();
-      
-      // Consider session active if within period
-      if (sessionAge <= periodMillis) {
-        activeSessions.push(sessionId);
-        
-        // Track active agents and channels
-        if (session.activeAgent) {
-          recentAgents.add(session.activeAgent);
-        }
-        if (session.activeChannel) {
-          recentChannels.add(session.activeChannel);
-        }
-      }
-      
-      // Collect all transactions
-      allTransactions.push(...session.pendingTransactions, ...session.completedTransactions);
-    }
-    
-    // Calculate transaction metrics
-    const successfulTx = allTransactions.filter(tx => tx.status === 'confirmed');
-    const failedTx = allTransactions.filter(tx => tx.status === 'failed');
-    const pendingTx = allTransactions.filter(tx => tx.status === 'pending');
-    
-    // Calculate average processing time (mock for now, could be enhanced with real timing)
-    const avgProcessingTime = successfulTx.length > 0 
-      ? Math.random() * 1000 + 500 // Mock processing time 500-1500ms
-      : 0;
-    
-    // Build analytics data with real metrics
+    // Convert blockchain data to our analytics interface
     const analyticsData: AnalyticsData = {
       transactions: {
-        total: state.globalStats.totalTransactions || allTransactions.length,
-        successful: successfulTx.length,
-        failed: failedTx.length,
-        avgProcessingTime: avgProcessingTime
+        total: blockchainData.transactions?.total || 0,
+        successful: blockchainData.transactions?.successful || 0,
+        failed: blockchainData.transactions?.failed || 0,
+        avgProcessingTime: blockchainData.transactions?.avgProcessingTime || 0
       },
       agents: {
-        total: state.globalStats.totalAgentsCreated || 0,
-        active: recentAgents.size,
-        inactive: Math.max(0, (state.globalStats.totalAgentsCreated || 0) - recentAgents.size),
-        topPerformers: generateTopPerformers(recentAgents)
+        total: blockchainData.agents?.total || 0,
+        active: blockchainData.agents?.active || 0,
+        inactive: blockchainData.agents?.inactive || 0,
+        topPerformers: blockchainData.agents?.topPerformers || []
       },
       channels: {
-        total: state.globalStats.totalChannelsCreated || 0,
-        active: recentChannels.size,
-        messageCount: state.globalStats.totalMessagessSent || 0,
-        avgResponseTime: calculateAvgResponseTime(allTransactions)
+        total: blockchainData.channels?.total || 0,
+        active: blockchainData.channels?.active || 0,
+        messageCount: blockchainData.channels?.messageCount || 0,
+        avgResponseTime: blockchainData.channels?.avgResponseTime || 0
       },
       escrow: {
-        totalVolume: calculateTotalVolume(allTransactions),
-        activeDeposits: pendingTx.filter(tx => tx.type === 'escrow_deposit').length,
-        completedTransactions: successfulTx.filter(tx => tx.type?.includes('escrow')).length,
-        averageAmount: calculateAverageAmount(allTransactions)
+        totalVolume: blockchainData.escrow?.totalVolume || 0,
+        activeDeposits: blockchainData.escrow?.activeDeposits || 0,
+        completedTransactions: blockchainData.escrow?.completedTransactions || 0,
+        averageAmount: blockchainData.escrow?.averageAmount || 0
       }
     };
-    
-    // Return real data even if empty
-    // No fallback to demo data
     
     return analyticsData;
     
   } catch (error) {
-    // If state loading fails, return empty data
-    console.error('Error fetching real analytics data:', error);
-    return getDemoData();
+    logger.general.warn('Failed to fetch blockchain analytics data, falling back to local state:', error);
+    
+    // Fallback: try to get data from local state file
+    try {
+      const state = await loadSharedState();
+      if (state) {
+        return calculateAnalyticsFromLocalState(state, period);
+      }
+    } catch (localError) {
+      logger.general.warn('Failed to fetch local state data:', localError);
+    }
+    
+    // Final fallback: return empty data
+    return getEmptyData();
   }
+}
+
+// Helper function to calculate analytics from local state as fallback
+function calculateAnalyticsFromLocalState(state: RuntimeState, period: string): AnalyticsData {
+  // This is a simplified version of the previous logic for fallback only
+  const allTransactions: any[] = [];
+  const recentAgents = new Set<string>();
+  const recentChannels = new Set<string>();
+  
+  // Process all sessions to gather metrics
+  const now = new Date().getTime();
+  const periodMillis = getPeriodMillis(period);
+  
+  for (const [sessionId, session] of Object.entries(state.sessions)) {
+    const sessionAge = now - new Date(session.lastActivity).getTime();
+    
+    if (sessionAge <= periodMillis) {
+      if (session.activeAgent) {
+        recentAgents.add(session.activeAgent);
+      }
+      if (session.activeChannel) {
+        recentChannels.add(session.activeChannel);
+      }
+    }
+    
+    allTransactions.push(...session.pendingTransactions, ...session.completedTransactions);
+  }
+  
+  const successfulTx = allTransactions.filter(tx => tx.status === 'confirmed');
+  const failedTx = allTransactions.filter(tx => tx.status === 'failed');
+  
+  return {
+    transactions: {
+      total: state.globalStats.totalTransactions || allTransactions.length,
+      successful: successfulTx.length,
+      failed: failedTx.length,
+      avgProcessingTime: 0
+    },
+    agents: {
+      total: state.globalStats.totalAgentsCreated || 0,
+      active: recentAgents.size,
+      inactive: Math.max(0, (state.globalStats.totalAgentsCreated || 0) - recentAgents.size),
+      topPerformers: []
+    },
+    channels: {
+      total: state.globalStats.totalChannelsCreated || 0,
+      active: recentChannels.size,
+      messageCount: state.globalStats.totalMessagessSent || 0,
+      avgResponseTime: 0
+    },
+    escrow: {
+      totalVolume: 0,
+      activeDeposits: 0,
+      completedTransactions: 0,
+      averageAmount: 0
+    }
+  };
 }
 
 // Load shared state from file
@@ -361,8 +409,8 @@ function getPeriodMillis(period: string): number {
 function generateTopPerformers(activeAgents: Set<string>): Array<{ name: string; score: number }> {
   const performers = Array.from(activeAgents).map(agent => ({
     name: agent,
-    // Calculate score based on some metrics (mock for now)
-    score: Math.random() * 30 + 70 // Score between 70-100
+    // Real score would come from blockchain metrics
+    score: 0 // No score data available yet
   }));
   
   // Sort by score and return top 3
@@ -377,8 +425,8 @@ function calculateAvgResponseTime(transactions: any[]): number {
   const messageTx = transactions.filter(tx => tx.type === 'send_message');
   if (messageTx.length === 0) return 0;
   
-  // Mock calculation - in real implementation would use actual timestamps
-  return Math.random() * 500 + 300; // 300-800ms
+  // Would need actual timestamp data from blockchain
+  return 0; // No timing data available yet
 }
 
 // Calculate total volume from transactions
@@ -398,7 +446,7 @@ function calculateAverageAmount(transactions: any[]): number {
 }
 
 // Get empty data when no blockchain data available
-function getDemoData(): AnalyticsData {
+function getEmptyData(): AnalyticsData {
   return {
     transactions: {
       total: 0,

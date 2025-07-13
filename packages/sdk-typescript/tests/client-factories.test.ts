@@ -42,7 +42,7 @@ describe('Client Factory Functions Coverage', () => {
       expect(devnetClient1.getCommitment()).toBe('confirmed');
       
       // Test createDevnetClient with programId (line 421: programId conditional)
-      const testProgramId = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
+      const testProgramId = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK';
       const devnetClient2 = createDevnetClient(testProgramId);
       expect(devnetClient2).toBeInstanceOf(PodAIClient);
       expect(devnetClient2.programId).toBe(testProgramId);
@@ -98,7 +98,7 @@ describe('Client Factory Functions Coverage', () => {
       console.log('🎯 Testing all factory functions with different program IDs...');
       
       const programIds = [
-        '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
+        '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
         'Test1111111111111111111111111111111111111111',
         'Test2222222222222222222222222222222222222222'
       ];
@@ -126,9 +126,9 @@ describe('Client Factory Functions Coverage', () => {
       const mainnetClient = createMainnetClient();
       
       // Verify they use default program IDs
-      expect(devnetClient.programId).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
-      expect(localnetClient.programId).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
-      expect(mainnetClient.programId).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(devnetClient.programId).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
+      expect(localnetClient.programId).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
+      expect(mainnetClient.programId).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       
       // Verify endpoints are correct
       expect(devnetClient.rpcEndpoint).toBe('https://api.devnet.solana.com');

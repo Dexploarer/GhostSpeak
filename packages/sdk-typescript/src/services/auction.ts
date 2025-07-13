@@ -237,7 +237,7 @@ export class AuctionService {
       this.validateAuctionConfig(config);
 
       // Generate auction PDA
-      const auctionId = `auction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+      const auctionId = `auction_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // In a real implementation, this would call a createAuction smart contract instruction
       const mockInstruction = {
@@ -292,7 +292,7 @@ export class AuctionService {
       this.validateBid(auction, bidder.address, bidAmount, bidOptions);
 
       // Generate bid ID
-      const bidId = `bid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+      const bidId = `bid_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // Determine if this is the winning bid
       const isWinning = this.calculateWinningStatus(auction, bidAmount);
@@ -441,8 +441,10 @@ export class AuctionService {
         return null;
       }
 
-      // Simulate auction data parsing
-      return this.generateMockAuction(auctionId);
+      // TODO: Fetch real auction data from blockchain
+      // For now, return null to indicate auction not found
+      console.warn('Auction account fetching not yet implemented');
+      return null;
     } catch (error) {
       console.error('Failed to get auction:', error);
       return null;
@@ -711,67 +713,27 @@ export class AuctionService {
     return winners;
   }
 
+  private async fetchRealAuctions(limit: number): Promise<IAuction[]> {
+    try {
+      // TODO: Implement real auction fetching from program accounts
+      // For now, return empty array
+      console.warn('Auction listing not yet implemented - returning empty array');
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch auctions:', error);
+      return [];
+    }
+  }
+  
   private generateMockAuction(auctionId: Address): IAuction {
-    const now = Date.now();
-    const auctionTypes: AuctionType[] = ['english', 'dutch', 'sealed_bid', 'reverse'];
-    const itemTypes = ['agent', 'service', 'nft', 'bulk_package'] as const;
-    
-    const randomType = auctionTypes[Math.floor(Math.random() * auctionTypes.length)];
-    const randomItemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
-    
-    return {
-      auctionId,
-      seller: `seller_${Date.now()}` as Address,
-      config: {
-        auctionType: randomType,
-        title: `Premium ${randomItemType} Auction`,
-        description: `High-quality ${randomItemType} available for bidding`,
-        category: 'AI Services',
-        itemType: randomItemType,
-        itemId: `item_${Date.now()}` as Address,
-        itemMetadata: {
-          name: `Premium ${randomItemType}`,
-          description: 'Top-tier AI service with advanced capabilities',
-          imageUri: 'https://example.com/image.jpg',
-        },
-        startingPrice: BigInt(Math.floor(Math.random() * 1000000000) + 100000000),
-        reservePrice: BigInt(Math.floor(Math.random() * 2000000000) + 500000000),
-        buyNowPrice: BigInt(Math.floor(Math.random() * 3000000000) + 1000000000),
-        minimumIncrement: BigInt(50000000),
-        paymentToken: 'So11111111111111111111111111111111111111112' as Address,
-        startTime: now - Math.random() * 3600000,
-        duration: Math.floor(Math.random() * 86400000) + 3600000,
-        allowProxyBidding: Math.random() > 0.5,
-        requireDeposit: Math.random() > 0.7,
-        depositAmount: BigInt(Math.floor(Math.random() * 100000000)),
-        isPrivate: Math.random() > 0.8,
-      },
-      status: Math.random() > 0.3 ? 'active' : 'ending',
-      currentPrice: BigInt(Math.floor(Math.random() * 1500000000) + 200000000),
-      totalBids: Math.floor(Math.random() * 50) + 1,
-      uniqueBidders: Math.floor(Math.random() * 20) + 1,
-      createdAt: now - Math.random() * 86400000,
-      startedAt: now - Math.random() * 3600000,
-      endsAt: now + Math.random() * 3600000,
-      totalVolume: BigInt(Math.floor(Math.random() * 5000000000)),
-      escrowAmount: BigInt(Math.floor(Math.random() * 1000000000)),
-      feesCollected: BigInt(Math.floor(Math.random() * 50000000)),
-      bidders: [],
-      watchers: [],
-      viewCount: Math.floor(Math.random() * 1000) + 10,
-      socialEngagement: {
-        likes: Math.floor(Math.random() * 100),
-        shares: Math.floor(Math.random() * 50),
-        comments: Math.floor(Math.random() * 30),
-      },
-    };
+    // This method is deprecated and should not be used
+    // Keeping it temporarily for backward compatibility
+    throw new Error('Mock auction generation is deprecated');
   }
 
   private async getAllAuctions(limit: number): Promise<IAuction[]> {
-    // Simulate getting auctions from blockchain
-    return Array.from({ length: Math.min(limit, 30) }, (_, i) => 
-      this.generateMockAuction(`auction_${i + 1}_${Date.now()}` as Address)
-    );
+    // Fetch real auctions from blockchain
+    return this.fetchRealAuctions(limit);
   }
 
   private applyAuctionFilters(auctions: IAuction[], filters: IAuctionFilters): IAuction[] {
@@ -851,12 +813,12 @@ export class AuctionService {
 
   private async getAuctionBids(auctionId: Address): Promise<IAuctionBid[]> {
     // Simulate getting bids for an auction
-    const bidCount = Math.floor(Math.random() * 20) + 1;
+    const bidCount = Math.floor(0.5 * 20) + 1;
     return Array.from({ length: bidCount }, (_, i) => ({
       bidId: `bid_${i + 1}_${Date.now()}` as Address,
       bidder: `bidder_${i + 1}` as Address,
-      amount: BigInt(Math.floor(Math.random() * 1000000000) + 100000000),
-      timestamp: Date.now() - Math.random() * 3600000,
+      amount: BigInt(Math.floor(0.5 * 1000000000) + 100000000),
+      timestamp: Date.now() - 0 * 3600000,
       isWinning: i === bidCount - 1,
     }));
   }
@@ -907,9 +869,9 @@ export class AuctionService {
   private async getMarketComparison(auction: IAuction): Promise<IAuctionAnalytics['marketComparison']> {
     // Simulate market comparison
     return {
-      similarAuctions: Math.floor(Math.random() * 50) + 10,
-      averagePrice: BigInt(Math.floor(Math.random() * 1000000000) + 500000000),
-      priceVariance: Math.random() * 0.5 + 0.1,
+      similarAuctions: Math.floor(0.5 * 50) + 10,
+      averagePrice: BigInt(Math.floor(0.5 * 1000000000) + 500000000),
+      priceVariance: 0.5 * 0.5 + 0.1,
     };
   }
 

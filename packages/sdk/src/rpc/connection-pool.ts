@@ -9,8 +9,8 @@ import { createSolanaRpc } from '@solana/rpc';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { Commitment } from '@solana/rpc-types';
 import type { Address } from '@solana/addresses';
-import { getGlobalCache } from '../performance/advanced-cache.js';
-import { getGlobalMonitor, monitored } from '../performance/monitoring.js';
+import { getGlobalCache, AdvancedCacheManager } from '../performance/advanced-cache.js';
+import { getGlobalMonitor, monitored, PerformanceMonitor } from '../performance/monitoring.js';
 import { CircularBuffer, PriorityQueue, ObjectPool } from '../performance/memory-optimization.js';
 
 /**
@@ -115,9 +115,9 @@ export class RpcConnectionPool {
   };
   private responseTimes: CircularBuffer<number>;
   private requestQueue: PriorityQueue<any>;
-  private connectionPool: ObjectPool<PoolConnection>;
-  private advancedCache: any;
-  private monitor: any;
+  private connectionPool?: ObjectPool<PoolConnection>;
+  private advancedCache?: AdvancedCacheManager;
+  private monitor?: PerformanceMonitor;
   private readonly config: ConnectionPoolConfig;
 
   constructor(config: Partial<ConnectionPoolConfig> = {}) {
@@ -827,7 +827,7 @@ export class RpcConnectionPool {
    */
   async warmupCache(): Promise<void> {
     // Common requests that benefit from caching
-    const commonRequests = [
+    const commonRequests: Array<[string, any[]]> = [
       ['getSlot', []],
       ['getVersion', []],
       ['getGenesisHash', []],

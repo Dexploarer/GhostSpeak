@@ -9,6 +9,7 @@ import type { Address } from '@solana/addresses';
 import type { Commitment } from '@solana/rpc-types';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import { createSolanaRpc } from '@solana/rpc';
+import type { Base64EncodedWireTransaction } from '@solana/transactions';
 
 export interface IMinimalClientConfig {
   readonly rpcEndpoint?: string;
@@ -26,7 +27,7 @@ export class MinimalPodAIClient {
       config.rpcEndpoint ?? 'https://api.devnet.solana.com'
     );
     this.programId = (config.programId ??
-      '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP') as Address;
+      '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK') as Address;
     this.commitment = config.commitment ?? 'confirmed';
   }
 
@@ -38,9 +39,9 @@ export class MinimalPodAIClient {
   }
 
   // Basic transaction sending without generated instruction builders
-  async sendTransaction(transaction: Uint8Array) {
+  async sendTransaction(transaction: Base64EncodedWireTransaction) {
     return await this.rpc
-      .sendTransaction(transaction, { encoding: 'base64' })
+      .sendTransaction(transaction)
       .send();
   }
 

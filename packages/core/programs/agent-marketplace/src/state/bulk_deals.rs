@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH, PodAIMarketplaceError};
+use super::{MAX_GENERAL_STRING_LENGTH, GhostSpeakError};
 
 // PDA Seeds
 pub const BULK_DEAL_SEED: &[u8] = b"bulk_deal";
@@ -31,6 +31,7 @@ pub struct VolumeTier {
 
 #[account]
 pub struct BulkDeal {
+    pub deal_id: u64, // Unique identifier for the deal
     pub agent: Pubkey,
     pub customer: Pubkey,
     pub deal_type: DealType,
@@ -44,11 +45,13 @@ pub struct BulkDeal {
     pub end_date: i64,
     pub is_active: bool,
     pub created_at: i64,
+    pub executed_volume: u32, // Track how much has been executed
     pub bump: u8,
 }
 
 impl BulkDeal {
     pub const LEN: usize = 8 + // discriminator
+        8 + // deal_id
         32 + // agent
         32 + // customer
         1 + // deal_type
@@ -62,10 +65,12 @@ impl BulkDeal {
         8 + // end_date
         1 + // is_active
         8 + // created_at
+        4 + // executed_volume
         1; // bump
 
     pub fn initialize(
         &mut self,
+        deal_id: u64,
         agent: Pubkey,
         customer: Pubkey,
         deal_type: DealType,
@@ -78,27 +83,28 @@ impl BulkDeal {
         end_date: i64,
         bump: u8,
     ) -> Result<()> {
-        require!(sla_terms.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::StringTooLong);
-        require!(volume_tiers.len() <= MAX_VOLUME_TIERS, PodAIMarketplaceError::TooManyVolumeTiers);
-        require!(total_volume > 0, PodAIMarketplaceError::InvalidVolume);
-        require!(total_value > 0, PodAIMarketplaceError::InvalidValue);
-        require!(discount_percentage >= 0.0 && discount_percentage <= 100.0, PodAIMarketplaceError::InvalidDiscountPercentage);
-        require!(contract_duration > 0, PodAIMarketplaceError::InvalidDuration);
+        require!(sla_terms.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::StringTooLong);
+        require!(volume_tiers.len() <= MAX_VOLUME_TIERS, GhostSpeakError::TooManyVolumeTiers);
+        require!(total_volume > 0, GhostSpeakError::InvalidVolume);
+        require!(total_value > 0, GhostSpeakError::InvalidValue);
+        require!(discount_percentage >= 0.0 && discount_percentage <= 100.0, GhostSpeakError::InvalidDiscountPercentage);
+        require!(contract_duration > 0, GhostSpeakError::InvalidDuration);
         
         let clock = Clock::get()?;
-        require!(end_date > clock.unix_timestamp, PodAIMarketplaceError::InvalidExpiration);
+        require!(end_date > clock.unix_timestamp, GhostSpeakError::InvalidExpiration);
         
         // Validate volume tiers
         for (i, tier) in volume_tiers.iter().enumerate() {
-            require!(tier.max_quantity > tier.min_quantity, PodAIMarketplaceError::InvalidVolumeTier);
-            require!(tier.discount_percentage <= MAX_DISCOUNT_PERCENTAGE, PodAIMarketplaceError::InvalidDiscountPercentage);
+            require!(tier.max_quantity > tier.min_quantity, GhostSpeakError::InvalidVolumeTier);
+            require!(tier.discount_percentage <= MAX_DISCOUNT_PERCENTAGE, GhostSpeakError::InvalidDiscountPercentage);
             
             // Check that tiers don't overlap
             if i > 0 {
-                require!(tier.min_quantity > volume_tiers[i-1].max_quantity, PodAIMarketplaceError::OverlappingVolumeTiers);
+                require!(tier.min_quantity > volume_tiers[i-1].max_quantity, GhostSpeakError::OverlappingVolumeTiers);
             }
         }
         
+        self.deal_id = deal_id;
         self.agent = agent;
         self.customer = customer;
         self.deal_type = deal_type;
@@ -112,6 +118,7 @@ impl BulkDeal {
         self.end_date = end_date;
         self.is_active = true;
         self.created_at = clock.unix_timestamp;
+        self.executed_volume = 0;
         self.bump = bump;
         
         Ok(())

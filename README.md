@@ -1320,7 +1320,7 @@ ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
 ANCHOR_WALLET=~/.config/solana/id.json
 
 # Program Addresses
-GHOSTSPEAK_PROGRAM_ID=4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+GHOSTSPEAK_PROGRAM_ID=367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
 
 # API Configuration
 IPFS_GATEWAY=https://gateway.pinata.cloud

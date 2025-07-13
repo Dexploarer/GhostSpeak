@@ -33,7 +33,7 @@ describe('Edge Cases and Complete Coverage', () => {
   beforeAll(async () => {
     console.log('🎯 Setting up edge cases and complete coverage tests...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     testSigner = await generateKeyPairSigner();
     testAddress = testSigner.address;
     rpc = createSolanaRpc('https://api.devnet.solana.com');
@@ -45,7 +45,7 @@ describe('Edge Cases and Complete Coverage', () => {
     test('All service constructors with different parameters', async () => {
       console.log('🏗️ Testing all service constructors...');
 
-      const programId = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as Address;
+      const programId = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address;
       const commitments: Array<'processed' | 'confirmed' | 'finalized'> = ['processed', 'confirmed', 'finalized'];
 
       for (const commitment of commitments) {
@@ -100,7 +100,7 @@ describe('Edge Cases and Complete Coverage', () => {
       console.log('⚙️ Testing client with various configurations...');
 
       // Test with minimal config
-      const minimalClient = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      const minimalClient = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(minimalClient).toBeDefined();
 
       // Test client service lazy loading with all services

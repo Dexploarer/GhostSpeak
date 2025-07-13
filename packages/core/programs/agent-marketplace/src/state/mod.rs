@@ -30,39 +30,113 @@ pub mod reputation;
 pub mod risk_management;
 pub mod royalty;
 pub mod security_governance;
-pub mod stubs;
+pub mod protocol_structures;
 pub mod work_order;
 pub mod user_registry;
 
-// Re-export all types
-pub use agent::*;
-pub use analytics::*;
+// Re-export all types with selective imports to avoid conflicts
+// Import from agent with conflict resolution
+pub use agent::{
+    Agent, AgentVerification, 
+    AgentVerificationData, AgentServiceData, AgentCustomization,
+    AgentAnalytics as AgentAgentAnalytics  // Rename to avoid conflict
+};
+// Import from analytics with conflict resolution
+pub use analytics::{
+    MarketAnalytics, MarketAnalyticsData, AnalyticsDashboard,
+    AgentAnalytics as AnalyticsAgentAnalytics  // Rename to avoid conflict
+};
 pub use auction::*;
-pub use audit::*;
+// Selective imports from audit to avoid conflicts
+pub use audit::{
+    AuditTrail, AuditEntry, AuditAction, AuditContext, ComplianceFlags,
+    AuditConfig, BackupFrequency, ApprovalLevel,
+    ComplianceViolation, ViolationType, ViolationSeverity, ResolutionStatus,
+    RegulatoryStatus, RiskThresholds, ComplianceReport, ReportType,
+    ReportData, ReportSummary, ReportEntry, ComplianceMetrics,
+    ReportStatus, SubmissionDetails,
+    // Rename conflicting types
+    ReportingFrequency as AuditReportingFrequency,
+    ComplianceStatus as AuditComplianceStatus,
+    RiskAssessment as AuditRiskAssessment,
+    RiskFactor as AuditRiskFactor,
+    RiskFactorType as AuditRiskFactorType,
+    RiskIndicator as AuditRiskIndicator,
+    TrendDirection as AuditTrendDirection,
+};
 pub use bulk_deals::*;
 pub use channel::*;
-pub use commerce::*;
-pub use compliance::*;
+// Selective imports from commerce to avoid conflicts
+pub use commerce::{
+    ServiceListingData as CommerceServiceListingData,
+    JobApplicationData as CommerceJobApplicationData,
+};
+// Selective imports from compliance to avoid conflicts  
+pub use compliance::{
+    RegulatoryCompliance, JurisdictionCompliance, RegulatoryFramework,
+    License, LicenseStatus, ComplianceRequirement, RequirementType,
+    ComplianceEvidence, EvidenceType, VerificationStatus,
+    CompliancePenalty, PenaltyType, RegulatoryContact, ContactType,
+    CommunicationMethod, JurisdictionStatus, KycAmlConfig, KycLevel,
+    DocumentRequirement, DataPrivacyConfig, SanctionsConfig, 
+    FinancialComplianceConfig, ReportingConfig, MonitoringConfig,
+    // Rename conflicting types
+    ImplementationStatus as ComplianceImplementationStatus,
+    ComplianceStatus as ComplianceStatusEnum,
+};
 pub use dispute::*;
 pub use escrow::*;
 pub use extensions::*;
 pub use governance::*;
-pub use incentives::*;
-pub use marketplace::*;
+// Selective imports from incentives
+pub use incentives::{
+    IncentiveConfig, IncentiveProgram, AgentIncentives
+};
+// Selective imports from marketplace to avoid conflicts
+pub use marketplace::{
+    PurchaseStatus, ServiceListing, ServicePurchase, JobPosting, 
+    JobApplication, JobContract, JobCompletion,
+    ServiceListingData as MarketplaceServiceListingData,
+    JobApplicationData as MarketplaceJobApplicationData,
+    ServiceListingCreatedEvent, ServicePurchasedEvent, 
+    JobPostingCreatedEvent, JobApplicationSubmittedEvent, JobApplicationAcceptedEvent,
+};
 pub use message::*;
 pub use negotiation::*;
 pub use pricing::*;
 pub use replication::*;
-pub use reputation::*;
+// Skip reputation module re-export as it's empty
 pub use risk_management::*;
 pub use royalty::*;
-pub use security_governance::*;
-pub use stubs::*;
+// Selective imports from security_governance to avoid conflicts
+pub use security_governance::{
+    RbacConfig, Role, RoleType, RoleConstraints, TimeConstraints, LocationConstraints,
+    GeographicRegion, LatitudeRange, LongitudeRange, ResourceConstraints, ResourceQuota,
+    QuotaResetBehavior, SessionConstraints, SodConstraint, SodConstraintType, EnforcementLevel,
+    ActivationRequirement, ActivationRequirementType, RoleMetadata, RiskLevel, DataAccessLevel,
+    RoleStatus, Permission, Action, ActionType, PermissionScope, ScopeType, ScopeBoundaries,
+    HierarchicalBoundary, PermissionConstraint, PermissionConstraintType, ConstraintCondition,
+    ConstraintOperator, ValueType, ActionConstraint, ApprovalRequirement, ApprovalType,
+    EscalationStep, EscalationTrigger, NotificationMethod, AuditRequirement, AuditLevel,
+    AuditElement, PermissionMetadata, RiskFactor, RiskCategory, RiskAcceptance,
+    AccessPolicy, PolicyType, PolicyRule, RuleCondition, ConditionType, RuleEffect,
+    PolicyScope, ScopeInheritance, PolicyStatus, PolicyMetadata, ReviewSchedule,
+    SecurityPolicies, AuthenticationPolicies, AuthenticationMethod, AuthenticationStrength,
+    AuthenticationLevel, StepUpTrigger, AccountLockoutPolicies, UnlockMethod,
+    NotificationRequirement, SecurityEventType, NotificationTarget, NotificationTargetType,
+    NotificationPriority, NotificationTiming, BiometricPolicies, BiometricType,
+    BiometricQuality, BiometricProtection, BiometricStorageMethod, AgingPolicy,
+    DegradationHandling, AuthorizationPolicies, PasswordPolicies, SessionPolicies,
+    DataProtectionPolicies, NetworkSecurityPolicies, IncidentResponsePolicies,
+    CompliancePolicies, AccessAuditConfig, EmergencyAccessConfig,
+    RiskAssessment as SecurityRiskAssessment,
+};
+pub use protocol_structures::*;
 pub use work_order::*;
 pub use user_registry::*;
 
 // Re-export error types from main lib
-pub use crate::PodAIMarketplaceError;
+pub use crate::GhostSpeakError;
 
 use anchor_lang::prelude::*;
 

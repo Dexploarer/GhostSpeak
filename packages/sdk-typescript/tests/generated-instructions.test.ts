@@ -64,7 +64,7 @@ describe('Generated Instructions Coverage', () => {
       });
 
       expect(instruction).toBeDefined();
-      expect(instruction.programAddress).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(instruction.programAddress).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(instruction.accounts).toBeDefined();
       expect(instruction.accounts.length).toBe(3);
       expect(instruction.data).toBeDefined();
@@ -177,7 +177,7 @@ describe('Generated Instructions Coverage', () => {
       });
 
       expect(instruction).toBeDefined();
-      expect(instruction.programAddress).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(instruction.programAddress).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(instruction.accounts).toBeDefined();
       expect(instruction.data).toBeDefined();
 
@@ -250,7 +250,7 @@ describe('Generated Instructions Coverage', () => {
       });
 
       expect(instruction).toBeDefined();
-      expect(instruction.programAddress).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(instruction.programAddress).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(instruction.accounts).toBeDefined();
       expect(instruction.data).toBeDefined();
 
@@ -457,7 +457,7 @@ describe('Generated Instructions Coverage', () => {
       });
 
       expect(instruction).toBeDefined();
-      expect(instruction.programAddress).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(instruction.programAddress).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(instruction.accounts).toBeDefined();
       expect(instruction.data).toBeDefined();
 

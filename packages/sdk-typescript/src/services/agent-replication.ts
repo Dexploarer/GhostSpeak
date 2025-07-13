@@ -110,7 +110,7 @@ export class AgentReplicationService {
         templateData.genomeHash
       );
 
-      const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const templateId = `template_${Date.now()}_${crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF.toString(36).substr(2, 8)}`;
 
       // Simulate transaction
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -160,7 +160,7 @@ export class AgentReplicationService {
         throw new Error('Maximum replications reached for this template');
       }
 
-      const agentId = `replicated_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      const agentId = `replicated_${Date.now()}_${crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF.toString(36).substr(2, 8)}`;
       const replicatedAgent = await this.getReplicatedAgentPda(
         buyer.address,
         agentId

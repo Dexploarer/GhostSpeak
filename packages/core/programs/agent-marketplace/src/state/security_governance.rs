@@ -7,7 +7,7 @@
  */
 
 use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
+// use std::collections::BTreeMap; // Commented out - using Vec<(K,V)> for Anchor compatibility
 
 // =====================================================
 // ROLE-BASED ACCESS CONTROL STRUCTURES
@@ -230,10 +230,10 @@ pub struct ResourceConstraints {
     pub blocked_resource_types: Vec<String>,
     
     /// Resource access limits
-    pub access_limits: BTreeMap<String, u64>,
+    pub access_limits: Vec<(String, u64)>,
     
     /// Resource quotas
-    pub quotas: BTreeMap<String, ResourceQuota>,
+    pub quotas: Vec<(String, ResourceQuota)>,
     
     /// Compartmentalized access
     pub compartments: Vec<String>,
@@ -467,7 +467,7 @@ pub struct Action {
     pub action_type: ActionType,
     
     /// Action parameters
-    pub parameters: BTreeMap<String, String>,
+    pub parameters: Vec<(String, String)>,
     
     /// Action constraints
     pub constraints: Vec<ActionConstraint>,
@@ -921,16 +921,16 @@ pub struct RuleCondition {
     pub condition_type: ConditionType,
     
     /// Subject attributes
-    pub subject_attributes: BTreeMap<String, String>,
+    pub subject_attributes: Vec<(String, String)>,
     
     /// Resource attributes
-    pub resource_attributes: BTreeMap<String, String>,
+    pub resource_attributes: Vec<(String, String)>,
     
     /// Action attributes
-    pub action_attributes: BTreeMap<String, String>,
+    pub action_attributes: Vec<(String, String)>,
     
     /// Environment attributes
-    pub environment_attributes: BTreeMap<String, String>,
+    pub environment_attributes: Vec<(String, String)>,
 }
 
 /// Types of rule conditions
@@ -1280,7 +1280,7 @@ pub struct BiometricQuality {
     pub multiple_samples: bool,
     
     /// Quality thresholds
-    pub quality_thresholds: BTreeMap<String, u8>,
+    pub quality_thresholds: Vec<(String, u8)>,
 }
 
 /// Biometric template protection

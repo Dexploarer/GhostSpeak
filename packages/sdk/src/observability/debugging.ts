@@ -3,9 +3,9 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import type { LogContext } from './types';
+import type { LogContext, TraceContext } from './types';
 import { StructuredLogger } from './logger';
-import { TracingSystem, TraceContext } from './tracing';
+import { TracingSystem } from './tracing';
 import { ErrorTracker } from './error-tracking';
 
 export class DebugSession {
@@ -196,7 +196,7 @@ export class RemoteDebugger {
       } catch (error) {
         session.addEvent('function_error', `Error in function ${functionName}`, {
           functionName,
-          error: error instanceof Error ? error.message : String(error),
+          error: error instanceof Error ? error : new Error(String(error)),
         });
 
         throw error;
@@ -396,7 +396,7 @@ export class DebugProbe {
       this.logger.error(
         {
           probeName: this.name,
-          error: error instanceof Error ? error.message : String(error),
+          error: error instanceof Error ? error : new Error(String(error)),
         },
         `Error in debug probe: ${this.name}`
       );
@@ -637,7 +637,7 @@ export class DebugUtils {
         {
           label,
           duration,
-          error: error instanceof Error ? error.message : String(error),
+          error: error instanceof Error ? error : new Error(String(error)),
         },
         `${label} failed after ${duration}ms`
       );

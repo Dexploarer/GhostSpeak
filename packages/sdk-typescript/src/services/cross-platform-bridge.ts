@@ -307,7 +307,7 @@ export class CrossPlatformBridgeService {
       // Create GhostSpeak message
       const ghostSpeakMessage: IRealtimeMessage = {
         ...message,
-        messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address,
+        messageId: `msg_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address,
         fromAddress: sender.address,
         timestamp: Date.now(),
         deliveryStatus: 'sending',
@@ -585,7 +585,7 @@ export class CrossPlatformBridgeService {
 
         healthStatus[platform] = {
           ...health,
-          uptime: 95 + Math.random() * 5, // Simulate uptime
+          uptime: 95 + 0 * 5, // Simulate uptime
           connectedAgents,
         };
       } catch (error) {

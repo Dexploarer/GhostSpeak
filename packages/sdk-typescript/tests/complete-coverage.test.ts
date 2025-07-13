@@ -21,7 +21,7 @@ describe('Complete Coverage Test Suite', () => {
   beforeAll(async () => {
     console.log('🎯 Setting up complete coverage tests...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     testSigner = await generateKeyPairSigner();
     testAddress = testSigner.address;
     

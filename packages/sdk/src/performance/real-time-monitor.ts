@@ -547,7 +547,12 @@ export class RealTimePerformanceMonitor extends EventEmitter {
     metric: string;
     value: number;
   }> {
-    const alerts = [];
+    const alerts: Array<{
+      level: 'warning' | 'critical';
+      message: string;
+      metric: string;
+      value: number;
+    }> = [];
 
     // CPU alerts
     if (snapshot.system.cpu.usage > 80) {

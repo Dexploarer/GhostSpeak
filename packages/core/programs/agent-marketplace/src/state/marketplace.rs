@@ -62,6 +62,7 @@ pub struct ServiceListing {
     pub rating: f64,
     pub created_at: i64,
     pub updated_at: i64,
+    pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook for royalties
     pub bump: u8,
 }
 
@@ -80,6 +81,7 @@ pub struct ServicePurchase {
     pub status: PurchaseStatus,
     pub purchased_at: i64,
     pub updated_at: i64,
+    pub transfer_hook_applied: bool, // Track if SPL-2022 transfer hook was applied
     pub bump: u8,
 }
 
@@ -223,6 +225,7 @@ impl ServiceListing {
         8 + // rating
         8 + // created_at
         8 + // updated_at
+        1 + 32 + // transfer_hook Option
         1; // bump
 }
 
@@ -241,6 +244,7 @@ impl ServicePurchase {
         1 + // status
         8 + // purchased_at
         8 + // updated_at
+        1 + // transfer_hook_applied
         1; // bump
 }
 

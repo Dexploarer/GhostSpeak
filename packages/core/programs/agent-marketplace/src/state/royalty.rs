@@ -5,7 +5,6 @@
  */
 
 use anchor_lang::prelude::*;
-use crate::MAX_GENERAL_STRING_LENGTH;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct RoyaltyConfig {

@@ -20,7 +20,7 @@ describe('PodAI Client Complete Coverage', () => {
       rpcEndpoint: 'https://api.devnet.solana.com',
       wsEndpoint: 'wss://api.devnet.solana.com',
       commitment: 'confirmed',
-      programId: '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
+      programId: '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK'
     });
 
     testSigner = await generateKeyPairSigner();
@@ -263,7 +263,7 @@ describe('PodAI Client Complete Coverage', () => {
       const validConfigs = [
         {
           rpcEndpoint: 'https://api.devnet.solana.com',
-          programId: '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
+          programId: '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK'
         },
         {
           rpcEndpoint: 'https://api.devnet.solana.com',
@@ -351,12 +351,12 @@ describe('PodAI Client Complete Coverage', () => {
         rpcEndpoint: 'https://api.devnet.solana.com',
         wsEndpoint: 'wss://api.devnet.solana.com',
         commitment: 'finalized',
-        programId: '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP'
+        programId: '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK'
       });
       
       expect(fullConfigClient.getCommitment()).toBe('finalized');
       expect(fullConfigClient.getWsEndpoint()).toBe('wss://api.devnet.solana.com');
-      expect(fullConfigClient.programId).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(fullConfigClient.programId).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       
       console.log('✅ Full configuration client tested');
     });

@@ -3,8 +3,9 @@
  * Manages cart items and checkout process
  */
 
-import React, { useState } from 'react';
-import { CartItem } from '@podai/sdk';
+import React, { useState, useEffect } from 'react';
+import { CartItem } from '@ghostspeak/sdk';
+import { useGhostspeak } from '../context/GhostSpeakProvider';
 
 export interface ShoppingCartProps {
   items: CartItem[];
@@ -17,6 +18,9 @@ export interface ShoppingCartProps {
   className?: string;
 }
 
+// Cache for listing details to avoid repeated fetches
+const listingCache = new Map<string, { title: string; price: bigint; description: string; fetchedAt: number }>();
+
 export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   items,
   onUpdateQuantity,
@@ -28,11 +32,63 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   className = '',
 }) => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [totalPrice, setTotalPrice] = useState<bigint>(0n);
+  const [listingDetails, setListingDetails] = useState<Map<string, any>>(new Map());
+  const { sdk } = useGhostspeak();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  
-  // Note: In a real implementation, we'd fetch listing details to calculate total price
-  const mockTotalPrice = items.reduce((sum, item) => sum + (item.quantity * 0.5), 0); // Mock price
+
+  // Fetch listing details for all items
+  useEffect(() => {
+    const fetchListingDetails = async () => {
+      if (!sdk) return;
+      
+      const newDetails = new Map(listingDetails);
+      let newTotalPrice = 0n;
+      
+      for (const item of items) {
+        // Check cache first
+        const cached = listingCache.get(item.listingId);
+        if (cached && Date.now() - cached.fetchedAt < 300000) { // 5 minute cache
+          newDetails.set(item.listingId, cached);
+          newTotalPrice += cached.price * BigInt(item.quantity);
+          continue;
+        }
+        
+        try {
+          // Fetch from blockchain
+          const listing = await sdk.marketplace.getServiceListing(item.listingId as any);
+          if (listing) {
+            const details = {
+              title: listing.title || `Service ${item.listingId.substring(0, 8)}...`,
+              price: listing.price || 500000000n, // Default 0.5 SOL
+              description: listing.description || 'AI-powered service',
+              fetchedAt: Date.now()
+            };
+            listingCache.set(item.listingId, details);
+            newDetails.set(item.listingId, details);
+            newTotalPrice += details.price * BigInt(item.quantity);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch listing ${item.listingId}:`, error);
+          // Use defaults if fetch fails
+          const defaultDetails = {
+            title: `Service ${item.listingId.substring(0, 8)}...`,
+            price: 500000000n, // 0.5 SOL
+            description: item.customInstructions || 'AI-powered service',
+            fetchedAt: Date.now()
+          };
+          newDetails.set(item.listingId, defaultDetails);
+          newTotalPrice += defaultDetails.price * BigInt(item.quantity);
+        }
+      }
+      
+      setListingDetails(newDetails);
+      setTotalPrice(newTotalPrice);
+    };
+
+    fetchListingDetails();
+  }, [items, sdk]);
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
@@ -86,6 +142,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                   <CartItemCard
                     key={item.listingId}
                     item={item}
+                    details={listingDetails.get(item.listingId)}
                     onUpdateQuantity={onUpdateQuantity}
                     onRemove={onRemoveItem}
                   />
@@ -100,7 +157,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
               {/* Total */}
               <div className="flex justify-between items-center text-lg font-semibold">
                 <span>Total:</span>
-                <span>{mockTotalPrice.toFixed(4)} SOL</span>
+                <span>{(Number(totalPrice) / 1e9).toFixed(4)} SOL</span>
               </div>
 
               {/* Actions */}
@@ -129,29 +186,32 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
 interface CartItemCardProps {
   item: CartItem;
+  details?: { title: string; price: bigint; description: string };
   onUpdateQuantity: (listingId: string, quantity: number) => void;
   onRemove: (listingId: string) => void;
 }
 
 const CartItemCard: React.FC<CartItemCardProps> = ({
   item,
+  details,
   onUpdateQuantity,
   onRemove,
 }) => {
-  // Mock data - in real implementation, fetch from listing details
-  const mockPrice = 0.5;
-  const mockTitle = `Service ${item.listingId.substring(0, 8)}...`;
-  const mockDescription = item.customInstructions || 'AI-powered service';
+  // Use real data from blockchain or defaults
+  const price = details?.price || 500000000n; // Default 0.5 SOL
+  const priceInSol = Number(price) / 1e9;
+  const title = details?.title || `Service ${item.listingId.substring(0, 8)}...`;
+  const description = details?.description || item.customInstructions || 'AI-powered service';
 
   return (
     <div className="border border-gray-200 rounded-lg p-3">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
           <h4 className="text-sm font-medium text-gray-900 truncate">
-            {mockTitle}
+            {title}
           </h4>
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-            {mockDescription}
+            {description}
           </p>
         </div>
         <button
@@ -183,7 +243,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
         </div>
         
         <div className="text-sm font-medium text-gray-900">
-          {(mockPrice * item.quantity).toFixed(4)} SOL
+          {(priceInSol * item.quantity).toFixed(4)} SOL
         </div>
       </div>
 

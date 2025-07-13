@@ -492,13 +492,13 @@ export const httpRequestDuration = new Histogram({
 
 ### GitHub
 
-**Main Repository**: [github.com/ghostspeak/core](https://github.com/ghostspeak/core)
+**Main Repository**: [github.com/ghostspeak/core](https://github.com/ghostspeak/ghostspeak)
 
 **Contributing:**
-- 🐛 [Report Issues](https://github.com/ghostspeak/core/issues/new?template=bug_report.md)
-- 💡 [Feature Requests](https://github.com/ghostspeak/core/issues/new?template=feature_request.md)
-- 📖 [Documentation Improvements](https://github.com/ghostspeak/core/issues/new?template=docs.md)
-- 🔧 [Pull Requests](https://github.com/ghostspeak/core/pulls)
+- 🐛 [Report Issues](https://github.com/ghostspeak/ghostspeak/issues/new?template=bug_report.md)
+- 💡 [Feature Requests](https://github.com/ghostspeak/ghostspeak/issues/new?template=feature_request.md)
+- 📖 [Documentation Improvements](https://github.com/ghostspeak/ghostspeak/issues/new?template=docs.md)
+- 🔧 [Pull Requests](https://github.com/ghostspeak/ghostspeak/pulls)
 
 **Related Repositories:**
 - [ghostspeak/examples](https://github.com/ghostspeak/examples) - Example applications
@@ -602,9 +602,9 @@ docker logs -f container-name
 
 ### Quick Help Decision Tree
 
-1. **🐛 Found a bug?** → [Report on GitHub](https://github.com/ghostspeak/core/issues)
+1. **🐛 Found a bug?** → [Report on GitHub](https://github.com/ghostspeak/ghostspeak/issues)
 2. **❓ Have a question?** → [Ask on Discord](https://discord.gg/ghostspeak-dev)
-3. **💡 Want a feature?** → [Request on GitHub](https://github.com/ghostspeak/core/issues)
+3. **💡 Want a feature?** → [Request on GitHub](https://github.com/ghostspeak/ghostspeak/issues)
 4. **📚 Need documentation?** → [Check the docs](./README.md)
 5. **🚀 Enterprise support?** → [Contact sales](mailto:enterprise@ghostspeak.com)
 

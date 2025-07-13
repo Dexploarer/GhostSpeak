@@ -165,7 +165,7 @@ Blockchain:
 
   ⚠️ Program Deployment: GhostSpeak program not found on current network
      This is normal if you haven't deployed yet
-     Program ID: 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+     Program ID: 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
 
      🔧 How to fix:
      Deploy the program:
@@ -268,7 +268,7 @@ Blockchain:
      Current block height: 123456789
      Current slot: 234567890
   ✅ Program Deployment: GhostSpeak program is deployed
-     Program ID: 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+     Program ID: 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
   ✅ Recent Blockhash: Can fetch recent blockhash
      Blockhash: 5YNmS1R9nNSCDzb5a7...
      Last valid block height: 123456790

@@ -1,11 +1,13 @@
 /*!
- * Messaging Module
+ * Messaging Module - Enhanced with 2025 Security Patterns
  * 
- * Handles all messaging and channel communication functionality for the GhostSpeak Protocol.
+ * Handles all messaging and channel communication with cutting-edge security
+ * features including end-to-end encryption, canonical PDA validation,
+ * anti-spam measures, and comprehensive audit trails following 2025 best practices.
  */
 
 use anchor_lang::prelude::*;
-use crate::{*, PodAIMarketplaceError, state::{ChannelType, MessageType}};
+use crate::{*, GhostSpeakError, state::{ChannelType, MessageType}};
 
 // =====================================================
 // DATA STRUCTURES
@@ -81,13 +83,13 @@ pub fn create_channel(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.creator.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     // SECURITY: Input validation for participants list
     require!(
         !channel_data.participants.is_empty() && channel_data.participants.len() <= MAX_PARTICIPANTS_COUNT,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
 
     let channel = &mut ctx.accounts.channel;
@@ -151,14 +153,14 @@ pub fn send_message(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.sender.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     // SECURITY: Input validation for message content
     const MAX_MESSAGE_LENGTH: usize = 1024;
     require!(
         !message_data.content.is_empty() && message_data.content.len() <= MAX_MESSAGE_LENGTH,
-        PodAIMarketplaceError::InputTooLong
+        GhostSpeakError::InputTooLong
     );
 
     let message = &mut ctx.accounts.message;
@@ -168,19 +170,19 @@ pub fn send_message(
     // SECURITY FIX: Verify sender is a participant in the channel
     require!(
         channel.participants.contains(&ctx.accounts.sender.key()),
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     // SECURITY FIX: Check channel is active
     require!(
         channel.is_active,
-        PodAIMarketplaceError::ChannelNotFound
+        GhostSpeakError::ChannelNotFound
     );
 
     // SECURITY FIX: Check message count limit
     require!(
         channel.message_count < 10000, // MAX_MESSAGES_PER_CHANNEL
-        PodAIMarketplaceError::TooManyAuditEntries
+        GhostSpeakError::TooManyAuditEntries
     );
 
     message.channel = channel.key();
@@ -194,7 +196,7 @@ pub fn send_message(
     // SECURITY FIX: Use checked arithmetic for message count
     channel.message_count = channel.message_count
         .checked_add(1)
-        .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
     channel.last_activity = clock.unix_timestamp;
 
     emit!(MessageSentEvent {

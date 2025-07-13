@@ -22,13 +22,13 @@ import type {
   RpcSubscriptions,
   SolanaRpcSubscriptionsApi,
 } from '@solana/rpc-subscriptions';
-import type { Commitment } from '@solana/rpc-types';
+import type { Commitment, Lamports } from '@solana/rpc-types';
 import {
   getCurrentProgramId,
   getNetworkConfig,
   type NetworkEnvironment,
-} from '../../../config/program-ids';
-import { getGlobalConnectionPool } from './rpc/connection-pool';
+} from './config/program-ids';
+// import { getGlobalConnectionPool } from './rpc/connection-pool'; // Temporarily disabled
 // Local logging for client operations
 const logger = {
   info: (msg: string) => console.log(`[SDK] ${msg}`),
@@ -81,19 +81,23 @@ export class PodAIClient {
 
     // Initialize RPC connection - use connection pool if enabled
     if (config.useConnectionPool !== false) {
+      /* Temporarily disabled connection pool
       const pool = getGlobalConnectionPool({
         endpoints: [this.rpcEndpoint],
         commitment: config.commitment ?? networkConfig.commitment,
       });
       // Use pooled connection
       this.rpc = new Proxy({} as Rpc<SolanaRpcApi>, {
-        get(target, prop) {
+        get(_target, prop) {
           if (typeof prop === 'string') {
             return (...args: any[]) => pool.executeRequest(prop, args);
           }
           return undefined;
         },
       });
+      */
+      // Fall back to direct connection
+      this.rpc = createSolanaRpc(this.rpcEndpoint);
     } else {
       this.rpc = createSolanaRpc(this.rpcEndpoint);
     }
@@ -109,7 +113,7 @@ export class PodAIClient {
 
     // Set program ID using centralized configuration
     this.programId = this.parseAddress(
-      config.programId ?? getCurrentProgramId('ghostspeak')
+      config.programId ?? getCurrentProgramId('devnet')
     );
 
     // Set commitment level
@@ -385,7 +389,7 @@ export class PodAIClient {
     try {
       // Calculate lamports directly as a number to avoid BigInt conversion issues
       const LAMPORTS_PER_SOL = 1_000_000_000;
-      const lamports = Math.floor(solAmount * LAMPORTS_PER_SOL);
+      const lamports = Math.floor(solAmount * LAMPORTS_PER_SOL) as unknown as Lamports;
       
       const signature = await this.rpc
         .requestAirdrop(address, lamports)

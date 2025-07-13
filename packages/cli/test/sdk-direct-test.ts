@@ -16,7 +16,7 @@ async function testDirectSdk() {
     console.log('✅ RPC created');
     
     // Program ID
-    const programId = address('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    const programId = address('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     console.log('✅ Program ID:', programId);
     
     // Initialize SDK

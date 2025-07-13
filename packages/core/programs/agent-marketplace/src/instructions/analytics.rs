@@ -1,12 +1,30 @@
 /*!
- * Analytics Module
+ * Analytics Instructions - Enhanced with 2025 Security Patterns
  * 
- * Implements comprehensive analytics and performance tracking
- * for agents and the overall marketplace.
+ * Implements comprehensive analytics and performance tracking with cutting-edge
+ * security features including canonical PDA validation, rate limiting,
+ * comprehensive input sanitization, and anti-manipulation measures
+ * following 2025 Solana best practices.
+ * 
+ * Security Features:
+ * - Canonical PDA validation with collision prevention
+ * - Rate limiting with 60-second cooldowns for updates
+ * - Enhanced input validation with security constraints
+ * - User registry integration for spam prevention
+ * - Comprehensive audit trail logging
+ * - Authority verification with has_one constraints
+ * - Anti-manipulation measures for analytics data
  */
 
 use anchor_lang::prelude::*;
+use crate::*;
 use crate::state::*;
+use crate::simple_optimization::{SecurityLogger, FormalVerification, InputValidator};
+
+// Enhanced 2025 security constants
+const RATE_LIMIT_WINDOW: i64 = 60; // 60-second cooldown for analytics operations
+const MAX_METRICS_LENGTH: usize = 1024; // Maximum metrics string length
+const MAX_DASHBOARD_UPDATES_PER_HOUR: u8 = 10; // Prevent excessive updates
 
 /// Creates an analytics dashboard for performance tracking
 /// 
@@ -49,6 +67,34 @@ pub fn create_analytics_dashboard(
     dashboard_id: u64,
     metrics: String,
 ) -> Result<()> {
+    let clock = Clock::get()?;
+    
+    // SECURITY: Enhanced signer authorization
+    require!(
+        ctx.accounts.owner.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
+    
+    // SECURITY: Rate limiting - prevent dashboard spam
+    let user_registry = &mut ctx.accounts.user_registry;
+    require!(
+        clock.unix_timestamp >= user_registry.last_dashboard_creation + RATE_LIMIT_WINDOW,
+        GhostSpeakError::RateLimitExceeded
+    );
+    user_registry.last_dashboard_creation = clock.unix_timestamp;
+    
+    // SECURITY: Input validation for metrics string
+    require!(
+        metrics.len() <= MAX_METRICS_LENGTH,
+        GhostSpeakError::InvalidInputLength
+    );
+    
+    // SECURITY: Validate dashboard_id uniqueness (non-zero)
+    require!(
+        dashboard_id > 0,
+        GhostSpeakError::InvalidParameter
+    );
+    
     let dashboard = &mut ctx.accounts.dashboard;
     
     // Use the struct's initialize method to ensure proper validation
@@ -59,11 +105,15 @@ pub fn create_analytics_dashboard(
         ctx.bumps.dashboard,
     )?;
 
+    // SECURITY: Log dashboard creation for audit trail
+    SecurityLogger::log_security_event("ANALYTICS_DASHBOARD_CREATED", ctx.accounts.owner.key(), 
+        &format!("dashboard: {}, dashboard_id: {}", dashboard.key(), dashboard_id));
+
     emit!(AnalyticsDashboardCreatedEvent {
         dashboard: dashboard.key(),
         owner: ctx.accounts.owner.key(),
         dashboard_id,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp: clock.unix_timestamp,
     });
 
     Ok(())
@@ -101,15 +151,44 @@ pub fn update_analytics_dashboard(
     ctx: Context<UpdateAnalyticsDashboard>,
     new_metrics: String,
 ) -> Result<()> {
+    let clock = Clock::get()?;
+    
+    // SECURITY: Enhanced signer authorization
+    require!(
+        ctx.accounts.owner.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
+    
+    // SECURITY: Rate limiting for dashboard updates
+    let user_registry = &mut ctx.accounts.user_registry;
+    require!(
+        clock.unix_timestamp >= user_registry.last_dashboard_update + RATE_LIMIT_WINDOW,
+        GhostSpeakError::RateLimitExceeded
+    );
+    user_registry.last_dashboard_update = clock.unix_timestamp;
+    
+    // SECURITY: Input validation for new metrics
+    require!(
+        new_metrics.len() <= MAX_METRICS_LENGTH,
+        GhostSpeakError::InvalidInputLength
+    );
+    
     let dashboard = &mut ctx.accounts.dashboard;
+    
+    // Store the length before moving the string
+    let metrics_length = new_metrics.len();
     
     // Update metrics using the struct's built-in method
     dashboard.update_metrics(new_metrics)?;
     
+    // SECURITY: Log dashboard update for audit trail
+    SecurityLogger::log_security_event("ANALYTICS_DASHBOARD_UPDATED", ctx.accounts.owner.key(), 
+        &format!("dashboard: {}, metrics_length: {}", dashboard.key(), metrics_length));
+
     emit!(AnalyticsDashboardUpdatedEvent {
         dashboard: dashboard.key(),
         owner: ctx.accounts.owner.key(),
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp: clock.unix_timestamp,
     });
     
     Ok(())
@@ -233,58 +312,132 @@ pub fn add_top_agent(
     Ok(())
 }
 
-// Context structures
+// Enhanced account structures with 2025 security patterns
+/// Enhanced dashboard creation with canonical PDA validation
 #[derive(Accounts)]
+#[instruction(dashboard_id: u64, metrics: String)]
 pub struct CreateAnalyticsDashboard<'info> {
+    /// Dashboard account with collision prevention
     #[account(
         init,
         payer = owner,
         space = AnalyticsDashboard::LEN,
-        seeds = [b"analytics", owner.key().as_ref()],
+        seeds = [
+            b"analytics", 
+            owner.key().as_ref(),
+            dashboard_id.to_le_bytes().as_ref()  // Enhanced collision prevention
+        ],
         bump
     )]
     pub dashboard: Account<'info, AnalyticsDashboard>,
+    
+    /// User registry for rate limiting and spam prevention
+    #[account(
+        init_if_needed,
+        payer = owner,
+        space = UserRegistry::LEN,
+        seeds = [b"user_registry", owner.key().as_ref()],
+        bump
+    )]
+    pub user_registry: Account<'info, UserRegistry>,
+    
+    /// Enhanced authority verification
     #[account(mut)]
     pub owner: Signer<'info>,
+    
+    /// System program for account creation
     pub system_program: Program<'info, System>,
+    
+    /// Clock sysvar for timestamp validation
+    pub clock: Sysvar<'info, Clock>,
 }
 
+/// Enhanced dashboard update with canonical bump validation
 #[derive(Accounts)]
 pub struct UpdateAnalyticsDashboard<'info> {
+    /// Dashboard account with canonical validation
     #[account(
         mut,
-        seeds = [b"analytics", owner.key().as_ref()],
+        seeds = [
+            b"analytics", 
+            owner.key().as_ref(),
+            dashboard.dashboard_id.to_le_bytes().as_ref()
+        ],
         bump = dashboard.bump,
-        has_one = owner
+        has_one = owner @ GhostSpeakError::UnauthorizedAccess
     )]
     pub dashboard: Account<'info, AnalyticsDashboard>,
+    
+    /// User registry for rate limiting
+    #[account(
+        mut,
+        seeds = [b"user_registry", owner.key().as_ref()],
+        bump = user_registry.bump
+    )]
+    pub user_registry: Account<'info, UserRegistry>,
+    
+    /// Enhanced owner verification
     pub owner: Signer<'info>,
+    
+    /// Clock sysvar for rate limiting
+    pub clock: Sysvar<'info, Clock>,
 }
 
+/// Enhanced market analytics creation with authority validation
 #[derive(Accounts)]
+#[instruction(period_start: i64, period_end: i64)]
 pub struct CreateMarketAnalytics<'info> {
+    /// Market analytics account with enhanced PDA security
     #[account(
         init,
         payer = authority,
         space = MarketAnalytics::LEN,
-        seeds = [b"market_analytics"],
+        seeds = [
+            b"market_analytics",
+            period_start.to_le_bytes().as_ref(),  // Period-specific analytics
+            period_end.to_le_bytes().as_ref()
+        ],
         bump
     )]
     pub market_analytics: Account<'info, MarketAnalytics>,
-    #[account(mut)]
-    pub authority: Signer<'info>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct UpdateMarketAnalytics<'info> {
+    
+    /// Enhanced authority verification - must be protocol admin
     #[account(
         mut,
-        seeds = [b"market_analytics"],
+        constraint = authority.key() == crate::PROTOCOL_ADMIN @ GhostSpeakError::UnauthorizedAccess
+    )]
+    pub authority: Signer<'info>,
+    
+    /// System program for account creation
+    pub system_program: Program<'info, System>,
+    
+    /// Clock sysvar for timestamp validation
+    pub clock: Sysvar<'info, Clock>,
+}
+
+/// Enhanced market analytics update with canonical validation
+#[derive(Accounts)]
+pub struct UpdateMarketAnalytics<'info> {
+    /// Market analytics account with canonical bump validation
+    #[account(
+        mut,
+        seeds = [
+            b"market_analytics",
+            market_analytics.period_start.to_le_bytes().as_ref(),
+            market_analytics.period_end.to_le_bytes().as_ref()
+        ],
         bump = market_analytics.bump
     )]
     pub market_analytics: Account<'info, MarketAnalytics>,
+    
+    /// Enhanced authority verification
+    #[account(
+        constraint = authority.key() == crate::PROTOCOL_ADMIN @ GhostSpeakError::UnauthorizedAccess
+    )]
     pub authority: Signer<'info>,
+    
+    /// Clock sysvar for timestamp validation
+    pub clock: Sysvar<'info, Clock>,
 }
 
 // Events

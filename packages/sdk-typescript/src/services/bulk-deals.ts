@@ -378,25 +378,8 @@ export class BulkDealsService {
       // Validate configuration
       this.validateNegotiationConfig(config);
 
-      // Generate negotiation ID
-      const negotiationId = `negotiation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
-
-      // In a real implementation, this would call createNegotiation smart contract instruction
-      const mockInstruction = {
-        programAddress: this._programId,
-        accounts: [
-          { address: negotiationId, role: 'writable' as const },
-          { address: initiator.address, role: 'writable_signer' as const },
-        ],
-        data: new Uint8Array([1, 2, 3]) // Mock instruction data
-      };
-
-      const sendTransactionFactory = sendAndConfirmTransactionFactory('https://api.devnet.solana.com');
-      const result = await sendTransactionFactory([mockInstruction], [initiator]);
-      const signature = result.signature;
-
-      console.log('✅ Bulk deal negotiation created:', { negotiationId, signature });
-      return { negotiationId, signature };
+      // Bulk deal negotiations require smart contract implementation
+      throw new Error('Bulk deal negotiation creation not yet implemented - requires smart contract deployment');
     } catch (error) {
       throw new Error(`Negotiation creation failed: ${String(error)}`);
     }
@@ -433,21 +416,7 @@ export class BulkDealsService {
       const partyId = `party_${Date.now()}_${participant.address.slice(0, 8)}` as Address;
 
       // In a real implementation, this would call joinNegotiation instruction
-      const mockInstruction = {
-        programAddress: this._programId,
-        accounts: [
-          { address: negotiationId, role: 'writable' as const },
-          { address: participant.address, role: 'writable_signer' as const },
-        ],
-        data: new Uint8Array([2, 3, 4]) // Mock instruction data
-      };
-
-      const sendTransactionFactory = sendAndConfirmTransactionFactory('https://api.devnet.solana.com');
-      const result = await sendTransactionFactory([mockInstruction], [participant]);
-      const signature = result.signature;
-
-      console.log('✅ Joined negotiation:', { partyId, signature });
-      return { signature, partyId };
+      throw new Error('Bulk deal negotiation joining not yet implemented - requires smart contract deployment');
     } catch (error) {
       throw new Error(`Failed to join negotiation: ${String(error)}`);
     }
@@ -485,26 +454,11 @@ export class BulkDealsService {
       // Validate proposer has authority
       this.validateProposalAuthority(negotiation, proposer.address);
 
-      const proposalId = `proposal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+      const proposalId = `proposal_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
       const version = negotiation.proposals.length + 1;
 
       // In a real implementation, this would call submitProposal instruction
-      const mockInstruction = {
-        programAddress: this._programId,
-        accounts: [
-          { address: proposalId, role: 'writable' as const },
-          { address: negotiationId, role: 'writable' as const },
-          { address: proposer.address, role: 'writable_signer' as const },
-        ],
-        data: new Uint8Array([3, 4, 5]) // Mock instruction data
-      };
-
-      const sendTransactionFactory = sendAndConfirmTransactionFactory('https://api.devnet.solana.com');
-      const result = await sendTransactionFactory([mockInstruction], [proposer]);
-      const signature = result.signature;
-
-      console.log('✅ Proposal submitted:', { proposalId, signature, version });
-      return { proposalId, signature, version };
+      throw new Error('Bulk deal proposal submission not yet implemented - requires smart contract deployment');
     } catch (error) {
       throw new Error(`Proposal submission failed: ${String(error)}`);
     }
@@ -528,25 +482,7 @@ export class BulkDealsService {
       console.log(`🗳️ Voting ${vote} on proposal: ${proposalId}`);
 
       // In a real implementation, this would validate voting rights and record vote
-      const mockInstruction = {
-        programAddress: this._programId,
-        accounts: [
-          { address: proposalId, role: 'writable' as const },
-          { address: voter.address, role: 'writable_signer' as const },
-        ],
-        data: new Uint8Array([4, 5, 6]) // Mock instruction data
-      };
-
-      const sendTransactionFactory = sendAndConfirmTransactionFactory('https://api.devnet.solana.com');
-      const result = await sendTransactionFactory([mockInstruction], [voter]);
-      const signature = result.signature;
-
-      // Simulate voting results
-      const votingComplete = Math.random() > 0.3;
-      const consensusReached = votingComplete && Math.random() > 0.4;
-
-      console.log('✅ Vote recorded:', { signature, votingComplete, consensusReached });
-      return { signature, votingComplete, consensusReached };
+      throw new Error('Bulk deal voting not yet implemented - requires smart contract deployment');
     } catch (error) {
       throw new Error(`Voting failed: ${String(error)}`);
     }
@@ -577,26 +513,11 @@ export class BulkDealsService {
         throw new Error('Agreement not ready for finalization');
       }
 
-      const agreementId = `agreement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+      const agreementId = `agreement_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
       const escrowAccount = escrowAmount ? `escrow_${Date.now()}` as Address : undefined;
 
       // In a real implementation, this would call finalizeAgreement instruction
-      const mockInstruction = {
-        programAddress: this._programId,
-        accounts: [
-          { address: agreementId, role: 'writable' as const },
-          { address: negotiationId, role: 'writable' as const },
-          { address: executor.address, role: 'writable_signer' as const },
-        ],
-        data: new Uint8Array([5, 6, 7]) // Mock instruction data
-      };
-
-      const sendTransactionFactory = sendAndConfirmTransactionFactory('https://api.devnet.solana.com');
-      const result = await sendTransactionFactory([mockInstruction], [executor]);
-      const signature = result.signature;
-
-      console.log('✅ Agreement finalized:', { agreementId, signature, escrowAccount });
-      return { agreementId, signature, escrowAccount };
+      throw new Error('Bulk deal agreement finalization not yet implemented - requires smart contract deployment');
     } catch (error) {
       throw new Error(`Agreement finalization failed: ${String(error)}`);
     }
@@ -619,8 +540,8 @@ export class BulkDealsService {
         return null;
       }
 
-      // Simulate negotiation data parsing
-      return this.generateMockNegotiation(negotiationId);
+      // Return null when negotiation account doesn't exist or can't be parsed
+      return null;
     } catch (error) {
       console.error('Failed to get negotiation:', error);
       return null;
@@ -850,319 +771,11 @@ export class BulkDealsService {
     }
   }
 
-  private generateMockNegotiation(negotiationId: Address): IBulkDealNegotiation {
-    const dealTypes: BulkDealType[] = ['agent_bundle', 'service_package', 'enterprise_license', 'volume_discount'];
-    const statuses: NegotiationStatus[] = ['proposed', 'negotiating', 'pending_approval', 'under_review'];
-    
-    const randomDealType = dealTypes[Math.floor(Math.random() * dealTypes.length)];
-    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-    
-    return {
-      negotiationId,
-      dealType: randomDealType,
-      initiator: `initiator_${Date.now()}` as Address,
-      title: `${randomDealType} Bulk Deal`,
-      description: `Large-scale ${randomDealType} negotiation for enterprise clients`,
-      status: randomStatus,
-      currentPhase: 'bargaining',
-      createdAt: Date.now() - Math.random() * 86400000 * 7, // Within last week
-      lastActivity: Date.now() - Math.random() * 3600000, // Within last hour
-      deadline: Date.now() + Math.random() * 86400000 * 30, // Next 30 days
-      parties: this.generateMockParties(),
-      maxParticipants: Math.floor(Math.random() * 10) + 3,
-      invitationOnly: Math.random() > 0.6,
-      proposals: [],
-      negotiationHistory: [],
-      estimatedValue: BigInt(Math.floor(Math.random() * 50000000000) + 1000000000), // 1-50 SOL
-      totalItems: Math.floor(Math.random() * 50) + 1,
-      categories: ['AI Services', 'Enterprise Software', 'Data Processing'],
-      communicationChannels: [
-        { type: 'on_chain_messages', enabled: true },
-        { type: 'private_channel', enabled: Math.random() > 0.5 },
-      ],
-      jurisdiction: 'International',
-      disputeResolution: {
-        mechanism: 'arbitration',
-        rules: 'Standard arbitration rules',
-      },
-    };
-  }
-
-  private generateMockParties(): INegotiationParty[] {
-    const roles: PartyRole[] = ['initiator', 'primary_seller', 'buyer', 'intermediary'];
-    const partyCount = Math.floor(Math.random() * 6) + 2; // 2-7 parties
-    
-    return Array.from({ length: partyCount }, (_, i) => ({
-      address: `party_${i + 1}_${Date.now()}` as Address,
-      role: roles[i % roles.length],
-      name: `Party ${i + 1}`,
-      organization: Math.random() > 0.5 ? `Organization ${i + 1}` : undefined,
-      reputation: Math.floor(Math.random() * 100) + 1,
-      hasJoined: Math.random() > 0.2,
-      lastActive: Date.now() - Math.random() * 3600000,
-      approvalStatus: 'pending',
-      votingWeight: Math.floor(Math.random() * 100) + 1,
-      decisionAuthority: {
-        canApprove: Math.random() > 0.3,
-        canVeto: Math.random() > 0.8,
-        canModifyTerms: Math.random() > 0.5,
-      },
-      preferredCommunication: 'hybrid',
-      responseTimeTarget: Math.floor(Math.random() * 3600000) + 300000, // 5 minutes to 1 hour
-    }));
-  }
-
-  private async getAllNegotiations(limit: number): Promise<IBulkDealNegotiation[]> {
-    // Simulate getting negotiations from blockchain
-    return Array.from({ length: Math.min(limit, 25) }, (_, i) => 
-      this.generateMockNegotiation(`negotiation_${i + 1}_${Date.now()}` as Address)
-    );
-  }
-
-  private applyNegotiationFilters(
-    negotiations: IBulkDealNegotiation[],
-    filters: IBulkDealFilters
-  ): IBulkDealNegotiation[] {
-    return negotiations.filter(negotiation => {
-      // Deal type filtering
-      if (filters.dealTypes && !filters.dealTypes.includes(negotiation.dealType)) return false;
-      
-      // Status filtering
-      if (filters.statuses && !filters.statuses.includes(negotiation.status)) return false;
-      
-      // Value range filtering
-      if (filters.valueRange) {
-        if (filters.valueRange.min && negotiation.estimatedValue < filters.valueRange.min) return false;
-        if (filters.valueRange.max && negotiation.estimatedValue > filters.valueRange.max) return false;
-      }
-      
-      // Category filtering
-      if (filters.categories && !filters.categories.some(cat => negotiation.categories.includes(cat))) return false;
-      
-      // Party filtering
-      if (filters.includeParty && !negotiation.parties.some(p => p.address === filters.includeParty)) return false;
-      if (filters.excludeParty && negotiation.parties.some(p => p.address === filters.excludeParty)) return false;
-      
-      // Participant count filtering
-      if (filters.minParticipants && negotiation.parties.length < filters.minParticipants) return false;
-      if (filters.maxParticipants && negotiation.parties.length > filters.maxParticipants) return false;
-      
-      // Timing filtering
-      if (filters.createdAfter && negotiation.createdAt < filters.createdAfter) return false;
-      if (filters.createdBefore && negotiation.createdAt > filters.createdBefore) return false;
-      if (filters.deadlineBefore && (!negotiation.deadline || negotiation.deadline > filters.deadlineBefore)) return false;
-      
-      // Items filtering
-      if (filters.minItems && negotiation.totalItems < filters.minItems) return false;
-
-      return true;
-    });
-  }
-
-  private sortNegotiations(
-    negotiations: IBulkDealNegotiation[],
-    filters: IBulkDealFilters
-  ): IBulkDealNegotiation[] {
-    const sortedNegotiations = [...negotiations];
-
-    switch (filters.sortBy) {
-      case 'created':
-        sortedNegotiations.sort((a, b) => b.createdAt - a.createdAt);
-        break;
-      case 'value':
-        sortedNegotiations.sort((a, b) => Number(b.estimatedValue - a.estimatedValue));
-        break;
-      case 'deadline':
-        sortedNegotiations.sort((a, b) => (a.deadline || 0) - (b.deadline || 0));
-        break;
-      case 'progress':
-        sortedNegotiations.sort((a, b) => this.calculateProgressScore(b) - this.calculateProgressScore(a));
-        break;
-      case 'participants':
-        sortedNegotiations.sort((a, b) => b.parties.length - a.parties.length);
-        break;
-      default:
-        sortedNegotiations.sort((a, b) => b.lastActivity - a.lastActivity);
-    }
-
-    if (filters.sortOrder === 'asc') {
-      sortedNegotiations.reverse();
-    }
-
-    return sortedNegotiations;
-  }
-
-  private calculateSearchQuality(
-    negotiations: IBulkDealNegotiation[],
-    filters: IBulkDealFilters
-  ): number {
-    if (negotiations.length === 0) return 0;
-    
-    const diversityScore = Math.min(negotiations.length / 15, 1) * 30;
-    const relevanceScore = negotiations.length > 0 ? 70 : 0;
-    
-    return Math.round(diversityScore + relevanceScore);
-  }
-
-  private calculateProgressScore(negotiation: IBulkDealNegotiation): number {
-    const statusScores = {
-      'draft': 10,
-      'proposed': 25,
-      'under_review': 40,
-      'counter_proposed': 45,
-      'negotiating': 60,
-      'pending_approval': 80,
-      'approved': 95,
-      'rejected': 0,
-      'expired': 0,
-      'executed': 100,
-      'disputed': 30,
-    };
-
-    const baseScore = statusScores[negotiation.status] || 0;
-    const participationBonus = Math.min((negotiation.parties.length / 5) * 10, 15);
-    const activityBonus = negotiation.lastActivity > Date.now() - 86400000 ? 10 : 0; // Active in last day
-
-    return Math.min(baseScore + participationBonus + activityBonus, 100);
-  }
-
-  private estimateTimeToCompletion(negotiation: IBulkDealNegotiation): number {
-    // Simple estimation based on current phase and complexity
-    const baseTime = 7 * 24 * 60 * 60 * 1000; // 7 days
-    const complexityFactor = Math.min(negotiation.totalItems / 10, 2);
-    const participantFactor = Math.min(negotiation.parties.length / 5, 1.5);
-    
-    return Math.round(baseTime * complexityFactor * participantFactor);
-  }
-
-  private identifyStuckPoints(negotiation: IBulkDealNegotiation): string[] {
-    const stuckPoints: string[] = [];
-    
-    if (negotiation.lastActivity < Date.now() - 48 * 60 * 60 * 1000) {
-      stuckPoints.push('No recent activity for over 48 hours');
-    }
-    
-    if (negotiation.estimatedValue > BigInt(10000000000)) {
-      stuckPoints.push('High deal value may require additional approvals');
-    }
-    
-    if (negotiation.parties.length > 5) {
-      stuckPoints.push('Large number of participants may slow consensus');
-    }
-    
-    return stuckPoints;
-  }
-
-  private analyzeParticipantEngagement(negotiation: IBulkDealNegotiation): INegotiationAnalytics['participantEngagement'] {
-    return negotiation.parties.map(party => ({
-      party: party.address,
-      engagementScore: Math.floor(Math.random() * 100) + 1,
-      responseTime: Math.floor(Math.random() * 3600000) + 300000,
-      constructiveness: Math.floor(Math.random() * 100) + 1,
-    }));
-  }
-
-  private analyzePriceMovement(negotiation: IBulkDealNegotiation): INegotiationAnalytics['priceMovement'] {
-    const movements = Math.floor(Math.random() * 5) + 1;
-    return Array.from({ length: movements }, (_, i) => ({
-      timestamp: negotiation.createdAt + (i * 86400000),
-      proposedPrice: negotiation.estimatedValue + BigInt(Math.floor(Math.random() * 2000000000) - 1000000000),
-      proposer: negotiation.parties[i % negotiation.parties.length].address,
-    }));
-  }
-
-  private analyzeTermsEvolution(negotiation: IBulkDealNegotiation): INegotiationAnalytics['termsEvolution'] {
-    const changes = Math.floor(Math.random() * 3) + 1;
-    return Array.from({ length: changes }, (_, i) => ({
-      timestamp: negotiation.createdAt + (i * 172800000), // Every 2 days
-      changedTerms: ['pricing', 'delivery_schedule', 'warranty_terms'].slice(0, Math.floor(Math.random() * 3) + 1),
-      complexity: Math.floor(Math.random() * 100) + 1,
-    }));
-  }
-
-  private async getMarketComparison(negotiation: IBulkDealNegotiation): Promise<INegotiationAnalytics['marketComparison']> {
-    // Simulate market comparison
-    return {
-      similarDeals: Math.floor(Math.random() * 20) + 5,
-      averageValue: BigInt(Math.floor(Math.random() * 20000000000) + 5000000000),
-      averageNegotiationTime: Math.floor(Math.random() * 30) + 7, // 7-37 days
-      successRate: Math.floor(Math.random() * 40) + 60, // 60-100%
-    };
-  }
-
-  private predictSuccessProbability(negotiation: IBulkDealNegotiation): number {
-    const progressScore = this.calculateProgressScore(negotiation);
-    const participationFactor = Math.min(negotiation.parties.filter(p => p.hasJoined).length / negotiation.parties.length, 1) * 20;
-    const timelineFactor = negotiation.deadline && negotiation.deadline > Date.now() ? 20 : 10;
-    
-    return Math.min(Math.round((progressScore * 0.6) + participationFactor + timelineFactor), 100);
-  }
-
-  private generateActionRecommendations(negotiation: IBulkDealNegotiation): INegotiationAnalytics['recommendedActions'] {
-    const recommendations: INegotiationAnalytics['recommendedActions'] = [];
-    
-    negotiation.parties.forEach(party => {
-      if (!party.hasJoined) {
-        recommendations.push({
-          party: party.address,
-          action: 'Join the negotiation to participate in decision making',
-          priority: 'high',
-          reasoning: 'Your participation is required for the negotiation to proceed',
-        });
-      }
-      
-      if (party.lastActive < Date.now() - 24 * 60 * 60 * 1000) {
-        recommendations.push({
-          party: party.address,
-          action: 'Respond to latest proposals',
-          priority: 'medium',
-          reasoning: 'Lack of response may delay the negotiation process',
-        });
-      }
-    });
-    
-    return recommendations;
-  }
-
-  private assessRiskFactors(negotiation: IBulkDealNegotiation): INegotiationAnalytics['riskFactors'] {
-    const risks: INegotiationAnalytics['riskFactors'] = [];
-    
-    if (negotiation.deadline && negotiation.deadline - Date.now() < 7 * 24 * 60 * 60 * 1000) {
-      risks.push({
-        type: 'timeline',
-        severity: 'high',
-        description: 'Negotiation deadline approaching within 7 days',
-        mitigation: 'Expedite decision making and reduce scope if necessary',
-      });
-    }
-    
-    if (negotiation.estimatedValue > BigInt(25000000000)) {
-      risks.push({
-        type: 'price',
-        severity: 'medium',
-        description: 'High-value deal may require additional due diligence',
-        mitigation: 'Ensure proper legal review and escrow arrangements',
-      });
-    }
-    
-    if (negotiation.parties.length > 7) {
-      risks.push({
-        type: 'parties',
-        severity: 'medium',
-        description: 'Large number of parties may complicate consensus',
-        mitigation: 'Consider forming smaller decision-making committees',
-      });
-    }
-    
-    return risks;
-  }
-
-  private calculateTrendingScore(negotiation: IBulkDealNegotiation): number {
-    const valueFactor = Math.min(Number(negotiation.estimatedValue) / 10000000000, 1) * 30; // Up to 30 points for high value
-    const participantFactor = Math.min(negotiation.parties.length / 8, 1) * 25; // Up to 25 points for many participants
-    const activityFactor = negotiation.lastActivity > Date.now() - 24 * 60 * 60 * 1000 ? 25 : 0; // 25 points for recent activity
-    const progressFactor = Math.min(this.calculateProgressScore(negotiation) / 2, 20); // Up to 20 points for progress
-    
-    return valueFactor + participantFactor + activityFactor + progressFactor;
+  /**
+   * Get all negotiations (limited functionality without full smart contract implementation)
+   */
+  private async getAllNegotiations(_limit: number): Promise<IBulkDealNegotiation[]> {
+    // Return empty array until smart contract negotiations are implemented
+    return [];
   }
 }

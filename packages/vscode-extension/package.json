@@ -26,9 +26,6 @@
     "ghostspeak"
   ],
   "activationEvents": [
-    "onLanguage:rust",
-    "onLanguage:typescript",
-    "onLanguage:javascript",
     "workspaceContains:**/Anchor.toml",
     "workspaceContains:**/anchor.toml",
     "workspaceContains:**/Cargo.toml",
@@ -36,7 +33,7 @@
     "onCommand:ghostspeak.createAgent",
     "onCommand:ghostspeak.deployContract"
   ],
-  "main": "./out/extension.js",
+  "main": "./out/extension-simple.js",
   "contributes": {
     "commands": [
       {
@@ -307,14 +304,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ghostspeak/protocol"
+    "url": "https://github.com/ghostspeak/ghostspeak"
   },
   "bugs": {
-    "url": "https://github.com/ghostspeak/protocol/issues"
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
   },
   "homepage": "https://ghostspeak.dev",
   "license": "MIT",
-  "icon": "images/icon.png",
   "galleryBanner": {
     "color": "#1e1e1e",
     "theme": "dark"

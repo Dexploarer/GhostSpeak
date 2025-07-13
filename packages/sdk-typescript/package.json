@@ -1,7 +1,7 @@
 {
-  "name": "@podai/sdk",
-  "version": "2.0.4",
-  "author": "PodAI Team",
+  "name": "@ghostspeak/sdk-typescript",
+  "version": "1.0.0",
+  "author": "GhostSpeak Team",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -53,7 +53,7 @@
       "types": "./src/generated-v2/*.ts"
     }
   },
-  "description": "TypeScript SDK for podAI Protocol on Solana",
+  "description": "TypeScript SDK for GhostSpeak Protocol - Decentralized AI Agent Commerce on Solana",
   "engines": {
     "node": ">=18.0.0",
     "bun": ">=1.0.0"
@@ -67,7 +67,7 @@
     "blockchain",
     "ai",
     "agents",
-    "podai",
+    "ghostspeak",
     "protocol",
     "typescript",
     "sdk",
@@ -77,8 +77,8 @@
   ],
   "license": "MIT",
   "scripts": {
-    "build:esm": "bun build --target=node --outdir=dist/esm src/index.ts --splitting",
-    "build:cjs": "bun build --target=node --format=cjs --outdir=dist/cjs src/index.ts --splitting",
+    "build:esm": "bun build --target=node --outdir=dist/esm src/index.ts --splitting --external @codama/nodes-from-anchor --external @codama/renderers-js --external @solana-program/token-2022 --external @solana/addresses --external @solana/codecs --external @solana/codecs-strings --external @solana/kit --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external @solana/spl-token --external @solana/spl-token-metadata --external borsh --external bs58 --external codama",
+    "build:cjs": "bun build --target=node --format=cjs --outdir=dist/cjs src/index.ts --splitting --external @codama/nodes-from-anchor --external @codama/renderers-js --external @solana-program/token-2022 --external @solana/addresses --external @solana/codecs --external @solana/codecs-strings --external @solana/kit --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external @solana/spl-token --external @solana/spl-token-metadata --external borsh --external bs58 --external codama",
     "build": "npm run clean && npm run build:esm && npm run build:cjs",
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/esm || echo 'Type generation skipped'",
     "clean": "rm -rf dist",
@@ -89,5 +89,20 @@
     "lint": "eslint src/**/*.ts || echo 'Linting skipped'",
     "type-check": "tsc --noEmit || echo 'Type checking skipped'"
   },
-  "types": "./dist/esm/index.d.ts"
+  "types": "./dist/esm/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghostspeak/ghostspeak.git",
+    "directory": "packages/sdk-typescript"
+  },
+  "homepage": "https://ghostspeak.com",
+  "bugs": {
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
+  },
+  "directories": {
+    "test": "tests"
+  }
 }

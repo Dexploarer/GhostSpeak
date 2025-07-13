@@ -6,8 +6,8 @@
  */
 
 use anchor_lang::prelude::*;
-use podai::state::*;
-use podai::PricingModel;
+use ghostspeak::state::*;
+use ghostspeak::PricingModel;
 
 #[cfg(test)]
 mod comprehensive_unit_tests {

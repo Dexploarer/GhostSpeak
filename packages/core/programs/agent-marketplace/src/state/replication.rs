@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use crate::{MAX_GENERAL_STRING_LENGTH, MAX_NAME_LENGTH};
+use crate::MAX_GENERAL_STRING_LENGTH;
 
 #[account]
 pub struct ReplicationTemplate {
@@ -18,6 +18,9 @@ pub struct ReplicationTemplate {
     pub current_replications: u32,
     pub is_active: bool,
     pub created_at: i64,
+    pub cnft_asset_id: Option<Pubkey>, // Compressed NFT asset ID
+    pub merkle_tree: Option<Pubkey>, // Merkle tree for cNFT
+    pub metadata_uri: String, // IPFS/Arweave URI for agent genome
     pub bump: u8,
 }
 
@@ -29,6 +32,7 @@ pub struct ReplicationRecord {
     pub replicator: Pubkey,
     pub fee_paid: u64,
     pub replicated_at: i64,
+    pub cnft_mint: Option<Pubkey>, // Compressed NFT mint for this replication
     pub bump: u8,
 }
 
@@ -61,6 +65,9 @@ impl ReplicationTemplate {
         4 + // current_replications
         1 + // is_active
         8 + // created_at
+        1 + 32 + // cnft_asset_id Option
+        1 + 32 + // merkle_tree Option
+        4 + MAX_GENERAL_STRING_LENGTH + // metadata_uri
         1; // bump
 }
 
@@ -72,5 +79,6 @@ impl ReplicationRecord {
         32 + // replicator
         8 + // fee_paid
         8 + // replicated_at
+        1 + 32 + // cnft_mint Option
         1; // bump
 }

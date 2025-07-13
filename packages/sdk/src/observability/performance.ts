@@ -21,7 +21,7 @@ export class PerformanceMonitor {
 
   // Start performance measurement
   startMeasurement(name: string, category?: string, metadata?: Record<string, any>): string {
-    const id = `${name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `${name}_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
     
     const timer: PerformanceTimer = {
       id,

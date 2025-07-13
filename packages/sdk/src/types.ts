@@ -42,6 +42,17 @@ export enum ChannelVisibility {
 }
 
 /**
+ * Work order status
+ */
+export enum WorkOrderStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  DISPUTED = 'disputed',
+}
+
+/**
  * Agent account data structure
  */
 export interface IAgentAccount {

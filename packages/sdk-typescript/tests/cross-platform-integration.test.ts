@@ -30,7 +30,7 @@ describe('Cross-platform Integration Features', () => {
   beforeAll(async () => {
     console.log('🌐 Setting up cross-platform integration test environment...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate test agents for different platforms
     multiPlatformAgent = await generateKeyPairSigner();

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use podai::state::{Agent, PricingModel};
+use ghostspeak::state::{Agent, PricingModel};
 
 #[cfg(test)]
 mod agent_tests {

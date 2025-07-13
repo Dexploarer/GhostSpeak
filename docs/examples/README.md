@@ -578,4 +578,4 @@ export class EventMonitor {
 
 ---
 
-**Need more examples?** Check our [GitHub repository](https://github.com/Prompt-or-Die/ghostspeak/tree/main/examples) for additional code samples. 
+**Need more examples?** Check our [GitHub repository](https://github.com/ghostspeak/ghostspeak/tree/main/examples) for additional code samples. 

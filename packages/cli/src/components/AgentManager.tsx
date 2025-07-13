@@ -57,15 +57,36 @@ export const AgentManager: React.FC<AgentManagerProps> = ({
       // Load from config
       const configAgents = config.listAgents();
 
-      // Convert to display format and simulate status check
-      const agentList: Agent[] = configAgents.map(({ name, agent }) => ({
-        name,
-        address: agent.address,
-        type: agent.type,
-        description: agent.description || 'No description',
-        lastUsed: agent.lastUsed,
-        status: Math.random() > 0.8 ? 'error' : ('active' as const), // Simulate some errors
-      }));
+      // Convert to display format and check real status
+      const agentList: Agent[] = await Promise.all(
+        configAgents.map(async ({ name, agent }) => {
+          try {
+            // Try to fetch agent from blockchain to check if it exists
+            const sdk = await import('../services/sdk-direct.js');
+            const client = await sdk.initializeSdk(network);
+            const agentAccount = await client.agents.getAgent(agent.address as any);
+            
+            return {
+              name,
+              address: agent.address,
+              type: agent.type,
+              description: agent.description || 'No description',
+              lastUsed: agent.lastUsed,
+              status: agentAccount ? 'active' : 'inactive' as const,
+            };
+          } catch (error) {
+            // If there's an error fetching, mark as error status
+            return {
+              name,
+              address: agent.address,
+              type: agent.type,
+              description: agent.description || 'No description',
+              lastUsed: agent.lastUsed,
+              status: 'error' as const,
+            };
+          }
+        })
+      );
 
       setAgents(agentList);
       await logger.ui.info(`Loaded ${agentList.length} agents`);
@@ -81,20 +102,45 @@ export const AgentManager: React.FC<AgentManagerProps> = ({
       setLoading(true);
       await logger.ui.info(`Registering agent: ${agentName}`);
 
-      // Simulate agent registration on blockchain
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get SDK instance from the global context
+      const sdk = await import('../services/sdk-direct.js');
+      const client = await sdk.initializeSdk(network);
+      
+      // Get the wallet keypair from config
+      const walletPath = config.getWalletPath() || `${process.env.HOME}/.config/solana/id.json`;
+      const walletConfig = JSON.parse(await import('fs').then(fs => fs.promises.readFile(walletPath, 'utf-8')));
+      const keypair = await import('@solana/keys').then(mod => mod.createKeyPairFromBytes(new Uint8Array(walletConfig)));
+      
+      // Map agent type to capabilities
+      const capabilityMap: Record<string, number[]> = {
+        'Basic': [0], // CHAT
+        'Service Provider': [0, 1, 5], // CHAT, CODE, ANALYSIS
+        'Chat Bot': [0, 3], // CHAT, COMMUNICATION
+        'Data Processor': [5, 7], // ANALYSIS, DATA_PROCESSING
+        'Custom': [0, 1] // CHAT, CODE
+      };
+      
+      const capabilities = capabilityMap[agentType] || [0];
+      
+      // Register agent on blockchain
+      const result = await client.agents.registerAgent(keypair, {
+        name: agentName,
+        description: agentDescription || `${agentType} agent for GhostSpeak protocol`,
+        capabilities,
+        metadata: {
+          type: agentType,
+          createdAt: new Date().toISOString()
+        }
+      });
 
-      // Generate a mock address for demo
-      const mockAddress = `Agent${Math.random().toString(36).substring(2, 15)}`;
-
-      // Save to config
-      config.addAgent(agentName, mockAddress, agentType, agentDescription);
+      // Save to config with real blockchain address
+      config.addAgent(agentName, result.agentPda.toString(), agentType, agentDescription);
       await config.save();
 
       // Add to local state
       const newAgent: Agent = {
         name: agentName,
-        address: mockAddress,
+        address: result.agentPda.toString(),
         type: agentType,
         description: agentDescription,
         lastUsed: new Date(),
@@ -104,6 +150,8 @@ export const AgentManager: React.FC<AgentManagerProps> = ({
       setAgents(prev => [...prev, newAgent]);
 
       await logger.success(`Agent "${agentName}" registered successfully`);
+      await logger.ui.info(`Transaction signature: ${result.signature}`);
+      await logger.ui.info(`Agent address: ${result.agentPda}`);
 
       // Reset form
       setAgentName('');

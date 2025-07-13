@@ -7,6 +7,7 @@
  */
 
 // Core working instructions only
+export * from './registerAgent';
 export * from './verifyAgent';
 export * from './createChannel';
 export * from './sendMessage';

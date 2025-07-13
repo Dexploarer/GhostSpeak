@@ -30,7 +30,7 @@ describe('Real-time Communication Features', () => {
   beforeAll(async () => {
     console.log('🌐 Setting up real-time communication test environment...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate test participants
     agent1 = await generateKeyPairSigner();

@@ -10,14 +10,15 @@
   },
   "scripts": {
     "build": "bun run clean && bun run compile",
-    "compile": "bun build src/index.ts --outdir dist --target node --minify",
+    "compile": "bun build src/index.ts --outdir dist --target node --minify --external @solana/addresses --external @solana/codecs --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external chalk --external commander --external conf --external semver",
+    "build:optimized": "bun build src/index-lightweight.ts --outdir dist --target node --minify --external @ghostspeak/sdk --external @solana/addresses --external @solana/codecs --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external chalk --external commander --external conf --external semver",
     "dev": "bun run src/index.ts",
     "test": "bun test",
     "lint": "echo 'Linting skipped - lightweight CLI'",
     "clean": "rimraf dist coverage",
     "type-check": "tsc --noEmit",
     "start": "node dist/index.js",
-    "prepack": "bun run build"
+    "prepack": "bun run build:optimized"
   },
   "files": [
     "dist",
@@ -46,7 +47,7 @@
     "typescript": "5.8.3"
   },
   "dependencies": {
-    "@ghostspeak/sdk": "1.0.0",
+    "@ghostspeak/sdk": "workspace:*",
     "@solana/addresses": "2.1.1",
     "@solana/codecs": "2.1.1",
     "@solana/rpc": "2.1.1",

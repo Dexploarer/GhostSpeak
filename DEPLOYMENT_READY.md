@@ -15,7 +15,7 @@
    - Program keypair: `target/deploy/podai-keypair.json`
 
 2. **Program ID Consistency** ✅
-   - **Canonical ID**: `4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP`
+   - **Canonical ID**: `367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK`
    - All TypeScript SDK files updated
    - IDL metadata aligned
    - No mock program IDs remaining
@@ -108,7 +108,7 @@ curl -X POST "https://solana-devnet.g.alchemy.com/v2/demo" \
 ### Immediate Tests After Deployment
 ```bash
 # 1. Verify program is deployed
-solana program show 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+solana program show 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
 
 # 2. Test SDK integration
 bun run devnet-connection-test.ts

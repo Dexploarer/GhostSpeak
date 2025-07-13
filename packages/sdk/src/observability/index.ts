@@ -7,12 +7,13 @@ export * from './logger';
 export * from './metrics';
 export * from './tracing';
 export * from './monitoring';
-export * from './analytics';
+// export * from './analytics'; // Temporarily disabled due to build issues
 export * from './health';
-export * from './alerts';
-export * from './debugging';
+// export * from './alerts'; // Temporarily disabled due to build issues
+// export * from './debugging'; // Temporarily disabled due to build issues
 export * from './performance';
 export * from './error-tracking';
+export * from './observability';
 
 // Re-export core interfaces
 export type {

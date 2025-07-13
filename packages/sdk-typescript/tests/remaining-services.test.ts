@@ -29,7 +29,7 @@ describe('Remaining Services Coverage', () => {
   beforeAll(async () => {
     console.log('🔧 Setting up remaining services test environment...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     testAgent = await generateKeyPairSigner();
     testUser = await generateKeyPairSigner();
     testUser2 = await generateKeyPairSigner();

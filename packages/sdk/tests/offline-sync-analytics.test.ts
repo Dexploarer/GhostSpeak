@@ -100,7 +100,7 @@ describe('Offline Synchronization and Analytics Features', () => {
   beforeAll(async () => {
     logger.test.info('🔧 Setting up offline synchronization and analytics test environment...');
 
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
 
     // Generate test participants
     [agent1, agent2, agent3, user1, user2] = await Promise.all([

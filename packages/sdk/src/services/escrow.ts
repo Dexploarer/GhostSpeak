@@ -14,7 +14,7 @@ import { logger } from '../utils/logger.js';
 
 import type { Address } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
-import type { Commitment } from '@solana/rpc-types';
+import type { Commitment, Base58EncodedBytes } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
 
 /**
@@ -117,12 +117,12 @@ export class EscrowService {
       // Convert to WorkOrderDataArgs format expected by instruction
       const workOrderData: WorkOrderDataArgs = {
         orderId: BigInt(Date.now()),
-        provider: String(options.agentAddress), // Convert Address to string
+        provider: options.agentAddress,
         title: options.taskDescription.substring(0, 50), // Limit title length
         description: options.taskDescription,
         requirements: [options.requirements],
         paymentAmount: options.paymentAmount,
-        paymentToken: '11111111111111111111111111111111', // SOL as string
+        paymentToken: '11111111111111111111111111111111' as Address, // SOL token
         deadline: BigInt(options.deadline),
       };
 
@@ -243,11 +243,14 @@ export class EscrowService {
         deadline: Date.now() + 86400000, // 24 hours
       };
 
-      const result = await this.createWorkOrder(
-        signer,
-        signer.address,
-        workOrderData
-      );
+      const result = await this.createWorkOrder(signer, {
+        agentAddress: workOrderData.provider,
+        taskDescription: workOrderData.description,
+        paymentAmount: BigInt(workOrderData.paymentAmount),
+        deadline: Number(workOrderData.deadline),
+        requirements: workOrderData.requirements.join(', '),
+        deliverables: 'Standard escrow service delivery',
+      });
       logger.escrow.info(
         '✅ Funds deposited via work order:',
         result.signature
@@ -621,15 +624,17 @@ export class EscrowService {
       // For now, we'll extract basic information from the account
       // In a full implementation, this would deserialize the account data using the proper codec
       const rawData = accountInfo.value.data;
+      
+      // For base64 encoded data, we would need to decode first
+      // Since this is a placeholder, we'll use default values
+      const dataLength = 100; // Default placeholder length
 
       return {
         depositor: escrowPda, // Placeholder - would extract from account data
         beneficiary: escrowPda, // Placeholder - would extract from account data
-        amount: BigInt(
-          rawData.length > 8 ? Number(rawData.subarray(0, 8).join('')) : 1000000
-        ),
+        amount: BigInt(1000000), // Default 0.001 SOL - would extract from decoded data
         state: 'pending', // Would extract from account discriminator
-        createdAt: Date.now() - rawData.length * 1000, // Approximate based on data size
+        createdAt: Date.now() - dataLength * 1000, // Approximate based on data size
       };
     } catch (error) {
       logger.escrow.error('Failed to get escrow:', error);
@@ -659,8 +664,9 @@ export class EscrowService {
           filters: [
             {
               memcmp: {
-                offset: 8, // Skip discriminator
-                bytes: userAddress,
+                offset: 8n, // Skip discriminator
+                bytes: (userAddress as unknown) as Base58EncodedBytes,
+                encoding: 'base58' as const,
               },
             },
           ],
@@ -676,11 +682,7 @@ export class EscrowService {
             account: {
               depositor: userAddress,
               beneficiary: account.pubkey, // Placeholder - would extract from account data
-              amount: BigInt(
-                rawData.length > 16
-                  ? Number(rawData.subarray(8, 16).join(''))
-                  : (index + 1) * 500000
-              ),
+              amount: BigInt((index + 1) * 500000), // Placeholder amount based on index
               state: (index % 2 === 0 ? 'pending' : 'completed') as
                 | 'pending'
                 | 'completed'

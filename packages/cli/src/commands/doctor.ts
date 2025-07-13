@@ -797,7 +797,7 @@ async function checkBlockchainConnection(): Promise<CheckResult> {
 }
 
 async function checkProgramDeployment(): Promise<CheckResult> {
-  const PROGRAM_ID = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
+  const PROGRAM_ID = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK';
   
   try {
     const programInfo = execSync(`solana program show ${PROGRAM_ID}`, { 

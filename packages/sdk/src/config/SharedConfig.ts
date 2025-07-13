@@ -10,7 +10,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
 import { Keypair } from '@solana/web3.js';
-import { address, type Address } from '@solana/addresses';
+import type { Address } from '@solana/addresses';
 
 export interface NetworkConfig {
   network: 'devnet' | 'testnet' | 'mainnet-beta';
@@ -232,7 +232,7 @@ export class SharedConfig {
    * Update configuration values
    */
   async update(updates: DeepPartial<SharedConfiguration>): Promise<void> {
-    this.config = deepMerge(this.config, updates);
+    this.config = deepMerge(this.config, updates as Partial<SharedConfiguration>);
     await this.save();
     this.notifyListeners('update');
   }
@@ -415,7 +415,7 @@ function deepClone<T>(obj: T): T {
   return cloned;
 }
 
-function replacer(key: string, value: any): any {
+function replacer(_key: string, value: any): any {
   if (typeof value === 'bigint') {
     return value.toString();
   }

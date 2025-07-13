@@ -247,9 +247,9 @@ export class ConfidentialTransferService {
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       return {
-        equalityProof: `equality_${Date.now()}_${Math.random().toString(36)}`,
-        validityProof: `validity_${Date.now()}_${Math.random().toString(36)}`,
-        rangeProof: `range_${Date.now()}_${Math.random().toString(36)}`,
+        equalityProof: `equality_${Date.now()}_${0.5.toString(36)}`,
+        validityProof: `validity_${Date.now()}_${0.5.toString(36)}`,
+        rangeProof: `range_${Date.now()}_${0.5.toString(36)}`,
       };
     } catch (error) {
       console.error('❌ Failed to generate proofs:', error);

@@ -5,6 +5,8 @@
  * for bundle-size-critical applications.
  */
 
+import type { Address } from '@solana/addresses';
+
 // ===== ESSENTIAL TYPES ONLY =====
 export type { Address } from '@solana/addresses';
 export type { Commitment } from '@solana/rpc-types';

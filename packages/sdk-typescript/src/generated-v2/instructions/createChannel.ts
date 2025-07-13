@@ -229,12 +229,12 @@ export async function getCreateChannelInstructionAsync<
       getAccountMeta(accounts.channelAccount),
       getAccountMeta(accounts.creator),
       getAccountMeta(accounts.systemProgram),
-    ],
+    ].filter(Boolean),
     programAddress,
     data: new Uint8Array(getCreateChannelInstructionDataEncoder().encode(
       args as CreateChannelInstructionDataArgs
     )),
-  } as CreateChannelInstruction<
+  } as any as CreateChannelInstruction<
     TProgramAddress,
     TAccountChannelAccount,
     TAccountCreator,
@@ -307,12 +307,12 @@ export function getCreateChannelInstruction<
       getAccountMeta(accounts.channelAccount),
       getAccountMeta(accounts.creator),
       getAccountMeta(accounts.systemProgram),
-    ],
+    ].filter(Boolean),
     programAddress,
     data: new Uint8Array(getCreateChannelInstructionDataEncoder().encode(
       args as CreateChannelInstructionDataArgs
     )),
-  } as CreateChannelInstruction<
+  } as any as CreateChannelInstruction<
     TProgramAddress,
     TAccountChannelAccount,
     TAccountCreator,

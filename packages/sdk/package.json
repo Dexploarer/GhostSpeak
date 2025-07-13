@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "author": "GhostSpeak Team",
   "type": "module",
-  "main": "./dist/cjs-fixed/index.js",
-  "module": "./dist/esm-fixed/index.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/optimized/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/ghostspeak/ghostspeak.git",
@@ -37,20 +37,48 @@
     "uuid": "^11.0.3"
   },
   "peerDependenciesMeta": {
-    "@codama/nodes-from-anchor": { "optional": true },
-    "@codama/renderers-js": { "optional": true },
-    "@solana-program/token-2022": { "optional": true },
-    "@solana/codecs-strings": { "optional": true },
-    "@solana/kit": { "optional": true },
-    "@solana/spl-token": { "optional": true },
-    "@solana/spl-token-metadata": { "optional": true },
-    "borsh": { "optional": true },
-    "codama": { "optional": true },
-    "pino": { "optional": true },
-    "pino-pretty": { "optional": true },
-    "uuid": { "optional": true }
+    "@codama/nodes-from-anchor": {
+      "optional": true
+    },
+    "@codama/renderers-js": {
+      "optional": true
+    },
+    "@solana-program/token-2022": {
+      "optional": true
+    },
+    "@solana/codecs-strings": {
+      "optional": true
+    },
+    "@solana/kit": {
+      "optional": true
+    },
+    "@solana/spl-token": {
+      "optional": true
+    },
+    "@solana/spl-token-metadata": {
+      "optional": true
+    },
+    "borsh": {
+      "optional": true
+    },
+    "codama": {
+      "optional": true
+    },
+    "pino": {
+      "optional": true
+    },
+    "pino-pretty": {
+      "optional": true
+    },
+    "uuid": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.4",
     "@types/node": "24.0.7",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "8.35.1",
@@ -58,22 +86,25 @@
     "bun-types": "1.2.18",
     "docsify-cli": "^4.4.4",
     "eslint": "9.30.0",
+    "rollup": "^4.44.2",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-visualizer": "^6.0.3",
     "typescript": "^5.8.3",
     "wasm-pack": "^0.13.1",
     "webpack-bundle-analyzer": "^4.10.2"
   },
   "exports": {
     ".": {
-      "import": "./dist/esm-fixed/index.js",
-      "require": "./dist/cjs-fixed/index.js",
+      "import": "./dist/optimized/index.js",
+      "require": "./dist/cjs/index.js",
       "types": "./dist/types/index.d.ts"
     },
     "./optimized": {
-      "import": "./dist/optimized/index-optimized.js",
+      "import": "./dist/optimized/index.js",
       "types": "./dist/types/index-optimized.d.ts"
     },
     "./core": {
-      "import": "./dist/optimized/index-optimized.js",
+      "import": "./dist/optimized/index.js",
       "types": "./dist/types/index-optimized.d.ts"
     },
     "./src": {
@@ -140,13 +171,13 @@
     "access": "public"
   },
   "scripts": {
-    "build:esm": "node build-fixed.js",
-    "build:cjs": "node build-fixed.js",
+    "build:esm": "rollup -c rollup.config.js --format es",
+    "build:cjs": "rollup -c rollup.config.js --format cjs",
     "build:minimal": "bun build --target=node --outdir=dist/minimal src/index-minimal.ts --splitting --external @solana/rpc-subscriptions --external @solana/functional --external @solana/transaction-messages --external @solana/transactions --external @solana/keys --external @solana/accounts",
-    "build:optimized": "node build-fixed.js",
+    "build:optimized": "rollup -c rollup.config.js",
     "build:core": "bun build --target=node --outdir=dist/optimized src/index-optimized.ts --splitting --external @solana/addresses --external @solana/codecs --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external bs58",
     "build:performance": "bun build --target=node --outdir=dist/performance src/performance/index.ts --splitting",
-    "build:full": "npm run clean && npm run build:esm",
+    "build:full": "npm run clean && npm run build:optimized",
     "build": "npm run build:full",
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/types || echo 'Type generation skipped'",
     "build:production": "npm run clean && npm run build:optimized && npm run build:types && npm run analyze:bundle",
@@ -185,5 +216,5 @@
     "monitor:start": "bun run observability:demo",
     "monitor:health": "curl http://localhost:3001 | head -20"
   },
-  "types": "./dist/esm/index.d.ts"
+  "types": "./dist/types/index.d.ts"
 }

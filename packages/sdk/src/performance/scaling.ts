@@ -142,8 +142,8 @@ export class LoadBalancer {
   private sessionMap = new Map<string, string>(); // sessionId -> instanceId
   private currentIndex = 0; // For round-robin
   private metrics: LoadBalancingMetrics;
-  private healthCheckInterval?: number;
-  private autoScalingInterval?: number;
+  private healthCheckInterval?: NodeJS.Timeout;
+  private autoScalingInterval?: NodeJS.Timeout;
   private readonly config: LoadBalancerConfig;
   private lastScalingAction = 0;
 
@@ -273,7 +273,7 @@ export class LoadBalancer {
     try {
       const result = await Promise.race([
         requestFn(instance),
-        this.createTimeoutPromise(this.config.connectionTimeout),
+        this.createTimeoutPromise<T>(this.config.connectionTimeout),
       ]);
 
       // Record success
@@ -287,7 +287,7 @@ export class LoadBalancer {
         instance.circuitBreakerFailures = 0;
       }
 
-      return result;
+      return result as T;
     } catch (error) {
       // Record failure
       const responseTime = performance.now() - startTime;

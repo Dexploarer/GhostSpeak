@@ -311,7 +311,7 @@ async function logTransaction(signature: string): Promise<void> {
 
 ### Before reporting issues
 1. Check this troubleshooting guide
-2. Search [existing issues](https://github.com/Prompt-or-Die/ghostspeak/issues)
+2. Search [existing issues](https://github.com/ghostspeak/ghostspeak/issues)
 3. Review [FAQ](../resources/faq.md)
 
 ### When reporting bugs, include:
@@ -321,7 +321,7 @@ async function logTransaction(signature: string): Promise<void> {
 - Expected vs actual behavior
 
 ### Support channels
-- [GitHub Issues](https://github.com/Prompt-or-Die/ghostspeak/issues)
+- [GitHub Issues](https://github.com/ghostspeak/ghostspeak/issues)
 - [Community Discord](../resources/community.md)
 - [Documentation FAQ](../resources/faq.md)
 

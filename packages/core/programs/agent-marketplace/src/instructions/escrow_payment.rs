@@ -6,11 +6,12 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_2022::Token2022;
 
 use crate::{
     Agent, Payment, WorkOrder,
     WorkOrderStatus,
-    PodAIMarketplaceError,
+    GhostSpeakError,
     PaymentProcessedEvent,
     MIN_PAYMENT_AMOUNT,
     MAX_PAYMENT_AMOUNT,
@@ -79,36 +80,36 @@ pub fn process_payment(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.payer.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     // SECURITY: Validate token accounts belong to the correct mint
     require!(
         ctx.accounts.payer_token_account.mint == ctx.accounts.token_mint.key(),
-        PodAIMarketplaceError::InvalidConfiguration
+        GhostSpeakError::InvalidConfiguration
     );
     
     require!(
         ctx.accounts.provider_token_account.mint == ctx.accounts.token_mint.key(),
-        PodAIMarketplaceError::InvalidConfiguration
+        GhostSpeakError::InvalidConfiguration
     );
 
     // SECURITY: Amount validation
     require!(
         amount >= MIN_PAYMENT_AMOUNT,
-        PodAIMarketplaceError::ValueBelowMinimum
+        GhostSpeakError::ValueBelowMinimum
     );
     
     require!(
         amount <= MAX_PAYMENT_AMOUNT,
-        PodAIMarketplaceError::ValueExceedsMaximum
+        GhostSpeakError::ValueExceedsMaximum
     );
 
     // SECURITY: Verify work order is in correct state for payment
     let work_order = &ctx.accounts.work_order;
     require!(
         matches!(work_order.status, WorkOrderStatus::InProgress | WorkOrderStatus::Submitted),
-        PodAIMarketplaceError::InvalidStatusTransition
+        GhostSpeakError::InvalidStatusTransition
     );
 
     let payment = &mut ctx.accounts.payment;
@@ -129,12 +130,12 @@ pub fn process_payment(
     // SECURITY: Safe arithmetic for provider earnings update
     provider_agent.total_earnings = provider_agent.total_earnings
         .checked_add(amount)
-        .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
     
     // SECURITY: Safe arithmetic for job completion count
     provider_agent.total_jobs_completed = provider_agent.total_jobs_completed
         .checked_add(1)
-        .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
     // Update work order status
     work_order.status = WorkOrderStatus::Completed;
@@ -144,7 +145,7 @@ pub fn process_payment(
     let reputation_increment = std::cmp::min((amount / 1_000_000) as u64, 10u64); // Max 10 points per payment
     provider_agent.reputation_score = provider_agent.reputation_score
         .checked_add(reputation_increment as u32)
-        .ok_or(PodAIMarketplaceError::ArithmeticOverflow)?;
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
     // Emit payment event
     emit!(PaymentProcessedEvent {

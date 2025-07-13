@@ -1,13 +1,13 @@
 [package]
-name = "podai_core"
+name = "ghostspeak-core"
 version = "0.1.0"
-description = "podAI Marketplace: Revolutionary AI Agent Platform"
+description = "GhostSpeak Core: Decentralized AI Agent Commerce Protocol"
 edition = "2021"
 rust-version = "1.79.0"
 
 [lib]
 crate-type = ["cdylib"]
-name = "podai_core"
+name = "ghostspeak_core"
 path = "programs/agent-marketplace/src/lib.rs"
 
 [features]
@@ -15,7 +15,7 @@ default = []
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
-idl-build = ["anchor-lang/idl-build", "spl-account-compression/idl-build"]
+idl-build = ["anchor-lang/idl-build"]
 anchor-debug = []
 no-log-ix-name = []
 # 2025 Enhanced Features
@@ -27,12 +27,12 @@ defi-integration = []
 
 [dependencies]
 # Core Solana dependencies - using workspace unified versions (FIXED CONFLICT)
-anchor-lang = { workspace = true }
-anchor-spl = { version = "0.31.1" }
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token", "associated_token"] }
 
 # Enhanced State Compression with Advanced ZK Features
-spl-account-compression = { workspace = true }
-spl-concurrent-merkle-tree = { workspace = true }
+# spl-account-compression = { workspace = true }  # Commented out due to IDL build issues
+# spl-concurrent-merkle-tree = { workspace = true }  # Commented out due to IDL build issues
 
 # Enhanced Token Standards for 2025
 spl-token = { version = "8.0.0", features = ["no-entrypoint"], default-features = false }

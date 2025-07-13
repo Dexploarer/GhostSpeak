@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 
 // Path to the Anchor program IDL
 const projectRoot = join(__dirname, '../../../');
-const idlPath = join(projectRoot, 'target/idl/podai_marketplace.json');
+const idlPath = join(projectRoot, 'target/idl/podai_core.json');
 
 // Output directory for generated TypeScript files
 const outputDir = join(__dirname, '../src/generated-v2');

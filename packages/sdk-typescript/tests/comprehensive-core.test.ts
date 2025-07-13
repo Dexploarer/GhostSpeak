@@ -31,7 +31,7 @@ describe('Comprehensive Core Features', () => {
     console.log('🚀 Setting up comprehensive test environment...');
     
     // Initialize client
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate test keypairs
     agentSigner = await generateKeyPairSigner();

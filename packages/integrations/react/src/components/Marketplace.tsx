@@ -11,7 +11,7 @@ import {
   MarketplaceFilters as IMarketplaceFilters,
   CartItem,
   PurchaseOrderAccount 
-} from '@podai/sdk';
+} from '@ghostspeak/sdk';
 import { createSolanaRpc } from '@solana/rpc';
 import { address } from '@solana/addresses';
 import type { Address } from '@solana/addresses';
@@ -38,7 +38,7 @@ const DEFAULT_FILTERS: IMarketplaceFilters = {
 
 export const Marketplace: React.FC<MarketplaceProps> = ({
   rpcUrl = 'https://api.devnet.solana.com',
-  programId = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
+  programId = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
   user,
   className = '',
   defaultTab = 'browse',

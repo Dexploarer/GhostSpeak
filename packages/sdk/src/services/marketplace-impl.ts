@@ -6,7 +6,7 @@
 import type { Address } from '@solana/addresses';
 import { address } from '@solana/addresses';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
-import type { Commitment } from '@solana/rpc-types';
+import type { Commitment, Base58EncodedBytes } from '@solana/rpc-types';
 import type { KeyPairSigner } from '@solana/signers';
 import { getAddressDecoder, getAddressEncoder } from '@solana/addresses';
 import {
@@ -19,7 +19,8 @@ import {
 } from '@solana/codecs';
 
 import { logger } from '../utils/logger.js';
-import { sendAndConfirmTransactionFactory } from '../utils/transaction-helpers.js';
+import { buildSimulateAndSendTransaction } from '../utils/transaction-helpers.js';
+import { createSolanaRpcSubscriptions } from '@solana/rpc-subscriptions';
 
 // Import real instruction builders
 import {
@@ -208,17 +209,11 @@ export interface MarketplaceFilters {
  * Production Marketplace Implementation
  */
 export class MarketplaceImpl {
-  private readonly sendAndConfirmTransaction: ReturnType<typeof sendAndConfirmTransactionFactory>;
-
   constructor(
     private readonly rpc: Rpc<SolanaRpcApi>,
     private readonly programId: Address,
     private readonly commitment: Commitment = 'confirmed'
-  ) {
-    this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
-      rpc: this.rpc,
-    });
-  }
+  ) {}
 
   /**
    * Create a new service listing
@@ -250,9 +245,12 @@ export class MarketplaceImpl {
       });
 
       // Send transaction
-      const signature = await this.sendAndConfirmTransaction([instruction], {
-        signers: [seller],
-      });
+      const rpcSubscriptions = createSolanaRpcSubscriptions(
+        'ws://localhost:8900'  // Default devnet websocket - in production, derive from RPC URL
+      );
+      const sendTransaction = buildSimulateAndSendTransaction(this.rpc, rpcSubscriptions);
+      const result = await sendTransaction([instruction], [seller]);
+      const signature = result.signature;
 
       logger.marketplace.info(`✅ Service listing created: ${listingAddress}`);
 
@@ -387,9 +385,12 @@ export class MarketplaceImpl {
       });
 
       // Send transaction
-      const signature = await this.sendAndConfirmTransaction([instruction], {
-        signers: [buyer],
-      });
+      const rpcSubscriptions = createSolanaRpcSubscriptions(
+        'ws://localhost:8900'  // Default devnet websocket - in production, derive from RPC URL
+      );
+      const sendTransaction = buildSimulateAndSendTransaction(this.rpc, rpcSubscriptions);
+      const result = await sendTransaction([instruction], [buyer]);
+      const signature = result.signature;
 
       logger.marketplace.info(`✅ Service purchased: Order ${orderId}`);
 
@@ -477,7 +478,7 @@ export class MarketplaceImpl {
           filters: [
             {
               memcmp: {
-                offset: 0,
+                offset: 0n,
                 bytes: this.getListingDiscriminator(),
                 encoding: 'base58',
               },
@@ -655,7 +656,7 @@ export class MarketplaceImpl {
           filters: [
             {
               memcmp: {
-                offset: 0,
+                offset: 0n,
                 bytes: this.getOrderDiscriminator(),
                 encoding: 'base58',
               },
@@ -725,7 +726,11 @@ export class MarketplaceImpl {
       signature: string;
     }>;
   }> {
-    const orders = [];
+    const orders: Array<{
+      orderAddress: Address;
+      orderId: bigint;
+      signature: string;
+    }> = [];
 
     for (const item of cartItems) {
       const listingAddress = item.listingId;
@@ -837,14 +842,14 @@ export class MarketplaceImpl {
     return address(addressStr.padEnd(44, '1'));
   }
 
-  private getListingDiscriminator(): string {
+  private getListingDiscriminator(): Base58EncodedBytes {
     // This would come from the IDL or generated code
-    return 'listing';
+    return 'listing' as Base58EncodedBytes;
   }
 
-  private getOrderDiscriminator(): string {
+  private getOrderDiscriminator(): Base58EncodedBytes {
     // This would come from the IDL or generated code
-    return 'order';
+    return 'order' as Base58EncodedBytes;
   }
 
   private decodeListingAccount(data: Buffer): ServiceListingAccount | null {
@@ -901,6 +906,7 @@ export class MarketplaceImpl {
         totalRevenue: decoded[19],
         averageRating: decoded[20] / 10, // Stored as fixed point
         reviewCount: decoded[21],
+        totalReviews: decoded[21], // Same as reviewCount
       };
     } catch (error) {
       logger.marketplace.error('Failed to decode listing account:', error);

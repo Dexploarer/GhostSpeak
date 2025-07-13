@@ -1,6 +1,6 @@
-# Getting Started with PodAI Rust SDK
+# Getting Started with GhostSpeak Rust SDK
 
-This guide will help you get up and running with the PodAI Rust SDK in minutes.
+This guide will help you get up and running with the GhostSpeak Rust SDK in minutes.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Add the SDK to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-podai-sdk = "0.1.0"
+ghostspeak-sdk = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 solana-sdk = "1.16"
 ```
@@ -24,11 +24,11 @@ solana-sdk = "1.16"
 ### 1. Import Required Types
 
 ```rust
-use podai_sdk::{
-    client::{PodAIClient, PodAIConfig},
+use ghostspeak_sdk::{
+    client::{GhostSpeakClient, GhostSpeakConfig},
     services::agent::AgentService,
     types::agent::AgentCapabilities,
-    errors::PodAIResult,
+    errors::GhostSpeakResult,
 };
 use solana_sdk::{signature::Keypair, signer::Signer};
 use std::sync::Arc;
@@ -38,13 +38,13 @@ use std::sync::Arc;
 
 ```rust
 #[tokio::main]
-async fn main() -> PodAIResult<()> {
+async fn main() -> GhostSpeakResult<()> {
     // Initialize for devnet (testnet)
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     
     // For production, use mainnet
-    // let config = PodAIConfig::mainnet();
+    // let config = GhostSpeakConfig::mainnet();
     
     println!("✅ Client connected to Solana!");
 ```
@@ -86,20 +86,20 @@ async fn main() -> PodAIResult<()> {
 ### Complete Example
 
 ```rust
-use podai_sdk::{
-    client::{PodAIClient, PodAIConfig},
+use ghostspeak_sdk::{
+    client::{GhostSpeakClient, GhostSpeakConfig},
     services::agent::AgentService,
     types::agent::AgentCapabilities,
-    errors::PodAIResult,
+    errors::GhostSpeakResult,
 };
 use solana_sdk::{signature::Keypair, signer::Signer};
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> PodAIResult<()> {
+async fn main() -> GhostSpeakResult<()> {
     // Initialize client
-    let config = PodAIConfig::devnet();
-    let client = Arc::new(PodAIClient::new(config).await?);
+    let config = GhostSpeakConfig::devnet();
+    let client = Arc::new(GhostSpeakClient::new(config).await?);
     
     // Create services
     let agent_service = AgentService::new(client);
@@ -125,8 +125,8 @@ async fn main() -> PodAIResult<()> {
 ### 1. Create a Channel
 
 ```rust
-use podai_sdk::services::channel::ChannelService;
-use podai_sdk::types::channel::ChannelVisibility;
+use ghostspeak_sdk::services::channel::ChannelService;
+use ghostspeak_sdk::types::channel::ChannelVisibility;
 
 let channel_service = ChannelService::new(client);
 
@@ -145,8 +145,8 @@ println!("Channel created: {}", channel_result.channel_pda);
 ### 2. Send a Message
 
 ```rust
-use podai_sdk::services::message::MessageService;
-use podai_sdk::types::message::MessageType;
+use ghostspeak_sdk::services::message::MessageService;
+use ghostspeak_sdk::types::message::MessageType;
 
 let message_service = MessageService::new(client);
 let recipient = Keypair::new().pubkey();
@@ -154,7 +154,7 @@ let recipient = Keypair::new().pubkey();
 let message_result = message_service.send_message(
     &agent_keypair,
     &recipient,
-    "Hello, PodAI world!",
+    "Hello, GhostSpeak world!",
     MessageType::Text
 ).await?;
 
@@ -164,7 +164,7 @@ println!("Message sent: {}", message_result.message_pda);
 ### 3. Create an Escrow
 
 ```rust
-use podai_sdk::services::escrow::EscrowService;
+use ghostspeak_sdk::services::escrow::EscrowService;
 
 let escrow_service = EscrowService::new(client);
 
@@ -183,19 +183,19 @@ println!("Escrow created: {}", escrow_result.escrow_pda);
 
 ```rust
 // Development/testing
-let config = PodAIConfig::devnet();
+let config = GhostSpeakConfig::devnet();
 
 // Production
-let config = PodAIConfig::mainnet(); 
+let config = GhostSpeakConfig::mainnet(); 
 
 // Local testing
-let config = PodAIConfig::localnet();
+let config = GhostSpeakConfig::localnet();
 ```
 
 ### Custom Configuration
 
 ```rust
-let config = PodAIConfig::devnet()
+let config = GhostSpeakConfig::devnet()
     .with_timeout(60_000)        // 60 second timeout
     .with_retry_config(5, 3000); // 5 retries, 3 second delay
 ```
@@ -207,11 +207,11 @@ match agent_service.register(&keypair, capabilities, metadata).await {
     Ok(result) => {
         println!("Success: {}", result.agent_pda);
     }
-    Err(podai_sdk::errors::PodAIError::Network { message }) => {
+    Err(ghostspeak_sdk::errors::GhostSpeakError::Network { message }) => {
         eprintln!("Network error: {}", message);
         // Retry logic here
     }
-    Err(podai_sdk::errors::PodAIError::InvalidInput { field, reason }) => {
+    Err(ghostspeak_sdk::errors::GhostSpeakError::InvalidInput { field, reason }) => {
         eprintln!("Invalid {}: {}", field, reason);
     }
     Err(e) => {
@@ -243,9 +243,9 @@ cargo run --example quick_validation
 ```rust
 #[tokio::test]
 async fn test_agent_registration() {
-    let config = PodAIConfig::devnet();
+    let config = GhostSpeakConfig::devnet();
     
-    match PodAIClient::new(config).await {
+    match GhostSpeakClient::new(config).await {
         Ok(client) => {
             let agent_service = AgentService::new(Arc::new(client));
             // Test agent registration...

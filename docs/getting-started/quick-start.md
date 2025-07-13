@@ -15,7 +15,7 @@ Don't have these? See our [full setup guide](./development-setup.md).
 
 ```bash
 # Clone the repository
-git clone https://github.com/Prompt-or-Die/ghostspeak.git
+git clone https://github.com/ghostspeak/ghostspeak.git
 cd ghostspeak
 
 # Install dependencies (using npm for universal compatibility)

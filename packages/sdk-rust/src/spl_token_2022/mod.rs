@@ -427,9 +427,86 @@ impl Token2022Factory {
         decimals: u8,
         extensions: &[ExtensionType],
     ) -> PodAIResult<(Pubkey, Token2022Handler)> {
-        // Implementation for creating a new mint would go here
-        // This involves calculating space, creating account, and initializing mint
-        todo!("Implement mint creation with extensions")
+        use spl_token_2022::{
+            extension::ExtensionType as SplExtensionType,
+            state::Mint,
+            instruction::initialize_mint2,
+        };
+        use solana_sdk::{
+            instruction::Instruction,
+            pubkey::Pubkey,
+            rent::Rent,
+            system_instruction,
+            transaction::Transaction,
+        };
+        
+        // Generate a new mint keypair
+        let mint_keypair = Keypair::new();
+        let mint_pubkey = mint_keypair.pubkey();
+        
+        // Calculate space needed for mint with extensions
+        let mut space = Mint::LEN;
+        for extension in extensions {
+            space += match extension {
+                ExtensionType::TransferFeeConfig => 108, // TransferFeeConfig size
+                ExtensionType::MintCloseAuthority => 36, // MintCloseAuthority size
+                ExtensionType::DefaultAccountState => 1, // DefaultAccountState size
+                ExtensionType::ImmutableOwner => 0, // ImmutableOwner has no data
+                ExtensionType::MemoTransfer => 1, // MemoTransfer size
+                ExtensionType::NonTransferable => 0, // NonTransferable has no data
+                ExtensionType::InterestBearingConfig => 44, // InterestBearingConfig size
+                ExtensionType::CpiGuard => 1, // CpiGuard size
+                ExtensionType::PermanentDelegate => 32, // PermanentDelegate size
+                ExtensionType::ConfidentialTransferMint => 97, // ConfidentialTransferMint size
+                ExtensionType::ConfidentialTransferFeeConfig => 157, // ConfidentialTransferFeeConfig size
+                ExtensionType::TransferHook => 32, // TransferHook size
+                ExtensionType::MetadataPointer => 32, // MetadataPointer size
+                ExtensionType::TokenMetadata => 0, // Variable size, will be calculated separately
+                ExtensionType::GroupPointer => 32, // GroupPointer size
+                ExtensionType::TokenGroup => 0, // Variable size
+                ExtensionType::GroupMemberPointer => 32, // GroupMemberPointer size
+                ExtensionType::TokenGroupMember => 0, // Variable size
+            };
+        }
+        
+        // Get rent information
+        let rent = Rent::default();
+        let lamports = rent.minimum_balance(space);
+        
+        // Create account instruction
+        let create_account_ix = system_instruction::create_account(
+            &authority.pubkey(),
+            &mint_pubkey,
+            lamports,
+            space as u64,
+            &spl_token_2022::id(),
+        );
+        
+        // Initialize mint instruction
+        let init_mint_ix = initialize_mint2(
+            &spl_token_2022::id(),
+            &mint_pubkey,
+            &authority.pubkey(),
+            Some(&authority.pubkey()),
+            decimals,
+        )?;
+        
+        // Build transaction
+        let instructions = vec![create_account_ix, init_mint_ix];
+        let mut transaction = Transaction::new_with_payer(&instructions, Some(&authority.pubkey()));
+        
+        // Sign and send transaction
+        let recent_blockhash = self.rpc.get_latest_blockhash().await
+            .map_err(|e| PodAIError::NetworkError(format!("Failed to get blockhash: {}", e)))?;
+        transaction.sign(&[authority, &mint_keypair], recent_blockhash);
+        
+        self.rpc.send_and_confirm_transaction(&transaction).await
+            .map_err(|e| PodAIError::TransactionError(format!("Failed to create mint: {}", e)))?;
+        
+        // Create handler for the new mint
+        let handler = Token2022Handler::new(mint_pubkey, self.rpc.clone());
+        
+        Ok((mint_pubkey, handler))
     }
 }
 

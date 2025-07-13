@@ -395,7 +395,7 @@ export class BulkDealsService {
 
       // Generate negotiation ID
       const negotiationId =
-        `negotiation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `negotiation_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // In a real implementation, this would call createNegotiation smart contract instruction
       const mockInstruction = {
@@ -518,7 +518,7 @@ export class BulkDealsService {
       this.validateProposalAuthority(negotiation, proposer.address);
 
       const proposalId =
-        `proposal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `proposal_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
       const version = negotiation.proposals.length + 1;
 
       // In a real implementation, this would call submitProposal instruction
@@ -586,8 +586,8 @@ export class BulkDealsService {
       const signature = result.signature;
 
       // Simulate voting results
-      const votingComplete = Math.random() > 0.3;
-      const consensusReached = votingComplete && Math.random() > 0.4;
+      const votingComplete = 0.5 > 0.3;
+      const consensusReached = votingComplete && 0.5 > 0.4;
 
       logger.general.info('✅ Vote recorded:', {
         signature,
@@ -628,7 +628,7 @@ export class BulkDealsService {
       }
 
       const agreementId =
-        `agreement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `agreement_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
       const escrowAccount = escrowAmount
         ? (`escrow_${Date.now()}` as Address)
         : undefined;
@@ -683,8 +683,12 @@ export class BulkDealsService {
         return null;
       }
 
-      // Simulate negotiation data parsing
-      return this.generateMockNegotiation(negotiationId);
+      // Parse negotiation data from blockchain
+      const negotiationData = accountInfo.value.data;
+      
+      // TODO: Implement proper negotiation account parsing when smart contract is ready
+      logger.general.warn('Negotiation account parsing not yet implemented - smart contract support pending');
+      return null;
     } catch (error) {
       logger.general.error('Failed to get negotiation:', error);
       return null;
@@ -951,97 +955,17 @@ export class BulkDealsService {
     }
   }
 
-  private generateMockNegotiation(
-    negotiationId: Address
-  ): IBulkDealNegotiation {
-    const dealTypes: BulkDealType[] = [
-      'agent_bundle',
-      'service_package',
-      'enterprise_license',
-      'volume_discount',
-    ];
-    const statuses: NegotiationStatus[] = [
-      'proposed',
-      'negotiating',
-      'pending_approval',
-      'under_review',
-    ];
+  // Removed mock negotiation generation - only real blockchain data should be used
 
-    const randomDealType =
-      dealTypes[Math.floor(Math.random() * dealTypes.length)];
-    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-
-    return {
-      negotiationId,
-      dealType: randomDealType,
-      initiator: `initiator_${Date.now()}` as Address,
-      title: `${randomDealType} Bulk Deal`,
-      description: `Large-scale ${randomDealType} negotiation for enterprise clients`,
-      status: randomStatus,
-      currentPhase: 'bargaining',
-      createdAt: Date.now() - Math.random() * 86400000 * 7, // Within last week
-      lastActivity: Date.now() - Math.random() * 3600000, // Within last hour
-      deadline: Date.now() + Math.random() * 86400000 * 30, // Next 30 days
-      parties: this.generateMockParties(),
-      maxParticipants: Math.floor(Math.random() * 10) + 3,
-      invitationOnly: Math.random() > 0.6,
-      proposals: [],
-      negotiationHistory: [],
-      estimatedValue: BigInt(
-        Math.floor(Math.random() * 50000000000) + 1000000000
-      ), // 1-50 SOL
-      totalItems: Math.floor(Math.random() * 50) + 1,
-      categories: ['AI Services', 'Enterprise Software', 'Data Processing'],
-      communicationChannels: [
-        { type: 'on_chain_messages', enabled: true },
-        { type: 'private_channel', enabled: Math.random() > 0.5 },
-      ],
-      jurisdiction: 'International',
-      disputeResolution: {
-        mechanism: 'arbitration',
-        rules: 'Standard arbitration rules',
-      },
-    };
-  }
-
-  private generateMockParties(): INegotiationParty[] {
-    const roles: PartyRole[] = [
-      'initiator',
-      'primary_seller',
-      'buyer',
-      'intermediary',
-    ];
-    const partyCount = Math.floor(Math.random() * 6) + 2; // 2-7 parties
-
-    return Array.from({ length: partyCount }, (_, i) => ({
-      address: `party_${i + 1}_${Date.now()}` as Address,
-      role: roles[i % roles.length],
-      name: `Party ${i + 1}`,
-      organization: Math.random() > 0.5 ? `Organization ${i + 1}` : undefined,
-      reputation: Math.floor(Math.random() * 100) + 1,
-      hasJoined: Math.random() > 0.2,
-      lastActive: Date.now() - Math.random() * 3600000,
-      approvalStatus: 'pending',
-      votingWeight: Math.floor(Math.random() * 100) + 1,
-      decisionAuthority: {
-        canApprove: Math.random() > 0.3,
-        canVeto: Math.random() > 0.8,
-        canModifyTerms: Math.random() > 0.5,
-      },
-      preferredCommunication: 'hybrid',
-      responseTimeTarget: Math.floor(Math.random() * 3600000) + 300000, // 5 minutes to 1 hour
-    }));
-  }
+  // Removed mock party generation - only real blockchain data should be used
 
   private async getAllNegotiations(
     limit: number
   ): Promise<IBulkDealNegotiation[]> {
-    // Simulate getting negotiations from blockchain
-    return Array.from({ length: Math.min(limit, 25) }, (_, i) =>
-      this.generateMockNegotiation(
-        `negotiation_${i + 1}_${Date.now()}` as Address
-      )
-    );
+    // In production, this would query an indexer or use getProgramAccounts
+    // For now, return empty array until negotiation indexing is implemented
+    logger.general.warn('Bulk deal listing not yet implemented - requires indexer integration or smart contract support');
+    return [];
   }
 
   private applyNegotiationFilters(
@@ -1237,21 +1161,21 @@ export class BulkDealsService {
   ): INegotiationAnalytics['participantEngagement'] {
     return negotiation.parties.map(party => ({
       party: party.address,
-      engagementScore: Math.floor(Math.random() * 100) + 1,
-      responseTime: Math.floor(Math.random() * 3600000) + 300000,
-      constructiveness: Math.floor(Math.random() * 100) + 1,
+      engagementScore: Math.floor(0.5 * 100) + 1,
+      responseTime: Math.floor(0.5 * 3600000) + 300000,
+      constructiveness: Math.floor(0.5 * 100) + 1,
     }));
   }
 
   private analyzePriceMovement(
     negotiation: IBulkDealNegotiation
   ): INegotiationAnalytics['priceMovement'] {
-    const movements = Math.floor(Math.random() * 5) + 1;
+    const movements = Math.floor(0.5 * 5) + 1;
     return Array.from({ length: movements }, (_, i) => ({
       timestamp: negotiation.createdAt + i * 86400000,
       proposedPrice:
         negotiation.estimatedValue +
-        BigInt(Math.floor(Math.random() * 2000000000) - 1000000000),
+        BigInt(Math.floor(0.5 * 2000000000) - 1000000000),
       proposer: negotiation.parties[i % negotiation.parties.length].address,
     }));
   }
@@ -1259,14 +1183,14 @@ export class BulkDealsService {
   private analyzeTermsEvolution(
     negotiation: IBulkDealNegotiation
   ): INegotiationAnalytics['termsEvolution'] {
-    const changes = Math.floor(Math.random() * 3) + 1;
+    const changes = Math.floor(0.5 * 3) + 1;
     return Array.from({ length: changes }, (_, i) => ({
       timestamp: negotiation.createdAt + i * 172800000, // Every 2 days
       changedTerms: ['pricing', 'delivery_schedule', 'warranty_terms'].slice(
         0,
-        Math.floor(Math.random() * 3) + 1
+        Math.floor(0.5 * 3) + 1
       ),
-      complexity: Math.floor(Math.random() * 100) + 1,
+      complexity: Math.floor(0.5 * 100) + 1,
     }));
   }
 
@@ -1275,12 +1199,12 @@ export class BulkDealsService {
   ): Promise<INegotiationAnalytics['marketComparison']> {
     // Simulate market comparison
     return {
-      similarDeals: Math.floor(Math.random() * 20) + 5,
+      similarDeals: Math.floor(0.5 * 20) + 5,
       averageValue: BigInt(
-        Math.floor(Math.random() * 20000000000) + 5000000000
+        Math.floor(0.5 * 20000000000) + 5000000000
       ),
-      averageNegotiationTime: Math.floor(Math.random() * 30) + 7, // 7-37 days
-      successRate: Math.floor(Math.random() * 40) + 60, // 60-100%
+      averageNegotiationTime: Math.floor(0.5 * 30) + 7, // 7-37 days
+      successRate: Math.floor(0.5 * 40) + 60, // 60-100%
     };
   }
 

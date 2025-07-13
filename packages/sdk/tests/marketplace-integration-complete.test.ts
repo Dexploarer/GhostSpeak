@@ -78,7 +78,7 @@ describe('Marketplace Integration - Complete Testing', () => {
     logger.general.info('🏪 Initializing comprehensive marketplace testing environment...');
 
     // Initialize client with proper configuration
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate all test participants
     serviceProvider = await generateKeyPairSigner();

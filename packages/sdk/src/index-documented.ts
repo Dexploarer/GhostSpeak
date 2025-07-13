@@ -21,92 +21,96 @@
  * const agentService = await client.loadModule('agent');
  * ```
  * 
- * @see {@link https://github.com/Prompt-or-Die/ghostspeak} - GitHub Repository
+ * @see {@link https://github.com/ghostspeak/ghostspeak} - GitHub Repository
  * @see {@link https://ghostspeak.gitbook.io/} - Documentation
  */
 
 // Re-export optimized version with comprehensive documentation
 export * from './index-optimized';
 
+// Import transaction helper for createClient function
+import { initializeGlobalTransactionSender } from './utils/enhanced-transaction-helpers';
+
+// Import protocol constants for namespace exports
+import { PROTOCOL_CONSTANTS } from './utils/sdk-utilities';
+
+// Re-export core types at top level since they can't be in namespaces
+export type { Address } from '@solana/addresses';
+export type { Rpc } from '@solana/rpc';
+export type { TransactionSigner } from '@solana/signers';
+
 /**
  * @namespace Core
  * @description Core SDK utilities and types
  */
-export namespace Core {
-  export type { Address } from '@solana/addresses';
-  export type { Rpc } from '@solana/rpc';
-  export type { TransactionSigner } from '@solana/signers';
-  
-  export {
-    safeBigIntToU64,
-    safeNumberToBigInt,
-    TimestampUtils,
-    TokenAmountUtils,
-    type BigIntLike,
-    type TimestampLike,
-    toTimestamp,
-  } from './utils/bigint-serialization';
-}
+
+// Export Core utilities directly (namespaces don't support re-exports)
+export {
+  safeBigIntToU64,
+  safeNumberToBigInt,
+  TimestampUtils,
+  TokenAmountUtils,
+  type BigIntLike,
+  type TimestampLike,
+  toTimestamp,
+} from './utils/bigint-serialization';
 
 /**
  * @namespace Protocol
  * @description Protocol-specific utilities and constants
  */
-export namespace Protocol {
-  export {
-    PDAUtils,
-    ProtocolValidator,
-    SDKHelpers,
-    PROTOCOL_CONSTANTS,
-  } from './utils/sdk-utilities';
-  
-  export {
-    DEFAULT_RETRY_CONFIGS,
-    ErrorType,
-    EnhancedTransactionError,
-    classifyError,
-  } from './utils/enhanced-transaction-helpers';
-}
+
+// Export Protocol utilities directly 
+export {
+  PDAUtils,
+  ProtocolValidator,
+  SDKHelpers,
+  PROTOCOL_CONSTANTS,
+} from './utils/sdk-utilities';
+
+export {
+  DEFAULT_RETRY_CONFIGS,
+} from './utils/enhanced-transaction-helpers';
 
 /**
  * @namespace Instructions
  * @description Generated instruction builders and types
  */
-export namespace Instructions {
-  export type {
-    IInstruction,
-    IInstructionWithData,
-    IInstructionWithAccounts,
-    IAccountMeta,
-    AccountRole,
-  } from './utils/instruction-compat';
-}
+
+// Export instruction types directly
+export type {
+  IInstruction,
+  IInstructionWithData,
+  IInstructionWithAccounts,
+  IAccountMeta,
+  AccountRole,
+} from './utils/instruction-compat';
 
 /**
  * @namespace Utils
  * @description Utility functions and helpers
  */
-export namespace Utils {
-  export {
-    AccountResolver,
-    InstructionBuilder,
-    InstructionDataEncoder,
-    ParameterValidator,
-    InstructionParser,
-    type ResolvedAccount,
-  } from './utils/instruction-builder-fixes';
-  
-  export {
-    ResilientTransactionSender,
-    CircuitBreaker,
-    withRetry,
-    TransactionUtils,
-    initializeGlobalTransactionSender,
-    getGlobalTransactionSender,
-    type RetryConfig,
-    type CircuitBreakerConfig,
-  } from './utils/enhanced-transaction-helpers';
-}
+
+// Export utils directly
+export {
+  AccountResolver,
+  InstructionBuilder,
+  InstructionDataEncoder,
+  ParameterValidator,
+  InstructionParser,
+  type ResolvedAccount,
+} from './utils/instruction-builder-fixes';
+
+export {
+  ResilientTransactionSender,
+  CircuitBreaker,
+  withRetry,
+  TransactionUtils,
+  initializeGlobalTransactionSender,
+  getGlobalTransactionSender,
+  type RetryConfig,
+  type CircuitBreakerConfig,
+} from './utils/enhanced-transaction-helpers';
 
 /**
  * Client factory with comprehensive options
@@ -154,14 +158,14 @@ export interface ClientOptions {
  * ```
  */
 export async function createClient(
-  rpc: Core.Rpc<any>,
+  rpc: Rpc<any>,
   options: ClientOptions = {}
 ): Promise<OptimizedClient> {
   const client = createOptimizedClient(rpc);
   
   // Initialize global transaction sender if circuit breaker is enabled
   if (options.enableCircuitBreaker) {
-    Utils.initializeGlobalTransactionSender(rpc, options.circuitBreakerConfig);
+    initializeGlobalTransactionSender(rpc, options.circuitBreakerConfig);
   }
   
   // Preload specified modules
@@ -187,8 +191,8 @@ export namespace Constants {
   
   /** Program IDs for different networks */
   export const PROGRAM_IDS = {
-    DEVNET: '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
-    TESTNET: '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
+    DEVNET: '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
+    TESTNET: '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
     MAINNET: '', // To be deployed
   } as const;
   
@@ -240,9 +244,11 @@ export namespace Types {
  * @namespace Errors
  * @description Error types and error handling utilities
  */
+
+// Re-export error utilities at top level
+export { ErrorType, EnhancedTransactionError, classifyError } from './utils/enhanced-transaction-helpers';
+
 export namespace Errors {
-  export { ErrorType, EnhancedTransactionError, classifyError } from './utils/enhanced-transaction-helpers';
-  
   /** SDK-specific error codes */
   export enum SDKErrorCode {
     INVALID_CONFIGURATION = 'INVALID_CONFIGURATION',
@@ -267,11 +273,12 @@ export namespace Errors {
   }
 }
 
-// Re-export important types for convenience
-import type { RetryConfig, CircuitBreakerConfig } from './utils/enhanced-transaction-helpers';
-import { OptimizedClient, createOptimizedClient, DEFAULT_RETRY_CONFIGS, PROTOCOL_CONSTANTS } from './index-optimized';
+// Re-export important utilities for convenience
+import { OptimizedClient, createOptimizedClient } from './index-optimized';
 
-export type { RetryConfig, CircuitBreakerConfig };
+// Import types needed for ClientOptions
+import type { RetryConfig, CircuitBreakerConfig } from './utils/enhanced-transaction-helpers';
+import type { Rpc } from '@solana/rpc';
 
 /**
  * @example Basic Usage

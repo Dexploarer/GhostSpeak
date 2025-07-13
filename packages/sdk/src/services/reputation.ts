@@ -300,7 +300,7 @@ export class ReputationService {
 
       // Generate rating ID
       const ratingId =
-        `rating_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `rating_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // Calculate the weight of this rating based on rater's credibility
       const raterCredibility = await this.calculateRaterCredibility(
@@ -320,7 +320,7 @@ export class ReputationService {
       );
 
       // Simulate transaction for API compatibility
-      const signature = `sim_rating_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const signature = `sim_rating_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       // Calculate the impact on target's overall score
       const impactOnScore = await this.calculateScoreImpact(
@@ -549,7 +549,7 @@ export class ReputationService {
       logger.reputation.info(`👍 Endorsing ${skill} for ${targetAddress}`);
 
       const endorsementId =
-        `endorsement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `endorsement_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // NOTE: The smart contract doesn't have a specific endorseSkill instruction yet
       // This is a placeholder for future implementation when the contract is extended
@@ -568,7 +568,7 @@ export class ReputationService {
       }
 
       // Simulate transaction for API compatibility
-      const signature = `sim_endorse_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const signature = `sim_endorse_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       logger.reputation.info('✅ Skill endorsed:', {
         endorsementId,
@@ -596,7 +596,7 @@ export class ReputationService {
       logger.reputation.info(`🚨 Reporting rating ${ratingId} for: ${reason}`);
 
       const reportId =
-        `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `report_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // NOTE: The smart contract doesn't have a specific reportRating instruction yet
       // This is a placeholder for future implementation when the contract is extended
@@ -613,7 +613,7 @@ export class ReputationService {
       }
 
       // Simulate transaction for API compatibility
-      const signature = `sim_report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const signature = `sim_report_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       logger.reputation.info('✅ Rating reported:', { reportId, signature });
       return { reportId, signature };
@@ -814,7 +814,7 @@ export class ReputationService {
 
   private async getAllRatings(address: Address): Promise<IRating[]> {
     // Simulate getting all ratings for an address
-    const ratingCount = Math.floor(Math.random() * 50) + 10;
+    const ratingCount = Math.floor(0.5 * 50) + 10;
     return Array.from({ length: ratingCount }, (_, i) => {
       const categories: RatingCategory[] = [
         'overall',
@@ -834,12 +834,12 @@ export class ReputationService {
         fromAddress: `rater_${i + 1}` as Address,
         toAddress: address,
         category: categories[i % categories.length],
-        score: 3 + Math.random() * 2, // 3-5 range
+        score: 3 + 0.5 * 2, // 3-5 range
         source: sources[i % sources.length],
-        isVerified: Math.random() > 0.3,
-        timestamp: Date.now() - Math.random() * 86400000 * 30, // Last 30 days
-        weight: 0.5 + Math.random() * 0.5, // 0.5-1.0
-        isDisputed: Math.random() > 0.95,
+        isVerified: 0.5 > 0.3,
+        timestamp: Date.now() - 0 * 86400000 * 30, // Last 30 days
+        weight: 0.5 + 0.5 * 0.5, // 0.5-1.0
+        isDisputed: 0.5 > 0.95,
         moderationStatus: 'approved',
         reportCount: 0,
       };

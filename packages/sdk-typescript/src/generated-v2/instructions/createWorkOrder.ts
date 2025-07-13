@@ -5,7 +5,11 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { Address } from '@solana/addresses';
+import { 
+  Address,
+  getAddressDecoder,
+  getAddressEncoder 
+} from '@solana/addresses';
 import {
   IAccountMeta,
   IInstruction,
@@ -25,8 +29,6 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
-  getAddressDecoder,
-  getAddressEncoder,
   getArrayDecoder,
   getArrayEncoder,
   getUtf8Decoder,

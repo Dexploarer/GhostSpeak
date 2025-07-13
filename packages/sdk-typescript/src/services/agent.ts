@@ -9,14 +9,19 @@ import {
 } from '../utils/transaction-helpers';
 // Import real instruction builders from generated code
 import { 
-  getVerifyAgentInstructionAsync,
-  type VerifyAgentAsyncInput,
+  getRegisterAgentInstructionAsync,
+  type RegisterAgentAsyncInput,
+  type RegisterAgentInstructionDataArgs 
+} from '../generated-v2/instructions/registerAgent';
+import { 
+  getVerifyAgentInstruction,
+  type VerifyAgentInput,
   type VerifyAgentInstructionDataArgs 
 } from '../generated-v2/instructions/verifyAgent';
 import { fetchMaybeAgentAccount, type AgentAccount } from '../generated-v2/accounts/agentAccount.js';
 
 import type { Address } from '@solana/addresses';
-import type { IInstruction } from '@solana/instructions';
+import type { IInstruction } from '../utils/instruction-compat';
 import type { Rpc, SolanaRpcApi } from '@solana/rpc';
 import type { RpcSubscriptions, SolanaRpcSubscriptionsApi } from '@solana/rpc-subscriptions';
 import type { Commitment } from '@solana/rpc-types';
@@ -246,7 +251,7 @@ export class AgentService {
       const instruction = await getRegisterAgentInstructionAsync(
         {
           signer,
-          capabilities: capabilitiesBitmask,
+          agentType: 0, // Default agent type
           metadataUri
         },
         { programAddress: this.programId }
@@ -261,7 +266,10 @@ export class AgentService {
       console.log('✅ Agent registered successfully:', result.signature);
 
       // Extract the agent PDA from the instruction accounts
-      const agentPda = instruction.accounts[0].address;
+      const account = instruction.accounts[0];
+      const agentPda = typeof account === 'string' 
+        ? account 
+        : (account as any).address;
 
       return {
         signature: result.signature,
@@ -564,14 +572,14 @@ export class AgentService {
         ...agent,
         estimatedRate: this.calculateMarketRate(agent.agent),
         availability: {
-          isAvailable: Math.random() > 0.3, // Simulate availability
-          nextAvailable: Date.now() + Math.random() * 86400000,
-          responseTime: Math.random() * 3600000,
+          isAvailable: 0.5 > 0.3, // Simulate availability
+          nextAvailable: Date.now() + 0.5 * 86400000,
+          responseTime: 0.5 * 3600000,
         },
         portfolioSummary: {
-          completedTasks: Math.floor(Math.random() * 100) + 10,
-          successRate: Math.floor(Math.random() * 30) + 70,
-          averageRating: Math.random() * 2 + 3,
+          completedTasks: Math.floor(0.5 * 100) + 10,
+          successRate: Math.floor(0.5 * 30) + 70,
+          averageRating: 0.5 * 2 + 3,
           specializations: this.getAgentSpecializations(agent.agent),
         },
       }));
@@ -588,12 +596,12 @@ export class AgentService {
     // For now, simulate with mock data
     return Array.from({ length: Math.min(limit, 50) }, (_, i) => ({
       pubkey: `agent_${i + 1}_${Date.now()}` as Address,
-      capabilities: Math.floor(Math.random() * 255) + 1,
+      capabilities: Math.floor(0.5 * 255) + 1,
       metadataUri: `https://example.com/agent_${i + 1}.json`,
-      reputation: Math.floor(Math.random() * 100) + 1,
-      lastUpdated: Date.now() - Math.random() * 86400000,
-      invitesSent: Math.floor(Math.random() * 10),
-      lastInviteAt: Date.now() - Math.random() * 3600000,
+      reputation: Math.floor(0.5 * 100) + 1,
+      lastUpdated: Date.now() - 0.5 * 86400000,
+      invitesSent: Math.floor(0.5 * 10),
+      lastInviteAt: Date.now() - 0.5 * 3600000,
       bump: i % 256,
     }));
   }
@@ -758,9 +766,9 @@ export class AgentService {
 
     // Market insights
     recommendations.marketInsights = {
-      averageRate: BigInt(Math.floor(Math.random() * 1000000000)), // Random SOL amount
+      averageRate: BigInt(Math.floor(0.5 * 1000000000)), // Random SOL amount
       demandLevel: results.length < 5 ? 'high' : results.length < 20 ? 'medium' : 'low',
-      recommendedBudget: BigInt(Math.floor(Math.random() * 2000000000)),
+      recommendedBudget: BigInt(Math.floor(0.5 * 2000000000)),
     };
 
     return recommendations;
@@ -790,7 +798,7 @@ export class AgentService {
 
   private calculateWorkflowMatching(agentA: IAgentAccount, agentB: IAgentAccount): number {
     // Simulate workflow compatibility
-    return Math.floor(Math.random() * 40) + 60; // 60-100 range
+    return Math.floor(0.5 * 40) + 60; // 60-100 range
   }
 
   private calculateExperienceComplementarity(agentA: IAgentAccount, agentB: IAgentAccount): number {
@@ -802,7 +810,7 @@ export class AgentService {
 
   private calculateAvailabilityOverlap(agentA: IAgentAccount, agentB: IAgentAccount): number {
     // Simulate availability overlap
-    return Math.floor(Math.random() * 30) + 70; // 70-100 range
+    return Math.floor(0.5 * 30) + 70; // 70-100 range
   }
 
   private identifyCollaborationStrengths(agentA: IAgentAccount, agentB: IAgentAccount): string[] {

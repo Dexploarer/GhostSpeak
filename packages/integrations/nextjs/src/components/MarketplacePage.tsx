@@ -8,8 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { GetServerSideProps } from 'next';
-import { Marketplace } from '@podai/react';
-import type { ServiceListingAccount } from '@podai/sdk';
+import { Marketplace } from '@ghostspeak/react';
+import type { ServiceListingAccount } from '@ghostspeak/sdk';
 
 interface MarketplacePageProps {
   initialListings?: ServiceListingAccount[];
@@ -26,7 +26,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   initialListings = [],
   initialStats,
   rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-  programId = process.env.NEXT_PUBLIC_PROGRAM_ID || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
+  programId = process.env.NEXT_PUBLIC_PROGRAM_ID || '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
 }) => {
   const [mounted, setMounted] = useState(false);
 
@@ -315,7 +315,7 @@ export const getServerSideProps: GetServerSideProps<MarketplacePageProps> = asyn
         initialListings,
         initialStats,
         rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-        programId: process.env.PROGRAM_ID || '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP',
+        programId: process.env.PROGRAM_ID || '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
       },
     };
   } catch (error) {

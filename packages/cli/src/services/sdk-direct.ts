@@ -1,58 +1,51 @@
 /**
- * Direct SDK integration without UnifiedClient
- * Uses Web3.js v2 patterns directly
+ * Real SDK integration connecting to deployed PodAI program
+ * Uses Web3.js v2 patterns with actual blockchain operations
  */
 
 import { createSolanaRpc, type Rpc, type SolanaRpcApi } from '@solana/rpc';
 import { address, type Address } from '@solana/addresses';
 import { type KeyPairSigner } from '@solana/signers';
 import { logger } from '../utils/logger.js';
+import { LazyModules } from '@ghostspeak/sdk';
 
 /**
- * Create a mock RPC subscriptions object for CLI usage
- * The CLI doesn't need real-time subscriptions
- */
-export function createMockRpcSubscriptions(): any {
-  return {
-    channelCreated: () => ({ subscribe: () => Promise.resolve({ unsubscribe: () => {} }) }),
-    channelUpdated: () => ({ subscribe: () => Promise.resolve({ unsubscribe: () => {} }) }),
-    messageSent: () => ({ subscribe: () => Promise.resolve({ unsubscribe: () => {} }) }),
-    // Add other subscription methods as needed
-  };
-}
-
-// Import services directly to avoid dynamic import issues
-import { AgentService } from '../../../sdk/src/services/agent.js';
-import { ChannelService } from '../../../sdk/src/services/channel.js';
-import { MessageService } from '../../../sdk/src/services/message.js';
-import { EscrowService } from '../../../sdk/src/services/escrow.js';
-import { MarketplaceService } from '../../../sdk/src/services/marketplace.js';
-
-/**
- * Initialize SDK services directly without UnifiedClient
+ * Initialize real SDK services connecting to deployed PodAI program
  */
 export async function initializeDirectSdk(rpc: Rpc<SolanaRpcApi>, programId: Address) {
   try {
-    // Create mock subscriptions for CLI
-    const mockSubscriptions = createMockRpcSubscriptions();
+    logger.general.debug('Initializing real SDK services for PodAI program...');
     
-    // Return service classes with mock subscriptions
+    // Load real SDK services
+    const [
+      agentModule,
+      channelModule,
+      messageModule,
+      escrowModule,
+      marketplaceModule
+    ] = await Promise.all([
+      LazyModules.agent,
+      LazyModules.channel,
+      LazyModules.message,
+      LazyModules.escrow,
+      LazyModules.marketplace
+    ]);
+    
     return {
-      AgentService,
-      ChannelService,
-      MessageService,
-      EscrowService,
-      MarketplaceService,
-      mockSubscriptions,
+      AgentService: agentModule.AgentService,
+      ChannelService: channelModule.ChannelService,
+      MessageService: messageModule.MessageService,
+      EscrowService: escrowModule.EscrowService,
+      MarketplaceService: marketplaceModule.MarketplaceService,
     };
   } catch (error) {
-    logger.general.error('Failed to initialize SDK services:', error);
+    logger.general.error('Failed to initialize real SDK services:', error);
     throw error;
   }
 }
 
 /**
- * Register an agent directly using SDK
+ * Register an agent directly using real SDK connected to PodAI program
  */
 export async function registerAgentDirect(
   rpc: Rpc<SolanaRpcApi>,
@@ -64,29 +57,25 @@ export async function registerAgentDirect(
   capabilities?: string[]
 ): Promise<{ address: Address; signature: string }> {
   const sdk = await initializeDirectSdk(rpc, programId);
-  const agentService = new sdk.AgentService(rpc, sdk.mockSubscriptions, programId, 'confirmed');
+  const agentService = new sdk.AgentService(rpc, programId);
   
-  // Generate unique agent ID
-  const agentId = `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  // Create agent through service
-  const result = await agentService.verifyAgent(signer, {
-    agentId,
+  // Register agent on actual blockchain using real PodAI program
+  const result = await agentService.registerAgent({
+    authority: signer,
     name,
     agentType: type,
     description: description || '',
-    capabilities: capabilities || [],
-    metadata: {}
+    capabilities: capabilities || []
   });
   
   return {
-    address: result.agentPda,
+    address: result.agentAddress,
     signature: result.signature
   };
 }
 
 /**
- * Create a channel directly using SDK
+ * Create a channel directly using real SDK connected to PodAI program
  */
 export async function createChannelDirect(
   rpc: Rpc<SolanaRpcApi>,
@@ -101,13 +90,26 @@ export async function createChannelDirect(
   }
 ): Promise<{ channelId: string; channelPda: Address; signature: string }> {
   const sdk = await initializeDirectSdk(rpc, programId);
-  const channelService = new sdk.ChannelService(rpc, sdk.mockSubscriptions, programId, 'confirmed');
+  const channelService = new sdk.ChannelService(rpc, programId);
   
-  return channelService.createChannel(signer, options);
+  // Create channel on actual blockchain using real PodAI program
+  const result = await channelService.createChannel({
+    authority: signer,
+    name: options.name,
+    description: options.description,
+    visibility: options.visibility,
+    maxParticipants: options.maxParticipants || 100
+  });
+  
+  return {
+    channelId: result.channelId,
+    channelPda: result.channelAddress,
+    signature: result.signature
+  };
 }
 
 /**
- * List user channels directly using SDK
+ * List user channels directly using real SDK
  */
 export async function listUserChannelsDirect(
   rpc: Rpc<SolanaRpcApi>,
@@ -115,7 +117,8 @@ export async function listUserChannelsDirect(
   creator: Address
 ): Promise<any[]> {
   const sdk = await initializeDirectSdk(rpc, programId);
-  const channelService = new sdk.ChannelService(rpc, sdk.mockSubscriptions, programId, 'confirmed');
+  const channelService = new sdk.ChannelService(rpc, programId);
   
-  return channelService.listUserChannels(creator);
+  // Get real channels from blockchain
+  return channelService.listUserChannels({ authority: creator });
 }

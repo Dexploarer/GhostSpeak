@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { PurchaseOrderAccount, OrderStatus } from '@podai/sdk';
+import { PurchaseOrderAccount, OrderStatus } from '@ghostspeak/sdk';
 
 export interface OrderHistoryProps {
   orders: PurchaseOrderAccount[];

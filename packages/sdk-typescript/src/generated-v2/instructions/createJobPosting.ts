@@ -20,6 +20,10 @@ type WritableSignerAccount<T> = T;
 
 import {
   combineCodec,
+  fixEncoderSize,
+  fixDecoderSize,
+  getBytesDecoder,
+  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -107,19 +111,19 @@ export interface JobPostingDataArgs {
 export function getCreateJobPostingInstructionDataEncoder(): Encoder<CreateJobPostingInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', getCreateJobPostingDiscriminatorBytes()],
+      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['jobData', getJobPostingDataEncoder()],
     ]),
     value => ({
       ...value,
-      discriminator: getCreateJobPostingDiscriminatorBytes(),
+      discriminator: CREATE_JOB_POSTING_DISCRIMINATOR,
     })
   );
 }
 
 export function getCreateJobPostingInstructionDataDecoder(): Decoder<CreateJobPostingInstructionData> {
   return getStructDecoder([
-    ['discriminator', getCreateJobPostingDiscriminatorBytes()],
+    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['jobData', getJobPostingDataDecoder()],
   ]);
 }

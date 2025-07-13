@@ -1,14 +1,14 @@
 [package]
-name = "podai-sdk"
+name = "ghostspeak-sdk"
 version = "0.1.0"
 edition = "2021"
-description = "Rust SDK for the podAI Agent Commerce Protocol"
+description = "Rust SDK for GhostSpeak Protocol - Decentralized AI Agent Commerce on Solana"
 license = "MIT"
 repository = "https://github.com/ghostspeak/ghostspeak"
 homepage = "https://ghostspeak.com"
-documentation = "https://docs.rs/podai-sdk"
-readme = "../README.md"
-keywords = ["solana", "blockchain", "agent", "commerce", "web3"]
+documentation = "https://docs.rs/ghostspeak-sdk"
+readme = "README.md"
+keywords = ["solana", "blockchain", "ai-agents", "ghostspeak", "web3"]
 categories = ["api-bindings", "web-programming"]
 
 [dependencies]
@@ -75,7 +75,7 @@ spl-token-2022 = []
 testing = []
 
 [lib]
-name = "podai_sdk"
+name = "ghostspeak_sdk"
 path = "src/lib.rs"
 
 [[example]]

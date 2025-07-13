@@ -19,8 +19,8 @@ npx ghostspeak --help
 
 ### From Source
 ```bash
-git clone https://github.com/ghostspeak/ghostspeak-protocol
-cd ghostspeak-protocol/packages/cli
+git clone https://github.com/ghostspeak/ghostspeak
+cd ghostspeak/packages/cli
 npm install
 npm run build
 npm link
@@ -291,7 +291,7 @@ ghostspeak settings --rpc-url "https://my-custom-rpc.com"
 🌐 Network: devnet
 🔗 RPC URL: https://api.devnet.solana.com
 📡 WebSocket: wss://api.devnet.solana.com
-🎯 Program ID: 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+🎯 Program ID: 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
 📊 Commitment: confirmed
 ⏱️ Timeout: 30s
 🔄 Max Retries: 3
@@ -538,7 +538,7 @@ ghostspeak demo --scenario full --auto --verbose
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✅ Connected to Solana devnet
-✅ Program ID: 4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+✅ Program ID: 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
 
 🔧 Setting up demo environment...
   ✅ Generated keypairs
@@ -641,7 +641,7 @@ Available Commands:
   "defaultNetwork": "devnet",
   "rpcUrl": "https://api.devnet.solana.com",
   "wsUrl": "wss://api.devnet.solana.com",
-  "programId": "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP",
+  "programId": "367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK",
   "commitment": "confirmed",
   "timeout": 30000,
   "maxRetries": 3,
@@ -665,7 +665,7 @@ Available Commands:
   "version": "1.0.0",
   "type": "agent",
   "network": "devnet",
-  "programId": "4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP",
+  "programId": "367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK",
   "agents": {
     "primary": {
       "name": "My AI Agent",
@@ -695,7 +695,7 @@ Available Commands:
 # Network Configuration
 export SOLANA_RPC_URL="https://api.devnet.solana.com"
 export SOLANA_WS_URL="wss://api.devnet.solana.com"
-export GHOSTSPEAK_PROGRAM_ID="4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP"
+export GHOSTSPEAK_PROGRAM_ID="367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK"
 
 # Keypair and Security
 export SOLANA_KEYPAIR_PATH="~/.config/solana/id.json"
@@ -1001,8 +1001,8 @@ ghostspeak register-agent --name "Agent" --export-tx tx.json
 
 ```bash
 # Clone repository
-git clone https://github.com/ghostspeak/ghostspeak-protocol
-cd ghostspeak-protocol/packages/cli
+git clone https://github.com/ghostspeak/ghostspeak
+cd ghostspeak/packages/cli
 
 # Install dependencies
 npm install

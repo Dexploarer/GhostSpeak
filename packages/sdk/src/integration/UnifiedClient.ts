@@ -5,13 +5,17 @@
  * state management, and SDK operations for seamless CLI/SDK integration.
  */
 
-import { Keypair, Connection, PublicKey } from '@solana/web3.js';
 import { address, type Address } from '@solana/addresses';
+import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import { createSolanaRpc } from '@solana/rpc';
+import type { KeyPairSigner } from '@solana/signers';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
 import { SharedConfig, type SharedConfiguration } from '../config/SharedConfig.js';
 import { SharedStateManager } from '../state/SharedStateManager.js';
-import { PodAIClient, createPodAIClient, type IMinimalClientConfig } from '../client-v2.js';
+import { PodAIClient, createPodAIClient } from '../client-v2.js';
+import type { IPodAIClientConfig } from '../client-v2.js';
 import { AgentService } from '../services/agent.js';
-import { ChannelService } from '../services/channel.js';
+import { ChannelService, ChannelVisibility } from '../services/channel.js';
 import { MessageService } from '../services/message.js';
 import { EscrowService } from '../services/escrow.js';
 import { MarketplaceService } from '../services/marketplace.js';
@@ -29,15 +33,8 @@ export class UnifiedClient {
   private config: SharedConfig;
   private stateManager: SharedStateManager;
   private sdkClient?: PodAIClient;
-  private connection?: Connection;
-  private keypair?: Keypair;
-  
-  // Service instances
-  private agentService?: AgentService;
-  private channelService?: ChannelService;
-  private messageService?: MessageService;
-  private escrowService?: EscrowService;
-  private marketplaceService?: MarketplaceService;
+  private rpc?: Rpc<SolanaRpcApi>;
+  private signer?: KeyPairSigner;
   
   private constructor(
     config: SharedConfig,
@@ -89,34 +86,23 @@ export class UnifiedClient {
   private async initializeConnection(): Promise<void> {
     const networkConfig = this.config.getNetwork();
     
-    // Create connection
-    this.connection = new Connection(networkConfig.rpcUrl, {
-      commitment: networkConfig.commitment || 'confirmed',
-    });
+    // Create RPC connection
+    this.rpc = createSolanaRpc(networkConfig.rpcUrl);
     
-    // Load keypair
-    this.keypair = await this.config.getKeypair() || undefined;
-    
-    // Create SDK client if we have a keypair
-    if (this.keypair) {
-      const clientConfig: IMinimalClientConfig = {
-        connection: this.connection,
-        wallet: {
-          publicKey: this.keypair.publicKey,
-          signTransaction: async (tx) => {
-            tx.sign([this.keypair!]);
-            return tx;
-          },
-          signAllTransactions: async (txs) => {
-            return txs.map(tx => {
-              tx.sign([this.keypair!]);
-              return tx;
-            });
-          },
-        },
+    // Load keypair and convert to signer
+    const keypair = await this.config.getKeypair();
+    if (keypair) {
+      // Convert legacy keypair to Web3.js v2 signer
+      this.signer = await createKeyPairSignerFromBytes(keypair.secretKey);
+      
+      // Create SDK client with proper config
+      const clientConfig: IPodAIClientConfig = {
+        rpcEndpoint: networkConfig.rpcUrl,
+        commitment: networkConfig.commitment || 'confirmed',
+        network: networkConfig.network as any,
       };
       
-      this.sdkClient = await createPodAIClient(clientConfig);
+      this.sdkClient = createPodAIClient(clientConfig);
     }
   }
   
@@ -124,65 +110,51 @@ export class UnifiedClient {
    * Get or create agent service
    */
   async getAgentService(): Promise<AgentService> {
-    if (!this.agentService) {
-      if (!this.sdkClient) {
-        throw new Error('SDK client not initialized. Please set up a wallet first.');
-      }
-      this.agentService = new AgentService(this.sdkClient);
+    if (!this.sdkClient) {
+      throw new Error('SDK client not initialized. Please set up a wallet first.');
     }
-    return this.agentService;
+    return this.sdkClient.agents;
   }
   
   /**
    * Get or create channel service
    */
   async getChannelService(): Promise<ChannelService> {
-    if (!this.channelService) {
-      if (!this.sdkClient) {
-        throw new Error('SDK client not initialized. Please set up a wallet first.');
-      }
-      this.channelService = new ChannelService(this.sdkClient);
+    if (!this.sdkClient) {
+      throw new Error('SDK client not initialized. Please set up a wallet first.');
     }
-    return this.channelService;
+    return this.sdkClient.channels;
   }
   
   /**
    * Get or create message service
    */
   async getMessageService(): Promise<MessageService> {
-    if (!this.messageService) {
-      if (!this.sdkClient) {
-        throw new Error('SDK client not initialized. Please set up a wallet first.');
-      }
-      this.messageService = new MessageService(this.sdkClient);
+    if (!this.sdkClient) {
+      throw new Error('SDK client not initialized. Please set up a wallet first.');
     }
-    return this.messageService;
+    return this.sdkClient.messages;
   }
   
   /**
    * Get or create escrow service
    */
   async getEscrowService(): Promise<EscrowService> {
-    if (!this.escrowService) {
-      if (!this.sdkClient) {
-        throw new Error('SDK client not initialized. Please set up a wallet first.');
-      }
-      this.escrowService = new EscrowService(this.sdkClient);
+    if (!this.sdkClient) {
+      throw new Error('SDK client not initialized. Please set up a wallet first.');
     }
-    return this.escrowService;
+    return this.sdkClient.escrow;
   }
   
   /**
    * Get or create marketplace service
    */
   async getMarketplaceService(): Promise<MarketplaceService> {
-    if (!this.marketplaceService) {
-      if (!this.sdkClient) {
-        throw new Error('SDK client not initialized. Please set up a wallet first.');
-      }
-      this.marketplaceService = new MarketplaceService(this.sdkClient);
+    if (!this.sdkClient) {
+      throw new Error('SDK client not initialized. Please set up a wallet first.');
     }
-    return this.marketplaceService;
+    // Note: marketplace service may not be exposed on PodAIClient yet
+    throw new Error('Marketplace service not yet available on PodAIClient');
   }
   
   /**
@@ -206,11 +178,15 @@ export class UnifiedClient {
     
     try {
       // Register agent through SDK
-      const result = await agentService.createAgent({
+      if (!this.signer) {
+        throw new Error('No signer available. Please set up a wallet first.');
+      }
+      
+      const result = await agentService.registerAgent(this.signer, {
         name,
-        type,
-        description,
-        capabilities,
+        description: description || '',
+        capabilities: capabilities?.map(c => parseInt(c) || 0) || [],
+        metadata: { type },
       });
       
       // Update transaction record
@@ -219,7 +195,7 @@ export class UnifiedClient {
       
       // Save agent info to config
       await this.config.addAgent({
-        address: result.address,
+        address: result.agentPda,
         name,
         type,
         description,
@@ -233,7 +209,10 @@ export class UnifiedClient {
       await this.stateManager.incrementStats('totalAgentsCreated');
       await this.stateManager.updateTransactionStatus(result.signature, 'confirmed');
       
-      return result;
+      return {
+        address: result.agentPda,
+        signature: result.signature,
+      };
     } catch (error) {
       if (txRecord.signature !== 'pending') {
         await this.stateManager.updateTransactionStatus(txRecord.signature, 'failed');
@@ -262,12 +241,16 @@ export class UnifiedClient {
     };
     
     try {
-      // Create channel through SDK
-      const result = await channelService.createChannel({
+      // Create channel through SDK  
+      if (!this.signer) {
+        throw new Error('No signer available. Please set up a wallet first.');
+      }
+      
+      const result = await channelService.createChannel(this.signer, {
         name,
-        description,
-        visibility: type === 'public' ? 'public' : 'private',
-        maxParticipants,
+        description: description || '',
+        visibility: type === 'public' ? ChannelVisibility.PUBLIC : ChannelVisibility.PRIVATE,
+        maxParticipants: maxParticipants || 100,
       });
       
       // Update transaction record
@@ -276,7 +259,7 @@ export class UnifiedClient {
       
       // Save channel info to config
       await this.config.addChannel({
-        address: result.address,
+        address: result.channelPda,
         name,
         type,
         description,
@@ -289,7 +272,10 @@ export class UnifiedClient {
       await this.stateManager.incrementStats('totalChannelsCreated');
       await this.stateManager.updateTransactionStatus(result.signature, 'confirmed');
       
-      return result;
+      return {
+        address: result.channelPda,
+        signature: result.signature,
+      };
     } catch (error) {
       if (txRecord.signature !== 'pending') {
         await this.stateManager.updateTransactionStatus(txRecord.signature, 'failed');
@@ -328,12 +314,15 @@ export class UnifiedClient {
     
     try {
       // Send message through SDK
-      const result = await messageService.sendMessage({
+      if (!this.signer) {
+        throw new Error('No signer available. Please set up a wallet first.');
+      }
+      
+      const result = await messageService.sendMessage(this.signer, {
         channelAddress: channel.address,
         content,
-        contentType: options?.contentType,
-        encrypted: options?.encrypted,
-        replyTo: options?.replyTo,
+        messageType: options?.contentType || 'text/plain',
+        metadata: options?.replyTo ? { threadId: options.replyTo } : undefined,
       });
       
       // Update transaction record
@@ -348,7 +337,10 @@ export class UnifiedClient {
       channel.lastUsed = new Date();
       await this.config.addChannel(channel);
       
-      return result;
+      return {
+        messageId: result.messagePda,
+        signature: result.signature,
+      };
     } catch (error) {
       if (txRecord.signature !== 'pending') {
         await this.stateManager.updateTransactionStatus(txRecord.signature, 'failed');
@@ -434,7 +426,7 @@ export class UnifiedClient {
               address: channel.address,
               type: channel.type,
               description: channel.description,
-              participantCount: onChainChannel?.participants?.length,
+              participantCount: undefined, // Participant count not available in current channel structure
               onChain: !!onChainChannel,
             };
           } catch {
@@ -500,30 +492,30 @@ export class UnifiedClient {
   }
   
   /**
-   * Get connection
+   * Get RPC connection
    */
-  getConnection(): Connection | undefined {
-    return this.connection;
+  getRpc(): Rpc<SolanaRpcApi> | undefined {
+    return this.rpc;
   }
   
   /**
-   * Get keypair
+   * Get signer
    */
-  getKeypair(): Keypair | undefined {
-    return this.keypair;
+  getSigner(): KeyPairSigner | undefined {
+    return this.signer;
   }
   
   /**
-   * Set keypair
+   * Set signer from keypair bytes
    */
-  async setKeypair(keypair: Keypair): Promise<void> {
-    this.keypair = keypair;
+  async setSignerFromBytes(secretKey: Uint8Array): Promise<void> {
+    this.signer = await createKeyPairSignerFromBytes(secretKey);
     await this.config.setWallet({
-      publicKey: keypair.publicKey.toBase58(),
-      privateKey: keypair.secretKey,
+      publicKey: this.signer.address,
+      privateKey: secretKey,
     });
     
-    // Reinitialize connection with new keypair
+    // Reinitialize connection with new signer
     await this.initializeConnection();
   }
   

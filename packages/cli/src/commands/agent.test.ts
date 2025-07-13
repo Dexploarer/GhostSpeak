@@ -72,7 +72,7 @@ describe('Agent Commands', () => {
   });
 
   describe('registerAgent', () => {
-    it('should register an agent in simulation mode when no wallet is configured', async () => {
+    it('should fail when no wallet is configured', async () => {
       // Act
       await registerAgent('TestAgent', {
         type: 'general',
@@ -94,18 +94,15 @@ describe('Agent Commands', () => {
       );
     });
 
-    it('should show simulation mode message when no wallet is configured', async () => {
+    it('should show error message when no wallet is configured', async () => {
       // Act
       await registerAgent('TestAgent', {
         type: 'analytics',
       });
 
-      // Assert - check for simulation mode messages
-      expect(logger.general.info).toHaveBeenCalledWith(
-        expect.stringContaining('No wallet configured - Running in simulation mode')
-      );
-      expect(logger.general.info).toHaveBeenCalledWith(
-        expect.stringContaining('Simulation Mode - Agent created locally')
+      // Assert - check for error messages
+      expect(logger.general.error).toHaveBeenCalledWith(
+        expect.stringContaining('No wallet configured')
       );
     });
     

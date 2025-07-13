@@ -5,6 +5,8 @@
  * Tree-shakeable exports for maximum efficiency
  */
 
+import type { Address } from '@solana/addresses';
+
 // ===== MINIMAL CLIENT (Essential) =====
 export {
   createMinimalClient,
@@ -113,6 +115,29 @@ export type { Commitment } from '@solana/rpc-types';
 export type { Rpc, SolanaRpcApi } from '@solana/rpc';
 export type { KeyPairSigner } from '@solana/signers';
 
+// ===== LAZY MODULES (For CLI compatibility) =====
+export const LazyModules = {
+  get agent() { return import('./services/agent'); },
+  get channel() { return import('./services/channel'); },
+  get message() { return import('./services/message'); },
+  get escrow() { return import('./services/escrow'); },
+  get marketplace() { return import('./services/marketplace'); },
+  get auction() { return import('./services/auction'); },
+  get bulkDeals() { return import('./services/bulk-deals'); },
+  get reputation() { return import('./services/reputation'); },
+  get analytics() { return import('./services/analytics'); },
+  get realtime() { return import('./services/realtime-communication'); },
+  get crossPlatform() { return import('./services/cross-platform-bridge'); },
+  get mevProtection() { return import('./services/mev-protection'); },
+  get confidentialTransfer() { return import('./services/confidential-transfer'); },
+  get zkCompression() { return import('./services/zk-compression'); },
+  get messageRouter() { return import('./services/message-router'); },
+  get offlineSync() { return import('./services/offline-sync'); },
+  get agentReplication() { return import('./services/agent-replication'); },
+  get serviceTracking() { return import('./services/service-tracking'); },
+  get review() { return import('./services/review-system'); },
+};
+
 // ===== BASIC TYPES =====
 export interface IAgent {
   readonly address: Address;
@@ -176,6 +201,8 @@ export { address, isAddress } from '@solana/addresses';
 export type { AgentAccount } from './generated-v2/accounts/agentAccount';
 
 // ===== OBSERVABILITY (Optional - Tree-shakeable) =====
+// TODO: Fix observability module TypeScript issues before re-enabling
+/*
 export const loadObservability = async () => {
   const { initializeObservability, getObservability, withObservability, observed } = await import('./observability');
   return { initializeObservability, getObservability, withObservability, observed };
@@ -185,15 +212,17 @@ export const createDashboard = async () => {
   const { createDashboardServer } = await import('./observability/dashboard');
   return { createDashboardServer };
 };
+*/
 
 // ===== INTEGRATION (CLI/SDK Unified) =====
-export { UnifiedClient, type UnifiedClientOptions } from './integration/UnifiedClient';
+// TODO: Update UnifiedClient to use Web3.js v2 patterns before re-enabling
+// export { UnifiedClient, type UnifiedClientOptions } from './integration/UnifiedClient';
 export { SharedConfig, type SharedConfiguration, type NetworkConfig, type WalletConfig, type AgentInfo, type ChannelInfo } from './config/SharedConfig';
 export { SharedStateManager, type SessionState, type RuntimeState, type StateChangeEvent, type TransactionRecord } from './state/SharedStateManager';
 
 // ===== CONSTANTS =====
 export const GHOSTSPEAK_PROGRAM_ID =
-  '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as const; // GhostSpeak Protocol Program ID
+  '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as const; // GhostSpeak Protocol Program ID
 export const DEVNET_RPC = 'https://api.devnet.solana.com' as const;
 export const VERSION = '1.0.0' as const;
 export const SDK_NAME = '@ghostspeak/sdk' as const;

@@ -14,7 +14,8 @@ pub mod analytics;
 pub mod auction;
 pub mod bulk_deals;
 pub mod dispute;
-pub mod escrow_payment;
+// TODO: Re-enable when Anchor 0.32+ supports token_interface IDL generation
+// pub mod escrow_payment;
 pub mod extensions;
 pub mod incentives;
 pub mod marketplace;
@@ -24,16 +25,12 @@ pub mod pricing;
 pub mod replication;
 pub mod royalty;
 pub mod work_orders;
-pub mod compliance_governance;
+// TODO: Complete state dependencies before enabling
+// pub mod compliance_governance;
 
 // Re-export instruction handlers
-// Note: Some modules are imported but not re-exported to avoid namespace pollution
-// Individual handlers are used within their respective modules
-
 use anchor_lang::prelude::*;
 
-// Common instruction result type
+// Common instruction result type 
+#[allow(dead_code)]
 pub type InstructionResult<T = ()> = Result<T>;
-
-// Re-export error from main lib
-// pub use crate::PodAIMarketplaceError; // Unused import

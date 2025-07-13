@@ -7,7 +7,8 @@
 
 use anchor_lang::prelude::*;
 use crate::state::*;
-use crate::PodAIMarketplaceError;
+use crate::state::pricing::{DynamicPricingConfig, DynamicPricingEngine, PricingAlgorithm, DemandMetrics};
+use crate::GhostSpeakError;
 
 /// Creates a dynamic pricing engine for automated price optimization
 /// 
@@ -56,7 +57,7 @@ pub fn create_dynamic_pricing_engine(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.owner.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     // SECURITY: Input validation
@@ -64,31 +65,31 @@ pub fn create_dynamic_pricing_engine(
     
     require!(
         config.base_price >= MIN_PAYMENT_AMOUNT && config.base_price <= MAX_PAYMENT_AMOUNT,
-        PodAIMarketplaceError::InvalidPaymentAmount
+        GhostSpeakError::InvalidPaymentAmount
     );
     require!(
         config.min_price >= MIN_PAYMENT_AMOUNT && config.min_price <= MAX_PAYMENT_AMOUNT,
-        PodAIMarketplaceError::InvalidPaymentAmount
+        GhostSpeakError::InvalidPaymentAmount
     );
     require!(
         config.max_price >= MIN_PAYMENT_AMOUNT && config.max_price <= MAX_PAYMENT_AMOUNT,
-        PodAIMarketplaceError::InvalidPaymentAmount
+        GhostSpeakError::InvalidPaymentAmount
     );
     require!(
         config.min_price <= config.base_price && config.base_price <= config.max_price,
-        PodAIMarketplaceError::InvalidPaymentAmount
+        GhostSpeakError::InvalidPaymentAmount
     );
     require!(
         config.update_frequency >= MIN_UPDATE_FREQUENCY,
-        PodAIMarketplaceError::InvalidDeadline
+        GhostSpeakError::InvalidDeadline
     );
 
     let engine = &mut ctx.accounts.engine;
     let agent = &ctx.accounts.agent;
     let clock = Clock::get()?;
 
-    require!(agent.is_active, PodAIMarketplaceError::AgentNotActive);
-    require!(agent.owner == ctx.accounts.owner.key(), PodAIMarketplaceError::UnauthorizedAccess);
+    require!(agent.is_active, GhostSpeakError::AgentNotActive);
+    require!(agent.owner == ctx.accounts.owner.key(), GhostSpeakError::UnauthorizedAccess);
 
     engine.engine_id = clock.unix_timestamp as u64;  // Use timestamp as unique ID
     engine.agent = agent.key();
@@ -157,7 +158,7 @@ pub fn update_dynamic_pricing(
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.updater.is_signer,
-        PodAIMarketplaceError::UnauthorizedAccess
+        GhostSpeakError::UnauthorizedAccess
     );
 
     let engine = &mut ctx.accounts.engine;
@@ -167,7 +168,7 @@ pub fn update_dynamic_pricing(
     // Check update frequency
     require!(
         clock.unix_timestamp >= engine.last_updated + engine.config.adjustment_frequency, 
-        PodAIMarketplaceError::UpdateFrequencyTooHigh
+        GhostSpeakError::InvalidDeadline
     );
 
     let _old_price = engine.current_price;

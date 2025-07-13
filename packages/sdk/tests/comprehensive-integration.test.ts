@@ -14,7 +14,7 @@ import type { TransactionSignature } from '@solana/rpc-types';
 // Test configuration
 const TEST_CONFIG = {
   rpcEndpoint: 'https://api.devnet.solana.com',
-  programId: '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP' as Address,
+  programId: '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address,
   commitment: 'confirmed' as const,
   timeout: 30000,
 };

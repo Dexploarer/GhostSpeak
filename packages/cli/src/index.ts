@@ -400,9 +400,9 @@ const escrowCommand = program
   .description('Manage escrow services');
 
 escrowCommand
-  .command('deposit <channel> <amount>')
-  .description('Deposit funds into escrow')
-  .action(async (channel, amount) => {
+  .command('deposit <escrowId> <amount>')
+  .description('Deposit additional funds into existing escrow')
+  .action(async (escrowId, amount) => {
     try {
       const { depositEscrow } = await import('./commands/escrow.js');
       
@@ -416,11 +416,110 @@ escrowCommand
         process.exit(1);
       }
       
-      await depositEscrow(channel, parsedAmount);
+      await depositEscrow(escrowId, parsedAmount);
       process.exit(0);
     } catch (error) {
       console.error(
         chalk.red('❌ Escrow deposit failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+escrowCommand
+  .command('create <beneficiary> <amount>')
+  .description('Create a new escrow')
+  .option('-d, --description <description>', 'Escrow description')
+  .action(async (beneficiary, amount, options) => {
+    try {
+      const { createEscrow } = await import('./commands/escrow.js');
+      
+      // Safely parse amount with validation
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        console.error(
+          chalk.red('❌ Invalid amount:'),
+          'Must be a positive number'
+        );
+        process.exit(1);
+      }
+      
+      await createEscrow(beneficiary, parsedAmount, options.description);
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Escrow creation failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+escrowCommand
+  .command('release <escrowId>')
+  .description('Release funds from escrow')
+  .option('-r, --recipient <address>', 'Override recipient address')
+  .action(async (escrowId, options) => {
+    try {
+      const { releaseEscrow } = await import('./commands/escrow.js');
+      await releaseEscrow(escrowId, options.recipient);
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Escrow release failed:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+escrowCommand
+  .command('status <escrowId>')
+  .description('Get escrow status and details')
+  .action(async (escrowId) => {
+    try {
+      const { getEscrowStatus } = await import('./commands/escrow.js');
+      await getEscrowStatus(escrowId);
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Failed to get escrow status:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+escrowCommand
+  .command('list')
+  .description('List your escrows')
+  .option('-a, --address <address>', 'List escrows for specific address')
+  .action(async (options) => {
+    try {
+      const { listEscrows } = await import('./commands/escrow.js');
+      await listEscrows(options.address);
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Failed to list escrows:'),
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+escrowCommand
+  .command('cancel <escrowId>')
+  .description('Cancel an escrow and refund funds')
+  .action(async (escrowId) => {
+    try {
+      const { cancelEscrow } = await import('./commands/escrow.js');
+      await cancelEscrow(escrowId);
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        chalk.red('❌ Escrow cancellation failed:'),
         error instanceof Error ? error.message : String(error)
       );
       process.exit(1);
@@ -470,7 +569,7 @@ analyticsCommand
       console.log(`Agents: ${chalk.cyan(summary.agents)}`);
       console.log(`Channels: ${chalk.cyan(summary.channels)}`);
       console.log(`Messages: ${chalk.cyan(summary.messages)}`);
-      console.log(`Data Source: ${summary.isLive ? chalk.green('Live') : chalk.yellow('Demo')}`);
+      console.log(`Data Source: ${summary.isLive ? chalk.green('Live') : chalk.red('Unavailable')}`);
       
       process.exit(0);
     } catch (error) {
@@ -1016,6 +1115,28 @@ function showCommandHelp(command: string): void {
       console.log('  ghostspeak message send "team" "Task update" --encrypted');
       console.log('  ghostspeak message list "general" --limit 20');
     },
+    escrow: () => {
+      console.log(chalk.cyan('💰 Escrow Command Help'));
+      console.log('');
+      console.log(chalk.yellow('Usage:'));
+      console.log('  ghostspeak escrow <subcommand> [options]');
+      console.log('');
+      console.log(chalk.yellow('Subcommands:'));
+      console.log('  create <beneficiary> <amount>    Create new escrow');
+      console.log('  deposit <escrowId> <amount>      Add funds to escrow');
+      console.log('  release <escrowId>               Release escrow funds');
+      console.log('  status <escrowId>                Check escrow status');
+      console.log('  list                             List your escrows');
+      console.log('  cancel <escrowId>                Cancel and refund escrow');
+      console.log('');
+      console.log(chalk.yellow('Examples:'));
+      console.log('  ghostspeak escrow create 7xK9...abc 1.5 -d "Web design work"');
+      console.log('  ghostspeak escrow deposit work_order_123 0.5');
+      console.log('  ghostspeak escrow release work_order_123');
+      console.log('  ghostspeak escrow status work_order_123');
+      console.log('  ghostspeak escrow list');
+      console.log('  ghostspeak escrow cancel work_order_123');
+    },
     mev: () => {
       console.log(chalk.cyan('🛡️ MEV Protection Command Help'));
       console.log('');
@@ -1086,7 +1207,7 @@ function showGeneralHelp(): void {
 // Default action when no command is specified
 program.action(async () => {
   // Check for configuration migration
-  const { migrateConfiguration } = await import('./utils/config-migration-stub.js');
+  const { migrateConfiguration } = await import('./utils/config-migration.js');
   if (false) { // Temporarily disabled: await needsMigration()
     console.log(chalk.yellow('⚠️  Configuration update required'));
     console.log(chalk.gray('Your configuration needs to be migrated to the new shared system.'));

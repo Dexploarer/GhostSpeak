@@ -302,7 +302,7 @@ describe('SDK Enhancement Validation', () => {
 
     test('should provide proper constants', () => {
       expect(Constants.RPC_ENDPOINTS.DEVNET).toBe('https://api.devnet.solana.com');
-      expect(Constants.PROGRAM_IDS.DEVNET).toBe('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+      expect(Constants.PROGRAM_IDS.DEVNET).toBe('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
       expect(Constants.ACCOUNT_SIZES.AGENT).toBe(256);
     });
   });

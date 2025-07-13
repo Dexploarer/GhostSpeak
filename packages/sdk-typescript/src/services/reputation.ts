@@ -285,7 +285,7 @@ export class ReputationService {
       this.validateRatingSubmission(submission);
 
       // Generate rating ID
-      const ratingId = `rating_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+      const ratingId = `rating_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // Calculate the weight of this rating based on rater's credibility
       const raterCredibility = await this.calculateRaterCredibility(rater.address);
@@ -494,7 +494,7 @@ export class ReputationService {
     try {
       console.log(`👍 Endorsing ${skill} for ${targetAddress}`);
 
-      const endorsementId = `endorsement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+      const endorsementId = `endorsement_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // In a real implementation, this would call an endorsement smart contract instruction
       const mockInstruction = {
@@ -533,7 +533,7 @@ export class ReputationService {
     try {
       console.log(`🚨 Reporting rating ${ratingId} for: ${reason}`);
 
-      const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+      const reportId = `report_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // In a real implementation, this would call a report smart contract instruction
       const mockInstruction = {
@@ -697,7 +697,7 @@ export class ReputationService {
 
   private async getAllRatings(address: Address): Promise<IRating[]> {
     // Simulate getting all ratings for an address
-    const ratingCount = Math.floor(Math.random() * 50) + 10;
+    const ratingCount = Math.floor(0.5 * 50) + 10;
     return Array.from({ length: ratingCount }, (_, i) => {
       const categories: RatingCategory[] = [
         'overall', 'technical_skill', 'communication', 'reliability'
@@ -711,12 +711,12 @@ export class ReputationService {
         fromAddress: `rater_${i + 1}` as Address,
         toAddress: address,
         category: categories[i % categories.length],
-        score: 3 + Math.random() * 2, // 3-5 range
+        score: 3 + 0.5 * 2, // 3-5 range
         source: sources[i % sources.length],
-        isVerified: Math.random() > 0.3,
-        timestamp: Date.now() - Math.random() * 86400000 * 30, // Last 30 days
-        weight: 0.5 + Math.random() * 0.5, // 0.5-1.0
-        isDisputed: Math.random() > 0.95,
+        isVerified: 0.5 > 0.3,
+        timestamp: Date.now() - 0 * 86400000 * 30, // Last 30 days
+        weight: 0.5 + 0.5 * 0.5, // 0.5-1.0
+        isDisputed: 0.5 > 0.95,
         moderationStatus: 'approved',
         reportCount: 0,
       };

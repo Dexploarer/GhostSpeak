@@ -133,7 +133,7 @@ code --install-extension ms-vscode.hexeditor
 
 ```bash
 # Clone the repository
-git clone https://github.com/Prompt-or-Die/ghostspeak.git
+git clone https://github.com/ghostspeak/ghostspeak.git
 cd ghostspeak
 
 # Verify project structure
@@ -548,7 +548,7 @@ Once your development environment is set up:
 ## Getting Help
 
 - 📖 **Documentation**: Browse our [complete docs](../README.md)
-- 🐛 **Issues**: Report problems on [GitHub](https://github.com/Prompt-or-Die/ghostspeak/issues)
+- 🐛 **Issues**: Report problems on [GitHub](https://github.com/ghostspeak/ghostspeak/issues)
 - 💬 **Community**: Join our [Discord](../resources/community.md)
 - 📧 **Support**: See [support resources](../resources/README.md)
 

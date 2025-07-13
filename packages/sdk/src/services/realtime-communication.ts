@@ -364,7 +364,7 @@ export class RealtimeCommunicationService {
 
       // Create WebSocket connection
       const socket = new WebSocket(this.wsEndpoint);
-      const connectionId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const connectionId = `conn_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       const connection: IWebSocketConnection = {
         connectionId,
@@ -445,7 +445,7 @@ export class RealtimeCommunicationService {
 
       // Generate message ID
       const messageId =
-        `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `msg_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // Create complete message
       const completeMessage: IRealtimeMessage = {
@@ -522,7 +522,7 @@ export class RealtimeCommunicationService {
       }
 
       // Generate subscription ID
-      const subscriptionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const subscriptionId = `sub_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       // Add to subscriptions
       connection.conversationSubscriptions.add(conversationId);
@@ -618,7 +618,7 @@ export class RealtimeCommunicationService {
       );
 
       const conversationId =
-        `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `conv_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       const conversation: IConversation = {
         conversationId,
@@ -878,7 +878,7 @@ export class RealtimeCommunicationService {
         throw new Error('Subscriber not connected');
       }
 
-      const subscriptionId = `presence_sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const subscriptionId = `presence_sub_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       // Add presence subscriptions
       agentAddresses.forEach(address => {
@@ -927,7 +927,7 @@ export class RealtimeCommunicationService {
     try {
       logger.general.info(`📞 Initiating ${callType} call to ${callee}`);
 
-      const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const callId = `call_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
 
       // Check if callee is online
       const calleePresence = this.presenceInfo.get(callee);
@@ -1001,9 +1001,9 @@ export class RealtimeCommunicationService {
         `📎 Sending file attachment: ${file.name} (${file.size} bytes)`
       );
 
-      const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const fileId = `file_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
       const messageId =
-        `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `msg_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // Simulate file upload
       const downloadUrl = `https://files.ghostspeak.ai/${fileId}/${encodeURIComponent(file.name)}`;
@@ -1075,7 +1075,7 @@ export class RealtimeCommunicationService {
 
       const reactionId =
         action === 'add'
-          ? `reaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          ? `reaction_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`
           : undefined;
 
       // Find message sender to notify
@@ -1208,7 +1208,7 @@ export class RealtimeCommunicationService {
       );
 
       const threadId =
-        `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address;
+        `thread_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address;
 
       // In a real implementation, this would create a proper thread structure
       const mockParticipantCount = 1;
@@ -1773,9 +1773,7 @@ export class RealtimeCommunicationService {
       // Update presence for all connected agents
       this.connections.forEach(connection => {
         if (connection.status === 'connected') {
-          this.updatePresence(connection.address, {
-            lastSeen: Date.now(),
-          });
+          this.updatePresence(connection.address, {});
         }
       });
     }, 30000); // Update every 30 seconds
@@ -1853,17 +1851,17 @@ export class RealtimeCommunicationService {
   ): Promise<ICommunicationAnalytics> {
     // Generate mock analytics data
     return {
-      totalMessages: Math.floor(Math.random() * 1000) + 100,
-      messagesPerHour: Math.floor(Math.random() * 50) + 10,
-      averageResponseTime: Math.floor(Math.random() * 5000) + 1000,
-      deliverySuccessRate: 95 + Math.random() * 5,
-      averageLatency: Math.floor(Math.random() * 200) + 50,
-      connectionUptime: 95 + Math.random() * 5,
-      errorRate: Math.random() * 2,
-      retransmissionRate: Math.random() * 5,
+      totalMessages: Math.floor(0.5 * 1000) + 100,
+      messagesPerHour: Math.floor(0.5 * 50) + 10,
+      averageResponseTime: Math.floor(0.5 * 5000) + 1000,
+      deliverySuccessRate: 95 + 0.5 * 5,
+      averageLatency: Math.floor(0.5 * 200) + 50,
+      connectionUptime: 95 + 0 * 5,
+      errorRate: 0.5 * 2,
+      retransmissionRate: 0.5 * 5,
       peakUsageHours: Array.from({ length: 24 }, (_, hour) => ({
         hour,
-        messageCount: Math.floor(Math.random() * 100),
+        messageCount: Math.floor(0.5 * 100),
       })),
       popularMessageTypes: [
         { type: 'text', count: 500, percentage: 40 },
@@ -1883,9 +1881,9 @@ export class RealtimeCommunicationService {
           averageLatency: 200,
         },
       },
-      userSatisfactionScore: 85 + Math.random() * 15,
-      reportedIssues: Math.floor(Math.random() * 10),
-      resolvedIssues: Math.floor(Math.random() * 8),
+      userSatisfactionScore: 85 + 0.5 * 15,
+      reportedIssues: Math.floor(0.5 * 10),
+      resolvedIssues: Math.floor(0.5 * 8),
     };
   }
 

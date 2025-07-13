@@ -208,7 +208,6 @@ class CodeGenerator {
   }
 
   private async generateTypeScriptAgent(template: AgentTemplate): Promise<GeneratedFile[]> {
-    const agentClass = this.generateAgentClass(template);
     const stateInterface = this.generateStateInterface(template);
     const capabilityImplementations = this.generateCapabilityImplementations(template);
 

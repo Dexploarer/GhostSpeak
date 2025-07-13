@@ -30,7 +30,7 @@ describe('Security and Validation Features', () => {
   beforeAll(async () => {
     console.log('🔒 Setting up security and validation test environment...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate test users with different security levels
     secureAgent = await generateKeyPairSigner();

@@ -249,7 +249,7 @@ const channelService = await client.loadModule('channel');
 ## Support
 
 - 📖 [Documentation](https://ghostspeak.gitbook.io/)
-- 🐛 [Issue Tracker](https://github.com/Prompt-or-Die/ghostspeak/issues)
+- 🐛 [Issue Tracker](https://github.com/ghostspeak/ghostspeak/issues)
 - 💬 [Discord Community](https://discord.gg/ghostspeak)
 - 📧 [Email Support](mailto:support@ghostspeak.io)
 

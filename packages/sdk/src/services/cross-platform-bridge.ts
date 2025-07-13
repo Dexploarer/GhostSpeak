@@ -342,7 +342,7 @@ export class CrossPlatformBridgeService {
       const ghostSpeakMessage: IRealtimeMessage = {
         ...message,
         messageId:
-          `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as Address,
+          `msg_${Date.now()}_${crypto.randomUUID().slice(0, 9)}` as Address,
         fromAddress: sender.address,
         timestamp: Date.now(),
         deliveryStatus: 'sending',
@@ -369,7 +369,7 @@ export class CrossPlatformBridgeService {
           successfulDeliveries: 0,
           failedDeliveries: 0,
           pendingDeliveries: targetPlatforms.length,
-          deliveryAttempts: {},
+          deliveryAttempts: {} as Record<SupportedPlatform, number>,
         },
       };
 
@@ -387,7 +387,7 @@ export class CrossPlatformBridgeService {
       }
 
       // Generate delivery results
-      const deliveryResults: Record<SupportedPlatform, any> = {};
+      const deliveryResults: Record<SupportedPlatform, any> = {} as Record<SupportedPlatform, any>;
       targetPlatforms.forEach(platform => {
         deliveryResults[platform] = { status: 'queued' };
       });
@@ -449,11 +449,22 @@ export class CrossPlatformBridgeService {
       // Create cross-platform agent profile
       const crossPlatformAgent: ICrossPlatformAgent = {
         ghostSpeakAddress: agent.address,
-        platformPresences: {},
+        platformPresences: {} as Record<SupportedPlatform, {
+          platformId: string;
+          isOnline: boolean;
+          lastSeen: number;
+          capabilities: string[];
+          metadata?: Record<string, any>;
+        }>,
         preferredPlatforms: preferences.preferredPlatforms,
         fallbackPlatforms: preferences.fallbackPlatforms,
         communicationRules: preferences.communicationRules || [],
-        crossPlatformReputation: {},
+        crossPlatformReputation: {} as Record<SupportedPlatform, {
+          score: number;
+          totalInteractions: number;
+          successRate: number;
+          averageResponseTime: number;
+        }>,
       };
 
       // Register on each platform
@@ -652,7 +663,7 @@ export class CrossPlatformBridgeService {
       }
     >
   > {
-    const healthStatus: Record<SupportedPlatform, any> = {} as any;
+    const healthStatus: Record<SupportedPlatform, any> = {} as Record<SupportedPlatform, any>;
 
     for (const [platform, adapter] of this.adapters) {
       try {
@@ -663,7 +674,7 @@ export class CrossPlatformBridgeService {
 
         healthStatus[platform] = {
           ...health,
-          uptime: 95 + Math.random() * 5, // Simulate uptime
+          uptime: 95 + 0 * 5, // Simulate uptime
           connectedAgents,
         };
       } catch (error) {

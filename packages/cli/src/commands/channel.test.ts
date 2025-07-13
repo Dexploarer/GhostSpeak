@@ -21,12 +21,17 @@ mock.module('../context-helpers.js', () => ({
   }))
 }));
 
-mock.module('../services/channel-wrapper.js', () => ({
-  createChannelServiceWrapper: mock((service: any) => service)
+mock.module('../services/sdk-direct.js', () => ({
+  createChannelDirect: mock(() => Promise.resolve({
+    channelId: 'test-channel-id',
+    channelPda: 'test-channel-pda',
+    signature: 'test-signature'
+  })),
+  listUserChannelsDirect: mock(() => Promise.resolve([]))
 }));
 
 mock.module('../utils/network-diagnostics.js', () => ({
-  preOperationCheck: mock(() => Promise.resolve()),
+  preOperationCheck: mock(() => Promise.resolve({ proceed: true, warning: false })),
   getNetworkErrorMessage: mock(() => 'Network error')
 }));
 
@@ -42,6 +47,46 @@ mock.module('../utils/prompts.js', () => ({
   error: mock(),
   info: mock(),
   createTable: mock()
+}));
+
+mock.module('../utils/enhanced-progress.js', () => ({
+  createEnhancedProgress: mock(() => ({
+    start: mock(),
+    startStep: mock(),
+    completeStep: mock(),
+    updateStatus: mock(),
+    succeed: mock(),
+    fail: mock()
+  })),
+  EnhancedProgressIndicator: class {
+    start = mock();
+    startStep = mock();
+    completeStep = mock();
+    updateStatus = mock();
+    succeed = mock();
+    fail = mock();
+  },
+  OPERATION_ESTIMATES: {}
+}));
+
+mock.module('../utils/timeout.js', () => ({
+  withTimeout: mock((fn: () => Promise<any>, timeout: number, operation: string) => fn()),
+  TimeoutError: class extends Error {
+    constructor(message: string, public timeoutMs: number) {
+      super(message);
+    }
+  },
+  TIMEOUTS: {
+    SDK_INIT: 10000,
+    CHANNEL_CREATE: 30000,
+    ACCOUNT_FETCH: 10000,
+    RPC_CALL: 5000,
+    TRANSACTION_SEND: 15000
+  }
+}));
+
+mock.module('@solana/addresses', () => ({
+  address: mock((addr: string) => addr)
 }));
 
 // Capture console output

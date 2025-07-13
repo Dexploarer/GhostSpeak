@@ -315,7 +315,7 @@ export class LRUCache<K, V> {
   }
 
   private addToHead(key: K, value: V): void {
-    const newNode = { value, prev: null, next: this.head };
+    const newNode = { key, value, prev: null, next: this.head };
     
     if (this.head) {
       this.head.prev = newNode;
@@ -1081,8 +1081,10 @@ export class ArrayPool {
 
     if (pool.length > 0) {
       const arr = pool.pop();
-      arr.length = 0; // Clear array
-      return arr;
+      if (arr) {
+        arr.length = 0; // Clear array
+        return arr;
+      }
     }
 
     return size ? new Array(size) : [];

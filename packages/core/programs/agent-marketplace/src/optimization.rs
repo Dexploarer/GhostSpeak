@@ -338,17 +338,17 @@ impl BatchOperations {
     ) -> Result<()> {
         require!(
             operation_count <= config.max_operations_per_batch,
-            crate::PodAIMarketplaceError::ValueExceedsMaximum
+            crate::GhostSpeakError::ValueExceedsMaximum
         );
         
         require!(
             total_compute <= config.max_compute_per_batch,
-            crate::PodAIMarketplaceError::ComputeBudgetExceeded
+            crate::GhostSpeakError::ComputeBudgetExceeded
         );
         
         require!(
             total_accounts <= config.max_accounts_per_batch,
-            crate::PodAIMarketplaceError::ValueExceedsMaximum
+            crate::GhostSpeakError::ValueExceedsMaximum
         );
         
         Ok(())

@@ -30,7 +30,7 @@ describe('Advanced Marketplace Features', () => {
   beforeAll(async () => {
     console.log('🏪 Setting up advanced marketplace test environment...');
     
-    client = createDevnetClient('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+    client = createDevnetClient('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
     
     // Generate test participants
     serviceProvider = await generateKeyPairSigner();

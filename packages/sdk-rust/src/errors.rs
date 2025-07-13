@@ -173,6 +173,13 @@ pub enum PodAIError {
         message: String 
     },
 
+    /// Serialization error with custom message
+    #[error("Serialization error: {message}")]
+    SerializationError { 
+        /// Error message
+        message: String 
+    },
+
     /// Transaction failed
     #[error("Transaction failed: {reason}")]
     TransactionFailed { 
@@ -407,6 +414,7 @@ impl PodAIError {
             Self::Timeout { .. } => true,
             Self::PriorityFeeEstimationFailed { .. } => true,
             Self::RateLimitExceeded { .. } => true, // Can retry after backoff
+            Self::SerializationError { .. } => false, // Don't retry serialization errors
             _ => false,
         }
     }
@@ -429,6 +437,7 @@ impl PodAIError {
             Self::Configuration { .. }
             | Self::Serialization(_)
             | Self::BorshSerialization(_)
+            | Self::SerializationError { .. }
             | Self::Cryptography { .. }
             | Self::Internal { .. } => ErrorSeverity::Critical,
 

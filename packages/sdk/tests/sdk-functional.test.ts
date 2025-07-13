@@ -32,7 +32,7 @@ import {
 } from '../src/generated-v2';
 
 // Test configuration
-const PROGRAM_ID = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
+const PROGRAM_ID = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK';
 const SYSTEM_PROGRAM = '11111111111111111111111111111111';
 
 describe('GhostSpeak SDK Functional Tests', () => {

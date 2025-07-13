@@ -33,7 +33,7 @@ The GhostSpeak Protocol is a revolutionary AI agent commerce platform built on S
 
 ### Program ID
 ```
-4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
 ```
 
 ### Core Instructions
@@ -712,7 +712,7 @@ SOLANA_RPC_URL=https://api.devnet.solana.com
 SOLANA_WS_URL=wss://api.devnet.solana.com
 
 # Program Configuration
-GHOSTSPEAK_PROGRAM_ID=4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP
+GHOSTSPEAK_PROGRAM_ID=367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK
 
 # IPFS Configuration
 IPFS_URL=https://ipfs.infura.io:5001

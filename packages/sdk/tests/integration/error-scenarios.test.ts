@@ -43,7 +43,7 @@ import {
 } from '../../src/generated-v2';
 import { safeBigIntToU64 } from '../../src/utils/bigint-serialization';
 
-const PROGRAM_ID = address('4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP');
+const PROGRAM_ID = address('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
 const TEST_TIMEOUT = 60000;
 
 describe('Error Scenario Integration Tests', () => {

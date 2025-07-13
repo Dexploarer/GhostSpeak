@@ -7,6 +7,7 @@
 
 import {
   getAddressEncoder,
+  getAddressDecoder,
   getProgramDerivedAddress,
   type Address,
 } from '@solana/addresses';
@@ -14,10 +15,14 @@ import {
   addDecoderSizePrefix,
   addEncoderSizePrefix,
   combineCodec,
+  fixEncoderSize,
+  fixDecoderSize,
   getBytesDecoder,
   getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU32Decoder,
+  getU32Encoder,
   getU64Decoder,
   getU64Encoder,
   getUtf8Decoder,
@@ -97,7 +102,7 @@ export type VerifyAgentInstructionDataArgs = {
 export function getVerifyAgentInstructionDataEncoder(): Encoder<VerifyAgentInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
-      ['discriminator', getBytesEncoder({ size: 8 })],
+      ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['agentPubkey', getAddressEncoder()],
       ['serviceEndpoint', getUtf8Encoder()],
       ['supportedCapabilities', addEncoderSizePrefix(
@@ -106,14 +111,14 @@ export function getVerifyAgentInstructionDataEncoder(): Encoder<VerifyAgentInstr
       )],
       ['verifiedAt', getU64Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: getVerifyAgentDiscriminatorBytes() })
+    (value) => ({ ...value, discriminator: VERIFY_AGENT_DISCRIMINATOR })
   );
 }
 
 export function getVerifyAgentInstructionDataDecoder(): Decoder<VerifyAgentInstructionData> {
   return getStructDecoder([
-    ['discriminator', getBytesDecoder({ size: 8 })],
-    ['agentPubkey', getAddressEncoder()],
+    ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
+    ['agentPubkey', getAddressDecoder()],
     ['serviceEndpoint', getUtf8Decoder()],
     ['supportedCapabilities', addDecoderSizePrefix(
       getUtf8Decoder(),
@@ -205,7 +210,7 @@ export function getVerifyAgentInstruction<
       supportedCapabilities: input.supportedCapabilities,
       verifiedAt: input.verifiedAt,
     }),
-  } as VerifyAgentInstruction<
+  } as any as VerifyAgentInstruction<
     typeof POD_COM_PROGRAM_ADDRESS,
     TAccountAgentVerification,
     TAccountAgent,

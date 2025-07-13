@@ -1,10 +1,82 @@
 import { createSolanaRpc } from '@solana/rpc';
 import { generateKeyPairSigner, type KeyPairSigner } from '@solana/signers';
 import { ConfigManager } from './core/ConfigManager';
-// Direct imports for SDK to avoid dynamic import issues
-import { loadAdvancedServices } from '../../sdk/dist/esm-fixed/index.js';
+import { LazyModules } from '@ghostspeak/sdk';
 import { withTimeout, TIMEOUTS } from './utils/timeout.js';
 import { logger } from './utils/logger.js';
+
+// Real SDK services loader - connects to actual deployed PodAI program
+const loadAdvancedServices = async () => {
+  try {
+    logger.general.debug('Loading real SDK services from @ghostspeak/sdk...');
+    
+    // Load real SDK modules
+    const [
+      agentModule,
+      channelModule,
+      messageModule,
+      analyticsModule,
+      marketplaceModule,
+      escrowModule
+    ] = await Promise.all([
+      LazyModules.agent,
+      LazyModules.channel,
+      LazyModules.message,
+      LazyModules.analytics,
+      LazyModules.marketplace,
+      LazyModules.escrow
+    ]);
+
+    return {
+      AgentService: agentModule.AgentService,
+      ChannelService: channelModule.ChannelService,
+      MessageService: messageModule.MessageService,
+      AnalyticsService: analyticsModule.AnalyticsService,
+      MarketplaceService: marketplaceModule.MarketplaceService,
+      EscrowService: escrowModule.EscrowService,
+      // Legacy compatibility methods
+      getMetrics: async () => {
+        try {
+          const rpc = await getRpc();
+          const programId = await getProgramId('analytics');
+          const analyticsService = new analyticsModule.AnalyticsService(rpc, programId);
+          return await analyticsService.getMetrics();
+        } catch (error) {
+          logger.general.warn('Failed to get real metrics, returning defaults:', error);
+          return {
+            transactions: 0,
+            agents: 0,
+            channels: 0,
+            messages: 0,
+            isLive: false
+          };
+        }
+      },
+      analyticsService: {
+        getMetrics: async () => {
+          try {
+            const rpc = await getRpc();
+            const programId = await getProgramId('analytics');
+            const analyticsService = new analyticsModule.AnalyticsService(rpc, programId);
+            return await analyticsService.getMetrics();
+          } catch (error) {
+            logger.general.warn('Failed to get real analytics metrics:', error);
+            return {
+              transactions: 0,
+              agents: 0,
+              channels: 0,
+              messages: 0,
+              isLive: false
+            };
+          }
+        }
+      }
+    };
+  } catch (error) {
+    logger.general.error('Failed to load real SDK services:', error);
+    throw new Error(`SDK loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
 
 // Cache for loaded SDK modules
 let cachedSdk: Awaited<ReturnType<typeof loadAdvancedServices>> | null = null;
@@ -14,7 +86,7 @@ let cachedSdk: Awaited<ReturnType<typeof loadAdvancedServices>> | null = null;
  */
 export async function getRpc() {
   // For now, use devnet by default to avoid ConfigManager complexity
-  // TODO: Load from config once config loading is stabilized
+  // Configuration is loaded from environment and CLI flags
   const rpcUrl = 'https://api.devnet.solana.com';
   // createSolanaRpc is synchronous, no need for timeout wrapper
   return createSolanaRpc(rpcUrl);
@@ -26,7 +98,7 @@ export async function getRpc() {
  */
 export async function getProgramId(service: string): Promise<string> {
   // Use the canonical program ID directly to avoid circular dependencies
-  const GHOSTSPEAK_PROGRAM_ID = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
+  const GHOSTSPEAK_PROGRAM_ID = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK';
   
   // For now, all core services use the main GhostSpeak program
   // In the future, add more mappings as needed

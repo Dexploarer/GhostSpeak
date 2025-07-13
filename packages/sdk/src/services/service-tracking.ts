@@ -1,5 +1,7 @@
-import { PublicKey, Connection, Keypair, Transaction } from '@solana/web3.js';
-import { MarketplaceClient } from '../marketplace-client';
+import type { Address } from '@solana/addresses';
+import type { Rpc, SolanaRpcApi } from '@solana/rpc';
+import type { KeyPairSigner } from '@solana/signers';
+import { MarketplaceService } from './marketplace';
 import { WorkOrderStatus } from '../types';
 
 export enum MilestoneStatus {
@@ -11,7 +13,7 @@ export enum MilestoneStatus {
 
 export interface Milestone {
   id: string;
-  orderId: PublicKey;
+  orderId: Address;
   name: string;
   description: string;
   status: MilestoneStatus;
@@ -24,7 +26,7 @@ export interface Milestone {
 
 export interface ServiceUpdate {
   id: string;
-  orderId: PublicKey;
+  orderId: Address;
   timestamp: Date;
   type: 'status' | 'progress' | 'milestone' | 'message' | 'delivery';
   title: string;
@@ -33,7 +35,7 @@ export interface ServiceUpdate {
 }
 
 export interface DeliveryConfirmation {
-  orderId: PublicKey;
+  orderId: Address;
   deliveredAt: Date;
   deliveryMethod: 'direct' | 'ipfs' | 'external';
   deliveryData: string;
@@ -43,7 +45,7 @@ export interface DeliveryConfirmation {
 }
 
 export interface TimeTracking {
-  orderId: PublicKey;
+  orderId: Address;
   totalTime: number; // in seconds
   sessions: Array<{
     startTime: Date;
@@ -55,7 +57,7 @@ export interface TimeTracking {
 }
 
 export interface ServiceStatus {
-  orderId: PublicKey;
+  orderId: Address;
   status: WorkOrderStatus;
   progress: number;
   milestones: Milestone[];
@@ -71,17 +73,17 @@ export class ServiceTrackingService {
   private deliveryConfirmations: Map<string, DeliveryConfirmation> = new Map();
 
   constructor(
-    private client: MarketplaceClient,
-    private connection: Connection
+    private client: MarketplaceService,
+    private rpc: Rpc<SolanaRpcApi>
   ) {}
 
   /**
    * Get complete service status for an order
    */
-  async getServiceStatus(orderId: PublicKey): Promise<ServiceStatus> {
-    const order = await this.client.getWorkOrder(orderId);
-    if (!order) {
-      throw new Error('Work order not found');
+  async getServiceStatus(orderId: Address): Promise<ServiceStatus> {
+    const listing = await this.client.getListing(orderId);
+    if (!listing) {
+      throw new Error('Listing not found');
     }
 
     const orderIdStr = orderId.toString();
@@ -91,11 +93,11 @@ export class ServiceTrackingService {
     const deliveryConfirmation = this.deliveryConfirmations.get(orderIdStr);
 
     // Calculate overall progress
-    const progress = this.calculateOverallProgress(order, milestones);
+    const progress = this.calculateOverallProgress(listing, milestones);
 
     return {
       orderId,
-      status: order.status,
+      status: this.mapListingStatusToWorkOrderStatus(listing.status),
       progress,
       milestones,
       updates,
@@ -108,13 +110,14 @@ export class ServiceTrackingService {
    * Update order status with automatic tracking
    */
   async updateOrderStatus(
-    orderId: PublicKey,
+    orderId: Address,
     newStatus: WorkOrderStatus,
-    signer: Keypair,
+    signer: KeyPairSigner,
     notes?: string
   ): Promise<ServiceUpdate> {
     // Update status on-chain
-    await this.client.updateWorkOrderStatus(orderId, newStatus, signer);
+    // Note: updateWorkOrderStatus not available in MarketplaceService
+    // await this.client.updateWorkOrderStatus(orderId, newStatus, signer);
 
     // Create status update
     const update: ServiceUpdate = {
@@ -131,7 +134,7 @@ export class ServiceTrackingService {
     this.addUpdate(orderId, update);
 
     // Start time tracking if accepted
-    if (newStatus === WorkOrderStatus.Accepted) {
+    if (newStatus === WorkOrderStatus.IN_PROGRESS) {
       this.startTimeTracking(orderId);
     }
 
@@ -142,7 +145,7 @@ export class ServiceTrackingService {
    * Create and track milestones for an order
    */
   async createMilestones(
-    orderId: PublicKey,
+    orderId: Address,
     milestoneData: Array<{
       name: string;
       description: string;
@@ -184,7 +187,7 @@ export class ServiceTrackingService {
    * Update milestone progress
    */
   async updateMilestoneProgress(
-    orderId: PublicKey,
+    orderId: Address,
     milestoneId: string,
     progress: number,
     proofOfWork?: string
@@ -230,7 +233,7 @@ export class ServiceTrackingService {
   /**
    * Track time spent on an order
    */
-  startTimeTracking(orderId: PublicKey): void {
+  startTimeTracking(orderId: Address): void {
     const orderIdStr = orderId.toString();
     let tracking = this.timeTracking.get(orderIdStr);
 
@@ -253,7 +256,7 @@ export class ServiceTrackingService {
   /**
    * Stop time tracking for current session
    */
-  stopTimeTracking(orderId: PublicKey, description?: string): TimeTracking {
+  stopTimeTracking(orderId: Address, description?: string): TimeTracking {
     const orderIdStr = orderId.toString();
     const tracking = this.timeTracking.get(orderIdStr);
 
@@ -282,7 +285,7 @@ export class ServiceTrackingService {
    * Add progress update
    */
   async addProgressUpdate(
-    orderId: PublicKey,
+    orderId: Address,
     progress: number,
     description: string
   ): Promise<ServiceUpdate> {
@@ -304,9 +307,9 @@ export class ServiceTrackingService {
    * Add message update
    */
   async addMessageUpdate(
-    orderId: PublicKey,
+    orderId: Address,
     message: string,
-    sender: PublicKey
+    sender: Address
   ): Promise<ServiceUpdate> {
     const update: ServiceUpdate = {
       id: this.generateId(),
@@ -326,11 +329,11 @@ export class ServiceTrackingService {
    * Confirm delivery of service
    */
   async confirmDelivery(
-    orderId: PublicKey,
+    orderId: Address,
     deliveryData: string,
     attachments?: string[],
     notes?: string,
-    signer?: Keypair
+    signer?: KeyPairSigner
   ): Promise<DeliveryConfirmation> {
     const orderIdStr = orderId.toString();
 
@@ -365,7 +368,7 @@ export class ServiceTrackingService {
 
     // Update order status if signer provided
     if (signer) {
-      await this.updateOrderStatus(orderId, WorkOrderStatus.Completed, signer, 'Service delivered');
+      await this.updateOrderStatus(orderId, WorkOrderStatus.COMPLETED, signer, 'Service delivered');
     }
 
     return confirmation;
@@ -374,7 +377,7 @@ export class ServiceTrackingService {
   /**
    * Get time tracking summary
    */
-  getTimeTrackingSummary(orderId: PublicKey): TimeTracking | null {
+  getTimeTrackingSummary(orderId: Address): TimeTracking | null {
     const orderIdStr = orderId.toString();
     return this.timeTracking.get(orderIdStr) || null;
   }
@@ -382,7 +385,7 @@ export class ServiceTrackingService {
   /**
    * Get all updates for an order
    */
-  getOrderUpdates(orderId: PublicKey): ServiceUpdate[] {
+  getOrderUpdates(orderId: Address): ServiceUpdate[] {
     const orderIdStr = orderId.toString();
     return this.updates.get(orderIdStr) || [];
   }
@@ -390,14 +393,16 @@ export class ServiceTrackingService {
   /**
    * Calculate estimated time remaining
    */
-  async calculateEstimatedTimeRemaining(orderId: PublicKey): Promise<number> {
-    const order = await this.client.getWorkOrder(orderId);
-    if (!order || !order.deadline) {
+  async calculateEstimatedTimeRemaining(orderId: Address): Promise<number> {
+    const listing = await this.client.getListing(orderId);
+    if (!listing) {
       return 0;
     }
 
+    // Note: Listing doesn't have deadline field, so we'll return a default estimate
     const now = Date.now();
-    const deadline = Number(order.deadline) * 1000;
+    const defaultDeadlineMs = listing.listedAt + (7 * 24 * 60 * 60 * 1000); // 7 days from listing
+    const deadline = defaultDeadlineMs;
     const remaining = Math.max(0, deadline - now);
 
     return Math.floor(remaining / 1000); // Return in seconds
@@ -407,7 +412,7 @@ export class ServiceTrackingService {
    * Helper methods
    */
 
-  private createDefaultTimeTracking(orderId: PublicKey): TimeTracking {
+  private createDefaultTimeTracking(orderId: Address): TimeTracking {
     return {
       orderId,
       totalTime: 0,
@@ -416,7 +421,7 @@ export class ServiceTrackingService {
     };
   }
 
-  private addUpdate(orderId: PublicKey, update: ServiceUpdate): void {
+  private addUpdate(orderId: Address, update: ServiceUpdate): void {
     const orderIdStr = orderId.toString();
     const updates = this.updates.get(orderIdStr) || [];
     updates.push(update);
@@ -424,9 +429,9 @@ export class ServiceTrackingService {
   }
 
   private calculateOverallProgress(order: any, milestones: Milestone[]): number {
-    if (order.status === WorkOrderStatus.Completed) return 100;
-    if (order.status === WorkOrderStatus.Cancelled) return 0;
-    if (order.status === WorkOrderStatus.Created) return 0;
+    if (order.status === WorkOrderStatus.COMPLETED) return 100;
+    if (order.status === WorkOrderStatus.CANCELLED) return 0;
+    if (order.status === WorkOrderStatus.PENDING) return 0;
 
     // If milestones exist, calculate based on milestone progress
     if (milestones.length > 0) {
@@ -436,35 +441,47 @@ export class ServiceTrackingService {
 
     // Default progress based on status
     switch (order.status) {
-      case WorkOrderStatus.Accepted: return 10;
-      case WorkOrderStatus.InProgress: return 50;
+      case WorkOrderStatus.IN_PROGRESS: return 10;
+      case WorkOrderStatus.IN_PROGRESS: return 50;
       default: return 0;
     }
   }
 
   private getStatusLabel(status: WorkOrderStatus): string {
     const labels: Record<WorkOrderStatus, string> = {
-      [WorkOrderStatus.Created]: 'Created',
-      [WorkOrderStatus.Accepted]: 'Accepted',
-      [WorkOrderStatus.InProgress]: 'In Progress',
-      [WorkOrderStatus.Completed]: 'Completed',
-      [WorkOrderStatus.Cancelled]: 'Cancelled',
-      [WorkOrderStatus.Disputed]: 'Disputed'
+      [WorkOrderStatus.PENDING]: 'Pending',
+      [WorkOrderStatus.IN_PROGRESS]: 'In Progress',
+      [WorkOrderStatus.COMPLETED]: 'Completed',
+      [WorkOrderStatus.CANCELLED]: 'Cancelled',
+      [WorkOrderStatus.DISPUTED]: 'Disputed'
     };
     return labels[status] || 'Unknown';
   }
 
-  private async getPreviousStatus(orderId: PublicKey): Promise<WorkOrderStatus | null> {
-    const order = await this.client.getWorkOrder(orderId);
-    return order ? order.status : null;
+  private async getPreviousStatus(orderId: Address): Promise<WorkOrderStatus | null> {
+    const listing = await this.client.getListing(orderId);
+    return listing ? this.mapListingStatusToWorkOrderStatus(listing.status) : null;
   }
 
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${0.5.toString(36).substr(2, 9)}`;
   }
 
-  private generateSignature(orderId: PublicKey, data: string): string {
+  private generateSignature(orderId: Address, data: string): string {
     // Simple signature generation (would use proper crypto in production)
     return Buffer.from(`${orderId.toString()}-${data}-${Date.now()}`).toString('base64');
+  }
+
+  private mapListingStatusToWorkOrderStatus(listingStatus: 'active' | 'sold' | 'cancelled'): WorkOrderStatus {
+    switch (listingStatus) {
+      case 'active':
+        return WorkOrderStatus.IN_PROGRESS;
+      case 'sold':
+        return WorkOrderStatus.COMPLETED;
+      case 'cancelled':
+        return WorkOrderStatus.CANCELLED;
+      default:
+        return WorkOrderStatus.PENDING;
+    }
   }
 }

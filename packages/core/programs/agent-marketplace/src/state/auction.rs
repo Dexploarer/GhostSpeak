@@ -5,7 +5,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, MIN_BID_INCREMENT, MIN_AUCTION_DURATION, MAX_AUCTION_DURATION, PodAIMarketplaceError};
+use super::{MAX_GENERAL_STRING_LENGTH, MIN_BID_INCREMENT, MIN_AUCTION_DURATION, MAX_AUCTION_DURATION, GhostSpeakError};
 
 // PDA Seeds
 pub const SERVICE_AUCTION_SEED: &[u8] = b"service_auction";
@@ -170,10 +170,10 @@ impl ServiceAuction {
         let clock = Clock::get()?;
         let duration = auction_end_time - clock.unix_timestamp;
         
-        require!(duration >= MIN_AUCTION_DURATION, PodAIMarketplaceError::AuctionDurationTooShort);
-        require!(duration <= MAX_AUCTION_DURATION, PodAIMarketplaceError::AuctionDurationTooLong);
-        require!(minimum_bid_increment >= MIN_BID_INCREMENT, PodAIMarketplaceError::BidIncrementTooLow);
-        require!(starting_price > 0, PodAIMarketplaceError::InvalidStartingPrice);
+        require!(duration >= MIN_AUCTION_DURATION, GhostSpeakError::AuctionDurationTooShort);
+        require!(duration <= MAX_AUCTION_DURATION, GhostSpeakError::AuctionDurationTooLong);
+        require!(minimum_bid_increment >= MIN_BID_INCREMENT, GhostSpeakError::BidIncrementTooLow);
+        require!(starting_price > 0, GhostSpeakError::InvalidStartingPrice);
         
         self.agent = agent;
         self.creator = creator;
@@ -195,8 +195,8 @@ impl ServiceAuction {
     pub fn place_bid(&mut self, bidder: Pubkey, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(self.is_active, PodAIMarketplaceError::AuctionNotActive);
-        require!(clock.unix_timestamp < self.auction_end_time, PodAIMarketplaceError::AuctionEnded);
+        require!(self.is_active, GhostSpeakError::AuctionNotActive);
+        require!(clock.unix_timestamp < self.auction_end_time, GhostSpeakError::AuctionEnded);
         
         let minimum_bid = if self.current_bid == 0 {
             self.starting_price
@@ -204,7 +204,7 @@ impl ServiceAuction {
             self.current_bid.saturating_add(self.minimum_bid_increment)
         };
         
-        require!(amount >= minimum_bid, PodAIMarketplaceError::BidTooLow);
+        require!(amount >= minimum_bid, GhostSpeakError::BidTooLow);
         
         self.current_bid = amount;
         self.current_bidder = Some(bidder);
@@ -216,8 +216,8 @@ impl ServiceAuction {
     pub fn end_auction(&mut self) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(self.is_active, PodAIMarketplaceError::AuctionNotActive);
-        require!(clock.unix_timestamp >= self.auction_end_time, PodAIMarketplaceError::AuctionNotEnded);
+        require!(self.is_active, GhostSpeakError::AuctionNotActive);
+        require!(clock.unix_timestamp >= self.auction_end_time, GhostSpeakError::AuctionNotEnded);
         
         self.is_active = false;
         
@@ -225,8 +225,8 @@ impl ServiceAuction {
     }
 
     pub fn cancel_auction(&mut self) -> Result<()> {
-        require!(self.is_active, PodAIMarketplaceError::AuctionNotActive);
-        require!(self.total_bids == 0, PodAIMarketplaceError::CannotCancelAuctionWithBids);
+        require!(self.is_active, GhostSpeakError::AuctionNotActive);
+        require!(self.total_bids == 0, GhostSpeakError::CannotCancelAuctionWithBids);
         
         self.is_active = false;
         
@@ -259,11 +259,11 @@ impl Negotiation {
     ) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(negotiation_deadline > clock.unix_timestamp, PodAIMarketplaceError::InvalidDeadline);
-        require!(terms.len() <= MAX_TERMS_COUNT, PodAIMarketplaceError::TooManyTerms);
+        require!(negotiation_deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
+        require!(terms.len() <= MAX_TERMS_COUNT, GhostSpeakError::TooManyTerms);
         
         for term in &terms {
-            require!(term.len() <= MAX_TERM_LENGTH, PodAIMarketplaceError::TermTooLong);
+            require!(term.len() <= MAX_TERM_LENGTH, GhostSpeakError::TermTooLong);
         }
         
         self.initiator = initiator;
@@ -284,12 +284,12 @@ impl Negotiation {
     pub fn make_counter_offer(&mut self, offer: u64) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(clock.unix_timestamp < self.negotiation_deadline, PodAIMarketplaceError::NegotiationExpired);
+        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
         require!(
             matches!(self.status, NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer),
-            PodAIMarketplaceError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidNegotiationStatus
         );
-        require!(self.counter_offers.len() < MAX_COUNTER_OFFERS, PodAIMarketplaceError::TooManyCounterOffers);
+        require!(self.counter_offers.len() < MAX_COUNTER_OFFERS, GhostSpeakError::TooManyCounterOffers);
         
         self.counter_offers.push(offer);
         self.current_offer = offer;
@@ -302,10 +302,10 @@ impl Negotiation {
     pub fn accept_offer(&mut self) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(clock.unix_timestamp < self.negotiation_deadline, PodAIMarketplaceError::NegotiationExpired);
+        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
         require!(
             matches!(self.status, NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer),
-            PodAIMarketplaceError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidNegotiationStatus
         );
         
         self.status = NegotiationStatus::Accepted;
@@ -371,7 +371,7 @@ impl AuctionMarketplace {
     ) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, PodAIMarketplaceError::MetadataUriTooLong);
+        require!(metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::MetadataUriTooLong);
         
         self.auction = auction;
         self.agent = agent;
@@ -398,9 +398,9 @@ impl AuctionMarketplace {
     pub fn place_bid(&mut self, bidder: Pubkey, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(self.status == AuctionStatus::Active, PodAIMarketplaceError::AuctionNotActive);
-        require!(clock.unix_timestamp < self.auction_end_time, PodAIMarketplaceError::AuctionEnded);
-        require!(self.bids.len() < MAX_BIDS_COUNT, PodAIMarketplaceError::TooManyBids);
+        require!(self.status == AuctionStatus::Active, GhostSpeakError::AuctionNotActive);
+        require!(clock.unix_timestamp < self.auction_end_time, GhostSpeakError::AuctionEnded);
+        require!(self.bids.len() < MAX_BIDS_COUNT, GhostSpeakError::TooManyBids);
         
         let minimum_bid = if self.current_winner.is_none() {
             self.starting_price
@@ -408,7 +408,7 @@ impl AuctionMarketplace {
             self.current_price.saturating_add(self.minimum_bid_increment)
         };
         
-        require!(amount >= minimum_bid, PodAIMarketplaceError::BidTooLow);
+        require!(amount >= minimum_bid, GhostSpeakError::BidTooLow);
         
         // Mark previous winning bid as not winning
         if let Some(last_bid) = self.bids.last_mut() {
@@ -433,8 +433,8 @@ impl AuctionMarketplace {
     pub fn end_auction(&mut self) -> Result<()> {
         let clock = Clock::get()?;
         
-        require!(self.status == AuctionStatus::Active, PodAIMarketplaceError::AuctionNotActive);
-        require!(clock.unix_timestamp >= self.auction_end_time, PodAIMarketplaceError::AuctionNotEnded);
+        require!(self.status == AuctionStatus::Active, GhostSpeakError::AuctionNotActive);
+        require!(clock.unix_timestamp >= self.auction_end_time, GhostSpeakError::AuctionNotEnded);
         
         self.status = AuctionStatus::Ended;
         self.ended_at = Some(clock.unix_timestamp);
@@ -443,7 +443,7 @@ impl AuctionMarketplace {
     }
 
     pub fn settle_auction(&mut self) -> Result<()> {
-        require!(self.status == AuctionStatus::Ended, PodAIMarketplaceError::AuctionNotEnded);
+        require!(self.status == AuctionStatus::Ended, GhostSpeakError::AuctionNotEnded);
         
         // Check if reserve price was met
         if self.current_price >= self.reserve_price {

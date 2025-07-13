@@ -12,7 +12,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP");
+declare_id!("367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK");
 
 // Program ID is already exported by declare_id! macro
 
@@ -121,11 +121,21 @@ pub const MAX_PARTICIPANTS_COUNT: usize = 50;
 pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
 pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
 
+// Protocol admin for governance and critical operations
+pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([0u8; 32]); // TODO: Replace with actual admin key
+
 // Additional constants for various operations
 pub const MAX_TITLE_LENGTH: usize = 100;
 pub const MAX_DESCRIPTION_LENGTH: usize = 512;
 pub const MAX_REQUIREMENTS_ITEMS: usize = 10;
 pub const MAX_MESSAGE_LENGTH: usize = 1024;
+pub const MAX_TAGS_COUNT: usize = 10;
+pub const MAX_TAG_LENGTH: usize = 20;
+pub const MAX_SKILLS_COUNT: usize = 20;
+pub const MAX_SKILL_LENGTH: usize = 50;
+pub const MAX_COVER_LETTER_LENGTH: usize = 1000;
+pub const MAX_PORTFOLIO_ITEMS: usize = 10;
+pub const MAX_URL_LENGTH: usize = 256;
 
 // =====================================================
 // EVENTS
@@ -233,7 +243,7 @@ pub struct A2AStatusUpdatedEvent {
 // =====================================================
 
 #[error_code]
-pub enum PodAIMarketplaceError {
+pub enum GhostSpeakError {
     // Agent-related errors (1000-1099)
     #[msg("Agent is not active")]
     AgentNotActive = 1000,
@@ -516,7 +526,7 @@ pub enum PodAIMarketplaceError {
     InvalidChannelConfiguration = 2135,
     
     #[msg("Work order already exists")]
-    WorkOrderAlreadyExists = 2186,
+    WorkOrderAlreadyExists = 2200,
     
     #[msg("Invalid delivery status")]
     InvalidDeliveryStatus = 2136,
@@ -667,6 +677,33 @@ pub enum PodAIMarketplaceError {
     
     #[msg("Maintenance mode active")]
     MaintenanceModeActive = 2185,
+    
+    #[msg("Invalid input length")]
+    InvalidInputLength = 2186,
+    
+    #[msg("Invalid parameter")]
+    InvalidParameter = 2187,
+    
+    #[msg("Invalid deal status")]
+    InvalidDealStatus = 2188,
+    
+    #[msg("Dispute window expired")]
+    DisputeWindowExpired = 2189,
+    
+    #[msg("Evidence window expired")]
+    EvidenceWindowExpired = 2190,
+    
+    #[msg("Too many evidence submissions")]
+    TooManyEvidenceSubmissions = 2191,
+    
+    #[msg("Unauthorized arbitrator")]
+    UnauthorizedArbitrator = 2192,
+    
+    #[msg("Invalid transaction status")]
+    InvalidTransactionStatus = 2193,
+    
+    #[msg("Invalid extension status")]
+    InvalidExtensionStatus = 2194,
 }
 
 // =====================================================
@@ -674,7 +711,7 @@ pub enum PodAIMarketplaceError {
 // =====================================================
 
 #[program]
-pub mod podai_marketplace {
+pub mod ghostspeak_marketplace {
     use super::*;
 
     // Agent management instructions (core functionality)
@@ -690,8 +727,8 @@ pub mod podai_marketplace {
     // Messaging instructions
     pub use instructions::messaging::*;
     
-    // Payment instructions
-    pub use instructions::escrow_payment::*;
+    // TODO: Re-enable when Anchor 0.32+ supports token_interface IDL generation
+    // pub use instructions::escrow_payment::*;
     
     // Auction instructions
     pub use instructions::auction::*;
@@ -726,6 +763,6 @@ pub mod podai_marketplace {
     // Incentive instructions
     pub use instructions::incentives::*;
     
-    // Compliance and governance instructions
-    pub use instructions::compliance_governance::*;
+    // TODO: Enable when state dependencies are complete
+    // pub use instructions::compliance_governance::*;
 }

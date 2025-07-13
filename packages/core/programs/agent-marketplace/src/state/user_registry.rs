@@ -24,6 +24,13 @@ pub struct UserRegistry {
     pub created_at: i64,
     pub is_rate_limited: bool,
     pub rate_limit_expiry: i64,
+    pub last_extension_registration: i64,
+    pub last_dispute_filing: i64,
+    pub last_evidence_submission: i64,
+    pub last_batch_execution: i64,
+    pub last_dashboard_update: i64,
+    pub last_bulk_deal_creation: i64,
+    pub last_dashboard_creation: i64,
     pub bump: u8,
 }
 
@@ -39,15 +46,22 @@ impl UserRegistry {
         8 + // created_at
         1 + // is_rate_limited
         8 + // rate_limit_expiry
+        8 + // last_extension_registration
+        8 + // last_dispute_filing
+        8 + // last_evidence_submission
+        8 + // last_batch_execution
+        8 + // last_dashboard_update
+        8 + // last_bulk_deal_creation
+        8 + // last_dashboard_creation
         1; // bump
 
     pub fn increment_agents(&mut self) -> Result<()> {
         self.agent_count = self.agent_count
             .checked_add(1)
-            .ok_or(crate::PodAIMarketplaceError::ArithmeticOverflow)?;
+            .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
         
         if self.agent_count > MAX_AGENTS_PER_USER {
-            return Err(crate::PodAIMarketplaceError::TooManyCapabilities.into());
+            return Err(crate::GhostSpeakError::TooManyCapabilities.into());
         }
         
         Ok(())
@@ -56,10 +70,10 @@ impl UserRegistry {
     pub fn increment_listings(&mut self) -> Result<()> {
         self.listing_count = self.listing_count
             .checked_add(1)
-            .ok_or(crate::PodAIMarketplaceError::ArithmeticOverflow)?;
+            .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
         
         if self.listing_count > MAX_LISTINGS_PER_AGENT {
-            return Err(crate::PodAIMarketplaceError::InputTooLong.into());
+            return Err(crate::GhostSpeakError::InputTooLong.into());
         }
         
         Ok(())
@@ -68,10 +82,10 @@ impl UserRegistry {
     pub fn increment_work_orders(&mut self) -> Result<()> {
         self.work_order_count = self.work_order_count
             .checked_add(1)
-            .ok_or(crate::PodAIMarketplaceError::ArithmeticOverflow)?;
+            .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
         
         if self.work_order_count > MAX_WORK_ORDERS_PER_USER {
-            return Err(crate::PodAIMarketplaceError::TooManyRequirements.into());
+            return Err(crate::GhostSpeakError::TooManyRequirements.into());
         }
         
         Ok(())
@@ -80,10 +94,10 @@ impl UserRegistry {
     pub fn increment_channels(&mut self) -> Result<()> {
         self.channel_count = self.channel_count
             .checked_add(1)
-            .ok_or(crate::PodAIMarketplaceError::ArithmeticOverflow)?;
+            .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
         
         if self.channel_count > MAX_CHANNELS_PER_USER {
-            return Err(crate::PodAIMarketplaceError::InputTooLong.into());
+            return Err(crate::GhostSpeakError::InputTooLong.into());
         }
         
         Ok(())
@@ -92,14 +106,14 @@ impl UserRegistry {
     pub fn add_volume(&mut self, amount: u64) -> Result<()> {
         self.total_volume_traded = self.total_volume_traded
             .checked_add(amount)
-            .ok_or(crate::PodAIMarketplaceError::ArithmeticOverflow)?;
+            .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
         
         Ok(())
     }
 
     pub fn check_rate_limit(&self, current_time: i64) -> Result<()> {
         if self.is_rate_limited && current_time < self.rate_limit_expiry {
-            return Err(crate::PodAIMarketplaceError::RateLimitExceeded.into());
+            return Err(crate::GhostSpeakError::RateLimitExceeded.into());
         }
         Ok(())
     }

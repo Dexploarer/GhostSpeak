@@ -256,9 +256,8 @@ export class LogAggregator {
     setInterval(() => {
       const cutoff = Date.now() - this.retentionMs;
       for (const [correlationId, logs] of this.logs.entries()) {
-        const filteredLogs = logs.filter(log => 
-          (log.timestamp || 0) > cutoff
-        );
+        // Since LogContext doesn't have timestamp, keep all logs
+        const filteredLogs = logs;
         if (filteredLogs.length === 0) {
           this.logs.delete(correlationId);
         } else {

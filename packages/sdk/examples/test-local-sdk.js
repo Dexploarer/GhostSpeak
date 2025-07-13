@@ -49,7 +49,7 @@ async function testBasicFunctionality() {
     console.log('3️⃣ Testing utility functions...');
     
     // Test address validation
-    const testAddress = '4nusKGxuNwK7XggWQHCMEE1Ht7taWrSJMhhNfTqswVFP';
+    const testAddress = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK';
     console.log(`   Testing address validation for: ${testAddress}`);
     console.log(`   Is valid address: ${SDK.isAddress(testAddress)}`);
     

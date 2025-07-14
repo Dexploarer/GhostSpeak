@@ -1,23 +1,16 @@
-# Workspace disabled for Anchor compatibility - moved dependencies to individual Cargo.toml files 
-
 [workspace]
-members = [
-    "packages/core/programs/agent-marketplace",
-    "packages/core",
-    "packages/sdk-rust"
-]
-resolver = "2" 
-
-[workspace.dependencies]
-anchor-lang = "0.31.1"
-# spl-account-compression = "1.0.0"  # Commented out due to IDL build issues
-# spl-concurrent-merkle-tree = "1.0.0"  # Commented out due to IDL build issues
-thiserror = "2.0.12"
-anyhow = "1.0.98"
-blake3 = "1.8.2"
-serde = { version = "1.0.219", features = ["derive"] }
-solana-sdk = "2.3.1"
-solana-program-test = "2.3.3"
+members = ["programs"]
+resolver = "2"
 
 [profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+overflow-checks = false
+
+[profile.dev]
+opt-level = 0
+debug = true
 overflow-checks = true 

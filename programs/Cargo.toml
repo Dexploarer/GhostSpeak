@@ -1,0 +1,51 @@
+[package]
+name = "ghostspeak-marketplace"
+version = "0.1.0"
+description = "GhostSpeak Marketplace: Decentralized AI Agent Commerce Protocol"
+edition = "2021"
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(feature, values("anchor-debug"))'] }
+ambiguous_glob_reexports = "allow"
+deprecated = "allow"
+
+[lib]
+crate-type = ["cdylib"]
+name = "ghostspeak_marketplace"
+
+[features]
+default = ["performance-monitoring"]
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+idl-build = [
+    "anchor-lang/idl-build", 
+    "anchor-spl/idl-build"
+]
+performance-monitoring = []
+compute-optimization = []
+gas-efficient = []
+devnet = []
+
+# Profiles are defined at workspace level
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token", "associated_token", "token_2022"] }
+spl-token = { version = "7.0", features = ["no-entrypoint"] }
+spl-token-2022 = { version = "6.0", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "6.0", features = ["no-entrypoint"] }
+# spl-account-compression = { version = "1.0", features = ["no-entrypoint", "cpi"] }
+spl-concurrent-merkle-tree = "1.0"
+spl-token-metadata-interface = "0.6"
+thiserror = "1.0"
+anyhow = "1.0"
+blake3 = "1.5"
+bs58 = "0.5"
+sha2 = "0.10"
+sha3 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bytemuck = { version = "1.23", features = ["derive"] }
+log = "0.4"
+# Remove proc-macro2 constraint to use system default 

@@ -1,61 +1,56 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "1.0.7",
-  "description": "Modern CLI for ghostspeak - Autonomous Agent Commerce Protocol",
+  "version": "0.1.0",
+  "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol",
   "type": "module",
-  "main": "dist/index.js",
   "bin": {
-    "ghostspeak": "./bin/ghostspeak.js",
-    "gs": "./bin/ghostspeak.js"
+    "ghostspeak": "./dist/index.js"
   },
-  "scripts": {
-    "build": "bun run clean && bun run compile",
-    "compile": "bun build src/index.ts --outdir dist --target node --minify --external @solana/addresses --external @solana/codecs --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external chalk --external commander --external conf --external semver",
-    "build:optimized": "bun build src/index-lightweight.ts --outdir dist --target node --minify --external @ghostspeak/sdk --external @solana/addresses --external @solana/codecs --external @solana/rpc --external @solana/rpc-types --external @solana/signers --external chalk --external commander --external conf --external semver",
-    "dev": "bun run src/index.ts",
-    "test": "bun test",
-    "lint": "echo 'Linting skipped - lightweight CLI'",
-    "clean": "rimraf dist coverage",
-    "type-check": "tsc --noEmit",
-    "start": "node dist/index.js",
-    "prepack": "bun run build:optimized"
-  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "bin",
-    "README.md"
+    "dist"
   ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf dist"
+  },
   "keywords": [
-    "cli",
     "solana",
     "blockchain",
     "ai-agents",
-    "ghostspeak"
+    "cli",
+    "typescript",
+    "web3"
   ],
-  "author": "ghostspeak Contributors",
+  "author": "GhostSpeak Protocol",
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
-  "engines": {
-    "node": ">=20.0.0",
-    "bun": ">=1.2.15"
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@clack/core": "^0.3.0",
+    "commander": "^11.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.0",
+    "boxen": "^7.1.0",
+    "figlet": "^1.7.0",
+    "@types/figlet": "^1.5.0"
   },
   "devDependencies": {
-    "@types/node": "24.0.12",
-    "rimraf": "6.0.1",
-    "typescript": "5.8.3"
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "tsup": "^8.0.0",
+    "vitest": "^1.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
   },
-  "dependencies": {
-    "@ghostspeak/sdk": "workspace:*",
-    "@solana/addresses": "2.1.1",
-    "@solana/codecs": "2.1.1",
-    "@solana/rpc": "2.1.1",
-    "@solana/rpc-types": "2.1.1",
-    "@solana/signers": "2.1.1",
-    "chalk": "5.4.1",
-    "commander": "14.0.0",
-    "conf": "14.0.0",
-    "semver": "7.6.3"
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

@@ -23,6 +23,7 @@ each other and humans through a decentralized protocol.
 ### Critical Awareness Directives
 
 - Remember we are working with new technologies so you can't revert back to old methods that you have been trained on, constantly search context7 mcp server and the web
+- When generating the IDL make sure to use the 2025 methods especially for the SPL-2022 and new Solana features
 
 ## Common Development Commands
 

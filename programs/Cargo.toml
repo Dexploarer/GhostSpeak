@@ -38,7 +38,7 @@ spl-associated-token-account = { version = "6.0", features = ["no-entrypoint"] }
 # spl-account-compression = { version = "1.0", features = ["no-entrypoint", "cpi"] }
 spl-concurrent-merkle-tree = "1.0"
 spl-token-metadata-interface = "0.6"
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 blake3 = "1.5"
 bs58 = "0.5"

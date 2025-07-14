@@ -49,7 +49,7 @@
     "commander": "^11.0.0",
     "chalk": "^5.3.0",
     "ora": "^8.0.0",
-    "boxen": "^7.1.0",
+    "boxen": "^8.0.1",
     "figlet": "^1.7.0",
     "@types/figlet": "^1.5.0",
     "@ghostspeak/sdk": "^0.1.0",

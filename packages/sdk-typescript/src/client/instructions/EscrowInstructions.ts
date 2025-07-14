@@ -1,11 +1,31 @@
 import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
-  GhostSpeakConfig,
-  CreateEscrowParams,
-  EscrowAccount
+  GhostSpeakConfig
 } from '../../types/index.js'
+import {
+  getCreateWorkOrderInstruction,
+  getProcessPaymentInstruction,
+  getSubmitWorkDeliveryInstruction,
+  fetchPayment,
+  fetchWorkOrder,
+  type Payment,
+  type WorkOrder
+} from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
+
+// Parameters for creating work orders (which handle escrow)
+export interface CreateEscrowParams {
+  orderId: bigint
+  provider: Address
+  title: string
+  description: string
+  requirements: string[]
+  paymentAmount: bigint
+  paymentToken: Address
+  deadline: bigint
+}
 
 /**
  * Instructions for escrow operations
@@ -16,25 +36,50 @@ export class EscrowInstructions extends BaseInstructions {
   }
 
   /**
-   * Create a new escrow account
+   * Create a new escrow account via work order
    */
   async create(
     signer: KeyPairSigner,
+    workOrderAddress: Address,
     params: CreateEscrowParams
   ): Promise<string> {
-    console.log('Creating escrow:', params)
-    throw new Error('Escrow creation not yet implemented - waiting for Codama generation')
+    const instruction = getCreateWorkOrderInstruction({
+      workOrder: workOrderAddress,
+      client: signer as unknown as TransactionSigner,
+      orderId: params.orderId,
+      provider: params.provider,
+      title: params.title,
+      description: params.description,
+      requirements: params.requirements,
+      paymentAmount: params.paymentAmount,
+      paymentToken: params.paymentToken,
+      deadline: params.deadline
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
-   * Release escrow funds to the seller
+   * Release escrow funds by submitting work delivery
    */
   async release(
     signer: KeyPairSigner,
-    escrowAddress: Address
+    workDeliveryAddress: Address,
+    workOrderAddress: Address,
+    deliverables: any[],
+    ipfsHash: string,
+    metadataUri: string
   ): Promise<string> {
-    console.log('Releasing escrow:', escrowAddress)
-    throw new Error('Escrow release not yet implemented - waiting for Codama generation')
+    const instruction = getSubmitWorkDeliveryInstruction({
+      workDelivery: workDeliveryAddress,
+      workOrder: workOrderAddress,
+      provider: signer as unknown as TransactionSigner,
+      deliverables,
+      ipfsHash,
+      metadataUri
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -44,8 +89,8 @@ export class EscrowInstructions extends BaseInstructions {
     signer: KeyPairSigner,
     escrowAddress: Address
   ): Promise<string> {
-    console.log('Canceling escrow:', escrowAddress)
-    throw new Error('Escrow cancellation not yet implemented - waiting for Codama generation')
+    // TODO: Implement cancellation logic when available in contract
+    throw new Error('Work order cancellation not yet available in smart contract')
   }
 
   /**
@@ -56,8 +101,8 @@ export class EscrowInstructions extends BaseInstructions {
     escrowAddress: Address,
     reason: string
   ): Promise<string> {
-    console.log('Disputing escrow:', escrowAddress, reason)
-    throw new Error('Escrow dispute not yet implemented - waiting for Codama generation')
+    // TODO: Implement dispute functionality using fileDispute instruction
+    throw new Error('Dispute functionality requires dispute instruction implementation')
   }
 
   /**
@@ -65,33 +110,117 @@ export class EscrowInstructions extends BaseInstructions {
    */
   async processPayment(
     signer: KeyPairSigner,
-    escrowAddress: Address
+    paymentAddress: Address,
+    workOrderAddress: Address,
+    providerAgent: Address,
+    payerTokenAccount: Address,
+    providerTokenAccount: Address,
+    tokenMint: Address,
+    amount: bigint,
+    useConfidentialTransfer: boolean = false
   ): Promise<string> {
-    console.log('Processing escrow payment:', escrowAddress)
-    throw new Error('Escrow payment processing not yet implemented - waiting for Codama generation')
+    const instruction = getProcessPaymentInstruction({
+      payment: paymentAddress,
+      workOrder: workOrderAddress,
+      providerAgent,
+      payer: signer as unknown as TransactionSigner,
+      payerTokenAccount,
+      providerTokenAccount,
+      tokenMint,
+      amount,
+      useConfidentialTransfer
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
-   * Get escrow account information
+   * Get work order (escrow) account information using 2025 patterns
    */
-  async getAccount(escrowAddress: Address): Promise<EscrowAccount | null> {
-    console.log('Fetching escrow account:', escrowAddress)
-    throw new Error('Escrow account fetching not yet implemented - waiting for Codama generation')
+  async getAccount(workOrderAddress: Address): Promise<WorkOrder | null> {
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const { getWorkOrderDecoder } = await import('../../generated/index.js')
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      const workOrder = await rpcClient.getAndDecodeAccount(
+        workOrderAddress,
+        getWorkOrderDecoder(),
+        this.commitment
+      )
+      
+      return workOrder
+    } catch (error) {
+      console.warn('Failed to fetch work order account:', error)
+      return null
+    }
   }
 
   /**
-   * Get all escrows for a user
+   * Get all escrows for a user using 2025 patterns
    */
-  async getEscrowsForUser(userAddress: Address): Promise<EscrowAccount[]> {
-    console.log('Fetching escrows for user:', userAddress)
-    throw new Error('User escrow fetching not yet implemented - waiting for Codama generation')
+  async getEscrowsForUser(userAddress: Address): Promise<WorkOrder[]> {
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const { getWorkOrderDecoder } = await import('../../generated/index.js')
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all work orders and filter for this user
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getWorkOrderDecoder(),
+        [], // No RPC filters - filtering client-side
+        this.commitment
+      )
+      
+      // Filter work orders where user is either client or provider
+      const userWorkOrders = accounts
+        .map(({ data }) => data)
+        .filter(workOrder => 
+          workOrder.client === userAddress || 
+          workOrder.provider === userAddress
+        )
+      
+      return userWorkOrders
+    } catch (error) {
+      console.warn('Failed to fetch user escrows:', error)
+      return []
+    }
   }
 
   /**
-   * Get all active escrows
+   * Get all active escrows using 2025 patterns
    */
-  async getActiveEscrows(): Promise<EscrowAccount[]> {
-    console.log('Fetching active escrows')
-    throw new Error('Active escrow fetching not yet implemented - waiting for Codama generation')
+  async getActiveEscrows(): Promise<WorkOrder[]> {
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const { getWorkOrderDecoder } = await import('../../generated/index.js')
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all work orders and filter for active ones
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getWorkOrderDecoder(),
+        [], // No RPC filters - filtering client-side
+        this.commitment
+      )
+      
+      // Filter work orders that are active (not completed/cancelled)
+      const { WorkOrderStatus } = await import('../../generated/index.js')
+      const activeWorkOrders = accounts
+        .map(({ data }) => data)
+        .filter(workOrder => 
+          workOrder.status === WorkOrderStatus.Open || 
+          workOrder.status === WorkOrderStatus.InProgress ||
+          workOrder.status === WorkOrderStatus.Submitted
+        )
+      
+      return activeWorkOrders
+    } catch (error) {
+      console.warn('Failed to fetch active escrows:', error)
+      return []
+    }
   }
 }

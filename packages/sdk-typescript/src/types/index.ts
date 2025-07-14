@@ -1,23 +1,53 @@
 // Core types for GhostSpeak Protocol
 import type { Address } from '@solana/addresses'
+import type { 
+  Rpc,
+  RpcSubscriptions,
+  GetLatestBlockhashApi,
+  SendTransactionApi,
+  GetAccountInfoApi,
+  SimulateTransactionApi,
+  GetFeeForMessageApi,
+  GetProgramAccountsApi
+} from '@solana/kit'
 
-// For now, use a simple placeholder interface for RPC
-// This will be replaced when Codama generates the proper types
-export interface RpcApi {
-  getAccountInfo: (address: Address) => Promise<any>
-  sendTransaction: (transaction: any) => Promise<string>
-}
+// Import generated types and re-export for convenience
+export * from '../generated/index.js'
+
+// Modern RPC API types using 2025 Web3.js v2 patterns
+export type RpcApi = Rpc<
+  GetLatestBlockhashApi &
+  SendTransactionApi &
+  GetAccountInfoApi &
+  SimulateTransactionApi &
+  GetFeeForMessageApi &
+  GetProgramAccountsApi
+>
 
 export type Commitment = 'processed' | 'confirmed' | 'finalized'
 
-// Program ID
-export const GHOSTSPEAK_PROGRAM_ID: Address = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address
+// Program ID - import from generated
+export { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS as GHOSTSPEAK_PROGRAM_ID } from '../generated/programs/index.js'
 
 // Configuration types
 export interface GhostSpeakConfig {
   programId?: Address
   rpc: RpcApi
+  rpcSubscriptions?: RpcSubscriptions<any>
   commitment?: Commitment
+  transactionTimeout?: number
+  defaultFeePayer?: Address
+  retryConfig?: RetryConfig
+  cluster?: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
+  rpcEndpoint?: string
+}
+
+export interface RetryConfig {
+  maxRetries?: number
+  baseDelay?: number
+  maxDelay?: number
+  backoffMultiplier?: number
+  retryableErrors?: string[]
 }
 
 // Agent types

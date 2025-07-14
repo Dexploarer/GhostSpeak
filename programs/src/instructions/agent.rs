@@ -82,6 +82,57 @@ pub struct UpdateAgent<'info> {
     pub clock: Sysvar<'info, Clock>,
 }
 
+/// Context for updating agent status (activate/deactivate)
+#[derive(Accounts)]
+#[instruction(agent_id: String)]
+pub struct UpdateAgentStatus<'info> {
+    /// Agent account with canonical PDA validation
+    #[account(
+        mut,
+        seeds = [
+            b"agent", 
+            signer.key().as_ref(),
+            agent_id.as_bytes()
+        ],
+        bump = agent_account.bump,
+        constraint = agent_account.owner == signer.key() @ GhostSpeakError::InvalidAgentOwner
+    )]
+    pub agent_account: Account<'info, Agent>,
+    
+    /// Enhanced authority verification
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    
+    /// Clock sysvar for rate limiting
+    pub clock: Sysvar<'info, Clock>,
+}
+
+/// Context for updating agent reputation
+#[derive(Accounts)]
+#[instruction(agent_id: String)]
+pub struct UpdateAgentReputation<'info> {
+    /// Agent account with canonical PDA validation
+    #[account(
+        mut,
+        seeds = [
+            b"agent", 
+            signer.key().as_ref(),
+            agent_id.as_bytes()
+        ],
+        bump = agent_account.bump,
+        constraint = agent_account.owner == signer.key() @ GhostSpeakError::InvalidAgentOwner,
+        constraint = agent_account.is_active @ GhostSpeakError::AgentNotActive
+    )]
+    pub agent_account: Account<'info, Agent>,
+    
+    /// Enhanced authority verification
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    
+    /// Clock sysvar for rate limiting
+    pub clock: Sysvar<'info, Clock>,
+}
+
 /// Enhanced agent verification with 2025 security patterns
 /// 
 /// Implements comprehensive verification with anti-fraud measures
@@ -302,7 +353,7 @@ pub fn verify_agent(
     Ok(())
 }
 
-pub fn deactivate_agent(ctx: Context<UpdateAgent>) -> Result<()> {
+pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
     
     require!(agent.is_active, GhostSpeakError::AgentNotActive);
@@ -312,7 +363,7 @@ pub fn deactivate_agent(ctx: Context<UpdateAgent>) -> Result<()> {
     Ok(())
 }
 
-pub fn activate_agent(ctx: Context<UpdateAgent>) -> Result<()> {
+pub fn activate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
     
     require!(!agent.is_active, GhostSpeakError::AgentAlreadyActive);
@@ -323,7 +374,8 @@ pub fn activate_agent(ctx: Context<UpdateAgent>) -> Result<()> {
 }
 
 pub fn update_agent_reputation(
-    ctx: Context<UpdateAgent>,
+    ctx: Context<UpdateAgentReputation>,
+    _agent_id: String,
     reputation_score: u64,
 ) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;

@@ -768,19 +768,20 @@ pub mod ghostspeak_marketplace {
         instructions::agent::verify_agent(ctx, agent_pubkey, service_endpoint, supported_capabilities, verified_at)
     }
 
-    pub fn deactivate_agent(ctx: Context<UpdateAgent>) -> Result<()> {
-        instructions::agent::deactivate_agent(ctx)
+    pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Result<()> {
+        instructions::agent::deactivate_agent(ctx, agent_id)
     }
 
-    pub fn activate_agent(ctx: Context<UpdateAgent>) -> Result<()> {
-        instructions::agent::activate_agent(ctx)
+    pub fn activate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Result<()> {
+        instructions::agent::activate_agent(ctx, agent_id)
     }
 
     pub fn update_agent_reputation(
-        ctx: Context<UpdateAgent>,
+        ctx: Context<UpdateAgentReputation>,
+        agent_id: String,
         reputation_score: u64,
     ) -> Result<()> {
-        instructions::agent::update_agent_reputation(ctx, reputation_score)
+        instructions::agent::update_agent_reputation(ctx, agent_id, reputation_score)
     }
 
     pub fn update_agent_service(
@@ -981,10 +982,9 @@ pub mod ghostspeak_marketplace {
 
     pub fn create_bulk_deal(
         ctx: Context<CreateBulkDeal>,
-        _deal_id: u64,
         deal_data: BulkDealData,
     ) -> Result<()> {
-        instructions::bulk_deals::create_bulk_deal(ctx, _deal_id, deal_data)
+        instructions::bulk_deals::create_bulk_deal(ctx, deal_data)
     }
 
     pub fn execute_bulk_deal_batch(

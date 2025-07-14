@@ -21,6 +21,7 @@ import { AgentInstructions } from './instructions/AgentInstructions.js'
 import { MarketplaceInstructions } from './instructions/MarketplaceInstructions.js'
 import { EscrowInstructions } from './instructions/EscrowInstructions.js'
 import { A2AInstructions } from './instructions/A2AInstructions.js'
+import { AuctionInstructions } from './instructions/AuctionInstructions.js'
 
 /**
  * Main client for interacting with the GhostSpeak Protocol
@@ -31,6 +32,7 @@ export class GhostSpeakClient {
   public readonly marketplace: MarketplaceInstructions
   public readonly escrow: EscrowInstructions
   public readonly a2a: A2AInstructions
+  public readonly auction: AuctionInstructions
 
   constructor(config: GhostSpeakConfig) {
     this.config = {
@@ -44,6 +46,7 @@ export class GhostSpeakClient {
     this.marketplace = new MarketplaceInstructions(this.config)
     this.escrow = new EscrowInstructions(this.config)
     this.a2a = new A2AInstructions(this.config)
+    this.auction = new AuctionInstructions(this.config)
   }
 
   /**

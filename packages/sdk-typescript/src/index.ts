@@ -8,6 +8,7 @@ export { AgentInstructions } from './client/instructions/AgentInstructions.js'
 export { MarketplaceInstructions } from './client/instructions/MarketplaceInstructions.js'
 export { EscrowInstructions } from './client/instructions/EscrowInstructions.js'
 export { A2AInstructions } from './client/instructions/A2AInstructions.js'
+export { AuctionInstructions } from './client/instructions/AuctionInstructions.js'
 
 // Types
 export * from './types/index.js'
@@ -15,6 +16,7 @@ export * from './types/index.js'
 // Utilities
 export * from './utils/pda.js'
 export * from './utils/connection.js'
+export * from './utils/auction-helpers.js'
 
 // Constants
 export { GHOSTSPEAK_PROGRAM_ID } from './types/index.js'

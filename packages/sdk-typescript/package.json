@@ -51,7 +51,7 @@
     "@codama/renderers-js": "^1.0.0",
     "@codama/visitors": "^1.0.0",
     "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
     "tsup": "^8.0.0",

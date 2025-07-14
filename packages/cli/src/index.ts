@@ -9,6 +9,7 @@ import { marketplaceCommand } from './commands/marketplace.js'
 import { escrowCommand } from './commands/escrow.js'
 import { channelCommand } from './commands/channel.js'
 import { configCommand } from './commands/config.js'
+import { setupFaucetCommand } from './commands/faucet.js'
 
 // ASCII art banner
 function showBanner() {
@@ -42,6 +43,9 @@ async function main() {
     program.addCommand(escrowCommand)
     program.addCommand(channelCommand)
     program.addCommand(configCommand)
+    
+    // Setup faucet command
+    setupFaucetCommand(program)
 
     // Show help if no command provided
     if (!process.argv.slice(2).length) {

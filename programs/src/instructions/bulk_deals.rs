@@ -73,7 +73,6 @@ const MAX_SLA_TERMS_LENGTH: usize = 2048; // Maximum SLA terms length
 /// - Custom SLA terms
 pub fn create_bulk_deal(
     ctx: Context<CreateBulkDeal>,
-    _deal_id: u64,
     deal_data: BulkDealData,
 ) -> Result<()> {
     let clock = Clock::get()?;
@@ -161,7 +160,7 @@ pub fn create_bulk_deal(
 // Enhanced account structures with 2025 security patterns
 /// Enhanced bulk deal creation with canonical PDA validation
 #[derive(Accounts)]
-#[instruction(deal_id: u64)]
+#[instruction(deal_data: BulkDealData)]
 pub struct CreateBulkDeal<'info> {
     /// Bulk deal account with collision prevention
     #[account(
@@ -172,7 +171,7 @@ pub struct CreateBulkDeal<'info> {
             b"bulk_deal", 
             agent.key().as_ref(), 
             customer.key().as_ref(),
-            deal_id.to_le_bytes().as_ref()  // Enhanced collision prevention
+            deal_data.deal_id.to_le_bytes().as_ref()  // Enhanced collision prevention
         ],
         bump
     )]

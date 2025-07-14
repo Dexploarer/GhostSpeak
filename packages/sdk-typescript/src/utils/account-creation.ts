@@ -1,0 +1,159 @@
+import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
+import type { KeyPairSigner } from '../client/GhostSpeakClient.js'
+import type { GhostSpeakConfig } from '../types/index.js'
+
+/**
+ * Utility functions for creating accounts and PDAs
+ */
+export class AccountCreationHelper {
+  constructor(private config: GhostSpeakConfig) {}
+
+  /**
+   * Helper to create an agent account with derived PDA
+   */
+  async createAgentAccount(
+    signer: KeyPairSigner,
+    agentId: string,
+    agentType: number,
+    metadataUri: string
+  ): Promise<{ agentAddress: Address; userRegistryAddress: Address }> {
+    const { deriveAgentPda, deriveUserRegistryPda } = await import('./pda.js')
+    
+    const agentAddress = await deriveAgentPda(this.config.programId!, signer.address, agentId)
+    const userRegistryAddress = await deriveUserRegistryPda(this.config.programId!)
+    
+    return {
+      agentAddress,
+      userRegistryAddress
+    }
+  }
+
+  /**
+   * Helper to create a service listing account with derived PDA
+   */
+  async createServiceListingAccount(
+    creator: KeyPairSigner,
+    listingId: string
+  ): Promise<Address> {
+    const { deriveServiceListingPda } = await import('./pda.js')
+    
+    return await deriveServiceListingPda(this.config.programId!, creator.address, listingId)
+  }
+
+  /**
+   * Helper to create a job posting account with derived PDA
+   */
+  async createJobPostingAccount(
+    employer: KeyPairSigner,
+    jobId: string
+  ): Promise<Address> {
+    const { deriveJobPostingPda } = await import('./pda.js')
+    
+    return await deriveJobPostingPda(this.config.programId!, employer.address, jobId)
+  }
+
+  /**
+   * Helper to create a work order account with derived PDA
+   */
+  async createWorkOrderAccount(
+    employer: KeyPairSigner,
+    orderId: bigint
+  ): Promise<Address> {
+    const { deriveWorkOrderPda } = await import('./pda.js')
+    
+    return await deriveWorkOrderPda(this.config.programId!, employer.address, orderId)
+  }
+
+  /**
+   * Helper to create an A2A session account with derived PDA
+   */
+  async createA2ASessionAccount(
+    creator: KeyPairSigner
+  ): Promise<Address> {
+    const { deriveA2ASessionPda } = await import('./pda.js')
+    
+    return await deriveA2ASessionPda(this.config.programId!, creator.address)
+  }
+
+  /**
+   * Helper to create service purchase account with derived PDA
+   */
+  async createServicePurchaseAccount(
+    serviceListing: Address,
+    buyer: KeyPairSigner
+  ): Promise<Address> {
+    const { deriveServicePurchasePda } = await import('./pda.js')
+    
+    return await deriveServicePurchasePda(this.config.programId!, serviceListing, buyer.address)
+  }
+
+  /**
+   * Helper to create job application account with derived PDA
+   */
+  async createJobApplicationAccount(
+    jobPosting: Address,
+    applicant: KeyPairSigner
+  ): Promise<Address> {
+    const { deriveJobApplicationPda } = await import('./pda.js')
+    
+    return await deriveJobApplicationPda(this.config.programId!, jobPosting, applicant.address)
+  }
+
+  /**
+   * Helper to create payment account with derived PDA
+   */
+  async createPaymentAccount(
+    workOrder: Address,
+    payer: KeyPairSigner
+  ): Promise<Address> {
+    const { derivePaymentPda } = await import('./pda.js')
+    
+    return await derivePaymentPda(this.config.programId!, workOrder, payer.address)
+  }
+
+  /**
+   * Helper to create work delivery account with derived PDA
+   */
+  async createWorkDeliveryAccount(
+    workOrder: Address,
+    provider: KeyPairSigner
+  ): Promise<Address> {
+    const { deriveWorkDeliveryPda } = await import('./pda.js')
+    
+    return await deriveWorkDeliveryPda(this.config.programId!, workOrder, provider.address)
+  }
+
+  /**
+   * Helper to create agent verification account with derived PDA
+   */
+  async createAgentVerificationAccount(
+    agent: Address,
+    verifier: KeyPairSigner
+  ): Promise<Address> {
+    const { deriveAgentVerificationPda } = await import('./pda.js')
+    
+    return await deriveAgentVerificationPda(this.config.programId!, agent, verifier.address)
+  }
+
+  /**
+   * Generate a unique string ID for accounts (useful for listings, jobs, etc.)
+   */
+  static generateUniqueId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
+  }
+
+  /**
+   * Generate a unique bigint ID for work orders
+   */
+  static generateUniqueBigIntId(): bigint {
+    return BigInt(Date.now()) * 1000n + BigInt(Math.floor(Math.random() * 1000))
+  }
+}
+
+/**
+ * Convenience functions for account creation
+ */
+export function createAccountCreationHelper(config: GhostSpeakConfig): AccountCreationHelper {
+  return new AccountCreationHelper(config)
+}

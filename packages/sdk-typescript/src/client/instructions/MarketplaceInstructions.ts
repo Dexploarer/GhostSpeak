@@ -1,13 +1,49 @@
 import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
-  GhostSpeakConfig,
-  CreateServiceListingParams,
-  CreateJobPostingParams,
-  ServiceListing,
-  JobPosting
+  GhostSpeakConfig
 } from '../../types/index.js'
+import {
+  getCreateServiceListingInstruction,
+  getCreateJobPostingInstruction,
+  getPurchaseServiceInstruction,
+  getApplyToJobInstruction,
+  getAcceptJobApplicationInstruction,
+  fetchServiceListing,
+  fetchJobPosting,
+  type ServiceListing,
+  type JobPosting
+} from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
+
+// Parameters for service listing creation
+export interface CreateServiceListingParams {
+  title: string
+  description: string
+  price: bigint
+  tokenMint: Address
+  serviceType: string
+  paymentToken: Address
+  estimatedDelivery: bigint
+  tags: string[]
+  listingId: string
+}
+
+// Parameters for job posting creation
+export interface CreateJobPostingParams {
+  title: string
+  description: string
+  budget: bigint
+  deadline: bigint
+  requirements: string[]
+  skillsNeeded: string[]
+  budgetMin: bigint
+  budgetMax: bigint
+  paymentToken: Address
+  jobType: string
+  experienceLevel: string
+}
 
 /**
  * Instructions for marketplace operations
@@ -22,10 +58,28 @@ export class MarketplaceInstructions extends BaseInstructions {
    */
   async createServiceListing(
     signer: KeyPairSigner,
+    serviceListingAddress: Address,
+    agentAddress: Address,
+    userRegistryAddress: Address,
     params: CreateServiceListingParams
   ): Promise<string> {
-    console.log('Creating service listing:', params)
-    throw new Error('Service listing creation not yet implemented - waiting for Codama generation')
+    const instruction = getCreateServiceListingInstruction({
+      serviceListing: serviceListingAddress,
+      agent: agentAddress,
+      userRegistry: userRegistryAddress,
+      creator: signer as unknown as TransactionSigner,
+      title: params.title,
+      description: params.description,
+      price: params.price,
+      tokenMint: params.tokenMint,
+      serviceType: params.serviceType,
+      paymentToken: params.paymentToken,
+      estimatedDelivery: params.estimatedDelivery,
+      tags: params.tags,
+      listingId: params.listingId
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -45,10 +99,26 @@ export class MarketplaceInstructions extends BaseInstructions {
    */
   async purchaseService(
     signer: KeyPairSigner,
-    listingAddress: Address
+    servicePurchaseAddress: Address,
+    serviceListingAddress: Address,
+    listingId: bigint,
+    quantity: number,
+    requirements: string[],
+    customInstructions: string,
+    deadline: bigint
   ): Promise<string> {
-    console.log('Purchasing service:', listingAddress)
-    throw new Error('Service purchase not yet implemented - waiting for Codama generation')
+    const instruction = getPurchaseServiceInstruction({
+      servicePurchase: servicePurchaseAddress,
+      serviceListing: serviceListingAddress,
+      buyer: signer as unknown as TransactionSigner,
+      listingId,
+      quantity,
+      requirements,
+      customInstructions,
+      deadline
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -56,10 +126,26 @@ export class MarketplaceInstructions extends BaseInstructions {
    */
   async createJobPosting(
     signer: KeyPairSigner,
+    jobPostingAddress: Address,
     params: CreateJobPostingParams
   ): Promise<string> {
-    console.log('Creating job posting:', params)
-    throw new Error('Job posting creation not yet implemented - waiting for Codama generation')
+    const instruction = getCreateJobPostingInstruction({
+      jobPosting: jobPostingAddress,
+      employer: signer as unknown as TransactionSigner,
+      title: params.title,
+      description: params.description,
+      requirements: params.requirements,
+      budget: params.budget,
+      deadline: params.deadline,
+      skillsNeeded: params.skillsNeeded,
+      budgetMin: params.budgetMin,
+      budgetMax: params.budgetMax,
+      paymentToken: params.paymentToken,
+      jobType: params.jobType,
+      experienceLevel: params.experienceLevel
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -67,11 +153,30 @@ export class MarketplaceInstructions extends BaseInstructions {
    */
   async applyToJob(
     signer: KeyPairSigner,
-    jobAddress: Address,
-    proposal: string
+    jobApplicationAddress: Address,
+    jobPostingAddress: Address,
+    agentAddress: Address,
+    coverLetter: string,
+    proposedPrice: bigint,
+    estimatedDuration: number,
+    proposedRate: bigint,
+    estimatedDelivery: bigint,
+    portfolioItems: string[]
   ): Promise<string> {
-    console.log('Applying to job:', jobAddress, proposal)
-    throw new Error('Job application not yet implemented - waiting for Codama generation')
+    const instruction = getApplyToJobInstruction({
+      jobApplication: jobApplicationAddress,
+      jobPosting: jobPostingAddress,
+      agent: agentAddress,
+      agentOwner: signer as unknown as TransactionSigner,
+      coverLetter,
+      proposedPrice,
+      estimatedDuration,
+      proposedRate,
+      estimatedDelivery,
+      portfolioItems
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -79,11 +184,18 @@ export class MarketplaceInstructions extends BaseInstructions {
    */
   async acceptJobApplication(
     signer: KeyPairSigner,
-    jobAddress: Address,
-    applicantAddress: Address
+    jobContractAddress: Address,
+    jobPostingAddress: Address,
+    jobApplicationAddress: Address
   ): Promise<string> {
-    console.log('Accepting job application:', jobAddress, applicantAddress)
-    throw new Error('Job application acceptance not yet implemented - waiting for Codama generation')
+    const instruction = getAcceptJobApplicationInstruction({
+      jobContract: jobContractAddress,
+      jobPosting: jobPostingAddress,
+      jobApplication: jobApplicationAddress,
+      employer: signer as unknown as TransactionSigner
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**

@@ -1,13 +1,39 @@
 import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
-  GhostSpeakConfig,
-  CreateA2ASessionParams,
-  SendA2AMessageParams,
-  A2ASession,
-  A2AMessage
+  GhostSpeakConfig
 } from '../../types/index.js'
+import {
+  getCreateA2aSessionInstruction,
+  getSendA2aMessageInstruction,
+  getUpdateA2aStatusInstruction,
+  fetchA2ASession,
+  fetchA2AMessage,
+  type A2ASession,
+  type A2AMessage
+} from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
+
+// Parameters for A2A session creation
+export interface CreateA2ASessionParams {
+  sessionId: bigint
+  initiator: Address
+  responder: Address
+  sessionType: string
+  metadata: string
+  expiresAt: bigint
+}
+
+// Parameters for A2A message sending
+export interface SendA2AMessageParams {
+  messageId: bigint
+  sessionId: bigint
+  sender: Address
+  content: string
+  messageType: string
+  timestamp: bigint
+}
 
 /**
  * Instructions for Agent-to-Agent (A2A) communication
@@ -22,10 +48,21 @@ export class A2AInstructions extends BaseInstructions {
    */
   async createSession(
     signer: KeyPairSigner,
+    sessionAddress: Address,
     params: CreateA2ASessionParams
   ): Promise<string> {
-    console.log('Creating A2A session:', params)
-    throw new Error('A2A session creation not yet implemented - waiting for Codama generation')
+    const instruction = getCreateA2aSessionInstruction({
+      session: sessionAddress,
+      creator: signer as unknown as TransactionSigner,
+      sessionId: params.sessionId,
+      initiator: params.initiator,
+      responder: params.responder,
+      sessionType: params.sessionType,
+      metadata: params.metadata,
+      expiresAt: params.expiresAt
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -33,10 +70,23 @@ export class A2AInstructions extends BaseInstructions {
    */
   async sendMessage(
     signer: KeyPairSigner,
+    messageAddress: Address,
+    sessionAddress: Address,
     params: SendA2AMessageParams
   ): Promise<string> {
-    console.log('Sending A2A message:', params)
-    throw new Error('A2A message sending not yet implemented - waiting for Codama generation')
+    const instruction = getSendA2aMessageInstruction({
+      message: messageAddress,
+      session: sessionAddress,
+      sender: signer as unknown as TransactionSigner,
+      messageId: params.messageId,
+      sessionId: params.sessionId,
+      senderArg: params.sender, // Renamed to avoid conflict
+      content: params.content,
+      messageType: params.messageType,
+      timestamp: params.timestamp
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -44,12 +94,28 @@ export class A2AInstructions extends BaseInstructions {
    */
   async updateStatus(
     signer: KeyPairSigner,
+    statusAddress: Address,
     sessionAddress: Address,
+    statusId: bigint,
+    agent: Address,
     status: string,
-    capabilities: string[]
+    capabilities: string[],
+    availability: boolean,
+    lastUpdated: bigint
   ): Promise<string> {
-    console.log('Updating A2A status:', sessionAddress, status, capabilities)
-    throw new Error('A2A status update not yet implemented - waiting for Codama generation')
+    const instruction = getUpdateA2aStatusInstruction({
+      status: statusAddress,
+      session: sessionAddress,
+      updater: signer as unknown as TransactionSigner,
+      statusId,
+      agent,
+      statusArg: status, // Renamed to avoid conflict
+      capabilities,
+      availability,
+      lastUpdated
+    })
+    
+    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -67,8 +133,8 @@ export class A2AInstructions extends BaseInstructions {
    * Get A2A session information
    */
   async getSession(sessionAddress: Address): Promise<A2ASession | null> {
-    console.log('Fetching A2A session:', sessionAddress)
-    throw new Error('A2A session fetching not yet implemented - waiting for Codama generation')
+    // TODO: Implement proper RPC integration
+    return null
   }
 
   /**

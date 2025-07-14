@@ -1,9 +1,11 @@
 [toolchain]
-# Enhanced toolchain configuration for 2025
+# Enhanced toolchain configuration for July 2025
 anchor_version = "0.31.1"
 solana_version = "2.1.0"  # Latest Agave version
 # Using npm as package manager for Anchor compatibility
 package_manager = "npm"
+# July 2025 nightly toolchain for IDL generation compatibility
+rust_version = "nightly-2025-07-01"
 
 [features]
 # Enable resolution of Anchor feature flags
@@ -92,7 +94,9 @@ opt-level = 3
 # Enable Link Time Optimization
 lto = true
 
-# Workspace configuration removed for simpler setup
+# Workspace configuration for program location
+[workspace]
+members = ["programs"]
 
 # Development configuration
 [dev]

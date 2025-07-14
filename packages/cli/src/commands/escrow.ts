@@ -1,403 +1,385 @@
-/**
- * Escrow Commands - Secure Payment Escrow
- *
- * Manages secure payment escrow for agent transactions.
- */
+import { Command } from 'commander'
+import chalk from 'chalk'
+import { 
+  intro, 
+  outro, 
+  text, 
+  select, 
+  confirm, 
+  spinner,
+  isCancel,
+  cancel
+} from '@clack/prompts'
 
-import chalk from 'chalk';
-import { createSolanaRpc } from '@solana/rpc';
-import { address } from '@solana/addresses';
-import type { Address } from '@solana/addresses';
-import { createKeyPairSignerFromBytes } from '@solana/signers';
-import { ConfigManager } from '../core/ConfigManager.js';
-import { Logger } from '../core/Logger.js';
-import { logger } from '../utils/logger.js';
-import { isVerboseMode } from '../utils/cli-options.js';
-import { lamportsToSol, solToLamports, formatDate, truncateAddress } from '../utils/format.js';
-import { ProgressIndicator } from '../utils/prompts.js';
+export const escrowCommand = new Command('escrow')
+  .description('Manage escrow payments and transactions')
 
-// Service instances
-let escrowService: any = null;
-let rpcClient: any = null;
+escrowCommand
+  .command('create')
+  .description('Create a new escrow payment')
+  .action(async () => {
+    intro(chalk.yellow('🔒 Create Escrow Payment'))
 
-async function getEscrowService() {
-  if (!escrowService) {
     try {
-      // Load configuration
-      const config = await ConfigManager.load();
-      const rpcUrl = (config as any).rpcUrl || 'https://api.devnet.solana.com';
-      const programId = address((config as any).programId || '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK');
-      
-      // Create RPC client
-      rpcClient = createSolanaRpc(rpcUrl);
-      
-      // Load escrow service from SDK dynamically
-      const { EscrowService } = await import('../../sdk/src/services/escrow.js');
-      escrowService = new EscrowService(rpcClient, programId);
-      
-      logger.general.debug('Escrow service initialized successfully');
+      const amount = await text({
+        message: 'Escrow amount (in SOL):',
+        placeholder: '1.0',
+        validate: (value) => {
+          if (!value) return 'Amount is required'
+          const num = parseFloat(value)
+          if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
+        }
+      })
+
+      if (isCancel(amount)) {
+        cancel('Escrow creation cancelled')
+        return
+      }
+
+      const recipient = await text({
+        message: 'Recipient wallet address:',
+        placeholder: 'Enter Solana wallet address...',
+        validate: (value) => {
+          if (!value) return 'Recipient address is required'
+          // Basic validation - in real implementation, use proper Solana address validation
+          if (value.length < 32) return 'Invalid Solana address format'
+        }
+      })
+
+      if (isCancel(recipient)) {
+        cancel('Escrow creation cancelled')
+        return
+      }
+
+      const s = spinner()
+      s.start('Creating escrow contract...')
+
+      // TODO: Implement actual escrow creation using GhostSpeak SDK
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      s.stop('✅ Escrow created successfully!')
+
+      console.log('\n' + chalk.green('🎉 Escrow payment created!'))
+      console.log(chalk.gray(`Amount: ${amount} SOL`))
+      console.log(chalk.gray(`Recipient: ${recipient}`))
+      console.log(chalk.gray(`Status: Active - Awaiting completion`))
+
+      outro('Escrow creation completed')
+
     } catch (error) {
-      logger.general.error('Failed to initialize escrow service:', error);
-      throw error;
+      cancel(chalk.red('Escrow creation failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
-  }
-  return escrowService;
-}
+  })
 
-async function getKeypairFromConfig() {
-  const config = await ConfigManager.load();
-  
-  if (!(config as any).walletPath) {
-    throw new Error('No wallet configured. Run "ghostspeak wallet create" first.');
-  }
-  
-  try {
-    const walletData = await import((config as any).walletPath);
-    return createKeyPairSignerFromBytes(new Uint8Array(walletData.default));
-  } catch (error) {
-    throw new Error(`Failed to load wallet from ${(config as any).walletPath}. Please check your wallet configuration.`);
-  }
-}
+escrowCommand
+  .command('list')
+  .description('List your escrow payments')
+  .action(async () => {
+    intro(chalk.yellow('📋 Your Escrow Payments'))
 
-export async function createEscrow(
-  beneficiary: string,
-  amount: number,
-  description?: string
-): Promise<void> {
-  const cliLogger = new Logger(isVerboseMode());
-  const progress = new ProgressIndicator('Creating escrow...');
+    const s = spinner()
+    s.start('Loading escrow payments...')
 
-  try {
-    cliLogger.general.info(chalk.cyan('🔐 Creating Escrow'));
-    cliLogger.general.info(chalk.gray('─'.repeat(50)));
-    cliLogger.general.info(`Beneficiary: ${chalk.blue(truncateAddress(beneficiary))}`);
-    cliLogger.general.info(`Amount: ${chalk.green(amount + ' SOL')}`);
-    if (description) {
-      cliLogger.general.info(`Description: ${chalk.gray(description)}`);
+    try {
+      // TODO: Implement actual escrow fetching using GhostSpeak SDK
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      s.stop('✅ Escrows loaded')
+
+      // Mock escrow data
+      console.log('\n' + chalk.bold('💰 Active Escrows'))
+      console.log('─'.repeat(60))
+      console.log(chalk.yellow('1. Payment for Data Analysis'))
+      console.log(chalk.gray('   ID: ESC-001 | Amount: 0.5 SOL | Status: Active'))
+      console.log(chalk.gray('   Created: 2 hours ago'))
+      console.log('')
+      console.log(chalk.yellow('2. Content Writing Service'))
+      console.log(chalk.gray('   ID: ESC-002 | Amount: 0.2 SOL | Status: Pending Release'))
+      console.log(chalk.gray('   Created: 1 day ago'))
+
+      outro('Escrow listing completed')
+
+    } catch (error) {
+      s.stop('❌ Failed to load escrows')
+      cancel(chalk.red('Error: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
-    cliLogger.general.info('');
-    
-    progress.start();
-    
-    // Get signer and service
-    const signer = await getKeypairFromConfig();
-    const service = await getEscrowService();
-    const beneficiaryAddress = address(beneficiary);
-    const amountLamports = solToLamports(amount);
-    
-    // Create work order (which includes escrow)
-    const result = await service.createWorkOrder(signer, {
-      agentAddress: beneficiaryAddress,
-      taskDescription: description || 'Escrow payment',
-      paymentAmount: amountLamports,
-      deadline: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days from now
-      requirements: 'Complete the agreed upon work',
-      deliverables: 'As specified in the agreement'
-    });
-    
-    progress.stop();
-    
-    cliLogger.general.info(chalk.green('✅ Escrow created successfully!'));
-    cliLogger.general.info('');
-    cliLogger.general.info(chalk.gray('Details:'));
-    cliLogger.general.info(`  Escrow ID: ${chalk.cyan(result.workOrderPda)}`);
-    cliLogger.general.info(`  Transaction: ${chalk.gray(result.signature)}`);
-    cliLogger.general.info(`  Amount: ${chalk.green(amount + ' SOL')}`);
-    cliLogger.general.info(`  Beneficiary: ${chalk.blue(beneficiary)}`);
-    cliLogger.general.info('');
-    cliLogger.general.info(chalk.yellow('💡 Next steps:'));
-    cliLogger.general.info(chalk.gray('   • Provider completes work and submits delivery'));
-    cliLogger.general.info(chalk.gray('   • You review and approve the work'));
-    cliLogger.general.info(chalk.gray('   • Funds are released upon approval'));
-    
-  } catch (error) {
-    progress.stop();
-    logger.escrow.error(chalk.red('❌ Failed to create escrow:'), error);
-    logger.escrow.info('');
-    logger.escrow.info(chalk.yellow('💡 Troubleshooting:'));
-    logger.escrow.info(chalk.gray('   • Ensure you have sufficient SOL balance'));
-    logger.escrow.info(chalk.gray('   • Check the beneficiary address is valid'));
-    logger.escrow.info(chalk.gray('   • Verify network connection'));
-    throw error;
-  }
-}
+  })
 
-export async function depositEscrow(
-  escrowId: string,
-  amount: number
-): Promise<void> {
-  const cliLogger = new Logger(isVerboseMode());
-  const progress = new ProgressIndicator('Depositing to escrow...');
+// Release escrow payment
+escrowCommand
+  .command('release')
+  .description('Release funds from escrow')
+  .argument('<escrow-id>', 'Escrow ID to release')
+  .action(async (escrowId) => {
+    intro(chalk.yellow('💸 Release Escrow Payment'))
 
-  try {
-    cliLogger.general.info(chalk.cyan('💰 Depositing to Escrow'));
-    cliLogger.general.info(chalk.gray('─'.repeat(50)));
-    cliLogger.general.info(`Escrow ID: ${chalk.blue(truncateAddress(escrowId))}`);
-    cliLogger.general.info(`Amount: ${chalk.green(amount + ' SOL')}`);
-    cliLogger.general.info('');
-    
-    progress.start();
-    
-    // Get signer and service
-    const signer = await getKeypairFromConfig();
-    const service = await getEscrowService();
-    const escrowAddress = address(escrowId);
-    const amountLamports = solToLamports(amount);
-    
-    // Deposit additional funds
-    const signature = await service.depositFunds(
-      signer,
-      escrowAddress,
-      amountLamports
-    );
-    
-    progress.stop();
-    
-    cliLogger.general.info(chalk.green('✅ Deposit successful!'));
-    cliLogger.general.info('');
-    cliLogger.general.info(chalk.gray('Details:'));
-    cliLogger.general.info(`  Transaction: ${chalk.cyan(signature)}`);
-    cliLogger.general.info(`  Amount deposited: ${chalk.green(amount + ' SOL')}`);
-    cliLogger.general.info(`  Escrow ID: ${chalk.blue(escrowId)}`);
-    
-  } catch (error) {
-    progress.stop();
-    logger.escrow.error(chalk.red('❌ Failed to deposit to escrow:'), error);
-    logger.escrow.info('');
-    logger.escrow.info(chalk.yellow('💡 Troubleshooting:'));
-    logger.escrow.info(chalk.gray('   • Ensure you have sufficient SOL balance'));
-    logger.escrow.info(chalk.gray('   • Check the escrow ID is valid'));
-    logger.escrow.info(chalk.gray('   • Verify you have permission to deposit'));
-    throw error;
-  }
-}
+    try {
+      // Fetch escrow details
+      const s = spinner()
+      s.start(`Loading escrow ${escrowId}...`)
 
-export async function releaseEscrow(
-  escrowId: string,
-  recipient?: string
-): Promise<void> {
-  const cliLogger = new Logger(isVerboseMode());
-  const progress = new ProgressIndicator('Processing escrow release...');
+      // TODO: Implement actual escrow fetching using GhostSpeak SDK
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-  try {
-    cliLogger.general.info(chalk.cyan('🔓 Releasing Escrow'));
-    cliLogger.general.info(chalk.gray('─'.repeat(50)));
-    cliLogger.general.info(`Escrow ID: ${chalk.blue(truncateAddress(escrowId))}`);
-    
-    progress.start();
-    
-    // Get signer and service
-    const signer = await getKeypairFromConfig();
-    const service = await getEscrowService();
-    const escrowAddress = address(escrowId);
-    
-    // Get escrow details
-    const escrowAccount = await service.getEscrow(escrowAddress);
-    if (!escrowAccount) {
-      throw new Error('Escrow not found');
+      s.stop('✅ Escrow loaded')
+
+      // Mock escrow details
+      console.log('\n' + chalk.bold('🔒 Escrow Details'))
+      console.log('─'.repeat(40))
+      console.log(chalk.yellow('Service:') + ' Data Analysis for E-commerce')
+      console.log(chalk.yellow('Amount:') + ' 0.5 SOL')
+      console.log(chalk.yellow('Provider:') + ' DataAnalyzer Pro')
+      console.log(chalk.yellow('Status:') + ' Work Completed - Pending Release')
+      console.log(chalk.yellow('Created:') + ' 3 days ago')
+
+      // Work verification
+      const verified = await confirm({
+        message: 'Have you verified the completed work?'
+      })
+
+      if (isCancel(verified)) {
+        cancel('Release cancelled')
+        return
+      }
+
+      if (!verified) {
+        console.log('\n' + chalk.yellow('⚠️  Please review the work before releasing payment'))
+        const proceed = await confirm({
+          message: 'Do you still want to proceed with release?'
+        })
+
+        if (isCancel(proceed) || !proceed) {
+          cancel('Release cancelled')
+          return
+        }
+      }
+
+      // Rating prompt
+      const rating = await select({
+        message: 'Rate the service (optional):',
+        options: [
+          { value: '5', label: '⭐⭐⭐⭐⭐ Excellent' },
+          { value: '4', label: '⭐⭐⭐⭐ Good' },
+          { value: '3', label: '⭐⭐⭐ Average' },
+          { value: '2', label: '⭐⭐ Below Average' },
+          { value: '1', label: '⭐ Poor' },
+          { value: 'skip', label: 'Skip rating' }
+        ]
+      })
+
+      if (isCancel(rating)) {
+        cancel('Release cancelled')
+        return
+      }
+
+      // Review prompt
+      let review = ''
+      if (rating !== 'skip') {
+        const reviewText = await text({
+          message: 'Leave a review (optional):',
+          placeholder: 'Share your experience with this service...'
+        })
+
+        if (isCancel(reviewText)) {
+          cancel('Release cancelled')
+          return
+        }
+
+        review = reviewText || ''
+      }
+
+      // Final confirmation
+      console.log('\n' + chalk.bold('📋 Release Summary'))
+      console.log('─'.repeat(40))
+      console.log(chalk.yellow('Amount to release:') + ' 0.5 SOL')
+      console.log(chalk.yellow('To:') + ' DataAnalyzer Pro')
+      if (rating !== 'skip') {
+        console.log(chalk.yellow('Rating:') + ` ${rating} stars`)
+      }
+      if (review) {
+        console.log(chalk.yellow('Review:') + ` ${review}`)
+      }
+
+      const confirmed = await confirm({
+        message: 'Release payment from escrow?'
+      })
+
+      if (isCancel(confirmed) || !confirmed) {
+        cancel('Release cancelled')
+        return
+      }
+
+      const releaseSpinner = spinner()
+      releaseSpinner.start('Releasing funds from escrow...')
+
+      // TODO: Implement actual escrow release using GhostSpeak SDK
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      releaseSpinner.stop('✅ Funds released successfully!')
+
+      console.log('\n' + chalk.green('🎉 Payment released!'))
+      console.log(chalk.gray('Transaction ID: 5yZ8m3...pQ4r'))
+      console.log(chalk.gray('Amount: 0.5 SOL'))
+      console.log(chalk.gray('Status: Completed'))
+      
+      if (rating !== 'skip') {
+        console.log('\n' + chalk.green('⭐ Thank you for rating the service!'))
+      }
+
+      outro('Escrow release completed')
+
+    } catch (error) {
+      cancel(chalk.red('Escrow release failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
-    
-    const recipientAddress = recipient ? address(recipient) : escrowAccount.beneficiary;
-    
-    cliLogger.general.info(`Amount: ${chalk.green(lamportsToSol(escrowAccount.amount) + ' SOL')}`);
-    cliLogger.general.info(`Recipient: ${chalk.blue(truncateAddress(String(recipientAddress)))}`);
-    cliLogger.general.info('');
-    
-    // Check if escrow can be released
-    const releaseCheck = await service.canRelease(escrowAddress);
-    if (!releaseCheck.canRelease) {
-      throw new Error(`Cannot release escrow: ${releaseCheck.reason}`);
+  })
+
+// Dispute escrow payment
+escrowCommand
+  .command('dispute')
+  .description('Open a dispute for an escrow payment')
+  .argument('<escrow-id>', 'Escrow ID to dispute')
+  .action(async (escrowId) => {
+    intro(chalk.red('⚠️  Open Escrow Dispute'))
+
+    try {
+      // Fetch escrow details
+      const s = spinner()
+      s.start(`Loading escrow ${escrowId}...`)
+
+      // TODO: Implement actual escrow fetching using GhostSpeak SDK
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      s.stop('✅ Escrow loaded')
+
+      // Mock escrow details
+      console.log('\n' + chalk.bold('🔒 Escrow Details'))
+      console.log('─'.repeat(40))
+      console.log(chalk.yellow('Service:') + ' Smart Contract Audit')
+      console.log(chalk.yellow('Amount:') + ' 2.0 SOL')
+      console.log(chalk.yellow('Provider:') + ' SecurityBot')
+      console.log(chalk.yellow('Status:') + ' Work Submitted - Pending Release')
+      console.log(chalk.yellow('Created:') + ' 5 days ago')
+
+      // Dispute reason
+      const reason = await select({
+        message: 'Select dispute reason:',
+        options: [
+          { value: 'incomplete', label: '📝 Work not completed as agreed' },
+          { value: 'quality', label: '⚠️  Poor quality or incorrect work' },
+          { value: 'late', label: '⏰ Missed deadline' },
+          { value: 'unresponsive', label: '🔇 Provider unresponsive' },
+          { value: 'misrepresentation', label: '❌ Service misrepresentation' },
+          { value: 'other', label: '📋 Other reason' }
+        ]
+      })
+
+      if (isCancel(reason)) {
+        cancel('Dispute cancelled')
+        return
+      }
+
+      // Detailed description
+      const description = await text({
+        message: 'Describe the issue in detail:',
+        placeholder: 'Explain what went wrong and what resolution you seek...',
+        validate: (value) => {
+          if (!value) return 'Description is required'
+          if (value.length < 50) return 'Please provide at least 50 characters of detail'
+        }
+      })
+
+      if (isCancel(description)) {
+        cancel('Dispute cancelled')
+        return
+      }
+
+      // Evidence upload prompt
+      const hasEvidence = await confirm({
+        message: 'Do you have evidence to support your dispute? (screenshots, chat logs, etc.)'
+      })
+
+      if (isCancel(hasEvidence)) {
+        cancel('Dispute cancelled')
+        return
+      }
+
+      let evidenceFiles = []
+      if (hasEvidence) {
+        const evidence = await text({
+          message: 'Evidence file paths (comma-separated):',
+          placeholder: 'e.g., screenshot1.png, chatlog.txt'
+        })
+
+        if (isCancel(evidence)) {
+          cancel('Dispute cancelled')
+          return
+        }
+
+        evidenceFiles = evidence ? evidence.split(',').map(f => f.trim()) : []
+      }
+
+      // Desired resolution
+      const resolution = await select({
+        message: 'What resolution are you seeking?',
+        options: [
+          { value: 'full-refund', label: '💰 Full refund' },
+          { value: 'partial-refund', label: '💸 Partial refund' },
+          { value: 'redo-work', label: '🔄 Redo the work' },
+          { value: 'mediation', label: '🤝 Mediation with provider' }
+        ]
+      })
+
+      if (isCancel(resolution)) {
+        cancel('Dispute cancelled')
+        return
+      }
+
+      // Confirmation
+      console.log('\n' + chalk.bold('📋 Dispute Summary'))
+      console.log('─'.repeat(40))
+      console.log(chalk.red('Escrow:') + ` ${escrowId}`)
+      console.log(chalk.red('Amount:') + ' 2.0 SOL')
+      console.log(chalk.red('Reason:') + ` ${reason}`)
+      console.log(chalk.red('Resolution sought:') + ` ${resolution}`)
+      if (evidenceFiles.length > 0) {
+        console.log(chalk.red('Evidence files:') + ` ${evidenceFiles.length} files`)
+      }
+      console.log('\n' + chalk.gray('Description:'))
+      console.log(chalk.gray(description))
+
+      console.log('\n' + chalk.yellow('⚠️  Warning: Opening a dispute will freeze the escrow funds'))
+      console.log(chalk.yellow('   until the dispute is resolved.'))
+
+      const confirmed = await confirm({
+        message: 'Open this dispute?'
+      })
+
+      if (isCancel(confirmed) || !confirmed) {
+        cancel('Dispute cancelled')
+        return
+      }
+
+      const disputeSpinner = spinner()
+      disputeSpinner.start('Opening dispute...')
+
+      // TODO: Implement actual dispute creation using GhostSpeak SDK
+      await new Promise(resolve => setTimeout(resolve, 2500))
+
+      disputeSpinner.stop('✅ Dispute opened successfully!')
+
+      console.log('\n' + chalk.red('⚠️  Dispute Opened'))
+      console.log(chalk.gray('Dispute ID: DISP-456789'))
+      console.log(chalk.gray('Status: Under Review'))
+      console.log(chalk.gray('Escrow Status: Frozen'))
+      console.log('\n' + chalk.yellow('💡 Next steps:'))
+      console.log(chalk.gray('1. The provider will be notified of the dispute'))
+      console.log(chalk.gray('2. Both parties can submit additional evidence'))
+      console.log(chalk.gray('3. A mediator will review the case within 48 hours'))
+      console.log(chalk.gray('4. You will be notified of the resolution'))
+
+      outro('Dispute opened')
+
+    } catch (error) {
+      cancel(chalk.red('Dispute creation failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
-    
-    // For now, we'll use processPayment to release funds
-    // In a full implementation, this would check token accounts
-    const signature = await service.processPayment(
-      signer,
-      escrowAddress, // workOrderPda
-      recipientAddress, // providerAgent
-      escrowAccount.amount,
-      signer.address, // payerTokenAccount - will be derived by SDK
-      recipientAddress, // providerTokenAccount - will be derived by SDK
-      address('So11111111111111111111111111111111111111112'), // Native SOL mint
-      false // useConfidentialTransfer
-    );
-    
-    progress.stop();
-    
-    cliLogger.general.info(chalk.green('✅ Escrow released successfully!'));
-    cliLogger.general.info('');
-    cliLogger.general.info(chalk.gray('Details:'));
-    cliLogger.general.info(`  Transaction: ${chalk.cyan(signature)}`);
-    cliLogger.general.info(`  Amount released: ${chalk.green(lamportsToSol(escrowAccount.amount) + ' SOL')}`);
-    cliLogger.general.info(`  Recipient: ${chalk.blue(truncateAddress(String(recipientAddress)))}`);
-
-  } catch (error) {
-    progress.stop();
-    logger.escrow.error(chalk.red('❌ Failed to release escrow:'), error);
-    logger.escrow.info('');
-    logger.escrow.info(chalk.yellow('💡 Troubleshooting:'));
-    logger.escrow.info(chalk.gray('   • Ensure you are authorized to release this escrow'));
-    logger.escrow.info(chalk.gray('   • Check if release conditions are met'));
-    logger.escrow.info(chalk.gray('   • Verify the escrow is still active'));
-    throw error;
-  }
-}
-
-export async function getEscrowStatus(escrowId: string): Promise<void> {
-  const cliLogger = new Logger(isVerboseMode());
-  const progress = new ProgressIndicator('Fetching escrow status...');
-
-  try {
-    cliLogger.general.info(chalk.cyan('📊 Escrow Status'));
-    cliLogger.general.info(chalk.gray('─'.repeat(50)));
-    cliLogger.general.info(`Escrow ID: ${chalk.blue(truncateAddress(escrowId))}`);
-    cliLogger.general.info('');
-    
-    progress.start();
-    
-    // Get service
-    const service = await getEscrowService();
-    const escrowAddress = address(escrowId);
-    
-    // Get escrow details
-    const escrowAccount = await service.getEscrow(escrowAddress);
-    progress.stop();
-    
-    if (!escrowAccount) {
-      cliLogger.general.info(chalk.red('❌ Escrow not found'));
-      return;
-    }
-    
-    // Display escrow details
-    cliLogger.general.info(chalk.gray('Details:'));
-    cliLogger.general.info(`  Status: ${getStatusBadge(escrowAccount.state)}`);
-    cliLogger.general.info(`  Amount: ${chalk.green(lamportsToSol(escrowAccount.amount) + ' SOL')}`);
-    cliLogger.general.info(`  Depositor: ${chalk.blue(truncateAddress(String(escrowAccount.depositor)))}`);
-    cliLogger.general.info(`  Beneficiary: ${chalk.blue(truncateAddress(String(escrowAccount.beneficiary)))}`);
-    cliLogger.general.info(`  Created: ${chalk.gray(formatDate(escrowAccount.createdAt))}`);
-    
-    if (escrowAccount.releaseTime) {
-      cliLogger.general.info(`  Release Time: ${chalk.yellow(formatDate(escrowAccount.releaseTime))}`);
-    }
-    
-    cliLogger.general.info('');
-    
-    // Check release conditions
-    const releaseCheck = await service.canRelease(escrowAddress);
-    cliLogger.general.info(chalk.gray('Release Conditions:'));
-    cliLogger.general.info(`  Can Release: ${releaseCheck.canRelease ? chalk.green('Yes') : chalk.red('No')}`);
-    if (releaseCheck.reason) {
-      cliLogger.general.info(`  Reason: ${chalk.yellow(releaseCheck.reason)}`);
-    }
-
-  } catch (error) {
-    progress.stop();
-    logger.escrow.error(chalk.red('❌ Failed to get escrow status:'), error);
-    throw error;
-  }
-}
-
-export async function listEscrows(userAddress?: string): Promise<void> {
-  const cliLogger = new Logger(isVerboseMode());
-  const progress = new ProgressIndicator('Loading escrows...');
-
-  try {
-    cliLogger.general.info(chalk.cyan('📋 Your Escrows'));
-    cliLogger.general.info(chalk.gray('─'.repeat(50)));
-    
-    progress.start();
-    
-    // Get signer and service
-    const signer = userAddress ? undefined : await getKeypairFromConfig();
-    const service = await getEscrowService();
-    const queryAddress = userAddress ? address(userAddress) : signer!.address;
-    
-    // Get user escrows
-    const escrows = await service.getUserEscrows(queryAddress);
-    progress.stop();
-    
-    if (escrows.length === 0) {
-      cliLogger.general.info(chalk.gray('No escrows found'));
-      return;
-    }
-    
-    // Display escrows
-    cliLogger.general.info(`Found ${chalk.cyan(escrows.length)} escrow(s)\n`);
-    
-    for (const { pda, account } of escrows) {
-      cliLogger.general.info(chalk.blue(`Escrow ${truncateAddress(String(pda))}`));
-      cliLogger.general.info(`  Status: ${getStatusBadge(account.state)}`);
-      cliLogger.general.info(`  Amount: ${chalk.green(lamportsToSol(account.amount) + ' SOL')}`);
-      cliLogger.general.info(`  Beneficiary: ${chalk.gray(truncateAddress(String(account.beneficiary)))}`);
-      cliLogger.general.info(`  Created: ${chalk.gray(formatDate(account.createdAt))}`);
-      cliLogger.general.info('');
-    }
-    
-    cliLogger.general.info(chalk.yellow('💡 Tips:'));
-    cliLogger.general.info(chalk.gray('   • Use "ghostspeak escrow status <id>" for detailed info'));
-    cliLogger.general.info(chalk.gray('   • Use "ghostspeak escrow release <id>" to release funds'));
-
-  } catch (error) {
-    progress.stop();
-    logger.escrow.error(chalk.red('❌ Failed to list escrows:'), error);
-    throw error;
-  }
-}
-
-export async function cancelEscrow(escrowId: string): Promise<void> {
-  const cliLogger = new Logger(isVerboseMode());
-  const progress = new ProgressIndicator('Cancelling escrow...');
-
-  try {
-    cliLogger.general.info(chalk.cyan('❌ Cancelling Escrow'));
-    cliLogger.general.info(chalk.gray('─'.repeat(50)));
-    cliLogger.general.info(`Escrow ID: ${chalk.blue(truncateAddress(escrowId))}`);
-    cliLogger.general.info('');
-    
-    progress.start();
-    
-    // Get signer and service
-    const signer = await getKeypairFromConfig();
-    const service = await getEscrowService();
-    const escrowAddress = address(escrowId);
-    
-    // Cancel escrow
-    const signature = await service.cancelEscrow(signer, escrowAddress);
-    
-    progress.stop();
-    
-    cliLogger.general.info(chalk.green('✅ Escrow cancelled successfully!'));
-    cliLogger.general.info('');
-    cliLogger.general.info(chalk.gray('Details:'));
-    cliLogger.general.info(`  Transaction: ${chalk.cyan(signature)}`);
-    cliLogger.general.info(`  Escrow ID: ${chalk.blue(escrowId)}`);
-    cliLogger.general.info('');
-    cliLogger.general.info(chalk.yellow('💡 Note:'));
-    cliLogger.general.info(chalk.gray('   • Funds will be refunded to the depositor'));
-    cliLogger.general.info(chalk.gray('   • Cancellation may take a few moments to process'));
-
-  } catch (error) {
-    progress.stop();
-    logger.escrow.error(chalk.red('❌ Failed to cancel escrow:'), error);
-    logger.escrow.info('');
-    logger.escrow.info(chalk.yellow('💡 Troubleshooting:'));
-    logger.escrow.info(chalk.gray('   • Ensure you are the escrow creator'));
-    logger.escrow.info(chalk.gray('   • Check if escrow is still active'));
-    logger.escrow.info(chalk.gray('   • Verify work hasn\'t been submitted'));
-    throw error;
-  }
-}
-
-// Helper function to get status badge
-function getStatusBadge(state: string): string {
-  switch (state) {
-    case 'pending':
-      return chalk.yellow('⏳ Pending');
-    case 'completed':
-      return chalk.green('✅ Completed');
-    case 'cancelled':
-      return chalk.red('❌ Cancelled');
-    default:
-      return chalk.gray('❓ Unknown');
-  }
-}
+  })

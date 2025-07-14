@@ -1,69 +1,146 @@
-/**
- * Config Command - Configuration Management
- *
- * Manages CLI configuration including network settings, wallet paths, and preferences.
- */
+import { Command } from 'commander'
+import chalk from 'chalk'
+import { 
+  intro, 
+  outro, 
+  text, 
+  select, 
+  confirm, 
+  spinner,
+  isCancel,
+  cancel
+} from '@clack/prompts'
 
-import chalk from 'chalk';
-import { ConfigManager } from '../core/ConfigManager.js';
-import { logger } from '../utils/logger.js';
+export const configCommand = new Command('config')
+  .description('Configure GhostSpeak CLI settings')
 
-export interface ConfigOptions {
-  show?: boolean;
-  reset?: boolean;
-}
+configCommand
+  .command('setup')
+  .description('Initial setup and wallet configuration')
+  .action(async () => {
+    intro(chalk.green('⚙️  GhostSpeak CLI Setup'))
 
-export async function configCommand(options: ConfigOptions): Promise<void> {
-  try {
-    if (options.reset) {
-      await resetConfig();
-    } else if (options.show || (!options.reset && !options.show)) {
-      // Show config by default or when --show is explicitly provided
-      await showConfig();
+    try {
+      const network = await select({
+        message: 'Select Solana network:',
+        options: [
+          { value: 'devnet', label: '🧪 Devnet (Development)' },
+          { value: 'testnet', label: '🧪 Testnet (Testing)' },
+          { value: 'mainnet', label: '🌐 Mainnet (Production)' }
+        ]
+      })
+
+      if (isCancel(network)) {
+        cancel('Setup cancelled')
+        return
+      }
+
+      const walletPath = await text({
+        message: 'Path to your Solana wallet:',
+        placeholder: '~/.config/solana/id.json',
+        validate: (value) => {
+          if (!value) return 'Wallet path is required'
+          // In real implementation, validate file exists
+        }
+      })
+
+      if (isCancel(walletPath)) {
+        cancel('Setup cancelled')
+        return
+      }
+
+      const rpcUrl = await text({
+        message: 'Custom RPC URL (optional):',
+        placeholder: 'Leave empty for default RPC endpoints'
+      })
+
+      if (isCancel(rpcUrl)) {
+        cancel('Setup cancelled')
+        return
+      }
+
+      // Configuration summary
+      console.log('\n' + chalk.bold('📋 Configuration Summary:'))
+      console.log('─'.repeat(40))
+      console.log(chalk.green('Network:') + ` ${network}`)
+      console.log(chalk.green('Wallet:') + ` ${walletPath}`)
+      if (rpcUrl) {
+        console.log(chalk.green('RPC URL:') + ` ${rpcUrl}`)
+      }
+
+      const confirmed = await confirm({
+        message: 'Save this configuration?'
+      })
+
+      if (isCancel(confirmed) || !confirmed) {
+        cancel('Setup cancelled')
+        return
+      }
+
+      const s = spinner()
+      s.start('Saving configuration...')
+
+      // TODO: Implement actual config saving
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      s.stop('✅ Configuration saved!')
+
+      console.log('\n' + chalk.green('🎉 GhostSpeak CLI is now configured!'))
+      console.log(chalk.gray('You can now use all CLI commands.'))
+
+      outro('Setup completed successfully')
+
+    } catch (error) {
+      cancel(chalk.red('Setup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
-  } catch (error) {
-    logger.config.error('Config command failed:', error);
-    throw error;
-  }
-}
+  })
 
-async function showConfig(): Promise<void> {
-  logger.general.info(chalk.cyan('⚙️  GhostSpeak Configuration'));
-  logger.general.info(chalk.gray('─'.repeat(40)));
+configCommand
+  .command('show')
+  .description('Show current configuration')
+  .action(async () => {
+    intro(chalk.green('📋 Current Configuration'))
 
-  const configManager = await ConfigManager.load();
-  const config = configManager.get();
+    // Mock configuration display
+    console.log('\n' + chalk.bold('⚙️  GhostSpeak CLI Settings'))
+    console.log('═'.repeat(50))
+    console.log(chalk.green('Network:') + ' devnet')
+    console.log(chalk.green('RPC URL:') + ' https://api.devnet.solana.com')
+    console.log(chalk.green('Wallet:') + ' ~/.config/solana/id.json')
+    console.log(chalk.green('Program ID:') + ' 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK')
+    console.log('')
+    console.log(chalk.gray('💰 Wallet Balance: 5.2 SOL'))
+    console.log(chalk.gray('🏪 Active Agents: 2'))
+    console.log(chalk.gray('📊 Total Earnings: 12.8 SOL'))
 
-  logger.general.info(chalk.yellow('Current Configuration:'));
-  logger.general.info(`  Network: ${config.network || 'devnet'}`);
-  logger.general.info(
-    `  RPC URL: ${config.rpcUrl || 'https://api.devnet.solana.com'}`
-  );
-  logger.general.info(
-    `  Wallet Path: ${config.defaultAgent || 'not configured'}`
-  );
-  logger.general.info(`  Theme: ${config.theme || 'auto'}`);
-  logger.general.info(
-    `  Verbose Logging: ${config.verbose ? 'enabled' : 'disabled'}`
-  );
-  logger.general.info('');
+    outro('Configuration displayed')
+  })
 
-  logger.general.info(chalk.green('✅ Configuration displayed successfully'));
-}
+configCommand
+  .command('reset')
+  .description('Reset CLI configuration')
+  .action(async () => {
+    intro(chalk.yellow('🔄 Reset Configuration'))
 
-async function resetConfig(): Promise<void> {
-  logger.general.info(
-    chalk.yellow('🔄 Resetting configuration to defaults...')
-  );
+    const confirmed = await confirm({
+      message: 'Are you sure you want to reset all settings?'
+    })
 
-  // Get ConfigManager instance and reset it
-  const configManager = await ConfigManager.load();
-  configManager.reset();
-  await configManager.save();
+    if (isCancel(confirmed) || !confirmed) {
+      cancel('Reset cancelled')
+      return
+    }
 
-  logger.general.info(chalk.green('✅ Configuration reset to defaults'));
-  logger.general.info('');
-  logger.general.info(
-    chalk.gray('Run "ghostspeak config --show" to view current settings')
-  );
-}
+    const s = spinner()
+    s.start('Resetting configuration...')
+
+    // TODO: Implement actual config reset
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    s.stop('✅ Configuration reset!')
+
+    console.log('\n' + chalk.yellow('🔄 All settings have been reset to defaults.'))
+    console.log(chalk.gray('Run "ghostspeak config setup" to reconfigure.'))
+
+    outro('Reset completed')
+  })

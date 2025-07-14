@@ -5,7 +5,7 @@
  * volume tiers, enterprise pricing, and batch execution.
  */
 
-import { describe, test, expect, beforeAll, afterAll, jest } from '@jest/globals'
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
 import { 
   Keypair,
   createSignerFromKeypair,
@@ -20,17 +20,17 @@ import {
 } from '../src/index.js'
 
 // Mock RPC responses
-jest.mock('@solana/web3.js', () => ({
-  Connection: jest.fn().mockImplementation(() => ({
-    getRecentBlockhash: jest.fn().mockResolvedValue({
+vi.mock('@solana/web3.js', () => ({
+  Connection: vi.fn().mockImplementation(() => ({
+    getRecentBlockhash: vi.fn().mockResolvedValue({
       blockhash: 'MockBlockhash123',
       lastValidBlockHeight: 100
     }),
-    getMinimumBalanceForRentExemption: jest.fn().mockResolvedValue(1000000),
-    sendTransaction: jest.fn().mockResolvedValue('MockSignature123'),
-    confirmTransaction: jest.fn().mockResolvedValue({ value: { err: null } }),
-    getAccountInfo: jest.fn().mockResolvedValue(null),
-    getMultipleAccountsInfo: jest.fn().mockResolvedValue([])
+    getMinimumBalanceForRentExemption: vi.fn().mockResolvedValue(1000000),
+    sendTransaction: vi.fn().mockResolvedValue('MockSignature123'),
+    confirmTransaction: vi.fn().mockResolvedValue({ value: { err: null } }),
+    getAccountInfo: vi.fn().mockResolvedValue(null),
+    getMultipleAccountsInfo: vi.fn().mockResolvedValue([])
   }))
 }))
 
@@ -56,7 +56,7 @@ describe('Bulk Deals Integration Tests', () => {
   })
 
   afterAll(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Bulk Deal Creation', () => {
@@ -71,7 +71,7 @@ describe('Bulk Deals Integration Tests', () => {
 
       // Mock successful transaction
       const mockSignature = 'BulkDealCreateSig123' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.createBulkDeal(
         enterprise,
@@ -96,7 +96,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'EnterpriseDealSig456' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.createBulkDeal(
         enterprise,
@@ -116,7 +116,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'SubscriptionDealSig789' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.createBulkDeal(
         enterprise,
@@ -137,7 +137,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'BatchExecSig123' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.executeBatch(
         enterprise,
@@ -155,7 +155,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'LargeBatchSig456' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.executeBatch(
         enterprise,
@@ -174,7 +174,7 @@ describe('Bulk Deals Integration Tests', () => {
 
       const mockSignatures = batches.map((_, i) => `MultiBatchSig${i}` as any)
       mockSignatures.forEach(sig => {
-        jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(sig)
+        vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(sig)
       })
 
       const results = await Promise.all(
@@ -288,7 +288,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'SaaSDealSig123' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.createBulkDeal(
         enterprise,
@@ -306,7 +306,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const batchSignature = 'SaaSBatchSig456' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(batchSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(batchSignature)
 
       const batchResult = await client.bulkDeals.executeBatch(
         enterprise,
@@ -326,7 +326,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'AggregatorDealSig789' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.createBulkDeal(
         enterprise,
@@ -348,7 +348,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'LicenseDealSig321' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.createBulkDeal(
         enterprise,
@@ -362,7 +362,7 @@ describe('Bulk Deals Integration Tests', () => {
 
   describe('Error Handling', () => {
     test('should handle RPC errors gracefully', async () => {
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockRejectedValueOnce(
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockRejectedValueOnce(
         new Error('RPC Error: Connection timeout')
       )
 
@@ -388,7 +388,7 @@ describe('Bulk Deals Integration Tests', () => {
         totalVolume: 1000n
       }
 
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockRejectedValueOnce(
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockRejectedValueOnce(
         new Error('Invalid batch size')
       )
 
@@ -404,7 +404,7 @@ describe('Bulk Deals Integration Tests', () => {
         totalVolume: 50n // Below minimum
       }
 
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockRejectedValueOnce(
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockRejectedValueOnce(
         new Error('Volume below minimum threshold')
       )
 
@@ -425,7 +425,7 @@ describe('Bulk Deals Integration Tests', () => {
       const mockSignatures = batches.map((_, i) => `RapidBatchSig${i}` as any)
       let callCount = 0
       
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockImplementation(async () => {
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockImplementation(async () => {
         // Simulate some rate limiting
         if (callCount >= 7) {
           throw new Error('Rate limit exceeded')
@@ -488,7 +488,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'MarketplaceBulkSig123' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.createBulkDeal(
         enterprise,
@@ -508,7 +508,7 @@ describe('Bulk Deals Integration Tests', () => {
       }
 
       const mockSignature = 'EscrowBulkBatchSig456' as any
-      jest.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.bulkDeals, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.bulkDeals.executeBatch(
         enterprise,

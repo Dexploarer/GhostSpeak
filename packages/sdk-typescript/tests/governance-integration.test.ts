@@ -5,7 +5,7 @@
  * multisig wallets, proposals, voting, and RBAC.
  */
 
-import { describe, test, expect, beforeAll, afterAll, jest } from '@jest/globals'
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
 import { 
   Keypair,
   createSignerFromKeypair,
@@ -24,17 +24,17 @@ import {
 } from '../src/index.js'
 
 // Mock RPC responses
-jest.mock('@solana/web3.js', () => ({
-  Connection: jest.fn().mockImplementation(() => ({
-    getRecentBlockhash: jest.fn().mockResolvedValue({
+vi.mock('@solana/web3.js', () => ({
+  Connection: vi.fn().mockImplementation(() => ({
+    getRecentBlockhash: vi.fn().mockResolvedValue({
       blockhash: 'MockBlockhash123',
       lastValidBlockHeight: 100
     }),
-    getMinimumBalanceForRentExemption: jest.fn().mockResolvedValue(1000000),
-    sendTransaction: jest.fn().mockResolvedValue('MockSignature123'),
-    confirmTransaction: jest.fn().mockResolvedValue({ value: { err: null } }),
-    getAccountInfo: jest.fn().mockResolvedValue(null),
-    getMultipleAccountsInfo: jest.fn().mockResolvedValue([])
+    getMinimumBalanceForRentExemption: vi.fn().mockResolvedValue(1000000),
+    sendTransaction: vi.fn().mockResolvedValue('MockSignature123'),
+    confirmTransaction: vi.fn().mockResolvedValue({ value: { err: null } }),
+    getAccountInfo: vi.fn().mockResolvedValue(null),
+    getMultipleAccountsInfo: vi.fn().mockResolvedValue([])
   }))
 }))
 
@@ -68,7 +68,7 @@ describe('Governance Integration Tests', () => {
   })
 
   afterAll(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Multisig Creation', () => {
@@ -85,7 +85,7 @@ describe('Governance Integration Tests', () => {
 
       // Mock successful transaction
       const mockSignature = 'MultisigCreateSig123' as any
-      jest.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.governance.createMultisig(
         admin,
@@ -115,7 +115,7 @@ describe('Governance Integration Tests', () => {
         signature: 'MultisigDetailSig456' as any,
         explorerUrl: 'https://explorer.solana.com/tx/MultisigDetailSig456?cluster=devnet'
       }
-      jest.spyOn(client.governance, 'sendTransactionWithDetails').mockResolvedValueOnce(mockResult)
+      vi.spyOn(client.governance, 'sendTransactionWithDetails').mockResolvedValueOnce(mockResult)
 
       const result = await client.governance.createMultisigWithDetails(
         admin,
@@ -201,7 +201,7 @@ describe('Governance Integration Tests', () => {
       }
 
       const mockSignature = 'ProposalCreateSig123' as any
-      jest.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.governance.createProposal(
         admin,
@@ -298,7 +298,7 @@ describe('Governance Integration Tests', () => {
       }
 
       const mockSignature = 'RbacInitSig123' as any
-      jest.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.governance.initializeRbac(
         admin,
@@ -351,7 +351,7 @@ describe('Governance Integration Tests', () => {
         }
       }
 
-      jest.spyOn(client.governance, 'getMultisig').mockResolvedValueOnce(mockMultisig as any)
+      vi.spyOn(client.governance, 'getMultisig').mockResolvedValueOnce(mockMultisig as any)
 
       const summary = await client.governance.getMultisigSummary(multisigPda)
 
@@ -381,7 +381,7 @@ describe('Governance Integration Tests', () => {
         }
       }
 
-      jest.spyOn(client.governance, 'getProposal').mockResolvedValueOnce(mockProposal as any)
+      vi.spyOn(client.governance, 'getProposal').mockResolvedValueOnce(mockProposal as any)
 
       const summary = await client.governance.getProposalSummary(proposalPda)
 
@@ -434,7 +434,7 @@ describe('Governance Integration Tests', () => {
       ]
 
       let callCount = 0
-      jest.spyOn(client.governance, 'getProposalSummary').mockImplementation(async () => {
+      vi.spyOn(client.governance, 'getProposalSummary').mockImplementation(async () => {
         if (callCount < mockProposals.length) {
           return mockProposals[callCount++] as any
         }
@@ -486,7 +486,7 @@ describe('Governance Integration Tests', () => {
         }
       ]
 
-      jest.spyOn(client.governance, 'listProposals').mockResolvedValueOnce(mockProposals as any)
+      vi.spyOn(client.governance, 'listProposals').mockResolvedValueOnce(mockProposals as any)
 
       const activeProposals = await client.governance.getActiveProposals()
 
@@ -524,7 +524,7 @@ describe('Governance Integration Tests', () => {
         }
       }
 
-      jest.spyOn(client.governance, 'getGovernanceAnalytics').mockResolvedValueOnce(mockAnalytics)
+      vi.spyOn(client.governance, 'getGovernanceAnalytics').mockResolvedValueOnce(mockAnalytics)
 
       const analytics = await client.governance.getGovernanceAnalytics()
 
@@ -537,9 +537,9 @@ describe('Governance Integration Tests', () => {
 
   describe('Error Handling', () => {
     test('should handle non-existent accounts gracefully', async () => {
-      jest.spyOn(client.governance, 'getMultisig').mockResolvedValueOnce(null)
-      jest.spyOn(client.governance, 'getProposal').mockResolvedValueOnce(null)
-      jest.spyOn(client.governance, 'getRbacConfig').mockResolvedValueOnce(null)
+      vi.spyOn(client.governance, 'getMultisig').mockResolvedValueOnce(null)
+      vi.spyOn(client.governance, 'getProposal').mockResolvedValueOnce(null)
+      vi.spyOn(client.governance, 'getRbacConfig').mockResolvedValueOnce(null)
 
       const multisig = await client.governance.getMultisig('NonExistent' as Address)
       const proposal = await client.governance.getProposal('NonExistent' as Address)
@@ -551,7 +551,7 @@ describe('Governance Integration Tests', () => {
     })
 
     test('should handle RPC errors', async () => {
-      jest.spyOn(client.governance, 'sendTransaction').mockRejectedValueOnce(
+      vi.spyOn(client.governance, 'sendTransaction').mockRejectedValueOnce(
         new Error('RPC Error: Connection timeout')
       )
 
@@ -584,7 +584,7 @@ describe('Governance Integration Tests', () => {
       }
 
       const mockSignature = 'EmergencyMultisigSig' as any
-      jest.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.governance, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.governance.createMultisig(
         admin,
@@ -604,7 +604,7 @@ describe('Governance Integration Tests', () => {
       ]
 
       let stateIndex = 0
-      jest.spyOn(client.governance, 'getProposalSummary').mockImplementation(async () => {
+      vi.spyOn(client.governance, 'getProposalSummary').mockImplementation(async () => {
         if (stateIndex < proposalStates.length) {
           const state = proposalStates[stateIndex++]
           return {

@@ -5,7 +5,7 @@
  * ensuring proper integration with smart contracts and validation of all dispute workflows.
  */
 
-import { describe, test, expect, beforeAll, afterAll, jest } from '@jest/globals'
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
 import { 
   Keypair,
   createSignerFromKeypair,
@@ -26,17 +26,17 @@ import {
 } from '../src/index.js'
 
 // Mock RPC responses for testing
-jest.mock('@solana/web3.js', () => ({
-  Connection: jest.fn().mockImplementation(() => ({
-    getRecentBlockhash: jest.fn().mockResolvedValue({
+vi.mock('@solana/web3.js', () => ({
+  Connection: vi.fn().mockImplementation(() => ({
+    getRecentBlockhash: vi.fn().mockResolvedValue({
       blockhash: 'MockBlockhash123',
       lastValidBlockHeight: 100
     }),
-    getMinimumBalanceForRentExemption: jest.fn().mockResolvedValue(1000000),
-    sendTransaction: jest.fn().mockResolvedValue('MockSignature123'),
-    confirmTransaction: jest.fn().mockResolvedValue({ value: { err: null } }),
-    getAccountInfo: jest.fn().mockResolvedValue(null),
-    getMultipleAccountsInfo: jest.fn().mockResolvedValue([])
+    getMinimumBalanceForRentExemption: vi.fn().mockResolvedValue(1000000),
+    sendTransaction: vi.fn().mockResolvedValue('MockSignature123'),
+    confirmTransaction: vi.fn().mockResolvedValue({ value: { err: null } }),
+    getAccountInfo: vi.fn().mockResolvedValue(null),
+    getMultipleAccountsInfo: vi.fn().mockResolvedValue([])
   }))
 }))
 
@@ -65,7 +65,7 @@ describe('Dispute Integration Tests', () => {
   })
 
   afterAll(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Dispute Creation', () => {
@@ -82,7 +82,7 @@ describe('Dispute Integration Tests', () => {
 
       // Mock successful transaction
       const mockSignature = 'DispFileSig123' as any
-      jest.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.dispute.fileDispute(
         buyer,
@@ -116,7 +116,7 @@ describe('Dispute Integration Tests', () => {
         signature: 'DispFileDetailSig456' as any,
         explorerUrl: 'https://explorer.solana.com/tx/DispFileDetailSig456?cluster=devnet'
       }
-      jest.spyOn(client.dispute, 'sendTransactionWithDetails').mockResolvedValueOnce(mockResult)
+      vi.spyOn(client.dispute, 'sendTransactionWithDetails').mockResolvedValueOnce(mockResult)
 
       const result = await client.dispute.fileDisputeWithDetails(
         buyer,
@@ -177,7 +177,7 @@ describe('Dispute Integration Tests', () => {
 
       // Mock successful transaction
       const mockSignature = 'EvidSubmitSig123' as any
-      jest.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.dispute.submitEvidence(
         buyer,
@@ -203,7 +203,7 @@ describe('Dispute Integration Tests', () => {
       })
 
       const mockSignature = 'EvidDocSig456' as any
-      jest.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.dispute.submitEvidence(
         seller,
@@ -255,7 +255,7 @@ describe('Dispute Integration Tests', () => {
       // Mock all transactions
       const mockSignatures = evidenceTypes.map((_, i) => `MultiEvidSig${i}` as any)
       mockSignatures.forEach(sig => {
-        jest.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(sig)
+        vi.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(sig)
       })
 
       const results = await Promise.all(
@@ -284,7 +284,7 @@ describe('Dispute Integration Tests', () => {
       
       // Mock successful transaction
       const mockSignature = 'ResolveSig123' as any
-      jest.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
+      vi.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(mockSignature)
 
       const signature = await client.dispute.resolveDispute(
         arbitrator,
@@ -305,7 +305,7 @@ describe('Dispute Integration Tests', () => {
         signature: 'ResolveDetailSig456' as any,
         explorerUrl: 'https://explorer.solana.com/tx/ResolveDetailSig456?cluster=devnet'
       }
-      jest.spyOn(client.dispute, 'sendTransactionWithDetails').mockResolvedValueOnce(mockResult)
+      vi.spyOn(client.dispute, 'sendTransactionWithDetails').mockResolvedValueOnce(mockResult)
 
       const result = await client.dispute.resolveDisputeWithDetails(
         arbitrator,
@@ -368,7 +368,7 @@ describe('Dispute Integration Tests', () => {
       }
 
       // Mock RPC response
-      jest.spyOn(client.dispute, 'getDispute').mockResolvedValueOnce(mockDispute as any)
+      vi.spyOn(client.dispute, 'getDispute').mockResolvedValueOnce(mockDispute as any)
 
       const dispute = await client.dispute.getDispute(disputePda)
 
@@ -398,7 +398,7 @@ describe('Dispute Integration Tests', () => {
         humanReview: true
       }
 
-      jest.spyOn(client.dispute, 'getDispute').mockResolvedValueOnce(mockDispute as any)
+      vi.spyOn(client.dispute, 'getDispute').mockResolvedValueOnce(mockDispute as any)
 
       const summary = await client.dispute.getDisputeSummary(disputePda)
 
@@ -411,7 +411,7 @@ describe('Dispute Integration Tests', () => {
     })
 
     test('should handle non-existent dispute', async () => {
-      jest.spyOn(client.dispute, 'getDispute').mockResolvedValueOnce(null)
+      vi.spyOn(client.dispute, 'getDispute').mockResolvedValueOnce(null)
 
       const dispute = await client.dispute.getDispute('NonExistentDispute' as Address)
       expect(dispute).toBeNull()
@@ -437,7 +437,7 @@ describe('Dispute Integration Tests', () => {
         }
       ]
 
-      jest.spyOn(client.dispute, 'getEvidenceHistory').mockResolvedValueOnce(mockEvidence)
+      vi.spyOn(client.dispute, 'getEvidenceHistory').mockResolvedValueOnce(mockEvidence)
 
       const history = await client.dispute.getEvidenceHistory(disputePda)
 
@@ -471,7 +471,7 @@ describe('Dispute Integration Tests', () => {
         }
       ]
 
-      jest.spyOn(client.dispute, 'getEvidenceHistory').mockResolvedValueOnce(allEvidence)
+      vi.spyOn(client.dispute, 'getEvidenceHistory').mockResolvedValueOnce(allEvidence)
 
       const buyerEvidence = await client.dispute.getEvidenceBySubmitter(disputePda, buyer.address)
 
@@ -525,7 +525,7 @@ describe('Dispute Integration Tests', () => {
       ]
 
       let callCount = 0
-      jest.spyOn(client.dispute, 'getDisputeSummary').mockImplementation(async () => {
+      vi.spyOn(client.dispute, 'getDisputeSummary').mockImplementation(async () => {
         if (callCount < mockDisputes.length) {
           return mockDisputes[callCount++] as DisputeSummary
         }
@@ -574,7 +574,7 @@ describe('Dispute Integration Tests', () => {
         ]
       }
 
-      jest.spyOn(client.dispute, 'getDisputeAnalytics').mockResolvedValueOnce(mockAnalytics)
+      vi.spyOn(client.dispute, 'getDisputeAnalytics').mockResolvedValueOnce(mockAnalytics)
 
       const analytics = await client.dispute.getDisputeAnalytics()
 
@@ -715,7 +715,7 @@ describe('Dispute Integration Tests', () => {
   describe('Error Handling', () => {
     test('should handle RPC errors gracefully', async () => {
       // Mock RPC error
-      jest.spyOn(client.dispute, 'sendTransaction').mockRejectedValueOnce(
+      vi.spyOn(client.dispute, 'sendTransaction').mockRejectedValueOnce(
         new Error('RPC Error: Network timeout')
       )
 
@@ -733,7 +733,7 @@ describe('Dispute Integration Tests', () => {
     })
 
     test('should handle insufficient funds error', async () => {
-      jest.spyOn(client.dispute, 'sendTransaction').mockRejectedValueOnce(
+      vi.spyOn(client.dispute, 'sendTransaction').mockRejectedValueOnce(
         new Error('Insufficient funds for transaction')
       )
 
@@ -760,9 +760,9 @@ describe('Dispute Integration Tests', () => {
       // Mock first 3 succeed, 4th rate limited
       const mockSignatures = ['Sig1', 'Sig2', 'Sig3']
       mockSignatures.forEach(sig => {
-        jest.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(sig as any)
+        vi.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(sig as any)
       })
-      jest.spyOn(client.dispute, 'sendTransaction').mockRejectedValueOnce(
+      vi.spyOn(client.dispute, 'sendTransaction').mockRejectedValueOnce(
         new Error('Rate limit exceeded')
       )
 
@@ -815,7 +815,7 @@ describe('Dispute Escalation Tests', () => {
     ]
 
     const evidencePromises = parties.map((party, index) => {
-      jest.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(`MultiPartySig${index}` as any)
+      vi.spyOn(client.dispute, 'sendTransaction').mockResolvedValueOnce(`MultiPartySig${index}` as any)
       
       return client.dispute.submitEvidence(
         party,
@@ -858,7 +858,7 @@ describe('Dispute Notification Tests', () => {
     ]
 
     let currentStatus = 0
-    jest.spyOn(client.dispute, 'getDisputeSummary').mockImplementation(async () => {
+    vi.spyOn(client.dispute, 'getDisputeSummary').mockImplementation(async () => {
       if (currentStatus < statuses.length) {
         return {
           dispute: disputePda,

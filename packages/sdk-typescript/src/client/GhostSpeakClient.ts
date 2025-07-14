@@ -22,6 +22,11 @@ import { MarketplaceInstructions } from './instructions/MarketplaceInstructions.
 import { EscrowInstructions } from './instructions/EscrowInstructions.js'
 import { A2AInstructions } from './instructions/A2AInstructions.js'
 import { AuctionInstructions } from './instructions/AuctionInstructions.js'
+import { DisputeInstructions } from './instructions/DisputeInstructions.js'
+import { GovernanceInstructions } from './instructions/GovernanceInstructions.js'
+import { BulkDealsInstructions } from './instructions/BulkDealsInstructions.js'
+import { AnalyticsInstructions } from './instructions/AnalyticsInstructions.js'
+import { ComplianceInstructions } from './instructions/ComplianceInstructions.js'
 
 /**
  * Main client for interacting with the GhostSpeak Protocol
@@ -33,6 +38,11 @@ export class GhostSpeakClient {
   public readonly escrow: EscrowInstructions
   public readonly a2a: A2AInstructions
   public readonly auction: AuctionInstructions
+  public readonly dispute: DisputeInstructions
+  public readonly governance: GovernanceInstructions
+  public readonly bulkDeals: BulkDealsInstructions
+  public readonly analytics: AnalyticsInstructions
+  public readonly compliance: ComplianceInstructions
 
   constructor(config: GhostSpeakConfig) {
     this.config = {
@@ -47,6 +57,11 @@ export class GhostSpeakClient {
     this.escrow = new EscrowInstructions(this.config)
     this.a2a = new A2AInstructions(this.config)
     this.auction = new AuctionInstructions(this.config)
+    this.dispute = new DisputeInstructions(this.config)
+    this.governance = new GovernanceInstructions(this.config)
+    this.bulkDeals = new BulkDealsInstructions(this.config)
+    this.analytics = new AnalyticsInstructions(this.config)
+    this.compliance = new ComplianceInstructions(this.config)
   }
 
   /**

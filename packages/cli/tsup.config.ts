@@ -11,10 +11,10 @@ export default defineConfig({
   minify: false,
   target: 'es2022',
   platform: 'node',
-  external: [],
+  external: ['@solana/web3.js', '@ghostspeak/sdk'],
   tsconfig: 'tsconfig.json',
-  // Remove banner for now to avoid shebang issues
-  // banner: {
-  //   js: '#!/usr/bin/env node'
-  // }
+  esbuildOptions(options) {
+    options.bundle = true
+    options.mainFields = ['module', 'main']
+  }
 })

@@ -31,6 +31,18 @@
   ],
   "author": "GhostSpeak Protocol",
   "license": "MIT",
+  "homepage": "https://github.com/ghostspeak/ghostspeak#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghostspeak/ghostspeak.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "@clack/core": "^0.3.0",
@@ -39,7 +51,9 @@
     "ora": "^8.0.0",
     "boxen": "^7.1.0",
     "figlet": "^1.7.0",
-    "@types/figlet": "^1.5.0"
+    "@types/figlet": "^1.5.0",
+    "@ghostspeak/sdk": "^0.1.0",
+    "@solana/web3.js": "^1.95.5"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

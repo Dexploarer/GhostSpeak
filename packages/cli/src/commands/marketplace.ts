@@ -9,8 +9,11 @@ import {
   spinner,
   isCancel,
   cancel,
-  multiselect
+  multiselect,
+  log
 } from '@clack/prompts'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { PublicKey } from '@solana/web3.js'
 
 export const marketplaceCommand = new Command('marketplace')
   .description('Browse and interact with the GhostSpeak marketplace')
@@ -25,52 +28,38 @@ marketplaceCommand
     intro(chalk.magenta('🛍️  GhostSpeak Marketplace'))
 
     const s = spinner()
-    s.start('Loading services from the marketplace...')
+    s.start('Connecting to Solana network...')
 
     try {
-      // TODO: Implement actual marketplace fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
+      // Initialize SDK client
+      const { client } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      s.start('Loading services from the marketplace...')
+      
+      // Fetch services from blockchain
+      const services = await client.marketplace.listServices({
+        category: options.category
+      })
+      
       s.stop('✅ Services loaded')
 
-      // Mock marketplace data
-      const services = [
-        {
-          id: '1',
-          title: 'Professional Data Analysis',
-          agent: 'DataAnalyzer Pro',
-          price: '0.5 SOL',
-          category: 'Analytics',
-          rating: 4.8,
-          description: 'Comprehensive data analysis with visualization and insights'
-        },
-        {
-          id: '2', 
-          title: 'Technical Blog Writing',
-          agent: 'Content Creator AI',
-          price: '0.2 SOL per article',
-          category: 'Content',
-          rating: 4.6,
-          description: 'High-quality technical articles and documentation'
-        },
-        {
-          id: '3',
-          title: 'Smart Contract Audit',
-          agent: 'SecurityBot',
-          price: '2.0 SOL',
-          category: 'Security',
-          rating: 4.9,
-          description: 'Thorough smart contract security analysis'
-        }
-      ]
+      if (services.length === 0) {
+        console.log('\n' + chalk.yellow('No services found in the marketplace'))
+        outro('Create a service with: npx ghostspeak marketplace create')
+        return
+      }
 
-      console.log('\n' + chalk.bold('🏪 Available Services'))
+      console.log('\n' + chalk.bold(`🏪 Available Services (${services.length})`))
       console.log('═'.repeat(70))
 
       services.forEach((service, index) => {
         console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-        console.log(chalk.gray(`   By: ${service.agent} | ${service.category} | ⭐ ${service.rating}`))
-        console.log(chalk.gray(`   Price: ${service.price}`))
+        console.log(chalk.gray(`   ID: ${service.id.toBase58()}`))
+        console.log(chalk.gray(`   Agent: ${service.agentName} (${service.agentAddress.toBase58().slice(0, 8)}...)`))
+        console.log(chalk.gray(`   Category: ${service.category}`))
+        console.log(chalk.gray(`   Price: ${Number(service.price) / 1_000_000} SOL`))
+        console.log(chalk.gray(`   Available: ${service.isAvailable ? '✅ Yes' : '❌ No'}`))
         console.log(chalk.gray(`   ${service.description}`))
         console.log('')
       })
@@ -92,13 +81,13 @@ marketplaceCommand
 
       switch (action) {
         case 'purchase':
-          console.log(chalk.yellow('💳 Purchase functionality coming soon!'))
+          await purchaseService(services)
           break
         case 'details':
-          console.log(chalk.yellow('📋 Service details view coming soon!'))
+          await viewServiceDetails(services)
           break
         case 'filter':
-          console.log(chalk.yellow('🔍 Advanced filtering coming soon!'))
+          console.log(chalk.yellow('🔍 Use --category flag to filter by category'))
           break
       }
 
@@ -196,15 +185,68 @@ marketplaceCommand
       }
 
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      // First check if user has a registered agent
+      s.start('Checking for registered agent...')
+      const agents = await client.agent.listByOwner({ owner: wallet.publicKey })
+      
+      if (agents.length === 0) {
+        s.stop('❌ No agent found')
+        console.log(chalk.yellow('\n⚠️  You need to register an agent first!'))
+        outro('Run: npx ghostspeak agent register')
+        return
+      }
+      
+      s.stop('✅ Agent found')
+      
+      // Select agent if multiple
+      let agentAddress = agents[0].address
+      if (agents.length > 1) {
+        const selectedAgent = await select({
+          message: 'Select agent for this service:',
+          options: agents.map(agent => ({
+            value: agent.address.toBase58(),
+            label: agent.name
+          }))
+        })
+        
+        if (isCancel(selectedAgent)) {
+          cancel('Service creation cancelled')
+          return
+        }
+        
+        agentAddress = new PublicKey(selectedAgent as string)
+      }
+      
       s.start('Creating service listing on the blockchain...')
+      
+      try {
+        const result = await client.marketplace.createListing({
+          agentAddress,
+          title: title as string,
+          description: description as string,
+          category: category as string,
+          price: BigInt(Math.floor(parseFloat(price as string) * 1_000_000))
+        })
+        
+        s.stop('✅ Service listing created!')
 
-      // TODO: Implement actual service creation using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      s.stop('✅ Service listing created!')
-
-      console.log('\n' + chalk.green('🎉 Your service is now live in the marketplace!'))
-      outro('Service creation completed')
+        console.log('\n' + chalk.green('🎉 Your service is now live in the marketplace!'))
+        console.log(chalk.gray(`Service ID: ${result.listingId.toBase58()}`))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(result.listingId.toBase58(), 'devnet'))
+        
+        outro('Service creation completed')
+      } catch (error: any) {
+        s.stop('❌ Creation failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Failed to create service: ' + (error instanceof Error ? error.message : 'Unknown error')))
@@ -225,63 +267,65 @@ marketplaceCommand
         const s = spinner()
         s.start('Loading available services...')
         
-        // TODO: Implement actual marketplace fetching using GhostSpeak SDK
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        const { client } = await initializeClient('devnet')
+        
+        // Fetch real services from blockchain
+        const services = await client.marketplace.listServices({})
         s.stop('✅ Services loaded')
 
-        // Mock services for selection
-        const services = [
-          { id: '1', title: 'Professional Data Analysis', price: '0.5 SOL', agent: 'DataAnalyzer Pro' },
-          { id: '2', title: 'Technical Blog Writing', price: '0.2 SOL', agent: 'Content Creator AI' },
-          { id: '3', title: 'Smart Contract Audit', price: '2.0 SOL', agent: 'SecurityBot' }
-        ]
+        if (services.length === 0) {
+          console.log('\n' + chalk.yellow('No services available in the marketplace'))
+          outro('Create a service with: npx ghostspeak marketplace create')
+          return
+        }
 
         console.log('\n' + chalk.bold('🏪 Available Services'))
         console.log('─'.repeat(60))
         services.forEach((service, index) => {
           console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-          console.log(chalk.gray(`   ID: ${service.id} | Price: ${service.price} | By: ${service.agent}`))
+          console.log(chalk.gray(`   ID: ${service.id.toBase58()} | Price: ${Number(service.price) / 1_000_000} SOL | By: ${service.agentName}`))
         })
 
-        const selectedId = await text({
-          message: 'Enter service ID to purchase:',
-          placeholder: 'e.g., 1',
-          validate: (value) => {
-            if (!value) return 'Service ID is required'
-            if (!services.find(s => s.id === value)) return 'Invalid service ID'
-          }
+        const selectedIndex = await select({
+          message: 'Select service to purchase:',
+          options: services.map((service, index) => ({
+            value: index,
+            label: `${service.title} - ${Number(service.price) / 1_000_000} SOL`
+          }))
         })
 
-        if (isCancel(selectedId)) {
+        if (isCancel(selectedIndex)) {
           cancel('Purchase cancelled')
           return
         }
 
-        listingId = selectedId
+        listingId = services[selectedIndex as number].id.toBase58()
       }
 
+      // Initialize client if needed
+      const { client } = await initializeClient('devnet')
+      
       // Get service details
-      console.log('\n' + chalk.bold('📋 Service Details'))
-      console.log('─'.repeat(40))
-      console.log(chalk.magenta('Service:') + ' Professional Data Analysis')
-      console.log(chalk.magenta('Price:') + ' 0.5 SOL')
-      console.log(chalk.magenta('Agent:') + ' DataAnalyzer Pro')
-      console.log(chalk.magenta('Rating:') + ' ⭐ 4.8 (125 reviews)')
-
-      // Delivery timeline
-      const deliveryTime = await select({
-        message: 'Select delivery timeline:',
-        options: [
-          { value: 'express', label: '⚡ Express (24 hours) +0.1 SOL' },
-          { value: 'standard', label: '📅 Standard (3 days)' },
-          { value: 'economy', label: '🐌 Economy (7 days) -0.05 SOL' }
-        ]
+      const s = spinner()
+      s.start('Loading service details...')
+      
+      const service = await client.marketplace.getService({
+        serviceId: new PublicKey(listingId)
       })
-
-      if (isCancel(deliveryTime)) {
-        cancel('Purchase cancelled')
+      
+      s.stop('✅ Service loaded')
+      
+      if (!service) {
+        cancel('Service not found')
         return
       }
+
+      console.log('\n' + chalk.bold('📋 Service Details'))
+      console.log('─'.repeat(40))
+      console.log(chalk.magenta('Service:') + ` ${service.title}`)
+      console.log(chalk.magenta('Price:') + ` ${Number(service.price) / 1_000_000} SOL`)
+      console.log(chalk.magenta('Agent:') + ` ${service.agentName}`)
+      console.log(chalk.magenta('Description:') + ` ${service.description}`)
 
       // Additional requirements
       const requirements = await text({
@@ -294,23 +338,17 @@ marketplaceCommand
         return
       }
 
-      // Calculate final price
-      let finalPrice = 0.5
-      if (deliveryTime === 'express') finalPrice += 0.1
-      if (deliveryTime === 'economy') finalPrice -= 0.05
-
       // Confirmation
       console.log('\n' + chalk.bold('💳 Purchase Summary'))
       console.log('─'.repeat(40))
-      console.log(chalk.magenta('Service:') + ' Professional Data Analysis')
-      console.log(chalk.magenta('Delivery:') + ` ${deliveryTime}`)
-      console.log(chalk.magenta('Final Price:') + ` ${finalPrice} SOL`)
+      console.log(chalk.magenta('Service:') + ` ${service.title}`)
+      console.log(chalk.magenta('Price:') + ` ${Number(service.price) / 1_000_000} SOL`)
       if (requirements) {
         console.log(chalk.magenta('Requirements:') + ` ${requirements}`)
       }
 
       const confirmed = await confirm({
-        message: 'Proceed with purchase?'
+        message: `Proceed with purchase for ${Number(service.price) / 1_000_000} SOL?`
       })
 
       if (isCancel(confirmed) || !confirmed) {
@@ -318,21 +356,31 @@ marketplaceCommand
         return
       }
 
-      const s = spinner()
-      s.start('Processing payment and creating escrow...')
+      const purchaseSpinner = spinner()
+      purchaseSpinner.start('Processing payment and creating work order...')
 
-      // TODO: Implement actual purchase using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      try {
+        const result = await client.marketplace.purchaseService({
+          serviceId: new PublicKey(listingId),
+          requirements: requirements || undefined
+        })
+        
+        purchaseSpinner.stop('✅ Purchase completed!')
 
-      s.stop('✅ Purchase completed!')
-
-      console.log('\n' + chalk.green('🎉 Service purchased successfully!'))
-      console.log(chalk.gray('Transaction ID: 4xY9k2...mN3p'))
-      console.log(chalk.gray('Escrow ID: ESC-123456'))
-      console.log(chalk.gray(`Expected delivery: ${deliveryTime === 'express' ? '24 hours' : deliveryTime === 'standard' ? '3 days' : '7 days'}`))
-      console.log('\n' + chalk.yellow('💡 The agent has been notified and will begin work shortly.'))
-
-      outro('Purchase completed')
+        console.log('\n' + chalk.green('🎉 Service purchased successfully!'))
+        console.log(chalk.gray(`Purchase ID: ${result.purchaseId.toBase58()}`))
+        console.log(chalk.gray(`Work Order: ${result.workOrderId.toBase58()}`))
+        console.log(chalk.gray('The agent will begin working on your request.'))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Purchase Account:'), getAddressExplorerUrl(result.purchaseId.toBase58(), 'devnet'))
+        console.log('\n' + chalk.yellow('💡 Track your order with: npx ghostspeak escrow list'))
+        
+        outro('Purchase completed')
+      } catch (error: any) {
+        purchaseSpinner.stop('❌ Purchase failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Purchase failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
@@ -359,25 +407,37 @@ marketplaceCommand
       }
 
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
       s.start(`Searching for "${query}"...`)
-
-      // TODO: Implement actual search using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1200))
-
+      
+      // Search services using SDK
+      const results = await client.marketplace.searchServices({
+        query: query as string
+      })
+      
       s.stop('✅ Search completed')
 
-      console.log('\n' + chalk.bold(`🔍 Search results for "${query}"`))
+      if (results.length === 0) {
+        console.log('\n' + chalk.yellow(`No services found matching "${query}"`))
+        outro('Try different search terms')
+        return
+      }
+
+      console.log('\n' + chalk.bold(`🔍 Found ${results.length} services matching "${query}"`))
       console.log('─'.repeat(50))
 
-      // Mock search results
-      console.log(chalk.magenta('1. Advanced Data Analytics Suite'))
-      console.log(chalk.gray('   By: DataMaster AI | 0.8 SOL | ⭐ 4.9'))
-      console.log(chalk.gray('   Perfect match for data analysis needs'))
-      console.log('')
-      
-      console.log(chalk.magenta('2. Data Visualization Service'))
-      console.log(chalk.gray('   By: VizBot Pro | 0.3 SOL | ⭐ 4.7'))
-      console.log(chalk.gray('   Create stunning charts and graphs'))
+      results.forEach((service, index) => {
+        console.log(chalk.magenta(`${index + 1}. ${service.title}`))
+        console.log(chalk.gray(`   By: ${service.agentName} | ${Number(service.price) / 1_000_000} SOL`))
+        console.log(chalk.gray(`   ${service.description.slice(0, 60)}...`))
+        console.log(chalk.gray(`   ID: ${service.id.toBase58()}`))
+        console.log('')
+      })
 
       outro('Search completed')
 
@@ -513,16 +573,42 @@ jobsCommand
       }
 
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
       s.start('Creating job posting on the blockchain...')
+      
+      try {
+        // Convert deadline to timestamp
+        const deadlineMs = deadline === '1d' ? 86400000 :
+                          deadline === '3d' ? 259200000 :
+                          deadline === '1w' ? 604800000 : 2592000000
+        const deadlineTimestamp = BigInt(Date.now() + deadlineMs) / 1000n
+        
+        const result = await client.marketplace.createJobPosting({
+          title: title as string,
+          description: description as string,
+          category: category as string,
+          requirements: requirements as string[],
+          budget: BigInt(Math.floor(parseFloat(budget as string) * 1_000_000)),
+          deadline: deadlineTimestamp
+        })
+        
+        s.stop('✅ Job posted successfully!')
 
-      // TODO: Implement actual job posting using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      s.stop('✅ Job posted successfully!')
-
-      console.log('\n' + chalk.green('🎉 Your job has been posted!'))
-      console.log(chalk.gray('Job ID: JOB-789012'))
-      console.log(chalk.gray('Status: Active - Accepting applications'))
+        console.log('\n' + chalk.green('🎉 Your job has been posted!'))
+        console.log(chalk.gray(`Job ID: ${result.jobId.toBase58()}`))
+        console.log(chalk.gray('Status: Active - Accepting applications'))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Job Posting:'), getAddressExplorerUrl(result.jobId.toBase58(), 'devnet'))
+      } catch (error: any) {
+        s.stop('❌ Job posting failed')
+        throw new Error(handleTransactionError(error))
+      }
       console.log('\n' + chalk.yellow('💡 AI agents matching your requirements will be notified.'))
 
       outro('Job posting completed')
@@ -542,65 +628,49 @@ jobsCommand
     intro(chalk.magenta('💼 Job Postings'))
 
     const s = spinner()
-    s.start('Loading job postings...')
-
+    s.start('Connecting to Solana network...')
+    
     try {
-      // TODO: Implement actual job fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1200))
-
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      s.start('Loading job postings...')
+      
+      // Fetch jobs using SDK
+      const jobs = await client.marketplace.listJobs({
+        myJobsOnly: options.myJobs ? wallet.publicKey : undefined,
+        category: options.category
+      })
+      
       s.stop('✅ Jobs loaded')
 
-      // Mock job data
-      const jobs = [
-        {
-          id: 'JOB-001',
-          title: 'AI Customer Support Agent Needed',
-          budget: '2.0 SOL',
-          deadline: '3 days',
-          category: 'support',
-          applications: 5,
-          poster: 'You' 
-        },
-        {
-          id: 'JOB-002',
-          title: 'Data Analysis for E-commerce Metrics',
-          budget: '1.5 SOL',
-          deadline: '1 week',
-          category: 'data',
-          applications: 8,
-          poster: 'TechStartup Inc'
-        },
-        {
-          id: 'JOB-003',
-          title: 'Smart Contract Development Assistant',
-          budget: '3.0 SOL',
-          deadline: '2 weeks',
-          category: 'development',
-          applications: 12,
-          poster: 'DeFi Protocol'
-        }
-      ]
+      if (jobs.length === 0) {
+        console.log('\n' + chalk.yellow('No job postings found'))
+        outro('Create a job with: npx ghostspeak marketplace jobs create')
+        return
+      }
 
-      const displayJobs = options.myJobs ? jobs.filter(j => j.poster === 'You') : jobs
-
-      console.log('\n' + chalk.bold(options.myJobs ? '💼 Your Job Postings' : '💼 Available Jobs'))
+      console.log('\n' + chalk.bold(options.myJobs ? `💼 Your Job Postings (${jobs.length})` : `💼 Available Jobs (${jobs.length})`))
       console.log('═'.repeat(70))
 
-      displayJobs.forEach((job, index) => {
+      jobs.forEach((job, index) => {
+        const isOwner = job.poster.equals(wallet.publicKey)
+        const deadlineDate = new Date(Number(job.deadline) * 1000)
+        const daysLeft = Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
+        
         console.log(chalk.magenta(`${index + 1}. ${job.title}`))
-        console.log(chalk.gray(`   ID: ${job.id} | Budget: ${job.budget} | Deadline: ${job.deadline}`))
-        console.log(chalk.gray(`   Category: ${job.category} | Applications: ${job.applications}`))
-        if (options.myJobs) {
-          console.log(chalk.gray(`   Status: Active`))
-        } else {
-          console.log(chalk.gray(`   Posted by: ${job.poster}`))
+        console.log(chalk.gray(`   ID: ${job.id.toBase58()}`))
+        console.log(chalk.gray(`   Budget: ${Number(job.budget) / 1_000_000} SOL`))
+        console.log(chalk.gray(`   Deadline: ${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`))
+        console.log(chalk.gray(`   Category: ${job.category}`))
+        console.log(chalk.gray(`   Applications: ${job.applicationCount || 0}`))
+        console.log(chalk.gray(`   Status: ${job.isActive ? '✅ Active' : '❌ Closed'}`))
+        if (!isOwner) {
+          console.log(chalk.gray(`   Posted by: ${job.poster.toBase58().slice(0, 8)}...`))
         }
         console.log('')
       })
-
-      if (displayJobs.length === 0) {
-        console.log(chalk.gray('No job postings found'))
-      }
 
       const action = await select({
         message: 'What would you like to do?',
@@ -619,10 +689,10 @@ jobsCommand
 
       switch (action) {
         case 'apply':
-          console.log(chalk.yellow('📝 Job application feature coming soon!'))
+          await applyToJob(jobs, client)
           break
         case 'details':
-          console.log(chalk.yellow('📋 Job details view coming soon!'))
+          await viewJobDetails(jobs)
           break
         case 'create':
           console.log(chalk.yellow('➕ Use "ghostspeak marketplace jobs create" to post a job'))
@@ -636,3 +706,226 @@ jobsCommand
       cancel(chalk.red('Error: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
   })
+
+// Helper function to purchase a service
+async function purchaseService(services: any[]) {
+  if (services.length === 0) {
+    cancel('No services available to purchase')
+    return
+  }
+
+  const selectedService = await select({
+    message: 'Select service to purchase:',
+    options: services.map((service, index) => ({
+      value: index,
+      label: `${service.title} - ${Number(service.price) / 1_000_000} SOL`
+    }))
+  })
+
+  if (isCancel(selectedService)) {
+    return
+  }
+
+  const service = services[selectedService as number]
+  
+  const confirmed = await confirm({
+    message: `Purchase "${service.title}" for ${Number(service.price) / 1_000_000} SOL?`
+  })
+
+  if (isCancel(confirmed) || !confirmed) {
+    return
+  }
+
+  const s = spinner()
+  s.start('Processing purchase...')
+
+  try {
+    const { client } = await initializeClient('devnet')
+    
+    const result = await client.marketplace.purchaseService({
+      serviceId: service.id
+    })
+    
+    s.stop('✅ Purchase successful!')
+    
+    console.log('')
+    console.log(chalk.green('🎉 Service purchased successfully!'))
+    console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+    console.log(chalk.cyan('Purchase ID:'), result.purchaseId.toBase58())
+    
+  } catch (error: any) {
+    s.stop('❌ Purchase failed')
+    log.error(handleTransactionError(error))
+  }
+}
+
+// Helper function to view service details
+async function viewServiceDetails(services: any[]) {
+  if (services.length === 0) {
+    cancel('No services available')
+    return
+  }
+
+  const selectedService = await select({
+    message: 'Select service to view details:',
+    options: services.map((service, index) => ({
+      value: index,
+      label: service.title
+    }))
+  })
+
+  if (isCancel(selectedService)) {
+    return
+  }
+
+  const service = services[selectedService as number]
+  
+  console.log('')
+  console.log(chalk.bold('📋 Service Details'))
+  console.log('─'.repeat(50))
+  console.log(chalk.cyan('Title:'), service.title)
+  console.log(chalk.cyan('ID:'), service.id.toBase58())
+  console.log(chalk.cyan('Description:'), service.description)
+  console.log(chalk.cyan('Agent:'), `${service.agentName} (${service.agentAddress.toBase58()})`)
+  console.log(chalk.cyan('Category:'), service.category)
+  console.log(chalk.cyan('Price:'), `${Number(service.price) / 1_000_000} SOL`)
+  console.log(chalk.cyan('Status:'), service.isAvailable ? '✅ Available' : '❌ Not Available')
+  console.log(chalk.cyan('Created:'), new Date(Number(service.createdAt) * 1000).toLocaleString())
+  
+  if (service.metadata) {
+    console.log(chalk.cyan('Delivery Time:'), service.metadata.deliveryTime || 'Not specified')
+    console.log(chalk.cyan('Requirements:'), service.metadata.requirements || 'None')
+  }
+}
+
+// Helper function to apply to a job
+async function applyToJob(jobs: any[], client: any) {
+  if (jobs.length === 0) {
+    cancel('No jobs available')
+    return
+  }
+
+  const selectedJob = await select({
+    message: 'Select job to apply to:',
+    options: jobs.map((job, index) => ({
+      value: index,
+      label: `${job.title} - ${Number(job.budget) / 1_000_000} SOL`
+    }))
+  })
+
+  if (isCancel(selectedJob)) {
+    return
+  }
+
+  const job = jobs[selectedJob as number]
+  
+  // Check if user has an agent
+  const agents = await client.agent.listByOwner({ owner: client.wallet.publicKey })
+  if (agents.length === 0) {
+    console.log(chalk.yellow('\n⚠️  You need a registered agent to apply for jobs'))
+    console.log('Run: npx ghostspeak agent register')
+    return
+  }
+  
+  // Select agent if multiple
+  let agentAddress = agents[0].address
+  if (agents.length > 1) {
+    const selectedAgent = await select({
+      message: 'Select agent to apply with:',
+      options: agents.map(agent => ({
+        value: agent.address.toBase58(),
+        label: agent.name
+      }))
+    })
+    
+    if (isCancel(selectedAgent)) {
+      return
+    }
+    
+    agentAddress = new PublicKey(selectedAgent as string)
+  }
+  
+  const proposal = await text({
+    message: 'Your proposal:',
+    placeholder: 'Explain why you\'re the best fit for this job...',
+    validate: (value) => {
+      if (!value) return 'Proposal is required'
+      if (value.length < 50) return 'Proposal must be at least 50 characters'
+    }
+  })
+  
+  if (isCancel(proposal)) {
+    return
+  }
+  
+  const confirmed = await confirm({
+    message: 'Submit application?'
+  })
+  
+  if (isCancel(confirmed) || !confirmed) {
+    return
+  }
+  
+  const s = spinner()
+  s.start('Submitting application...')
+  
+  try {
+    const result = await client.marketplace.applyToJob({
+      jobId: job.id,
+      agentAddress,
+      proposal: proposal as string
+    })
+    
+    s.stop('✅ Application submitted!')
+    
+    console.log('')
+    console.log(chalk.green('🎉 Application submitted successfully!'))
+    console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+    console.log(chalk.cyan('Application ID:'), result.applicationId.toBase58())
+    
+  } catch (error: any) {
+    s.stop('❌ Application failed')
+    log.error(handleTransactionError(error))
+  }
+}
+
+// Helper function to view job details
+async function viewJobDetails(jobs: any[]) {
+  if (jobs.length === 0) {
+    cancel('No jobs available')
+    return
+  }
+
+  const selectedJob = await select({
+    message: 'Select job to view details:',
+    options: jobs.map((job, index) => ({
+      value: index,
+      label: job.title
+    }))
+  })
+
+  if (isCancel(selectedJob)) {
+    return
+  }
+
+  const job = jobs[selectedJob as number]
+  const deadlineDate = new Date(Number(job.deadline) * 1000)
+  const daysLeft = Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
+  
+  console.log('')
+  console.log(chalk.bold('💼 Job Details'))
+  console.log('─'.repeat(50))
+  console.log(chalk.cyan('Title:'), job.title)
+  console.log(chalk.cyan('ID:'), job.id.toBase58())
+  console.log(chalk.cyan('Description:'), job.description)
+  console.log(chalk.cyan('Category:'), job.category)
+  console.log(chalk.cyan('Budget:'), `${Number(job.budget) / 1_000_000} SOL`)
+  console.log(chalk.cyan('Deadline:'), `${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`)
+  console.log(chalk.cyan('Status:'), job.isActive ? '✅ Active' : '❌ Closed')
+  console.log(chalk.cyan('Applications:'), job.applicationCount || 0)
+  console.log(chalk.cyan('Posted by:'), job.poster.toBase58())
+  
+  if (job.requirements && job.requirements.length > 0) {
+    console.log(chalk.cyan('Requirements:'), job.requirements.join(', '))
+  }
+}

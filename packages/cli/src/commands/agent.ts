@@ -9,9 +9,12 @@ import {
   confirm, 
   spinner,
   isCancel,
-  cancel
+  cancel,
+  log
 } from '@clack/prompts'
 import { registerAgentPrompts } from '../prompts/agent.js'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { PublicKey } from '@solana/web3.js'
 
 export const agentCommand = new Command('agent')
   .description('Manage AI agents on the GhostSpeak protocol')
@@ -35,19 +38,40 @@ agentCommand
       }
 
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected to Solana devnet')
+      
       s.start('Registering agent on the blockchain...')
-
-      // TODO: Implement actual agent registration using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate network call
-
-      s.stop('✅ Agent registered successfully!')
       
-      console.log('\n' + chalk.green('🎉 Your agent has been registered!'))
-      console.log(chalk.gray(`Name: ${agentData.name}`))
-      console.log(chalk.gray(`Description: ${agentData.description}`))
-      console.log(chalk.gray(`Capabilities: ${agentData.capabilities.join(', ')}`))
-      
-      outro('Agent registration completed')
+      try {
+        // Register the agent using SDK
+        const result = await client.agent.register({
+          name: agentData.name,
+          description: agentData.description,
+          endpoint: agentData.endpoint,
+          capabilities: agentData.capabilities,
+          pricePerTask: BigInt(Math.floor(parseFloat(agentData.pricePerTask) * 1_000_000)) // Convert SOL to lamports
+        })
+        
+        s.stop('✅ Agent registered successfully!')
+        
+        console.log('\n' + chalk.green('🎉 Your agent has been registered!'))
+        console.log(chalk.gray(`Name: ${agentData.name}`))
+        console.log(chalk.gray(`Description: ${agentData.description}`))
+        console.log(chalk.gray(`Capabilities: ${agentData.capabilities.join(', ')}`))
+        console.log(chalk.gray(`Agent Address: ${result.agentAddress.toBase58()}`))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Agent Account:'), getAddressExplorerUrl(result.agentAddress.toBase58(), 'devnet'))
+        
+        outro('Agent registration completed')
+      } catch (error: any) {
+        s.stop('❌ Registration failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Failed to register agent: ' + (error instanceof Error ? error.message : 'Unknown error')))
@@ -63,28 +87,38 @@ agentCommand
     intro(chalk.cyan('📋 List Registered Agents'))
 
     const s = spinner()
-    s.start('Fetching agents from the blockchain...')
-
+    s.start('Connecting to Solana network...')
+    
     try {
-      // TODO: Implement actual agent fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
+      // Initialize SDK client
+      const { client } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      s.start('Fetching agents from the blockchain...')
+      
+      // Fetch agents using SDK
+      const agents = await client.agent.list({
+        limit: parseInt(options.limit)
+      })
+      
       s.stop('✅ Agents loaded')
 
-      // Mock data for demonstration
-      const agents = [
-        { name: 'DataAnalyzer Pro', capabilities: ['data-analysis', 'reporting'], reputation: 95 },
-        { name: 'Content Creator AI', capabilities: ['writing', 'translation'], reputation: 88 },
-        { name: 'Code Assistant', capabilities: ['coding', 'debugging'], reputation: 92 }
-      ]
+      if (agents.length === 0) {
+        console.log('\n' + chalk.yellow('No agents found on the network'))
+        outro('Try registering an agent with: npx ghostspeak agent register')
+        return
+      }
 
-      console.log('\n' + chalk.bold('Available Agents:'))
+      console.log('\n' + chalk.bold(`Available Agents (${agents.length}):`))
       console.log('─'.repeat(60))
 
       agents.forEach((agent, index) => {
         console.log(chalk.cyan(`${index + 1}. ${agent.name}`))
+        console.log(chalk.gray(`   Address: ${agent.address.toBase58()}`))
         console.log(chalk.gray(`   Capabilities: ${agent.capabilities.join(', ')}`))
-        console.log(chalk.gray(`   Reputation: ${agent.reputation}%`))
+        console.log(chalk.gray(`   Status: ${agent.isActive ? '🟢 Active' : '🔴 Inactive'}`))
+        console.log(chalk.gray(`   Price: ${Number(agent.pricePerTask) / 1_000_000} SOL per task`))
+        console.log(chalk.gray(`   Registered: ${new Date(Number(agent.createdAt) * 1000).toLocaleDateString()}`))
         console.log('')
       })
 
@@ -123,20 +157,40 @@ agentCommand
       }
 
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
       s.start('Searching for agents...')
-
-      // TODO: Implement actual search using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
+      
+      // Search agents using SDK
+      const results = await client.agent.search({
+        capabilities: capabilities as string[]
+      })
+      
       s.stop('✅ Search completed')
 
-      console.log('\n' + chalk.bold(`Found agents with capabilities: ${capabilities.join(', ')}`))
+      if (results.length === 0) {
+        console.log('\n' + chalk.yellow(`No agents found with capabilities: ${capabilities.join(', ')}`))
+        outro('Try searching with different capabilities')
+        return
+      }
+
+      console.log('\n' + chalk.bold(`Found ${results.length} agents with capabilities: ${capabilities.join(', ')}`))
       console.log('─'.repeat(60))
       
-      // Mock search results
-      console.log(chalk.cyan('1. DataAnalyzer Pro'))
-      console.log(chalk.gray('   Matches: data-analysis'))
-      console.log(chalk.gray('   Price: 0.1 SOL per task'))
+      results.forEach((agent, index) => {
+        const matchingCaps = agent.capabilities.filter(cap => capabilities.includes(cap))
+        console.log(chalk.cyan(`${index + 1}. ${agent.name}`))
+        console.log(chalk.gray(`   Address: ${agent.address.toBase58()}`))
+        console.log(chalk.gray(`   Matches: ${matchingCaps.join(', ')}`))
+        console.log(chalk.gray(`   All capabilities: ${agent.capabilities.join(', ')}`))
+        console.log(chalk.gray(`   Price: ${Number(agent.pricePerTask) / 1_000_000} SOL per task`))
+        console.log(chalk.gray(`   Status: ${agent.isActive ? '🟢 Active' : '🔴 Inactive'}`))
+        console.log('')
+      })
       
       outro('Search completed')
 
@@ -154,22 +208,53 @@ agentCommand
 
     try {
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
       s.start('Checking agent status...')
-
-      // TODO: Implement status check using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1200))
-
+      
+      // Get user's agents
+      const myAgents = await client.agent.listByOwner({
+        owner: wallet.publicKey
+      })
+      
       s.stop('✅ Status updated')
+      
+      if (myAgents.length === 0) {
+        console.log('\n' + chalk.yellow('You have no registered agents'))
+        outro('Register an agent with: npx ghostspeak agent register')
+        return
+      }
 
       console.log('\n' + chalk.bold('Your Agents:'))
       console.log('─'.repeat(50))
-      console.log(chalk.green('● CodeBot Pro') + chalk.gray(' - Active'))
-      console.log(chalk.gray('  Jobs completed: 15'))
-      console.log(chalk.gray('  Earnings: 2.4 SOL'))
-      console.log('')
-      console.log(chalk.yellow('◐ DataMiner AI') + chalk.gray(' - Busy'))
-      console.log(chalk.gray('  Currently working on: Data analysis task'))
-      console.log(chalk.gray('  ETA: 2 hours'))
+      
+      for (const agent of myAgents) {
+        // Get agent status details
+        const status = await client.agent.getStatus({
+          agentAddress: agent.address
+        })
+        
+        const statusIcon = agent.isActive ? chalk.green('●') : chalk.red('○')
+        const statusText = agent.isActive ? 'Active' : 'Inactive'
+        
+        console.log(`${statusIcon} ${agent.name}` + chalk.gray(` - ${statusText}`))
+        console.log(chalk.gray(`  Address: ${agent.address.toBase58()}`))
+        console.log(chalk.gray(`  Jobs completed: ${status.jobsCompleted || 0}`))
+        console.log(chalk.gray(`  Total earnings: ${Number(status.totalEarnings || 0) / 1_000_000} SOL`))
+        console.log(chalk.gray(`  Success rate: ${status.successRate || 0}%`))
+        console.log(chalk.gray(`  Last active: ${status.lastActive ? new Date(Number(status.lastActive) * 1000).toLocaleString() : 'Never'}`))
+        
+        if (status.currentJob) {
+          console.log(chalk.yellow('  Currently working on: ') + chalk.gray(status.currentJob.description))
+          console.log(chalk.gray(`  Job started: ${new Date(Number(status.currentJob.startTime) * 1000).toLocaleString()}`))
+        }
+        
+        console.log('')
+      }
 
       outro('Status check completed')
 
@@ -187,27 +272,45 @@ agentCommand
     intro(chalk.cyan('🔄 Update AI Agent'))
 
     try {
-      // Select agent if not provided
-      let agentId = options.agentId
-      if (!agentId) {
-        const s = spinner()
-        s.start('Loading your agents...')
-        
-        // TODO: Implement actual agent fetching using GhostSpeak SDK
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        s.stop('✅ Agents loaded')
+      const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
 
-        // Mock agent data
-        const myAgents = [
-          { id: 'agent-001', name: 'CodeBot Pro', status: 'Active' },
-          { id: 'agent-002', name: 'DataMiner AI', status: 'Active' }
-        ]
+      // Select agent if not provided
+      let agentAddress: PublicKey
+      
+      if (options.agentId) {
+        // Use provided agent ID
+        try {
+          agentAddress = new PublicKey(options.agentId)
+        } catch {
+          cancel('Invalid agent address provided')
+          return
+        }
+      } else {
+        const loadSpinner = spinner()
+        loadSpinner.start('Loading your agents...')
+        
+        // Fetch user's agents
+        const myAgents = await client.agent.listByOwner({
+          owner: wallet.publicKey
+        })
+        
+        loadSpinner.stop('✅ Agents loaded')
+        
+        if (myAgents.length === 0) {
+          cancel('You have no registered agents to update')
+          return
+        }
 
         const selectedAgent = await select({
           message: 'Select agent to update:',
           options: myAgents.map(agent => ({
-            value: agent.id,
-            label: `${agent.name} (${agent.status})`
+            value: agent.address.toBase58(),
+            label: `${agent.name} (${agent.isActive ? 'Active' : 'Inactive'})`
           }))
         })
 
@@ -216,24 +319,22 @@ agentCommand
           return
         }
 
-        agentId = selectedAgent
+        agentAddress = new PublicKey(selectedAgent as string)
       }
 
       // Fetch current agent details
       const fetchSpinner = spinner()
-      fetchSpinner.start(`Loading agent ${agentId} details...`)
+      fetchSpinner.start(`Loading agent details...`)
       
-      // TODO: Implement actual agent fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 800))
+      const currentAgent = await client.agent.get({
+        agentAddress
+      })
+      
       fetchSpinner.stop('✅ Agent details loaded')
 
-      // Mock current details
-      const currentAgent = {
-        name: 'CodeBot Pro',
-        description: 'Professional code generation and review assistant',
-        endpoint: 'https://api.codebot.ai/v1',
-        capabilities: ['coding', 'debugging', 'code-review'],
-        pricePerTask: '0.1'
+      if (!currentAgent) {
+        cancel('Agent not found')
+        return
       }
 
       console.log('\n' + chalk.bold('Current Agent Details:'))
@@ -242,7 +343,7 @@ agentCommand
       console.log(chalk.cyan('Description:') + ` ${currentAgent.description}`)
       console.log(chalk.cyan('Endpoint:') + ` ${currentAgent.endpoint}`)
       console.log(chalk.cyan('Capabilities:') + ` ${currentAgent.capabilities.join(', ')}`)
-      console.log(chalk.cyan('Price per task:') + ` ${currentAgent.pricePerTask} SOL`)
+      console.log(chalk.cyan('Price per task:') + ` ${Number(currentAgent.pricePerTask) / 1_000_000} SOL`)
 
       // Update options
       const updateChoice = await select({
@@ -358,8 +459,8 @@ agentCommand
       if (updateChoice === 'price' || updateChoice === 'all') {
         const newPrice = await text({
           message: 'New price per task (in SOL):',
-          placeholder: currentAgent.pricePerTask,
-          initialValue: updateChoice === 'all' ? currentAgent.pricePerTask : undefined,
+          placeholder: `${Number(currentAgent.pricePerTask) / 1_000_000}`,
+          initialValue: updateChoice === 'all' ? `${Number(currentAgent.pricePerTask) / 1_000_000}` : undefined,
           validate: (value) => {
             if (!value) return 'Price is required'
             const num = parseFloat(value)
@@ -399,16 +500,32 @@ agentCommand
       const updateSpinner = spinner()
       updateSpinner.start('Updating agent on the blockchain...')
 
-      // TODO: Implement actual agent update using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      try {
+        // Convert price to lamports if updated
+        const updateData: any = { ...updates }
+        if (updates.pricePerTask) {
+          updateData.pricePerTask = BigInt(Math.floor(parseFloat(updates.pricePerTask) * 1_000_000))
+        }
 
-      updateSpinner.stop('✅ Agent updated successfully!')
+        // Update agent using SDK
+        const result = await client.agent.update({
+          agentAddress,
+          ...updateData
+        })
 
-      console.log('\n' + chalk.green('🎉 Agent has been updated!'))
-      console.log(chalk.gray(`Agent ID: ${agentId}`))
-      console.log(chalk.gray('Changes will take effect immediately'))
+        updateSpinner.stop('✅ Agent updated successfully!')
 
-      outro('Agent update completed')
+        console.log('\n' + chalk.green('🎉 Agent has been updated!'))
+        console.log(chalk.gray(`Agent Address: ${agentAddress.toBase58()}`))
+        console.log(chalk.gray('Changes will take effect immediately'))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+
+        outro('Agent update completed')
+      } catch (error: any) {
+        updateSpinner.stop('❌ Update failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Agent update failed: ' + (error instanceof Error ? error.message : 'Unknown error')))

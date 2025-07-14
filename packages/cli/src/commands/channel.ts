@@ -8,8 +8,11 @@ import {
   confirm, 
   spinner,
   isCancel,
-  cancel
+  cancel,
+  log
 } from '@clack/prompts'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { PublicKey } from '@solana/web3.js'
 
 export const channelCommand = new Command('channel')
   .description('Manage Agent-to-Agent (A2A) communication channels')
@@ -27,7 +30,12 @@ channelCommand
         placeholder: 'Enter agent wallet address...',
         validate: (value) => {
           if (!value) return 'Agent address is required'
-          if (value.length < 32) return 'Invalid Solana address format'
+          try {
+            new PublicKey(value)
+            return
+          } catch {
+            return 'Invalid Solana address format'
+          }
         }
       })
 
@@ -36,50 +44,109 @@ channelCommand
         return
       }
 
-      const sessionType = await select({
-        message: 'Select communication type:',
-        options: [
-          { value: 'direct', label: '🎯 Direct Communication' },
-          { value: 'collaboration', label: '🤝 Collaboration Session' },
-          { value: 'negotiation', label: '💼 Service Negotiation' },
-          { value: 'support', label: '🆘 Technical Support' }
-        ]
+      const channelName = await text({
+        message: 'Channel name:',
+        placeholder: 'e.g., Project Collaboration',
+        validate: (value) => {
+          if (!value) return 'Channel name is required'
+          if (value.length < 3) return 'Name must be at least 3 characters'
+        }
       })
 
-      if (isCancel(sessionType)) {
+      if (isCancel(channelName)) {
         cancel('Channel creation cancelled')
         return
       }
 
-      const duration = await select({
-        message: 'Session duration:',
+      const description = await text({
+        message: 'Channel description (optional):',
+        placeholder: 'What is this channel for?'
+      })
+
+      if (isCancel(description)) {
+        cancel('Channel creation cancelled')
+        return
+      }
+
+      const visibility = await select({
+        message: 'Channel visibility:',
         options: [
-          { value: '1h', label: '1 hour' },
-          { value: '4h', label: '4 hours' },
-          { value: '24h', label: '24 hours' },
-          { value: '7d', label: '7 days' }
+          { value: 'public', label: '🌍 Public - Anyone can view' },
+          { value: 'private', label: '🔒 Private - Only participants' }
         ]
       })
 
-      if (isCancel(duration)) {
+      if (isCancel(visibility)) {
         cancel('Channel creation cancelled')
         return
       }
 
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      // Check if user has a registered agent
+      s.start('Checking for registered agent...')
+      const agents = await client.agent.listByOwner({ owner: wallet.publicKey })
+      
+      if (agents.length === 0) {
+        s.stop('❌ No agent found')
+        console.log(chalk.yellow('\n⚠️  You need to register an agent first!'))
+        outro('Run: npx ghostspeak agent register')
+        return
+      }
+      
+      s.stop('✅ Agent found')
+      
+      // Select agent if multiple
+      let agentAddress = agents[0].address
+      if (agents.length > 1) {
+        const selectedAgent = await select({
+          message: 'Select agent to use:',
+          options: agents.map(agent => ({
+            value: agent.address.toBase58(),
+            label: agent.name
+          }))
+        })
+        
+        if (isCancel(selectedAgent)) {
+          cancel('Channel creation cancelled')
+          return
+        }
+        
+        agentAddress = new PublicKey(selectedAgent as string)
+      }
+      
       s.start('Creating A2A communication channel...')
 
-      // TODO: Implement actual A2A channel creation using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      try {
+        const result = await client.channel.create({
+          name: channelName as string,
+          description: description as string || '',
+          visibility: visibility as 'public' | 'private',
+          participants: [agentAddress, new PublicKey(responder as string)]
+        })
 
-      s.stop('✅ A2A channel created!')
+        s.stop('✅ A2A channel created!')
 
-      console.log('\n' + chalk.green('🎉 Communication channel established!'))
-      console.log(chalk.gray(`Type: ${sessionType}`))
-      console.log(chalk.gray(`Duration: ${duration}`))
-      console.log(chalk.gray(`Status: Active - Ready for communication`))
+        console.log('\n' + chalk.green('🎉 Communication channel established!'))
+        console.log(chalk.gray(`Channel ID: ${result.channelId.toBase58()}`))
+        console.log(chalk.gray(`Name: ${channelName}`))
+        console.log(chalk.gray(`Visibility: ${visibility}`))
+        console.log(chalk.gray(`Participants: 2 agents`))
+        console.log(chalk.gray(`Status: Active - Ready for communication`))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Channel Account:'), getAddressExplorerUrl(result.channelId.toBase58(), 'devnet'))
 
-      outro('A2A channel creation completed')
+        outro('A2A channel creation completed')
+      } catch (error: any) {
+        s.stop('❌ Creation failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Channel creation failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
@@ -93,24 +160,63 @@ channelCommand
     intro(chalk.blue('📡 Active A2A Channels'))
 
     const s = spinner()
-    s.start('Loading communication channels...')
+    s.start('Connecting to Solana network...')
 
     try {
-      // TODO: Implement actual channel fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      s.start('Loading communication channels...')
+      
+      // Get user's agents
+      const agents = await client.agent.listByOwner({ owner: wallet.publicKey })
+      
+      if (agents.length === 0) {
+        s.stop('✅ Channels loaded')
+        console.log('\n' + chalk.yellow('No channels found - you need to register an agent first'))
+        outro('Run: npx ghostspeak agent register')
+        return
+      }
+      
+      // Get channels for all user's agents
+      const allChannels = []
+      for (const agent of agents) {
+        const channels = await client.channel.listByParticipant({
+          participant: agent.address
+        })
+        allChannels.push(...channels.map(ch => ({ ...ch, agentName: agent.name })))
+      }
+      
       s.stop('✅ Channels loaded')
 
-      // Mock channel data
-      console.log('\n' + chalk.bold('💬 Your A2A Channels'))
+      if (allChannels.length === 0) {
+        console.log('\n' + chalk.yellow('No A2A channels found'))
+        outro('Create a channel with: npx ghostspeak channel create')
+        return
+      }
+
+      console.log('\n' + chalk.bold(`💬 Your A2A Channels (${allChannels.length})`))
       console.log('─'.repeat(70))
-      console.log(chalk.blue('1. Collaboration with DataAnalyzer Pro'))
-      console.log(chalk.gray('   Type: Collaboration | Status: Active'))
-      console.log(chalk.gray('   Messages: 12 | Created: 3 hours ago'))
-      console.log('')
-      console.log(chalk.blue('2. Negotiation with ContentBot'))
-      console.log(chalk.gray('   Type: Service Negotiation | Status: Active'))
-      console.log(chalk.gray('   Messages: 5 | Created: 1 day ago'))
+      
+      allChannels.forEach((channel, index) => {
+        const messageCount = channel.messageCount || 0
+        const isActive = channel.isActive
+        const statusIcon = isActive ? '🟢' : '🔴'
+        const status = isActive ? 'Active' : 'Closed'
+        
+        console.log(chalk.blue(`${index + 1}. ${channel.name}`))
+        console.log(chalk.gray(`   ID: ${channel.id.toBase58()}`))
+        console.log(chalk.gray(`   Your Agent: ${channel.agentName}`))
+        console.log(chalk.gray(`   Visibility: ${channel.visibility}`))
+        console.log(chalk.gray(`   Messages: ${messageCount}`))
+        console.log(chalk.gray(`   Status: ${statusIcon} ${status}`))
+        console.log(chalk.gray(`   Created: ${new Date(Number(channel.createdAt) * 1000).toLocaleString()}`))
+        if (channel.lastMessageAt) {
+          console.log(chalk.gray(`   Last Activity: ${new Date(Number(channel.lastMessageAt) * 1000).toLocaleString()}`))
+        }
+        console.log('')
+      })
 
       outro('Channel listing completed')
 
@@ -128,8 +234,78 @@ channelCommand
     intro(chalk.blue('📤 Send A2A Message'))
 
     try {
-      // TODO: In real implementation, list user's channels if no ID provided
-      const channelId = options.channel || 'demo-channel-123'
+      const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      let channelPubkey: PublicKey
+      
+      if (options.channel) {
+        // Use provided channel ID
+        try {
+          channelPubkey = new PublicKey(options.channel)
+        } catch {
+          cancel('Invalid channel ID format')
+          return
+        }
+      } else {
+        // List user's channels to select from
+        s.start('Loading your channels...')
+        
+        const agents = await client.agent.listByOwner({ owner: wallet.publicKey })
+        if (agents.length === 0) {
+          s.stop('❌ No agents found')
+          console.log(chalk.yellow('\n⚠️  You need to register an agent first!'))
+          outro('Run: npx ghostspeak agent register')
+          return
+        }
+        
+        // Get channels for all user's agents
+        const allChannels = []
+        for (const agent of agents) {
+          const channels = await client.channel.listByParticipant({
+            participant: agent.address
+          })
+          allChannels.push(...channels.map(ch => ({ 
+            ...ch, 
+            agentName: agent.name,
+            agentAddress: agent.address
+          })))
+        }
+        
+        s.stop('✅ Channels loaded')
+        
+        if (allChannels.length === 0) {
+          console.log('\n' + chalk.yellow('No channels found'))
+          outro('Create a channel with: npx ghostspeak channel create')
+          return
+        }
+        
+        const selectedChannel = await select({
+          message: 'Select channel:',
+          options: allChannels.map(channel => ({
+            value: channel.id.toBase58(),
+            label: `${channel.name} (via ${channel.agentName})`
+          }))
+        })
+        
+        if (isCancel(selectedChannel)) {
+          cancel('Message sending cancelled')
+          return
+        }
+        
+        channelPubkey = new PublicKey(selectedChannel as string)
+        
+        // Find the agent address for this channel
+        const selectedChannelData = allChannels.find(ch => ch.id.toBase58() === selectedChannel)
+        if (!selectedChannelData) {
+          cancel('Channel not found')
+          return
+        }
+      }
 
       const message = await text({
         message: 'Enter your message:',
@@ -145,16 +321,45 @@ channelCommand
         return
       }
 
-      const s = spinner()
-      s.start('Sending message...')
+      const messageType = await select({
+        message: 'Message type:',
+        options: [
+          { value: 'text', label: '💬 Text Message' },
+          { value: 'request', label: '📋 Service Request' },
+          { value: 'response', label: '✅ Response' },
+          { value: 'update', label: '📢 Status Update' }
+        ]
+      })
 
-      // TODO: Implement actual message sending using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 800))
+      if (isCancel(messageType)) {
+        cancel('Message sending cancelled')
+        return
+      }
 
-      s.stop('✅ Message sent!')
+      const sendSpinner = spinner()
+      sendSpinner.start('Sending message...')
 
-      console.log('\n' + chalk.green('📤 Message delivered successfully!'))
-      outro('Message sending completed')
+      try {
+        const result = await client.channel.sendMessage({
+          channelId: channelPubkey,
+          content: message as string,
+          messageType: messageType as string
+        })
+
+        sendSpinner.stop('✅ Message sent!')
+
+        console.log('\n' + chalk.green('📤 Message delivered successfully!'))
+        console.log(chalk.gray(`Message ID: ${result.messageId.toBase58()}`))
+        console.log(chalk.gray(`Channel: ${channelPubkey.toBase58()}`))
+        console.log(chalk.gray(`Type: ${messageType}`))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        
+        outro('Message sending completed')
+      } catch (error: any) {
+        sendSpinner.stop('❌ Send failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Message sending failed: ' + (error instanceof Error ? error.message : 'Unknown error')))

@@ -35,6 +35,18 @@
   ],
   "author": "GhostSpeak Protocol",
   "license": "MIT",
+  "homepage": "https://github.com/ghostspeak/ghostspeak#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghostspeak/ghostspeak.git",
+    "directory": "packages/sdk-typescript"
+  },
+  "bugs": {
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@solana/accounts": "^2.0.0",
     "@solana/addresses": "^2.0.0",

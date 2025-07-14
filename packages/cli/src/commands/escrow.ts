@@ -8,8 +8,11 @@ import {
   confirm, 
   spinner,
   isCancel,
-  cancel
+  cancel,
+  log
 } from '@clack/prompts'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { PublicKey } from '@solana/web3.js'
 
 export const escrowCommand = new Command('escrow')
   .description('Manage escrow payments and transactions')
@@ -41,8 +44,12 @@ escrowCommand
         placeholder: 'Enter Solana wallet address...',
         validate: (value) => {
           if (!value) return 'Recipient address is required'
-          // Basic validation - in real implementation, use proper Solana address validation
-          if (value.length < 32) return 'Invalid Solana address format'
+          try {
+            new PublicKey(value)
+            return
+          } catch {
+            return 'Invalid Solana address format'
+          }
         }
       })
 
@@ -51,20 +58,53 @@ escrowCommand
         return
       }
 
+      const workDescription = await text({
+        message: 'Work description:',
+        placeholder: 'Describe the work to be done...',
+        validate: (value) => {
+          if (!value) return 'Work description is required'
+          if (value.length < 10) return 'Description must be at least 10 characters'
+        }
+      })
+
+      if (isCancel(workDescription)) {
+        cancel('Escrow creation cancelled')
+        return
+      }
+
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
       s.start('Creating escrow contract...')
 
-      // TODO: Implement actual escrow creation using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      try {
+        const result = await client.escrow.create({
+          amount: BigInt(Math.floor(parseFloat(amount as string) * 1_000_000)), // Convert SOL to lamports
+          recipient: new PublicKey(recipient as string),
+          description: workDescription as string
+        })
 
-      s.stop('✅ Escrow created successfully!')
+        s.stop('✅ Escrow created successfully!')
 
-      console.log('\n' + chalk.green('🎉 Escrow payment created!'))
-      console.log(chalk.gray(`Amount: ${amount} SOL`))
-      console.log(chalk.gray(`Recipient: ${recipient}`))
-      console.log(chalk.gray(`Status: Active - Awaiting completion`))
+        console.log('\n' + chalk.green('🎉 Escrow payment created!'))
+        console.log(chalk.gray(`Escrow ID: ${result.escrowId.toBase58()}`))
+        console.log(chalk.gray(`Amount: ${amount} SOL`))
+        console.log(chalk.gray(`Recipient: ${recipient}`))
+        console.log(chalk.gray(`Description: ${workDescription}`))
+        console.log(chalk.gray(`Status: Active - Awaiting completion`))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Escrow Account:'), getAddressExplorerUrl(result.escrowId.toBase58(), 'devnet'))
 
-      outro('Escrow creation completed')
+        outro('Escrow creation completed')
+      } catch (error: any) {
+        s.stop('❌ Creation failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Escrow creation failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
@@ -78,24 +118,51 @@ escrowCommand
     intro(chalk.yellow('📋 Your Escrow Payments'))
 
     const s = spinner()
-    s.start('Loading escrow payments...')
+    s.start('Connecting to Solana network...')
 
     try {
-      // TODO: Implement actual escrow fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
+      s.start('Loading escrow payments...')
+      
+      // Fetch user's escrows
+      const escrows = await client.escrow.listByUser({
+        user: wallet.publicKey
+      })
+      
       s.stop('✅ Escrows loaded')
 
-      // Mock escrow data
-      console.log('\n' + chalk.bold('💰 Active Escrows'))
-      console.log('─'.repeat(60))
-      console.log(chalk.yellow('1. Payment for Data Analysis'))
-      console.log(chalk.gray('   ID: ESC-001 | Amount: 0.5 SOL | Status: Active'))
-      console.log(chalk.gray('   Created: 2 hours ago'))
-      console.log('')
-      console.log(chalk.yellow('2. Content Writing Service'))
-      console.log(chalk.gray('   ID: ESC-002 | Amount: 0.2 SOL | Status: Pending Release'))
-      console.log(chalk.gray('   Created: 1 day ago'))
+      if (escrows.length === 0) {
+        console.log('\n' + chalk.yellow('No escrow payments found'))
+        outro('Create an escrow with: npx ghostspeak escrow create')
+        return
+      }
+
+      console.log('\n' + chalk.bold(`💰 Your Escrows (${escrows.length})`))
+      console.log('─'.repeat(70))
+      
+      escrows.forEach((escrow, index) => {
+        const statusIcon = escrow.isReleased ? '✅' : 
+                          escrow.isDisputed ? '⚠️' : 
+                          escrow.workSubmitted ? '📝' : '⏳'
+        const status = escrow.isReleased ? 'Released' : 
+                      escrow.isDisputed ? 'Disputed' : 
+                      escrow.workSubmitted ? 'Work Submitted' : 'Awaiting Work'
+        
+        console.log(chalk.yellow(`${index + 1}. ${escrow.description}`))
+        console.log(chalk.gray(`   ID: ${escrow.id.toBase58()}`))
+        console.log(chalk.gray(`   Amount: ${Number(escrow.amount) / 1_000_000} SOL`))
+        console.log(chalk.gray(`   Status: ${statusIcon} ${status}`))
+        console.log(chalk.gray(`   Sender: ${escrow.sender.toBase58().slice(0, 8)}...`))
+        console.log(chalk.gray(`   Recipient: ${escrow.recipient.toBase58().slice(0, 8)}...`))
+        console.log(chalk.gray(`   Created: ${new Date(Number(escrow.createdAt) * 1000).toLocaleString()}`))
+        if (escrow.workSubmitted && escrow.workSubmissionTime) {
+          console.log(chalk.gray(`   Work Submitted: ${new Date(Number(escrow.workSubmissionTime) * 1000).toLocaleString()}`))
+        }
+        console.log('')
+      })
 
       outro('Escrow listing completed')
 
@@ -116,21 +183,62 @@ escrowCommand
     try {
       // Fetch escrow details
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
       s.start(`Loading escrow ${escrowId}...`)
 
-      // TODO: Implement actual escrow fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      let escrowPubkey: PublicKey
+      try {
+        escrowPubkey = new PublicKey(escrowId)
+      } catch {
+        s.stop('❌ Invalid escrow ID')
+        cancel('Invalid escrow ID format')
+        return
+      }
+
+      const escrow = await client.escrow.get({
+        escrowId: escrowPubkey
+      })
 
       s.stop('✅ Escrow loaded')
 
-      // Mock escrow details
+      if (!escrow) {
+        cancel('Escrow not found')
+        return
+      }
+
+      // Check if user is the sender
+      if (!escrow.sender.equals(wallet.publicKey)) {
+        cancel('You are not the sender of this escrow')
+        return
+      }
+
+      // Check escrow status
+      if (escrow.isReleased) {
+        cancel('This escrow has already been released')
+        return
+      }
+
+      if (escrow.isDisputed) {
+        cancel('This escrow is currently disputed and cannot be released')
+        return
+      }
+
+      if (!escrow.workSubmitted) {
+        console.log('\n' + chalk.yellow('⚠️  Work has not been submitted yet'))
+      }
+
       console.log('\n' + chalk.bold('🔒 Escrow Details'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Service:') + ' Data Analysis for E-commerce')
-      console.log(chalk.yellow('Amount:') + ' 0.5 SOL')
-      console.log(chalk.yellow('Provider:') + ' DataAnalyzer Pro')
-      console.log(chalk.yellow('Status:') + ' Work Completed - Pending Release')
-      console.log(chalk.yellow('Created:') + ' 3 days ago')
+      console.log(chalk.yellow('Description:') + ` ${escrow.description}`)
+      console.log(chalk.yellow('Amount:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
+      console.log(chalk.yellow('Recipient:') + ` ${escrow.recipient.toBase58()}`)
+      console.log(chalk.yellow('Status:') + ` ${escrow.workSubmitted ? 'Work Submitted' : 'Awaiting Work'}`)
+      console.log(chalk.yellow('Created:') + ` ${new Date(Number(escrow.createdAt) * 1000).toLocaleString()}`)
 
       // Work verification
       const verified = await confirm({
@@ -191,8 +299,8 @@ escrowCommand
       // Final confirmation
       console.log('\n' + chalk.bold('📋 Release Summary'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Amount to release:') + ' 0.5 SOL')
-      console.log(chalk.yellow('To:') + ' DataAnalyzer Pro')
+      console.log(chalk.yellow('Amount to release:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
+      console.log(chalk.yellow('To:') + ` ${escrow.recipient.toBase58()}`)
       if (rating !== 'skip') {
         console.log(chalk.yellow('Rating:') + ` ${rating} stars`)
       }
@@ -212,21 +320,31 @@ escrowCommand
       const releaseSpinner = spinner()
       releaseSpinner.start('Releasing funds from escrow...')
 
-      // TODO: Implement actual escrow release using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      try {
+        const result = await client.escrow.release({
+          escrowId: escrowPubkey,
+          rating: rating !== 'skip' ? parseInt(rating) : undefined,
+          review: review || undefined
+        })
 
-      releaseSpinner.stop('✅ Funds released successfully!')
+        releaseSpinner.stop('✅ Funds released successfully!')
 
-      console.log('\n' + chalk.green('🎉 Payment released!'))
-      console.log(chalk.gray('Transaction ID: 5yZ8m3...pQ4r'))
-      console.log(chalk.gray('Amount: 0.5 SOL'))
-      console.log(chalk.gray('Status: Completed'))
-      
-      if (rating !== 'skip') {
-        console.log('\n' + chalk.green('⭐ Thank you for rating the service!'))
+        console.log('\n' + chalk.green('🎉 Payment released!'))
+        console.log(chalk.gray(`Amount: ${Number(escrow.amount) / 1_000_000} SOL`))
+        console.log(chalk.gray(`To: ${escrow.recipient.toBase58()}`))
+        console.log(chalk.gray('Status: Completed'))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        
+        if (rating !== 'skip') {
+          console.log('\n' + chalk.green('⭐ Thank you for rating the service!'))
+        }
+
+        outro('Escrow release completed')
+      } catch (error: any) {
+        releaseSpinner.stop('❌ Release failed')
+        throw new Error(handleTransactionError(error))
       }
-
-      outro('Escrow release completed')
 
     } catch (error) {
       cancel(chalk.red('Escrow release failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
@@ -244,21 +362,58 @@ escrowCommand
     try {
       // Fetch escrow details
       const s = spinner()
+      s.start('Connecting to Solana network...')
+      
+      // Initialize SDK client
+      const { client, wallet } = await initializeClient('devnet')
+      s.stop('✅ Connected')
+      
       s.start(`Loading escrow ${escrowId}...`)
 
-      // TODO: Implement actual escrow fetching using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      let escrowPubkey: PublicKey
+      try {
+        escrowPubkey = new PublicKey(escrowId)
+      } catch {
+        s.stop('❌ Invalid escrow ID')
+        cancel('Invalid escrow ID format')
+        return
+      }
+
+      const escrow = await client.escrow.get({
+        escrowId: escrowPubkey
+      })
 
       s.stop('✅ Escrow loaded')
 
-      // Mock escrow details
+      if (!escrow) {
+        cancel('Escrow not found')
+        return
+      }
+
+      // Check if user is the sender
+      if (!escrow.sender.equals(wallet.publicKey)) {
+        cancel('You are not the sender of this escrow')
+        return
+      }
+
+      // Check escrow status
+      if (escrow.isReleased) {
+        cancel('This escrow has already been released')
+        return
+      }
+
+      if (escrow.isDisputed) {
+        cancel('This escrow is already disputed')
+        return
+      }
+
       console.log('\n' + chalk.bold('🔒 Escrow Details'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Service:') + ' Smart Contract Audit')
-      console.log(chalk.yellow('Amount:') + ' 2.0 SOL')
-      console.log(chalk.yellow('Provider:') + ' SecurityBot')
-      console.log(chalk.yellow('Status:') + ' Work Submitted - Pending Release')
-      console.log(chalk.yellow('Created:') + ' 5 days ago')
+      console.log(chalk.yellow('Description:') + ` ${escrow.description}`)
+      console.log(chalk.yellow('Amount:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
+      console.log(chalk.yellow('Provider:') + ` ${escrow.recipient.toBase58()}`)
+      console.log(chalk.yellow('Status:') + ` ${escrow.workSubmitted ? 'Work Submitted' : 'Awaiting Work'}`)
+      console.log(chalk.yellow('Created:') + ` ${new Date(Number(escrow.createdAt) * 1000).toLocaleString()}`)
 
       // Dispute reason
       const reason = await select({
@@ -338,7 +493,7 @@ escrowCommand
       console.log('\n' + chalk.bold('📋 Dispute Summary'))
       console.log('─'.repeat(40))
       console.log(chalk.red('Escrow:') + ` ${escrowId}`)
-      console.log(chalk.red('Amount:') + ' 2.0 SOL')
+      console.log(chalk.red('Amount:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
       console.log(chalk.red('Reason:') + ` ${reason}`)
       console.log(chalk.red('Resolution sought:') + ` ${resolution}`)
       if (evidenceFiles.length > 0) {
@@ -362,22 +517,36 @@ escrowCommand
       const disputeSpinner = spinner()
       disputeSpinner.start('Opening dispute...')
 
-      // TODO: Implement actual dispute creation using GhostSpeak SDK
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      try {
+        const result = await client.escrow.dispute({
+          escrowId: escrowPubkey,
+          reason: reason as string,
+          description: description as string,
+          evidence: evidenceFiles.join(','),
+          desiredResolution: resolution as string
+        })
 
-      disputeSpinner.stop('✅ Dispute opened successfully!')
+        disputeSpinner.stop('✅ Dispute opened successfully!')
 
-      console.log('\n' + chalk.red('⚠️  Dispute Opened'))
-      console.log(chalk.gray('Dispute ID: DISP-456789'))
-      console.log(chalk.gray('Status: Under Review'))
-      console.log(chalk.gray('Escrow Status: Frozen'))
-      console.log('\n' + chalk.yellow('💡 Next steps:'))
-      console.log(chalk.gray('1. The provider will be notified of the dispute'))
-      console.log(chalk.gray('2. Both parties can submit additional evidence'))
-      console.log(chalk.gray('3. A mediator will review the case within 48 hours'))
-      console.log(chalk.gray('4. You will be notified of the resolution'))
+        console.log('\n' + chalk.red('⚠️  Dispute Opened'))
+        console.log(chalk.gray(`Dispute ID: ${result.disputeId.toBase58()}`))
+        console.log(chalk.gray('Status: Under Review'))
+        console.log(chalk.gray('Escrow Status: Frozen'))
+        console.log('')
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Dispute Account:'), getAddressExplorerUrl(result.disputeId.toBase58(), 'devnet'))
+        
+        console.log('\n' + chalk.yellow('💡 Next steps:'))
+        console.log(chalk.gray('1. The provider will be notified of the dispute'))
+        console.log(chalk.gray('2. Both parties can submit additional evidence'))
+        console.log(chalk.gray('3. A mediator will review the case within 48 hours'))
+        console.log(chalk.gray('4. You will be notified of the resolution'))
 
-      outro('Dispute opened')
+        outro('Dispute opened')
+      } catch (error: any) {
+        disputeSpinner.stop('❌ Dispute creation failed')
+        throw new Error(handleTransactionError(error))
+      }
 
     } catch (error) {
       cancel(chalk.red('Dispute creation failed: ' + (error instanceof Error ? error.message : 'Unknown error')))

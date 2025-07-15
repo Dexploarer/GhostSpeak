@@ -54,6 +54,8 @@
     "@solana/kit": "^2.0.0",
     "@solana/programs": "^2.0.0",
     "@solana/rpc": "^2.0.0",
+    "@solana/rpc-spec": "^2.3.0",
+    "@solana/rpc-transport": "^0.0.0-experimental.0",
     "@solana/signers": "^2.0.0",
     "@solana/transactions": "^2.0.0"
   },

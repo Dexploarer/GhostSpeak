@@ -9,7 +9,6 @@
 use crate::state::AgentVerificationData;
 use crate::GhostSpeakError;
 use crate::*;
-use anchor_lang::prelude::*;
 // Enhanced optimization utilities with 2025 performance patterns
 
 /// Enhanced agent registration with 2025 security patterns

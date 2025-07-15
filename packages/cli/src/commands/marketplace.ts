@@ -39,9 +39,13 @@ marketplaceCommand
       s.start('Loading services from the marketplace...')
       
       // Fetch services from blockchain
-      const services = await client.marketplace.listServices({
-        category: options.category
-      })
+      // Use the correct method name
+      let services = await client.marketplace.getServiceListings()
+      
+      // Filter by category if provided
+      if (options.category) {
+        services = await client.marketplace.searchServicesByCategory(options.category)
+      }
       
       s.stop('✅ Services loaded')
 
@@ -271,7 +275,7 @@ marketplaceCommand
         const { client } = await initializeClient('devnet')
         
         // Fetch real services from blockchain
-        const services = await client.marketplace.listServices({})
+        const services = await client.marketplace.getServiceListings()
         s.stop('✅ Services loaded')
 
         if (services.length === 0) {

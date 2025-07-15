@@ -10,7 +10,6 @@ use crate::{
     state::{ChannelType, MessageType},
     GhostSpeakError, *,
 };
-use anchor_lang::prelude::*;
 
 // =====================================================
 // DATA STRUCTURES

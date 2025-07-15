@@ -1,5 +1,6 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
+import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig
@@ -62,7 +63,7 @@ export class A2AInstructions extends BaseInstructions {
       expiresAt: params.expiresAt
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -86,7 +87,7 @@ export class A2AInstructions extends BaseInstructions {
       timestamp: params.timestamp
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -115,7 +116,7 @@ export class A2AInstructions extends BaseInstructions {
       lastUpdated
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**

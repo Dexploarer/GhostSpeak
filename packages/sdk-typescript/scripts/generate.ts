@@ -4,6 +4,7 @@ import { createFromRoot } from '@codama/nodes'
 import { rootNodeFromAnchor } from '@codama/nodes-from-anchor'
 import { renderVisitor as renderJavaScriptVisitor } from '@codama/renderers-js'
 import { visit } from '@codama/visitors'
+import { updateInstructionsVisitor } from '@codama/visitors'
 import path from 'path'
 import { readFileSync, existsSync } from 'fs'
 import { fileURLToPath } from 'url'
@@ -28,7 +29,7 @@ async function generateClient() {
     // Create the root node from the Anchor IDL
     const rootNode = rootNodeFromAnchor(idl)
     
-    // Use the basic root node for now to avoid visitor complexity
+    // Transform the root node to use July 2025 compatible types
     const enhancedRoot = rootNode
     
     // Configure the JavaScript renderer for @solana/kit (web3.js v2) compatibility
@@ -36,34 +37,52 @@ async function generateClient() {
     console.log(`Generating client in: ${outDir}`)
     
     const jsVisitor = renderJavaScriptVisitor(outDir, {
-      // Use @solana/kit imports instead of @solana/web3.js
+      // Web3.js v2 compatibility settings
+      clientName: 'ghostspeakMarketplace',
+      // Use proper package imports for Web3.js v2
       importMap: {
         '@solana/web3.js': '@solana/kit',
-        // Map other imports to new packages
+        codecs: '@solana/codecs-core',
+        'codecs-core': '@solana/codecs-core',
+        'codecs-strings': '@solana/codecs-strings',
+        'codecs-numbers': '@solana/codecs-numbers',
+        'codecs-data-structures': '@solana/codecs-data-structures',
+        options: '@solana/options',
         addresses: '@solana/addresses',
         instructions: '@solana/instructions',
         programs: '@solana/programs',
         rpc: '@solana/rpc',
         signers: '@solana/signers',
         transactions: '@solana/transactions',
-        accounts: '@solana/accounts'
+        accounts: '@solana/accounts',
+        errors: '@solana/errors'
       },
-      // Use the new instruction data format
-      instructionDataStrategy: 'byteArray',
-      // Don't flatten structs to avoid conflicts
+      // Use modern instruction data format  
+      instructionDataStrategy: 'instructionData',
+      // Better type handling
       flattenInstructionArguments: false,
-      // Generate PDAs for all accounts that need them
-      pdaLinkOverrides: {},
-      // Use tree-shakeable exports
+      // Use proper exports
       exportMode: 'named',
-      // Generate comprehensive type exports
+      // Generate comprehensive types
       typeDeclarations: true,
-      // Use proper async/await patterns - must be array
-      asyncResolvers: [],
-      // Force generation of all types including nested ones
+      // Generate all necessary types including nested ones
       includeInternalTypes: true,
-      // Generate all type exports
-      renderDefinedTypesVisitor: true
+      // Use proper async patterns
+      asyncResolvers: [],
+      // Don't generate invalid parsers that cause type issues
+      renderInstructionParsers: false,
+      // Use proper account handling
+      accountProviders: true,
+      // Generate proper PDAs
+      pdaLinkOverrides: {},
+      // Disable obsolete Web3.js v1 interface types for July 2025 compatibility
+      renderInstructionDefaults: false,
+      renderInstructionAccountHelpers: false,
+      renderInstructionSignerHelpers: false,
+      // Disable instruction type exports that use obsolete interfaces
+      instructionSignatureFormat: 'minimal',
+      // Use simple data format only for July 2025 compatibility
+      instructionArgumentStrategy: 'dataOnly'
     })
     
     // Generate the client

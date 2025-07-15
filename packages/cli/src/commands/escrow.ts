@@ -12,7 +12,8 @@ import {
   log
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
-import { PublicKey } from '@solana/web3.js'
+import { address, type Address } from '@solana/addresses'
+import { WorkOrderStatus } from '@ghostspeak/sdk'
 
 export const escrowCommand = new Command('escrow')
   .description('Manage escrow payments and transactions')
@@ -45,7 +46,7 @@ escrowCommand
         validate: (value) => {
           if (!value) return 'Recipient address is required'
           try {
-            new PublicKey(value)
+            address(value)
             return
           } catch {
             return 'Invalid Solana address format'
@@ -82,23 +83,79 @@ escrowCommand
       s.start('Creating escrow contract...')
 
       try {
-        const result = await client.escrow.create({
-          amount: BigInt(Math.floor(parseFloat(amount as string) * 1_000_000)), // Convert SOL to lamports
-          recipient: new PublicKey(recipient as string),
-          description: workDescription as string
+        // Generate a unique order ID
+        const orderId = BigInt(Date.now())
+        
+        // Generate PDA for work order using proper derivation
+        const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+        
+        let workOrderPda: any
+        try {
+          // Generate a proper PDA for the work order
+          const addressEncoder = getAddressEncoder()
+          const [pda, bump] = await getProgramDerivedAddress({
+            programAddress: client.config.programId!,
+            seeds: [
+              new TextEncoder().encode('work_order'),
+              new TextEncoder().encode(orderId.toString()),
+              addressEncoder.encode(wallet.address)
+            ]
+          })
+          workOrderPda = pda
+          
+          console.log('Generated work order PDA:', workOrderPda)
+        } catch (error) {
+          console.error('PDA generation failed:', error)
+          throw error
+        }
+        
+        // Create the work order (escrow)
+        console.log('Creating escrow with params:', {
+          orderId: orderId.toString(),
+          provider: recipient,
+          workOrderPda: workOrderPda.toString(),
         })
+        
+        console.log('About to call client.createEscrow...')
+        
+        let signature: string
+        try {
+          signature = await client.createEscrow(
+            wallet,
+            workOrderPda,
+            {
+              orderId,
+              provider: address(recipient as string),
+              title: `Work Order #${orderId}`,
+              description: workDescription as string,
+              requirements: ['No specific requirements'], // Try with non-empty array
+              paymentAmount: BigInt(Math.floor(parseFloat(amount as string) * 1_000_000_000)), // Convert SOL to lamports
+              paymentToken: address('So11111111111111111111111111111111111111112'), // Native SOL
+              deadline: BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60) // 7 days from now
+            }
+          )
+          console.log('✅ Escrow creation successful, signature:', signature)
+        } catch (escrowError) {
+          console.error('❌ Escrow creation failed:', escrowError)
+          console.error('Error details:', {
+            message: escrowError instanceof Error ? escrowError.message : 'Unknown error',
+            stack: escrowError instanceof Error ? escrowError.stack : 'No stack trace'
+          })
+          throw escrowError
+        }
 
         s.stop('✅ Escrow created successfully!')
 
         console.log('\n' + chalk.green('🎉 Escrow payment created!'))
-        console.log(chalk.gray(`Escrow ID: ${result.escrowId.toBase58()}`))
+        console.log(chalk.gray(`Work Order ID: #${orderId}`))
+        console.log(chalk.gray(`Work Order Address: ${workOrderPda}`))
         console.log(chalk.gray(`Amount: ${amount} SOL`))
         console.log(chalk.gray(`Recipient: ${recipient}`))
         console.log(chalk.gray(`Description: ${workDescription}`))
         console.log(chalk.gray(`Status: Active - Awaiting completion`))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Escrow Account:'), getAddressExplorerUrl(result.escrowId.toBase58(), 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(signature, 'devnet'))
+        console.log(chalk.cyan('Work Order Account:'), getAddressExplorerUrl(workOrderPda, 'devnet'))
 
         outro('Escrow creation completed')
       } catch (error: any) {
@@ -127,39 +184,68 @@ escrowCommand
       
       s.start('Loading escrow payments...')
       
-      // Fetch user's escrows
-      const escrows = await client.escrow.listByUser({
-        user: wallet.publicKey
-      })
+      // Fetch user's escrows (work orders)
+      const workOrders = await client.escrow.getEscrowsForUser(wallet.address)
       
       s.stop('✅ Escrows loaded')
 
-      if (escrows.length === 0) {
+      if (workOrders.length === 0) {
         console.log('\n' + chalk.yellow('No escrow payments found'))
-        outro('Create an escrow with: npx ghostspeak escrow create')
+        outro('Create an escrow with: gs escrow create')
         return
       }
 
-      console.log('\n' + chalk.bold(`💰 Your Escrows (${escrows.length})`))
+      console.log('\n' + chalk.bold(`💰 Your Work Orders (${workOrders.length})`))
       console.log('─'.repeat(70))
       
-      escrows.forEach((escrow, index) => {
-        const statusIcon = escrow.isReleased ? '✅' : 
-                          escrow.isDisputed ? '⚠️' : 
-                          escrow.workSubmitted ? '📝' : '⏳'
-        const status = escrow.isReleased ? 'Released' : 
-                      escrow.isDisputed ? 'Disputed' : 
-                      escrow.workSubmitted ? 'Work Submitted' : 'Awaiting Work'
+      // Import WorkOrderStatus enum
+      const { WorkOrderStatus } = await import('@ghostspeak/sdk')
+      
+      workOrders.forEach((workOrder, index) => {
+        const isClient = workOrder.client === wallet.address
+        const role = isClient ? 'Client' : 'Provider'
         
-        console.log(chalk.yellow(`${index + 1}. ${escrow.description}`))
-        console.log(chalk.gray(`   ID: ${escrow.id.toBase58()}`))
-        console.log(chalk.gray(`   Amount: ${Number(escrow.amount) / 1_000_000} SOL`))
-        console.log(chalk.gray(`   Status: ${statusIcon} ${status}`))
-        console.log(chalk.gray(`   Sender: ${escrow.sender.toBase58().slice(0, 8)}...`))
-        console.log(chalk.gray(`   Recipient: ${escrow.recipient.toBase58().slice(0, 8)}...`))
-        console.log(chalk.gray(`   Created: ${new Date(Number(escrow.createdAt) * 1000).toLocaleString()}`))
-        if (escrow.workSubmitted && escrow.workSubmissionTime) {
-          console.log(chalk.gray(`   Work Submitted: ${new Date(Number(escrow.workSubmissionTime) * 1000).toLocaleString()}`))
+        let statusIcon = '⏳'
+        let statusText = 'Unknown'
+        
+        switch (workOrder.status) {
+          case WorkOrderStatus.Open:
+            statusIcon = '📋'
+            statusText = 'Open'
+            break
+          case WorkOrderStatus.InProgress:
+            statusIcon = '🔨'
+            statusText = 'In Progress'
+            break
+          case WorkOrderStatus.Submitted:
+            statusIcon = '📝'
+            statusText = 'Work Submitted'
+            break
+          case WorkOrderStatus.Completed:
+            statusIcon = '✅'
+            statusText = 'Completed'
+            break
+          case WorkOrderStatus.Cancelled:
+            statusIcon = '❌'
+            statusText = 'Cancelled'
+            break
+          case WorkOrderStatus.Disputed:
+            statusIcon = '⚠️'
+            statusText = 'Disputed'
+            break
+        }
+        
+        console.log(chalk.yellow(`${index + 1}. ${workOrder.title || `Work Order #${workOrder.orderId}`}`))
+        console.log(chalk.gray(`   Role: ${role}`))
+        console.log(chalk.gray(`   Order ID: #${workOrder.orderId}`))
+        console.log(chalk.gray(`   Amount: ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`))
+        console.log(chalk.gray(`   Status: ${statusIcon} ${statusText}`))
+        console.log(chalk.gray(`   Client: ${workOrder.client.slice(0, 8)}...`))
+        console.log(chalk.gray(`   Provider: ${workOrder.provider.slice(0, 8)}...`))
+        console.log(chalk.gray(`   Created: ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`))
+        console.log(chalk.gray(`   Deadline: ${new Date(Number(workOrder.deadline) * 1000).toLocaleString()}`))
+        if (workOrder.description) {
+          console.log(chalk.gray(`   Description: ${workOrder.description.slice(0, 50)}...`))
         }
         console.log('')
       })
@@ -191,54 +277,60 @@ escrowCommand
       
       s.start(`Loading escrow ${escrowId}...`)
 
-      let escrowPubkey: PublicKey
+      let escrowPubkey: Address
       try {
-        escrowPubkey = new PublicKey(escrowId)
+        escrowPubkey = address(escrowId)
       } catch {
         s.stop('❌ Invalid escrow ID')
         cancel('Invalid escrow ID format')
         return
       }
 
-      const escrow = await client.escrow.get({
-        escrowId: escrowPubkey
-      })
+      const workOrder = await client.escrow.getAccount(escrowPubkey)
 
-      s.stop('✅ Escrow loaded')
+      s.stop('✅ Work order loaded')
 
-      if (!escrow) {
-        cancel('Escrow not found')
+      if (!workOrder) {
+        cancel('Work order not found')
         return
       }
 
-      // Check if user is the sender
-      if (!escrow.sender.equals(wallet.publicKey)) {
-        cancel('You are not the sender of this escrow')
+      // Check if user is the client
+      if (workOrder.client !== wallet.address) {
+        cancel('You are not the client of this work order')
         return
       }
 
-      // Check escrow status
-      if (escrow.isReleased) {
-        cancel('This escrow has already been released')
+      // Check work order status
+      if (workOrder.status === WorkOrderStatus.Completed) {
+        cancel('This work order has already been completed')
         return
       }
 
-      if (escrow.isDisputed) {
-        cancel('This escrow is currently disputed and cannot be released')
+      if (workOrder.status === WorkOrderStatus.Disputed) {
+        cancel('This work order is currently disputed and cannot be released')
         return
       }
 
-      if (!escrow.workSubmitted) {
+      if (workOrder.status === WorkOrderStatus.Cancelled) {
+        cancel('This work order has been cancelled')
+        return
+      }
+
+      if (workOrder.status !== WorkOrderStatus.Submitted) {
         console.log('\n' + chalk.yellow('⚠️  Work has not been submitted yet'))
       }
 
-      console.log('\n' + chalk.bold('🔒 Escrow Details'))
+      console.log('\n' + chalk.bold('🔒 Work Order Details'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Description:') + ` ${escrow.description}`)
-      console.log(chalk.yellow('Amount:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
-      console.log(chalk.yellow('Recipient:') + ` ${escrow.recipient.toBase58()}`)
-      console.log(chalk.yellow('Status:') + ` ${escrow.workSubmitted ? 'Work Submitted' : 'Awaiting Work'}`)
-      console.log(chalk.yellow('Created:') + ` ${new Date(Number(escrow.createdAt) * 1000).toLocaleString()}`)
+      console.log(chalk.yellow('Title:') + ` ${workOrder.title || 'Untitled'}`)
+      console.log(chalk.yellow('Order ID:') + ` #${workOrder.orderId}`)
+      console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
+      console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
+      console.log(chalk.yellow('Provider:') + ` ${workOrder.provider.slice(0, 8)}...`)
+      console.log(chalk.yellow('Status:') + ` ${workOrder.status === WorkOrderStatus.Submitted ? 'Work Submitted' : 'Awaiting Work'}`)
+      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
+      console.log(chalk.yellow('Deadline:') + ` ${new Date(Number(workOrder.deadline) * 1000).toLocaleString()}`)
 
       // Work verification
       const verified = await confirm({
@@ -299,8 +391,8 @@ escrowCommand
       // Final confirmation
       console.log('\n' + chalk.bold('📋 Release Summary'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Amount to release:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
-      console.log(chalk.yellow('To:') + ` ${escrow.recipient.toBase58()}`)
+      console.log(chalk.yellow('Amount to release:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
+      console.log(chalk.yellow('To:') + ` ${workOrder.provider.slice(0, 8)}...`)
       if (rating !== 'skip') {
         console.log(chalk.yellow('Rating:') + ` ${rating} stars`)
       }
@@ -330,8 +422,8 @@ escrowCommand
         releaseSpinner.stop('✅ Funds released successfully!')
 
         console.log('\n' + chalk.green('🎉 Payment released!'))
-        console.log(chalk.gray(`Amount: ${Number(escrow.amount) / 1_000_000} SOL`))
-        console.log(chalk.gray(`To: ${escrow.recipient.toBase58()}`))
+        console.log(chalk.gray(`Amount: ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`))
+        console.log(chalk.gray(`To: ${workOrder.provider.slice(0, 8)}...`))
         console.log(chalk.gray('Status: Completed'))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
@@ -370,50 +462,56 @@ escrowCommand
       
       s.start(`Loading escrow ${escrowId}...`)
 
-      let escrowPubkey: PublicKey
+      let escrowPubkey: Address
       try {
-        escrowPubkey = new PublicKey(escrowId)
+        escrowPubkey = address(escrowId)
       } catch {
         s.stop('❌ Invalid escrow ID')
         cancel('Invalid escrow ID format')
         return
       }
 
-      const escrow = await client.escrow.get({
-        escrowId: escrowPubkey
-      })
+      const workOrder = await client.escrow.getAccount(escrowPubkey)
 
-      s.stop('✅ Escrow loaded')
+      s.stop('✅ Work order loaded')
 
-      if (!escrow) {
-        cancel('Escrow not found')
+      if (!workOrder) {
+        cancel('Work order not found')
         return
       }
 
-      // Check if user is the sender
-      if (!escrow.sender.equals(wallet.publicKey)) {
-        cancel('You are not the sender of this escrow')
+      // Check if user is the client
+      if (workOrder.client !== wallet.address) {
+        cancel('You are not the client of this work order')
         return
       }
 
-      // Check escrow status
-      if (escrow.isReleased) {
-        cancel('This escrow has already been released')
+      // Check work order status
+      if (workOrder.status === WorkOrderStatus.Completed) {
+        cancel('This work order has already been completed')
         return
       }
 
-      if (escrow.isDisputed) {
-        cancel('This escrow is already disputed')
+      if (workOrder.status === WorkOrderStatus.Disputed) {
+        cancel('This work order is already disputed')
         return
       }
 
-      console.log('\n' + chalk.bold('🔒 Escrow Details'))
+      if (workOrder.status === WorkOrderStatus.Cancelled) {
+        cancel('This work order has been cancelled')
+        return
+      }
+
+      console.log('\n' + chalk.bold('🔒 Work Order Details'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Description:') + ` ${escrow.description}`)
-      console.log(chalk.yellow('Amount:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
-      console.log(chalk.yellow('Provider:') + ` ${escrow.recipient.toBase58()}`)
-      console.log(chalk.yellow('Status:') + ` ${escrow.workSubmitted ? 'Work Submitted' : 'Awaiting Work'}`)
-      console.log(chalk.yellow('Created:') + ` ${new Date(Number(escrow.createdAt) * 1000).toLocaleString()}`)
+      console.log(chalk.yellow('Title:') + ` ${workOrder.title || 'Untitled'}`)
+      console.log(chalk.yellow('Order ID:') + ` #${workOrder.orderId}`)
+      console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
+      console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
+      console.log(chalk.yellow('Provider:') + ` ${workOrder.provider.slice(0, 8)}...`)
+      console.log(chalk.yellow('Status:') + ` ${workOrder.status === WorkOrderStatus.Submitted ? 'Work Submitted' : 'Awaiting Work'}`)
+      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
+      console.log(chalk.yellow('Deadline:') + ` ${new Date(Number(workOrder.deadline) * 1000).toLocaleString()}`)
 
       // Dispute reason
       const reason = await select({
@@ -493,7 +591,7 @@ escrowCommand
       console.log('\n' + chalk.bold('📋 Dispute Summary'))
       console.log('─'.repeat(40))
       console.log(chalk.red('Escrow:') + ` ${escrowId}`)
-      console.log(chalk.red('Amount:') + ` ${Number(escrow.amount) / 1_000_000} SOL`)
+      console.log(chalk.red('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
       console.log(chalk.red('Reason:') + ` ${reason}`)
       console.log(chalk.red('Resolution sought:') + ` ${resolution}`)
       if (evidenceFiles.length > 0) {

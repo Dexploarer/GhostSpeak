@@ -6,7 +6,6 @@
  */
 
 use crate::*;
-use anchor_lang::prelude::*;
 
 /// Data structure for creating a replication template
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]

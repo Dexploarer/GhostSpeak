@@ -19,7 +19,6 @@
 
 use crate::simple_optimization::{InputValidator, SecurityLogger};
 use crate::*;
-use anchor_lang::prelude::*;
 
 // Enhanced 2025 security constants
 const RATE_LIMIT_WINDOW: i64 = 60; // 60-second cooldown for bulk deal operations

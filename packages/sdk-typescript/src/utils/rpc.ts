@@ -3,24 +3,30 @@ import type {
   Rpc,
   GetAccountInfoApi,
   GetProgramAccountsApi,
-  AccountInfo,
-  Decoder
+  GetMultipleAccountsApi
 } from '@solana/kit'
 import { 
-  createSolanaRpc,
-  createDefaultRpcTransport,
-  fetchEncodedAccount,
-  fetchEncodedAccounts
+  createSolanaRpc
 } from '@solana/kit'
 import type { Commitment } from '../types/index.js'
+
+// Simple type for account info
+export interface AccountInfo {
+  executable: boolean
+  lamports: bigint
+  owner: Address
+  rentEpoch: bigint
+  space: bigint
+  data: string | Uint8Array
+}
 
 /**
  * Enhanced RPC client using 2025 Web3.js v2 patterns
  */
 export class GhostSpeakRpcClient {
-  private rpc: Rpc<GetAccountInfoApi & GetProgramAccountsApi>
+  private rpc: any
 
-  constructor(rpc: Rpc<GetAccountInfoApi & GetProgramAccountsApi>) {
+  constructor(rpc: any) {
     this.rpc = rpc
   }
 
@@ -28,8 +34,7 @@ export class GhostSpeakRpcClient {
    * Create a new RPC client from endpoint URL
    */
   static fromEndpoint(endpoint: string): GhostSpeakRpcClient {
-    const transport = createDefaultRpcTransport({ url: endpoint })
-    const rpc = createSolanaRpc({ transport })
+    const rpc = createSolanaRpc(endpoint)
     return new GhostSpeakRpcClient(rpc)
   }
 
@@ -41,11 +46,11 @@ export class GhostSpeakRpcClient {
     commitment: Commitment = 'confirmed'
   ): Promise<AccountInfo | null> {
     try {
-      const account = await fetchEncodedAccount(this.rpc, address, {
+      const result = await this.rpc.getAccountInfo(address, {
         commitment,
         encoding: 'base64'
-      })
-      return account
+      }).send()
+      return result.value
     } catch (error) {
       console.warn(`Failed to fetch account ${address}:`, error)
       return null
@@ -60,11 +65,11 @@ export class GhostSpeakRpcClient {
     commitment: Commitment = 'confirmed'
   ): Promise<(AccountInfo | null)[]> {
     try {
-      const accounts = await fetchEncodedAccounts(this.rpc, addresses, {
+      const result = await this.rpc.getMultipleAccounts(addresses, {
         commitment,
         encoding: 'base64'
-      })
-      return accounts
+      }).send()
+      return result.value
     } catch (error) {
       console.warn('Failed to fetch multiple accounts:', error)
       return addresses.map(() => null)
@@ -80,15 +85,15 @@ export class GhostSpeakRpcClient {
     commitment: Commitment = 'confirmed'
   ): Promise<{ address: Address; account: AccountInfo }[]> {
     try {
-      const { value: accounts } = await this.rpc.getProgramAccounts(programId, {
+      const result = await this.rpc.getProgramAccounts(programId, {
         commitment,
         encoding: 'base64',
         filters
       }).send()
       
-      return accounts.map(({ pubkey, account }) => ({
-        address: pubkey,
-        account
+      return (result.value || []).map((item: any) => ({
+        address: item.pubkey,
+        account: item.account
       }))
     } catch (error) {
       console.warn(`Failed to fetch program accounts for ${programId}:`, error)
@@ -101,7 +106,7 @@ export class GhostSpeakRpcClient {
    */
   async getAndDecodeAccount<T>(
     address: Address,
-    decoder: Decoder<T>,
+    decoder: { decode: (data: Uint8Array) => T },
     commitment: Commitment = 'confirmed'
   ): Promise<T | null> {
     try {
@@ -127,7 +132,7 @@ export class GhostSpeakRpcClient {
    */
   async getAndDecodeAccounts<T>(
     addresses: Address[],
-    decoder: Decoder<T>,
+    decoder: { decode: (data: Uint8Array) => T },
     commitment: Commitment = 'confirmed'
   ): Promise<(T | null)[]> {
     try {
@@ -160,7 +165,7 @@ export class GhostSpeakRpcClient {
    */
   async getAndDecodeProgramAccounts<T>(
     programId: Address,
-    decoder: Decoder<T>,
+    decoder: { decode: (data: Uint8Array) => T },
     filters: any[] = [],
     commitment: Commitment = 'confirmed'
   ): Promise<{ address: Address; data: T }[]> {
@@ -194,7 +199,7 @@ export class GhostSpeakRpcClient {
   /**
    * Raw RPC access for advanced use cases
    */
-  get raw(): Rpc<GetAccountInfoApi & GetProgramAccountsApi> {
+  get raw(): any {
     return this.rpc
   }
 }
@@ -208,7 +213,7 @@ export class AccountDecoder {
    */
   static decode<T>(
     accountData: Uint8Array | string,
-    decoder: Decoder<T>
+    decoder: { decode: (data: Uint8Array) => T }
   ): T {
     const data = typeof accountData === 'string'
       ? Uint8Array.from(atob(accountData), c => c.charCodeAt(0))
@@ -222,7 +227,7 @@ export class AccountDecoder {
    */
   static decodeMultiple<T>(
     accountsData: (Uint8Array | string | null)[],
-    decoder: Decoder<T>
+    decoder: { decode: (data: Uint8Array) => T }
   ): (T | null)[] {
     return accountsData.map(data => {
       if (!data) return null
@@ -256,7 +261,7 @@ export class AccountFetcher {
    */
   async fetchAccount<T>(
     address: Address,
-    decoder: Decoder<T>,
+    decoder: { decode: (data: Uint8Array) => T },
     useCache: boolean = true
   ): Promise<T | null> {
     const cacheKey = `${address}_${decoder.constructor.name}`
@@ -282,7 +287,7 @@ export class AccountFetcher {
    */
   async fetchAccountsBatch<T>(
     addresses: Address[],
-    decoder: Decoder<T>,
+    decoder: { decode: (data: Uint8Array) => T },
     useCache: boolean = true
   ): Promise<(T | null)[]> {
     const uncachedAddresses: Address[] = []

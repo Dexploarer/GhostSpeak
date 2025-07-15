@@ -177,7 +177,7 @@ Interactive CLI built with Clack prompts for beautiful terminal UI:
 
 ## Program ID and Deployment
 
-- **Program ID**: `367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK`
+- **Program ID**: `5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK`
 - **Current Network**: Devnet
 - **Anchor Version**: 0.31.1
 - **Solana Version**: 2.1.0 (Agave)

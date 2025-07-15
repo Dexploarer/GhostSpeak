@@ -21,7 +21,6 @@ use crate::state::auction::{
     AuctionBid, AuctionData, AuctionMarketplace, AuctionStatus, AuctionType,
 };
 use crate::*;
-use anchor_lang::prelude::*;
 
 // Import constants explicitly to avoid ambiguity
 use crate::state::{

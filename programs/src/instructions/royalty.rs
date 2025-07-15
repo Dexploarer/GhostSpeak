@@ -6,7 +6,6 @@
  */
 
 use crate::*;
-use anchor_lang::prelude::*;
 
 /// Creates a royalty stream for ongoing revenue sharing
 ///

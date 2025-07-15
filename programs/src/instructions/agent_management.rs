@@ -5,7 +5,6 @@
  */
 
 use crate::{GhostSpeakError, *};
-use anchor_lang::prelude::*;
 
 /// Agent service configuration data with 2025 security validation
 ///

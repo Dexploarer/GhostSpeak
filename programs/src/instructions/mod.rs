@@ -1,6 +1,6 @@
 /*!
  * Instructions Module
- * 
+ *
  * Contains all instruction handlers for the GhostSpeak Protocol.
  */
 
@@ -13,6 +13,7 @@ pub mod a2a_protocol;
 pub mod analytics;
 pub mod auction;
 pub mod bulk_deals;
+pub mod compliance_governance;
 pub mod dispute;
 pub mod escrow_payment;
 pub mod extensions;
@@ -24,15 +25,15 @@ pub mod pricing;
 pub mod replication;
 pub mod royalty;
 pub mod work_orders;
-pub mod compliance_governance;
 
 // Re-export all instruction handlers (2025 Anchor best practice)
+pub use a2a_protocol::*;
 pub use agent::*;
 pub use agent_management::*;
-pub use a2a_protocol::*;
 pub use analytics::*;
 pub use auction::*;
 pub use bulk_deals::*;
+pub use compliance_governance::*;
 pub use dispute::*;
 pub use escrow_payment::*;
 pub use extensions::*;
@@ -44,10 +45,9 @@ pub use pricing::*;
 pub use replication::*;
 pub use royalty::*;
 pub use work_orders::*;
-pub use compliance_governance::*;
 
 use anchor_lang::prelude::*;
 
-// Common instruction result type 
+// Common instruction result type
 #[allow(dead_code)]
 pub type InstructionResult<T = ()> = Result<T>;

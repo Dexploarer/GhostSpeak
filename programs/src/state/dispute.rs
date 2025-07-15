@@ -1,11 +1,11 @@
 /*!
  * Dispute State Module
- * 
+ *
  * Contains dispute-related state structures.
  */
 
+use crate::{GhostSpeakError, MAX_GENERAL_STRING_LENGTH};
 use anchor_lang::prelude::*;
-use crate::{MAX_GENERAL_STRING_LENGTH, GhostSpeakError};
 
 /// Arbitrator registry for managing authorized dispute arbitrators
 #[account]
@@ -25,7 +25,7 @@ impl ArbitratorRegistry {
         8 + // updated_at
         1 + // bump
         256; // padding
-        
+
     pub fn is_authorized_arbitrator(&self, arbitrator: Pubkey) -> bool {
         self.authorized_arbitrators.contains(&arbitrator)
     }
@@ -136,7 +136,10 @@ impl DisputeCase {
     }
 
     pub fn add_evidence(&mut self, evidence: DisputeEvidence) -> Result<()> {
-        require!(self.evidence.len() < 10, GhostSpeakError::TooManyEvidenceItems);
+        require!(
+            self.evidence.len() < 10,
+            GhostSpeakError::TooManyEvidenceItems
+        );
         self.evidence.push(evidence);
         Ok(())
     }

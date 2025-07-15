@@ -1,6 +1,6 @@
 /*!
  * User Registry State
- * 
+ *
  * Tracks per-user resource limits and usage statistics for security
  */
 
@@ -56,58 +56,63 @@ impl UserRegistry {
         1; // bump
 
     pub fn increment_agents(&mut self) -> Result<()> {
-        self.agent_count = self.agent_count
+        self.agent_count = self
+            .agent_count
             .checked_add(1)
             .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
-        
+
         if self.agent_count > MAX_AGENTS_PER_USER {
             return Err(crate::GhostSpeakError::TooManyCapabilities.into());
         }
-        
+
         Ok(())
     }
 
     pub fn increment_listings(&mut self) -> Result<()> {
-        self.listing_count = self.listing_count
+        self.listing_count = self
+            .listing_count
             .checked_add(1)
             .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
-        
+
         if self.listing_count > MAX_LISTINGS_PER_AGENT {
             return Err(crate::GhostSpeakError::InputTooLong.into());
         }
-        
+
         Ok(())
     }
 
     pub fn increment_work_orders(&mut self) -> Result<()> {
-        self.work_order_count = self.work_order_count
+        self.work_order_count = self
+            .work_order_count
             .checked_add(1)
             .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
-        
+
         if self.work_order_count > MAX_WORK_ORDERS_PER_USER {
             return Err(crate::GhostSpeakError::TooManyRequirements.into());
         }
-        
+
         Ok(())
     }
 
     pub fn increment_channels(&mut self) -> Result<()> {
-        self.channel_count = self.channel_count
+        self.channel_count = self
+            .channel_count
             .checked_add(1)
             .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
-        
+
         if self.channel_count > MAX_CHANNELS_PER_USER {
             return Err(crate::GhostSpeakError::InputTooLong.into());
         }
-        
+
         Ok(())
     }
 
     pub fn add_volume(&mut self, amount: u64) -> Result<()> {
-        self.total_volume_traded = self.total_volume_traded
+        self.total_volume_traded = self
+            .total_volume_traded
             .checked_add(amount)
             .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
-        
+
         Ok(())
     }
 

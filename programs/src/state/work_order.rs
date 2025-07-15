@@ -1,11 +1,14 @@
 /*!
  * Work Order State Module
- * 
+ *
  * Contains work order related state structures.
  */
 
+use super::{
+    GhostSpeakError, MAX_DESCRIPTION_LENGTH, MAX_GENERAL_STRING_LENGTH, MAX_REQUIREMENTS_ITEMS,
+    MAX_TITLE_LENGTH,
+};
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_REQUIREMENTS_ITEMS, GhostSpeakError};
 
 // PDA Seeds
 pub const WORK_ORDER_SEED: &[u8] = b"work_order";
@@ -110,18 +113,33 @@ impl WorkOrder {
         deadline: i64,
         bump: u8,
     ) -> Result<()> {
-        require!(title.len() <= MAX_TITLE_LENGTH, GhostSpeakError::TitleTooLong);
-        require!(description.len() <= MAX_DESCRIPTION_LENGTH, GhostSpeakError::DescriptionTooLong);
-        require!(requirements.len() <= MAX_REQUIREMENTS_ITEMS, GhostSpeakError::TooManyRequirements);
-        
+        require!(
+            title.len() <= MAX_TITLE_LENGTH,
+            GhostSpeakError::TitleTooLong
+        );
+        require!(
+            description.len() <= MAX_DESCRIPTION_LENGTH,
+            GhostSpeakError::DescriptionTooLong
+        );
+        require!(
+            requirements.len() <= MAX_REQUIREMENTS_ITEMS,
+            GhostSpeakError::TooManyRequirements
+        );
+
         for req in &requirements {
-            require!(req.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::RequirementTooLong);
+            require!(
+                req.len() <= MAX_GENERAL_STRING_LENGTH,
+                GhostSpeakError::RequirementTooLong
+            );
         }
-        
+
         let clock = Clock::get()?;
-        require!(deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
+        require!(
+            deadline > clock.unix_timestamp,
+            GhostSpeakError::InvalidDeadline
+        );
         require!(payment_amount > 0, GhostSpeakError::InvalidPaymentAmount);
-        
+
         self.client = client;
         self.provider = provider;
         self.title = title;
@@ -135,66 +153,84 @@ impl WorkOrder {
         self.deadline = deadline;
         self.delivered_at = None;
         self.bump = bump;
-        
+
         Ok(())
     }
 
     pub fn open(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Created, GhostSpeakError::InvalidWorkOrderStatus);
-        
+        require!(
+            self.status == WorkOrderStatus::Created,
+            GhostSpeakError::InvalidWorkOrderStatus
+        );
+
         self.status = WorkOrderStatus::Open;
         self.updated_at = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn submit(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Open, GhostSpeakError::InvalidWorkOrderStatus);
-        
+        require!(
+            self.status == WorkOrderStatus::Open,
+            GhostSpeakError::InvalidWorkOrderStatus
+        );
+
         self.status = WorkOrderStatus::Submitted;
         self.updated_at = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn start(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Submitted, GhostSpeakError::InvalidWorkOrderStatus);
-        
+        require!(
+            self.status == WorkOrderStatus::Submitted,
+            GhostSpeakError::InvalidWorkOrderStatus
+        );
+
         self.status = WorkOrderStatus::InProgress;
         self.updated_at = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn approve(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::InProgress, GhostSpeakError::InvalidWorkOrderStatus);
-        
+        require!(
+            self.status == WorkOrderStatus::InProgress,
+            GhostSpeakError::InvalidWorkOrderStatus
+        );
+
         let clock = Clock::get()?;
         self.status = WorkOrderStatus::Approved;
         self.updated_at = clock.unix_timestamp;
         self.delivered_at = Some(clock.unix_timestamp);
-        
+
         Ok(())
     }
 
     pub fn complete(&mut self) -> Result<()> {
-        require!(self.status == WorkOrderStatus::Approved, GhostSpeakError::InvalidWorkOrderStatus);
-        
+        require!(
+            self.status == WorkOrderStatus::Approved,
+            GhostSpeakError::InvalidWorkOrderStatus
+        );
+
         self.status = WorkOrderStatus::Completed;
         self.updated_at = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn cancel(&mut self) -> Result<()> {
         require!(
-            matches!(self.status, WorkOrderStatus::Created | WorkOrderStatus::Open | WorkOrderStatus::Submitted),
+            matches!(
+                self.status,
+                WorkOrderStatus::Created | WorkOrderStatus::Open | WorkOrderStatus::Submitted
+            ),
             GhostSpeakError::InvalidWorkOrderStatus
         );
-        
+
         self.status = WorkOrderStatus::Cancelled;
         self.updated_at = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 }
@@ -219,10 +255,19 @@ impl WorkDelivery {
         bump: u8,
     ) -> Result<()> {
         require!(deliverables.len() > 0, GhostSpeakError::NoDeliverables);
-        require!(deliverables.len() <= MAX_DELIVERABLES, GhostSpeakError::TooManyDeliverables);
-        require!(ipfs_hash.len() <= MAX_IPFS_HASH_LENGTH, GhostSpeakError::IpfsHashTooLong);
-        require!(metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::MetadataUriTooLong);
-        
+        require!(
+            deliverables.len() <= MAX_DELIVERABLES,
+            GhostSpeakError::TooManyDeliverables
+        );
+        require!(
+            ipfs_hash.len() <= MAX_IPFS_HASH_LENGTH,
+            GhostSpeakError::IpfsHashTooLong
+        );
+        require!(
+            metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::MetadataUriTooLong
+        );
+
         self.work_order = work_order;
         self.provider = provider;
         self.deliverables = deliverables;
@@ -230,7 +275,7 @@ impl WorkDelivery {
         self.metadata_uri = metadata_uri;
         self.submitted_at = Clock::get()?.unix_timestamp;
         self.bump = bump;
-        
+
         Ok(())
     }
 }

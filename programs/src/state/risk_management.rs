@@ -1,6 +1,6 @@
 /*!
  * Risk Management Module - Comprehensive Risk Assessment and Mitigation
- * 
+ *
  * This module implements comprehensive risk management including risk assessment
  * tools, risk monitoring, risk mitigation strategies, and compliance validation
  * for the GhostSpeak Protocol.
@@ -19,43 +19,43 @@ use super::security_governance::NotificationMethod;
 pub struct RiskManagement {
     /// Risk management authority
     pub authority: Pubkey,
-    
+
     /// Chief Risk Officer
     pub chief_risk_officer: Pubkey,
-    
+
     /// Creation timestamp
     pub created_at: i64,
-    
+
     /// Last update timestamp
     pub updated_at: i64,
-    
+
     /// Version for compatibility
     pub version: u8,
-    
+
     /// Risk framework configuration
     pub risk_framework: RiskFramework,
-    
+
     /// Risk assessment policies
     pub assessment_policies: RiskAssessmentPolicies,
-    
+
     /// Risk monitoring configuration
     pub monitoring_config: RiskMonitoringConfig,
-    
+
     /// Risk mitigation strategies
     pub mitigation_strategies: Vec<RiskMitigationStrategy>,
-    
+
     /// Risk appetite and tolerance
     pub risk_appetite: RiskAppetite,
-    
+
     /// Key Risk Indicators (KRIs)
     pub key_risk_indicators: Vec<KeyRiskIndicator>,
-    
+
     /// Risk register
     pub risk_register: RiskRegister,
-    
+
     /// Compliance validation rules
     pub compliance_validation: ComplianceValidationConfig,
-    
+
     /// Reserved space
     pub reserved: [u8; 128],
 }
@@ -65,25 +65,25 @@ pub struct RiskManagement {
 pub struct RiskFramework {
     /// Framework name and version
     pub framework_name: String,
-    
+
     /// Framework version
     pub version: String,
-    
+
     /// Risk categories
     pub risk_categories: Vec<RiskCategory>,
-    
+
     /// Risk assessment methodology
     pub assessment_methodology: AssessmentMethodology,
-    
+
     /// Risk scoring model
     pub scoring_model: RiskScoringModel,
-    
+
     /// Risk matrix configuration
     pub risk_matrix: RiskMatrix,
-    
+
     /// Governance structure
     pub governance_structure: RiskGovernance,
-    
+
     /// Framework review schedule
     pub review_schedule: FrameworkReviewSchedule,
 }
@@ -93,25 +93,25 @@ pub struct RiskFramework {
 pub struct RiskCategory {
     /// Category ID
     pub category_id: String,
-    
+
     /// Category name
     pub name: String,
-    
+
     /// Category description
     pub description: String,
-    
+
     /// Category type
     pub category_type: RiskCategoryType,
-    
+
     /// Subcategories
     pub subcategories: Vec<RiskSubcategory>,
-    
+
     /// Category weight in overall risk
     pub weight: u8,
-    
+
     /// Assessment frequency
     pub assessment_frequency: i64,
-    
+
     /// Escalation thresholds
     pub escalation_thresholds: EscalationThresholds,
 }
@@ -121,31 +121,31 @@ pub struct RiskCategory {
 pub enum RiskCategoryType {
     /// Strategic risks affecting business objectives
     Strategic,
-    
+
     /// Operational risks from internal processes
     Operational,
-    
+
     /// Financial risks from market conditions
     Financial,
-    
+
     /// Compliance and regulatory risks
     Compliance,
-    
+
     /// Technology and cyber security risks
     Technology,
-    
+
     /// Reputation and brand risks
     Reputational,
-    
+
     /// Legal and regulatory risks
     Legal,
-    
+
     /// Environmental and sustainability risks
     Environmental,
-    
+
     /// Third-party and vendor risks
     ThirdParty,
-    
+
     /// Governance and oversight risks
     Governance,
 }
@@ -155,19 +155,19 @@ pub enum RiskCategoryType {
 pub struct RiskSubcategory {
     /// Subcategory ID
     pub subcategory_id: String,
-    
+
     /// Subcategory name
     pub name: String,
-    
+
     /// Description
     pub description: String,
-    
+
     /// Risk factors
     pub risk_factors: Vec<RiskFactor>,
-    
+
     /// Control objectives
     pub control_objectives: Vec<ControlObjective>,
-    
+
     /// Weight within category
     pub weight: u8,
 }
@@ -177,25 +177,25 @@ pub struct RiskSubcategory {
 pub struct RiskFactor {
     /// Factor ID
     pub factor_id: String,
-    
+
     /// Factor name
     pub name: String,
-    
+
     /// Factor description
     pub description: String,
-    
+
     /// Factor type
     pub factor_type: RiskFactorType,
-    
+
     /// Impact assessment
     pub impact_assessment: ImpactAssessment,
-    
+
     /// Likelihood assessment
     pub likelihood_assessment: LikelihoodAssessment,
-    
+
     /// Current controls
     pub current_controls: Vec<RiskControl>,
-    
+
     /// Risk indicators
     pub indicators: Vec<RiskIndicator>,
 }
@@ -218,22 +218,22 @@ pub enum RiskFactorType {
 pub struct ImpactAssessment {
     /// Financial impact
     pub financial_impact: FinancialImpact,
-    
+
     /// Operational impact
     pub operational_impact: OperationalImpact,
-    
+
     /// Reputational impact
     pub reputational_impact: ReputationalImpact,
-    
+
     /// Legal impact
     pub legal_impact: LegalImpact,
-    
+
     /// Strategic impact
     pub strategic_impact: StrategicImpact,
-    
+
     /// Overall impact score
     pub overall_impact_score: u8,
-    
+
     /// Impact confidence level
     pub confidence_level: ConfidenceLevel,
 }
@@ -243,19 +243,19 @@ pub struct ImpactAssessment {
 pub struct FinancialImpact {
     /// Direct financial loss
     pub direct_loss: MonetaryImpact,
-    
+
     /// Indirect financial impact
     pub indirect_impact: MonetaryImpact,
-    
+
     /// Revenue impact
     pub revenue_impact: MonetaryImpact,
-    
+
     /// Cost increase
     pub cost_increase: MonetaryImpact,
-    
+
     /// Capital requirements
     pub capital_requirements: MonetaryImpact,
-    
+
     /// Impact timeframe
     pub timeframe: ImpactTimeframe,
 }
@@ -265,16 +265,16 @@ pub struct FinancialImpact {
 pub struct MonetaryImpact {
     /// Minimum impact amount
     pub min_amount: u64,
-    
+
     /// Maximum impact amount
     pub max_amount: u64,
-    
+
     /// Expected impact amount
     pub expected_amount: u64,
-    
+
     /// Currency denomination
     pub currency: String,
-    
+
     /// Impact probability
     pub probability: u8,
 }
@@ -294,16 +294,16 @@ pub enum ImpactTimeframe {
 pub struct OperationalImpact {
     /// Service disruption level
     pub service_disruption: DisruptionLevel,
-    
+
     /// Process efficiency impact
     pub efficiency_impact: EfficiencyImpact,
-    
+
     /// Resource availability impact
     pub resource_impact: ResourceImpact,
-    
+
     /// Quality impact
     pub quality_impact: QualityImpact,
-    
+
     /// Recovery time estimate
     pub recovery_time: RecoveryTimeEstimate,
 }
@@ -324,13 +324,13 @@ pub enum DisruptionLevel {
 pub struct EfficiencyImpact {
     /// Productivity reduction percentage
     pub productivity_reduction: u8,
-    
+
     /// Process delay increase
     pub delay_increase: i64,
-    
+
     /// Resource utilization impact
     pub utilization_impact: u8,
-    
+
     /// Automation impact
     pub automation_impact: AutomationImpact,
 }
@@ -349,13 +349,13 @@ pub enum AutomationImpact {
 pub struct ResourceImpact {
     /// Human resource impact
     pub human_resources: HumanResourceImpact,
-    
+
     /// Technology resource impact
     pub technology_resources: TechnologyResourceImpact,
-    
+
     /// Financial resource impact
     pub financial_resources: FinancialResourceImpact,
-    
+
     /// Physical resource impact
     pub physical_resources: PhysicalResourceImpact,
 }
@@ -365,13 +365,13 @@ pub struct ResourceImpact {
 pub struct HumanResourceImpact {
     /// Staff availability impact
     pub staff_availability: u8,
-    
+
     /// Skill gap impact
     pub skill_gap: u8,
-    
+
     /// Training requirements
     pub training_requirements: Vec<String>,
-    
+
     /// Additional hiring needs
     pub hiring_needs: u32,
 }
@@ -381,13 +381,13 @@ pub struct HumanResourceImpact {
 pub struct TechnologyResourceImpact {
     /// System availability impact
     pub system_availability: u8,
-    
+
     /// Performance degradation
     pub performance_degradation: u8,
-    
+
     /// Infrastructure requirements
     pub infrastructure_requirements: Vec<String>,
-    
+
     /// Technology debt increase
     pub tech_debt_increase: u8,
 }
@@ -397,13 +397,13 @@ pub struct TechnologyResourceImpact {
 pub struct FinancialResourceImpact {
     /// Budget impact
     pub budget_impact: u64,
-    
+
     /// Cash flow impact
     pub cash_flow_impact: i64,
-    
+
     /// Capital expenditure needs
     pub capex_needs: u64,
-    
+
     /// Operational expenditure impact
     pub opex_impact: i64,
 }
@@ -413,13 +413,13 @@ pub struct FinancialResourceImpact {
 pub struct PhysicalResourceImpact {
     /// Facility impact
     pub facility_impact: u8,
-    
+
     /// Equipment impact
     pub equipment_impact: u8,
-    
+
     /// Supply chain impact
     pub supply_chain_impact: u8,
-    
+
     /// Location impact
     pub location_impact: u8,
 }
@@ -429,13 +429,13 @@ pub struct PhysicalResourceImpact {
 pub struct QualityImpact {
     /// Service quality degradation
     pub service_quality: u8,
-    
+
     /// Data quality impact
     pub data_quality: u8,
-    
+
     /// Compliance quality impact
     pub compliance_quality: u8,
-    
+
     /// Customer satisfaction impact
     pub customer_satisfaction: u8,
 }
@@ -445,16 +445,16 @@ pub struct QualityImpact {
 pub struct RecoveryTimeEstimate {
     /// Minimum recovery time
     pub min_recovery_time: i64,
-    
+
     /// Maximum recovery time
     pub max_recovery_time: i64,
-    
+
     /// Expected recovery time
     pub expected_recovery_time: i64,
-    
+
     /// Recovery confidence level
     pub confidence_level: ConfidenceLevel,
-    
+
     /// Recovery dependencies
     pub dependencies: Vec<String>,
 }
@@ -464,16 +464,16 @@ pub struct RecoveryTimeEstimate {
 pub struct ReputationalImpact {
     /// Stakeholder impact
     pub stakeholder_impact: StakeholderImpact,
-    
+
     /// Media coverage impact
     pub media_coverage: MediaCoverageImpact,
-    
+
     /// Brand value impact
     pub brand_value_impact: u8,
-    
+
     /// Customer trust impact
     pub customer_trust_impact: u8,
-    
+
     /// Recovery timeline
     pub recovery_timeline: i64,
 }
@@ -483,19 +483,19 @@ pub struct ReputationalImpact {
 pub struct StakeholderImpact {
     /// Customer impact
     pub customers: u8,
-    
+
     /// Investor impact
     pub investors: u8,
-    
+
     /// Regulatory impact
     pub regulators: u8,
-    
+
     /// Partner impact
     pub partners: u8,
-    
+
     /// Employee impact
     pub employees: u8,
-    
+
     /// Community impact
     pub community: u8,
 }
@@ -505,13 +505,13 @@ pub struct StakeholderImpact {
 pub struct MediaCoverageImpact {
     /// Coverage scope
     pub scope: MediaScope,
-    
+
     /// Coverage sentiment
     pub sentiment: MediaSentiment,
-    
+
     /// Coverage duration
     pub duration: i64,
-    
+
     /// Viral potential
     pub viral_potential: u8,
 }
@@ -542,13 +542,13 @@ pub enum MediaSentiment {
 pub struct LegalImpact {
     /// Litigation risk
     pub litigation_risk: LitigationRisk,
-    
+
     /// Regulatory penalties
     pub regulatory_penalties: RegulatoryPenalties,
-    
+
     /// Contractual breaches
     pub contractual_breaches: Vec<ContractualBreach>,
-    
+
     /// Intellectual property impact
     pub ip_impact: IntellectualPropertyImpact,
 }
@@ -558,16 +558,16 @@ pub struct LegalImpact {
 pub struct LitigationRisk {
     /// Likelihood of litigation
     pub likelihood: u8,
-    
+
     /// Potential damages
     pub potential_damages: MonetaryImpact,
-    
+
     /// Legal costs estimate
     pub legal_costs: MonetaryImpact,
-    
+
     /// Settlement probability
     pub settlement_probability: u8,
-    
+
     /// Legal complexity
     pub complexity: LegalComplexity,
 }
@@ -587,13 +587,13 @@ pub enum LegalComplexity {
 pub struct RegulatoryPenalties {
     /// Monetary penalties
     pub monetary_penalties: MonetaryImpact,
-    
+
     /// License suspensions
     pub license_suspensions: Vec<LicenseSuspension>,
-    
+
     /// Operational restrictions
     pub operational_restrictions: Vec<OperationalRestriction>,
-    
+
     /// Remediation requirements
     pub remediation_requirements: Vec<RemediationRequirement>,
 }
@@ -603,13 +603,13 @@ pub struct RegulatoryPenalties {
 pub struct LicenseSuspension {
     /// License type
     pub license_type: String,
-    
+
     /// Suspension duration
     pub duration: i64,
-    
+
     /// Business impact
     pub business_impact: u8,
-    
+
     /// Reinstatement requirements
     pub reinstatement_requirements: Vec<String>,
 }
@@ -619,13 +619,13 @@ pub struct LicenseSuspension {
 pub struct OperationalRestriction {
     /// Restriction type
     pub restriction_type: String,
-    
+
     /// Scope of restriction
     pub scope: String,
-    
+
     /// Duration
     pub duration: i64,
-    
+
     /// Impact level
     pub impact_level: u8,
 }
@@ -635,13 +635,13 @@ pub struct OperationalRestriction {
 pub struct RemediationRequirement {
     /// Requirement description
     pub description: String,
-    
+
     /// Implementation deadline
     pub deadline: i64,
-    
+
     /// Cost estimate
     pub cost_estimate: u64,
-    
+
     /// Complexity level
     pub complexity: RemediationComplexity,
 }
@@ -661,16 +661,16 @@ pub enum RemediationComplexity {
 pub struct ContractualBreach {
     /// Contract type
     pub contract_type: String,
-    
+
     /// Breach severity
     pub severity: BreachSeverity,
-    
+
     /// Potential penalties
     pub penalties: MonetaryImpact,
-    
+
     /// Relationship impact
     pub relationship_impact: u8,
-    
+
     /// Cure period
     pub cure_period: Option<i64>,
 }
@@ -689,13 +689,13 @@ pub enum BreachSeverity {
 pub struct IntellectualPropertyImpact {
     /// IP type affected
     pub ip_type: IntellectualPropertyType,
-    
+
     /// Infringement risk
     pub infringement_risk: u8,
-    
+
     /// Value at risk
     pub value_at_risk: u64,
-    
+
     /// Enforcement requirements
     pub enforcement_requirements: Vec<String>,
 }
@@ -716,16 +716,16 @@ pub enum IntellectualPropertyType {
 pub struct StrategicImpact {
     /// Business objective impact
     pub business_objectives: BusinessObjectiveImpact,
-    
+
     /// Competitive position impact
     pub competitive_position: CompetitivePositionImpact,
-    
+
     /// Market opportunity impact
     pub market_opportunities: MarketOpportunityImpact,
-    
+
     /// Innovation impact
     pub innovation_impact: InnovationImpact,
-    
+
     /// Partnership impact
     pub partnership_impact: PartnershipImpact,
 }
@@ -735,16 +735,16 @@ pub struct StrategicImpact {
 pub struct BusinessObjectiveImpact {
     /// Revenue objectives
     pub revenue_objectives: u8,
-    
+
     /// Growth objectives
     pub growth_objectives: u8,
-    
+
     /// Market share objectives
     pub market_share_objectives: u8,
-    
+
     /// Profitability objectives
     pub profitability_objectives: u8,
-    
+
     /// Strategic timeline impact
     pub timeline_impact: i64,
 }
@@ -754,13 +754,13 @@ pub struct BusinessObjectiveImpact {
 pub struct CompetitivePositionImpact {
     /// Market position impact
     pub market_position: u8,
-    
+
     /// Competitive advantage impact
     pub competitive_advantage: u8,
-    
+
     /// Differentiation impact
     pub differentiation: u8,
-    
+
     /// Barrier to entry impact
     pub barrier_to_entry: u8,
 }
@@ -770,13 +770,13 @@ pub struct CompetitivePositionImpact {
 pub struct MarketOpportunityImpact {
     /// New market access impact
     pub new_markets: u8,
-    
+
     /// Customer acquisition impact
     pub customer_acquisition: u8,
-    
+
     /// Product development impact
     pub product_development: u8,
-    
+
     /// Partnership opportunities
     pub partnership_opportunities: u8,
 }
@@ -786,13 +786,13 @@ pub struct MarketOpportunityImpact {
 pub struct InnovationImpact {
     /// R&D capability impact
     pub rd_capability: u8,
-    
+
     /// Technology development impact
     pub technology_development: u8,
-    
+
     /// Innovation pipeline impact
     pub innovation_pipeline: u8,
-    
+
     /// Intellectual property impact
     pub ip_development: u8,
 }
@@ -802,13 +802,13 @@ pub struct InnovationImpact {
 pub struct PartnershipImpact {
     /// Existing partnership impact
     pub existing_partnerships: u8,
-    
+
     /// New partnership opportunities
     pub new_opportunities: u8,
-    
+
     /// Ecosystem participation
     pub ecosystem_participation: u8,
-    
+
     /// Collaboration effectiveness
     pub collaboration_effectiveness: u8,
 }
@@ -828,19 +828,19 @@ pub enum ConfidenceLevel {
 pub struct LikelihoodAssessment {
     /// Probability score (0-100)
     pub probability_score: u8,
-    
+
     /// Frequency estimate
     pub frequency_estimate: FrequencyEstimate,
-    
+
     /// Trend analysis
     pub trend_analysis: TrendAnalysis,
-    
+
     /// Trigger events
     pub trigger_events: Vec<TriggerEvent>,
-    
+
     /// Leading indicators
     pub leading_indicators: Vec<LeadingIndicator>,
-    
+
     /// Confidence level
     pub confidence_level: ConfidenceLevel,
 }
@@ -850,13 +850,13 @@ pub struct LikelihoodAssessment {
 pub struct FrequencyEstimate {
     /// Expected frequency per year
     pub annual_frequency: f64,
-    
+
     /// Historical frequency
     pub historical_frequency: f64,
-    
+
     /// Frequency trend
     pub frequency_trend: FrequencyTrend,
-    
+
     /// Seasonality factors
     pub seasonality: Vec<SeasonalityFactor>,
 }
@@ -877,10 +877,10 @@ pub enum FrequencyTrend {
 pub struct SeasonalityFactor {
     /// Time period
     pub period: String,
-    
+
     /// Frequency multiplier
     pub multiplier: f64,
-    
+
     /// Confidence level
     pub confidence: ConfidenceLevel,
 }
@@ -890,16 +890,16 @@ pub struct SeasonalityFactor {
 pub struct TrendAnalysis {
     /// Historical trend
     pub historical_trend: TrendDirection,
-    
+
     /// Current trend
     pub current_trend: TrendDirection,
-    
+
     /// Projected trend
     pub projected_trend: TrendDirection,
-    
+
     /// Trend drivers
     pub trend_drivers: Vec<TrendDriver>,
-    
+
     /// Trend confidence
     pub confidence: ConfidenceLevel,
 }
@@ -921,13 +921,13 @@ pub enum TrendDirection {
 pub struct TrendDriver {
     /// Driver name
     pub name: String,
-    
+
     /// Driver type
     pub driver_type: TrendDriverType,
-    
+
     /// Impact magnitude
     pub impact_magnitude: u8,
-    
+
     /// Driver stability
     pub stability: DriverStability,
 }
@@ -960,19 +960,19 @@ pub enum DriverStability {
 pub struct TriggerEvent {
     /// Event name
     pub name: String,
-    
+
     /// Event description
     pub description: String,
-    
+
     /// Trigger probability
     pub probability: u8,
-    
+
     /// Impact multiplier
     pub impact_multiplier: f64,
-    
+
     /// Event type
     pub event_type: TriggerEventType,
-    
+
     /// Early warning indicators
     pub early_warning_indicators: Vec<String>,
 }
@@ -993,19 +993,19 @@ pub enum TriggerEventType {
 pub struct LeadingIndicator {
     /// Indicator name
     pub name: String,
-    
+
     /// Indicator type
     pub indicator_type: IndicatorType,
-    
+
     /// Current value
     pub current_value: f64,
-    
+
     /// Threshold values
     pub thresholds: IndicatorThresholds,
-    
+
     /// Predictive power
     pub predictive_power: u8,
-    
+
     /// Lead time
     pub lead_time: i64,
 }
@@ -1028,13 +1028,13 @@ pub enum IndicatorType {
 pub struct IndicatorThresholds {
     /// Green threshold (low risk)
     pub green_threshold: f64,
-    
+
     /// Yellow threshold (medium risk)
     pub yellow_threshold: f64,
-    
+
     /// Red threshold (high risk)
     pub red_threshold: f64,
-    
+
     /// Critical threshold (very high risk)
     pub critical_threshold: f64,
 }
@@ -1048,28 +1048,28 @@ pub struct IndicatorThresholds {
 pub struct RiskControl {
     /// Control ID
     pub control_id: String,
-    
+
     /// Control name
     pub name: String,
-    
+
     /// Control description
     pub description: String,
-    
+
     /// Control type
     pub control_type: ControlType,
-    
+
     /// Control effectiveness
     pub effectiveness: ControlEffectiveness,
-    
+
     /// Implementation status
     pub implementation_status: ImplementationStatus,
-    
+
     /// Control owner
     pub owner: Option<Pubkey>,
-    
+
     /// Testing requirements
     pub testing_requirements: TestingRequirements,
-    
+
     /// Control metrics
     pub metrics: ControlMetrics,
 }
@@ -1090,19 +1090,19 @@ pub enum ControlType {
 pub struct ControlEffectiveness {
     /// Design effectiveness
     pub design_effectiveness: EffectivenessRating,
-    
+
     /// Operating effectiveness
     pub operating_effectiveness: EffectivenessRating,
-    
+
     /// Overall effectiveness score
     pub overall_score: u8,
-    
+
     /// Last assessment date
     pub last_assessment: i64,
-    
+
     /// Next assessment due
     pub next_assessment: i64,
-    
+
     /// Assessment confidence
     pub confidence: ConfidenceLevel,
 }
@@ -1133,19 +1133,19 @@ pub enum ImplementationStatus {
 pub struct TestingRequirements {
     /// Testing frequency
     pub frequency: TestingFrequency,
-    
+
     /// Testing methods
     pub methods: Vec<TestingMethod>,
-    
+
     /// Testing scope
     pub scope: TestingScope,
-    
+
     /// Testing owner
     pub testing_owner: Option<Pubkey>,
-    
+
     /// Last testing date
     pub last_testing: Option<i64>,
-    
+
     /// Next testing due
     pub next_testing: i64,
 }
@@ -1181,16 +1181,16 @@ pub enum TestingMethod {
 pub struct TestingScope {
     /// Full scope testing
     pub full_scope: bool,
-    
+
     /// Sample-based testing
     pub sample_based: bool,
-    
+
     /// Sample size
     pub sample_size: Option<u32>,
-    
+
     /// Specific test areas
     pub test_areas: Vec<String>,
-    
+
     /// Exclusions
     pub exclusions: Vec<String>,
 }
@@ -1200,13 +1200,13 @@ pub struct TestingScope {
 pub struct ControlMetrics {
     /// Key performance indicators
     pub kpis: Vec<ControlKpi>,
-    
+
     /// Trend analysis
     pub trend_analysis: ControlTrendAnalysis,
-    
+
     /// Benchmarking data
     pub benchmarks: Vec<ControlBenchmark>,
-    
+
     /// Cost-effectiveness metrics
     pub cost_effectiveness: CostEffectivenessMetrics,
 }
@@ -1216,19 +1216,19 @@ pub struct ControlMetrics {
 pub struct ControlKpi {
     /// KPI name
     pub name: String,
-    
+
     /// Current value
     pub current_value: f64,
-    
+
     /// Target value
     pub target_value: f64,
-    
+
     /// Tolerance range
     pub tolerance_range: f64,
-    
+
     /// Measurement frequency
     pub measurement_frequency: i64,
-    
+
     /// Last measurement
     pub last_measurement: i64,
 }
@@ -1238,16 +1238,16 @@ pub struct ControlKpi {
 pub struct ControlTrendAnalysis {
     /// Performance trend
     pub performance_trend: TrendDirection,
-    
+
     /// Effectiveness trend
     pub effectiveness_trend: TrendDirection,
-    
+
     /// Cost trend
     pub cost_trend: TrendDirection,
-    
+
     /// Trend period
     pub trend_period: i64,
-    
+
     /// Trend confidence
     pub confidence: ConfidenceLevel,
 }
@@ -1257,16 +1257,16 @@ pub struct ControlTrendAnalysis {
 pub struct ControlBenchmark {
     /// Benchmark type
     pub benchmark_type: BenchmarkType,
-    
+
     /// Benchmark value
     pub benchmark_value: f64,
-    
+
     /// Performance vs benchmark
     pub performance_ratio: f64,
-    
+
     /// Benchmark source
     pub source: String,
-    
+
     /// Benchmark date
     pub benchmark_date: i64,
 }
@@ -1287,19 +1287,19 @@ pub enum BenchmarkType {
 pub struct CostEffectivenessMetrics {
     /// Implementation cost
     pub implementation_cost: u64,
-    
+
     /// Ongoing operational cost
     pub operational_cost: u64,
-    
+
     /// Risk reduction value
     pub risk_reduction_value: u64,
-    
+
     /// Cost-benefit ratio
     pub cost_benefit_ratio: f64,
-    
+
     /// Return on investment
     pub roi: f64,
-    
+
     /// Payback period
     pub payback_period: i64,
 }
@@ -1309,19 +1309,19 @@ pub struct CostEffectivenessMetrics {
 pub struct ControlObjective {
     /// Objective ID
     pub objective_id: String,
-    
+
     /// Objective description
     pub description: String,
-    
+
     /// Related risks
     pub related_risks: Vec<String>,
-    
+
     /// Control activities
     pub control_activities: Vec<RiskControl>,
-    
+
     /// Achievement status
     pub achievement_status: ObjectiveAchievementStatus,
-    
+
     /// Success criteria
     pub success_criteria: Vec<SuccessCriterion>,
 }
@@ -1342,16 +1342,16 @@ pub enum ObjectiveAchievementStatus {
 pub struct SuccessCriterion {
     /// Criterion description
     pub description: String,
-    
+
     /// Measurement method
     pub measurement_method: String,
-    
+
     /// Target value
     pub target_value: f64,
-    
+
     /// Current achievement
     pub current_achievement: f64,
-    
+
     /// Achievement percentage
     pub achievement_percentage: u8,
 }
@@ -1361,16 +1361,16 @@ pub struct SuccessCriterion {
 pub struct EscalationThresholds {
     /// Low risk threshold
     pub low_threshold: u8,
-    
+
     /// Medium risk threshold
     pub medium_threshold: u8,
-    
+
     /// High risk threshold
     pub high_threshold: u8,
-    
+
     /// Critical risk threshold
     pub critical_threshold: u8,
-    
+
     /// Escalation procedures
     pub escalation_procedures: Vec<EscalationProcedure>,
 }
@@ -1380,16 +1380,16 @@ pub struct EscalationThresholds {
 pub struct EscalationProcedure {
     /// Threshold level
     pub threshold_level: ThresholdLevel,
-    
+
     /// Escalation targets
     pub targets: Vec<Pubkey>,
-    
+
     /// Notification method
     pub notification_method: NotificationMethod,
-    
+
     /// Response timeframe
     pub response_timeframe: i64,
-    
+
     /// Required actions
     pub required_actions: Vec<String>,
 }

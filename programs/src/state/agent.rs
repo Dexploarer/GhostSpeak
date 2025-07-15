@@ -1,11 +1,11 @@
 /*!
  * Agent State Module
- * 
+ *
  * Contains data structures related to AI agents and their verification.
  */
 
+use super::{GhostSpeakError, MAX_CAPABILITIES_COUNT, MAX_GENERAL_STRING_LENGTH, MAX_NAME_LENGTH};
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, MAX_CAPABILITIES_COUNT, MAX_NAME_LENGTH, GhostSpeakError};
 
 // Import PricingModel from lib.rs
 use crate::PricingModel;
@@ -13,7 +13,6 @@ use crate::PricingModel;
 // PDA Seeds
 pub const AGENT_SEED: &[u8] = b"agent";
 pub const AGENT_VERIFICATION_SEED: &[u8] = b"agent_verification";
-
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
 pub struct AgentVerificationData {
@@ -77,7 +76,7 @@ pub struct Agent {
     pub supported_tokens: Vec<Pubkey>, // SPL-2022 tokens accepted
     pub cnft_mint: Option<Pubkey>, // Compressed NFT for replication
     pub merkle_tree: Option<Pubkey>, // Merkle tree for verification
-    pub supports_a2a: bool, // Agent-to-agent communication
+    pub supports_a2a: bool,       // Agent-to-agent communication
     pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook
     pub bump: u8,
 }
@@ -138,10 +137,13 @@ impl Agent {
         bump: u8,
     ) -> Result<()> {
         require!(name.len() <= MAX_NAME_LENGTH, GhostSpeakError::NameTooLong);
-        require!(description.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::DescriptionTooLong);
-        
+        require!(
+            description.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::DescriptionTooLong
+        );
+
         let clock = Clock::get()?;
-        
+
         self.owner = owner;
         self.name = name;
         self.description = description;
@@ -162,23 +164,44 @@ impl Agent {
         self.verification_timestamp = 0;
         self.metadata_uri = String::new();
         self.bump = bump;
-        
+
         Ok(())
     }
 
     /// Validate agent state
     pub fn validate(&self) -> Result<()> {
-        require!(self.name.len() <= MAX_NAME_LENGTH, GhostSpeakError::NameTooLong);
-        require!(self.description.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::DescriptionTooLong);
-        require!(self.capabilities.len() <= MAX_CAPABILITIES_COUNT, GhostSpeakError::TooManyCapabilities);
-        require!(self.genome_hash.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::InvalidGenomeHash);
-        require!(self.service_endpoint.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::InvalidServiceEndpoint);
-        require!(self.metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::InvalidMetadataUri);
-        
+        require!(
+            self.name.len() <= MAX_NAME_LENGTH,
+            GhostSpeakError::NameTooLong
+        );
+        require!(
+            self.description.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::DescriptionTooLong
+        );
+        require!(
+            self.capabilities.len() <= MAX_CAPABILITIES_COUNT,
+            GhostSpeakError::TooManyCapabilities
+        );
+        require!(
+            self.genome_hash.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::InvalidGenomeHash
+        );
+        require!(
+            self.service_endpoint.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::InvalidServiceEndpoint
+        );
+        require!(
+            self.metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::InvalidMetadataUri
+        );
+
         for capability in &self.capabilities {
-            require!(capability.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::CapabilityTooLong);
+            require!(
+                capability.len() <= MAX_GENERAL_STRING_LENGTH,
+                GhostSpeakError::CapabilityTooLong
+            );
         }
-        
+
         Ok(())
     }
 }
@@ -222,7 +245,7 @@ impl AgentVerification {
         bump: u8,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         self.agent = agent;
         self.verifier = verifier;
         self.verification_data = verification_data;
@@ -230,7 +253,7 @@ impl AgentVerification {
         self.expires_at = expires_at;
         self.is_active = true;
         self.bump = bump;
-        
+
         Ok(())
     }
 }

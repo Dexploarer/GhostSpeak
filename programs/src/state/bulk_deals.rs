@@ -1,11 +1,11 @@
 /*!
  * Bulk Deals State Module
- * 
+ *
  * Contains bulk deal-related state structures.
  */
 
+use super::{GhostSpeakError, MAX_GENERAL_STRING_LENGTH};
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, GhostSpeakError};
 
 // PDA Seeds
 pub const BULK_DEAL_SEED: &[u8] = b"bulk_deal";
@@ -83,27 +83,48 @@ impl BulkDeal {
         end_date: i64,
         bump: u8,
     ) -> Result<()> {
-        require!(sla_terms.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::StringTooLong);
-        require!(volume_tiers.len() <= MAX_VOLUME_TIERS, GhostSpeakError::TooManyVolumeTiers);
+        require!(
+            sla_terms.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::StringTooLong
+        );
+        require!(
+            volume_tiers.len() <= MAX_VOLUME_TIERS,
+            GhostSpeakError::TooManyVolumeTiers
+        );
         require!(total_volume > 0, GhostSpeakError::InvalidVolume);
         require!(total_value > 0, GhostSpeakError::InvalidValue);
-        require!(discount_percentage >= 0.0 && discount_percentage <= 100.0, GhostSpeakError::InvalidDiscountPercentage);
+        require!(
+            discount_percentage >= 0.0 && discount_percentage <= 100.0,
+            GhostSpeakError::InvalidDiscountPercentage
+        );
         require!(contract_duration > 0, GhostSpeakError::InvalidDuration);
-        
+
         let clock = Clock::get()?;
-        require!(end_date > clock.unix_timestamp, GhostSpeakError::InvalidExpiration);
-        
+        require!(
+            end_date > clock.unix_timestamp,
+            GhostSpeakError::InvalidExpiration
+        );
+
         // Validate volume tiers
         for (i, tier) in volume_tiers.iter().enumerate() {
-            require!(tier.max_quantity > tier.min_quantity, GhostSpeakError::InvalidVolumeTier);
-            require!(tier.discount_percentage <= MAX_DISCOUNT_PERCENTAGE, GhostSpeakError::InvalidDiscountPercentage);
-            
+            require!(
+                tier.max_quantity > tier.min_quantity,
+                GhostSpeakError::InvalidVolumeTier
+            );
+            require!(
+                tier.discount_percentage <= MAX_DISCOUNT_PERCENTAGE,
+                GhostSpeakError::InvalidDiscountPercentage
+            );
+
             // Check that tiers don't overlap
             if i > 0 {
-                require!(tier.min_quantity > volume_tiers[i-1].max_quantity, GhostSpeakError::OverlappingVolumeTiers);
+                require!(
+                    tier.min_quantity > volume_tiers[i - 1].max_quantity,
+                    GhostSpeakError::OverlappingVolumeTiers
+                );
             }
         }
-        
+
         self.deal_id = deal_id;
         self.agent = agent;
         self.customer = customer;
@@ -120,16 +141,15 @@ impl BulkDeal {
         self.created_at = clock.unix_timestamp;
         self.executed_volume = 0;
         self.bump = bump;
-        
+
         Ok(())
     }
-
 
     pub fn calculate_price(&self, quantity: u32) -> u64 {
         // Calculate base price from total value and volume
         let base_price_per_unit = self.total_value.saturating_div(self.total_volume as u64);
         let mut price = base_price_per_unit.saturating_mul(quantity as u64);
-        
+
         // Apply volume discount if applicable
         for tier in &self.volume_tiers {
             if quantity >= tier.min_quantity && quantity <= tier.max_quantity {
@@ -140,11 +160,11 @@ impl BulkDeal {
                 break;
             }
         }
-        
+
         // Apply deal discount percentage
         let deal_discount = (price as f64 * self.discount_percentage / 100.0) as u64;
         price = price.saturating_sub(deal_discount);
-        
+
         price
     }
 
@@ -157,7 +177,7 @@ impl BulkDeal {
         let clock = Clock::get().unwrap();
         clock.unix_timestamp > self.end_date
     }
-    
+
     pub fn is_within_contract(&self) -> bool {
         let clock = Clock::get().unwrap();
         clock.unix_timestamp >= self.start_date && clock.unix_timestamp <= self.end_date

@@ -1,13 +1,16 @@
 /*!
  * Messaging Module - Enhanced with 2025 Security Patterns
- * 
+ *
  * Handles all messaging and channel communication with cutting-edge security
  * features including end-to-end encryption, canonical PDA validation,
  * anti-spam measures, and comprehensive audit trails following 2025 best practices.
  */
 
+use crate::{
+    state::{ChannelType, MessageType},
+    GhostSpeakError, *,
+};
 use anchor_lang::prelude::*;
-use crate::{*, GhostSpeakError, state::{ChannelType, MessageType}};
 
 // =====================================================
 // DATA STRUCTURES
@@ -52,29 +55,29 @@ pub struct MessageSentEvent {
 // =====================================================
 
 /// Creates a secure communication channel between agents
-/// 
+///
 /// Establishes a channel for agents to exchange messages, coordinate work, and share updates.
 /// Supports both direct (1-to-1) and group channels with privacy controls.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing the channel account and creator authority
 /// * `channel_data` - Channel configuration including:
 ///   - `participants` - Array of agent public keys that can access the channel
 ///   - `channel_type` - Type of channel (Direct, Group, Public, Private)
 ///   - `is_private` - Whether the channel contents are encrypted
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful channel creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `InvalidParticipants` - If participant list is empty or contains invalid keys
 /// * `UnauthorizedAccess` - If creator is not a verified agent
-/// 
+///
 /// # Security
-/// 
+///
 /// Private channels use end-to-end encryption with keys derived from participant public keys
 pub fn create_channel(
     ctx: Context<CreateChannel>,
@@ -88,7 +91,8 @@ pub fn create_channel(
 
     // SECURITY: Input validation for participants list
     require!(
-        !channel_data.participants.is_empty() && channel_data.participants.len() <= MAX_PARTICIPANTS_COUNT,
+        !channel_data.participants.is_empty()
+            && channel_data.participants.len() <= MAX_PARTICIPANTS_COUNT,
         GhostSpeakError::InputTooLong
     );
 
@@ -115,30 +119,30 @@ pub fn create_channel(
 }
 
 /// Sends a message in an existing communication channel
-/// 
+///
 /// Allows channel participants to send text, files, images, audio, or system messages.
 /// Messages are stored on-chain with optional encryption for private channels.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing the message, channel, and sender accounts
 /// * `message_data` - Message content including:
 ///   - `content` - The message content (text or IPFS hash for files)
 ///   - `message_type` - Type of message (Text, File, Image, Audio, System)
 ///   - `is_encrypted` - Whether the message content is encrypted
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful message send
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If sender is not a channel participant
 /// * `ChannelInactive` - If the channel has been deactivated
 /// * `MessageTooLarge` - If message content exceeds 4KB limit
-/// 
+///
 /// # Example
-/// 
+///
 /// ```no_run
 /// let message = MessageData {
 ///     content: "Ready to start work on the task".to_string(),
@@ -146,10 +150,7 @@ pub fn create_channel(
 ///     is_encrypted: false,
 /// };
 /// ```
-pub fn send_message(
-    ctx: Context<SendMessage>,
-    message_data: MessageData,
-) -> Result<()> {
+pub fn send_message(ctx: Context<SendMessage>, message_data: MessageData) -> Result<()> {
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.sender.is_signer,
@@ -174,10 +175,7 @@ pub fn send_message(
     );
 
     // SECURITY FIX: Check channel is active
-    require!(
-        channel.is_active,
-        GhostSpeakError::ChannelNotFound
-    );
+    require!(channel.is_active, GhostSpeakError::ChannelNotFound);
 
     // SECURITY FIX: Check message count limit
     require!(
@@ -194,7 +192,8 @@ pub fn send_message(
     message.bump = ctx.bumps.message;
 
     // SECURITY FIX: Use checked arithmetic for message count
-    channel.message_count = channel.message_count
+    channel.message_count = channel
+        .message_count
         .checked_add(1)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
     channel.last_activity = clock.unix_timestamp;
@@ -224,10 +223,10 @@ pub struct CreateChannel<'info> {
         bump
     )]
     pub channel: Account<'info, Channel>,
-    
+
     #[account(mut)]
     pub creator: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -242,12 +241,12 @@ pub struct SendMessage<'info> {
         bump
     )]
     pub message: Account<'info, Message>,
-    
+
     #[account(mut)]
     pub channel: Account<'info, Channel>,
-    
+
     #[account(mut)]
     pub sender: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }

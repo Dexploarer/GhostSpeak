@@ -1,12 +1,12 @@
 /*!
  * Replication Instructions Module
- * 
+ *
  * Contains all replication-related instruction handlers for the GhostSpeak Protocol.
  * This module manages agent template creation and replication functionality.
  */
 
-use anchor_lang::prelude::*;
 use crate::*;
+use anchor_lang::prelude::*;
 
 /// Data structure for creating a replication template
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -29,31 +29,31 @@ pub struct AgentCustomization {
 }
 
 /// Creates a replication template for an existing agent
-/// 
+///
 /// Allows agent owners to create templates that enable controlled replication
 /// of their agents with defined pricing and limitations.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing template and agent accounts
 /// * `template_data` - Template configuration including:
 ///   - `base_price` - One-time fee for replication
 ///   - `royalty_percentage` - Ongoing royalty from earnings
 ///   - `max_replications` - Maximum allowed replications
 ///   - `replication_config` - Custom replication parameters
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful template creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If caller is not the agent owner
 /// * `AgentNotReplicable` - If agent doesn't allow replication
 /// * `InvalidConfiguration` - If template parameters are invalid
-/// 
+///
 /// # Pricing Model
-/// 
+///
 /// - One-time base price per replication
 /// - Ongoing royalty from replicated agent earnings
 pub fn create_replication_template(
@@ -69,9 +69,10 @@ pub fn create_replication_template(
     // SECURITY: Input validation
     const MAX_GENOME_HASH_LENGTH: usize = 64;
     const MAX_CAPABILITIES: usize = 20;
-    
+
     require!(
-        !template_data.genome_hash.is_empty() && template_data.genome_hash.len() <= MAX_GENOME_HASH_LENGTH,
+        !template_data.genome_hash.is_empty()
+            && template_data.genome_hash.len() <= MAX_GENOME_HASH_LENGTH,
         GhostSpeakError::InputTooLong
     );
     require!(
@@ -91,10 +92,7 @@ pub fn create_replication_template(
     let agent = &ctx.accounts.source_agent;
 
     // Verify agent allows replication
-    require!(
-        agent.is_replicable,
-        GhostSpeakError::UnauthorizedAccess
-    );
+    require!(agent.is_replicable, GhostSpeakError::UnauthorizedAccess);
     template.source_agent = agent.key();
     template.creator = ctx.accounts.creator.key();
     template.genome_hash = agent.genome_hash.clone();
@@ -118,38 +116,38 @@ pub fn create_replication_template(
 }
 
 /// Replicates a new agent instance from an existing template
-/// 
+///
 /// Creates a new agent with capabilities and configurations from a template,
 /// while maintaining unique identity and ownership.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing new agent and template accounts
 /// * `replication_data` - Replication details including:
 ///   - `template` - Template to replicate from
 ///   - `custom_name` - Name for the new agent
 ///   - `modifications` - Custom modifications to template
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful replication
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `TemplateNotActive` - If template is discontinued
 /// * `InsufficientFunds` - If user lacks funds for base price
 /// * `InvalidModifications` - If modifications violate template rules
-/// 
+///
 /// # Replication Process
-/// 
+///
 /// 1. Validates template availability
 /// 2. Charges base template price
 /// 3. Creates new agent with template config
 /// 4. Sets up royalty stream to template creator
 /// 5. Applies any custom modifications
-/// 
+///
 /// # Important Notes
-/// 
+///
 /// - Replicated agents are independent entities
 /// - Template updates don't affect existing replications
 /// - Royalties are automatically deducted from earnings
@@ -166,13 +164,16 @@ pub fn replicate_agent(
     // SECURITY: Input validation
     const MAX_NAME_LENGTH: usize = 64;
     const MAX_CUSTOM_CONFIG_LENGTH: usize = 1024;
-    
+
     require!(
         !customization.name.is_empty() && customization.name.len() <= MAX_NAME_LENGTH,
         GhostSpeakError::NameTooLong
     );
     require!(
-        customization.description.as_ref().map_or(true, |desc| desc.len() <= MAX_CUSTOM_CONFIG_LENGTH),
+        customization
+            .description
+            .as_ref()
+            .map_or(true, |desc| desc.len() <= MAX_CUSTOM_CONFIG_LENGTH),
         GhostSpeakError::InputTooLong
     );
 
@@ -182,13 +183,18 @@ pub fn replicate_agent(
     let _clock = Clock::get()?;
 
     require!(template.is_active, GhostSpeakError::AgentNotActive);
-    require!(template.current_replications < template.max_replications, GhostSpeakError::InsufficientFunds);
+    require!(
+        template.current_replications < template.max_replications,
+        GhostSpeakError::InsufficientFunds
+    );
 
     new_agent.owner = ctx.accounts.buyer.key();
     new_agent.name = customization.name.clone();
     new_agent.description = customization.description.unwrap_or_default();
     new_agent.capabilities = template.base_capabilities.clone();
-    new_agent.capabilities.extend(customization.additional_capabilities.clone());
+    new_agent
+        .capabilities
+        .extend(customization.additional_capabilities.clone());
     new_agent.pricing_model = customization.pricing_model;
     new_agent.reputation_score = 0;
     new_agent.total_jobs_completed = 0;
@@ -210,7 +216,8 @@ pub fn replicate_agent(
     replication_record.bump = ctx.bumps.replication_record;
 
     // SECURITY: Update replication count with overflow protection
-    template.current_replications = template.current_replications
+    template.current_replications = template
+        .current_replications
         .checked_add(1)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
@@ -240,12 +247,12 @@ pub struct CreateReplicationTemplate<'info> {
         bump
     )]
     pub replication_template: Account<'info, crate::state::ReplicationTemplate>,
-    
+
     pub source_agent: Account<'info, Agent>,
-    
+
     #[account(mut)]
     pub creator: Signer<'info>,
-    
+
     pub clock: Sysvar<'info, Clock>,
     pub system_program: Program<'info, System>,
 }
@@ -255,7 +262,7 @@ pub struct CreateReplicationTemplate<'info> {
 pub struct ReplicateAgent<'info> {
     #[account(mut)]
     pub replication_template: Account<'info, crate::state::ReplicationTemplate>,
-    
+
     #[account(
         init,
         payer = buyer,
@@ -264,7 +271,7 @@ pub struct ReplicateAgent<'info> {
         bump
     )]
     pub new_agent: Account<'info, Agent>,
-    
+
     #[account(
         init,
         payer = buyer,
@@ -273,9 +280,9 @@ pub struct ReplicateAgent<'info> {
         bump
     )]
     pub replication_record: Account<'info, ReplicationRecord>,
-    
+
     #[account(mut)]
     pub buyer: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }

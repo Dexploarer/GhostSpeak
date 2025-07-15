@@ -1,21 +1,23 @@
 /*!
  * Dynamic Pricing Module
- * 
+ *
  * Implements automated pricing optimization and dynamic pricing strategies
  * for AI agent services based on market conditions and demand.
  */
 
-use anchor_lang::prelude::*;
+use crate::state::pricing::{
+    DemandMetrics, DynamicPricingConfig, DynamicPricingEngine, PricingAlgorithm,
+};
 use crate::*;
-use crate::state::pricing::{DynamicPricingConfig, DynamicPricingEngine, PricingAlgorithm, DemandMetrics};
+use anchor_lang::prelude::*;
 
 /// Creates a dynamic pricing engine for automated price optimization
-/// 
+///
 /// Establishes an AI-powered pricing engine that automatically adjusts
 /// service prices based on demand, competition, and performance metrics.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing pricing engine accounts
 /// * `engine_config` - Pricing engine configuration including:
 ///   - `base_price` - Starting price point
@@ -24,18 +26,18 @@ use crate::state::pricing::{DynamicPricingConfig, DynamicPricingEngine, PricingA
 ///   - `adjustment_factors` - What influences pricing
 ///   - `update_frequency` - How often to recalculate
 ///   - `strategy` - Conservative, moderate, or aggressive
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful engine creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `InvalidPriceRange` - If min > max or base outside range
 /// * `UpdateFrequencyTooHigh` - If updates more than hourly
-/// 
+///
 /// # Pricing Factors
-/// 
+///
 /// Engine considers:
 /// - Current demand (pending orders)
 /// - Competitor pricing
@@ -43,9 +45,9 @@ use crate::state::pricing::{DynamicPricingConfig, DynamicPricingEngine, PricingA
 /// - Customer satisfaction scores
 /// - Time of day/week patterns
 /// - Market trends
-/// 
+///
 /// # Strategies
-/// 
+///
 /// - **Conservative**: Small adjustments (±5%)
 /// - **Moderate**: Medium adjustments (±15%)
 /// - **Aggressive**: Large adjustments (±30%)
@@ -61,7 +63,7 @@ pub fn create_dynamic_pricing_engine(
 
     // SECURITY: Input validation
     const MIN_UPDATE_FREQUENCY: i64 = 3600; // 1 hour minimum
-    
+
     require!(
         config.base_price >= MIN_PAYMENT_AMOUNT && config.base_price <= MAX_PAYMENT_AMOUNT,
         GhostSpeakError::InvalidPaymentAmount
@@ -88,12 +90,15 @@ pub fn create_dynamic_pricing_engine(
     let clock = Clock::get()?;
 
     require!(agent.is_active, GhostSpeakError::AgentNotActive);
-    require!(agent.owner == ctx.accounts.owner.key(), GhostSpeakError::UnauthorizedAccess);
+    require!(
+        agent.owner == ctx.accounts.owner.key(),
+        GhostSpeakError::UnauthorizedAccess
+    );
 
-    engine.engine_id = clock.unix_timestamp as u64;  // Use timestamp as unique ID
+    engine.engine_id = clock.unix_timestamp as u64; // Use timestamp as unique ID
     engine.agent = agent.key();
     engine.algorithm = config.algorithm;
-    engine.config = config.clone();  // Clone here
+    engine.config = config.clone(); // Clone here
     engine.current_price = config.base_price;
     engine.last_updated = clock.unix_timestamp;
     engine.is_active = true;
@@ -111,42 +116,42 @@ pub fn create_dynamic_pricing_engine(
 }
 
 /// Updates dynamic pricing based on real-time market conditions
-/// 
+///
 /// Recalculates and applies new pricing based on current market data,
 /// demand patterns, and configured pricing strategy.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing pricing engine and service accounts
 /// * `market_data` - Current market conditions including:
 ///   - `current_demand` - Number of pending requests
 ///   - `competitor_avg_price` - Average competitor pricing
 ///   - `utilization_rate` - Agent's current workload (0-100%)
 ///   - `recent_performance` - Recent rating average
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` with updated pricing applied
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If caller is not the agent owner
 /// * `UpdateTooSoon` - If called before update frequency allows
 /// * `MarketDataStale` - If market data is outdated
-/// 
+///
 /// # Pricing Algorithm
-/// 
+///
 /// ```text
 /// new_price = base_price * demand_multiplier * competition_factor * performance_bonus
-/// 
+///
 /// Where:
 /// - demand_multiplier: 0.8-1.5x based on demand
 /// - competition_factor: 0.9-1.1x based on market position
 /// - performance_bonus: 0.95-1.2x based on ratings
 /// ```
-/// 
+///
 /// # Safety Limits
-/// 
+///
 /// - Single update capped at strategy maximum
 /// - Always respects min/max price bounds
 /// - Gradual changes to avoid price shocks
@@ -161,12 +166,12 @@ pub fn update_dynamic_pricing(
     );
 
     let engine = &mut ctx.accounts.engine;
-    
+
     let clock = Clock::get()?;
 
     // Check update frequency
     require!(
-        clock.unix_timestamp >= engine.last_updated + engine.config.adjustment_frequency, 
+        clock.unix_timestamp >= engine.last_updated + engine.config.adjustment_frequency,
         GhostSpeakError::InvalidDeadline
     );
 
@@ -175,7 +180,11 @@ pub fn update_dynamic_pricing(
 
     // Apply demand-based pricing
     if engine.algorithm == PricingAlgorithm::DemandBased {
-        let demand_multiplier = if demand_metrics.current_demand > 10 { 1.5 } else { 1.0 };
+        let demand_multiplier = if demand_metrics.current_demand > 10 {
+            1.5
+        } else {
+            1.0
+        };
         new_price = (new_price as f64 * demand_multiplier) as u64;
     }
 

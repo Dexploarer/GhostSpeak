@@ -1,11 +1,11 @@
 /*!
  * Escrow State Module
- * 
+ *
  * Contains escrow and payment related state structures.
  */
 
-use anchor_lang::prelude::*;
 use super::GhostSpeakError;
+use anchor_lang::prelude::*;
 
 // PDA Seeds
 pub const ESCROW_SEED: &[u8] = b"escrow";
@@ -46,9 +46,9 @@ pub struct Escrow {
     pub expires_at: i64,
     pub dispute_reason: Option<String>,
     pub resolution_notes: Option<String>,
-    pub payment_token: Pubkey, // SPL token mint (could be SPL-2022)
+    pub payment_token: Pubkey,         // SPL token mint (could be SPL-2022)
     pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook for compliance
-    pub is_confidential: bool, // For confidential transfers
+    pub is_confidential: bool,         // For confidential transfers
 }
 
 #[account]
@@ -93,12 +93,18 @@ impl Escrow {
         transfer_hook: Option<Pubkey>,
         is_confidential: bool,
     ) -> Result<()> {
-        require!(task_id.len() <= MAX_TASK_ID_LENGTH, GhostSpeakError::TaskIdTooLong);
+        require!(
+            task_id.len() <= MAX_TASK_ID_LENGTH,
+            GhostSpeakError::TaskIdTooLong
+        );
         require!(amount > 0, GhostSpeakError::InvalidAmount);
-        
+
         let clock = Clock::get()?;
-        require!(expires_at > clock.unix_timestamp, GhostSpeakError::InvalidExpiration);
-        
+        require!(
+            expires_at > clock.unix_timestamp,
+            GhostSpeakError::InvalidExpiration
+        );
+
         self.client = client;
         self.agent = agent;
         self.task_id = task_id;
@@ -111,48 +117,69 @@ impl Escrow {
         self.payment_token = payment_token;
         self.transfer_hook = transfer_hook;
         self.is_confidential = is_confidential;
-        
+
         Ok(())
     }
 
     pub fn complete(&mut self, resolution_notes: Option<String>) -> Result<()> {
-        require!(self.status == EscrowStatus::Active, GhostSpeakError::InvalidEscrowStatus);
-        
+        require!(
+            self.status == EscrowStatus::Active,
+            GhostSpeakError::InvalidEscrowStatus
+        );
+
         if let Some(notes) = &resolution_notes {
-            require!(notes.len() <= MAX_RESOLUTION_NOTES_LENGTH, GhostSpeakError::ResolutionNotesTooLong);
+            require!(
+                notes.len() <= MAX_RESOLUTION_NOTES_LENGTH,
+                GhostSpeakError::ResolutionNotesTooLong
+            );
         }
-        
+
         self.status = EscrowStatus::Completed;
         self.resolution_notes = resolution_notes;
-        
+
         Ok(())
     }
 
     pub fn dispute(&mut self, dispute_reason: String) -> Result<()> {
-        require!(self.status == EscrowStatus::Active, GhostSpeakError::InvalidEscrowStatus);
-        require!(dispute_reason.len() <= MAX_DISPUTE_REASON_LENGTH, GhostSpeakError::DisputeReasonTooLong);
-        
+        require!(
+            self.status == EscrowStatus::Active,
+            GhostSpeakError::InvalidEscrowStatus
+        );
+        require!(
+            dispute_reason.len() <= MAX_DISPUTE_REASON_LENGTH,
+            GhostSpeakError::DisputeReasonTooLong
+        );
+
         self.status = EscrowStatus::Disputed;
         self.dispute_reason = Some(dispute_reason);
-        
+
         Ok(())
     }
 
     pub fn resolve(&mut self, resolution_notes: String) -> Result<()> {
-        require!(self.status == EscrowStatus::Disputed, GhostSpeakError::InvalidEscrowStatus);
-        require!(resolution_notes.len() <= MAX_RESOLUTION_NOTES_LENGTH, GhostSpeakError::ResolutionNotesTooLong);
-        
+        require!(
+            self.status == EscrowStatus::Disputed,
+            GhostSpeakError::InvalidEscrowStatus
+        );
+        require!(
+            resolution_notes.len() <= MAX_RESOLUTION_NOTES_LENGTH,
+            GhostSpeakError::ResolutionNotesTooLong
+        );
+
         self.status = EscrowStatus::Resolved;
         self.resolution_notes = Some(resolution_notes);
-        
+
         Ok(())
     }
 
     pub fn cancel(&mut self) -> Result<()> {
-        require!(matches!(self.status, EscrowStatus::Active | EscrowStatus::Disputed), GhostSpeakError::InvalidEscrowStatus);
-        
+        require!(
+            matches!(self.status, EscrowStatus::Active | EscrowStatus::Disputed),
+            GhostSpeakError::InvalidEscrowStatus
+        );
+
         self.status = EscrowStatus::Cancelled;
-        
+
         Ok(())
     }
 }
@@ -179,12 +206,18 @@ impl TaskEscrow {
         deadline: i64,
         escrow_pubkey: Pubkey,
     ) -> Result<()> {
-        require!(task_id.len() <= MAX_TASK_ID_LENGTH, GhostSpeakError::TaskIdTooLong);
+        require!(
+            task_id.len() <= MAX_TASK_ID_LENGTH,
+            GhostSpeakError::TaskIdTooLong
+        );
         require!(amount > 0, GhostSpeakError::InvalidAmount);
-        
+
         let clock = Clock::get()?;
-        require!(deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
-        
+        require!(
+            deadline > clock.unix_timestamp,
+            GhostSpeakError::InvalidDeadline
+        );
+
         self.task_id = task_id;
         self.client = client;
         self.agent = agent;
@@ -195,46 +228,67 @@ impl TaskEscrow {
         self.completion_proof = None;
         self.dispute_details = None;
         self.escrow_pubkey = escrow_pubkey;
-        
+
         Ok(())
     }
 
     pub fn start_task(&mut self) -> Result<()> {
-        require!(self.status == TaskStatus::Pending, GhostSpeakError::InvalidTaskStatus);
-        
+        require!(
+            self.status == TaskStatus::Pending,
+            GhostSpeakError::InvalidTaskStatus
+        );
+
         self.status = TaskStatus::InProgress;
-        
+
         Ok(())
     }
 
     pub fn complete_task(&mut self, completion_proof: String) -> Result<()> {
-        require!(self.status == TaskStatus::InProgress, GhostSpeakError::InvalidTaskStatus);
-        require!(completion_proof.len() <= MAX_COMPLETION_PROOF_LENGTH, GhostSpeakError::CompletionProofTooLong);
-        
+        require!(
+            self.status == TaskStatus::InProgress,
+            GhostSpeakError::InvalidTaskStatus
+        );
+        require!(
+            completion_proof.len() <= MAX_COMPLETION_PROOF_LENGTH,
+            GhostSpeakError::CompletionProofTooLong
+        );
+
         let clock = Clock::get()?;
-        require!(clock.unix_timestamp <= self.deadline, GhostSpeakError::TaskDeadlineExceeded);
-        
+        require!(
+            clock.unix_timestamp <= self.deadline,
+            GhostSpeakError::TaskDeadlineExceeded
+        );
+
         self.status = TaskStatus::Completed;
         self.completion_proof = Some(completion_proof);
-        
+
         Ok(())
     }
 
     pub fn dispute_task(&mut self, dispute_details: String) -> Result<()> {
-        require!(matches!(self.status, TaskStatus::InProgress | TaskStatus::Completed), GhostSpeakError::InvalidTaskStatus);
-        require!(dispute_details.len() <= MAX_DISPUTE_REASON_LENGTH, GhostSpeakError::DisputeDetailsTooLong);
-        
+        require!(
+            matches!(self.status, TaskStatus::InProgress | TaskStatus::Completed),
+            GhostSpeakError::InvalidTaskStatus
+        );
+        require!(
+            dispute_details.len() <= MAX_DISPUTE_REASON_LENGTH,
+            GhostSpeakError::DisputeDetailsTooLong
+        );
+
         self.status = TaskStatus::Disputed;
         self.dispute_details = Some(dispute_details);
-        
+
         Ok(())
     }
 
     pub fn cancel_task(&mut self) -> Result<()> {
-        require!(matches!(self.status, TaskStatus::Pending | TaskStatus::InProgress), GhostSpeakError::InvalidTaskStatus);
-        
+        require!(
+            matches!(self.status, TaskStatus::Pending | TaskStatus::InProgress),
+            GhostSpeakError::InvalidTaskStatus
+        );
+
         self.status = TaskStatus::Cancelled;
-        
+
         Ok(())
     }
 }
@@ -249,7 +303,7 @@ pub struct Payment {
     pub is_confidential: bool,
     pub paid_at: i64,
     pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook
-    pub transfer_fee_applied: bool, // Track if SPL-2022 transfer fee was applied
+    pub transfer_fee_applied: bool,    // Track if SPL-2022 transfer fee was applied
     pub bump: u8,
 }
 

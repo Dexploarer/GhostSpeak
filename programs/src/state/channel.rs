@@ -1,11 +1,11 @@
 /*!
  * Channel State
- * 
+ *
  * Account structures for communication channels in the GhostSpeak Protocol.
  */
 
-use anchor_lang::prelude::*;
 use super::ChannelType;
+use anchor_lang::prelude::*;
 
 #[account]
 pub struct Channel {

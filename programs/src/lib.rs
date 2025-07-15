@@ -1,25 +1,37 @@
 /*!
  * GhostSpeak Protocol - AI Agent Commerce Protocol
- * 
+ *
  * A pure decentralized protocol for existing AI agents to:
  * - List and sell services to humans and other agents
  * - Execute work orders with escrow payments
  * - Communicate through secure channels
  * - Process payments using SPL Token 2022
- * 
+ *
  * Note: This is a protocol, not a runtime. Agents must be created externally.
  */
 
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::bool_comparison)]
+#![allow(clippy::manual_range_contains)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::clone_on_copy)]
+#![allow(clippy::derivable_impls)]
+#![allow(clippy::identity_op)]
+#![allow(clippy::implicit_saturating_sub)]
+#![allow(clippy::len_zero)]
+#![allow(clippy::crate_in_macro_def)]
+#![allow(clippy::unnecessary_map_or)]
+
 use anchor_lang::prelude::*;
 
-declare_id!("367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK");
+declare_id!("AkKRLXwBTMR3AEcmgAEAz8FTQRvhMYmQcGgMbTeSHeCJ");
 
 // Module declarations
 mod instructions;
-pub mod state;
 mod simple_optimization;
+pub mod state;
 
-// Re-export types from state module  
+// Re-export types from state module
 pub use state::*;
 
 // Re-export optimization utilities
@@ -124,7 +136,8 @@ pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
 // For devnet/testnet: Use a development admin key
 // For mainnet: This should be set to a multisig or governance-controlled account
 #[cfg(feature = "devnet")]
-pub const PROTOCOL_ADMIN: Pubkey = anchor_lang::solana_program::pubkey!("11111111111111111111111111111111");
+pub const PROTOCOL_ADMIN: Pubkey =
+    anchor_lang::solana_program::pubkey!("11111111111111111111111111111111");
 #[cfg(not(feature = "devnet"))]
 pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([1u8; 32]);
 
@@ -199,7 +212,7 @@ pub struct ServiceListingCreatedEvent {
     pub timestamp: i64,
 }
 
-// Service purchase event with correct fields  
+// Service purchase event with correct fields
 #[event]
 pub struct ServicePurchasedEvent {
     pub service: Pubkey,
@@ -271,7 +284,7 @@ pub enum GhostSpeakError {
     AgentNotActive = 1000,
     #[msg("Agent not found")]
     AgentNotFound = 1001,
-    
+
     // Pricing and payment errors (1100-1199)
     #[msg("Invalid price range")]
     InvalidPriceRange = 1100,
@@ -281,13 +294,13 @@ pub enum GhostSpeakError {
     InsufficientBalance = 1102,
     #[msg("Payment already processed")]
     PaymentAlreadyProcessed = 1103,
-    
+
     // Access control errors (1200-1299)
     #[msg("Unauthorized access")]
     UnauthorizedAccess = 1200,
     #[msg("Invalid agent owner")]
     InvalidAgentOwner = 1201,
-    
+
     // State transition errors (1300-1399)
     #[msg("Invalid status transition")]
     InvalidStatusTransition = 1300,
@@ -305,7 +318,7 @@ pub enum GhostSpeakError {
     InvalidReportStatus = 1306,
     #[msg("Invalid negotiation status")]
     InvalidNegotiationStatus = 1307,
-    
+
     // Time-related errors (1400-1499)
     #[msg("Deadline passed")]
     DeadlinePassed = 1400,
@@ -323,7 +336,7 @@ pub enum GhostSpeakError {
     NegotiationExpired = 1409,
     #[msg("Deal expired")]
     DealExpired = 1410,
-    
+
     // Marketplace-specific errors (1404-1499)
     #[msg("Invalid bid")]
     InvalidBid = 1404,
@@ -367,7 +380,7 @@ pub enum GhostSpeakError {
     InvalidMinParticipants = 1428,
     #[msg("Invalid max participants")]
     InvalidMaxParticipants = 1429,
-    
+
     // Input validation errors (1500-1599)
     #[msg("Input too long")]
     InputTooLong = 1500,
@@ -429,7 +442,7 @@ pub enum GhostSpeakError {
     DisputeDetailsTooLong = 1528,
     #[msg("Resolution notes too long")]
     ResolutionNotesTooLong = 1529,
-    
+
     // Arithmetic and overflow errors (1800-1899)
     #[msg("Arithmetic overflow")]
     ArithmeticOverflow = 1800,
@@ -441,289 +454,289 @@ pub enum GhostSpeakError {
     ValueExceedsMaximum = 1803,
     #[msg("Value below minimum")]
     ValueBelowMinimum = 1804,
-    
+
     // Configuration errors (2100-2199)
     #[msg("Invalid configuration")]
     InvalidConfiguration = 2100,
-    
+
     // Additional errors
     #[msg("Invalid offer")]
     InvalidOffer = 2101,
-    
+
     #[msg("Service is not active")]
     ServiceNotActive = 2104,
-    
+
     #[msg("Invalid percentage value")]
     InvalidPercentage = 2105,
-    
+
     #[msg("Compute budget exceeded")]
     ComputeBudgetExceeded = 2106,
-    
+
     #[msg("Job posting is not active")]
     JobNotActive = 2107,
-    
+
     #[msg("Insufficient funds for operation")]
     InsufficientFunds = 2108,
-    
+
     #[msg("Agent is already active")]
     AgentAlreadyActive = 2109,
-    
+
     #[msg("Invalid reputation score")]
     InvalidReputationScore = 2110,
-    
+
     #[msg("Invalid service configuration")]
     InvalidServiceConfiguration = 2111,
-    
+
     #[msg("Invalid job status")]
     InvalidJobStatus = 2112,
-    
+
     // Missing error variants found in codebase
     #[msg("Auction already ended")]
     AuctionAlreadyEnded = 2113,
-    
+
     #[msg("Dispute case not found")]
     DisputeCaseNotFound = 2114,
-    
+
     #[msg("Dispute already resolved")]
     DisputeAlreadyResolved = 2115,
-    
+
     #[msg("Invalid dispute status")]
     InvalidDisputeStatus = 2116,
-    
+
     #[msg("Too many evidence items")]
     TooManyEvidenceItems = 2117,
-    
+
     #[msg("Invalid contract status")]
     InvalidContractStatus = 2118,
-    
+
     #[msg("String too long")]
     StringTooLong = 2119,
-    
+
     #[msg("Invalid volume")]
     InvalidVolume = 2120,
-    
+
     #[msg("Invalid value")]
     InvalidValue = 2121,
-    
+
     #[msg("Invalid duration")]
     InvalidDuration = 2122,
-    
+
     #[msg("Job already filled")]
     JobAlreadyFilled = 2123,
-    
+
     #[msg("Application not found")]
     ApplicationNotFound = 2124,
-    
+
     #[msg("Application already processed")]
     ApplicationAlreadyProcessed = 2125,
-    
+
     #[msg("Listing already active")]
     ListingAlreadyActive = 2126,
-    
+
     #[msg("Listing not active")]
     ListingNotActive = 2127,
-    
+
     #[msg("Invalid service type")]
     InvalidServiceType = 2128,
-    
+
     #[msg("Agent already registered")]
     AgentAlreadyRegistered = 2129,
-    
+
     #[msg("Invalid agent status")]
     InvalidAgentStatus = 2130,
-    
+
     #[msg("Message not found")]
     MessageNotFound = 2131,
-    
+
     #[msg("Invalid message status")]
     InvalidMessageStatus = 2132,
-    
+
     #[msg("Channel not found")]
     ChannelNotFound = 2133,
-    
+
     #[msg("Channel already exists")]
     ChannelAlreadyExists = 2134,
-    
+
     #[msg("Invalid channel configuration")]
     InvalidChannelConfiguration = 2135,
-    
+
     #[msg("Work order already exists")]
     WorkOrderAlreadyExists = 2200,
-    
+
     #[msg("Invalid delivery status")]
     InvalidDeliveryStatus = 2136,
-    
+
     #[msg("Escrow not found")]
     EscrowNotFound = 2137,
-    
+
     #[msg("Escrow already released")]
     EscrowAlreadyReleased = 2138,
-    
+
     #[msg("Invalid escrow amount")]
     InvalidEscrowAmount = 2139,
-    
+
     #[msg("Negotiation not found")]
     NegotiationNotFound = 2140,
-    
+
     #[msg("Invalid offer amount")]
     InvalidOfferAmount = 2141,
-    
+
     #[msg("Royalty configuration invalid")]
     RoyaltyConfigurationInvalid = 2142,
-    
+
     #[msg("Invalid royalty percentage")]
     InvalidRoyaltyPercentage = 2143,
-    
+
     #[msg("Analytics not enabled")]
     AnalyticsNotEnabled = 2144,
-    
+
     #[msg("Invalid metrics data")]
     InvalidMetricsData = 2145,
-    
+
     #[msg("Extension not found")]
     ExtensionNotFound = 2146,
-    
+
     #[msg("Extension already enabled")]
     ExtensionAlreadyEnabled = 2147,
-    
+
     #[msg("Invalid extension configuration")]
     InvalidExtensionConfiguration = 2148,
-    
+
     #[msg("Incentive pool exhausted")]
     IncentivePoolExhausted = 2149,
-    
+
     #[msg("Invalid incentive configuration")]
     InvalidIncentiveConfiguration = 2150,
-    
+
     #[msg("Compliance check failed")]
     ComplianceCheckFailed = 2151,
-    
+
     #[msg("Governance proposal invalid")]
     GovernanceProposalInvalid = 2152,
-    
+
     #[msg("Voting period ended")]
     VotingPeriodEnded = 2153,
-    
+
     #[msg("Already voted")]
     AlreadyVoted = 2154,
-    
+
     #[msg("Insufficient voting power")]
     InsufficientVotingPower = 2155,
-    
+
     #[msg("Replication not allowed")]
     ReplicationNotAllowed = 2156,
-    
+
     #[msg("Invalid replication config")]
     InvalidReplicationConfig = 2157,
-    
+
     #[msg("Price model not supported")]
     PriceModelNotSupported = 2158,
-    
+
     #[msg("Invalid price configuration")]
     InvalidPriceConfiguration = 2159,
-    
+
     #[msg("Bulk deal not found")]
     BulkDealNotFound = 2160,
-    
+
     #[msg("Invalid participant count")]
     InvalidParticipantCount = 2161,
-    
+
     #[msg("Deal already finalized")]
     DealAlreadyFinalized = 2162,
-    
+
     #[msg("Invalid A2A protocol message")]
     InvalidA2AProtocolMessage = 2163,
-    
+
     #[msg("Protocol version mismatch")]
     ProtocolVersionMismatch = 2164,
-    
+
     #[msg("Task not found")]
     TaskNotFound = 2165,
-    
+
     #[msg("Task already completed")]
     TaskAlreadyCompleted = 2166,
-    
+
     #[msg("Invalid task configuration")]
     InvalidTaskConfiguration = 2167,
-    
+
     #[msg("Report not found")]
     ReportNotFound = 2168,
-    
+
     #[msg("Invalid report data")]
     InvalidReportData = 2169,
-    
+
     #[msg("Access denied")]
     AccessDenied = 2170,
-    
+
     #[msg("Operation not supported")]
     OperationNotSupported = 2171,
-    
+
     #[msg("Resource locked")]
     ResourceLocked = 2172,
-    
+
     #[msg("Rate limit exceeded")]
     RateLimitExceeded = 2173,
-    
+
     #[msg("Invalid state transition")]
     InvalidStateTransition = 2174,
-    
+
     #[msg("Data corruption detected")]
     DataCorruptionDetected = 2175,
-    
+
     #[msg("Signature verification failed")]
     SignatureVerificationFailed = 2176,
-    
+
     #[msg("Token transfer failed")]
     TokenTransferFailed = 2177,
-    
+
     #[msg("Account not initialized")]
     AccountNotInitialized = 2178,
-    
+
     #[msg("Account already initialized")]
     AccountAlreadyInitialized = 2179,
-    
+
     #[msg("Invalid account owner")]
     InvalidAccountOwner = 2180,
-    
+
     #[msg("Maximum retries exceeded")]
     MaximumRetriesExceeded = 2181,
-    
+
     #[msg("Operation timed out")]
     OperationTimedOut = 2182,
-    
+
     #[msg("Invalid input format")]
     InvalidInputFormat = 2183,
-    
+
     #[msg("Feature not enabled")]
     FeatureNotEnabled = 2184,
-    
+
     #[msg("Maintenance mode active")]
     MaintenanceModeActive = 2185,
-    
+
     #[msg("Invalid input length")]
     InvalidInputLength = 2186,
-    
+
     #[msg("Invalid parameter")]
     InvalidParameter = 2187,
-    
+
     #[msg("Invalid deal status")]
     InvalidDealStatus = 2188,
-    
+
     #[msg("Dispute window expired")]
     DisputeWindowExpired = 2189,
-    
+
     #[msg("Evidence window expired")]
     EvidenceWindowExpired = 2190,
-    
+
     #[msg("Too many evidence submissions")]
     TooManyEvidenceSubmissions = 2191,
-    
+
     #[msg("Unauthorized arbitrator")]
     UnauthorizedArbitrator = 2192,
-    
+
     #[msg("Invalid transaction status")]
     InvalidTransactionStatus = 2193,
-    
+
     #[msg("Invalid extension status")]
     InvalidExtensionStatus = 2194,
 }
@@ -739,7 +752,7 @@ pub mod ghostspeak_marketplace {
     // =====================================================
     // AGENT MANAGEMENT INSTRUCTIONS
     // =====================================================
-    
+
     pub fn register_agent(
         ctx: Context<RegisterAgent>,
         agent_type: u8,
@@ -765,7 +778,13 @@ pub mod ghostspeak_marketplace {
         supported_capabilities: Vec<u64>,
         verified_at: i64,
     ) -> Result<()> {
-        instructions::agent::verify_agent(ctx, agent_pubkey, service_endpoint, supported_capabilities, verified_at)
+        instructions::agent::verify_agent(
+            ctx,
+            agent_pubkey,
+            service_endpoint,
+            supported_capabilities,
+            verified_at,
+        )
     }
 
     pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Result<()> {
@@ -791,10 +810,7 @@ pub mod ghostspeak_marketplace {
         instructions::agent_management::update_agent_service(ctx, service_data)
     }
 
-    pub fn manage_agent_status(
-        ctx: Context<ManageAgentStatus>,
-        new_status: bool,
-    ) -> Result<()> {
+    pub fn manage_agent_status(ctx: Context<ManageAgentStatus>, new_status: bool) -> Result<()> {
         instructions::agent_management::manage_agent_status(ctx, new_status)
     }
 
@@ -831,9 +847,7 @@ pub mod ghostspeak_marketplace {
         instructions::marketplace::apply_to_job(ctx, application_data)
     }
 
-    pub fn accept_job_application(
-        ctx: Context<AcceptJobApplication>,
-    ) -> Result<()> {
+    pub fn accept_job_application(ctx: Context<AcceptJobApplication>) -> Result<()> {
         instructions::marketplace::accept_job_application(ctx)
     }
 
@@ -848,10 +862,7 @@ pub mod ghostspeak_marketplace {
         instructions::messaging::create_channel(ctx, channel_data)
     }
 
-    pub fn send_message(
-        ctx: Context<SendMessage>,
-        message_data: MessageData,
-    ) -> Result<()> {
+    pub fn send_message(ctx: Context<SendMessage>, message_data: MessageData) -> Result<()> {
         instructions::messaging::send_message(ctx, message_data)
     }
 
@@ -945,10 +956,7 @@ pub mod ghostspeak_marketplace {
         instructions::analytics::update_analytics_dashboard(ctx, new_metrics)
     }
 
-    pub fn add_top_agent(
-        ctx: Context<UpdateMarketAnalytics>,
-        agent: Pubkey,
-    ) -> Result<()> {
+    pub fn add_top_agent(ctx: Context<UpdateMarketAnalytics>, agent: Pubkey) -> Result<()> {
         instructions::analytics::add_top_agent(ctx, agent)
     }
 
@@ -963,16 +971,11 @@ pub mod ghostspeak_marketplace {
         instructions::auction::create_service_auction(ctx, auction_data)
     }
 
-    pub fn place_auction_bid(
-        ctx: Context<PlaceAuctionBid>,
-        bid_amount: u64,
-    ) -> Result<()> {
+    pub fn place_auction_bid(ctx: Context<PlaceAuctionBid>, bid_amount: u64) -> Result<()> {
         instructions::auction::place_auction_bid(ctx, bid_amount)
     }
 
-    pub fn finalize_auction(
-        ctx: Context<FinalizeAuction>,
-    ) -> Result<()> {
+    pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
         instructions::auction::finalize_auction(ctx)
     }
 
@@ -980,17 +983,11 @@ pub mod ghostspeak_marketplace {
     // BULK DEALS INSTRUCTIONS
     // =====================================================
 
-    pub fn create_bulk_deal(
-        ctx: Context<CreateBulkDeal>,
-        deal_data: BulkDealData,
-    ) -> Result<()> {
+    pub fn create_bulk_deal(ctx: Context<CreateBulkDeal>, deal_data: BulkDealData) -> Result<()> {
         instructions::bulk_deals::create_bulk_deal(ctx, deal_data)
     }
 
-    pub fn execute_bulk_deal_batch(
-        ctx: Context<UpdateBulkDeal>,
-        batch_size: u32,
-    ) -> Result<()> {
+    pub fn execute_bulk_deal_batch(ctx: Context<UpdateBulkDeal>, batch_size: u32) -> Result<()> {
         instructions::bulk_deals::execute_bulk_deal_batch(ctx, batch_size)
     }
 
@@ -1013,7 +1010,13 @@ pub mod ghostspeak_marketplace {
         signers: Vec<Pubkey>,
         config: MultisigConfig,
     ) -> Result<()> {
-        instructions::compliance_governance::create_multisig(ctx, multisig_id, threshold, signers, config)
+        instructions::compliance_governance::create_multisig(
+            ctx,
+            multisig_id,
+            threshold,
+            signers,
+            config,
+        )
     }
 
     pub fn initialize_governance_proposal(
@@ -1025,7 +1028,12 @@ pub mod ghostspeak_marketplace {
         execution_params: ExecutionParams,
     ) -> Result<()> {
         instructions::compliance_governance::initialize_governance_proposal(
-            ctx, proposal_id, title, description, proposal_type, execution_params
+            ctx,
+            proposal_id,
+            title,
+            description,
+            proposal_type,
+            execution_params,
         )
     }
 
@@ -1044,7 +1052,11 @@ pub mod ghostspeak_marketplace {
         date_range_end: i64,
     ) -> Result<()> {
         instructions::compliance_governance::generate_compliance_report(
-            ctx, report_id, report_type, date_range_start, date_range_end
+            ctx,
+            report_id,
+            report_type,
+            date_range_start,
+            date_range_end,
         )
     }
 
@@ -1052,10 +1064,7 @@ pub mod ghostspeak_marketplace {
     // DISPUTE INSTRUCTIONS
     // =====================================================
 
-    pub fn file_dispute(
-        ctx: Context<FileDispute>,
-        reason: String,
-    ) -> Result<()> {
+    pub fn file_dispute(ctx: Context<FileDispute>, reason: String) -> Result<()> {
         instructions::dispute::file_dispute(ctx, reason)
     }
 
@@ -1088,9 +1097,7 @@ pub mod ghostspeak_marketplace {
         instructions::extensions::register_extension(ctx, metadata, code_hash, revenue_share)
     }
 
-    pub fn approve_extension(
-        ctx: Context<ApproveExtension>,
-    ) -> Result<()> {
+    pub fn approve_extension(ctx: Context<ApproveExtension>) -> Result<()> {
         instructions::extensions::approve_extension(ctx)
     }
 
@@ -1124,7 +1131,12 @@ pub mod ghostspeak_marketplace {
         auto_accept_threshold: u64,
         negotiation_deadline: i64,
     ) -> Result<()> {
-        instructions::negotiation::initiate_negotiation(ctx, initial_offer, auto_accept_threshold, negotiation_deadline)
+        instructions::negotiation::initiate_negotiation(
+            ctx,
+            initial_offer,
+            auto_accept_threshold,
+            negotiation_deadline,
+        )
     }
 
     pub fn make_counter_offer(

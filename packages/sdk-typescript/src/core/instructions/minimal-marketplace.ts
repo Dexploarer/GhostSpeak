@@ -14,7 +14,7 @@ import {
   AccountRole
 } from '@solana/instructions';
 import type { TransactionSigner } from '@solana/signers';
-import { GHOSTSPEAK_PROGRAM_ID } from '../types.js';
+import { GHOSTSPEAK_PROGRAM_ID } from '../../types/index.js';
 import { deriveAgentPda } from '../utils.js';
 
 /**

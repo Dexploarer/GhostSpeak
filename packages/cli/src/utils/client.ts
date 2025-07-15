@@ -1,36 +1,51 @@
 /**
- * Shared SDK client initialization for CLI commands
+ * Shared SDK client initialization for CLI commands - July 2025 Standards
  */
 
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
-import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createSolanaRpc, KeyPairSigner, createKeyPairSignerFromBytes } from '@solana/kit'
+import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, writeFileSync } from 'fs'
 import { log } from '@clack/prompts'
 import chalk from 'chalk'
 
 /**
  * Get or create a wallet for CLI operations
  */
-export function getWallet(): Keypair {
+export function getWallet(): KeyPairSigner {
   const walletPath = join(homedir(), '.config', 'solana', 'ghostspeak-cli.json')
   
   if (existsSync(walletPath)) {
     try {
       const walletData = JSON.parse(readFileSync(walletPath, 'utf-8'))
-      return Keypair.fromSecretKey(new Uint8Array(walletData))
+      return createKeyPairSignerFromBytes(new Uint8Array(walletData))
     } catch (error) {
       log.warn('Failed to load existing wallet, creating new one')
     }
   }
   
+  // Use default Solana CLI wallet
+  const defaultWalletPath = join(homedir(), '.config', 'solana', 'id.json')
+  if (existsSync(defaultWalletPath)) {
+    try {
+      const walletData = JSON.parse(readFileSync(defaultWalletPath, 'utf-8'))
+      return createKeyPairSignerFromBytes(new Uint8Array(walletData))
+    } catch (error) {
+      log.warn('Failed to load default Solana wallet')
+    }
+  }
+  
   // Create new wallet if none exists
-  const newWallet = Keypair.generate()
-  log.info(`Created new wallet: ${newWallet.publicKey.toBase58()}`)
+  const newWallet = crypto.getRandomValues(new Uint8Array(64))
+  const signer = createKeyPairSignerFromBytes(newWallet)
+  
+  // Save the new wallet
+  writeFileSync(walletPath, JSON.stringify([...newWallet]))
+  log.info(`Created new wallet: ${signer.address}`)
   log.warn(`Please save your wallet or request SOL from faucet using: npx ghostspeak faucet --save`)
   
-  return newWallet
+  return signer
 }
 
 /**
@@ -38,32 +53,31 @@ export function getWallet(): Keypair {
  */
 export async function initializeClient(network: 'devnet' | 'testnet' | 'mainnet-beta' = 'devnet'): Promise<{
   client: GhostSpeakClient
-  wallet: Keypair
-  connection: Connection
+  wallet: KeyPairSigner
+  rpc: any
 }> {
-  // Set up connection
+  // Set up RPC connection using July 2025 patterns
   const rpcUrl = network === 'mainnet-beta' 
     ? 'https://api.mainnet-beta.solana.com'
     : `https://api.${network}.solana.com`
     
-  const connection = new Connection(rpcUrl, 'confirmed')
+  const rpc = createSolanaRpc(rpcUrl)
   
   // Get wallet
   const wallet = getWallet()
   
-  // Initialize client with the correct program ID
-  const programId = new PublicKey('367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK')
-  
+  // Initialize client with the latest program ID
   const client = new GhostSpeakClient({
-    connection,
-    wallet,
-    programId
+    rpc,
+    signer: wallet,
+    programId: GHOSTSPEAK_PROGRAM_ID
   })
   
   // Check wallet balance
   try {
-    const balance = await connection.getBalance(wallet.publicKey)
-    if (balance === 0) {
+    const balanceResponse = await rpc.getBalance(wallet.address).send()
+    const balance = balanceResponse.value
+    if (balance === 0n) {
       log.warn(chalk.yellow('⚠️  Your wallet has 0 SOL. You need SOL to perform transactions.'))
       log.info(chalk.dim('Run: npx ghostspeak faucet --save'))
     }
@@ -71,7 +85,7 @@ export async function initializeClient(network: 'devnet' | 'testnet' | 'mainnet-
     // Ignore balance check errors
   }
   
-  return { client, wallet, connection }
+  return { client, wallet, rpc }
 }
 
 /**

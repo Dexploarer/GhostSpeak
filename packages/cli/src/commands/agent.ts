@@ -14,7 +14,8 @@ import {
 } from '@clack/prompts'
 import { registerAgentPrompts } from '../prompts/agent.js'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
-import { PublicKey } from '@solana/web3.js'
+import type { Address } from '@solana/addresses'
+import { address } from '@solana/addresses'
 
 export const agentCommand = new Command('agent')
   .description('Manage AI agents on the GhostSpeak protocol')
@@ -62,10 +63,10 @@ agentCommand
         console.log(chalk.gray(`Name: ${agentData.name}`))
         console.log(chalk.gray(`Description: ${agentData.description}`))
         console.log(chalk.gray(`Capabilities: ${agentData.capabilities.join(', ')}`))
-        console.log(chalk.gray(`Agent Address: ${result.agentAddress.toBase58()}`))
+        console.log(chalk.gray(`Agent Address: ${result.agentAddress.toString()}`))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Agent Account:'), getAddressExplorerUrl(result.agentAddress.toBase58(), 'devnet'))
+        console.log(chalk.cyan('Agent Account:'), getAddressExplorerUrl(result.agentAddress.toString(), 'devnet'))
         
         outro('Agent registration completed')
       } catch (error: any) {
@@ -114,7 +115,7 @@ agentCommand
 
       agents.forEach((agent, index) => {
         console.log(chalk.cyan(`${index + 1}. ${agent.name}`))
-        console.log(chalk.gray(`   Address: ${agent.address.toBase58()}`))
+        console.log(chalk.gray(`   Address: ${agent.address.toString()}`))
         console.log(chalk.gray(`   Capabilities: ${agent.capabilities.join(', ')}`))
         console.log(chalk.gray(`   Status: ${agent.isActive ? '🟢 Active' : '🔴 Inactive'}`))
         console.log(chalk.gray(`   Price: ${Number(agent.pricePerTask) / 1_000_000} SOL per task`))
@@ -184,7 +185,7 @@ agentCommand
       results.forEach((agent, index) => {
         const matchingCaps = agent.capabilities.filter(cap => capabilities.includes(cap))
         console.log(chalk.cyan(`${index + 1}. ${agent.name}`))
-        console.log(chalk.gray(`   Address: ${agent.address.toBase58()}`))
+        console.log(chalk.gray(`   Address: ${agent.address.toString()}`))
         console.log(chalk.gray(`   Matches: ${matchingCaps.join(', ')}`))
         console.log(chalk.gray(`   All capabilities: ${agent.capabilities.join(', ')}`))
         console.log(chalk.gray(`   Price: ${Number(agent.pricePerTask) / 1_000_000} SOL per task`))
@@ -218,7 +219,7 @@ agentCommand
       
       // Get user's agents
       const myAgents = await client.agent.listByOwner({
-        owner: wallet.publicKey
+        owner: wallet.address
       })
       
       s.stop('✅ Status updated')
@@ -242,7 +243,7 @@ agentCommand
         const statusText = agent.isActive ? 'Active' : 'Inactive'
         
         console.log(`${statusIcon} ${agent.name}` + chalk.gray(` - ${statusText}`))
-        console.log(chalk.gray(`  Address: ${agent.address.toBase58()}`))
+        console.log(chalk.gray(`  Address: ${agent.address.toString()}`))
         console.log(chalk.gray(`  Jobs completed: ${status.jobsCompleted || 0}`))
         console.log(chalk.gray(`  Total earnings: ${Number(status.totalEarnings || 0) / 1_000_000} SOL`))
         console.log(chalk.gray(`  Success rate: ${status.successRate || 0}%`))
@@ -280,12 +281,12 @@ agentCommand
       s.stop('✅ Connected')
 
       // Select agent if not provided
-      let agentAddress: PublicKey
+      let agentAddress: Address
       
       if (options.agentId) {
         // Use provided agent ID
         try {
-          agentAddress = new PublicKey(options.agentId)
+          agentAddress = address(options.agentId)
         } catch {
           cancel('Invalid agent address provided')
           return
@@ -296,7 +297,7 @@ agentCommand
         
         // Fetch user's agents
         const myAgents = await client.agent.listByOwner({
-          owner: wallet.publicKey
+          owner: wallet.address
         })
         
         loadSpinner.stop('✅ Agents loaded')
@@ -309,7 +310,7 @@ agentCommand
         const selectedAgent = await select({
           message: 'Select agent to update:',
           options: myAgents.map(agent => ({
-            value: agent.address.toBase58(),
+            value: agent.address.toString(),
             label: `${agent.name} (${agent.isActive ? 'Active' : 'Inactive'})`
           }))
         })
@@ -319,7 +320,7 @@ agentCommand
           return
         }
 
-        agentAddress = new PublicKey(selectedAgent as string)
+        agentAddress = address(selectedAgent as string)
       }
 
       // Fetch current agent details
@@ -516,7 +517,7 @@ agentCommand
         updateSpinner.stop('✅ Agent updated successfully!')
 
         console.log('\n' + chalk.green('🎉 Agent has been updated!'))
-        console.log(chalk.gray(`Agent Address: ${agentAddress.toBase58()}`))
+        console.log(chalk.gray(`Agent Address: ${agentAddress.toString()}`))
         console.log(chalk.gray('Changes will take effect immediately'))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))

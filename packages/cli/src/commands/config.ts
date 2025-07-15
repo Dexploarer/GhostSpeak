@@ -107,7 +107,7 @@ configCommand
     console.log(chalk.green('Network:') + ' devnet')
     console.log(chalk.green('RPC URL:') + ' https://api.devnet.solana.com')
     console.log(chalk.green('Wallet:') + ' ~/.config/solana/id.json')
-    console.log(chalk.green('Program ID:') + ' 367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK')
+    console.log(chalk.green('Program ID:') + ' 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK')
     console.log('')
     console.log(chalk.gray('💰 Wallet Balance: 5.2 SOL'))
     console.log(chalk.gray('🏪 Active Agents: 2'))

@@ -24,7 +24,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("AkKRLXwBTMR3AEcmgAEAz8FTQRvhMYmQcGgMbTeSHeCJ");
+declare_id!("5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK");
 
 // Module declarations
 mod instructions;
@@ -1200,4 +1200,147 @@ pub mod ghostspeak_marketplace {
     ) -> Result<()> {
         instructions::royalty::list_agent_for_resale(ctx, listing_price)
     }
+
+    // =====================================================
+    // TYPE EXPORT INSTRUCTIONS FOR IDL GENERATION
+    // =====================================================
+    // These dummy instructions force Anchor to include nested types in the IDL
+    // They are never meant to be called - they exist solely for IDL generation
+
+    /// Dummy instruction to export AuditContext type
+    pub fn _export_audit_context(_ctx: Context<DummyContext>, _data: crate::state::audit::AuditContext) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export BiometricQuality type
+    pub fn _export_biometric_quality(_ctx: Context<DummyContext>, _data: crate::state::security_governance::BiometricQuality) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export ComplianceStatus type
+    pub fn _export_compliance_status(_ctx: Context<DummyContext>, _data: crate::state::audit::ComplianceStatus) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export DynamicPricingConfig type
+    pub fn _export_dynamic_pricing_config(_ctx: Context<DummyContext>, _data: crate::state::pricing::DynamicPricingConfig) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export MultisigConfig type
+    pub fn _export_multisig_config(_ctx: Context<DummyContext>, _data: crate::state::governance::MultisigConfig) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export Action type
+    pub fn _export_action(_ctx: Context<DummyContext>, _data: crate::state::security_governance::Action) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export RuleCondition type
+    pub fn _export_rule_condition(_ctx: Context<DummyContext>, _data: crate::state::security_governance::RuleCondition) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export ReportEntry type
+    pub fn _export_report_entry(_ctx: Context<DummyContext>, _data: crate::state::audit::ReportEntry) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
+
+    /// Dummy instruction to export ResourceConstraints type
+    pub fn _export_resource_constraints(_ctx: Context<DummyContext>, _data: crate::state::security_governance::ResourceConstraints) -> Result<()> {
+        err!(GhostSpeakError::FeatureNotEnabled)
+    }
 }
+
+// =====================================================
+// DUMMY CONTEXT FOR TYPE EXPORTS
+// =====================================================
+/// Dummy context for type export instructions
+#[derive(Accounts)]
+pub struct DummyContext<'info> {
+    pub system_program: Program<'info, System>,
+}
+
+// =====================================================
+// DUMMY EVENTS FOR TYPE EXPORTS
+// =====================================================
+// These events force Anchor to include nested types in the IDL
+
+#[event]
+pub struct AuditContextExport {
+    pub data: crate::state::audit::AuditContext,
+}
+
+#[event]
+pub struct BiometricQualityExport {
+    pub data: crate::state::security_governance::BiometricQuality,
+}
+
+#[event]
+pub struct ComplianceStatusExport {
+    pub data: crate::state::audit::ComplianceStatus,
+}
+
+#[event]
+pub struct DynamicPricingConfigExport {
+    pub data: crate::state::pricing::DynamicPricingConfig,
+}
+
+#[event]
+pub struct MultisigConfigExport {
+    pub data: crate::state::governance::MultisigConfig,
+}
+
+#[event]
+pub struct ActionExport {
+    pub data: crate::state::security_governance::Action,
+}
+
+#[event]
+pub struct RuleConditionExport {
+    pub data: crate::state::security_governance::RuleCondition,
+}
+
+#[event]
+pub struct ReportEntryExport {
+    pub data: crate::state::audit::ReportEntry,
+}
+
+#[event]
+pub struct ResourceConstraintsExport {
+    pub data: crate::state::security_governance::ResourceConstraints,
+}
+
+// =====================================================
+// EXPLICIT TYPE EXPORTS FOR IDL GENERATION
+// =====================================================
+// These types are used within nested structures but need to be
+// explicitly declared for Anchor to include them in the IDL
+
+/// Re-export AuditContext for IDL
+pub use crate::state::audit::AuditContext;
+
+/// Re-export BiometricQuality for IDL  
+pub use crate::state::security_governance::BiometricQuality;
+
+/// Re-export ComplianceStatus for IDL
+pub use crate::state::audit::ComplianceStatus;
+
+/// Re-export DynamicPricingConfig for IDL
+pub use crate::state::pricing::DynamicPricingConfig;
+
+/// Re-export MultisigConfig for IDL
+pub use crate::state::governance::MultisigConfig;
+
+/// Re-export Action for IDL
+pub use crate::state::security_governance::Action;
+
+/// Re-export RuleCondition for IDL
+pub use crate::state::security_governance::RuleCondition;
+
+/// Re-export ReportEntry for IDL
+pub use crate::state::audit::ReportEntry;
+
+/// Re-export ResourceConstraints for IDL
+pub use crate::state::security_governance::ResourceConstraints;

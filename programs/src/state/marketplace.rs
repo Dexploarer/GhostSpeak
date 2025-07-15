@@ -1,12 +1,12 @@
 /*!
  * Marketplace State Module
- * 
+ *
  * Contains marketplace related state structures including service listings,
  * job postings, applications, and contracts.
  */
 
-use anchor_lang::prelude::*;
 use crate::{ApplicationStatus, ContractStatus, Deliverable};
+use anchor_lang::prelude::*;
 
 // =====================================================
 // MARKETPLACE ENUMS

@@ -1,20 +1,16 @@
 /*!
  * Simplified Escrow and Payment Instructions
- * 
+ *
  * Handles payment processing with optimized performance and safety.
  */
 
 use anchor_lang::prelude::*;
-use anchor_spl::token_2022::{Token2022};
 use anchor_spl::token::{Mint, TokenAccount};
+use anchor_spl::token_2022::Token2022;
 
 use crate::{
-    Agent, Payment, WorkOrder,
-    WorkOrderStatus,
-    GhostSpeakError,
-    PaymentProcessedEvent,
-    MIN_PAYMENT_AMOUNT,
-    MAX_PAYMENT_AMOUNT,
+    Agent, GhostSpeakError, Payment, PaymentProcessedEvent, WorkOrder, WorkOrderStatus,
+    MAX_PAYMENT_AMOUNT, MIN_PAYMENT_AMOUNT,
 };
 
 // =====================================================
@@ -31,26 +27,26 @@ pub struct ProcessPayment<'info> {
         bump
     )]
     pub payment: Account<'info, Payment>,
-    
+
     #[account(mut)]
     pub work_order: Account<'info, WorkOrder>,
-    
+
     #[account(mut)]
     pub provider_agent: Account<'info, Agent>,
-    
+
     #[account(mut)]
     pub payer: Signer<'info>,
-    
+
     #[account(mut)]
     pub payer_token_account: Account<'info, TokenAccount>,
-    
+
     #[account(mut)]
     pub provider_token_account: Account<'info, TokenAccount>,
-    
+
     pub token_mint: Account<'info, Mint>,
-    
+
     pub token_program: Program<'info, Token2022>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -59,12 +55,12 @@ pub struct ProcessPayment<'info> {
 // =====================================================
 
 /// Processes payment from client to provider for completed work order
-/// 
+///
 /// # Performance Optimizations
 /// - Compute units: ~25,000 CU
 /// - Safe arithmetic operations
 /// - Efficient validation
-/// 
+///
 /// # Security Features
 /// - Authorization verification
 /// - Amount validation
@@ -76,7 +72,7 @@ pub fn process_payment(
     use_confidential_transfer: bool,
 ) -> Result<()> {
     msg!("Processing payment - Amount: {}", amount);
-    
+
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.payer.is_signer,
@@ -88,7 +84,7 @@ pub fn process_payment(
         ctx.accounts.payer_token_account.mint == ctx.accounts.token_mint.key(),
         GhostSpeakError::InvalidConfiguration
     );
-    
+
     require!(
         ctx.accounts.provider_token_account.mint == ctx.accounts.token_mint.key(),
         GhostSpeakError::InvalidConfiguration
@@ -99,7 +95,7 @@ pub fn process_payment(
         amount >= MIN_PAYMENT_AMOUNT,
         GhostSpeakError::ValueBelowMinimum
     );
-    
+
     require!(
         amount <= MAX_PAYMENT_AMOUNT,
         GhostSpeakError::ValueExceedsMaximum
@@ -108,7 +104,10 @@ pub fn process_payment(
     // SECURITY: Verify work order is in correct state for payment
     let work_order = &ctx.accounts.work_order;
     require!(
-        matches!(work_order.status, WorkOrderStatus::InProgress | WorkOrderStatus::Submitted),
+        matches!(
+            work_order.status,
+            WorkOrderStatus::InProgress | WorkOrderStatus::Submitted
+        ),
         GhostSpeakError::InvalidStatusTransition
     );
 
@@ -128,22 +127,25 @@ pub fn process_payment(
     payment.bump = ctx.bumps.payment;
 
     // SECURITY: Safe arithmetic for provider earnings update
-    provider_agent.total_earnings = provider_agent.total_earnings
+    provider_agent.total_earnings = provider_agent
+        .total_earnings
         .checked_add(amount)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
-    
+
     // SECURITY: Safe arithmetic for job completion count
-    provider_agent.total_jobs_completed = provider_agent.total_jobs_completed
+    provider_agent.total_jobs_completed = provider_agent
+        .total_jobs_completed
         .checked_add(1)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
     // Update work order status
     work_order.status = WorkOrderStatus::Completed;
     work_order.updated_at = clock.unix_timestamp;
-    
+
     // Calculate and update reputation score with overflow protection
     let reputation_increment = std::cmp::min((amount / 1_000_000) as u64, 10u64); // Max 10 points per payment
-    provider_agent.reputation_score = provider_agent.reputation_score
+    provider_agent.reputation_score = provider_agent
+        .reputation_score
         .checked_add(reputation_increment as u32)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 

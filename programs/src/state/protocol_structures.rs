@@ -1,14 +1,14 @@
 /*!
  * Protocol Data Structures
- * 
+ *
  * Core data structures and account definitions for GhostSpeak protocol features
  * including A2A communication, incentives, and other protocol components.
  */
 
-use anchor_lang::prelude::*;
 use super::MAX_GENERAL_STRING_LENGTH;
+use anchor_lang::prelude::*;
 
-// A2A Protocol Data Structures  
+// A2A Protocol Data Structures
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct A2ASessionData {
     pub session_id: u64,
@@ -52,7 +52,6 @@ pub struct A2ASession {
     pub bump: u8,
 }
 
-
 #[account]
 pub struct A2AMessage {
     pub message_id: u64,
@@ -64,7 +63,6 @@ pub struct A2AMessage {
     pub bump: u8,
 }
 
-
 #[account]
 pub struct A2AStatus {
     pub agent: Pubkey,
@@ -74,7 +72,6 @@ pub struct A2AStatus {
     pub last_updated: i64,
     pub bump: u8,
 }
-
 
 // A2A Event definitions moved to lib.rs with proper #[event] attribute
 
@@ -187,7 +184,5 @@ impl AgentIncentives {
 // NegotiationChatbot LEN implementation moved to negotiation.rs
 
 // RoyaltyStream and ResaleMarket LEN implementations moved to royalty.rs
-
-
 
 // ReplicationRecord LEN is implemented in replication.rs

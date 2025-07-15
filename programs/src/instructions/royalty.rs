@@ -1,20 +1,20 @@
 /*!
  * Royalty & Resale Module
- * 
+ *
  * Implements royalty streams for creators and secondary market
  * functionality for agent ownership transfers.
  */
 
-use anchor_lang::prelude::*;
 use crate::*;
+use anchor_lang::prelude::*;
 
 /// Creates a royalty stream for ongoing revenue sharing
-/// 
+///
 /// Establishes automated royalty payments for template creators,
 /// referrers, or partners based on agent earnings.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing royalty stream accounts
 /// * `royalty_data` - Royalty configuration including:
 ///   - `beneficiary` - Who receives royalties
@@ -22,25 +22,25 @@ use crate::*;
 ///   - `duration` - How long royalties last
 ///   - `minimum_payout` - Minimum accumulated before payout
 ///   - `payout_frequency` - How often to pay out
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful royalty stream creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `RoyaltyRateTooHigh` - If percentage exceeds 10%
 /// * `InvalidBeneficiary` - If beneficiary not verified
 /// * `ConflictingRoyalties` - If total royalties exceed limit
-/// 
+///
 /// # Royalty Types
-/// 
+///
 /// - **Template Royalties**: For agent template creators
 /// - **Referral Royalties**: For bringing new users
 /// - **Partnership Royalties**: For strategic partners
-/// 
+///
 /// # Automatic Processing
-/// 
+///
 /// Royalties are:
 /// - Calculated on each transaction
 /// - Accumulated until minimum reached
@@ -55,11 +55,14 @@ pub fn create_royalty_stream(
     let clock = Clock::get()?;
 
     require!(agent.is_active, GhostSpeakError::AgentNotActive);
-    require!(agent.owner == ctx.accounts.creator.key(), GhostSpeakError::UnauthorizedAccess);
+    require!(
+        agent.owner == ctx.accounts.creator.key(),
+        GhostSpeakError::UnauthorizedAccess
+    );
 
     stream.agent = agent.key();
     stream.original_creator = ctx.accounts.creator.key();
-    stream.config = config.clone();  // Clone here
+    stream.config = config.clone(); // Clone here
     stream.total_paid = 0;
     stream.last_payment = clock.unix_timestamp;
     stream.created_at = clock.unix_timestamp;
@@ -77,12 +80,12 @@ pub fn create_royalty_stream(
 }
 
 /// Lists an agent for resale on the secondary market
-/// 
+///
 /// Allows agent owners to sell their successful agents to other users,
 /// transferring ownership and future earnings potential.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing agent and listing accounts
 /// * `resale_data` - Resale listing details including:
 ///   - `asking_price` - Desired sale price
@@ -90,43 +93,43 @@ pub fn create_royalty_stream(
 ///   - `include_contracts` - Whether active contracts transfer
 ///   - `earnings_history` - Past earnings documentation
 ///   - `transfer_training` - Whether to include training period
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful listing
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `AgentNotEligible` - If agent has active disputes
 /// * `ActiveContractsExist` - If contracts can't transfer
 /// * `UnauthorizedOwner` - If caller doesn't own agent
-/// 
+///
 /// # Valuation Factors
-/// 
+///
 /// Agent value based on:
 /// - Historical earnings
 /// - Client base size
 /// - Performance ratings
 /// - Unique capabilities
 /// - Market demand
-/// 
+///
 /// # Transfer Process
-/// 
+///
 /// 1. Listing created with terms
 /// 2. Buyers make offers
 /// 3. Owner accepts offer
 /// 4. Ownership transfers on payment
 /// 5. 30-day transition support period
-pub fn list_agent_for_resale(
-    ctx: Context<ListAgentForResale>,
-    listing_price: u64,
-) -> Result<()> {
+pub fn list_agent_for_resale(ctx: Context<ListAgentForResale>, listing_price: u64) -> Result<()> {
     let resale = &mut ctx.accounts.resale;
     let agent = &ctx.accounts.agent;
     let clock = Clock::get()?;
 
     require!(agent.is_active, GhostSpeakError::AgentNotActive);
-    require!(agent.owner == ctx.accounts.seller.key(), GhostSpeakError::UnauthorizedAccess);
+    require!(
+        agent.owner == ctx.accounts.seller.key(),
+        GhostSpeakError::UnauthorizedAccess
+    );
 
     resale.agent = agent.key();
     resale.seller = ctx.accounts.seller.key();
@@ -187,7 +190,7 @@ pub struct RoyaltyStreamCreatedEvent {
     pub stream: Pubkey,
     pub agent: Pubkey,
     pub creator: Pubkey,
-    pub percentage: u32,    // Basis points
+    pub percentage: u32, // Basis points
 }
 
 #[event]

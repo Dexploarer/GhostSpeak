@@ -1,11 +1,11 @@
 /*!
  * Negotiation Instructions - Enhanced with 2025 Security Patterns
- * 
+ *
  * Implements price negotiation with cutting-edge security features
  * including canonical PDA validation, rate limiting, comprehensive
  * input sanitization, and anti-manipulation measures following
  * 2025 Solana best practices.
- * 
+ *
  * Security Features:
  * - Canonical PDA validation with collision prevention
  * - Rate limiting with 60-second cooldowns for negotiation operations
@@ -16,11 +16,10 @@
  * - Sybil attack prevention mechanisms
  */
 
-use anchor_lang::prelude::*;
-use crate::{GhostSpeakError};
+use crate::simple_optimization::InputValidator;
 use crate::state::negotiation::*;
-use crate::simple_optimization::{InputValidator};
-
+use crate::GhostSpeakError;
+use anchor_lang::prelude::*;
 
 // Import NegotiationStatus
 use crate::NegotiationStatus;
@@ -33,12 +32,12 @@ const MAX_NEGOTIATION_DURATION: i64 = 604_800; // Maximum 7 days
 const _MIN_OFFER_IMPROVEMENT: f64 = 0.05; // Minimum 5% improvement per round
 
 /// Initiates a price negotiation session between buyer and seller
-/// 
+///
 /// Creates a structured negotiation framework for parties to reach
 /// mutually agreeable terms through offers and counter-offers.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing negotiation accounts
 /// * `negotiation_data` - Initial negotiation parameters including:
 ///   - `service_or_job` - Reference to service/job being negotiated
@@ -46,26 +45,26 @@ const _MIN_OFFER_IMPROVEMENT: f64 = 0.05; // Minimum 5% improvement per round
 ///   - `negotiation_terms` - What's negotiable (price, timeline, scope)
 ///   - `max_rounds` - Maximum negotiation rounds (default: 10)
 ///   - `auto_accept_threshold` - Price to auto-accept
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful negotiation initiation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `ServiceNotNegotiable` - If service has fixed pricing
 /// * `InvalidInitialOffer` - If offer is unreasonable
 /// * `PartyNotEligible` - If party can't negotiate
-/// 
+///
 /// # Negotiation Rules
-/// 
+///
 /// - Each party can make one offer per round
 /// - Offers must improve (buyer increases, seller decreases)
 /// - Negotiation ends on acceptance or max rounds
 /// - 24-hour timeout between rounds
-/// 
+///
 /// # Best Practices
-/// 
+///
 /// - Start with reasonable offers
 /// - Consider total value, not just price
 /// - Bundle services for better deals
@@ -76,34 +75,38 @@ pub fn initiate_negotiation(
     negotiation_deadline: i64,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     // SECURITY: Enhanced signer authorization
     require!(
         ctx.accounts.initiator.is_signer,
         GhostSpeakError::UnauthorizedAccess
     );
-    
+
     // SECURITY: Enhanced input validation with security constraints
     InputValidator::validate_payment_amount(initial_offer, "initial_offer")?;
     InputValidator::validate_payment_amount(auto_accept_threshold, "auto_accept_threshold")?;
-    
+
     require!(
         initial_offer >= crate::MIN_PAYMENT_AMOUNT && initial_offer <= crate::MAX_PAYMENT_AMOUNT,
         GhostSpeakError::InvalidPaymentAmount
     );
     require!(
-        auto_accept_threshold >= crate::MIN_PAYMENT_AMOUNT && auto_accept_threshold <= crate::MAX_PAYMENT_AMOUNT,
+        auto_accept_threshold >= crate::MIN_PAYMENT_AMOUNT
+            && auto_accept_threshold <= crate::MAX_PAYMENT_AMOUNT,
         GhostSpeakError::InvalidPaymentAmount
     );
 
     let negotiation = &mut ctx.accounts.negotiation;
 
-    require!(negotiation_deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
+    require!(
+        negotiation_deadline > clock.unix_timestamp,
+        GhostSpeakError::InvalidDeadline
+    );
     require!(
         negotiation_deadline <= clock.unix_timestamp + MAX_NEGOTIATION_DURATION,
         GhostSpeakError::InvalidDeadline
     );
-    
+
     // SECURITY: Auto-accept threshold validation removed - it depends on negotiation direction
     // The threshold logic should be validated during counter-offer processing based on who is buyer/seller
 
@@ -133,39 +136,39 @@ pub fn initiate_negotiation(
 }
 
 /// Makes a counter-offer in an active negotiation
-/// 
+///
 /// Allows negotiating parties to respond to offers with improved terms,
 /// working toward a mutually acceptable agreement.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing negotiation and offer accounts
 /// * `counter_offer_data` - Counter-offer details including:
 ///   - `new_price` - Proposed price adjustment
 ///   - `new_terms` - Modified terms (timeline, scope)
 ///   - `justification` - Reason for counter-offer
 ///   - `final_offer` - Whether this is final offer
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful counter-offer
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `NotYourTurn` - If it's not the party's turn
 /// * `OfferNotImproved` - If offer doesn't improve terms
 /// * `NegotiationExpired` - If round timeout exceeded
 /// * `MaxRoundsReached` - If negotiation limit hit
-/// 
+///
 /// # Offer Requirements
-/// 
+///
 /// Counter-offers must:
 /// - Improve previous offer (buyer up, seller down)
 /// - Stay within reasonable bounds
 /// - Include clear justification
-/// 
+///
 /// # Auto-Resolution
-/// 
+///
 /// If offer meets auto-accept threshold,
 /// negotiation completes automatically
 pub fn make_counter_offer(
@@ -176,10 +179,15 @@ pub fn make_counter_offer(
     let negotiation = &mut ctx.accounts.negotiation;
     let clock = Clock::get()?;
 
-    require!(negotiation.status == NegotiationStatus::InitialOffer || 
-             negotiation.status == NegotiationStatus::CounterOffer, 
-             GhostSpeakError::InvalidApplicationStatus);
-    require!(clock.unix_timestamp < negotiation.negotiation_deadline, GhostSpeakError::InvalidDeadline);
+    require!(
+        negotiation.status == NegotiationStatus::InitialOffer
+            || negotiation.status == NegotiationStatus::CounterOffer,
+        GhostSpeakError::InvalidApplicationStatus
+    );
+    require!(
+        clock.unix_timestamp < negotiation.negotiation_deadline,
+        GhostSpeakError::InvalidDeadline
+    );
 
     // Store current offer before modifying
     let current_offer = negotiation.current_offer;
@@ -207,7 +215,7 @@ pub fn make_counter_offer(
             counter_offer >= negotiation.auto_accept_threshold
         }
     };
-    
+
     if should_auto_accept {
         negotiation.status = NegotiationStatus::AutoAccepted;
     }

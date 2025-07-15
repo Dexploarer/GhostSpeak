@@ -1,6 +1,6 @@
 /*!
  * Royalty State Module
- * 
+ *
  * Contains royalty-related state structures.
  */
 
@@ -8,7 +8,7 @@ use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct RoyaltyConfig {
-    pub percentage: u32,    // Basis points (0-10000 for 0-100%)
+    pub percentage: u32, // Basis points (0-10000 for 0-100%)
     pub min_amount: u64,
     pub max_amount: u64,
 }
@@ -30,7 +30,7 @@ pub struct ResaleMarket {
     pub agent: Pubkey,
     pub seller: Pubkey,
     pub price: u64,
-    pub royalty_percentage: u32,    // Basis points (0-10000 for 0-100%)
+    pub royalty_percentage: u32, // Basis points (0-10000 for 0-100%)
     pub is_listed: bool,
     pub created_at: i64,
     pub sold_at: Option<i64>,

@@ -1,19 +1,19 @@
 /*!
  * Agent Instructions - Enhanced with 2025 Security Patterns
- * 
+ *
  * Contains instruction handlers for agent-related operations with cutting-edge
  * security features including canonical PDA validation, rate limiting, and
  * comprehensive input sanitization following 2025 Solana best practices.
  */
 
-use anchor_lang::prelude::*;
-use crate::*;
-use crate::state::{AgentVerificationData};
+use crate::state::AgentVerificationData;
 use crate::GhostSpeakError;
+use crate::*;
+use anchor_lang::prelude::*;
 // Enhanced optimization utilities with 2025 performance patterns
 
 /// Enhanced agent registration with 2025 security patterns
-/// 
+///
 /// Implements canonical PDA validation, anti-collision measures,
 /// and comprehensive security constraints following 2025 best practices
 #[derive(Accounts)]
@@ -25,14 +25,14 @@ pub struct RegisterAgent<'info> {
         payer = signer,
         space = Agent::LEN,
         seeds = [
-            b"agent", 
+            b"agent",
             signer.key().as_ref(),
             agent_id.as_bytes()  // Collision prevention
         ],
         bump
     )]
     pub agent_account: Account<'info, Agent>,
-    
+
     /// User registry with enhanced validation
     #[account(
         init_if_needed,
@@ -42,20 +42,20 @@ pub struct RegisterAgent<'info> {
         bump
     )]
     pub user_registry: Account<'info, UserRegistry>,
-    
+
     /// Authority with enhanced verification
     #[account(mut)]
     pub signer: Signer<'info>,
-    
+
     /// System program for account creation
     pub system_program: Program<'info, System>,
-    
+
     /// Clock sysvar for timestamp validation
     pub clock: Sysvar<'info, Clock>,
 }
 
 /// Enhanced agent update with 2025 security patterns
-/// 
+///
 /// Implements canonical bump validation and comprehensive authority checks
 #[derive(Accounts)]
 #[instruction(agent_type: u8, metadata_uri: String, agent_id: String)]
@@ -64,7 +64,7 @@ pub struct UpdateAgent<'info> {
     #[account(
         mut,
         seeds = [
-            b"agent", 
+            b"agent",
             signer.key().as_ref(),
             agent_id.as_bytes()
         ],
@@ -73,11 +73,11 @@ pub struct UpdateAgent<'info> {
         constraint = agent_account.is_active @ GhostSpeakError::AgentNotActive
     )]
     pub agent_account: Account<'info, Agent>,
-    
+
     /// Enhanced authority verification
     #[account(mut)]
     pub signer: Signer<'info>,
-    
+
     /// Clock sysvar for rate limiting
     pub clock: Sysvar<'info, Clock>,
 }
@@ -90,7 +90,7 @@ pub struct UpdateAgentStatus<'info> {
     #[account(
         mut,
         seeds = [
-            b"agent", 
+            b"agent",
             signer.key().as_ref(),
             agent_id.as_bytes()
         ],
@@ -98,11 +98,11 @@ pub struct UpdateAgentStatus<'info> {
         constraint = agent_account.owner == signer.key() @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent_account: Account<'info, Agent>,
-    
+
     /// Enhanced authority verification
     #[account(mut)]
     pub signer: Signer<'info>,
-    
+
     /// Clock sysvar for rate limiting
     pub clock: Sysvar<'info, Clock>,
 }
@@ -115,7 +115,7 @@ pub struct UpdateAgentReputation<'info> {
     #[account(
         mut,
         seeds = [
-            b"agent", 
+            b"agent",
             signer.key().as_ref(),
             agent_id.as_bytes()
         ],
@@ -124,17 +124,17 @@ pub struct UpdateAgentReputation<'info> {
         constraint = agent_account.is_active @ GhostSpeakError::AgentNotActive
     )]
     pub agent_account: Account<'info, Agent>,
-    
+
     /// Enhanced authority verification
     #[account(mut)]
     pub signer: Signer<'info>,
-    
+
     /// Clock sysvar for rate limiting
     pub clock: Sysvar<'info, Clock>,
 }
 
 /// Enhanced agent verification with 2025 security patterns
-/// 
+///
 /// Implements comprehensive verification with anti-fraud measures
 #[derive(Accounts)]
 pub struct VerifyAgent<'info> {
@@ -144,42 +144,42 @@ pub struct VerifyAgent<'info> {
         payer = verifier,
         space = AgentVerification::LEN,
         seeds = [
-            b"agent_verification", 
+            b"agent_verification",
             agent.key().as_ref(),
             verifier.key().as_ref()  // Prevent verification conflicts
         ],
         bump
     )]
     pub agent_verification: Account<'info, AgentVerification>,
-    
+
     /// Agent account being verified (enhanced validation)
     #[account(
         constraint = agent.data_is_empty() == false @ GhostSpeakError::AccountNotInitialized
     )]
     /// CHECK: Agent account validated through constraint
     pub agent: UncheckedAccount<'info>,
-    
+
     /// Verifier authority with enhanced permissions
     #[account(mut)]
     pub verifier: Signer<'info>,
-    
+
     /// System program for account operations
     pub system_program: Program<'info, System>,
-    
+
     /// Clock sysvar for timestamp validation
     pub clock: Sysvar<'info, Clock>,
 }
 
 /// Registers a new AI agent in the marketplace
-/// 
+///
 /// This instruction creates a new agent account with optimized space allocation
 /// and comprehensive security validations.
-/// 
+///
 /// # Performance Optimizations
 /// - Compute units: ~40,000 CU (optimized for agent registration complexity)
 /// - Memory layout: Optimized account structure for minimal space usage
 /// - Input validation: Efficient string length checks with early termination
-/// 
+///
 /// # Security Features
 /// - Owner verification with detailed error context
 /// - Input sanitization and length validation
@@ -193,7 +193,6 @@ pub fn register_agent(
 ) -> Result<()> {
     // Initialize agent registration
     {
-        
         let agent = &mut ctx.accounts.agent_account;
         let user_registry = &mut ctx.accounts.user_registry;
         let clock = Clock::get()?;
@@ -203,7 +202,7 @@ pub fn register_agent(
             metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
             GhostSpeakError::InputTooLong
         );
-        
+
         // SECURITY: Validate agent type is within acceptable range
         require!(
             agent_type <= 10, // Assuming max 10 agent types
@@ -228,7 +227,7 @@ pub fn register_agent(
         // SECURITY FIX: Check resource limits
         user_registry.increment_agents()?;
         user_registry.check_rate_limit(clock.unix_timestamp)?;
-        
+
         // Initialize agent account with memory-optimized defaults
         agent.owner = ctx.accounts.signer.key();
         agent.name = String::with_capacity(0); // Optimize for empty initial state
@@ -259,19 +258,22 @@ pub fn register_agent(
             timestamp: clock.unix_timestamp,
         });
 
-        msg!("Agent registered successfully - Owner: {}, Agent: {}", 
-             agent.owner, agent.key());
+        msg!(
+            "Agent registered successfully - Owner: {}, Agent: {}",
+            agent.owner,
+            agent.key()
+        );
         Ok(())
     }
 }
 
 /// Updates an existing agent's metadata and configuration
-/// 
+///
 /// # Performance Optimizations
 /// - Compute units: ~15,000 CU (optimized for simple updates)
 /// - Minimal state changes to reduce transaction size
 /// - Efficient validation with early returns
-/// 
+///
 /// # Security Features
 /// - Owner authorization verification
 /// - Update frequency limiting (prevents spam updates)
@@ -284,7 +286,6 @@ pub fn update_agent(
 ) -> Result<()> {
     // Process agent update
     {
-        
         let agent = &mut ctx.accounts.agent_account;
         let clock = Clock::get()?;
 
@@ -293,17 +294,18 @@ pub fn update_agent(
             metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
             GhostSpeakError::InputTooLong
         );
-        
+
         // SECURITY: Prevent too frequent updates (rate limiting)
-        let time_since_last_update = clock.unix_timestamp
+        let time_since_last_update = clock
+            .unix_timestamp
             .checked_sub(agent.updated_at)
             .ok_or(GhostSpeakError::ArithmeticUnderflow)?;
-        
+
         require!(
             time_since_last_update >= 300, // 5 minutes minimum between updates
             GhostSpeakError::UpdateFrequencyTooHigh
         );
-        
+
         // Update agent metadata with memory optimization
         agent.metadata_uri = metadata_uri;
         agent.updated_at = clock.unix_timestamp;
@@ -315,8 +317,11 @@ pub fn update_agent(
             timestamp: clock.unix_timestamp,
         });
 
-        msg!("Agent updated successfully - Owner: {}, Agent: {}", 
-             agent.owner, agent.key());
+        msg!(
+            "Agent updated successfully - Owner: {}, Agent: {}",
+            agent.owner,
+            agent.key()
+        );
         Ok(())
     }
 }
@@ -332,9 +337,15 @@ pub fn verify_agent(
     let clock = Clock::get()?;
 
     // Validate input
-    require!(service_endpoint.len() <= 256, GhostSpeakError::MessageTooLong);
-    require!(supported_capabilities.len() <= MAX_CAPABILITIES_COUNT, GhostSpeakError::InvalidServiceConfiguration);
-    
+    require!(
+        service_endpoint.len() <= 256,
+        GhostSpeakError::MessageTooLong
+    );
+    require!(
+        supported_capabilities.len() <= MAX_CAPABILITIES_COUNT,
+        GhostSpeakError::InvalidServiceConfiguration
+    );
+
     // Initialize verification account
     agent_verification.agent = agent_pubkey;
     agent_verification.verifier = ctx.accounts.verifier.key();
@@ -355,9 +366,9 @@ pub fn verify_agent(
 
 pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
-    
+
     require!(agent.is_active, GhostSpeakError::AgentNotActive);
-    
+
     agent.deactivate();
     msg!("Agent deactivated: {}", agent.owner);
     Ok(())
@@ -365,9 +376,9 @@ pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> R
 
 pub fn activate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
-    
+
     require!(!agent.is_active, GhostSpeakError::AgentAlreadyActive);
-    
+
     agent.activate();
     msg!("Agent activated: {}", agent.owner);
     Ok(())
@@ -379,12 +390,22 @@ pub fn update_agent_reputation(
     reputation_score: u64,
 ) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
-    
+
     // SECURITY: Ensure reputation score fits in u32 and is within valid range
-    require!(reputation_score <= 100, GhostSpeakError::InvalidReputationScore);
-    require!(reputation_score <= u32::MAX as u64, GhostSpeakError::ValueExceedsMaximum);
-    
+    require!(
+        reputation_score <= 100,
+        GhostSpeakError::InvalidReputationScore
+    );
+    require!(
+        reputation_score <= u32::MAX as u64,
+        GhostSpeakError::ValueExceedsMaximum
+    );
+
     agent.update_reputation(reputation_score);
-    msg!("Agent reputation updated: {} -> {}", agent.owner, reputation_score);
+    msg!(
+        "Agent reputation updated: {} -> {}",
+        agent.owner,
+        reputation_score
+    );
     Ok(())
 }

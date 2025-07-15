@@ -1,11 +1,14 @@
 /*!
  * Auction State Module
- * 
+ *
  * Contains auction related state structures.
  */
 
+use super::{
+    GhostSpeakError, MAX_AUCTION_DURATION, MAX_GENERAL_STRING_LENGTH, MIN_AUCTION_DURATION,
+    MIN_BID_INCREMENT,
+};
 use anchor_lang::prelude::*;
-use super::{MAX_GENERAL_STRING_LENGTH, MIN_BID_INCREMENT, MIN_AUCTION_DURATION, MAX_AUCTION_DURATION, GhostSpeakError};
 
 // PDA Seeds
 pub const SERVICE_AUCTION_SEED: &[u8] = b"service_auction";
@@ -22,10 +25,10 @@ pub const MAX_FEATURE_LENGTH: usize = 100;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AuctionType {
-    English,           // Ascending price auction
-    Dutch,             // Descending price auction
-    SealedBid,         // Blind bidding
-    Vickrey,           // Second-price sealed bid
+    English,   // Ascending price auction
+    Dutch,     // Descending price auction
+    SealedBid, // Blind bidding
+    Vickrey,   // Second-price sealed bid
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
@@ -169,12 +172,21 @@ impl ServiceAuction {
     ) -> Result<()> {
         let clock = Clock::get()?;
         let duration = auction_end_time - clock.unix_timestamp;
-        
-        require!(duration >= MIN_AUCTION_DURATION, GhostSpeakError::AuctionDurationTooShort);
-        require!(duration <= MAX_AUCTION_DURATION, GhostSpeakError::AuctionDurationTooLong);
-        require!(minimum_bid_increment >= MIN_BID_INCREMENT, GhostSpeakError::BidIncrementTooLow);
+
+        require!(
+            duration >= MIN_AUCTION_DURATION,
+            GhostSpeakError::AuctionDurationTooShort
+        );
+        require!(
+            duration <= MAX_AUCTION_DURATION,
+            GhostSpeakError::AuctionDurationTooLong
+        );
+        require!(
+            minimum_bid_increment >= MIN_BID_INCREMENT,
+            GhostSpeakError::BidIncrementTooLow
+        );
         require!(starting_price > 0, GhostSpeakError::InvalidStartingPrice);
-        
+
         self.agent = agent;
         self.creator = creator;
         self.auction_type = auction_type;
@@ -188,48 +200,57 @@ impl ServiceAuction {
         self.is_active = true;
         self.created_at = clock.unix_timestamp;
         self.bump = bump;
-        
+
         Ok(())
     }
 
     pub fn place_bid(&mut self, bidder: Pubkey, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         require!(self.is_active, GhostSpeakError::AuctionNotActive);
-        require!(clock.unix_timestamp < self.auction_end_time, GhostSpeakError::AuctionEnded);
-        
+        require!(
+            clock.unix_timestamp < self.auction_end_time,
+            GhostSpeakError::AuctionEnded
+        );
+
         let minimum_bid = if self.current_bid == 0 {
             self.starting_price
         } else {
             self.current_bid.saturating_add(self.minimum_bid_increment)
         };
-        
+
         require!(amount >= minimum_bid, GhostSpeakError::BidTooLow);
-        
+
         self.current_bid = amount;
         self.current_bidder = Some(bidder);
         self.total_bids = self.total_bids.saturating_add(1);
-        
+
         Ok(())
     }
 
     pub fn end_auction(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         require!(self.is_active, GhostSpeakError::AuctionNotActive);
-        require!(clock.unix_timestamp >= self.auction_end_time, GhostSpeakError::AuctionNotEnded);
-        
+        require!(
+            clock.unix_timestamp >= self.auction_end_time,
+            GhostSpeakError::AuctionNotEnded
+        );
+
         self.is_active = false;
-        
+
         Ok(())
     }
 
     pub fn cancel_auction(&mut self) -> Result<()> {
         require!(self.is_active, GhostSpeakError::AuctionNotActive);
-        require!(self.total_bids == 0, GhostSpeakError::CannotCancelAuctionWithBids);
-        
+        require!(
+            self.total_bids == 0,
+            GhostSpeakError::CannotCancelAuctionWithBids
+        );
+
         self.is_active = false;
-        
+
         Ok(())
     }
 }
@@ -258,14 +279,20 @@ impl Negotiation {
         bump: u8,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(negotiation_deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
-        require!(terms.len() <= MAX_TERMS_COUNT, GhostSpeakError::TooManyTerms);
-        
+
+        require!(
+            negotiation_deadline > clock.unix_timestamp,
+            GhostSpeakError::InvalidDeadline
+        );
+        require!(
+            terms.len() <= MAX_TERMS_COUNT,
+            GhostSpeakError::TooManyTerms
+        );
+
         for term in &terms {
             require!(term.len() <= MAX_TERM_LENGTH, GhostSpeakError::TermTooLong);
         }
-        
+
         self.initiator = initiator;
         self.counterparty = counterparty;
         self.initial_offer = initial_offer;
@@ -277,60 +304,79 @@ impl Negotiation {
         self.created_at = clock.unix_timestamp;
         self.last_activity = clock.unix_timestamp;
         self.bump = bump;
-        
+
         Ok(())
     }
 
     pub fn make_counter_offer(&mut self, offer: u64) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
+
         require!(
-            matches!(self.status, NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer),
+            clock.unix_timestamp < self.negotiation_deadline,
+            GhostSpeakError::NegotiationExpired
+        );
+        require!(
+            matches!(
+                self.status,
+                NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer
+            ),
             GhostSpeakError::InvalidNegotiationStatus
         );
-        require!(self.counter_offers.len() < MAX_COUNTER_OFFERS, GhostSpeakError::TooManyCounterOffers);
-        
+        require!(
+            self.counter_offers.len() < MAX_COUNTER_OFFERS,
+            GhostSpeakError::TooManyCounterOffers
+        );
+
         self.counter_offers.push(offer);
         self.current_offer = offer;
         self.status = NegotiationStatus::CounterOffer;
         self.last_activity = clock.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn accept_offer(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
+
         require!(
-            matches!(self.status, NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer),
+            clock.unix_timestamp < self.negotiation_deadline,
+            GhostSpeakError::NegotiationExpired
+        );
+        require!(
+            matches!(
+                self.status,
+                NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer
+            ),
             GhostSpeakError::InvalidNegotiationStatus
         );
-        
+
         self.status = NegotiationStatus::Accepted;
         self.last_activity = clock.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn reject_offer(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         self.status = NegotiationStatus::Rejected;
         self.last_activity = clock.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn check_expiry(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
-        if clock.unix_timestamp >= self.negotiation_deadline && 
-           matches!(self.status, NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer) {
+
+        if clock.unix_timestamp >= self.negotiation_deadline
+            && matches!(
+                self.status,
+                NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer
+            )
+        {
             self.status = NegotiationStatus::Expired;
         }
-        
+
         Ok(())
     }
 }
@@ -370,9 +416,12 @@ impl AuctionMarketplace {
         bump: u8,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::MetadataUriTooLong);
-        
+
+        require!(
+            metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
+            GhostSpeakError::MetadataUriTooLong
+        );
+
         self.auction = auction;
         self.agent = agent;
         self.creator = creator;
@@ -391,30 +440,40 @@ impl AuctionMarketplace {
         self.ended_at = None;
         self.metadata_uri = metadata_uri;
         self.bump = bump;
-        
+
         Ok(())
     }
 
     pub fn place_bid(&mut self, bidder: Pubkey, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(self.status == AuctionStatus::Active, GhostSpeakError::AuctionNotActive);
-        require!(clock.unix_timestamp < self.auction_end_time, GhostSpeakError::AuctionEnded);
-        require!(self.bids.len() < MAX_BIDS_COUNT, GhostSpeakError::TooManyBids);
-        
+
+        require!(
+            self.status == AuctionStatus::Active,
+            GhostSpeakError::AuctionNotActive
+        );
+        require!(
+            clock.unix_timestamp < self.auction_end_time,
+            GhostSpeakError::AuctionEnded
+        );
+        require!(
+            self.bids.len() < MAX_BIDS_COUNT,
+            GhostSpeakError::TooManyBids
+        );
+
         let minimum_bid = if self.current_winner.is_none() {
             self.starting_price
         } else {
-            self.current_price.saturating_add(self.minimum_bid_increment)
+            self.current_price
+                .saturating_add(self.minimum_bid_increment)
         };
-        
+
         require!(amount >= minimum_bid, GhostSpeakError::BidTooLow);
-        
+
         // Mark previous winning bid as not winning
         if let Some(last_bid) = self.bids.last_mut() {
             last_bid.is_winning = false;
         }
-        
+
         // Add new bid
         self.bids.push(AuctionBid {
             bidder,
@@ -422,36 +481,45 @@ impl AuctionMarketplace {
             timestamp: clock.unix_timestamp,
             is_winning: true,
         });
-        
+
         self.current_price = amount;
         self.current_winner = Some(bidder);
         self.total_bids = self.total_bids.saturating_add(1);
-        
+
         Ok(())
     }
 
     pub fn end_auction(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(self.status == AuctionStatus::Active, GhostSpeakError::AuctionNotActive);
-        require!(clock.unix_timestamp >= self.auction_end_time, GhostSpeakError::AuctionNotEnded);
-        
+
+        require!(
+            self.status == AuctionStatus::Active,
+            GhostSpeakError::AuctionNotActive
+        );
+        require!(
+            clock.unix_timestamp >= self.auction_end_time,
+            GhostSpeakError::AuctionNotEnded
+        );
+
         self.status = AuctionStatus::Ended;
         self.ended_at = Some(clock.unix_timestamp);
-        
+
         Ok(())
     }
 
     pub fn settle_auction(&mut self) -> Result<()> {
-        require!(self.status == AuctionStatus::Ended, GhostSpeakError::AuctionNotEnded);
-        
+        require!(
+            self.status == AuctionStatus::Ended,
+            GhostSpeakError::AuctionNotEnded
+        );
+
         // Check if reserve price was met
         if self.current_price >= self.reserve_price {
             self.status = AuctionStatus::Settled;
         } else {
             self.status = AuctionStatus::Cancelled;
         }
-        
+
         Ok(())
     }
 }

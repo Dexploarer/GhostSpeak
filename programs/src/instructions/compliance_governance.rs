@@ -1,28 +1,23 @@
 /*!
  * Compliance and Governance Instructions
- * 
+ *
  * This module implements instruction handlers for enterprise-grade compliance
  * and governance features including audit trails, multi-signature operations,
  * role-based access control, and risk management.
  */
 
-use anchor_lang::prelude::*;
-use crate::*;
 use crate::state::audit::{
-    RiskThresholds, AuditTrail, AuditEntry, 
-    AuditAction, AuditConfig,
-    ComplianceReport, ReportType
+    AuditAction, AuditConfig, AuditEntry, AuditTrail, ComplianceReport, ReportType, RiskThresholds,
 };
 use crate::state::governance::{
-    Multisig, MultisigConfig, EmergencyConfig,
-    TransactionType, GovernanceProposal, ProposalStatus,
-    ProposalType, ExecutionParams, QuorumRequirements,
-    ProposalMetadata
+    EmergencyConfig, ExecutionParams, GovernanceProposal, Multisig, MultisigConfig,
+    ProposalMetadata, ProposalStatus, ProposalType, QuorumRequirements, TransactionType,
 };
 use crate::state::security_governance::{
-    RbacConfig, Role, SecurityPolicies,
-    AccessAuditConfig, EmergencyAccessConfig
+    AccessAuditConfig, EmergencyAccessConfig, RbacConfig, Role, SecurityPolicies,
 };
+use crate::*;
+use anchor_lang::prelude::*;
 
 // =====================================================
 // INSTRUCTION CONTEXTS
@@ -40,14 +35,14 @@ pub struct InitializeAuditTrail<'info> {
         bump
     )]
     pub audit_trail: Account<'info, AuditTrail>,
-    
+
     /// Entity being audited
     /// CHECK: Entity can be any account - used only for deriving audit trail seeds
     pub entity: AccountInfo<'info>,
-    
+
     #[account(mut)]
     pub authority: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -63,10 +58,10 @@ pub struct CreateMultisig<'info> {
         bump
     )]
     pub multisig: Account<'info, Multisig>,
-    
+
     #[account(mut)]
     pub owner: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -82,10 +77,10 @@ pub struct InitializeGovernanceProposal<'info> {
         bump
     )]
     pub proposal: Account<'info, GovernanceProposal>,
-    
+
     #[account(mut)]
     pub proposer: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -100,10 +95,10 @@ pub struct InitializeRbacConfig<'info> {
         bump
     )]
     pub rbac_config: Account<'info, RbacConfig>,
-    
+
     #[account(mut)]
     pub authority: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -119,14 +114,14 @@ pub struct GenerateComplianceReport<'info> {
         bump
     )]
     pub report: Account<'info, ComplianceReport>,
-    
+
     /// Audit trail for the entity
     #[account(mut)]
     pub audit_trail: Account<'info, AuditTrail>,
-    
+
     #[account(mut)]
     pub authority: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -142,7 +137,7 @@ pub fn initialize_audit_trail(
 ) -> Result<()> {
     let audit_trail = &mut ctx.accounts.audit_trail;
     let clock = Clock::get()?;
-    
+
     // Initialize audit trail
     audit_trail.authority = ctx.accounts.authority.key();
     audit_trail.trail_id = clock.unix_timestamp as u64; // Use timestamp as unique ID
@@ -174,8 +169,11 @@ pub fn initialize_audit_trail(
         },
         compliance_officers: vec![ctx.accounts.authority.key()],
     };
-    
-    msg!("Audit trail initialized for entity: {}", ctx.accounts.entity.key());
+
+    msg!(
+        "Audit trail initialized for entity: {}",
+        ctx.accounts.entity.key()
+    );
     Ok(())
 }
 
@@ -191,15 +189,12 @@ pub fn create_multisig(
         threshold > 0 && threshold <= signers.len() as u8,
         GhostSpeakError::InvalidConfiguration
     );
-    
-    require!(
-        signers.len() <= 10,
-        GhostSpeakError::InvalidConfiguration
-    );
-    
+
+    require!(signers.len() <= 10, GhostSpeakError::InvalidConfiguration);
+
     let multisig = &mut ctx.accounts.multisig;
     let clock = Clock::get()?;
-    
+
     multisig.multisig_id = multisig_id;
     multisig.threshold = threshold;
     multisig.signers = signers;
@@ -219,7 +214,7 @@ pub fn create_multisig(
         frozen_at: None,
         auto_unfreeze_duration: Some(86400), // 24 hours
     };
-    
+
     msg!("Multisig created with ID: {}", multisig_id);
     Ok(())
 }
@@ -233,19 +228,16 @@ pub fn initialize_governance_proposal(
     proposal_type: ProposalType,
     execution_params: ExecutionParams,
 ) -> Result<()> {
-    require!(
-        title.len() <= 100,
-        GhostSpeakError::TitleTooLong
-    );
-    
+    require!(title.len() <= 100, GhostSpeakError::TitleTooLong);
+
     require!(
         description.len() <= 1000,
         GhostSpeakError::DescriptionTooLong
     );
-    
+
     let proposal = &mut ctx.accounts.proposal;
     let clock = Clock::get()?;
-    
+
     proposal.proposal_id = proposal_id;
     proposal.proposer = ctx.accounts.proposer.key();
     proposal.title = title;
@@ -270,7 +262,7 @@ pub fn initialize_governance_proposal(
     proposal.execution_params = execution_params;
     proposal.quorum_requirements = QuorumRequirements {
         minimum_participation: 20, // 20% minimum participation
-        approval_threshold: 51, // 51% approval needed
+        approval_threshold: 51,    // 51% approval needed
         super_majority_required: false,
         minimum_voting_power: 100,
         quorum_method: crate::state::governance::QuorumMethod::Absolute,
@@ -283,7 +275,7 @@ pub fn initialize_governance_proposal(
         impact_analysis: None,
         implementation_timeline: None,
     };
-    
+
     msg!("Governance proposal {} created", proposal_id);
     Ok(())
 }
@@ -295,7 +287,7 @@ pub fn initialize_rbac_config(
 ) -> Result<()> {
     let rbac_config = &mut ctx.accounts.rbac_config;
     let clock = Clock::get()?;
-    
+
     rbac_config.authority = ctx.accounts.authority.key();
     rbac_config.created_at = clock.unix_timestamp;
     rbac_config.updated_at = clock.unix_timestamp;
@@ -306,7 +298,9 @@ pub fn initialize_rbac_config(
     rbac_config.security_policies = SecurityPolicies {
         authentication: crate::state::security_governance::AuthenticationPolicies {
             mfa_required: false,
-            supported_methods: vec![crate::state::security_governance::AuthenticationMethod::Password],
+            supported_methods: vec![
+                crate::state::security_governance::AuthenticationMethod::Password,
+            ],
             strength_requirements: crate::state::security_governance::AuthenticationStrength {
                 minimum_level: crate::state::security_governance::AuthenticationLevel::Medium,
                 risk_based: false,
@@ -317,20 +311,26 @@ pub fn initialize_rbac_config(
                 max_failed_attempts: 5,
                 lockout_duration: 300, // 5 minutes
                 progressive_lockout: false,
-                unlock_methods: vec![crate::state::security_governance::UnlockMethod::TimeBasedAutoUnlock],
+                unlock_methods: vec![
+                    crate::state::security_governance::UnlockMethod::TimeBasedAutoUnlock,
+                ],
                 notification_requirements: vec![],
             },
             biometric_policies: None,
         },
         password: crate::state::security_governance::PasswordPolicies {
             minimum_length: 8,
-            complexity_requirements: vec!["uppercase".to_string(), "lowercase".to_string(), "numbers".to_string()],
+            complexity_requirements: vec![
+                "uppercase".to_string(),
+                "lowercase".to_string(),
+                "numbers".to_string(),
+            ],
             history_count: 5,
             max_age: 90 * 24 * 60 * 60, // 90 days
         },
         session: crate::state::security_governance::SessionPolicies {
             max_session_duration: 8 * 60 * 60, // 8 hours
-            idle_timeout: 30 * 60, // 30 minutes
+            idle_timeout: 30 * 60,             // 30 minutes
             concurrent_sessions: 3,
         },
         authorization: crate::state::security_governance::AuthorizationPolicies {
@@ -368,7 +368,7 @@ pub fn initialize_rbac_config(
         emergency_contacts: vec![],
         approval_required: true,
     };
-    
+
     msg!("RBAC configuration initialized");
     Ok(())
 }
@@ -384,32 +384,33 @@ pub fn generate_compliance_report(
     let report = &mut ctx.accounts.report;
     let audit_trail = &ctx.accounts.audit_trail;
     let clock = Clock::get()?;
-    
+
     report.report_id = report_id;
     report.report_type = report_type;
     report.generated_at = clock.unix_timestamp;
     report.period_start = period_start;
     report.period_end = period_end;
-    
+
     // Analyze audit entries for the period
-    let period_entries: Vec<&AuditEntry> = audit_trail.entries
+    let period_entries: Vec<&AuditEntry> = audit_trail
+        .entries
         .iter()
         .filter(|entry| entry.timestamp >= period_start && entry.timestamp <= period_end)
         .collect();
-    
+
     // Calculate compliance metrics
     let total_entries = period_entries.len() as u64;
     let compliance_violations = period_entries
         .iter()
         .filter(|entry| matches!(entry.action, AuditAction::ViolationDetected))
         .count() as u64;
-    
+
     let compliance_rate = if total_entries > 0 {
         ((total_entries - compliance_violations) * 100) / total_entries
     } else {
         100
     };
-    
+
     report.report_data = crate::state::audit::ReportData {
         summary: crate::state::audit::ReportSummary {
             total_transactions: total_entries,
@@ -431,12 +432,16 @@ pub fn generate_compliance_report(
         risk_indicators: vec![],
         recommendations: vec![],
     };
-    
+
     report.signature = [0u8; 64]; // Placeholder for signature
     report.status = crate::state::audit::ReportStatus::Generated;
     report.submission_details = None;
-    
-    msg!("Compliance report {} generated with {}% compliance rate", report_id, compliance_rate);
+
+    msg!(
+        "Compliance report {} generated with {}% compliance rate",
+        report_id,
+        compliance_rate
+    );
     Ok(())
 }
 

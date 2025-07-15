@@ -1,6 +1,6 @@
 /*!
  * State Module - Data Structures and Account Definitions
- * 
+ *
  * This module contains all the data structures and account definitions
  * used by the GhostSpeak Protocol smart contract.
  */
@@ -25,79 +25,114 @@ pub mod marketplace;
 pub mod message;
 pub mod negotiation;
 pub mod pricing;
+pub mod protocol_structures;
 pub mod replication;
 pub mod reputation;
 pub mod risk_management;
 pub mod royalty;
 pub mod security_governance;
-pub mod protocol_structures;
-pub mod work_order;
 pub mod user_registry;
+pub mod work_order;
 
 // Re-export all types with selective imports to avoid conflicts
 // Import from agent with conflict resolution
 pub use agent::{
-    Agent, AgentVerification, 
-    AgentVerificationData, AgentServiceData, AgentCustomization,
-    AgentAnalytics as AgentAgentAnalytics  // Rename to avoid conflict
+    Agent,
+    AgentAnalytics as AgentAgentAnalytics, // Rename to avoid conflict
+    AgentCustomization,
+    AgentServiceData,
+    AgentVerification,
+    AgentVerificationData,
 };
 // Import from analytics with conflict resolution
 pub use analytics::{
-    MarketAnalytics, MarketAnalyticsData, AnalyticsDashboard,
-    AgentAnalytics as AnalyticsAgentAnalytics  // Rename to avoid conflict
+    AgentAnalytics as AnalyticsAgentAnalytics, // Rename to avoid conflict
+    AnalyticsDashboard,
+    MarketAnalytics,
+    MarketAnalyticsData,
 };
 pub use auction::*;
 // Selective imports from audit to avoid conflicts
 pub use audit::{
-    AuditTrail, AuditEntry, AuditAction, AuditContext, ComplianceFlags,
-    AuditConfig, BackupFrequency, ApprovalLevel,
-    ComplianceViolation, ViolationType, ViolationSeverity, ResolutionStatus,
-    RegulatoryStatus, RiskThresholds, ComplianceReport, ReportType,
-    ReportData, ReportSummary, ReportEntry, ComplianceMetrics,
-    ReportStatus, SubmissionDetails,
+    ApprovalLevel,
+    AuditAction,
+    AuditConfig,
+    AuditContext,
+    AuditEntry,
+    AuditTrail,
+    BackupFrequency,
+    ComplianceFlags,
+    ComplianceMetrics,
+    ComplianceReport,
+    ComplianceStatus as AuditComplianceStatus,
+    ComplianceViolation,
+    RegulatoryStatus,
+    ReportData,
+    ReportEntry,
+    ReportStatus,
+    ReportSummary,
+    ReportType,
     // Rename conflicting types
     ReportingFrequency as AuditReportingFrequency,
-    ComplianceStatus as AuditComplianceStatus,
+    ResolutionStatus,
     RiskAssessment as AuditRiskAssessment,
     RiskFactor as AuditRiskFactor,
     RiskFactorType as AuditRiskFactorType,
     RiskIndicator as AuditRiskIndicator,
+    RiskThresholds,
+    SubmissionDetails,
     TrendDirection as AuditTrendDirection,
+    ViolationSeverity,
+    ViolationType,
 };
 pub use bulk_deals::*;
 pub use channel::*;
 // Selective imports from commerce to avoid conflicts
 pub use commerce::{
-    ServiceListingData as CommerceServiceListingData,
     JobApplicationData as CommerceJobApplicationData,
+    ServiceListingData as CommerceServiceListingData,
 };
-// Selective imports from compliance to avoid conflicts  
+// Selective imports from compliance to avoid conflicts
 pub use compliance::{
-    RegulatoryCompliance, JurisdictionCompliance, RegulatoryFramework,
-    License, LicenseStatus, ComplianceRequirement, RequirementType,
-    ComplianceEvidence, EvidenceType, VerificationStatus,
-    CompliancePenalty, PenaltyType, RegulatoryContact, ContactType,
-    CommunicationMethod, JurisdictionStatus, KycAmlConfig, KycLevel,
-    DocumentRequirement, DataPrivacyConfig, SanctionsConfig, 
-    FinancialComplianceConfig, ReportingConfig, MonitoringConfig,
+    CommunicationMethod,
+    ComplianceEvidence,
+    CompliancePenalty,
+    ComplianceRequirement,
+    ComplianceStatus as ComplianceStatusEnum,
+    ContactType,
+    DataPrivacyConfig,
+    DocumentRequirement,
+    EvidenceType,
+    FinancialComplianceConfig,
     // Rename conflicting types
     ImplementationStatus as ComplianceImplementationStatus,
-    ComplianceStatus as ComplianceStatusEnum,
+    JurisdictionCompliance,
+    JurisdictionStatus,
+    KycAmlConfig,
+    KycLevel,
+    License,
+    LicenseStatus,
+    MonitoringConfig,
+    PenaltyType,
+    RegulatoryCompliance,
+    RegulatoryContact,
+    RegulatoryFramework,
+    ReportingConfig,
+    RequirementType,
+    SanctionsConfig,
+    VerificationStatus,
 };
 pub use dispute::*;
 pub use escrow::*;
 pub use extensions::*;
 pub use governance::*;
 // Selective imports from incentives
-pub use incentives::{
-    IncentiveConfig, IncentiveProgram, AgentIncentives
-};
+pub use incentives::{AgentIncentives, IncentiveConfig, IncentiveProgram};
 // Selective imports from marketplace to avoid conflicts
 pub use marketplace::{
-    PurchaseStatus, ServiceListing, ServicePurchase, JobPosting, 
-    JobApplication, JobContract, JobCompletion,
-    ServiceListingData as MarketplaceServiceListingData,
-    JobApplicationData as MarketplaceJobApplicationData,
+    JobApplication, JobApplicationData as MarketplaceJobApplicationData, JobCompletion,
+    JobContract, JobPosting, PurchaseStatus, ServiceListing,
+    ServiceListingData as MarketplaceServiceListingData, ServicePurchase,
 };
 pub use message::*;
 pub use negotiation::*;
@@ -107,31 +142,30 @@ pub use replication::*;
 pub use risk_management::*;
 pub use royalty::*;
 // Selective imports from security_governance to avoid conflicts
-pub use security_governance::{
-    RbacConfig, Role, RoleType, RoleConstraints, TimeConstraints, LocationConstraints,
-    GeographicRegion, LatitudeRange, LongitudeRange, ResourceConstraints, ResourceQuota,
-    QuotaResetBehavior, SessionConstraints, SodConstraint, SodConstraintType, EnforcementLevel,
-    ActivationRequirement, ActivationRequirementType, RoleMetadata, RiskLevel, DataAccessLevel,
-    RoleStatus, Permission, Action, ActionType, PermissionScope, ScopeType, ScopeBoundaries,
-    HierarchicalBoundary, PermissionConstraint, PermissionConstraintType, ConstraintCondition,
-    ConstraintOperator, ValueType, ActionConstraint, ApprovalRequirement, ApprovalType,
-    EscalationStep, EscalationTrigger, NotificationMethod, AuditRequirement, AuditLevel,
-    AuditElement, PermissionMetadata, RiskFactor, RiskCategory, RiskAcceptance,
-    AccessPolicy, PolicyType, PolicyRule, RuleCondition, ConditionType, RuleEffect,
-    PolicyScope, ScopeInheritance, PolicyStatus, PolicyMetadata, ReviewSchedule,
-    SecurityPolicies, AuthenticationPolicies, AuthenticationMethod, AuthenticationStrength,
-    AuthenticationLevel, StepUpTrigger, AccountLockoutPolicies, UnlockMethod,
-    NotificationRequirement, SecurityEventType, NotificationTarget, NotificationTargetType,
-    NotificationPriority, NotificationTiming, BiometricPolicies, BiometricType,
-    BiometricQuality, BiometricProtection, BiometricStorageMethod, AgingPolicy,
-    DegradationHandling, AuthorizationPolicies, PasswordPolicies, SessionPolicies,
-    DataProtectionPolicies, NetworkSecurityPolicies, IncidentResponsePolicies,
-    CompliancePolicies, AccessAuditConfig, EmergencyAccessConfig,
-    RiskAssessment as SecurityRiskAssessment,
-};
 pub use protocol_structures::*;
-pub use work_order::*;
+pub use security_governance::{
+    AccessAuditConfig, AccessPolicy, AccountLockoutPolicies, Action, ActionConstraint, ActionType,
+    ActivationRequirement, ActivationRequirementType, AgingPolicy, ApprovalRequirement,
+    ApprovalType, AuditElement, AuditLevel, AuditRequirement, AuthenticationLevel,
+    AuthenticationMethod, AuthenticationPolicies, AuthenticationStrength, AuthorizationPolicies,
+    BiometricPolicies, BiometricProtection, BiometricQuality, BiometricStorageMethod,
+    BiometricType, CompliancePolicies, ConditionType, ConstraintCondition, ConstraintOperator,
+    DataAccessLevel, DataProtectionPolicies, DegradationHandling, EmergencyAccessConfig,
+    EnforcementLevel, EscalationStep, EscalationTrigger, GeographicRegion, HierarchicalBoundary,
+    IncidentResponsePolicies, LatitudeRange, LocationConstraints, LongitudeRange,
+    NetworkSecurityPolicies, NotificationMethod, NotificationPriority, NotificationRequirement,
+    NotificationTarget, NotificationTargetType, NotificationTiming, PasswordPolicies, Permission,
+    PermissionConstraint, PermissionConstraintType, PermissionMetadata, PermissionScope,
+    PolicyMetadata, PolicyRule, PolicyScope, PolicyStatus, PolicyType, QuotaResetBehavior,
+    RbacConfig, ResourceConstraints, ResourceQuota, ReviewSchedule, RiskAcceptance,
+    RiskAssessment as SecurityRiskAssessment, RiskCategory, RiskFactor, RiskLevel, Role,
+    RoleConstraints, RoleMetadata, RoleStatus, RoleType, RuleCondition, RuleEffect,
+    ScopeBoundaries, ScopeInheritance, ScopeType, SecurityEventType, SecurityPolicies,
+    SessionConstraints, SessionPolicies, SodConstraint, SodConstraintType, StepUpTrigger,
+    TimeConstraints, UnlockMethod, ValueType,
+};
 pub use user_registry::*;
+pub use work_order::*;
 
 // Re-export error types from main lib
 pub use crate::GhostSpeakError;
@@ -180,7 +214,6 @@ pub enum MessageType {
     Audio,
     System,
 }
-
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum ApplicationStatus {

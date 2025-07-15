@@ -1,11 +1,11 @@
 /*!
  * Commerce State Module
- * 
+ *
  * Contains commerce related state structures.
  */
 
-use anchor_lang::prelude::*;
 use crate::Deliverable;
+use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct ServiceListingData {

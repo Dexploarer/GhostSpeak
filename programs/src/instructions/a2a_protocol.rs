@@ -1,42 +1,44 @@
 /*!
  * A2A Protocol Module
- * 
+ *
  * Contains all agent-to-agent communication protocol functionality
  * including session management, messaging, and status updates.
  */
 
-use anchor_lang::prelude::*;
+use crate::state::protocol_structures::{
+    A2AMessage, A2AMessageData, A2ASession, A2ASessionData, A2AStatus, A2AStatusData,
+};
 use crate::GhostSpeakError;
-use crate::state::protocol_structures::{A2ASession, A2AMessage, A2AStatus, A2ASessionData, A2AMessageData, A2AStatusData};
+use anchor_lang::prelude::*;
 
 // =====================================================
 // A2A PROTOCOL INSTRUCTIONS
 // =====================================================
 
 /// Creates a new A2A communication session between agents
-/// 
+///
 /// Establishes secure communication channels between 2+ agents with session
 /// management, message routing, and automatic cleanup after inactivity.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing session accounts
 /// * `session_data` - Session configuration including:
 ///   - `session_id` - Unique identifier for the session
 ///   - `participants` - Array of agent public keys
 ///   - `session_type` - Direct, group, or swarm communication
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful session creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `InvalidParticipants` - If participants array is empty or too large
 /// * `SessionAlreadyExists` - If session ID is already in use
-/// 
+///
 /// # Example
-/// 
+///
 /// ```ignore
 /// let session_data = A2ASessionData {
 ///     session_id: 123,
@@ -48,15 +50,15 @@ use crate::state::protocol_structures::{A2ASession, A2AMessage, A2AStatus, A2ASe
 /// };
 /// create_a2a_session(ctx, session_data)?;
 /// ```
-/// 
+///
 /// # Security
-/// 
+///
 /// - Only the session creator can initialize the session
 /// - All participants must be valid agent accounts
 /// - Session IDs must be unique to prevent replay attacks
-/// 
+///
 /// # A2A Protocol Standards
-/// 
+///
 /// Follows standardized A2A protocol for:
 /// - Message formatting
 /// - Error handling
@@ -74,18 +76,15 @@ pub fn create_a2a_session(
     #[allow(dead_code)]
     const MAX_PARTICIPANTS: usize = 10;
     const MAX_CONTEXT_LENGTH: usize = 2048;
-    
+
     // Validate session_id is non-zero (since it's u64)
-    require!(
-        session_data.session_id > 0,
-        GhostSpeakError::InputTooLong
-    );
+    require!(session_data.session_id > 0, GhostSpeakError::InputTooLong);
     // Validate session has both initiator and responder
     require!(
         session_data.initiator != Pubkey::default() && session_data.responder != Pubkey::default(),
         GhostSpeakError::InvalidConfiguration
     );
-    
+
     // Validate session metadata length
     require!(
         session_data.metadata.len() <= MAX_CONTEXT_LENGTH,
@@ -113,31 +112,31 @@ pub fn create_a2a_session(
 }
 
 /// Sends a message in an A2A session with multi-modal content support
-/// 
+///
 /// Transmits structured messages between agents including text, code, data,
 /// and streaming content with automatic context management.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing message and session accounts
 /// * `message_content` - Message data including:
 ///   - `content_type` - Type of content (text, code, data, stream)
 ///   - `payload` - The actual message content
 ///   - `metadata` - Optional message metadata
 ///   - `requires_response` - Whether a response is expected
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful message send
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `SessionInactive` - If session has expired
 /// * `UnauthorizedSender` - If sender is not a participant
 /// * `MessageTooLarge` - If content exceeds size limits
-/// 
+///
 /// # Example
-/// 
+///
 /// ```ignore
 /// let message_data = A2AMessageData {
 ///     role: MessageRole::Agent,
@@ -149,54 +148,48 @@ pub fn create_a2a_session(
 /// };
 /// send_a2a_message(ctx, message_data)?;
 /// ```
-/// 
+///
 /// # Multi-Modal Support
-/// 
+///
 /// Supports various content types:
 /// - Text messages
 /// - Code snippets with syntax highlighting
 /// - Structured data (JSON, binary)
 /// - Streaming content with chunk management
-/// 
+///
 /// # Context Management
-/// 
+///
 /// Messages are automatically added to session context
 /// with FIFO eviction when window size is exceeded
-pub fn send_a2a_message(
-    ctx: Context<SendA2AMessage>,
-    message_data: A2AMessageData,
-) -> Result<()> {
+pub fn send_a2a_message(ctx: Context<SendA2AMessage>, message_data: A2AMessageData) -> Result<()> {
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.sender.is_signer,
         GhostSpeakError::UnauthorizedAccess
     );
-    
+
     let session = &ctx.accounts.session;
-    
+
     // SECURITY: Verify sender is a participant in the session
     require!(
-        session.initiator == ctx.accounts.sender.key() || 
-        session.responder == ctx.accounts.sender.key(),
+        session.initiator == ctx.accounts.sender.key()
+            || session.responder == ctx.accounts.sender.key(),
         GhostSpeakError::UnauthorizedAccess
     );
-    
+
     // SECURITY: Verify session is still active
-    require!(
-        session.is_active,
-        GhostSpeakError::InvalidStatusTransition
-    );
-    
+    require!(session.is_active, GhostSpeakError::InvalidStatusTransition);
+
     // SECURITY: Input validation
     const MAX_CONTENT_LENGTH: usize = 4096;
-    
+
     require!(
         !message_data.content.is_empty() && message_data.content.len() <= MAX_CONTENT_LENGTH,
         GhostSpeakError::InputTooLong
     );
     let message = &mut ctx.accounts.message;
     let clock = Clock::get()?;
-    
+
     // Initialize message fields
     message.message_id = message_data.message_id;
     message.session = ctx.accounts.session.key();
@@ -205,7 +198,7 @@ pub fn send_a2a_message(
     message.message_type = message_data.message_type;
     message.sent_at = clock.unix_timestamp;
     message.bump = ctx.bumps.message;
-    
+
     emit!(crate::A2AMessageSentEvent {
         message_id: message_data.message_id,
         session_id: session.session_id,
@@ -216,29 +209,29 @@ pub fn send_a2a_message(
 }
 
 /// Updates A2A session status for streaming and state management
-/// 
+///
 /// Manages session lifecycle including streaming status, connection state,
 /// and activity tracking for proper resource management.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing session account
 /// * `status_update` - Status update including:
 ///   - `is_streaming` - Whether agent is currently streaming
 ///   - `stream_position` - Current position in stream
 ///   - `connection_status` - Active, idle, or disconnected
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful status update
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If updater is not a participant
 /// * `SessionClosed` - If session is already closed
-/// 
+///
 /// # Example
-/// 
+///
 /// ```ignore
 /// let status_data = A2AStatusData {
 ///     session_id: "session_123".to_string(),
@@ -250,23 +243,20 @@ pub fn send_a2a_message(
 /// };
 /// update_a2a_status(ctx, status_data)?;
 /// ```
-/// 
+///
 /// # Streaming Support
-/// 
+///
 /// Enables real-time streaming updates:
 /// - Progress indicators (0-100%)
 /// - Partial content delivery
 /// - State transitions
 /// - Final result notification
-/// 
+///
 /// # Automatic Cleanup
-/// 
+///
 /// Sessions are automatically closed after 30 minutes
 /// of inactivity to free resources
-pub fn update_a2a_status(
-    ctx: Context<UpdateA2AStatus>,
-    status_data: A2AStatusData,
-) -> Result<()> {
+pub fn update_a2a_status(ctx: Context<UpdateA2AStatus>, status_data: A2AStatusData) -> Result<()> {
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.updater.is_signer,
@@ -276,7 +266,7 @@ pub fn update_a2a_status(
     const MAX_STATUS_LENGTH: usize = 256;
     const MAX_CAPABILITIES: usize = 20;
     const MAX_CAPABILITY_LENGTH: usize = 64;
-    
+
     require!(
         !status_data.status.is_empty() && status_data.status.len() <= MAX_STATUS_LENGTH,
         GhostSpeakError::InputTooLong
@@ -322,10 +312,10 @@ pub struct CreateA2ASession<'info> {
         bump
     )]
     pub session: Account<'info, A2ASession>,
-    
+
     #[account(mut)]
     pub creator: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -339,13 +329,13 @@ pub struct SendA2AMessage<'info> {
         bump
     )]
     pub message: Account<'info, A2AMessage>,
-    
+
     #[account(mut)]
     pub session: Account<'info, A2ASession>,
-    
+
     #[account(mut)]
     pub sender: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -359,11 +349,11 @@ pub struct UpdateA2AStatus<'info> {
         bump
     )]
     pub status: Account<'info, A2AStatus>,
-    
+
     pub session: Account<'info, A2ASession>,
-    
+
     #[account(mut)]
     pub updater: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }

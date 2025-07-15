@@ -1,11 +1,11 @@
 /*!
  * Extensions Instructions - Enhanced with 2025 Security Patterns
- * 
+ *
  * Implements a plugin system with cutting-edge security features
  * including canonical PDA validation, rate limiting, comprehensive
  * input sanitization, and anti-manipulation measures following
  * 2025 Solana best practices.
- * 
+ *
  * Security Features:
  * - Canonical PDA validation with collision prevention
  * - Rate limiting with 60-second cooldowns for extension operations
@@ -17,10 +17,10 @@
  * - Anti-manipulation measures for extension approval
  */
 
-use anchor_lang::prelude::*;
+use crate::simple_optimization::SecurityLogger;
+use crate::state::extensions::{Extension, ExtensionMetadata, ExtensionStatus, ExtensionType};
 use crate::*;
-use crate::state::extensions::{Extension, ExtensionStatus, ExtensionMetadata, ExtensionType};
-use crate::simple_optimization::{SecurityLogger};
+use anchor_lang::prelude::*;
 
 // Enhanced 2025 security constants
 const RATE_LIMIT_WINDOW: i64 = 60; // 60-second cooldown for extension operations
@@ -31,12 +31,12 @@ const MIN_REVENUE_SHARE: f64 = 0.05; // Minimum 5% revenue share
 const MAX_REVENUE_SHARE: f64 = 0.25; // Maximum 25% revenue share
 
 /// Registers a third-party extension or plugin
-/// 
+///
 /// Allows developers to create and register extensions that enhance
 /// agent capabilities or add new features to the protocol.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing extension registry accounts
 /// * `extension_data` - Extension details including:
 ///   - `name` - Extension name (unique)
@@ -46,27 +46,27 @@ const MAX_REVENUE_SHARE: f64 = 0.25; // Maximum 25% revenue share
 ///   - `capabilities_added` - New capabilities provided
 ///   - `fee_structure` - Usage fees if any
 ///   - `open_source` - Whether code is open
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful registration
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `ExtensionNameTaken` - If name already registered
 /// * `InvalidEndpoint` - If endpoint unreachable
 /// * `SecurityCheckFailed` - If fails security audit
-/// 
+///
 /// # Extension Categories
-/// 
+///
 /// - **Capabilities**: Add new agent abilities
 /// - **Integrations**: Connect external services
 /// - **Analytics**: Enhanced reporting tools
 /// - **Automation**: Workflow automation
 /// - **Security**: Additional security features
-/// 
+///
 /// # Security Requirements
-/// 
+///
 /// All extensions must:
 /// - Pass automated security scan
 /// - Provide API documentation
@@ -79,13 +79,13 @@ pub fn register_extension(
     revenue_share: f64,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     // SECURITY: Enhanced signer authorization
     require!(
         ctx.accounts.developer.is_signer,
         GhostSpeakError::UnauthorizedAccess
     );
-    
+
     // SECURITY: Rate limiting - prevent extension spam
     let user_registry = &mut ctx.accounts.user_registry;
     require!(
@@ -93,29 +93,29 @@ pub fn register_extension(
         GhostSpeakError::RateLimitExceeded
     );
     user_registry.last_extension_registration = clock.unix_timestamp;
-    
+
     // SECURITY: Comprehensive input validation
     require!(
         !metadata.name.is_empty() && metadata.name.len() <= MAX_EXTENSION_NAME_LENGTH,
         GhostSpeakError::InvalidInputLength
     );
-    
+
     require!(
         !metadata.description.is_empty() && metadata.description.len() <= MAX_DESCRIPTION_LENGTH,
         GhostSpeakError::InvalidInputLength
     );
-    
+
     require!(
         !code_hash.is_empty() && code_hash.len() <= MAX_CODE_HASH_LENGTH,
         GhostSpeakError::InvalidInputLength
     );
-    
+
     // SECURITY: Validate revenue share bounds
     require!(
         revenue_share >= MIN_REVENUE_SHARE && revenue_share <= MAX_REVENUE_SHARE,
         GhostSpeakError::InvalidParameter
     );
-    
+
     let extension = &mut ctx.accounts.extension;
 
     extension.developer = ctx.accounts.developer.key();
@@ -129,10 +129,18 @@ pub fn register_extension(
     extension.total_earnings = 0;
     extension.created_at = clock.unix_timestamp;
     extension.bump = ctx.bumps.extension;
-    
+
     // SECURITY: Log extension registration for audit trail
-    SecurityLogger::log_security_event("EXTENSION_REGISTERED", ctx.accounts.developer.key(), 
-        &format!("extension: {}, name: {}, type: {:?}", extension.key(), metadata.name, metadata.extension_type));
+    SecurityLogger::log_security_event(
+        "EXTENSION_REGISTERED",
+        ctx.accounts.developer.key(),
+        &format!(
+            "extension: {}, name: {}, type: {:?}",
+            extension.key(),
+            metadata.name,
+            metadata.extension_type
+        ),
+    );
 
     emit!(ExtensionRegisteredEvent {
         extension: extension.key(),
@@ -144,43 +152,48 @@ pub fn register_extension(
 }
 
 /// Enhanced extension approval with authority validation
-pub fn approve_extension(
-    ctx: Context<ApproveExtension>,
-) -> Result<()> {
+pub fn approve_extension(ctx: Context<ApproveExtension>) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     // SECURITY: Enhanced authority verification - only protocol admin
     require!(
         ctx.accounts.authority.is_signer,
         GhostSpeakError::UnauthorizedAccess
     );
-    
+
     require!(
         ctx.accounts.authority.key() == crate::PROTOCOL_ADMIN,
         GhostSpeakError::UnauthorizedAccess
     );
-    
+
     let extension = &mut ctx.accounts.extension;
-    
+
     // SECURITY: Validate extension can be approved
     require!(
         extension.status == ExtensionStatus::Pending,
         GhostSpeakError::InvalidExtensionStatus
     );
-    
+
     extension.status = ExtensionStatus::Approved;
-    
+
     // SECURITY: Log extension approval for audit trail
-    SecurityLogger::log_security_event("EXTENSION_APPROVED", ctx.accounts.authority.key(), 
-        &format!("extension: {}, developer: {}", extension.key(), extension.developer));
-    
+    SecurityLogger::log_security_event(
+        "EXTENSION_APPROVED",
+        ctx.accounts.authority.key(),
+        &format!(
+            "extension: {}, developer: {}",
+            extension.key(),
+            extension.developer
+        ),
+    );
+
     emit!(ExtensionApprovedEvent {
         extension: extension.key(),
         developer: extension.developer,
         authority: ctx.accounts.authority.key(),
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -195,14 +208,14 @@ pub struct RegisterExtension<'info> {
         payer = developer,
         space = Extension::LEN,
         seeds = [
-            b"extension", 
+            b"extension",
             developer.key().as_ref(),
             metadata.name.as_bytes()  // Enhanced collision prevention
         ],
         bump
     )]
     pub extension: Account<'info, Extension>,
-    
+
     /// User registry for rate limiting and spam prevention
     #[account(
         init_if_needed,
@@ -212,14 +225,14 @@ pub struct RegisterExtension<'info> {
         bump
     )]
     pub user_registry: Account<'info, UserRegistry>,
-    
+
     /// Enhanced developer verification
     #[account(mut)]
     pub developer: Signer<'info>,
-    
+
     /// System program for account creation
     pub system_program: Program<'info, System>,
-    
+
     /// Clock sysvar for timestamp validation
     pub clock: Sysvar<'info, Clock>,
 }
@@ -231,7 +244,7 @@ pub struct ApproveExtension<'info> {
     #[account(
         mut,
         seeds = [
-            b"extension", 
+            b"extension",
             extension.developer.as_ref(),
             extension.metadata.name.as_bytes()
         ],
@@ -239,13 +252,13 @@ pub struct ApproveExtension<'info> {
         constraint = extension.status == ExtensionStatus::Pending @ GhostSpeakError::InvalidExtensionStatus
     )]
     pub extension: Account<'info, Extension>,
-    
+
     /// Enhanced authority verification - only protocol admin
     #[account(
         constraint = authority.key() == crate::PROTOCOL_ADMIN @ GhostSpeakError::UnauthorizedAccess
     )]
     pub authority: Signer<'info>,
-    
+
     /// Clock sysvar for timestamp validation
     pub clock: Sysvar<'info, Clock>,
 }

@@ -1,6 +1,6 @@
 /*!
  * Governance Module - Multi-signature and Governance Systems
- * 
+ *
  * This module implements comprehensive governance mechanisms including
  * multi-signature wallets, proposal systems, voting mechanisms, and
  * time-locked operations for the GhostSpeak Protocol.
@@ -18,34 +18,34 @@ use anchor_lang::prelude::*;
 pub struct Multisig {
     /// Unique identifier
     pub multisig_id: u64,
-    
+
     /// Required number of signatures
     pub threshold: u8,
-    
+
     /// List of authorized signers
     pub signers: Vec<Pubkey>,
-    
+
     /// Multisig owner (can modify signers)
     pub owner: Pubkey,
-    
+
     /// Creation timestamp
     pub created_at: i64,
-    
+
     /// Last update timestamp
     pub updated_at: i64,
-    
+
     /// Current nonce (prevents replay attacks)
     pub nonce: u64,
-    
+
     /// Pending transactions
     pub pending_transactions: Vec<PendingTransaction>,
-    
+
     /// Configuration settings
     pub config: MultisigConfig,
-    
+
     /// Emergency settings
     pub emergency_config: EmergencyConfig,
-    
+
     /// Reserved space for future extensions
     pub reserved: [u8; 128],
 }
@@ -55,37 +55,37 @@ pub struct Multisig {
 pub struct PendingTransaction {
     /// Transaction ID
     pub transaction_id: u64,
-    
+
     /// Transaction type
     pub transaction_type: TransactionType,
-    
+
     /// Target program/account
     pub target: Pubkey,
-    
+
     /// Transaction data
     pub data: Vec<u8>,
-    
+
     /// Required signatures
     pub required_signatures: u8,
-    
+
     /// Current signatures
     pub signatures: Vec<MultisigSignature>,
-    
+
     /// Creation timestamp
     pub created_at: i64,
-    
+
     /// Expiration timestamp
     pub expires_at: i64,
-    
+
     /// Transaction priority
     pub priority: TransactionPriority,
-    
+
     /// Execution conditions
     pub execution_conditions: Vec<ExecutionCondition>,
-    
+
     /// Transaction status
     pub status: TransactionStatus,
-    
+
     /// Time lock (if applicable)
     pub time_lock: Option<TimeLock>,
 }
@@ -95,25 +95,25 @@ pub struct PendingTransaction {
 pub struct MultisigConfig {
     /// Maximum number of signers
     pub max_signers: u8,
-    
+
     /// Default transaction timeout (seconds)
     pub default_timeout: i64,
-    
+
     /// Allow emergency override
     pub allow_emergency_override: bool,
-    
+
     /// Emergency threshold (if different from normal)
     pub emergency_threshold: Option<u8>,
-    
+
     /// Automatic execution enabled
     pub auto_execute: bool,
-    
+
     /// Required confirmations for signer changes
     pub signer_change_threshold: u8,
-    
+
     /// Allowed transaction types
     pub allowed_transaction_types: Vec<TransactionType>,
-    
+
     /// Daily transaction limits
     pub daily_limits: Vec<(String, u64)>,
 }
@@ -123,25 +123,25 @@ pub struct MultisigConfig {
 pub struct EmergencyConfig {
     /// Emergency contacts
     pub emergency_contacts: Vec<Pubkey>,
-    
+
     /// Emergency threshold override
     pub emergency_threshold: u8,
-    
+
     /// Emergency timeout (shorter than normal)
     pub emergency_timeout: i64,
-    
+
     /// Allowed emergency transaction types
     pub emergency_transaction_types: Vec<TransactionType>,
-    
+
     /// Emergency freeze enabled
     pub freeze_enabled: bool,
-    
+
     /// Current freeze status
     pub frozen: bool,
-    
+
     /// Freeze timestamp
     pub frozen_at: Option<i64>,
-    
+
     /// Auto-unfreeze after duration
     pub auto_unfreeze_duration: Option<i64>,
 }
@@ -153,28 +153,28 @@ pub enum TransactionType {
     Transfer,
     Withdrawal,
     EscrowRelease,
-    
+
     // Governance operations
     ProposalCreation,
     VoteExecution,
     ParameterUpdate,
-    
+
     // Administrative operations
     SignerAddition,
     SignerRemoval,
     ThresholdUpdate,
     ConfigUpdate,
-    
+
     // Security operations
     EmergencyFreeze,
     EmergencyUnfreeze,
     SecurityPolicyUpdate,
-    
+
     // Protocol operations
     ProtocolUpgrade,
     FeatureToggle,
     RiskParameterUpdate,
-    
+
     // Custom operations
     CustomInstruction,
 }
@@ -206,16 +206,16 @@ pub enum TransactionStatus {
 pub struct MultisigSignature {
     /// Signer public key
     pub signer: Pubkey,
-    
+
     /// Signature data
     pub signature: [u8; 64],
-    
+
     /// Signature timestamp
     pub signed_at: i64,
-    
+
     /// Signature method/algorithm
     pub signature_method: String,
-    
+
     /// Additional verification data
     pub verification_data: Option<Vec<u8>>,
 }
@@ -225,16 +225,16 @@ pub struct MultisigSignature {
 pub struct ExecutionCondition {
     /// Condition type
     pub condition_type: ConditionType,
-    
+
     /// Target value/threshold
     pub target_value: u64,
-    
+
     /// Current value
     pub current_value: u64,
-    
+
     /// Condition met
     pub met: bool,
-    
+
     /// Condition description
     pub description: String,
 }
@@ -255,19 +255,19 @@ pub enum ConditionType {
 pub struct TimeLock {
     /// Lock duration in seconds
     pub duration: i64,
-    
+
     /// Lock start timestamp
     pub locked_at: i64,
-    
+
     /// Unlock timestamp
     pub unlocks_at: i64,
-    
+
     /// Early unlock conditions
     pub early_unlock_conditions: Vec<ExecutionCondition>,
-    
+
     /// Lock type
     pub lock_type: TimeLockType,
-    
+
     /// Can be cancelled before execution
     pub cancellable: bool,
 }
@@ -290,46 +290,46 @@ pub enum TimeLockType {
 pub struct GovernanceProposal {
     /// Proposal ID
     pub proposal_id: u64,
-    
+
     /// Proposer
     pub proposer: Pubkey,
-    
+
     /// Proposal title
     pub title: String,
-    
+
     /// Proposal description
     pub description: String,
-    
+
     /// Proposal type
     pub proposal_type: ProposalType,
-    
+
     /// Creation timestamp
     pub created_at: i64,
-    
+
     /// Voting start timestamp
     pub voting_starts_at: i64,
-    
+
     /// Voting end timestamp
     pub voting_ends_at: i64,
-    
+
     /// Execution timestamp (if approved)
     pub execution_timestamp: Option<i64>,
-    
+
     /// Proposal status
     pub status: ProposalStatus,
-    
+
     /// Voting results
     pub voting_results: VotingResults,
-    
+
     /// Execution parameters
     pub execution_params: ExecutionParams,
-    
+
     /// Quorum requirements
     pub quorum_requirements: QuorumRequirements,
-    
+
     /// Proposal metadata
     pub metadata: ProposalMetadata,
-    
+
     /// Reserved space
     pub reserved: [u8; 64],
 }
@@ -339,25 +339,25 @@ pub struct GovernanceProposal {
 pub enum ProposalType {
     /// Protocol parameter updates
     ParameterUpdate,
-    
+
     /// Smart contract upgrades
     ProtocolUpgrade,
-    
+
     /// Treasury operations
     TreasuryOperation,
-    
+
     /// Fee structure changes
     FeeUpdate,
-    
+
     /// Security policy updates
     SecurityUpdate,
-    
+
     /// Governance rule changes
     GovernanceUpdate,
-    
+
     /// Emergency actions
     EmergencyAction,
-    
+
     /// Custom proposals
     Custom,
 }
@@ -379,28 +379,28 @@ pub enum ProposalStatus {
 pub struct VotingResults {
     /// Total votes for
     pub votes_for: u64,
-    
+
     /// Total votes against
     pub votes_against: u64,
-    
+
     /// Total votes abstain
     pub votes_abstain: u64,
-    
+
     /// Total voting power
     pub total_voting_power: u64,
-    
+
     /// Participation rate
     pub participation_rate: u8,
-    
+
     /// Individual votes
     pub individual_votes: Vec<Vote>,
-    
+
     /// Weighted voting enabled
     pub weighted_voting: bool,
-    
+
     /// Quorum reached
     pub quorum_reached: bool,
-    
+
     /// Approval threshold met
     pub approval_threshold_met: bool,
 }
@@ -410,19 +410,19 @@ pub struct VotingResults {
 pub struct Vote {
     /// Voter public key
     pub voter: Pubkey,
-    
+
     /// Vote choice
     pub choice: VoteChoice,
-    
+
     /// Voting power used
     pub voting_power: u64,
-    
+
     /// Vote timestamp
     pub voted_at: i64,
-    
+
     /// Vote reasoning (optional)
     pub reasoning: Option<String>,
-    
+
     /// Delegation info (if delegated vote)
     pub delegation_info: Option<DelegationInfo>,
 }
@@ -440,13 +440,13 @@ pub enum VoteChoice {
 pub struct DelegationInfo {
     /// Original delegator
     pub delegator: Pubkey,
-    
+
     /// Delegation timestamp
     pub delegated_at: i64,
-    
+
     /// Delegation scope
     pub scope: DelegationScope,
-    
+
     /// Delegation expiry
     pub expires_at: Option<i64>,
 }
@@ -465,19 +465,19 @@ pub enum DelegationScope {
 pub struct ExecutionParams {
     /// Instructions to execute if passed
     pub instructions: Vec<ProposalInstruction>,
-    
+
     /// Time delay before execution
     pub execution_delay: i64,
-    
+
     /// Execution conditions
     pub execution_conditions: Vec<ExecutionCondition>,
-    
+
     /// Can be cancelled after approval
     pub cancellable: bool,
-    
+
     /// Automatic execution enabled
     pub auto_execute: bool,
-    
+
     /// Required execution authority
     pub execution_authority: Pubkey,
 }
@@ -487,13 +487,13 @@ pub struct ExecutionParams {
 pub struct ProposalInstruction {
     /// Target program
     pub program_id: Pubkey,
-    
+
     /// Accounts required
     pub accounts: Vec<ProposalAccount>,
-    
+
     /// Instruction data
     pub data: Vec<u8>,
-    
+
     /// Instruction description
     pub description: String,
 }
@@ -503,13 +503,13 @@ pub struct ProposalInstruction {
 pub struct ProposalAccount {
     /// Account public key
     pub pubkey: Pubkey,
-    
+
     /// Is signer required
     pub is_signer: bool,
-    
+
     /// Is writable
     pub is_writable: bool,
-    
+
     /// Account description
     pub description: String,
 }
@@ -519,16 +519,16 @@ pub struct ProposalAccount {
 pub struct QuorumRequirements {
     /// Minimum participation rate (0-100)
     pub minimum_participation: u8,
-    
+
     /// Approval threshold (0-100)
     pub approval_threshold: u8,
-    
+
     /// Super majority required
     pub super_majority_required: bool,
-    
+
     /// Minimum total voting power
     pub minimum_voting_power: u64,
-    
+
     /// Quorum calculation method
     pub quorum_method: QuorumMethod,
 }
@@ -547,19 +547,19 @@ pub enum QuorumMethod {
 pub struct ProposalMetadata {
     /// IPFS hash for detailed proposal
     pub ipfs_hash: Option<String>,
-    
+
     /// External references
     pub external_references: Vec<String>,
-    
+
     /// Proposal tags
     pub tags: Vec<String>,
-    
+
     /// Risk assessment
     pub risk_assessment: Option<String>,
-    
+
     /// Impact analysis
     pub impact_analysis: Option<String>,
-    
+
     /// Implementation timeline
     pub implementation_timeline: Option<String>,
 }
@@ -573,31 +573,31 @@ pub struct ProposalMetadata {
 pub struct GovernanceConfig {
     /// Governance authority
     pub authority: Pubkey,
-    
+
     /// Version for upgrades
     pub version: u8,
-    
+
     /// Creation timestamp
     pub created_at: i64,
-    
+
     /// Last update timestamp
     pub updated_at: i64,
-    
+
     /// Voting configuration
     pub voting_config: VotingConfig,
-    
+
     /// Proposal configuration
     pub proposal_config: ProposalConfig,
-    
+
     /// Token-based governance settings
     pub token_governance: TokenGovernance,
-    
+
     /// Council-based governance settings
     pub council_governance: Option<CouncilGovernance>,
-    
+
     /// Emergency governance settings
     pub emergency_governance: EmergencyGovernance,
-    
+
     /// Reserved space
     pub reserved: [u8; 128],
 }
@@ -607,25 +607,25 @@ pub struct GovernanceConfig {
 pub struct VotingConfig {
     /// Voting period duration (seconds)
     pub voting_period: i64,
-    
+
     /// Minimum voting delay before voting starts
     pub voting_delay: i64,
-    
+
     /// Default quorum threshold
     pub default_quorum_threshold: u8,
-    
+
     /// Default approval threshold
     pub default_approval_threshold: u8,
-    
+
     /// Vote delegation enabled
     pub delegation_enabled: bool,
-    
+
     /// Weighted voting enabled
     pub weighted_voting_enabled: bool,
-    
+
     /// Vote privacy settings
     pub vote_privacy: VotePrivacy,
-    
+
     /// Snapshot strategy
     pub snapshot_strategy: SnapshotStrategy,
 }
@@ -653,19 +653,19 @@ pub enum SnapshotStrategy {
 pub struct ProposalConfig {
     /// Minimum proposal deposit
     pub minimum_deposit: u64,
-    
+
     /// Proposal deposit token
     pub deposit_token: Pubkey,
-    
+
     /// Maximum active proposals
     pub max_active_proposals: u32,
-    
+
     /// Proposal cooldown period
     pub proposal_cooldown: i64,
-    
+
     /// Required proposer qualifications
     pub proposer_requirements: ProposerRequirements,
-    
+
     /// Automatic execution settings
     pub auto_execution: AutoExecutionConfig,
 }
@@ -675,16 +675,16 @@ pub struct ProposalConfig {
 pub struct ProposerRequirements {
     /// Minimum token balance required
     pub minimum_token_balance: u64,
-    
+
     /// Minimum reputation score
     pub minimum_reputation: Option<u32>,
-    
+
     /// Required staking period
     pub required_staking_period: Option<i64>,
-    
+
     /// Whitelist of approved proposers
     pub approved_proposers: Option<Vec<Pubkey>>,
-    
+
     /// Blacklist of banned proposers
     pub banned_proposers: Vec<Pubkey>,
 }
@@ -694,16 +694,16 @@ pub struct ProposerRequirements {
 pub struct AutoExecutionConfig {
     /// Auto-execution enabled
     pub enabled: bool,
-    
+
     /// Maximum execution delay
     pub max_execution_delay: i64,
-    
+
     /// Execution window duration
     pub execution_window: i64,
-    
+
     /// Gas limit for execution
     pub gas_limit: u64,
-    
+
     /// Execution priority levels
     pub priority_levels: Vec<ExecutionPriority>,
 }
@@ -713,13 +713,13 @@ pub struct AutoExecutionConfig {
 pub struct ExecutionPriority {
     /// Proposal type
     pub proposal_type: ProposalType,
-    
+
     /// Priority level
     pub priority: TransactionPriority,
-    
+
     /// Execution delay override
     pub delay_override: Option<i64>,
-    
+
     /// Special conditions
     pub conditions: Vec<String>,
 }
@@ -729,16 +729,16 @@ pub struct ExecutionPriority {
 pub struct TokenGovernance {
     /// Governance token mint
     pub governance_token: Pubkey,
-    
+
     /// Voting power calculation method
     pub voting_power_method: VotingPowerMethod,
-    
+
     /// Token lockup requirements
     pub lockup_requirements: LockupRequirements,
-    
+
     /// Staking rewards for participation
     pub staking_rewards: Option<StakingRewards>,
-    
+
     /// Slashing conditions
     pub slashing_conditions: Vec<SlashingCondition>,
 }
@@ -758,13 +758,13 @@ pub enum VotingPowerMethod {
 pub struct LockupRequirements {
     /// Minimum lockup period
     pub minimum_lockup_period: i64,
-    
+
     /// Voting power multiplier for longer lockups
     pub lockup_multipliers: Vec<LockupMultiplier>,
-    
+
     /// Early withdrawal penalties
     pub early_withdrawal_penalty: u8,
-    
+
     /// Lockup extensions allowed
     pub extensions_allowed: bool,
 }
@@ -774,10 +774,10 @@ pub struct LockupRequirements {
 pub struct LockupMultiplier {
     /// Lockup duration threshold
     pub duration_threshold: i64,
-    
+
     /// Voting power multiplier
     pub multiplier: u16, // Basis points (10000 = 1.0x)
-    
+
     /// Maximum multiplier cap
     pub max_multiplier: u16,
 }
@@ -787,16 +787,16 @@ pub struct LockupMultiplier {
 pub struct StakingRewards {
     /// Reward token mint
     pub reward_token: Pubkey,
-    
+
     /// Base reward rate (per second)
     pub base_reward_rate: u64,
-    
+
     /// Participation bonus multiplier
     pub participation_bonus: u16,
-    
+
     /// Reward distribution frequency
     pub distribution_frequency: i64,
-    
+
     /// Maximum reward pool
     pub max_reward_pool: u64,
 }
@@ -806,13 +806,13 @@ pub struct StakingRewards {
 pub struct SlashingCondition {
     /// Behavior that triggers slashing
     pub behavior_type: SlashingBehavior,
-    
+
     /// Percentage of stake to slash
     pub slash_percentage: u8,
-    
+
     /// Minimum slash amount
     pub minimum_slash_amount: u64,
-    
+
     /// Evidence requirements
     pub evidence_requirements: Vec<String>,
 }
@@ -833,16 +833,16 @@ pub enum SlashingBehavior {
 pub struct CouncilGovernance {
     /// Council members
     pub council_members: Vec<CouncilMember>,
-    
+
     /// Council threshold for decisions
     pub council_threshold: u8,
-    
+
     /// Council term length
     pub term_length: i64,
-    
+
     /// Election process
     pub election_process: ElectionProcess,
-    
+
     /// Council powers and limitations
     pub council_powers: CouncilPowers,
 }
@@ -852,19 +852,19 @@ pub struct CouncilGovernance {
 pub struct CouncilMember {
     /// Member public key
     pub member: Pubkey,
-    
+
     /// Election timestamp
     pub elected_at: i64,
-    
+
     /// Term expiration
     pub term_expires_at: i64,
-    
+
     /// Voting weight
     pub voting_weight: u16,
-    
+
     /// Specialization areas
     pub specializations: Vec<String>,
-    
+
     /// Performance metrics
     pub performance_metrics: MemberPerformance,
 }
@@ -874,16 +874,16 @@ pub struct CouncilMember {
 pub struct MemberPerformance {
     /// Proposals voted on
     pub proposals_voted: u32,
-    
+
     /// Proposals created
     pub proposals_created: u32,
-    
+
     /// Attendance rate
     pub attendance_rate: u8,
-    
+
     /// Community satisfaction score
     pub satisfaction_score: u8,
-    
+
     /// Expertise utilization
     pub expertise_utilization: u8,
 }
@@ -893,19 +893,19 @@ pub struct MemberPerformance {
 pub struct ElectionProcess {
     /// Election frequency
     pub election_frequency: i64,
-    
+
     /// Nomination period
     pub nomination_period: i64,
-    
+
     /// Campaign period
     pub campaign_period: i64,
-    
+
     /// Voting period
     pub voting_period: i64,
-    
+
     /// Candidate requirements
     pub candidate_requirements: CandidateRequirements,
-    
+
     /// Election method
     pub election_method: ElectionMethod,
 }
@@ -915,16 +915,16 @@ pub struct ElectionProcess {
 pub struct CandidateRequirements {
     /// Minimum token balance
     pub minimum_token_balance: u64,
-    
+
     /// Required nominations
     pub required_nominations: u32,
-    
+
     /// Minimum reputation score
     pub minimum_reputation: u32,
-    
+
     /// Required experience areas
     pub required_experience: Vec<String>,
-    
+
     /// Background check requirements
     pub background_checks: Vec<String>,
 }
@@ -943,19 +943,19 @@ pub enum ElectionMethod {
 pub struct CouncilPowers {
     /// Can fast-track emergency proposals
     pub emergency_powers: bool,
-    
+
     /// Can veto community proposals
     pub veto_power: bool,
-    
+
     /// Can modify governance parameters
     pub parameter_modification: bool,
-    
+
     /// Can manage treasury
     pub treasury_management: bool,
-    
+
     /// Can oversee protocol upgrades
     pub upgrade_oversight: bool,
-    
+
     /// Power limitations
     pub limitations: Vec<String>,
 }
@@ -965,19 +965,19 @@ pub struct CouncilPowers {
 pub struct EmergencyGovernance {
     /// Emergency multisig
     pub emergency_multisig: Pubkey,
-    
+
     /// Emergency threshold (lower than normal)
     pub emergency_threshold: u8,
-    
+
     /// Emergency voting period (shorter)
     pub emergency_voting_period: i64,
-    
+
     /// Types of emergency actions allowed
     pub emergency_actions: Vec<EmergencyAction>,
-    
+
     /// Post-emergency review requirements
     pub post_emergency_review: bool,
-    
+
     /// Emergency activation conditions
     pub activation_conditions: Vec<EmergencyCondition>,
 }
@@ -998,16 +998,16 @@ pub enum EmergencyAction {
 pub struct EmergencyCondition {
     /// Condition type
     pub condition_type: EmergencyConditionType,
-    
+
     /// Threshold value
     pub threshold: u64,
-    
+
     /// Detection method
     pub detection_method: String,
-    
+
     /// Automatic activation
     pub auto_activate: bool,
-    
+
     /// Required confirmations
     pub required_confirmations: u8,
 }

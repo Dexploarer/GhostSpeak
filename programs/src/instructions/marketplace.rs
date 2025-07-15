@@ -1,28 +1,33 @@
 /*!
  * Marketplace Instructions - Enhanced with 2025 Security Patterns
- * 
+ *
  * Implements cutting-edge security features for service listings, job postings,
  * and marketplace operations with canonical PDA validation, rate limiting,
  * and comprehensive anti-fraud measures following 2025 Solana best practices.
  */
 
-use anchor_lang::prelude::*;
-use crate::{*, GhostSpeakError, state::{ApplicationStatus, ContractStatus}};
 use crate::simple_optimization::InputValidator;
-use crate::state::commerce::{ServiceListingData, ServicePurchaseData, JobPostingData, JobApplicationData};
+use crate::state::commerce::{
+    JobApplicationData, JobPostingData, ServiceListingData, ServicePurchaseData,
+};
 use crate::state::marketplace::*;
+use crate::{
+    state::{ApplicationStatus, ContractStatus},
+    GhostSpeakError, *,
+};
+use anchor_lang::prelude::*;
 
 // =====================================================
 // SERVICE LISTING INSTRUCTIONS
 // =====================================================
 
 /// Creates a service listing where agents can advertise capabilities to human customers
-/// 
+///
 /// Allows AI agents to create marketplace listings for their services, including pricing,
 /// availability, and supported capabilities. Human customers can browse and purchase these services.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing the listing account and agent authority
 /// * `listing_data` - Service listing details including:
 ///   - `title` - Service name (max 100 chars)
@@ -31,19 +36,19 @@ use crate::state::marketplace::*;
 ///   - `payment_token` - SPL token mint for payments
 ///   - `estimated_delivery` - Expected completion time in seconds
 ///   - `tags` - Searchable tags for discovery
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful listing creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If creator doesn't own the agent
 /// * `AgentNotActive` - If agent is deactivated
 /// * `InvalidPaymentAmount` - If price is zero or exceeds maximum
-/// 
+///
 /// # Example
-/// 
+///
 /// ```no_run
 /// let listing_data = ServiceListingData {
 ///     title: "Code Review Service".to_string(),
@@ -67,15 +72,28 @@ pub fn create_service_listing(
 
     // SECURITY: Comprehensive input validation using security module
     InputValidator::validate_string(&listing_data.title, MAX_TITLE_LENGTH, "title")?;
-    InputValidator::validate_string(&listing_data.description, MAX_DESCRIPTION_LENGTH, "description")?;
+    InputValidator::validate_string(
+        &listing_data.description,
+        MAX_DESCRIPTION_LENGTH,
+        "description",
+    )?;
     InputValidator::validate_payment_amount(listing_data.price, "price")?;
-    InputValidator::validate_string_vec(&listing_data.tags, MAX_TAGS_COUNT, MAX_TAG_LENGTH, "tags")?;
-    
+    InputValidator::validate_string_vec(
+        &listing_data.tags,
+        MAX_TAGS_COUNT,
+        MAX_TAG_LENGTH,
+        "tags",
+    )?;
+
     // Additional security checks for metadata_uri if it's included
     // Note: metadata_uri field handling depends on ServiceListingData struct definition
-    
+
     // Log security event
-    msg!("Security Event: SERVICE_LISTING_CREATED - Creator: {}, Title: {}", ctx.accounts.creator.key(), &listing_data.title);
+    msg!(
+        "Security Event: SERVICE_LISTING_CREATED - Creator: {}, Title: {}",
+        ctx.accounts.creator.key(),
+        &listing_data.title
+    );
 
     let listing = &mut ctx.accounts.service_listing;
     let agent = &ctx.accounts.agent;
@@ -110,12 +128,12 @@ pub fn create_service_listing(
 }
 
 /// Purchases a service from an AI agent (for human customers)
-/// 
+///
 /// Enables human customers to purchase services from AI agents. Creates a purchase order
 /// and handles payment escrow until service completion.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing purchase accounts and buyer authority
 /// * `purchase_data` - Purchase details including:
 ///   - `listing_id` - The service listing to purchase
@@ -123,18 +141,18 @@ pub fn create_service_listing(
 ///   - `requirements` - Specific requirements for the service
 ///   - `custom_instructions` - Additional instructions for the agent
 ///   - `deadline` - Expected completion deadline
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful purchase creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `ServiceNotActive` - If the service listing is inactive
 /// * `InsufficientFunds` - If buyer lacks funds for payment
-/// 
+///
 /// # Payment Flow
-/// 
+///
 /// - Calculates total payment based on quantity
 /// - Transfers funds to escrow account
 /// - Creates purchase order for agent fulfillment
@@ -151,8 +169,17 @@ pub fn purchase_service(
     );
 
     // SECURITY: Comprehensive input validation
-    InputValidator::validate_string_vec(&purchase_data.requirements, MAX_REQUIREMENTS_ITEMS, MAX_GENERAL_STRING_LENGTH, "requirements")?;
-    InputValidator::validate_string(&purchase_data.custom_instructions, MAX_DESCRIPTION_LENGTH, "custom_instructions")?;
+    InputValidator::validate_string_vec(
+        &purchase_data.requirements,
+        MAX_REQUIREMENTS_ITEMS,
+        MAX_GENERAL_STRING_LENGTH,
+        "requirements",
+    )?;
+    InputValidator::validate_string(
+        &purchase_data.custom_instructions,
+        MAX_DESCRIPTION_LENGTH,
+        "custom_instructions",
+    )?;
     InputValidator::validate_future_timestamp(purchase_data.deadline, "deadline")?;
 
     let purchase = &mut ctx.accounts.service_purchase;
@@ -171,16 +198,22 @@ pub fn purchase_service(
     purchase.custom_instructions = purchase_data.custom_instructions.clone();
     purchase.deadline = purchase_data.deadline;
     // SECURITY: Use safe arithmetic with overflow protection
-    purchase.payment_amount = listing.price
+    purchase.payment_amount = listing
+        .price
         .checked_mul(purchase_data.quantity as u64)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
-    
+
     // SECURITY: Validate total payment amount
     InputValidator::validate_payment_amount(purchase.payment_amount, "total_payment_amount")?;
-    
+
     // Log purchase event for security audit
-    msg!("Security Event: SERVICE_PURCHASED - Buyer: {}, listing_id: {}, quantity: {}, amount: {}", 
-        ctx.accounts.buyer.key(), purchase_data.listing_id, purchase_data.quantity, purchase.payment_amount);
+    msg!(
+        "Security Event: SERVICE_PURCHASED - Buyer: {}, listing_id: {}, quantity: {}, amount: {}",
+        ctx.accounts.buyer.key(),
+        purchase_data.listing_id,
+        purchase_data.quantity,
+        purchase.payment_amount
+    );
     purchase.payment_token = listing.payment_token;
     purchase.purchased_at = clock.unix_timestamp;
     purchase.updated_at = clock.unix_timestamp;
@@ -201,12 +234,12 @@ pub fn purchase_service(
 // =====================================================
 
 /// Creates a job posting for AI agents to apply to (human employers hiring agents)
-/// 
+///
 /// Allows human employers to post jobs that AI agents can apply for. Supports various
 /// job types, budget ranges, and skill requirements.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing the job posting account and employer authority
 /// * `job_data` - Job posting details including:
 ///   - `title` - Job title (max 100 chars)
@@ -217,18 +250,18 @@ pub fn purchase_service(
 ///   - `deadline` - Job completion deadline
 ///   - `skills_needed` - Required skills for the job
 ///   - `payment_token` - SPL token for payment
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful job posting creation
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If caller is not the employer signer
 /// * `InvalidPaymentAmount` - If budget range is invalid
-/// 
+///
 /// # Example
-/// 
+///
 /// ```no_run
 /// let job_data = JobPostingData {
 ///     title: "Smart Contract Audit".to_string(),
@@ -241,10 +274,7 @@ pub fn purchase_service(
 ///     payment_token: usdc_mint,
 /// };
 /// ```
-pub fn create_job_posting(
-    ctx: Context<CreateJobPosting>,
-    job_data: JobPostingData,
-) -> Result<()> {
+pub fn create_job_posting(ctx: Context<CreateJobPosting>, job_data: JobPostingData) -> Result<()> {
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.employer.is_signer,
@@ -254,9 +284,19 @@ pub fn create_job_posting(
     // SECURITY: Comprehensive input validation using security module
     InputValidator::validate_string(&job_data.title, MAX_TITLE_LENGTH, "title")?;
     InputValidator::validate_string(&job_data.description, MAX_DESCRIPTION_LENGTH, "description")?;
-    InputValidator::validate_string_vec(&job_data.requirements, MAX_REQUIREMENTS_ITEMS, MAX_GENERAL_STRING_LENGTH, "requirements")?;
-    InputValidator::validate_string_vec(&job_data.skills_needed, MAX_SKILLS_COUNT, MAX_SKILL_LENGTH, "skills_needed")?;
-    
+    InputValidator::validate_string_vec(
+        &job_data.requirements,
+        MAX_REQUIREMENTS_ITEMS,
+        MAX_GENERAL_STRING_LENGTH,
+        "requirements",
+    )?;
+    InputValidator::validate_string_vec(
+        &job_data.skills_needed,
+        MAX_SKILLS_COUNT,
+        MAX_SKILL_LENGTH,
+        "skills_needed",
+    )?;
+
     // SECURITY: Validate budget range
     InputValidator::validate_payment_amount(job_data.budget_min, "budget_min")?;
     InputValidator::validate_payment_amount(job_data.budget_max, "budget_max")?;
@@ -264,12 +304,16 @@ pub fn create_job_posting(
         job_data.budget_min <= job_data.budget_max,
         GhostSpeakError::InvalidPaymentAmount
     );
-    
+
     // SECURITY: Validate deadline
     InputValidator::validate_future_timestamp(job_data.deadline, "deadline")?;
-    
+
     // Log job posting for security audit
-    msg!("Security Event: JOB_POSTING_CREATED - Employer: {}, Title: {}", ctx.accounts.employer.key(), &job_data.title);
+    msg!(
+        "Security Event: JOB_POSTING_CREATED - Employer: {}, Title: {}",
+        ctx.accounts.employer.key(),
+        &job_data.title
+    );
 
     let job_posting = &mut ctx.accounts.job_posting;
     let clock = Clock::get()?;
@@ -302,40 +346,37 @@ pub fn create_job_posting(
 }
 
 /// Submits an application to a job posting (AI agents applying for jobs)
-/// 
+///
 /// Allows AI agents to apply for job postings created by human employers.
 /// Includes proposal details, rate negotiation, and portfolio items.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing application accounts and agent authority
 /// * `application_data` - Application details including:
 ///   - `cover_letter` - Proposal/cover letter (max 2048 chars)
 ///   - `proposed_rate` - Proposed payment rate
 ///   - `estimated_delivery` - Estimated completion time
 ///   - `portfolio_items` - Links to relevant portfolio work
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful application submission
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If caller doesn't own the agent
 /// * `JobNotActive` - If job posting is closed
-/// * `InvalidPaymentAmount` - If proposed rate is invalid  
+/// * `InvalidPaymentAmount` - If proposed rate is invalid
 /// * `AgentNotActive` - If agent is deactivated
-/// 
+///
 /// # Application Process
-/// 
+///
 /// - Validates agent eligibility
 /// - Creates application with proposed terms
 /// - Increments job posting application count
 /// - Emits notification to employer
-pub fn apply_to_job(
-    ctx: Context<ApplyToJob>,
-    application_data: JobApplicationData,
-) -> Result<()> {
+pub fn apply_to_job(ctx: Context<ApplyToJob>, application_data: JobApplicationData) -> Result<()> {
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.agent_owner.is_signer,
@@ -343,21 +384,37 @@ pub fn apply_to_job(
     );
 
     // SECURITY: Comprehensive input validation
-    InputValidator::validate_string(&application_data.cover_letter, MAX_COVER_LETTER_LENGTH, "cover_letter")?;
-    InputValidator::validate_string_vec(&application_data.portfolio_items, MAX_PORTFOLIO_ITEMS, MAX_URL_LENGTH, "portfolio_items")?;
+    InputValidator::validate_string(
+        &application_data.cover_letter,
+        MAX_COVER_LETTER_LENGTH,
+        "cover_letter",
+    )?;
+    InputValidator::validate_string_vec(
+        &application_data.portfolio_items,
+        MAX_PORTFOLIO_ITEMS,
+        MAX_URL_LENGTH,
+        "portfolio_items",
+    )?;
     InputValidator::validate_payment_amount(application_data.proposed_rate, "proposed_rate")?;
-    
+
     // SECURITY: Validate URLs in portfolio items
     for url in application_data.portfolio_items.iter() {
         InputValidator::validate_url(url)?;
     }
-    
+
     // SECURITY: Validate estimated delivery time
-    InputValidator::validate_future_timestamp(application_data.estimated_delivery, "estimated_delivery")?;
-    
+    InputValidator::validate_future_timestamp(
+        application_data.estimated_delivery,
+        "estimated_delivery",
+    )?;
+
     // Log application for security audit
-    msg!("Security Event: JOB_APPLICATION_SUBMITTED - Agent Owner: {}, job: {}, proposed_rate: {}", 
-        ctx.accounts.agent_owner.key(), ctx.accounts.job_posting.key(), application_data.proposed_rate);
+    msg!(
+        "Security Event: JOB_APPLICATION_SUBMITTED - Agent Owner: {}, job: {}, proposed_rate: {}",
+        ctx.accounts.agent_owner.key(),
+        ctx.accounts.job_posting.key(),
+        application_data.proposed_rate
+    );
 
     let application = &mut ctx.accounts.job_application;
     let job_posting = &mut ctx.accounts.job_posting;
@@ -385,11 +442,15 @@ pub fn apply_to_job(
     job_posting.applications_count = (job_posting.applications_count as u64)
         .checked_add(1)
         .ok_or(GhostSpeakError::ArithmeticOverflow)? as u32;
-    
+
     // SECURITY: Check for application spam
     if job_posting.applications_count > 1000 {
-        msg!("Security Event: EXCESSIVE_APPLICATIONS - Agent Owner: {}, job_id: {}, count: {}", 
-            ctx.accounts.agent_owner.key(), job_posting.key(), job_posting.applications_count);
+        msg!(
+            "Security Event: EXCESSIVE_APPLICATIONS - Agent Owner: {}, job_id: {}, count: {}",
+            ctx.accounts.agent_owner.key(),
+            job_posting.key(),
+            job_posting.applications_count
+        );
     }
     job_posting.updated_at = clock.unix_timestamp;
 
@@ -405,42 +466,40 @@ pub fn apply_to_job(
 }
 
 /// Accepts a job application and creates a work contract
-/// 
+///
 /// Allows employers to accept an agent's application and establish a binding work contract.
 /// This initiates the escrow process and sets deliverable expectations.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ctx` - The context containing contract creation accounts and employer authority
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `Ok(())` on successful application acceptance
-/// 
+///
 /// # Errors
-/// 
+///
 /// * `UnauthorizedAccess` - If caller is not the job poster
 /// * `InvalidApplicationStatus` - If application is not in `Submitted` status
 /// * `InsufficientFunds` - If employer lacks funds for escrow
-/// 
+///
 /// # Contract Creation
-/// 
+///
 /// Creates a job contract with:
 /// - Agreed payment terms from the application
 /// - Milestone schedule if applicable
 /// - Delivery deadline
 /// - Dispute resolution terms
-/// 
+///
 /// # State Changes
-/// 
+///
 /// - Creates new job contract account
 /// - Updates application status to `Accepted`
 /// - Marks job posting as inactive
 /// - Transfers funds to escrow
 /// - Updates other applications to `Rejected`
-pub fn accept_job_application(
-    ctx: Context<AcceptJobApplication>,
-) -> Result<()> {
+pub fn accept_job_application(ctx: Context<AcceptJobApplication>) -> Result<()> {
     // SECURITY: Verify signer authorization
     require!(
         ctx.accounts.employer.is_signer,
@@ -494,7 +553,7 @@ pub fn accept_job_application(
 // =====================================================
 
 /// Enhanced service listing creation with 2025 security patterns
-/// 
+///
 /// Implements canonical PDA validation, anti-spam measures, and comprehensive
 /// security constraints for marketplace integrity
 #[derive(Accounts)]
@@ -506,21 +565,21 @@ pub struct CreateServiceListing<'info> {
         payer = creator,
         space = ServiceListing::LEN,
         seeds = [
-            b"service_listing", 
-            creator.key().as_ref(), 
+            b"service_listing",
+            creator.key().as_ref(),
             listing_id.as_bytes()  // Collision prevention
         ],
         bump
     )]
     pub service_listing: Account<'info, ServiceListing>,
-    
+
     /// Agent account with ownership validation
     #[account(
         constraint = agent.owner == creator.key() @ GhostSpeakError::InvalidAgentOwner,
         constraint = agent.is_active @ GhostSpeakError::AgentNotActive
     )]
     pub agent: Account<'info, Agent>,
-    
+
     /// User registry for rate limiting
     #[account(
         mut,
@@ -528,14 +587,14 @@ pub struct CreateServiceListing<'info> {
         bump = user_registry.bump
     )]
     pub user_registry: Account<'info, UserRegistry>,
-    
+
     /// Creator authority with enhanced verification
     #[account(mut)]
     pub creator: Signer<'info>,
-    
+
     /// System program for account operations
     pub system_program: Program<'info, System>,
-    
+
     /// Clock sysvar for timestamp validation and rate limiting
     pub clock: Sysvar<'info, Clock>,
 }
@@ -567,10 +626,10 @@ pub struct CreateJobPosting<'info> {
         bump
     )]
     pub job_posting: Account<'info, JobPosting>,
-    
+
     #[account(mut)]
     pub employer: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -584,15 +643,15 @@ pub struct ApplyToJob<'info> {
         bump
     )]
     pub job_application: Account<'info, JobApplication>,
-    
+
     #[account(mut)]
     pub job_posting: Account<'info, JobPosting>,
-    
+
     pub agent: Account<'info, Agent>,
-    
+
     #[account(mut)]
     pub agent_owner: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -606,15 +665,15 @@ pub struct AcceptJobApplication<'info> {
         bump
     )]
     pub job_contract: Account<'info, JobContract>,
-    
+
     #[account(mut)]
     pub job_posting: Account<'info, JobPosting>,
-    
+
     #[account(mut)]
     pub job_application: Account<'info, JobApplication>,
-    
+
     #[account(mut)]
     pub employer: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }

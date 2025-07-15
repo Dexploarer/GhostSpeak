@@ -1,6 +1,6 @@
 /*!
  * Reputation State Module
- * 
+ *
  * Contains reputation related state structures.
  */
 

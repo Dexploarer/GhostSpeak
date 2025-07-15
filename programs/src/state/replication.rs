@@ -1,11 +1,11 @@
 /*!
  * Replication State Module
- * 
+ *
  * Contains state structures for agent replication and template management.
  */
 
-use anchor_lang::prelude::*;
 use crate::MAX_GENERAL_STRING_LENGTH;
+use anchor_lang::prelude::*;
 
 #[account]
 pub struct ReplicationTemplate {
@@ -19,8 +19,8 @@ pub struct ReplicationTemplate {
     pub is_active: bool,
     pub created_at: i64,
     pub cnft_asset_id: Option<Pubkey>, // Compressed NFT asset ID
-    pub merkle_tree: Option<Pubkey>, // Merkle tree for cNFT
-    pub metadata_uri: String, // IPFS/Arweave URI for agent genome
+    pub merkle_tree: Option<Pubkey>,   // Merkle tree for cNFT
+    pub metadata_uri: String,          // IPFS/Arweave URI for agent genome
     pub bump: u8,
 }
 

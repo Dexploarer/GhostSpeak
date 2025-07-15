@@ -1,11 +1,11 @@
 /*!
  * Analytics State Module
- * 
+ *
  * Contains all analytics-related data structures for the GhostSpeak Protocol.
  */
 
-use anchor_lang::prelude::*;
 use super::GhostSpeakError;
+use anchor_lang::prelude::*;
 
 // PDA Seeds
 pub const MARKET_ANALYTICS_SEED: &[u8] = b"market_analytics";
@@ -19,12 +19,12 @@ pub const MAX_METRICS_LENGTH: usize = 256;
 pub struct AgentAnalytics {
     pub total_revenue: u64,
     pub total_jobs: u32,
-    pub success_rate: u32,         // Basis points (0-10000 for 0-100%)
-    pub average_rating: u32,        // Scaled rating (0-5000 for 0-5.0)
-    pub response_time_avg: u64,     // Milliseconds
-    pub customer_retention: u32,    // Basis points (0-10000 for 0-100%)
-    pub market_share: u32,          // Basis points (0-10000 for 0-100%)
-    pub trend_direction: i32,       // Positive/negative trend in basis points
+    pub success_rate: u32,       // Basis points (0-10000 for 0-100%)
+    pub average_rating: u32,     // Scaled rating (0-5000 for 0-5.0)
+    pub response_time_avg: u64,  // Milliseconds
+    pub customer_retention: u32, // Basis points (0-10000 for 0-100%)
+    pub market_share: u32,       // Basis points (0-10000 for 0-100%)
+    pub trend_direction: i32,    // Positive/negative trend in basis points
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
@@ -32,9 +32,9 @@ pub struct MarketAnalyticsData {
     pub total_volume: u64,
     pub active_agents: u32,
     pub average_price: u64,
-    pub price_volatility: u32,      // Basis points for volatility percentage
-    pub demand_trend: i32,          // Basis points (can be negative)
-    pub supply_trend: i32,          // Basis points (can be negative)
+    pub price_volatility: u32, // Basis points for volatility percentage
+    pub demand_trend: i32,     // Basis points (can be negative)
+    pub supply_trend: i32,     // Basis points (can be negative)
     pub market_cap: u64,
 }
 
@@ -80,26 +80,32 @@ impl AnalyticsDashboard {
         metrics: String,
         bump: u8,
     ) -> Result<()> {
-        require!(metrics.len() <= MAX_METRICS_LENGTH, GhostSpeakError::MetricsTooLong);
-        
+        require!(
+            metrics.len() <= MAX_METRICS_LENGTH,
+            GhostSpeakError::MetricsTooLong
+        );
+
         let clock = Clock::get()?;
-        
+
         self.dashboard_id = dashboard_id;
         self.owner = owner;
         self.metrics = metrics;
         self.created_at = clock.unix_timestamp;
         self.updated_at = clock.unix_timestamp;
         self.bump = bump;
-        
+
         Ok(())
     }
 
     pub fn update_metrics(&mut self, metrics: String) -> Result<()> {
-        require!(metrics.len() <= MAX_METRICS_LENGTH, GhostSpeakError::MetricsTooLong);
-        
+        require!(
+            metrics.len() <= MAX_METRICS_LENGTH,
+            GhostSpeakError::MetricsTooLong
+        );
+
         self.metrics = metrics;
         self.updated_at = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 }
@@ -119,14 +125,9 @@ impl MarketAnalytics {
         4 + (MAX_TOP_AGENTS * 32) + // top_agents
         1; // bump
 
-    pub fn initialize(
-        &mut self,
-        period_start: i64,
-        period_end: i64,
-        bump: u8,
-    ) -> Result<()> {
+    pub fn initialize(&mut self, period_start: i64, period_end: i64, bump: u8) -> Result<()> {
         require!(period_end > period_start, GhostSpeakError::InvalidPeriod);
-        
+
         self.period_start = period_start;
         self.period_end = period_end;
         self.total_volume = 0;
@@ -139,36 +140,36 @@ impl MarketAnalytics {
         self.market_cap = 0;
         self.top_agents = Vec::new();
         self.bump = bump;
-        
+
         Ok(())
     }
 
-    pub fn update_stats(
-        &mut self,
-        volume: u64,
-        price: u64,
-    ) -> Result<()> {
+    pub fn update_stats(&mut self, volume: u64, price: u64) -> Result<()> {
         self.total_volume = self.total_volume.saturating_add(volume);
         self.total_transactions = self.total_transactions.saturating_add(1);
-        
+
         // Calculate new average price
         if self.total_transactions > 0 {
-            let total_value = self.average_price
+            let total_value = self
+                .average_price
                 .saturating_mul(self.total_transactions.saturating_sub(1))
                 .saturating_add(price);
             self.average_price = total_value / self.total_transactions;
         }
-        
+
         Ok(())
     }
 
     pub fn add_top_agent(&mut self, agent: Pubkey) -> Result<()> {
-        require!(self.top_agents.len() < MAX_TOP_AGENTS, GhostSpeakError::TooManyTopAgents);
-        
+        require!(
+            self.top_agents.len() < MAX_TOP_AGENTS,
+            GhostSpeakError::TooManyTopAgents
+        );
+
         if !self.top_agents.contains(&agent) {
             self.top_agents.push(agent);
         }
-        
+
         Ok(())
     }
 
@@ -185,7 +186,7 @@ impl MarketAnalytics {
         self.demand_trend = demand_trend;
         self.supply_trend = supply_trend;
         self.market_cap = market_cap;
-        
+
         Ok(())
     }
 

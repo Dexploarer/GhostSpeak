@@ -1,11 +1,11 @@
 /*!
  * Message State
- * 
+ *
  * Account structures for messages in the GhostSpeak Protocol.
  */
 
-use anchor_lang::prelude::*;
 use super::MessageType;
+use anchor_lang::prelude::*;
 
 #[account]
 pub struct Message {

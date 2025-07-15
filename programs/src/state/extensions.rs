@@ -1,6 +1,6 @@
 /*!
  * Extensions State Module
- * 
+ *
  * Contains data structures for third-party extensions and plugins.
  */
 
@@ -44,10 +44,10 @@ pub struct Extension {
     pub extension_type: ExtensionType,
     pub status: ExtensionStatus,
     pub metadata: ExtensionMetadata,
-    pub code_hash: String,       // IPFS hash of extension code
+    pub code_hash: String, // IPFS hash of extension code
     pub install_count: u32,
     pub rating: f64,
-    pub revenue_share: f64,      // Percentage to developer
+    pub revenue_share: f64, // Percentage to developer
     pub total_earnings: u64,
     pub created_at: i64,
     pub bump: u8,

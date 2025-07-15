@@ -1,11 +1,11 @@
 /*!
  * Negotiation State Module
- * 
+ *
  * Contains negotiation-related state structures.
  */
 
-use anchor_lang::prelude::*;
 use crate::GhostSpeakError;
+use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct NegotiationMessage {
@@ -57,14 +57,23 @@ impl NegotiationChatbot {
         bump: u8,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(negotiation_deadline > clock.unix_timestamp, GhostSpeakError::InvalidDeadline);
-        require!(terms.len() <= super::auction::MAX_TERMS_COUNT, GhostSpeakError::TooManyTerms);
-        
+
+        require!(
+            negotiation_deadline > clock.unix_timestamp,
+            GhostSpeakError::InvalidDeadline
+        );
+        require!(
+            terms.len() <= super::auction::MAX_TERMS_COUNT,
+            GhostSpeakError::TooManyTerms
+        );
+
         for term in &terms {
-            require!(term.len() <= super::auction::MAX_TERM_LENGTH, GhostSpeakError::TermTooLong);
+            require!(
+                term.len() <= super::auction::MAX_TERM_LENGTH,
+                GhostSpeakError::TermTooLong
+            );
         }
-        
+
         self.initiator = initiator;
         self.counterparty = counterparty;
         self.initial_offer = initial_offer;
@@ -77,60 +86,82 @@ impl NegotiationChatbot {
         self.created_at = clock.unix_timestamp;
         self.last_activity = clock.unix_timestamp;
         self.bump = bump;
-        
+
         Ok(())
     }
 
     pub fn make_counter_offer(&mut self, offer: u64) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
+
         require!(
-            matches!(self.status, super::auction::NegotiationStatus::InitialOffer | super::auction::NegotiationStatus::CounterOffer),
+            clock.unix_timestamp < self.negotiation_deadline,
+            GhostSpeakError::NegotiationExpired
+        );
+        require!(
+            matches!(
+                self.status,
+                super::auction::NegotiationStatus::InitialOffer
+                    | super::auction::NegotiationStatus::CounterOffer
+            ),
             GhostSpeakError::InvalidNegotiationStatus
         );
-        require!(self.counter_offers.len() < super::auction::MAX_COUNTER_OFFERS, GhostSpeakError::TooManyCounterOffers);
-        
+        require!(
+            self.counter_offers.len() < super::auction::MAX_COUNTER_OFFERS,
+            GhostSpeakError::TooManyCounterOffers
+        );
+
         self.counter_offers.push(offer);
         self.current_offer = offer;
         self.status = super::auction::NegotiationStatus::CounterOffer;
         self.last_activity = clock.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn accept_offer(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
-        require!(clock.unix_timestamp < self.negotiation_deadline, GhostSpeakError::NegotiationExpired);
+
         require!(
-            matches!(self.status, super::auction::NegotiationStatus::InitialOffer | super::auction::NegotiationStatus::CounterOffer),
+            clock.unix_timestamp < self.negotiation_deadline,
+            GhostSpeakError::NegotiationExpired
+        );
+        require!(
+            matches!(
+                self.status,
+                super::auction::NegotiationStatus::InitialOffer
+                    | super::auction::NegotiationStatus::CounterOffer
+            ),
             GhostSpeakError::InvalidNegotiationStatus
         );
-        
+
         self.status = super::auction::NegotiationStatus::Accepted;
         self.last_activity = clock.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn reject_offer(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         self.status = super::auction::NegotiationStatus::Rejected;
         self.last_activity = clock.unix_timestamp;
-        
+
         Ok(())
     }
 
     pub fn check_expiry(&mut self) -> Result<()> {
         let clock = Clock::get()?;
-        
-        if clock.unix_timestamp >= self.negotiation_deadline && 
-           matches!(self.status, super::auction::NegotiationStatus::InitialOffer | super::auction::NegotiationStatus::CounterOffer) {
+
+        if clock.unix_timestamp >= self.negotiation_deadline
+            && matches!(
+                self.status,
+                super::auction::NegotiationStatus::InitialOffer
+                    | super::auction::NegotiationStatus::CounterOffer
+            )
+        {
             self.status = super::auction::NegotiationStatus::Expired;
         }
-        
+
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
 /*!
  * Audit Trail Module - Enterprise-Grade Compliance and Governance
- * 
+ *
  * This module implements comprehensive audit trails, compliance reporting,
  * and immutable logging for the GhostSpeak Protocol.
  */
@@ -25,31 +25,31 @@ pub const COMPLIANCE_REPORT_SEED: &[u8] = b"compliance_report";
 pub struct AuditTrail {
     /// Authority that can manage this audit trail
     pub authority: Pubkey,
-    
+
     /// Unique identifier for this audit trail
     pub trail_id: u64,
-    
+
     /// Creation timestamp
     pub created_at: i64,
-    
+
     /// Last update timestamp
     pub updated_at: i64,
-    
+
     /// Version for compatibility
     pub version: u8,
-    
+
     /// Audit entries (immutable log)
     pub entries: Vec<AuditEntry>,
-    
+
     /// Trail configuration
     pub config: AuditConfig,
-    
+
     /// Compliance status
     pub compliance_status: ComplianceStatus,
-    
+
     /// Hash chain for integrity verification
     pub hash_chain: Vec<[u8; 32]>,
-    
+
     /// Reserved space for future extensions
     pub reserved: [u8; 128],
 }
@@ -59,31 +59,31 @@ pub struct AuditTrail {
 pub struct AuditEntry {
     /// Unique entry ID
     pub entry_id: u64,
-    
+
     /// Timestamp of the action
     pub timestamp: i64,
-    
+
     /// Action that was performed
     pub action: AuditAction,
-    
+
     /// User/agent who performed the action
     pub actor: Pubkey,
-    
+
     /// Target of the action (if applicable)
     pub target: Option<Pubkey>,
-    
+
     /// Additional context data
     pub context: AuditContext,
-    
+
     /// Compliance flags
     pub compliance_flags: ComplianceFlags,
-    
+
     /// Hash of previous entry for chain integrity
     pub previous_hash: [u8; 32],
-    
+
     /// Hash of this entry
     pub entry_hash: [u8; 32],
-    
+
     /// Digital signature for non-repudiation
     pub signature: Option<[u8; 64]>,
 }
@@ -96,47 +96,47 @@ pub enum AuditAction {
     AgentUpdated,
     AgentDeactivated,
     AgentVerified,
-    
+
     // Financial Operations
     PaymentProcessed,
     EscrowCreated,
     EscrowReleased,
     FundsWithdrawn,
-    
+
     // Governance Actions
     ProposalCreated,
     VoteCast,
     ProposalExecuted,
     GovernanceUpdated,
-    
+
     // Security Events
     AccessGranted,
     AccessRevoked,
     SecurityPolicyUpdated,
     SuspiciousActivity,
-    
+
     // Compliance Events
     ComplianceReportGenerated,
     RegulatorySubmission,
     AuditRequested,
     ViolationDetected,
-    
+
     // Administrative Actions
     SystemConfigUpdated,
     EmergencyAction,
     MaintenancePerformed,
-    
+
     // Contract Operations
     WorkOrderCreated,
     WorkOrderCompleted,
     DisputeRaised,
     DisputeResolved,
-    
+
     // Multi-signature Operations
     MultisigCreated,
     MultisigSigned,
     MultisigExecuted,
-    
+
     // Risk Management
     RiskAssessmentPerformed,
     RiskThresholdExceeded,
@@ -148,22 +148,22 @@ pub enum AuditAction {
 pub struct AuditContext {
     /// Transaction signature
     pub transaction_signature: Option<String>,
-    
+
     /// Amount involved (if financial)
     pub amount: Option<u64>,
-    
+
     /// Token involved (if financial)
     pub token: Option<Pubkey>,
-    
+
     /// Additional metadata
     pub metadata: Vec<(String, String)>,
-    
+
     /// Risk score at time of action
     pub risk_score: Option<u32>,
-    
+
     /// Geolocation (if applicable)
     pub location: Option<String>,
-    
+
     /// User agent / client info
     pub client_info: Option<String>,
 }
@@ -173,25 +173,25 @@ pub struct AuditContext {
 pub struct ComplianceFlags {
     /// Requires regulatory reporting
     pub requires_reporting: bool,
-    
+
     /// High-risk transaction
     pub high_risk: bool,
-    
+
     /// Sensitive data involved
     pub sensitive_data: bool,
-    
+
     /// Cross-border transaction
     pub cross_border: bool,
-    
+
     /// Large amount transaction
     pub large_amount: bool,
-    
+
     /// Suspicious activity detected
     pub suspicious: bool,
-    
+
     /// Manual review required
     pub manual_review: bool,
-    
+
     /// Regulatory jurisdiction
     pub jurisdiction: Option<String>,
 }
@@ -201,22 +201,22 @@ pub struct ComplianceFlags {
 pub struct AuditConfig {
     /// Maximum entries before archival
     pub max_entries: u32,
-    
+
     /// Retention period in seconds
     pub retention_period: i64,
-    
+
     /// Auto-archival enabled
     pub auto_archive: bool,
-    
+
     /// Compliance reporting frequency
     pub reporting_frequency: ReportingFrequency,
-    
+
     /// Required approval levels
     pub approval_levels: Vec<ApprovalLevel>,
-    
+
     /// Encryption requirements
     pub encryption_required: bool,
-    
+
     /// Backup frequency
     pub backup_frequency: BackupFrequency,
 }
@@ -246,13 +246,13 @@ pub enum BackupFrequency {
 pub struct ApprovalLevel {
     /// Action type requiring approval
     pub action_type: AuditAction,
-    
+
     /// Required approvers
     pub required_approvers: Vec<Pubkey>,
-    
+
     /// Minimum approval count
     pub min_approvals: u8,
-    
+
     /// Timeout for approval process
     pub approval_timeout: i64,
 }
@@ -262,22 +262,22 @@ pub struct ApprovalLevel {
 pub struct ComplianceStatus {
     /// Overall compliance score (0-100)
     pub compliance_score: u8,
-    
+
     /// Last compliance review timestamp
     pub last_review: i64,
-    
+
     /// Next scheduled review
     pub next_review: i64,
-    
+
     /// Active violations
     pub active_violations: Vec<ComplianceViolation>,
-    
+
     /// Regulatory status per jurisdiction
     pub regulatory_status: Vec<(String, RegulatoryStatus)>,
-    
+
     /// Risk assessment results
     pub risk_assessment: RiskAssessment,
-    
+
     /// Compliance officer assignments
     pub compliance_officers: Vec<Pubkey>,
 }
@@ -287,28 +287,28 @@ pub struct ComplianceStatus {
 pub struct ComplianceViolation {
     /// Violation ID
     pub violation_id: u64,
-    
+
     /// Timestamp when detected
     pub detected_at: i64,
-    
+
     /// Type of violation
     pub violation_type: ViolationType,
-    
+
     /// Severity level
     pub severity: ViolationSeverity,
-    
+
     /// Description
     pub description: String,
-    
+
     /// Related audit entries
     pub related_entries: Vec<u64>,
-    
+
     /// Resolution status
     pub resolution_status: ResolutionStatus,
-    
+
     /// Resolution timestamp
     pub resolved_at: Option<i64>,
-    
+
     /// Remediation actions taken
     pub remediation_actions: Vec<String>,
 }
@@ -352,22 +352,22 @@ pub enum ResolutionStatus {
 pub struct RegulatoryStatus {
     /// Jurisdiction code (ISO 3166-1 alpha-2)
     pub jurisdiction: String,
-    
+
     /// Registration status
     pub registered: bool,
-    
+
     /// License numbers
     pub licenses: Vec<String>,
-    
+
     /// Compliance requirements
     pub requirements: Vec<String>,
-    
+
     /// Last regulatory submission
     pub last_submission: Option<i64>,
-    
+
     /// Next required submission
     pub next_submission: Option<i64>,
-    
+
     /// Regulatory contact
     pub regulatory_contact: Option<String>,
 }
@@ -377,19 +377,19 @@ pub struct RegulatoryStatus {
 pub struct RiskAssessment {
     /// Overall risk score (0-100)
     pub risk_score: u8,
-    
+
     /// Last assessment timestamp
     pub last_assessment: i64,
-    
+
     /// Next scheduled assessment
     pub next_assessment: i64,
-    
+
     /// Risk factors identified
     pub risk_factors: Vec<RiskFactor>,
-    
+
     /// Mitigation strategies
     pub mitigation_strategies: Vec<String>,
-    
+
     /// Risk tolerance thresholds
     pub risk_thresholds: RiskThresholds,
 }
@@ -399,19 +399,19 @@ pub struct RiskAssessment {
 pub struct RiskFactor {
     /// Factor type
     pub factor_type: RiskFactorType,
-    
+
     /// Risk level (0-100)
     pub risk_level: u8,
-    
+
     /// Description
     pub description: String,
-    
+
     /// Likelihood (0-100)
     pub likelihood: u8,
-    
+
     /// Impact (0-100)
     pub impact: u8,
-    
+
     /// Mitigation status
     pub mitigation_status: MitigationStatus,
 }
@@ -444,19 +444,19 @@ pub enum MitigationStatus {
 pub struct RiskThresholds {
     /// Low risk threshold
     pub low_threshold: u8,
-    
+
     /// Medium risk threshold
     pub medium_threshold: u8,
-    
+
     /// High risk threshold
     pub high_threshold: u8,
-    
+
     /// Critical risk threshold
     pub critical_threshold: u8,
-    
+
     /// Auto-mitigation threshold
     pub auto_mitigation_threshold: u8,
-    
+
     /// Manual review threshold
     pub manual_review_threshold: u8,
 }
@@ -470,31 +470,31 @@ pub struct RiskThresholds {
 pub struct ComplianceReport {
     /// Report ID
     pub report_id: u64,
-    
+
     /// Report type
     pub report_type: ReportType,
-    
+
     /// Generation timestamp
     pub generated_at: i64,
-    
+
     /// Reporting period start
     pub period_start: i64,
-    
+
     /// Reporting period end
     pub period_end: i64,
-    
+
     /// Report data
     pub report_data: ReportData,
-    
+
     /// Digital signature for authenticity
     pub signature: [u8; 64],
-    
+
     /// Report status
     pub status: ReportStatus,
-    
+
     /// Submission details
     pub submission_details: Option<SubmissionDetails>,
-    
+
     /// Reserved space
     pub reserved: [u8; 64],
 }
@@ -517,16 +517,16 @@ pub enum ReportType {
 pub struct ReportData {
     /// Summary statistics
     pub summary: ReportSummary,
-    
+
     /// Detailed entries
     pub entries: Vec<ReportEntry>,
-    
+
     /// Compliance metrics
     pub compliance_metrics: ComplianceMetrics,
-    
+
     /// Risk indicators
     pub risk_indicators: Vec<RiskIndicator>,
-    
+
     /// Recommendations
     pub recommendations: Vec<String>,
 }
@@ -536,19 +536,19 @@ pub struct ReportData {
 pub struct ReportSummary {
     /// Total transactions
     pub total_transactions: u64,
-    
+
     /// Total volume
     pub total_volume: u64,
-    
+
     /// High-risk transactions
     pub high_risk_transactions: u64,
-    
+
     /// Compliance violations
     pub compliance_violations: u64,
-    
+
     /// Security incidents
     pub security_incidents: u64,
-    
+
     /// Average risk score
     pub average_risk_score: u8,
 }
@@ -558,25 +558,25 @@ pub struct ReportSummary {
 pub struct ReportEntry {
     /// Entry timestamp
     pub timestamp: i64,
-    
+
     /// Transaction/event ID
     pub event_id: String,
-    
+
     /// Entry type
     pub entry_type: String,
-    
+
     /// Amount (if financial)
     pub amount: Option<u64>,
-    
+
     /// Parties involved
     pub parties: Vec<Pubkey>,
-    
+
     /// Risk score
     pub risk_score: u8,
-    
+
     /// Compliance flags
     pub compliance_flags: ComplianceFlags,
-    
+
     /// Additional metadata
     pub metadata: Vec<(String, String)>,
 }
@@ -586,19 +586,19 @@ pub struct ReportEntry {
 pub struct ComplianceMetrics {
     /// Compliance score (0-100)
     pub compliance_score: u8,
-    
+
     /// Policy adherence rate
     pub policy_adherence_rate: u8,
-    
+
     /// Incident response time (average seconds)
     pub avg_incident_response_time: u64,
-    
+
     /// False positive rate
     pub false_positive_rate: u8,
-    
+
     /// Coverage percentage
     pub coverage_percentage: u8,
-    
+
     /// Audit readiness score
     pub audit_readiness_score: u8,
 }
@@ -608,19 +608,19 @@ pub struct ComplianceMetrics {
 pub struct RiskIndicator {
     /// Indicator name
     pub name: String,
-    
+
     /// Current value
-    pub current_value: u64,  // Store as fixed point (e.g., basis points)
-    
+    pub current_value: u64, // Store as fixed point (e.g., basis points)
+
     /// Threshold value
-    pub threshold_value: u64,  // Store as fixed point (e.g., basis points)
-    
+    pub threshold_value: u64, // Store as fixed point (e.g., basis points)
+
     /// Trend direction
     pub trend: TrendDirection,
-    
+
     /// Severity if threshold exceeded
     pub severity: ViolationSeverity,
-    
+
     /// Recommended actions
     pub recommended_actions: Vec<String>,
 }
@@ -651,19 +651,19 @@ pub enum ReportStatus {
 pub struct SubmissionDetails {
     /// Submission timestamp
     pub submitted_at: i64,
-    
+
     /// Regulatory body
     pub regulatory_body: String,
-    
+
     /// Submission reference
     pub submission_reference: String,
-    
+
     /// Acknowledgment received
     pub acknowledged: bool,
-    
+
     /// Acknowledgment timestamp
     pub acknowledged_at: Option<i64>,
-    
+
     /// Response from regulatory body
     pub regulatory_response: Option<String>,
 }
@@ -690,7 +690,7 @@ pub const MAX_REPORT_ENTRIES: usize = 5000;
 /// Hash algorithm identifier
 pub const HASH_ALGORITHM: &str = "SHA256";
 
-/// Signature algorithm identifier  
+/// Signature algorithm identifier
 pub const SIGNATURE_ALGORITHM: &str = "Ed25519";
 
 // =====================================================
@@ -721,7 +721,7 @@ impl AuditTrail {
         config: AuditConfig,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         self.authority = authority;
         self.trail_id = trail_id;
         self.created_at = clock.unix_timestamp;
@@ -754,7 +754,7 @@ impl AuditTrail {
         };
         self.hash_chain = Vec::new();
         self.reserved = [0; 128];
-        
+
         Ok(())
     }
 
@@ -767,18 +767,21 @@ impl AuditTrail {
         context: AuditContext,
         compliance_flags: ComplianceFlags,
     ) -> Result<()> {
-        require!(self.entries.len() < MAX_AUDIT_ENTRIES, GhostSpeakError::TooManyAuditEntries);
-        
+        require!(
+            self.entries.len() < MAX_AUDIT_ENTRIES,
+            GhostSpeakError::TooManyAuditEntries
+        );
+
         let clock = Clock::get()?;
         let entry_id = self.entries.len() as u64;
-        
+
         // Calculate previous hash
         let previous_hash = if let Some(last_entry) = self.entries.last() {
             last_entry.entry_hash
         } else {
             [0; 32]
         };
-        
+
         // Create new entry
         let entry = AuditEntry {
             entry_id,
@@ -792,10 +795,10 @@ impl AuditTrail {
             entry_hash: [0; 32], // Should be calculated with proper hash function
             signature: None,
         };
-        
+
         self.entries.push(entry);
         self.updated_at = clock.unix_timestamp;
-        
+
         Ok(())
     }
 }
@@ -956,9 +959,9 @@ impl ComplianceReport {
         period_end: i64,
     ) -> Result<()> {
         require!(period_end > period_start, GhostSpeakError::InvalidPeriod);
-        
+
         let clock = Clock::get()?;
-        
+
         self.report_id = report_id;
         self.report_type = report_type;
         self.generated_at = clock.unix_timestamp;
@@ -989,29 +992,31 @@ impl ComplianceReport {
         self.status = ReportStatus::Draft;
         self.submission_details = None;
         self.reserved = [0; 64];
-        
+
         Ok(())
     }
 
     /// Approve the report
     pub fn approve(&mut self) -> Result<()> {
-        require!(self.status == ReportStatus::Reviewed, GhostSpeakError::InvalidReportStatus);
-        
+        require!(
+            self.status == ReportStatus::Reviewed,
+            GhostSpeakError::InvalidReportStatus
+        );
+
         self.status = ReportStatus::Approved;
-        
+
         Ok(())
     }
 
     /// Submit the report to regulatory body
-    pub fn submit(
-        &mut self,
-        regulatory_body: String,
-        submission_reference: String,
-    ) -> Result<()> {
-        require!(self.status == ReportStatus::Approved, GhostSpeakError::InvalidReportStatus);
-        
+    pub fn submit(&mut self, regulatory_body: String, submission_reference: String) -> Result<()> {
+        require!(
+            self.status == ReportStatus::Approved,
+            GhostSpeakError::InvalidReportStatus
+        );
+
         let clock = Clock::get()?;
-        
+
         self.status = ReportStatus::Submitted;
         self.submission_details = Some(SubmissionDetails {
             submitted_at: clock.unix_timestamp,
@@ -1021,7 +1026,7 @@ impl ComplianceReport {
             acknowledged_at: None,
             regulatory_response: None,
         });
-        
+
         Ok(())
     }
 }

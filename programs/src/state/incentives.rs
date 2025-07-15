@@ -1,6 +1,6 @@
 /*!
  * Incentives State Module
- * 
+ *
  * Contains incentive-related state structures.
  */
 

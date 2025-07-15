@@ -15,7 +15,6 @@ use crate::{
     state::{ApplicationStatus, ContractStatus},
     GhostSpeakError, *,
 };
-use anchor_lang::prelude::*;
 
 // =====================================================
 // SERVICE LISTING INSTRUCTIONS

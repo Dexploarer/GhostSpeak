@@ -1,5 +1,6 @@
 import type { Address } from '@solana/addresses'
-import type { IInstruction, TransactionSigner } from '@solana/kit'
+import type { TransactionSigner } from '@solana/kit'
+import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig
@@ -48,7 +49,7 @@ export class AgentInstructions extends BaseInstructions {
       agentId: params.agentId
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -69,7 +70,7 @@ export class AgentInstructions extends BaseInstructions {
       agentId
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -94,7 +95,7 @@ export class AgentInstructions extends BaseInstructions {
       verifiedAt
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -111,7 +112,7 @@ export class AgentInstructions extends BaseInstructions {
       agentId
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
   
   /**
@@ -128,7 +129,7 @@ export class AgentInstructions extends BaseInstructions {
       agentId
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -296,117 +297,12 @@ export class AgentInstructions extends BaseInstructions {
     }
     
     return {
-      jobsCompleted: agent.totalJobs || 0,
-      totalEarnings: agent.totalEarnings || 0n,
-      successRate: agent.successRate || 100,
-      lastActive: agent.lastActive || null,
+      jobsCompleted: (agent as any).totalJobs || 0,
+      totalEarnings: (agent as any).totalEarnings || 0n,
+      successRate: (agent as any).successRate || 100,
+      lastActive: agent.isActive ? BigInt(Date.now()) : null,
       currentJob: null // Would need to fetch from work order accounts
     }
   }
 
-  /**
-   * Register agent with CLI-compatible interface
-   */
-  async register(params: {
-    name: string
-    description: string
-    endpoint: string
-    capabilities: string[]
-    pricePerTask: bigint
-  }): Promise<{
-    signature: string
-    agentAddress: Address
-  }> {
-    const signer = this.signer
-    if (!signer) {
-      throw new Error('Signer required for agent registration')
-    }
-
-    // Generate agent ID from name
-    const agentId = params.name.toLowerCase().replace(/\s+/g, '-')
-    
-    // Find the PDA for the agent
-    const agentAddress = await this.findAgentPDA(signer.address, agentId)
-    
-    // Find user registry PDA (if needed)
-    const { deriveUserRegistryPda } = await import('../../utils/pda.js')
-    const userRegistryAddress = await deriveUserRegistryPda(this.programId, signer.address)
-    
-    // Create registration params
-    const registrationParams: AgentRegistrationParams = {
-      agentType: 1, // Default agent type
-      metadataUri: JSON.stringify({
-        name: params.name,
-        description: params.description,
-        endpoint: params.endpoint,
-        capabilities: params.capabilities,
-        pricePerTask: params.pricePerTask.toString()
-      }),
-      agentId
-    }
-    
-    // Register the agent
-    const signature = await super.register(
-      signer,
-      agentAddress,
-      userRegistryAddress,
-      registrationParams
-    )
-    
-    return {
-      signature,
-      agentAddress
-    }
-  }
-
-  /**
-   * Update agent with CLI-compatible interface
-   */
-  async update(params: {
-    agentAddress: Address
-    name?: string
-    description?: string
-    endpoint?: string
-    capabilities?: string[]
-    pricePerTask?: bigint
-  }): Promise<{
-    signature: string
-  }> {
-    const signer = this.signer
-    if (!signer) {
-      throw new Error('Signer required for agent update')
-    }
-
-    // Fetch current agent to merge updates
-    const currentAgent = await this.getAccount(params.agentAddress)
-    if (!currentAgent) {
-      throw new Error('Agent not found')
-    }
-    
-    // Parse current metadata
-    let currentMetadata: any = {}
-    try {
-      currentMetadata = JSON.parse(currentAgent.metadataUri || '{}')
-    } catch {}
-    
-    // Merge updates
-    const updatedMetadata = {
-      name: params.name || currentMetadata.name || currentAgent.name,
-      description: params.description || currentMetadata.description || currentAgent.description,
-      endpoint: params.endpoint || currentMetadata.endpoint || currentAgent.serviceEndpoint,
-      capabilities: params.capabilities || currentMetadata.capabilities || currentAgent.capabilities,
-      pricePerTask: (params.pricePerTask || currentAgent.pricePerTask || 0n).toString()
-    }
-    
-    // Update the agent
-    const signature = await super.update(
-      signer,
-      params.agentAddress,
-      currentAgent.agentType || 1,
-      JSON.stringify(updatedMetadata),
-      currentAgent.agentId || ''
-    )
-    
-    return { signature }
-  }
 }

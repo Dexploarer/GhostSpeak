@@ -3,11 +3,7 @@
  * Using modern @solana/kit (Web3.js v2) patterns
  */
 
-// Export core implementation 
-export * from './core/index.js';
-
-// Legacy exports commented out until migration complete
-/*
+// Export modern client implementation
 export { GhostSpeakClient } from './client/GhostSpeakClient.js'
 export { AgentInstructions } from './client/instructions/AgentInstructions.js'
 export { MarketplaceInstructions } from './client/instructions/MarketplaceInstructions.js'
@@ -19,13 +15,18 @@ export { GovernanceInstructions } from './client/instructions/GovernanceInstruct
 export { BulkDealsInstructions } from './client/instructions/BulkDealsInstructions.js'
 export { AnalyticsInstructions } from './client/instructions/AnalyticsInstructions.js'
 export { ComplianceInstructions } from './client/instructions/ComplianceInstructions.js'
-export * from './types/index.js'
-export * from './utils/pda.js'
-export * from './utils/connection.js'
-export * from './utils/auction-helpers.js'
-export * from './utils/dispute-helpers.js'
-export * from './utils/governance-helpers.js'
-export * from './utils/bulk-deals-helpers.js'
-export * from './utils/analytics-helpers.js'
-export * from './utils/compliance-helpers.js'
-*/
+
+// Export types and utilities
+export type { GhostSpeakConfig } from './types/index.js'
+export * from './utils/rpc.js'
+
+// Export all generated types and instructions (these take precedence)
+export * from './generated/index.js'
+
+// Export program constants
+export { GHOSTSPEAK_PROGRAM_ID } from './constants.js'
+
+// Export core client only (avoid type conflicts)
+export { GhostSpeakClient as SimplifiedClient } from './core/client-simple.js'
+export * from './core/instructions/index.js'
+export * from './core/utils.js'

@@ -12,7 +12,7 @@ import {
   log
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
-import { PublicKey } from '@solana/web3.js'
+import { address, type Address } from '@solana/addresses'
 
 export const channelCommand = new Command('channel')
   .description('Manage Agent-to-Agent (A2A) communication channels')
@@ -31,7 +31,7 @@ channelCommand
         validate: (value) => {
           if (!value) return 'Agent address is required'
           try {
-            new PublicKey(value)
+            address(value)
             return
           } catch {
             return 'Invalid Solana address format'
@@ -117,7 +117,7 @@ channelCommand
           return
         }
         
-        agentAddress = new PublicKey(selectedAgent as string)
+        agentAddress = address(selectedAgent as string)
       }
       
       s.start('Creating A2A communication channel...')
@@ -127,7 +127,7 @@ channelCommand
           name: channelName as string,
           description: description as string || '',
           visibility: visibility as 'public' | 'private',
-          participants: [agentAddress, new PublicKey(responder as string)]
+          participants: [agentAddress, address(responder as string)]
         })
 
         s.stop('✅ A2A channel created!')
@@ -241,12 +241,12 @@ channelCommand
       const { client, wallet } = await initializeClient('devnet')
       s.stop('✅ Connected')
       
-      let channelPubkey: PublicKey
+      let channelPubkey: Address
       
       if (options.channel) {
         // Use provided channel ID
         try {
-          channelPubkey = new PublicKey(options.channel)
+          channelPubkey = address(options.channel)
         } catch {
           cancel('Invalid channel ID format')
           return
@@ -297,7 +297,7 @@ channelCommand
           return
         }
         
-        channelPubkey = new PublicKey(selectedChannel as string)
+        channelPubkey = address(selectedChannel as string)
         
         // Find the agent address for this channel
         const selectedChannelData = allChannels.find(ch => ch.id.toBase58() === selectedChannel)

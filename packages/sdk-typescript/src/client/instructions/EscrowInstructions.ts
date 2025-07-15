@@ -1,5 +1,6 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
+import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig
@@ -56,7 +57,7 @@ export class EscrowInstructions extends BaseInstructions {
       deadline: params.deadline
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -79,7 +80,7 @@ export class EscrowInstructions extends BaseInstructions {
       metadataUri
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -131,7 +132,7 @@ export class EscrowInstructions extends BaseInstructions {
       useConfidentialTransfer
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**

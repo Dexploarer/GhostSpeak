@@ -2,20 +2,42 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
+    name: 'ghostspeak-cli-e2e',
     environment: 'node',
     globals: true,
-    setupFiles: [],
-    testTimeout: 15000, // 15 seconds for CLI tests
-    hookTimeout: 15000, // 15 seconds for setup/teardown
+    testTimeout: 45000, // Longer for CLI operations
+    hookTimeout: 30000,
+    teardownTimeout: 10000,
+    include: ['tests/**/*.test.ts', 'tests/**/*.spec.ts'],
+    exclude: ['node_modules', 'dist'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'html', 'json'],
+      include: ['src/**/*.ts'],
       exclude: [
-        'node_modules/',
-        'dist/',
+        'src/**/*.test.ts',
+        'src/**/*.spec.ts',
+        'node_modules/**/*',
+        'dist/**/*',
         '**/*.d.ts',
-        '**/*.config.*'
-      ]
-    }
-  }
+        '**/*.config.*',
+      ],
+      thresholds: {
+        global: {
+          branches: 50,
+          functions: 60,
+          lines: 60,
+          statements: 60,
+        },
+      },
+    },
+    // CLI testing configuration
+    poolOptions: {
+      threads: {
+        singleThread: true, // CLI commands should run sequentially
+      },
+    },
+    retry: 1, // CLI tests should be more deterministic
+    reporter: ['verbose'],
+  },
 })

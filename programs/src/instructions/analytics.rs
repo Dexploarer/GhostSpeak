@@ -18,7 +18,6 @@
 
 use crate::simple_optimization::SecurityLogger;
 use crate::*;
-use anchor_lang::prelude::*;
 
 // Enhanced 2025 security constants
 const RATE_LIMIT_WINDOW: i64 = 60; // 60-second cooldown for analytics operations

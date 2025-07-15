@@ -12,7 +12,6 @@ deprecated = "allow"
 [lib]
 crate-type = ["cdylib"]
 name = "ghostspeak_marketplace"
-
 [features]
 default = ["performance-monitoring"]
 cpi = ["no-entrypoint"]

@@ -1,5 +1,6 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
+import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig
@@ -79,7 +80,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       listingId: params.listingId
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -120,7 +121,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       deadline
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -147,7 +148,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       experienceLevel: params.experienceLevel
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -178,7 +179,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       portfolioItems
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -197,7 +198,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       employer: signer as unknown as TransactionSigner
     })
     
-    return this.sendTransaction([instruction], [signer as unknown as TransactionSigner])
+    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
@@ -327,311 +328,4 @@ export class MarketplaceInstructions extends BaseInstructions {
     }
   }
 
-  /**
-   * List services (alias for getServiceListings for CLI compatibility)
-   */
-  async listServices(options: { category?: string } = {}): Promise<any[]> {
-    const listings = await this.getServiceListings()
-    
-    // Filter by category if provided
-    if (options.category) {
-      return listings.filter(listing => 
-        listing.serviceType?.toLowerCase().includes(options.category.toLowerCase())
-      )
-    }
-    
-    // Transform to CLI expected format
-    return listings.map(listing => ({
-      id: listing.address,
-      title: listing.title || 'Untitled Service',
-      description: listing.description || '',
-      category: listing.serviceType || 'general',
-      price: listing.price || 0n,
-      isAvailable: listing.isActive || false,
-      agentName: 'Agent', // Would need to fetch from agent account
-      agentAddress: listing.agent
-    }))
-  }
-
-  /**
-   * Create a service listing (CLI-compatible interface)
-   */
-  async createListing(params: {
-    agentAddress: Address
-    title: string
-    description: string
-    category: string
-    price: bigint
-    tags?: string[]
-  }): Promise<{
-    signature: string
-    listingAddress: Address
-  }> {
-    const signer = this.signer
-    if (!signer) {
-      throw new Error('Signer required for creating listing')
-    }
-
-    // Generate listing ID from title
-    const listingId = params.title.toLowerCase().replace(/\s+/g, '-')
-    
-    // Find PDA for service listing
-    const { deriveServiceListingPda } = await import('../../utils/pda.js')
-    const listingAddress = await deriveServiceListingPda(this.programId, params.agentAddress, listingId)
-    
-    // Find user registry PDA
-    const { deriveUserRegistryPda } = await import('../../utils/pda.js')
-    const userRegistryAddress = await deriveUserRegistryPda(this.programId, signer.address)
-    
-    // Create listing params
-    const listingParams: CreateServiceListingParams = {
-      title: params.title,
-      description: params.description,
-      price: params.price,
-      tokenMint: params.agentAddress, // Use a default mint for now
-      serviceType: params.category,
-      paymentToken: params.agentAddress, // Use a default token
-      estimatedDelivery: BigInt(7 * 24 * 60 * 60), // 7 days default
-      tags: params.tags || [params.category],
-      listingId
-    }
-    
-    const signature = await this.createServiceListing(
-      signer,
-      listingAddress,
-      params.agentAddress,
-      userRegistryAddress,
-      listingParams
-    )
-    
-    return {
-      signature,
-      listingAddress
-    }
-  }
-
-  /**
-   * Get service details (CLI-compatible interface)
-   */
-  async getService(options: { serviceId: Address }): Promise<any> {
-    const listing = await this.getServiceListing(options.serviceId)
-    
-    if (!listing) {
-      throw new Error('Service not found')
-    }
-    
-    return {
-      id: listing.address,
-      title: listing.title || 'Untitled Service',
-      description: listing.description || '',
-      category: listing.serviceType || 'general',
-      price: listing.price || 0n,
-      isAvailable: listing.isActive || false,
-      requirements: listing.requirements || [],
-      deliveryTime: listing.estimatedDelivery || 0n,
-      agentAddress: listing.agent
-    }
-  }
-
-  /**
-   * Purchase a service (CLI-compatible interface)
-   */
-  async purchaseService(params: {
-    serviceId: Address
-    requirements?: string[]
-  }): Promise<{
-    signature: string
-    purchaseId: Address
-  }> {
-    const signer = this.signer
-    if (!signer) {
-      throw new Error('Signer required for purchasing service')
-    }
-
-    // Find PDA for service purchase
-    const { deriveServicePurchasePda } = await import('../../utils/pda.js')
-    const purchaseAddress = await deriveServicePurchasePda(
-      this.programId,
-      params.serviceId,
-      signer.address
-    )
-    
-    // Fetch listing details
-    const listing = await this.getServiceListing(params.serviceId)
-    if (!listing) {
-      throw new Error('Service not found')
-    }
-    
-    const signature = await super.purchaseService(
-      signer,
-      purchaseAddress,
-      params.serviceId,
-      listing.listingId || 0n,
-      1, // quantity
-      params.requirements || [],
-      '', // custom instructions
-      BigInt(Date.now() / 1000 + 7 * 24 * 60 * 60) // 7 days deadline
-    )
-    
-    return {
-      signature,
-      purchaseId: purchaseAddress
-    }
-  }
-
-  /**
-   * Search services (CLI-compatible interface)
-   */
-  async searchServices(options: { query: string }): Promise<any[]> {
-    const allServices = await this.listServices()
-    
-    // Simple text search across title, description, and category
-    const query = options.query.toLowerCase()
-    return allServices.filter(service => 
-      service.title.toLowerCase().includes(query) ||
-      service.description.toLowerCase().includes(query) ||
-      service.category.toLowerCase().includes(query)
-    )
-  }
-
-  /**
-   * Create job posting (CLI-compatible interface)
-   */
-  async createJobPosting(params: {
-    title: string
-    description: string
-    category: string
-    requirements: string[]
-    budget: bigint
-    deadline?: bigint
-  }): Promise<{
-    signature: string
-    jobId: Address
-  }> {
-    const signer = this.signer
-    if (!signer) {
-      throw new Error('Signer required for creating job posting')
-    }
-
-    // Find PDA for job posting
-    const { deriveJobPostingPda } = await import('../../utils/pda.js')
-    const jobId = params.title.toLowerCase().replace(/\s+/g, '-')
-    const jobAddress = await deriveJobPostingPda(this.programId, signer.address, jobId)
-    
-    const jobParams: CreateJobPostingParams = {
-      title: params.title,
-      description: params.description,
-      budget: params.budget,
-      deadline: params.deadline || BigInt(Date.now() / 1000 + 30 * 24 * 60 * 60), // 30 days default
-      requirements: params.requirements,
-      skillsNeeded: [params.category],
-      budgetMin: params.budget,
-      budgetMax: params.budget,
-      paymentToken: signer.address, // Use default token
-      jobType: params.category,
-      experienceLevel: 'any'
-    }
-    
-    const signature = await super.createJobPosting(
-      signer,
-      jobAddress,
-      jobParams
-    )
-    
-    return {
-      signature,
-      jobId: jobAddress
-    }
-  }
-
-  /**
-   * List jobs (CLI-compatible interface)
-   */
-  async listJobs(options: { 
-    myJobsOnly?: Address
-    category?: string 
-  } = {}): Promise<any[]> {
-    const postings = await this.getJobPostings()
-    
-    let filtered = postings
-    
-    // Filter by owner if requested
-    if (options.myJobsOnly) {
-      filtered = filtered.filter(posting => 
-        posting.employer?.toString() === options.myJobsOnly?.toString()
-      )
-    }
-    
-    // Filter by category if provided
-    if (options.category) {
-      filtered = filtered.filter(posting => 
-        posting.jobType?.toLowerCase().includes(options.category.toLowerCase())
-      )
-    }
-    
-    // Transform to CLI expected format
-    return filtered.map(posting => ({
-      id: posting.address,
-      title: posting.title || 'Untitled Job',
-      description: posting.description || '',
-      category: posting.jobType || 'general',
-      budget: posting.budget || 0n,
-      deadline: posting.deadline || 0n,
-      requirements: posting.requirements || [],
-      employer: posting.employer,
-      applicants: posting.applicantCount || 0,
-      status: posting.isActive ? 'open' : 'closed'
-    }))
-  }
-
-  /**
-   * Apply to job (CLI-compatible interface)
-   */
-  async applyToJob(params: {
-    jobId: Address
-    agentAddress: Address
-    proposal: string
-  }): Promise<{
-    signature: string
-    applicationId: Address
-  }> {
-    const signer = this.signer
-    if (!signer) {
-      throw new Error('Signer required for job application')
-    }
-
-    // Find PDA for job application
-    const { deriveJobApplicationPda } = await import('../../utils/pda.js')
-    const applicationAddress = await deriveJobApplicationPda(
-      this.programId,
-      params.jobId,
-      params.agentAddress
-    )
-    
-    // Fetch job details
-    const job = await this.getJobPostings()
-      .then(jobs => jobs.find(j => j.address.toString() === params.jobId.toString()))
-    
-    if (!job) {
-      throw new Error('Job not found')
-    }
-    
-    const signature = await super.applyToJob(
-      signer,
-      applicationAddress,
-      params.jobId,
-      params.agentAddress,
-      params.proposal, // cover letter
-      job.budget || 0n, // proposed price
-      30, // estimated duration in days
-      job.budget || 0n, // proposed rate
-      BigInt(Date.now() / 1000 + 30 * 24 * 60 * 60), // estimated delivery
-      [] // portfolio items
-    )
-    
-    return {
-      signature,
-      applicationId: applicationAddress
-    }
-  }
 }

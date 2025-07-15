@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/sdk",
-  "version": "0.1.0",
+  "version": "1.1.4",
   "description": "TypeScript SDK for GhostSpeak AI Agent Commerce Protocol",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,9 +21,15 @@
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:ci": "vitest run",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "generate": "tsx scripts/generate.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "fix-imports": "tsx scripts/fix-imports.ts",
+    "fix-errors": "tsx scripts/fix-errors.ts",
+    "fix-instruction-types": "tsx scripts/fix-instruction-types.ts",
+    "fix-generated-types": "tsx scripts/fix-generated-types.ts",
+    "fix-all-types": "tsx scripts/fix-all-types.ts",
+    "fix-final-types": "tsx scripts/fix-final-types.ts"
   },
   "keywords": [
     "solana",
@@ -35,29 +41,36 @@
   ],
   "author": "GhostSpeak Protocol",
   "license": "MIT",
-  "homepage": "https://github.com/ghostspeak/ghostspeak#readme",
+  "homepage": "https://github.com/Prompt-or-Die/ghostspeak#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ghostspeak/ghostspeak.git",
+    "url": "git+https://github.com/Prompt-or-Die/ghostspeak.git",
     "directory": "packages/sdk-typescript"
   },
   "bugs": {
-    "url": "https://github.com/ghostspeak/ghostspeak/issues"
+    "url": "https://github.com/Prompt-or-Die/ghostspeak/issues"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@solana/accounts": "^2.0.0",
-    "@solana/addresses": "^2.0.0",
-    "@solana/instructions": "^2.0.0",
-    "@solana/kit": "^2.0.0",
-    "@solana/programs": "^2.0.0",
-    "@solana/rpc": "^2.0.0",
+    "@solana/accounts": "^2.3.0",
+    "@solana/addresses": "^2.3.0",
+    "@solana/codecs-core": "^2.3.0",
+    "@solana/codecs-data-structures": "^2.3.0",
+    "@solana/codecs-numbers": "^2.3.0",
+    "@solana/codecs-strings": "^2.3.0",
+    "@solana/errors": "^2.3.0",
+    "@solana/instructions": "^2.3.0",
+    "@solana/kit": "^2.3.0",
+    "@solana/options": "^2.3.0",
+    "@solana/programs": "^2.3.0",
+    "@solana/rpc": "^2.3.0",
     "@solana/rpc-spec": "^2.3.0",
-    "@solana/rpc-transport": "^0.0.0-experimental.0",
-    "@solana/signers": "^2.0.0",
-    "@solana/transactions": "^2.0.0"
+    "@solana/rpc-transport": "^2.0.0-experimental",
+    "@solana/rpc-types": "^2.3.0",
+    "@solana/signers": "^2.3.0",
+    "@solana/transactions": "^2.3.0"
   },
   "devDependencies": {
     "@codama/nodes": "^1.0.0",

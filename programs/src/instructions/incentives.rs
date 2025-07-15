@@ -19,7 +19,6 @@
 
 use crate::state::incentives::{AgentIncentives, IncentiveConfig, IncentiveProgram};
 use crate::*;
-use anchor_lang::prelude::*;
 // SecurityLogger not currently used in this module
 
 // Enhanced 2025 security constants

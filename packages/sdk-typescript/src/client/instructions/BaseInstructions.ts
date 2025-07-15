@@ -21,6 +21,7 @@ import {
   pipe,
   createTransactionMessage,
   setTransactionMessageFeePayer,
+  setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   appendTransactionMessageInstructions,
   signTransactionMessageWithSigners,
@@ -120,7 +121,7 @@ export abstract class BaseInstructions {
       console.log('🏗️ Building transaction message...')
       const transactionMessage = await pipe(
         createTransactionMessage({ version: 0 }),
-        tx => setTransactionMessageFeePayer(signers[0].address, tx),
+        tx => setTransactionMessageFeePayerSigner(signers[0], tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
         tx => appendTransactionMessageInstructions(instructions, tx)
       )
@@ -219,7 +220,7 @@ export abstract class BaseInstructions {
       // Build transaction message
       const transactionMessage = await pipe(
         createTransactionMessage({ version: 0 }),
-        tx => setTransactionMessageFeePayer(signers[0].address, tx),
+        tx => setTransactionMessageFeePayerSigner(signers[0], tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
         tx => appendTransactionMessageInstructions(instructions, tx)
       )

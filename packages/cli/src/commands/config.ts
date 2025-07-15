@@ -10,6 +10,12 @@ import {
   isCancel,
   cancel
 } from '@clack/prompts'
+import { loadConfig, saveConfig, resetConfig, getConfigPath } from '../utils/config.js'
+import { existsSync, readFileSync } from 'fs'
+import { createSolanaRpc, createKeyPairSignerFromBytes } from '@solana/kit'
+import { lamportsToSol } from '../utils/helpers.js'
+import { homedir } from 'os'
+import { join } from 'path'
 
 export const configCommand = new Command('config')
   .description('Configure GhostSpeak CLI settings')
@@ -40,7 +46,12 @@ configCommand
         placeholder: '~/.config/solana/id.json',
         validate: (value) => {
           if (!value) return 'Wallet path is required'
-          // In real implementation, validate file exists
+          // Expand ~ to home directory
+          const expandedPath = value.replace('~', homedir())
+          if (!existsSync(expandedPath)) {
+            return `Wallet file not found at: ${expandedPath}`
+          }
+          return undefined
         }
       })
 
@@ -80,8 +91,13 @@ configCommand
       const s = spinner()
       s.start('Saving configuration...')
 
-      // TODO: Implement actual config saving
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Save the actual configuration
+      const expandedWalletPath = walletPath.toString().replace('~', homedir())
+      saveConfig({
+        network: network as any,
+        walletPath: expandedWalletPath,
+        rpcUrl: rpcUrl ? rpcUrl.toString() : undefined
+      })
 
       s.stop('✅ Configuration saved!')
 
@@ -101,19 +117,53 @@ configCommand
   .action(async () => {
     intro(chalk.green('📋 Current Configuration'))
 
-    // Mock configuration display
-    console.log('\n' + chalk.bold('⚙️  GhostSpeak CLI Settings'))
-    console.log('═'.repeat(50))
-    console.log(chalk.green('Network:') + ' devnet')
-    console.log(chalk.green('RPC URL:') + ' https://api.devnet.solana.com')
-    console.log(chalk.green('Wallet:') + ' ~/.config/solana/id.json')
-    console.log(chalk.green('Program ID:') + ' 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK')
-    console.log('')
-    console.log(chalk.gray('💰 Wallet Balance: 5.2 SOL'))
-    console.log(chalk.gray('🏪 Active Agents: 2'))
-    console.log(chalk.gray('📊 Total Earnings: 12.8 SOL'))
+    try {
+      const config = loadConfig()
+      
+      console.log('\n' + chalk.bold('⚙️  GhostSpeak CLI Settings'))
+      console.log('═'.repeat(50))
+      console.log(chalk.green('Network:') + ` ${config.network}`)
+      console.log(chalk.green('RPC URL:') + ` ${config.rpcUrl || `Default ${config.network} RPC`}`)
+      console.log(chalk.green('Wallet:') + ` ${config.walletPath}`)
+      console.log(chalk.green('Program ID:') + ` ${config.programId}`)
+      console.log(chalk.gray('Config File:') + ` ${getConfigPath()}`)
+      
+      // Try to load wallet balance if wallet exists
+      if (existsSync(config.walletPath)) {
+        const s = spinner()
+        s.start('Checking wallet balance...')
+        
+        try {
+          const rpc = createSolanaRpc(
+            config.rpcUrl || 
+            (config.network === 'devnet' ? 'https://api.devnet.solana.com' : 
+             config.network === 'testnet' ? 'https://api.testnet.solana.com' : 
+             'https://api.mainnet-beta.solana.com')
+          )
+          
+          const walletData = readFileSync(config.walletPath, 'utf-8')
+          const signer = createKeyPairSignerFromBytes(new Uint8Array(JSON.parse(walletData)))
+          const balanceResponse = await rpc.getBalance(signer.address).send()
+          const balance = balanceResponse.value
+          
+          s.stop('')
+          console.log('')
+          console.log(chalk.gray('💰 Wallet Address:') + ` ${signer.address}`)
+          console.log(chalk.gray('💰 Wallet Balance:') + ` ${lamportsToSol(balance)} SOL`)
+        } catch (error) {
+          s.stop('')
+          console.log('')
+          console.log(chalk.yellow('⚠️  Could not fetch wallet balance'))
+        }
+      } else {
+        console.log('')
+        console.log(chalk.yellow('⚠️  Wallet file not found'))
+      }
 
-    outro('Configuration displayed')
+      outro('Configuration displayed')
+    } catch (error) {
+      cancel(chalk.red('Failed to load configuration: ' + (error instanceof Error ? error.message : 'Unknown error')))
+    }
   })
 
 configCommand
@@ -134,8 +184,7 @@ configCommand
     const s = spinner()
     s.start('Resetting configuration...')
 
-    // TODO: Implement actual config reset
-    await new Promise(resolve => setTimeout(resolve, 800))
+    resetConfig()
 
     s.stop('✅ Configuration reset!')
 

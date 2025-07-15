@@ -10,6 +10,12 @@ import { escrowCommand } from './commands/escrow.js'
 import { channelCommand } from './commands/channel.js'
 import { configCommand } from './commands/config.js'
 import { setupFaucetCommand } from './commands/faucet.js'
+import { sdkCommand } from './commands/sdk.js'
+import { updateCommand } from './commands/update.js'
+import { checkForUpdates } from './utils/update-check.js'
+import { readFileSync, existsSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 
 // ASCII art banner
 function showBanner() {
@@ -30,12 +36,38 @@ async function main() {
   try {
     showBanner()
     
+    // Get current version
+    let currentVersion = '1.3.3' // Fallback version
+    try {
+      const __filename = fileURLToPath(import.meta.url)
+      const __dirname = dirname(__filename)
+      const possiblePaths = [
+        join(__dirname, '../package.json'),
+        join(__dirname, '../../package.json')
+      ]
+      
+      for (const path of possiblePaths) {
+        if (existsSync(path)) {
+          const pkg = JSON.parse(readFileSync(path, 'utf-8'))
+          if (pkg.name === '@ghostspeak/cli') {
+            currentVersion = pkg.version
+            break
+          }
+        }
+      }
+    } catch {
+      // Use fallback version
+    }
+    
+    // Check for updates in background
+    checkForUpdates(currentVersion)
+    
     intro(chalk.inverse(' Welcome to GhostSpeak CLI '))
 
     program
       .name('ghostspeak')
       .description('Command-line interface for GhostSpeak AI Agent Commerce Protocol')
-      .version('0.1.0')
+      .version(currentVersion)
 
     // Add command modules
     program.addCommand(agentCommand)
@@ -43,6 +75,8 @@ async function main() {
     program.addCommand(escrowCommand)
     program.addCommand(channelCommand)
     program.addCommand(configCommand)
+    program.addCommand(sdkCommand)
+    program.addCommand(updateCommand)
     
     // Setup faucet command
     setupFaucetCommand(program)

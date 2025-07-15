@@ -36,6 +36,15 @@ import {
   type ParsedDeactivateAgentInstruction,
   type ParsedDistributeIncentivesInstruction,
   type ParsedExecuteBulkDealBatchInstruction,
+  type ParsedExportActionInstruction,
+  type ParsedExportAuditContextInstruction,
+  type ParsedExportBiometricQualityInstruction,
+  type ParsedExportComplianceStatusInstruction,
+  type ParsedExportDynamicPricingConfigInstruction,
+  type ParsedExportMultisigConfigInstruction,
+  type ParsedExportReportEntryInstruction,
+  type ParsedExportResourceConstraintsInstruction,
+  type ParsedExportRuleConditionInstruction,
   type ParsedFileDisputeInstruction,
   type ParsedFinalizeAuctionInstruction,
   type ParsedGenerateComplianceReportInstruction,
@@ -68,7 +77,7 @@ import {
 } from '../instructions';
 
 export const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS =
-  '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address<'367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK'>;
+  '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK' as Address<'5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK'>;
 
 export enum GhostspeakMarketplaceAccount {
   A2AMessage,
@@ -515,6 +524,15 @@ export function identifyGhostspeakMarketplaceAccount(
 }
 
 export enum GhostspeakMarketplaceInstruction {
+  ExportAction,
+  ExportAuditContext,
+  ExportBiometricQuality,
+  ExportComplianceStatus,
+  ExportDynamicPricingConfig,
+  ExportMultisigConfig,
+  ExportReportEntry,
+  ExportResourceConstraints,
+  ExportRuleCondition,
   AcceptJobApplication,
   ActivateAgent,
   AddTopAgent,
@@ -572,6 +590,105 @@ export function identifyGhostspeakMarketplaceInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array
 ): GhostspeakMarketplaceInstruction {
   const data = 'data' in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([206, 39, 235, 232, 29, 98, 124, 4])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportAction;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([146, 64, 145, 33, 190, 17, 82, 70])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportAuditContext;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([30, 229, 117, 69, 175, 246, 7, 143])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportBiometricQuality;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([25, 78, 239, 255, 21, 9, 170, 98])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportComplianceStatus;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([212, 219, 242, 67, 179, 18, 238, 104])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportDynamicPricingConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([100, 100, 216, 86, 42, 163, 37, 64])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportMultisigConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([34, 42, 234, 113, 80, 201, 15, 95])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportReportEntry;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([250, 43, 164, 121, 205, 210, 124, 127])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportResourceConstraints;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([87, 78, 249, 236, 50, 103, 49, 173])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExportRuleCondition;
+  }
   if (
     containsBytes(
       data,
@@ -1139,8 +1256,35 @@ export function identifyGhostspeakMarketplaceInstruction(
 }
 
 export type ParsedGhostspeakMarketplaceInstruction<
-  TProgram extends string = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK',
+  TProgram extends string = '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK',
 > =
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportAction;
+    } & ParsedExportActionInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportAuditContext;
+    } & ParsedExportAuditContextInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportBiometricQuality;
+    } & ParsedExportBiometricQualityInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportComplianceStatus;
+    } & ParsedExportComplianceStatusInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportDynamicPricingConfig;
+    } & ParsedExportDynamicPricingConfigInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportMultisigConfig;
+    } & ParsedExportMultisigConfigInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportReportEntry;
+    } & ParsedExportReportEntryInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportResourceConstraints;
+    } & ParsedExportResourceConstraintsInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExportRuleCondition;
+    } & ParsedExportRuleConditionInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.AcceptJobApplication;
     } & ParsedAcceptJobApplicationInstruction<TProgram>)

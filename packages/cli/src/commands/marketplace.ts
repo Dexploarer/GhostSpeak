@@ -13,7 +13,8 @@ import {
   log
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
-import { PublicKey } from '@solana/web3.js'
+import type { Address } from '@solana/addresses'
+import { address } from '@solana/addresses'
 
 export const marketplaceCommand = new Command('marketplace')
   .description('Browse and interact with the GhostSpeak marketplace')
@@ -55,8 +56,8 @@ marketplaceCommand
 
       services.forEach((service, index) => {
         console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-        console.log(chalk.gray(`   ID: ${service.id.toBase58()}`))
-        console.log(chalk.gray(`   Agent: ${service.agentName} (${service.agentAddress.toBase58().slice(0, 8)}...)`))
+        console.log(chalk.gray(`   ID: ${service.id.toString()}`))
+        console.log(chalk.gray(`   Agent: ${service.agentName} (${service.agentAddress.toString().slice(0, 8)}...)`))
         console.log(chalk.gray(`   Category: ${service.category}`))
         console.log(chalk.gray(`   Price: ${Number(service.price) / 1_000_000} SOL`))
         console.log(chalk.gray(`   Available: ${service.isAvailable ? '✅ Yes' : '❌ No'}`))
@@ -193,7 +194,7 @@ marketplaceCommand
       
       // First check if user has a registered agent
       s.start('Checking for registered agent...')
-      const agents = await client.agent.listByOwner({ owner: wallet.publicKey })
+      const agents = await client.agent.listByOwner({ owner: wallet.address })
       
       if (agents.length === 0) {
         s.stop('❌ No agent found')
@@ -210,7 +211,7 @@ marketplaceCommand
         const selectedAgent = await select({
           message: 'Select agent for this service:',
           options: agents.map(agent => ({
-            value: agent.address.toBase58(),
+            value: agent.address.toString(),
             label: agent.name
           }))
         })
@@ -220,7 +221,7 @@ marketplaceCommand
           return
         }
         
-        agentAddress = new PublicKey(selectedAgent as string)
+        agentAddress = address(selectedAgent as string)
       }
       
       s.start('Creating service listing on the blockchain...')
@@ -237,10 +238,10 @@ marketplaceCommand
         s.stop('✅ Service listing created!')
 
         console.log('\n' + chalk.green('🎉 Your service is now live in the marketplace!'))
-        console.log(chalk.gray(`Service ID: ${result.listingId.toBase58()}`))
+        console.log(chalk.gray(`Service ID: ${result.listingId.toString()}`))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(result.listingId.toBase58(), 'devnet'))
+        console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(result.listingId.toString(), 'devnet'))
         
         outro('Service creation completed')
       } catch (error: any) {
@@ -283,7 +284,7 @@ marketplaceCommand
         console.log('─'.repeat(60))
         services.forEach((service, index) => {
           console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-          console.log(chalk.gray(`   ID: ${service.id.toBase58()} | Price: ${Number(service.price) / 1_000_000} SOL | By: ${service.agentName}`))
+          console.log(chalk.gray(`   ID: ${service.id.toString()} | Price: ${Number(service.price) / 1_000_000} SOL | By: ${service.agentName}`))
         })
 
         const selectedIndex = await select({
@@ -299,7 +300,7 @@ marketplaceCommand
           return
         }
 
-        listingId = services[selectedIndex as number].id.toBase58()
+        listingId = services[selectedIndex as number].id.toString()
       }
 
       // Initialize client if needed
@@ -310,7 +311,7 @@ marketplaceCommand
       s.start('Loading service details...')
       
       const service = await client.marketplace.getService({
-        serviceId: new PublicKey(listingId)
+        serviceId: address(listingId)
       })
       
       s.stop('✅ Service loaded')
@@ -361,19 +362,19 @@ marketplaceCommand
 
       try {
         const result = await client.marketplace.purchaseService({
-          serviceId: new PublicKey(listingId),
+          serviceId: address(listingId),
           requirements: requirements || undefined
         })
         
         purchaseSpinner.stop('✅ Purchase completed!')
 
         console.log('\n' + chalk.green('🎉 Service purchased successfully!'))
-        console.log(chalk.gray(`Purchase ID: ${result.purchaseId.toBase58()}`))
-        console.log(chalk.gray(`Work Order: ${result.workOrderId.toBase58()}`))
+        console.log(chalk.gray(`Purchase ID: ${result.purchaseId.toString()}`))
+        console.log(chalk.gray(`Work Order: ${result.workOrderId.toString()}`))
         console.log(chalk.gray('The agent will begin working on your request.'))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Purchase Account:'), getAddressExplorerUrl(result.purchaseId.toBase58(), 'devnet'))
+        console.log(chalk.cyan('Purchase Account:'), getAddressExplorerUrl(result.purchaseId.toString(), 'devnet'))
         console.log('\n' + chalk.yellow('💡 Track your order with: npx ghostspeak escrow list'))
         
         outro('Purchase completed')
@@ -435,7 +436,7 @@ marketplaceCommand
         console.log(chalk.magenta(`${index + 1}. ${service.title}`))
         console.log(chalk.gray(`   By: ${service.agentName} | ${Number(service.price) / 1_000_000} SOL`))
         console.log(chalk.gray(`   ${service.description.slice(0, 60)}...`))
-        console.log(chalk.gray(`   ID: ${service.id.toBase58()}`))
+        console.log(chalk.gray(`   ID: ${service.id.toString()}`))
         console.log('')
       })
 
@@ -600,11 +601,11 @@ jobsCommand
         s.stop('✅ Job posted successfully!')
 
         console.log('\n' + chalk.green('🎉 Your job has been posted!'))
-        console.log(chalk.gray(`Job ID: ${result.jobId.toBase58()}`))
+        console.log(chalk.gray(`Job ID: ${result.jobId.toString()}`))
         console.log(chalk.gray('Status: Active - Accepting applications'))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Job Posting:'), getAddressExplorerUrl(result.jobId.toBase58(), 'devnet'))
+        console.log(chalk.cyan('Job Posting:'), getAddressExplorerUrl(result.jobId.toString(), 'devnet'))
       } catch (error: any) {
         s.stop('❌ Job posting failed')
         throw new Error(handleTransactionError(error))
@@ -639,7 +640,7 @@ jobsCommand
       
       // Fetch jobs using SDK
       const jobs = await client.marketplace.listJobs({
-        myJobsOnly: options.myJobs ? wallet.publicKey : undefined,
+        myJobsOnly: options.myJobs ? wallet.address : undefined,
         category: options.category
       })
       
@@ -655,19 +656,19 @@ jobsCommand
       console.log('═'.repeat(70))
 
       jobs.forEach((job, index) => {
-        const isOwner = job.poster.equals(wallet.publicKey)
+        const isOwner = job.poster.equals(wallet.address)
         const deadlineDate = new Date(Number(job.deadline) * 1000)
         const daysLeft = Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
         
         console.log(chalk.magenta(`${index + 1}. ${job.title}`))
-        console.log(chalk.gray(`   ID: ${job.id.toBase58()}`))
+        console.log(chalk.gray(`   ID: ${job.id.toString()}`))
         console.log(chalk.gray(`   Budget: ${Number(job.budget) / 1_000_000} SOL`))
         console.log(chalk.gray(`   Deadline: ${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`))
         console.log(chalk.gray(`   Category: ${job.category}`))
         console.log(chalk.gray(`   Applications: ${job.applicationCount || 0}`))
         console.log(chalk.gray(`   Status: ${job.isActive ? '✅ Active' : '❌ Closed'}`))
         if (!isOwner) {
-          console.log(chalk.gray(`   Posted by: ${job.poster.toBase58().slice(0, 8)}...`))
+          console.log(chalk.gray(`   Posted by: ${job.poster.toString().slice(0, 8)}...`))
         }
         console.log('')
       })
@@ -751,7 +752,7 @@ async function purchaseService(services: any[]) {
     console.log('')
     console.log(chalk.green('🎉 Service purchased successfully!'))
     console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-    console.log(chalk.cyan('Purchase ID:'), result.purchaseId.toBase58())
+    console.log(chalk.cyan('Purchase ID:'), result.purchaseId.toString())
     
   } catch (error: any) {
     s.stop('❌ Purchase failed')
@@ -784,9 +785,9 @@ async function viewServiceDetails(services: any[]) {
   console.log(chalk.bold('📋 Service Details'))
   console.log('─'.repeat(50))
   console.log(chalk.cyan('Title:'), service.title)
-  console.log(chalk.cyan('ID:'), service.id.toBase58())
+  console.log(chalk.cyan('ID:'), service.id.toString())
   console.log(chalk.cyan('Description:'), service.description)
-  console.log(chalk.cyan('Agent:'), `${service.agentName} (${service.agentAddress.toBase58()})`)
+  console.log(chalk.cyan('Agent:'), `${service.agentName} (${service.agentAddress.toString()})`)
   console.log(chalk.cyan('Category:'), service.category)
   console.log(chalk.cyan('Price:'), `${Number(service.price) / 1_000_000} SOL`)
   console.log(chalk.cyan('Status:'), service.isAvailable ? '✅ Available' : '❌ Not Available')
@@ -820,7 +821,7 @@ async function applyToJob(jobs: any[], client: any) {
   const job = jobs[selectedJob as number]
   
   // Check if user has an agent
-  const agents = await client.agent.listByOwner({ owner: client.wallet.publicKey })
+  const agents = await client.agent.listByOwner({ owner: client.wallet.address })
   if (agents.length === 0) {
     console.log(chalk.yellow('\n⚠️  You need a registered agent to apply for jobs'))
     console.log('Run: npx ghostspeak agent register')
@@ -833,7 +834,7 @@ async function applyToJob(jobs: any[], client: any) {
     const selectedAgent = await select({
       message: 'Select agent to apply with:',
       options: agents.map(agent => ({
-        value: agent.address.toBase58(),
+        value: agent.address.toString(),
         label: agent.name
       }))
     })
@@ -842,7 +843,7 @@ async function applyToJob(jobs: any[], client: any) {
       return
     }
     
-    agentAddress = new PublicKey(selectedAgent as string)
+    agentAddress = address(selectedAgent as string)
   }
   
   const proposal = await text({
@@ -881,7 +882,7 @@ async function applyToJob(jobs: any[], client: any) {
     console.log('')
     console.log(chalk.green('🎉 Application submitted successfully!'))
     console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-    console.log(chalk.cyan('Application ID:'), result.applicationId.toBase58())
+    console.log(chalk.cyan('Application ID:'), result.applicationId.toString())
     
   } catch (error: any) {
     s.stop('❌ Application failed')
@@ -916,14 +917,14 @@ async function viewJobDetails(jobs: any[]) {
   console.log(chalk.bold('💼 Job Details'))
   console.log('─'.repeat(50))
   console.log(chalk.cyan('Title:'), job.title)
-  console.log(chalk.cyan('ID:'), job.id.toBase58())
+  console.log(chalk.cyan('ID:'), job.id.toString())
   console.log(chalk.cyan('Description:'), job.description)
   console.log(chalk.cyan('Category:'), job.category)
   console.log(chalk.cyan('Budget:'), `${Number(job.budget) / 1_000_000} SOL`)
   console.log(chalk.cyan('Deadline:'), `${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`)
   console.log(chalk.cyan('Status:'), job.isActive ? '✅ Active' : '❌ Closed')
   console.log(chalk.cyan('Applications:'), job.applicationCount || 0)
-  console.log(chalk.cyan('Posted by:'), job.poster.toBase58())
+  console.log(chalk.cyan('Posted by:'), job.poster.toString())
   
   if (job.requirements && job.requirements.length > 0) {
     console.log(chalk.cyan('Requirements:'), job.requirements.join(', '))

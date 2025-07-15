@@ -3,7 +3,7 @@
  */
 
 import { getAddressEncoder, getProgramDerivedAddress, type Address } from '@solana/addresses';
-import { GHOSTSPEAK_PROGRAM_ID } from './types.js';
+import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js';
 
 /**
  * Derive PDA for agent account

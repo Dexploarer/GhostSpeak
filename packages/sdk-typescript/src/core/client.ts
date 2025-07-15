@@ -21,7 +21,8 @@ import {
 import type { TransactionSigner } from '@solana/signers';
 import type { IInstruction } from '@solana/instructions';
 
-import { GhostSpeakConfig, GHOSTSPEAK_PROGRAM_ID } from './types.js';
+import { GhostSpeakConfig } from './types.js';
+import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js';
 import * as instructions from './instructions/index.js';
 
 export class GhostSpeakClient {

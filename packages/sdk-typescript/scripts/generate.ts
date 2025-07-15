@@ -59,7 +59,11 @@ async function generateClient() {
       // Generate comprehensive type exports
       typeDeclarations: true,
       // Use proper async/await patterns - must be array
-      asyncResolvers: []
+      asyncResolvers: [],
+      // Force generation of all types including nested ones
+      includeInternalTypes: true,
+      // Generate all type exports
+      renderDefinedTypesVisitor: true
     })
     
     // Generate the client
@@ -68,6 +72,19 @@ async function generateClient() {
     console.log('✅ TypeScript client generated successfully!')
     console.log('📁 Generated files in:', outDir)
     console.log('🚀 You can now import from "@ghostspeak/sdk/generated"')
+    
+    // Run the patch script to add missing types
+    console.log('\n🔧 Running patch for missing types...')
+    const { execSync } = await import('child_process')
+    try {
+      execSync('tsx scripts/patch-missing-types.ts', { 
+        cwd: path.join(__dirname, '..'),
+        stdio: 'inherit' 
+      })
+    } catch (patchError) {
+      console.error('⚠️  Warning: Failed to patch missing types:', patchError)
+      // Don't fail the whole generation if patch fails
+    }
     
   } catch (error) {
     console.error('❌ Error generating client:', error)

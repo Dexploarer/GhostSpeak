@@ -5,7 +5,7 @@
 import type { Address } from '@solana/addresses';
 import type { TransactionSigner } from '@solana/signers';
 
-export const GHOSTSPEAK_PROGRAM_ID = 'AkKRLXwBTMR3AEcmgAEAz8FTQRvhMYmQcGgMbTeSHeCJ' as Address;
+// Program ID is now exported from ../types/index.ts which gets it from generated files
 
 export interface Agent {
   id: string;

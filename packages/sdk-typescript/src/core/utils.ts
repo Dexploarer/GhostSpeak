@@ -26,13 +26,14 @@ export async function deriveAgentPda(owner: Address, agentId: string): Promise<A
 
 /**
  * Derive PDA for service listing
+ * CRITICAL: Must match Rust seeds exactly: [b"service_listing", creator.key().as_ref(), listing_id.as_bytes()]
  */
 export async function deriveServiceListingPda(creator: Address, listingId: bigint): Promise<Address> {
   const encoder = getAddressEncoder();
   const seeds = [
     Buffer.from('service_listing'),
     encoder.encode(creator),
-    Buffer.from(listingId.toString(16).padStart(16, '0'), 'hex')
+    Buffer.from(listingId.toString()) // Convert to string then to bytes like Rust listing_id.as_bytes()
   ];
   
   const [pda] = await getProgramDerivedAddress({

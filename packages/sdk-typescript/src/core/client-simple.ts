@@ -93,6 +93,50 @@ export class GhostSpeakClient {
       listingData.category
     );
   }
+
+  /**
+   * Create a simple service listing (minimal version to avoid serialization issues)
+   */
+  async createSimpleServiceListing(
+    signer: TransactionSigner,
+    agentId: string,
+    listingId: bigint,
+    title: string,
+    price: bigint
+  ): Promise<IInstruction> {
+    // Import the simple instruction builder
+    const { createSimpleServiceListingInstruction } = await import('./instructions/simple-marketplace.js');
+    return await createSimpleServiceListingInstruction(
+      signer,
+      agentId,
+      listingId,
+      title,
+      price
+    );
+  }
+
+  /**
+   * Create service listing with fixed Anchor struct serialization
+   */
+  async createFixedServiceListing(
+    signer: TransactionSigner,
+    agentId: string,
+    listingId: bigint,
+    title: string,
+    description: string,
+    price: bigint
+  ): Promise<IInstruction> {
+    // Import the fixed instruction builder
+    const { createFixedServiceListingInstruction } = await import('./instructions/fixed-marketplace.js');
+    return await createFixedServiceListingInstruction(
+      signer,
+      agentId,
+      listingId,
+      title,
+      description,
+      price
+    );
+  }
   
   /**
    * Purchase a service (create work order)

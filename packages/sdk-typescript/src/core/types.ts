@@ -5,7 +5,7 @@
 import type { Address } from '@solana/addresses';
 import type { TransactionSigner } from '@solana/signers';
 
-export const GHOSTSPEAK_PROGRAM_ID = '367WUUpQTxXYUZqFyo9rDpgfJtH7mfGxX9twahdUmaEK' as Address;
+export const GHOSTSPEAK_PROGRAM_ID = 'AkKRLXwBTMR3AEcmgAEAz8FTQRvhMYmQcGgMbTeSHeCJ' as Address;
 
 export interface Agent {
   id: string;

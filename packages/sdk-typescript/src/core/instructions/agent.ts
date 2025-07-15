@@ -27,8 +27,9 @@ export async function createRegisterAgentInstruction(
   agentType: number,
   metadataUri: string
 ): Promise<IInstruction> {
-  // Derive agent PDA
-  const agentPda = await deriveAgentPda(signer.address, agentId);
+  // Derive agent PDA - TEMPORARY FIX: Use empty string for PDA as program expects
+  // TODO: Fix the Rust program to use the actual agent_id parameter
+  const agentPda = await deriveAgentPda(signer.address, '');
   
   // Derive user registry PDA
   const encoder = getAddressEncoder();

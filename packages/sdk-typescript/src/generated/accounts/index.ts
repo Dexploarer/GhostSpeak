@@ -11,6 +11,7 @@ export * from './a2ASession';
 export * from './a2AStatus';
 export * from './agent';
 export * from './agentIncentives';
+export * from './agentTreeConfig';
 export * from './agentVerification';
 export * from './analyticsDashboard';
 export * from './arbitratorRegistry';

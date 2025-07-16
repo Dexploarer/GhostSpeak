@@ -58,6 +58,7 @@ import {
   type ParsedPlaceAuctionBidInstruction,
   type ParsedProcessPaymentInstruction,
   type ParsedPurchaseServiceInstruction,
+  type ParsedRegisterAgentCompressedInstruction,
   type ParsedRegisterAgentInstruction,
   type ParsedRegisterExtensionInstruction,
   type ParsedReplicateAgentInstruction,
@@ -77,7 +78,7 @@ import {
 } from '../instructions';
 
 export const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS =
-  'FVknDdFF634i2gLyVaXrgaM1eYpb7LNPdV14Y3Egb73E' as Address<'FVknDdFF634i2gLyVaXrgaM1eYpb7LNPdV14Y3Egb73E'>;
+  '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK' as Address<'5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK'>;
 
 export enum GhostspeakMarketplaceAccount {
   A2AMessage,
@@ -85,6 +86,7 @@ export enum GhostspeakMarketplaceAccount {
   A2AStatus,
   Agent,
   AgentIncentives,
+  AgentTreeConfig,
   AgentVerification,
   AnalyticsDashboard,
   ArbitratorRegistry,
@@ -176,6 +178,17 @@ export function identifyGhostspeakMarketplaceAccount(
     )
   ) {
     return GhostspeakMarketplaceAccount.AgentIncentives;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([145, 145, 156, 0, 197, 232, 130, 245])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceAccount.AgentTreeConfig;
   }
   if (
     containsBytes(
@@ -569,6 +582,7 @@ export enum GhostspeakMarketplaceInstruction {
   ProcessPayment,
   PurchaseService,
   RegisterAgent,
+  RegisterAgentCompressed,
   RegisterExtension,
   ReplicateAgent,
   ResolveDispute,
@@ -1089,6 +1103,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([15, 6, 94, 55, 65, 80, 123, 248])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.RegisterAgentCompressed;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([158, 205, 4, 17, 6, 106, 172, 148])
       ),
       0
@@ -1256,7 +1281,7 @@ export function identifyGhostspeakMarketplaceInstruction(
 }
 
 export type ParsedGhostspeakMarketplaceInstruction<
-  TProgram extends string = 'FVknDdFF634i2gLyVaXrgaM1eYpb7LNPdV14Y3Egb73E',
+  TProgram extends string = '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK',
 > =
   | ({
       instructionType: GhostspeakMarketplaceInstruction.ExportAction;
@@ -1393,6 +1418,9 @@ export type ParsedGhostspeakMarketplaceInstruction<
   | ({
       instructionType: GhostspeakMarketplaceInstruction.RegisterAgent;
     } & ParsedRegisterAgentInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.RegisterAgentCompressed;
+    } & ParsedRegisterAgentCompressedInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.RegisterExtension;
     } & ParsedRegisterExtensionInstruction<TProgram>)

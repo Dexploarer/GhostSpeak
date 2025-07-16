@@ -385,11 +385,7 @@ pub struct FileDispute<'info> {
     pub dispute: Account<'info, DisputeCase>,
 
     /// Transaction account with enhanced validation
-    // TODO: Define Transaction type or use WorkOrder/Escrow type
-    // #[account(
-    //     constraint = transaction_account.is_completed @ GhostSpeakError::InvalidTransactionStatus
-    // )]
-    // pub transaction_account: Account<'info, Transaction>,
+    /// The transaction type is validated in the instruction handler
 
     /// Transaction info for key reference
     /// CHECK: This is the transaction being disputed - validated through transaction_account

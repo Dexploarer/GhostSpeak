@@ -58,6 +58,7 @@ export * from './complianceMetrics';
 export * from './compliancePolicies';
 export * from './complianceReportGeneratedEvent';
 export * from './complianceStatusExport';
+export * from './compressedAgentCreatedEvent';
 export * from './conditionType';
 export * from './constraintCondition';
 export * from './constraintOperator';

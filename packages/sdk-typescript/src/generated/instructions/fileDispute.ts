@@ -147,6 +147,7 @@ export type FileDisputeAsyncInput<
   dispute?: Address<TAccountDispute>;
   /**
    * Transaction account with enhanced validation
+   * The transaction type is validated in the instruction handler
    * Transaction info for key reference
    */
   transaction: Address<TAccountTransaction>;
@@ -298,6 +299,7 @@ export type FileDisputeInput<
   dispute: Address<TAccountDispute>;
   /**
    * Transaction account with enhanced validation
+   * The transaction type is validated in the instruction handler
    * Transaction info for key reference
    */
   transaction: Address<TAccountTransaction>;
@@ -416,6 +418,7 @@ export type ParsedFileDisputeInstruction<
     dispute: TAccountMetas[0];
     /**
      * Transaction account with enhanced validation
+     * The transaction type is validated in the instruction handler
      * Transaction info for key reference
      */
 

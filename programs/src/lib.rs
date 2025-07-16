@@ -24,7 +24,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("FVknDdFF634i2gLyVaXrgaM1eYpb7LNPdV14Y3Egb73E");
+declare_id!("AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR");
 
 // Module declarations
 mod instructions;
@@ -762,7 +762,6 @@ pub mod ghostspeak_marketplace {
         instructions::agent::register_agent(ctx, agent_type, metadata_uri, _agent_id)
     }
 
-    /* ZK COMPRESSION READY - Temporarily disabled for dependency compatibility
     /// Register Agent using ZK compression (solves error 2006 with 5000x cost reduction)
     pub fn register_agent_compressed(
         ctx: Context<RegisterAgentCompressed>,
@@ -772,7 +771,6 @@ pub mod ghostspeak_marketplace {
     ) -> Result<()> {
         instructions::agent_compressed::register_agent_compressed(ctx, agent_type, metadata_uri, agent_id)
     }
-    */
 
     pub fn update_agent(
         ctx: Context<UpdateAgent>,

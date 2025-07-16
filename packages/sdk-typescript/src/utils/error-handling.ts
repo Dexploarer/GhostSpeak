@@ -1,90 +1,137 @@
 import type { Signature } from '@solana/kit'
+import { 
+  GhostSpeakError, 
+  ErrorContext, 
+  ErrorCategory, 
+  ErrorSeverity,
+  NetworkError,
+  TransactionError,
+  AccountNotFoundError,
+  ValidationError,
+  TimeoutError,
+  RateLimitError,
+  isRetryableError,
+  getRetryDelay,
+  createErrorWithContext,
+  logError
+} from '../errors/index.js'
 
 /**
- * Custom error types for GhostSpeak SDK
+ * Enhanced error handling utilities with comprehensive retry logic and recovery patterns
+ * Integrates with the new comprehensive error system for production-ready error handling
  */
-export class GhostSpeakError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public cause?: Error
-  ) {
-    super(message)
-    this.name = 'GhostSpeakError'
-  }
-}
 
-export class TransactionError extends GhostSpeakError {
-  constructor(
-    message: string,
-    public signature?: Signature,
-    cause?: Error
-  ) {
-    super(message, 'TRANSACTION_ERROR', cause)
-    this.name = 'TransactionError'
-  }
-}
+// Re-export main error types for backward compatibility
+export { 
+  GhostSpeakError,
+  NetworkError,
+  TransactionError,
+  AccountNotFoundError,
+  ValidationError,
+  TimeoutError,
+  RateLimitError,
+  ErrorContext,
+  ErrorCategory,
+  ErrorSeverity
+} from '../errors/index.js'
 
-export class AccountNotFoundError extends GhostSpeakError {
-  constructor(
-    message: string,
-    public address: string,
-    cause?: Error
-  ) {
-    super(message, 'ACCOUNT_NOT_FOUND', cause)
-    this.name = 'AccountNotFoundError'
-  }
-}
-
-export class RpcError extends GhostSpeakError {
+/**
+ * Deprecated aliases for backward compatibility
+ * @deprecated Use the new error classes from '../errors/index.js'
+ */
+export class RpcError extends NetworkError {
   constructor(
     message: string,
     public endpoint?: string,
     cause?: Error
   ) {
-    super(message, 'RPC_ERROR', cause)
+    super(message, { context: { metadata: { endpoint } }, cause })
     this.name = 'RpcError'
   }
 }
 
-export class InstructionError extends GhostSpeakError {
+export class InstructionError extends ValidationError {
   constructor(
     message: string,
     public instructionIndex?: number,
     cause?: Error
   ) {
-    super(message, 'INSTRUCTION_ERROR', cause)
+    super(message, { 
+      field: 'instruction', 
+      context: { metadata: { instructionIndex } }, 
+      cause 
+    })
     this.name = 'InstructionError'
   }
 }
 
 /**
- * Retry configuration
+ * Enhanced retry configuration with comprehensive settings
  */
 export interface RetryConfig {
   maxRetries: number
   baseDelay: number
   maxDelay: number
   backoffMultiplier: number
+  jitterMax: number
   retryableErrors: string[]
+  retryableCategories: ErrorCategory[]
+  timeoutPerAttempt: number
+  exponentialBackoff: boolean
+  onRetry?: (error: Error, attempt: number) => void
+  onMaxRetriesReached?: (error: Error) => void
 }
 
 /**
- * Default retry configuration
+ * Default retry configuration optimized for blockchain operations
  */
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 3,
+  maxRetries: 5,
   baseDelay: 1000,
-  maxDelay: 10000,
+  maxDelay: 30000,
   backoffMultiplier: 2,
+  jitterMax: 1000,
+  timeoutPerAttempt: 30000,
+  exponentialBackoff: true,
   retryableErrors: [
     'NETWORK_ERROR',
-    'TIMEOUT',
+    'TIMEOUT_ERROR',
+    'RATE_LIMIT_EXCEEDED',
     'CONNECTION_REFUSED',
-    'RATE_LIMITED',
-    'TEMPORARY_FAILURE'
+    'TEMPORARY_FAILURE',
+    'TRANSACTION_ERROR' // Some transaction errors are retryable
+  ],
+  retryableCategories: [
+    ErrorCategory.NETWORK,
+    ErrorCategory.SYSTEM
   ]
 }
+
+/**
+ * Configuration for different operation types
+ */
+export const RETRY_CONFIGS = {
+  TRANSACTION: {
+    ...DEFAULT_RETRY_CONFIG,
+    maxRetries: 3,
+    baseDelay: 2000,
+    timeoutPerAttempt: 60000 // Longer timeout for transactions
+  },
+  
+  ACCOUNT_FETCH: {
+    ...DEFAULT_RETRY_CONFIG,
+    maxRetries: 5,
+    baseDelay: 500,
+    timeoutPerAttempt: 10000
+  },
+  
+  RPC_CALL: {
+    ...DEFAULT_RETRY_CONFIG,
+    maxRetries: 4,
+    baseDelay: 800,
+    timeoutPerAttempt: 15000
+  }
+} as const
 
 /**
  * Retry logic utility

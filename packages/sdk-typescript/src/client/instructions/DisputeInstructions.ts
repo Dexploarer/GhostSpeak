@@ -474,7 +474,7 @@ export class DisputeInstructions extends BaseInstructions {
       
       // Convert to summaries and apply filters
       let disputes = accounts
-        .map(({ pubkey, data }) => this.disputeToSummary(pubkey, data))
+        .map(({ address, data }) => this.disputeToSummary(address, data))
         .filter(summary => this.applyDisputeFilter(summary, filter))
         .slice(0, limit)
       

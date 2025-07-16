@@ -19,12 +19,29 @@
     "clean": "anchor clean",
     "deploy": "anchor deploy",
     "deploy:devnet": "anchor deploy --provider.cluster devnet",
+    "deploy:testnet": "tsx scripts/testnet-deploy.ts",
+    "deploy:mainnet": "anchor deploy --provider.cluster mainnet",
     "idl": "anchor idl build",
     "build:sdk": "npm run build --workspace=packages/sdk-typescript",
     "build:cli": "npm run build --workspace=packages/cli",
     "build:packages": "npm run build:sdk && npm run build:cli",
     "dev:sdk": "npm run dev --workspace=packages/sdk-typescript",
-    "dev:cli": "npm run dev --workspace=packages/cli"
+    "dev:cli": "npm run dev --workspace=packages/cli",
+    "test:testnet": "tsx scripts/testnet-test-runner.ts",
+    "test:performance": "tsx scripts/performance-benchmarks.ts",
+    "test:error-recovery": "tsx scripts/error-recovery-tester.ts",
+    "test:all-testnet": "npm run test:testnet && npm run test:performance && npm run test:error-recovery",
+    "monitor:testnet": "tsx scripts/continuous-testnet-monitor.ts",
+    "monitor:dashboard": "tsx scripts/continuous-testnet-monitor.ts dashboard",
+    "ci:pipeline": "tsx scripts/automated-ci-testnet.ts",
+    "setup:testnet": "solana config set --url https://api.testnet.solana.com && solana airdrop 10",
+    "setup:devnet": "solana config set --url https://api.devnet.solana.com && solana airdrop 2",
+    "verify:deployment": "solana account 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK",
+    "idl:init": "anchor idl init 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK --filepath target/idl/ghostspeak_marketplace.json",
+    "idl:upgrade": "anchor idl upgrade 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK --filepath target/idl/ghostspeak_marketplace.json",
+    "idl:fetch": "anchor idl fetch 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK",
+    "audit": "npm audit && cd programs && cargo audit",
+    "verify:setup": "tsx scripts/verify-testnet-setup.ts"
   },
   "keywords": [
     "solana",
@@ -53,6 +70,10 @@
     "@eslint/js": "^9.31.0",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
-    "eslint": "^9.31.0"
+    "eslint": "^9.31.0",
+    "@types/node": "^24.0.13",
+    "typescript": "^5.3.0",
+    "tsx": "^4.20.3",
+    "chalk": "^5.3.0"
   }
 }

@@ -577,7 +577,7 @@ export class GovernanceInstructions extends BaseInstructions {
       
       // Convert to summaries and apply filters
       let multisigs = accounts
-        .map(({ pubkey, data }) => this.multisigToSummary(pubkey, data))
+        .map(({ address, data }) => this.multisigToSummary(address, data))
         .filter(summary => this.applyMultisigFilter(summary, filter))
         .slice(0, limit)
       
@@ -613,7 +613,7 @@ export class GovernanceInstructions extends BaseInstructions {
       
       // Convert to summaries and apply filters
       let proposals = accounts
-        .map(({ pubkey, data }) => this.proposalToSummary(pubkey, data))
+        .map(({ address, data }) => this.proposalToSummary(address, data))
         .filter(summary => this.applyProposalFilter(summary, filter))
         .slice(0, limit)
       
@@ -813,9 +813,7 @@ export class GovernanceInstructions extends BaseInstructions {
       totalVotes,
       quorumReached: proposal.votingResults.quorumReached,
       timeRemaining,
-      votingEnded,
-      canExecute,
-      executionParams: proposal.executionParams
+      canExecute
     }
   }
 
@@ -824,8 +822,8 @@ export class GovernanceInstructions extends BaseInstructions {
 
     if (filter.threshold !== undefined && summary.threshold !== filter.threshold) return false
     if (filter.owner && summary.owner !== filter.owner) return false
-    if (filter.minimumSigners !== undefined && summary.signers.length < filter.minimumSigners) return false
-    if (filter.isActive !== undefined && summary.isActive !== filter.isActive) return false
+    if (filter.minSigners !== undefined && summary.signers.length < filter.minSigners) return false
+    // isActive field not available in MultisigFilter
     if (filter.createdAfter && summary.createdAt < filter.createdAfter) return false
     if (filter.createdBefore && summary.createdAt > filter.createdBefore) return false
 
@@ -840,9 +838,11 @@ export class GovernanceInstructions extends BaseInstructions {
     if (filter.proposalType && summary.proposalType !== filter.proposalType) return false
     if (filter.createdAfter && summary.createdAt < filter.createdAfter) return false
     if (filter.createdBefore && summary.createdAt > filter.createdBefore) return false
-    if (filter.votingOpen !== undefined && summary.votingEnded === filter.votingOpen) return false
-    if (filter.canExecute !== undefined && summary.canExecute !== filter.canExecute) return false
-    if (filter.quorumReached !== undefined && summary.quorumReached !== filter.quorumReached) return false
+    if (filter.votingActive !== undefined) {
+      const isVotingActive = summary.timeRemaining !== undefined && summary.timeRemaining > 0n
+      if (isVotingActive !== filter.votingActive) return false
+    }
+    if (filter.executable !== undefined && summary.canExecute !== filter.executable) return false
 
     return true
   }

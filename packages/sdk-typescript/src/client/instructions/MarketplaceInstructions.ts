@@ -99,8 +99,7 @@ export class MarketplaceInstructions extends BaseInstructions {
     
     console.warn('Direct service listing updates not available. Consider creating a new listing or updating agent service capabilities.')
     
-    // If updating agent-related data, we can use updateAgentService
-    if (updateData.tags || updateData.serviceType) {
+    try {
       const { getUpdateAgentServiceInstruction } = await import('../../generated/index.js')
       
       // Get the current listing to extract agent info
@@ -114,7 +113,7 @@ export class MarketplaceInstructions extends BaseInstructions {
         agent: listing.agent,
         owner: signer as unknown as TransactionSigner,
         agentPubkey: listing.agent,
-        serviceEndpoint: `${listing.title} - ${listing.description}`, // Use title + description as endpoint
+        serviceEndpoint: updateData.title || `${listing.title} - ${listing.description}`,
         isActive: listing.isActive,
         lastUpdated: BigInt(Math.floor(Date.now() / 1000)),
         metadataUri: updateData.description || listing.description,
@@ -122,9 +121,10 @@ export class MarketplaceInstructions extends BaseInstructions {
       })
       
       return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    } catch (error) {
+      console.warn('Failed to update service listing via agent service:', error)
+      throw new Error('Service listing updates require implementing updateServiceListing instruction in the smart contract, or create a new listing')
     }
-    
-    throw new Error('Service listing updates require implementing updateServiceListing instruction in the smart contract, or create a new listing')
   }
 
   /**

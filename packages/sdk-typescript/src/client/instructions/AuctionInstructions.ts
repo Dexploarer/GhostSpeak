@@ -490,7 +490,7 @@ export class AuctionInstructions extends BaseInstructions {
       
       // Convert to summaries and apply filters
       let auctions = accounts
-        .map(({ pubkey, data }) => this.auctionToSummary(pubkey, data))
+        .map(({ address, data }) => this.auctionToSummary(address, data))
         .filter(summary => this.applyAuctionFilter(summary, filter))
         .slice(0, limit)
       
@@ -702,28 +702,28 @@ export class AuctionInstructions extends BaseInstructions {
     const hasBids = auction.bids.length > 0
 
     const currentBid = hasBids ? auction.bids[auction.bids.length - 1] : null
-    const currentPrice = currentBid ? currentBid.amount : auction.startingPrice
+    const currentPrice = auction.currentPrice
 
     return {
       auction: auctionAddress,
-      auctionId: auction.auctionId,
-      seller: auction.seller,
+      auctionId: auction.auction, // Use auction field as ID
+      seller: auction.creator, // Use creator as seller
       itemType: auction.auctionType,
-      title: auction.title || 'Untitled Auction',
-      description: auction.description || 'No description',
+      title: `Auction ${auction.auction}`, // Generate title from auction address
+      description: `Auction for ${auction.agent}`, // Generate description
       startingPrice: auction.startingPrice,
       currentPrice,
       minimumBidIncrement: auction.minimumBidIncrement,
       status: auction.status,
-      auctionStartTime: auction.auctionStartTime,
+      auctionStartTime: auction.createdAt || 0n, // Use createdAt if available
       auctionEndTime: auction.auctionEndTime,
       timeRemaining,
       hasEnded,
       bidCount: auction.bids.length,
       hasBids,
-      highestBidder: currentBid?.bidder,
+      highestBidder: auction.currentWinner?.__option === 'Some' ? auction.currentWinner.value : undefined,
       reservePrice: auction.reservePrice,
-      buyNowPrice: auction.buyNowPrice,
+      buyNowPrice: 0n, // Not available in this structure
       isReserveMet: currentPrice >= auction.reservePrice
     }
   }
@@ -732,14 +732,13 @@ export class AuctionInstructions extends BaseInstructions {
     if (!filter) return true
 
     if (filter.status && summary.status !== filter.status) return false
-    if (filter.seller && summary.seller !== filter.seller) return false
-    if (filter.itemType && summary.itemType !== filter.itemType) return false
+    if (filter.creator && summary.seller !== filter.creator) return false
+    if (filter.auctionType && summary.itemType !== filter.auctionType) return false
     if (filter.minPrice !== undefined && summary.currentPrice < filter.minPrice) return false
     if (filter.maxPrice !== undefined && summary.currentPrice > filter.maxPrice) return false
-    if (filter.endingBefore && summary.auctionEndTime > filter.endingBefore) return false
-    if (filter.endingAfter && summary.auctionEndTime < filter.endingAfter) return false
+    if (filter.endsBefore && summary.auctionEndTime > filter.endsBefore) return false
+    if (filter.endsAfter && summary.auctionEndTime < filter.endsAfter) return false
     if (filter.hasReserve !== undefined && (summary.reservePrice > 0n) !== filter.hasReserve) return false
-    if (filter.hasBuyNow !== undefined && (summary.buyNowPrice && summary.buyNowPrice > 0n) !== filter.hasBuyNow) return false
     if (filter.isActive !== undefined && (summary.status === AuctionStatus.Active) !== filter.isActive) return false
 
     return true

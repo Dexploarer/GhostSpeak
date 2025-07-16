@@ -191,7 +191,7 @@ export class A2AInstructions extends BaseInstructions {
       const sessionMessages = accounts
         .map(({ data }) => data)
         .filter(message => message.session === sessionAddress)
-        .sort((a, b) => Number(a.timestamp - b.timestamp)) // Sort by timestamp
+        .sort((a, b) => Number(a.sentAt - b.sentAt)) // Sort by timestamp
       
       return sessionMessages
     } catch (error) {

@@ -44,12 +44,12 @@ pub use agent::{
     AgentVerification,
     AgentVerificationData,
 };
-// Import compressed agent types - ZK compression ready, temporarily disabled
-// pub use crate::instructions::agent_compressed::{
-//     AgentTreeConfig,
-//     CompressedAgentMetadata,
-//     CompressedAgentCreatedEvent,
-// };
+// Import compressed agent types
+pub use crate::instructions::agent_compressed::{
+    AgentTreeConfig,
+    CompressedAgentMetadata,
+    CompressedAgentCreatedEvent,
+};
 // Import from analytics with conflict resolution
 pub use analytics::{
     AgentAnalytics as AnalyticsAgentAnalytics, // Rename to avoid conflict

@@ -51,6 +51,7 @@ export * from './placeAuctionBid';
 export * from './processPayment';
 export * from './purchaseService';
 export * from './registerAgent';
+export * from './registerAgentCompressed';
 export * from './registerExtension';
 export * from './replicateAgent';
 export * from './resolveDispute';

@@ -10,8 +10,8 @@ import {
   combineCodec,
   getOptionDecoder,
   getOptionEncoder,
-  getUtf8Decoder,
-  getUtf8Encoder,
+  getStringDecoder,
+  getStringEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -65,27 +65,27 @@ export type AuditContextArgs = {
 
 export function getAuditContextEncoder(): Encoder<AuditContextArgs> {
   return getStructEncoder([
-    ['transactionSignature', getOptionEncoder(getUtf8Encoder())],
+    ['transactionSignature', getOptionEncoder(getStringEncoder())],
     ['blockNumber', getOptionEncoder(getU64Encoder())],
-    ['ipAddress', getOptionEncoder(getUtf8Encoder())],
-    ['userAgent', getOptionEncoder(getUtf8Encoder())],
-    ['geoLocation', getOptionEncoder(getUtf8Encoder())],
-    ['sessionId', getOptionEncoder(getUtf8Encoder())],
+    ['ipAddress', getOptionEncoder(getStringEncoder())],
+    ['userAgent', getOptionEncoder(getStringEncoder())],
+    ['geoLocation', getOptionEncoder(getStringEncoder())],
+    ['sessionId', getOptionEncoder(getStringEncoder())],
     ['riskScore', getU8Encoder()],
-    ['metadata', getOptionEncoder(getUtf8Encoder())],
+    ['metadata', getOptionEncoder(getStringEncoder())],
   ]);
 }
 
 export function getAuditContextDecoder(): Decoder<AuditContext> {
   return getStructDecoder([
-    ['transactionSignature', getOptionDecoder(getUtf8Decoder())],
+    ['transactionSignature', getOptionDecoder(getStringDecoder())],
     ['blockNumber', getOptionDecoder(getU64Decoder())],
-    ['ipAddress', getOptionDecoder(getUtf8Decoder())],
-    ['userAgent', getOptionDecoder(getUtf8Decoder())],
-    ['geoLocation', getOptionDecoder(getUtf8Decoder())],
-    ['sessionId', getOptionDecoder(getUtf8Decoder())],
+    ['ipAddress', getOptionDecoder(getStringDecoder())],
+    ['userAgent', getOptionDecoder(getStringDecoder())],
+    ['geoLocation', getOptionDecoder(getStringDecoder())],
+    ['sessionId', getOptionDecoder(getStringDecoder())],
     ['riskScore', getU8Decoder()],
-    ['metadata', getOptionDecoder(getUtf8Decoder())],
+    ['metadata', getOptionDecoder(getStringDecoder())],
   ]);
 }
 

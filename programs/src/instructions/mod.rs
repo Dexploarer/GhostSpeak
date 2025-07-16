@@ -6,7 +6,7 @@
 
 // Core modules (working)
 pub mod agent;
-// pub mod agent_compressed; // ZK compression ready - temporarily disabled
+pub mod agent_compressed;
 pub mod agent_management;
 
 // Additional modules
@@ -30,7 +30,7 @@ pub mod work_orders;
 // Re-export all instruction handlers (2025 Anchor best practice)
 pub use a2a_protocol::*;
 pub use agent::*;
-// pub use agent_compressed::*; // ZK compression ready - temporarily disabled
+pub use agent_compressed::*;
 pub use agent_management::*;
 pub use analytics::*;
 pub use auction::*;

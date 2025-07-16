@@ -16,10 +16,8 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
-  getArrayDecoder,
-  getArrayEncoder,
-  getUtf8Decoder,
-  getUtf8Encoder,
+  getVecDecoder,
+  getVecEncoder,
   type Address,
   type Codec,
   type Decoder,
@@ -75,10 +73,10 @@ export function getComplianceStatusEncoder(): Encoder<ComplianceStatusArgs> {
     ['complianceScore', getU8Encoder()],
     ['lastReview', getI64Encoder()],
     ['nextReview', getI64Encoder()],
-    ['activeViolations', getArrayEncoder(getViolationSeverityEncoder())],
-    ['regulatoryStatus', getArrayEncoder(getUtf8Encoder())],
+    ['activeViolations', getVecEncoder(getViolationSeverityEncoder())],
+    ['regulatoryStatus', getVecEncoder(getStringEncoder())],
     ['riskAssessment', getRiskAssessmentEncoder()],
-    ['complianceOfficers', getArrayEncoder(getAddressEncoder())],
+    ['complianceOfficers', getVecEncoder(getAddressEncoder())],
   ]);
 }
 
@@ -87,10 +85,10 @@ export function getComplianceStatusDecoder(): Decoder<ComplianceStatus> {
     ['complianceScore', getU8Decoder()],
     ['lastReview', getI64Decoder()],
     ['nextReview', getI64Decoder()],
-    ['activeViolations', getArrayDecoder(getViolationSeverityDecoder())],
-    ['regulatoryStatus', getArrayDecoder(getUtf8Decoder())],
+    ['activeViolations', getVecDecoder(getViolationSeverityDecoder())],
+    ['regulatoryStatus', getVecDecoder(getStringDecoder())],
     ['riskAssessment', getRiskAssessmentDecoder()],
-    ['complianceOfficers', getArrayDecoder(getAddressDecoder())],
+    ['complianceOfficers', getVecDecoder(getAddressDecoder())],
   ]);
 }
 

@@ -10,16 +10,16 @@ import {
   combineCodec,
   getI64Decoder,
   getI64Encoder,
-  getUtf8Decoder,
-  getUtf8Encoder,
+  getStringDecoder,
+  getStringEncoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
-  getArrayDecoder,
-  getArrayEncoder,
+  getVecDecoder,
+  getVecEncoder,
   type Codec,
   type Decoder,
   type Encoder,
@@ -80,9 +80,9 @@ export function getReportEntryEncoder(): Encoder<ReportEntryArgs> {
     ['amount', getU64Encoder()],
     ['riskScore', getU8Encoder()],
     ['complianceFlags', getComplianceFlagsEncoder()],
-    ['riskIndicators', getArrayEncoder(getRiskIndicatorEncoder())],
-    ['anomalies', getArrayEncoder(getUtf8Encoder())],
-    ['actionsTaken', getArrayEncoder(getUtf8Encoder())],
+    ['riskIndicators', getVecEncoder(getRiskIndicatorEncoder())],
+    ['anomalies', getVecEncoder(getStringEncoder())],
+    ['actionsTaken', getVecEncoder(getStringEncoder())],
   ]);
 }
 
@@ -93,9 +93,9 @@ export function getReportEntryDecoder(): Decoder<ReportEntry> {
     ['amount', getU64Decoder()],
     ['riskScore', getU8Decoder()],
     ['complianceFlags', getComplianceFlagsDecoder()],
-    ['riskIndicators', getArrayDecoder(getRiskIndicatorDecoder())],
-    ['anomalies', getArrayDecoder(getUtf8Decoder())],
-    ['actionsTaken', getArrayDecoder(getUtf8Decoder())],
+    ['riskIndicators', getVecDecoder(getRiskIndicatorDecoder())],
+    ['anomalies', getVecDecoder(getStringDecoder())],
+    ['actionsTaken', getVecDecoder(getStringDecoder())],
   ]);
 }
 

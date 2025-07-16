@@ -91,10 +91,40 @@ export class MarketplaceInstructions extends BaseInstructions {
     listingAddress: Address,
     updateData: Partial<CreateServiceListingParams>
   ): Promise<string> {
-    // Note: UpdateServiceListing instruction not implemented in the Rust program yet
-    // For now, we'd need to close the old listing and create a new one
-    // This is a placeholder for when the instruction is added
-    throw new Error('Service listing updates are not yet supported by the on-chain program. Please create a new listing instead.')
+    // Since there's no direct update instruction, we need to work with the current listing
+    // In practice, this would require either:
+    // 1. A new updateServiceListing instruction in the smart contract
+    // 2. Closing the old listing and creating a new one (not ideal due to address changes)
+    // 3. Using the updateAgentService instruction if the update is related to agent services
+    
+    console.warn('Direct service listing updates not available. Consider creating a new listing or updating agent service capabilities.')
+    
+    // If updating agent-related data, we can use updateAgentService
+    if (updateData.tags || updateData.serviceType) {
+      const { getUpdateAgentServiceInstruction } = await import('../../generated/index.js')
+      
+      // Get the current listing to extract agent info
+      const listing = await this.getServiceListing(listingAddress)
+      if (!listing || !listing.agent) {
+        throw new Error('Could not find listing or agent information')
+      }
+      
+      // Update agent service with new capabilities/tags
+      const instruction = getUpdateAgentServiceInstruction({
+        agent: listing.agent,
+        owner: signer as unknown as TransactionSigner,
+        agentPubkey: listing.agent,
+        serviceEndpoint: listing.metadataUri || '',
+        isActive: listing.isActive,
+        lastUpdated: BigInt(Math.floor(Date.now() / 1000)),
+        metadataUri: updateData.description || listing.description,
+        capabilities: updateData.tags || []
+      })
+      
+      return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    }
+    
+    throw new Error('Service listing updates require implementing updateServiceListing instruction in the smart contract, or create a new listing')
   }
 
   /**

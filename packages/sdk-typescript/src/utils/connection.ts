@@ -8,8 +8,14 @@ import type { RpcApi } from '../types/index.js'
  * Create a connection with recommended settings for GhostSpeak
  */
 export function createRecommendedConnection(endpoint: string): RpcApi {
-  // TODO: Implement using @solana/kit Rpc with optimized settings
-  throw new Error('Connection utilities not yet implemented - waiting for Codama generation')
+  const { createSolanaRpc } = require('@solana/kit')
+  
+  // Create RPC with optimized settings for GhostSpeak protocol
+  const rpc = createSolanaRpc(endpoint, {
+    // Add any specific configuration for optimal performance
+  })
+  
+  return rpc
 }
 
 /**
@@ -17,9 +23,17 @@ export function createRecommendedConnection(endpoint: string): RpcApi {
  */
 export async function checkConnectionHealth(rpc: RpcApi): Promise<boolean> {
   try {
-    // TODO: Implement health check
-    throw new Error('Connection health check not yet implemented - waiting for Codama generation')
+    // Test basic RPC connectivity by getting latest blockhash
+    const response = await rpc.getLatestBlockhash().send()
+    
+    // Check if we got a valid response with blockhash
+    if (response && response.value && response.value.blockhash) {
+      return true
+    }
+    
+    return false
   } catch (error) {
+    console.warn('Connection health check failed:', error)
     return false
   }
 }

@@ -564,10 +564,25 @@ export class GovernanceInstructions extends BaseInstructions {
     console.log('📋 Listing multisigs...')
     
     try {
-      // This would use getProgramAccounts with proper filtering
-      // For now, return empty array - in production, implement RPC filtering
-      console.log('⚠️ Multisig listing not fully implemented - requires RPC filtering')
-      return []
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all multisig accounts
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getMultisigDecoder(),
+        [], // No RPC filters - filtering client-side
+        this.commitment
+      )
+      
+      // Convert to summaries and apply filters
+      let multisigs = accounts
+        .map(({ pubkey, data }) => this.multisigToSummary(pubkey, data))
+        .filter(summary => this.applyMultisigFilter(summary, filter))
+        .slice(0, limit)
+      
+      console.log(`✅ Found ${multisigs.length} multisigs`)
+      return multisigs
     } catch (error) {
       console.warn('Failed to list multisigs:', error)
       return []
@@ -585,10 +600,25 @@ export class GovernanceInstructions extends BaseInstructions {
     console.log('📋 Listing proposals...')
     
     try {
-      // This would use getProgramAccounts with proper filtering
-      // For now, return empty array - in production, implement RPC filtering
-      console.log('⚠️ Proposal listing not fully implemented - requires RPC filtering')
-      return []
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all governance proposal accounts
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getGovernanceProposalDecoder(),
+        [], // No RPC filters - filtering client-side
+        this.commitment
+      )
+      
+      // Convert to summaries and apply filters
+      let proposals = accounts
+        .map(({ pubkey, data }) => this.proposalToSummary(pubkey, data))
+        .filter(summary => this.applyProposalFilter(summary, filter))
+        .slice(0, limit)
+      
+      console.log(`✅ Found ${proposals.length} proposals`)
+      return proposals
     } catch (error) {
       console.warn('Failed to list proposals:', error)
       return []
@@ -736,5 +766,84 @@ export class GovernanceInstructions extends BaseInstructions {
     if (params.initialRoles.length > 10) {
       throw new Error('Cannot have more than 10 initial roles')
     }
+  }
+
+  private multisigToSummary(multisigAddress: Address, multisig: Multisig): MultisigSummary {
+    return {
+      multisig: multisigAddress,
+      multisigId: multisig.multisigId,
+      threshold: multisig.threshold,
+      signers: multisig.signers,
+      owner: multisig.owner,
+      createdAt: multisig.createdAt,
+      updatedAt: multisig.updatedAt,
+      config: multisig.config,
+      emergencyConfig: {} as any,
+      pendingTransactions: 0,
+      isActive: multisig.signers.length >= multisig.threshold
+    }
+  }
+
+  private proposalToSummary(proposalAddress: Address, proposal: GovernanceProposal): ProposalSummary {
+    const now = BigInt(Math.floor(Date.now() / 1000))
+    const votingEndsAt = proposal.createdAt + BigInt(7 * 24 * 60 * 60) // 7 days
+    const timeRemaining = votingEndsAt > now ? votingEndsAt - now : 0n
+
+    const totalVotes = proposal.votingResults.votesFor + proposal.votingResults.votesAgainst + proposal.votingResults.votesAbstain
+    const votingEnded = now >= votingEndsAt
+    const canExecute = votingEnded && 
+                      proposal.votingResults.quorumReached && 
+                      proposal.votingResults.votesFor > proposal.votingResults.votesAgainst &&
+                      proposal.status === ProposalStatus.Active
+
+    return {
+      proposal: proposalAddress,
+      proposalId: proposal.proposalId,
+      proposalType: proposal.proposalType,
+      proposer: proposal.proposer,
+      title: proposal.title || 'Untitled Proposal',
+      description: proposal.description || 'No description',
+      status: proposal.status,
+      createdAt: proposal.createdAt,
+      votingEndsAt,
+      executionDelay: proposal.executionParams.executionDelay,
+      forVotes: proposal.votingResults.votesFor,
+      againstVotes: proposal.votingResults.votesAgainst,
+      abstainVotes: proposal.votingResults.votesAbstain,
+      totalVotes,
+      quorumReached: proposal.votingResults.quorumReached,
+      timeRemaining,
+      votingEnded,
+      canExecute,
+      executionParams: proposal.executionParams
+    }
+  }
+
+  private applyMultisigFilter(summary: MultisigSummary, filter?: MultisigFilter): boolean {
+    if (!filter) return true
+
+    if (filter.threshold !== undefined && summary.threshold !== filter.threshold) return false
+    if (filter.owner && summary.owner !== filter.owner) return false
+    if (filter.minimumSigners !== undefined && summary.signers.length < filter.minimumSigners) return false
+    if (filter.isActive !== undefined && summary.isActive !== filter.isActive) return false
+    if (filter.createdAfter && summary.createdAt < filter.createdAfter) return false
+    if (filter.createdBefore && summary.createdAt > filter.createdBefore) return false
+
+    return true
+  }
+
+  private applyProposalFilter(summary: ProposalSummary, filter?: ProposalFilter): boolean {
+    if (!filter) return true
+
+    if (filter.status && summary.status !== filter.status) return false
+    if (filter.proposer && summary.proposer !== filter.proposer) return false
+    if (filter.proposalType && summary.proposalType !== filter.proposalType) return false
+    if (filter.createdAfter && summary.createdAt < filter.createdAfter) return false
+    if (filter.createdBefore && summary.createdAt > filter.createdBefore) return false
+    if (filter.votingOpen !== undefined && summary.votingEnded === filter.votingOpen) return false
+    if (filter.canExecute !== undefined && summary.canExecute !== filter.canExecute) return false
+    if (filter.quorumReached !== undefined && summary.quorumReached !== filter.quorumReached) return false
+
+    return true
   }
 }

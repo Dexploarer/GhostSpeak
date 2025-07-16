@@ -269,3 +269,28 @@ export async function deriveAgentVerificationPda(
   })
   return address
 }
+
+/**
+ * Generic PDA finder for custom use cases
+ * Pattern: seeds array with automatic encoding
+ */
+export async function findProgramDerivedAddress(
+  seeds: (string | Address | Uint8Array)[],
+  programId: Address
+): Promise<[Address, number]> {
+  const encodedSeeds = seeds.map(seed => {
+    if (typeof seed === 'string') {
+      return getUtf8Encoder().encode(seed)
+    } else if (typeof seed === 'object' && seed.constructor === Uint8Array) {
+      return seed
+    } else {
+      // Assume it's an Address
+      return getAddressEncoder().encode(seed as Address)
+    }
+  })
+
+  return await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: encodedSeeds
+  })
+}

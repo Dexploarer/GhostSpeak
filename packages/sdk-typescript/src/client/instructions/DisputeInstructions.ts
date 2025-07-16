@@ -461,10 +461,25 @@ export class DisputeInstructions extends BaseInstructions {
     console.log('📋 Listing disputes...')
     
     try {
-      // This would use getProgramAccounts with proper filtering
-      // For now, return empty array - in production, implement RPC filtering
-      console.log('⚠️ Dispute listing not fully implemented - requires RPC filtering')
-      return []
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all dispute case accounts
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getDisputeCaseDecoder(),
+        [], // No RPC filters - filtering client-side
+        this.commitment
+      )
+      
+      // Convert to summaries and apply filters
+      let disputes = accounts
+        .map(({ pubkey, data }) => this.disputeToSummary(pubkey, data))
+        .filter(summary => this.applyDisputeFilter(summary, filter))
+        .slice(0, limit)
+      
+      console.log(`✅ Found ${disputes.length} disputes`)
+      return disputes
     } catch (error) {
       console.warn('Failed to list disputes:', error)
       return []
@@ -629,5 +644,43 @@ export class DisputeInstructions extends BaseInstructions {
     // In production, derive proper user registry PDA
     // For now, return a placeholder
     return '11111111111111111111111111111111' as Address
+  }
+
+  private disputeToSummary(disputeAddress: Address, dispute: DisputeCase): DisputeSummary {
+    const now = BigInt(Math.floor(Date.now() / 1000))
+    const daysSinceCreated = Math.floor(Number(now - dispute.createdAt) / 86400)
+
+    return {
+      dispute: disputeAddress,
+      transaction: dispute.transaction,
+      complainant: dispute.complainant,
+      respondent: dispute.respondent,
+      moderator: dispute.moderator?.__option === 'Some' ? dispute.moderator.value : undefined,
+      reason: dispute.reason,
+      status: dispute.status,
+      evidence: dispute.evidence,
+      resolution: dispute.resolution?.__option === 'Some' ? dispute.resolution.value : undefined,
+      aiScore: dispute.aiScore,
+      humanReview: dispute.humanReview,
+      createdAt: dispute.createdAt,
+      resolvedAt: dispute.resolvedAt?.__option === 'Some' ? dispute.resolvedAt.value : undefined,
+      daysSinceCreated,
+      evidenceCount: dispute.evidence.length
+    }
+  }
+
+  private applyDisputeFilter(summary: DisputeSummary, filter?: DisputeFilter): boolean {
+    if (!filter) return true
+
+    if (filter.status && summary.status !== filter.status) return false
+    if (filter.complainant && summary.complainant !== filter.complainant) return false
+    if (filter.respondent && summary.respondent !== filter.respondent) return false
+    if (filter.moderator && summary.moderator !== filter.moderator) return false
+    if (filter.createdAfter && summary.createdAt < filter.createdAfter) return false
+    if (filter.createdBefore && summary.createdAt > filter.createdBefore) return false
+    if (filter.hasEvidence !== undefined && (summary.evidenceCount > 0) !== filter.hasEvidence) return false
+    if (filter.requiresHumanReview !== undefined && summary.humanReview !== filter.requiresHumanReview) return false
+
+    return true
   }
 }

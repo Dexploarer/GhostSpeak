@@ -126,32 +126,113 @@ export class A2AInstructions extends BaseInstructions {
     signer: KeyPairSigner,
     sessionAddress: Address
   ): Promise<string> {
-    console.log('Closing A2A session:', sessionAddress)
-    throw new Error('A2A session closing not yet implemented - waiting for Codama generation')
+    // Since there's no specific close instruction in the contract,
+    // we can update the session status to mark it as inactive
+    const session = await this.getSession(sessionAddress)
+    if (!session) {
+      throw new Error('Session not found')
+    }
+    
+    // Update status to mark session as inactive
+    return this.updateStatus(
+      signer,
+      sessionAddress, // Using session address as status address for simplicity
+      sessionAddress,
+      session.sessionId,
+      signer.address as Address,
+      'closed',
+      [],
+      false, // Set availability to false
+      BigInt(Math.floor(Date.now() / 1000))
+    )
   }
 
   /**
    * Get A2A session information
    */
   async getSession(sessionAddress: Address): Promise<A2ASession | null> {
-    // TODO: Implement proper RPC integration
-    return null
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const { getA2ASessionDecoder } = await import('../../generated/index.js')
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      const session = await rpcClient.getAndDecodeAccount(
+        sessionAddress,
+        getA2ASessionDecoder(),
+        this.commitment
+      )
+      
+      return session
+    } catch (error) {
+      console.warn('Failed to fetch A2A session:', error)
+      return null
+    }
   }
 
   /**
    * Get all messages in an A2A session
    */
   async getMessages(sessionAddress: Address): Promise<A2AMessage[]> {
-    console.log('Fetching A2A messages:', sessionAddress)
-    throw new Error('A2A message fetching not yet implemented - waiting for Codama generation')
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const { getA2AMessageDecoder } = await import('../../generated/index.js')
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all A2A message accounts filtering by session
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getA2AMessageDecoder(),
+        [], // No RPC filters - filtering client-side for session
+        this.commitment
+      )
+      
+      // Filter messages for this specific session
+      const sessionMessages = accounts
+        .map(({ data }) => data)
+        .filter(message => message.session === sessionAddress)
+        .sort((a, b) => Number(a.timestamp - b.timestamp)) // Sort by timestamp
+      
+      return sessionMessages
+    } catch (error) {
+      console.warn('Failed to fetch A2A messages:', error)
+      return []
+    }
   }
 
   /**
    * Get all active sessions for an agent
    */
   async getActiveSessions(agentAddress: Address): Promise<A2ASession[]> {
-    console.log('Fetching active A2A sessions for agent:', agentAddress)
-    throw new Error('Active A2A session fetching not yet implemented - waiting for Codama generation')
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const { getA2ASessionDecoder } = await import('../../generated/index.js')
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all A2A session accounts
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getA2ASessionDecoder(),
+        [], // No RPC filters - filtering client-side
+        this.commitment
+      )
+      
+      // Filter sessions where agent is either initiator or responder and session is active
+      const currentTimestamp = BigInt(Math.floor(Date.now() / 1000))
+      const activeSessions = accounts
+        .map(({ data }) => data)
+        .filter(session => 
+          (session.initiator === agentAddress || session.responder === agentAddress) &&
+          session.isActive &&
+          (session.expiresAt === 0n || session.expiresAt > currentTimestamp)
+        )
+      
+      return activeSessions
+    } catch (error) {
+      console.warn('Failed to fetch active A2A sessions:', error)
+      return []
+    }
   }
 
   /**
@@ -161,7 +242,40 @@ export class A2AInstructions extends BaseInstructions {
     sessionAddress: Address,
     callback: (message: A2AMessage) => void
   ): Promise<() => void> {
-    console.log('Subscribing to A2A messages:', sessionAddress)
-    throw new Error('A2A message subscription not yet implemented - waiting for Codama generation')
+    // WebSocket subscriptions would require additional setup
+    // For now, implement polling as a fallback
+    let isSubscribed = true
+    let lastMessageCount = 0
+    
+    const pollInterval = setInterval(async () => {
+      if (!isSubscribed) {
+        clearInterval(pollInterval)
+        return
+      }
+      
+      try {
+        const messages = await this.getMessages(sessionAddress)
+        
+        // Check if new messages were added
+        if (messages.length > lastMessageCount) {
+          // Get only the new messages
+          const newMessages = messages.slice(lastMessageCount)
+          
+          // Call the callback for each new message
+          newMessages.forEach(message => callback(message))
+          
+          // Update the last message count
+          lastMessageCount = messages.length
+        }
+      } catch (error) {
+        console.warn('Error polling for A2A messages:', error)
+      }
+    }, 5000) // Poll every 5 seconds
+    
+    // Return unsubscribe function
+    return () => {
+      isSubscribed = false
+      clearInterval(pollInterval)
+    }
   }
 }

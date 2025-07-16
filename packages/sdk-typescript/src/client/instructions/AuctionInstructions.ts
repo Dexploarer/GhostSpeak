@@ -477,10 +477,25 @@ export class AuctionInstructions extends BaseInstructions {
     console.log('📋 Listing auctions...')
     
     try {
-      // This would use getProgramAccounts with proper filtering
-      // For now, return empty array - in production, implement RPC filtering
-      console.log('⚠️ Auction listing not fully implemented - requires RPC filtering')
-      return []
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      
+      // Get all auction marketplace accounts
+      const accounts = await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        getAuctionMarketplaceDecoder(),
+        [], // No RPC filters - filtering client-side
+        this.commitment
+      )
+      
+      // Convert to summaries and apply filters
+      let auctions = accounts
+        .map(({ pubkey, data }) => this.auctionToSummary(pubkey, data))
+        .filter(summary => this.applyAuctionFilter(summary, filter))
+        .slice(0, limit)
+      
+      console.log(`✅ Found ${auctions.length} auctions`)
+      return auctions
     } catch (error) {
       console.warn('Failed to list auctions:', error)
       return []
@@ -678,5 +693,55 @@ export class AuctionInstructions extends BaseInstructions {
     if (now < auction.auctionEndTime) {
       throw new Error('Auction has not ended yet')
     }
+  }
+
+  private auctionToSummary(auctionAddress: Address, auction: AuctionMarketplace): AuctionSummary {
+    const now = BigInt(Math.floor(Date.now() / 1000))
+    const timeRemaining = auction.auctionEndTime > now ? auction.auctionEndTime - now : 0n
+    const hasEnded = now >= auction.auctionEndTime
+    const hasBids = auction.bids.length > 0
+
+    const currentBid = hasBids ? auction.bids[auction.bids.length - 1] : null
+    const currentPrice = currentBid ? currentBid.amount : auction.startingPrice
+
+    return {
+      auction: auctionAddress,
+      auctionId: auction.auctionId,
+      seller: auction.seller,
+      itemType: auction.auctionType,
+      title: auction.title || 'Untitled Auction',
+      description: auction.description || 'No description',
+      startingPrice: auction.startingPrice,
+      currentPrice,
+      minimumBidIncrement: auction.minimumBidIncrement,
+      status: auction.status,
+      auctionStartTime: auction.auctionStartTime,
+      auctionEndTime: auction.auctionEndTime,
+      timeRemaining,
+      hasEnded,
+      bidCount: auction.bids.length,
+      hasBids,
+      highestBidder: currentBid?.bidder,
+      reservePrice: auction.reservePrice,
+      buyNowPrice: auction.buyNowPrice,
+      isReserveMet: currentPrice >= auction.reservePrice
+    }
+  }
+
+  private applyAuctionFilter(summary: AuctionSummary, filter?: AuctionFilter): boolean {
+    if (!filter) return true
+
+    if (filter.status && summary.status !== filter.status) return false
+    if (filter.seller && summary.seller !== filter.seller) return false
+    if (filter.itemType && summary.itemType !== filter.itemType) return false
+    if (filter.minPrice !== undefined && summary.currentPrice < filter.minPrice) return false
+    if (filter.maxPrice !== undefined && summary.currentPrice > filter.maxPrice) return false
+    if (filter.endingBefore && summary.auctionEndTime > filter.endingBefore) return false
+    if (filter.endingAfter && summary.auctionEndTime < filter.endingAfter) return false
+    if (filter.hasReserve !== undefined && (summary.reservePrice > 0n) !== filter.hasReserve) return false
+    if (filter.hasBuyNow !== undefined && (summary.buyNowPrice && summary.buyNowPrice > 0n) !== filter.hasBuyNow) return false
+    if (filter.isActive !== undefined && (summary.status === AuctionStatus.Active) !== filter.isActive) return false
+
+    return true
   }
 }

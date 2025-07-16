@@ -123,16 +123,14 @@ export class GhostSpeakClient {
    * Get all active service listings
    */
   async getServiceListings(): Promise<ServiceListing[]> {
-    // TODO: Implement marketplace listing functionality
-    return []
+    return this.marketplace.getServiceListings()
   }
 
   /**
    * Get all active job postings
    */
   async getJobPostings(): Promise<JobPosting[]> {
-    // TODO: Implement job posting listing functionality
-    return []
+    return this.marketplace.getJobPostings()
   }
 
   /**

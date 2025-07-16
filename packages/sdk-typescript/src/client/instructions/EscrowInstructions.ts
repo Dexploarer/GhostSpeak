@@ -126,12 +126,10 @@ export class EscrowInstructions extends BaseInstructions {
       
       const instruction = getFileDisputeInstruction({
         dispute: disputeAddress,
-        workOrder: escrowAddress,
+        transaction: escrowAddress, // Use escrow address as transaction reference
         complainant: signer as unknown as TransactionSigner,
-        reason,
-        evidence: [], // Can be extended to include evidence
-        disputeType: 'cancellation',
-        requestedResolution: 'refund'
+        respondent: escrowAddress, // Placeholder - should be actual respondent
+        reason
       })
       
       return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])

@@ -114,7 +114,7 @@ export class MarketplaceInstructions extends BaseInstructions {
         agent: listing.agent,
         owner: signer as unknown as TransactionSigner,
         agentPubkey: listing.agent,
-        serviceEndpoint: listing.metadataUri || '',
+        serviceEndpoint: `${listing.title} - ${listing.description}`, // Use title + description as endpoint
         isActive: listing.isActive,
         lastUpdated: BigInt(Math.floor(Date.now() / 1000)),
         metadataUri: updateData.description || listing.description,

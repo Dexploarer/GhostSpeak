@@ -16,7 +16,7 @@ const CONFIG_FILE = join(CONFIG_DIR, 'config.json')
 const DEFAULT_CONFIG: GhostSpeakConfig = {
   network: 'devnet',
   walletPath: join(homedir(), '.config', 'solana', 'id.json'),
-  programId: '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK'
+  programId: 'FVknDdFF634i2gLyVaXrgaM1eYpb7LNPdV14Y3Egb73E'
 }
 
 export function ensureConfigDir(): void {

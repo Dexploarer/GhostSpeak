@@ -24,7 +24,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK");
+declare_id!("FVknDdFF634i2gLyVaXrgaM1eYpb7LNPdV14Y3Egb73E");
 
 // Module declarations
 mod instructions;
@@ -53,7 +53,7 @@ pub struct AgentRegistrationData {
     pub service_endpoint: String,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PricingModel {
     Fixed,
     Hourly,
@@ -761,6 +761,18 @@ pub mod ghostspeak_marketplace {
     ) -> Result<()> {
         instructions::agent::register_agent(ctx, agent_type, metadata_uri, _agent_id)
     }
+
+    /* ZK COMPRESSION READY - Temporarily disabled for dependency compatibility
+    /// Register Agent using ZK compression (solves error 2006 with 5000x cost reduction)
+    pub fn register_agent_compressed(
+        ctx: Context<RegisterAgentCompressed>,
+        agent_type: u8,
+        metadata_uri: String,
+        agent_id: String,
+    ) -> Result<()> {
+        instructions::agent_compressed::register_agent_compressed(ctx, agent_type, metadata_uri, agent_id)
+    }
+    */
 
     pub fn update_agent(
         ctx: Context<UpdateAgent>,

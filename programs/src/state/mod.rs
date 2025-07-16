@@ -44,6 +44,12 @@ pub use agent::{
     AgentVerification,
     AgentVerificationData,
 };
+// Import compressed agent types - ZK compression ready, temporarily disabled
+// pub use crate::instructions::agent_compressed::{
+//     AgentTreeConfig,
+//     CompressedAgentMetadata,
+//     CompressedAgentCreatedEvent,
+// };
 // Import from analytics with conflict resolution
 pub use analytics::{
     AgentAnalytics as AnalyticsAgentAnalytics, // Rename to avoid conflict
@@ -175,7 +181,7 @@ use anchor_lang::prelude::*;
 // Security constants
 pub const MAX_NAME_LENGTH: usize = 64;
 pub const MAX_GENERAL_STRING_LENGTH: usize = 256;
-pub const MAX_CAPABILITIES_COUNT: usize = 20;
+pub const MAX_CAPABILITIES_COUNT: usize = 5;
 pub const MAX_PARTICIPANTS_COUNT: usize = 50;
 pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
 pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens

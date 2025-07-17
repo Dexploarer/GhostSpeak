@@ -17,6 +17,7 @@ import {
 /**
  * Derive agent PDA
  * Pattern: ['agent', owner, agentId]
+ * NOTE: Uses length-prefixed string encoding to match smart contract expectations
  */
 export async function deriveAgentPda(
   programId: Address,
@@ -211,17 +212,20 @@ export async function deriveA2AMessagePda(
 
 /**
  * Derive user registry PDA
- * Pattern: ['user_registry']
+ * Pattern: ['user_registry', signer]
+ * NOTE: Fixed to match smart contract expectations - includes signer address
  */
 export async function deriveUserRegistryPda(
-  programId: Address
+  programId: Address,
+  signer: Address
 ): Promise<Address> {
   const [address] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
       getBytesEncoder().encode(new Uint8Array([
         117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121
-      ])) // 'user_registry'
+      ])), // 'user_registry'
+      getAddressEncoder().encode(signer)
     ]
   })
   return address

@@ -14,6 +14,7 @@ import {
   type A2ASession,
   type A2AMessage
 } from '../../generated/index.js'
+import { deriveA2AMessagePda } from '../../utils/pda.js'
 import { BaseInstructions } from './BaseInstructions.js'
 
 // Parameters for A2A session creation
@@ -71,10 +72,22 @@ export class A2AInstructions extends BaseInstructions {
    */
   async sendMessage(
     signer: KeyPairSigner,
-    messageAddress: Address,
     sessionAddress: Address,
     params: SendA2AMessageParams
   ): Promise<string> {
+    // Fetch the session to get the createdAt timestamp for PDA derivation
+    const session = await this.getSession(sessionAddress)
+    if (!session) {
+      throw new Error('Session not found')
+    }
+
+    // Derive the message address using the session's createdAt timestamp
+    const messageAddress = await deriveA2AMessagePda(
+      this.programId,
+      sessionAddress,
+      session.createdAt
+    )
+
     const instruction = getSendA2aMessageInstruction({
       message: messageAddress,
       session: sessionAddress,

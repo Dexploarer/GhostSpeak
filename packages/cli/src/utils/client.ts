@@ -130,7 +130,8 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     rpc,
     rpcSubscriptions,
     signer: wallet,
-    programId: address(programId)
+    programId: address(programId),
+    rpcUrl: rpcUrl // Pass the RPC URL to the client
   })
   
   // Check wallet balance

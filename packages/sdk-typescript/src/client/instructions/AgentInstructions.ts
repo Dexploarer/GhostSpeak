@@ -45,14 +45,6 @@ export class AgentInstructions extends BaseInstructions {
       ? params.agentType 
       : 1 // Default to 1 if invalid
       
-    console.log('🔍 Registering agent with params:', {
-      agentType,
-      metadataUri: params.metadataUri,
-      agentId: params.agentId,
-      agentAddress: agentAddress.toString(),
-      userRegistry: userRegistryAddress.toString(),
-      signer: signer.address ? signer.address.toString() : 'NO_ADDRESS'
-    })
 
     try {
       const instruction = getRegisterAgentInstruction({
@@ -64,19 +56,14 @@ export class AgentInstructions extends BaseInstructions {
         agentId: params.agentId
       })
       
-      console.log('📦 Instruction created:', {
-        programAddress: instruction.programAddress,
-        accountsLength: instruction.accounts?.length,
-        dataLength: instruction.data?.length,
-        accounts: instruction.accounts
-      })
-      
       // Log instruction details before sending
       this.logInstructionDetails(instruction as unknown as IInstruction)
       
-      return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      const signature = await this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      
+      return signature
     } catch (error) {
-      console.error('❌ Failed to create register instruction:', error)
+      console.error('❌ Failed to register agent:', error)
       throw error
     }
   }
@@ -299,21 +286,10 @@ export class AgentInstructions extends BaseInstructions {
       )
       
       // Filter agents owned by the specified address
-      console.log('🔍 Debug: Total accounts fetched:', accounts.length)
-      
       const ownerAgents = accounts
-        .map(({ data, address }) => {
-          console.log('🔍 Debug: Agent account:', {
-            address: address.toString(),
-            owner: data.owner?.toString(),
-            name: data.name,
-            isActive: data.isActive
-          })
-          return { ...data, address }
-        })
+        .map(({ data, address }) => ({ ...data, address }))
         .filter(agent => agent.owner?.toString() === options.owner.toString())
       
-      console.log('🔍 Debug: Filtered agents for owner:', ownerAgents.length)
       return ownerAgents
     } catch (error) {
       console.warn('Failed to fetch agents by owner:', error)

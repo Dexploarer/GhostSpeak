@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol",
   "type": "module",
   "bin": {

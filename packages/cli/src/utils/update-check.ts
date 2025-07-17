@@ -31,7 +31,7 @@ export async function checkForUpdates(currentVersion: string): Promise<void> {
         
         if (timeSinceLastCheck < CHECK_INTERVAL) {
           // Use cached result if recent
-          if (cache.latestVersion && cache.latestVersion !== currentVersion) {
+          if (cache.latestVersion && cache.latestVersion !== currentVersion && compareVersions(cache.latestVersion, currentVersion) > 0) {
             showUpdateNotification(currentVersion, cache.latestVersion)
           }
           return

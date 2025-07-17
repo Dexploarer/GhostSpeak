@@ -16,6 +16,7 @@ import { auctionCommand } from './commands/auction.js'
 import { disputeCommand } from './commands/dispute.js'
 import { governanceCommand } from './commands/governance.js'
 import { checkForUpdates } from './utils/update-check.js'
+import { InteractiveMenu, shouldRunInteractive } from './utils/interactive-menu.js'
 import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -40,7 +41,7 @@ async function main() {
   try {
     
     // Get current version
-    let currentVersion = '1.6.1' // Fallback version
+    let currentVersion = '1.7.0' // Fallback version
     try {
       const __filename = fileURLToPath(import.meta.url)
       const __dirname = dirname(__filename)
@@ -69,12 +70,11 @@ async function main() {
     // Check for updates in background
     checkForUpdates(currentVersion)
     
-    intro(chalk.inverse(' Welcome to GhostSpeak CLI '))
-
     program
       .name('ghostspeak')
       .description('Command-line interface for GhostSpeak AI Agent Commerce Protocol')
       .version(currentVersion)
+      .option('-i, --interactive', 'Run in interactive mode')
 
     // Add command modules
     program.addCommand(agentCommand)
@@ -91,7 +91,18 @@ async function main() {
     // Setup faucet command
     setupFaucetCommand(program)
 
-    // Show help if no command provided
+    // Check if we should run in interactive mode
+    if (shouldRunInteractive(process.argv)) {
+      // Don't show banner again since it's already shown
+      const menu = new InteractiveMenu(program)
+      await menu.showMainMenu()
+      return
+    }
+
+    // Normal CLI mode
+    intro(chalk.inverse(' Welcome to GhostSpeak CLI '))
+
+    // Show help if no command provided (shouldn't happen due to interactive check)
     if (!process.argv.slice(2).length) {
       program.outputHelp()
       process.exit(0)

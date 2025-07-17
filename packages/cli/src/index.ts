@@ -21,7 +21,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 // ASCII art banner
-function showBanner() {
+function showBanner(version: string) {
   console.log(
     chalk.cyan(
       figlet.textSync('GhostSpeak', {
@@ -31,22 +31,23 @@ function showBanner() {
       })
     )
   )
-  console.log(chalk.gray('AI Agent Commerce Protocol CLI\n'))
+  console.log(chalk.gray('AI Agent Commerce Protocol CLI'))
+  console.log(chalk.gray(`CLI v${version} | SDK v1.4.0 | Built with ❤️  for Web3 developers\n`))
 }
 
 // Main CLI setup
 async function main() {
   try {
-    showBanner()
     
     // Get current version
-    let currentVersion = '1.3.3' // Fallback version
+    let currentVersion = '1.6.1' // Fallback version
     try {
       const __filename = fileURLToPath(import.meta.url)
       const __dirname = dirname(__filename)
       const possiblePaths = [
         join(__dirname, '../package.json'),
-        join(__dirname, '../../package.json')
+        join(__dirname, '../../package.json'),
+        join(__dirname, '../../cli/package.json')
       ]
       
       for (const path of possiblePaths) {
@@ -58,9 +59,12 @@ async function main() {
           }
         }
       }
-    } catch {
+    } catch (error) {
       // Use fallback version
     }
+    
+    // Show banner with version
+    showBanner(currentVersion)
     
     // Check for updates in background
     checkForUpdates(currentVersion)

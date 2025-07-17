@@ -33,7 +33,7 @@ function showBanner(version: string) {
     )
   )
   console.log(chalk.gray('AI Agent Commerce Protocol CLI'))
-  console.log(chalk.gray(`CLI v${version} | SDK v1.4.0 | Built with ❤️  for Web3 developers\n`))
+  console.log(chalk.gray(`CLI v${version} | SDK v1.4.2 | Built with ❤️  for Web3 developers\n`))
 }
 
 // Main CLI setup
@@ -41,7 +41,7 @@ async function main() {
   try {
     
     // Get current version
-    let currentVersion = '1.7.0' // Fallback version
+    let currentVersion = '1.7.2' // Fallback version
     try {
       const __filename = fileURLToPath(import.meta.url)
       const __dirname = dirname(__filename)

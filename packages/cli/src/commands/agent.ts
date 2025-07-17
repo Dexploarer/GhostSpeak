@@ -62,19 +62,9 @@ agentCommand
         s.stop('✅ Agent wallet generated')
         s.start('Registering agent on the blockchain...')
         
-        // Debug wallet and client info
-        console.log('\n🔍 Debug Info:')
-        console.log('Owner wallet address:', wallet.address ? wallet.address.toString() : 'NO ADDRESS')
-        console.log('Agent wallet address:', agentWallet.address.toString())
-        console.log('Agent UUID:', credentials.uuid)
-        console.log('Program ID:', client.config.programId?.toString())
-        console.log('Signer available:', !!wallet)
-        
         // Generate PDAs for agent registration
         const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
         const agentId = credentials.agentId
-        
-        console.log('Agent ID:', agentId)
         
         // Derive agent PDA (still using owner wallet for PDA derivation)
         const [agentPda] = await getProgramDerivedAddress({
@@ -86,8 +76,6 @@ agentCommand
           ]
         })
         
-        console.log('Agent PDA:', agentPda.toString())
-        
         // Derive user registry PDA
         const [userRegistryPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
@@ -97,10 +85,9 @@ agentCommand
           ]
         })
         
-        console.log('User Registry PDA:', userRegistryPda.toString())
-        console.log('\nCalling client.agent.register...')
-        
         // Register the agent using SDK with all required parameters
+        s.start('Registering agent on-chain (this may take a moment)...')
+        
         const signature = await client.agent.register(
           wallet,
           agentPda,
@@ -111,6 +98,7 @@ agentCommand
             agentId: agentId
           }
         )
+        
         
         s.stop('✅ Agent registered successfully!')
         
@@ -186,8 +174,32 @@ agentCommand
       
       s.stop('✅ Agents loaded')
 
+      // Also check for local agents if no on-chain agents found
       if (agents.length === 0) {
         console.log('\n' + chalk.yellow('No agents found on the network'))
+        
+        // Check for local agents
+        try {
+          const { wallet } = await initializeClient('devnet')
+          const localAgents = await AgentWalletManager.getAgentsByOwner(wallet.address)
+          
+          if (localAgents.length > 0) {
+            console.log('\n' + chalk.cyan('Local agents found (not yet synchronized with blockchain):'))
+            console.log('─'.repeat(60))
+            
+            localAgents.forEach((agent, index) => {
+              console.log(chalk.yellow(`${index + 1}. ${agent.name} (Local)`))
+              console.log(chalk.gray(`   Description: ${agent.description}`))
+              console.log(chalk.gray(`   UUID: ${agent.uuid}`))
+              console.log(chalk.gray(`   Agent ID: ${agent.agentId}`))
+              console.log(chalk.gray(`   Status: Pending blockchain sync`))
+              console.log('')
+            })
+          }
+        } catch (error) {
+          console.log('Error checking local agents:', error)
+        }
+        
         outro('Try registering an agent with: npx ghostspeak agent register')
         return
       }
@@ -336,8 +348,10 @@ agentCommand
           }
         }
         
-        const statusIcon = onChainAgent?.isActive ? chalk.green('●') : chalk.red('○')
-        const statusText = onChainAgent?.isActive ? 'Active' : 'Inactive'
+        const statusIcon = onChainAgent?.isActive ? chalk.green('●') : 
+                          onChainAgent ? chalk.red('○') : chalk.yellow('◐')
+        const statusText = onChainAgent?.isActive ? 'Active' : 
+                          onChainAgent ? 'Inactive' : 'Pending Sync'
         
         console.log(`${statusIcon} ${credentials.name}` + chalk.gray(` - ${statusText}`))
         console.log(chalk.gray(`  Agent ID: ${credentials.agentId}`))
@@ -360,6 +374,10 @@ agentCommand
             console.log(chalk.yellow('  Currently working on: ') + chalk.gray(status.currentJob.description))
             console.log(chalk.gray(`  Job started: ${new Date(Number(status.currentJob.startTime) * 1000).toLocaleString()}`))
           }
+        }
+        
+        if (!onChainAgent) {
+          console.log(chalk.yellow('  ⚠️  Agent not found on blockchain - blockchain sync may be in progress'))
         }
         
         console.log('')

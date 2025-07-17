@@ -109,11 +109,6 @@ export abstract class BaseInstructions {
     signers: TransactionSigner[]
   ): Promise<TransactionResult> {
     try {
-      console.log(`📤 Sending REAL transaction with ${instructions.length} instructions`)
-      console.log(`🔐 Using ${signers.length} signers`)
-      console.log(`📍 Program ID: ${this.programId}`)
-      console.log(`🌐 Commitment: ${this.commitment}`)
-      
       // Validate instructions
       for (let i = 0; i < instructions.length; i++) {
         const instruction = instructions[i]
@@ -129,38 +124,29 @@ export abstract class BaseInstructions {
         if (!Array.isArray(instruction.accounts)) {
           throw new Error(`Instruction at index ${i} accounts is not an array`)
         }
-        console.log(`✅ Instruction ${i}: ${instruction.accounts.length} accounts, program: ${instruction.programAddress}`)
       }
       
       // Step 1: Get latest blockhash using real RPC call
-      console.log('🔗 Fetching latest blockhash...')
       const { value: latestBlockhash } = await this.rpc.getLatestBlockhash().send()
-      console.log(`✅ Got blockhash: ${latestBlockhash.blockhash}`)
 
       // Step 2: Build transaction message using pipe pattern (2025 standard)
-      console.log('🏗️ Building transaction message...')
       const transactionMessage = await pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayerSigner(signers[0], tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
         tx => appendTransactionMessageInstructions(instructions, tx)
       )
-      console.log('✅ Transaction message built')
 
       // Step 3: Sign transaction using 2025 pattern
-      console.log('✍️ Signing transaction...')
       const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
-      console.log('✅ Transaction signed')
 
       // Step 4: Send and confirm using factory pattern
-      console.log('📡 Sending transaction to blockchain...')
       
       let result: any
       let signature: Signature
       
       // If no subscriptions available, use polling method
       if (!this.rpcSubscriptions) {
-        console.log('⚠️ No RPC subscriptions available, using polling for confirmation...')
         
         // Send transaction first
         const transactionSignature = await this.rpc.sendTransaction(signedTransaction as any, {
@@ -168,7 +154,6 @@ export abstract class BaseInstructions {
           preflightCommitment: this.commitment
         }).send()
         
-        console.log(`📤 Transaction sent: ${transactionSignature}`)
         
         // Poll for confirmation
         let confirmed = false

@@ -642,23 +642,47 @@ jobsCommand
                           deadline === '1w' ? 604800000 : 2592000000
         const deadlineTimestamp = BigInt(Date.now() + deadlineMs) / 1000n
         
-        const result = await client.marketplace.createJobPosting({
-          title: title as string,
-          description: description as string,
-          category: category as string,
-          requirements: requirements as string[],
-          budget: BigInt(Math.floor(parseFloat(budget as string) * 1_000_000)),
-          deadline: deadlineTimestamp
+        // Generate job posting address
+        const { getProgramDerivedAddress } = await import('@solana/kit')
+        const jobPostingId = `job-${Date.now()}`
+        const [jobPostingAddress] = await getProgramDerivedAddress({
+          programAddress: client.config.programId!,
+          seeds: [
+            new TextEncoder().encode('job_posting'),
+            new TextEncoder().encode(jobPostingId)
+          ]
         })
+        
+        // Convert budget to bigint
+        const budgetAmount = BigInt(Math.floor(parseFloat(budget as string) * 1_000_000))
+        
+        const result = await client.marketplace.createJobPosting(
+          wallet,
+          jobPostingAddress,
+          {
+            title: title as string,
+            description: description as string,
+            requirements: requirements as string[],
+            budget: budgetAmount,
+            deadline: deadlineTimestamp,
+            skillsNeeded: [], // Optional field
+            budgetMin: budgetAmount, // Use same as budget
+            budgetMax: budgetAmount, // Use same as budget
+            paymentToken: client.config.programId!, // Use program ID as placeholder
+            jobType: category as string, // Use category as jobType
+            experienceLevel: 'intermediate' // Default value
+          }
+        )
         
         s.stop('✅ Job posted successfully!')
 
         console.log('\n' + chalk.green('🎉 Your job has been posted!'))
-        console.log(chalk.gray(`Job ID: ${result.jobId.toString()}`))
+        console.log(chalk.gray(`Job ID: ${jobPostingId}`))
+        console.log(chalk.gray(`Job Address: ${jobPostingAddress}`))
         console.log(chalk.gray('Status: Active - Accepting applications'))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Job Posting:'), getAddressExplorerUrl(result.jobId.toString(), 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
+        console.log(chalk.cyan('Job Posting:'), getAddressExplorerUrl(jobPostingAddress, 'devnet'))
       } catch (error: any) {
         s.stop('❌ Job posting failed')
         throw new Error(handleTransactionError(error))

@@ -19,6 +19,7 @@ export { ComplianceInstructions } from './client/instructions/ComplianceInstruct
 // Export types and utilities
 export type { GhostSpeakConfig } from './types/index.js'
 export * from './utils/rpc.js'
+export { deriveA2AMessagePda, deriveA2ASessionPda } from './utils/pda.js'
 
 // Export all generated types and instructions (these take precedence)
 export * from './generated/index.js'

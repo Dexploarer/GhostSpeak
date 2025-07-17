@@ -167,11 +167,10 @@ export class GhostSpeakClient {
    */
   async sendA2AMessage(
     signer: KeyPairSigner,
-    messageAddress: Address,
     sessionAddress: Address,
     params: SendA2AMessageParams
   ): Promise<string> {
-    return this.a2a.sendMessage(signer, messageAddress, sessionAddress, params)
+    return this.a2a.sendMessage(signer, sessionAddress, params)
   }
 
   /**

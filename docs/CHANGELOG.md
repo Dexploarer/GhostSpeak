@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-01-17 (@ghostspeak/cli)
+
+### Changed
+- Major documentation reorganization - all docs now in `/docs` folder
+- Cleaned up repository - removed test files from root
+- Updated all documentation references
+- Improved CLI user experience
+- Enhanced error messages and validation
+
+### Fixed
+- Fixed test file organization
+- Resolved documentation duplication
+- Updated package references
+
+## [1.3.0] - 2025-01-17 (@ghostspeak/sdk)
+
+### Changed
+- Enhanced error handling throughout SDK
+- Improved TypeScript types
+- Better transaction building patterns
+- Documentation improvements
+
+### Fixed
+- Fixed method naming consistency
+- Resolved type export issues
+- Updated dependencies
+
 ## [1.0.0] - 2025-01-17
 
 ### Added

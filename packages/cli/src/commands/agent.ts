@@ -48,13 +48,21 @@ agentCommand
       
       s.start('Generating agent wallet and credentials...')
       
+      // Keep track of resources for cleanup
+      let credentials: any = null
+      let agentWallet: any = null
+      let registrationComplete = false
+      
       try {
         // Generate dedicated agent wallet and credentials
-        const { agentWallet, credentials } = await AgentWalletManager.generateAgentWallet(
+        const walletResult = await AgentWalletManager.generateAgentWallet(
           agentData.name,
           agentData.description,
           wallet.address
         )
+        
+        agentWallet = walletResult.agentWallet
+        credentials = walletResult.credentials
         
         // Save credentials locally
         await AgentWalletManager.saveCredentials(credentials)
@@ -99,7 +107,7 @@ agentCommand
           }
         )
         
-        
+        registrationComplete = true
         s.stop('✅ Agent registered successfully!')
         
         // Mint CNFT ownership token
@@ -141,7 +149,28 @@ agentCommand
         outro('Agent registration completed')
       } catch (error: any) {
         s.stop('❌ Registration failed')
+        
+        // Cleanup resources on error
+        if (credentials && !registrationComplete) {
+          try {
+            console.log('🧹 Cleaning up partial registration...')
+            await AgentWalletManager.deleteCredentials(credentials.agentId)
+            console.log('✅ Cleanup completed')
+          } catch (cleanupError: any) {
+            console.warn('⚠️  Cleanup failed:', cleanupError.message)
+          }
+        }
+        
         throw new Error(handleTransactionError(error))
+      } finally {
+        // Ensure client resources are cleaned up
+        try {
+          if (client && typeof client.cleanup === 'function') {
+            await client.cleanup()
+          }
+        } catch (cleanupError) {
+          // Silent cleanup - don't throw errors during cleanup
+        }
       }
 
     } catch (error) {

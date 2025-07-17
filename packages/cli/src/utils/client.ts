@@ -126,12 +126,18 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   
   // Initialize client with the program ID from config or default
   const programId = config.programId || GHOSTSPEAK_PROGRAM_ID
+  
+  // Cast to ExtendedRpcApi - the Solana RPC does support all these methods
+  const extendedRpc = rpc as any
+  
   const client = new GhostSpeakClient({
-    rpc,
+    rpc: extendedRpc,
     rpcSubscriptions,
-    signer: wallet,
     programId: address(programId),
-    rpcUrl: rpcUrl // Pass the RPC URL to the client
+    defaultFeePayer: wallet.address,
+    commitment: 'confirmed',
+    cluster: selectedNetwork === 'mainnet-beta' ? 'mainnet-beta' : selectedNetwork as 'devnet' | 'testnet' | 'localnet',
+    rpcEndpoint: rpcUrl
   })
   
   // Check wallet balance
@@ -152,7 +158,29 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     console.warn('Balance check failed:', error.message)
   }
   
-  return { client, wallet, rpc, rpcSubscriptions }
+  // Add cleanup method to client
+  const originalClient = client
+  const enhancedClient = {
+    ...originalClient,
+    cleanup: async () => {
+      try {
+        // Close RPC subscriptions if they exist
+        if (rpcSubscriptions && typeof rpcSubscriptions.close === 'function') {
+          await rpcSubscriptions.close()
+        }
+        
+        // Close HTTP connections if possible
+        if (rpc && typeof rpc.close === 'function') {
+          await rpc.close()
+        }
+      } catch (error: any) {
+        // Silent cleanup - don't throw errors during cleanup
+        console.debug('Client cleanup warning:', error?.message)
+      }
+    }
+  }
+
+  return { client: enhancedClient, wallet, rpc, rpcSubscriptions }
 }
 
 /**

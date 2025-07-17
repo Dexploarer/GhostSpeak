@@ -31,6 +31,12 @@
     "test:performance": "tsx scripts/performance-benchmarks.ts",
     "test:error-recovery": "tsx scripts/error-recovery-tester.ts",
     "test:all-testnet": "npm run test:testnet && npm run test:performance && npm run test:error-recovery",
+    "test:integration": "vitest run tests/integration",
+    "test:perf": "vitest run tests/performance",
+    "test:security": "vitest run tests/security",
+    "test:uat": "vitest run tests/user-acceptance",
+    "test:all": "npm test && npm run test:integration && npm run test:perf && npm run test:security && npm run test:uat",
+    "test:coverage": "vitest run --coverage",
     "monitor:testnet": "tsx scripts/continuous-testnet-monitor.ts",
     "monitor:dashboard": "tsx scripts/continuous-testnet-monitor.ts dashboard",
     "ci:pipeline": "tsx scripts/automated-ci-testnet.ts",
@@ -74,6 +80,8 @@
     "@types/node": "^24.0.13",
     "typescript": "^5.3.0",
     "tsx": "^4.20.3",
-    "chalk": "^5.3.0"
+    "chalk": "^5.3.0",
+    "vitest": "^3.2.4",
+    "@vitest/coverage-v8": "^3.2.4"
   }
 }

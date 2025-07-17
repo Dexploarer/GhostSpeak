@@ -8,7 +8,11 @@ import type {
   GetAccountInfoApi,
   SimulateTransactionApi,
   GetFeeForMessageApi,
-  GetProgramAccountsApi
+  GetProgramAccountsApi,
+  GetEpochInfoApi,
+  GetSignatureStatusesApi,
+  SignatureNotificationsApi,
+  SlotNotificationsApi
 } from '@solana/kit'
 
 // Import generated types and re-export for convenience
@@ -24,6 +28,12 @@ export type RpcApi = Rpc<
   GetProgramAccountsApi
 >
 
+// Add missing API types for full RPC support
+export type ExtendedRpcApi = RpcApi & Rpc<GetEpochInfoApi & GetSignatureStatusesApi>
+
+// RPC Subscription types
+export type RpcSubscriptionApi = RpcSubscriptions<SignatureNotificationsApi & SlotNotificationsApi>
+
 export type Commitment = 'processed' | 'confirmed' | 'finalized'
 
 // Program ID - import from generated
@@ -32,8 +42,8 @@ export { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS as GHOSTSPEAK_PROGRAM_ID } from 
 // Configuration types
 export interface GhostSpeakConfig {
   programId?: Address
-  rpc: RpcApi
-  rpcSubscriptions?: RpcSubscriptions<any>
+  rpc: ExtendedRpcApi
+  rpcSubscriptions?: RpcSubscriptionApi
   commitment?: Commitment
   transactionTimeout?: number
   defaultFeePayer?: Address

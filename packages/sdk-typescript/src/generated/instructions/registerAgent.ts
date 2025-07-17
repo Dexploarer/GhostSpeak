@@ -115,7 +115,13 @@ export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentI
       ['metadataUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['agentId', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ]),
-    (value) => ({ ...value, discriminator: REGISTER_AGENT_DISCRIMINATOR })
+    (value) => {
+      // Ensure agentType is a valid number
+      if (typeof value.agentType !== 'number' || isNaN(value.agentType)) {
+        throw new Error(`Invalid agentType: ${value.agentType}. Must be a valid number.`);
+      }
+      return { ...value, discriminator: REGISTER_AGENT_DISCRIMINATOR };
+    }
   );
 }
 

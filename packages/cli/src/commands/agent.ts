@@ -48,9 +48,17 @@ agentCommand
       s.start('Registering agent on the blockchain...')
       
       try {
+        // Debug wallet and client info
+        console.log('\n🔍 Debug Info:')
+        console.log('Wallet address:', wallet.address ? wallet.address.toString() : 'NO ADDRESS')
+        console.log('Program ID:', client.config.programId?.toString())
+        console.log('Signer available:', !!wallet)
+        
         // Generate PDAs for agent registration
         const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
         const agentId = agentData.name.toLowerCase().replace(/\s+/g, '-')
+        
+        console.log('Agent ID:', agentId)
         
         // Derive agent PDA
         const [agentPda] = await getProgramDerivedAddress({
@@ -62,6 +70,8 @@ agentCommand
           ]
         })
         
+        console.log('Agent PDA:', agentPda.toString())
+        
         // Derive user registry PDA
         const [userRegistryPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
@@ -70,6 +80,9 @@ agentCommand
             getAddressEncoder().encode(wallet.address)
           ]
         })
+        
+        console.log('User Registry PDA:', userRegistryPda.toString())
+        console.log('\nCalling client.agent.register...')
         
         // Register the agent using SDK with all required parameters
         const signature = await client.agent.register(

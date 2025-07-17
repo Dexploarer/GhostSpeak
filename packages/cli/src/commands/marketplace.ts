@@ -260,14 +260,14 @@ marketplaceCommand
       console.log(chalk.gray(`  Agent Wallet: ${selectedCredentials.agentWallet.publicKey}`))
       
       // Get the agent's on-chain address for the listing
-      const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+      const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } = await import('@solana/kit')
       
       const [agentPda] = await getProgramDerivedAddress({
         programAddress: client.config.programId!,
         seeds: [
-          new TextEncoder().encode('agent'),
+          getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])), // 'agent'
           getAddressEncoder().encode(wallet.address),
-          new TextEncoder().encode(selectedCredentials.agentId)
+          addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(selectedCredentials.agentId)
         ]
       })
       
@@ -643,13 +643,12 @@ jobsCommand
         const deadlineTimestamp = BigInt(Date.now() + deadlineMs) / 1000n
         
         // Generate job posting address
-        const { getProgramDerivedAddress } = await import('@solana/kit')
-        const jobPostingId = `job-${Date.now()}`
+        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder } = await import('@solana/kit')
         const [jobPostingAddress] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
           seeds: [
-            new TextEncoder().encode('job_posting'),
-            new TextEncoder().encode(jobPostingId)
+            getBytesEncoder().encode(new Uint8Array([106, 111, 98, 95, 112, 111, 115, 116, 105, 110, 103])), // 'job_posting'
+            getAddressEncoder().encode(wallet.address)
           ]
         })
         

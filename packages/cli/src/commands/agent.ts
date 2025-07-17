@@ -71,24 +71,24 @@ agentCommand
         s.start('Registering agent on the blockchain...')
         
         // Generate PDAs for agent registration
-        const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } = await import('@solana/kit')
         const agentId = credentials.agentId
         
-        // Derive agent PDA (still using owner wallet for PDA derivation)
+        // Derive agent PDA using the same pattern as the generated code
         const [agentPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
           seeds: [
-            new TextEncoder().encode('agent'),
+            getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])), // 'agent'
             getAddressEncoder().encode(wallet.address),
-            new TextEncoder().encode(agentId)
+            addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(agentId)
           ]
         })
         
-        // Derive user registry PDA
+        // Derive user registry PDA using the same pattern as the generated code
         const [userRegistryPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
           seeds: [
-            new TextEncoder().encode('user_registry'),
+            getBytesEncoder().encode(new Uint8Array([117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121])), // 'user_registry'
             getAddressEncoder().encode(wallet.address)
           ]
         })

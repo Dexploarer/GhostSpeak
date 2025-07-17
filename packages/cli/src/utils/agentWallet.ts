@@ -11,6 +11,98 @@ import type { KeyPairSigner } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 
+/**
+ * Atomic file operations helper to prevent race conditions and resource leaks
+ */
+class AtomicFileManager {
+  private static locks = new Map<string, Promise<void>>()
+  
+  static async writeJSON<T>(filePath: string, data: T): Promise<void> {
+    const lockKey = filePath
+    
+    // Wait for any existing operations on this file
+    if (this.locks.has(lockKey)) {
+      await this.locks.get(lockKey)
+    }
+    
+    // Create new lock for this operation
+    const operation = this.performAtomicWrite(filePath, data)
+    this.locks.set(lockKey, operation)
+    
+    try {
+      await operation
+    } finally {
+      this.locks.delete(lockKey)
+    }
+  }
+  
+  private static async performAtomicWrite<T>(filePath: string, data: T): Promise<void> {
+    const tempPath = `${filePath}.tmp`
+    const backupPath = `${filePath}.backup`
+    
+    try {
+      // Create backup if original exists
+      try {
+        await fs.access(filePath)
+        await fs.copyFile(filePath, backupPath)
+      } catch {
+        // Original doesn't exist, no backup needed
+      }
+      
+      // Write to temporary file first
+      await fs.writeFile(tempPath, JSON.stringify(data, null, 2))
+      
+      // Atomic rename
+      await fs.rename(tempPath, filePath)
+      
+      // Clean up backup on success
+      try {
+        await fs.unlink(backupPath)
+      } catch {
+        // Backup cleanup failed, not critical
+      }
+      
+    } catch (error) {
+      // Cleanup temp file on error
+      try {
+        await fs.unlink(tempPath)
+      } catch {
+        // Temp cleanup failed, not critical
+      }
+      
+      // Restore from backup if possible
+      try {
+        await fs.access(backupPath)
+        await fs.copyFile(backupPath, filePath)
+        await fs.unlink(backupPath)
+      } catch {
+        // Backup restoration failed
+      }
+      
+      throw error
+    }
+  }
+  
+  static async readJSON<T>(filePath: string): Promise<T | null> {
+    const lockKey = filePath
+    
+    // Wait for any existing write operations
+    if (this.locks.has(lockKey)) {
+      await this.locks.get(lockKey)
+    }
+    
+    try {
+      const data = await fs.readFile(filePath, 'utf-8')
+      return JSON.parse(data)
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        return null
+      }
+      throw error
+    }
+  }
+}
+
 // Agent credential storage directory
 const AGENT_CREDENTIALS_DIR = join(homedir(), '.ghostspeak', 'agents')
 
@@ -90,19 +182,22 @@ export class AgentWalletManager {
     const credentialsPath = join(agentDir, 'credentials.json')
     await fs.writeFile(credentialsPath, JSON.stringify(credentials, null, 2))
     
-    // Save UUID mapping for easy lookup
+    // Save UUID mapping for easy lookup with atomic operations
     const uuidMappingPath = join(AGENT_CREDENTIALS_DIR, 'uuid-mapping.json')
-    let uuidMapping: Record<string, string> = {}
     
     try {
-      const existingMapping = await fs.readFile(uuidMappingPath, 'utf-8')
-      uuidMapping = JSON.parse(existingMapping)
-    } catch (error) {
-      // File doesn't exist, start with empty mapping
+      let uuidMapping: Record<string, string> = await AtomicFileManager.readJSON(uuidMappingPath) || {}
+      
+      // Update mapping
+      uuidMapping[credentials.uuid] = credentials.agentId
+      
+      // Atomic write to prevent corruption
+      await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
+      
+    } catch (error: any) {
+      console.error('Error updating UUID mapping:', error.message)
+      throw new Error(`Failed to update UUID mapping: ${error.message}`)
     }
-    
-    uuidMapping[credentials.uuid] = credentials.agentId
-    await fs.writeFile(uuidMappingPath, JSON.stringify(uuidMapping, null, 2))
   }
   
   /**
@@ -113,8 +208,13 @@ export class AgentWalletManager {
       const credentialsPath = join(AGENT_CREDENTIALS_DIR, agentId, 'credentials.json')
       const credentialsData = await fs.readFile(credentialsPath, 'utf-8')
       return JSON.parse(credentialsData)
-    } catch (error) {
-      return null
+    } catch (error: any) {
+      // Only return null for expected errors (file not found)
+      if (error.code === 'ENOENT') {
+        return null
+      }
+      console.error(`Error reading agent credentials for ${agentId}:`, error.message)
+      throw new Error(`Failed to read agent credentials for ${agentId}: ${error.message}`)
     }
   }
   
@@ -132,8 +232,13 @@ export class AgentWalletManager {
       if (!agentId) return null
       
       return await this.loadCredentials(agentId)
-    } catch (error) {
-      return null
+    } catch (error: any) {
+      // Only return null for expected errors (file not found)
+      if (error.code === 'ENOENT') {
+        return null
+      }
+      console.error(`Error loading credentials by UUID ${uuid}:`, error.message)
+      throw new Error(`Failed to load credentials by UUID: ${error.message}`)
     }
   }
   
@@ -155,8 +260,13 @@ export class AgentWalletManager {
       }
       
       return agents.sort((a, b) => b.createdAt - a.createdAt)
-    } catch (error) {
-      return []
+    } catch (error: any) {
+      // Only return empty array for expected errors (directory not found)
+      if (error.code === 'ENOENT') {
+        return []
+      }
+      console.error(`Error getting agents by owner ${ownerAddress}:`, error.message)
+      throw new Error(`Failed to get agents by owner: ${error.message}`)
     }
   }
   
@@ -193,15 +303,20 @@ export class AgentWalletManager {
     const credentials = await this.loadCredentials(agentId)
     if (!credentials) return
     
-    // Remove from UUID mapping
+    // Remove from UUID mapping with atomic operations
     const uuidMappingPath = join(AGENT_CREDENTIALS_DIR, 'uuid-mapping.json')
     try {
-      const mappingData = await fs.readFile(uuidMappingPath, 'utf-8')
-      const uuidMapping = JSON.parse(mappingData)
+      const uuidMapping: Record<string, string> = await AtomicFileManager.readJSON(uuidMappingPath) || {}
+      
+      // Remove the mapping
       delete uuidMapping[credentials.uuid]
-      await fs.writeFile(uuidMappingPath, JSON.stringify(uuidMapping, null, 2))
-    } catch (error) {
-      // Ignore if mapping file doesn't exist
+      
+      // Atomic write to prevent corruption
+      await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
+      
+    } catch (error: any) {
+      console.error('Error updating UUID mapping during deletion:', error.message)
+      // Don't throw here, continue with deletion as this is cleanup
     }
     
     // Remove agent directory
@@ -223,8 +338,13 @@ export class AgentWalletManager {
     try {
       const agentDirs = await fs.readdir(AGENT_CREDENTIALS_DIR)
       return agentDirs.filter(dir => dir !== 'uuid-mapping.json')
-    } catch (error) {
-      return []
+    } catch (error: any) {
+      // Only return empty array for expected errors (directory not found)
+      if (error.code === 'ENOENT') {
+        return []
+      }
+      console.error('Error listing agent IDs:', error.message)
+      throw new Error(`Failed to list agent IDs: ${error.message}`)
     }
   }
 }
@@ -247,9 +367,23 @@ export class AgentCNFTManager {
   }> {
     // Initialize Umi with connection
     const umi = createUmi(rpcUrl)
+    
+    // Create proper keypair identity from the signer
+    // The ownerWallet is a KeyPairSigner which has the private key internally
+    // We need to extract the bytes properly for Umi
+    const walletBytes = await ownerWallet.keyPair
+    const secretKey = new Uint8Array(64)
+    // Ed25519 keypairs are 64 bytes: 32 bytes private key + 32 bytes public key
+    if ('privateKey' in walletBytes && walletBytes.privateKey instanceof Uint8Array) {
+      secretKey.set(walletBytes.privateKey, 0)
+      secretKey.set(walletBytes.publicKey, 32)
+    } else {
+      throw new Error('Unable to extract private key from wallet signer')
+    }
+    
     umi.use(keypairIdentity({
       publicKey: ownerWallet.address,
-      secretKey: new Uint8Array(64) // This would need the actual secret key
+      secretKey: secretKey
     }))
     
     // Create a new merkle tree for the CNFT

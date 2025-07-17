@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol",
   "type": "module",
   "bin": {
@@ -49,7 +49,7 @@
   "dependencies": {
     "@clack/core": "^0.3.0",
     "@clack/prompts": "^0.11.0",
-    "@ghostspeak/sdk": "^1.4.2",
+    "@ghostspeak/sdk": "^1.5.0",
     "@metaplex-foundation/mpl-bubblegum": "^5.0.2",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",

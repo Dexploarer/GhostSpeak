@@ -2,18 +2,6 @@ import type { Address } from '@solana/addresses'
 import type { 
   IInstruction, 
   TransactionSigner,
-  Rpc,
-  GetLatestBlockhashApi,
-  SendTransactionApi,
-  GetAccountInfoApi,
-  SimulateTransactionApi,
-  GetFeeForMessageApi,
-  GetProgramAccountsApi,
-  GetEpochInfoApi,
-  GetSignatureStatusesApi,
-  RpcSubscriptions,
-  SignatureNotificationsApi,
-  SlotNotificationsApi,
   TransactionMessage,
   Signature
 } from '@solana/kit'
@@ -28,7 +16,7 @@ import {
   sendAndConfirmTransactionFactory,
   compileTransactionMessage
 } from '@solana/kit'
-import type { GhostSpeakConfig } from '../../types/index.js'
+import type { GhostSpeakConfig, ExtendedRpcApi, RpcSubscriptionApi } from '../../types/index.js'
 import { 
   createTransactionResult, 
   logTransactionDetails, 
@@ -50,15 +38,15 @@ export abstract class BaseInstructions {
   /**
    * Get the RPC client
    */
-  protected get rpc(): Rpc<GetLatestBlockhashApi & SendTransactionApi & GetAccountInfoApi & SimulateTransactionApi & GetFeeForMessageApi & GetProgramAccountsApi & GetEpochInfoApi & GetSignatureStatusesApi> {
-    return this.config.rpc as any
+  protected get rpc(): ExtendedRpcApi {
+    return this.config.rpc
   }
 
   /**
    * Get the RPC subscriptions client
    */
-  protected get rpcSubscriptions(): RpcSubscriptions<SignatureNotificationsApi & SlotNotificationsApi> | undefined {
-    return this.config.rpcSubscriptions as any
+  protected get rpcSubscriptions(): RpcSubscriptionApi | undefined {
+    return this.config.rpcSubscriptions
   }
 
   /**
@@ -81,9 +69,9 @@ export abstract class BaseInstructions {
   private getSendAndConfirmTransaction() {
     if (!this._sendAndConfirmTransaction) {
       // Only pass rpcSubscriptions if they exist
-      const factoryConfig: any = { rpc: this.rpc as any }
+      const factoryConfig = { rpc: this.rpc } as any
       if (this.rpcSubscriptions) {
-        factoryConfig.rpcSubscriptions = this.rpcSubscriptions as any
+        factoryConfig.rpcSubscriptions = this.rpcSubscriptions
       }
       this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig)
     }
@@ -145,7 +133,7 @@ export abstract class BaseInstructions {
       let result: any
       let signature: Signature
       
-      // If no subscriptions available, use polling method
+      // If no subscriptions available, use polling method with exponential backoff
       if (!this.rpcSubscriptions) {
         
         // Send transaction first
@@ -154,27 +142,59 @@ export abstract class BaseInstructions {
           preflightCommitment: this.commitment
         }).send()
         
-        
-        // Poll for confirmation
+        // Poll for confirmation with exponential backoff and better error handling
         let confirmed = false
         let attempts = 0
         const maxAttempts = 30
+        const baseDelay = 1000 // 1 second
+        let currentDelay = baseDelay
         
         while (!confirmed && attempts < maxAttempts) {
-          const status = await this.rpc.getSignatureStatuses([transactionSignature]).send()
-          
-          if (status.value[0] && status.value[0].confirmationStatus === this.commitment) {
-            confirmed = true
-            console.log('✅ Transaction confirmed!')
-          } else {
+          try {
+            const status = await this.rpc.getSignatureStatuses([transactionSignature]).send()
+            
+            if (status.value[0]) {
+              const confirmationStatus = status.value[0].confirmationStatus
+              const err = status.value[0].err
+              
+              // Check for transaction errors
+              if (err) {
+                throw new Error(`Transaction failed: ${JSON.stringify(err)}`)
+              }
+              
+              // Check for confirmation
+              if (confirmationStatus === this.commitment || 
+                  (this.commitment === 'confirmed' && confirmationStatus === 'finalized')) {
+                confirmed = true
+                console.log('✅ Transaction confirmed!')
+                break
+              }
+            }
+            
+            // Transaction still pending, wait with exponential backoff
             attempts++
             console.log(`⏳ Waiting for confirmation... (${attempts}/${maxAttempts})`)
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await new Promise(resolve => setTimeout(resolve, currentDelay))
+            
+            // Exponential backoff with max delay of 5 seconds
+            currentDelay = Math.min(currentDelay * 1.5, 5000)
+            
+          } catch (statusError: any) {
+            // Handle RPC errors gracefully
+            if (statusError.message?.includes('Transaction failed')) {
+              throw statusError // Re-throw transaction failures
+            }
+            
+            attempts++
+            console.warn(`⚠️ Status check failed (${attempts}/${maxAttempts}): ${statusError.message}`)
+            
+            // Wait longer after RPC errors
+            await new Promise(resolve => setTimeout(resolve, currentDelay * 2))
           }
         }
         
         if (!confirmed) {
-          throw new Error('Transaction confirmation timeout')
+          throw new Error(`Transaction confirmation timeout after ${maxAttempts} attempts. Signature: ${transactionSignature}`)
         }
         
         signature = transactionSignature as Signature
@@ -186,8 +206,19 @@ export abstract class BaseInstructions {
           skipPreflight: false
         })
         
-        // Extract signature from the transaction or result
-        signature = (result as any)?.signature || Object.values(signedTransaction.signatures || {})[0] || 'unknown_signature'
+        // Extract signature from the transaction or result safely
+        if (result && typeof result === 'object' && 'signature' in result) {
+          signature = result.signature as Signature
+        } else if (signedTransaction.signatures && typeof signedTransaction.signatures === 'object') {
+          const signatures = Object.values(signedTransaction.signatures)
+          if (signatures.length > 0 && typeof signatures[0] === 'string') {
+            signature = signatures[0] as Signature
+          } else {
+            throw new Error('Unable to extract transaction signature')
+          }
+        } else {
+          throw new Error('Transaction result missing signature')
+        }
       }
       
       // Detect cluster from RPC endpoint or config

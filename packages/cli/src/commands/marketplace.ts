@@ -13,6 +13,7 @@ import {
   log
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { AgentWalletManager, AgentCNFTManager } from '../utils/agentWallet.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 
@@ -196,37 +197,81 @@ marketplaceCommand
       const { client, wallet } = await initializeClient('devnet')
       s.stop('✅ Connected')
       
-      // First check if user has a registered agent
-      s.start('Checking for registered agent...')
-      const agents = await client.agent.listByOwner({ owner: wallet.address })
+      // Check for registered agents using new credential system
+      s.start('Checking for registered agents...')
       
-      if (agents.length === 0) {
+      const myAgentCredentials = await AgentWalletManager.getAgentsByOwner(wallet.address)
+      
+      if (myAgentCredentials.length === 0) {
         s.stop('❌ No agent found')
         console.log(chalk.yellow('\n⚠️  You need to register an agent first!'))
         outro('Run: npx ghostspeak agent register')
         return
       }
       
-      s.stop('✅ Agent found')
+      s.stop('✅ Agent(s) found')
       
-      // Select agent if multiple
-      let agentAddress = agents[0].address
-      if (agents.length > 1) {
-        const selectedAgent = await select({
+      // Select agent for the service listing
+      let selectedCredentials
+      if (myAgentCredentials.length === 1) {
+        selectedCredentials = myAgentCredentials[0]
+      } else {
+        const selectedAgentId = await select({
           message: 'Select agent for this service:',
-          options: agents.map(agent => ({
-            value: agent.address.toString(),
-            label: agent.name
+          options: myAgentCredentials.map(cred => ({
+            value: cred.agentId,
+            label: `${cred.name} (UUID: ${cred.uuid})`
           }))
         })
         
-        if (isCancel(selectedAgent)) {
+        if (isCancel(selectedAgentId)) {
           cancel('Service creation cancelled')
           return
         }
         
-        agentAddress = address(selectedAgent as string)
+        selectedCredentials = myAgentCredentials.find(cred => cred.agentId === selectedAgentId)
       }
+      
+      if (!selectedCredentials) {
+        cancel('Invalid agent selection')
+        return
+      }
+      
+      // Verify ownership using CNFT or credentials
+      s.start('Verifying agent ownership...')
+      
+      const ownershipVerified = await AgentCNFTManager.verifyOwnership(
+        selectedCredentials.uuid,
+        wallet.address,
+        client.config.rpcUrl || 'https://api.devnet.solana.com'
+      )
+      
+      if (!ownershipVerified) {
+        s.stop('❌ Ownership verification failed')
+        cancel('You do not own this agent')
+        return
+      }
+      
+      s.stop('✅ Ownership verified')
+      
+      console.log('\n' + chalk.green('✅ Using agent:'))
+      console.log(chalk.gray(`  Name: ${selectedCredentials.name}`))
+      console.log(chalk.gray(`  UUID: ${selectedCredentials.uuid}`))
+      console.log(chalk.gray(`  Agent Wallet: ${selectedCredentials.agentWallet.publicKey}`))
+      
+      // Get the agent's on-chain address for the listing
+      const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+      
+      const [agentPda] = await getProgramDerivedAddress({
+        programAddress: client.config.programId!,
+        seeds: [
+          new TextEncoder().encode('agent'),
+          getAddressEncoder().encode(wallet.address),
+          new TextEncoder().encode(selectedCredentials.agentId)
+        ]
+      })
+      
+      const agentAddress = agentPda
       
       s.start('Creating service listing on the blockchain...')
       
@@ -243,9 +288,13 @@ marketplaceCommand
 
         console.log('\n' + chalk.green('🎉 Your service is now live in the marketplace!'))
         console.log(chalk.gray(`Service ID: ${result.listingId.toString()}`))
+        console.log(chalk.gray(`Agent: ${selectedCredentials.name}`))
+        console.log(chalk.gray(`Agent UUID: ${selectedCredentials.uuid}`))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
         console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(result.listingId.toString(), 'devnet'))
+        console.log('')
+        console.log(chalk.yellow('💡 Service linked to agent via UUID for ownership verification'))
         
         outro('Service creation completed')
       } catch (error: any) {

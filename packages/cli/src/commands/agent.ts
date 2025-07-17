@@ -14,6 +14,7 @@ import {
 } from '@clack/prompts'
 import { registerAgentPrompts } from '../prompts/agent.js'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { AgentWalletManager, AgentCNFTManager, AgentBackupManager } from '../utils/agentWallet.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 
@@ -45,22 +46,37 @@ agentCommand
       const { client, wallet } = await initializeClient('devnet')
       s.stop('✅ Connected to Solana devnet')
       
-      s.start('Registering agent on the blockchain...')
+      s.start('Generating agent wallet and credentials...')
       
       try {
+        // Generate dedicated agent wallet and credentials
+        const { agentWallet, credentials } = await AgentWalletManager.generateAgentWallet(
+          agentData.name,
+          agentData.description,
+          wallet.address
+        )
+        
+        // Save credentials locally
+        await AgentWalletManager.saveCredentials(credentials)
+        
+        s.stop('✅ Agent wallet generated')
+        s.start('Registering agent on the blockchain...')
+        
         // Debug wallet and client info
         console.log('\n🔍 Debug Info:')
-        console.log('Wallet address:', wallet.address ? wallet.address.toString() : 'NO ADDRESS')
+        console.log('Owner wallet address:', wallet.address ? wallet.address.toString() : 'NO ADDRESS')
+        console.log('Agent wallet address:', agentWallet.address.toString())
+        console.log('Agent UUID:', credentials.uuid)
         console.log('Program ID:', client.config.programId?.toString())
         console.log('Signer available:', !!wallet)
         
         // Generate PDAs for agent registration
         const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
-        const agentId = agentData.name.toLowerCase().replace(/\s+/g, '-')
+        const agentId = credentials.agentId
         
         console.log('Agent ID:', agentId)
         
-        // Derive agent PDA
+        // Derive agent PDA (still using owner wallet for PDA derivation)
         const [agentPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
           seeds: [
@@ -98,14 +114,41 @@ agentCommand
         
         s.stop('✅ Agent registered successfully!')
         
+        // Mint CNFT ownership token
+        s.start('Minting agent ownership token (CNFT)...')
+        
+        try {
+          const { cnftMint, merkleTree } = await AgentCNFTManager.mintOwnershipToken(
+            credentials,
+            wallet,
+            client.config.rpcUrl || 'https://api.devnet.solana.com'
+          )
+          
+          console.log('CNFT Mint:', cnftMint)
+          console.log('Merkle Tree:', merkleTree)
+          
+          s.stop('✅ Ownership token minted')
+        } catch (error) {
+          console.warn('⚠️  CNFT minting failed (using credentials only):', error)
+          s.stop('⚠️  Using credential-based ownership')
+        }
+        
         console.log('\n' + chalk.green('🎉 Your agent has been registered!'))
         console.log(chalk.gray(`Name: ${agentData.name}`))
         console.log(chalk.gray(`Description: ${agentData.description}`))
         console.log(chalk.gray(`Capabilities: ${agentData.capabilities.join(', ')}`))
+        console.log(chalk.gray(`Agent ID: ${credentials.agentId}`))
+        console.log(chalk.gray(`Agent UUID: ${credentials.uuid}`))
+        console.log(chalk.gray(`Agent Wallet: ${agentWallet.address.toString()}`))
         console.log(chalk.gray(`Agent Address: ${agentPda}`))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(signature, 'devnet'))
         console.log(chalk.cyan('Agent Account:'), getAddressExplorerUrl(agentPda, 'devnet'))
+        console.log('')
+        console.log(chalk.yellow('💡 Agent credentials saved to:'))
+        console.log(chalk.gray(`   ~/.ghostspeak/agents/${credentials.agentId}/credentials.json`))
+        console.log(chalk.yellow('💡 Use your agent UUID for marketplace operations:'))
+        console.log(chalk.gray(`   ${credentials.uuid}`))
         
         outro('Agent registration completed')
       } catch (error: any) {
@@ -256,41 +299,67 @@ agentCommand
       
       s.start('Checking agent status...')
       
-      // Get user's agents
-      const myAgents = await client.agent.listByOwner({
+      // Get user's agents from credentials
+      const myAgentCredentials = await AgentWalletManager.getAgentsByOwner(wallet.address)
+      
+      // Also get agents from blockchain
+      const onChainAgents = await client.agent.listByOwner({
         owner: wallet.address
       })
       
       s.stop('✅ Status updated')
       
-      if (myAgents.length === 0) {
+      if (myAgentCredentials.length === 0) {
         console.log('\n' + chalk.yellow('You have no registered agents'))
         outro('Register an agent with: npx ghostspeak agent register')
         return
       }
 
       console.log('\n' + chalk.bold('Your Agents:'))
-      console.log('─'.repeat(50))
+      console.log('─'.repeat(60))
       
-      for (const agent of myAgents) {
+      for (const credentials of myAgentCredentials) {
+        // Find matching on-chain agent
+        const onChainAgent = onChainAgents.find(agent => 
+          agent.address && agent.address.toString() === credentials.agentWallet.publicKey
+        )
+        
         // Get agent status details
-        const status = await client.agent.getStatus({
-          agentAddress: agent.address
-        })
+        let status = null
+        if (onChainAgent) {
+          try {
+            status = await client.agent.getStatus({
+              agentAddress: onChainAgent.address
+            })
+          } catch (error) {
+            console.warn('Failed to get agent status:', error)
+          }
+        }
         
-        const statusIcon = agent.isActive ? chalk.green('●') : chalk.red('○')
-        const statusText = agent.isActive ? 'Active' : 'Inactive'
+        const statusIcon = onChainAgent?.isActive ? chalk.green('●') : chalk.red('○')
+        const statusText = onChainAgent?.isActive ? 'Active' : 'Inactive'
         
-        console.log(`${statusIcon} ${agent.name}` + chalk.gray(` - ${statusText}`))
-        console.log(chalk.gray(`  Address: ${agent.address.toString()}`))
-        console.log(chalk.gray(`  Jobs completed: ${status.jobsCompleted || 0}`))
-        console.log(chalk.gray(`  Total earnings: ${Number(status.totalEarnings || 0) / 1_000_000} SOL`))
-        console.log(chalk.gray(`  Success rate: ${status.successRate || 0}%`))
-        console.log(chalk.gray(`  Last active: ${status.lastActive ? new Date(Number(status.lastActive) * 1000).toLocaleString() : 'Never'}`))
+        console.log(`${statusIcon} ${credentials.name}` + chalk.gray(` - ${statusText}`))
+        console.log(chalk.gray(`  Agent ID: ${credentials.agentId}`))
+        console.log(chalk.gray(`  UUID: ${credentials.uuid}`))
+        console.log(chalk.gray(`  Agent Wallet: ${credentials.agentWallet.publicKey}`))
+        console.log(chalk.gray(`  Owner: ${credentials.ownerWallet}`))
+        console.log(chalk.gray(`  Created: ${new Date(credentials.createdAt).toLocaleString()}`))
         
-        if (status.currentJob) {
-          console.log(chalk.yellow('  Currently working on: ') + chalk.gray(status.currentJob.description))
-          console.log(chalk.gray(`  Job started: ${new Date(Number(status.currentJob.startTime) * 1000).toLocaleString()}`))
+        if (credentials.cnftMint) {
+          console.log(chalk.gray(`  CNFT Mint: ${credentials.cnftMint}`))
+        }
+        
+        if (status) {
+          console.log(chalk.gray(`  Jobs completed: ${status.jobsCompleted || 0}`))
+          console.log(chalk.gray(`  Total earnings: ${Number(status.totalEarnings || 0) / 1_000_000} SOL`))
+          console.log(chalk.gray(`  Success rate: ${status.successRate || 0}%`))
+          console.log(chalk.gray(`  Last active: ${status.lastActive ? new Date(Number(status.lastActive) * 1000).toLocaleString() : 'Never'}`))
+          
+          if (status.currentJob) {
+            console.log(chalk.yellow('  Currently working on: ') + chalk.gray(status.currentJob.description))
+            console.log(chalk.gray(`  Job started: ${new Date(Number(status.currentJob.startTime) * 1000).toLocaleString()}`))
+          }
         }
         
         console.log('')
@@ -956,3 +1025,354 @@ agentCommand
       log.error(`Failed to load analytics: ${error.message}`)
     }
   })
+
+// Agent credential management commands
+agentCommand
+  .command('credentials')
+  .description('Manage agent credentials')
+  .action(async () => {
+    intro(chalk.cyan('🔐 Agent Credentials Manager'))
+
+    try {
+      const { wallet } = await initializeClient('devnet')
+      
+      const action = await select({
+        message: 'What would you like to do?',
+        options: [
+          { value: 'list', label: '📋 List all agent credentials' },
+          { value: 'show', label: '👁️  Show agent details' },
+          { value: 'backup', label: '💾 Backup agent credentials' },
+          { value: 'restore', label: '📥 Restore agent credentials' },
+          { value: 'delete', label: '🗑️  Delete agent credentials' }
+        ]
+      })
+
+      if (isCancel(action)) {
+        cancel('Operation cancelled')
+        return
+      }
+
+      switch (action) {
+        case 'list':
+          await listCredentials(wallet.address)
+          break
+        case 'show':
+          await showCredentials(wallet.address)
+          break
+        case 'backup':
+          await backupCredentials(wallet.address)
+          break
+        case 'restore':
+          await restoreCredentials()
+          break
+        case 'delete':
+          await deleteCredentials(wallet.address)
+          break
+      }
+
+      outro('Credential management completed')
+    } catch (error) {
+      cancel(chalk.red('Error: ' + (error instanceof Error ? error.message : 'Unknown error')))
+    }
+  })
+
+// UUID lookup command
+agentCommand
+  .command('uuid')
+  .description('Look up agent by UUID')
+  .argument('[uuid]', 'Agent UUID')
+  .action(async (uuid) => {
+    intro(chalk.cyan('🔍 Agent UUID Lookup'))
+
+    try {
+      if (!uuid) {
+        uuid = await text({
+          message: 'Enter agent UUID:',
+          placeholder: 'e.g., 550e8400-e29b-41d4-a716-446655440000',
+          validate: (value) => {
+            if (!value) return 'UUID is required'
+            if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+              return 'Invalid UUID format'
+            }
+          }
+        })
+
+        if (isCancel(uuid)) {
+          cancel('Lookup cancelled')
+          return
+        }
+      }
+
+      const s = spinner()
+      s.start('Looking up agent...')
+      
+      const credentials = await AgentWalletManager.loadCredentialsByUuid(uuid as string)
+      
+      if (!credentials) {
+        s.stop('❌ Agent not found')
+        console.log(chalk.yellow('\nAgent not found for UUID: ' + uuid))
+        outro('Make sure the UUID is correct and the agent is registered on this device')
+        return
+      }
+
+      s.stop('✅ Agent found')
+
+      console.log('\n' + chalk.bold('🤖 Agent Details:'))
+      console.log('─'.repeat(50))
+      console.log(chalk.cyan('Name:') + ` ${credentials.name}`)
+      console.log(chalk.cyan('Agent ID:') + ` ${credentials.agentId}`)
+      console.log(chalk.cyan('UUID:') + ` ${credentials.uuid}`)
+      console.log(chalk.cyan('Description:') + ` ${credentials.description}`)
+      console.log(chalk.cyan('Agent Wallet:') + ` ${credentials.agentWallet.publicKey}`)
+      console.log(chalk.cyan('Owner:') + ` ${credentials.ownerWallet}`)
+      console.log(chalk.cyan('Created:') + ` ${new Date(credentials.createdAt).toLocaleString()}`)
+      console.log(chalk.cyan('Updated:') + ` ${new Date(credentials.updatedAt).toLocaleString()}`)
+      
+      if (credentials.cnftMint) {
+        console.log(chalk.cyan('CNFT Mint:') + ` ${credentials.cnftMint}`)
+      }
+      
+      if (credentials.merkleTree) {
+        console.log(chalk.cyan('Merkle Tree:') + ` ${credentials.merkleTree}`)
+      }
+
+      outro('Agent lookup completed')
+    } catch (error) {
+      cancel(chalk.red('Lookup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+    }
+  })
+
+// Helper functions for credential management
+async function listCredentials(ownerAddress: Address) {
+  const s = spinner()
+  s.start('Loading agent credentials...')
+  
+  const credentials = await AgentWalletManager.getAgentsByOwner(ownerAddress)
+  
+  s.stop('✅ Credentials loaded')
+  
+  if (credentials.length === 0) {
+    console.log('\n' + chalk.yellow('No agent credentials found'))
+    return
+  }
+
+  console.log('\n' + chalk.bold(`🔐 Your Agent Credentials (${credentials.length})`))
+  console.log('═'.repeat(70))
+
+  credentials.forEach((cred, index) => {
+    console.log(chalk.cyan(`${index + 1}. ${cred.name}`))
+    console.log(chalk.gray(`   Agent ID: ${cred.agentId}`))
+    console.log(chalk.gray(`   UUID: ${cred.uuid}`))
+    console.log(chalk.gray(`   Agent Wallet: ${cred.agentWallet.publicKey}`))
+    console.log(chalk.gray(`   Created: ${new Date(cred.createdAt).toLocaleString()}`))
+    console.log(chalk.gray(`   CNFT: ${cred.cnftMint ? '✅ Yes' : '❌ No'}`))
+    console.log('')
+  })
+}
+
+async function showCredentials(ownerAddress: Address) {
+  const credentials = await AgentWalletManager.getAgentsByOwner(ownerAddress)
+  
+  if (credentials.length === 0) {
+    console.log('\n' + chalk.yellow('No agent credentials found'))
+    return
+  }
+
+  const selectedAgentId = await select({
+    message: 'Select agent to view details:',
+    options: credentials.map(cred => ({
+      value: cred.agentId,
+      label: `${cred.name} (${cred.uuid})`
+    }))
+  })
+
+  if (isCancel(selectedAgentId)) {
+    return
+  }
+
+  const selectedCredentials = credentials.find(cred => cred.agentId === selectedAgentId)
+  
+  if (!selectedCredentials) {
+    console.log(chalk.red('Agent not found'))
+    return
+  }
+
+  console.log('\n' + chalk.bold('🔐 Agent Credentials:'))
+  console.log('─'.repeat(50))
+  console.log(chalk.cyan('Name:') + ` ${selectedCredentials.name}`)
+  console.log(chalk.cyan('Agent ID:') + ` ${selectedCredentials.agentId}`)
+  console.log(chalk.cyan('UUID:') + ` ${selectedCredentials.uuid}`)
+  console.log(chalk.cyan('Description:') + ` ${selectedCredentials.description}`)
+  console.log(chalk.cyan('Agent Wallet:') + ` ${selectedCredentials.agentWallet.publicKey}`)
+  console.log(chalk.cyan('Owner:') + ` ${selectedCredentials.ownerWallet}`)
+  console.log(chalk.cyan('Created:') + ` ${new Date(selectedCredentials.createdAt).toLocaleString()}`)
+  console.log(chalk.cyan('Updated:') + ` ${new Date(selectedCredentials.updatedAt).toLocaleString()}`)
+  
+  if (selectedCredentials.cnftMint) {
+    console.log(chalk.cyan('CNFT Mint:') + ` ${selectedCredentials.cnftMint}`)
+    console.log(chalk.cyan('Merkle Tree:') + ` ${selectedCredentials.merkleTree}`)
+  }
+}
+
+async function backupCredentials(ownerAddress: Address) {
+  const credentials = await AgentWalletManager.getAgentsByOwner(ownerAddress)
+  
+  if (credentials.length === 0) {
+    console.log('\n' + chalk.yellow('No agent credentials found'))
+    return
+  }
+
+  const backupType = await select({
+    message: 'Backup type:',
+    options: [
+      { value: 'single', label: '📄 Single agent backup' },
+      { value: 'all', label: '📦 Backup all agents' }
+    ]
+  })
+
+  if (isCancel(backupType)) {
+    return
+  }
+
+  if (backupType === 'single') {
+    const selectedAgentId = await select({
+      message: 'Select agent to backup:',
+      options: credentials.map(cred => ({
+        value: cred.agentId,
+        label: `${cred.name} (${cred.uuid})`
+      }))
+    })
+
+    if (isCancel(selectedAgentId)) {
+      return
+    }
+
+    const backupPath = await text({
+      message: 'Backup file path:',
+      placeholder: `./agent-backup-${selectedAgentId}.json`,
+      validate: (value) => {
+        if (!value) return 'Backup path is required'
+      }
+    })
+
+    if (isCancel(backupPath)) {
+      return
+    }
+
+    const s = spinner()
+    s.start('Creating backup...')
+    
+    try {
+      await AgentBackupManager.backupAgent(selectedAgentId as string, backupPath as string)
+      s.stop('✅ Backup created')
+      console.log(chalk.green(`\n✅ Agent backup saved to: ${backupPath}`))
+    } catch (error) {
+      s.stop('❌ Backup failed')
+      console.log(chalk.red('Backup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+    }
+  } else {
+    const backupDir = await text({
+      message: 'Backup directory:',
+      placeholder: './agent-backups',
+      validate: (value) => {
+        if (!value) return 'Backup directory is required'
+      }
+    })
+
+    if (isCancel(backupDir)) {
+      return
+    }
+
+    const s = spinner()
+    s.start('Creating backups...')
+    
+    try {
+      await AgentBackupManager.backupAllAgents(ownerAddress, backupDir as string)
+      s.stop('✅ Backups created')
+      console.log(chalk.green(`\n✅ All agent backups saved to: ${backupDir}`))
+    } catch (error) {
+      s.stop('❌ Backup failed')
+      console.log(chalk.red('Backup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+    }
+  }
+}
+
+async function restoreCredentials() {
+  const backupPath = await text({
+    message: 'Backup file path:',
+    placeholder: './agent-backup.json',
+    validate: (value) => {
+      if (!value) return 'Backup path is required'
+    }
+  })
+
+  if (isCancel(backupPath)) {
+    return
+  }
+
+  const s = spinner()
+  s.start('Restoring agent...')
+  
+  try {
+    const agentId = await AgentBackupManager.restoreAgent(backupPath as string)
+    s.stop('✅ Agent restored')
+    console.log(chalk.green(`\n✅ Agent restored: ${agentId}`))
+  } catch (error) {
+    s.stop('❌ Restore failed')
+    console.log(chalk.red('Restore failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+  }
+}
+
+async function deleteCredentials(ownerAddress: Address) {
+  const credentials = await AgentWalletManager.getAgentsByOwner(ownerAddress)
+  
+  if (credentials.length === 0) {
+    console.log('\n' + chalk.yellow('No agent credentials found'))
+    return
+  }
+
+  const selectedAgentId = await select({
+    message: 'Select agent to delete:',
+    options: credentials.map(cred => ({
+      value: cred.agentId,
+      label: `${cred.name} (${cred.uuid})`
+    }))
+  })
+
+  if (isCancel(selectedAgentId)) {
+    return
+  }
+
+  const selectedCredentials = credentials.find(cred => cred.agentId === selectedAgentId)
+  
+  if (!selectedCredentials) {
+    console.log(chalk.red('Agent not found'))
+    return
+  }
+
+  console.log('\n' + chalk.bold('⚠️  WARNING: This will permanently delete agent credentials'))
+  console.log(chalk.red('Agent to delete:') + ` ${selectedCredentials.name}`)
+  console.log(chalk.red('UUID:') + ` ${selectedCredentials.uuid}`)
+  console.log(chalk.yellow('This action cannot be undone!'))
+
+  const confirmed = await confirm({
+    message: 'Are you sure you want to delete these credentials?'
+  })
+
+  if (isCancel(confirmed) || !confirmed) {
+    console.log(chalk.gray('Deletion cancelled'))
+    return
+  }
+
+  const s = spinner()
+  s.start('Deleting credentials...')
+  
+  try {
+    await AgentWalletManager.deleteCredentials(selectedCredentials.agentId)
+    s.stop('✅ Credentials deleted')
+    console.log(chalk.green(`\n✅ Agent credentials deleted: ${selectedCredentials.name}`))
+  } catch (error) {
+    s.stop('❌ Deletion failed')
+    console.log(chalk.red('Deletion failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+  }
+}

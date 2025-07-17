@@ -299,10 +299,21 @@ export class AgentInstructions extends BaseInstructions {
       )
       
       // Filter agents owned by the specified address
+      console.log('🔍 Debug: Total accounts fetched:', accounts.length)
+      
       const ownerAgents = accounts
-        .map(({ data }) => data)
+        .map(({ data, address }) => {
+          console.log('🔍 Debug: Agent account:', {
+            address: address.toString(),
+            owner: data.owner?.toString(),
+            name: data.name,
+            isActive: data.isActive
+          })
+          return { ...data, address }
+        })
         .filter(agent => agent.owner?.toString() === options.owner.toString())
       
+      console.log('🔍 Debug: Filtered agents for owner:', ownerAgents.length)
       return ownerAgents
     } catch (error) {
       console.warn('Failed to fetch agents by owner:', error)

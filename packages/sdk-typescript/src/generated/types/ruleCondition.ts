@@ -8,8 +8,8 @@
 
 import {
   combineCodec,
-  getStringDecoder,
-  getStringEncoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   getStructDecoder,
   getStructEncoder,
   type Codec,
@@ -56,9 +56,9 @@ export type RuleConditionArgs = {
 export function getRuleConditionEncoder(): Encoder<RuleConditionArgs> {
   return getStructEncoder([
     ['conditionType', getConditionTypeEncoder()],
-    ['field', getStringEncoder()],
-    ['operator', getStringEncoder()],
-    ['value', getStringEncoder()],
+    ['field', getUtf8Encoder()],
+    ['operator', getUtf8Encoder()],
+    ['value', getUtf8Encoder()],
     ['valueType', getValueTypeEncoder()],
   ]);
 }
@@ -66,9 +66,9 @@ export function getRuleConditionEncoder(): Encoder<RuleConditionArgs> {
 export function getRuleConditionDecoder(): Decoder<RuleCondition> {
   return getStructDecoder([
     ['conditionType', getConditionTypeDecoder()],
-    ['field', getStringDecoder()],
-    ['operator', getStringDecoder()],
-    ['value', getStringDecoder()],
+    ['field', getUtf8Decoder()],
+    ['operator', getUtf8Decoder()],
+    ['value', getUtf8Decoder()],
     ['valueType', getValueTypeDecoder()],
   ]);
 }

@@ -6,7 +6,7 @@
  */
 
 import { Command } from 'commander'
-import { generateKeyPairSigner, createSolanaRpc, createDefaultRpcTransport, address } from '@solana/kit'
+import { generateKeyPairSigner, createSolanaRpc, address } from '@solana/kit'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
@@ -155,8 +155,7 @@ async function requestFromRpcAirdrop(
       ? 'https://api.devnet.solana.com'
       : 'https://api.testnet.solana.com'
 
-    const transport = createDefaultRpcTransport({ url: rpcUrl })
-    const rpc = createSolanaRpc({ transport })
+    const rpc = createSolanaRpc(rpcUrl)
 
     // Request airdrop via RPC
     const { value: signature } = await rpc.requestAirdrop(
@@ -244,8 +243,7 @@ async function checkBalance(walletAddress: string, network: 'devnet' | 'testnet'
       ? 'https://api.devnet.solana.com'
       : 'https://api.testnet.solana.com'
 
-    const transport = createDefaultRpcTransport({ url: rpcUrl })
-    const rpc = createSolanaRpc({ transport })
+    const rpc = createSolanaRpc(rpcUrl)
 
     const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
     return Number(balance) / 1_000_000_000 // Convert lamports to SOL

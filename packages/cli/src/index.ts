@@ -12,6 +12,9 @@ import { configCommand } from './commands/config.js'
 import { setupFaucetCommand } from './commands/faucet.js'
 import { sdkCommand } from './commands/sdk.js'
 import { updateCommand } from './commands/update.js'
+import { auctionCommand } from './commands/auction.js'
+import { disputeCommand } from './commands/dispute.js'
+import { governanceCommand } from './commands/governance.js'
 import { checkForUpdates } from './utils/update-check.js'
 import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
@@ -74,6 +77,9 @@ async function main() {
     program.addCommand(marketplaceCommand)
     program.addCommand(escrowCommand)
     program.addCommand(channelCommand)
+    program.addCommand(auctionCommand)
+    program.addCommand(disputeCommand)
+    program.addCommand(governanceCommand)
     program.addCommand(configCommand)
     program.addCommand(sdkCommand)
     program.addCommand(updateCommand)

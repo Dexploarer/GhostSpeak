@@ -49,7 +49,7 @@ export class GhostSpeakRpcClient {
       const result = await this.rpc.getAccountInfo(address, {
         commitment,
         encoding: 'base64'
-      }).send()
+      })
       return result.value
     } catch (error) {
       console.warn(`Failed to fetch account ${address}:`, error)
@@ -68,7 +68,7 @@ export class GhostSpeakRpcClient {
       const result = await this.rpc.getMultipleAccounts(addresses, {
         commitment,
         encoding: 'base64'
-      }).send()
+      })
       return result.value
     } catch (error) {
       console.warn('Failed to fetch multiple accounts:', error)
@@ -89,7 +89,7 @@ export class GhostSpeakRpcClient {
         commitment,
         encoding: 'base64',
         filters
-      }).send()
+      })
       
       return (result.value || []).map((item: any) => ({
         address: item.pubkey,

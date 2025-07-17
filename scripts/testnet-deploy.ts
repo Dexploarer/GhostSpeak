@@ -315,7 +315,7 @@ class TestnetDeployer {
 async function main(): Promise<void> {
   const config: DeploymentConfig = {
     network: 'testnet',
-    programId: '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK',
+    programId: 'AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR',
     keypairPath: process.env.SOLANA_KEYPAIR_PATH || '~/.config/solana/id.json',
     rpcUrl: process.env.TESTNET_RPC_URL || 'https://api.testnet.solana.com',
     confirmationTimeout: 30000,

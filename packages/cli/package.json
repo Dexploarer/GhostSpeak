@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "1.3.8",
+  "version": "1.0.0",
   "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol",
   "type": "module",
   "bin": {
@@ -56,7 +56,7 @@
     "figlet": "^1.7.0",
     "@types/figlet": "^1.5.0",
     "picocolors": "^1.1.1",
-    "@ghostspeak/sdk": "^1.1.4",
+    "@ghostspeak/sdk": "^1.2.0",
     "@solana/kit": "^2.3.0"
   },
   "devDependencies": {

@@ -24,7 +24,7 @@ import { address, generateKeyPairSigner } from '@solana/kit'
 import type { Address, TransactionSigner } from '@solana/kit'
 
 describe('PDA Utilities', () => {
-  const programId: Address = address('5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK')
+  const programId: Address = address('AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR')
   let owner: TransactionSigner
   let agent: TransactionSigner
   let buyer: TransactionSigner

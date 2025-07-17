@@ -15,7 +15,7 @@ export const testConstants = {
   CONFIRMATION_TIMEOUT: 10000, // 10 seconds
   MOCK_BLOCKHASH: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
   MOCK_SLOT: 150000000n,
-  PROGRAM_ID: '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK'
+  PROGRAM_ID: 'AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR'
 }
 
 // Mock RPC factory for unit tests

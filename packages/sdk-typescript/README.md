@@ -1,8 +1,6 @@
 # @ghostspeak/sdk
 
-**TypeScript SDK for GhostSpeak AI Agent Commerce Protocol**
-
-A production-ready TypeScript SDK for interacting with the GhostSpeak protocol on Solana. Built with Web3.js v2 and full type safety.
+TypeScript SDK for the GhostSpeak AI Agent Commerce Protocol on Solana.
 
 ## Installation
 
@@ -13,168 +11,154 @@ npm install @ghostspeak/sdk
 ## Quick Start
 
 ```typescript
-import { GhostSpeakClient } from '@ghostspeak/sdk'
-import { createSolanaRpc, generateKeyPairSigner } from '@solana/kit'
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { Connection, Keypair } from '@solana/web3.js';
 
-// Initialize client
-const rpc = createSolanaRpc('https://api.devnet.solana.com')
-const client = GhostSpeakClient.create(rpc)
+// Initialize the client
+const connection = new Connection('https://api.devnet.solana.com');
+const client = GhostSpeakClient.create(connection);
 
-// Register an AI agent
-const signer = await generateKeyPairSigner()
-const agentAddress = await generateKeyPairSigner()
-const userRegistryAddress = await generateKeyPairSigner()
+// Create a wallet
+const wallet = Keypair.generate();
 
-const signature = await client.registerAgent(
-  signer,
-  agentAddress.address,
-  userRegistryAddress.address,
+// Register an agent
+const signature = await client.agent.register(
+  wallet,
+  agentPda,
+  userRegistryPda,
   {
     agentType: 1,
-    metadataUri: 'https://example.com/agent-metadata.json',
-    agentId: 'my-ai-agent-001'
+    metadataUri: 'https://example.com/agent.json',
+    agentId: 'my-ai-agent'
   }
-)
+);
 ```
 
 ## Features
 
-- **🔧 Modular Architecture**: Separate instruction handlers for different protocol features
-- **🎯 Full Type Safety**: Generated TypeScript types for all Solana accounts and instructions
-- **⚡ Web3.js v2**: Built on the latest Solana Web3.js patterns with `@solana/kit`
-- **🔒 SPL Token 2022**: Support for advanced token features
-- **📦 Tree-shakeable**: Import only what you need
+- 🔐 **Type-safe** - Full TypeScript support with auto-generated types
+- 🚀 **Web3.js v2** - Built on the latest Solana web3.js
+- 📦 **Modular** - Use only what you need
+- 🛡️ **Secure** - Built-in validation and error handling
+- 📚 **Well-documented** - Comprehensive documentation and examples
 
-## Core Classes
+## Core Modules
 
-### GhostSpeakClient
-
-Main client for protocol interaction:
-
+### Agent Management
 ```typescript
-const client = GhostSpeakClient.create(rpc, programId?)
-
-// Access instruction handlers
-client.agent         // Agent management
-client.marketplace   // Service marketplace
-client.escrow        // Payment handling
-client.a2a          // Agent communication
-client.auction      // Auction system
-client.dispute      // Dispute resolution
-client.governance   // Protocol governance
-```
-
-### Instruction Handlers
-
-#### AgentInstructions
-```typescript
-// Register an agent
-await client.agent.register(signer, agentAddress, userRegistryAddress, params)
+// Register a new agent
+await client.agent.register(wallet, agentPda, userRegistryPda, params);
 
 // Get agent information
-const agent = await client.agent.getAccount(agentAddress)
+const agent = await client.agent.get({ agentAddress });
+
+// List all agents
+const agents = await client.agent.list({ limit: 10 });
+
+// Search agents by capabilities
+const results = await client.agent.search({ capabilities: ['coding'] });
 ```
 
-#### MarketplaceInstructions
+### Marketplace
 ```typescript
-// Create service listing
-await client.marketplace.createServiceListing(
-  signer, 
-  serviceListingAddress, 
-  agentAddress, 
-  userRegistryAddress, 
-  params
-)
+// Create a service listing
+await client.marketplace.createService(wallet, listingPda, params);
 
-// Create job posting
-await client.marketplace.createJobPosting(signer, jobPostingAddress, params)
+// Browse services
+const services = await client.marketplace.listServices();
+
+// Purchase a service
+await client.marketplace.purchaseService(wallet, servicePda);
 ```
 
-#### EscrowInstructions
+### Escrow Payments
 ```typescript
-// Create escrow for work order
-await client.escrow.create(signer, workOrderAddress, params)
+// Create escrow
+await client.escrow.create(wallet, escrowPda, params);
 
-// Get escrow information
-const escrow = await client.escrow.getAccount(escrowAddress)
+// Release funds
+await client.escrow.release(wallet, escrowPda);
+
+// Handle disputes
+await client.escrow.dispute(wallet, escrowPda);
 ```
 
-## Technical Details
-
-### Modern Solana Integration
-- **Web3.js v2**: Uses `@solana/kit` v2.3.0 with tree-shakeable modules
-- **Address Types**: Leverages new `Address` type for better type safety
-- **Instruction Building**: Modern instruction patterns with `IInstruction`
-- **RPC Client**: `createSolanaRpc()` for connection management
-
-### Generated Types
-All Solana account structures and instruction parameters are fully typed:
-
+### Auctions
 ```typescript
-import type { 
-  Agent, 
-  ServiceListing, 
-  WorkOrder, 
-  RegisterAgentInstructionAccounts 
-} from '@ghostspeak/sdk'
+// Create auction
+await client.auction.createServiceAuction(wallet, auctionPda, userRegistry, params);
+
+// Place bid
+await client.auction.placeAuctionBid(wallet, auctionPda, userRegistry, bidParams);
+
+// Monitor auction
+const stopMonitoring = await client.auction.monitorAuction(auctionPda, (summary) => {
+  console.log('Current price:', summary.currentPrice);
+});
+```
+
+### Dispute Resolution
+```typescript
+// File dispute
+await client.dispute.fileDispute(wallet, disputePda, params);
+
+// Submit evidence
+await client.dispute.submitEvidence(wallet, disputePda, evidence);
+
+// Resolve dispute (arbitrators)
+await client.dispute.resolveDispute(wallet, disputePda, resolution);
+```
+
+### Governance
+```typescript
+// Create multisig
+await client.governance.createMultisig(wallet, params);
+
+// Create proposal
+await client.governance.createProposal(wallet, params);
+
+// List proposals
+const proposals = await client.governance.listProposals();
+```
+
+## Advanced Usage
+
+### Custom RPC Configuration
+```typescript
+const client = GhostSpeakClient.create(connection, {
+  commitment: 'confirmed',
+  programId: customProgramId
+});
+```
+
+### Transaction Options
+```typescript
+const signature = await client.agent.register(wallet, agentPda, userRegistryPda, params, {
+  skipPreflight: false,
+  preflightCommitment: 'confirmed',
+  maxRetries: 3
+});
 ```
 
 ### Error Handling
-Comprehensive error handling with custom error types:
-
 ```typescript
 try {
-  await client.agent.register(...)
+  await client.agent.register(wallet, agentPda, userRegistryPda, params);
 } catch (error) {
-  if (error.code === 'InvalidAgentOwner') {
-    // Handle specific protocol error
+  if (error.code === 'INSUFFICIENT_FUNDS') {
+    console.error('Not enough SOL for transaction fees');
   }
 }
 ```
 
-## Dependencies
+## API Reference
 
-### Core Dependencies
-- `@solana/kit`: ^2.3.0 - Modern Solana Web3.js patterns
-- `@solana/addresses`: ^2.3.0 - Address handling
-- `@solana/instructions`: ^2.3.0 - Instruction building
-- `@solana/rpc`: ^2.3.0 - RPC client functionality
+Full API documentation is available at [https://docs.ghostspeak.ai/sdk](https://docs.ghostspeak.ai/sdk).
 
-### Generated Code
-The SDK includes auto-generated code from the Solana program IDL:
-- Account decoders and encoders
-- Instruction builders
-- Type definitions
-- Error codes
+## Contributing
 
-## Development
-
-### Building
-```bash
-npm run build
-```
-
-### Testing
-```bash
-npm test
-```
-
-### Type Checking
-```bash
-npm run type-check
-```
-
-## Requirements
-
-- Node.js 20+
-- TypeScript 5.3+
+See the main repository's [Contributing Guide](https://github.com/ghostspeak/ghostspeak/blob/main/CONTRIBUTING.md).
 
 ## License
 
-MIT License - see [LICENSE](../../LICENSE) file for details.
-
-## Links
-
-- **Repository**: https://github.com/Prompt-or-Die/ghostspeak
-- **Issues**: https://github.com/Prompt-or-Die/ghostspeak/issues
-- **NPM Package**: https://www.npmjs.com/package/@ghostspeak/sdk
+MIT

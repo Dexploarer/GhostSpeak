@@ -47,7 +47,7 @@ describe.skipIf(SKIP_E2E)('E2E Tests with Local Validator', () => {
       rpc = createSolanaRpc('http://127.0.0.1:8899')
       
       // Use the test program ID (you might need to deploy first)
-      programId = address('5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK')
+      programId = address('AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR')
       
       // Create client
       client = new GhostSpeakClient(rpc, programId)

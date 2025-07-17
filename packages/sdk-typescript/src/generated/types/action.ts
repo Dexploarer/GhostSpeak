@@ -8,12 +8,12 @@
 
 import {
   combineCodec,
-  getStringDecoder,
-  getStringEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   getStructDecoder,
   getStructEncoder,
-  getVecDecoder,
-  getVecEncoder,
   type Codec,
   type Decoder,
   type Encoder,
@@ -34,19 +34,19 @@ export type ActionArgs = Action;
 
 export function getActionEncoder(): Encoder<ActionArgs> {
   return getStructEncoder([
-    ['actionId', getStringEncoder()],
-    ['resource', getStringEncoder()],
-    ['operation', getStringEncoder()],
-    ['constraints', getVecEncoder(getStringEncoder())],
+    ['actionId', getUtf8Encoder()],
+    ['resource', getUtf8Encoder()],
+    ['operation', getUtf8Encoder()],
+    ['constraints', getArrayEncoder(getUtf8Encoder())],
   ]);
 }
 
 export function getActionDecoder(): Decoder<Action> {
   return getStructDecoder([
-    ['actionId', getStringDecoder()],
-    ['resource', getStringDecoder()],
-    ['operation', getStringDecoder()],
-    ['constraints', getVecDecoder(getStringDecoder())],
+    ['actionId', getUtf8Decoder()],
+    ['resource', getUtf8Decoder()],
+    ['operation', getUtf8Decoder()],
+    ['constraints', getArrayDecoder(getUtf8Decoder())],
   ]);
 }
 

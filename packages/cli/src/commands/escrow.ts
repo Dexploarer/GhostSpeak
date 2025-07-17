@@ -13,6 +13,7 @@ import {
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
+import { getAddressEncoder } from '@solana/kit'
 import { WorkOrderStatus } from '@ghostspeak/sdk'
 
 export const escrowCommand = new Command('escrow')
@@ -80,25 +81,29 @@ escrowCommand
       const { client, wallet } = await initializeClient('devnet')
       s.stop('✅ Connected')
       
+      // Ensure wallet has an address
+      if (!wallet || !wallet.address) {
+        throw new Error('No wallet found. Please run: ghostspeak faucet --save')
+      }
+      
       s.start('Creating escrow contract...')
 
       try {
         // Generate a unique order ID
         const orderId = BigInt(Date.now())
         
-        // Generate PDA for work order using proper derivation
-        const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+        // Generate PDA for work order using manual derivation (SDK function has bug)
+        const { getProgramDerivedAddress, getU64Encoder } = await import('@solana/kit')
         
         let workOrderPda: any
         try {
-          // Generate a proper PDA for the work order
-          const addressEncoder = getAddressEncoder()
-          const [pda, bump] = await getProgramDerivedAddress({
+          // Use manual PDA derivation that matches smart contract exactly
+          const [pda] = await getProgramDerivedAddress({
             programAddress: client.config.programId!,
             seeds: [
-              new TextEncoder().encode('work_order'),
-              new TextEncoder().encode(orderId.toString()),
-              addressEncoder.encode(wallet.address)
+              new TextEncoder().encode('work_order'),  // b"work_order"
+              getAddressEncoder().encode(wallet.address), // client.key().as_ref()
+              getU64Encoder().encode(orderId) // &order_id.to_le_bytes()
             ]
           })
           workOrderPda = pda
@@ -125,7 +130,7 @@ escrowCommand
             workOrderPda,
             {
               orderId,
-              provider: address(recipient as string),
+              provider: recipient as Address,
               title: `Work Order #${orderId}`,
               description: workDescription as string,
               requirements: ['No specific requirements'], // Try with non-empty array

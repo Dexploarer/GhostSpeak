@@ -10,8 +10,8 @@ import {
   combineCodec,
   getOptionDecoder,
   getOptionEncoder,
-  getStringDecoder,
-  getStringEncoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   getStructDecoder,
   getStructEncoder,
   getU64Decoder,
@@ -65,27 +65,27 @@ export type AuditContextArgs = {
 
 export function getAuditContextEncoder(): Encoder<AuditContextArgs> {
   return getStructEncoder([
-    ['transactionSignature', getOptionEncoder(getStringEncoder())],
+    ['transactionSignature', getOptionEncoder(getUtf8Encoder())],
     ['blockNumber', getOptionEncoder(getU64Encoder())],
-    ['ipAddress', getOptionEncoder(getStringEncoder())],
-    ['userAgent', getOptionEncoder(getStringEncoder())],
-    ['geoLocation', getOptionEncoder(getStringEncoder())],
-    ['sessionId', getOptionEncoder(getStringEncoder())],
+    ['ipAddress', getOptionEncoder(getUtf8Encoder())],
+    ['userAgent', getOptionEncoder(getUtf8Encoder())],
+    ['geoLocation', getOptionEncoder(getUtf8Encoder())],
+    ['sessionId', getOptionEncoder(getUtf8Encoder())],
     ['riskScore', getU8Encoder()],
-    ['metadata', getOptionEncoder(getStringEncoder())],
+    ['metadata', getOptionEncoder(getUtf8Encoder())],
   ]);
 }
 
 export function getAuditContextDecoder(): Decoder<AuditContext> {
   return getStructDecoder([
-    ['transactionSignature', getOptionDecoder(getStringDecoder())],
+    ['transactionSignature', getOptionDecoder(getUtf8Decoder())],
     ['blockNumber', getOptionDecoder(getU64Decoder())],
-    ['ipAddress', getOptionDecoder(getStringDecoder())],
-    ['userAgent', getOptionDecoder(getStringDecoder())],
-    ['geoLocation', getOptionDecoder(getStringDecoder())],
-    ['sessionId', getOptionDecoder(getStringDecoder())],
+    ['ipAddress', getOptionDecoder(getUtf8Decoder())],
+    ['userAgent', getOptionDecoder(getUtf8Decoder())],
+    ['geoLocation', getOptionDecoder(getUtf8Decoder())],
+    ['sessionId', getOptionDecoder(getUtf8Decoder())],
     ['riskScore', getU8Decoder()],
-    ['metadata', getOptionDecoder(getStringDecoder())],
+    ['metadata', getOptionDecoder(getUtf8Decoder())],
   ]);
 }
 

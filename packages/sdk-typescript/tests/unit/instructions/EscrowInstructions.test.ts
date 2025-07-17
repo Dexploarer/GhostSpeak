@@ -50,7 +50,7 @@ describe('EscrowInstructions', () => {
     buyer = await generateKeyPairSigner()
     seller = await generateKeyPairSigner()
     arbitrator = await generateKeyPairSigner()
-    programId = address('5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK')
+    programId = address('AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR')
 
     escrowInstructions = new EscrowInstructions(mockRpc, programId)
   })

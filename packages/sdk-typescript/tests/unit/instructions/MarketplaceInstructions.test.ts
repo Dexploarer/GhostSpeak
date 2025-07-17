@@ -48,7 +48,7 @@ describe('MarketplaceInstructions', () => {
     payer = await generateKeyPairSigner()
     agent = await generateKeyPairSigner()
     buyer = await generateKeyPairSigner()
-    programId = address('5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK')
+    programId = address('AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR')
 
     marketplaceInstructions = new MarketplaceInstructions(mockRpc, programId)
   })

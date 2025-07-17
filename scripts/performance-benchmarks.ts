@@ -483,7 +483,7 @@ class PerformanceBenchmarker {
 async function main(): Promise<void> {
   const config: BenchmarkConfig = {
     network: 'testnet',
-    programId: '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK',
+    programId: 'AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR',
     rpcUrl: process.env.TESTNET_RPC_URL || 'https://api.testnet.solana.com',
     testDuration: 30000, // 30 seconds per operation type
     maxConcurrency: 20,

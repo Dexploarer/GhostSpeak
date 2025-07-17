@@ -464,7 +464,7 @@ class TestnetTestRunner {
 async function main(): Promise<void> {
   const config: TestConfig = {
     network: 'testnet',
-    programId: '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK',
+    programId: 'AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR',
     rpcUrl: process.env.TESTNET_RPC_URL || 'https://api.testnet.solana.com',
     testDuration: 300000, // 5 minutes
     concurrentUsers: 10,

@@ -188,12 +188,13 @@ export async function deriveA2ASessionPda(
 
 /**
  * Derive A2A message PDA
- * Pattern: ['a2a_message', session, messageId]
+ * Pattern: ['a2a_message', session, session.created_at]
+ * NOTE: Fixed to match smart contract expectation - uses session.created_at, not messageId
  */
 export async function deriveA2AMessagePda(
   programId: Address,
   session: Address,
-  messageId: bigint
+  sessionCreatedAt: bigint  // Changed from messageId to sessionCreatedAt
 ): Promise<Address> {
   const [address] = await getProgramDerivedAddress({
     programAddress: programId,
@@ -202,7 +203,7 @@ export async function deriveA2AMessagePda(
         97, 50, 97, 95, 109, 101, 115, 115, 97, 103, 101
       ])), // 'a2a_message'
       getAddressEncoder().encode(session),
-      getU64Encoder().encode(messageId)
+      getU64Encoder().encode(sessionCreatedAt)  // Fixed: use session.created_at
     ]
   })
   return address
@@ -285,12 +286,13 @@ export async function findProgramDerivedAddress(
       return seed
     } else {
       // Assume it's an Address
-      return getAddressEncoder().encode(seed as Address)
+      return getAddressEncoder().encode(seed as unknown as Address)
     }
   })
 
-  return await getProgramDerivedAddress({
+  const result = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: encodedSeeds
   })
+  return [result[0], result[1]]
 }

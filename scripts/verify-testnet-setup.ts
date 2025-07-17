@@ -334,7 +334,7 @@ class TestnetSetupVerifier {
     console.log(chalk.yellow('📦 Verifying program deployment...'));
     
     const checks: VerificationResult['checks'] = [];
-    const programId = '5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK';
+    const programId = 'AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR';
     
     // Check if program account exists
     try {

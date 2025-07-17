@@ -48,14 +48,40 @@ agentCommand
       s.start('Registering agent on the blockchain...')
       
       try {
-        // Register the agent using SDK
-        const result = await client.agent.register({
-          name: agentData.name,
-          description: agentData.description,
-          endpoint: agentData.endpoint,
-          capabilities: agentData.capabilities,
-          pricePerTask: BigInt(Math.floor(parseFloat(agentData.pricePerTask) * 1_000_000)) // Convert SOL to lamports
+        // Generate PDAs for agent registration
+        const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+        const agentId = agentData.name.toLowerCase().replace(/\s+/g, '-')
+        
+        // Derive agent PDA
+        const [agentPda] = await getProgramDerivedAddress({
+          programAddress: client.config.programId!,
+          seeds: [
+            new TextEncoder().encode('agent'),
+            getAddressEncoder().encode(wallet.address),
+            new TextEncoder().encode(agentId)
+          ]
         })
+        
+        // Derive user registry PDA
+        const [userRegistryPda] = await getProgramDerivedAddress({
+          programAddress: client.config.programId!,
+          seeds: [
+            new TextEncoder().encode('user_registry'),
+            getAddressEncoder().encode(wallet.address)
+          ]
+        })
+        
+        // Register the agent using SDK with all required parameters
+        const signature = await client.agent.register(
+          wallet,
+          agentPda,
+          userRegistryPda,
+          {
+            agentType: 1, // Default agent type
+            metadataUri: agentData.metadataUri || `https://ghostspeak.ai/agents/${agentId}.json`,
+            agentId: agentId
+          }
+        )
         
         s.stop('✅ Agent registered successfully!')
         
@@ -63,10 +89,10 @@ agentCommand
         console.log(chalk.gray(`Name: ${agentData.name}`))
         console.log(chalk.gray(`Description: ${agentData.description}`))
         console.log(chalk.gray(`Capabilities: ${agentData.capabilities.join(', ')}`))
-        console.log(chalk.gray(`Agent Address: ${result.agentAddress.toString()}`))
+        console.log(chalk.gray(`Agent Address: ${agentPda}`))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Agent Account:'), getAddressExplorerUrl(result.agentAddress.toString(), 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(signature, 'devnet'))
+        console.log(chalk.cyan('Agent Account:'), getAddressExplorerUrl(agentPda, 'devnet'))
         
         outro('Agent registration completed')
       } catch (error: any) {
@@ -530,5 +556,390 @@ agentCommand
 
     } catch (error) {
       cancel(chalk.red('Agent update failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+    }
+  })
+
+// Verify agent subcommand (admin only)
+agentCommand
+  .command('verify')
+  .description('Verify an AI agent (admin only)')
+  .option('-a, --agent <address>', 'Agent address to verify')
+  .option('--auto', 'Auto-verify based on criteria')
+  .action(async (options) => {
+    intro(chalk.cyan('✅ Agent Verification'))
+
+    try {
+      const s = spinner()
+      s.start('Loading agents for verification...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      
+      // Check if user has admin privileges
+      const isAdmin = await client.agent.isAdmin(wallet.address)
+      if (!isAdmin) {
+        s.stop('❌ Access denied')
+        outro(
+          `${chalk.red('You do not have admin privileges to verify agents')}\n\n` +
+          `${chalk.gray('Contact the protocol administrators for verification access')}`
+        )
+        return
+      }
+
+      const unverifiedAgents = await client.agent.getUnverifiedAgents()
+      s.stop(`✅ Found ${unverifiedAgents.length} agents pending verification`)
+
+      if (unverifiedAgents.length === 0) {
+        outro(
+          `${chalk.green('All agents are verified!')}\n\n` +
+          `${chalk.gray('No agents are currently pending verification')}`
+        )
+        return
+      }
+
+      // Select agent if not provided
+      let selectedAgent = options.agent
+      if (!selectedAgent) {
+        const agentChoice = await select({
+          message: 'Select agent to verify:',
+          options: unverifiedAgents.map(agent => ({
+            value: agent.address,
+            label: agent.name || 'Unnamed Agent',
+            hint: `${agent.agentType} - ${new Date(Number(agent.registeredAt) * 1000).toLocaleDateString()}`
+          }))
+        })
+
+        if (isCancel(agentChoice)) {
+          cancel('Verification cancelled')
+          return
+        }
+
+        selectedAgent = agentChoice
+      }
+
+      const agent = unverifiedAgents.find(a => a.address === selectedAgent)
+      if (!agent) {
+        log.error('Agent not found or already verified')
+        return
+      }
+
+      // Display agent details for review
+      log.info(`\n${chalk.bold('🤖 Agent Review:')}\n`)
+      log.info(
+        `${chalk.gray('Name:')} ${agent.name}\n` +
+        `${chalk.gray('Type:')} ${agent.agentType}\n` +
+        `${chalk.gray('Owner:')} ${agent.owner}\n` +
+        `${chalk.gray('Registered:')} ${new Date(Number(agent.registeredAt) * 1000).toLocaleString()}\n` +
+        `${chalk.gray('Capabilities:')} ${agent.capabilities?.join(', ') || 'None listed'}\n` +
+        `${chalk.gray('Service Endpoint:')} ${agent.serviceEndpoint || 'Not provided'}\n` +
+        `${chalk.gray('Metadata URI:')} ${agent.metadataUri || 'Not provided'}\n`
+      )
+
+      // Verification criteria checklist
+      const verificationCriteria = [
+        { key: 'has_name', label: 'Has descriptive name', check: agent.name && agent.name.length >= 3 },
+        { key: 'has_endpoint', label: 'Has valid service endpoint', check: agent.serviceEndpoint && agent.serviceEndpoint.startsWith('http') },
+        { key: 'has_capabilities', label: 'Lists specific capabilities', check: agent.capabilities && agent.capabilities.length > 0 },
+        { key: 'has_metadata', label: 'Provides metadata URI', check: agent.metadataUri && agent.metadataUri.length > 0 },
+        { key: 'recent_activity', label: 'Recent registration (< 30 days)', check: (Date.now() / 1000 - Number(agent.registeredAt)) < (30 * 24 * 60 * 60) }
+      ]
+
+      log.info(`\n${chalk.bold('📋 Verification Criteria:')}\n`)
+      verificationCriteria.forEach(criteria => {
+        const status = criteria.check ? chalk.green('✅') : chalk.red('❌')
+        log.info(`${status} ${criteria.label}`)
+      })
+
+      const passedCriteria = verificationCriteria.filter(c => c.check).length
+      const verificationScore = Math.round((passedCriteria / verificationCriteria.length) * 100)
+
+      log.info(`\n${chalk.bold('📊 Verification Score:')} ${verificationScore}%\n`)
+
+      if (options.auto) {
+        // Auto-verify based on score
+        if (verificationScore >= 80) {
+          log.info(chalk.green('Auto-verification criteria met (≥80%)'))
+        } else {
+          log.warn(chalk.yellow(`Auto-verification failed (${verificationScore}% < 80%)`))
+          outro('Agent requires manual review or improvements')
+          return
+        }
+      } else {
+        // Manual verification decision
+        const verificationDecision = await select({
+          message: `Verify this agent? (Score: ${verificationScore}%)`,
+          options: [
+            { value: 'approve', label: '✅ APPROVE', hint: 'Grant verification badge' },
+            { value: 'reject', label: '❌ REJECT', hint: 'Deny verification with feedback' },
+            { value: 'request_info', label: '📝 REQUEST INFO', hint: 'Ask for more information' }
+          ]
+        })
+
+        if (isCancel(verificationDecision)) {
+          cancel('Verification cancelled')
+          return
+        }
+
+        if (verificationDecision === 'reject') {
+          const rejectionReason = await text({
+            message: 'Reason for rejection:',
+            placeholder: 'Missing service endpoint and capability documentation...',
+            validate: (value) => {
+              if (!value || value.length < 10) return 'Please provide at least 10 characters explaining the rejection'
+            }
+          })
+
+          if (isCancel(rejectionReason)) {
+            cancel('Verification cancelled')
+            return
+          }
+
+          s.start('Recording rejection...')
+          
+          try {
+            const signature = await client.agent.rejectVerification(
+              wallet,
+              address(selectedAgent),
+              { reason: rejectionReason }
+            )
+
+            s.stop('✅ Rejection recorded')
+            
+            outro(
+              `${chalk.red('❌ Agent Verification Rejected')}\n\n` +
+              `${chalk.gray('Reason:')} ${rejectionReason}\n` +
+              `${chalk.gray('The agent owner has been notified')}`
+            )
+            
+          } catch (error) {
+            s.stop('❌ Failed to record rejection')
+            await handleTransactionError(error, 'verification rejection')
+          }
+          return
+        }
+
+        if (verificationDecision === 'request_info') {
+          const infoRequest = await text({
+            message: 'What additional information is needed?',
+            placeholder: 'Please provide a valid HTTPS endpoint for your service...',
+            validate: (value) => {
+              if (!value || value.length < 10) return 'Please provide at least 10 characters describing what information is needed'
+            }
+          })
+
+          if (isCancel(infoRequest)) {
+            cancel('Verification cancelled')
+            return
+          }
+
+          s.start('Sending information request...')
+          
+          try {
+            const signature = await client.agent.requestAdditionalInfo(
+              wallet,
+              address(selectedAgent),
+              { request: infoRequest }
+            )
+
+            s.stop('✅ Information request sent')
+            
+            outro(
+              `${chalk.yellow('📝 Additional Information Requested')}\n\n` +
+              `${chalk.gray('Request:')} ${infoRequest}\n` +
+              `${chalk.gray('The agent owner has been notified')}`
+            )
+            
+          } catch (error) {
+            s.stop('❌ Failed to send request')
+            await handleTransactionError(error, 'information request')
+          }
+          return
+        }
+      }
+
+      // Approve verification
+      const verificationNotes = await text({
+        message: 'Verification notes (optional):',
+        placeholder: 'Agent meets all verification criteria and provides clear service description...',
+        validate: (value) => {
+          if (value && value.length > 300) return 'Notes must be less than 300 characters'
+        }
+      })
+
+      if (isCancel(verificationNotes)) {
+        cancel('Verification cancelled')
+        return
+      }
+
+      s.start('Granting verification...')
+      
+      try {
+        const verificationParams = {
+          score: verificationScore,
+          notes: verificationNotes || '',
+          verifiedBy: wallet.address,
+          criteria: verificationCriteria.map(c => ({ [c.key]: c.check }))
+        }
+
+        const signature = await client.agent.verify(
+          wallet,
+          address(selectedAgent),
+          verificationParams
+        )
+
+        s.stop('✅ Agent verified successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.green('✅ Agent Verification Approved!')}\n\n` +
+          `${chalk.bold('Agent Details:')}\n` +
+          `${chalk.gray('Name:')} ${agent.name}\n` +
+          `${chalk.gray('Verification Score:')} ${verificationScore}%\n` +
+          `${chalk.gray('Status:')} ${chalk.green('VERIFIED')}\n\n` +
+          `${chalk.bold('Transaction:')}\n` +
+          `${chalk.gray('Signature:')} ${signature}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
+          `${chalk.yellow('💡 The agent now has a verification badge')}`
+        )
+        
+      } catch (error) {
+        s.stop('❌ Verification failed')
+        await handleTransactionError(error, 'agent verification')
+      }
+      
+    } catch (error) {
+      log.error(`Failed to verify agent: ${error.message}`)
+    }
+  })
+
+// Analytics subcommand
+agentCommand
+  .command('analytics')
+  .description('View agent performance analytics')
+  .option('-a, --agent <address>', 'Specific agent address')
+  .option('--mine', 'Show analytics for my agents only')
+  .option('-p, --period <period>', 'Time period (7d, 30d, 90d, 1y)')
+  .action(async (options) => {
+    intro(chalk.cyan('📊 Agent Analytics'))
+
+    try {
+      const s = spinner()
+      s.start('Loading analytics data...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      
+      let analytics
+      if (options.agent) {
+        analytics = await client.agent.getAgentAnalytics(address(options.agent), {
+          period: options.period || '30d'
+        })
+      } else if (options.mine) {
+        analytics = await client.agent.getAnalyticsForOwner(wallet.address, {
+          period: options.period || '30d'
+        })
+      } else {
+        analytics = await client.agent.getMarketplaceAnalytics({
+          period: options.period || '30d'
+        })
+      }
+
+      s.stop('✅ Analytics loaded')
+
+      // Display analytics dashboard
+      log.info(`\n${chalk.bold('📈 Performance Overview:')}`)
+      log.info('─'.repeat(30))
+      
+      if (options.agent || options.mine) {
+        // Individual agent or user analytics
+        log.info(
+          `${chalk.gray('Active Agents:')} ${analytics.activeAgents}\n` +
+          `${chalk.gray('Total Jobs Completed:')} ${analytics.totalJobs}\n` +
+          `${chalk.gray('Success Rate:')} ${(analytics.successRate * 100).toFixed(1)}%\n` +
+          `${chalk.gray('Average Rating:')} ${analytics.averageRating?.toFixed(1) || 'No ratings'} ⭐\n` +
+          `${chalk.gray('Total Earnings:')} ${(Number(analytics.totalEarnings) / 1_000_000_000).toFixed(3)} SOL\n`
+        )
+
+        if (analytics.jobsByCategory) {
+          log.info(`\n${chalk.bold('📋 Jobs by Category:')}`)
+          Object.entries(analytics.jobsByCategory).forEach(([category, count]) => {
+            log.info(`   ${chalk.gray(category + ':')} ${count}`)
+          })
+        }
+
+        if (analytics.earningsTrend) {
+          log.info(`\n${chalk.bold('💰 Earnings Trend:')}`)
+          analytics.earningsTrend.forEach(point => {
+            const date = new Date(Number(point.timestamp) * 1000).toLocaleDateString()
+            const earningsSOL = (Number(point.earnings) / 1_000_000_000).toFixed(3)
+            log.info(`   ${chalk.gray(date + ':')} ${earningsSOL} SOL`)
+          })
+        }
+
+        if (analytics.topClients && analytics.topClients.length > 0) {
+          log.info(`\n${chalk.bold('👥 Top Clients:')}`)
+          analytics.topClients.slice(0, 5).forEach((client, index) => {
+            log.info(
+              `   ${index + 1}. ${client.address}\n` +
+              `      ${chalk.gray('Jobs:')} ${client.jobCount} | ${chalk.gray('Spent:')} ${(Number(client.totalSpent) / 1_000_000_000).toFixed(3)} SOL`
+            )
+          })
+        }
+
+      } else {
+        // Marketplace-wide analytics
+        log.info(
+          `${chalk.gray('Total Agents:')} ${analytics.totalAgents}\n` +
+          `${chalk.gray('Verified Agents:')} ${analytics.verifiedAgents} (${((analytics.verifiedAgents / analytics.totalAgents) * 100).toFixed(1)}%)\n` +
+          `${chalk.gray('Active Agents:')} ${analytics.activeAgents}\n` +
+          `${chalk.gray('Total Jobs:')} ${analytics.totalJobs}\n` +
+          `${chalk.gray('Marketplace Volume:')} ${(Number(analytics.totalVolume) / 1_000_000_000).toFixed(3)} SOL\n`
+        )
+
+        if (analytics.topCategories) {
+          log.info(`\n${chalk.bold('🏆 Popular Categories:')}`)
+          analytics.topCategories.slice(0, 5).forEach((category, index) => {
+            log.info(`   ${index + 1}. ${category.name} (${category.agentCount} agents)`)
+          })
+        }
+
+        if (analytics.topPerformers) {
+          log.info(`\n${chalk.bold('⭐ Top Performing Agents:')}`)
+          analytics.topPerformers.slice(0, 5).forEach((agent, index) => {
+            log.info(
+              `   ${index + 1}. ${agent.name}\n` +
+              `      ${chalk.gray('Rating:')} ${agent.rating.toFixed(1)} ⭐ | ${chalk.gray('Jobs:')} ${agent.completedJobs}`
+            )
+          })
+        }
+
+        if (analytics.growthMetrics) {
+          log.info(`\n${chalk.bold('📈 Growth Metrics:')}`)
+          log.info(
+            `   ${chalk.gray('New Agents (30d):')} ${analytics.growthMetrics.newAgents}\n` +
+            `   ${chalk.gray('Job Growth:')} ${analytics.growthMetrics.jobGrowthRate > 0 ? '+' : ''}${(analytics.growthMetrics.jobGrowthRate * 100).toFixed(1)}%\n` +
+            `   ${chalk.gray('Volume Growth:')} ${analytics.growthMetrics.volumeGrowthRate > 0 ? '+' : ''}${(analytics.growthMetrics.volumeGrowthRate * 100).toFixed(1)}%`
+          )
+        }
+      }
+
+      // Performance insights
+      if (analytics.insights && analytics.insights.length > 0) {
+        log.info(`\n${chalk.bold('💡 Performance Insights:')}`)
+        analytics.insights.forEach(insight => {
+          const icon = insight.type === 'positive' ? '📈' : insight.type === 'negative' ? '📉' : '💡'
+          log.info(`   ${icon} ${insight.message}`)
+        })
+      }
+
+      outro(
+        `${chalk.yellow('💡 Analytics Tips:')}\n` +
+        `• Monitor success rates and ratings regularly\n` +
+        `• Focus on high-demand capability categories\n` +
+        `• Engage with top clients for repeat business\n\n` +
+        `${chalk.cyan('npx ghostspeak agent analytics --mine')} - View your agent analytics`
+      )
+      
+    } catch (error) {
+      log.error(`Failed to load analytics: ${error.message}`)
     }
   })

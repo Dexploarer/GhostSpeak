@@ -464,11 +464,11 @@ describe('Error Handling', () => {
             ]
           },
           logs: [
-            'Program 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK invoke [1]',
+            'Program AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR invoke [1]',
             'Program log: Instruction: CreateWorkOrder',
             'Program log: Error: Deadline must be in the future',
-            'Program 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK consumed 2500 units',
-            'Program 5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK failed: custom program error: 0x1771'
+            'Program AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR consumed 2500 units',
+            'Program AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR failed: custom program error: 0x1771'
           ],
           unitsConsumed: 2500n
         }

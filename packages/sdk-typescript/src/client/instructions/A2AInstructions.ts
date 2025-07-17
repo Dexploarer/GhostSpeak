@@ -75,17 +75,25 @@ export class A2AInstructions extends BaseInstructions {
     sessionAddress: Address,
     params: SendA2AMessageParams
   ): Promise<string> {
-    // Fetch the session to get the createdAt timestamp for PDA derivation
-    const session = await this.getSession(sessionAddress)
-    if (!session) {
-      throw new Error('Session not found')
+    // Get session account data directly (bypassing decoder which is broken)
+    const accountInfo = await this.rpc.getAccountInfo(sessionAddress, {
+      commitment: 'confirmed',
+      encoding: 'base64'
+    }).send()
+    
+    if (!accountInfo.value) {
+      throw new Error('Session account not found')
     }
+    
+    // Parse created_at timestamp from session account data (at offset 8)
+    const sessionBuffer = Buffer.from(accountInfo.value.data[0], 'base64')
+    const sessionCreatedAt = sessionBuffer.readBigInt64LE(8)
 
     // Derive the message address using the session's createdAt timestamp
     const messageAddress = await deriveA2AMessagePda(
       this.programId,
       sessionAddress,
-      session.createdAt
+      sessionCreatedAt
     )
 
     const instruction = getSendA2aMessageInstruction({

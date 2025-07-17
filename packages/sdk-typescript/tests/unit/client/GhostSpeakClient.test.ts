@@ -15,7 +15,7 @@ describe('GhostSpeakClient', () => {
   let programId: Address
 
   beforeEach(async () => {
-    programId = address('5mMhsW6dP6RCXv73CdBtzfAV9CJkXKYv3SqPDiccf5aK')
+    programId = address('AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR')
     payer = await generateKeyPairSigner()
 
     // Create comprehensive mock RPC

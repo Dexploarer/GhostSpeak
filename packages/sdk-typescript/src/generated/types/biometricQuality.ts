@@ -8,6 +8,8 @@
 
 import {
   combineCodec,
+  getBooleanDecoder,
+  getBooleanEncoder,
   getStructDecoder,
   getStructEncoder,
   getU8Decoder,
@@ -35,8 +37,8 @@ export type BiometricQualityArgs = BiometricQuality;
 export function getBiometricQualityEncoder(): Encoder<BiometricQualityArgs> {
   return getStructEncoder([
     ['minimumQuality', getU8Encoder()],
-    ['livenessRequired', getU8Encoder()],
-    ['antiSpoofingRequired', getU8Encoder()],
+    ['livenessRequired', getBooleanEncoder()],
+    ['antiSpoofingRequired', getBooleanEncoder()],
     ['maxFalseAcceptanceRate', getU8Encoder()],
     ['maxFalseRejectionRate', getU8Encoder()],
   ]);
@@ -45,8 +47,8 @@ export function getBiometricQualityEncoder(): Encoder<BiometricQualityArgs> {
 export function getBiometricQualityDecoder(): Decoder<BiometricQuality> {
   return getStructDecoder([
     ['minimumQuality', getU8Decoder()],
-    ['livenessRequired', getU8Decoder()],
-    ['antiSpoofingRequired', getU8Decoder()],
+    ['livenessRequired', getBooleanDecoder()],
+    ['antiSpoofingRequired', getBooleanDecoder()],
     ['maxFalseAcceptanceRate', getU8Decoder()],
     ['maxFalseRejectionRate', getU8Decoder()],
   ]);

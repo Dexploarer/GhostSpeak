@@ -2,7 +2,7 @@
  * Shared SDK client initialization for CLI commands - July 2025 Standards
  */
 
-import { createSolanaRpc, KeyPairSigner, createKeyPairSignerFromBytes, address, createDefaultRpcTransport } from '@solana/kit'
+import { createSolanaRpc, KeyPairSigner, createKeyPairSignerFromBytes, address } from '@solana/kit'
 import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
@@ -75,17 +75,36 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   // Use network from config if not provided
   const selectedNetwork = network || config.network || 'devnet'
   
-  // Set up RPC connection using July 2025 patterns
-  const rpcUrl = config.rpcUrl || (
-    selectedNetwork === 'mainnet-beta' 
-      ? 'https://api.mainnet-beta.solana.com'
-      : selectedNetwork === 'mainnet'
-      ? 'https://api.mainnet-beta.solana.com' 
-      : `https://api.${selectedNetwork}.solana.com`
-  )
-    
-  const transport = createDefaultRpcTransport({ url: rpcUrl })
-  const rpc = createSolanaRpc({ transport })
+  // Set up RPC connection with proper URL validation
+  let rpcUrl = config.rpcUrl
+  if (!rpcUrl) {
+    switch (selectedNetwork) {
+      case 'mainnet-beta':
+      case 'mainnet':
+        rpcUrl = 'https://api.mainnet-beta.solana.com'
+        break
+      case 'testnet':
+        rpcUrl = 'https://api.testnet.solana.com'
+        break
+      case 'devnet':
+      default:
+        rpcUrl = 'https://api.devnet.solana.com'
+        break
+    }
+  }
+  
+  // Validate URL format
+  if (!rpcUrl || typeof rpcUrl !== 'string') {
+    throw new Error('Invalid RPC URL configuration')
+  }
+  
+  try {
+    new URL(rpcUrl) // Validate URL format
+  } catch {
+    throw new Error(`Invalid RPC endpoint URL: ${rpcUrl}`)
+  }
+  
+  const rpc = createSolanaRpc(rpcUrl)
   
   // Get wallet
   const wallet = getWallet()
@@ -107,7 +126,8 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
       log.info(chalk.dim('Run: npx ghostspeak faucet --save'))
     }
   } catch (error) {
-    // Ignore balance check errors
+    // Log but don't fail on balance check errors
+    console.warn('Balance check failed:', error.message)
   }
   
   return { client, wallet, rpc }

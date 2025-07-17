@@ -8,18 +8,18 @@
 
 import {
   combineCodec,
+  getArrayDecoder,
+  getArrayEncoder,
   getOptionDecoder,
   getOptionEncoder,
-  getStringDecoder,
-  getStringEncoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   getStructDecoder,
   getStructEncoder,
   getU32Decoder,
   getU32Encoder,
   getU64Decoder,
   getU64Encoder,
-  getVecDecoder,
-  getVecEncoder,
   type Codec,
   type Decoder,
   type Encoder,
@@ -62,8 +62,8 @@ export function getResourceConstraintsEncoder(): Encoder<ResourceConstraintsArgs
     ['maxOperationsPerHour', getOptionEncoder(getU32Encoder())],
     ['maxDataSize', getOptionEncoder(getU64Encoder())],
     ['maxTransactionValue', getOptionEncoder(getU64Encoder())],
-    ['allowedResourceTypes', getVecEncoder(getStringEncoder())],
-    ['blockedResourcePatterns', getVecEncoder(getStringEncoder())],
+    ['allowedResourceTypes', getArrayEncoder(getUtf8Encoder())],
+    ['blockedResourcePatterns', getArrayEncoder(getUtf8Encoder())],
     ['quotaResetPeriod', getOptionEncoder(getU64Encoder())],
   ]);
 }
@@ -73,8 +73,8 @@ export function getResourceConstraintsDecoder(): Decoder<ResourceConstraints> {
     ['maxOperationsPerHour', getOptionDecoder(getU32Decoder())],
     ['maxDataSize', getOptionDecoder(getU64Decoder())],
     ['maxTransactionValue', getOptionDecoder(getU64Decoder())],
-    ['allowedResourceTypes', getVecDecoder(getStringDecoder())],
-    ['blockedResourcePatterns', getVecDecoder(getStringDecoder())],
+    ['allowedResourceTypes', getArrayDecoder(getUtf8Decoder())],
+    ['blockedResourcePatterns', getArrayDecoder(getUtf8Decoder())],
     ['quotaResetPeriod', getOptionDecoder(getU64Decoder())],
   ]);
 }

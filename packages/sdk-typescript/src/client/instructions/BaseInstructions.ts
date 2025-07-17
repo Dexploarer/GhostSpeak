@@ -80,10 +80,12 @@ export abstract class BaseInstructions {
    */
   private getSendAndConfirmTransaction() {
     if (!this._sendAndConfirmTransaction) {
-      this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
-        rpc: this.rpc as any,
-        rpcSubscriptions: this.rpcSubscriptions as any
-      })
+      // Only pass rpcSubscriptions if they exist
+      const factoryConfig: any = { rpc: this.rpc as any }
+      if (this.rpcSubscriptions) {
+        factoryConfig.rpcSubscriptions = this.rpcSubscriptions as any
+      }
+      this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig)
     }
     return this._sendAndConfirmTransaction
   }
@@ -112,6 +114,24 @@ export abstract class BaseInstructions {
       console.log(`📍 Program ID: ${this.programId}`)
       console.log(`🌐 Commitment: ${this.commitment}`)
       
+      // Validate instructions
+      for (let i = 0; i < instructions.length; i++) {
+        const instruction = instructions[i]
+        if (!instruction) {
+          throw new Error(`Instruction at index ${i} is undefined`)
+        }
+        if (!instruction.programAddress) {
+          throw new Error(`Instruction at index ${i} has no programAddress`)
+        }
+        if (!instruction.accounts) {
+          throw new Error(`Instruction at index ${i} has no accounts array`)
+        }
+        if (!Array.isArray(instruction.accounts)) {
+          throw new Error(`Instruction at index ${i} accounts is not an array`)
+        }
+        console.log(`✅ Instruction ${i}: ${instruction.accounts.length} accounts, program: ${instruction.programAddress}`)
+      }
+      
       // Step 1: Get latest blockhash using real RPC call
       console.log('🔗 Fetching latest blockhash...')
       const { value: latestBlockhash } = await this.rpc.getLatestBlockhash().send()
@@ -134,18 +154,60 @@ export abstract class BaseInstructions {
 
       // Step 4: Send and confirm using factory pattern
       console.log('📡 Sending transaction to blockchain...')
-      const sendAndConfirmTransaction = this.getSendAndConfirmTransaction()
-      const result = await sendAndConfirmTransaction(signedTransaction as any, {
-        commitment: this.commitment,
-        skipPreflight: false
-      })
-
-      // Extract signature from the transaction or result
-      const signature = (result as any)?.signature || Object.values(signedTransaction.signatures || {})[0] || 'unknown_signature'
       
-      // Detect cluster from RPC endpoint
-      const rpcEndpoint = this.config.rpc?.toString() || 'mainnet-beta'
-      const cluster = detectClusterFromEndpoint(rpcEndpoint)
+      let result: any
+      let signature: Signature
+      
+      // If no subscriptions available, use polling method
+      if (!this.rpcSubscriptions) {
+        console.log('⚠️ No RPC subscriptions available, using polling for confirmation...')
+        
+        // Send transaction first
+        const transactionSignature = await this.rpc.sendTransaction(signedTransaction as any, {
+          skipPreflight: false,
+          preflightCommitment: this.commitment
+        }).send()
+        
+        console.log(`📤 Transaction sent: ${transactionSignature}`)
+        
+        // Poll for confirmation
+        let confirmed = false
+        let attempts = 0
+        const maxAttempts = 30
+        
+        while (!confirmed && attempts < maxAttempts) {
+          const status = await this.rpc.getSignatureStatuses([transactionSignature]).send()
+          
+          if (status.value[0] && status.value[0].confirmationStatus === this.commitment) {
+            confirmed = true
+            console.log('✅ Transaction confirmed!')
+          } else {
+            attempts++
+            console.log(`⏳ Waiting for confirmation... (${attempts}/${maxAttempts})`)
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+        }
+        
+        if (!confirmed) {
+          throw new Error('Transaction confirmation timeout')
+        }
+        
+        signature = transactionSignature as Signature
+      } else {
+        // Use subscriptions for faster confirmation
+        const sendAndConfirmTransaction = this.getSendAndConfirmTransaction()
+        result = await sendAndConfirmTransaction(signedTransaction as any, {
+          commitment: this.commitment,
+          skipPreflight: false
+        })
+        
+        // Extract signature from the transaction or result
+        signature = (result as any)?.signature || Object.values(signedTransaction.signatures || {})[0] || 'unknown_signature'
+      }
+      
+      // Detect cluster from RPC endpoint or config
+      const cluster = this.config.cluster || 
+        (this.config.rpcEndpoint ? detectClusterFromEndpoint(this.config.rpcEndpoint) : 'devnet')
       
       // Create complete transaction result with verification URLs
       const transactionResult = createTransactionResult(
@@ -303,5 +365,10 @@ export abstract class BaseInstructions {
     console.log(`   Program: ${instruction.programAddress}`)
     console.log(`   Accounts: ${instruction.accounts?.length || 0}`)
     console.log(`   Data size: ${instruction.data?.length || 0} bytes`)
+    if (instruction.accounts) {
+      instruction.accounts.forEach((account, index) => {
+        console.log(`   Account ${index}: ${JSON.stringify(account)}`)
+      })
+    }
   }
 }

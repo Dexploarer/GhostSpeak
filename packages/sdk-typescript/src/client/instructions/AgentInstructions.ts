@@ -40,16 +40,45 @@ export class AgentInstructions extends BaseInstructions {
     userRegistryAddress: Address,
     params: AgentRegistrationParams
   ): Promise<string> {
-    const instruction = getRegisterAgentInstruction({
-      agentAccount: agentAddress,
-      userRegistry: userRegistryAddress,
-      signer: signer as unknown as TransactionSigner,
-      agentType: params.agentType,
+    // Validate and ensure agentType is a valid number
+    const agentType = typeof params.agentType === 'number' && !isNaN(params.agentType) 
+      ? params.agentType 
+      : 1 // Default to 1 if invalid
+      
+    console.log('🔍 Registering agent with params:', {
+      agentType,
       metadataUri: params.metadataUri,
-      agentId: params.agentId
+      agentId: params.agentId,
+      agentAddress: agentAddress.toString(),
+      userRegistry: userRegistryAddress.toString(),
+      signer: signer.address ? signer.address.toString() : 'NO_ADDRESS'
     })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+
+    try {
+      const instruction = getRegisterAgentInstruction({
+        agentAccount: agentAddress,
+        userRegistry: userRegistryAddress,
+        signer: signer as unknown as TransactionSigner,
+        agentType,
+        metadataUri: params.metadataUri,
+        agentId: params.agentId
+      })
+      
+      console.log('📦 Instruction created:', {
+        programAddress: instruction.programAddress,
+        accountsLength: instruction.accounts?.length,
+        dataLength: instruction.data?.length,
+        accounts: instruction.accounts
+      })
+      
+      // Log instruction details before sending
+      this.logInstructionDetails(instruction as unknown as IInstruction)
+      
+      return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    } catch (error) {
+      console.error('❌ Failed to create register instruction:', error)
+      throw error
+    }
   }
 
   /**
@@ -62,10 +91,13 @@ export class AgentInstructions extends BaseInstructions {
     metadataUri: string,
     agentId: string
   ): Promise<string> {
+    // Validate agentType
+    const validAgentType = typeof agentType === 'number' && !isNaN(agentType) ? agentType : 1
+    
     const instruction = getUpdateAgentInstruction({
       agentAccount: agentAddress,
       signer: signer as unknown as TransactionSigner,
-      agentType,
+      agentType: validAgentType,
       metadataUri,
       agentId
     })

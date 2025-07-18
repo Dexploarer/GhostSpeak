@@ -20,19 +20,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type NegotiationInitiatedEvent = {
+export interface NegotiationInitiatedEvent {
   negotiation: Address;
   initiator: Address;
   counterparty: Address;
   initialOffer: bigint;
-};
+}
 
-export type NegotiationInitiatedEventArgs = {
+export interface NegotiationInitiatedEventArgs {
   negotiation: Address;
   initiator: Address;
   counterparty: Address;
   initialOffer: number | bigint;
-};
+}
 
 export function getNegotiationInitiatedEventEncoder(): Encoder<NegotiationInitiatedEventArgs> {
   return getStructEncoder([

@@ -92,7 +92,7 @@ export type UpdateAgentServiceInstruction<
     ]
   >;
 
-export type UpdateAgentServiceInstructionData = {
+export interface UpdateAgentServiceInstructionData {
   discriminator: ReadonlyUint8Array;
   /** Agent's public key for verification (must match PDA derivation) */
   agentPubkey: Address;
@@ -105,10 +105,10 @@ export type UpdateAgentServiceInstructionData = {
   /** Optional metadata URI for extended agent information */
   metadataUri: Option<string>;
   /** Service capability tags for filtering */
-  capabilities: Array<string>;
-};
+  capabilities: string[];
+}
 
-export type UpdateAgentServiceInstructionDataArgs = {
+export interface UpdateAgentServiceInstructionDataArgs {
   /** Agent's public key for verification (must match PDA derivation) */
   agentPubkey: Address;
   /** Service endpoint URL (validated for length and format) */
@@ -120,8 +120,8 @@ export type UpdateAgentServiceInstructionDataArgs = {
   /** Optional metadata URI for extended agent information */
   metadataUri: OptionOrNullable<string>;
   /** Service capability tags for filtering */
-  capabilities: Array<string>;
-};
+  capabilities: string[];
+}
 
 export function getUpdateAgentServiceInstructionDataEncoder(): Encoder<UpdateAgentServiceInstructionDataArgs> {
   return transformEncoder(
@@ -182,11 +182,11 @@ export function getUpdateAgentServiceInstructionDataCodec(): Codec<
   );
 }
 
-export type UpdateAgentServiceAsyncInput<
+export interface UpdateAgentServiceAsyncInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   /** Agent account with enhanced 2025 security patterns */
   agent?: Address<TAccountAgent>;
   /** Owner must be signer for security (2025 pattern) */
@@ -199,7 +199,7 @@ export type UpdateAgentServiceAsyncInput<
   lastUpdated: UpdateAgentServiceInstructionDataArgs['lastUpdated'];
   metadataUri: UpdateAgentServiceInstructionDataArgs['metadataUri'];
   capabilities: UpdateAgentServiceInstructionDataArgs['capabilities'];
-};
+}
 
 export async function getUpdateAgentServiceInstructionAsync<
   TAccountAgent extends string,
@@ -276,11 +276,11 @@ export async function getUpdateAgentServiceInstructionAsync<
   return instruction;
 }
 
-export type UpdateAgentServiceInput<
+export interface UpdateAgentServiceInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   /** Agent account with enhanced 2025 security patterns */
   agent: Address<TAccountAgent>;
   /** Owner must be signer for security (2025 pattern) */
@@ -293,7 +293,7 @@ export type UpdateAgentServiceInput<
   lastUpdated: UpdateAgentServiceInstructionDataArgs['lastUpdated'];
   metadataUri: UpdateAgentServiceInstructionDataArgs['metadataUri'];
   capabilities: UpdateAgentServiceInstructionDataArgs['capabilities'];
-};
+}
 
 export function getUpdateAgentServiceInstruction<
   TAccountAgent extends string,
@@ -359,10 +359,10 @@ export function getUpdateAgentServiceInstruction<
   return instruction;
 }
 
-export type ParsedUpdateAgentServiceInstruction<
+export interface ParsedUpdateAgentServiceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with enhanced 2025 security patterns */
@@ -373,7 +373,7 @@ export type ParsedUpdateAgentServiceInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: UpdateAgentServiceInstructionData;
-};
+}
 
 export function parseUpdateAgentServiceInstruction<
   TProgram extends string,

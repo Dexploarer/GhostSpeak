@@ -37,31 +37,31 @@ import {
 } from '.';
 
 /** Role activation requirements */
-export type ActivationRequirement = {
+export interface ActivationRequirement {
   /** Requirement type */
   requirementType: ActivationRequirementType;
   /** Required approvers */
-  approvers: Array<Address>;
+  approvers: Address[];
   /** Minimum approvals needed */
   minApprovals: number;
   /** Approval timeout */
   approvalTimeout: bigint;
   /** Evidence requirements */
-  evidenceRequirements: Array<string>;
-};
+  evidenceRequirements: string[];
+}
 
-export type ActivationRequirementArgs = {
+export interface ActivationRequirementArgs {
   /** Requirement type */
   requirementType: ActivationRequirementTypeArgs;
   /** Required approvers */
-  approvers: Array<Address>;
+  approvers: Address[];
   /** Minimum approvals needed */
   minApprovals: number;
   /** Approval timeout */
   approvalTimeout: number | bigint;
   /** Evidence requirements */
-  evidenceRequirements: Array<string>;
-};
+  evidenceRequirements: string[];
+}
 
 export function getActivationRequirementEncoder(): Encoder<ActivationRequirementArgs> {
   return getStructEncoder([

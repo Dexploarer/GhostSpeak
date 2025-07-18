@@ -62,14 +62,14 @@ export type ExportMultisigConfigInstruction<
     ]
   >;
 
-export type ExportMultisigConfigInstructionData = {
+export interface ExportMultisigConfigInstructionData {
   discriminator: ReadonlyUint8Array;
   data: MultisigConfig;
-};
+}
 
-export type ExportMultisigConfigInstructionDataArgs = {
+export interface ExportMultisigConfigInstructionDataArgs {
   data: MultisigConfigArgs;
-};
+}
 
 export function getExportMultisigConfigInstructionDataEncoder(): Encoder<ExportMultisigConfigInstructionDataArgs> {
   return transformEncoder(
@@ -101,12 +101,12 @@ export function getExportMultisigConfigInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportMultisigConfigInput<
+export interface ExportMultisigConfigInput<
   TAccountSystemProgram extends string = string,
-> = {
+> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportMultisigConfigInstructionDataArgs['data'];
-};
+}
 
 export function getExportMultisigConfigInstruction<
   TAccountSystemProgram extends string,
@@ -150,16 +150,16 @@ export function getExportMultisigConfigInstruction<
   return instruction;
 }
 
-export type ParsedExportMultisigConfigInstruction<
+export interface ParsedExportMultisigConfigInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportMultisigConfigInstructionData;
-};
+}
 
 export function parseExportMultisigConfigInstruction<
   TProgram extends string,

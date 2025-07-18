@@ -5,9 +5,9 @@
  * including filing disputes, evidence submission, and resolution with real Web3.js v2 execution.
  */
 
-import type { Address, Signature, TransactionSigner, IInstruction } from '@solana/kit'
+import type { Address, Signature, TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
-import type { GhostSpeakConfig, Commitment } from '../../types/index.js'
+import type { GhostSpeakConfig } from '../../types/index.js'
 import { 
   getFileDisputeInstruction,
   getSubmitDisputeEvidenceInstruction,
@@ -17,11 +17,7 @@ import {
   type DisputeEvidence,
   getDisputeCaseDecoder
 } from '../../generated/index.js'
-import { 
-  createTransactionResult, 
-  logTransactionDetails,
-  type TransactionResult 
-} from '../../utils/transaction-urls.js'
+import { type TransactionResult } from '../../utils/transaction-urls.js'
 
 // Enhanced types for better developer experience
 export interface FileDisputeParams {
@@ -81,8 +77,8 @@ export interface DisputeAnalytics {
   escalatedDisputes: number
   averageResolutionTime: bigint
   complainantSuccessRate: number
-  mostCommonReasons: Array<{ reason: string; count: number }>
-  topMediators: Array<{ moderator: Address; resolutionCount: number; successRate: number }>
+  mostCommonReasons: { reason: string; count: number }[]
+  topMediators: { moderator: Address; resolutionCount: number; successRate: number }[]
 }
 
 export interface EvidenceSubmission {
@@ -150,7 +146,7 @@ export class DisputeInstructions extends BaseInstructions {
     const instruction = getFileDisputeInstruction({
       dispute: disputePda,
       transaction: params.transaction,
-      userRegistry: params.userRegistry || await this.deriveUserRegistry(complainant),
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(complainant),
       complainant,
       respondent: params.respondent,
       systemProgram: '11111111111111111111111111111112' as Address,
@@ -179,7 +175,7 @@ export class DisputeInstructions extends BaseInstructions {
     const instruction = getFileDisputeInstruction({
       dispute: disputePda,
       transaction: params.transaction,
-      userRegistry: params.userRegistry || await this.deriveUserRegistry(complainant),
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(complainant),
       complainant,
       respondent: params.respondent,
       systemProgram: '11111111111111111111111111111112' as Address,
@@ -241,7 +237,7 @@ export class DisputeInstructions extends BaseInstructions {
     // Build instruction
     const instruction = getSubmitDisputeEvidenceInstruction({
       dispute: params.dispute,
-      userRegistry: params.userRegistry || await this.deriveUserRegistry(submitter),
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(submitter),
       submitter,
       clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
       evidenceType: params.evidenceType,
@@ -274,7 +270,7 @@ export class DisputeInstructions extends BaseInstructions {
 
     const instruction = getSubmitDisputeEvidenceInstruction({
       dispute: params.dispute,
-      userRegistry: params.userRegistry || await this.deriveUserRegistry(submitter),
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(submitter),
       submitter,
       clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
       evidenceType: params.evidenceType,
@@ -334,7 +330,7 @@ export class DisputeInstructions extends BaseInstructions {
     // Build instruction
     const instruction = getResolveDisputeInstruction({
       dispute: params.dispute,
-      arbitratorRegistry: params.userRegistry || await this.deriveUserRegistry(moderator),
+      arbitratorRegistry: params.userRegistry ?? await this.deriveUserRegistry(moderator),
       arbitrator: moderator,
       clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
       resolution: params.resolution,
@@ -367,7 +363,7 @@ export class DisputeInstructions extends BaseInstructions {
 
     const instruction = getResolveDisputeInstruction({
       dispute: params.dispute,
-      arbitratorRegistry: params.userRegistry || await this.deriveUserRegistry(moderator),
+      arbitratorRegistry: params.userRegistry ?? await this.deriveUserRegistry(moderator),
       arbitrator: moderator,
       clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
       resolution: params.resolution,
@@ -641,8 +637,8 @@ export class DisputeInstructions extends BaseInstructions {
   }
 
   private async deriveUserRegistry(user: TransactionSigner): Promise<Address> {
-    // In production, derive proper user registry PDA
-    // For now, return a placeholder
+    // In production, derive proper user registry PDA based on user's public key
+    console.log(`Deriving user registry for ${user}`)
     return '11111111111111111111111111111111' as Address
   }
 

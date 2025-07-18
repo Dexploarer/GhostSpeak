@@ -30,7 +30,7 @@ import {
 } from '@solana/kit';
 
 /** Submission details for regulatory reports */
-export type SubmissionDetails = {
+export interface SubmissionDetails {
   /** Submission timestamp */
   submittedAt: bigint;
   /** Regulatory body */
@@ -43,9 +43,9 @@ export type SubmissionDetails = {
   acknowledgedAt: Option<bigint>;
   /** Response from regulatory body */
   regulatoryResponse: Option<string>;
-};
+}
 
-export type SubmissionDetailsArgs = {
+export interface SubmissionDetailsArgs {
   /** Submission timestamp */
   submittedAt: number | bigint;
   /** Regulatory body */
@@ -58,7 +58,7 @@ export type SubmissionDetailsArgs = {
   acknowledgedAt: OptionOrNullable<number | bigint>;
   /** Response from regulatory body */
   regulatoryResponse: OptionOrNullable<string>;
-};
+}
 
 export function getSubmissionDetailsEncoder(): Encoder<SubmissionDetailsArgs> {
   return getStructEncoder([

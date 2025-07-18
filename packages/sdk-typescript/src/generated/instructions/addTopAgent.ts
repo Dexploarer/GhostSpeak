@@ -71,12 +71,12 @@ export type AddTopAgentInstruction<
     ]
   >;
 
-export type AddTopAgentInstructionData = {
+export interface AddTopAgentInstructionData {
   discriminator: ReadonlyUint8Array;
   agent: Address;
-};
+}
 
-export type AddTopAgentInstructionDataArgs = { agent: Address };
+export interface AddTopAgentInstructionDataArgs { agent: Address }
 
 export function getAddTopAgentInstructionDataEncoder(): Encoder<AddTopAgentInstructionDataArgs> {
   return transformEncoder(
@@ -105,11 +105,11 @@ export function getAddTopAgentInstructionDataCodec(): Codec<
   );
 }
 
-export type AddTopAgentInput<
+export interface AddTopAgentInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Market analytics account with canonical bump validation */
   marketAnalytics: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification */
@@ -117,7 +117,7 @@ export type AddTopAgentInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   agent: AddTopAgentInstructionDataArgs['agent'];
-};
+}
 
 export function getAddTopAgentInstruction<
   TAccountMarketAnalytics extends string,
@@ -183,10 +183,10 @@ export function getAddTopAgentInstruction<
   return instruction;
 }
 
-export type ParsedAddTopAgentInstruction<
+export interface ParsedAddTopAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Market analytics account with canonical bump validation */
@@ -197,7 +197,7 @@ export type ParsedAddTopAgentInstruction<
     clock: TAccountMetas[2];
   };
   data: AddTopAgentInstructionData;
-};
+}
 
 export function parseAddTopAgentInstruction<
   TProgram extends string,

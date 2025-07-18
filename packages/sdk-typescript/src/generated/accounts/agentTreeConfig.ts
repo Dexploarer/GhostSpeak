@@ -49,7 +49,7 @@ export function getAgentTreeConfigDiscriminatorBytes() {
   );
 }
 
-export type AgentTreeConfig = {
+export interface AgentTreeConfig {
   discriminator: ReadonlyUint8Array;
   /** Tree creator/owner */
   treeCreator: Address;
@@ -59,9 +59,9 @@ export type AgentTreeConfig = {
   numMinted: bigint;
   /** Bump seed */
   bump: number;
-};
+}
 
-export type AgentTreeConfigArgs = {
+export interface AgentTreeConfigArgs {
   /** Tree creator/owner */
   treeCreator: Address;
   /** Tree delegate authority */
@@ -70,7 +70,7 @@ export type AgentTreeConfigArgs = {
   numMinted: number | bigint;
   /** Bump seed */
   bump: number;
-};
+}
 
 export function getAgentTreeConfigEncoder(): Encoder<AgentTreeConfigArgs> {
   return transformEncoder(
@@ -142,7 +142,7 @@ export async function fetchMaybeAgentTreeConfig<
 
 export async function fetchAllAgentTreeConfig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<AgentTreeConfig>[]> {
   const maybeAccounts = await fetchAllMaybeAgentTreeConfig(
@@ -156,7 +156,7 @@ export async function fetchAllAgentTreeConfig(
 
 export async function fetchAllMaybeAgentTreeConfig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<AgentTreeConfig>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

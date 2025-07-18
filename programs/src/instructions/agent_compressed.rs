@@ -126,7 +126,7 @@ pub fn register_agent_compressed(
         agent_id: agent_id.clone(),
         agent_type,
         metadata_uri: metadata_uri.clone(),
-        name: format!("Agent-{}", agent_id), // Auto-generated name
+        name: format!("Agent-{agent_id}"), // Auto-generated name
         description: "Compressed AI Agent".to_string(),
         capabilities: Vec::new(), // Start with empty capabilities, can be updated later
         pricing_model: crate::PricingModel::Fixed, // Default pricing model

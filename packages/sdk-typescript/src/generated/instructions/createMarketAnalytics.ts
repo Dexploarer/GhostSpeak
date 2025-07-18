@@ -82,16 +82,16 @@ export type CreateMarketAnalyticsInstruction<
     ]
   >;
 
-export type CreateMarketAnalyticsInstructionData = {
+export interface CreateMarketAnalyticsInstructionData {
   discriminator: ReadonlyUint8Array;
   periodStart: bigint;
   periodEnd: bigint;
-};
+}
 
-export type CreateMarketAnalyticsInstructionDataArgs = {
+export interface CreateMarketAnalyticsInstructionDataArgs {
   periodStart: number | bigint;
   periodEnd: number | bigint;
-};
+}
 
 export function getCreateMarketAnalyticsInstructionDataEncoder(): Encoder<CreateMarketAnalyticsInstructionDataArgs> {
   return transformEncoder(
@@ -125,12 +125,12 @@ export function getCreateMarketAnalyticsInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateMarketAnalyticsAsyncInput<
+export interface CreateMarketAnalyticsAsyncInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Market analytics account with enhanced PDA security */
   marketAnalytics?: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification - must be protocol admin */
@@ -141,7 +141,7 @@ export type CreateMarketAnalyticsAsyncInput<
   clock?: Address<TAccountClock>;
   periodStart: CreateMarketAnalyticsInstructionDataArgs['periodStart'];
   periodEnd: CreateMarketAnalyticsInstructionDataArgs['periodEnd'];
-};
+}
 
 export async function getCreateMarketAnalyticsInstructionAsync<
   TAccountMarketAnalytics extends string,
@@ -234,12 +234,12 @@ export async function getCreateMarketAnalyticsInstructionAsync<
   return instruction;
 }
 
-export type CreateMarketAnalyticsInput<
+export interface CreateMarketAnalyticsInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Market analytics account with enhanced PDA security */
   marketAnalytics: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification - must be protocol admin */
@@ -250,7 +250,7 @@ export type CreateMarketAnalyticsInput<
   clock?: Address<TAccountClock>;
   periodStart: CreateMarketAnalyticsInstructionDataArgs['periodStart'];
   periodEnd: CreateMarketAnalyticsInstructionDataArgs['periodEnd'];
-};
+}
 
 export function getCreateMarketAnalyticsInstruction<
   TAccountMarketAnalytics extends string,
@@ -326,10 +326,10 @@ export function getCreateMarketAnalyticsInstruction<
   return instruction;
 }
 
-export type ParsedCreateMarketAnalyticsInstruction<
+export interface ParsedCreateMarketAnalyticsInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Market analytics account with enhanced PDA security */
@@ -342,7 +342,7 @@ export type ParsedCreateMarketAnalyticsInstruction<
     clock: TAccountMetas[3];
   };
   data: CreateMarketAnalyticsInstructionData;
-};
+}
 
 export function parseCreateMarketAnalyticsInstruction<
   TProgram extends string,

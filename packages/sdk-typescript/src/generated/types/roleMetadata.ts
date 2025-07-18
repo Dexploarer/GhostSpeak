@@ -43,7 +43,7 @@ import {
 } from '.';
 
 /** Role metadata for additional information */
-export type RoleMetadata = {
+export interface RoleMetadata {
   /** Business purpose */
   businessPurpose: string;
   /** Risk level */
@@ -51,7 +51,7 @@ export type RoleMetadata = {
   /** Data access level */
   dataAccessLevel: DataAccessLevel;
   /** Compliance requirements */
-  complianceRequirements: Array<string>;
+  complianceRequirements: string[];
   /** Role owner */
   roleOwner: Option<Address>;
   /** Role custodian */
@@ -62,9 +62,9 @@ export type RoleMetadata = {
   lastReview: Option<bigint>;
   /** Next review due */
   nextReview: Option<bigint>;
-};
+}
 
-export type RoleMetadataArgs = {
+export interface RoleMetadataArgs {
   /** Business purpose */
   businessPurpose: string;
   /** Risk level */
@@ -72,7 +72,7 @@ export type RoleMetadataArgs = {
   /** Data access level */
   dataAccessLevel: DataAccessLevelArgs;
   /** Compliance requirements */
-  complianceRequirements: Array<string>;
+  complianceRequirements: string[];
   /** Role owner */
   roleOwner: OptionOrNullable<Address>;
   /** Role custodian */
@@ -83,7 +83,7 @@ export type RoleMetadataArgs = {
   lastReview: OptionOrNullable<number | bigint>;
   /** Next review due */
   nextReview: OptionOrNullable<number | bigint>;
-};
+}
 
 export function getRoleMetadataEncoder(): Encoder<RoleMetadataArgs> {
   return getStructEncoder([

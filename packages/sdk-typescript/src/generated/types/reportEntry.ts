@@ -35,7 +35,7 @@ import {
   type RiskIndicatorArgs,
 } from '.';
 
-export type ReportEntry = {
+export interface ReportEntry {
   /** Entry timestamp */
   timestamp: bigint;
   /** Transaction ID */
@@ -47,14 +47,14 @@ export type ReportEntry = {
   /** Compliance flags */
   complianceFlags: ComplianceFlags;
   /** Risk indicators */
-  riskIndicators: Array<RiskIndicator>;
+  riskIndicators: RiskIndicator[];
   /** Anomalies detected */
-  anomalies: Array<string>;
+  anomalies: string[];
   /** Actions taken */
-  actionsTaken: Array<string>;
-};
+  actionsTaken: string[];
+}
 
-export type ReportEntryArgs = {
+export interface ReportEntryArgs {
   /** Entry timestamp */
   timestamp: number | bigint;
   /** Transaction ID */
@@ -66,12 +66,12 @@ export type ReportEntryArgs = {
   /** Compliance flags */
   complianceFlags: ComplianceFlagsArgs;
   /** Risk indicators */
-  riskIndicators: Array<RiskIndicatorArgs>;
+  riskIndicators: RiskIndicatorArgs[];
   /** Anomalies detected */
-  anomalies: Array<string>;
+  anomalies: string[];
   /** Actions taken */
-  actionsTaken: Array<string>;
-};
+  actionsTaken: string[];
+}
 
 export function getReportEntryEncoder(): Encoder<ReportEntryArgs> {
   return getStructEncoder([

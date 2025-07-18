@@ -62,12 +62,12 @@ export type ExportActionInstruction<
     ]
   >;
 
-export type ExportActionInstructionData = {
+export interface ExportActionInstructionData {
   discriminator: ReadonlyUint8Array;
   data: Action;
-};
+}
 
-export type ExportActionInstructionDataArgs = { data: ActionArgs };
+export interface ExportActionInstructionDataArgs { data: ActionArgs }
 
 export function getExportActionInstructionDataEncoder(): Encoder<ExportActionInstructionDataArgs> {
   return transformEncoder(
@@ -96,10 +96,10 @@ export function getExportActionInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportActionInput<TAccountSystemProgram extends string = string> = {
+export interface ExportActionInput<TAccountSystemProgram extends string = string> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportActionInstructionDataArgs['data'];
-};
+}
 
 export function getExportActionInstruction<
   TAccountSystemProgram extends string,
@@ -143,16 +143,16 @@ export function getExportActionInstruction<
   return instruction;
 }
 
-export type ParsedExportActionInstruction<
+export interface ParsedExportActionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportActionInstructionData;
-};
+}
 
 export function parseExportActionInstruction<
   TProgram extends string,

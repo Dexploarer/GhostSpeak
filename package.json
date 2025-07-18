@@ -14,7 +14,10 @@
     "build": "anchor build",
     "build:release": "anchor build --release",
     "test": "anchor test",
-    "lint": "cd programs && cargo clippy -- -D warnings",
+    "lint": "npm run lint:rust && npm run lint:ts",
+    "lint:rust": "cd programs && cargo clippy -- -D warnings",
+    "lint:ts": "eslint . --max-warnings=750",
+    "lint:fix": "eslint . --fix",
     "format": "cd programs && cargo fmt",
     "clean": "anchor clean",
     "deploy": "anchor deploy",
@@ -74,14 +77,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
+    "@types/node": "^24.0.13",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
-    "eslint": "^9.31.0",
-    "@types/node": "^24.0.13",
-    "typescript": "^5.3.0",
-    "tsx": "^4.20.3",
+    "@vitest/coverage-v8": "^3.2.4",
     "chalk": "^5.3.0",
-    "vitest": "^3.2.4",
-    "@vitest/coverage-v8": "^3.2.4"
+    "eslint": "^9.31.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.37.0",
+    "vitest": "^3.2.4"
   }
 }

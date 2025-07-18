@@ -20,17 +20,17 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AgentUpdatedEvent = {
+export interface AgentUpdatedEvent {
   agent: Address;
   owner: Address;
   timestamp: bigint;
-};
+}
 
-export type AgentUpdatedEventArgs = {
+export interface AgentUpdatedEventArgs {
   agent: Address;
   owner: Address;
   timestamp: number | bigint;
-};
+}
 
 export function getAgentUpdatedEventEncoder(): Encoder<AgentUpdatedEventArgs> {
   return getStructEncoder([

@@ -21,9 +21,9 @@ import {
   type BiometricQualityArgs,
 } from '.';
 
-export type BiometricQualityExport = { data: BiometricQuality };
+export interface BiometricQualityExport { data: BiometricQuality }
 
-export type BiometricQualityExportArgs = { data: BiometricQualityArgs };
+export interface BiometricQualityExportArgs { data: BiometricQualityArgs }
 
 export function getBiometricQualityExportEncoder(): Encoder<BiometricQualityExportArgs> {
   return getStructEncoder([['data', getBiometricQualityEncoder()]]);

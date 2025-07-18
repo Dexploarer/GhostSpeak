@@ -17,11 +17,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type NetworkSecurityPolicies = {
+export interface NetworkSecurityPolicies {
   firewallRequired: boolean;
   intrusionDetection: boolean;
   trafficMonitoring: boolean;
-};
+}
 
 export type NetworkSecurityPoliciesArgs = NetworkSecurityPolicies;
 

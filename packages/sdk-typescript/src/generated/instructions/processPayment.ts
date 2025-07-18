@@ -105,16 +105,16 @@ export type ProcessPaymentInstruction<
     ]
   >;
 
-export type ProcessPaymentInstructionData = {
+export interface ProcessPaymentInstructionData {
   discriminator: ReadonlyUint8Array;
   amount: bigint;
   useConfidentialTransfer: boolean;
-};
+}
 
-export type ProcessPaymentInstructionDataArgs = {
+export interface ProcessPaymentInstructionDataArgs {
   amount: number | bigint;
   useConfidentialTransfer: boolean;
-};
+}
 
 export function getProcessPaymentInstructionDataEncoder(): Encoder<ProcessPaymentInstructionDataArgs> {
   return transformEncoder(
@@ -145,7 +145,7 @@ export function getProcessPaymentInstructionDataCodec(): Codec<
   );
 }
 
-export type ProcessPaymentAsyncInput<
+export interface ProcessPaymentAsyncInput<
   TAccountPayment extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProviderAgent extends string = string,
@@ -155,7 +155,7 @@ export type ProcessPaymentAsyncInput<
   TAccountTokenMint extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   payment?: Address<TAccountPayment>;
   workOrder: Address<TAccountWorkOrder>;
   providerAgent: Address<TAccountProviderAgent>;
@@ -167,7 +167,7 @@ export type ProcessPaymentAsyncInput<
   systemProgram?: Address<TAccountSystemProgram>;
   amount: ProcessPaymentInstructionDataArgs['amount'];
   useConfidentialTransfer: ProcessPaymentInstructionDataArgs['useConfidentialTransfer'];
-};
+}
 
 export async function getProcessPaymentInstructionAsync<
   TAccountPayment extends string,
@@ -292,7 +292,7 @@ export async function getProcessPaymentInstructionAsync<
   return instruction;
 }
 
-export type ProcessPaymentInput<
+export interface ProcessPaymentInput<
   TAccountPayment extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProviderAgent extends string = string,
@@ -302,7 +302,7 @@ export type ProcessPaymentInput<
   TAccountTokenMint extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   payment: Address<TAccountPayment>;
   workOrder: Address<TAccountWorkOrder>;
   providerAgent: Address<TAccountProviderAgent>;
@@ -314,7 +314,7 @@ export type ProcessPaymentInput<
   systemProgram?: Address<TAccountSystemProgram>;
   amount: ProcessPaymentInstructionDataArgs['amount'];
   useConfidentialTransfer: ProcessPaymentInstructionDataArgs['useConfidentialTransfer'];
-};
+}
 
 export function getProcessPaymentInstruction<
   TAccountPayment extends string,
@@ -426,10 +426,10 @@ export function getProcessPaymentInstruction<
   return instruction;
 }
 
-export type ParsedProcessPaymentInstruction<
+export interface ParsedProcessPaymentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     payment: TAccountMetas[0];
@@ -443,7 +443,7 @@ export type ParsedProcessPaymentInstruction<
     systemProgram: TAccountMetas[8];
   };
   data: ProcessPaymentInstructionData;
-};
+}
 
 export function parseProcessPaymentInstruction<
   TProgram extends string,

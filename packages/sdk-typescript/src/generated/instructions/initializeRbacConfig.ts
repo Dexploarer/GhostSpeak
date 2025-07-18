@@ -83,14 +83,14 @@ export type InitializeRbacConfigInstruction<
     ]
   >;
 
-export type InitializeRbacConfigInstructionData = {
+export interface InitializeRbacConfigInstructionData {
   discriminator: ReadonlyUint8Array;
-  initialRoles: Array<Role>;
-};
+  initialRoles: Role[];
+}
 
-export type InitializeRbacConfigInstructionDataArgs = {
-  initialRoles: Array<RoleArgs>;
-};
+export interface InitializeRbacConfigInstructionDataArgs {
+  initialRoles: RoleArgs[];
+}
 
 export function getInitializeRbacConfigInstructionDataEncoder(): Encoder<InitializeRbacConfigInstructionDataArgs> {
   return transformEncoder(
@@ -122,16 +122,16 @@ export function getInitializeRbacConfigInstructionDataCodec(): Codec<
   );
 }
 
-export type InitializeRbacConfigAsyncInput<
+export interface InitializeRbacConfigAsyncInput<
   TAccountRbacConfig extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   rbacConfig?: Address<TAccountRbacConfig>;
   authority: TransactionSigner<TAccountAuthority>;
   systemProgram?: Address<TAccountSystemProgram>;
   initialRoles: InitializeRbacConfigInstructionDataArgs['initialRoles'];
-};
+}
 
 export async function getInitializeRbacConfigInstructionAsync<
   TAccountRbacConfig extends string,
@@ -210,16 +210,16 @@ export async function getInitializeRbacConfigInstructionAsync<
   return instruction;
 }
 
-export type InitializeRbacConfigInput<
+export interface InitializeRbacConfigInput<
   TAccountRbacConfig extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   rbacConfig: Address<TAccountRbacConfig>;
   authority: TransactionSigner<TAccountAuthority>;
   systemProgram?: Address<TAccountSystemProgram>;
   initialRoles: InitializeRbacConfigInstructionDataArgs['initialRoles'];
-};
+}
 
 export function getInitializeRbacConfigInstruction<
   TAccountRbacConfig extends string,
@@ -285,10 +285,10 @@ export function getInitializeRbacConfigInstruction<
   return instruction;
 }
 
-export type ParsedInitializeRbacConfigInstruction<
+export interface ParsedInitializeRbacConfigInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     rbacConfig: TAccountMetas[0];
@@ -296,7 +296,7 @@ export type ParsedInitializeRbacConfigInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: InitializeRbacConfigInstructionData;
-};
+}
 
 export function parseInitializeRbacConfigInstruction<
   TProgram extends string,

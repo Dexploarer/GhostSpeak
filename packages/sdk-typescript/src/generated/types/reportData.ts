@@ -42,31 +42,31 @@ import {
 } from '.';
 
 /** Report data container */
-export type ReportData = {
+export interface ReportData {
   /** Summary statistics */
   summary: ReportSummary;
   /** Detailed entries */
-  entries: Array<ReportEntry>;
+  entries: ReportEntry[];
   /** Compliance metrics */
   complianceMetrics: ComplianceMetrics;
   /** Risk indicators */
-  riskIndicators: Array<RiskIndicator>;
+  riskIndicators: RiskIndicator[];
   /** Recommendations */
-  recommendations: Array<string>;
-};
+  recommendations: string[];
+}
 
-export type ReportDataArgs = {
+export interface ReportDataArgs {
   /** Summary statistics */
   summary: ReportSummaryArgs;
   /** Detailed entries */
-  entries: Array<ReportEntryArgs>;
+  entries: ReportEntryArgs[];
   /** Compliance metrics */
   complianceMetrics: ComplianceMetricsArgs;
   /** Risk indicators */
-  riskIndicators: Array<RiskIndicatorArgs>;
+  riskIndicators: RiskIndicatorArgs[];
   /** Recommendations */
-  recommendations: Array<string>;
-};
+  recommendations: string[];
+}
 
 export function getReportDataEncoder(): Encoder<ReportDataArgs> {
   return getStructEncoder([

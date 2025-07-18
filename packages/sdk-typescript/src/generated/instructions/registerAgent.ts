@@ -94,18 +94,18 @@ export type RegisterAgentInstruction<
     ]
   >;
 
-export type RegisterAgentInstructionData = {
+export interface RegisterAgentInstructionData {
   discriminator: ReadonlyUint8Array;
   agentType: number;
   metadataUri: string;
   agentId: string;
-};
+}
 
-export type RegisterAgentInstructionDataArgs = {
+export interface RegisterAgentInstructionDataArgs {
   agentType: number;
   metadataUri: string;
   agentId: string;
-};
+}
 
 export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentInstructionDataArgs> {
   return transformEncoder(
@@ -144,13 +144,13 @@ export function getRegisterAgentInstructionDataCodec(): Codec<
   );
 }
 
-export type RegisterAgentAsyncInput<
+export interface RegisterAgentAsyncInput<
   TAccountAgentAccount extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Agent account with enhanced 2025 PDA security */
   agentAccount?: Address<TAccountAgentAccount>;
   /** User registry with enhanced validation */
@@ -164,7 +164,7 @@ export type RegisterAgentAsyncInput<
   agentType: RegisterAgentInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentInstructionDataArgs['agentId'];
-};
+}
 
 export async function getRegisterAgentInstructionAsync<
   TAccountAgentAccount extends string,
@@ -273,13 +273,13 @@ export async function getRegisterAgentInstructionAsync<
   return instruction;
 }
 
-export type RegisterAgentInput<
+export interface RegisterAgentInput<
   TAccountAgentAccount extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Agent account with enhanced 2025 PDA security */
   agentAccount: Address<TAccountAgentAccount>;
   /** User registry with enhanced validation */
@@ -293,7 +293,7 @@ export type RegisterAgentInput<
   agentType: RegisterAgentInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentInstructionDataArgs['agentId'];
-};
+}
 
 export function getRegisterAgentInstruction<
   TAccountAgentAccount extends string,
@@ -375,10 +375,10 @@ export function getRegisterAgentInstruction<
   return instruction;
 }
 
-export type ParsedRegisterAgentInstruction<
+export interface ParsedRegisterAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with enhanced 2025 PDA security */
@@ -393,7 +393,7 @@ export type ParsedRegisterAgentInstruction<
     clock: TAccountMetas[4];
   };
   data: RegisterAgentInstructionData;
-};
+}
 
 export function parseRegisterAgentInstruction<
   TProgram extends string,

@@ -275,7 +275,7 @@ export class AgentWalletManager {
    */
   static async createAgentSigner(credentials: AgentCredentials): Promise<KeyPairSigner> {
     const secretKey = new Uint8Array(credentials.agentWallet.secretKey)
-    return await createKeyPairSignerFromBytes(secretKey)
+    return createKeyPairSignerFromBytes(secretKey)
   }
   
   /**

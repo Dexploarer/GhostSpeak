@@ -100,12 +100,12 @@ export type FileDisputeInstruction<
     ]
   >;
 
-export type FileDisputeInstructionData = {
+export interface FileDisputeInstructionData {
   discriminator: ReadonlyUint8Array;
   reason: string;
-};
+}
 
-export type FileDisputeInstructionDataArgs = { reason: string };
+export interface FileDisputeInstructionDataArgs { reason: string }
 
 export function getFileDisputeInstructionDataEncoder(): Encoder<FileDisputeInstructionDataArgs> {
   return transformEncoder(
@@ -134,7 +134,7 @@ export function getFileDisputeInstructionDataCodec(): Codec<
   );
 }
 
-export type FileDisputeAsyncInput<
+export interface FileDisputeAsyncInput<
   TAccountDispute extends string = string,
   TAccountTransaction extends string = string,
   TAccountUserRegistry extends string = string,
@@ -142,7 +142,7 @@ export type FileDisputeAsyncInput<
   TAccountRespondent extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dispute account with collision prevention */
   dispute?: Address<TAccountDispute>;
   /**
@@ -162,7 +162,7 @@ export type FileDisputeAsyncInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   reason: FileDisputeInstructionDataArgs['reason'];
-};
+}
 
 export async function getFileDisputeInstructionAsync<
   TAccountDispute extends string,
@@ -286,7 +286,7 @@ export async function getFileDisputeInstructionAsync<
   return instruction;
 }
 
-export type FileDisputeInput<
+export interface FileDisputeInput<
   TAccountDispute extends string = string,
   TAccountTransaction extends string = string,
   TAccountUserRegistry extends string = string,
@@ -294,7 +294,7 @@ export type FileDisputeInput<
   TAccountRespondent extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dispute account with collision prevention */
   dispute: Address<TAccountDispute>;
   /**
@@ -314,7 +314,7 @@ export type FileDisputeInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   reason: FileDisputeInstructionDataArgs['reason'];
-};
+}
 
 export function getFileDisputeInstruction<
   TAccountDispute extends string,
@@ -408,10 +408,10 @@ export function getFileDisputeInstruction<
   return instruction;
 }
 
-export type ParsedFileDisputeInstruction<
+export interface ParsedFileDisputeInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dispute account with collision prevention */
@@ -435,7 +435,7 @@ export type ParsedFileDisputeInstruction<
     clock: TAccountMetas[6];
   };
   data: FileDisputeInstructionData;
-};
+}
 
 export function parseFileDisputeInstruction<
   TProgram extends string,

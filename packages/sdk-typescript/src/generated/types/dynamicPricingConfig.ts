@@ -23,7 +23,7 @@ import {
   type PricingAlgorithmArgs,
 } from '.';
 
-export type DynamicPricingConfig = {
+export interface DynamicPricingConfig {
   algorithm: PricingAlgorithm;
   basePrice: bigint;
   minPrice: bigint;
@@ -33,9 +33,9 @@ export type DynamicPricingConfig = {
   supplyMultiplier: bigint;
   timeDecayFactor: bigint;
   updateFrequency: bigint;
-};
+}
 
-export type DynamicPricingConfigArgs = {
+export interface DynamicPricingConfigArgs {
   algorithm: PricingAlgorithmArgs;
   basePrice: number | bigint;
   minPrice: number | bigint;
@@ -45,7 +45,7 @@ export type DynamicPricingConfigArgs = {
   supplyMultiplier: number | bigint;
   timeDecayFactor: number | bigint;
   updateFrequency: number | bigint;
-};
+}
 
 export function getDynamicPricingConfigEncoder(): Encoder<DynamicPricingConfigArgs> {
   return getStructEncoder([

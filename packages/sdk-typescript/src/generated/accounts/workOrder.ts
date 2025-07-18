@@ -67,13 +67,13 @@ export function getWorkOrderDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(WORK_ORDER_DISCRIMINATOR);
 }
 
-export type WorkOrder = {
+export interface WorkOrder {
   discriminator: ReadonlyUint8Array;
   client: Address;
   provider: Address;
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   paymentAmount: bigint;
   paymentToken: Address;
   status: WorkOrderStatus;
@@ -82,14 +82,14 @@ export type WorkOrder = {
   deadline: bigint;
   deliveredAt: Option<bigint>;
   bump: number;
-};
+}
 
-export type WorkOrderArgs = {
+export interface WorkOrderArgs {
   client: Address;
   provider: Address;
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   paymentAmount: number | bigint;
   paymentToken: Address;
   status: WorkOrderStatusArgs;
@@ -98,7 +98,7 @@ export type WorkOrderArgs = {
   deadline: number | bigint;
   deliveredAt: OptionOrNullable<number | bigint>;
   bump: number;
-};
+}
 
 export function getWorkOrderEncoder(): Encoder<WorkOrderArgs> {
   return transformEncoder(
@@ -189,7 +189,7 @@ export async function fetchMaybeWorkOrder<TAddress extends string = string>(
 
 export async function fetchAllWorkOrder(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<WorkOrder>[]> {
   const maybeAccounts = await fetchAllMaybeWorkOrder(rpc, addresses, config);
@@ -199,7 +199,7 @@ export async function fetchAllWorkOrder(
 
 export async function fetchAllMaybeWorkOrder(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<WorkOrder>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

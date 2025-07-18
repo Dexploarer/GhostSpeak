@@ -146,7 +146,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     }
@@ -229,7 +229,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     } else if (choice === 'example-agent') {
@@ -268,7 +268,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     }
@@ -298,7 +298,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     }
@@ -328,7 +328,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     }
@@ -358,7 +358,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     }
@@ -387,7 +387,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     }
@@ -416,7 +416,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     }
@@ -444,7 +444,7 @@ export class InteractiveMenu {
     }
 
     const selected = commands.find(cmd => cmd.value === choice)
-    if (selected && selected.command) {
+    if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
     } else if (choice === 'marketplace') {
@@ -544,7 +544,7 @@ export class InteractiveMenu {
     }
   }
 
-  private getRecentCommands(): Array<{ command: string; label: string; timestamp: number }> {
+  private getRecentCommands(): { command: string; label: string; timestamp: number }[] {
     try {
       if (existsSync(RECENT_COMMANDS_FILE)) {
         return JSON.parse(readFileSync(RECENT_COMMANDS_FILE, 'utf-8'))

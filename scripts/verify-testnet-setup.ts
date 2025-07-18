@@ -182,7 +182,7 @@ class TestnetSetupVerifier {
     // Check Solana config
     try {
       const config = execSync('solana config get', { encoding: 'utf8' });
-      const rpcUrl = config.match(/RPC URL: (.*)/)?.[1]?.trim();
+      const rpcUrl = (/RPC URL: (.*)/.exec(config))?.[1]?.trim();
       
       checks.push({
         name: 'Solana Configuration',

@@ -19,17 +19,17 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type RoyaltyConfig = {
+export interface RoyaltyConfig {
   percentage: number;
   minAmount: bigint;
   maxAmount: bigint;
-};
+}
 
-export type RoyaltyConfigArgs = {
+export interface RoyaltyConfigArgs {
   percentage: number;
   minAmount: number | bigint;
   maxAmount: number | bigint;
-};
+}
 
 export function getRoyaltyConfigEncoder(): Encoder<RoyaltyConfigArgs> {
   return getStructEncoder([

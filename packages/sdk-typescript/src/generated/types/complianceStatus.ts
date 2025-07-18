@@ -36,7 +36,7 @@ import {
   type ViolationSeverityArgs,
 } from '.';
 
-export type ComplianceStatus = {
+export interface ComplianceStatus {
   /** Overall compliance score (0-100) */
   complianceScore: number;
   /** Last compliance review timestamp */
@@ -44,16 +44,16 @@ export type ComplianceStatus = {
   /** Next scheduled review */
   nextReview: bigint;
   /** Active compliance violations */
-  activeViolations: Array<ViolationSeverity>;
+  activeViolations: ViolationSeverity[];
   /** Regulatory status flags */
-  regulatoryStatus: Array<string>;
+  regulatoryStatus: string[];
   /** Risk assessment */
   riskAssessment: RiskAssessment;
   /** Compliance officers */
-  complianceOfficers: Array<Address>;
-};
+  complianceOfficers: Address[];
+}
 
-export type ComplianceStatusArgs = {
+export interface ComplianceStatusArgs {
   /** Overall compliance score (0-100) */
   complianceScore: number;
   /** Last compliance review timestamp */
@@ -61,14 +61,14 @@ export type ComplianceStatusArgs = {
   /** Next scheduled review */
   nextReview: number | bigint;
   /** Active compliance violations */
-  activeViolations: Array<ViolationSeverityArgs>;
+  activeViolations: ViolationSeverityArgs[];
   /** Regulatory status flags */
-  regulatoryStatus: Array<string>;
+  regulatoryStatus: string[];
   /** Risk assessment */
   riskAssessment: RiskAssessmentArgs;
   /** Compliance officers */
-  complianceOfficers: Array<Address>;
-};
+  complianceOfficers: Address[];
+}
 
 export function getComplianceStatusEncoder(): Encoder<ComplianceStatusArgs> {
   return getStructEncoder([

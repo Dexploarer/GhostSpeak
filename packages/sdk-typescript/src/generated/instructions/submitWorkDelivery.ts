@@ -99,18 +99,18 @@ export type SubmitWorkDeliveryInstruction<
     ]
   >;
 
-export type SubmitWorkDeliveryInstructionData = {
+export interface SubmitWorkDeliveryInstructionData {
   discriminator: ReadonlyUint8Array;
-  deliverables: Array<Deliverable>;
+  deliverables: Deliverable[];
   ipfsHash: string;
   metadataUri: string;
-};
+}
 
-export type SubmitWorkDeliveryInstructionDataArgs = {
-  deliverables: Array<DeliverableArgs>;
+export interface SubmitWorkDeliveryInstructionDataArgs {
+  deliverables: DeliverableArgs[];
   ipfsHash: string;
   metadataUri: string;
-};
+}
 
 export function getSubmitWorkDeliveryInstructionDataEncoder(): Encoder<SubmitWorkDeliveryInstructionDataArgs> {
   return transformEncoder(
@@ -143,13 +143,13 @@ export function getSubmitWorkDeliveryInstructionDataCodec(): Codec<
   );
 }
 
-export type SubmitWorkDeliveryAsyncInput<
+export interface SubmitWorkDeliveryAsyncInput<
   TAccountWorkDelivery extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProvider extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   workDelivery?: Address<TAccountWorkDelivery>;
   workOrder: Address<TAccountWorkOrder>;
   provider: TransactionSigner<TAccountProvider>;
@@ -158,7 +158,7 @@ export type SubmitWorkDeliveryAsyncInput<
   deliverables: SubmitWorkDeliveryInstructionDataArgs['deliverables'];
   ipfsHash: SubmitWorkDeliveryInstructionDataArgs['ipfsHash'];
   metadataUri: SubmitWorkDeliveryInstructionDataArgs['metadataUri'];
-};
+}
 
 export async function getSubmitWorkDeliveryInstructionAsync<
   TAccountWorkDelivery extends string,
@@ -255,13 +255,13 @@ export async function getSubmitWorkDeliveryInstructionAsync<
   return instruction;
 }
 
-export type SubmitWorkDeliveryInput<
+export interface SubmitWorkDeliveryInput<
   TAccountWorkDelivery extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProvider extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   workDelivery: Address<TAccountWorkDelivery>;
   workOrder: Address<TAccountWorkOrder>;
   provider: TransactionSigner<TAccountProvider>;
@@ -270,7 +270,7 @@ export type SubmitWorkDeliveryInput<
   deliverables: SubmitWorkDeliveryInstructionDataArgs['deliverables'];
   ipfsHash: SubmitWorkDeliveryInstructionDataArgs['ipfsHash'];
   metadataUri: SubmitWorkDeliveryInstructionDataArgs['metadataUri'];
-};
+}
 
 export function getSubmitWorkDeliveryInstruction<
   TAccountWorkDelivery extends string,
@@ -352,10 +352,10 @@ export function getSubmitWorkDeliveryInstruction<
   return instruction;
 }
 
-export type ParsedSubmitWorkDeliveryInstruction<
+export interface ParsedSubmitWorkDeliveryInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     workDelivery: TAccountMetas[0];
@@ -365,7 +365,7 @@ export type ParsedSubmitWorkDeliveryInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: SubmitWorkDeliveryInstructionData;
-};
+}
 
 export function parseSubmitWorkDeliveryInstruction<
   TProgram extends string,

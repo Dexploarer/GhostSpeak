@@ -83,20 +83,20 @@ export type CreateChannelInstruction<
     ]
   >;
 
-export type CreateChannelInstructionData = {
+export interface CreateChannelInstructionData {
   discriminator: ReadonlyUint8Array;
   channelId: bigint;
-  participants: Array<Address>;
+  participants: Address[];
   channelType: ChannelType;
   isPrivate: boolean;
-};
+}
 
-export type CreateChannelInstructionDataArgs = {
+export interface CreateChannelInstructionDataArgs {
   channelId: number | bigint;
-  participants: Array<Address>;
+  participants: Address[];
   channelType: ChannelTypeArgs;
   isPrivate: boolean;
-};
+}
 
 export function getCreateChannelInstructionDataEncoder(): Encoder<CreateChannelInstructionDataArgs> {
   return transformEncoder(
@@ -131,11 +131,11 @@ export function getCreateChannelInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateChannelInput<
+export interface CreateChannelInput<
   TAccountChannel extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   channel: Address<TAccountChannel>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -143,7 +143,7 @@ export type CreateChannelInput<
   participants: CreateChannelInstructionDataArgs['participants'];
   channelType: CreateChannelInstructionDataArgs['channelType'];
   isPrivate: CreateChannelInstructionDataArgs['isPrivate'];
-};
+}
 
 export function getCreateChannelInstruction<
   TAccountChannel extends string,
@@ -209,10 +209,10 @@ export function getCreateChannelInstruction<
   return instruction;
 }
 
-export type ParsedCreateChannelInstruction<
+export interface ParsedCreateChannelInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     channel: TAccountMetas[0];
@@ -220,7 +220,7 @@ export type ParsedCreateChannelInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateChannelInstructionData;
-};
+}
 
 export function parseCreateChannelInstruction<
   TProgram extends string,

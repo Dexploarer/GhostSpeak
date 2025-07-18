@@ -6,15 +6,41 @@
  */
 
 import type { Address, Option } from '@solana/kit'
-import { getAddressEncoder, getProgramDerivedAddress } from '@solana/kit'
+import { getAddressEncoder, getProgramDerivedAddress, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } from '@solana/kit'
 import {
-  ComplianceStatus,
   RiskLevel,
   ReportType,
   ReportStatus,
   type ComplianceReport,
-  type ReportData
+  type ReportData,
+  type SubmissionDetails
 } from '../generated/index.js'
+
+// Interfaces for compliance data
+interface ComplianceTransaction {
+  amount: bigint
+  riskLevel: RiskLevel
+  timestamp?: bigint
+  from?: Address
+  to?: Address
+}
+
+interface ComplianceIncident {
+  id?: string
+  type?: string  
+  resolved: boolean
+  severity?: string
+  timestamp?: bigint
+  description?: string
+}
+
+interface ComplianceData {
+  totalUsers: number
+  verifiedUsers?: number
+  transactions: ComplianceTransaction[]
+  incidents: ComplianceIncident[]
+  riskLevel?: RiskLevel
+}
 
 // Define missing types locally since they're not in generated types
 export enum ComplianceLevel {
@@ -83,7 +109,7 @@ export async function deriveComplianceReportPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('compliance_report'),
+      getBytesEncoder().encode(new Uint8Array([99, 111, 109, 112, 108, 105, 97, 110, 99, 101, 95, 114, 101, 112, 111, 114, 116])), // 'compliance_report'
       getAddressEncoder().encode(entity),
       new Uint8Array(new BigUint64Array([reportId]).buffer)
     ]
@@ -101,7 +127,7 @@ export async function deriveKycDataPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('kyc_data'),
+      getBytesEncoder().encode(new Uint8Array([107, 121, 99, 95, 100, 97, 116, 97])), // 'kyc_data'
       getAddressEncoder().encode(user)
     ]
   })
@@ -118,8 +144,8 @@ export async function deriveRegulatoryConfigPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('regulatory_config'),
-      new TextEncoder().encode(jurisdiction)
+      getBytesEncoder().encode(new Uint8Array([114, 101, 103, 117, 108, 97, 116, 111, 114, 121, 95, 99, 111, 110, 102, 105, 103])), // 'regulatory_config'
+      addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(jurisdiction)
     ]
   })
   return pda
@@ -186,7 +212,7 @@ export class KycAmlUtils {
    */
   static performAmlAssessment(
     amlCheck: AmlCheck,
-    transactionHistory: Array<{ amount: bigint; timestamp: bigint; counterparty: Address }>
+    transactionHistory: { amount: bigint; timestamp: bigint; counterparty: Address }[]
   ): {
     riskLevel: RiskLevel
     flags: string[]
@@ -241,7 +267,7 @@ export class KycAmlUtils {
    * Analyze transaction patterns for suspicious activity
    */
   private static analyzeSuspiciousPatterns(
-    transactions: Array<{ amount: bigint; timestamp: bigint; counterparty: Address }>
+    transactions: { amount: bigint; timestamp: bigint; counterparty: Address }[]
   ): string[] {
     const patterns: string[] = []
 
@@ -266,7 +292,7 @@ export class KycAmlUtils {
     // Same counterparty concentration
     const counterpartyMap = new Map<string, number>()
     transactions.forEach(tx => {
-      const count = counterpartyMap.get(tx.counterparty) || 0
+      const count = counterpartyMap.get(tx.counterparty) ?? 0
       counterpartyMap.set(tx.counterparty, count + 1)
     })
     
@@ -282,7 +308,7 @@ export class KycAmlUtils {
    * Find rapid transactions within time window
    */
   private static findRapidTransactions(
-    transactions: Array<{ timestamp: bigint }>,
+    transactions: { timestamp: bigint }[],
     windowSeconds: number
   ): number {
     let maxCount = 0
@@ -404,8 +430,8 @@ export class RegulatoryFramework {
   static generateComplianceChecklist(
     jurisdiction: string,
     transactionType: string
-  ): Array<{ requirement: string; mandatory: boolean; description: string }> {
-    const checklist: Array<{ requirement: string; mandatory: boolean; description: string }> = []
+  ): { requirement: string; mandatory: boolean; description: string }[] {
+    const checklist: { requirement: string; mandatory: boolean; description: string }[] = []
 
     // Basic requirements (all jurisdictions)
     checklist.push({
@@ -474,8 +500,8 @@ export class ComplianceReporting {
     data: {
       totalUsers: number
       verifiedUsers: number
-      transactions: Array<{ amount: bigint; riskLevel: RiskLevel }>
-      incidents: Array<{ type: string; severity: string; resolved: boolean }>
+      transactions: { amount: bigint; riskLevel: RiskLevel }[]
+      incidents: { type: string; severity: string; resolved: boolean }[]
     }
   ): ComplianceReport {
     const report: ComplianceReport = {
@@ -488,7 +514,7 @@ export class ComplianceReporting {
       signature: new Uint8Array(64), // Placeholder signature
       status: ReportStatus.Generated,
       discriminator: new Uint8Array(8), // Placeholder discriminator
-      submissionDetails: undefined as unknown as Option<any>, // No submission details yet
+      submissionDetails: { __option: 'None' } as Option<SubmissionDetails>, // No submission details yet
       reserved: new Uint8Array(64) // Reserved space
     }
 
@@ -499,8 +525,8 @@ export class ComplianceReporting {
    * Format report data based on type
    */
   private static formatReportData(
-    reportType: ReportType,
-    data: any
+    _reportType: ReportType,
+    _data: ComplianceData
   ): ReportData {
     // Create a basic ReportData structure for all report types
     return {
@@ -526,13 +552,13 @@ export class ComplianceReporting {
     }
   }
 
-  private static formatComplianceData(data: any): string {
+  private static formatComplianceData(data: ComplianceData): string {
     const verificationRate = data.totalUsers > 0
-      ? (data.verifiedUsers / data.totalUsers * 100).toFixed(2)
+      ? (data.verifiedUsers ?? 0 / data.totalUsers * 100).toFixed(2)
       : '0'
 
-    const highRiskTxs = data.transactions.filter((tx: any) => tx.riskLevel === RiskLevel.High).length
-    const unresolvedIncidents = data.incidents.filter((i: any) => !i.resolved).length
+    const highRiskTxs = data.transactions.filter((tx: ComplianceTransaction) => tx.riskLevel === RiskLevel.High).length
+    const unresolvedIncidents = data.incidents.filter((i: ComplianceIncident) => !i.resolved).length
 
     return `
 COMPLIANCE REPORT
@@ -540,15 +566,15 @@ COMPLIANCE REPORT
 
 User Verification:
 - Total Users: ${data.totalUsers}
-- Verified Users: ${data.verifiedUsers}
+- Verified Users: ${data.verifiedUsers ?? 0}
 - Verification Rate: ${verificationRate}%
 
 Transaction Analysis:
 - Total Transactions: ${data.transactions.length}
 - High Risk Transactions: ${highRiskTxs}
 - Risk Distribution:
-  - Low: ${data.transactions.filter((tx: any) => tx.riskLevel === RiskLevel.Low).length}
-  - Medium: ${data.transactions.filter((tx: any) => tx.riskLevel === RiskLevel.Medium).length}
+  - Low: ${data.transactions.filter((tx: ComplianceTransaction) => tx.riskLevel === RiskLevel.Low).length}
+  - Medium: ${data.transactions.filter((tx: ComplianceTransaction) => tx.riskLevel === RiskLevel.Medium).length}
   - High: ${highRiskTxs}
 
 Incidents:
@@ -558,8 +584,8 @@ Incidents:
     `.trim()
   }
 
-  private static formatFinancialData(data: any): string {
-    const totalVolume = data.transactions.reduce((sum: bigint, tx: any) => sum + tx.amount, 0n)
+  private static formatFinancialData(data: ComplianceData): string {
+    const totalVolume = data.transactions.reduce((sum: bigint, tx: ComplianceTransaction) => sum + tx.amount, 0n)
     const avgTransaction = data.transactions.length > 0
       ? totalVolume / BigInt(data.transactions.length)
       : 0n
@@ -574,24 +600,24 @@ Transaction Volume:
 - Average Transaction: $${(Number(avgTransaction) / 1000000).toFixed(2)}
 
 Risk Analysis:
-- High Risk Volume: $${(Number(data.transactions.filter((tx: any) => tx.riskLevel === RiskLevel.High).reduce((sum: bigint, tx: any) => sum + tx.amount, 0n)) / 1000000).toFixed(2)}
-- Monitoring Required: ${data.transactions.filter((tx: any) => tx.riskLevel !== RiskLevel.Low).length} transactions
+- High Risk Volume: $${(Number(data.transactions.filter((tx: ComplianceTransaction) => tx.riskLevel === RiskLevel.High).reduce((sum: bigint, tx: ComplianceTransaction) => sum + tx.amount, 0n)) / 1000000).toFixed(2)}
+- Monitoring Required: ${data.transactions.filter((tx: ComplianceTransaction) => tx.riskLevel !== RiskLevel.Low).length} transactions
     `.trim()
   }
 
-  private static formatAuditData(data: any): string {
+  private static formatAuditData(data: ComplianceData): string {
     return `
 AUDIT REPORT
 ============
 
 Compliance Status:
-- User Verification Rate: ${data.totalUsers > 0 ? (data.verifiedUsers / data.totalUsers * 100).toFixed(2) : '0'}%
-- High Risk Transactions: ${data.transactions.filter((tx: any) => tx.riskLevel === RiskLevel.High).length}
-- Open Incidents: ${data.incidents.filter((i: any) => !i.resolved).length}
+- User Verification Rate: ${data.totalUsers > 0 ? (data.verifiedUsers ?? 0 / data.totalUsers * 100).toFixed(2) : '0'}%
+- High Risk Transactions: ${data.transactions.filter((tx: ComplianceTransaction) => tx.riskLevel === RiskLevel.High).length}
+- Open Incidents: ${data.incidents.filter((i: ComplianceIncident) => !i.resolved).length}
 
 Recommendations:
-1. ${data.verifiedUsers / data.totalUsers < 0.8 ? 'Increase user verification efforts' : 'Maintain current verification standards'}
-2. ${data.incidents.filter((i: any) => !i.resolved).length > 0 ? 'Address unresolved compliance incidents' : 'Continue incident resolution practices'}
+1. ${data.verifiedUsers ?? 0 / data.totalUsers < 0.8 ? 'Increase user verification efforts' : 'Maintain current verification standards'}
+2. ${data.incidents.filter((i: ComplianceIncident) => !i.resolved).length > 0 ? 'Address unresolved compliance incidents' : 'Continue incident resolution practices'}
 3. Monitor high-risk transactions closely
     `.trim()
   }
@@ -604,7 +630,7 @@ Recommendations:
     suspiciousActivity: {
       type: string
       description: string
-      transactions: Array<{ amount: bigint; timestamp: bigint; counterparty: Address }>
+      transactions: { amount: bigint; timestamp: bigint; counterparty: Address }[]
       totalAmount: bigint
     }
   ): string {
@@ -645,7 +671,7 @@ export class RiskAssessmentUtils {
    */
   static calculateUserRiskScore(
     kycScore: number,
-    transactionHistory: Array<{ amount: bigint; riskLevel: RiskLevel }>,
+    transactionHistory: { amount: bigint; riskLevel: RiskLevel }[],
     jurisdiction: string,
     accountAge: number // days
   ): {

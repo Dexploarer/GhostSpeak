@@ -225,14 +225,14 @@ export class FaucetService {
   /**
    * Get available faucet sources with their status
    */
-  getAvailableSources(): Array<{
+  getAvailableSources(): {
     name: string
     id: string
     description: string
     networks: ('devnet' | 'testnet')[]
     rateLimit: string
     typicalAmount: string
-  }> {
+  }[] {
     return [
       {
         name: 'Solana Official',

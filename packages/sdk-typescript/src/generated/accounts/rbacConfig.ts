@@ -75,7 +75,7 @@ export function getRbacConfigDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(RBAC_CONFIG_DISCRIMINATOR);
 }
 
-export type RbacConfig = {
+export interface RbacConfig {
   discriminator: ReadonlyUint8Array;
   /** Authority for RBAC management */
   authority: Address;
@@ -86,11 +86,11 @@ export type RbacConfig = {
   /** Version for compatibility */
   version: number;
   /** Role definitions */
-  roles: Array<Role>;
+  roles: Role[];
   /** Permission definitions */
-  permissions: Array<Permission>;
+  permissions: Permission[];
   /** Access policies */
-  accessPolicies: Array<AccessPolicy>;
+  accessPolicies: AccessPolicy[];
   /** Security policies */
   securityPolicies: SecurityPolicies;
   /** Audit configuration */
@@ -99,9 +99,9 @@ export type RbacConfig = {
   emergencyAccess: EmergencyAccessConfig;
   /** Reserved space */
   reserved: ReadonlyUint8Array;
-};
+}
 
-export type RbacConfigArgs = {
+export interface RbacConfigArgs {
   /** Authority for RBAC management */
   authority: Address;
   /** Creation timestamp */
@@ -111,11 +111,11 @@ export type RbacConfigArgs = {
   /** Version for compatibility */
   version: number;
   /** Role definitions */
-  roles: Array<RoleArgs>;
+  roles: RoleArgs[];
   /** Permission definitions */
-  permissions: Array<PermissionArgs>;
+  permissions: PermissionArgs[];
   /** Access policies */
-  accessPolicies: Array<AccessPolicyArgs>;
+  accessPolicies: AccessPolicyArgs[];
   /** Security policies */
   securityPolicies: SecurityPoliciesArgs;
   /** Audit configuration */
@@ -124,7 +124,7 @@ export type RbacConfigArgs = {
   emergencyAccess: EmergencyAccessConfigArgs;
   /** Reserved space */
   reserved: ReadonlyUint8Array;
-};
+}
 
 export function getRbacConfigEncoder(): Encoder<RbacConfigArgs> {
   return transformEncoder(
@@ -203,7 +203,7 @@ export async function fetchMaybeRbacConfig<TAddress extends string = string>(
 
 export async function fetchAllRbacConfig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<RbacConfig>[]> {
   const maybeAccounts = await fetchAllMaybeRbacConfig(rpc, addresses, config);
@@ -213,7 +213,7 @@ export async function fetchAllRbacConfig(
 
 export async function fetchAllMaybeRbacConfig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<RbacConfig>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

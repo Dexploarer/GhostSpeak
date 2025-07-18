@@ -69,11 +69,11 @@ export type ApproveExtensionInstruction<
     ]
   >;
 
-export type ApproveExtensionInstructionData = {
+export interface ApproveExtensionInstructionData {
   discriminator: ReadonlyUint8Array;
-};
+}
 
-export type ApproveExtensionInstructionDataArgs = {};
+export interface ApproveExtensionInstructionDataArgs {}
 
 export function getApproveExtensionInstructionDataEncoder(): Encoder<ApproveExtensionInstructionDataArgs> {
   return transformEncoder(
@@ -98,18 +98,18 @@ export function getApproveExtensionInstructionDataCodec(): Codec<
   );
 }
 
-export type ApproveExtensionInput<
+export interface ApproveExtensionInput<
   TAccountExtension extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Extension account with canonical validation */
   extension: Address<TAccountExtension>;
   /** Enhanced authority verification - only protocol admin */
   authority: TransactionSigner<TAccountAuthority>;
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
-};
+}
 
 export function getApproveExtensionInstruction<
   TAccountExtension extends string,
@@ -170,10 +170,10 @@ export function getApproveExtensionInstruction<
   return instruction;
 }
 
-export type ParsedApproveExtensionInstruction<
+export interface ParsedApproveExtensionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Extension account with canonical validation */
@@ -184,7 +184,7 @@ export type ParsedApproveExtensionInstruction<
     clock: TAccountMetas[2];
   };
   data: ApproveExtensionInstructionData;
-};
+}
 
 export function parseApproveExtensionInstruction<
   TProgram extends string,

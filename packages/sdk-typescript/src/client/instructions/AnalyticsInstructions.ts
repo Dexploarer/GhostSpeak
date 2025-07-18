@@ -20,7 +20,6 @@ import {
   getAnalyticsDashboardDecoder,
   getMarketAnalyticsDecoder
 } from '../../generated/index.js'
-import { type TransactionResult } from '../../utils/transaction-urls.js'
 
 // Enhanced types for better developer experience
 export interface CreateDashboardParams {
@@ -95,11 +94,29 @@ export interface MarketSummary {
   marketHealth: 'Excellent' | 'Good' | 'Fair' | 'Poor'
 }
 
+export interface AnalyticsTrendMetrics {
+  date: string
+  revenue: bigint
+  transactionCount: number
+  successRate: number
+  activeAgents: number
+  averageResponseTime: number
+}
+
+export interface TopPerformerMetrics {
+  agent: Address
+  performanceScore: number
+  rank: number
+  totalRevenue: bigint
+  successRate: number
+  customerRating: number
+}
+
 export interface PerformanceMetrics {
   agentMetrics: {
     totalAgents: number
     activeAgents: number
-    topPerformers: Array<{ agent: Address; score: number; rank: number }>
+    topPerformers: { agent: Address; score: number; rank: number }[]
     averageRating: number
     averageResponseTime: number
   }
@@ -459,21 +476,21 @@ export class AnalyticsInstructions extends BaseInstructions {
     if (!dashboard) return null
 
     // Parse metrics JSON to get actual data
-    let metricsData: any = {}
+    let metricsData: Record<string, unknown> = {}
     try {
-      metricsData = JSON.parse(dashboard.metrics)
+      metricsData = JSON.parse(dashboard.metrics) as Record<string, unknown>
     } catch (error) {
       console.warn('Failed to parse dashboard metrics:', error)
     }
 
     // Extract values from parsed metrics or use defaults
-    const revenue = BigInt(metricsData.revenue || '0')
-    const transactionCount = metricsData.transactionCount || 0
-    const successRate = metricsData.successRate || 0
-    const averageResponseTime = metricsData.averageResponseTime || 0
-    const customerRating = metricsData.customerRating || 0
-    const utilizationRate = metricsData.utilizationRate || 0
-    const agentId = metricsData.agentId || dashboard.owner // Use owner as fallback
+    const revenue = BigInt((metricsData.revenue as string) ?? '0')
+    const transactionCount = (metricsData.transactionCount as number) ?? 0
+    const successRate = (metricsData.successRate as number) ?? 0
+    const averageResponseTime = (metricsData.averageResponseTime as number) ?? 0
+    const customerRating = (metricsData.customerRating as number) ?? 0
+    const utilizationRate = (metricsData.utilizationRate as number) ?? 0
+    const agentId = (metricsData.agentId as Address) ?? dashboard.owner // Use owner as fallback
 
     // Calculate performance grade based on metrics
     const performanceGrade = this.calculatePerformanceGrade(
@@ -551,8 +568,8 @@ export class AnalyticsInstructions extends BaseInstructions {
   ): Promise<{
     period: { start: bigint; end: bigint }
     summary: PerformanceMetrics
-    trends: Array<{ date: string; metrics: any }>
-    topPerformers: Array<{ agent: Address; metrics: any }>
+    trends: { date: string; metrics: AnalyticsTrendMetrics }[]
+    topPerformers: { agent: Address; metrics: TopPerformerMetrics }[]
     recommendations: string[]
   }> {
     console.log('📋 Generating analytics report...')
@@ -667,11 +684,12 @@ export class AnalyticsInstructions extends BaseInstructions {
     return 'D'
   }
 
-  private determineTrendDirection(metricsData: any): TrendDirection {
+  private determineTrendDirection(metricsData: Record<string, unknown>): TrendDirection {
     // If we have historical data, compare current vs previous metrics
     if (metricsData.previousMetrics) {
-      const currentScore = metricsData.successRate || 0
-      const previousScore = metricsData.previousMetrics.successRate || 0
+      const currentScore = (metricsData.successRate as number) ?? 0
+      const previousMetrics = metricsData.previousMetrics as Record<string, unknown>
+      const previousScore = (previousMetrics.successRate as number) ?? 0
       
       if (currentScore > previousScore + 0.05) return TrendDirection.Increasing
       if (currentScore < previousScore - 0.05) return TrendDirection.Decreasing
@@ -681,9 +699,10 @@ export class AnalyticsInstructions extends BaseInstructions {
     return TrendDirection.Unknown
   }
 
-  private async deriveUserRegistry(user: any): Promise<Address> {
-    // In production, derive proper user registry PDA
+  private async deriveUserRegistry(user: TransactionSigner): Promise<Address> {
+    // In production, derive proper user registry PDA based on user's public key
     // For now, return a placeholder address
+    console.log(`Deriving user registry for ${user}`)
     return '11111111111111111111111111111111' as Address
   }
 

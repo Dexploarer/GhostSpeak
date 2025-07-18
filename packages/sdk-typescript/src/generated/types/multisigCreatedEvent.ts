@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type MultisigCreatedEvent = {
+export interface MultisigCreatedEvent {
   multisig: Address;
   multisigId: bigint;
   owner: Address;
   threshold: number;
   signersCount: number;
-};
+}
 
-export type MultisigCreatedEventArgs = {
+export interface MultisigCreatedEventArgs {
   multisig: Address;
   multisigId: number | bigint;
   owner: Address;
   threshold: number;
   signersCount: number;
-};
+}
 
 export function getMultisigCreatedEventEncoder(): Encoder<MultisigCreatedEventArgs> {
   return getStructEncoder([

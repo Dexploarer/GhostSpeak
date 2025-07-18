@@ -25,7 +25,7 @@ import {
 import { getVoteDecoder, getVoteEncoder, type Vote, type VoteArgs } from '.';
 
 /** Voting results for proposal */
-export type VotingResults = {
+export interface VotingResults {
   /** Total votes for */
   votesFor: bigint;
   /** Total votes against */
@@ -37,16 +37,16 @@ export type VotingResults = {
   /** Participation rate */
   participationRate: number;
   /** Individual votes */
-  individualVotes: Array<Vote>;
+  individualVotes: Vote[];
   /** Weighted voting enabled */
   weightedVoting: boolean;
   /** Quorum reached */
   quorumReached: boolean;
   /** Approval threshold met */
   approvalThresholdMet: boolean;
-};
+}
 
-export type VotingResultsArgs = {
+export interface VotingResultsArgs {
   /** Total votes for */
   votesFor: number | bigint;
   /** Total votes against */
@@ -58,14 +58,14 @@ export type VotingResultsArgs = {
   /** Participation rate */
   participationRate: number;
   /** Individual votes */
-  individualVotes: Array<VoteArgs>;
+  individualVotes: VoteArgs[];
   /** Weighted voting enabled */
   weightedVoting: boolean;
   /** Quorum reached */
   quorumReached: boolean;
   /** Approval threshold met */
   approvalThresholdMet: boolean;
-};
+}
 
 export function getVotingResultsEncoder(): Encoder<VotingResultsArgs> {
   return getStructEncoder([

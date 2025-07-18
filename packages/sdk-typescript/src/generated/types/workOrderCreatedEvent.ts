@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type WorkOrderCreatedEvent = {
+export interface WorkOrderCreatedEvent {
   workOrder: Address;
   client: Address;
   provider: Address;
   amount: bigint;
   timestamp: bigint;
-};
+}
 
-export type WorkOrderCreatedEventArgs = {
+export interface WorkOrderCreatedEventArgs {
   workOrder: Address;
   client: Address;
   provider: Address;
   amount: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getWorkOrderCreatedEventEncoder(): Encoder<WorkOrderCreatedEventArgs> {
   return getStructEncoder([

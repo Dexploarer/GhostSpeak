@@ -62,12 +62,12 @@ export type ExportAuditContextInstruction<
     ]
   >;
 
-export type ExportAuditContextInstructionData = {
+export interface ExportAuditContextInstructionData {
   discriminator: ReadonlyUint8Array;
   data: AuditContext;
-};
+}
 
-export type ExportAuditContextInstructionDataArgs = { data: AuditContextArgs };
+export interface ExportAuditContextInstructionDataArgs { data: AuditContextArgs }
 
 export function getExportAuditContextInstructionDataEncoder(): Encoder<ExportAuditContextInstructionDataArgs> {
   return transformEncoder(
@@ -96,12 +96,12 @@ export function getExportAuditContextInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportAuditContextInput<
+export interface ExportAuditContextInput<
   TAccountSystemProgram extends string = string,
-> = {
+> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportAuditContextInstructionDataArgs['data'];
-};
+}
 
 export function getExportAuditContextInstruction<
   TAccountSystemProgram extends string,
@@ -145,16 +145,16 @@ export function getExportAuditContextInstruction<
   return instruction;
 }
 
-export type ParsedExportAuditContextInstruction<
+export interface ParsedExportAuditContextInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportAuditContextInstructionData;
-};
+}
 
 export function parseExportAuditContextInstruction<
   TProgram extends string,

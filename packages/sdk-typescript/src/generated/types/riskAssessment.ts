@@ -36,27 +36,27 @@ import {
 } from '.';
 
 /** Risk assessment for permissions */
-export type RiskAssessment = {
+export interface RiskAssessment {
   /** Overall risk score */
   riskScore: number;
   /** Risk factors */
-  riskFactors: Array<RiskFactor>;
+  riskFactors: RiskFactor[];
   /** Mitigation measures */
-  mitigationMeasures: Array<string>;
+  mitigationMeasures: string[];
   /** Risk acceptance */
   riskAcceptance: RiskAcceptance;
-};
+}
 
-export type RiskAssessmentArgs = {
+export interface RiskAssessmentArgs {
   /** Overall risk score */
   riskScore: number;
   /** Risk factors */
-  riskFactors: Array<RiskFactorArgs>;
+  riskFactors: RiskFactorArgs[];
   /** Mitigation measures */
-  mitigationMeasures: Array<string>;
+  mitigationMeasures: string[];
   /** Risk acceptance */
   riskAcceptance: RiskAcceptanceArgs;
-};
+}
 
 export function getRiskAssessmentEncoder(): Encoder<RiskAssessmentArgs> {
   return getStructEncoder([

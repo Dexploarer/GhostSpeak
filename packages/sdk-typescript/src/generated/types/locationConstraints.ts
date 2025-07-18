@@ -32,35 +32,35 @@ import {
 } from '.';
 
 /** Location-based access constraints */
-export type LocationConstraints = {
+export interface LocationConstraints {
   /** Allowed countries (ISO codes) */
-  allowedCountries: Array<string>;
+  allowedCountries: string[];
   /** Blocked countries (ISO codes) */
-  blockedCountries: Array<string>;
+  blockedCountries: string[];
   /** Allowed IP address ranges (CIDR) */
-  allowedIpRanges: Array<string>;
+  allowedIpRanges: string[];
   /** Blocked IP address ranges (CIDR) */
-  blockedIpRanges: Array<string>;
+  blockedIpRanges: string[];
   /** Geofencing enabled */
   geofencingEnabled: boolean;
   /** Allowed geographic regions */
-  allowedRegions: Array<GeographicRegion>;
-};
+  allowedRegions: GeographicRegion[];
+}
 
-export type LocationConstraintsArgs = {
+export interface LocationConstraintsArgs {
   /** Allowed countries (ISO codes) */
-  allowedCountries: Array<string>;
+  allowedCountries: string[];
   /** Blocked countries (ISO codes) */
-  blockedCountries: Array<string>;
+  blockedCountries: string[];
   /** Allowed IP address ranges (CIDR) */
-  allowedIpRanges: Array<string>;
+  allowedIpRanges: string[];
   /** Blocked IP address ranges (CIDR) */
-  blockedIpRanges: Array<string>;
+  blockedIpRanges: string[];
   /** Geofencing enabled */
   geofencingEnabled: boolean;
   /** Allowed geographic regions */
-  allowedRegions: Array<GeographicRegionArgs>;
-};
+  allowedRegions: GeographicRegionArgs[];
+}
 
 export function getLocationConstraintsEncoder(): Encoder<LocationConstraintsArgs> {
   return getStructEncoder([

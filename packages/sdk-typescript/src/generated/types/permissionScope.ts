@@ -28,7 +28,7 @@ import {
 } from '.';
 
 /** Permission scope definition */
-export type PermissionScope = {
+export interface PermissionScope {
   /** Scope type */
   scopeType: ScopeType;
   /** Scope boundaries */
@@ -37,9 +37,9 @@ export type PermissionScope = {
   hierarchical: boolean;
   /** Inherited permissions */
   inherited: boolean;
-};
+}
 
-export type PermissionScopeArgs = {
+export interface PermissionScopeArgs {
   /** Scope type */
   scopeType: ScopeTypeArgs;
   /** Scope boundaries */
@@ -48,7 +48,7 @@ export type PermissionScopeArgs = {
   hierarchical: boolean;
   /** Inherited permissions */
   inherited: boolean;
-};
+}
 
 export function getPermissionScopeEncoder(): Encoder<PermissionScopeArgs> {
   return getStructEncoder([

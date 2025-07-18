@@ -17,11 +17,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type VolumeTier = {
+export interface VolumeTier {
   minQuantity: number;
   maxQuantity: number;
   discountPercentage: number;
-};
+}
 
 export type VolumeTierArgs = VolumeTier;
 

@@ -32,7 +32,7 @@ export const updateCommand = new Command('update')
         for (const cmd of commands) {
           try {
             const { stdout } = await execAsync(cmd, { timeout: 5000 }) // 5 second timeout
-            const versionMatch = stdout.trim().match(/(\d+\.\d+\.\d+)/)
+            const versionMatch = /(\d+\.\d+\.\d+)/.exec(stdout.trim())
             if (versionMatch) {
               currentVersion = versionMatch[1]
               break
@@ -49,7 +49,7 @@ export const updateCommand = new Command('update')
       if (currentVersion === '1.3.3') {
         try {
           const { stdout } = await execAsync('npm list -g @ghostspeak/cli --depth=0 2>/dev/null || npm list @ghostspeak/cli --depth=0 2>/dev/null')
-          const match = stdout.match(/@ghostspeak\/cli@(\S+)/)
+          const match = /@ghostspeak\/cli@(\S+)/.exec(stdout)
           if (match) {
             currentVersion = match[1]
           }
@@ -154,7 +154,7 @@ export const updateCommand = new Command('update')
         // Verify the update by checking version again
         try {
           const { stdout } = await execAsync('ghostspeak --version')
-          const newVersion = stdout.trim().match(/(\d+\.\d+\.\d+)/)?.[1]
+          const newVersion = (/(\d+\.\d+\.\d+)/.exec(stdout.trim()))?.[1]
           if (newVersion && newVersion === latest) {
             console.log(chalk.green('✅ Version verified:'), chalk.bold(`v${newVersion}`))
           }

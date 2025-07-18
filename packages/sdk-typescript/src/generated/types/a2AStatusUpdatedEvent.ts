@@ -28,19 +28,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type A2AStatusUpdatedEvent = {
+export interface A2AStatusUpdatedEvent {
   agent: Address;
   status: string;
   availability: boolean;
   timestamp: bigint;
-};
+}
 
-export type A2AStatusUpdatedEventArgs = {
+export interface A2AStatusUpdatedEventArgs {
   agent: Address;
   status: string;
   availability: boolean;
   timestamp: number | bigint;
-};
+}
 
 export function getA2AStatusUpdatedEventEncoder(): Encoder<A2AStatusUpdatedEventArgs> {
   return getStructEncoder([

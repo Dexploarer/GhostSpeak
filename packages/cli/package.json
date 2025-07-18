@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol",
   "type": "module",
   "bin": {
@@ -20,7 +20,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:ci": "vitest run",
-    "lint": "eslint src",
+    "lint": "eslint src --no-error-on-unmatched-pattern --max-warnings=1000",
+    "lint:fix": "eslint src --fix",
     "clean": "rm -rf dist",
     "postinstall": "node scripts/postinstall.js"
   },
@@ -49,7 +50,7 @@
   "dependencies": {
     "@clack/core": "^0.3.0",
     "@clack/prompts": "^0.11.0",
-    "@ghostspeak/sdk": "^1.5.0",
+    "@ghostspeak/sdk": "^1.5.1",
     "@metaplex-foundation/mpl-bubblegum": "^5.0.2",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
@@ -64,9 +65,9 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.13",
-    "@typescript-eslint/eslint-plugin": "^8.36.0",
-    "@typescript-eslint/parser": "^8.36.0",
-    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "eslint": "^9.31.0",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
     "vitest": "^3.2.4"

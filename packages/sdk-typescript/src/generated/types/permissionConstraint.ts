@@ -32,23 +32,23 @@ import {
 } from '.';
 
 /** Permission constraint */
-export type PermissionConstraint = {
+export interface PermissionConstraint {
   /** Constraint type */
   constraintType: PermissionConstraintType;
   /** Constraint conditions */
-  conditions: Array<ConstraintCondition>;
+  conditions: ConstraintCondition[];
   /** Constraint enforcement */
   enforcement: EnforcementLevel;
-};
+}
 
-export type PermissionConstraintArgs = {
+export interface PermissionConstraintArgs {
   /** Constraint type */
   constraintType: PermissionConstraintTypeArgs;
   /** Constraint conditions */
-  conditions: Array<ConstraintConditionArgs>;
+  conditions: ConstraintConditionArgs[];
   /** Constraint enforcement */
   enforcement: EnforcementLevelArgs;
-};
+}
 
 export function getPermissionConstraintEncoder(): Encoder<PermissionConstraintArgs> {
   return getStructEncoder([

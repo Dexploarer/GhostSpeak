@@ -105,24 +105,24 @@ export type ReplicateAgentInstruction<
     ]
   >;
 
-export type ReplicateAgentInstructionData = {
+export interface ReplicateAgentInstructionData {
   discriminator: ReadonlyUint8Array;
   name: string;
   description: Option<string>;
-  additionalCapabilities: Array<string>;
+  additionalCapabilities: string[];
   pricingModel: PricingModel;
   isReplicable: boolean;
   replicationFee: Option<bigint>;
-};
+}
 
-export type ReplicateAgentInstructionDataArgs = {
+export interface ReplicateAgentInstructionDataArgs {
   name: string;
   description: OptionOrNullable<string>;
-  additionalCapabilities: Array<string>;
+  additionalCapabilities: string[];
   pricingModel: PricingModelArgs;
   isReplicable: boolean;
   replicationFee: OptionOrNullable<number | bigint>;
-};
+}
 
 export function getReplicateAgentInstructionDataEncoder(): Encoder<ReplicateAgentInstructionDataArgs> {
   return transformEncoder(
@@ -177,13 +177,13 @@ export function getReplicateAgentInstructionDataCodec(): Codec<
   );
 }
 
-export type ReplicateAgentAsyncInput<
+export interface ReplicateAgentAsyncInput<
   TAccountReplicationTemplate extends string = string,
   TAccountNewAgent extends string = string,
   TAccountReplicationRecord extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   replicationTemplate: Address<TAccountReplicationTemplate>;
   newAgent?: Address<TAccountNewAgent>;
   replicationRecord?: Address<TAccountReplicationRecord>;
@@ -195,7 +195,7 @@ export type ReplicateAgentAsyncInput<
   pricingModel: ReplicateAgentInstructionDataArgs['pricingModel'];
   isReplicable: ReplicateAgentInstructionDataArgs['isReplicable'];
   replicationFee: ReplicateAgentInstructionDataArgs['replicationFee'];
-};
+}
 
 export async function getReplicateAgentInstructionAsync<
   TAccountReplicationTemplate extends string,
@@ -307,13 +307,13 @@ export async function getReplicateAgentInstructionAsync<
   return instruction;
 }
 
-export type ReplicateAgentInput<
+export interface ReplicateAgentInput<
   TAccountReplicationTemplate extends string = string,
   TAccountNewAgent extends string = string,
   TAccountReplicationRecord extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   replicationTemplate: Address<TAccountReplicationTemplate>;
   newAgent: Address<TAccountNewAgent>;
   replicationRecord: Address<TAccountReplicationRecord>;
@@ -325,7 +325,7 @@ export type ReplicateAgentInput<
   pricingModel: ReplicateAgentInstructionDataArgs['pricingModel'];
   isReplicable: ReplicateAgentInstructionDataArgs['isReplicable'];
   replicationFee: ReplicateAgentInstructionDataArgs['replicationFee'];
-};
+}
 
 export function getReplicateAgentInstruction<
   TAccountReplicationTemplate extends string,
@@ -409,10 +409,10 @@ export function getReplicateAgentInstruction<
   return instruction;
 }
 
-export type ParsedReplicateAgentInstruction<
+export interface ParsedReplicateAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     replicationTemplate: TAccountMetas[0];
@@ -422,7 +422,7 @@ export type ParsedReplicateAgentInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: ReplicateAgentInstructionData;
-};
+}
 
 export function parseReplicateAgentInstruction<
   TProgram extends string,

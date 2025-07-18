@@ -21,9 +21,9 @@ import {
   type DynamicPricingConfigArgs,
 } from '.';
 
-export type DynamicPricingConfigExport = { data: DynamicPricingConfig };
+export interface DynamicPricingConfigExport { data: DynamicPricingConfig }
 
-export type DynamicPricingConfigExportArgs = { data: DynamicPricingConfigArgs };
+export interface DynamicPricingConfigExportArgs { data: DynamicPricingConfigArgs }
 
 export function getDynamicPricingConfigExportEncoder(): Encoder<DynamicPricingConfigExportArgs> {
   return getStructEncoder([['data', getDynamicPricingConfigEncoder()]]);

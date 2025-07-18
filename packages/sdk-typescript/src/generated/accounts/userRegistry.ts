@@ -55,7 +55,7 @@ export function getUserRegistryDiscriminatorBytes() {
   );
 }
 
-export type UserRegistry = {
+export interface UserRegistry {
   discriminator: ReadonlyUint8Array;
   user: Address;
   agentCount: number;
@@ -75,9 +75,9 @@ export type UserRegistry = {
   lastBulkDealCreation: bigint;
   lastDashboardCreation: bigint;
   bump: number;
-};
+}
 
-export type UserRegistryArgs = {
+export interface UserRegistryArgs {
   user: Address;
   agentCount: number;
   listingCount: number;
@@ -96,7 +96,7 @@ export type UserRegistryArgs = {
   lastBulkDealCreation: number | bigint;
   lastDashboardCreation: number | bigint;
   bump: number;
-};
+}
 
 export function getUserRegistryEncoder(): Encoder<UserRegistryArgs> {
   return transformEncoder(
@@ -189,7 +189,7 @@ export async function fetchMaybeUserRegistry<TAddress extends string = string>(
 
 export async function fetchAllUserRegistry(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<UserRegistry>[]> {
   const maybeAccounts = await fetchAllMaybeUserRegistry(rpc, addresses, config);
@@ -199,7 +199,7 @@ export async function fetchAllUserRegistry(
 
 export async function fetchAllMaybeUserRegistry(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<UserRegistry>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

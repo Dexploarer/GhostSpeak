@@ -1,4 +1,5 @@
 import type { RpcApi } from '../types/index.js'
+import { createSolanaRpc } from '@solana/kit'
 
 /**
  * Utility functions for connection management
@@ -8,7 +9,6 @@ import type { RpcApi } from '../types/index.js'
  * Create a connection with recommended settings for GhostSpeak
  */
 export function createRecommendedConnection(endpoint: string): RpcApi {
-  const { createSolanaRpc } = require('@solana/kit')
   
   // Create RPC with optimized settings for GhostSpeak protocol
   const rpc = createSolanaRpc(endpoint, {
@@ -27,7 +27,7 @@ export async function checkConnectionHealth(rpc: RpcApi): Promise<boolean> {
     const response = await rpc.getLatestBlockhash().send()
     
     // Check if we got a valid response with blockhash
-    if (response && response.value && response.value.blockhash) {
+    if (response?.value?.blockhash) {
       return true
     }
     

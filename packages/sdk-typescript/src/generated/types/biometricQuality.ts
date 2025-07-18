@@ -19,7 +19,7 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type BiometricQuality = {
+export interface BiometricQuality {
   /** Minimum quality score */
   minimumQuality: number;
   /** Liveness detection required */
@@ -30,7 +30,7 @@ export type BiometricQuality = {
   maxFalseAcceptanceRate: number;
   /** Maximum false rejection rate */
   maxFalseRejectionRate: number;
-};
+}
 
 export type BiometricQualityArgs = BiometricQuality;
 

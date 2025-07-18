@@ -22,19 +22,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type A2ASessionCreatedEvent = {
+export interface A2ASessionCreatedEvent {
   sessionId: bigint;
   initiator: Address;
   responder: Address;
   timestamp: bigint;
-};
+}
 
-export type A2ASessionCreatedEventArgs = {
+export interface A2ASessionCreatedEventArgs {
   sessionId: number | bigint;
   initiator: Address;
   responder: Address;
   timestamp: number | bigint;
-};
+}
 
 export function getA2ASessionCreatedEventEncoder(): Encoder<A2ASessionCreatedEventArgs> {
   return getStructEncoder([

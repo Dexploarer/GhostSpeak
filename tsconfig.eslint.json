@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext", 
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": [
+    "packages/*/src/**/*",
+    "packages/*/scripts/**/*",
+    "scripts/**/*",
+    "tests/**/*",
+    "config/**/*",
+    "vitest.config.ts",
+    "eslint.config.mjs"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/target",
+    "**/coverage",
+    "**/generated/**",
+    "packages/sdk-typescript/src/generated/**"
+  ]
+}

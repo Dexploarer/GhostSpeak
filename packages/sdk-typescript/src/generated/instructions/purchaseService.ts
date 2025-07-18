@@ -91,22 +91,22 @@ export type PurchaseServiceInstruction<
     ]
   >;
 
-export type PurchaseServiceInstructionData = {
+export interface PurchaseServiceInstructionData {
   discriminator: ReadonlyUint8Array;
   listingId: bigint;
   quantity: number;
-  requirements: Array<string>;
+  requirements: string[];
   customInstructions: string;
   deadline: bigint;
-};
+}
 
-export type PurchaseServiceInstructionDataArgs = {
+export interface PurchaseServiceInstructionDataArgs {
   listingId: number | bigint;
   quantity: number;
-  requirements: Array<string>;
+  requirements: string[];
   customInstructions: string;
   deadline: number | bigint;
-};
+}
 
 export function getPurchaseServiceInstructionDataEncoder(): Encoder<PurchaseServiceInstructionDataArgs> {
   return transformEncoder(
@@ -157,12 +157,12 @@ export function getPurchaseServiceInstructionDataCodec(): Codec<
   );
 }
 
-export type PurchaseServiceAsyncInput<
+export interface PurchaseServiceAsyncInput<
   TAccountServicePurchase extends string = string,
   TAccountServiceListing extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   servicePurchase?: Address<TAccountServicePurchase>;
   serviceListing: Address<TAccountServiceListing>;
   buyer: TransactionSigner<TAccountBuyer>;
@@ -172,7 +172,7 @@ export type PurchaseServiceAsyncInput<
   requirements: PurchaseServiceInstructionDataArgs['requirements'];
   customInstructions: PurchaseServiceInstructionDataArgs['customInstructions'];
   deadline: PurchaseServiceInstructionDataArgs['deadline'];
-};
+}
 
 export async function getPurchaseServiceInstructionAsync<
   TAccountServicePurchase extends string,
@@ -263,12 +263,12 @@ export async function getPurchaseServiceInstructionAsync<
   return instruction;
 }
 
-export type PurchaseServiceInput<
+export interface PurchaseServiceInput<
   TAccountServicePurchase extends string = string,
   TAccountServiceListing extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   servicePurchase: Address<TAccountServicePurchase>;
   serviceListing: Address<TAccountServiceListing>;
   buyer: TransactionSigner<TAccountBuyer>;
@@ -278,7 +278,7 @@ export type PurchaseServiceInput<
   requirements: PurchaseServiceInstructionDataArgs['requirements'];
   customInstructions: PurchaseServiceInstructionDataArgs['customInstructions'];
   deadline: PurchaseServiceInstructionDataArgs['deadline'];
-};
+}
 
 export function getPurchaseServiceInstruction<
   TAccountServicePurchase extends string,
@@ -350,10 +350,10 @@ export function getPurchaseServiceInstruction<
   return instruction;
 }
 
-export type ParsedPurchaseServiceInstruction<
+export interface ParsedPurchaseServiceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     servicePurchase: TAccountMetas[0];
@@ -362,7 +362,7 @@ export type ParsedPurchaseServiceInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: PurchaseServiceInstructionData;
-};
+}
 
 export function parsePurchaseServiceInstruction<
   TProgram extends string,

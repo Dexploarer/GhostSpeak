@@ -20,17 +20,17 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AnalyticsDashboardUpdatedEvent = {
+export interface AnalyticsDashboardUpdatedEvent {
   dashboard: Address;
   owner: Address;
   timestamp: bigint;
-};
+}
 
-export type AnalyticsDashboardUpdatedEventArgs = {
+export interface AnalyticsDashboardUpdatedEventArgs {
   dashboard: Address;
   owner: Address;
   timestamp: number | bigint;
-};
+}
 
 export function getAnalyticsDashboardUpdatedEventEncoder(): Encoder<AnalyticsDashboardUpdatedEventArgs> {
   return getStructEncoder([

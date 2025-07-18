@@ -19,17 +19,17 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AccessAuditConfig = {
+export interface AccessAuditConfig {
   auditEnabled: boolean;
   realTimeMonitoring: boolean;
   retentionPeriod: bigint;
-};
+}
 
-export type AccessAuditConfigArgs = {
+export interface AccessAuditConfigArgs {
   auditEnabled: boolean;
   realTimeMonitoring: boolean;
   retentionPeriod: number | bigint;
-};
+}
 
 export function getAccessAuditConfigEncoder(): Encoder<AccessAuditConfigArgs> {
   return getStructEncoder([

@@ -34,7 +34,7 @@ import {
 } from '@solana/kit';
 
 /** Event emitted when a compressed agent is created */
-export type CompressedAgentCreatedEvent = {
+export interface CompressedAgentCreatedEvent {
   agentId: string;
   owner: Address;
   treeAuthority: Address;
@@ -43,9 +43,9 @@ export type CompressedAgentCreatedEvent = {
   index: bigint;
   metadataUri: string;
   createdAt: bigint;
-};
+}
 
-export type CompressedAgentCreatedEventArgs = {
+export interface CompressedAgentCreatedEventArgs {
   agentId: string;
   owner: Address;
   treeAuthority: Address;
@@ -54,7 +54,7 @@ export type CompressedAgentCreatedEventArgs = {
   index: number | bigint;
   metadataUri: string;
   createdAt: number | bigint;
-};
+}
 
 export function getCompressedAgentCreatedEventEncoder(): Encoder<CompressedAgentCreatedEventArgs> {
   return getStructEncoder([

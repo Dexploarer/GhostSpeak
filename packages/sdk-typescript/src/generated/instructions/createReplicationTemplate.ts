@@ -95,20 +95,20 @@ export type CreateReplicationTemplateInstruction<
     ]
   >;
 
-export type CreateReplicationTemplateInstructionData = {
+export interface CreateReplicationTemplateInstructionData {
   discriminator: ReadonlyUint8Array;
   genomeHash: string;
-  baseCapabilities: Array<string>;
+  baseCapabilities: string[];
   replicationFee: bigint;
   maxReplications: number;
-};
+}
 
-export type CreateReplicationTemplateInstructionDataArgs = {
+export interface CreateReplicationTemplateInstructionDataArgs {
   genomeHash: string;
-  baseCapabilities: Array<string>;
+  baseCapabilities: string[];
   replicationFee: number | bigint;
   maxReplications: number;
-};
+}
 
 export function getCreateReplicationTemplateInstructionDataEncoder(): Encoder<CreateReplicationTemplateInstructionDataArgs> {
   return transformEncoder(
@@ -154,13 +154,13 @@ export function getCreateReplicationTemplateInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateReplicationTemplateAsyncInput<
+export interface CreateReplicationTemplateAsyncInput<
   TAccountReplicationTemplate extends string = string,
   TAccountSourceAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   replicationTemplate?: Address<TAccountReplicationTemplate>;
   sourceAgent: Address<TAccountSourceAgent>;
   creator: TransactionSigner<TAccountCreator>;
@@ -170,7 +170,7 @@ export type CreateReplicationTemplateAsyncInput<
   baseCapabilities: CreateReplicationTemplateInstructionDataArgs['baseCapabilities'];
   replicationFee: CreateReplicationTemplateInstructionDataArgs['replicationFee'];
   maxReplications: CreateReplicationTemplateInstructionDataArgs['maxReplications'];
-};
+}
 
 export async function getCreateReplicationTemplateInstructionAsync<
   TAccountReplicationTemplate extends string,
@@ -271,13 +271,13 @@ export async function getCreateReplicationTemplateInstructionAsync<
   return instruction;
 }
 
-export type CreateReplicationTemplateInput<
+export interface CreateReplicationTemplateInput<
   TAccountReplicationTemplate extends string = string,
   TAccountSourceAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   replicationTemplate: Address<TAccountReplicationTemplate>;
   sourceAgent: Address<TAccountSourceAgent>;
   creator: TransactionSigner<TAccountCreator>;
@@ -287,7 +287,7 @@ export type CreateReplicationTemplateInput<
   baseCapabilities: CreateReplicationTemplateInstructionDataArgs['baseCapabilities'];
   replicationFee: CreateReplicationTemplateInstructionDataArgs['replicationFee'];
   maxReplications: CreateReplicationTemplateInstructionDataArgs['maxReplications'];
-};
+}
 
 export function getCreateReplicationTemplateInstruction<
   TAccountReplicationTemplate extends string,
@@ -372,10 +372,10 @@ export function getCreateReplicationTemplateInstruction<
   return instruction;
 }
 
-export type ParsedCreateReplicationTemplateInstruction<
+export interface ParsedCreateReplicationTemplateInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     replicationTemplate: TAccountMetas[0];
@@ -385,7 +385,7 @@ export type ParsedCreateReplicationTemplateInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: CreateReplicationTemplateInstructionData;
-};
+}
 
 export function parseCreateReplicationTemplateInstruction<
   TProgram extends string,

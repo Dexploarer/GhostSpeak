@@ -57,7 +57,7 @@ export function getAnalyticsDashboardDiscriminatorBytes() {
   );
 }
 
-export type AnalyticsDashboard = {
+export interface AnalyticsDashboard {
   discriminator: ReadonlyUint8Array;
   dashboardId: bigint;
   owner: Address;
@@ -65,16 +65,16 @@ export type AnalyticsDashboard = {
   createdAt: bigint;
   updatedAt: bigint;
   bump: number;
-};
+}
 
-export type AnalyticsDashboardArgs = {
+export interface AnalyticsDashboardArgs {
   dashboardId: number | bigint;
   owner: Address;
   metrics: string;
   createdAt: number | bigint;
   updatedAt: number | bigint;
   bump: number;
-};
+}
 
 export function getAnalyticsDashboardEncoder(): Encoder<AnalyticsDashboardArgs> {
   return transformEncoder(
@@ -153,7 +153,7 @@ export async function fetchMaybeAnalyticsDashboard<
 
 export async function fetchAllAnalyticsDashboard(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<AnalyticsDashboard>[]> {
   const maybeAccounts = await fetchAllMaybeAnalyticsDashboard(
@@ -167,7 +167,7 @@ export async function fetchAllAnalyticsDashboard(
 
 export async function fetchAllMaybeAnalyticsDashboard(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<AnalyticsDashboard>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

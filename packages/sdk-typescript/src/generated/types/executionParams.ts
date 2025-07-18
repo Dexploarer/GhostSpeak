@@ -35,35 +35,35 @@ import {
 } from '.';
 
 /** Execution parameters for proposals */
-export type ExecutionParams = {
+export interface ExecutionParams {
   /** Instructions to execute if passed */
-  instructions: Array<ProposalInstruction>;
+  instructions: ProposalInstruction[];
   /** Time delay before execution */
   executionDelay: bigint;
   /** Execution conditions */
-  executionConditions: Array<ExecutionCondition>;
+  executionConditions: ExecutionCondition[];
   /** Can be cancelled after approval */
   cancellable: boolean;
   /** Automatic execution enabled */
   autoExecute: boolean;
   /** Required execution authority */
   executionAuthority: Address;
-};
+}
 
-export type ExecutionParamsArgs = {
+export interface ExecutionParamsArgs {
   /** Instructions to execute if passed */
-  instructions: Array<ProposalInstructionArgs>;
+  instructions: ProposalInstructionArgs[];
   /** Time delay before execution */
   executionDelay: number | bigint;
   /** Execution conditions */
-  executionConditions: Array<ExecutionConditionArgs>;
+  executionConditions: ExecutionConditionArgs[];
   /** Can be cancelled after approval */
   cancellable: boolean;
   /** Automatic execution enabled */
   autoExecute: boolean;
   /** Required execution authority */
   executionAuthority: Address;
-};
+}
 
 export function getExecutionParamsEncoder(): Encoder<ExecutionParamsArgs> {
   return getStructEncoder([

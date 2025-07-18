@@ -20,11 +20,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type RbacConfigInitializedEvent = {
+export interface RbacConfigInitializedEvent {
   rbacConfig: Address;
   authority: Address;
   rolesCount: number;
-};
+}
 
 export type RbacConfigInitializedEventArgs = RbacConfigInitializedEvent;
 

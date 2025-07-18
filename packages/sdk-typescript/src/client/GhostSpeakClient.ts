@@ -1,6 +1,5 @@
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
-import type { RpcApi, ExtendedRpcApi } from '../types/index.js'
+import type { ExtendedRpcApi } from '../types/index.js'
 
 // KeyPairSigner interface - compatible with TransactionSigner
 export interface KeyPairSigner {
@@ -70,7 +69,7 @@ export class GhostSpeakClient {
   static create(rpc: ExtendedRpcApi, programId?: Address): GhostSpeakClient {
     return new GhostSpeakClient({
       rpc,
-      programId: programId || GHOSTSPEAK_PROGRAM_ID
+      programId: programId ?? GHOSTSPEAK_PROGRAM_ID
     })
   }
 
@@ -81,11 +80,9 @@ export class GhostSpeakClient {
    */
   async registerAgent(
     signer: KeyPairSigner,
-    agentAddress: Address,
-    userRegistryAddress: Address,
     params: AgentRegistrationParams
   ): Promise<string> {
-    return this.agent.register(signer, agentAddress, userRegistryAddress, params)
+    return this.agent.register(signer, params)
   }
 
   /**

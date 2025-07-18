@@ -26,21 +26,21 @@ import {
   type AuctionTypeArgs,
 } from '.';
 
-export type ServiceAuctionCreatedEvent = {
+export interface ServiceAuctionCreatedEvent {
   auction: Address;
   agent: Address;
   creator: Address;
   startingPrice: bigint;
   auctionType: AuctionType;
-};
+}
 
-export type ServiceAuctionCreatedEventArgs = {
+export interface ServiceAuctionCreatedEventArgs {
   auction: Address;
   agent: Address;
   creator: Address;
   startingPrice: number | bigint;
   auctionType: AuctionTypeArgs;
-};
+}
 
 export function getServiceAuctionCreatedEventEncoder(): Encoder<ServiceAuctionCreatedEventArgs> {
   return getStructEncoder([

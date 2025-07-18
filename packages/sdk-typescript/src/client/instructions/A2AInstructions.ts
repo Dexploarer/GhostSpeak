@@ -9,16 +9,18 @@ import {
   getCreateA2aSessionInstruction,
   getSendA2aMessageInstruction,
   getUpdateA2aStatusInstruction,
-  fetchA2ASession,
-  fetchA2AMessage,
   type A2ASession,
   type A2AMessage
 } from '../../generated/index.js'
 import { deriveA2AMessagePda } from '../../utils/pda.js'
 import { BaseInstructions } from './BaseInstructions.js'
+import type {
+  BaseInstructionParams,
+  BaseTimeParams
+} from './BaseInterfaces.js'
 
 // Parameters for A2A session creation
-export interface CreateA2ASessionParams {
+export interface CreateA2ASessionParams extends BaseInstructionParams, BaseTimeParams {
   sessionId: bigint
   initiator: Address
   responder: Address
@@ -28,13 +30,24 @@ export interface CreateA2ASessionParams {
 }
 
 // Parameters for A2A message sending
-export interface SendA2AMessageParams {
+export interface SendA2AMessageParams extends BaseInstructionParams {
   messageId: bigint
   sessionId: bigint
   sender: Address
   content: string
   messageType: string
   timestamp: bigint
+}
+
+// Parameters for A2A status update
+export interface UpdateA2AStatusParams extends BaseInstructionParams {
+  sessionAddress: Address
+  statusId: bigint
+  agent: Address
+  status: string
+  capabilities: string[]
+  availability: boolean
+  lastUpdated: bigint
 }
 
 /**
@@ -49,95 +62,97 @@ export class A2AInstructions extends BaseInstructions {
    * Create a new A2A communication session
    */
   async createSession(
-    signer: KeyPairSigner,
     sessionAddress: Address,
     params: CreateA2ASessionParams
   ): Promise<string> {
-    const instruction = getCreateA2aSessionInstruction({
-      session: sessionAddress,
-      creator: signer as unknown as TransactionSigner,
-      sessionId: params.sessionId,
-      initiator: params.initiator,
-      responder: params.responder,
-      sessionType: params.sessionType,
-      metadata: params.metadata,
-      expiresAt: params.expiresAt
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getCreateA2aSessionInstruction({
+        session: sessionAddress,
+        creator: params.signer as unknown as TransactionSigner,
+        sessionId: params.sessionId,
+        initiator: params.initiator,
+        responder: params.responder,
+        sessionType: params.sessionType,
+        metadata: params.metadata,
+        expiresAt: params.expiresAt
+      }),
+      params.signer as unknown as TransactionSigner,
+      'A2A session creation'
+    )
   }
 
   /**
    * Send a message in an A2A session
    */
   async sendMessage(
-    signer: KeyPairSigner,
     sessionAddress: Address,
     params: SendA2AMessageParams
   ): Promise<string> {
-    // Get session account data directly (bypassing decoder which is broken)
-    const accountInfo = await this.rpc.getAccountInfo(sessionAddress, {
-      commitment: 'confirmed',
-      encoding: 'base64'
-    }).send()
-    
-    if (!accountInfo.value) {
-      throw new Error('Session account not found')
+    try {
+      // Get session account data directly (bypassing decoder which is broken)
+      const accountInfo = await this.rpc.getAccountInfo(sessionAddress, {
+        commitment: 'confirmed',
+        encoding: 'base64'
+      }).send()
+      
+      if (!accountInfo.value) {
+        throw new Error('Session account not found')
+      }
+      
+      // Parse created_at timestamp from session account data (at offset 8)
+      const sessionBuffer = Buffer.from(accountInfo.value.data[0], 'base64')
+      const sessionCreatedAt = sessionBuffer.readBigInt64LE(8)
+
+      // Derive the message address using the session's createdAt timestamp
+      const messageAddress = await deriveA2AMessagePda(
+        this.programId,
+        sessionAddress,
+        sessionCreatedAt
+      )
+
+      return this.executeInstruction(
+        () => getSendA2aMessageInstruction({
+          message: messageAddress,
+          session: sessionAddress,
+          sender: params.signer as unknown as TransactionSigner,
+          messageId: params.messageId,
+          sessionId: params.sessionId,
+          senderArg: params.sender, // Renamed to avoid conflict
+          content: params.content,
+          messageType: params.messageType,
+          timestamp: params.timestamp
+        }),
+        params.signer as unknown as TransactionSigner,
+        'A2A message sending'
+      )
+    } catch (error) {
+      console.error('❌ Failed to send A2A message:', error)
+      throw error
     }
-    
-    // Parse created_at timestamp from session account data (at offset 8)
-    const sessionBuffer = Buffer.from(accountInfo.value.data[0], 'base64')
-    const sessionCreatedAt = sessionBuffer.readBigInt64LE(8)
-
-    // Derive the message address using the session's createdAt timestamp
-    const messageAddress = await deriveA2AMessagePda(
-      this.programId,
-      sessionAddress,
-      sessionCreatedAt
-    )
-
-    const instruction = getSendA2aMessageInstruction({
-      message: messageAddress,
-      session: sessionAddress,
-      sender: signer as unknown as TransactionSigner,
-      messageId: params.messageId,
-      sessionId: params.sessionId,
-      senderArg: params.sender, // Renamed to avoid conflict
-      content: params.content,
-      messageType: params.messageType,
-      timestamp: params.timestamp
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
   }
 
   /**
    * Update A2A status
    */
   async updateStatus(
-    signer: KeyPairSigner,
     statusAddress: Address,
-    sessionAddress: Address,
-    statusId: bigint,
-    agent: Address,
-    status: string,
-    capabilities: string[],
-    availability: boolean,
-    lastUpdated: bigint
+    params: UpdateA2AStatusParams
   ): Promise<string> {
-    const instruction = getUpdateA2aStatusInstruction({
-      status: statusAddress,
-      session: sessionAddress,
-      updater: signer as unknown as TransactionSigner,
-      statusId,
-      agent,
-      statusArg: status, // Renamed to avoid conflict
-      capabilities,
-      availability,
-      lastUpdated
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getUpdateA2aStatusInstruction({
+        status: statusAddress,
+        session: params.sessionAddress,
+        updater: params.signer as unknown as TransactionSigner,
+        statusId: params.statusId,
+        agent: params.agent,
+        statusArg: params.status, // Renamed to avoid conflict
+        capabilities: params.capabilities,
+        availability: params.availability,
+        lastUpdated: params.lastUpdated
+      }),
+      params.signer as unknown as TransactionSigner,
+      'A2A status update'
+    )
   }
 
   /**
@@ -156,15 +171,17 @@ export class A2AInstructions extends BaseInstructions {
     
     // Update status to mark session as inactive
     return this.updateStatus(
-      signer,
       sessionAddress, // Using session address as status address for simplicity
-      sessionAddress,
-      session.sessionId,
-      signer.address as Address,
-      'closed',
-      [],
-      false, // Set availability to false
-      BigInt(Math.floor(Date.now() / 1000))
+      {
+        signer,
+        sessionAddress,
+        statusId: session.sessionId,
+        agent: signer.address as Address,
+        status: 'closed',
+        capabilities: [],
+        availability: false, // Set availability to false
+        lastUpdated: BigInt(Math.floor(Date.now() / 1000))
+      }
     )
   }
 
@@ -172,88 +189,37 @@ export class A2AInstructions extends BaseInstructions {
    * Get A2A session information
    */
   async getSession(sessionAddress: Address): Promise<A2ASession | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getA2ASessionDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      const session = await rpcClient.getAndDecodeAccount(
-        sessionAddress,
-        getA2ASessionDecoder(),
-        this.commitment
-      )
-      
-      return session
-    } catch (error) {
-      console.warn('Failed to fetch A2A session:', error)
-      return null
-    }
+    return this.getDecodedAccount<A2ASession>(sessionAddress, 'getA2ASessionDecoder')
   }
 
   /**
    * Get all messages in an A2A session
    */
   async getMessages(sessionAddress: Address): Promise<A2AMessage[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getA2AMessageDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all A2A message accounts filtering by session
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getA2AMessageDecoder(),
-        [], // No RPC filters - filtering client-side for session
-        this.commitment
-      )
-      
-      // Filter messages for this specific session
-      const sessionMessages = accounts
-        .map(({ data }) => data)
-        .filter(message => message.session === sessionAddress)
-        .sort((a, b) => Number(a.sentAt - b.sentAt)) // Sort by timestamp
-      
-      return sessionMessages
-    } catch (error) {
-      console.warn('Failed to fetch A2A messages:', error)
-      return []
-    }
+    const accounts = await this.getDecodedProgramAccounts<A2AMessage>('getA2AMessageDecoder')
+    
+    // Filter messages for this specific session
+    return accounts
+      .map(({ data }) => data)
+      .filter(message => message.session === sessionAddress)
+      .sort((a, b) => Number(a.sentAt - b.sentAt)) // Sort by timestamp
   }
 
   /**
    * Get all active sessions for an agent
    */
   async getActiveSessions(agentAddress: Address): Promise<A2ASession[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getA2ASessionDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all A2A session accounts
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getA2ASessionDecoder(),
-        [], // No RPC filters - filtering client-side
-        this.commitment
+    const accounts = await this.getDecodedProgramAccounts<A2ASession>('getA2ASessionDecoder')
+    
+    // Filter sessions where agent is either initiator or responder and session is active
+    const currentTimestamp = BigInt(Math.floor(Date.now() / 1000))
+    return accounts
+      .map(({ data }) => data)
+      .filter(session => 
+        (session.initiator === agentAddress || session.responder === agentAddress) &&
+        session.isActive &&
+        (session.expiresAt === 0n || session.expiresAt > currentTimestamp)
       )
-      
-      // Filter sessions where agent is either initiator or responder and session is active
-      const currentTimestamp = BigInt(Math.floor(Date.now() / 1000))
-      const activeSessions = accounts
-        .map(({ data }) => data)
-        .filter(session => 
-          (session.initiator === agentAddress || session.responder === agentAddress) &&
-          session.isActive &&
-          (session.expiresAt === 0n || session.expiresAt > currentTimestamp)
-        )
-      
-      return activeSessions
-    } catch (error) {
-      console.warn('Failed to fetch active A2A sessions:', error)
-      return []
-    }
   }
 
   /**

@@ -57,7 +57,7 @@ export function getAgentVerificationDiscriminatorBytes() {
   );
 }
 
-export type AgentVerification = {
+export interface AgentVerification {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   verifier: Address;
@@ -66,9 +66,9 @@ export type AgentVerification = {
   expiresAt: bigint;
   isActive: boolean;
   bump: number;
-};
+}
 
-export type AgentVerificationArgs = {
+export interface AgentVerificationArgs {
   agent: Address;
   verifier: Address;
   verificationData: AgentVerificationDataArgs;
@@ -76,7 +76,7 @@ export type AgentVerificationArgs = {
   expiresAt: number | bigint;
   isActive: boolean;
   bump: number;
-};
+}
 
 export function getAgentVerificationEncoder(): Encoder<AgentVerificationArgs> {
   return transformEncoder(
@@ -157,7 +157,7 @@ export async function fetchMaybeAgentVerification<
 
 export async function fetchAllAgentVerification(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<AgentVerification>[]> {
   const maybeAccounts = await fetchAllMaybeAgentVerification(
@@ -171,7 +171,7 @@ export async function fetchAllAgentVerification(
 
 export async function fetchAllMaybeAgentVerification(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<AgentVerification>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

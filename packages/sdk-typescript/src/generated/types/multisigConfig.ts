@@ -29,7 +29,7 @@ import {
   type TransactionTypeArgs,
 } from '.';
 
-export type MultisigConfig = {
+export interface MultisigConfig {
   /** Maximum number of signers */
   maxSigners: number;
   /** Default transaction timeout (seconds) */
@@ -43,14 +43,14 @@ export type MultisigConfig = {
   /** Allow partial execution */
   allowPartialExecution: boolean;
   /** Transaction types allowed */
-  allowedTransactionTypes: Array<TransactionType>;
+  allowedTransactionTypes: TransactionType[];
   /** Cooldown period between transactions (seconds) */
   cooldownPeriod: bigint;
   /** Maximum pending transactions */
   maxPendingTransactions: number;
-};
+}
 
-export type MultisigConfigArgs = {
+export interface MultisigConfigArgs {
   /** Maximum number of signers */
   maxSigners: number;
   /** Default transaction timeout (seconds) */
@@ -64,12 +64,12 @@ export type MultisigConfigArgs = {
   /** Allow partial execution */
   allowPartialExecution: boolean;
   /** Transaction types allowed */
-  allowedTransactionTypes: Array<TransactionTypeArgs>;
+  allowedTransactionTypes: TransactionTypeArgs[];
   /** Cooldown period between transactions (seconds) */
   cooldownPeriod: number | bigint;
   /** Maximum pending transactions */
   maxPendingTransactions: number;
-};
+}
 
 export function getMultisigConfigEncoder(): Encoder<MultisigConfigArgs> {
   return getStructEncoder([

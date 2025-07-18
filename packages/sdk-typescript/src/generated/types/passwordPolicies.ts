@@ -27,19 +27,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type PasswordPolicies = {
+export interface PasswordPolicies {
   minimumLength: number;
-  complexityRequirements: Array<string>;
+  complexityRequirements: string[];
   historyCount: number;
   maxAge: bigint;
-};
+}
 
-export type PasswordPoliciesArgs = {
+export interface PasswordPoliciesArgs {
   minimumLength: number;
-  complexityRequirements: Array<string>;
+  complexityRequirements: string[];
   historyCount: number;
   maxAge: number | bigint;
-};
+}
 
 export function getPasswordPoliciesEncoder(): Encoder<PasswordPoliciesArgs> {
   return getStructEncoder([

@@ -59,15 +59,15 @@ export function getJobPostingDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(JOB_POSTING_DISCRIMINATOR);
 }
 
-export type JobPosting = {
+export interface JobPosting {
   discriminator: ReadonlyUint8Array;
   employer: Address;
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   budget: bigint;
   deadline: bigint;
-  skillsNeeded: Array<string>;
+  skillsNeeded: string[];
   budgetMin: bigint;
   budgetMax: bigint;
   paymentToken: Address;
@@ -78,16 +78,16 @@ export type JobPosting = {
   createdAt: bigint;
   updatedAt: bigint;
   bump: number;
-};
+}
 
-export type JobPostingArgs = {
+export interface JobPostingArgs {
   employer: Address;
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   budget: number | bigint;
   deadline: number | bigint;
-  skillsNeeded: Array<string>;
+  skillsNeeded: string[];
   budgetMin: number | bigint;
   budgetMax: number | bigint;
   paymentToken: Address;
@@ -98,7 +98,7 @@ export type JobPostingArgs = {
   createdAt: number | bigint;
   updatedAt: number | bigint;
   bump: number;
-};
+}
 
 export function getJobPostingEncoder(): Encoder<JobPostingArgs> {
   return transformEncoder(
@@ -211,7 +211,7 @@ export async function fetchMaybeJobPosting<TAddress extends string = string>(
 
 export async function fetchAllJobPosting(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<JobPosting>[]> {
   const maybeAccounts = await fetchAllMaybeJobPosting(rpc, addresses, config);
@@ -221,7 +221,7 @@ export async function fetchAllJobPosting(
 
 export async function fetchAllMaybeJobPosting(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<JobPosting>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

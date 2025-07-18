@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type BulkDealBatchExecutedEvent = {
+export interface BulkDealBatchExecutedEvent {
   deal: Address;
   executor: Address;
   batchSize: number;
   totalExecuted: number;
   timestamp: bigint;
-};
+}
 
-export type BulkDealBatchExecutedEventArgs = {
+export interface BulkDealBatchExecutedEventArgs {
   deal: Address;
   executor: Address;
   batchSize: number;
   totalExecuted: number;
   timestamp: number | bigint;
-};
+}
 
 export function getBulkDealBatchExecutedEventEncoder(): Encoder<BulkDealBatchExecutedEventArgs> {
   return getStructEncoder([

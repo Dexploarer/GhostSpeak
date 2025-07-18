@@ -30,7 +30,7 @@ import {
 } from '.';
 
 /** Individual risk factor */
-export type RiskFactor = {
+export interface RiskFactor {
   /** Factor name */
   name: string;
   /** Factor category */
@@ -41,9 +41,9 @@ export type RiskFactor = {
   likelihood: number;
   /** Risk score */
   riskScore: number;
-};
+}
 
-export type RiskFactorArgs = {
+export interface RiskFactorArgs {
   /** Factor name */
   name: string;
   /** Factor category */
@@ -54,7 +54,7 @@ export type RiskFactorArgs = {
   likelihood: number;
   /** Risk score */
   riskScore: number;
-};
+}
 
 export function getRiskFactorEncoder(): Encoder<RiskFactorArgs> {
   return getStructEncoder([

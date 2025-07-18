@@ -195,7 +195,7 @@ export function createTransactionMarkdown(
   linkText?: string
 ): string {
   const url = getSolanaExplorerUrl(signature, cluster)
-  const text = linkText || `View Transaction ${signature.slice(0, 8)}...`
+  const text = linkText ?? `View Transaction ${signature.slice(0, 8)}...`
   return `[${text}](${url})`
 }
 

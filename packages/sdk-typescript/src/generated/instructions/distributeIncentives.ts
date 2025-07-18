@@ -76,18 +76,18 @@ export type DistributeIncentivesInstruction<
     ]
   >;
 
-export type DistributeIncentivesInstructionData = {
+export interface DistributeIncentivesInstructionData {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   incentiveType: string;
   amount: bigint;
-};
+}
 
-export type DistributeIncentivesInstructionDataArgs = {
+export interface DistributeIncentivesInstructionDataArgs {
   agent: Address;
   incentiveType: string;
   amount: number | bigint;
-};
+}
 
 export function getDistributeIncentivesInstructionDataEncoder(): Encoder<DistributeIncentivesInstructionDataArgs> {
   return transformEncoder(
@@ -126,18 +126,18 @@ export function getDistributeIncentivesInstructionDataCodec(): Codec<
   );
 }
 
-export type DistributeIncentivesInput<
+export interface DistributeIncentivesInput<
   TAccountProgram extends string = string,
   TAccountIncentives extends string = string,
   TAccountDistributor extends string = string,
-> = {
+> {
   program: Address<TAccountProgram>;
   incentives: Address<TAccountIncentives>;
   distributor: TransactionSigner<TAccountDistributor>;
   agent: DistributeIncentivesInstructionDataArgs['agent'];
   incentiveType: DistributeIncentivesInstructionDataArgs['incentiveType'];
   amount: DistributeIncentivesInstructionDataArgs['amount'];
-};
+}
 
 export function getDistributeIncentivesInstruction<
   TAccountProgram extends string,
@@ -197,10 +197,10 @@ export function getDistributeIncentivesInstruction<
   return instruction;
 }
 
-export type ParsedDistributeIncentivesInstruction<
+export interface ParsedDistributeIncentivesInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     program: TAccountMetas[0];
@@ -208,7 +208,7 @@ export type ParsedDistributeIncentivesInstruction<
     distributor: TAccountMetas[2];
   };
   data: DistributeIncentivesInstructionData;
-};
+}
 
 export function parseDistributeIncentivesInstruction<
   TProgram extends string,

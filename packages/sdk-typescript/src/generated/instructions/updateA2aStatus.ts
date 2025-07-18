@@ -94,24 +94,24 @@ export type UpdateA2aStatusInstruction<
     ]
   >;
 
-export type UpdateA2aStatusInstructionData = {
+export interface UpdateA2aStatusInstructionData {
   discriminator: ReadonlyUint8Array;
   statusId: bigint;
   agent: Address;
   status: string;
-  capabilities: Array<string>;
+  capabilities: string[];
   availability: boolean;
   lastUpdated: bigint;
-};
+}
 
-export type UpdateA2aStatusInstructionDataArgs = {
+export interface UpdateA2aStatusInstructionDataArgs {
   statusId: number | bigint;
   agent: Address;
   status: string;
-  capabilities: Array<string>;
+  capabilities: string[];
   availability: boolean;
   lastUpdated: number | bigint;
-};
+}
 
 export function getUpdateA2aStatusInstructionDataEncoder(): Encoder<UpdateA2aStatusInstructionDataArgs> {
   return transformEncoder(
@@ -158,12 +158,12 @@ export function getUpdateA2aStatusInstructionDataCodec(): Codec<
   );
 }
 
-export type UpdateA2aStatusAsyncInput<
+export interface UpdateA2aStatusAsyncInput<
   TAccountStatus extends string = string,
   TAccountSession extends string = string,
   TAccountUpdater extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   status?: Address<TAccountStatus>;
   session: Address<TAccountSession>;
   updater: TransactionSigner<TAccountUpdater>;
@@ -174,7 +174,7 @@ export type UpdateA2aStatusAsyncInput<
   capabilities: UpdateA2aStatusInstructionDataArgs['capabilities'];
   availability: UpdateA2aStatusInstructionDataArgs['availability'];
   lastUpdated: UpdateA2aStatusInstructionDataArgs['lastUpdated'];
-};
+}
 
 export async function getUpdateA2aStatusInstructionAsync<
   TAccountStatus extends string,
@@ -259,12 +259,12 @@ export async function getUpdateA2aStatusInstructionAsync<
   return instruction;
 }
 
-export type UpdateA2aStatusInput<
+export interface UpdateA2aStatusInput<
   TAccountStatus extends string = string,
   TAccountSession extends string = string,
   TAccountUpdater extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   status: Address<TAccountStatus>;
   session: Address<TAccountSession>;
   updater: TransactionSigner<TAccountUpdater>;
@@ -275,7 +275,7 @@ export type UpdateA2aStatusInput<
   capabilities: UpdateA2aStatusInstructionDataArgs['capabilities'];
   availability: UpdateA2aStatusInstructionDataArgs['availability'];
   lastUpdated: UpdateA2aStatusInstructionDataArgs['lastUpdated'];
-};
+}
 
 export function getUpdateA2aStatusInstruction<
   TAccountStatus extends string,
@@ -347,10 +347,10 @@ export function getUpdateA2aStatusInstruction<
   return instruction;
 }
 
-export type ParsedUpdateA2aStatusInstruction<
+export interface ParsedUpdateA2aStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     status: TAccountMetas[0];
@@ -359,7 +359,7 @@ export type ParsedUpdateA2aStatusInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: UpdateA2aStatusInstructionData;
-};
+}
 
 export function parseUpdateA2aStatusInstruction<
   TProgram extends string,

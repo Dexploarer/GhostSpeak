@@ -61,7 +61,7 @@ export function getMessageDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(MESSAGE_DISCRIMINATOR);
 }
 
-export type Message = {
+export interface Message {
   discriminator: ReadonlyUint8Array;
   channel: Address;
   sender: Address;
@@ -70,9 +70,9 @@ export type Message = {
   timestamp: bigint;
   isEncrypted: boolean;
   bump: number;
-};
+}
 
-export type MessageArgs = {
+export interface MessageArgs {
   channel: Address;
   sender: Address;
   content: string;
@@ -80,7 +80,7 @@ export type MessageArgs = {
   timestamp: number | bigint;
   isEncrypted: boolean;
   bump: number;
-};
+}
 
 export function getMessageEncoder(): Encoder<MessageArgs> {
   return transformEncoder(
@@ -151,7 +151,7 @@ export async function fetchMaybeMessage<TAddress extends string = string>(
 
 export async function fetchAllMessage(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<Message>[]> {
   const maybeAccounts = await fetchAllMaybeMessage(rpc, addresses, config);
@@ -161,7 +161,7 @@ export async function fetchAllMessage(
 
 export async function fetchAllMaybeMessage(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<Message>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

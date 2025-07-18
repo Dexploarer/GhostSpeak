@@ -14,7 +14,6 @@ import {
   type VolumeTier,
   type DealType
 } from '../../generated/index.js'
-import { type TransactionResult } from '../../utils/transaction-urls.js'
 
 export interface CreateBulkDealParams {
   dealId: bigint
@@ -53,7 +52,7 @@ export class BulkDealsInstructions extends BaseInstructions {
 
     const instruction = getCreateBulkDealInstruction({
       deal: bulkDealPda,
-      agent: params.agent || bulkDealPda, // Placeholder - should be provided
+      agent: params.agent ?? bulkDealPda, // Placeholder - should be provided
       userRegistry: await this.deriveUserRegistry(creator),
       customer: creator,
       systemProgram: '11111111111111111111111111111112' as Address,
@@ -120,8 +119,9 @@ export class BulkDealsInstructions extends BaseInstructions {
     return null
   }
 
-  private async deriveUserRegistry(user: any): Promise<Address> {
-    // In production, derive proper user registry PDA
+  private async deriveUserRegistry(user: TransactionSigner): Promise<Address> {
+    // In production, derive proper user registry PDA based on user's public key
+    console.log(`Deriving user registry for ${user}`)
     return '11111111111111111111111111111111' as Address
   }
 }

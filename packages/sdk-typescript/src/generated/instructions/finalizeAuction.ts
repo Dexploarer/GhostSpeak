@@ -69,11 +69,11 @@ export type FinalizeAuctionInstruction<
     ]
   >;
 
-export type FinalizeAuctionInstructionData = {
+export interface FinalizeAuctionInstructionData {
   discriminator: ReadonlyUint8Array;
-};
+}
 
-export type FinalizeAuctionInstructionDataArgs = {};
+export interface FinalizeAuctionInstructionDataArgs {}
 
 export function getFinalizeAuctionInstructionDataEncoder(): Encoder<FinalizeAuctionInstructionDataArgs> {
   return transformEncoder(
@@ -98,18 +98,18 @@ export function getFinalizeAuctionInstructionDataCodec(): Codec<
   );
 }
 
-export type FinalizeAuctionInput<
+export interface FinalizeAuctionInput<
   TAccountAuction extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Auction account with canonical validation */
   auction: Address<TAccountAuction>;
   /** Enhanced authority verification - only creator or protocol admin */
   authority: TransactionSigner<TAccountAuthority>;
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
-};
+}
 
 export function getFinalizeAuctionInstruction<
   TAccountAuction extends string,
@@ -170,10 +170,10 @@ export function getFinalizeAuctionInstruction<
   return instruction;
 }
 
-export type ParsedFinalizeAuctionInstruction<
+export interface ParsedFinalizeAuctionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Auction account with canonical validation */
@@ -184,7 +184,7 @@ export type ParsedFinalizeAuctionInstruction<
     clock: TAccountMetas[2];
   };
   data: FinalizeAuctionInstructionData;
-};
+}
 
 export function parseFinalizeAuctionInstruction<
   TProgram extends string,

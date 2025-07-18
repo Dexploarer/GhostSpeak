@@ -39,39 +39,39 @@ import {
 } from '.';
 
 /** Permission metadata */
-export type PermissionMetadata = {
+export interface PermissionMetadata {
   /** Business justification */
   businessJustification: string;
   /** Risk assessment */
   riskAssessment: RiskAssessment;
   /** Compliance mapping */
-  complianceMapping: Array<string>;
+  complianceMapping: string[];
   /** Related permissions */
-  relatedPermissions: Array<string>;
+  relatedPermissions: string[];
   /** Permission owner */
   owner: Option<Address>;
   /** Last review */
   lastReview: Option<bigint>;
   /** Review frequency */
   reviewFrequency: bigint;
-};
+}
 
-export type PermissionMetadataArgs = {
+export interface PermissionMetadataArgs {
   /** Business justification */
   businessJustification: string;
   /** Risk assessment */
   riskAssessment: RiskAssessmentArgs;
   /** Compliance mapping */
-  complianceMapping: Array<string>;
+  complianceMapping: string[];
   /** Related permissions */
-  relatedPermissions: Array<string>;
+  relatedPermissions: string[];
   /** Permission owner */
   owner: OptionOrNullable<Address>;
   /** Last review */
   lastReview: OptionOrNullable<number | bigint>;
   /** Review frequency */
   reviewFrequency: number | bigint;
-};
+}
 
 export function getPermissionMetadataEncoder(): Encoder<PermissionMetadataArgs> {
   return getStructEncoder([

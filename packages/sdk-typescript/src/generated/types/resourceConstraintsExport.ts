@@ -21,9 +21,9 @@ import {
   type ResourceConstraintsArgs,
 } from '.';
 
-export type ResourceConstraintsExport = { data: ResourceConstraints };
+export interface ResourceConstraintsExport { data: ResourceConstraints }
 
-export type ResourceConstraintsExportArgs = { data: ResourceConstraintsArgs };
+export interface ResourceConstraintsExportArgs { data: ResourceConstraintsArgs }
 
 export function getResourceConstraintsExportEncoder(): Encoder<ResourceConstraintsExportArgs> {
   return getStructEncoder([['data', getResourceConstraintsEncoder()]]);

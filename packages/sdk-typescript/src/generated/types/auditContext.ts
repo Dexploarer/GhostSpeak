@@ -25,7 +25,7 @@ import {
   type OptionOrNullable,
 } from '@solana/kit';
 
-export type AuditContext = {
+export interface AuditContext {
   /** Transaction signature */
   transactionSignature: Option<string>;
   /** Block number */
@@ -42,9 +42,9 @@ export type AuditContext = {
   riskScore: number;
   /** Additional metadata as JSON string */
   metadata: Option<string>;
-};
+}
 
-export type AuditContextArgs = {
+export interface AuditContextArgs {
   /** Transaction signature */
   transactionSignature: OptionOrNullable<string>;
   /** Block number */
@@ -61,7 +61,7 @@ export type AuditContextArgs = {
   riskScore: number;
   /** Additional metadata as JSON string */
   metadata: OptionOrNullable<string>;
-};
+}
 
 export function getAuditContextEncoder(): Encoder<AuditContextArgs> {
   return getStructEncoder([

@@ -59,10 +59,10 @@ export function getChannelDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(CHANNEL_DISCRIMINATOR);
 }
 
-export type Channel = {
+export interface Channel {
   discriminator: ReadonlyUint8Array;
   creator: Address;
-  participants: Array<Address>;
+  participants: Address[];
   channelType: ChannelType;
   isPrivate: boolean;
   messageCount: bigint;
@@ -70,11 +70,11 @@ export type Channel = {
   lastActivity: bigint;
   isActive: boolean;
   bump: number;
-};
+}
 
-export type ChannelArgs = {
+export interface ChannelArgs {
   creator: Address;
-  participants: Array<Address>;
+  participants: Address[];
   channelType: ChannelTypeArgs;
   isPrivate: boolean;
   messageCount: number | bigint;
@@ -82,7 +82,7 @@ export type ChannelArgs = {
   lastActivity: number | bigint;
   isActive: boolean;
   bump: number;
-};
+}
 
 export function getChannelEncoder(): Encoder<ChannelArgs> {
   return transformEncoder(
@@ -157,7 +157,7 @@ export async function fetchMaybeChannel<TAddress extends string = string>(
 
 export async function fetchAllChannel(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<Channel>[]> {
   const maybeAccounts = await fetchAllMaybeChannel(rpc, addresses, config);
@@ -167,7 +167,7 @@ export async function fetchAllChannel(
 
 export async function fetchAllMaybeChannel(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<Channel>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

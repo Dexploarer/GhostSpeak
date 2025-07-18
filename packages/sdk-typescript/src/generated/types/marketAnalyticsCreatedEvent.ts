@@ -20,19 +20,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type MarketAnalyticsCreatedEvent = {
+export interface MarketAnalyticsCreatedEvent {
   marketAnalytics: Address;
   periodStart: bigint;
   periodEnd: bigint;
   timestamp: bigint;
-};
+}
 
-export type MarketAnalyticsCreatedEventArgs = {
+export interface MarketAnalyticsCreatedEventArgs {
   marketAnalytics: Address;
   periodStart: number | bigint;
   periodEnd: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getMarketAnalyticsCreatedEventEncoder(): Encoder<MarketAnalyticsCreatedEventArgs> {
   return getStructEncoder([

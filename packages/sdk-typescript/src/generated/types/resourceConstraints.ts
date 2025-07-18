@@ -27,7 +27,7 @@ import {
   type OptionOrNullable,
 } from '@solana/kit';
 
-export type ResourceConstraints = {
+export interface ResourceConstraints {
   /** Maximum operations per hour */
   maxOperationsPerHour: Option<number>;
   /** Maximum data size (bytes) */
@@ -35,14 +35,14 @@ export type ResourceConstraints = {
   /** Maximum transaction value */
   maxTransactionValue: Option<bigint>;
   /** Allowed resource types */
-  allowedResourceTypes: Array<string>;
+  allowedResourceTypes: string[];
   /** Blocked resource patterns */
-  blockedResourcePatterns: Array<string>;
+  blockedResourcePatterns: string[];
   /** Quota reset period (seconds) */
   quotaResetPeriod: Option<bigint>;
-};
+}
 
-export type ResourceConstraintsArgs = {
+export interface ResourceConstraintsArgs {
   /** Maximum operations per hour */
   maxOperationsPerHour: OptionOrNullable<number>;
   /** Maximum data size (bytes) */
@@ -50,12 +50,12 @@ export type ResourceConstraintsArgs = {
   /** Maximum transaction value */
   maxTransactionValue: OptionOrNullable<number | bigint>;
   /** Allowed resource types */
-  allowedResourceTypes: Array<string>;
+  allowedResourceTypes: string[];
   /** Blocked resource patterns */
-  blockedResourcePatterns: Array<string>;
+  blockedResourcePatterns: string[];
   /** Quota reset period (seconds) */
   quotaResetPeriod: OptionOrNullable<number | bigint>;
-};
+}
 
 export function getResourceConstraintsEncoder(): Encoder<ResourceConstraintsArgs> {
   return getStructEncoder([

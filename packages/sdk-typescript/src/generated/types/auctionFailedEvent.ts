@@ -24,7 +24,7 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AuctionFailedEvent = { auction: Address; reason: string };
+export interface AuctionFailedEvent { auction: Address; reason: string }
 
 export type AuctionFailedEventArgs = AuctionFailedEvent;
 

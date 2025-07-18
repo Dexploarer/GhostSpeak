@@ -83,18 +83,18 @@ export type InitiateNegotiationInstruction<
     ]
   >;
 
-export type InitiateNegotiationInstructionData = {
+export interface InitiateNegotiationInstructionData {
   discriminator: ReadonlyUint8Array;
   initialOffer: bigint;
   autoAcceptThreshold: bigint;
   negotiationDeadline: bigint;
-};
+}
 
-export type InitiateNegotiationInstructionDataArgs = {
+export interface InitiateNegotiationInstructionDataArgs {
   initialOffer: number | bigint;
   autoAcceptThreshold: number | bigint;
   negotiationDeadline: number | bigint;
-};
+}
 
 export function getInitiateNegotiationInstructionDataEncoder(): Encoder<InitiateNegotiationInstructionDataArgs> {
   return transformEncoder(
@@ -127,12 +127,12 @@ export function getInitiateNegotiationInstructionDataCodec(): Codec<
   );
 }
 
-export type InitiateNegotiationAsyncInput<
+export interface InitiateNegotiationAsyncInput<
   TAccountNegotiation extends string = string,
   TAccountInitiator extends string = string,
   TAccountCounterparty extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   negotiation?: Address<TAccountNegotiation>;
   initiator: TransactionSigner<TAccountInitiator>;
   counterparty: Address<TAccountCounterparty>;
@@ -140,7 +140,7 @@ export type InitiateNegotiationAsyncInput<
   initialOffer: InitiateNegotiationInstructionDataArgs['initialOffer'];
   autoAcceptThreshold: InitiateNegotiationInstructionDataArgs['autoAcceptThreshold'];
   negotiationDeadline: InitiateNegotiationInstructionDataArgs['negotiationDeadline'];
-};
+}
 
 export async function getInitiateNegotiationInstructionAsync<
   TAccountNegotiation extends string,
@@ -226,12 +226,12 @@ export async function getInitiateNegotiationInstructionAsync<
   return instruction;
 }
 
-export type InitiateNegotiationInput<
+export interface InitiateNegotiationInput<
   TAccountNegotiation extends string = string,
   TAccountInitiator extends string = string,
   TAccountCounterparty extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   negotiation: Address<TAccountNegotiation>;
   initiator: TransactionSigner<TAccountInitiator>;
   counterparty: Address<TAccountCounterparty>;
@@ -239,7 +239,7 @@ export type InitiateNegotiationInput<
   initialOffer: InitiateNegotiationInstructionDataArgs['initialOffer'];
   autoAcceptThreshold: InitiateNegotiationInstructionDataArgs['autoAcceptThreshold'];
   negotiationDeadline: InitiateNegotiationInstructionDataArgs['negotiationDeadline'];
-};
+}
 
 export function getInitiateNegotiationInstruction<
   TAccountNegotiation extends string,
@@ -311,10 +311,10 @@ export function getInitiateNegotiationInstruction<
   return instruction;
 }
 
-export type ParsedInitiateNegotiationInstruction<
+export interface ParsedInitiateNegotiationInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     negotiation: TAccountMetas[0];
@@ -323,7 +323,7 @@ export type ParsedInitiateNegotiationInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: InitiateNegotiationInstructionData;
-};
+}
 
 export function parseInitiateNegotiationInstruction<
   TProgram extends string,

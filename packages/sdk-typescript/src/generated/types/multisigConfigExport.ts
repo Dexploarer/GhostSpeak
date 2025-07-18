@@ -21,9 +21,9 @@ import {
   type MultisigConfigArgs,
 } from '.';
 
-export type MultisigConfigExport = { data: MultisigConfig };
+export interface MultisigConfigExport { data: MultisigConfig }
 
-export type MultisigConfigExportArgs = { data: MultisigConfigArgs };
+export interface MultisigConfigExportArgs { data: MultisigConfigArgs }
 
 export function getMultisigConfigExportEncoder(): Encoder<MultisigConfigExportArgs> {
   return getStructEncoder([['data', getMultisigConfigEncoder()]]);

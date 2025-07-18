@@ -6,7 +6,7 @@
  */
 
 import type { Address } from '@solana/kit'
-import { getAddressEncoder, getProgramDerivedAddress } from '@solana/kit'
+import { getAddressEncoder, getProgramDerivedAddress, getBytesEncoder } from '@solana/kit'
 import {
   ProposalStatus,
   VoteChoice,
@@ -16,7 +16,6 @@ import {
   type Role,
   type Permission,
   type VotingResults,
-  type ProposalMetadata,
   type QuorumRequirements
 } from '../generated/index.js'
 
@@ -35,7 +34,7 @@ export async function deriveMultisigPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('multisig'),
+      getBytesEncoder().encode(new Uint8Array([109, 117, 108, 116, 105, 115, 105, 103])), // 'multisig'
       getAddressEncoder().encode(authority),
       new Uint8Array(new BigUint64Array([multisigId]).buffer)
     ]
@@ -54,7 +53,7 @@ export async function deriveProposalPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('proposal'),
+      getBytesEncoder().encode(new Uint8Array([112, 114, 111, 112, 111, 115, 97, 108])), // 'proposal'
       getAddressEncoder().encode(multisig),
       new Uint8Array(new BigUint64Array([proposalId]).buffer)
     ]
@@ -72,7 +71,7 @@ export async function deriveRbacPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('rbac'),
+      getBytesEncoder().encode(new Uint8Array([114, 98, 97, 99])), // 'rbac'
       getAddressEncoder().encode(admin)
     ]
   })
@@ -302,12 +301,10 @@ export class RbacUtils {
   /**
    * Get user's role
    */
-  static getUserRole(rbac: RbacConfig, user: Address): Role | null {
+  static getUserRole(_rbac: RbacConfig, _user: Address): Role | null {
     // Find user's role assignment
-    for (const role of rbac.roles) {
-      // In production, check role assignments
-      // For now, return null
-    }
+    // In production, this would check role assignments
+    // Currently returns null as placeholder
     return null
   }
 
@@ -483,8 +480,8 @@ export interface GovernanceAnalytics {
   passedProposals: number
   failedProposals: number
   averageVoterTurnout: number
-  topVoters: Array<{ address: Address; voteCount: number }>
-  proposalCategories: Array<{ category: string; count: number }>
+  topVoters: { address: Address; voteCount: number }[]
+  proposalCategories: { category: string; count: number }[]
 }
 
 export class GovernanceAnalyticsUtils {

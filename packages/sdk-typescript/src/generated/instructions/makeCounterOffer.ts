@@ -70,16 +70,16 @@ export type MakeCounterOfferInstruction<
     ]
   >;
 
-export type MakeCounterOfferInstructionData = {
+export interface MakeCounterOfferInstructionData {
   discriminator: ReadonlyUint8Array;
   counterOffer: bigint;
   message: string;
-};
+}
 
-export type MakeCounterOfferInstructionDataArgs = {
+export interface MakeCounterOfferInstructionDataArgs {
   counterOffer: number | bigint;
   message: string;
-};
+}
 
 export function getMakeCounterOfferInstructionDataEncoder(): Encoder<MakeCounterOfferInstructionDataArgs> {
   return transformEncoder(
@@ -110,15 +110,15 @@ export function getMakeCounterOfferInstructionDataCodec(): Codec<
   );
 }
 
-export type MakeCounterOfferInput<
+export interface MakeCounterOfferInput<
   TAccountNegotiation extends string = string,
   TAccountSender extends string = string,
-> = {
+> {
   negotiation: Address<TAccountNegotiation>;
   sender: TransactionSigner<TAccountSender>;
   counterOffer: MakeCounterOfferInstructionDataArgs['counterOffer'];
   message: MakeCounterOfferInstructionDataArgs['message'];
-};
+}
 
 export function getMakeCounterOfferInstruction<
   TAccountNegotiation extends string,
@@ -169,17 +169,17 @@ export function getMakeCounterOfferInstruction<
   return instruction;
 }
 
-export type ParsedMakeCounterOfferInstruction<
+export interface ParsedMakeCounterOfferInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     negotiation: TAccountMetas[0];
     sender: TAccountMetas[1];
   };
   data: MakeCounterOfferInstructionData;
-};
+}
 
 export function parseMakeCounterOfferInstruction<
   TProgram extends string,

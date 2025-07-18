@@ -125,7 +125,7 @@ sdkCommand
             const { stdout } = await execAsync('npm list -g @ghostspeak/sdk --depth=0')
             if (stdout.includes('@ghostspeak/sdk')) {
               console.log(pc.green('\n✓ SDK installed globally'))
-              const versionMatch = stdout.match(/@ghostspeak\/sdk@(\S+)/)
+              const versionMatch = /@ghostspeak\/sdk@(\S+)/.exec(stdout)
               if (versionMatch) {
                 console.log(pc.gray(`  Version: ${versionMatch[1]}`))
               }

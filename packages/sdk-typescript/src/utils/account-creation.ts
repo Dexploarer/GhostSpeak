@@ -1,5 +1,4 @@
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
 import type { KeyPairSigner } from '../client/GhostSpeakClient.js'
 import type { GhostSpeakConfig } from '../types/index.js'
 
@@ -15,13 +14,13 @@ export class AccountCreationHelper {
   async createAgentAccount(
     signer: KeyPairSigner,
     agentId: string,
-    agentType: number,
+    _agentType: number,
     metadataUri: string
   ): Promise<{ agentAddress: Address; userRegistryAddress: Address }> {
     const { deriveAgentPda, deriveUserRegistryPda } = await import('./pda.js')
     
     const agentAddress = await deriveAgentPda(this.config.programId!, signer.address, agentId)
-    const userRegistryAddress = await deriveUserRegistryPda(this.config.programId!)
+    const userRegistryAddress = await deriveUserRegistryPda(this.config.programId!, signer.address)
     
     return {
       agentAddress,
@@ -38,7 +37,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveServiceListingPda } = await import('./pda.js')
     
-    return await deriveServiceListingPda(this.config.programId!, creator.address, listingId)
+    return deriveServiceListingPda(this.config.programId!, creator.address, listingId)
   }
 
   /**
@@ -50,7 +49,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveJobPostingPda } = await import('./pda.js')
     
-    return await deriveJobPostingPda(this.config.programId!, employer.address, jobId)
+    return deriveJobPostingPda(this.config.programId!, employer.address, jobId)
   }
 
   /**
@@ -62,7 +61,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveWorkOrderPda } = await import('./pda.js')
     
-    return await deriveWorkOrderPda(this.config.programId!, employer.address, orderId)
+    return deriveWorkOrderPda(this.config.programId!, employer.address, orderId)
   }
 
   /**
@@ -73,7 +72,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveA2ASessionPda } = await import('./pda.js')
     
-    return await deriveA2ASessionPda(this.config.programId!, creator.address)
+    return deriveA2ASessionPda(this.config.programId!, creator.address)
   }
 
   /**
@@ -85,7 +84,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveServicePurchasePda } = await import('./pda.js')
     
-    return await deriveServicePurchasePda(this.config.programId!, serviceListing, buyer.address)
+    return deriveServicePurchasePda(this.config.programId!, serviceListing, buyer.address)
   }
 
   /**
@@ -97,7 +96,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveJobApplicationPda } = await import('./pda.js')
     
-    return await deriveJobApplicationPda(this.config.programId!, jobPosting, applicant.address)
+    return deriveJobApplicationPda(this.config.programId!, jobPosting, applicant.address)
   }
 
   /**
@@ -109,7 +108,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { derivePaymentPda } = await import('./pda.js')
     
-    return await derivePaymentPda(this.config.programId!, workOrder, payer.address)
+    return derivePaymentPda(this.config.programId!, workOrder, payer.address)
   }
 
   /**
@@ -121,7 +120,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveWorkDeliveryPda } = await import('./pda.js')
     
-    return await deriveWorkDeliveryPda(this.config.programId!, workOrder, provider.address)
+    return deriveWorkDeliveryPda(this.config.programId!, workOrder, provider.address)
   }
 
   /**
@@ -133,7 +132,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveAgentVerificationPda } = await import('./pda.js')
     
-    return await deriveAgentVerificationPda(this.config.programId!, agent, verifier.address)
+    return deriveAgentVerificationPda(this.config.programId!, agent, verifier.address)
   }
 
   /**

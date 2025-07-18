@@ -57,7 +57,7 @@ export function getJobContractDiscriminatorBytes() {
   );
 }
 
-export type JobContract = {
+export interface JobContract {
   discriminator: ReadonlyUint8Array;
   jobPosting: Address;
   application: Address;
@@ -70,9 +70,9 @@ export type JobContract = {
   createdAt: bigint;
   updatedAt: bigint;
   bump: number;
-};
+}
 
-export type JobContractArgs = {
+export interface JobContractArgs {
   jobPosting: Address;
   application: Address;
   employer: Address;
@@ -84,7 +84,7 @@ export type JobContractArgs = {
   createdAt: number | bigint;
   updatedAt: number | bigint;
   bump: number;
-};
+}
 
 export function getJobContractEncoder(): Encoder<JobContractArgs> {
   return transformEncoder(
@@ -163,7 +163,7 @@ export async function fetchMaybeJobContract<TAddress extends string = string>(
 
 export async function fetchAllJobContract(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<JobContract>[]> {
   const maybeAccounts = await fetchAllMaybeJobContract(rpc, addresses, config);
@@ -173,7 +173,7 @@ export async function fetchAllJobContract(
 
 export async function fetchAllMaybeJobContract(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<JobContract>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

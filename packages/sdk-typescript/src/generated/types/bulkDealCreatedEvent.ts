@@ -26,21 +26,21 @@ import {
   type DealTypeArgs,
 } from '.';
 
-export type BulkDealCreatedEvent = {
+export interface BulkDealCreatedEvent {
   deal: Address;
   agent: Address;
   customer: Address;
   dealType: DealType;
   totalValue: bigint;
-};
+}
 
-export type BulkDealCreatedEventArgs = {
+export interface BulkDealCreatedEventArgs {
   deal: Address;
   agent: Address;
   customer: Address;
   dealType: DealTypeArgs;
   totalValue: number | bigint;
-};
+}
 
 export function getBulkDealCreatedEventEncoder(): Encoder<BulkDealCreatedEventArgs> {
   return getStructEncoder([

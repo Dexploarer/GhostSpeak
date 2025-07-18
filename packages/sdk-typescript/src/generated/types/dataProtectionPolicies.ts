@@ -17,11 +17,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type DataProtectionPolicies = {
+export interface DataProtectionPolicies {
   encryptionRequired: boolean;
   classificationRequired: boolean;
   dlpEnabled: boolean;
-};
+}
 
 export type DataProtectionPoliciesArgs = DataProtectionPolicies;
 

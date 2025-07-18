@@ -85,14 +85,14 @@ export type UpdateAnalyticsDashboardInstruction<
     ]
   >;
 
-export type UpdateAnalyticsDashboardInstructionData = {
+export interface UpdateAnalyticsDashboardInstructionData {
   discriminator: ReadonlyUint8Array;
   newMetrics: string;
-};
+}
 
-export type UpdateAnalyticsDashboardInstructionDataArgs = {
+export interface UpdateAnalyticsDashboardInstructionDataArgs {
   newMetrics: string;
-};
+}
 
 export function getUpdateAnalyticsDashboardInstructionDataEncoder(): Encoder<UpdateAnalyticsDashboardInstructionDataArgs> {
   return transformEncoder(
@@ -124,12 +124,12 @@ export function getUpdateAnalyticsDashboardInstructionDataCodec(): Codec<
   );
 }
 
-export type UpdateAnalyticsDashboardAsyncInput<
+export interface UpdateAnalyticsDashboardAsyncInput<
   TAccountDashboard extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountOwner extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dashboard account with canonical validation */
   dashboard: Address<TAccountDashboard>;
   /** User registry for rate limiting */
@@ -139,7 +139,7 @@ export type UpdateAnalyticsDashboardAsyncInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   newMetrics: UpdateAnalyticsDashboardInstructionDataArgs['newMetrics'];
-};
+}
 
 export async function getUpdateAnalyticsDashboardInstructionAsync<
   TAccountDashboard extends string,
@@ -226,12 +226,12 @@ export async function getUpdateAnalyticsDashboardInstructionAsync<
   return instruction;
 }
 
-export type UpdateAnalyticsDashboardInput<
+export interface UpdateAnalyticsDashboardInput<
   TAccountDashboard extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountOwner extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dashboard account with canonical validation */
   dashboard: Address<TAccountDashboard>;
   /** User registry for rate limiting */
@@ -241,7 +241,7 @@ export type UpdateAnalyticsDashboardInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   newMetrics: UpdateAnalyticsDashboardInstructionDataArgs['newMetrics'];
-};
+}
 
 export function getUpdateAnalyticsDashboardInstruction<
   TAccountDashboard extends string,
@@ -313,10 +313,10 @@ export function getUpdateAnalyticsDashboardInstruction<
   return instruction;
 }
 
-export type ParsedUpdateAnalyticsDashboardInstruction<
+export interface ParsedUpdateAnalyticsDashboardInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dashboard account with canonical validation */
@@ -329,7 +329,7 @@ export type ParsedUpdateAnalyticsDashboardInstruction<
     clock: TAccountMetas[3];
   };
   data: UpdateAnalyticsDashboardInstructionData;
-};
+}
 
 export function parseUpdateAnalyticsDashboardInstruction<
   TProgram extends string,

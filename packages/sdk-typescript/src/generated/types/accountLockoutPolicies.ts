@@ -34,7 +34,7 @@ import {
 } from '.';
 
 /** Account lockout policies */
-export type AccountLockoutPolicies = {
+export interface AccountLockoutPolicies {
   /** Max failed attempts before lockout */
   maxFailedAttempts: number;
   /** Lockout duration */
@@ -42,12 +42,12 @@ export type AccountLockoutPolicies = {
   /** Progressive lockout enabled */
   progressiveLockout: boolean;
   /** Unlock methods */
-  unlockMethods: Array<UnlockMethod>;
+  unlockMethods: UnlockMethod[];
   /** Notification requirements */
-  notificationRequirements: Array<NotificationRequirement>;
-};
+  notificationRequirements: NotificationRequirement[];
+}
 
-export type AccountLockoutPoliciesArgs = {
+export interface AccountLockoutPoliciesArgs {
   /** Max failed attempts before lockout */
   maxFailedAttempts: number;
   /** Lockout duration */
@@ -55,10 +55,10 @@ export type AccountLockoutPoliciesArgs = {
   /** Progressive lockout enabled */
   progressiveLockout: boolean;
   /** Unlock methods */
-  unlockMethods: Array<UnlockMethodArgs>;
+  unlockMethods: UnlockMethodArgs[];
   /** Notification requirements */
-  notificationRequirements: Array<NotificationRequirementArgs>;
-};
+  notificationRequirements: NotificationRequirementArgs[];
+}
 
 export function getAccountLockoutPoliciesEncoder(): Encoder<AccountLockoutPoliciesArgs> {
   return getStructEncoder([

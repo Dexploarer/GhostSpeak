@@ -30,19 +30,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AgentVerificationData = {
+export interface AgentVerificationData {
   agentPubkey: Address;
   serviceEndpoint: string;
-  supportedCapabilities: Array<bigint>;
+  supportedCapabilities: bigint[];
   verifiedAt: bigint;
-};
+}
 
-export type AgentVerificationDataArgs = {
+export interface AgentVerificationDataArgs {
   agentPubkey: Address;
   serviceEndpoint: string;
-  supportedCapabilities: Array<number | bigint>;
+  supportedCapabilities: (number | bigint)[];
   verifiedAt: number | bigint;
-};
+}
 
 export function getAgentVerificationDataEncoder(): Encoder<AgentVerificationDataArgs> {
   return getStructEncoder([

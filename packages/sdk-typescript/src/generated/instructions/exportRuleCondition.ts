@@ -62,14 +62,14 @@ export type ExportRuleConditionInstruction<
     ]
   >;
 
-export type ExportRuleConditionInstructionData = {
+export interface ExportRuleConditionInstructionData {
   discriminator: ReadonlyUint8Array;
   data: RuleCondition;
-};
+}
 
-export type ExportRuleConditionInstructionDataArgs = {
+export interface ExportRuleConditionInstructionDataArgs {
   data: RuleConditionArgs;
-};
+}
 
 export function getExportRuleConditionInstructionDataEncoder(): Encoder<ExportRuleConditionInstructionDataArgs> {
   return transformEncoder(
@@ -101,12 +101,12 @@ export function getExportRuleConditionInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportRuleConditionInput<
+export interface ExportRuleConditionInput<
   TAccountSystemProgram extends string = string,
-> = {
+> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportRuleConditionInstructionDataArgs['data'];
-};
+}
 
 export function getExportRuleConditionInstruction<
   TAccountSystemProgram extends string,
@@ -150,16 +150,16 @@ export function getExportRuleConditionInstruction<
   return instruction;
 }
 
-export type ParsedExportRuleConditionInstruction<
+export interface ParsedExportRuleConditionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportRuleConditionInstructionData;
-};
+}
 
 export function parseExportRuleConditionInstruction<
   TProgram extends string,

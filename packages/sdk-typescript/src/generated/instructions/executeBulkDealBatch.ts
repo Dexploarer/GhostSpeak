@@ -81,12 +81,12 @@ export type ExecuteBulkDealBatchInstruction<
     ]
   >;
 
-export type ExecuteBulkDealBatchInstructionData = {
+export interface ExecuteBulkDealBatchInstructionData {
   discriminator: ReadonlyUint8Array;
   batchSize: number;
-};
+}
 
-export type ExecuteBulkDealBatchInstructionDataArgs = { batchSize: number };
+export interface ExecuteBulkDealBatchInstructionDataArgs { batchSize: number }
 
 export function getExecuteBulkDealBatchInstructionDataEncoder(): Encoder<ExecuteBulkDealBatchInstructionDataArgs> {
   return transformEncoder(
@@ -118,12 +118,12 @@ export function getExecuteBulkDealBatchInstructionDataCodec(): Codec<
   );
 }
 
-export type ExecuteBulkDealBatchAsyncInput<
+export interface ExecuteBulkDealBatchAsyncInput<
   TAccountDeal extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Bulk deal account with canonical bump validation */
   deal: Address<TAccountDeal>;
   /** User registry for rate limiting */
@@ -133,7 +133,7 @@ export type ExecuteBulkDealBatchAsyncInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   batchSize: ExecuteBulkDealBatchInstructionDataArgs['batchSize'];
-};
+}
 
 export async function getExecuteBulkDealBatchInstructionAsync<
   TAccountDeal extends string,
@@ -220,12 +220,12 @@ export async function getExecuteBulkDealBatchInstructionAsync<
   return instruction;
 }
 
-export type ExecuteBulkDealBatchInput<
+export interface ExecuteBulkDealBatchInput<
   TAccountDeal extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Bulk deal account with canonical bump validation */
   deal: Address<TAccountDeal>;
   /** User registry for rate limiting */
@@ -235,7 +235,7 @@ export type ExecuteBulkDealBatchInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   batchSize: ExecuteBulkDealBatchInstructionDataArgs['batchSize'];
-};
+}
 
 export function getExecuteBulkDealBatchInstruction<
   TAccountDeal extends string,
@@ -307,10 +307,10 @@ export function getExecuteBulkDealBatchInstruction<
   return instruction;
 }
 
-export type ParsedExecuteBulkDealBatchInstruction<
+export interface ParsedExecuteBulkDealBatchInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Bulk deal account with canonical bump validation */
@@ -323,7 +323,7 @@ export type ParsedExecuteBulkDealBatchInstruction<
     clock: TAccountMetas[3];
   };
   data: ExecuteBulkDealBatchInstructionData;
-};
+}
 
 export function parseExecuteBulkDealBatchInstruction<
   TProgram extends string,

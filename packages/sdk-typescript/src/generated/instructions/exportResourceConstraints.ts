@@ -62,14 +62,14 @@ export type ExportResourceConstraintsInstruction<
     ]
   >;
 
-export type ExportResourceConstraintsInstructionData = {
+export interface ExportResourceConstraintsInstructionData {
   discriminator: ReadonlyUint8Array;
   data: ResourceConstraints;
-};
+}
 
-export type ExportResourceConstraintsInstructionDataArgs = {
+export interface ExportResourceConstraintsInstructionDataArgs {
   data: ResourceConstraintsArgs;
-};
+}
 
 export function getExportResourceConstraintsInstructionDataEncoder(): Encoder<ExportResourceConstraintsInstructionDataArgs> {
   return transformEncoder(
@@ -101,12 +101,12 @@ export function getExportResourceConstraintsInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportResourceConstraintsInput<
+export interface ExportResourceConstraintsInput<
   TAccountSystemProgram extends string = string,
-> = {
+> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportResourceConstraintsInstructionDataArgs['data'];
-};
+}
 
 export function getExportResourceConstraintsInstruction<
   TAccountSystemProgram extends string,
@@ -156,16 +156,16 @@ export function getExportResourceConstraintsInstruction<
   return instruction;
 }
 
-export type ParsedExportResourceConstraintsInstruction<
+export interface ParsedExportResourceConstraintsInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportResourceConstraintsInstructionData;
-};
+}
 
 export function parseExportResourceConstraintsInstruction<
   TProgram extends string,

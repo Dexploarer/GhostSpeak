@@ -33,7 +33,7 @@ import {
 } from '@solana/kit';
 
 /** Risk acceptance status */
-export type RiskAcceptance = {
+export interface RiskAcceptance {
   /** Risk accepted */
   accepted: boolean;
   /** Accepting authority */
@@ -44,9 +44,9 @@ export type RiskAcceptance = {
   reasoning: Option<string>;
   /** Review date */
   reviewDate: Option<bigint>;
-};
+}
 
-export type RiskAcceptanceArgs = {
+export interface RiskAcceptanceArgs {
   /** Risk accepted */
   accepted: boolean;
   /** Accepting authority */
@@ -57,7 +57,7 @@ export type RiskAcceptanceArgs = {
   reasoning: OptionOrNullable<string>;
   /** Review date */
   reviewDate: OptionOrNullable<number | bigint>;
-};
+}
 
 export function getRiskAcceptanceEncoder(): Encoder<RiskAcceptanceArgs> {
   return getStructEncoder([

@@ -82,16 +82,16 @@ export type ResolveDisputeInstruction<
     ]
   >;
 
-export type ResolveDisputeInstructionData = {
+export interface ResolveDisputeInstructionData {
   discriminator: ReadonlyUint8Array;
   resolution: string;
   awardToComplainant: boolean;
-};
+}
 
-export type ResolveDisputeInstructionDataArgs = {
+export interface ResolveDisputeInstructionDataArgs {
   resolution: string;
   awardToComplainant: boolean;
-};
+}
 
 export function getResolveDisputeInstructionDataEncoder(): Encoder<ResolveDisputeInstructionDataArgs> {
   return transformEncoder(
@@ -122,12 +122,12 @@ export function getResolveDisputeInstructionDataCodec(): Codec<
   );
 }
 
-export type ResolveDisputeAsyncInput<
+export interface ResolveDisputeAsyncInput<
   TAccountDispute extends string = string,
   TAccountArbitratorRegistry extends string = string,
   TAccountArbitrator extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dispute account with canonical validation */
   dispute: Address<TAccountDispute>;
   /** Arbitrator registry for authority validation */
@@ -138,7 +138,7 @@ export type ResolveDisputeAsyncInput<
   clock?: Address<TAccountClock>;
   resolution: ResolveDisputeInstructionDataArgs['resolution'];
   awardToComplainant: ResolveDisputeInstructionDataArgs['awardToComplainant'];
-};
+}
 
 export async function getResolveDisputeInstructionAsync<
   TAccountDispute extends string,
@@ -228,12 +228,12 @@ export async function getResolveDisputeInstructionAsync<
   return instruction;
 }
 
-export type ResolveDisputeInput<
+export interface ResolveDisputeInput<
   TAccountDispute extends string = string,
   TAccountArbitratorRegistry extends string = string,
   TAccountArbitrator extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dispute account with canonical validation */
   dispute: Address<TAccountDispute>;
   /** Arbitrator registry for authority validation */
@@ -244,7 +244,7 @@ export type ResolveDisputeInput<
   clock?: Address<TAccountClock>;
   resolution: ResolveDisputeInstructionDataArgs['resolution'];
   awardToComplainant: ResolveDisputeInstructionDataArgs['awardToComplainant'];
-};
+}
 
 export function getResolveDisputeInstruction<
   TAccountDispute extends string,
@@ -319,10 +319,10 @@ export function getResolveDisputeInstruction<
   return instruction;
 }
 
-export type ParsedResolveDisputeInstruction<
+export interface ParsedResolveDisputeInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dispute account with canonical validation */
@@ -335,7 +335,7 @@ export type ParsedResolveDisputeInstruction<
     clock: TAccountMetas[3];
   };
   data: ResolveDisputeInstructionData;
-};
+}
 
 export function parseResolveDisputeInstruction<
   TProgram extends string,

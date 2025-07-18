@@ -1,32 +1,28 @@
 import type { Address } from '@solana/addresses'
-import type { 
-  Rpc,
-  GetAccountInfoApi,
-  GetProgramAccountsApi,
-  GetMultipleAccountsApi
-} from '@solana/kit'
 import { 
   createSolanaRpc
 } from '@solana/kit'
-import type { Commitment } from '../types/index.js'
+import type { 
+  Commitment, 
+  SolanaRpcClient,
+  ExtendedRpcApi,
+  RpcAccountInfo,
+  RpcAccountInfoResponse,
+  RpcMultipleAccountsResponse,
+  RpcProgramAccountsResponse,
+  RpcProgramAccount
+} from '../types/index.js'
 
-// Simple type for account info
-export interface AccountInfo {
-  executable: boolean
-  lamports: bigint
-  owner: Address
-  rentEpoch: bigint
-  space: bigint
-  data: string | Uint8Array
-}
+// Re-export account info type for backwards compatibility
+export type AccountInfo = RpcAccountInfo
 
 /**
  * Enhanced RPC client using 2025 Web3.js v2 patterns
  */
 export class GhostSpeakRpcClient {
-  private rpc: any
+  private rpc: ExtendedRpcApi | SolanaRpcClient
 
-  constructor(rpc: any) {
+  constructor(rpc: ExtendedRpcApi | SolanaRpcClient) {
     this.rpc = rpc
   }
 
@@ -34,7 +30,7 @@ export class GhostSpeakRpcClient {
    * Create a new RPC client from endpoint URL
    */
   static fromEndpoint(endpoint: string): GhostSpeakRpcClient {
-    const rpc = createSolanaRpc(endpoint)
+    const rpc = createSolanaRpc(endpoint) as ExtendedRpcApi
     return new GhostSpeakRpcClient(rpc)
   }
 
@@ -44,13 +40,17 @@ export class GhostSpeakRpcClient {
   async getAccount(
     address: Address,
     commitment: Commitment = 'confirmed'
-  ): Promise<AccountInfo | null> {
+  ): Promise<RpcAccountInfo | null> {
     try {
-      const result = await this.rpc.getAccountInfo(address, {
-        commitment,
-        encoding: 'base64'
-      })
-      return result.value
+      // Handle both Web3.js v2 (ExtendedRpcApi) and custom interface
+      if ('getAccountInfo' in this.rpc && typeof (this.rpc as any).getAccountInfo === 'function') {
+        const getAccountInfo = (this.rpc as any).getAccountInfo
+        const result = typeof getAccountInfo(address, { commitment, encoding: 'base64' }).send === 'function'
+          ? await getAccountInfo(address, { commitment, encoding: 'base64' }).send()
+          : await getAccountInfo(address, { commitment, encoding: 'base64' })
+        return result.value
+      }
+      throw new Error('getAccountInfo method not available')
     } catch (error) {
       console.warn(`Failed to fetch account ${address}:`, error)
       return null
@@ -63,13 +63,17 @@ export class GhostSpeakRpcClient {
   async getAccounts(
     addresses: Address[],
     commitment: Commitment = 'confirmed'
-  ): Promise<(AccountInfo | null)[]> {
+  ): Promise<(RpcAccountInfo | null)[]> {
     try {
-      const result = await this.rpc.getMultipleAccounts(addresses, {
-        commitment,
-        encoding: 'base64'
-      })
-      return result.value
+      // Handle both Web3.js v2 (ExtendedRpcApi) and custom interface
+      if ('getMultipleAccounts' in this.rpc && typeof (this.rpc as any).getMultipleAccounts === 'function') {
+        const getMultipleAccounts = (this.rpc as any).getMultipleAccounts
+        const result = typeof getMultipleAccounts(addresses, { commitment, encoding: 'base64' }).send === 'function'
+          ? await getMultipleAccounts(addresses, { commitment, encoding: 'base64' }).send()
+          : await getMultipleAccounts(addresses, { commitment, encoding: 'base64' })
+        return result.value
+      }
+      throw new Error('getMultipleAccounts method not available')
     } catch (error) {
       console.warn('Failed to fetch multiple accounts:', error)
       return addresses.map(() => null)
@@ -81,20 +85,23 @@ export class GhostSpeakRpcClient {
    */
   async getProgramAccounts(
     programId: Address,
-    filters: any[] = [],
+    filters: unknown[] = [],
     commitment: Commitment = 'confirmed'
-  ): Promise<{ address: Address; account: AccountInfo }[]> {
+  ): Promise<{ address: Address; account: RpcAccountInfo }[]> {
     try {
-      const result = await this.rpc.getProgramAccounts(programId, {
-        commitment,
-        encoding: 'base64',
-        filters
-      })
-      
-      return (result.value || []).map((item: any) => ({
-        address: item.pubkey,
-        account: item.account
-      }))
+      // Handle both Web3.js v2 (ExtendedRpcApi) and custom interface
+      if ('getProgramAccounts' in this.rpc && typeof (this.rpc as any).getProgramAccounts === 'function') {
+        const getProgramAccounts = (this.rpc as any).getProgramAccounts
+        const result = typeof getProgramAccounts(programId, { commitment, encoding: 'base64', filters }).send === 'function'
+          ? await getProgramAccounts(programId, { commitment, encoding: 'base64', filters }).send()
+          : await getProgramAccounts(programId, { commitment, encoding: 'base64', filters })
+        
+        return (result.value ?? []).map((item: RpcProgramAccount) => ({
+          address: item.pubkey,
+          account: item.account
+        }))
+      }
+      throw new Error('getProgramAccounts method not available')
     } catch (error) {
       console.warn(`Failed to fetch program accounts for ${programId}:`, error)
       return []
@@ -136,7 +143,7 @@ export class GhostSpeakRpcClient {
     commitment: Commitment = 'confirmed'
   ): Promise<(T | null)[]> {
     try {
-      const accounts = await this.getAccounts(addresses, commitment)
+      const accounts: (RpcAccountInfo | null)[] = await this.getAccounts(addresses, commitment)
       
       return accounts.map(account => {
         if (!account?.data) {
@@ -166,11 +173,11 @@ export class GhostSpeakRpcClient {
   async getAndDecodeProgramAccounts<T>(
     programId: Address,
     decoder: { decode: (data: Uint8Array) => T },
-    filters: any[] = [],
+    filters: unknown[] = [],
     commitment: Commitment = 'confirmed'
   ): Promise<{ address: Address; data: T }[]> {
     try {
-      const accounts = await this.getProgramAccounts(programId, filters, commitment)
+      const accounts: { address: Address; account: RpcAccountInfo }[] = await this.getProgramAccounts(programId, filters, commitment)
       
       const decodedAccounts: { address: Address; data: T }[] = []
       
@@ -199,7 +206,7 @@ export class GhostSpeakRpcClient {
   /**
    * Raw RPC access for advanced use cases
    */
-  get raw(): any {
+  get raw(): ExtendedRpcApi | SolanaRpcClient {
     return this.rpc
   }
 }
@@ -246,7 +253,7 @@ export class AccountDecoder {
  * Account fetcher with caching and batch optimization
  */
 export class AccountFetcher {
-  private cache = new Map<string, { data: any; timestamp: number }>()
+  private cache = new Map<string, { data: unknown; timestamp: number }>()
   private cacheTimeout: number
 
   constructor(
@@ -269,7 +276,7 @@ export class AccountFetcher {
     if (useCache) {
       const cached = this.cache.get(cacheKey)
       if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-        return cached.data
+        return cached.data as T | null
       }
     }
 
@@ -291,7 +298,7 @@ export class AccountFetcher {
     useCache: boolean = true
   ): Promise<(T | null)[]> {
     const uncachedAddresses: Address[] = []
-    const results: (T | null)[] = new Array(addresses.length)
+    const results: (T | null)[] = new Array<T | null>(addresses.length)
     
     // Check cache first
     if (useCache) {
@@ -300,7 +307,7 @@ export class AccountFetcher {
         const cached = this.cache.get(cacheKey)
         
         if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-          results[index] = cached.data
+          results[index] = cached.data as T | null
         } else {
           uncachedAddresses.push(address)
         }

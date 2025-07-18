@@ -30,7 +30,7 @@ import {
 } from '.';
 
 /** Biometric template protection */
-export type BiometricProtection = {
+export interface BiometricProtection {
   /** Template encryption required */
   encryptionRequired: boolean;
   /** Template storage method */
@@ -38,10 +38,10 @@ export type BiometricProtection = {
   /** Template revocation support */
   revocationSupport: boolean;
   /** Template aging policies */
-  agingPolicies: Array<AgingPolicy>;
-};
+  agingPolicies: AgingPolicy[];
+}
 
-export type BiometricProtectionArgs = {
+export interface BiometricProtectionArgs {
   /** Template encryption required */
   encryptionRequired: boolean;
   /** Template storage method */
@@ -49,8 +49,8 @@ export type BiometricProtectionArgs = {
   /** Template revocation support */
   revocationSupport: boolean;
   /** Template aging policies */
-  agingPolicies: Array<AgingPolicyArgs>;
-};
+  agingPolicies: AgingPolicyArgs[];
+}
 
 export function getBiometricProtectionEncoder(): Encoder<BiometricProtectionArgs> {
   return getStructEncoder([

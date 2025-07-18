@@ -106,7 +106,7 @@ export type CreateServiceAuctionInstruction<
     ]
   >;
 
-export type CreateServiceAuctionInstructionData = {
+export interface CreateServiceAuctionInstructionData {
   discriminator: ReadonlyUint8Array;
   auctionType: AuctionType;
   startingPrice: bigint;
@@ -116,9 +116,9 @@ export type CreateServiceAuctionInstructionData = {
   auctionEndTime: bigint;
   minimumBidIncrement: bigint;
   totalBids: number;
-};
+}
 
-export type CreateServiceAuctionInstructionDataArgs = {
+export interface CreateServiceAuctionInstructionDataArgs {
   auctionType: AuctionTypeArgs;
   startingPrice: number | bigint;
   reservePrice: number | bigint;
@@ -127,7 +127,7 @@ export type CreateServiceAuctionInstructionDataArgs = {
   auctionEndTime: number | bigint;
   minimumBidIncrement: number | bigint;
   totalBids: number;
-};
+}
 
 export function getCreateServiceAuctionInstructionDataEncoder(): Encoder<CreateServiceAuctionInstructionDataArgs> {
   return transformEncoder(
@@ -173,14 +173,14 @@ export function getCreateServiceAuctionInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateServiceAuctionAsyncInput<
+export interface CreateServiceAuctionAsyncInput<
   TAccountAuction extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Auction account with canonical PDA validation and collision prevention */
   auction?: Address<TAccountAuction>;
   /** Agent account with enhanced constraints */
@@ -201,7 +201,7 @@ export type CreateServiceAuctionAsyncInput<
   auctionEndTime: CreateServiceAuctionInstructionDataArgs['auctionEndTime'];
   minimumBidIncrement: CreateServiceAuctionInstructionDataArgs['minimumBidIncrement'];
   totalBids: CreateServiceAuctionInstructionDataArgs['totalBids'];
-};
+}
 
 export async function getCreateServiceAuctionInstructionAsync<
   TAccountAuction extends string,
@@ -303,14 +303,14 @@ export async function getCreateServiceAuctionInstructionAsync<
   return instruction;
 }
 
-export type CreateServiceAuctionInput<
+export interface CreateServiceAuctionInput<
   TAccountAuction extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Auction account with canonical PDA validation and collision prevention */
   auction: Address<TAccountAuction>;
   /** Agent account with enhanced constraints */
@@ -331,7 +331,7 @@ export type CreateServiceAuctionInput<
   auctionEndTime: CreateServiceAuctionInstructionDataArgs['auctionEndTime'];
   minimumBidIncrement: CreateServiceAuctionInstructionDataArgs['minimumBidIncrement'];
   totalBids: CreateServiceAuctionInstructionDataArgs['totalBids'];
-};
+}
 
 export function getCreateServiceAuctionInstruction<
   TAccountAuction extends string,
@@ -419,10 +419,10 @@ export function getCreateServiceAuctionInstruction<
   return instruction;
 }
 
-export type ParsedCreateServiceAuctionInstruction<
+export interface ParsedCreateServiceAuctionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Auction account with canonical PDA validation and collision prevention */
@@ -439,7 +439,7 @@ export type ParsedCreateServiceAuctionInstruction<
     clock: TAccountMetas[5];
   };
   data: CreateServiceAuctionInstructionData;
-};
+}
 
 export function parseCreateServiceAuctionInstruction<
   TProgram extends string,

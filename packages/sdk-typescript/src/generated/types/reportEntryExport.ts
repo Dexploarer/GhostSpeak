@@ -21,9 +21,9 @@ import {
   type ReportEntryArgs,
 } from '.';
 
-export type ReportEntryExport = { data: ReportEntry };
+export interface ReportEntryExport { data: ReportEntry }
 
-export type ReportEntryExportArgs = { data: ReportEntryArgs };
+export interface ReportEntryExportArgs { data: ReportEntryArgs }
 
 export function getReportEntryExportEncoder(): Encoder<ReportEntryExportArgs> {
   return getStructEncoder([['data', getReportEntryEncoder()]]);

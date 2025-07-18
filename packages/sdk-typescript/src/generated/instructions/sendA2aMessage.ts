@@ -85,7 +85,7 @@ export type SendA2aMessageInstruction<
     ]
   >;
 
-export type SendA2aMessageInstructionData = {
+export interface SendA2aMessageInstructionData {
   discriminator: ReadonlyUint8Array;
   messageId: bigint;
   sessionId: bigint;
@@ -93,16 +93,16 @@ export type SendA2aMessageInstructionData = {
   content: string;
   messageType: string;
   timestamp: bigint;
-};
+}
 
-export type SendA2aMessageInstructionDataArgs = {
+export interface SendA2aMessageInstructionDataArgs {
   messageId: number | bigint;
   sessionId: number | bigint;
   sender: Address;
   content: string;
   messageType: string;
   timestamp: number | bigint;
-};
+}
 
 export function getSendA2aMessageInstructionDataEncoder(): Encoder<SendA2aMessageInstructionDataArgs> {
   return transformEncoder(
@@ -141,12 +141,12 @@ export function getSendA2aMessageInstructionDataCodec(): Codec<
   );
 }
 
-export type SendA2aMessageInput<
+export interface SendA2aMessageInput<
   TAccountMessage extends string = string,
   TAccountSession extends string = string,
   TAccountSender extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   message: Address<TAccountMessage>;
   session: Address<TAccountSession>;
   sender: TransactionSigner<TAccountSender>;
@@ -157,7 +157,7 @@ export type SendA2aMessageInput<
   content: SendA2aMessageInstructionDataArgs['content'];
   messageType: SendA2aMessageInstructionDataArgs['messageType'];
   timestamp: SendA2aMessageInstructionDataArgs['timestamp'];
-};
+}
 
 export function getSendA2aMessageInstruction<
   TAccountMessage extends string,
@@ -229,10 +229,10 @@ export function getSendA2aMessageInstruction<
   return instruction;
 }
 
-export type ParsedSendA2aMessageInstruction<
+export interface ParsedSendA2aMessageInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     message: TAccountMetas[0];
@@ -241,7 +241,7 @@ export type ParsedSendA2aMessageInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: SendA2aMessageInstructionData;
-};
+}
 
 export function parseSendA2aMessageInstruction<
   TProgram extends string,

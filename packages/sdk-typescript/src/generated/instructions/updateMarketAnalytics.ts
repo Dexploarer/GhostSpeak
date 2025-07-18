@@ -71,16 +71,16 @@ export type UpdateMarketAnalyticsInstruction<
     ]
   >;
 
-export type UpdateMarketAnalyticsInstructionData = {
+export interface UpdateMarketAnalyticsInstructionData {
   discriminator: ReadonlyUint8Array;
   volume: bigint;
   price: bigint;
-};
+}
 
-export type UpdateMarketAnalyticsInstructionDataArgs = {
+export interface UpdateMarketAnalyticsInstructionDataArgs {
   volume: number | bigint;
   price: number | bigint;
-};
+}
 
 export function getUpdateMarketAnalyticsInstructionDataEncoder(): Encoder<UpdateMarketAnalyticsInstructionDataArgs> {
   return transformEncoder(
@@ -114,11 +114,11 @@ export function getUpdateMarketAnalyticsInstructionDataCodec(): Codec<
   );
 }
 
-export type UpdateMarketAnalyticsInput<
+export interface UpdateMarketAnalyticsInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Market analytics account with canonical bump validation */
   marketAnalytics: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification */
@@ -127,7 +127,7 @@ export type UpdateMarketAnalyticsInput<
   clock?: Address<TAccountClock>;
   volume: UpdateMarketAnalyticsInstructionDataArgs['volume'];
   price: UpdateMarketAnalyticsInstructionDataArgs['price'];
-};
+}
 
 export function getUpdateMarketAnalyticsInstruction<
   TAccountMarketAnalytics extends string,
@@ -193,10 +193,10 @@ export function getUpdateMarketAnalyticsInstruction<
   return instruction;
 }
 
-export type ParsedUpdateMarketAnalyticsInstruction<
+export interface ParsedUpdateMarketAnalyticsInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Market analytics account with canonical bump validation */
@@ -207,7 +207,7 @@ export type ParsedUpdateMarketAnalyticsInstruction<
     clock: TAccountMetas[2];
   };
   data: UpdateMarketAnalyticsInstructionData;
-};
+}
 
 export function parseUpdateMarketAnalyticsInstruction<
   TProgram extends string,

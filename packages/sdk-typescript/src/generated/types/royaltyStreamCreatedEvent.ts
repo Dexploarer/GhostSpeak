@@ -20,12 +20,12 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type RoyaltyStreamCreatedEvent = {
+export interface RoyaltyStreamCreatedEvent {
   stream: Address;
   agent: Address;
   creator: Address;
   percentage: number;
-};
+}
 
 export type RoyaltyStreamCreatedEventArgs = RoyaltyStreamCreatedEvent;
 

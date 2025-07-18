@@ -71,7 +71,7 @@ export function getExtensionDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(EXTENSION_DISCRIMINATOR);
 }
 
-export type Extension = {
+export interface Extension {
   discriminator: ReadonlyUint8Array;
   extension: Address;
   developer: Address;
@@ -85,9 +85,9 @@ export type Extension = {
   totalEarnings: bigint;
   createdAt: bigint;
   bump: number;
-};
+}
 
-export type ExtensionArgs = {
+export interface ExtensionArgs {
   extension: Address;
   developer: Address;
   extensionType: ExtensionTypeArgs;
@@ -100,7 +100,7 @@ export type ExtensionArgs = {
   totalEarnings: number | bigint;
   createdAt: number | bigint;
   bump: number;
-};
+}
 
 export function getExtensionEncoder(): Encoder<ExtensionArgs> {
   return transformEncoder(
@@ -181,7 +181,7 @@ export async function fetchMaybeExtension<TAddress extends string = string>(
 
 export async function fetchAllExtension(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<Extension>[]> {
   const maybeAccounts = await fetchAllMaybeExtension(rpc, addresses, config);
@@ -191,7 +191,7 @@ export async function fetchAllExtension(
 
 export async function fetchAllMaybeExtension(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<Extension>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

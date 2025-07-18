@@ -20,7 +20,7 @@ import {
 } from '@solana/kit';
 
 /** Compliance metrics */
-export type ComplianceMetrics = {
+export interface ComplianceMetrics {
   /** Compliance score (0-100) */
   complianceScore: number;
   /** Policy adherence rate */
@@ -33,9 +33,9 @@ export type ComplianceMetrics = {
   coveragePercentage: number;
   /** Audit readiness score */
   auditReadinessScore: number;
-};
+}
 
-export type ComplianceMetricsArgs = {
+export interface ComplianceMetricsArgs {
   /** Compliance score (0-100) */
   complianceScore: number;
   /** Policy adherence rate */
@@ -48,7 +48,7 @@ export type ComplianceMetricsArgs = {
   coveragePercentage: number;
   /** Audit readiness score */
   auditReadinessScore: number;
-};
+}
 
 export function getComplianceMetricsEncoder(): Encoder<ComplianceMetricsArgs> {
   return getStructEncoder([

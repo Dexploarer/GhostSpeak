@@ -65,14 +65,14 @@ export function getMultisigDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(MULTISIG_DISCRIMINATOR);
 }
 
-export type Multisig = {
+export interface Multisig {
   discriminator: ReadonlyUint8Array;
   /** Unique identifier */
   multisigId: bigint;
   /** Required number of signatures */
   threshold: number;
   /** List of authorized signers */
-  signers: Array<Address>;
+  signers: Address[];
   /** Multisig owner (can modify signers) */
   owner: Address;
   /** Creation timestamp */
@@ -82,22 +82,22 @@ export type Multisig = {
   /** Current nonce (prevents replay attacks) */
   nonce: bigint;
   /** Pending transactions */
-  pendingTransactions: Array<PendingTransaction>;
+  pendingTransactions: PendingTransaction[];
   /** Configuration settings */
   config: MultisigConfig;
   /** Emergency settings */
   emergencyConfig: EmergencyConfig;
   /** Reserved space for future extensions */
   reserved: ReadonlyUint8Array;
-};
+}
 
-export type MultisigArgs = {
+export interface MultisigArgs {
   /** Unique identifier */
   multisigId: number | bigint;
   /** Required number of signatures */
   threshold: number;
   /** List of authorized signers */
-  signers: Array<Address>;
+  signers: Address[];
   /** Multisig owner (can modify signers) */
   owner: Address;
   /** Creation timestamp */
@@ -107,14 +107,14 @@ export type MultisigArgs = {
   /** Current nonce (prevents replay attacks) */
   nonce: number | bigint;
   /** Pending transactions */
-  pendingTransactions: Array<PendingTransactionArgs>;
+  pendingTransactions: PendingTransactionArgs[];
   /** Configuration settings */
   config: MultisigConfigArgs;
   /** Emergency settings */
   emergencyConfig: EmergencyConfigArgs;
   /** Reserved space for future extensions */
   reserved: ReadonlyUint8Array;
-};
+}
 
 export function getMultisigEncoder(): Encoder<MultisigArgs> {
   return transformEncoder(
@@ -193,7 +193,7 @@ export async function fetchMaybeMultisig<TAddress extends string = string>(
 
 export async function fetchAllMultisig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<Multisig>[]> {
   const maybeAccounts = await fetchAllMaybeMultisig(rpc, addresses, config);
@@ -203,7 +203,7 @@ export async function fetchAllMultisig(
 
 export async function fetchAllMaybeMultisig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<Multisig>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

@@ -170,7 +170,7 @@ class TestnetDeployer {
       );
       
       // Extract transaction signature from output
-      const signatureMatch = deployOutput.match(/signature: ([A-Za-z0-9]+)/);
+      const signatureMatch = /signature: ([A-Za-z0-9]+)/.exec(deployOutput);
       const signature = signatureMatch ? signatureMatch[1] : 'unknown';
       
       console.log(chalk.green('✓ Program deployed'));

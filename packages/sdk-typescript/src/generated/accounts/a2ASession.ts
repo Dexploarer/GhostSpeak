@@ -59,7 +59,7 @@ export function getA2ASessionDiscriminatorBytes() {
   );
 }
 
-export type A2ASession = {
+export interface A2ASession {
   discriminator: ReadonlyUint8Array;
   sessionId: bigint;
   initiator: Address;
@@ -70,9 +70,9 @@ export type A2ASession = {
   createdAt: bigint;
   expiresAt: bigint;
   bump: number;
-};
+}
 
-export type A2ASessionArgs = {
+export interface A2ASessionArgs {
   sessionId: number | bigint;
   initiator: Address;
   responder: Address;
@@ -82,7 +82,7 @@ export type A2ASessionArgs = {
   createdAt: number | bigint;
   expiresAt: number | bigint;
   bump: number;
-};
+}
 
 export function getA2ASessionEncoder(): Encoder<A2ASessionArgs> {
   return transformEncoder(
@@ -157,7 +157,7 @@ export async function fetchMaybeA2ASession<TAddress extends string = string>(
 
 export async function fetchAllA2ASession(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<A2ASession>[]> {
   const maybeAccounts = await fetchAllMaybeA2ASession(rpc, addresses, config);
@@ -167,7 +167,7 @@ export async function fetchAllA2ASession(
 
 export async function fetchAllMaybeA2ASession(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<A2ASession>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

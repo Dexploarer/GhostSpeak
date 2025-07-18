@@ -17,10 +17,10 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AuthorizationPolicies = {
+export interface AuthorizationPolicies {
   defaultDeny: boolean;
   explicitPermissionsRequired: boolean;
-};
+}
 
 export type AuthorizationPoliciesArgs = AuthorizationPolicies;
 

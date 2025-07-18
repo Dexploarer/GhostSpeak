@@ -19,17 +19,17 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type SessionPolicies = {
+export interface SessionPolicies {
   maxSessionDuration: bigint;
   idleTimeout: bigint;
   concurrentSessions: number;
-};
+}
 
-export type SessionPoliciesArgs = {
+export interface SessionPoliciesArgs {
   maxSessionDuration: number | bigint;
   idleTimeout: number | bigint;
   concurrentSessions: number;
-};
+}
 
 export function getSessionPoliciesEncoder(): Encoder<SessionPoliciesArgs> {
   return getStructEncoder([

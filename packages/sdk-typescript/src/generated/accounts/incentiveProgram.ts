@@ -59,7 +59,7 @@ export function getIncentiveProgramDiscriminatorBytes() {
   );
 }
 
-export type IncentiveProgram = {
+export interface IncentiveProgram {
   discriminator: ReadonlyUint8Array;
   owner: Address;
   config: IncentiveConfig;
@@ -68,9 +68,9 @@ export type IncentiveProgram = {
   createdAt: bigint;
   updatedAt: bigint;
   bump: number;
-};
+}
 
-export type IncentiveProgramArgs = {
+export interface IncentiveProgramArgs {
   owner: Address;
   config: IncentiveConfigArgs;
   totalRewardsDistributed: number | bigint;
@@ -78,7 +78,7 @@ export type IncentiveProgramArgs = {
   createdAt: number | bigint;
   updatedAt: number | bigint;
   bump: number;
-};
+}
 
 export function getIncentiveProgramEncoder(): Encoder<IncentiveProgramArgs> {
   return transformEncoder(
@@ -159,7 +159,7 @@ export async function fetchMaybeIncentiveProgram<
 
 export async function fetchAllIncentiveProgram(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<IncentiveProgram>[]> {
   const maybeAccounts = await fetchAllMaybeIncentiveProgram(
@@ -173,7 +173,7 @@ export async function fetchAllIncentiveProgram(
 
 export async function fetchAllMaybeIncentiveProgram(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<IncentiveProgram>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

@@ -87,18 +87,18 @@ export type SendMessageInstruction<
     ]
   >;
 
-export type SendMessageInstructionData = {
+export interface SendMessageInstructionData {
   discriminator: ReadonlyUint8Array;
   content: string;
   messageType: MessageType;
   isEncrypted: boolean;
-};
+}
 
-export type SendMessageInstructionDataArgs = {
+export interface SendMessageInstructionDataArgs {
   content: string;
   messageType: MessageTypeArgs;
   isEncrypted: boolean;
-};
+}
 
 export function getSendMessageInstructionDataEncoder(): Encoder<SendMessageInstructionDataArgs> {
   return transformEncoder(
@@ -131,12 +131,12 @@ export function getSendMessageInstructionDataCodec(): Codec<
   );
 }
 
-export type SendMessageInput<
+export interface SendMessageInput<
   TAccountMessage extends string = string,
   TAccountChannel extends string = string,
   TAccountSender extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   message: Address<TAccountMessage>;
   channel: Address<TAccountChannel>;
   sender: TransactionSigner<TAccountSender>;
@@ -144,7 +144,7 @@ export type SendMessageInput<
   content: SendMessageInstructionDataArgs['content'];
   messageType: SendMessageInstructionDataArgs['messageType'];
   isEncrypted: SendMessageInstructionDataArgs['isEncrypted'];
-};
+}
 
 export function getSendMessageInstruction<
   TAccountMessage extends string,
@@ -216,10 +216,10 @@ export function getSendMessageInstruction<
   return instruction;
 }
 
-export type ParsedSendMessageInstruction<
+export interface ParsedSendMessageInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     message: TAccountMetas[0];
@@ -228,7 +228,7 @@ export type ParsedSendMessageInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: SendMessageInstructionData;
-};
+}
 
 export function parseSendMessageInstruction<
   TProgram extends string,

@@ -32,17 +32,17 @@ import {
   type NotificationRequirementArgs,
 } from '.';
 
-export type IncidentResponsePolicies = {
-  responseTeam: Array<Address>;
-  escalationProcedures: Array<string>;
-  notificationRequirements: Array<NotificationRequirement>;
-};
+export interface IncidentResponsePolicies {
+  responseTeam: Address[];
+  escalationProcedures: string[];
+  notificationRequirements: NotificationRequirement[];
+}
 
-export type IncidentResponsePoliciesArgs = {
-  responseTeam: Array<Address>;
-  escalationProcedures: Array<string>;
-  notificationRequirements: Array<NotificationRequirementArgs>;
-};
+export interface IncidentResponsePoliciesArgs {
+  responseTeam: Address[];
+  escalationProcedures: string[];
+  notificationRequirements: NotificationRequirementArgs[];
+}
 
 export function getIncidentResponsePoliciesEncoder(): Encoder<IncidentResponsePoliciesArgs> {
   return getStructEncoder([

@@ -59,7 +59,7 @@ export function getResaleMarketDiscriminatorBytes() {
   );
 }
 
-export type ResaleMarket = {
+export interface ResaleMarket {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   seller: Address;
@@ -70,9 +70,9 @@ export type ResaleMarket = {
   soldAt: Option<bigint>;
   buyer: Option<Address>;
   bump: number;
-};
+}
 
-export type ResaleMarketArgs = {
+export interface ResaleMarketArgs {
   agent: Address;
   seller: Address;
   price: number | bigint;
@@ -82,7 +82,7 @@ export type ResaleMarketArgs = {
   soldAt: OptionOrNullable<number | bigint>;
   buyer: OptionOrNullable<Address>;
   bump: number;
-};
+}
 
 export function getResaleMarketEncoder(): Encoder<ResaleMarketArgs> {
   return transformEncoder(
@@ -157,7 +157,7 @@ export async function fetchMaybeResaleMarket<TAddress extends string = string>(
 
 export async function fetchAllResaleMarket(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<ResaleMarket>[]> {
   const maybeAccounts = await fetchAllMaybeResaleMarket(rpc, addresses, config);
@@ -167,7 +167,7 @@ export async function fetchAllResaleMarket(
 
 export async function fetchAllMaybeResaleMarket(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<ResaleMarket>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

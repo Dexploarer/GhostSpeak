@@ -85,14 +85,14 @@ export type CreateRoyaltyStreamInstruction<
     ]
   >;
 
-export type CreateRoyaltyStreamInstructionData = {
+export interface CreateRoyaltyStreamInstructionData {
   discriminator: ReadonlyUint8Array;
   config: RoyaltyConfig;
-};
+}
 
-export type CreateRoyaltyStreamInstructionDataArgs = {
+export interface CreateRoyaltyStreamInstructionDataArgs {
   config: RoyaltyConfigArgs;
-};
+}
 
 export function getCreateRoyaltyStreamInstructionDataEncoder(): Encoder<CreateRoyaltyStreamInstructionDataArgs> {
   return transformEncoder(
@@ -124,18 +124,18 @@ export function getCreateRoyaltyStreamInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateRoyaltyStreamAsyncInput<
+export interface CreateRoyaltyStreamAsyncInput<
   TAccountStream extends string = string,
   TAccountAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   stream?: Address<TAccountStream>;
   agent: Address<TAccountAgent>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateRoyaltyStreamInstructionDataArgs['config'];
-};
+}
 
 export async function getCreateRoyaltyStreamInstructionAsync<
   TAccountStream extends string,
@@ -222,18 +222,18 @@ export async function getCreateRoyaltyStreamInstructionAsync<
   return instruction;
 }
 
-export type CreateRoyaltyStreamInput<
+export interface CreateRoyaltyStreamInput<
   TAccountStream extends string = string,
   TAccountAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   stream: Address<TAccountStream>;
   agent: Address<TAccountAgent>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateRoyaltyStreamInstructionDataArgs['config'];
-};
+}
 
 export function getCreateRoyaltyStreamInstruction<
   TAccountStream extends string,
@@ -305,10 +305,10 @@ export function getCreateRoyaltyStreamInstruction<
   return instruction;
 }
 
-export type ParsedCreateRoyaltyStreamInstruction<
+export interface ParsedCreateRoyaltyStreamInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     stream: TAccountMetas[0];
@@ -317,7 +317,7 @@ export type ParsedCreateRoyaltyStreamInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: CreateRoyaltyStreamInstructionData;
-};
+}
 
 export function parseCreateRoyaltyStreamInstruction<
   TProgram extends string,

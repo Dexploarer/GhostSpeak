@@ -94,16 +94,16 @@ export type CreateAnalyticsDashboardInstruction<
     ]
   >;
 
-export type CreateAnalyticsDashboardInstructionData = {
+export interface CreateAnalyticsDashboardInstructionData {
   discriminator: ReadonlyUint8Array;
   dashboardId: bigint;
   metrics: string;
-};
+}
 
-export type CreateAnalyticsDashboardInstructionDataArgs = {
+export interface CreateAnalyticsDashboardInstructionDataArgs {
   dashboardId: number | bigint;
   metrics: string;
-};
+}
 
 export function getCreateAnalyticsDashboardInstructionDataEncoder(): Encoder<CreateAnalyticsDashboardInstructionDataArgs> {
   return transformEncoder(
@@ -137,13 +137,13 @@ export function getCreateAnalyticsDashboardInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateAnalyticsDashboardAsyncInput<
+export interface CreateAnalyticsDashboardAsyncInput<
   TAccountDashboard extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dashboard account with collision prevention */
   dashboard?: Address<TAccountDashboard>;
   /** User registry for rate limiting and spam prevention */
@@ -156,7 +156,7 @@ export type CreateAnalyticsDashboardAsyncInput<
   clock?: Address<TAccountClock>;
   dashboardId: CreateAnalyticsDashboardInstructionDataArgs['dashboardId'];
   metrics: CreateAnalyticsDashboardInstructionDataArgs['metrics'];
-};
+}
 
 export async function getCreateAnalyticsDashboardInstructionAsync<
   TAccountDashboard extends string,
@@ -265,13 +265,13 @@ export async function getCreateAnalyticsDashboardInstructionAsync<
   return instruction;
 }
 
-export type CreateAnalyticsDashboardInput<
+export interface CreateAnalyticsDashboardInput<
   TAccountDashboard extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dashboard account with collision prevention */
   dashboard: Address<TAccountDashboard>;
   /** User registry for rate limiting and spam prevention */
@@ -284,7 +284,7 @@ export type CreateAnalyticsDashboardInput<
   clock?: Address<TAccountClock>;
   dashboardId: CreateAnalyticsDashboardInstructionDataArgs['dashboardId'];
   metrics: CreateAnalyticsDashboardInstructionDataArgs['metrics'];
-};
+}
 
 export function getCreateAnalyticsDashboardInstruction<
   TAccountDashboard extends string,
@@ -366,10 +366,10 @@ export function getCreateAnalyticsDashboardInstruction<
   return instruction;
 }
 
-export type ParsedCreateAnalyticsDashboardInstruction<
+export interface ParsedCreateAnalyticsDashboardInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dashboard account with collision prevention */
@@ -384,7 +384,7 @@ export type ParsedCreateAnalyticsDashboardInstruction<
     clock: TAccountMetas[4];
   };
   data: CreateAnalyticsDashboardInstructionData;
-};
+}
 
 export function parseCreateAnalyticsDashboardInstruction<
   TProgram extends string,

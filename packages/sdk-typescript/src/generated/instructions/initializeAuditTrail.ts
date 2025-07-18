@@ -91,16 +91,16 @@ export type InitializeAuditTrailInstruction<
     ]
   >;
 
-export type InitializeAuditTrailInstructionData = {
+export interface InitializeAuditTrailInstructionData {
   discriminator: ReadonlyUint8Array;
   entityType: string;
   config: AuditConfig;
-};
+}
 
-export type InitializeAuditTrailInstructionDataArgs = {
+export interface InitializeAuditTrailInstructionDataArgs {
   entityType: string;
   config: AuditConfigArgs;
-};
+}
 
 export function getInitializeAuditTrailInstructionDataEncoder(): Encoder<InitializeAuditTrailInstructionDataArgs> {
   return transformEncoder(
@@ -134,12 +134,12 @@ export function getInitializeAuditTrailInstructionDataCodec(): Codec<
   );
 }
 
-export type InitializeAuditTrailAsyncInput<
+export interface InitializeAuditTrailAsyncInput<
   TAccountAuditTrail extends string = string,
   TAccountEntity extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   auditTrail?: Address<TAccountAuditTrail>;
   /** Entity being audited */
   entity: Address<TAccountEntity>;
@@ -147,7 +147,7 @@ export type InitializeAuditTrailAsyncInput<
   systemProgram?: Address<TAccountSystemProgram>;
   entityType: InitializeAuditTrailInstructionDataArgs['entityType'];
   config: InitializeAuditTrailInstructionDataArgs['config'];
-};
+}
 
 export async function getInitializeAuditTrailInstructionAsync<
   TAccountAuditTrail extends string,
@@ -232,12 +232,12 @@ export async function getInitializeAuditTrailInstructionAsync<
   return instruction;
 }
 
-export type InitializeAuditTrailInput<
+export interface InitializeAuditTrailInput<
   TAccountAuditTrail extends string = string,
   TAccountEntity extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   auditTrail: Address<TAccountAuditTrail>;
   /** Entity being audited */
   entity: Address<TAccountEntity>;
@@ -245,7 +245,7 @@ export type InitializeAuditTrailInput<
   systemProgram?: Address<TAccountSystemProgram>;
   entityType: InitializeAuditTrailInstructionDataArgs['entityType'];
   config: InitializeAuditTrailInstructionDataArgs['config'];
-};
+}
 
 export function getInitializeAuditTrailInstruction<
   TAccountAuditTrail extends string,
@@ -317,10 +317,10 @@ export function getInitializeAuditTrailInstruction<
   return instruction;
 }
 
-export type ParsedInitializeAuditTrailInstruction<
+export interface ParsedInitializeAuditTrailInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     auditTrail: TAccountMetas[0];
@@ -330,7 +330,7 @@ export type ParsedInitializeAuditTrailInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: InitializeAuditTrailInstructionData;
-};
+}
 
 export function parseInitializeAuditTrailInstruction<
   TProgram extends string,

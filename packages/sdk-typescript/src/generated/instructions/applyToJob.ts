@@ -95,24 +95,24 @@ export type ApplyToJobInstruction<
     ]
   >;
 
-export type ApplyToJobInstructionData = {
+export interface ApplyToJobInstructionData {
   discriminator: ReadonlyUint8Array;
   coverLetter: string;
   proposedPrice: bigint;
   estimatedDuration: number;
   proposedRate: bigint;
   estimatedDelivery: bigint;
-  portfolioItems: Array<string>;
-};
+  portfolioItems: string[];
+}
 
-export type ApplyToJobInstructionDataArgs = {
+export interface ApplyToJobInstructionDataArgs {
   coverLetter: string;
   proposedPrice: number | bigint;
   estimatedDuration: number;
   proposedRate: number | bigint;
   estimatedDelivery: number | bigint;
-  portfolioItems: Array<string>;
-};
+  portfolioItems: string[];
+}
 
 export function getApplyToJobInstructionDataEncoder(): Encoder<ApplyToJobInstructionDataArgs> {
   return transformEncoder(
@@ -159,13 +159,13 @@ export function getApplyToJobInstructionDataCodec(): Codec<
   );
 }
 
-export type ApplyToJobAsyncInput<
+export interface ApplyToJobAsyncInput<
   TAccountJobApplication extends string = string,
   TAccountJobPosting extends string = string,
   TAccountAgent extends string = string,
   TAccountAgentOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   jobApplication?: Address<TAccountJobApplication>;
   jobPosting: Address<TAccountJobPosting>;
   agent: Address<TAccountAgent>;
@@ -177,7 +177,7 @@ export type ApplyToJobAsyncInput<
   proposedRate: ApplyToJobInstructionDataArgs['proposedRate'];
   estimatedDelivery: ApplyToJobInstructionDataArgs['estimatedDelivery'];
   portfolioItems: ApplyToJobInstructionDataArgs['portfolioItems'];
-};
+}
 
 export async function getApplyToJobInstructionAsync<
   TAccountJobApplication extends string,
@@ -272,13 +272,13 @@ export async function getApplyToJobInstructionAsync<
   return instruction;
 }
 
-export type ApplyToJobInput<
+export interface ApplyToJobInput<
   TAccountJobApplication extends string = string,
   TAccountJobPosting extends string = string,
   TAccountAgent extends string = string,
   TAccountAgentOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   jobApplication: Address<TAccountJobApplication>;
   jobPosting: Address<TAccountJobPosting>;
   agent: Address<TAccountAgent>;
@@ -290,7 +290,7 @@ export type ApplyToJobInput<
   proposedRate: ApplyToJobInstructionDataArgs['proposedRate'];
   estimatedDelivery: ApplyToJobInstructionDataArgs['estimatedDelivery'];
   portfolioItems: ApplyToJobInstructionDataArgs['portfolioItems'];
-};
+}
 
 export function getApplyToJobInstruction<
   TAccountJobApplication extends string,
@@ -368,10 +368,10 @@ export function getApplyToJobInstruction<
   return instruction;
 }
 
-export type ParsedApplyToJobInstruction<
+export interface ParsedApplyToJobInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     jobApplication: TAccountMetas[0];
@@ -381,7 +381,7 @@ export type ParsedApplyToJobInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: ApplyToJobInstructionData;
-};
+}
 
 export function parseApplyToJobInstruction<
   TProgram extends string,

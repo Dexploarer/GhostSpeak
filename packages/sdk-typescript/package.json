@@ -84,7 +84,7 @@
     "@codama/nodes-from-anchor": "^1.0.0",
     "@codama/renderers-js": "^1.0.0",
     "@codama/visitors": "^1.0.0",
-    "@types/node": "^24.0.13",
+    "@types/node": "^24.0.14",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
     "@vitest/coverage-v8": "^3.2.4",

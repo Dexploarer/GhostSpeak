@@ -14,7 +14,6 @@ import {
   getFinalizeAuctionInstruction,
   type AuctionType,
   AuctionStatus,
-  getAuctionMarketplaceDecoder,
   type AuctionMarketplace
 } from '../../generated/index.js'
 import { type TransactionResult } from '../../utils/transaction-urls.js'
@@ -662,11 +661,6 @@ export class AuctionInstructions extends BaseInstructions {
   private auctionToSummary(auctionAddress: Address, auction: AuctionMarketplace): AuctionSummary {
     const now = BigInt(Math.floor(Date.now() / 1000))
     const timeRemaining = auction.auctionEndTime > now ? auction.auctionEndTime - now : 0n
-    const hasEnded = now >= auction.auctionEndTime
-    const hasBids = auction.bids.length > 0
-
-    const currentBid = hasBids ? auction.bids[auction.bids.length - 1] : null
-    const currentPrice = auction.currentPrice
 
     return {
       auction: auctionAddress,
@@ -675,7 +669,7 @@ export class AuctionInstructions extends BaseInstructions {
       auctionType: auction.auctionType,
       startingPrice: auction.startingPrice,
       reservePrice: auction.reservePrice,
-      currentPrice,
+      currentPrice: auction.currentPrice,
       currentWinner: auction.currentWinner?.__option === 'Some' ? auction.currentWinner.value : undefined,
       winner: auction.winner?.__option === 'Some' ? auction.winner.value : undefined,
       auctionEndTime: auction.auctionEndTime,

@@ -1,6 +1,5 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig
@@ -143,7 +142,7 @@ export class EscrowInstructions extends BaseInstructions {
         this.programId
       )
       
-      return this.executeInstruction(
+      return await this.executeInstruction(
         () => getFileDisputeInstruction({
           dispute: disputeAddress,
           transaction: params.escrowAddress, // Use escrow address as transaction reference

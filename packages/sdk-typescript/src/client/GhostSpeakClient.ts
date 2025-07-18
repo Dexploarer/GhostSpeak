@@ -113,7 +113,7 @@ export class GhostSpeakClient {
     jobPostingAddress: Address,
     params: CreateJobPostingParams
   ): Promise<string> {
-    return this.marketplace.createJobPosting(signer, jobPostingAddress, params)
+    return this.marketplace.createJobPosting(jobPostingAddress, { ...params, signer })
   }
 
   /**
@@ -138,7 +138,7 @@ export class GhostSpeakClient {
     workOrderAddress: Address,
     params: CreateEscrowParams
   ): Promise<string> {
-    return this.escrow.create(signer, workOrderAddress, params)
+    return this.escrow.create(workOrderAddress, { ...params, signer })
   }
 
   /**
@@ -156,7 +156,7 @@ export class GhostSpeakClient {
     sessionAddress: Address,
     params: CreateA2ASessionParams
   ): Promise<string> {
-    return this.a2a.createSession(signer, sessionAddress, params)
+    return this.a2a.createSession(sessionAddress, { ...params, signer })
   }
 
   /**
@@ -167,7 +167,7 @@ export class GhostSpeakClient {
     sessionAddress: Address,
     params: SendA2AMessageParams
   ): Promise<string> {
-    return this.a2a.sendMessage(signer, sessionAddress, params)
+    return this.a2a.sendMessage(sessionAddress, { ...params, signer })
   }
 
   /**

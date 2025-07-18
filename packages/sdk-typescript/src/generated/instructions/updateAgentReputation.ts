@@ -84,16 +84,16 @@ export type UpdateAgentReputationInstruction<
     ]
   >;
 
-export type UpdateAgentReputationInstructionData = {
+export interface UpdateAgentReputationInstructionData {
   discriminator: ReadonlyUint8Array;
   agentId: string;
   reputationScore: bigint;
-};
+}
 
-export type UpdateAgentReputationInstructionDataArgs = {
+export interface UpdateAgentReputationInstructionDataArgs {
   agentId: string;
   reputationScore: number | bigint;
-};
+}
 
 export function getUpdateAgentReputationInstructionDataEncoder(): Encoder<UpdateAgentReputationInstructionDataArgs> {
   return transformEncoder(
@@ -127,11 +127,11 @@ export function getUpdateAgentReputationInstructionDataCodec(): Codec<
   );
 }
 
-export type UpdateAgentReputationAsyncInput<
+export interface UpdateAgentReputationAsyncInput<
   TAccountAgentAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Agent account with canonical PDA validation */
   agentAccount?: Address<TAccountAgentAccount>;
   /** Enhanced authority verification */
@@ -140,7 +140,7 @@ export type UpdateAgentReputationAsyncInput<
   clock?: Address<TAccountClock>;
   agentId: UpdateAgentReputationInstructionDataArgs['agentId'];
   reputationScore: UpdateAgentReputationInstructionDataArgs['reputationScore'];
-};
+}
 
 export async function getUpdateAgentReputationInstructionAsync<
   TAccountAgentAccount extends string,
@@ -220,11 +220,11 @@ export async function getUpdateAgentReputationInstructionAsync<
   return instruction;
 }
 
-export type UpdateAgentReputationInput<
+export interface UpdateAgentReputationInput<
   TAccountAgentAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Agent account with canonical PDA validation */
   agentAccount: Address<TAccountAgentAccount>;
   /** Enhanced authority verification */
@@ -233,7 +233,7 @@ export type UpdateAgentReputationInput<
   clock?: Address<TAccountClock>;
   agentId: UpdateAgentReputationInstructionDataArgs['agentId'];
   reputationScore: UpdateAgentReputationInstructionDataArgs['reputationScore'];
-};
+}
 
 export function getUpdateAgentReputationInstruction<
   TAccountAgentAccount extends string,
@@ -299,10 +299,10 @@ export function getUpdateAgentReputationInstruction<
   return instruction;
 }
 
-export type ParsedUpdateAgentReputationInstruction<
+export interface ParsedUpdateAgentReputationInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with canonical PDA validation */
@@ -313,7 +313,7 @@ export type ParsedUpdateAgentReputationInstruction<
     clock: TAccountMetas[2];
   };
   data: UpdateAgentReputationInstructionData;
-};
+}
 
 export function parseUpdateAgentReputationInstruction<
   TProgram extends string,

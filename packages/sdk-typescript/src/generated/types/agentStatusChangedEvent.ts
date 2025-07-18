@@ -23,7 +23,7 @@ import {
 } from '@solana/kit';
 
 /** Agent status management event (2025 pattern) */
-export type AgentStatusChangedEvent = {
+export interface AgentStatusChangedEvent {
   /** Agent public key */
   agent: Address;
   /** Previous status */
@@ -34,9 +34,9 @@ export type AgentStatusChangedEvent = {
   timestamp: bigint;
   /** Owner who made the change */
   authority: Address;
-};
+}
 
-export type AgentStatusChangedEventArgs = {
+export interface AgentStatusChangedEventArgs {
   /** Agent public key */
   agent: Address;
   /** Previous status */
@@ -47,7 +47,7 @@ export type AgentStatusChangedEventArgs = {
   timestamp: number | bigint;
   /** Owner who made the change */
   authority: Address;
-};
+}
 
 export function getAgentStatusChangedEventEncoder(): Encoder<AgentStatusChangedEventArgs> {
   return getStructEncoder([

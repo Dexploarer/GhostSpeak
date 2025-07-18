@@ -20,11 +20,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type DisputeEvidenceSubmittedEvent = {
+export interface DisputeEvidenceSubmittedEvent {
   dispute: Address;
   submitter: Address;
   evidenceCount: number;
-};
+}
 
 export type DisputeEvidenceSubmittedEventArgs = DisputeEvidenceSubmittedEvent;
 

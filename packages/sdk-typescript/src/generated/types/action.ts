@@ -19,7 +19,7 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type Action = {
+export interface Action {
   /** Action identifier */
   actionId: string;
   /** Action resource */
@@ -27,8 +27,8 @@ export type Action = {
   /** Action operation */
   operation: string;
   /** Action constraints */
-  constraints: Array<string>;
-};
+  constraints: string[];
+}
 
 export type ActionArgs = Action;
 

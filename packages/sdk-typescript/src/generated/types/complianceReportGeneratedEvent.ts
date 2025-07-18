@@ -26,19 +26,19 @@ import {
   type ReportTypeArgs,
 } from '.';
 
-export type ComplianceReportGeneratedEvent = {
+export interface ComplianceReportGeneratedEvent {
   report: Address;
   reportId: bigint;
   reportType: ReportType;
   complianceRate: bigint;
-};
+}
 
-export type ComplianceReportGeneratedEventArgs = {
+export interface ComplianceReportGeneratedEventArgs {
   report: Address;
   reportId: number | bigint;
   reportType: ReportTypeArgs;
   complianceRate: number | bigint;
-};
+}
 
 export function getComplianceReportGeneratedEventEncoder(): Encoder<ComplianceReportGeneratedEventArgs> {
   return getStructEncoder([

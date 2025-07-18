@@ -60,7 +60,7 @@ export abstract class BaseInstructions {
    * Get the commitment level
    */
   protected get commitment() {
-    return this.config.commitment || 'confirmed'
+    return this.config.commitment ?? 'confirmed'
   }
 
   /**
@@ -68,12 +68,17 @@ export abstract class BaseInstructions {
    */
   private getSendAndConfirmTransaction() {
     if (!this._sendAndConfirmTransaction) {
-      // Only pass rpcSubscriptions if they exist
-      const factoryConfig = { rpc: this.rpc } as any
+      // Only pass rpcSubscriptions if they exist and are valid
+      const factoryConfig: { rpc: ExtendedRpcApi; rpcSubscriptions?: RpcSubscriptionApi } = { rpc: this.rpc }
       if (this.rpcSubscriptions) {
         factoryConfig.rpcSubscriptions = this.rpcSubscriptions
       }
-      this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig)
+      try {
+        this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig as any)
+      } catch (error) {
+        // Fallback to RPC-only mode if subscriptions fail
+        this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ rpc: this.rpc } as any)
+      }
     }
     return this._sendAndConfirmTransaction
   }
@@ -130,7 +135,7 @@ export abstract class BaseInstructions {
 
       // Step 4: Send and confirm using factory pattern
       
-      let result: any
+      let result: unknown
       let signature: Signature
       
       // If no subscriptions available, use polling method with exponential backoff
@@ -179,14 +184,15 @@ export abstract class BaseInstructions {
             // Exponential backoff with max delay of 5 seconds
             currentDelay = Math.min(currentDelay * 1.5, 5000)
             
-          } catch (statusError: any) {
+          } catch (statusError: unknown) {
             // Handle RPC errors gracefully
-            if (statusError.message?.includes('Transaction failed')) {
+            const errorMessage = statusError instanceof Error ? statusError.message : String(statusError)
+            if (errorMessage.includes('Transaction failed')) {
               throw statusError // Re-throw transaction failures
             }
             
             attempts++
-            console.warn(`⚠️ Status check failed (${attempts}/${maxAttempts}): ${statusError.message}`)
+            console.warn(`⚠️ Status check failed (${attempts}/${maxAttempts}): ${errorMessage}`)
             
             // Wait longer after RPC errors
             await new Promise(resolve => setTimeout(resolve, currentDelay * 2))
@@ -222,7 +228,7 @@ export abstract class BaseInstructions {
       }
       
       // Detect cluster from RPC endpoint or config
-      const cluster = this.config.cluster || 
+      const cluster = this.config.cluster ?? 
         (this.config.rpcEndpoint ? detectClusterFromEndpoint(this.config.rpcEndpoint) : 'devnet')
       
       // Create complete transaction result with verification URLs
@@ -258,7 +264,7 @@ export abstract class BaseInstructions {
       // Build transaction message for fee estimation
       const transactionMessage = await pipe(
         createTransactionMessage({ version: 0 }),
-        tx => setTransactionMessageFeePayer(feePayer || this.config.defaultFeePayer!, tx),
+        tx => setTransactionMessageFeePayer(feePayer ?? this.config.defaultFeePayer!, tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
         tx => appendTransactionMessageInstructions(instructions, tx)
       )
@@ -272,7 +278,7 @@ export abstract class BaseInstructions {
       }).send()
       
       console.log(`💳 Real estimated fee: ${fee} lamports`)
-      return BigInt(fee || 0)
+      return BigInt(fee ?? 0)
     } catch (error) {
       console.warn('⚠️ Real fee estimation failed, using fallback:', error)
       // Fallback to reasonable estimate if RPC fails
@@ -288,7 +294,7 @@ export abstract class BaseInstructions {
   protected async simulateTransaction(
     instructions: IInstruction[],
     signers: TransactionSigner[]
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
       console.log(`🧪 Running REAL simulation with ${instructions.length} instructions`)
       
@@ -315,8 +321,8 @@ export abstract class BaseInstructions {
 
       console.log(`✅ Real simulation completed:`)
       console.log(`   Success: ${!simulation.err}`)
-      console.log(`   Compute units: ${simulation.unitsConsumed || 'N/A'}`)
-      console.log(`   Logs: ${simulation.logs?.length || 0} entries`)
+      console.log(`   Compute units: ${simulation.unitsConsumed ?? 'N/A'}`)
+      console.log(`   Logs: ${simulation.logs?.length ?? 0} entries`)
       
       return simulation
     } catch (error) {
@@ -379,12 +385,143 @@ export abstract class BaseInstructions {
   protected logInstructionDetails(instruction: IInstruction): void {
     console.log(`📋 Instruction Details:`)
     console.log(`   Program: ${instruction.programAddress}`)
-    console.log(`   Accounts: ${instruction.accounts?.length || 0}`)
-    console.log(`   Data size: ${instruction.data?.length || 0} bytes`)
+    console.log(`   Accounts: ${instruction.accounts?.length ?? 0}`)
+    console.log(`   Data size: ${instruction.data?.length ?? 0} bytes`)
     if (instruction.accounts) {
       instruction.accounts.forEach((account, index) => {
         console.log(`   Account ${index}: ${JSON.stringify(account)}`)
       })
+    }
+  }
+
+  // =====================================================
+  // COMMON ACCOUNT OPERATIONS (Reduces duplication across instruction modules)
+  // =====================================================
+
+  /**
+   * Get and decode a single account using provided decoder
+   * Centralizes the common pattern used across all instruction modules
+   */
+  protected async getDecodedAccount<T>(
+    address: Address,
+    decoderImportName: string,
+    commitment = this.commitment
+  ): Promise<T | null> {
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const generated = await import('../../generated/index.js')
+      const decoder = (generated as any)[decoderImportName]()
+      
+      if (!decoder) {
+        throw new Error(`Decoder ${decoderImportName} not found in generated imports`)
+      }
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      return await rpcClient.getAndDecodeAccount(address, decoder, commitment)
+    } catch (error) {
+      console.warn(`Failed to fetch account ${address}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Get and decode multiple accounts of the same type
+   * Centralizes batch account fetching pattern
+   */
+  protected async getDecodedAccounts<T>(
+    addresses: Address[],
+    decoderImportName: string,
+    commitment = this.commitment
+  ): Promise<(T | null)[]> {
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const generated = await import('../../generated/index.js')
+      const decoder = (generated as any)[decoderImportName]()
+      
+      if (!decoder) {
+        throw new Error(`Decoder ${decoderImportName} not found in generated imports`)
+      }
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      return await rpcClient.getAndDecodeAccounts(addresses, decoder, commitment)
+    } catch (error) {
+      console.warn('Failed to fetch multiple accounts:', error)
+      return addresses.map(() => null)
+    }
+  }
+
+  /**
+   * Get and decode program accounts with optional filters
+   * Centralizes program account scanning pattern
+   */
+  protected async getDecodedProgramAccounts<T>(
+    decoderImportName: string,
+    filters: unknown[] = [],
+    commitment = this.commitment
+  ): Promise<{ address: Address; data: T }[]> {
+    try {
+      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
+      const generated = await import('../../generated/index.js')
+      const decoder = (generated as any)[decoderImportName]()
+      
+      if (!decoder) {
+        throw new Error(`Decoder ${decoderImportName} not found in generated imports`)
+      }
+      
+      const rpcClient = new GhostSpeakRpcClient(this.rpc)
+      return await rpcClient.getAndDecodeProgramAccounts(
+        this.programId,
+        decoder,
+        filters,
+        commitment
+      )
+    } catch (error) {
+      console.warn(`Failed to fetch program accounts for ${this.programId}:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Execute a single instruction with standard error handling
+   * Centralizes the common instruction execution pattern
+   */
+  protected async executeInstruction(
+    instructionGetter: () => unknown,
+    signer: TransactionSigner,
+    context?: string
+  ): Promise<Signature> {
+    try {
+      const instruction = instructionGetter()
+      return await this.sendTransaction(
+        [instruction as unknown as IInstruction], 
+        [signer]
+      )
+    } catch (error) {
+      const operation = context ?? 'instruction execution'
+      console.error(`❌ Failed to execute ${operation}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Execute a single instruction and return detailed results
+   * Centralizes the common pattern for detailed transaction results
+   */
+  protected async executeInstructionWithDetails(
+    instructionGetter: () => unknown,
+    signer: TransactionSigner,
+    context?: string
+  ): Promise<TransactionResult> {
+    try {
+      const instruction = instructionGetter()
+      return await this.sendTransactionWithDetails(
+        [instruction as unknown as IInstruction], 
+        [signer]
+      )
+    } catch (error) {
+      const operation = context ?? 'instruction execution'
+      console.error(`❌ Failed to execute ${operation}:`, error)
+      throw error
     }
   }
 }

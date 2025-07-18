@@ -71,7 +71,7 @@ export function getBulkDealDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(BULK_DEAL_DISCRIMINATOR);
 }
 
-export type BulkDeal = {
+export interface BulkDeal {
   discriminator: ReadonlyUint8Array;
   dealId: bigint;
   agent: Address;
@@ -80,7 +80,7 @@ export type BulkDeal = {
   totalVolume: number;
   totalValue: bigint;
   discountPercentage: number;
-  volumeTiers: Array<VolumeTier>;
+  volumeTiers: VolumeTier[];
   slaTerms: string;
   contractDuration: bigint;
   startDate: bigint;
@@ -89,9 +89,9 @@ export type BulkDeal = {
   createdAt: bigint;
   executedVolume: number;
   bump: number;
-};
+}
 
-export type BulkDealArgs = {
+export interface BulkDealArgs {
   dealId: number | bigint;
   agent: Address;
   customer: Address;
@@ -99,7 +99,7 @@ export type BulkDealArgs = {
   totalVolume: number;
   totalValue: number | bigint;
   discountPercentage: number;
-  volumeTiers: Array<VolumeTierArgs>;
+  volumeTiers: VolumeTierArgs[];
   slaTerms: string;
   contractDuration: number | bigint;
   startDate: number | bigint;
@@ -108,7 +108,7 @@ export type BulkDealArgs = {
   createdAt: number | bigint;
   executedVolume: number;
   bump: number;
-};
+}
 
 export function getBulkDealEncoder(): Encoder<BulkDealArgs> {
   return transformEncoder(
@@ -197,7 +197,7 @@ export async function fetchMaybeBulkDeal<TAddress extends string = string>(
 
 export async function fetchAllBulkDeal(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<BulkDeal>[]> {
   const maybeAccounts = await fetchAllMaybeBulkDeal(rpc, addresses, config);
@@ -207,7 +207,7 @@ export async function fetchAllBulkDeal(
 
 export async function fetchAllMaybeBulkDeal(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<BulkDeal>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

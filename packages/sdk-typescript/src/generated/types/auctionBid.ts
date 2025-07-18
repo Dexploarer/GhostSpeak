@@ -24,19 +24,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AuctionBid = {
+export interface AuctionBid {
   bidder: Address;
   amount: bigint;
   timestamp: bigint;
   isWinning: boolean;
-};
+}
 
-export type AuctionBidArgs = {
+export interface AuctionBidArgs {
   bidder: Address;
   amount: number | bigint;
   timestamp: number | bigint;
   isWinning: boolean;
-};
+}
 
 export function getAuctionBidEncoder(): Encoder<AuctionBidArgs> {
   return getStructEncoder([

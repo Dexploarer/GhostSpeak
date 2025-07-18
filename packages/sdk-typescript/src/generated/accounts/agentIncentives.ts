@@ -55,7 +55,7 @@ export function getAgentIncentivesDiscriminatorBytes() {
   );
 }
 
-export type AgentIncentives = {
+export interface AgentIncentives {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   referralsCount: number;
@@ -66,9 +66,9 @@ export type AgentIncentives = {
   totalEarnings: bigint;
   lastActivity: bigint;
   bump: number;
-};
+}
 
-export type AgentIncentivesArgs = {
+export interface AgentIncentivesArgs {
   agent: Address;
   referralsCount: number;
   referralEarnings: number | bigint;
@@ -78,7 +78,7 @@ export type AgentIncentivesArgs = {
   totalEarnings: number | bigint;
   lastActivity: number | bigint;
   bump: number;
-};
+}
 
 export function getAgentIncentivesEncoder(): Encoder<AgentIncentivesArgs> {
   return transformEncoder(
@@ -160,7 +160,7 @@ export async function fetchMaybeAgentIncentives<
 
 export async function fetchAllAgentIncentives(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<AgentIncentives>[]> {
   const maybeAccounts = await fetchAllMaybeAgentIncentives(
@@ -174,7 +174,7 @@ export async function fetchAllAgentIncentives(
 
 export async function fetchAllMaybeAgentIncentives(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<AgentIncentives>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

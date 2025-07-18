@@ -22,19 +22,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type A2AMessageSentEvent = {
+export interface A2AMessageSentEvent {
   messageId: bigint;
   sessionId: bigint;
   sender: Address;
   timestamp: bigint;
-};
+}
 
-export type A2AMessageSentEventArgs = {
+export interface A2AMessageSentEventArgs {
   messageId: number | bigint;
   sessionId: number | bigint;
   sender: Address;
   timestamp: number | bigint;
-};
+}
 
 export function getA2AMessageSentEventEncoder(): Encoder<A2AMessageSentEventArgs> {
   return getStructEncoder([

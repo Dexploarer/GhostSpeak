@@ -92,22 +92,22 @@ export type InitializeGovernanceProposalInstruction<
     ]
   >;
 
-export type InitializeGovernanceProposalInstructionData = {
+export interface InitializeGovernanceProposalInstructionData {
   discriminator: ReadonlyUint8Array;
   proposalId: bigint;
   title: string;
   description: string;
   proposalType: ProposalType;
   executionParams: ExecutionParams;
-};
+}
 
-export type InitializeGovernanceProposalInstructionDataArgs = {
+export interface InitializeGovernanceProposalInstructionDataArgs {
   proposalId: number | bigint;
   title: string;
   description: string;
   proposalType: ProposalTypeArgs;
   executionParams: ExecutionParamsArgs;
-};
+}
 
 export function getInitializeGovernanceProposalInstructionDataEncoder(): Encoder<InitializeGovernanceProposalInstructionDataArgs> {
   return transformEncoder(
@@ -147,11 +147,11 @@ export function getInitializeGovernanceProposalInstructionDataCodec(): Codec<
   );
 }
 
-export type InitializeGovernanceProposalAsyncInput<
+export interface InitializeGovernanceProposalAsyncInput<
   TAccountProposal extends string = string,
   TAccountProposer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   proposal?: Address<TAccountProposal>;
   proposer: TransactionSigner<TAccountProposer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -160,7 +160,7 @@ export type InitializeGovernanceProposalAsyncInput<
   description: InitializeGovernanceProposalInstructionDataArgs['description'];
   proposalType: InitializeGovernanceProposalInstructionDataArgs['proposalType'];
   executionParams: InitializeGovernanceProposalInstructionDataArgs['executionParams'];
-};
+}
 
 export async function getInitializeGovernanceProposalInstructionAsync<
   TAccountProposal extends string,
@@ -242,11 +242,11 @@ export async function getInitializeGovernanceProposalInstructionAsync<
   return instruction;
 }
 
-export type InitializeGovernanceProposalInput<
+export interface InitializeGovernanceProposalInput<
   TAccountProposal extends string = string,
   TAccountProposer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   proposal: Address<TAccountProposal>;
   proposer: TransactionSigner<TAccountProposer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -255,7 +255,7 @@ export type InitializeGovernanceProposalInput<
   description: InitializeGovernanceProposalInstructionDataArgs['description'];
   proposalType: InitializeGovernanceProposalInstructionDataArgs['proposalType'];
   executionParams: InitializeGovernanceProposalInstructionDataArgs['executionParams'];
-};
+}
 
 export function getInitializeGovernanceProposalInstruction<
   TAccountProposal extends string,
@@ -321,10 +321,10 @@ export function getInitializeGovernanceProposalInstruction<
   return instruction;
 }
 
-export type ParsedInitializeGovernanceProposalInstruction<
+export interface ParsedInitializeGovernanceProposalInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     proposal: TAccountMetas[0];
@@ -332,7 +332,7 @@ export type ParsedInitializeGovernanceProposalInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: InitializeGovernanceProposalInstructionData;
-};
+}
 
 export function parseInitializeGovernanceProposalInstruction<
   TProgram extends string,

@@ -6,12 +6,11 @@ import type {
   GhostSpeakConfig
 } from '../../types/index.js'
 import { 
-  getRegisterAgentInstruction,
+  getRegisterAgentInstructionAsync,
   getUpdateAgentInstruction,
   getVerifyAgentInstruction,
   getDeactivateAgentInstruction,
   getActivateAgentInstruction,
-  fetchAgent,
   type Agent
 } from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
@@ -36,8 +35,6 @@ export class AgentInstructions extends BaseInstructions {
    */
   async register(
     signer: KeyPairSigner,
-    agentAddress: Address,
-    userRegistryAddress: Address,
     params: AgentRegistrationParams
   ): Promise<string> {
     // Validate and ensure agentType is a valid number
@@ -47,14 +44,13 @@ export class AgentInstructions extends BaseInstructions {
       
 
     try {
-      const instruction = getRegisterAgentInstruction({
-        agentAccount: agentAddress,
-        userRegistry: userRegistryAddress,
+      // Use the async version that automatically calculates PDAs
+      const instruction = await getRegisterAgentInstructionAsync({
         signer: signer as unknown as TransactionSigner,
         agentType,
         metadataUri: params.metadataUri,
         agentId: params.agentId
-      })
+      }, { programAddress: this.programId })
       
       // Log instruction details before sending
       this.logInstructionDetails(instruction as unknown as IInstruction)
@@ -125,13 +121,15 @@ export class AgentInstructions extends BaseInstructions {
     agentAddress: Address,
     agentId: string
   ): Promise<string> {
-    const instruction = getDeactivateAgentInstruction({
-      agentAccount: agentAddress,
-      signer: signer as unknown as TransactionSigner,
-      agentId
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getDeactivateAgentInstruction({
+        agentAccount: agentAddress,
+        signer: signer as unknown as TransactionSigner,
+        agentId
+      }),
+      signer as unknown as TransactionSigner,
+      'agent deactivation'
+    )
   }
   
   /**
@@ -142,107 +140,59 @@ export class AgentInstructions extends BaseInstructions {
     agentAddress: Address,
     agentId: string
   ): Promise<string> {
-    const instruction = getActivateAgentInstruction({
-      agentAccount: agentAddress,
-      signer: signer as unknown as TransactionSigner,
-      agentId
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getActivateAgentInstruction({
+        agentAccount: agentAddress,
+        signer: signer as unknown as TransactionSigner,
+        agentId
+      }),
+      signer as unknown as TransactionSigner,
+      'agent activation'
+    )
   }
 
   /**
-   * Get agent account information using 2025 patterns
+   * Get agent account information using centralized pattern
    */
   async getAccount(agentAddress: Address): Promise<Agent | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getAgentDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      const agent = await rpcClient.getAndDecodeAccount(
-        agentAddress,
-        getAgentDecoder(),
-        this.commitment
-      )
-      
-      return agent
-    } catch (error) {
-      console.warn('Failed to fetch agent account:', error)
-      return null
-    }
+    return this.getDecodedAccount<Agent>(agentAddress, 'getAgentDecoder')
   }
 
   /**
-   * Get all agents (with pagination) using 2025 patterns
+   * Get all agents (with pagination) using centralized pattern
    */
   async getAllAgents(
     limit: number = 100,
     offset: number = 0
   ): Promise<Agent[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getAgentDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all agent accounts using program account fetching
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getAgentDecoder(),
-        [], // No filters - get all agents
-        this.commitment
-      )
-      
-      // Apply pagination
-      const paginatedAccounts = accounts.slice(offset, offset + limit)
-      return paginatedAccounts.map(({ data }) => data)
-    } catch (error) {
-      console.warn('Failed to fetch all agents:', error)
-      return []
-    }
+    const accounts = await this.getDecodedProgramAccounts<Agent>('getAgentDecoder')
+    
+    // Apply pagination
+    const paginatedAccounts = accounts.slice(offset, offset + limit)
+    return paginatedAccounts.map(({ data }) => data)
   }
 
   /**
-   * Search agents by capabilities using 2025 patterns
+   * Search agents by capabilities using centralized pattern
    */
   async searchByCapabilities(capabilities: string[]): Promise<Agent[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getAgentDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all agents and filter client-side
-      // In production, you'd want to use RPC filters for efficiency
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getAgentDecoder(),
-        [], // No RPC filters - filtering client-side for now
-        this.commitment
-      )
-      
-      // Filter agents that have any of the requested capabilities
-      const filteredAgents = accounts
-        .map(({ data }) => data)
-        .filter(agent => 
-          capabilities.some(capability => 
-            agent.capabilities?.includes(capability)
-          )
+    const accounts = await this.getDecodedProgramAccounts<Agent>('getAgentDecoder')
+    
+    // Filter agents that have any of the requested capabilities
+    return accounts
+      .map(({ data }) => data)
+      .filter(agent => 
+        capabilities.some(capability => 
+          agent.capabilities?.includes(capability)
         )
-      
-      return filteredAgents
-    } catch (error) {
-      console.warn('Failed to search agents by capabilities:', error)
-      return []
-    }
+      )
   }
   
   /**
    * List agents (alias for getAllAgents for CLI compatibility)
    */
   async list(options: { limit?: number; offset?: number } = {}): Promise<Agent[]> {
-    return this.getAllAgents(options.limit || 100, options.offset || 0)
+    return this.getAllAgents(options.limit ?? 100, options.offset ?? 0)
   }
 
   /**
@@ -271,30 +221,12 @@ export class AgentInstructions extends BaseInstructions {
    * List agents by owner
    */
   async listByOwner(options: { owner: Address }): Promise<Agent[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getAgentDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all agent accounts and filter by owner
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getAgentDecoder(),
-        [], // Could use memcmp filter here for efficiency
-        this.commitment
-      )
-      
-      // Filter agents owned by the specified address
-      const ownerAgents = accounts
-        .map(({ data, address }) => ({ ...data, address }))
-        .filter(agent => agent.owner?.toString() === options.owner.toString())
-      
-      return ownerAgents
-    } catch (error) {
-      console.warn('Failed to fetch agents by owner:', error)
-      return []
-    }
+    const accounts = await this.getDecodedProgramAccounts<Agent>('getAgentDecoder')
+    
+    // Filter agents owned by the specified address
+    return accounts
+      .map(({ data }) => data)
+      .filter(agent => agent.owner?.toString() === options.owner.toString())
   }
 
   /**
@@ -305,7 +237,7 @@ export class AgentInstructions extends BaseInstructions {
     totalEarnings: bigint
     successRate: number
     lastActive: bigint | null
-    currentJob: any | null
+    currentJob: unknown | null
   }> {
     // This would typically fetch from a separate status account
     // For now, return mock data as the status tracking isn't implemented in the program
@@ -316,9 +248,9 @@ export class AgentInstructions extends BaseInstructions {
     }
     
     return {
-      jobsCompleted: (agent as any).totalJobs || 0,
-      totalEarnings: (agent as any).totalEarnings || 0n,
-      successRate: (agent as any).successRate || 100,
+      jobsCompleted: agent.totalJobsCompleted ?? 0,
+      totalEarnings: agent.totalEarnings ?? 0n,
+      successRate: agent.reputationScore ?? 100, // Use reputation score as proxy for success rate
       lastActive: agent.isActive ? BigInt(Date.now()) : null,
       currentJob: null // Would need to fetch from work order accounts
     }

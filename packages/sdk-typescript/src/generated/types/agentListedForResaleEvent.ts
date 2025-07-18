@@ -20,19 +20,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AgentListedForResaleEvent = {
+export interface AgentListedForResaleEvent {
   resale: Address;
   agent: Address;
   seller: Address;
   listingPrice: bigint;
-};
+}
 
-export type AgentListedForResaleEventArgs = {
+export interface AgentListedForResaleEventArgs {
   resale: Address;
   agent: Address;
   seller: Address;
   listingPrice: number | bigint;
-};
+}
 
 export function getAgentListedForResaleEventEncoder(): Encoder<AgentListedForResaleEventArgs> {
   return getStructEncoder([

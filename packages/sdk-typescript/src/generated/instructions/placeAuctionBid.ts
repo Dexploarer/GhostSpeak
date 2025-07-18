@@ -81,12 +81,12 @@ export type PlaceAuctionBidInstruction<
     ]
   >;
 
-export type PlaceAuctionBidInstructionData = {
+export interface PlaceAuctionBidInstructionData {
   discriminator: ReadonlyUint8Array;
   bidAmount: bigint;
-};
+}
 
-export type PlaceAuctionBidInstructionDataArgs = { bidAmount: number | bigint };
+export interface PlaceAuctionBidInstructionDataArgs { bidAmount: number | bigint }
 
 export function getPlaceAuctionBidInstructionDataEncoder(): Encoder<PlaceAuctionBidInstructionDataArgs> {
   return transformEncoder(
@@ -115,13 +115,13 @@ export function getPlaceAuctionBidInstructionDataCodec(): Codec<
   );
 }
 
-export type PlaceAuctionBidInput<
+export interface PlaceAuctionBidInput<
   TAccountAuction extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountBidder extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Auction account with canonical bump validation */
   auction: Address<TAccountAuction>;
   /** User registry for rate limiting */
@@ -133,7 +133,7 @@ export type PlaceAuctionBidInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   bidAmount: PlaceAuctionBidInstructionDataArgs['bidAmount'];
-};
+}
 
 export function getPlaceAuctionBidInstruction<
   TAccountAuction extends string,
@@ -215,10 +215,10 @@ export function getPlaceAuctionBidInstruction<
   return instruction;
 }
 
-export type ParsedPlaceAuctionBidInstruction<
+export interface ParsedPlaceAuctionBidInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Auction account with canonical bump validation */
@@ -233,7 +233,7 @@ export type ParsedPlaceAuctionBidInstruction<
     clock: TAccountMetas[4];
   };
   data: PlaceAuctionBidInstructionData;
-};
+}
 
 export function parsePlaceAuctionBidInstruction<
   TProgram extends string,

@@ -36,27 +36,27 @@ import {
 } from '.';
 
 /** Template aging policies */
-export type AgingPolicy = {
+export interface AgingPolicy {
   /** Biometric type */
   biometricType: BiometricType;
   /** Maximum age */
   maxAge: bigint;
   /** Refresh requirements */
-  refreshRequirements: Array<string>;
+  refreshRequirements: string[];
   /** Degradation handling */
   degradationHandling: DegradationHandling;
-};
+}
 
-export type AgingPolicyArgs = {
+export interface AgingPolicyArgs {
   /** Biometric type */
   biometricType: BiometricTypeArgs;
   /** Maximum age */
   maxAge: number | bigint;
   /** Refresh requirements */
-  refreshRequirements: Array<string>;
+  refreshRequirements: string[];
   /** Degradation handling */
   degradationHandling: DegradationHandlingArgs;
-};
+}
 
 export function getAgingPolicyEncoder(): Encoder<AgingPolicyArgs> {
   return getStructEncoder([

@@ -17,7 +17,7 @@ export interface ErrorContext {
   address?: string
   instruction?: string
   timestamp: number
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   userMessage?: string
 }
 
@@ -52,7 +52,7 @@ export class GhostSpeakError extends Error {
   public readonly code: string
   public readonly category: ErrorCategory
   public readonly severity: ErrorSeverity
-  public readonly context?: ErrorContext
+  public readonly context?: Partial<ErrorContext>
   public readonly logs?: string[]
   public readonly retryable: boolean
   public readonly userFriendlyMessage: string
@@ -63,7 +63,7 @@ export class GhostSpeakError extends Error {
     category: ErrorCategory,
     severity: ErrorSeverity = ErrorSeverity.MEDIUM,
     options: {
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       retryable?: boolean
       userFriendlyMessage?: string
@@ -105,7 +105,7 @@ export class GhostSpeakError extends Error {
   /**
    * Convert error to JSON for logging and debugging
    */
-  toJSON(): Record<string, any> {
+  toJSON(): Record<string, unknown> {
     return {
       name: this.name,
       message: this.message,
@@ -130,7 +130,7 @@ export class NetworkError extends GhostSpeakError {
     message: string = 'Network connection failed',
     options: {
       endpoint?: string
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -162,7 +162,7 @@ export class TransactionError extends GhostSpeakError {
     options: {
       signature?: Signature
       instructionIndex?: number
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       retryable?: boolean
       cause?: Error
@@ -195,7 +195,7 @@ export class AccountNotFoundError extends GhostSpeakError {
     accountType: string,
     address: string,
     options: {
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -227,7 +227,7 @@ export class UnauthorizedError extends GhostSpeakError {
     message: string = 'Unauthorized access',
     options: {
       requiredPermission?: string
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -260,7 +260,7 @@ export class ValidationError extends GhostSpeakError {
     options: {
       field?: string
       expectedFormat?: string
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -273,7 +273,7 @@ export class ValidationError extends GhostSpeakError {
       {
         ...options,
         retryable: false,
-        userFriendlyMessage: `Invalid ${options.field || 'input'}. ${options.expectedFormat ? `Expected format: ${options.expectedFormat}` : 'Please check your input and try again.'}`
+        userFriendlyMessage: `Invalid ${options.field ?? 'input'}. ${options.expectedFormat ? `Expected format: ${options.expectedFormat}` : 'Please check your input and try again.'}`
       }
     )
     this.name = 'ValidationError'
@@ -294,7 +294,7 @@ export class InsufficientFundsError extends GhostSpeakError {
     options: {
       requiredAmount?: number
       availableAmount?: number
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -327,7 +327,7 @@ export class ProgramError extends GhostSpeakError {
     programErrorCode: GhostspeakMarketplaceError,
     options: {
       instructionIndex?: number
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -360,7 +360,7 @@ export class RateLimitError extends GhostSpeakError {
     message: string = 'Rate limit exceeded',
     options: {
       retryAfter?: number
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -391,7 +391,7 @@ export class TimeoutError extends GhostSpeakError {
     message: string = 'Operation timed out',
     options: {
       timeoutDuration?: number
-      context?: ErrorContext
+      context?: Partial<ErrorContext>
       logs?: string[]
       cause?: Error
     } = {}
@@ -452,61 +452,61 @@ export function parseErrorFromLogs(logs: string[], context?: Partial<ErrorContex
 
   for (const log of logs) {
     // Check for Anchor errors with program error codes
-    const anchorMatch = log.match(/Error Code: (\w+)\. Error Number: (\d+)\. Error Message: (.+)/)
+    const anchorMatch = /Error Code: (\w+)\. Error Number: (\d+)\. Error Message: (.+)/.exec(log)
     if (anchorMatch) {
-      const [, errorName, errorNumber, errorMessage] = anchorMatch
+      const [, , errorNumber] = anchorMatch
       const errorCode = parseInt(errorNumber) as GhostspeakMarketplaceError
       return new ProgramError(errorCode, { logs, context })
     }
     
     // Check for insufficient funds
-    if (log.includes('Error: Insufficient funds') || log.includes('InsufficientFunds')) {
+    if (log.includes('Error: Insufficient funds') ?? log.includes('InsufficientFunds')) {
       return new InsufficientFundsError(log, { logs, context })
     }
     
     // Check for invalid instruction data
-    if (log.includes('Error: Invalid instruction data') || log.includes('InvalidInstruction')) {
+    if (log.includes('Error: Invalid instruction data') ?? log.includes('InvalidInstruction')) {
       return new ValidationError(log, { field: 'instruction', logs, context })
     }
     
     // Check for account not found
-    if (log.includes('account not found') || log.includes('AccountNotFound')) {
-      const accountTypeMatch = log.match(/(\w+) account not found/)
-      const accountType = accountTypeMatch?.[1] || 'Account'
-      const addressMatch = log.match(/([A-Za-z0-9]{32,44})/)
-      const address = addressMatch?.[1] || 'unknown'
+    if (log.includes('account not found') ?? log.includes('AccountNotFound')) {
+      const accountTypeMatch = /(\w+) account not found/.exec(log)
+      const accountType = accountTypeMatch?.[1] ?? 'Account'
+      const addressMatch = /([A-Za-z0-9]{32,44})/.exec(log)
+      const address = addressMatch?.[1] ?? 'unknown'
       return new AccountNotFoundError(accountType, address, { logs, context })
     }
     
     // Check for unauthorized access
-    if (log.includes('Unauthorized') || log.includes('not authorized') || log.includes('Access denied')) {
+    if (log.includes('Unauthorized') ?? log.includes('not authorized') ?? log.includes('Access denied')) {
       return new UnauthorizedError(log, { logs, context })
     }
     
     // Check for deadline errors
-    if (log.includes('Deadline must be in the future') || log.includes('deadline')) {
+    if (log.includes('Deadline must be in the future') ?? log.includes('deadline')) {
       return new ValidationError(log, { field: 'deadline', logs, context })
     }
     
     // Check for state change errors
-    if (log.includes('Account state has changed') || log.includes('state changed')) {
+    if (log.includes('Account state has changed') ?? log.includes('state changed')) {
       return new TransactionError(log, { logs, context, retryable: true })
     }
     
     // Check for rate limiting
-    if (log.includes('Rate limit') || log.includes('Too Many Requests') || log.includes('429')) {
-      const retryAfterMatch = log.match(/retry after (\d+)/)
+    if (log.includes('Rate limit') ?? log.includes('Too Many Requests') ?? log.includes('429')) {
+      const retryAfterMatch = /retry after (\d+)/.exec(log)
       const retryAfter = retryAfterMatch ? parseInt(retryAfterMatch[1]) : undefined
       return new RateLimitError(log, { retryAfter, logs, context })
     }
     
     // Check for timeout errors
-    if (log.includes('timeout') || log.includes('Timeout')) {
+    if (log.includes('timeout') ?? log.includes('Timeout')) {
       return new TimeoutError(log, { logs, context })
     }
     
     // Generic program error with hex code
-    const customErrorMatch = log.match(/custom program error: 0x([0-9a-fA-F]+)/)
+    const customErrorMatch = /custom program error: 0x([0-9a-fA-F]+)/.exec(log)
     if (customErrorMatch) {
       const errorCode = parseInt(customErrorMatch[1], 16) as GhostspeakMarketplaceError
       return new ProgramError(errorCode, { logs, context })
@@ -516,90 +516,118 @@ export function parseErrorFromLogs(logs: string[], context?: Partial<ErrorContex
   return null
 }
 
+// Enhanced error interface to replace 'any'
+interface ParseableError {
+  name?: string
+  message?: string
+  toString?: () => string
+  data?: unknown
+  error?: unknown
+}
+
 /**
  * Enhanced RPC error parsing with better categorization and user-friendly messages
  */
-export function parseRpcError(error: any, context?: Partial<ErrorContext>): GhostSpeakError {
-  const message = error.message || error.toString()
-  const errorData = error.data || error.error || {}
+// Interface for structured RPC error data
+interface RpcErrorData {
+  InstructionError?: readonly [number, unknown]
+  [key: string]: unknown
+}
+
+// Interface for instruction error details
+interface InstructionErrorDetails {
+  Custom?: number
+  [key: string]: unknown
+}
+
+// Type guard for InstructionError
+function isInstructionError(value: unknown): value is [number, InstructionErrorDetails | string] {
+  return Array.isArray(value) && value.length === 2 && typeof value[0] === 'number'
+}
+
+export function parseRpcError(error: ParseableError, context?: Partial<ErrorContext>): GhostSpeakError {
+  const message = error.message ?? (typeof error.toString === 'function' ? error.toString() : 'Unknown error')
+  const errorData = (error.data ?? error.error ?? {}) as RpcErrorData
   
   // Network-related errors (retryable)
   if (message.includes('fetch failed') || message.includes('Connection refused') || message.includes('ECONNREFUSED')) {
-    return new NetworkError('Connection refused', { context, cause: error })
+    return new NetworkError('Connection refused', { context, cause: error as Error })
   }
   
   if (message.includes('timeout') || message.includes('ETIMEDOUT')) {
-    return new TimeoutError(message, { context, cause: error })
+    return new TimeoutError(message, { context, cause: error as Error })
   }
   
   if (message.includes('429') || message.includes('Too Many Requests')) {
-    const retryAfterMatch = message.match(/retry after (\d+)/)
+    const retryAfterMatch = /retry after (\d+)/.exec(message)
     const retryAfter = retryAfterMatch ? parseInt(retryAfterMatch[1]) : undefined
-    return new RateLimitError(message, { retryAfter, context, cause: error })
+    return new RateLimitError(message, { retryAfter, context, cause: error as Error })
   }
   
-  if (message.includes('Network Error') || message.includes('ENOTFOUND') || message.includes('ECONNRESET')) {
-    return new NetworkError(message, { context, cause: error })
+  if (message.includes('Network Error') ?? message.includes('ENOTFOUND') ?? message.includes('ECONNRESET')) {
+    return new NetworkError(message, { context, cause: error as Error })
   }
   
   // Transaction-related errors
   if (message.includes('Transaction too large')) {
-    return new TransactionError(message, { context, cause: error, retryable: false })
+    return new TransactionError(message, { context, cause: error as Error, retryable: false })
   }
   
   if (message.includes('Blockhash not found')) {
-    return new TransactionError('Transaction blockhash expired', { context, cause: error, retryable: true })
+    return new TransactionError('Transaction blockhash expired', { context, cause: error as Error, retryable: true })
   }
   
   if (message.includes('Signature verification failed')) {
-    return new TransactionError('Invalid transaction signature', { context, cause: error, retryable: false })
+    return new TransactionError('Invalid transaction signature', { context, cause: error as Error, retryable: false })
   }
   
   if (message.includes('Transaction simulation failed')) {
-    return new TransactionError(message, { context, cause: error, retryable: true })
+    return new TransactionError(message, { context, cause: error as Error, retryable: true })
   }
   
   // Account-related errors
   if (message.includes('Account not found') || message.includes('could not find account')) {
-    const addressMatch = message.match(/([A-Za-z0-9]{32,44})/)
-    const address = addressMatch?.[1] || 'unknown'
-    return new AccountNotFoundError('Account', address, { context, cause: error })
+    const addressMatch = /([A-Za-z0-9]{32,44})/.exec(message)
+    const address = addressMatch?.[1] ?? 'unknown'
+    return new AccountNotFoundError('Account', address, { context, cause: error as Error })
   }
   
   // Validation errors
   if (message.includes('Invalid enum variant') || message.includes('failed to deserialize')) {
-    return new ValidationError(message, { context, cause: error })
+    return new ValidationError(message, { context, cause: error as Error })
   }
   
-  if (message.includes('Failed to serialize') || message.includes('serialization error')) {
+  if (message.includes('Failed to serialize') ?? message.includes('serialization error')) {
     return new ValidationError('Invalid instruction data format', { 
       field: 'instruction', 
       context, 
-      cause: error 
+      cause: error as Error 
     })
   }
   
   // Program errors
-  if (errorData.InstructionError) {
-    const [instructionIndex, instructionError] = errorData.InstructionError
+  if (errorData.InstructionError && isInstructionError(errorData.InstructionError)) {
+    const instructionErrorArray = errorData.InstructionError as [number, InstructionErrorDetails | string]
+    const [instructionIndex, instructionErrorRaw] = instructionErrorArray
+    const instructionError = instructionErrorRaw
     
-    if (instructionError.Custom !== undefined) {
+    if (typeof instructionError === 'object' && instructionError !== null && 'Custom' in instructionError && instructionError.Custom !== undefined) {
       const errorCode = instructionError.Custom as GhostspeakMarketplaceError
-      return new ProgramError(errorCode, { instructionIndex, context, cause: error })
+      return new ProgramError(errorCode, { instructionIndex: instructionIndex as number, context, cause: error as Error })
     }
     
     if (instructionError === 'InsufficientFunds') {
-      return new InsufficientFundsError('Insufficient funds for transaction', { context, cause: error })
+      return new InsufficientFundsError('Insufficient funds for transaction', { context, cause: error as Error })
     }
     
     if (instructionError === 'AccountNotFound') {
-      return new AccountNotFoundError('Account', 'unknown', { context, cause: error })
+      return new AccountNotFoundError('Account', 'unknown', { context, cause: error as Error })
     }
     
     return new TransactionError(`Instruction error: ${JSON.stringify(instructionError)}`, {
-      instructionIndex,
+      instructionIndex: instructionIndex as number,
       context,
-      cause: error
+      cause: error as Error
     })
   }
   
@@ -611,7 +639,7 @@ export function parseRpcError(error: any, context?: Partial<ErrorContext>): Ghos
     ErrorSeverity.MEDIUM,
     {
       context,
-      cause: error,
+      cause: error as Error,
       retryable: false,
       userFriendlyMessage: 'An unexpected error occurred. Please try again or contact support if the issue persists.'
     }
@@ -621,20 +649,28 @@ export function parseRpcError(error: any, context?: Partial<ErrorContext>): Ghos
 /**
  * Enhanced simulation error extraction with better context
  */
-export function extractSimulationError(result: any, context?: Partial<ErrorContext>): GhostSpeakError | null {
+// Interface for simulation result
+interface SimulationResult {
+  err?: unknown
+  logs?: string[]
+}
+
+export function extractSimulationError(result: SimulationResult, context?: Partial<ErrorContext>): GhostSpeakError | null {
   if (!result.err) return null
   
-  const logs = result.logs || []
+  const logs: string[] = result.logs ?? []
   
   // Try to parse from logs first with context
   const logError = parseErrorFromLogs(logs, context)
   if (logError) return logError
   
-  // Handle instruction errors
-  if (result.err.InstructionError) {
-    const [instructionIndex, error] = result.err.InstructionError
+  // Handle instruction errors  
+  const errorObj = result.err as { InstructionError?: unknown }
+  if (errorObj.InstructionError && isInstructionError(errorObj.InstructionError)) {
+    const instructionErrorArray = errorObj.InstructionError as [number, InstructionErrorDetails | string]
+    const [instructionIndex, error] = instructionErrorArray
     
-    if (error.Custom !== undefined) {
+    if (typeof error === 'object' && error !== null && 'Custom' in error && error.Custom !== undefined) {
       const errorCode = error.Custom as GhostspeakMarketplaceError
       return new ProgramError(errorCode, { instructionIndex, logs, context })
     }
@@ -648,7 +684,7 @@ export function extractSimulationError(result: any, context?: Partial<ErrorConte
     }
     
     return new TransactionError(`Instruction error: ${JSON.stringify(error)}`, { 
-      instructionIndex, 
+      instructionIndex: instructionIndex as number, 
       logs, 
       context,
       retryable: false
@@ -722,7 +758,7 @@ export function getRetryDelay(error: Error, attempt: number): number {
 export function createErrorWithContext(
   error: Error | GhostSpeakError,
   operation: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): GhostSpeakError {
   if (error instanceof GhostSpeakError) {
     // Enhance existing error with additional context
@@ -744,7 +780,7 @@ export function createErrorWithContext(
         logs: error.logs,
         retryable: error.retryable,
         userFriendlyMessage: error.userFriendlyMessage,
-        cause: error
+        cause: error as Error
       }
     )
   }
@@ -761,7 +797,7 @@ export function createErrorWithContext(
         metadata,
         timestamp: Date.now()
       },
-      cause: error,
+      cause: error as Error,
       userFriendlyMessage: 'An unexpected error occurred during the operation.'
     }
   )
@@ -824,14 +860,25 @@ export function formatErrorForUser(error: GhostSpeakError): string {
 /**
  * Create error summary for monitoring and analytics
  */
-export function createErrorSummary(error: GhostSpeakError): Record<string, any> {
+export interface ErrorSummary {
+  code: string
+  category: ErrorCategory
+  severity: ErrorSeverity
+  retryable: boolean
+  operation?: string
+  timestamp: number
+  signature?: Signature
+  address?: string
+}
+
+export function createErrorSummary(error: GhostSpeakError): ErrorSummary {
   return {
     code: error.code,
     category: error.category,
     severity: error.severity,
     retryable: error.retryable,
     operation: error.context?.operation,
-    timestamp: error.context?.timestamp || Date.now(),
+    timestamp: error.context?.timestamp ?? Date.now(),
     signature: error.context?.signature,
     address: error.context?.address
   }

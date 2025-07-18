@@ -51,22 +51,22 @@ export function getArbitratorRegistryDiscriminatorBytes() {
   );
 }
 
-export type ArbitratorRegistry = {
+export interface ArbitratorRegistry {
   discriminator: ReadonlyUint8Array;
   authority: Address;
-  authorizedArbitrators: Array<Address>;
+  authorizedArbitrators: Address[];
   createdAt: bigint;
   updatedAt: bigint;
   bump: number;
-};
+}
 
-export type ArbitratorRegistryArgs = {
+export interface ArbitratorRegistryArgs {
   authority: Address;
-  authorizedArbitrators: Array<Address>;
+  authorizedArbitrators: Address[];
   createdAt: number | bigint;
   updatedAt: number | bigint;
   bump: number;
-};
+}
 
 export function getArbitratorRegistryEncoder(): Encoder<ArbitratorRegistryArgs> {
   return transformEncoder(
@@ -143,7 +143,7 @@ export async function fetchMaybeArbitratorRegistry<
 
 export async function fetchAllArbitratorRegistry(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<ArbitratorRegistry>[]> {
   const maybeAccounts = await fetchAllMaybeArbitratorRegistry(
@@ -157,7 +157,7 @@ export async function fetchAllArbitratorRegistry(
 
 export async function fetchAllMaybeArbitratorRegistry(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<ArbitratorRegistry>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

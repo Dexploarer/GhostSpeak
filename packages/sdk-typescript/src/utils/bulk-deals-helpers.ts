@@ -6,7 +6,7 @@
  */
 
 import type { Address } from '@solana/kit'
-import { getAddressEncoder, getProgramDerivedAddress } from '@solana/kit'
+import { getAddressEncoder, getProgramDerivedAddress, getBytesEncoder } from '@solana/kit'
 import {
   DealType,
   type BulkDeal,
@@ -27,7 +27,7 @@ export interface DealMetrics {
   averageExecutionTime: bigint
   successRate: number
   costSavings: bigint
-  tierUtilization: Array<{ tier: number, usage: number }>
+  tierUtilization: { tier: number, usage: number }[]
   lastUpdated: bigint
   totalVolume: number
   executedVolume: number
@@ -51,7 +51,7 @@ export async function deriveBulkDealPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('bulk_deal'),
+      getBytesEncoder().encode(new Uint8Array([98, 117, 108, 107, 95, 100, 101, 97, 108])), // 'bulk_deal'
       getAddressEncoder().encode(customer),
       new Uint8Array(new BigUint64Array([dealId]).buffer)
     ]
@@ -69,7 +69,7 @@ export async function deriveDealMetricsPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('deal_metrics'),
+      getBytesEncoder().encode(new Uint8Array([100, 101, 97, 108, 95, 109, 101, 116, 114, 105, 99, 115])), // 'deal_metrics'
       getAddressEncoder().encode(bulkDeal)
     ]
   })
@@ -151,12 +151,12 @@ export class PricingUtils {
   static generatePricingTable(
     basePrice: bigint,
     tiers: VolumeTier[]
-  ): Array<{
+  ): {
     tier: VolumeTier
     unitPrice: bigint
     savings: bigint
     savingsPercentage: number
-  }> {
+  }[] {
     return tiers.map(tier => {
       const discountAmount = (basePrice * BigInt(tier.discountPercentage)) / 100n
       const unitPrice = basePrice - discountAmount
@@ -292,13 +292,13 @@ export class BatchExecutionUtils {
     startTime: bigint
   ): {
     totalBatches: number
-    batches: Array<{
+    batches: {
       batchNumber: number
       startIndex: number
       endIndex: number
       size: number
       estimatedStartTime: bigint
-    }>
+    }[]
   } {
     const totalBatches = Math.ceil(totalVolume / batchSize)
     const batches = []
@@ -450,8 +450,8 @@ export interface DealAnalytics {
   totalVolume: number
   totalValue: bigint
   averageDiscount: number
-  topCustomers: Array<{ customer: Address; dealCount: number; totalVolume: number }>
-  popularTiers: Array<{ tier: VolumeTier; usageCount: number }>
+  topCustomers: { customer: Address; dealCount: number; totalVolume: number }[]
+  popularTiers: { tier: VolumeTier; usageCount: number }[]
 }
 
 export class DealAnalyticsUtils {
@@ -488,9 +488,6 @@ export class DealAnalyticsUtils {
       ? Math.round(analytics.totalVolume / analytics.totalDeals)
       : 0
     
-    const avgValuePerDeal = analytics.totalDeals > 0
-      ? analytics.totalValue / BigInt(analytics.totalDeals)
-      : 0n
     
     return `
 Bulk Deals Analytics:
@@ -500,7 +497,7 @@ Bulk Deals Analytics:
 - Total Volume: ${analytics.totalVolume.toLocaleString()}
 - Average Volume/Deal: ${avgVolumePerDeal.toLocaleString()}
 - Average Discount: ${analytics.averageDiscount.toFixed(1)}%
-- Top Customer: ${analytics.topCustomers[0]?.customer || 'N/A'}
+- Top Customer: ${analytics.topCustomers[0]?.customer ?? 'N/A'}
     `.trim()
   }
 

@@ -21,9 +21,9 @@ import {
   type RuleConditionArgs,
 } from '.';
 
-export type RuleConditionExport = { data: RuleCondition };
+export interface RuleConditionExport { data: RuleCondition }
 
-export type RuleConditionExportArgs = { data: RuleConditionArgs };
+export interface RuleConditionExportArgs { data: RuleConditionArgs }
 
 export function getRuleConditionExportEncoder(): Encoder<RuleConditionExportArgs> {
   return getStructEncoder([['data', getRuleConditionEncoder()]]);

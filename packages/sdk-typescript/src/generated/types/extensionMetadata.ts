@@ -29,27 +29,27 @@ import {
   type ExtensionTypeArgs,
 } from '.';
 
-export type ExtensionMetadata = {
+export interface ExtensionMetadata {
   name: string;
   description: string;
   version: string;
   author: string;
   repository: string;
   license: string;
-  dependencies: Array<string>;
+  dependencies: string[];
   extensionType: ExtensionType;
-};
+}
 
-export type ExtensionMetadataArgs = {
+export interface ExtensionMetadataArgs {
   name: string;
   description: string;
   version: string;
   author: string;
   repository: string;
   license: string;
-  dependencies: Array<string>;
+  dependencies: string[];
   extensionType: ExtensionTypeArgs;
-};
+}
 
 export function getExtensionMetadataEncoder(): Encoder<ExtensionMetadataArgs> {
   return getStructEncoder([

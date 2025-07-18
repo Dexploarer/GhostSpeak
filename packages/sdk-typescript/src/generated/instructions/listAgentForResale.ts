@@ -81,14 +81,14 @@ export type ListAgentForResaleInstruction<
     ]
   >;
 
-export type ListAgentForResaleInstructionData = {
+export interface ListAgentForResaleInstructionData {
   discriminator: ReadonlyUint8Array;
   listingPrice: bigint;
-};
+}
 
-export type ListAgentForResaleInstructionDataArgs = {
+export interface ListAgentForResaleInstructionDataArgs {
   listingPrice: number | bigint;
-};
+}
 
 export function getListAgentForResaleInstructionDataEncoder(): Encoder<ListAgentForResaleInstructionDataArgs> {
   return transformEncoder(
@@ -120,18 +120,18 @@ export function getListAgentForResaleInstructionDataCodec(): Codec<
   );
 }
 
-export type ListAgentForResaleAsyncInput<
+export interface ListAgentForResaleAsyncInput<
   TAccountResale extends string = string,
   TAccountAgent extends string = string,
   TAccountSeller extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   resale?: Address<TAccountResale>;
   agent: Address<TAccountAgent>;
   seller: TransactionSigner<TAccountSeller>;
   systemProgram?: Address<TAccountSystemProgram>;
   listingPrice: ListAgentForResaleInstructionDataArgs['listingPrice'];
-};
+}
 
 export async function getListAgentForResaleInstructionAsync<
   TAccountResale extends string,
@@ -215,18 +215,18 @@ export async function getListAgentForResaleInstructionAsync<
   return instruction;
 }
 
-export type ListAgentForResaleInput<
+export interface ListAgentForResaleInput<
   TAccountResale extends string = string,
   TAccountAgent extends string = string,
   TAccountSeller extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   resale: Address<TAccountResale>;
   agent: Address<TAccountAgent>;
   seller: TransactionSigner<TAccountSeller>;
   systemProgram?: Address<TAccountSystemProgram>;
   listingPrice: ListAgentForResaleInstructionDataArgs['listingPrice'];
-};
+}
 
 export function getListAgentForResaleInstruction<
   TAccountResale extends string,
@@ -298,10 +298,10 @@ export function getListAgentForResaleInstruction<
   return instruction;
 }
 
-export type ParsedListAgentForResaleInstruction<
+export interface ParsedListAgentForResaleInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     resale: TAccountMetas[0];
@@ -310,7 +310,7 @@ export type ParsedListAgentForResaleInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: ListAgentForResaleInstructionData;
-};
+}
 
 export function parseListAgentForResaleInstruction<
   TProgram extends string,

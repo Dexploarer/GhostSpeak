@@ -21,9 +21,9 @@ import {
   type ComplianceStatusArgs,
 } from '.';
 
-export type ComplianceStatusExport = { data: ComplianceStatus };
+export interface ComplianceStatusExport { data: ComplianceStatus }
 
-export type ComplianceStatusExportArgs = { data: ComplianceStatusArgs };
+export interface ComplianceStatusExportArgs { data: ComplianceStatusArgs }
 
 export function getComplianceStatusExportEncoder(): Encoder<ComplianceStatusExportArgs> {
   return getStructEncoder([['data', getComplianceStatusEncoder()]]);

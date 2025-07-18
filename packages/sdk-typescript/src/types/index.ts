@@ -209,3 +209,90 @@ export interface SendA2AMessageParams {
   content: string
   messageType: string
 }
+
+// RPC Response Types (to replace 'any' usage)
+export interface RpcResponse<T> {
+  value: T | null
+}
+
+export interface RpcAccountInfo {
+  executable: boolean
+  lamports: bigint
+  owner: Address
+  rentEpoch: bigint
+  space: bigint
+  data: string | Uint8Array
+}
+
+export interface RpcProgramAccount {
+  pubkey: Address
+  account: RpcAccountInfo
+}
+
+export interface RpcProgramAccountsResponse {
+  value: RpcProgramAccount[] | null
+}
+
+export interface RpcAccountInfoResponse {
+  value: RpcAccountInfo | null
+}
+
+export interface RpcMultipleAccountsResponse {
+  value: (RpcAccountInfo | null)[]
+}
+
+// Transaction Builder Response Types
+export interface TransactionResponse {
+  signature: string
+  confirmationStatus?: Commitment
+  err?: unknown | null
+}
+
+export interface SimulatedTransactionResponse {
+  value: {
+    err?: unknown | null
+    logs?: string[]
+    unitsConsumed?: number
+  }
+}
+
+// Modern RPC Client Interface (replacement for 'any' rpc parameter)
+export interface SolanaRpcClient {
+  getAccountInfo(
+    address: Address, 
+    options?: { commitment?: Commitment; encoding?: string }
+  ): Promise<RpcAccountInfoResponse>
+  
+  getMultipleAccounts(
+    addresses: Address[], 
+    options?: { commitment?: Commitment; encoding?: string }
+  ): Promise<RpcMultipleAccountsResponse>
+  
+  getProgramAccounts(
+    programId: Address,
+    options?: {
+      commitment?: Commitment
+      encoding?: string
+      filters?: unknown[]
+    }
+  ): Promise<RpcProgramAccountsResponse>
+  
+  sendTransaction(
+    transaction: unknown,
+    options?: { commitment?: Commitment }
+  ): Promise<TransactionResponse>
+  
+  simulateTransaction(
+    transaction: unknown,
+    options?: { commitment?: Commitment }
+  ): Promise<SimulatedTransactionResponse>
+}
+
+// Emergency Configuration Interface for Governance
+export interface EmergencyConfig {
+  emergencyDelay?: bigint
+  emergencyThreshold?: number
+  emergencySigners?: Address[]
+  canEmergencyPause?: boolean
+  emergencyContact?: string
+}

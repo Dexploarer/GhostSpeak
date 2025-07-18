@@ -88,34 +88,34 @@ export type CreateJobPostingInstruction<
     ]
   >;
 
-export type CreateJobPostingInstructionData = {
+export interface CreateJobPostingInstructionData {
   discriminator: ReadonlyUint8Array;
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   budget: bigint;
   deadline: bigint;
-  skillsNeeded: Array<string>;
+  skillsNeeded: string[];
   budgetMin: bigint;
   budgetMax: bigint;
   paymentToken: Address;
   jobType: string;
   experienceLevel: string;
-};
+}
 
-export type CreateJobPostingInstructionDataArgs = {
+export interface CreateJobPostingInstructionDataArgs {
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   budget: number | bigint;
   deadline: number | bigint;
-  skillsNeeded: Array<string>;
+  skillsNeeded: string[];
   budgetMin: number | bigint;
   budgetMax: number | bigint;
   paymentToken: Address;
   jobType: string;
   experienceLevel: string;
-};
+}
 
 export function getCreateJobPostingInstructionDataEncoder(): Encoder<CreateJobPostingInstructionDataArgs> {
   return transformEncoder(
@@ -186,11 +186,11 @@ export function getCreateJobPostingInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateJobPostingAsyncInput<
+export interface CreateJobPostingAsyncInput<
   TAccountJobPosting extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   jobPosting?: Address<TAccountJobPosting>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -205,7 +205,7 @@ export type CreateJobPostingAsyncInput<
   paymentToken: CreateJobPostingInstructionDataArgs['paymentToken'];
   jobType: CreateJobPostingInstructionDataArgs['jobType'];
   experienceLevel: CreateJobPostingInstructionDataArgs['experienceLevel'];
-};
+}
 
 export async function getCreateJobPostingInstructionAsync<
   TAccountJobPosting extends string,
@@ -284,11 +284,11 @@ export async function getCreateJobPostingInstructionAsync<
   return instruction;
 }
 
-export type CreateJobPostingInput<
+export interface CreateJobPostingInput<
   TAccountJobPosting extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   jobPosting: Address<TAccountJobPosting>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -303,7 +303,7 @@ export type CreateJobPostingInput<
   paymentToken: CreateJobPostingInstructionDataArgs['paymentToken'];
   jobType: CreateJobPostingInstructionDataArgs['jobType'];
   experienceLevel: CreateJobPostingInstructionDataArgs['experienceLevel'];
-};
+}
 
 export function getCreateJobPostingInstruction<
   TAccountJobPosting extends string,
@@ -369,10 +369,10 @@ export function getCreateJobPostingInstruction<
   return instruction;
 }
 
-export type ParsedCreateJobPostingInstruction<
+export interface ParsedCreateJobPostingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     jobPosting: TAccountMetas[0];
@@ -380,7 +380,7 @@ export type ParsedCreateJobPostingInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateJobPostingInstructionData;
-};
+}
 
 export function parseCreateJobPostingInstruction<
   TProgram extends string,

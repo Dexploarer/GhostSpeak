@@ -26,19 +26,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type WorkDeliverySubmittedEvent = {
+export interface WorkDeliverySubmittedEvent {
   workOrder: Address;
   provider: Address;
   ipfsHash: string;
   timestamp: bigint;
-};
+}
 
-export type WorkDeliverySubmittedEventArgs = {
+export interface WorkDeliverySubmittedEventArgs {
   workOrder: Address;
   provider: Address;
   ipfsHash: string;
   timestamp: number | bigint;
-};
+}
 
 export function getWorkDeliverySubmittedEventEncoder(): Encoder<WorkDeliverySubmittedEventArgs> {
   return getStructEncoder([

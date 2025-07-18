@@ -17,12 +17,12 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type IncentiveConfig = {
+export interface IncentiveConfig {
   referralBonus: number;
   performanceBonus: number;
   loyaltyMultiplier: number;
   earlyBirdDiscount: number;
-};
+}
 
 export type IncentiveConfigArgs = IncentiveConfig;
 

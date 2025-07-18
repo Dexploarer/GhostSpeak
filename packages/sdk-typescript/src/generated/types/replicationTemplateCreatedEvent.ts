@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type ReplicationTemplateCreatedEvent = {
+export interface ReplicationTemplateCreatedEvent {
   template: Address;
   agent: Address;
   owner: Address;
   fee: bigint;
   timestamp: bigint;
-};
+}
 
-export type ReplicationTemplateCreatedEventArgs = {
+export interface ReplicationTemplateCreatedEventArgs {
   template: Address;
   agent: Address;
   owner: Address;
   fee: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getReplicationTemplateCreatedEventEncoder(): Encoder<ReplicationTemplateCreatedEventArgs> {
   return getStructEncoder([

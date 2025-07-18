@@ -27,7 +27,4 @@ export * from './generated/index.js'
 // Export program constants
 export { GHOSTSPEAK_PROGRAM_ID } from './constants.js'
 
-// Export core client only (avoid type conflicts)
-export { GhostSpeakClient as SimplifiedClient } from './core/client-simple.js'
-export * from './core/instructions/index.js'
-export * from './core/utils.js'
+// All necessary functionality is available through the modern client implementation above

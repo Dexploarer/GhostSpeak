@@ -11,18 +11,21 @@ import {
   getPurchaseServiceInstruction,
   getApplyToJobInstruction,
   getAcceptJobApplicationInstruction,
-  fetchServiceListing,
-  fetchJobPosting,
   type ServiceListing,
   type JobPosting
 } from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
 
-// Parameters for service listing creation
-export interface CreateServiceListingParams {
-  title: string
-  description: string
-  price: bigint
+import type {
+  BaseCreationParams,
+  BaseTokenParams,
+  BaseTimeParams,
+  BaseFilterParams,
+  BaseInstructionParams
+} from './BaseInterfaces.js'
+
+// Service listing creation parameters
+export interface CreateServiceListingParams extends BaseCreationParams, BaseTokenParams {
   tokenMint: Address
   serviceType: string
   paymentToken: Address
@@ -31,12 +34,8 @@ export interface CreateServiceListingParams {
   listingId: string
 }
 
-// Parameters for job posting creation
-export interface CreateJobPostingParams {
-  title: string
-  description: string
-  budget: bigint
-  deadline: bigint
+// Job posting creation parameters
+export interface CreateJobPostingParams extends BaseCreationParams, BaseTokenParams, BaseTimeParams {
   requirements: string[]
   skillsNeeded: string[]
   budgetMin: bigint
@@ -44,6 +43,28 @@ export interface CreateJobPostingParams {
   paymentToken: Address
   jobType: string
   experienceLevel: string
+}
+
+// Service purchase parameters
+export interface PurchaseServiceParams extends BaseInstructionParams {
+  serviceListingAddress: Address
+  listingId: bigint
+  quantity: number
+  requirements: string[]
+  customInstructions: string
+  deadline: bigint
+}
+
+// Job application parameters
+export interface JobApplicationParams extends BaseInstructionParams {
+  jobPostingAddress: Address
+  agentAddress: Address
+  coverLetter: string
+  proposedPrice: bigint
+  estimatedDuration: number
+  proposedRate: bigint
+  estimatedDelivery: bigint
+  portfolioItems: string[]
 }
 
 /**
@@ -64,23 +85,25 @@ export class MarketplaceInstructions extends BaseInstructions {
     userRegistryAddress: Address,
     params: CreateServiceListingParams
   ): Promise<string> {
-    const instruction = getCreateServiceListingInstruction({
-      serviceListing: serviceListingAddress,
-      agent: agentAddress,
-      userRegistry: userRegistryAddress,
-      creator: signer as unknown as TransactionSigner,
-      title: params.title,
-      description: params.description,
-      price: params.price,
-      tokenMint: params.tokenMint,
-      serviceType: params.serviceType,
-      paymentToken: params.paymentToken,
-      estimatedDelivery: params.estimatedDelivery,
-      tags: params.tags,
-      listingId: params.listingId
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getCreateServiceListingInstruction({
+        serviceListing: serviceListingAddress,
+        agent: agentAddress,
+        userRegistry: userRegistryAddress,
+        creator: signer as unknown as TransactionSigner,
+        title: params.title,
+        description: params.description,
+        price: params.amount,
+        tokenMint: params.tokenMint,
+        serviceType: params.serviceType,
+        paymentToken: params.paymentToken,
+        estimatedDelivery: params.estimatedDelivery,
+        tags: params.tags,
+        listingId: params.listingId
+      }),
+      signer as unknown as TransactionSigner,
+      'service listing creation'
+    )
   }
 
   /**
@@ -113,14 +136,14 @@ export class MarketplaceInstructions extends BaseInstructions {
         agent: listing.agent,
         owner: signer as unknown as TransactionSigner,
         agentPubkey: listing.agent,
-        serviceEndpoint: updateData.title || `${listing.title} - ${listing.description}`,
+        serviceEndpoint: updateData.title ?? `${listing.title} - ${listing.description}`,
         isActive: listing.isActive,
         lastUpdated: BigInt(Math.floor(Date.now() / 1000)),
-        metadataUri: updateData.description || listing.description,
-        capabilities: updateData.tags || []
+        metadataUri: updateData.description ?? listing.description,
+        capabilities: updateData.tags ?? []
       })
       
-      return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      return await this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
     } catch (error) {
       console.warn('Failed to update service listing via agent service:', error)
       throw new Error('Service listing updates require implementing updateServiceListing instruction in the smart contract, or create a new listing')
@@ -131,85 +154,76 @@ export class MarketplaceInstructions extends BaseInstructions {
    * Purchase a service
    */
   async purchaseService(
-    signer: KeyPairSigner,
     servicePurchaseAddress: Address,
-    serviceListingAddress: Address,
-    listingId: bigint,
-    quantity: number,
-    requirements: string[],
-    customInstructions: string,
-    deadline: bigint
+    params: PurchaseServiceParams
   ): Promise<string> {
-    const instruction = getPurchaseServiceInstruction({
-      servicePurchase: servicePurchaseAddress,
-      serviceListing: serviceListingAddress,
-      buyer: signer as unknown as TransactionSigner,
-      listingId,
-      quantity,
-      requirements,
-      customInstructions,
-      deadline
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getPurchaseServiceInstruction({
+        servicePurchase: servicePurchaseAddress,
+        serviceListing: params.serviceListingAddress,
+        buyer: params.signer as unknown as TransactionSigner,
+        listingId: params.listingId,
+        quantity: params.quantity,
+        requirements: params.requirements,
+        customInstructions: params.customInstructions,
+        deadline: params.deadline
+      }),
+      params.signer as unknown as TransactionSigner,
+      'service purchase'
+    )
   }
 
   /**
    * Create a new job posting
    */
   async createJobPosting(
-    signer: KeyPairSigner,
     jobPostingAddress: Address,
     params: CreateJobPostingParams
   ): Promise<string> {
-    const instruction = getCreateJobPostingInstruction({
-      jobPosting: jobPostingAddress,
-      employer: signer as unknown as TransactionSigner,
-      title: params.title,
-      description: params.description,
-      requirements: params.requirements,
-      budget: params.budget,
-      deadline: params.deadline,
-      skillsNeeded: params.skillsNeeded,
-      budgetMin: params.budgetMin,
-      budgetMax: params.budgetMax,
-      paymentToken: params.paymentToken,
-      jobType: params.jobType,
-      experienceLevel: params.experienceLevel
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getCreateJobPostingInstruction({
+        jobPosting: jobPostingAddress,
+        employer: params.signer as unknown as TransactionSigner,
+        title: params.title,
+        description: params.description,
+        requirements: params.requirements,
+        budget: params.amount,
+        deadline: params.deadline,
+        skillsNeeded: params.skillsNeeded,
+        budgetMin: params.budgetMin,
+        budgetMax: params.budgetMax,
+        paymentToken: params.paymentToken,
+        jobType: params.jobType,
+        experienceLevel: params.experienceLevel
+      }),
+      params.signer as unknown as TransactionSigner,
+      'job posting creation'
+    )
   }
 
   /**
    * Apply to a job
    */
   async applyToJob(
-    signer: KeyPairSigner,
     jobApplicationAddress: Address,
-    jobPostingAddress: Address,
-    agentAddress: Address,
-    coverLetter: string,
-    proposedPrice: bigint,
-    estimatedDuration: number,
-    proposedRate: bigint,
-    estimatedDelivery: bigint,
-    portfolioItems: string[]
+    params: JobApplicationParams
   ): Promise<string> {
-    const instruction = getApplyToJobInstruction({
-      jobApplication: jobApplicationAddress,
-      jobPosting: jobPostingAddress,
-      agent: agentAddress,
-      agentOwner: signer as unknown as TransactionSigner,
-      coverLetter,
-      proposedPrice,
-      estimatedDuration,
-      proposedRate,
-      estimatedDelivery,
-      portfolioItems
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getApplyToJobInstruction({
+        jobApplication: jobApplicationAddress,
+        jobPosting: params.jobPostingAddress,
+        agent: params.agentAddress,
+        agentOwner: params.signer as unknown as TransactionSigner,
+        coverLetter: params.coverLetter,
+        proposedPrice: params.proposedPrice,
+        estimatedDuration: params.estimatedDuration,
+        proposedRate: params.proposedRate,
+        estimatedDelivery: params.estimatedDelivery,
+        portfolioItems: params.portfolioItems
+      }),
+      params.signer as unknown as TransactionSigner,
+      'job application'
+    )
   }
 
   /**
@@ -221,117 +235,60 @@ export class MarketplaceInstructions extends BaseInstructions {
     jobPostingAddress: Address,
     jobApplicationAddress: Address
   ): Promise<string> {
-    const instruction = getAcceptJobApplicationInstruction({
-      jobContract: jobContractAddress,
-      jobPosting: jobPostingAddress,
-      jobApplication: jobApplicationAddress,
-      employer: signer as unknown as TransactionSigner
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getAcceptJobApplicationInstruction({
+        jobContract: jobContractAddress,
+        jobPosting: jobPostingAddress,
+        jobApplication: jobApplicationAddress,
+        employer: signer as unknown as TransactionSigner
+      }),
+      signer as unknown as TransactionSigner,
+      'job application acceptance'
+    )
   }
 
   /**
    * Get a single service listing
    */
   async getServiceListing(listingAddress: Address): Promise<ServiceListing | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getServiceListingDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      const listing = await rpcClient.getAndDecodeAccount(
-        listingAddress,
-        getServiceListingDecoder(),
-        this.commitment
-      )
-      
-      return listing
-    } catch (error) {
-      console.warn('Failed to fetch service listing:', error)
-      return null
-    }
+    return this.getDecodedAccount<ServiceListing>(listingAddress, 'getServiceListingDecoder')
   }
 
   /**
    * Get all active service listings
    */
   async getServiceListings(): Promise<ServiceListing[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getServiceListingDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all service listing accounts
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getServiceListingDecoder(),
-        [], // No filters - get all listings
-        this.commitment
-      )
-      
-      // Filter only active listings
-      const activeListings = accounts
-        .map(({ data }) => data)
-        .filter(listing => listing.isActive)
-      
-      return activeListings
-    } catch (error) {
-      console.warn('Failed to fetch service listings:', error)
-      return []
-    }
+    const accounts = await this.getDecodedProgramAccounts<ServiceListing>('getServiceListingDecoder')
+    
+    // Filter only active listings
+    return accounts
+      .map(({ data }) => data)
+      .filter(listing => listing.isActive)
   }
 
   /**
    * Get all active job postings
    */
   async getJobPostings(): Promise<JobPosting[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getJobPostingDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all job posting accounts
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getJobPostingDecoder(),
-        [], // No filters - get all postings
-        this.commitment
-      )
-      
-      // Filter only active postings
-      const activePostings = accounts
-        .map(({ data }) => data)
-        .filter(posting => posting.isActive)
-      
-      return activePostings
-    } catch (error) {
-      console.warn('Failed to fetch job postings:', error)
-      return []
-    }
+    const accounts = await this.getDecodedProgramAccounts<JobPosting>('getJobPostingDecoder')
+    
+    // Filter only active postings
+    return accounts
+      .map(({ data }) => data)
+      .filter(posting => posting.isActive)
   }
 
   /**
    * Search service listings by category
    */
   async searchServicesByCategory(category: string): Promise<ServiceListing[]> {
-    try {
-      // Get all service listings first
-      const allListings = await this.getServiceListings()
-      
-      // Filter by category/service type
-      const filteredListings = allListings.filter(listing => 
-        listing.serviceType?.toLowerCase().includes(category.toLowerCase()) ||
-        listing.tags?.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
-      )
-      
-      return filteredListings
-    } catch (error) {
-      console.warn('Failed to search services by category:', error)
-      return []
-    }
+    const allListings = await this.getServiceListings()
+    
+    // Filter by category/service type
+    return allListings.filter(listing => 
+      listing.serviceType?.toLowerCase().includes(category.toLowerCase()) ||
+      listing.tags?.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
+    )
   }
 
   /**
@@ -341,21 +298,13 @@ export class MarketplaceInstructions extends BaseInstructions {
     minBudget: bigint,
     maxBudget: bigint
   ): Promise<JobPosting[]> {
-    try {
-      // Get all job postings first
-      const allPostings = await this.getJobPostings()
-      
-      // Filter by budget range
-      const filteredPostings = allPostings.filter(posting => {
-        const budget = posting.budget || 0n
-        return budget >= minBudget && budget <= maxBudget
-      })
-      
-      return filteredPostings
-    } catch (error) {
-      console.warn('Failed to search jobs by budget:', error)
-      return []
-    }
+    const allPostings = await this.getJobPostings()
+    
+    // Filter by budget range
+    return allPostings.filter(posting => {
+      const budget = posting.budget ?? 0n
+      return budget >= minBudget && budget <= maxBudget
+    })
   }
 
 }

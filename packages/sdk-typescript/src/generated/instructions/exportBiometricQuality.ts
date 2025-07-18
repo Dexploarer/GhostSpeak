@@ -62,14 +62,14 @@ export type ExportBiometricQualityInstruction<
     ]
   >;
 
-export type ExportBiometricQualityInstructionData = {
+export interface ExportBiometricQualityInstructionData {
   discriminator: ReadonlyUint8Array;
   data: BiometricQuality;
-};
+}
 
-export type ExportBiometricQualityInstructionDataArgs = {
+export interface ExportBiometricQualityInstructionDataArgs {
   data: BiometricQualityArgs;
-};
+}
 
 export function getExportBiometricQualityInstructionDataEncoder(): Encoder<ExportBiometricQualityInstructionDataArgs> {
   return transformEncoder(
@@ -101,12 +101,12 @@ export function getExportBiometricQualityInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportBiometricQualityInput<
+export interface ExportBiometricQualityInput<
   TAccountSystemProgram extends string = string,
-> = {
+> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportBiometricQualityInstructionDataArgs['data'];
-};
+}
 
 export function getExportBiometricQualityInstruction<
   TAccountSystemProgram extends string,
@@ -153,16 +153,16 @@ export function getExportBiometricQualityInstruction<
   return instruction;
 }
 
-export type ParsedExportBiometricQualityInstruction<
+export interface ParsedExportBiometricQualityInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportBiometricQualityInstructionData;
-};
+}
 
 export function parseExportBiometricQualityInstruction<
   TProgram extends string,

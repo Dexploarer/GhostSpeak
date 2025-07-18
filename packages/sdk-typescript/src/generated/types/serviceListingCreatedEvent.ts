@@ -22,19 +22,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type ServiceListingCreatedEvent = {
+export interface ServiceListingCreatedEvent {
   listing: Address;
   creator: Address;
   price: bigint;
   timestamp: bigint;
-};
+}
 
-export type ServiceListingCreatedEventArgs = {
+export interface ServiceListingCreatedEventArgs {
   listing: Address;
   creator: Address;
   price: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getServiceListingCreatedEventEncoder(): Encoder<ServiceListingCreatedEventArgs> {
   return getStructEncoder([

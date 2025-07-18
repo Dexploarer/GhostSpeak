@@ -28,35 +28,35 @@ import {
 } from '@solana/kit';
 
 /** Proposal metadata */
-export type ProposalMetadata = {
+export interface ProposalMetadata {
   /** IPFS hash for detailed proposal */
   ipfsHash: Option<string>;
   /** External references */
-  externalReferences: Array<string>;
+  externalReferences: string[];
   /** Proposal tags */
-  tags: Array<string>;
+  tags: string[];
   /** Risk assessment */
   riskAssessment: Option<string>;
   /** Impact analysis */
   impactAnalysis: Option<string>;
   /** Implementation timeline */
   implementationTimeline: Option<string>;
-};
+}
 
-export type ProposalMetadataArgs = {
+export interface ProposalMetadataArgs {
   /** IPFS hash for detailed proposal */
   ipfsHash: OptionOrNullable<string>;
   /** External references */
-  externalReferences: Array<string>;
+  externalReferences: string[];
   /** Proposal tags */
-  tags: Array<string>;
+  tags: string[];
   /** Risk assessment */
   riskAssessment: OptionOrNullable<string>;
   /** Impact analysis */
   impactAnalysis: OptionOrNullable<string>;
   /** Implementation timeline */
   implementationTimeline: OptionOrNullable<string>;
-};
+}
 
 export function getProposalMetadataEncoder(): Encoder<ProposalMetadataArgs> {
   return getStructEncoder([

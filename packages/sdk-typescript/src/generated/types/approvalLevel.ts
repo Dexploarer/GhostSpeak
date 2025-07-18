@@ -31,27 +31,27 @@ import {
 } from '.';
 
 /** Approval level configuration */
-export type ApprovalLevel = {
+export interface ApprovalLevel {
   /** Action type requiring approval */
   actionType: AuditAction;
   /** Required approvers */
-  requiredApprovers: Array<Address>;
+  requiredApprovers: Address[];
   /** Minimum approval count */
   minApprovals: number;
   /** Timeout for approval process */
   approvalTimeout: bigint;
-};
+}
 
-export type ApprovalLevelArgs = {
+export interface ApprovalLevelArgs {
   /** Action type requiring approval */
   actionType: AuditActionArgs;
   /** Required approvers */
-  requiredApprovers: Array<Address>;
+  requiredApprovers: Address[];
   /** Minimum approval count */
   minApprovals: number;
   /** Timeout for approval process */
   approvalTimeout: number | bigint;
-};
+}
 
 export function getApprovalLevelEncoder(): Encoder<ApprovalLevelArgs> {
   return getStructEncoder([

@@ -70,36 +70,13 @@ agentCommand
         s.stop('✅ Agent wallet generated')
         s.start('Registering agent on the blockchain...')
         
-        // Generate PDAs for agent registration
-        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } = await import('@solana/kit')
-        const agentId = credentials.agentId
-        
-        // Derive agent PDA using the same pattern as the generated code
-        const [agentPda] = await getProgramDerivedAddress({
-          programAddress: client.config.programId!,
-          seeds: [
-            getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])), // 'agent'
-            getAddressEncoder().encode(wallet.address),
-            addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(agentId)
-          ]
-        })
-        
-        // Derive user registry PDA using the same pattern as the generated code
-        const [userRegistryPda] = await getProgramDerivedAddress({
-          programAddress: client.config.programId!,
-          seeds: [
-            getBytesEncoder().encode(new Uint8Array([117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121])), // 'user_registry'
-            getAddressEncoder().encode(wallet.address)
-          ]
-        })
-        
         // Register the agent using SDK with all required parameters
         s.start('Registering agent on-chain (this may take a moment)...')
         
+        const agentId = credentials.agentId
+        
         const signature = await client.agent.register(
           wallet,
-          agentPda,
-          userRegistryPda,
           {
             agentType: 1, // Default agent type
             metadataUri: agentData.metadataUri || `https://ghostspeak.ai/agents/${agentId}.json`,
@@ -136,10 +113,8 @@ agentCommand
         console.log(chalk.gray(`Agent ID: ${credentials.agentId}`))
         console.log(chalk.gray(`Agent UUID: ${credentials.uuid}`))
         console.log(chalk.gray(`Agent Wallet: ${agentWallet.address.toString()}`))
-        console.log(chalk.gray(`Agent Address: ${agentPda}`))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(signature, 'devnet'))
-        console.log(chalk.cyan('Agent Account:'), getAddressExplorerUrl(agentPda, 'devnet'))
         console.log('')
         console.log(chalk.yellow('💡 Agent credentials saved to:'))
         console.log(chalk.gray(`   ~/.ghostspeak/agents/${credentials.agentId}/credentials.json`))
@@ -766,7 +741,7 @@ agentCommand
       // Verification criteria checklist
       const verificationCriteria = [
         { key: 'has_name', label: 'Has descriptive name', check: agent.name && agent.name.length >= 3 },
-        { key: 'has_endpoint', label: 'Has valid service endpoint', check: agent.serviceEndpoint && agent.serviceEndpoint.startsWith('http') },
+        { key: 'has_endpoint', label: 'Has valid service endpoint', check: agent.serviceEndpoint?.startsWith('http') },
         { key: 'has_capabilities', label: 'Lists specific capabilities', check: agent.capabilities && agent.capabilities.length > 0 },
         { key: 'has_metadata', label: 'Provides metadata URI', check: agent.metadataUri && agent.metadataUri.length > 0 },
         { key: 'recent_activity', label: 'Recent registration (< 30 days)', check: (Date.now() / 1000 - Number(agent.registeredAt)) < (30 * 24 * 60 * 60) }

@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AgentReplicatedEvent = {
+export interface AgentReplicatedEvent {
   originalAgent: Address;
   replicatedAgent: Address;
   replicator: Address;
   feePaid: bigint;
   timestamp: bigint;
-};
+}
 
-export type AgentReplicatedEventArgs = {
+export interface AgentReplicatedEventArgs {
   originalAgent: Address;
   replicatedAgent: Address;
   replicator: Address;
   feePaid: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getAgentReplicatedEventEncoder(): Encoder<AgentReplicatedEventArgs> {
   return getStructEncoder([

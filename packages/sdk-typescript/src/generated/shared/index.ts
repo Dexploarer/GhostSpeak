@@ -93,7 +93,7 @@ export function expectTransactionSigner<T extends string = string>(
  * Defines an instruction account to resolve.
  * @internal
  */
-export type ResolvedAccount<
+export interface ResolvedAccount<
   T extends string = string,
   U extends
     | Address<T>
@@ -104,18 +104,18 @@ export type ResolvedAccount<
     | ProgramDerivedAddress<T>
     | TransactionSigner<T>
     | null,
-> = {
+> {
   isWritable: boolean;
   value: U;
-};
+}
 
 /**
  * Defines an instruction that stores additional bytes on-chain.
  * @internal
  */
-export type IInstructionWithByteDelta = {
+export interface IInstructionWithByteDelta {
   byteDelta: number;
-};
+}
 
 /**
  * Get account metas and signers from resolved accounts.

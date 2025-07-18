@@ -109,18 +109,18 @@ export type RegisterAgentCompressedInstruction<
     ]
   >;
 
-export type RegisterAgentCompressedInstructionData = {
+export interface RegisterAgentCompressedInstructionData {
   discriminator: ReadonlyUint8Array;
   agentType: number;
   metadataUri: string;
   agentId: string;
-};
+}
 
-export type RegisterAgentCompressedInstructionDataArgs = {
+export interface RegisterAgentCompressedInstructionDataArgs {
   agentType: number;
   metadataUri: string;
   agentId: string;
-};
+}
 
 export function getRegisterAgentCompressedInstructionDataEncoder(): Encoder<RegisterAgentCompressedInstructionDataArgs> {
   return transformEncoder(
@@ -156,7 +156,7 @@ export function getRegisterAgentCompressedInstructionDataCodec(): Codec<
   );
 }
 
-export type RegisterAgentCompressedAsyncInput<
+export interface RegisterAgentCompressedAsyncInput<
   TAccountTreeAuthority extends string = string,
   TAccountMerkleTree extends string = string,
   TAccountUserRegistry extends string = string,
@@ -165,7 +165,7 @@ export type RegisterAgentCompressedAsyncInput<
   TAccountLogWrapper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Tree authority PDA that manages the compressed Agent tree */
   treeAuthority?: Address<TAccountTreeAuthority>;
   /** The Merkle tree account that stores compressed Agent data */
@@ -185,7 +185,7 @@ export type RegisterAgentCompressedAsyncInput<
   agentType: RegisterAgentCompressedInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentCompressedInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentCompressedInstructionDataArgs['agentId'];
-};
+}
 
 export async function getRegisterAgentCompressedInstructionAsync<
   TAccountTreeAuthority extends string,
@@ -325,7 +325,7 @@ export async function getRegisterAgentCompressedInstructionAsync<
   return instruction;
 }
 
-export type RegisterAgentCompressedInput<
+export interface RegisterAgentCompressedInput<
   TAccountTreeAuthority extends string = string,
   TAccountMerkleTree extends string = string,
   TAccountUserRegistry extends string = string,
@@ -334,7 +334,7 @@ export type RegisterAgentCompressedInput<
   TAccountLogWrapper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Tree authority PDA that manages the compressed Agent tree */
   treeAuthority: Address<TAccountTreeAuthority>;
   /** The Merkle tree account that stores compressed Agent data */
@@ -354,7 +354,7 @@ export type RegisterAgentCompressedInput<
   agentType: RegisterAgentCompressedInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentCompressedInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentCompressedInstructionDataArgs['agentId'];
-};
+}
 
 export function getRegisterAgentCompressedInstruction<
   TAccountTreeAuthority extends string,
@@ -465,10 +465,10 @@ export function getRegisterAgentCompressedInstruction<
   return instruction;
 }
 
-export type ParsedRegisterAgentCompressedInstruction<
+export interface ParsedRegisterAgentCompressedInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Tree authority PDA that manages the compressed Agent tree */
@@ -489,7 +489,7 @@ export type ParsedRegisterAgentCompressedInstruction<
     clock: TAccountMetas[7];
   };
   data: RegisterAgentCompressedInstructionData;
-};
+}
 
 export function parseRegisterAgentCompressedInstruction<
   TProgram extends string,

@@ -20,11 +20,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type IncentiveProgramCreatedEvent = {
+export interface IncentiveProgramCreatedEvent {
   program: Address;
   referralBonus: number;
   performanceBonus: number;
-};
+}
 
 export type IncentiveProgramCreatedEventArgs = IncentiveProgramCreatedEvent;
 

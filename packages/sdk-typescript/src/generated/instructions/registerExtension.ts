@@ -99,18 +99,18 @@ export type RegisterExtensionInstruction<
     ]
   >;
 
-export type RegisterExtensionInstructionData = {
+export interface RegisterExtensionInstructionData {
   discriminator: ReadonlyUint8Array;
   metadata: ExtensionMetadata;
   codeHash: string;
   revenueShare: number;
-};
+}
 
-export type RegisterExtensionInstructionDataArgs = {
+export interface RegisterExtensionInstructionDataArgs {
   metadata: ExtensionMetadataArgs;
   codeHash: string;
   revenueShare: number;
-};
+}
 
 export function getRegisterExtensionInstructionDataEncoder(): Encoder<RegisterExtensionInstructionDataArgs> {
   return transformEncoder(
@@ -143,13 +143,13 @@ export function getRegisterExtensionInstructionDataCodec(): Codec<
   );
 }
 
-export type RegisterExtensionAsyncInput<
+export interface RegisterExtensionAsyncInput<
   TAccountExtension extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountDeveloper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Extension account with collision prevention */
   extension: Address<TAccountExtension>;
   /** User registry for rate limiting and spam prevention */
@@ -163,7 +163,7 @@ export type RegisterExtensionAsyncInput<
   metadata: RegisterExtensionInstructionDataArgs['metadata'];
   codeHash: RegisterExtensionInstructionDataArgs['codeHash'];
   revenueShare: RegisterExtensionInstructionDataArgs['revenueShare'];
-};
+}
 
 export async function getRegisterExtensionInstructionAsync<
   TAccountExtension extends string,
@@ -260,13 +260,13 @@ export async function getRegisterExtensionInstructionAsync<
   return instruction;
 }
 
-export type RegisterExtensionInput<
+export interface RegisterExtensionInput<
   TAccountExtension extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountDeveloper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Extension account with collision prevention */
   extension: Address<TAccountExtension>;
   /** User registry for rate limiting and spam prevention */
@@ -280,7 +280,7 @@ export type RegisterExtensionInput<
   metadata: RegisterExtensionInstructionDataArgs['metadata'];
   codeHash: RegisterExtensionInstructionDataArgs['codeHash'];
   revenueShare: RegisterExtensionInstructionDataArgs['revenueShare'];
-};
+}
 
 export function getRegisterExtensionInstruction<
   TAccountExtension extends string,
@@ -362,10 +362,10 @@ export function getRegisterExtensionInstruction<
   return instruction;
 }
 
-export type ParsedRegisterExtensionInstruction<
+export interface ParsedRegisterExtensionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Extension account with collision prevention */
@@ -380,7 +380,7 @@ export type ParsedRegisterExtensionInstruction<
     clock: TAccountMetas[4];
   };
   data: RegisterExtensionInstructionData;
-};
+}
 
 export function parseRegisterExtensionInstruction<
   TProgram extends string,

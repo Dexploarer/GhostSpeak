@@ -62,14 +62,14 @@ export type ExportComplianceStatusInstruction<
     ]
   >;
 
-export type ExportComplianceStatusInstructionData = {
+export interface ExportComplianceStatusInstructionData {
   discriminator: ReadonlyUint8Array;
   data: ComplianceStatus;
-};
+}
 
-export type ExportComplianceStatusInstructionDataArgs = {
+export interface ExportComplianceStatusInstructionDataArgs {
   data: ComplianceStatusArgs;
-};
+}
 
 export function getExportComplianceStatusInstructionDataEncoder(): Encoder<ExportComplianceStatusInstructionDataArgs> {
   return transformEncoder(
@@ -101,12 +101,12 @@ export function getExportComplianceStatusInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportComplianceStatusInput<
+export interface ExportComplianceStatusInput<
   TAccountSystemProgram extends string = string,
-> = {
+> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportComplianceStatusInstructionDataArgs['data'];
-};
+}
 
 export function getExportComplianceStatusInstruction<
   TAccountSystemProgram extends string,
@@ -153,16 +153,16 @@ export function getExportComplianceStatusInstruction<
   return instruction;
 }
 
-export type ParsedExportComplianceStatusInstruction<
+export interface ParsedExportComplianceStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportComplianceStatusInstructionData;
-};
+}
 
 export function parseExportComplianceStatusInstruction<
   TProgram extends string,

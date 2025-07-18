@@ -24,17 +24,17 @@ import {
   type ChannelTypeArgs,
 } from '.';
 
-export type ChannelCreatedEvent = {
+export interface ChannelCreatedEvent {
   channel: Address;
   creator: Address;
   channelType: ChannelType;
-};
+}
 
-export type ChannelCreatedEventArgs = {
+export interface ChannelCreatedEventArgs {
   channel: Address;
   creator: Address;
   channelType: ChannelTypeArgs;
-};
+}
 
 export function getChannelCreatedEventEncoder(): Encoder<ChannelCreatedEventArgs> {
   return getStructEncoder([

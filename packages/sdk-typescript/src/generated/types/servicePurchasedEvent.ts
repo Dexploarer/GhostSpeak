@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type ServicePurchasedEvent = {
+export interface ServicePurchasedEvent {
   service: Address;
   buyer: Address;
   quantity: bigint;
   price: bigint;
   timestamp: bigint;
-};
+}
 
-export type ServicePurchasedEventArgs = {
+export interface ServicePurchasedEventArgs {
   service: Address;
   buyer: Address;
   quantity: number | bigint;
   price: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getServicePurchasedEventEncoder(): Encoder<ServicePurchasedEventArgs> {
   return getStructEncoder([

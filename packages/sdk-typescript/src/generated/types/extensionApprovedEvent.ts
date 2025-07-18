@@ -20,19 +20,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type ExtensionApprovedEvent = {
+export interface ExtensionApprovedEvent {
   extension: Address;
   developer: Address;
   authority: Address;
   timestamp: bigint;
-};
+}
 
-export type ExtensionApprovedEventArgs = {
+export interface ExtensionApprovedEventArgs {
   extension: Address;
   developer: Address;
   authority: Address;
   timestamp: number | bigint;
-};
+}
 
 export function getExtensionApprovedEventEncoder(): Encoder<ExtensionApprovedEventArgs> {
   return getStructEncoder([

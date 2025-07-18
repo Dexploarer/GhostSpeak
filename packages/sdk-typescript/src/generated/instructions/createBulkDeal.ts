@@ -113,30 +113,30 @@ export type CreateBulkDealInstruction<
     ]
   >;
 
-export type CreateBulkDealInstructionData = {
+export interface CreateBulkDealInstructionData {
   discriminator: ReadonlyUint8Array;
   dealId: bigint;
   dealType: DealType;
   totalVolume: number;
   totalValue: bigint;
   discountPercentage: number;
-  volumeTiers: Array<VolumeTier>;
+  volumeTiers: VolumeTier[];
   slaTerms: string;
   contractDuration: bigint;
   endDate: bigint;
-};
+}
 
-export type CreateBulkDealInstructionDataArgs = {
+export interface CreateBulkDealInstructionDataArgs {
   dealId: number | bigint;
   dealType: DealTypeArgs;
   totalVolume: number;
   totalValue: number | bigint;
   discountPercentage: number;
-  volumeTiers: Array<VolumeTierArgs>;
+  volumeTiers: VolumeTierArgs[];
   slaTerms: string;
   contractDuration: number | bigint;
   endDate: number | bigint;
-};
+}
 
 export function getCreateBulkDealInstructionDataEncoder(): Encoder<CreateBulkDealInstructionDataArgs> {
   return transformEncoder(
@@ -181,14 +181,14 @@ export function getCreateBulkDealInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateBulkDealAsyncInput<
+export interface CreateBulkDealAsyncInput<
   TAccountDeal extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCustomer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Bulk deal account with collision prevention */
   deal: Address<TAccountDeal>;
   /** Agent account with enhanced constraints */
@@ -210,7 +210,7 @@ export type CreateBulkDealAsyncInput<
   slaTerms: CreateBulkDealInstructionDataArgs['slaTerms'];
   contractDuration: CreateBulkDealInstructionDataArgs['contractDuration'];
   endDate: CreateBulkDealInstructionDataArgs['endDate'];
-};
+}
 
 export async function getCreateBulkDealInstructionAsync<
   TAccountDeal extends string,
@@ -313,14 +313,14 @@ export async function getCreateBulkDealInstructionAsync<
   return instruction;
 }
 
-export type CreateBulkDealInput<
+export interface CreateBulkDealInput<
   TAccountDeal extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCustomer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Bulk deal account with collision prevention */
   deal: Address<TAccountDeal>;
   /** Agent account with enhanced constraints */
@@ -342,7 +342,7 @@ export type CreateBulkDealInput<
   slaTerms: CreateBulkDealInstructionDataArgs['slaTerms'];
   contractDuration: CreateBulkDealInstructionDataArgs['contractDuration'];
   endDate: CreateBulkDealInstructionDataArgs['endDate'];
-};
+}
 
 export function getCreateBulkDealInstruction<
   TAccountDeal extends string,
@@ -430,10 +430,10 @@ export function getCreateBulkDealInstruction<
   return instruction;
 }
 
-export type ParsedCreateBulkDealInstruction<
+export interface ParsedCreateBulkDealInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Bulk deal account with collision prevention */
@@ -450,7 +450,7 @@ export type ParsedCreateBulkDealInstruction<
     clock: TAccountMetas[5];
   };
   data: CreateBulkDealInstructionData;
-};
+}
 
 export function parseCreateBulkDealInstruction<
   TProgram extends string,

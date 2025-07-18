@@ -9,7 +9,6 @@
  * - Error monitoring and analytics
  */
 
-import type { Signature } from '@solana/kit'
 import {
   GhostSpeakError,
   ErrorContext,
@@ -20,11 +19,7 @@ import {
   TimeoutError,
   RateLimitError,
   isRetryableError,
-  getRetryDelay,
-  createErrorWithContext,
-  logError,
-  formatErrorForUser,
-  createErrorSummary
+  createErrorWithContext
 } from '../errors/index.js'
 
 /**
@@ -44,7 +39,7 @@ export interface AdvancedRetryConfig {
   timeoutPerAttempt: number
   onRetry?: (error: Error, attempt: number, delay: number) => void | Promise<void>
   onMaxRetriesReached?: (error: Error, totalAttempts: number) => void | Promise<void>
-  onSuccess?: (result: any, totalAttempts: number) => void | Promise<void>
+  onSuccess?: <T>(result: T, totalAttempts: number) => void | Promise<void>
 }
 
 /**
@@ -100,8 +95,8 @@ export const RETRY_STRATEGIES = {
     jitterType: 'proportional' as const,
     jitterMax: 2000,
     timeoutPerAttempt: 90000,
-    retryableCategories: [ErrorCategory.NETWORK, ErrorCategory.SYSTEM],
-    nonRetryableCategories: [ErrorCategory.VALIDATION, ErrorCategory.AUTHORIZATION]
+    retryableCategories: [ErrorCategory.NETWORK, ErrorCategory.SYSTEM] as ErrorCategory[],
+    nonRetryableCategories: [ErrorCategory.VALIDATION, ErrorCategory.AUTHORIZATION] as ErrorCategory[]
   },
   
   ACCOUNT_FETCH: {
@@ -112,8 +107,8 @@ export const RETRY_STRATEGIES = {
     jitterType: 'uniform' as const,
     jitterMax: 500,
     timeoutPerAttempt: 15000,
-    retryableCategories: [ErrorCategory.NETWORK, ErrorCategory.ACCOUNT],
-    nonRetryableCategories: [ErrorCategory.VALIDATION]
+    retryableCategories: [ErrorCategory.NETWORK, ErrorCategory.ACCOUNT] as ErrorCategory[],
+    nonRetryableCategories: [ErrorCategory.VALIDATION] as ErrorCategory[]
   },
   
   RPC_CALL: {
@@ -124,8 +119,8 @@ export const RETRY_STRATEGIES = {
     jitterType: 'decorrelated' as const,
     jitterMax: 1000,
     timeoutPerAttempt: 30000,
-    retryableCategories: [ErrorCategory.NETWORK, ErrorCategory.SYSTEM],
-    nonRetryableCategories: [ErrorCategory.VALIDATION, ErrorCategory.AUTHORIZATION]
+    retryableCategories: [ErrorCategory.NETWORK, ErrorCategory.SYSTEM] as ErrorCategory[],
+    nonRetryableCategories: [ErrorCategory.VALIDATION, ErrorCategory.AUTHORIZATION] as ErrorCategory[]
   }
 } as const
 
@@ -139,7 +134,7 @@ export class AdvancedCircuitBreaker {
   private slowCallCount = 0
   private lastFailureTime = 0
   private lastSuccessTime = 0
-  private recentCalls: Array<{ timestamp: number; success: boolean; duration: number }> = []
+  private recentCalls: { timestamp: number; success: boolean; duration: number }[] = []
   private metrics: OperationMetrics
   
   constructor(
@@ -254,7 +249,7 @@ export class AdvancedCircuitBreaker {
     
     // Track error types
     const errorType = error instanceof GhostSpeakError ? error.code : error.constructor.name
-    this.metrics.errorDistribution[errorType] = (this.metrics.errorDistribution[errorType] || 0) + 1
+    this.metrics.errorDistribution[errorType] = (this.metrics.errorDistribution[errorType] ?? 0) + 1
     
     // Add to recent calls
     this.recentCalls.push({
@@ -420,9 +415,8 @@ export class AdvancedRetryHandler {
     const finalConfig = { ...this.defaultConfig, ...config }
     const circuitBreaker = this.getOrCreateCircuitBreaker(operationId, finalConfig)
     
-    let lastError: Error
+    let lastError: Error = new Error('No attempts made')
     let attempt = 0
-    const startTime = Date.now()
     
     // Initialize metrics
     if (!this.operationMetrics.has(operationId)) {
@@ -501,7 +495,7 @@ export class AdvancedRetryHandler {
     config: AdvancedRetryConfig
   ): AdvancedCircuitBreaker {
     if (!this.circuitBreakers.has(operationId)) {
-      const circuitBreakerConfig: CircuitBreakerConfig = config.circuitBreakerConfig || {
+      const circuitBreakerConfig: CircuitBreakerConfig = config.circuitBreakerConfig ?? {
         failureThreshold: 5,
         successThreshold: 3,
         timeout: 60000,
@@ -744,7 +738,7 @@ export class AdvancedRetryHandler {
    */
   getOperationMetrics(operationId?: string): OperationMetrics | Map<string, OperationMetrics> {
     if (operationId) {
-      return this.operationMetrics.get(operationId) || {
+      return this.operationMetrics.get(operationId) ?? {
         operationId,
         totalAttempts: 0,
         successCount: 0,
@@ -796,7 +790,7 @@ export class AdvancedRetryHandler {
 /**
  * Create a resilient operation wrapper with advanced error handling
  */
-export function createResilientSDKOperation<TArgs extends any[], TResult>(
+export function createResilientSDKOperation<TArgs extends unknown[], TResult>(
   operation: (...args: TArgs) => Promise<TResult>,
   operationId: string,
   config: {

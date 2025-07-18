@@ -98,20 +98,20 @@ export type VerifyAgentInstruction<
     ]
   >;
 
-export type VerifyAgentInstructionData = {
+export interface VerifyAgentInstructionData {
   discriminator: ReadonlyUint8Array;
   agentPubkey: Address;
   serviceEndpoint: string;
-  supportedCapabilities: Array<bigint>;
+  supportedCapabilities: bigint[];
   verifiedAt: bigint;
-};
+}
 
-export type VerifyAgentInstructionDataArgs = {
+export interface VerifyAgentInstructionDataArgs {
   agentPubkey: Address;
   serviceEndpoint: string;
-  supportedCapabilities: Array<number | bigint>;
+  supportedCapabilities: (number | bigint)[];
   verifiedAt: number | bigint;
-};
+}
 
 export function getVerifyAgentInstructionDataEncoder(): Encoder<VerifyAgentInstructionDataArgs> {
   return transformEncoder(
@@ -152,13 +152,13 @@ export function getVerifyAgentInstructionDataCodec(): Codec<
   );
 }
 
-export type VerifyAgentAsyncInput<
+export interface VerifyAgentAsyncInput<
   TAccountAgentVerification extends string = string,
   TAccountAgent extends string = string,
   TAccountVerifier extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Verification account with enhanced PDA security */
   agentVerification?: Address<TAccountAgentVerification>;
   /** Agent account being verified (enhanced validation) */
@@ -173,7 +173,7 @@ export type VerifyAgentAsyncInput<
   serviceEndpoint: VerifyAgentInstructionDataArgs['serviceEndpoint'];
   supportedCapabilities: VerifyAgentInstructionDataArgs['supportedCapabilities'];
   verifiedAt: VerifyAgentInstructionDataArgs['verifiedAt'];
-};
+}
 
 export async function getVerifyAgentInstructionAsync<
   TAccountAgentVerification extends string,
@@ -275,13 +275,13 @@ export async function getVerifyAgentInstructionAsync<
   return instruction;
 }
 
-export type VerifyAgentInput<
+export interface VerifyAgentInput<
   TAccountAgentVerification extends string = string,
   TAccountAgent extends string = string,
   TAccountVerifier extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Verification account with enhanced PDA security */
   agentVerification: Address<TAccountAgentVerification>;
   /** Agent account being verified (enhanced validation) */
@@ -296,7 +296,7 @@ export type VerifyAgentInput<
   serviceEndpoint: VerifyAgentInstructionDataArgs['serviceEndpoint'];
   supportedCapabilities: VerifyAgentInstructionDataArgs['supportedCapabilities'];
   verifiedAt: VerifyAgentInstructionDataArgs['verifiedAt'];
-};
+}
 
 export function getVerifyAgentInstruction<
   TAccountAgentVerification extends string,
@@ -381,10 +381,10 @@ export function getVerifyAgentInstruction<
   return instruction;
 }
 
-export type ParsedVerifyAgentInstruction<
+export interface ParsedVerifyAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Verification account with enhanced PDA security */
@@ -399,7 +399,7 @@ export type ParsedVerifyAgentInstruction<
     clock: TAccountMetas[4];
   };
   data: VerifyAgentInstructionData;
-};
+}
 
 export function parseVerifyAgentInstruction<
   TProgram extends string,

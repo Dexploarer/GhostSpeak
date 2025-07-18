@@ -423,12 +423,12 @@ export class DisputeAnalyticsUtils {
    */
   static analyzeDisputeReasons<T extends { reason: string }>(
     disputes: T[]
-  ): Array<{ reason: string; count: number; percentage: number }> {
+  ): { reason: string; count: number; percentage: number }[] {
     const reasonCounts = new Map<string, number>()
 
     disputes.forEach(dispute => {
       const reason = dispute.reason.toLowerCase().trim()
-      reasonCounts.set(reason, (reasonCounts.get(reason) || 0) + 1)
+      reasonCounts.set(reason, (reasonCounts.get(reason) ?? 0) + 1)
     })
 
     const total = disputes.length
@@ -465,7 +465,7 @@ export class DisputeAnalyticsUtils {
     disputes.forEach(dispute => {
       if (!dispute.moderator) return
 
-      const current = moderatorStats.get(dispute.moderator) || {
+      const current = moderatorStats.get(dispute.moderator) ?? {
         totalCases: 0,
         resolvedCases: 0,
         averageResolutionTime: 0n,
@@ -497,19 +497,19 @@ export class DisputeAnalyticsUtils {
   static getDisputeTrends<T extends { createdAt: bigint; status: DisputeStatus }>(
     disputes: T[],
     periodDays: number = 30
-  ): Array<{
+  ): {
     date: string
     filed: number
     resolved: number
     active: number
-  }> {
+  }[] {
     const now = DisputeTimeUtils.now()
-    const trends: Array<{
+    const trends: {
       date: string
       filed: number
       resolved: number
       active: number
-    }> = []
+    }[] = []
 
     for (let i = periodDays; i >= 0; i--) {
       const dayStart = now - BigInt(i * 86400)
@@ -659,7 +659,7 @@ export class EvidenceUtils {
     const grouped = new Map<Address, DisputeEvidence[]>()
     
     evidence.forEach(ev => {
-      const existing = grouped.get(ev.submitter) || []
+      const existing = grouped.get(ev.submitter) ?? []
       existing.push(ev)
       grouped.set(ev.submitter, existing)
     })
@@ -685,7 +685,7 @@ export class EvidenceUtils {
     
     const evidenceTypes = new Map<string, number>()
     evidence.forEach(ev => {
-      evidenceTypes.set(ev.evidenceType, (evidenceTypes.get(ev.evidenceType) || 0) + 1)
+      evidenceTypes.set(ev.evidenceType, (evidenceTypes.get(ev.evidenceType) ?? 0) + 1)
     })
     
     return {

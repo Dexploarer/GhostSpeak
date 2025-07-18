@@ -28,21 +28,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type DisputeResolvedEvent = {
+export interface DisputeResolvedEvent {
   dispute: Address;
   arbitrator: Address;
   awardToComplainant: boolean;
   resolution: string;
   timestamp: bigint;
-};
+}
 
-export type DisputeResolvedEventArgs = {
+export interface DisputeResolvedEventArgs {
   dispute: Address;
   arbitrator: Address;
   awardToComplainant: boolean;
   resolution: string;
   timestamp: number | bigint;
-};
+}
 
 export function getDisputeResolvedEventEncoder(): Encoder<DisputeResolvedEventArgs> {
   return getStructEncoder([

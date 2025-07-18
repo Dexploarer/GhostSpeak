@@ -31,7 +31,7 @@ import {
 } from '.';
 
 /** Vote delegation information */
-export type DelegationInfo = {
+export interface DelegationInfo {
   /** Original delegator */
   delegator: Address;
   /** Delegation timestamp */
@@ -40,9 +40,9 @@ export type DelegationInfo = {
   scope: DelegationScope;
   /** Delegation expiry */
   expiresAt: Option<bigint>;
-};
+}
 
-export type DelegationInfoArgs = {
+export interface DelegationInfoArgs {
   /** Original delegator */
   delegator: Address;
   /** Delegation timestamp */
@@ -51,7 +51,7 @@ export type DelegationInfoArgs = {
   scope: DelegationScopeArgs;
   /** Delegation expiry */
   expiresAt: OptionOrNullable<number | bigint>;
-};
+}
 
 export function getDelegationInfoEncoder(): Encoder<DelegationInfoArgs> {
   return getStructEncoder([

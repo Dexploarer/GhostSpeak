@@ -36,7 +36,7 @@ import {
 } from '.';
 
 /** Geographic region definition */
-export type GeographicRegion = {
+export interface GeographicRegion {
   /** Region name */
   name: string;
   /** Latitude boundaries */
@@ -45,9 +45,9 @@ export type GeographicRegion = {
   longitudeRange: LongitudeRange;
   /** Radius for circular regions (meters) */
   radius: Option<number>;
-};
+}
 
-export type GeographicRegionArgs = {
+export interface GeographicRegionArgs {
   /** Region name */
   name: string;
   /** Latitude boundaries */
@@ -56,7 +56,7 @@ export type GeographicRegionArgs = {
   longitudeRange: LongitudeRangeArgs;
   /** Radius for circular regions (meters) */
   radius: OptionOrNullable<number>;
-};
+}
 
 export function getGeographicRegionEncoder(): Encoder<GeographicRegionArgs> {
   return getStructEncoder([

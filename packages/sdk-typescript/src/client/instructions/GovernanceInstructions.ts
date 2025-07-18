@@ -5,9 +5,9 @@
  * including multi-signature wallets, proposals, voting, and RBAC with real Web3.js v2 execution.
  */
 
-import type { Address, Signature, TransactionSigner, IInstruction } from '@solana/kit'
+import type { Address, Signature, TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
-import type { GhostSpeakConfig, Commitment } from '../../types/index.js'
+import type { GhostSpeakConfig, EmergencyConfig } from '../../types/index.js'
 import { 
   getCreateMultisigInstruction,
   getInitializeGovernanceProposalInstruction,
@@ -20,18 +20,11 @@ import {
   type MultisigConfig,
   type ExecutionParams,
   type Role,
-  type VotingResults,
-  type ProposalMetadata,
-  type QuorumRequirements,
   getMultisigDecoder,
   getGovernanceProposalDecoder,
   getRbacConfigDecoder
 } from '../../generated/index.js'
-import { 
-  createTransactionResult, 
-  logTransactionDetails,
-  type TransactionResult 
-} from '../../utils/transaction-urls.js'
+import { type TransactionResult } from '../../utils/transaction-urls.js'
 
 // Enhanced types for better developer experience
 export interface CreateMultisigParams {
@@ -88,7 +81,7 @@ export interface MultisigSummary {
   createdAt: bigint
   updatedAt: bigint
   config: MultisigConfig
-  emergencyConfig?: any // Not in generated types
+  emergencyConfig?: EmergencyConfig // Emergency configuration
   pendingTransactions: number
   isActive: boolean
 }
@@ -121,7 +114,7 @@ export interface GovernanceAnalytics {
   passedProposals: number
   failedProposals: number
   averageVotingParticipation: number
-  topSigners: Array<{ signer: Address; multisigCount: number; transactionCount: number }>
+  topSigners: { signer: Address; multisigCount: number; transactionCount: number }[]
   proposalSuccess: { rate: number; averageVotes: bigint }
 }
 
@@ -502,7 +495,7 @@ export class GovernanceInstructions extends BaseInstructions {
       createdAt: multisig.createdAt,
       updatedAt: multisig.updatedAt,
       config: multisig.config,
-      emergencyConfig: {} as any, // Not in the generated type
+      emergencyConfig: undefined, // Not in the generated type
       pendingTransactions: 0, // Not in the generated type
       isActive: multisig.signers.length >= multisig.threshold
     }
@@ -537,8 +530,8 @@ export class GovernanceInstructions extends BaseInstructions {
       proposalId: proposal.proposalId,
       proposalType: proposal.proposalType,
       proposer: proposal.proposer,
-      title: proposal.title || 'Untitled Proposal',
-      description: proposal.description || 'No description',
+      title: proposal.title ?? 'Untitled Proposal',
+      description: proposal.description ?? 'No description',
       status: proposal.status,
       createdAt: proposal.createdAt,
       votingEndsAt,
@@ -778,7 +771,7 @@ export class GovernanceInstructions extends BaseInstructions {
       createdAt: multisig.createdAt,
       updatedAt: multisig.updatedAt,
       config: multisig.config,
-      emergencyConfig: {} as any,
+      emergencyConfig: undefined,
       pendingTransactions: 0,
       isActive: multisig.signers.length >= multisig.threshold
     }
@@ -801,8 +794,8 @@ export class GovernanceInstructions extends BaseInstructions {
       proposalId: proposal.proposalId,
       proposalType: proposal.proposalType,
       proposer: proposal.proposer,
-      title: proposal.title || 'Untitled Proposal',
-      description: proposal.description || 'No description',
+      title: proposal.title ?? 'Untitled Proposal',
+      description: proposal.description ?? 'No description',
       status: proposal.status,
       createdAt: proposal.createdAt,
       votingEndsAt,

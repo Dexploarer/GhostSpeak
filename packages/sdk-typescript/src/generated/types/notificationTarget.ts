@@ -32,23 +32,23 @@ import {
 } from '.';
 
 /** Notification targets */
-export type NotificationTarget = {
+export interface NotificationTarget {
   /** Target type */
   targetType: NotificationTargetType;
   /** Target identifier */
   targetId: string;
   /** Notification priority */
   priority: NotificationPriority;
-};
+}
 
-export type NotificationTargetArgs = {
+export interface NotificationTargetArgs {
   /** Target type */
   targetType: NotificationTargetTypeArgs;
   /** Target identifier */
   targetId: string;
   /** Notification priority */
   priority: NotificationPriorityArgs;
-};
+}
 
 export function getNotificationTargetEncoder(): Encoder<NotificationTargetArgs> {
   return getStructEncoder([

@@ -18,12 +18,12 @@ import {
 } from '@solana/kit';
 
 /** Longitude range for geographic constraints */
-export type LongitudeRange = {
+export interface LongitudeRange {
   /** Minimum longitude */
   min: number;
   /** Maximum longitude */
   max: number;
-};
+}
 
 export type LongitudeRangeArgs = LongitudeRange;
 

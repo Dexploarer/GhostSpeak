@@ -21,9 +21,9 @@ import {
   type AuditContextArgs,
 } from '.';
 
-export type AuditContextExport = { data: AuditContext };
+export interface AuditContextExport { data: AuditContext }
 
-export type AuditContextExportArgs = { data: AuditContextArgs };
+export interface AuditContextExportArgs { data: AuditContextArgs }
 
 export function getAuditContextExportEncoder(): Encoder<AuditContextExportArgs> {
   return getStructEncoder([['data', getAuditContextEncoder()]]);

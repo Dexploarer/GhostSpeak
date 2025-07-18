@@ -178,16 +178,16 @@ auctionCommand
         const auctionEndTime = BigInt(Math.floor(Date.now() / 1000) + (parseInt(duration) * 60 * 60))
         
         // Generate PDAs for auction creation
-        const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } = await import('@solana/kit')
         const auctionId = `${serviceTitle.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
         
         // Derive auction PDA
         const [auctionPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
           seeds: [
-            new TextEncoder().encode('auction'),
+            getBytesEncoder().encode(new Uint8Array([97, 117, 99, 116, 105, 111, 110])), // 'auction'
             getAddressEncoder().encode(wallet.address),
-            new TextEncoder().encode(auctionId)
+            addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(auctionId)
           ]
         })
         
@@ -195,7 +195,7 @@ auctionCommand
         const [userRegistryPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
           seeds: [
-            new TextEncoder().encode('user_registry'),
+            getBytesEncoder().encode(new Uint8Array([117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121])), // 'user_registry'
             getAddressEncoder().encode(wallet.address)
           ]
         })
@@ -437,11 +437,11 @@ auctionCommand
       
       try {
         // Derive user registry PDA for the bidder
-        const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
+        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder } = await import('@solana/kit')
         const [userRegistryPda] = await getProgramDerivedAddress({
           programAddress: client.config.programId!,
           seeds: [
-            new TextEncoder().encode('user_registry'),
+            getBytesEncoder().encode(new Uint8Array([117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121])), // 'user_registry'
             getAddressEncoder().encode(wallet.address)
           ]
         })

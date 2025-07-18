@@ -89,28 +89,28 @@ export type CreateWorkOrderInstruction<
     ]
   >;
 
-export type CreateWorkOrderInstructionData = {
+export interface CreateWorkOrderInstructionData {
   discriminator: ReadonlyUint8Array;
   orderId: bigint;
   provider: Address;
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   paymentAmount: bigint;
   paymentToken: Address;
   deadline: bigint;
-};
+}
 
-export type CreateWorkOrderInstructionDataArgs = {
+export interface CreateWorkOrderInstructionDataArgs {
   orderId: number | bigint;
   provider: Address;
   title: string;
   description: string;
-  requirements: Array<string>;
+  requirements: string[];
   paymentAmount: number | bigint;
   paymentToken: Address;
   deadline: number | bigint;
-};
+}
 
 export function getCreateWorkOrderInstructionDataEncoder(): Encoder<CreateWorkOrderInstructionDataArgs> {
   return transformEncoder(
@@ -161,12 +161,12 @@ export function getCreateWorkOrderInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateWorkOrderInput<
+export interface CreateWorkOrderInput<
   TAccountWorkOrder extends string = string,
   TAccountClient extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   workOrder: Address<TAccountWorkOrder>;
   client: TransactionSigner<TAccountClient>;
   clock?: Address<TAccountClock>;
@@ -179,7 +179,7 @@ export type CreateWorkOrderInput<
   paymentAmount: CreateWorkOrderInstructionDataArgs['paymentAmount'];
   paymentToken: CreateWorkOrderInstructionDataArgs['paymentToken'];
   deadline: CreateWorkOrderInstructionDataArgs['deadline'];
-};
+}
 
 export function getCreateWorkOrderInstruction<
   TAccountWorkOrder extends string,
@@ -255,10 +255,10 @@ export function getCreateWorkOrderInstruction<
   return instruction;
 }
 
-export type ParsedCreateWorkOrderInstruction<
+export interface ParsedCreateWorkOrderInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     workOrder: TAccountMetas[0];
@@ -267,7 +267,7 @@ export type ParsedCreateWorkOrderInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: CreateWorkOrderInstructionData;
-};
+}
 
 export function parseCreateWorkOrderInstruction<
   TProgram extends string,

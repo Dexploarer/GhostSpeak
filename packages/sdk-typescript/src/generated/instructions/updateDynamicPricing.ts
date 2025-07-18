@@ -70,7 +70,7 @@ export type UpdateDynamicPricingInstruction<
     ]
   >;
 
-export type UpdateDynamicPricingInstructionData = {
+export interface UpdateDynamicPricingInstructionData {
   discriminator: ReadonlyUint8Array;
   currentDemand: bigint;
   peakDemand: bigint;
@@ -78,16 +78,16 @@ export type UpdateDynamicPricingInstructionData = {
   demandTrend: number;
   demandVolatility: number;
   lastUpdated: bigint;
-};
+}
 
-export type UpdateDynamicPricingInstructionDataArgs = {
+export interface UpdateDynamicPricingInstructionDataArgs {
   currentDemand: number | bigint;
   peakDemand: number | bigint;
   averageDemand: number | bigint;
   demandTrend: number;
   demandVolatility: number;
   lastUpdated: number | bigint;
-};
+}
 
 export function getUpdateDynamicPricingInstructionDataEncoder(): Encoder<UpdateDynamicPricingInstructionDataArgs> {
   return transformEncoder(
@@ -129,10 +129,10 @@ export function getUpdateDynamicPricingInstructionDataCodec(): Codec<
   );
 }
 
-export type UpdateDynamicPricingInput<
+export interface UpdateDynamicPricingInput<
   TAccountEngine extends string = string,
   TAccountUpdater extends string = string,
-> = {
+> {
   engine: Address<TAccountEngine>;
   updater: TransactionSigner<TAccountUpdater>;
   currentDemand: UpdateDynamicPricingInstructionDataArgs['currentDemand'];
@@ -141,7 +141,7 @@ export type UpdateDynamicPricingInput<
   demandTrend: UpdateDynamicPricingInstructionDataArgs['demandTrend'];
   demandVolatility: UpdateDynamicPricingInstructionDataArgs['demandVolatility'];
   lastUpdated: UpdateDynamicPricingInstructionDataArgs['lastUpdated'];
-};
+}
 
 export function getUpdateDynamicPricingInstruction<
   TAccountEngine extends string,
@@ -192,17 +192,17 @@ export function getUpdateDynamicPricingInstruction<
   return instruction;
 }
 
-export type ParsedUpdateDynamicPricingInstruction<
+export interface ParsedUpdateDynamicPricingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     engine: TAccountMetas[0];
     updater: TAccountMetas[1];
   };
   data: UpdateDynamicPricingInstructionData;
-};
+}
 
 export function parseUpdateDynamicPricingInstruction<
   TProgram extends string,

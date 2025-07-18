@@ -32,7 +32,7 @@ import {
 } from '.';
 
 /** Constraint condition definition */
-export type ConstraintCondition = {
+export interface ConstraintCondition {
   /** Attribute name */
   attribute: string;
   /** Condition operator */
@@ -41,9 +41,9 @@ export type ConstraintCondition = {
   value: string;
   /** Value type */
   valueType: ValueType;
-};
+}
 
-export type ConstraintConditionArgs = {
+export interface ConstraintConditionArgs {
   /** Attribute name */
   attribute: string;
   /** Condition operator */
@@ -52,7 +52,7 @@ export type ConstraintConditionArgs = {
   value: string;
   /** Value type */
   valueType: ValueTypeArgs;
-};
+}
 
 export function getConstraintConditionEncoder(): Encoder<ConstraintConditionArgs> {
   return getStructEncoder([

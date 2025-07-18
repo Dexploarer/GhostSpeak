@@ -26,17 +26,17 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AuditTrailInitializedEvent = {
+export interface AuditTrailInitializedEvent {
   entity: Address;
   entityType: string;
   timestamp: bigint;
-};
+}
 
-export type AuditTrailInitializedEventArgs = {
+export interface AuditTrailInitializedEventArgs {
   entity: Address;
   entityType: string;
   timestamp: number | bigint;
-};
+}
 
 export function getAuditTrailInitializedEventEncoder(): Encoder<AuditTrailInitializedEventArgs> {
   return getStructEncoder([

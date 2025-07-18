@@ -21,9 +21,9 @@ import {
   type ActionArgs,
 } from '.';
 
-export type ActionExport = { data: Action };
+export interface ActionExport { data: Action }
 
-export type ActionExportArgs = { data: ActionArgs };
+export interface ActionExportArgs { data: ActionArgs }
 
 export function getActionExportEncoder(): Encoder<ActionExportArgs> {
   return getStructEncoder([['data', getActionEncoder()]]);

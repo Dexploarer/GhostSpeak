@@ -24,19 +24,19 @@ import {
   type MessageTypeArgs,
 } from '.';
 
-export type MessageSentEvent = {
+export interface MessageSentEvent {
   message: Address;
   channel: Address;
   sender: Address;
   messageType: MessageType;
-};
+}
 
-export type MessageSentEventArgs = {
+export interface MessageSentEventArgs {
   message: Address;
   channel: Address;
   sender: Address;
   messageType: MessageTypeArgs;
-};
+}
 
 export function getMessageSentEventEncoder(): Encoder<MessageSentEventArgs> {
   return getStructEncoder([

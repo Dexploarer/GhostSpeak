@@ -10,7 +10,6 @@ import {
   ErrorContext,
   ErrorCategory,
   ErrorSeverity,
-  createErrorSummary,
   logError
 } from '../errors/index.js'
 import type { OperationMetrics } from './error-recovery.js'
@@ -41,7 +40,7 @@ export interface ErrorStatistics {
   errorsByOperation: Record<string, number>
   averageErrorRate: number
   recentErrors: ErrorEvent[]
-  topErrors: Array<{ code: string; count: number; percentage: number }>
+  topErrors: { code: string; count: number; percentage: number }[]
   timeWindow: { start: number; end: number }
 }
 
@@ -144,7 +143,7 @@ export class ErrorMonitor {
   private performanceMetrics = new Map<string, PerformanceMetrics>()
   private healthStatus = new Map<string, HealthStatus>()
   private reportingBuffer: ErrorEvent[] = []
-  private flushTimer?: NodeJS.Timeout
+  private flushTimer?: ReturnType<typeof setTimeout>
   
   constructor(private config: MonitoringConfig = DEFAULT_MONITORING_CONFIG) {
     if (this.config.reporting.enabled && this.config.reporting.flushInterval > 0) {
@@ -179,7 +178,13 @@ export class ErrorMonitor {
         ...context
       },
       metrics,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      userAgent: (() => {
+        if (typeof globalThis === 'undefined') return undefined
+        const global = globalThis as { navigator?: { userAgent?: string } }
+        const nav = global.navigator
+        if (!nav || typeof nav !== 'object') return undefined
+        return typeof nav.userAgent === 'string' ? nav.userAgent : undefined
+      })(),
       sessionId: this.getSessionId(),
       userId: this.getUserId()
     }
@@ -218,7 +223,7 @@ export class ErrorMonitor {
    * Get error statistics for a time window
    */
   getStatistics(timeWindow?: { start: number; end: number }): ErrorStatistics {
-    const window = timeWindow || {
+    const window = timeWindow ?? {
       start: Date.now() - (60 * 60 * 1000), // Last hour
       end: Date.now()
     }
@@ -253,8 +258,8 @@ export class ErrorMonitor {
       
       stats.errorsByCategory[error.category]++
       stats.errorsBySeverity[error.severity]++
-      stats.errorsByCode[error.code] = (stats.errorsByCode[error.code] || 0) + 1
-      stats.errorsByOperation[operationId] = (stats.errorsByOperation[operationId] || 0) + 1
+      stats.errorsByCode[error.code] = (stats.errorsByCode[error.code] ?? 0) + 1
+      stats.errorsByOperation[operationId] = (stats.errorsByOperation[operationId] ?? 0) + 1
     })
     
     // Calculate error rate
@@ -279,7 +284,7 @@ export class ErrorMonitor {
    */
   getPerformanceMetrics(operationId?: string): PerformanceMetrics | Map<string, PerformanceMetrics> {
     if (operationId) {
-      return this.performanceMetrics.get(operationId) || this.createDefaultMetrics(operationId)
+      return this.performanceMetrics.get(operationId) ?? this.createDefaultMetrics(operationId)
     }
     
     return new Map(this.performanceMetrics)
@@ -290,7 +295,7 @@ export class ErrorMonitor {
    */
   getHealthStatus(operationId?: string): HealthStatus | Map<string, HealthStatus> {
     if (operationId) {
-      return this.healthStatus.get(operationId) || this.createDefaultHealth(operationId)
+      return this.healthStatus.get(operationId) ?? this.createDefaultHealth(operationId)
     }
     
     return new Map(this.healthStatus)
@@ -417,7 +422,7 @@ export class ErrorMonitor {
     error: GhostSpeakError,
     operationMetrics?: OperationMetrics
   ): void {
-    const existing = this.performanceMetrics.get(operationId) || this.createDefaultMetrics(operationId)
+    const existing = this.performanceMetrics.get(operationId) ?? this.createDefaultMetrics(operationId)
     
     if (operationMetrics) {
       existing.averageLatency = operationMetrics.averageLatency
@@ -437,9 +442,9 @@ export class ErrorMonitor {
     const recentEvents = this.getRecentErrors(operationId, 20)
     
     const errorRate = recentEvents.length > 0 ? recentEvents.length / 20 : 0
-    const avgLatency = metrics?.averageLatency || 0
-    const availability = metrics?.successRate || 1
-    const throughput = metrics?.throughput || 0
+    const avgLatency = metrics?.averageLatency ?? 0
+    const availability = metrics?.successRate ?? 1
+    const throughput = metrics?.throughput ?? 0
     
     // Calculate health score (0-100)
     let score = 100
@@ -499,7 +504,13 @@ export class ErrorMonitor {
     const batch = this.reportingBuffer.splice(0, this.config.reporting.batchSize)
     
     try {
-      await fetch(this.config.reporting.endpoint, {
+      // Check if fetch is available (browser or Node 18+)
+      if (typeof globalThis.fetch === 'undefined') {
+        console.warn('fetch is not available in this environment')
+        return
+      }
+      
+      await globalThis.fetch(this.config.reporting.endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

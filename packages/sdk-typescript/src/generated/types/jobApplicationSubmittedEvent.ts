@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type JobApplicationSubmittedEvent = {
+export interface JobApplicationSubmittedEvent {
   application: Address;
   jobPosting: Address;
   agent: Address;
   proposedRate: bigint;
   timestamp: bigint;
-};
+}
 
-export type JobApplicationSubmittedEventArgs = {
+export interface JobApplicationSubmittedEventArgs {
   application: Address;
   jobPosting: Address;
   agent: Address;
   proposedRate: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getJobApplicationSubmittedEventEncoder(): Encoder<JobApplicationSubmittedEventArgs> {
   return getStructEncoder([

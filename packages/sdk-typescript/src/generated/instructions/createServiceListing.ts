@@ -103,7 +103,7 @@ export type CreateServiceListingInstruction<
     ]
   >;
 
-export type CreateServiceListingInstructionData = {
+export interface CreateServiceListingInstructionData {
   discriminator: ReadonlyUint8Array;
   title: string;
   description: string;
@@ -112,11 +112,11 @@ export type CreateServiceListingInstructionData = {
   serviceType: string;
   paymentToken: Address;
   estimatedDelivery: bigint;
-  tags: Array<string>;
+  tags: string[];
   listingId: string;
-};
+}
 
-export type CreateServiceListingInstructionDataArgs = {
+export interface CreateServiceListingInstructionDataArgs {
   title: string;
   description: string;
   price: number | bigint;
@@ -124,9 +124,9 @@ export type CreateServiceListingInstructionDataArgs = {
   serviceType: string;
   paymentToken: Address;
   estimatedDelivery: number | bigint;
-  tags: Array<string>;
+  tags: string[];
   listingId: string;
-};
+}
 
 export function getCreateServiceListingInstructionDataEncoder(): Encoder<CreateServiceListingInstructionDataArgs> {
   return transformEncoder(
@@ -182,14 +182,14 @@ export function getCreateServiceListingInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateServiceListingAsyncInput<
+export interface CreateServiceListingAsyncInput<
   TAccountServiceListing extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Service listing account with enhanced PDA security */
   serviceListing?: Address<TAccountServiceListing>;
   /** Agent account with ownership validation */
@@ -211,7 +211,7 @@ export type CreateServiceListingAsyncInput<
   estimatedDelivery: CreateServiceListingInstructionDataArgs['estimatedDelivery'];
   tags: CreateServiceListingInstructionDataArgs['tags'];
   listingId: CreateServiceListingInstructionDataArgs['listingId'];
-};
+}
 
 export async function getCreateServiceListingInstructionAsync<
   TAccountServiceListing extends string,
@@ -331,14 +331,14 @@ export async function getCreateServiceListingInstructionAsync<
   return instruction;
 }
 
-export type CreateServiceListingInput<
+export interface CreateServiceListingInput<
   TAccountServiceListing extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Service listing account with enhanced PDA security */
   serviceListing: Address<TAccountServiceListing>;
   /** Agent account with ownership validation */
@@ -360,7 +360,7 @@ export type CreateServiceListingInput<
   estimatedDelivery: CreateServiceListingInstructionDataArgs['estimatedDelivery'];
   tags: CreateServiceListingInstructionDataArgs['tags'];
   listingId: CreateServiceListingInstructionDataArgs['listingId'];
-};
+}
 
 export function getCreateServiceListingInstruction<
   TAccountServiceListing extends string,
@@ -448,10 +448,10 @@ export function getCreateServiceListingInstruction<
   return instruction;
 }
 
-export type ParsedCreateServiceListingInstruction<
+export interface ParsedCreateServiceListingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Service listing account with enhanced PDA security */
@@ -468,7 +468,7 @@ export type ParsedCreateServiceListingInstruction<
     clock: TAccountMetas[5];
   };
   data: CreateServiceListingInstructionData;
-};
+}
 
 export function parseCreateServiceListingInstruction<
   TProgram extends string,

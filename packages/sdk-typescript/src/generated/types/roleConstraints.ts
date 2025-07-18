@@ -50,7 +50,7 @@ import {
 } from '.';
 
 /** Constraints applied to roles */
-export type RoleConstraints = {
+export interface RoleConstraints {
   /** Time-based constraints */
   timeConstraints: Option<TimeConstraints>;
   /** Location-based constraints */
@@ -60,14 +60,14 @@ export type RoleConstraints = {
   /** Session-based constraints */
   sessionConstraints: Option<SessionConstraints>;
   /** Segregation of duties constraints */
-  sodConstraints: Array<SodConstraint>;
+  sodConstraints: SodConstraint[];
   /** Maximum concurrent sessions */
   maxConcurrentSessions: Option<number>;
   /** Role activation requirements */
-  activationRequirements: Array<ActivationRequirement>;
-};
+  activationRequirements: ActivationRequirement[];
+}
 
-export type RoleConstraintsArgs = {
+export interface RoleConstraintsArgs {
   /** Time-based constraints */
   timeConstraints: OptionOrNullable<TimeConstraintsArgs>;
   /** Location-based constraints */
@@ -77,12 +77,12 @@ export type RoleConstraintsArgs = {
   /** Session-based constraints */
   sessionConstraints: OptionOrNullable<SessionConstraintsArgs>;
   /** Segregation of duties constraints */
-  sodConstraints: Array<SodConstraintArgs>;
+  sodConstraints: SodConstraintArgs[];
   /** Maximum concurrent sessions */
   maxConcurrentSessions: OptionOrNullable<number>;
   /** Role activation requirements */
-  activationRequirements: Array<ActivationRequirementArgs>;
-};
+  activationRequirements: ActivationRequirementArgs[];
+}
 
 export function getRoleConstraintsEncoder(): Encoder<RoleConstraintsArgs> {
   return getStructEncoder([

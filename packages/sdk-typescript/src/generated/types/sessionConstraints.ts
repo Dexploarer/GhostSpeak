@@ -20,7 +20,7 @@ import {
 } from '@solana/kit';
 
 /** Session-based access constraints */
-export type SessionConstraints = {
+export interface SessionConstraints {
   /** Maximum session duration */
   maxSessionDuration: bigint;
   /** Idle timeout */
@@ -33,9 +33,9 @@ export type SessionConstraints = {
   deviceFingerprinting: boolean;
   /** Session encryption required */
   sessionEncryption: boolean;
-};
+}
 
-export type SessionConstraintsArgs = {
+export interface SessionConstraintsArgs {
   /** Maximum session duration */
   maxSessionDuration: number | bigint;
   /** Idle timeout */
@@ -48,7 +48,7 @@ export type SessionConstraintsArgs = {
   deviceFingerprinting: boolean;
   /** Session encryption required */
   sessionEncryption: boolean;
-};
+}
 
 export function getSessionConstraintsEncoder(): Encoder<SessionConstraintsArgs> {
   return getStructEncoder([

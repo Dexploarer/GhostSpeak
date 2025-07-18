@@ -65,7 +65,7 @@ export function getAuditTrailDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(AUDIT_TRAIL_DISCRIMINATOR);
 }
 
-export type AuditTrail = {
+export interface AuditTrail {
   discriminator: ReadonlyUint8Array;
   /** Authority that can manage this audit trail */
   authority: Address;
@@ -78,18 +78,18 @@ export type AuditTrail = {
   /** Version for compatibility */
   version: number;
   /** Audit entries (immutable log) */
-  entries: Array<AuditEntry>;
+  entries: AuditEntry[];
   /** Trail configuration */
   config: AuditConfig;
   /** Compliance status */
   complianceStatus: ComplianceStatus;
   /** Hash chain for integrity verification */
-  hashChain: Array<ReadonlyUint8Array>;
+  hashChain: ReadonlyUint8Array[];
   /** Reserved space for future extensions */
   reserved: ReadonlyUint8Array;
-};
+}
 
-export type AuditTrailArgs = {
+export interface AuditTrailArgs {
   /** Authority that can manage this audit trail */
   authority: Address;
   /** Unique identifier for this audit trail */
@@ -101,16 +101,16 @@ export type AuditTrailArgs = {
   /** Version for compatibility */
   version: number;
   /** Audit entries (immutable log) */
-  entries: Array<AuditEntryArgs>;
+  entries: AuditEntryArgs[];
   /** Trail configuration */
   config: AuditConfigArgs;
   /** Compliance status */
   complianceStatus: ComplianceStatusArgs;
   /** Hash chain for integrity verification */
-  hashChain: Array<ReadonlyUint8Array>;
+  hashChain: ReadonlyUint8Array[];
   /** Reserved space for future extensions */
   reserved: ReadonlyUint8Array;
-};
+}
 
 export function getAuditTrailEncoder(): Encoder<AuditTrailArgs> {
   return transformEncoder(
@@ -187,7 +187,7 @@ export async function fetchMaybeAuditTrail<TAddress extends string = string>(
 
 export async function fetchAllAuditTrail(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<AuditTrail>[]> {
   const maybeAccounts = await fetchAllMaybeAuditTrail(rpc, addresses, config);
@@ -197,7 +197,7 @@ export async function fetchAllAuditTrail(
 
 export async function fetchAllMaybeAuditTrail(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<AuditTrail>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

@@ -6,12 +6,9 @@
  */
 
 import type { Address } from '@solana/kit'
-import { getAddressEncoder, getProgramDerivedAddress } from '@solana/kit'
+import { getAddressEncoder, getProgramDerivedAddress, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } from '@solana/kit'
 import {
-  TrendDirection,
-  ReportType,
-  type AnalyticsDashboard,
-  type MarketAnalytics
+  ReportType
 } from '../generated/index.js'
 
 // Define missing types locally
@@ -69,7 +66,7 @@ export async function deriveDashboardPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('dashboard'),
+      getBytesEncoder().encode(new Uint8Array([100, 97, 115, 104, 98, 111, 97, 114, 100])), // 'dashboard'
       getAddressEncoder().encode(owner),
       new Uint8Array(new BigUint64Array([dashboardId]).buffer)
     ]
@@ -87,8 +84,8 @@ export async function deriveMarketAnalyticsPda(
   const [pda] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      new TextEncoder().encode('market_analytics'),
-      new TextEncoder().encode(market)
+      getBytesEncoder().encode(new Uint8Array([109, 97, 114, 107, 101, 116, 95, 97, 110, 97, 108, 121, 116, 105, 99, 115])), // 'market_analytics'
+      addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(market)
     ]
   })
   return pda
@@ -106,14 +103,14 @@ export class MetricsAggregator {
     metrics: PerformanceMetrics[],
     periodSeconds: number = 3600 // Default 1 hour
   ): {
-    periods: Array<{
+    periods: {
       startTime: bigint
       endTime: bigint
       avgResponseTime: number
       totalTransactions: number
       successRate: number
       avgThroughput: number
-    }>
+    }[]
   } {
     if (metrics.length === 0) return { periods: [] }
 
@@ -216,7 +213,7 @@ export class MetricsAggregator {
     values: number[],
     threshold: number = 2 // Number of standard deviations
   ): {
-    anomalies: Array<{ index: number; value: number; deviation: number }>
+    anomalies: { index: number; value: number; deviation: number }[]
     stats: { mean: number; stdDev: number }
   } {
     if (values.length === 0) {
@@ -232,7 +229,7 @@ export class MetricsAggregator {
     const stdDev = Math.sqrt(variance)
 
     // Find anomalies
-    const anomalies: Array<{ index: number; value: number; deviation: number }> = []
+    const anomalies: { index: number; value: number; deviation: number }[] = []
     
     values.forEach((value, index) => {
       const deviation = Math.abs(value - mean) / stdDev
@@ -512,7 +509,7 @@ Hourly Breakdown Available
    */
   static generateCSV<T extends Record<string, any>>(
     data: T[],
-    columns: Array<{ key: keyof T; label: string }>
+    columns: { key: keyof T; label: string }[]
   ): string {
     if (data.length === 0) return ''
 
@@ -530,7 +527,7 @@ Hourly Breakdown Available
         if (typeof value === 'bigint') {
           return value.toString()
         }
-        return value?.toString() || ''
+        return value?.toString() ?? ''
       }).join(',')
     )
 
@@ -635,11 +632,11 @@ export class DashboardUtils {
    * Generate dashboard layout configuration
    */
   static generateLayoutConfig(
-    widgets: Array<{ type: string; priority: number; size: 'small' | 'medium' | 'large' }>
+    widgets: { type: string; priority: number; size: 'small' | 'medium' | 'large' }[]
   ): {
-    grid: Array<{ widget: string; position: { x: number; y: number; w: number; h: number } }>
+    grid: { widget: string; position: { x: number; y: number; w: number; h: number } }[]
   } {
-    const grid: Array<{ widget: string; position: { x: number; y: number; w: number; h: number } }> = []
+    const grid: { widget: string; position: { x: number; y: number; w: number; h: number } }[] = []
     
     // Sort by priority
     const sorted = [...widgets].sort((a, b) => b.priority - a.priority)

@@ -77,12 +77,12 @@ export type ManageAgentStatusInstruction<
     ]
   >;
 
-export type ManageAgentStatusInstructionData = {
+export interface ManageAgentStatusInstructionData {
   discriminator: ReadonlyUint8Array;
   newStatus: boolean;
-};
+}
 
-export type ManageAgentStatusInstructionDataArgs = { newStatus: boolean };
+export interface ManageAgentStatusInstructionDataArgs { newStatus: boolean }
 
 export function getManageAgentStatusInstructionDataEncoder(): Encoder<ManageAgentStatusInstructionDataArgs> {
   return transformEncoder(
@@ -111,11 +111,11 @@ export function getManageAgentStatusInstructionDataCodec(): Codec<
   );
 }
 
-export type ManageAgentStatusAsyncInput<
+export interface ManageAgentStatusAsyncInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Agent account with strict validation */
   agent?: Address<TAccountAgent>;
   /** Owner authority */
@@ -123,7 +123,7 @@ export type ManageAgentStatusAsyncInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   newStatus: ManageAgentStatusInstructionDataArgs['newStatus'];
-};
+}
 
 export async function getManageAgentStatusInstructionAsync<
   TAccountAgent extends string,
@@ -200,11 +200,11 @@ export async function getManageAgentStatusInstructionAsync<
   return instruction;
 }
 
-export type ManageAgentStatusInput<
+export interface ManageAgentStatusInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Agent account with strict validation */
   agent: Address<TAccountAgent>;
   /** Owner authority */
@@ -212,7 +212,7 @@ export type ManageAgentStatusInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   newStatus: ManageAgentStatusInstructionDataArgs['newStatus'];
-};
+}
 
 export function getManageAgentStatusInstruction<
   TAccountAgent extends string,
@@ -274,10 +274,10 @@ export function getManageAgentStatusInstruction<
   return instruction;
 }
 
-export type ParsedManageAgentStatusInstruction<
+export interface ParsedManageAgentStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with strict validation */
@@ -288,7 +288,7 @@ export type ParsedManageAgentStatusInstruction<
     clock: TAccountMetas[2];
   };
   data: ManageAgentStatusInstructionData;
-};
+}
 
 export function parseManageAgentStatusInstruction<
   TProgram extends string,

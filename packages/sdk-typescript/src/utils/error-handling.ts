@@ -1,19 +1,10 @@
-import type { Signature } from '@solana/kit'
 import { 
   GhostSpeakError, 
   ErrorContext, 
   ErrorCategory, 
   ErrorSeverity,
   NetworkError,
-  TransactionError,
-  AccountNotFoundError,
-  ValidationError,
-  TimeoutError,
-  RateLimitError,
-  isRetryableError,
-  getRetryDelay,
-  createErrorWithContext,
-  logError
+  ValidationError
 } from '../errors/index.js'
 
 /**
@@ -29,7 +20,10 @@ export {
   AccountNotFoundError,
   ValidationError,
   TimeoutError,
-  RateLimitError,
+  RateLimitError
+} from '../errors/index.js'
+
+export type {
   ErrorContext,
   ErrorCategory,
   ErrorSeverity
@@ -146,7 +140,7 @@ export class RetryHandler {
     operation: () => Promise<T>,
     context?: string
   ): Promise<T> {
-    let lastError: Error
+    let lastError: Error = new Error('No attempts made')
     
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
       try {
@@ -182,7 +176,9 @@ export class RetryHandler {
     throw new GhostSpeakError(
       `Operation failed after ${this.config.maxRetries + 1} attempts`,
       'MAX_RETRIES_EXCEEDED',
-      lastError
+      ErrorCategory.SYSTEM,
+      ErrorSeverity.HIGH,
+      { cause: lastError }
     )
   }
 
@@ -194,7 +190,7 @@ export class RetryHandler {
     
     return this.config.retryableErrors.some(retryableError => 
       errorMessage.includes(retryableError.toLowerCase())
-    ) || this.isNetworkError(error)
+    ) ?? this.isNetworkError(error)
   }
 
   /**
@@ -247,7 +243,9 @@ export class CircuitBreaker {
       } else {
         throw new GhostSpeakError(
           'Circuit breaker is OPEN - too many recent failures',
-          'CIRCUIT_BREAKER_OPEN'
+          'CIRCUIT_BREAKER_OPEN',
+          ErrorCategory.SYSTEM,
+          ErrorSeverity.MEDIUM
         )
       }
     }
@@ -309,7 +307,7 @@ export class TimeoutHandler {
       promise,
       new Promise<T>((_, reject) => {
         setTimeout(() => {
-          reject(new GhostSpeakError(errorMessage, 'TIMEOUT'))
+          reject(new GhostSpeakError(errorMessage, 'TIMEOUT', ErrorCategory.NETWORK, ErrorSeverity.MEDIUM))
         }, timeoutMs)
       })
     ])
@@ -321,7 +319,7 @@ export class TimeoutHandler {
  */
 export function setupGlobalErrorHandling(): void {
   // Handle unhandled promise rejections
-  process.on('unhandledRejection', (reason, promise) => {
+  process.on('unhandledRejection', (reason) => {
     console.error('Unhandled Promise Rejection:', reason)
     // Don't exit the process, but log the error
   })
@@ -337,19 +335,12 @@ export function setupGlobalErrorHandling(): void {
 /**
  * Error context for better debugging
  */
-export interface ErrorContext {
-  operation: string
-  address?: string
-  signature?: string
-  instruction?: string
-  timestamp: number
-  metadata?: Record<string, any>
-}
+// ErrorContext is imported from '../errors/index.js' above
 
 /**
  * Enhanced error wrapper with context
  */
-export function wrapWithErrorContext<T extends any[], R>(
+export function wrapWithErrorContext<T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
   context: Omit<ErrorContext, 'timestamp'>
 ): (...args: T) => Promise<R> {
@@ -360,7 +351,9 @@ export function wrapWithErrorContext<T extends any[], R>(
       const enhancedError = new GhostSpeakError(
         `${context.operation}: ${(error as Error).message}`,
         'ENHANCED_ERROR',
-        error as Error
+        ErrorCategory.SYSTEM,
+        ErrorSeverity.MEDIUM,
+        { cause: error as Error }
       )
       
       // Add context to error for debugging

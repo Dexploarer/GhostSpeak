@@ -93,7 +93,7 @@ escrowCommand
         const orderId = BigInt(Date.now())
         
         // Generate PDA for work order using manual derivation (SDK function has bug)
-        const { getProgramDerivedAddress, getU64Encoder } = await import('@solana/kit')
+        const { getProgramDerivedAddress, getU64Encoder, getBytesEncoder } = await import('@solana/kit')
         
         let workOrderPda: any
         try {
@@ -101,7 +101,7 @@ escrowCommand
           const [pda] = await getProgramDerivedAddress({
             programAddress: client.config.programId!,
             seeds: [
-              new TextEncoder().encode('work_order'),  // b"work_order"
+              getBytesEncoder().encode(new Uint8Array([119, 111, 114, 107, 95, 111, 114, 100, 101, 114])),  // 'work_order'
               getAddressEncoder().encode(wallet.address), // client.key().as_ref()
               getU64Encoder().encode(orderId) // &order_id.to_le_bytes()
             ]

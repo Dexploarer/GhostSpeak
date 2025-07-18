@@ -5,9 +5,9 @@
  * including creation, bidding, monitoring, and settlement with real Web3.js v2 execution.
  */
 
-import type { Address, Signature, TransactionSigner, IInstruction } from '@solana/kit'
+import type { Address, Signature, TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
-import type { GhostSpeakConfig, Commitment } from '../../types/index.js'
+import type { GhostSpeakConfig } from '../../types/index.js'
 import { 
   getCreateServiceAuctionInstruction,
   getPlaceAuctionBidInstruction,
@@ -17,11 +17,11 @@ import {
   getAuctionMarketplaceDecoder,
   type AuctionMarketplace
 } from '../../generated/index.js'
-import { 
-  createTransactionResult, 
-  logTransactionDetails,
-  type TransactionResult 
-} from '../../utils/transaction-urls.js'
+import { type TransactionResult } from '../../utils/transaction-urls.js'
+import type {
+  BaseInstructionParams,
+  BaseTimeParams
+} from './BaseInterfaces.js'
 
 // Enhanced types for better developer experience
 export interface AuctionData {
@@ -35,7 +35,7 @@ export interface AuctionData {
   totalBids: number
 }
 
-export interface CreateAuctionParams {
+export interface CreateAuctionParams extends BaseInstructionParams, BaseTimeParams {
   auctionData: {
     auctionType: AuctionType
     startingPrice: bigint
@@ -47,9 +47,13 @@ export interface CreateAuctionParams {
   agent: Address
 }
 
-export interface PlaceBidParams {
+export interface PlaceBidParams extends BaseInstructionParams {
   auction: Address
   bidAmount: bigint
+}
+
+export interface FinalizeAuctionParams extends BaseInstructionParams {
+  auction: Address
 }
 
 export interface AuctionFilter {
@@ -97,7 +101,7 @@ export interface AuctionAnalytics {
   totalVolume: bigint
   averageBidCount: number
   averageAuctionDuration: bigint
-  topBidders: Array<{ bidder: Address; totalBids: number; totalVolume: bigint }>
+  topBidders: { bidder: Address; totalBids: number; totalVolume: bigint }[]
 }
 
 /**
@@ -147,7 +151,6 @@ export class AuctionInstructions extends BaseInstructions {
    * ```
    */
   async createServiceAuction(
-    creator: TransactionSigner,
     auctionPda: Address,
     userRegistry: Address,
     params: CreateAuctionParams
@@ -161,35 +164,32 @@ export class AuctionInstructions extends BaseInstructions {
     // Validate parameters
     this.validateCreateAuctionParams(params)
 
-    // Build instruction
-    const instruction = getCreateServiceAuctionInstruction({
-      auction: auctionPda,
-      agent: params.agent,
-      userRegistry,
-      creator,
-      systemProgram: '11111111111111111111111111111112' as Address,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
-      auctionType: params.auctionData.auctionType,
-      startingPrice: params.auctionData.startingPrice,
-      reservePrice: params.auctionData.reservePrice,
-      currentBid: params.auctionData.startingPrice,
-      currentBidder: null,
-      auctionEndTime: params.auctionData.auctionEndTime,
-      minimumBidIncrement: params.auctionData.minimumBidIncrement,
-      totalBids: 0
-    })
-
-    const signature = await this.sendTransaction([instruction], [creator])
-    
-    console.log(`✅ Service auction created with signature: ${signature}`)
-    return signature
+    return this.executeInstruction(
+      () => getCreateServiceAuctionInstruction({
+        auction: auctionPda,
+        agent: params.agent,
+        userRegistry,
+        creator: params.signer as unknown as TransactionSigner,
+        systemProgram: '11111111111111111111111111111112' as Address,
+        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        auctionType: params.auctionData.auctionType,
+        startingPrice: params.auctionData.startingPrice,
+        reservePrice: params.auctionData.reservePrice,
+        currentBid: params.auctionData.startingPrice,
+        currentBidder: null,
+        auctionEndTime: params.auctionData.auctionEndTime,
+        minimumBidIncrement: params.auctionData.minimumBidIncrement,
+        totalBids: 0
+      }),
+      params.signer as unknown as TransactionSigner,
+      'service auction creation'
+    )
   }
 
   /**
    * Create auction with full transaction details and URLs
    */
   async createServiceAuctionWithDetails(
-    creator: TransactionSigner,
     auctionPda: Address,
     userRegistry: Address,
     params: CreateAuctionParams
@@ -198,24 +198,26 @@ export class AuctionInstructions extends BaseInstructions {
 
     this.validateCreateAuctionParams(params)
 
-    const instruction = getCreateServiceAuctionInstruction({
-      auction: auctionPda,
-      agent: params.agent,
-      userRegistry,
-      creator,
-      systemProgram: '11111111111111111111111111111112' as Address,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
-      auctionType: params.auctionData.auctionType,
-      startingPrice: params.auctionData.startingPrice,
-      reservePrice: params.auctionData.reservePrice,
-      currentBid: params.auctionData.startingPrice,
-      currentBidder: null,
-      auctionEndTime: params.auctionData.auctionEndTime,
-      minimumBidIncrement: params.auctionData.minimumBidIncrement,
-      totalBids: 0
-    })
-
-    return this.sendTransactionWithDetails([instruction], [creator])
+    return this.executeInstructionWithDetails(
+      () => getCreateServiceAuctionInstruction({
+        auction: auctionPda,
+        agent: params.agent,
+        userRegistry,
+        creator: params.signer as unknown as TransactionSigner,
+        systemProgram: '11111111111111111111111111111112' as Address,
+        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        auctionType: params.auctionData.auctionType,
+        startingPrice: params.auctionData.startingPrice,
+        reservePrice: params.auctionData.reservePrice,
+        currentBid: params.auctionData.startingPrice,
+        currentBidder: null,
+        auctionEndTime: params.auctionData.auctionEndTime,
+        minimumBidIncrement: params.auctionData.minimumBidIncrement,
+        totalBids: 0
+      }),
+      params.signer as unknown as TransactionSigner,
+      'service auction creation'
+    )
   }
 
   // =====================================================
@@ -248,67 +250,63 @@ export class AuctionInstructions extends BaseInstructions {
    * ```
    */
   async placeAuctionBid(
-    bidder: TransactionSigner,
-    auction: Address,
     userRegistry: Address,
     params: PlaceBidParams
   ): Promise<Signature> {
     console.log('💰 Placing auction bid...')
-    console.log(`   Auction: ${auction}`)
+    console.log(`   Auction: ${params.auction}`)
     console.log(`   Bid Amount: ${params.bidAmount} lamports`)
 
     // Validate bid
-    const auctionData = await this.getAuction(auction)
+    const auctionData = await this.getAuction(params.auction)
     if (!auctionData) {
       throw new Error('Auction not found')
     }
 
     this.validateBidParams(params, auctionData)
 
-    // Build instruction
-    const instruction = getPlaceAuctionBidInstruction({
-      auction,
-      userRegistry,
-      bidder,
-      systemProgram: '11111111111111111111111111111112' as Address,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
-      bidAmount: params.bidAmount
-    })
-
-    const signature = await this.sendTransaction([instruction], [bidder])
-    
-    console.log(`✅ Auction bid placed with signature: ${signature}`)
-    return signature
+    return this.executeInstruction(
+      () => getPlaceAuctionBidInstruction({
+        auction: params.auction,
+        userRegistry,
+        bidder: params.signer as unknown as TransactionSigner,
+        systemProgram: '11111111111111111111111111111112' as Address,
+        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        bidAmount: params.bidAmount
+      }),
+      params.signer as unknown as TransactionSigner,
+      'auction bid placement'
+    )
   }
 
   /**
    * Place bid with detailed transaction results
    */
   async placeAuctionBidWithDetails(
-    bidder: TransactionSigner,
-    auction: Address,
     userRegistry: Address,
     params: PlaceBidParams
   ): Promise<TransactionResult> {
     console.log('💰 Placing auction bid with detailed results...')
 
-    const auctionData = await this.getAuction(auction)
+    const auctionData = await this.getAuction(params.auction)
     if (!auctionData) {
       throw new Error('Auction not found')
     }
 
     this.validateBidParams(params, auctionData)
 
-    const instruction = getPlaceAuctionBidInstruction({
-      auction,
-      userRegistry,
-      bidder,
-      systemProgram: '11111111111111111111111111111112' as Address,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
-      bidAmount: params.bidAmount
-    })
-
-    return this.sendTransactionWithDetails([instruction], [bidder])
+    return this.executeInstructionWithDetails(
+      () => getPlaceAuctionBidInstruction({
+        auction: params.auction,
+        userRegistry,
+        bidder: params.signer as unknown as TransactionSigner,
+        systemProgram: '11111111111111111111111111111112' as Address,
+        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        bidAmount: params.bidAmount
+      }),
+      params.signer as unknown as TransactionSigner,
+      'auction bid placement'
+    )
   }
 
   // =====================================================
@@ -333,57 +331,51 @@ export class AuctionInstructions extends BaseInstructions {
    * )
    * ```
    */
-  async finalizeAuction(
-    authority: TransactionSigner,
-    auction: Address
-  ): Promise<Signature> {
+  async finalizeAuction(params: FinalizeAuctionParams): Promise<Signature> {
     console.log('🏁 Finalizing auction...')
-    console.log(`   Auction: ${auction}`)
+    console.log(`   Auction: ${params.auction}`)
 
     // Validate auction can be finalized
-    const auctionData = await this.getAuction(auction)
+    const auctionData = await this.getAuction(params.auction)
     if (!auctionData) {
       throw new Error('Auction not found')
     }
 
     this.validateAuctionCanBeFinalized(auctionData)
 
-    // Build instruction
-    const instruction = getFinalizeAuctionInstruction({
-      auction,
-      authority,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address
-    })
-
-    const signature = await this.sendTransaction([instruction], [authority])
-    
-    console.log(`✅ Auction finalized with signature: ${signature}`)
-    return signature
+    return this.executeInstruction(
+      () => getFinalizeAuctionInstruction({
+        auction: params.auction,
+        authority: params.signer as unknown as TransactionSigner,
+        clock: 'SysvarC1ock11111111111111111111111111111111' as Address
+      }),
+      params.signer as unknown as TransactionSigner,
+      'auction finalization'
+    )
   }
 
   /**
    * Finalize auction with detailed transaction results
    */
-  async finalizeAuctionWithDetails(
-    authority: TransactionSigner,
-    auction: Address
-  ): Promise<TransactionResult> {
+  async finalizeAuctionWithDetails(params: FinalizeAuctionParams): Promise<TransactionResult> {
     console.log('🏁 Finalizing auction with detailed results...')
 
-    const auctionData = await this.getAuction(auction)
+    const auctionData = await this.getAuction(params.auction)
     if (!auctionData) {
       throw new Error('Auction not found')
     }
 
     this.validateAuctionCanBeFinalized(auctionData)
 
-    const instruction = getFinalizeAuctionInstruction({
-      auction,
-      authority,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address
-    })
-
-    return this.sendTransactionWithDetails([instruction], [authority])
+    return this.executeInstructionWithDetails(
+      () => getFinalizeAuctionInstruction({
+        auction: params.auction,
+        authority: params.signer as unknown as TransactionSigner,
+        clock: 'SysvarC1ock11111111111111111111111111111111' as Address
+      }),
+      params.signer as unknown as TransactionSigner,
+      'auction finalization'
+    )
   }
 
   // =====================================================
@@ -397,21 +389,7 @@ export class AuctionInstructions extends BaseInstructions {
    * @returns Auction account data or null if not found
    */
   async getAuction(auctionAddress: Address): Promise<AuctionMarketplace | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      const auction = await rpcClient.getAndDecodeAccount(
-        auctionAddress,
-        getAuctionMarketplaceDecoder(),
-        this.commitment
-      )
-      
-      return auction
-    } catch (error) {
-      console.warn(`Failed to fetch auction ${auctionAddress}:`, error)
-      return null
-    }
+    return this.getDecodedAccount<AuctionMarketplace>(auctionAddress, 'getAuctionMarketplaceDecoder')
   }
 
   /**
@@ -476,30 +454,16 @@ export class AuctionInstructions extends BaseInstructions {
   async listAuctions(filter?: AuctionFilter, limit: number = 50): Promise<AuctionSummary[]> {
     console.log('📋 Listing auctions...')
     
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all auction marketplace accounts
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getAuctionMarketplaceDecoder(),
-        [], // No RPC filters - filtering client-side
-        this.commitment
-      )
-      
-      // Convert to summaries and apply filters
-      let auctions = accounts
-        .map(({ address, data }) => this.auctionToSummary(address, data))
-        .filter(summary => this.applyAuctionFilter(summary, filter))
-        .slice(0, limit)
-      
-      console.log(`✅ Found ${auctions.length} auctions`)
-      return auctions
-    } catch (error) {
-      console.warn('Failed to list auctions:', error)
-      return []
-    }
+    const accounts = await this.getDecodedProgramAccounts<AuctionMarketplace>('getAuctionMarketplaceDecoder')
+    
+    // Convert to summaries and apply filters
+    const auctions = accounts
+      .map(({ address, data }) => this.auctionToSummary(address, data))
+      .filter(summary => this.applyAuctionFilter(summary, filter))
+      .slice(0, limit)
+    
+    console.log(`✅ Found ${auctions.length} auctions`)
+    return auctions
   }
 
   /**
@@ -606,7 +570,7 @@ export class AuctionInstructions extends BaseInstructions {
 
     const currentPrice = auction.currentPrice
     const increment = auction.minimumBidIncrement
-    const timeRemaining = auction.timeRemaining || 0n
+    const timeRemaining = auction.timeRemaining ?? 0n
 
     switch (strategy) {
       case 'conservative':

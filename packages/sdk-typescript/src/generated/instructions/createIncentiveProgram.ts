@@ -81,14 +81,14 @@ export type CreateIncentiveProgramInstruction<
     ]
   >;
 
-export type CreateIncentiveProgramInstructionData = {
+export interface CreateIncentiveProgramInstructionData {
   discriminator: ReadonlyUint8Array;
   config: IncentiveConfig;
-};
+}
 
-export type CreateIncentiveProgramInstructionDataArgs = {
+export interface CreateIncentiveProgramInstructionDataArgs {
   config: IncentiveConfigArgs;
-};
+}
 
 export function getCreateIncentiveProgramInstructionDataEncoder(): Encoder<CreateIncentiveProgramInstructionDataArgs> {
   return transformEncoder(
@@ -120,16 +120,16 @@ export function getCreateIncentiveProgramInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateIncentiveProgramAsyncInput<
+export interface CreateIncentiveProgramAsyncInput<
   TAccountProgram extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   program?: Address<TAccountProgram>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateIncentiveProgramInstructionDataArgs['config'];
-};
+}
 
 export async function getCreateIncentiveProgramInstructionAsync<
   TAccountProgram extends string,
@@ -211,16 +211,16 @@ export async function getCreateIncentiveProgramInstructionAsync<
   return instruction;
 }
 
-export type CreateIncentiveProgramInput<
+export interface CreateIncentiveProgramInput<
   TAccountProgram extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   program: Address<TAccountProgram>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateIncentiveProgramInstructionDataArgs['config'];
-};
+}
 
 export function getCreateIncentiveProgramInstruction<
   TAccountProgram extends string,
@@ -286,10 +286,10 @@ export function getCreateIncentiveProgramInstruction<
   return instruction;
 }
 
-export type ParsedCreateIncentiveProgramInstruction<
+export interface ParsedCreateIncentiveProgramInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     program: TAccountMetas[0];
@@ -297,7 +297,7 @@ export type ParsedCreateIncentiveProgramInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateIncentiveProgramInstructionData;
-};
+}
 
 export function parseCreateIncentiveProgramInstruction<
   TProgram extends string,

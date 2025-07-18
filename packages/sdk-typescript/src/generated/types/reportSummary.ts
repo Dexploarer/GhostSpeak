@@ -20,7 +20,7 @@ import {
 } from '@solana/kit';
 
 /** Report summary statistics */
-export type ReportSummary = {
+export interface ReportSummary {
   /** Total transactions */
   totalTransactions: bigint;
   /** Total volume */
@@ -33,9 +33,9 @@ export type ReportSummary = {
   securityIncidents: bigint;
   /** Average risk score */
   averageRiskScore: number;
-};
+}
 
-export type ReportSummaryArgs = {
+export interface ReportSummaryArgs {
   /** Total transactions */
   totalTransactions: number | bigint;
   /** Total volume */
@@ -48,7 +48,7 @@ export type ReportSummaryArgs = {
   securityIncidents: number | bigint;
   /** Average risk score */
   averageRiskScore: number;
-};
+}
 
 export function getReportSummaryEncoder(): Encoder<ReportSummaryArgs> {
   return getStructEncoder([

@@ -83,11 +83,11 @@ export type AcceptJobApplicationInstruction<
     ]
   >;
 
-export type AcceptJobApplicationInstructionData = {
+export interface AcceptJobApplicationInstructionData {
   discriminator: ReadonlyUint8Array;
-};
+}
 
-export type AcceptJobApplicationInstructionDataArgs = {};
+export interface AcceptJobApplicationInstructionDataArgs {}
 
 export function getAcceptJobApplicationInstructionDataEncoder(): Encoder<AcceptJobApplicationInstructionDataArgs> {
   return transformEncoder(
@@ -115,19 +115,19 @@ export function getAcceptJobApplicationInstructionDataCodec(): Codec<
   );
 }
 
-export type AcceptJobApplicationAsyncInput<
+export interface AcceptJobApplicationAsyncInput<
   TAccountJobContract extends string = string,
   TAccountJobPosting extends string = string,
   TAccountJobApplication extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   jobContract?: Address<TAccountJobContract>;
   jobPosting: Address<TAccountJobPosting>;
   jobApplication: Address<TAccountJobApplication>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
-};
+}
 
 export async function getAcceptJobApplicationInstructionAsync<
   TAccountJobContract extends string,
@@ -218,19 +218,19 @@ export async function getAcceptJobApplicationInstructionAsync<
   return instruction;
 }
 
-export type AcceptJobApplicationInput<
+export interface AcceptJobApplicationInput<
   TAccountJobContract extends string = string,
   TAccountJobPosting extends string = string,
   TAccountJobApplication extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   jobContract: Address<TAccountJobContract>;
   jobPosting: Address<TAccountJobPosting>;
   jobApplication: Address<TAccountJobApplication>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
-};
+}
 
 export function getAcceptJobApplicationInstruction<
   TAccountJobContract extends string,
@@ -303,10 +303,10 @@ export function getAcceptJobApplicationInstruction<
   return instruction;
 }
 
-export type ParsedAcceptJobApplicationInstruction<
+export interface ParsedAcceptJobApplicationInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     jobContract: TAccountMetas[0];
@@ -316,7 +316,7 @@ export type ParsedAcceptJobApplicationInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: AcceptJobApplicationInstructionData;
-};
+}
 
 export function parseAcceptJobApplicationInstruction<
   TProgram extends string,

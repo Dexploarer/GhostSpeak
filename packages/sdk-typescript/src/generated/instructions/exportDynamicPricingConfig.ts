@@ -62,14 +62,14 @@ export type ExportDynamicPricingConfigInstruction<
     ]
   >;
 
-export type ExportDynamicPricingConfigInstructionData = {
+export interface ExportDynamicPricingConfigInstructionData {
   discriminator: ReadonlyUint8Array;
   data: DynamicPricingConfig;
-};
+}
 
-export type ExportDynamicPricingConfigInstructionDataArgs = {
+export interface ExportDynamicPricingConfigInstructionDataArgs {
   data: DynamicPricingConfigArgs;
-};
+}
 
 export function getExportDynamicPricingConfigInstructionDataEncoder(): Encoder<ExportDynamicPricingConfigInstructionDataArgs> {
   return transformEncoder(
@@ -101,12 +101,12 @@ export function getExportDynamicPricingConfigInstructionDataCodec(): Codec<
   );
 }
 
-export type ExportDynamicPricingConfigInput<
+export interface ExportDynamicPricingConfigInput<
   TAccountSystemProgram extends string = string,
-> = {
+> {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportDynamicPricingConfigInstructionDataArgs['data'];
-};
+}
 
 export function getExportDynamicPricingConfigInstruction<
   TAccountSystemProgram extends string,
@@ -156,16 +156,16 @@ export function getExportDynamicPricingConfigInstruction<
   return instruction;
 }
 
-export type ParsedExportDynamicPricingConfigInstruction<
+export interface ParsedExportDynamicPricingConfigInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportDynamicPricingConfigInstructionData;
-};
+}
 
 export function parseExportDynamicPricingConfigInstruction<
   TProgram extends string,

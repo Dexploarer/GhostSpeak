@@ -22,23 +22,23 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type DynamicPricingUpdatedEvent = {
+export interface DynamicPricingUpdatedEvent {
   engine: Address;
   agent: Address;
   owner: Address;
   newPrice: bigint;
   demandMultiplier: number;
   supplyMultiplier: number;
-};
+}
 
-export type DynamicPricingUpdatedEventArgs = {
+export interface DynamicPricingUpdatedEventArgs {
   engine: Address;
   agent: Address;
   owner: Address;
   newPrice: number | bigint;
   demandMultiplier: number;
   supplyMultiplier: number;
-};
+}
 
 export function getDynamicPricingUpdatedEventEncoder(): Encoder<DynamicPricingUpdatedEventArgs> {
   return getStructEncoder([

@@ -28,7 +28,7 @@ import {
 } from '@solana/kit';
 
 /** Compliance flags for audit entries */
-export type ComplianceFlags = {
+export interface ComplianceFlags {
   /** Requires regulatory reporting */
   requiresReporting: boolean;
   /** High-risk transaction */
@@ -45,9 +45,9 @@ export type ComplianceFlags = {
   manualReview: boolean;
   /** Regulatory jurisdiction */
   jurisdiction: Option<string>;
-};
+}
 
-export type ComplianceFlagsArgs = {
+export interface ComplianceFlagsArgs {
   /** Requires regulatory reporting */
   requiresReporting: boolean;
   /** High-risk transaction */
@@ -64,7 +64,7 @@ export type ComplianceFlagsArgs = {
   manualReview: boolean;
   /** Regulatory jurisdiction */
   jurisdiction: OptionOrNullable<string>;
-};
+}
 
 export function getComplianceFlagsEncoder(): Encoder<ComplianceFlagsArgs> {
   return getStructEncoder([

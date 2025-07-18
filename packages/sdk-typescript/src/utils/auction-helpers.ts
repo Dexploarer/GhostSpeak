@@ -297,7 +297,6 @@ export class AuctionFilterUtils {
     auctions: T[],
     maxTimeRemaining: bigint
   ): T[] {
-    const now = AuctionTimeUtils.now()
     return auctions.filter(auction => {
       const remaining = AuctionTimeUtils.getTimeRemaining(auction.auctionEndTime)
       return remaining <= maxTimeRemaining && remaining > 0n
@@ -377,7 +376,7 @@ export class AuctionAnalyticsUtils {
   static findTopAppreciationAuctions<T extends { 
     startingPrice: bigint
     currentPrice: bigint 
-  }>(auctions: T[], limit: number = 10): Array<T & { appreciation: number }> {
+  }>(auctions: T[], limit: number = 10): (T & { appreciation: number })[] {
     return auctions
       .map(auction => ({
         ...auction,
@@ -397,7 +396,7 @@ export class AuctionAnalyticsUtils {
     const stats = new Map<Address, { total: number; settled: number; rate: number }>()
 
     auctions.forEach(auction => {
-      const current = stats.get(auction.creator) || { total: 0, settled: 0, rate: 0 }
+      const current = stats.get(auction.creator) ?? { total: 0, settled: 0, rate: 0 }
       current.total++
       if (auction.status === AuctionStatus.Settled) {
         current.settled++

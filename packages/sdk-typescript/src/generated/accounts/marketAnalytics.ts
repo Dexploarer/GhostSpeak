@@ -57,7 +57,7 @@ export function getMarketAnalyticsDiscriminatorBytes() {
   );
 }
 
-export type MarketAnalytics = {
+export interface MarketAnalytics {
   discriminator: ReadonlyUint8Array;
   periodStart: bigint;
   periodEnd: bigint;
@@ -69,11 +69,11 @@ export type MarketAnalytics = {
   demandTrend: number;
   supplyTrend: number;
   marketCap: bigint;
-  topAgents: Array<Address>;
+  topAgents: Address[];
   bump: number;
-};
+}
 
-export type MarketAnalyticsArgs = {
+export interface MarketAnalyticsArgs {
   periodStart: number | bigint;
   periodEnd: number | bigint;
   totalVolume: number | bigint;
@@ -84,9 +84,9 @@ export type MarketAnalyticsArgs = {
   demandTrend: number;
   supplyTrend: number;
   marketCap: number | bigint;
-  topAgents: Array<Address>;
+  topAgents: Address[];
   bump: number;
-};
+}
 
 export function getMarketAnalyticsEncoder(): Encoder<MarketAnalyticsArgs> {
   return transformEncoder(
@@ -174,7 +174,7 @@ export async function fetchMaybeMarketAnalytics<
 
 export async function fetchAllMarketAnalytics(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<MarketAnalytics>[]> {
   const maybeAccounts = await fetchAllMaybeMarketAnalytics(
@@ -188,7 +188,7 @@ export async function fetchAllMarketAnalytics(
 
 export async function fetchAllMaybeMarketAnalytics(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<MarketAnalytics>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

@@ -28,7 +28,7 @@ import {
 } from '.';
 
 /** Quorum requirements for proposals */
-export type QuorumRequirements = {
+export interface QuorumRequirements {
   /** Minimum participation rate (0-100) */
   minimumParticipation: number;
   /** Approval threshold (0-100) */
@@ -39,9 +39,9 @@ export type QuorumRequirements = {
   minimumVotingPower: bigint;
   /** Quorum calculation method */
   quorumMethod: QuorumMethod;
-};
+}
 
-export type QuorumRequirementsArgs = {
+export interface QuorumRequirementsArgs {
   /** Minimum participation rate (0-100) */
   minimumParticipation: number;
   /** Approval threshold (0-100) */
@@ -52,7 +52,7 @@ export type QuorumRequirementsArgs = {
   minimumVotingPower: number | bigint;
   /** Quorum calculation method */
   quorumMethod: QuorumMethodArgs;
-};
+}
 
 export function getQuorumRequirementsEncoder(): Encoder<QuorumRequirementsArgs> {
   return getStructEncoder([

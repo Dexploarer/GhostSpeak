@@ -18,7 +18,6 @@ import {
   BackupFrequency,
   AuditAction
 } from '../../generated/index.js'
-import { type TransactionResult } from '../../utils/transaction-urls.js'
 
 // Enhanced types for better developer experience
 export interface GenerateReportParams {
@@ -312,7 +311,7 @@ export class ComplianceInstructions extends BaseInstructions {
     screeningResult: {
       cleared: boolean
       riskScore: number
-      watchlistMatches: Array<{ entity: Address; riskLevel: string }>
+      watchlistMatches: { entity: Address; riskLevel: string }[]
       flaggedReasons: string[]
       requiresManualReview: boolean
     }
@@ -330,7 +329,7 @@ export class ComplianceInstructions extends BaseInstructions {
     const screeningResult = {
       cleared: params.riskScore < 70,
       riskScore: params.riskScore,
-      watchlistMatches: [] as Array<{ entity: Address; riskLevel: string }>,
+      watchlistMatches: [] as { entity: Address; riskLevel: string }[],
       flaggedReasons: params.riskScore > 70 ? ['High risk score'] : [],
       requiresManualReview: params.riskScore > 90
     }
@@ -390,11 +389,12 @@ export class ComplianceInstructions extends BaseInstructions {
     requestId: string
     status: 'received' | 'processing' | 'completed' | 'rejected'
     estimatedCompletion: bigint
-    dataPackage?: any
+    dataPackage?: Record<string, unknown>
   }> {
     console.log('📋 Processing data subject request...')
     console.log(`   Request Type: ${requestType}`)
     console.log(`   Data Subject: ${dataSubject}`)
+    console.log(`   Request Details: ${requestDetails}`)
 
     const requestId = `dsr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     const now = BigInt(Math.floor(Date.now() / 1000))

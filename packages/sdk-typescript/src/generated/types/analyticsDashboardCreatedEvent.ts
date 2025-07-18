@@ -22,19 +22,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type AnalyticsDashboardCreatedEvent = {
+export interface AnalyticsDashboardCreatedEvent {
   dashboard: Address;
   owner: Address;
   dashboardId: bigint;
   timestamp: bigint;
-};
+}
 
-export type AnalyticsDashboardCreatedEventArgs = {
+export interface AnalyticsDashboardCreatedEventArgs {
   dashboard: Address;
   owner: Address;
   dashboardId: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getAnalyticsDashboardCreatedEventEncoder(): Encoder<AnalyticsDashboardCreatedEventArgs> {
   return getStructEncoder([

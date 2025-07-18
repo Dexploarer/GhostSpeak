@@ -27,7 +27,7 @@ import {
   type ValueTypeArgs,
 } from '.';
 
-export type RuleCondition = {
+export interface RuleCondition {
   /** Condition type */
   conditionType: ConditionType;
   /** Field to evaluate */
@@ -38,9 +38,9 @@ export type RuleCondition = {
   value: string;
   /** Value type for parsing */
   valueType: ValueType;
-};
+}
 
-export type RuleConditionArgs = {
+export interface RuleConditionArgs {
   /** Condition type */
   conditionType: ConditionTypeArgs;
   /** Field to evaluate */
@@ -51,7 +51,7 @@ export type RuleConditionArgs = {
   value: string;
   /** Value type for parsing */
   valueType: ValueTypeArgs;
-};
+}
 
 export function getRuleConditionEncoder(): Encoder<RuleConditionArgs> {
   return getStructEncoder([

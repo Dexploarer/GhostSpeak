@@ -85,16 +85,16 @@ export type SubmitDisputeEvidenceInstruction<
     ]
   >;
 
-export type SubmitDisputeEvidenceInstructionData = {
+export interface SubmitDisputeEvidenceInstructionData {
   discriminator: ReadonlyUint8Array;
   evidenceType: string;
   evidenceData: string;
-};
+}
 
-export type SubmitDisputeEvidenceInstructionDataArgs = {
+export interface SubmitDisputeEvidenceInstructionDataArgs {
   evidenceType: string;
   evidenceData: string;
-};
+}
 
 export function getSubmitDisputeEvidenceInstructionDataEncoder(): Encoder<SubmitDisputeEvidenceInstructionDataArgs> {
   return transformEncoder(
@@ -128,12 +128,12 @@ export function getSubmitDisputeEvidenceInstructionDataCodec(): Codec<
   );
 }
 
-export type SubmitDisputeEvidenceAsyncInput<
+export interface SubmitDisputeEvidenceAsyncInput<
   TAccountDispute extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSubmitter extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dispute account with canonical bump validation */
   dispute: Address<TAccountDispute>;
   /** User registry for rate limiting */
@@ -144,7 +144,7 @@ export type SubmitDisputeEvidenceAsyncInput<
   clock?: Address<TAccountClock>;
   evidenceType: SubmitDisputeEvidenceInstructionDataArgs['evidenceType'];
   evidenceData: SubmitDisputeEvidenceInstructionDataArgs['evidenceData'];
-};
+}
 
 export async function getSubmitDisputeEvidenceInstructionAsync<
   TAccountDispute extends string,
@@ -231,12 +231,12 @@ export async function getSubmitDisputeEvidenceInstructionAsync<
   return instruction;
 }
 
-export type SubmitDisputeEvidenceInput<
+export interface SubmitDisputeEvidenceInput<
   TAccountDispute extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSubmitter extends string = string,
   TAccountClock extends string = string,
-> = {
+> {
   /** Dispute account with canonical bump validation */
   dispute: Address<TAccountDispute>;
   /** User registry for rate limiting */
@@ -247,7 +247,7 @@ export type SubmitDisputeEvidenceInput<
   clock?: Address<TAccountClock>;
   evidenceType: SubmitDisputeEvidenceInstructionDataArgs['evidenceType'];
   evidenceData: SubmitDisputeEvidenceInstructionDataArgs['evidenceData'];
-};
+}
 
 export function getSubmitDisputeEvidenceInstruction<
   TAccountDispute extends string,
@@ -319,10 +319,10 @@ export function getSubmitDisputeEvidenceInstruction<
   return instruction;
 }
 
-export type ParsedSubmitDisputeEvidenceInstruction<
+export interface ParsedSubmitDisputeEvidenceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dispute account with canonical bump validation */
@@ -335,7 +335,7 @@ export type ParsedSubmitDisputeEvidenceInstruction<
     clock: TAccountMetas[3];
   };
   data: SubmitDisputeEvidenceInstructionData;
-};
+}
 
 export function parseSubmitDisputeEvidenceInstruction<
   TProgram extends string,

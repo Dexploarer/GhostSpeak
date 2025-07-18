@@ -22,21 +22,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export type PaymentProcessedEvent = {
+export interface PaymentProcessedEvent {
   workOrder: Address;
   from: Address;
   to: Address;
   amount: bigint;
   timestamp: bigint;
-};
+}
 
-export type PaymentProcessedEventArgs = {
+export interface PaymentProcessedEventArgs {
   workOrder: Address;
   from: Address;
   to: Address;
   amount: number | bigint;
   timestamp: number | bigint;
-};
+}
 
 export function getPaymentProcessedEventEncoder(): Encoder<PaymentProcessedEventArgs> {
   return getStructEncoder([

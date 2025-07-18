@@ -67,7 +67,7 @@ export function getServiceListingDiscriminatorBytes() {
   );
 }
 
-export type ServiceListing = {
+export interface ServiceListing {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   owner: Address;
@@ -78,7 +78,7 @@ export type ServiceListing = {
   serviceType: string;
   paymentToken: Address;
   estimatedDelivery: bigint;
-  tags: Array<string>;
+  tags: string[];
   isActive: boolean;
   totalOrders: number;
   rating: number;
@@ -86,9 +86,9 @@ export type ServiceListing = {
   updatedAt: bigint;
   transferHook: Option<Address>;
   bump: number;
-};
+}
 
-export type ServiceListingArgs = {
+export interface ServiceListingArgs {
   agent: Address;
   owner: Address;
   title: string;
@@ -98,7 +98,7 @@ export type ServiceListingArgs = {
   serviceType: string;
   paymentToken: Address;
   estimatedDelivery: number | bigint;
-  tags: Array<string>;
+  tags: string[];
   isActive: boolean;
   totalOrders: number;
   rating: number;
@@ -106,7 +106,7 @@ export type ServiceListingArgs = {
   updatedAt: number | bigint;
   transferHook: OptionOrNullable<Address>;
   bump: number;
-};
+}
 
 export function getServiceListingEncoder(): Encoder<ServiceListingArgs> {
   return transformEncoder(
@@ -210,7 +210,7 @@ export async function fetchMaybeServiceListing<
 
 export async function fetchAllServiceListing(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<Account<ServiceListing>[]> {
   const maybeAccounts = await fetchAllMaybeServiceListing(
@@ -224,7 +224,7 @@ export async function fetchAllServiceListing(
 
 export async function fetchAllMaybeServiceListing(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Array<Address>,
+  addresses: Address[],
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<ServiceListing>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

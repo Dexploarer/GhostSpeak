@@ -88,20 +88,20 @@ export type GenerateComplianceReportInstruction<
     ]
   >;
 
-export type GenerateComplianceReportInstructionData = {
+export interface GenerateComplianceReportInstructionData {
   discriminator: ReadonlyUint8Array;
   reportId: bigint;
   reportType: ReportType;
   dateRangeStart: bigint;
   dateRangeEnd: bigint;
-};
+}
 
-export type GenerateComplianceReportInstructionDataArgs = {
+export interface GenerateComplianceReportInstructionDataArgs {
   reportId: number | bigint;
   reportType: ReportTypeArgs;
   dateRangeStart: number | bigint;
   dateRangeEnd: number | bigint;
-};
+}
 
 export function getGenerateComplianceReportInstructionDataEncoder(): Encoder<GenerateComplianceReportInstructionDataArgs> {
   return transformEncoder(
@@ -139,12 +139,12 @@ export function getGenerateComplianceReportInstructionDataCodec(): Codec<
   );
 }
 
-export type GenerateComplianceReportAsyncInput<
+export interface GenerateComplianceReportAsyncInput<
   TAccountReport extends string = string,
   TAccountAuditTrail extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   report?: Address<TAccountReport>;
   /** Audit trail for the entity */
   auditTrail: Address<TAccountAuditTrail>;
@@ -154,7 +154,7 @@ export type GenerateComplianceReportAsyncInput<
   reportType: GenerateComplianceReportInstructionDataArgs['reportType'];
   dateRangeStart: GenerateComplianceReportInstructionDataArgs['dateRangeStart'];
   dateRangeEnd: GenerateComplianceReportInstructionDataArgs['dateRangeEnd'];
-};
+}
 
 export async function getGenerateComplianceReportInstructionAsync<
   TAccountReport extends string,
@@ -242,12 +242,12 @@ export async function getGenerateComplianceReportInstructionAsync<
   return instruction;
 }
 
-export type GenerateComplianceReportInput<
+export interface GenerateComplianceReportInput<
   TAccountReport extends string = string,
   TAccountAuditTrail extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> = {
+> {
   report: Address<TAccountReport>;
   /** Audit trail for the entity */
   auditTrail: Address<TAccountAuditTrail>;
@@ -257,7 +257,7 @@ export type GenerateComplianceReportInput<
   reportType: GenerateComplianceReportInstructionDataArgs['reportType'];
   dateRangeStart: GenerateComplianceReportInstructionDataArgs['dateRangeStart'];
   dateRangeEnd: GenerateComplianceReportInstructionDataArgs['dateRangeEnd'];
-};
+}
 
 export function getGenerateComplianceReportInstruction<
   TAccountReport extends string,
@@ -329,10 +329,10 @@ export function getGenerateComplianceReportInstruction<
   return instruction;
 }
 
-export type ParsedGenerateComplianceReportInstruction<
+export interface ParsedGenerateComplianceReportInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> = {
+> {
   programAddress: Address<TProgram>;
   accounts: {
     report: TAccountMetas[0];
@@ -342,7 +342,7 @@ export type ParsedGenerateComplianceReportInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: GenerateComplianceReportInstructionData;
-};
+}
 
 export function parseGenerateComplianceReportInstruction<
   TProgram extends string,

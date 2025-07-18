@@ -24,17 +24,17 @@ import {
   type ExtensionTypeArgs,
 } from '.';
 
-export type ExtensionRegisteredEvent = {
+export interface ExtensionRegisteredEvent {
   extension: Address;
   developer: Address;
   extensionType: ExtensionType;
-};
+}
 
-export type ExtensionRegisteredEventArgs = {
+export interface ExtensionRegisteredEventArgs {
   extension: Address;
   developer: Address;
   extensionType: ExtensionTypeArgs;
-};
+}
 
 export function getExtensionRegisteredEventEncoder(): Encoder<ExtensionRegisteredEventArgs> {
   return getStructEncoder([

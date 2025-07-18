@@ -9,23 +9,47 @@ import {
   getCreateWorkOrderInstruction,
   getProcessPaymentInstruction,
   getSubmitWorkDeliveryInstruction,
-  fetchPayment,
-  fetchWorkOrder,
-  type Payment,
-  type WorkOrder
+  type WorkOrder,
+  type Deliverable
 } from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
+import type {
+  BaseCreationParams,
+  BaseTokenParams,
+  BaseTimeParams,
+  BaseInstructionParams
+} from './BaseInterfaces.js'
 
 // Parameters for creating work orders (which handle escrow)
-export interface CreateEscrowParams {
+export interface CreateEscrowParams extends BaseCreationParams, BaseTokenParams, BaseTimeParams {
   orderId: bigint
   provider: Address
-  title: string
-  description: string
   requirements: string[]
-  paymentAmount: bigint
   paymentToken: Address
-  deadline: bigint
+}
+
+// Parameters for payment processing
+export interface ProcessPaymentParams extends BaseInstructionParams, BaseTokenParams {
+  workOrderAddress: Address
+  providerAgent: Address
+  payerTokenAccount: Address
+  providerTokenAccount: Address
+  tokenMint: Address
+  useConfidentialTransfer?: boolean
+}
+
+// Parameters for work delivery submission
+export interface SubmitDeliveryParams extends BaseInstructionParams {
+  workOrderAddress: Address
+  deliverables: Deliverable[]
+  ipfsHash: string
+  metadataUri: string
+}
+
+// Parameters for dispute filing
+export interface DisputeParams extends BaseInstructionParams {
+  escrowAddress: Address
+  reason: string
 }
 
 /**
@@ -40,47 +64,46 @@ export class EscrowInstructions extends BaseInstructions {
    * Create a new escrow account via work order
    */
   async create(
-    signer: KeyPairSigner,
     workOrderAddress: Address,
     params: CreateEscrowParams
   ): Promise<string> {
-    const instruction = getCreateWorkOrderInstruction({
-      workOrder: workOrderAddress,
-      client: signer as unknown as TransactionSigner,
-      orderId: params.orderId,
-      provider: params.provider,
-      title: params.title,
-      description: params.description,
-      requirements: params.requirements,
-      paymentAmount: params.paymentAmount,
-      paymentToken: params.paymentToken,
-      deadline: params.deadline
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getCreateWorkOrderInstruction({
+        workOrder: workOrderAddress,
+        client: params.signer as unknown as TransactionSigner,
+        orderId: params.orderId,
+        provider: params.provider,
+        title: params.title,
+        description: params.description,
+        requirements: params.requirements,
+        paymentAmount: params.amount,
+        paymentToken: params.paymentToken,
+        deadline: params.deadline
+      }),
+      params.signer as unknown as TransactionSigner,
+      'escrow creation'
+    )
   }
 
   /**
    * Release escrow funds by submitting work delivery
    */
   async release(
-    signer: KeyPairSigner,
     workDeliveryAddress: Address,
-    workOrderAddress: Address,
-    deliverables: any[],
-    ipfsHash: string,
-    metadataUri: string
+    params: SubmitDeliveryParams
   ): Promise<string> {
-    const instruction = getSubmitWorkDeliveryInstruction({
-      workDelivery: workDeliveryAddress,
-      workOrder: workOrderAddress,
-      provider: signer as unknown as TransactionSigner,
-      deliverables,
-      ipfsHash,
-      metadataUri
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getSubmitWorkDeliveryInstruction({
+        workDelivery: workDeliveryAddress,
+        workOrder: params.workOrderAddress,
+        provider: params.signer as unknown as TransactionSigner,
+        deliverables: params.deliverables,
+        ipfsHash: params.ipfsHash,
+        metadataUri: params.metadataUri
+      }),
+      params.signer as unknown as TransactionSigner,
+      'work delivery submission'
+    )
   }
 
   /**
@@ -97,17 +120,13 @@ export class EscrowInstructions extends BaseInstructions {
     
     // Return a placeholder transaction - in practice this would require
     // either a custom cancel instruction or going through dispute resolution
-    return this.dispute(signer, escrowAddress, 'Buyer requested cancellation')
+    return this.dispute({ signer, escrowAddress, reason: 'Buyer requested cancellation' })
   }
 
   /**
    * Dispute an escrow (requires arbitration)
    */
-  async dispute(
-    signer: KeyPairSigner,
-    escrowAddress: Address,
-    reason: string
-  ): Promise<string> {
+  async dispute(params: DisputeParams): Promise<string> {
     try {
       const { getFileDisputeInstruction } = await import('../../generated/index.js')
       
@@ -118,22 +137,24 @@ export class EscrowInstructions extends BaseInstructions {
       const [disputeAddress] = await findProgramDerivedAddress(
         [
           'dispute',
-          escrowAddress,
+          params.escrowAddress,
           timestamp.toString()
         ],
         this.programId
       )
       
-      const instruction = getFileDisputeInstruction({
-        dispute: disputeAddress,
-        transaction: escrowAddress, // Use escrow address as transaction reference
-        userRegistry: escrowAddress, // Placeholder - should be actual user registry
-        complainant: signer as unknown as TransactionSigner,
-        respondent: escrowAddress, // Placeholder - should be actual respondent
-        reason
-      })
-      
-      return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      return this.executeInstruction(
+        () => getFileDisputeInstruction({
+          dispute: disputeAddress,
+          transaction: params.escrowAddress, // Use escrow address as transaction reference
+          userRegistry: params.escrowAddress, // Placeholder - should be actual user registry
+          complainant: params.signer as unknown as TransactionSigner,
+          respondent: params.escrowAddress, // Placeholder - should be actual respondent
+          reason: params.reason
+        }),
+        params.signer as unknown as TransactionSigner,
+        'dispute filing'
+      )
     } catch (error) {
       console.warn('Dispute filing failed. This may indicate the smart contract needs additional implementation:', error)
       // For development, return a mock transaction ID to allow testing to continue
@@ -145,118 +166,67 @@ export class EscrowInstructions extends BaseInstructions {
    * Process payment through escrow
    */
   async processPayment(
-    signer: KeyPairSigner,
     paymentAddress: Address,
-    workOrderAddress: Address,
-    providerAgent: Address,
-    payerTokenAccount: Address,
-    providerTokenAccount: Address,
-    tokenMint: Address,
-    amount: bigint,
-    useConfidentialTransfer: boolean = false
+    params: ProcessPaymentParams
   ): Promise<string> {
-    const instruction = getProcessPaymentInstruction({
-      payment: paymentAddress,
-      workOrder: workOrderAddress,
-      providerAgent,
-      payer: signer as unknown as TransactionSigner,
-      payerTokenAccount,
-      providerTokenAccount,
-      tokenMint,
-      amount,
-      useConfidentialTransfer
-    })
-    
-    return this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+    return this.executeInstruction(
+      () => getProcessPaymentInstruction({
+        payment: paymentAddress,
+        workOrder: params.workOrderAddress,
+        providerAgent: params.providerAgent,
+        payer: params.signer as unknown as TransactionSigner,
+        payerTokenAccount: params.payerTokenAccount,
+        providerTokenAccount: params.providerTokenAccount,
+        tokenMint: params.tokenMint,
+        amount: params.amount,
+        useConfidentialTransfer: params.useConfidentialTransfer ?? false
+      }),
+      params.signer as unknown as TransactionSigner,
+      'payment processing'
+    )
   }
 
   /**
-   * Get work order (escrow) account information using 2025 patterns
+   * Get work order (escrow) account information using centralized pattern
    */
   async getAccount(workOrderAddress: Address): Promise<WorkOrder | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getWorkOrderDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      const workOrder = await rpcClient.getAndDecodeAccount(
-        workOrderAddress,
-        getWorkOrderDecoder(),
-        this.commitment
-      )
-      
-      return workOrder
-    } catch (error) {
-      console.warn('Failed to fetch work order account:', error)
-      return null
-    }
+    return this.getDecodedAccount<WorkOrder>(workOrderAddress, 'getWorkOrderDecoder')
   }
 
   /**
-   * Get all escrows for a user using 2025 patterns
+   * Get all escrows for a user using centralized pattern
    */
   async getEscrowsForUser(userAddress: Address): Promise<WorkOrder[]> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getWorkOrderDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all work orders and filter for this user
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getWorkOrderDecoder(),
-        [], // No RPC filters - filtering client-side
-        this.commitment
+    const accounts = await this.getDecodedProgramAccounts<WorkOrder>('getWorkOrderDecoder')
+    
+    // Filter work orders where user is either client or provider
+    return accounts
+      .map(({ data }) => data)
+      .filter(workOrder => 
+        workOrder.client === userAddress || 
+        workOrder.provider === userAddress
       )
-      
-      // Filter work orders where user is either client or provider
-      const userWorkOrders = accounts
-        .map(({ data }) => data)
-        .filter(workOrder => 
-          workOrder.client === userAddress || 
-          workOrder.provider === userAddress
-        )
-      
-      return userWorkOrders
-    } catch (error) {
-      console.warn('Failed to fetch user escrows:', error)
-      return []
-    }
   }
 
   /**
-   * Get all active escrows using 2025 patterns
+   * Get all active escrows using centralized pattern
    */
   async getActiveEscrows(): Promise<WorkOrder[]> {
+    const accounts = await this.getDecodedProgramAccounts<WorkOrder>('getWorkOrderDecoder')
+    
+    // Filter work orders that are active (not completed/cancelled)
     try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const { getWorkOrderDecoder } = await import('../../generated/index.js')
-      
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      // Get all work orders and filter for active ones
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getWorkOrderDecoder(),
-        [], // No RPC filters - filtering client-side
-        this.commitment
-      )
-      
-      // Filter work orders that are active (not completed/cancelled)
       const { WorkOrderStatus } = await import('../../generated/index.js')
-      const activeWorkOrders = accounts
+      return accounts
         .map(({ data }) => data)
         .filter(workOrder => 
           workOrder.status === WorkOrderStatus.Open || 
           workOrder.status === WorkOrderStatus.InProgress ||
           workOrder.status === WorkOrderStatus.Submitted
         )
-      
-      return activeWorkOrders
     } catch (error) {
-      console.warn('Failed to fetch active escrows:', error)
-      return []
+      console.warn('Failed to load WorkOrderStatus enum, returning all escrows:', error)
+      return accounts.map(({ data }) => data)
     }
   }
 }

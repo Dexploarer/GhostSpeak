@@ -26,21 +26,21 @@ import {
   type PricingAlgorithmArgs,
 } from '.';
 
-export type DynamicPricingEngineCreatedEvent = {
+export interface DynamicPricingEngineCreatedEvent {
   engine: Address;
   agent: Address;
   owner: Address;
   algorithm: PricingAlgorithm;
   basePrice: bigint;
-};
+}
 
-export type DynamicPricingEngineCreatedEventArgs = {
+export interface DynamicPricingEngineCreatedEventArgs {
   engine: Address;
   agent: Address;
   owner: Address;
   algorithm: PricingAlgorithmArgs;
   basePrice: number | bigint;
-};
+}
 
 export function getDynamicPricingEngineCreatedEventEncoder(): Encoder<DynamicPricingEngineCreatedEventArgs> {
   return getStructEncoder([

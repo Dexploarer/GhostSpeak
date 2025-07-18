@@ -69,15 +69,23 @@ export abstract class BaseInstructions {
   private getSendAndConfirmTransaction() {
     if (!this._sendAndConfirmTransaction) {
       // Only pass rpcSubscriptions if they exist and are valid
-      const factoryConfig: { rpc: ExtendedRpcApi; rpcSubscriptions?: RpcSubscriptionApi } = { rpc: this.rpc }
       if (this.rpcSubscriptions) {
-        factoryConfig.rpcSubscriptions = this.rpcSubscriptions
-      }
-      try {
-        this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig as any)
-      } catch (error) {
-        // Fallback to RPC-only mode if subscriptions fail
-        this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ rpc: this.rpc } as any)
+        const factoryConfig = { rpc: this.rpc, rpcSubscriptions: this.rpcSubscriptions }
+        try {
+          this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig)
+        } catch {
+          // Fallback to RPC-only mode if subscriptions fail  
+          this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ 
+            rpc: this.rpc, 
+            rpcSubscriptions: this.rpcSubscriptions 
+          })
+        }
+      } else {
+        // Use RPC-only mode when no subscriptions available
+        this._sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ 
+          rpc: this.rpc,
+          rpcSubscriptions: undefined
+        } as any)
       }
     }
     return this._sendAndConfirmTransaction

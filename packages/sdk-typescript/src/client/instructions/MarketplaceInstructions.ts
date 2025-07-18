@@ -20,7 +20,6 @@ import type {
   BaseCreationParams,
   BaseTokenParams,
   BaseTimeParams,
-  BaseFilterParams,
   BaseInstructionParams
 } from './BaseInterfaces.js'
 

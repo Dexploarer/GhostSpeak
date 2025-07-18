@@ -1,6 +1,5 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig
@@ -110,7 +109,7 @@ export class A2AInstructions extends BaseInstructions {
         sessionCreatedAt
       )
 
-      return this.executeInstruction(
+      return await this.executeInstruction(
         () => getSendA2aMessageInstruction({
           message: messageAddress,
           session: sessionAddress,

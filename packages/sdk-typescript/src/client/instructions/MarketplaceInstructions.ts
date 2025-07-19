@@ -3,7 +3,8 @@ import type { TransactionSigner } from '@solana/kit'
 import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
-  GhostSpeakConfig
+  GhostSpeakConfig,
+  ServiceListingWithAddress
 } from '../../types/index.js'
 import {
   getCreateServiceListingInstruction,
@@ -25,45 +26,45 @@ import type {
 
 // Service listing creation parameters
 export interface CreateServiceListingParams extends BaseCreationParams, BaseTokenParams {
-  tokenMint: Address
-  serviceType: string
-  paymentToken: Address
-  estimatedDelivery: bigint
-  tags: string[]
-  listingId: string
+  tokenMint?: Address
+  serviceType?: string
+  paymentToken?: Address
+  estimatedDelivery?: bigint
+  tags?: string[]
+  listingId?: string
 }
 
 // Job posting creation parameters
 export interface CreateJobPostingParams extends BaseCreationParams, BaseTokenParams, BaseTimeParams {
-  requirements: string[]
-  skillsNeeded: string[]
-  budgetMin: bigint
-  budgetMax: bigint
-  paymentToken: Address
-  jobType: string
-  experienceLevel: string
+  requirements?: string[]
+  skillsNeeded?: string[]
+  budgetMin?: bigint
+  budgetMax?: bigint
+  paymentToken?: Address
+  jobType?: string
+  experienceLevel?: string
 }
 
 // Service purchase parameters
 export interface PurchaseServiceParams extends BaseInstructionParams {
   serviceListingAddress: Address
-  listingId: bigint
-  quantity: number
-  requirements: string[]
-  customInstructions: string
-  deadline: bigint
+  listingId?: bigint
+  quantity?: number
+  requirements?: string[]
+  customInstructions?: string
+  deadline?: bigint
 }
 
 // Job application parameters
 export interface JobApplicationParams extends BaseInstructionParams {
   jobPostingAddress: Address
   agentAddress: Address
-  coverLetter: string
-  proposedPrice: bigint
-  estimatedDuration: number
-  proposedRate: bigint
-  estimatedDelivery: bigint
-  portfolioItems: string[]
+  coverLetter?: string
+  proposedPrice?: bigint
+  estimatedDuration?: number
+  proposedRate?: bigint
+  estimatedDelivery?: bigint
+  portfolioItems?: string[]
 }
 
 /**
@@ -72,6 +73,99 @@ export interface JobApplicationParams extends BaseInstructionParams {
 export class MarketplaceInstructions extends BaseInstructions {
   constructor(config: GhostSpeakConfig) {
     super(config)
+  }
+
+  /**
+   * Resolve service listing parameters with smart defaults
+   */
+  private async _resolveServiceListingParams(
+    params: CreateServiceListingParams & { signer: KeyPairSigner }
+  ): Promise<Required<CreateServiceListingParams> & { signer: KeyPairSigner }> {
+    // Auto-generate listing ID if not provided
+    const listingId = params.listingId ?? `listing-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    
+    // Get USDC token mint as default payment token
+    const defaultPaymentToken = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address // USDC on mainnet
+    
+    return {
+      title: params.title,
+      description: params.description,
+      amount: params.amount,
+      tokenMint: params.tokenMint ?? params.paymentToken ?? defaultPaymentToken,
+      serviceType: params.serviceType ?? 'general',
+      paymentToken: params.paymentToken ?? defaultPaymentToken,
+      estimatedDelivery: params.estimatedDelivery ?? BigInt(7 * 24 * 60 * 60), // 7 days default
+      tags: params.tags ?? [],
+      listingId,
+      signer: params.signer
+    }
+  }
+
+  /**
+   * Resolve job posting parameters with smart defaults
+   */
+  private async _resolveJobPostingParams(
+    params: CreateJobPostingParams
+  ): Promise<Required<CreateJobPostingParams>> {
+    // Auto-calculate budget if min/max not provided
+    const budgetMin = params.budgetMin ?? params.amount ?? 0n
+    const budgetMax = params.budgetMax ?? params.amount ?? budgetMin * 2n
+    
+    // Get USDC token mint as default payment token
+    const defaultPaymentToken = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address // USDC on mainnet
+    
+    return {
+      title: params.title,
+      description: params.description,
+      amount: params.amount ?? budgetMax,
+      requirements: params.requirements ?? [],
+      deadline: params.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60), // 30 days default
+      skillsNeeded: params.skillsNeeded ?? [],
+      budgetMin,
+      budgetMax,
+      paymentToken: params.paymentToken ?? defaultPaymentToken,
+      jobType: params.jobType ?? 'fixed',
+      experienceLevel: params.experienceLevel ?? 'any',
+      signer: params.signer, // Keep signer as-is
+      tokenMint: params.tokenMint ?? defaultPaymentToken, // Add tokenMint
+      createdAt: params.createdAt ?? BigInt(Math.floor(Date.now() / 1000)) // Add createdAt
+    }
+  }
+
+  /**
+   * Resolve purchase parameters with smart defaults
+   */
+  private async _resolvePurchaseParams(
+    params: PurchaseServiceParams
+  ): Promise<Required<PurchaseServiceParams>> {
+    return {
+      serviceListingAddress: params.serviceListingAddress,
+      listingId: params.listingId ?? 0n,
+      quantity: params.quantity ?? 1,
+      requirements: params.requirements ?? [],
+      customInstructions: params.customInstructions ?? '',
+      deadline: params.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 14 * 24 * 60 * 60), // 14 days default
+      signer: params.signer // Keep signer as-is
+    }
+  }
+
+  /**
+   * Resolve job application parameters with smart defaults
+   */
+  private async _resolveApplicationParams(
+    params: JobApplicationParams
+  ): Promise<Required<JobApplicationParams>> {
+    return {
+      jobPostingAddress: params.jobPostingAddress,
+      agentAddress: params.agentAddress,
+      coverLetter: params.coverLetter ?? 'I am interested in this job opportunity.',
+      proposedPrice: params.proposedPrice ?? 0n, // Will be set based on job budget
+      estimatedDuration: params.estimatedDuration ?? 7, // 7 days default
+      proposedRate: params.proposedRate ?? 0n,
+      estimatedDelivery: params.estimatedDelivery ?? BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60),
+      portfolioItems: params.portfolioItems ?? [],
+      signer: params.signer // Keep signer as-is
+    }
   }
 
   /**
@@ -84,21 +178,24 @@ export class MarketplaceInstructions extends BaseInstructions {
     userRegistryAddress: Address,
     params: CreateServiceListingParams
   ): Promise<string> {
+    // Resolve parameters with smart defaults
+    const resolvedParams = await this._resolveServiceListingParams({ ...params, signer })
+    
     return this.executeInstruction(
       () => getCreateServiceListingInstruction({
         serviceListing: serviceListingAddress,
         agent: agentAddress,
         userRegistry: userRegistryAddress,
         creator: signer as unknown as TransactionSigner,
-        title: params.title,
-        description: params.description,
-        price: params.amount,
-        tokenMint: params.tokenMint,
-        serviceType: params.serviceType,
-        paymentToken: params.paymentToken,
-        estimatedDelivery: params.estimatedDelivery,
-        tags: params.tags,
-        listingId: params.listingId
+        title: resolvedParams.title,
+        description: resolvedParams.description,
+        price: resolvedParams.amount,
+        tokenMint: resolvedParams.tokenMint,
+        serviceType: resolvedParams.serviceType,
+        paymentToken: resolvedParams.paymentToken,
+        estimatedDelivery: resolvedParams.estimatedDelivery,
+        tags: resolvedParams.tags,
+        listingId: resolvedParams.listingId
       }),
       signer as unknown as TransactionSigner,
       'service listing creation'
@@ -156,18 +253,21 @@ export class MarketplaceInstructions extends BaseInstructions {
     servicePurchaseAddress: Address,
     params: PurchaseServiceParams
   ): Promise<string> {
+    // Resolve parameters with smart defaults
+    const resolvedParams = await this._resolvePurchaseParams(params)
+    
     return this.executeInstruction(
       () => getPurchaseServiceInstruction({
         servicePurchase: servicePurchaseAddress,
-        serviceListing: params.serviceListingAddress,
-        buyer: params.signer as unknown as TransactionSigner,
-        listingId: params.listingId,
-        quantity: params.quantity,
-        requirements: params.requirements,
-        customInstructions: params.customInstructions,
-        deadline: params.deadline
+        serviceListing: resolvedParams.serviceListingAddress,
+        buyer: resolvedParams.signer as unknown as TransactionSigner,
+        listingId: resolvedParams.listingId,
+        quantity: resolvedParams.quantity,
+        requirements: resolvedParams.requirements,
+        customInstructions: resolvedParams.customInstructions,
+        deadline: resolvedParams.deadline
       }),
-      params.signer as unknown as TransactionSigner,
+      resolvedParams.signer as unknown as TransactionSigner,
       'service purchase'
     )
   }
@@ -179,23 +279,26 @@ export class MarketplaceInstructions extends BaseInstructions {
     jobPostingAddress: Address,
     params: CreateJobPostingParams
   ): Promise<string> {
+    // Resolve parameters with smart defaults
+    const resolvedParams = await this._resolveJobPostingParams(params)
+    
     return this.executeInstruction(
       () => getCreateJobPostingInstruction({
         jobPosting: jobPostingAddress,
-        employer: params.signer as unknown as TransactionSigner,
-        title: params.title,
-        description: params.description,
-        requirements: params.requirements,
-        budget: params.amount,
-        deadline: params.deadline,
-        skillsNeeded: params.skillsNeeded,
-        budgetMin: params.budgetMin,
-        budgetMax: params.budgetMax,
-        paymentToken: params.paymentToken,
-        jobType: params.jobType,
-        experienceLevel: params.experienceLevel
+        employer: resolvedParams.signer as unknown as TransactionSigner,
+        title: resolvedParams.title,
+        description: resolvedParams.description,
+        requirements: resolvedParams.requirements,
+        budget: resolvedParams.amount,
+        deadline: resolvedParams.deadline,
+        skillsNeeded: resolvedParams.skillsNeeded,
+        budgetMin: resolvedParams.budgetMin,
+        budgetMax: resolvedParams.budgetMax,
+        paymentToken: resolvedParams.paymentToken,
+        jobType: resolvedParams.jobType,
+        experienceLevel: resolvedParams.experienceLevel
       }),
-      params.signer as unknown as TransactionSigner,
+      resolvedParams.signer as unknown as TransactionSigner,
       'job posting creation'
     )
   }
@@ -207,20 +310,23 @@ export class MarketplaceInstructions extends BaseInstructions {
     jobApplicationAddress: Address,
     params: JobApplicationParams
   ): Promise<string> {
+    // Resolve parameters with smart defaults
+    const resolvedParams = await this._resolveApplicationParams(params)
+    
     return this.executeInstruction(
       () => getApplyToJobInstruction({
         jobApplication: jobApplicationAddress,
-        jobPosting: params.jobPostingAddress,
-        agent: params.agentAddress,
-        agentOwner: params.signer as unknown as TransactionSigner,
-        coverLetter: params.coverLetter,
-        proposedPrice: params.proposedPrice,
-        estimatedDuration: params.estimatedDuration,
-        proposedRate: params.proposedRate,
-        estimatedDelivery: params.estimatedDelivery,
-        portfolioItems: params.portfolioItems
+        jobPosting: resolvedParams.jobPostingAddress,
+        agent: resolvedParams.agentAddress,
+        agentOwner: resolvedParams.signer as unknown as TransactionSigner,
+        coverLetter: resolvedParams.coverLetter,
+        proposedPrice: resolvedParams.proposedPrice,
+        estimatedDuration: resolvedParams.estimatedDuration,
+        proposedRate: resolvedParams.proposedRate,
+        estimatedDelivery: resolvedParams.estimatedDelivery,
+        portfolioItems: resolvedParams.portfolioItems
       }),
-      params.signer as unknown as TransactionSigner,
+      resolvedParams.signer as unknown as TransactionSigner,
       'job application'
     )
   }
@@ -256,13 +362,13 @@ export class MarketplaceInstructions extends BaseInstructions {
   /**
    * Get all active service listings
    */
-  async getServiceListings(): Promise<ServiceListing[]> {
+  async getServiceListings(): Promise<ServiceListingWithAddress[]> {
     const accounts = await this.getDecodedProgramAccounts<ServiceListing>('getServiceListingDecoder')
     
     // Filter only active listings
     return accounts
-      .map(({ data }) => data)
-      .filter(listing => listing.isActive)
+      .filter(({ data }) => data.isActive)
+      .map(({ address, data }) => ({ address, data } as unknown as ServiceListingWithAddress))
   }
 
   /**
@@ -280,14 +386,15 @@ export class MarketplaceInstructions extends BaseInstructions {
   /**
    * Search service listings by category
    */
-  async searchServicesByCategory(category: string): Promise<ServiceListing[]> {
+  async searchServicesByCategory(category: string): Promise<ServiceListingWithAddress[]> {
     const allListings = await this.getServiceListings()
     
     // Filter by category/service type
-    return allListings.filter(listing => 
-      listing.serviceType?.toLowerCase().includes(category.toLowerCase()) ||
-      listing.tags?.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
-    )
+    return allListings.filter(({ data }) => {
+      const service = data as any
+      return service.serviceType?.toLowerCase().includes(category.toLowerCase()) ||
+             service.tags?.some((tag: string) => tag.toLowerCase().includes(category.toLowerCase()))
+    })
   }
 
   /**

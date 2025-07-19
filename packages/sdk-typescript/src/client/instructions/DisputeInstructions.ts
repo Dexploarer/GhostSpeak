@@ -14,9 +14,14 @@ import {
   getResolveDisputeInstruction,
   DisputeStatus,
   type DisputeCase,
-  type DisputeEvidence,
-  getDisputeCaseDecoder
+  type DisputeEvidence as GeneratedDisputeEvidence,
+  // getDisputeCaseDecoder
 } from '../../generated/index.js'
+
+// Extended DisputeEvidence type with CLI properties
+export interface DisputeEvidence extends GeneratedDisputeEvidence {
+  description?: string
+}
 import { type TransactionResult } from '../../utils/transaction-urls.js'
 
 // Enhanced types for better developer experience
@@ -68,6 +73,13 @@ export interface DisputeSummary {
   resolvedAt?: bigint
   daysSinceCreated: number
   evidenceCount: number
+  // Additional properties expected by CLI
+  id?: Address
+  claimant?: Address // alias for complainant
+  severity?: string
+  workOrder?: Address
+  description?: string
+  preferredResolution?: string
 }
 
 export interface DisputeAnalytics {
@@ -384,21 +396,10 @@ export class DisputeInstructions extends BaseInstructions {
    * @returns Dispute account data or null if not found
    */
   async getDispute(disputeAddress: Address): Promise<DisputeCase | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      const dispute = await rpcClient.getAndDecodeAccount(
-        disputeAddress,
-        getDisputeCaseDecoder(),
-        this.commitment
-      )
-      
-      return dispute
-    } catch (error) {
-      console.warn(`Failed to fetch dispute ${disputeAddress}:`, error)
-      return null
-    }
+    return this.getDecodedAccount<DisputeCase>(
+      disputeAddress,
+      'getDisputeCaseDecoder'
+    )
   }
 
   /**
@@ -457,15 +458,10 @@ export class DisputeInstructions extends BaseInstructions {
     console.log('📋 Listing disputes...')
     
     try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
       // Get all dispute case accounts
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getDisputeCaseDecoder(),
-        [], // No RPC filters - filtering client-side
-        this.commitment
+      const accounts = await this.getDecodedProgramAccounts<DisputeCase>(
+        'getDisputeCaseDecoder',
+        [] // No RPC filters - filtering client-side
       )
       
       // Convert to summaries and apply filters

@@ -10,15 +10,23 @@ export { MarketplaceInstructions } from './client/instructions/MarketplaceInstru
 export { EscrowInstructions } from './client/instructions/EscrowInstructions.js'
 export { A2AInstructions } from './client/instructions/A2AInstructions.js'
 export { AuctionInstructions } from './client/instructions/AuctionInstructions.js'
-export { DisputeInstructions } from './client/instructions/DisputeInstructions.js'
-export { GovernanceInstructions } from './client/instructions/GovernanceInstructions.js'
+export { 
+  DisputeInstructions,
+  type DisputeSummary,
+  type DisputeFilter
+} from './client/instructions/DisputeInstructions.js'
+export { 
+  GovernanceInstructions,
+  type MultisigSummary,
+  type ProposalFilter,
+  type ProposalSummary
+} from './client/instructions/GovernanceInstructions.js'
 export { BulkDealsInstructions } from './client/instructions/BulkDealsInstructions.js'
 export { AnalyticsInstructions } from './client/instructions/AnalyticsInstructions.js'
 export { ComplianceInstructions } from './client/instructions/ComplianceInstructions.js'
 
 // Export types and utilities
 export type { GhostSpeakConfig } from './types/index.js'
-export * from './utils/rpc.js'
 export { deriveA2AMessagePda, deriveA2ASessionPda } from './utils/pda.js'
 
 // Export all generated types and instructions (these take precedence)

@@ -15,7 +15,7 @@ export class AccountCreationHelper {
     signer: KeyPairSigner,
     agentId: string,
     _agentType: number,
-    metadataUri: string
+    _metadataUri: string
   ): Promise<{ agentAddress: Address; userRegistryAddress: Address }> {
     const { deriveAgentPda, deriveUserRegistryPda } = await import('./pda.js')
     

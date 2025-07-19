@@ -8,7 +8,8 @@ export interface KeyPairSigner {
   sign: (message: Uint8Array) => Promise<Uint8Array>
 }
 import type { 
-  GhostSpeakConfig
+  GhostSpeakConfig,
+  ServiceListingWithAddress
 } from '../types/index.js'
 import type { Agent, ServiceListing, JobPosting, WorkOrder, A2ASession, A2AMessage } from '../generated/index.js'
 import type { AgentRegistrationParams } from './instructions/AgentInstructions.js'
@@ -119,7 +120,7 @@ export class GhostSpeakClient {
   /**
    * Get all active service listings
    */
-  async getServiceListings(): Promise<ServiceListing[]> {
+  async getServiceListings(): Promise<ServiceListingWithAddress[]> {
     return this.marketplace.getServiceListings()
   }
 

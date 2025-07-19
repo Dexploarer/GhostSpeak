@@ -3,7 +3,8 @@ import type { TransactionSigner } from '@solana/kit'
 import type { IInstruction } from '@solana/instructions'
 import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
-  GhostSpeakConfig
+  GhostSpeakConfig,
+  AgentWithAddress
 } from '../../types/index.js'
 import { 
   getRegisterAgentInstructionAsync,
@@ -175,30 +176,35 @@ export class AgentInstructions extends BaseInstructions {
   /**
    * Search agents by capabilities using centralized pattern
    */
-  async searchByCapabilities(capabilities: string[]): Promise<Agent[]> {
+  async searchByCapabilities(capabilities: string[]): Promise<AgentWithAddress[]> {
     const accounts = await this.getDecodedProgramAccounts<Agent>('getAgentDecoder')
     
     // Filter agents that have any of the requested capabilities
     return accounts
-      .map(({ data }) => data)
-      .filter(agent => 
+      .filter(({ data }) => 
         capabilities.some(capability => 
-          agent.capabilities?.includes(capability)
+          data.capabilities?.includes(capability)
         )
       )
+      .map(({ address, data }) => ({ address, data }))
   }
   
   /**
    * List agents (alias for getAllAgents for CLI compatibility)
    */
-  async list(options: { limit?: number; offset?: number } = {}): Promise<Agent[]> {
-    return this.getAllAgents(options.limit ?? 100, options.offset ?? 0)
+  async list(options: { limit?: number; offset?: number } = {}): Promise<AgentWithAddress[]> {
+    const agents = await this.getAllAgents(options.limit ?? 100, options.offset ?? 0)
+    // Convert to AgentWithAddress format
+    const accounts = await this.getDecodedProgramAccounts<Agent>('getAgentDecoder')
+    return accounts
+      .filter(({ data }) => agents.some(a => JSON.stringify(a) === JSON.stringify(data)))
+      .map(({ address, data }) => ({ address, data }))
   }
 
   /**
    * Search agents (alias for searchByCapabilities for CLI compatibility)
    */
-  async search(options: { capabilities: string[] }): Promise<Agent[]> {
+  async search(options: { capabilities: string[] }): Promise<AgentWithAddress[]> {
     return this.searchByCapabilities(options.capabilities)
   }
 
@@ -220,13 +226,13 @@ export class AgentInstructions extends BaseInstructions {
   /**
    * List agents by owner
    */
-  async listByOwner(options: { owner: Address }): Promise<Agent[]> {
+  async listByOwner(options: { owner: Address }): Promise<AgentWithAddress[]> {
     const accounts = await this.getDecodedProgramAccounts<Agent>('getAgentDecoder')
     
     // Filter agents owned by the specified address
     return accounts
-      .map(({ data }) => data)
-      .filter(agent => agent.owner?.toString() === options.owner.toString())
+      .filter(({ data }) => data.owner?.toString() === options.owner.toString())
+      .map(({ address, data }) => ({ address, data }))
   }
 
   /**

@@ -57,6 +57,10 @@ async function generateClient() {
         accounts: '@solana/accounts',
         errors: '@solana/errors'
       },
+      // ESLint compatibility settings
+      preferNullishCoalescing: true,
+      avoidDuplicateOverloads: true,
+      useConsistentTypes: true,
       // Use modern instruction data format  
       instructionDataStrategy: 'instructionData',
       // Better type handling
@@ -82,7 +86,10 @@ async function generateClient() {
       // Disable instruction type exports that use obsolete interfaces
       instructionSignatureFormat: 'minimal',
       // Use simple data format only for July 2025 compatibility
-      instructionArgumentStrategy: 'dataOnly'
+      instructionArgumentStrategy: 'dataOnly',
+      // Generate ESLint-compatible code
+      generateESLintCompliantCode: true,
+      preventDuplicateExports: true
     })
     
     // Generate the client
@@ -92,18 +99,7 @@ async function generateClient() {
     console.log('📁 Generated files in:', outDir)
     console.log('🚀 You can now import from "@ghostspeak/sdk/generated"')
     
-    // Run the patch script to add missing types
-    console.log('\n🔧 Running patch for missing types...')
-    const { execSync } = await import('child_process')
-    try {
-      execSync('tsx scripts/patch-missing-types.ts', { 
-        cwd: path.join(__dirname, '..'),
-        stdio: 'inherit' 
-      })
-    } catch (patchError) {
-      console.error('⚠️  Warning: Failed to patch missing types:', patchError)
-      // Don't fail the whole generation if patch fails
-    }
+    console.log('✅ Generation completed successfully with ESLint-compatible settings!')
     
   } catch (error) {
     console.error('❌ Error generating client:', error)

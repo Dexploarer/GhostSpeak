@@ -19,10 +19,7 @@ import {
   type ProposalType,
   type MultisigConfig,
   type ExecutionParams,
-  type Role,
-  getMultisigDecoder,
-  getGovernanceProposalDecoder,
-  getRbacConfigDecoder
+  type Role
 } from '../../generated/index.js'
 import { type TransactionResult } from '../../utils/transaction-urls.js'
 
@@ -70,6 +67,7 @@ export interface ProposalFilter {
   createdBefore?: bigint
   votingActive?: boolean
   executable?: boolean
+  category?: string
 }
 
 export interface MultisigSummary {
@@ -84,6 +82,11 @@ export interface MultisigSummary {
   emergencyConfig?: EmergencyConfig // Emergency configuration
   pendingTransactions: number
   isActive: boolean
+  // Additional properties expected by CLI
+  balance?: bigint
+  name?: string
+  multisigType?: string
+  timelockDuration?: bigint
 }
 
 export interface ProposalSummary {
@@ -104,6 +107,12 @@ export interface ProposalSummary {
   quorumReached: boolean
   canExecute: boolean
   timeRemaining?: bigint
+  // Additional properties expected by CLI
+  yesVotes?: bigint
+  noVotes?: bigint
+  eligibleVoters?: number
+  quorumThreshold?: number
+  approvalThreshold?: number
 }
 
 export interface GovernanceAnalytics {
@@ -411,21 +420,10 @@ export class GovernanceInstructions extends BaseInstructions {
    * @returns Multisig account data or null if not found
    */
   async getMultisig(multisigAddress: Address): Promise<Multisig | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      const multisig = await rpcClient.getAndDecodeAccount(
-        multisigAddress,
-        getMultisigDecoder(),
-        this.commitment
-      )
-      
-      return multisig
-    } catch (error) {
-      console.warn(`Failed to fetch multisig ${multisigAddress}:`, error)
-      return null
-    }
+    return this.getDecodedAccount<Multisig>(
+      multisigAddress,
+      'getMultisigDecoder'
+    )
   }
 
   /**
@@ -435,21 +433,10 @@ export class GovernanceInstructions extends BaseInstructions {
    * @returns Proposal account data or null if not found
    */
   async getProposal(proposalAddress: Address): Promise<GovernanceProposal | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      const proposal = await rpcClient.getAndDecodeAccount(
-        proposalAddress,
-        getGovernanceProposalDecoder(),
-        this.commitment
-      )
-      
-      return proposal
-    } catch (error) {
-      console.warn(`Failed to fetch proposal ${proposalAddress}:`, error)
-      return null
-    }
+    return this.getDecodedAccount<GovernanceProposal>(
+      proposalAddress,
+      'getGovernanceProposalDecoder'
+    )
   }
 
   /**
@@ -459,21 +446,10 @@ export class GovernanceInstructions extends BaseInstructions {
    * @returns RBAC config data or null if not found
    */
   async getRbacConfig(rbacAddress: Address): Promise<RbacConfig | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      const rbacConfig = await rpcClient.getAndDecodeAccount(
-        rbacAddress,
-        getRbacConfigDecoder(),
-        this.commitment
-      )
-      
-      return rbacConfig
-    } catch (error) {
-      console.warn(`Failed to fetch RBAC config ${rbacAddress}:`, error)
-      return null
-    }
+    return this.getDecodedAccount<RbacConfig>(
+      rbacAddress,
+      'getRbacConfigDecoder'
+    )
   }
 
   /**
@@ -557,15 +533,10 @@ export class GovernanceInstructions extends BaseInstructions {
     console.log('📋 Listing multisigs...')
     
     try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
       // Get all multisig accounts
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getMultisigDecoder(),
-        [], // No RPC filters - filtering client-side
-        this.commitment
+      const accounts = await this.getDecodedProgramAccounts<Multisig>(
+        'getMultisigDecoder',
+        [] // No RPC filters - filtering client-side
       )
       
       // Convert to summaries and apply filters
@@ -593,15 +564,10 @@ export class GovernanceInstructions extends BaseInstructions {
     console.log('📋 Listing proposals...')
     
     try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
       // Get all governance proposal accounts
-      const accounts = await rpcClient.getAndDecodeProgramAccounts(
-        this.programId,
-        getGovernanceProposalDecoder(),
-        [], // No RPC filters - filtering client-side
-        this.commitment
+      const accounts = await this.getDecodedProgramAccounts<GovernanceProposal>(
+        'getGovernanceProposalDecoder',
+        [] // No RPC filters - filtering client-side
       )
       
       // Convert to summaries and apply filters

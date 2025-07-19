@@ -17,8 +17,8 @@ import {
   type AnalyticsDashboard,
   type MarketAnalytics,
   TrendDirection,
-  getAnalyticsDashboardDecoder,
-  getMarketAnalyticsDecoder
+  // getAnalyticsDashboardDecoder,
+  // getMarketAnalyticsDecoder
 } from '../../generated/index.js'
 
 // Enhanced types for better developer experience
@@ -424,21 +424,10 @@ export class AnalyticsInstructions extends BaseInstructions {
    * @returns Dashboard account data or null if not found
    */
   async getDashboard(dashboardAddress: Address): Promise<AnalyticsDashboard | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      const dashboard = await rpcClient.getAndDecodeAccount(
-        dashboardAddress,
-        getAnalyticsDashboardDecoder(),
-        this.commitment
-      )
-      
-      return dashboard
-    } catch (error) {
-      console.warn(`Failed to fetch dashboard ${dashboardAddress}:`, error)
-      return null
-    }
+    return this.getDecodedAccount<AnalyticsDashboard>(
+      dashboardAddress,
+      'getAnalyticsDashboardDecoder'
+    )
   }
 
   /**
@@ -448,21 +437,10 @@ export class AnalyticsInstructions extends BaseInstructions {
    * @returns Market analytics data or null if not found
    */
   async getMarketAnalytics(marketAnalyticsAddress: Address): Promise<MarketAnalytics | null> {
-    try {
-      const { GhostSpeakRpcClient } = await import('../../utils/rpc.js')
-      const rpcClient = new GhostSpeakRpcClient(this.rpc)
-      
-      const marketAnalytics = await rpcClient.getAndDecodeAccount(
-        marketAnalyticsAddress,
-        getMarketAnalyticsDecoder(),
-        this.commitment
-      )
-      
-      return marketAnalytics
-    } catch (error) {
-      console.warn(`Failed to fetch market analytics ${marketAnalyticsAddress}:`, error)
-      return null
-    }
+    return this.getDecodedAccount<MarketAnalytics>(
+      marketAnalyticsAddress,
+      'getMarketAnalyticsDecoder'
+    )
   }
 
   /**

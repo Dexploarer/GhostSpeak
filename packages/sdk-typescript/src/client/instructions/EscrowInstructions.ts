@@ -118,7 +118,7 @@ export class EscrowInstructions extends BaseInstructions {
     return {
       workOrderAddress: params.workOrderAddress,
       deliverables: params.deliverables ?? [],
-      ipfsHash: params.ipfsHash ?? `ipfs://${Date.now()}-placeholder`,
+      ipfsHash: params.ipfsHash ?? '',
       metadataUri: params.metadataUri ?? `https://ghostspeak.io/delivery/${Date.now()}`,
       signer: params.signer
     }
@@ -186,10 +186,9 @@ export class EscrowInstructions extends BaseInstructions {
     // Since there's no specific cancel instruction, we implement this through
     // the dispute mechanism or by updating work order status
     // For now, we'll need to use the dispute system to handle cancellations
-    console.warn('Work order cancellation requires dispute resolution. Use dispute() method instead.')
+    console.log('Work order cancellation through dispute resolution...')
     
-    // Return a placeholder transaction - in practice this would require
-    // either a custom cancel instruction or going through dispute resolution
+    // Implement cancellation through dispute resolution mechanism
     return this.dispute({ signer, escrowAddress, reason: 'Buyer requested cancellation' })
   }
 
@@ -226,9 +225,8 @@ export class EscrowInstructions extends BaseInstructions {
         'dispute filing'
       )
     } catch (error) {
-      console.warn('Dispute filing failed. This may indicate the smart contract needs additional implementation:', error)
-      // For development, return a mock transaction ID to allow testing to continue
-      return `mock_dispute_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      console.error('Dispute filing failed:', error)
+      throw error
     }
   }
 

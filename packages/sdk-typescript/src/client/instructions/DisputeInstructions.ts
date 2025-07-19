@@ -633,9 +633,8 @@ export class DisputeInstructions extends BaseInstructions {
   }
 
   private async deriveUserRegistry(user: TransactionSigner): Promise<Address> {
-    // In production, derive proper user registry PDA based on user's public key
-    console.log(`Deriving user registry for ${user}`)
-    return '11111111111111111111111111111111' as Address
+    const { deriveUserRegistryPda } = await import('../../utils/pda.js')
+    return deriveUserRegistryPda(this.config.programId!, user.address)
   }
 
   private disputeToSummary(disputeAddress: Address, dispute: DisputeCase): DisputeSummary {

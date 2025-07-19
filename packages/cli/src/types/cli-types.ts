@@ -27,6 +27,7 @@ export interface SearchOptions {
 
 export interface StatusOptions {
   agent?: string
+  agentId?: string
   detailed?: boolean
 }
 

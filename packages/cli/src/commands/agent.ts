@@ -18,21 +18,39 @@ import { AgentWalletManager, AgentCNFTManager, AgentBackupManager, type AgentCre
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 import type { KeyPairSigner } from '@solana/kit'
-import type { AgentWithAddress } from '@ghostspeak/sdk'
+import type { AgentWithAddress, Agent } from '@ghostspeak/sdk'
 import type {
   RegisterOptions,
-  ListOptions,
-  StatusOptions,
-  UpdateOptions,
-  VerifyOptions,
-  AnalyticsOptions,
-  ManageOptions,
-  isString,
-  isDefined,
-  validateString,
-  parseIntSafe,
-  isValidUrl
+  ListOptions
 } from '../types/cli-types.js'
+
+// Analytics interface for type safety
+interface AgentAnalytics {
+  totalEarnings: number
+  jobsCompleted: number
+  successRate: number
+  averageRating: number
+  totalTransactions: number
+  uniqueClients: number
+  totalVolume: bigint
+  activeAgents: number
+  totalJobs: number
+  totalAgents: number
+  verifiedAgents: number
+  jobsByCategory: Record<string, number>
+  earningsTrend: { timestamp: bigint; earnings: bigint }[]
+  topClients: { address: string; jobCount: number; totalSpent: bigint }[]
+  topCategories: { name: string; agentCount: number }[]
+  topPerformers: { name: string; address: string; successRate: number; totalEarnings: bigint }[]
+  growthMetrics: {
+    weeklyGrowth: number
+    monthlyGrowth: number
+    userGrowth: number
+    revenueGrowth: number
+  }
+  insights: string[]
+}
+import { isValidUrl } from '../types/cli-types.js'
 
 export const agentCommand = new Command('agent')
   .description('Manage AI agents on the GhostSpeak protocol')
@@ -386,13 +404,13 @@ agentCommand
         
         if (status) {
           console.log(chalk.gray(`  Jobs completed: ${status.jobsCompleted || 0}`))
-          console.log(chalk.gray(`  Total earnings: ${Number(status.totalEarnings || 0) / 1_000_000} SOL`))
+          console.log(chalk.gray(`  Total earnings: ${Number(status.totalEarnings ?? 0) / 1_000_000} SOL`))
           console.log(chalk.gray(`  Success rate: ${status.successRate || 0}%`))
           console.log(chalk.gray(`  Last active: ${status.lastActive ? new Date(Number(status.lastActive) * 1000).toLocaleString() : 'Never'}`))
           
           if (status.currentJob) {
             const job = status.currentJob as { description?: string; startTime?: bigint }
-            console.log(chalk.yellow('  Currently working on: ') + chalk.gray(job.description || 'Unknown'))
+            console.log(chalk.yellow('  Currently working on: ') + chalk.gray(job.description ?? 'Unknown'))
             console.log(chalk.gray(`  Job started: ${job.startTime ? new Date(Number(job.startTime) * 1000).toLocaleString() : 'Unknown'}`))
           }
         }
@@ -433,7 +451,7 @@ agentCommand
       if (options.agentId) {
         // Use provided agent ID
         try {
-          agentAddress = address(options.agentId)
+          agentAddress = address(options.agentId as string)
         } catch {
           cancel('Invalid agent address provided')
           return
@@ -670,7 +688,7 @@ agentCommand
           toSDKSigner(wallet),
           agentAddress,
           1, // Default agent type
-          updateData.metadataUri || currentAgent.metadataUri || '',
+          updateData.metadataUri ?? currentAgent.metadataUri ?? '',
           agentAddress.toString() // Use address as agentId for now
         )
 
@@ -736,7 +754,7 @@ agentCommand
       }
 
       // Select agent if not provided
-      let selectedAgent = options.agent
+      let selectedAgent = options.agent as Address | undefined
       if (!selectedAgent) {
         const agentChoice = await select({
           message: 'Select agent to verify:',
@@ -797,7 +815,7 @@ agentCommand
 
       log.info(`\n${chalk.bold('📊 Verification Score:')} ${verificationScore}%\n`)
 
-      if (options.auto) {
+      if (options.auto as boolean) {
         // Auto-verify based on score
         if (verificationScore >= 80) {
           log.info(chalk.green('Auto-verification criteria met (≥80%)'))
@@ -845,7 +863,7 @@ agentCommand
             //   address(selectedAgent),
             //   { reason: rejectionReason }
             // )
-            const signature = 'mock-signature' // Temporary mock
+            // const signature = 'mock-signature' // Temporary mock
 
             s.stop('✅ Rejection recorded')
             
@@ -885,7 +903,7 @@ agentCommand
             //   address(selectedAgent),
             //   { request: infoRequest }
             // )
-            const signature = 'mock-signature' // Temporary mock
+            // const signature = 'mock-signature' // Temporary mock
 
             s.stop('✅ Information request sent')
             
@@ -920,21 +938,21 @@ agentCommand
       s.start('Granting verification...')
       
       try {
-        const verificationParams = {
-          score: verificationScore,
-          notes: verificationNotes || '',
-          verifiedBy: wallet.address,
-          criteria: verificationCriteria.map(c => ({ [c.key]: c.check }))
-        }
+        // const verificationParams = {
+        //   score: verificationScore,
+        //   notes: verificationNotes || '',
+        //   verifiedBy: wallet.address,
+        //   criteria: verificationCriteria.map(c => ({ [c.key]: c.check }))
+        // }
 
         // TODO: Implement verify method when available in SDK
         // For now, use update to set isVerified flag
         const signature = await client.agent.update(
           toSDKSigner(wallet),
-          address(selectedAgent),
+          address(selectedAgent as string),
           1, // Default agent type
           agent.data.metadataUri || '',
-          selectedAgent
+          selectedAgent as string
         )
 
         s.stop('✅ Agent verified successfully!')
@@ -977,10 +995,13 @@ agentCommand
       const s = spinner()
       s.start('Loading analytics data...')
       
-      const { client, wallet } = await initializeClient('devnet')
+      const { client, wallet: analyticsWallet } = await initializeClient('devnet')
+      // Acknowledge unused variables for analytics future implementation
+      void analyticsWallet
+      void client
       
       // TODO: Implement analytics methods when available in SDK
-      let analytics = {
+      const analytics: AgentAnalytics = {
         totalEarnings: 0,
         jobsCompleted: 0,
         successRate: 95,
@@ -992,18 +1013,18 @@ agentCommand
         totalJobs: 0,
         totalAgents: 0,
         verifiedAgents: 0,
-        jobsByCategory: {} as Record<string, number>,
-        earningsTrend: [] as { timestamp: bigint; earnings: bigint }[],
-        topClients: [] as { address: string; jobCount: number; totalSpent: bigint }[],
-        topCategories: [] as { name: string; agentCount: number }[],
-        topPerformers: [] as { name: string; address: string; successRate: number; totalEarnings: bigint }[],
+        jobsByCategory: {},
+        earningsTrend: [],
+        topClients: [],
+        topCategories: [],
+        topPerformers: [],
         growthMetrics: {
           weeklyGrowth: 0,
           monthlyGrowth: 0,
           userGrowth: 0,
           revenueGrowth: 0
         },
-        insights: [] as string[]
+        insights: []
       }
       
       // if (options.agent) {
@@ -1026,7 +1047,7 @@ agentCommand
       log.info(`\n${chalk.bold('📈 Performance Overview:')}`)
       log.info('─'.repeat(30))
       
-      if (options.agent || options.mine) {
+      if ((options.agent as Address) || (options.mine as boolean)) {
         // Individual agent or user analytics
         log.info(
           `${chalk.gray('Active Agents:')} ${analytics.activeAgents}\n` +
@@ -1045,7 +1066,7 @@ agentCommand
 
         if (analytics.earningsTrend) {
           log.info(`\n${chalk.bold('💰 Earnings Trend:')}`)
-          analytics.earningsTrend.forEach((point: { timestamp: bigint; earnings: bigint }) => {
+          analytics.earningsTrend.forEach((point) => {
             const date = new Date(Number(point.timestamp) * 1000).toLocaleDateString()
             const earningsSOL = (Number(point.earnings) / 1_000_000_000).toFixed(3)
             log.info(`   ${chalk.gray(date + ':')} ${earningsSOL} SOL`)

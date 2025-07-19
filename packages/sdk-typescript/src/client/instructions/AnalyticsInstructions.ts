@@ -678,15 +678,14 @@ export class AnalyticsInstructions extends BaseInstructions {
   }
 
   private async deriveUserRegistry(user: TransactionSigner): Promise<Address> {
-    // In production, derive proper user registry PDA based on user's public key
-    // For now, return a placeholder address
-    console.log(`Deriving user registry for ${user}`)
-    return '11111111111111111111111111111111' as Address
+    const { deriveUserRegistryPda } = await import('../../utils/pda.js')
+    return deriveUserRegistryPda(this.config.programId!, user.address)
   }
 
   private async deriveMarketAnalyticsPda(): Promise<Address> {
-    // In production, derive proper market analytics PDA
-    // For now, return a placeholder address
-    return 'MarketAnalytics11111111111111111' as Address
+    // Market analytics PDA pattern: ['market_analytics']
+    const { findProgramDerivedAddress } = await import('../../utils/pda.js')
+    const [address] = await findProgramDerivedAddress(['market_analytics'], this.config.programId!)
+    return address
   }
 }

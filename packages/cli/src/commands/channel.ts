@@ -5,14 +5,32 @@ import {
   outro, 
   text, 
   select, 
-  confirm, 
   spinner,
   isCancel,
-  cancel,
-  log
+  cancel
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
+import type { Channel, AgentWithAddress } from '@ghostspeak/sdk'
+
+// Channel-related types for type safety
+interface ChannelCreateResult {
+  channelId: { toString: () => string }
+  signature: string
+}
+
+interface ChannelWithAgentInfo {
+  channelId: Address
+  creator: Address
+  participants: Address[]
+  channelType: string
+  isPrivate: boolean
+  messageCount: bigint
+  createdAt: bigint
+  lastActivity: bigint
+  isActive: boolean
+  agentName: string
+}
 
 export const channelCommand = new Command('channel')
   .description('Manage Agent-to-Agent (A2A) communication channels')
@@ -118,16 +136,18 @@ channelCommand
         }
         
         agentAddress = address(selectedAgent as string)
+        // Acknowledge unused variable for future development
+        void agentAddress
       }
       
       s.start('Creating A2A communication channel...')
 
       try {
         // TODO: Implement channel creation when SDK supports it
-        const result = { 
+        const result: ChannelCreateResult = { 
           channelId: { toString: () => 'mock-channel-id' },
           signature: 'mock-signature'
-        } as any
+        }
         /* const result = await client.channel.create({
           name: channelName as string,
           description: description as string || '',
@@ -148,9 +168,9 @@ channelCommand
         console.log(chalk.cyan('Channel Account:'), getAddressExplorerUrl(result.channelId.toString(), 'devnet'))
 
         outro('A2A channel creation completed')
-      } catch (error: any) {
+      } catch (error) {
         s.stop('❌ Creation failed')
-        throw new Error(handleTransactionError(error))
+        throw new Error(handleTransactionError(error as Error))
       }
 
     } catch (error) {
@@ -185,14 +205,14 @@ channelCommand
       }
       
       // Get channels for all user's agents
-      const allChannels = []
+      const allChannels: ChannelWithAgentInfo[] = []
       for (const agent of agents) {
         // TODO: Implement channel listing when SDK supports it
-        const channels: any[] = []
+        const channels: ChannelWithAgentInfo[] = []
         /* const channels = await client.channel.listByParticipant({
           participant: agent.address
         }) */
-        allChannels.push(...channels.map((ch: any) => ({ ...ch, agentName: agent.data.name || 'Agent' })))
+        allChannels.push(...channels.map((ch) => ({ ...ch, agentName: agent.data.name || 'Agent' })))
       }
       
       s.stop('✅ Channels loaded')
@@ -367,9 +387,9 @@ channelCommand
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
         
         outro('Message sending completed')
-      } catch (error: any) {
+      } catch (error) {
         sendSpinner.stop('❌ Send failed')
-        throw new Error(handleTransactionError(error))
+        throw new Error(handleTransactionError(error as Error))
       }
 
     } catch (error) {

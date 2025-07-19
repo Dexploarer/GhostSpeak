@@ -21,7 +21,10 @@ import type { KeyPairSigner } from '@solana/kit'
 import type { AgentWithAddress, Agent } from '@ghostspeak/sdk'
 import type {
   RegisterOptions,
-  ListOptions
+  ListOptions,
+  UpdateOptions,
+  VerifyOptions,
+  AnalyticsOptions
 } from '../types/cli-types.js'
 
 // Analytics interface for type safety
@@ -62,11 +65,11 @@ agentCommand
   .option('-n, --name <name>', 'Agent name')
   .option('-d, --description <description>', 'Agent description')
   .option('--endpoint <endpoint>', 'Service endpoint URL')
-  .action(async (options: RegisterOptions) => {
+  .action(async (_options: RegisterOptions) => {
     intro(chalk.cyan('🤖 Register New AI Agent'))
 
     try {
-      const agentData = await registerAgentPrompts(options)
+      const agentData = await registerAgentPrompts(_options)
       
       if (isCancel(agentData)) {
         cancel('Agent registration cancelled')
@@ -403,9 +406,9 @@ agentCommand
         }
         
         if (status) {
-          console.log(chalk.gray(`  Jobs completed: ${status.jobsCompleted || 0}`))
+          console.log(chalk.gray(`  Jobs completed: ${status.jobsCompleted ?? 0}`))
           console.log(chalk.gray(`  Total earnings: ${Number(status.totalEarnings ?? 0) / 1_000_000} SOL`))
-          console.log(chalk.gray(`  Success rate: ${status.successRate || 0}%`))
+          console.log(chalk.gray(`  Success rate: ${status.successRate ?? 0}%`))
           console.log(chalk.gray(`  Last active: ${status.lastActive ? new Date(Number(status.lastActive) * 1000).toLocaleString() : 'Never'}`))
           
           if (status.currentJob) {
@@ -434,7 +437,7 @@ agentCommand
   .command('update')
   .description('Update your AI agent details')
   .option('--agent-id <id>', 'Agent ID to update')
-  .action(async (options) => {
+  .action(async (options: UpdateOptions) => {
     intro(chalk.cyan('🔄 Update AI Agent'))
 
     try {
@@ -511,7 +514,7 @@ agentCommand
       console.log('─'.repeat(40))
       console.log(chalk.cyan('Name:') + ` ${currentAgent.name}`)
       console.log(chalk.cyan('Description:') + ` ${currentAgent.description}`)
-      console.log(chalk.cyan('Service Endpoint:') + ` ${currentAgent.serviceEndpoint || 'Not set'}`)
+      console.log(chalk.cyan('Service Endpoint:') + ` ${currentAgent.serviceEndpoint ?? 'Not set'}`)
       console.log(chalk.cyan('Capabilities:') + ` ${currentAgent.capabilities.join(', ')}`)
       console.log(chalk.cyan('Reputation:') + ` ${currentAgent.reputationScore}/100`)
 
@@ -586,7 +589,7 @@ agentCommand
       if (updateChoice === 'endpoint' || updateChoice === 'all') {
         const newEndpoint = await text({
           message: 'New service endpoint URL:',
-          placeholder: currentAgent.serviceEndpoint || 'https://api.example.com/agent',
+          placeholder: currentAgent.serviceEndpoint ?? 'https://api.example.com/agent',
           initialValue: updateChoice === 'all' ? currentAgent.serviceEndpoint : undefined,
           validate: (value) => {
             if (!value) return 'Endpoint is required'
@@ -632,7 +635,7 @@ agentCommand
 
       // Price update (using originalPrice from agent)
       if (updateChoice === 'price' || updateChoice === 'all') {
-        const currentPrice = currentAgent.originalPrice || 0n
+        const currentPrice = currentAgent.originalPrice ?? 0n
         const newPrice = await text({
           message: 'New price per task (in SOL):',
           placeholder: `${Number(currentPrice) / 1_000_000}`,
@@ -717,7 +720,7 @@ agentCommand
   .description('Verify an AI agent (admin only)')
   .option('-a, --agent <address>', 'Agent address to verify')
   .option('--auto', 'Auto-verify based on criteria')
-  .action(async (options) => {
+  .action(async (options: VerifyOptions) => {
     intro(chalk.cyan('✅ Agent Verification'))
 
     try {
@@ -730,6 +733,7 @@ agentCommand
       // TODO: Implement admin check when available in SDK
       // For now, assume admin access for testing
       const isAdmin = true // await client.agent.isAdmin(wallet.address)
+      void isAdmin // Mark as used for future implementation
       if (!isAdmin) {
         s.stop('❌ Access denied')
         outro(
@@ -790,9 +794,9 @@ agentCommand
         `${chalk.gray('Type:')} Agent\n` +
         `${chalk.gray('Owner:')} ${agent.data.owner}\n` +
         `${chalk.gray('Registered:')} ${new Date(Number(agent.data.createdAt) * 1000).toLocaleString()}\n` +
-        `${chalk.gray('Capabilities:')} ${agent.data.capabilities?.join(', ') || 'None listed'}\n` +
-        `${chalk.gray('Service Endpoint:')} ${agent.data.serviceEndpoint || 'Not provided'}\n` +
-        `${chalk.gray('Metadata URI:')} ${agent.data.metadataUri || 'Not provided'}\n`
+        `${chalk.gray('Capabilities:')} ${agent.data.capabilities?.join(', ') ?? 'None listed'}\n` +
+        `${chalk.gray('Service Endpoint:')} ${agent.data.serviceEndpoint ?? 'Not provided'}\n` +
+        `${chalk.gray('Metadata URI:')} ${agent.data.metadataUri ?? 'Not provided'}\n`
       )
 
       // Verification criteria checklist
@@ -951,7 +955,7 @@ agentCommand
           toSDKSigner(wallet),
           address(selectedAgent as string),
           1, // Default agent type
-          agent.data.metadataUri || '',
+          agent.data.metadataUri ?? '',
           selectedAgent as string
         )
 
@@ -988,16 +992,16 @@ agentCommand
   .option('-a, --agent <address>', 'Specific agent address')
   .option('--mine', 'Show analytics for my agents only')
   .option('-p, --period <period>', 'Time period (7d, 30d, 90d, 1y)')
-  .action(async (options) => {
+  .action(async (options: AnalyticsOptions) => {
     intro(chalk.cyan('📊 Agent Analytics'))
 
     try {
       const s = spinner()
       s.start('Loading analytics data...')
       
-      const { client, wallet: analyticsWallet } = await initializeClient('devnet')
+      const { client, wallet: _analyticsWallet } = await initializeClient('devnet')
       // Acknowledge unused variables for analytics future implementation
-      void analyticsWallet
+      void _analyticsWallet
       void client
       
       // TODO: Implement analytics methods when available in SDK
@@ -1053,7 +1057,7 @@ agentCommand
           `${chalk.gray('Active Agents:')} ${analytics.activeAgents}\n` +
           `${chalk.gray('Total Jobs Completed:')} ${analytics.totalJobs}\n` +
           `${chalk.gray('Success Rate:')} ${(analytics.successRate * 100).toFixed(1)}%\n` +
-          `${chalk.gray('Average Rating:')} ${analytics.averageRating?.toFixed(1) || 'No ratings'} ⭐\n` +
+          `${chalk.gray('Average Rating:')} ${analytics.averageRating?.toFixed(1) ?? 'No ratings'} ⭐\n` +
           `${chalk.gray('Total Earnings:')} ${(Number(analytics.totalEarnings) / 1_000_000_000).toFixed(3)} SOL\n`
         )
 

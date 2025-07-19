@@ -68,6 +68,9 @@ sdkCommand
 
           try {
             const { stdout, stderr } = await execAsync(installCmd)
+            // Acknowledge unused outputs for future logging
+            void stdout
+            void stderr
             s.stop(`Successfully installed ${packageName}`)
 
             // Show post-installation message

@@ -1,6 +1,5 @@
 import { 
   text, 
-  select, 
   multiselect, 
   confirm,
   isCancel,

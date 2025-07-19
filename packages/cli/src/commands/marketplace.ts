@@ -14,17 +14,12 @@ import {
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager } from '../utils/agentWallet.js'
-import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 import type {
   ListServicesOptions,
   CreateServiceOptions,
-  BuyServiceOptions,
   SearchServicesOptions,
-  JobsOptions,
-  isDefined,
-  isValidUrl,
-  parseFloatSafe
+  JobsOptions
 } from '../types/cli-types.js'
 
 export const marketplaceCommand = new Command('marketplace')
@@ -123,6 +118,9 @@ marketplaceCommand
   .description('Create a new service listing')
   .action(async (options: CreateServiceOptions) => {
     intro(chalk.magenta('📝 Create Service Listing'))
+    
+    // Acknowledge options for future implementation
+    void options
 
     try {
       const title = await text({
@@ -544,6 +542,9 @@ jobsCommand
   .description('Create a new job posting')
   .action(async (options: JobsOptions) => {
     intro(chalk.magenta('💼 Create Job Posting'))
+    
+    // Acknowledge options for future implementation
+    void options
 
     try {
       const title = await text({

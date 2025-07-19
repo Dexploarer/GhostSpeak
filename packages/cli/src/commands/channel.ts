@@ -11,7 +11,7 @@ import {
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
-import type { Channel, AgentWithAddress } from '@ghostspeak/sdk'
+// Types imported from SDK when needed
 
 // Channel-related types for type safety
 interface ChannelCreateResult {
@@ -20,12 +20,15 @@ interface ChannelCreateResult {
 }
 
 interface ChannelWithAgentInfo {
+  id: { toString: () => string }
+  name: string
   channelId: Address
   creator: Address
   participants: Address[]
   channelType: string
+  visibility: string
   isPrivate: boolean
-  messageCount: bigint
+  messageCount: number
   createdAt: bigint
   lastActivity: bigint
   isActive: boolean
@@ -226,21 +229,21 @@ channelCommand
       console.log('\n' + chalk.bold(`💬 Your A2A Channels (${allChannels.length})`))
       console.log('─'.repeat(70))
       
-      allChannels.forEach((channel: any, index: number) => {
-        const messageCount = channel.messageCount || 0
+      allChannels.forEach((channel: ChannelWithAgentInfo, index: number) => {
+        const messageCount = channel.messageCount ?? 0
         const isActive = channel.isActive
         const statusIcon = isActive ? '🟢' : '🔴'
         const status = isActive ? 'Active' : 'Closed'
         
         console.log(chalk.blue(`${index + 1}. ${channel.name}`))
-        console.log(chalk.gray(`   ID: ${(channel.id as any).toString()}`))
+        console.log(chalk.gray(`   ID: ${channel.id.toString()}`))
         console.log(chalk.gray(`   Your Agent: ${channel.agentName}`))
         console.log(chalk.gray(`   Visibility: ${channel.visibility}`))
         console.log(chalk.gray(`   Messages: ${messageCount}`))
         console.log(chalk.gray(`   Status: ${statusIcon} ${status}`))
         console.log(chalk.gray(`   Created: ${new Date(Number(channel.createdAt) * 1000).toLocaleString()}`))
-        if (channel.lastMessageAt) {
-          console.log(chalk.gray(`   Last Activity: ${new Date(Number(channel.lastMessageAt) * 1000).toLocaleString()}`))
+        if (channel.lastActivity) {
+          console.log(chalk.gray(`   Last Activity: ${new Date(Number(channel.lastActivity) * 1000).toLocaleString()}`))
         }
         console.log('')
       })

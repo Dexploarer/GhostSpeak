@@ -62,6 +62,7 @@ async function main() {
       }
     } catch (error) {
       // Use fallback version
+      void error
     }
     
     // Show banner with version

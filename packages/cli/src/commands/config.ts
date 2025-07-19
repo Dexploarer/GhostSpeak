@@ -122,7 +122,7 @@ configCommand
       console.log('\n' + chalk.bold('⚙️  GhostSpeak CLI Settings'))
       console.log('═'.repeat(50))
       console.log(chalk.green('Network:') + ` ${config.network}`)
-      console.log(chalk.green('RPC URL:') + ` ${config.rpcUrl || `Default ${config.network} RPC`}`)
+      console.log(chalk.green('RPC URL:') + ` ${config.rpcUrl ?? `Default ${config.network} RPC`}`)
       console.log(chalk.green('Wallet:') + ` ${config.walletPath}`)
       console.log(chalk.green('Program ID:') + ` ${config.programId}`)
       console.log(chalk.gray('Config File:') + ` ${getConfigPath()}`)
@@ -134,7 +134,7 @@ configCommand
         
         try {
           const rpc = createSolanaRpc(
-            config.rpcUrl || 
+            config.rpcUrl ?? 
             (config.network === 'devnet' ? 'https://api.devnet.solana.com' : 
              config.network === 'testnet' ? 'https://api.testnet.solana.com' : 
              'https://api.mainnet-beta.solana.com')

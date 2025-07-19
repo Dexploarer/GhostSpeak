@@ -15,7 +15,6 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
-import type { AuctionMarketplace } from '@ghostspeak/sdk'
 import type {
   CreateAuctionOptions,
   BidAuctionOptions,
@@ -47,12 +46,12 @@ auctionCommand
   .option('-s, --starting-price <price>', 'Starting price in SOL')
   .option('-r, --reserve-price <price>', 'Reserve price in SOL')
   .option('-d, --duration <hours>', 'Auction duration in hours')
-  .action(async (options: CreateAuctionOptions) => {
+  .action(async (_options: CreateAuctionOptions) => {
     intro(chalk.cyan('🎯 Create Service Auction'))
 
     try {
       // Collect auction parameters
-      const auctionType = options.type ?? await select({
+      const auctionType = _options.type ?? await select({
         message: 'Select auction type:',
         options: [
           { value: 'english', label: '📈 English Auction (ascending bids)', hint: 'Traditional highest bidder wins' },
@@ -96,7 +95,7 @@ auctionCommand
         return
       }
 
-      const startingPrice = options.startingPrice ?? await text({
+      const startingPrice = _options.startingPrice ?? await text({
         message: 'Starting price (SOL):',
         placeholder: '0.1',
         validate: (value) => {
@@ -112,7 +111,7 @@ auctionCommand
         return
       }
 
-      const reservePrice = options.reservePrice ?? await text({
+      const reservePrice = _options.reservePrice ?? await text({
         message: 'Reserve price (SOL):',
         placeholder: startingPrice,
         validate: (value) => {
@@ -130,7 +129,7 @@ auctionCommand
         return
       }
 
-      const duration = options.duration ?? await select({
+      const duration = _options.duration ?? await select({
         message: 'Auction duration:',
         options: [
           { value: '1', label: '1 hour', hint: 'Quick turnaround' },
@@ -277,6 +276,9 @@ auctionCommand
   .option('--mine', 'Show only my auctions')
   .action(async (options: ListAuctionsOptions) => {
     intro(chalk.cyan('📋 Active Auctions'))
+    
+    // Acknowledge options for future filtering implementation
+    void options
 
     try {
       const s = spinner()
@@ -297,7 +299,7 @@ auctionCommand
         currentBidder?: string
         creator?: string
       }[] = []
-      if (options.mine) {
+      if (_options.mine) {
         // Use listAuctions with creator filter
         try {
           auctions = await client.auction.listAuctions({
@@ -306,7 +308,7 @@ auctionCommand
         } catch {
           auctions = [] // TODO: Implement proper auction filtering
         }
-      } else if (options.status === 'ending') {
+      } else if (_options.status === 'ending') {
         try {
           auctions = await client.auction.getAuctionsEndingSoon(3600) // Next hour
         } catch {
@@ -315,7 +317,7 @@ auctionCommand
       } else {
         try {
           auctions = await client.auction.listAuctions({
-            auctionType: options.type as 'english' | 'dutch' | 'sealed' | undefined
+            auctionType: _options.type as 'english' | 'dutch' | 'sealed' | undefined
           })
         } catch {
           auctions = [] // TODO: Implement proper auction filtering
@@ -335,7 +337,7 @@ auctionCommand
       // Display auctions in a formatted table
       log.info(`\n${chalk.bold('Active Auctions:')}\n`)
       
-      auctions.forEach((auction) => {
+      auctions.forEach((auction, index) => {
         const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
         const hoursLeft = Math.max(0, Math.floor(timeLeft / 3600))
         const minutesLeft = Math.max(0, Math.floor((timeLeft % 3600) / 60))
@@ -371,7 +373,7 @@ auctionCommand
   .description('Place a bid on an auction')
   .option('-a, --auction <address>', 'Auction address')
   .option('-b, --bid <amount>', 'Bid amount in SOL')
-  .action(async (options: BidAuctionOptions) => {
+  .action(async (_options: BidAuctionOptions) => {
     intro(chalk.cyan('💰 Place Auction Bid'))
 
     try {
@@ -405,17 +407,17 @@ auctionCommand
       }
 
       // Select auction if not provided
-      let selectedAuction = options.auction
+      let selectedAuction = _options.auction
       if (!selectedAuction) {
         const auctionChoice = await select({
           message: 'Select auction to bid on:',
-          options: auctions.map((auction) => {
+          options: auctions.map((auction, index) => {
             const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
             const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
             const hoursLeft = Math.floor(timeLeft / 3600)
             
             return {
-              value: auction.address || `auction-${index}`,
+              value: auction.address ?? `auction-${index}`,
               label: `${(auction.auctionType as string).toUpperCase()} - ${currentPriceSOL} SOL`,
               hint: `${hoursLeft}h left, ${auction.totalBids} bids`
             }
@@ -443,7 +445,7 @@ auctionCommand
       const suggestedBid = currentPriceSOL + minIncrementSOL
 
       // Get bid amount
-      let bidAmount = options.bid
+      let bidAmount = _options.bid
       if (!bidAmount) {
         bidAmount = await text({
           message: `Enter bid amount (SOL):`,
@@ -550,7 +552,7 @@ auctionCommand
   .command('monitor')
   .description('Monitor auction progress in real-time')
   .option('-a, --auction <address>', 'Specific auction to monitor')
-  .action(async (options: { auction?: string }) => {
+  .action(async (_options: { auction?: string }) => {
     intro(chalk.cyan('📡 Auction Monitor'))
 
     try {
@@ -559,9 +561,9 @@ auctionCommand
       void client
       void wallet
 
-      if (options.auction) {
+      if (_options.auction) {
         // Monitor specific auction
-        log.info(`Monitoring auction: ${options.auction}`)
+        log.info(`Monitoring auction: ${_options.auction}`)
         
         let lastBidAmount = 0n
         let lastStatus = ''
@@ -578,7 +580,7 @@ auctionCommand
           status: 'active' as const
         }
         
-        log.info(`Monitoring auction: ${options.auction}`)
+        log.info(`Monitoring auction: ${_options.auction}`)
         log.info(`Current status: ${mockAuctionSummary.status}`)
         log.info(`Time remaining: ${Number(mockAuctionSummary.timeRemaining)} seconds`)
         
@@ -642,7 +644,7 @@ auctionCommand
   .command('finalize')
   .description('Finalize completed auctions')
   .option('-a, --auction <address>', 'Auction address to finalize')
-  .action(async (options: { auction?: string }) => {
+  .action(async (_options: { auction?: string }) => {
     intro(chalk.cyan('🏁 Finalize Auction'))
 
     try {
@@ -670,7 +672,7 @@ auctionCommand
       }
 
       // Select auction if not provided
-      let selectedAuction = options.auction
+      let selectedAuction = _options.auction
       if (!selectedAuction) {
         const auctionChoice = await select({
           message: 'Select auction to finalize:',
@@ -680,7 +682,7 @@ auctionCommand
             return {
               value: auction.address,
               label: `${auction.auctionType.toUpperCase()} - ${finalPriceSOL} SOL`,
-              hint: `${auction.totalBids} bids, winner: ${auction.currentBidder?.toString() || 'No bids'}`
+              hint: `${auction.totalBids} bids, winner: ${auction.currentBidder?.toString() ?? 'No bids'}`
             }
           })
         })
@@ -759,17 +761,20 @@ auctionCommand
   .command('analytics')
   .description('View auction analytics and insights')
   .option('--mine', 'Show only my auction analytics')
-  .action(async (options: { mine?: boolean }) => {
+  .action(async (_options: { mine?: boolean }) => {
     intro(chalk.cyan('📊 Auction Analytics'))
+    
+    // Acknowledge options for future analytics filtering implementation
+    void _options
 
     try {
       const s = spinner()
       s.start('Generating analytics...')
       
-      const { client, wallet } = await initializeClient('devnet')
+      const { client, wallet: _wallet } = await initializeClient('devnet')
       // Acknowledge unused variables for future analytics implementation
       void client
-      void wallet
+      void _wallet
       
       // Get analytics (currently mocked until SDK implementation is complete)
       const analytics = {
@@ -794,19 +799,19 @@ auctionCommand
       log.info(`\n${chalk.bold('📈 Auction Performance Overview:')}\n`)
       
       log.info(
-        `${chalk.gray('Total Auctions:')} ${analytics.totalAuctions || 0}\n` +
-        `${chalk.gray('Active Auctions:')} ${analytics.activeAuctions || 0}\n` +
-        `${chalk.gray('Completed Auctions:')} ${analytics.completedAuctions || 0}\n` +
-        `${chalk.gray('Success Rate:')} ${((analytics.successRate || 0) * 100).toFixed(1)}%\n`
+        `${chalk.gray('Total Auctions:')} ${analytics.totalAuctions ?? 0}\n` +
+        `${chalk.gray('Active Auctions:')} ${analytics.activeAuctions ?? 0}\n` +
+        `${chalk.gray('Completed Auctions:')} ${analytics.completedAuctions ?? 0}\n` +
+        `${chalk.gray('Success Rate:')} ${((analytics.successRate ?? 0) * 100).toFixed(1)}%\n`
       )
 
       log.info(`\n${chalk.bold('💰 Financial Metrics:')}\n`)
       
       log.info(
-        `${chalk.gray('Total Volume:')} ${(Number(analytics.totalVolume || 0) / 1_000_000_000).toFixed(3)} SOL\n` +
-        `${chalk.gray('Average Price:')} ${(Number(analytics.averagePrice || 0) / 1_000_000_000).toFixed(3)} SOL\n` +
-        `${chalk.gray('Highest Sale:')} ${(Number(analytics.highestSale || 0) / 1_000_000_000).toFixed(3)} SOL\n` +
-        `${chalk.gray('Total Fees Collected:')} ${(Number(analytics.totalFees || 0) / 1_000_000_000).toFixed(3)} SOL\n`
+        `${chalk.gray('Total Volume:')} ${(Number(analytics.totalVolume ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
+        `${chalk.gray('Average Price:')} ${(Number(analytics.averagePrice ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
+        `${chalk.gray('Highest Sale:')} ${(Number(analytics.highestSale ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
+        `${chalk.gray('Total Fees Collected:')} ${(Number(analytics.totalFees ?? 0) / 1_000_000_000).toFixed(3)} SOL\n`
       )
 
       log.info(`\n${chalk.bold('🎯 Auction Type Breakdown:')}\n`)
@@ -815,9 +820,9 @@ auctionCommand
         Object.entries(analytics.auctionTypeStats).forEach(([type, stats]: [string, { count?: number; successRate?: number; averagePrice?: bigint }]) => {
           log.info(
             `${chalk.bold(type.toUpperCase())}:\n` +
-            `   ${chalk.gray('Count:')} ${stats?.count || 0}\n` +
-            `   ${chalk.gray('Success Rate:')} ${((stats?.successRate || 0) * 100).toFixed(1)}%\n` +
-            `   ${chalk.gray('Avg Price:')} ${(Number(stats?.averagePrice || 0) / 1_000_000_000).toFixed(3)} SOL\n`
+            `   ${chalk.gray('Count:')} ${stats?.count ?? 0}\n` +
+            `   ${chalk.gray('Success Rate:')} ${((stats?.successRate ?? 0) * 100).toFixed(1)}%\n` +
+            `   ${chalk.gray('Avg Price:')} ${(Number(stats?.averagePrice ?? 0) / 1_000_000_000).toFixed(3)} SOL\n`
           )
         })
       }
@@ -827,10 +832,10 @@ auctionCommand
         
         analytics.topPerformers.slice(0, 5).forEach((performer: { creator?: string; auctionCount?: number; totalVolume?: bigint; successRate?: number }, index: number) => {
           log.info(
-            `${index + 1}. ${performer?.creator || 'Unknown'}\n` +
-            `   ${chalk.gray('Auctions:')} ${performer?.auctionCount || 0}\n` +
-            `   ${chalk.gray('Total Volume:')} ${(Number(performer?.totalVolume || 0) / 1_000_000_000).toFixed(3)} SOL\n` +
-            `   ${chalk.gray('Success Rate:')} ${((performer?.successRate || 0) * 100).toFixed(1)}%\n`
+            `${index + 1}. ${performer?.creator ?? 'Unknown'}\n` +
+            `   ${chalk.gray('Auctions:')} ${performer?.auctionCount ?? 0}\n` +
+            `   ${chalk.gray('Total Volume:')} ${(Number(performer?.totalVolume ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
+            `   ${chalk.gray('Success Rate:')} ${((performer?.successRate ?? 0) * 100).toFixed(1)}%\n`
           )
         })
       }

@@ -23,6 +23,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
       const walletData = JSON.parse(readFileSync(config.walletPath, 'utf-8'))
       return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
     } catch (error) {
+      // Acknowledge error for future error handling
+      void error
       log.warn(`Failed to load wallet from config: ${config.walletPath}`)
     }
   }
@@ -34,6 +36,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
       const walletData = JSON.parse(readFileSync(walletPath, 'utf-8'))
       return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
     } catch (error) {
+      // Acknowledge error for future error handling
+      void error
       log.warn('Failed to load GhostSpeak CLI wallet')
     }
   }
@@ -45,6 +49,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
       const walletData = JSON.parse(readFileSync(defaultWalletPath, 'utf-8'))
       return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
     } catch (error) {
+      // Acknowledge error for future error handling
+      void error
       log.warn('Failed to load default Solana wallet')
     }
   }

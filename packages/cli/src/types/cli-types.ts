@@ -32,7 +32,8 @@ export interface StatusOptions {
 }
 
 export interface UpdateOptions {
-  agent: string
+  agentId?: string  // Added missing agentId field
+  agent?: string    // Made optional since we can select interactively
   name?: string
   description?: string
   endpoint?: string
@@ -40,12 +41,13 @@ export interface UpdateOptions {
 }
 
 export interface VerifyOptions {
-  agent: string
+  agent?: string  // Made optional since can be selected interactively
   auto?: boolean
 }
 
 export interface AnalyticsOptions {
   agent?: string
+  mine?: boolean  // Added missing mine field
   period?: string
   format?: string
 }
@@ -298,7 +300,7 @@ export type RequireAtLeastOne<T> = {
 // URL validation helper
 export function isValidUrl(value: string): boolean {
   try {
-    // eslint-disable-next-line no-new
+     
     new globalThis.URL(value)
     return true
   } catch {

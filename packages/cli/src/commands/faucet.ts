@@ -10,7 +10,7 @@ import { generateKeyPairSigner, createSolanaRpc, address } from '@solana/kit'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
-import { FaucetService, EnhancedSolanaFaucets } from '../services/faucet-service.js'
+import { FaucetService } from '../services/faucet-service.js'
 
 interface FaucetOptions {
   network?: 'devnet' | 'testnet'
@@ -257,7 +257,7 @@ async function checkBalance(walletAddress: string, network: 'devnet' | 'testnet'
 /**
  * Main faucet command
  */
-export async function faucetCommand(options: FaucetOptions): Promise<void> {
+async function faucetCommand(options: FaucetOptions): Promise<void> {
   try {
     console.log('💧 GhostSpeak Faucet - Get SOL for Development')
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
@@ -604,3 +604,4 @@ export function setupFaucetCommand(program: Command): void {
       }
     })
 }
+

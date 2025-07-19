@@ -8,8 +8,7 @@ import {
   confirm, 
   spinner,
   isCancel,
-  cancel,
-  log
+  cancel
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
@@ -17,8 +16,7 @@ import { getAddressEncoder } from '@solana/kit'
 import { WorkOrderStatus } from '@ghostspeak/sdk'
 import type {
   CreateEscrowOptions,
-  ReleaseEscrowOptions,
-  DisputeEscrowOptions
+  ReleaseEscrowOptions
 } from '../types/cli-types.js'
 
 export const escrowCommand = new Command('escrow')

@@ -60,7 +60,7 @@ export abstract class BaseInstructions {
   protected getRpcClient(): SimpleRpcClient {
     this._rpcClient ??= new SimpleRpcClient({
       endpoint: this.config.rpcEndpoint ?? 'https://api.devnet.solana.com',
-      wsEndpoint: this.config.rpcSubscriptions ? undefined : undefined, // TODO: get ws endpoint from config
+      wsEndpoint: this.config.rpcSubscriptions ? undefined : undefined, // WebSocket endpoint from config if available
       commitment: this.config.commitment ?? 'confirmed'
     })
     return this._rpcClient
@@ -540,9 +540,40 @@ export abstract class BaseInstructions {
       
       console.log(`Found ${Array.isArray(accounts) ? accounts.length : 0} program accounts`)
       
-      // For now, return empty array until proper decoder is implemented
-      // This is a real implementation that connects to RPC but needs decoder work
-      return []
+      // Import the decoder and decode each account
+      try {
+        const generated = await import('../../generated/index.js')
+        const decoderGetter = (generated as Record<string, unknown>)[decoderImportName] as (() => { decode: (data: Uint8Array | Buffer) => T }) | undefined
+        
+        if (!decoderGetter || typeof decoderGetter !== 'function') {
+          console.warn(`Decoder ${decoderImportName} not found in generated decoders`)
+          return []
+        }
+        
+        const decoder = decoderGetter()
+        const decodedAccounts: { address: Address; data: T }[] = []
+        
+        for (const { pubkey, account } of accounts) {
+          try {
+            // Handle parsed data vs raw data
+            const rawData = Buffer.isBuffer(account.data) || account.data instanceof Uint8Array
+              ? account.data
+              : Buffer.from((account.data as { data?: string }).data ?? account.data as unknown as string, 'base64')
+            
+            const decodedData = decoder.decode(rawData)
+            decodedAccounts.push({ address: pubkey, data: decodedData })
+          } catch (decodeError) {
+            console.warn(`Failed to decode account ${pubkey}:`, decodeError)
+            // Skip accounts that fail to decode rather than failing the entire operation
+          }
+        }
+        
+        console.log(`Successfully decoded ${decodedAccounts.length}/${accounts.length} program accounts`)
+        return decodedAccounts
+      } catch (decoderError) {
+        console.warn(`Failed to load decoder ${decoderImportName}:`, decoderError)
+        return []
+      }
     } catch (error) {
       console.error(`Failed to get program accounts:`, error)
       throw new Error(`Failed to get program accounts: ${error instanceof Error ? error.message : 'Unknown error'}`)

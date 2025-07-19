@@ -5,7 +5,6 @@ import {
   outro, 
   text, 
   select, 
-  multiselect, 
   confirm, 
   spinner,
   isCancel,
@@ -13,14 +12,11 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 import type {
-  CreateMultisigOptions,
-  CreateProposalOptions,
-  VoteOptions,
-  ListProposalsOptions
+  CreateMultisigOptions
 } from '../types/cli-types.js'
 
 export const governanceCommand = new Command('governance')
@@ -271,7 +267,7 @@ governanceCommand
           log.info(`\n${chalk.bold('Multisig Wallets:')}\n`)
           
           multisigs.forEach((multisig, index) => {
-            const balanceSOL = (Number(multisig.balance || 0) / 1_000_000_000).toFixed(3)
+            const balanceSOL = (Number(multisig.balance ?? 0) / 1_000_000_000).toFixed(3)
             const isSigner = multisig.signers.includes(wallet.address)
             
             log.info(
@@ -279,7 +275,7 @@ governanceCommand
               `   ${chalk.gray('Type:')} ${multisig.multisigType}\n` +
               `   ${chalk.gray('Threshold:')} ${multisig.threshold} of ${multisig.signers.length}\n` +
               `   ${chalk.gray('Balance:')} ${balanceSOL} SOL\n` +
-              `   ${chalk.gray('Pending Transactions:')} ${multisig.pendingTransactions || 0}\n` +
+              `   ${chalk.gray('Pending Transactions:')} ${multisig.pendingTransactions ?? 0}\n` +
               `   ${chalk.gray('Time Lock:')} ${multisig.timelockDuration && Number(multisig.timelockDuration) > 0 ? `${Number(multisig.timelockDuration) / 3600}h` : 'None'}\n`
             )
           })
@@ -592,18 +588,18 @@ governanceCommand
               proposal.status.toString() === 'executed' ? chalk.blue :
               chalk.yellow
 
-            const timeLeft = Number(proposal.votingEndsAt || 0) - Math.floor(Date.now() / 1000)
+            const timeLeft = Number(proposal.votingEndsAt ?? 0) - Math.floor(Date.now() / 1000)
             const daysLeft = Math.max(0, Math.floor(timeLeft / 86400))
             const hoursLeft = Math.max(0, Math.floor((timeLeft % 86400) / 3600))
 
             const participation = proposal.totalVotes > 0 ? 
-              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters || 1)) * 100).toFixed(1) : '0'
+              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters ?? 1)) * 100).toFixed(1) : '0'
 
             const approval = proposal.totalVotes > 0 ? 
-              ((Number(proposal.yesVotes || 0) / Number(proposal.totalVotes)) * 100).toFixed(1) : '0'
+              ((Number(proposal.yesVotes ?? 0) / Number(proposal.totalVotes)) * 100).toFixed(1) : '0'
 
             log.info(
-              `${chalk.bold(`${index + 1}. ${proposal.title}`)} [${(proposal.category || 'general').toUpperCase()}]\n` +
+              `${chalk.bold(`${index + 1}. ${proposal.title}`)} [${(proposal.category ?? 'general').toUpperCase()}]\n` +
               `   ${chalk.gray('Status:')} ${statusColor(proposal.status.toString().toUpperCase())}\n` +
               `   ${chalk.gray('Participation:')} ${participation}% (${proposal.totalVotes} votes)\n` +
               `   ${chalk.gray('Approval:')} ${approval}% yes votes\n` +
@@ -656,10 +652,10 @@ governanceCommand
         const proposalChoice = await select({
           message: 'Select proposal to vote on:',
           options: proposals.map(proposal => {
-            const timeLeft = Number(proposal.votingEndsAt || 0) - Math.floor(Date.now() / 1000)
+            const timeLeft = Number(proposal.votingEndsAt ?? 0) - Math.floor(Date.now() / 1000)
             const daysLeft = Math.floor(timeLeft / 86400)
             const participation = proposal.totalVotes > 0 ? 
-              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters || 1)) * 100).toFixed(1) : '0'
+              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters ?? 1)) * 100).toFixed(1) : '0'
             
             return {
               value: proposal.id,

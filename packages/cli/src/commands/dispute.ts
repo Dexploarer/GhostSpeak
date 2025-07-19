@@ -13,15 +13,12 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
-import type { DisputeSummary } from '@ghostspeak/sdk'
+import type { DisputeSummary, DisputeFilter } from '@ghostspeak/sdk'
 import type {
-  FileDisputeOptions,
-  ResolveDisputeOptions,
-  EscalateDisputeOptions,
-  ListDisputesOptions
+  FileDisputeOptions
 } from '../types/cli-types.js'
 
 export const disputeCommand = new Command('dispute')
@@ -45,13 +42,7 @@ disputeCommand
         
         const { client, wallet } = await initializeClient('devnet')
         
-        // TODO: Method getEscrowsForUser not implemented in SDK yet
-      const workOrders: Array<{
-        address: Address
-        orderId: bigint
-        title?: string
-        status: string
-      }> = [] // await client.escrow.getEscrowsForUser(wallet.address)
+        const workOrders = await client.escrow.getEscrowsForUser(wallet.address)
         s.stop(`✅ Found ${workOrders.length} work orders`)
 
         if (workOrders.length === 0) {
@@ -64,10 +55,10 @@ disputeCommand
 
         const workOrderChoice = await select({
           message: 'Select work order to dispute:',
-          options: workOrders.map((order: any) => ({
-            value: order.address?.toString() || order.id || 'unknown',
-            label: order.title || 'Untitled Work Order',
-            hint: `${(Number(order.paymentAmount || 0) / 1_000_000_000).toFixed(3)} SOL`
+          options: workOrders.map((order) => ({
+            value: order.address?.toString() ?? order.orderId?.toString() ?? 'unknown',
+            label: order.title ?? 'Untitled Work Order',
+            hint: `${(Number(order.paymentAmount ?? 0) / 1_000_000_000).toFixed(3)} SOL`
           }))
         })
 
@@ -217,8 +208,16 @@ disputeCommand
           reason: `${disputeReason}: ${disputeDescription}`
         }
 
-        // TODO: fileDispute method signature expects 3 parameters
-        const disputePda = address('11111111111111111111111111111111')
+        // Generate dispute PDA
+        const { getProgramDerivedAddress, getBytesEncoder, getAddressEncoder } = await import('@solana/kit')
+        const [disputePda] = await getProgramDerivedAddress({
+          programAddress: client.config.programId!,
+          seeds: [
+            getBytesEncoder().encode(new Uint8Array([100, 105, 115, 112, 117, 116, 101])), // 'dispute'
+            getAddressEncoder().encode(wallet.address)
+          ]
+        })
+        
         const signature = await client.dispute.fileDispute(
           wallet,
           disputePda,
@@ -238,7 +237,7 @@ disputeCommand
               await client.dispute.submitEvidence(
                 wallet,
                 {
-                  dispute: address(signature.toString()), // Using transaction signature as dispute ID for now
+                  dispute: disputePda,
                   evidenceType: 'document',
                   evidenceData: evidence
                 }
@@ -378,8 +377,8 @@ disputeCommand
       // Get all disputes and filter by user involvement
       const allDisputes = await client.dispute.listDisputes()
       const disputes = allDisputes.filter((d: DisputeSummary) => 
-        (d.claimant === wallet.address.toString() || d.claimant === wallet.address) || 
-        (d.respondent === wallet.address.toString() || d.respondent === wallet.address)
+        (d.claimant === wallet.address.toString()) || 
+        (d.respondent === wallet.address.toString())
       )
       const activeDisputes = disputes.filter((d: DisputeSummary) => 
         d.status.toString() === 'pending' || 
@@ -419,8 +418,8 @@ disputeCommand
       }
 
       const dispute = activeDisputes.find((d: DisputeSummary) => 
-        (d.id && d.id.toString() === selectedDispute) || 
-        d.dispute.toString() === selectedDispute
+        (d.id?.toString() === selectedDispute) || 
+        d.dispute?.toString() === selectedDispute
       )
       if (!dispute) {
         log.error('Dispute not found or not accessible')
@@ -607,8 +606,8 @@ disputeCommand
       }
 
       const dispute = pendingDisputes.find((d: DisputeSummary) => 
-        (d.id && d.id.toString() === selectedDispute) || 
-        d.dispute.toString() === selectedDispute
+        (d.id?.toString() === selectedDispute) || 
+        d.dispute?.toString() === selectedDispute
       )
       if (!dispute) {
         log.error('Dispute not found or not available for arbitration')
@@ -774,8 +773,8 @@ disputeCommand
       // Get all disputes and filter by user involvement
       const allDisputes = await client.dispute.listDisputes()
       const disputes = allDisputes.filter((d: DisputeSummary) => 
-        (d.claimant === wallet.address.toString() || d.claimant === wallet.address) || 
-        (d.respondent === wallet.address.toString() || d.respondent === wallet.address)
+        (d.claimant === wallet.address.toString()) || 
+        (d.respondent === wallet.address.toString())
       )
       const escalatableDisputes = disputes.filter((d: DisputeSummary) => 
         (d.status.toString() === 'under_review' || d.status.toString() === 'UnderReview') && 
@@ -818,8 +817,8 @@ disputeCommand
       }
 
       const dispute = escalatableDisputes.find((d: DisputeSummary) => 
-        (d.id && d.id.toString() === selectedDispute) || 
-        d.dispute.toString() === selectedDispute
+        (d.id?.toString() === selectedDispute) || 
+        d.dispute?.toString() === selectedDispute
       )
       if (!dispute) {
         log.error('Dispute not found or not eligible for escalation')

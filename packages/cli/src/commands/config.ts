@@ -15,12 +15,6 @@ import { existsSync, readFileSync } from 'fs'
 import { createSolanaRpc, createKeyPairSignerFromBytes } from '@solana/kit'
 import { lamportsToSol } from '../utils/helpers.js'
 import { homedir } from 'os'
-import { join } from 'path'
-import type {
-  ConfigSetOptions,
-  ConfigGetOptions,
-  ConfigResetOptions
-} from '../types/cli-types.js'
 
 export const configCommand = new Command('config')
   .description('Configure GhostSpeak CLI settings')
@@ -28,7 +22,7 @@ export const configCommand = new Command('config')
 configCommand
   .command('setup')
   .description('Initial setup and wallet configuration')
-  .action(async (options: Record<string, unknown>) => {
+  .action(async () => {
     intro(chalk.green('⚙️  GhostSpeak CLI Setup'))
 
     try {
@@ -99,7 +93,7 @@ configCommand
       // Save the actual configuration
       const expandedWalletPath = walletPath.toString().replace('~', homedir())
       saveConfig({
-        network: network as any,
+        network: network as 'devnet' | 'testnet' | 'mainnet-beta' | 'localnet',
         walletPath: expandedWalletPath,
         rpcUrl: rpcUrl ? rpcUrl.toString() : undefined
       })
@@ -155,7 +149,7 @@ configCommand
           console.log('')
           console.log(chalk.gray('💰 Wallet Address:') + ` ${signer.address}`)
           console.log(chalk.gray('💰 Wallet Balance:') + ` ${lamportsToSol(balance)} SOL`)
-        } catch (error) {
+        } catch {
           s.stop('')
           console.log('')
           console.log(chalk.yellow('⚠️  Could not fetch wallet balance'))

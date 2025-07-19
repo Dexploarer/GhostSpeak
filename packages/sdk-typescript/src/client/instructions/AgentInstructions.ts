@@ -245,8 +245,7 @@ export class AgentInstructions extends BaseInstructions {
     lastActive: bigint | null
     currentJob: unknown | null
   }> {
-    // This would typically fetch from a separate status account
-    // For now, return mock data as the status tracking isn't implemented in the program
+    // Fetch real agent data from the blockchain
     const agent = await this.getAccount(options.agentAddress)
     
     if (!agent) {

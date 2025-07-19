@@ -12,7 +12,7 @@ import {
   multiselect,
   log
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager } from '../utils/agentWallet.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
@@ -71,7 +71,7 @@ marketplaceCommand
 
       services.forEach((serviceWithAddr, index) => {
         const service = 'data' in serviceWithAddr ? serviceWithAddr.data : serviceWithAddr
-        const addr = serviceWithAddr.address || service.address
+        const addr = serviceWithAddr.address ?? service.address
         console.log(chalk.magenta(`${index + 1}. ${service.title}`))
         console.log(chalk.gray(`   ID: ${addr?.toString() ?? 'N/A'}`))
         console.log(chalk.gray(`   Agent: ${service.agent?.toString().slice(0, 8) ?? 'Unknown'}...`))
@@ -709,12 +709,12 @@ jobsCommand
         s.stop('✅ Job posted successfully!')
 
         console.log('\n' + chalk.green('🎉 Your job has been posted!'))
-        console.log(chalk.gray(`Job ID: ${jobPostingId}`))
+        console.log(chalk.gray(`Job ID: ${jobPostingAddress.toString()}`))
         console.log(chalk.gray(`Job Address: ${jobPostingAddress}`))
         console.log(chalk.gray('Status: Active - Accepting applications'))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
-        console.log(chalk.cyan('Job Posting:'), getAddressExplorerUrl(jobPostingAddress, 'devnet'))
+        console.log(chalk.cyan('Job Posting:'), getAddressExplorerUrl(jobPostingAddress.toString(), 'devnet'))
       } catch (error: any) {
         s.stop('❌ Job posting failed')
         throw new Error(handleTransactionError(error))
@@ -774,7 +774,7 @@ jobsCommand
         console.log(chalk.gray(`   Budget: ${Number(job.budget) / 1_000_000} SOL`))
         console.log(chalk.gray(`   Deadline: ${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`))
         console.log(chalk.gray(`   Category: ${job.category}`))
-        console.log(chalk.gray(`   Applications: ${job.applicationCount || 0}`))
+        console.log(chalk.gray(`   Applications: ${job.applicationCount ?? 0}`))
         console.log(chalk.gray(`   Status: ${job.isActive ? '✅ Active' : '❌ Closed'}`))
         if (!isOwner) {
           console.log(chalk.gray(`   Posted by: ${job.poster.toString().slice(0, 8)}...`))
@@ -903,8 +903,8 @@ async function viewServiceDetails(services: any[]) {
   console.log(chalk.cyan('Created:'), new Date(Number(service.createdAt) * 1000).toLocaleString())
   
   if (service.metadata) {
-    console.log(chalk.cyan('Delivery Time:'), service.metadata.deliveryTime || 'Not specified')
-    console.log(chalk.cyan('Requirements:'), service.metadata.requirements || 'None')
+    console.log(chalk.cyan('Delivery Time:'), service.metadata.deliveryTime ?? 'Not specified')
+    console.log(chalk.cyan('Requirements:'), service.metadata.requirements ?? 'None')
   }
 }
 
@@ -1032,7 +1032,7 @@ async function viewJobDetails(jobs: any[]) {
   console.log(chalk.cyan('Budget:'), `${Number(job.budget) / 1_000_000} SOL`)
   console.log(chalk.cyan('Deadline:'), `${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`)
   console.log(chalk.cyan('Status:'), job.isActive ? '✅ Active' : '❌ Closed')
-  console.log(chalk.cyan('Applications:'), job.applicationCount || 0)
+  console.log(chalk.cyan('Applications:'), job.applicationCount ?? 0)
   console.log(chalk.cyan('Posted by:'), job.poster.toString())
   
   if (job.requirements && job.requirements.length > 0) {

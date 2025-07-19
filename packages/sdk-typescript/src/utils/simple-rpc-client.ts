@@ -19,13 +19,8 @@ export interface SimpleRpcClientConfig {
   commitment?: Commitment
 }
 
-interface SolanaRpcConfig {
-  url: string
-}
-
-interface SolanaRpcSubscriptionsConfig {
-  url: string
-}
+// RPC configuration interfaces
+// Note: These may be used for future WebSocket configuration
 
 /**
  * Simplified RPC client focusing on core functionality
@@ -112,7 +107,7 @@ export class SimpleRpcClient {
     transaction: string,
     options?: { skipPreflight?: boolean; preflightCommitment?: Commitment }
   ): Promise<string> {
-    const result = await this.rpc.sendTransaction(transaction as any, {
+    const result = await this.rpc.sendTransaction(transaction as unknown as Parameters<typeof this.rpc.sendTransaction>[0], {
       skipPreflight: options?.skipPreflight ?? false,
       preflightCommitment: options?.preflightCommitment ?? this.commitment
     }).send()
@@ -135,9 +130,11 @@ export class SimpleRpcClient {
     transaction: string,
     options?: { commitment?: Commitment; replaceRecentBlockhash?: boolean }
   ) {
-    return this.rpc.simulateTransaction(transaction as any, {
+    return this.rpc.simulateTransaction(transaction as unknown as Parameters<typeof this.rpc.simulateTransaction>[0], {
       commitment: options?.commitment ?? this.commitment,
-      replaceRecentBlockhash: options?.replaceRecentBlockhash ?? false
+      replaceRecentBlockhash: options?.replaceRecentBlockhash ?? false,
+      sigVerify: false,
+      encoding: 'base64'
     }).send()
   }
 
@@ -145,7 +142,7 @@ export class SimpleRpcClient {
    * Get fee for message
    */
   async getFeeForMessage(message: string): Promise<number> {
-    const result = await this.rpc.getFeeForMessage(message as any).send()
+    const result = await this.rpc.getFeeForMessage(message as unknown as Parameters<typeof this.rpc.getFeeForMessage>[0]).send()
     return Number(result.value ?? 5000) // Fallback fee
   }
 
@@ -227,7 +224,7 @@ export class SimpleRpcClient {
     const account = accountInfo as Record<string, unknown>
     return {
       executable: account.executable as boolean,
-      lamports: account.lamports as any, // Cast to Lamports branded type
+      lamports: BigInt(account.lamports as string | number) as unknown as AccountInfo['lamports'], // Cast to Lamports branded type
       owner: account.owner as Address,
       rentEpoch: account.rentEpoch as bigint,
       data: account.data as Buffer,

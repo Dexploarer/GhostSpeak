@@ -35,7 +35,7 @@ export function loadConfig(): GhostSpeakConfig {
   
   try {
     const configData = readFileSync(CONFIG_FILE, 'utf-8')
-    const config = JSON.parse(configData)
+    const config = JSON.parse(configData) as Partial<GhostSpeakConfig>
     return { ...DEFAULT_CONFIG, ...config }
   } catch (error) {
     console.error('Error loading config:', error)

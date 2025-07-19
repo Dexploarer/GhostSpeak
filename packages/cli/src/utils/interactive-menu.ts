@@ -1,7 +1,7 @@
 import { select, intro, outro, confirm, cancel, isCancel, log, spinner } from '@clack/prompts'
 import chalk from 'chalk'
 import { Command } from 'commander'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import { initializeClient } from './client.js'
@@ -535,11 +535,11 @@ export class InteractiveMenu {
       // Ensure directory exists
       const dir = join(homedir(), '.ghostspeak')
       if (!existsSync(dir)) {
-        require('fs').mkdirSync(dir, { recursive: true })
+        mkdirSync(dir, { recursive: true })
       }
       
       writeFileSync(RECENT_COMMANDS_FILE, JSON.stringify(toSave, null, 2))
-    } catch (error) {
+    } catch {
       // Silently ignore errors saving recent commands
     }
   }
@@ -547,7 +547,7 @@ export class InteractiveMenu {
   private getRecentCommands(): { command: string; label: string; timestamp: number }[] {
     try {
       if (existsSync(RECENT_COMMANDS_FILE)) {
-        return JSON.parse(readFileSync(RECENT_COMMANDS_FILE, 'utf-8'))
+        return JSON.parse(readFileSync(RECENT_COMMANDS_FILE, 'utf-8')) as { command: string; label: string; timestamp: number }[]
       }
     } catch (error) {
       // Ignore errors reading recent commands

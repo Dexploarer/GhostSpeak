@@ -5,7 +5,6 @@ import {
   outro, 
   text, 
   select, 
-  multiselect, 
   confirm, 
   spinner,
   isCancel,
@@ -13,14 +12,29 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
-import type { Address } from '@solana/addresses'
+import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
 import { address } from '@solana/addresses'
+import type { Address } from '@solana/addresses'
+import type { AuctionMarketplace } from '@ghostspeak/sdk'
 import type {
   CreateAuctionOptions,
   BidAuctionOptions,
   ListAuctionsOptions
 } from '../types/cli-types.js'
+
+// Auction types for better type safety
+interface AuctionListItem {
+  address: string
+  creator: Address
+  auctionType: string
+  startingPrice: bigint
+  currentBid?: bigint
+  currentPrice: bigint
+  currentBidder?: Address
+  minimumBidIncrement: bigint
+  totalBids: number
+  status: string
+}
 
 export const auctionCommand = new Command('auction')
   .description('Manage auctions on the GhostSpeak marketplace')
@@ -271,7 +285,7 @@ auctionCommand
       const { client, wallet } = await initializeClient('devnet')
       
       // Get auctions based on filters
-      let auctions: Array<{
+      let auctions: {
         address?: string
         auctionType: string
         currentBid?: bigint
@@ -282,7 +296,7 @@ auctionCommand
         minimumBidIncrement: bigint
         currentBidder?: string
         creator?: string
-      }> = []
+      }[] = []
       if (options.mine) {
         // Use listAuctions with creator filter
         try {
@@ -321,7 +335,7 @@ auctionCommand
       // Display auctions in a formatted table
       log.info(`\n${chalk.bold('Active Auctions:')}\n`)
       
-      auctions.forEach((auction, index: number) => {
+      auctions.forEach((auction) => {
         const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
         const hoursLeft = Math.max(0, Math.floor(timeLeft / 3600))
         const minutesLeft = Math.max(0, Math.floor((timeLeft % 3600) / 60))
@@ -366,7 +380,7 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: Array<{
+      let auctions: {
         address?: string
         auctionType: string
         currentBid?: bigint
@@ -374,7 +388,7 @@ auctionCommand
         auctionEndTime: bigint
         totalBids: number
         minimumBidIncrement: bigint
-      }> = []
+      }[] = []
       try {
         auctions = await client.auction.listAuctions({ status: 'active' as 'active' | 'ending' | 'completed' })
       } catch {
@@ -395,7 +409,7 @@ auctionCommand
       if (!selectedAuction) {
         const auctionChoice = await select({
           message: 'Select auction to bid on:',
-          options: auctions.map((auction, index: number) => {
+          options: auctions.map((auction) => {
             const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
             const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
             const hoursLeft = Math.floor(timeLeft / 3600)
@@ -423,8 +437,9 @@ auctionCommand
       }
 
       // Calculate suggested bid
-      const currentPriceSOL = Number((auction as any).currentBid ?? (auction as any).startingPrice) / 1_000_000_000
-      const minIncrementSOL = Number(auction.minimumBidIncrement) / 1_000_000_000
+      const auctionData = auction as unknown as AuctionListItem
+      const currentPriceSOL = Number(auctionData.currentBid ?? auctionData.startingPrice) / 1_000_000_000
+      const minIncrementSOL = Number(auctionData.minimumBidIncrement) / 1_000_000_000
       const suggestedBid = currentPriceSOL + minIncrementSOL
 
       // Get bid amount
@@ -489,6 +504,8 @@ auctionCommand
             getAddressEncoder().encode(wallet.address)
           ]
         })
+        // Acknowledge unused variable for future development
+        void userRegistryPda
         
         const bidParams = {
           auction: address(selectedAuction),
@@ -538,6 +555,9 @@ auctionCommand
 
     try {
       const { client, wallet } = await initializeClient('devnet')
+      // Acknowledge unused variables for future development
+      void client
+      void wallet
 
       if (options.auction) {
         // Monitor specific auction
@@ -545,6 +565,9 @@ auctionCommand
         
         let lastBidAmount = 0n
         let lastStatus = ''
+        // Acknowledge unused variables for future monitoring implementation
+        void lastBidAmount
+        void lastStatus
         
         // TODO: Implement real-time monitoring when SDK supports it
         // Mock monitoring for now
@@ -586,7 +609,7 @@ auctionCommand
 
         log.info(`\n${chalk.bold('Auctions Ending Soon:')}\n`)
         
-        auctions.forEach((auction, index: number) => {
+        auctions.forEach((auction) => {
           const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
           const hoursLeft = Math.floor(timeLeft / 3600)
           const minutesLeft = Math.floor((timeLeft % 3600) / 60)
@@ -628,13 +651,13 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: any[] = []
+      let auctions: AuctionListItem[] = []
       try {
-        auctions = await client.auction.listAuctions({ status: 'completed' as any })
+        auctions = await client.auction.listAuctions({ status: 'completed' }) as AuctionListItem[]
       } catch {
         auctions = [] // TODO: Implement proper completed auction listing
       }
-      const myAuctions = auctions.filter((a: any) => a.creator === wallet.address)
+      const myAuctions = auctions.filter((a) => a.creator === wallet.address)
       
       s.stop(`✅ Found ${myAuctions.length} completed auctions`)
 
@@ -656,8 +679,8 @@ auctionCommand
             
             return {
               value: auction.address,
-              label: `${(auction.auctionType as string).toUpperCase()} - ${finalPriceSOL} SOL`,
-              hint: `${auction.totalBids} bids, winner: ${auction.currentBidder || 'No bids'}`
+              label: `${auction.auctionType.toUpperCase()} - ${finalPriceSOL} SOL`,
+              hint: `${auction.totalBids} bids, winner: ${auction.currentBidder?.toString() || 'No bids'}`
             }
           })
         })
@@ -670,22 +693,22 @@ auctionCommand
         selectedAuction = auctionChoice
       }
 
-      const auction = myAuctions.find((a: any) => a.address === selectedAuction)
+      const auction = myAuctions.find((a) => a.address === selectedAuction)
       if (!auction) {
         log.error('Auction not found or not owned by you')
         return
       }
 
       // Show finalization details
-      const finalPriceSOL = (Number((auction as any).currentBid ?? (auction as any).startingPrice) / 1_000_000_000).toFixed(3)
-      const hasWinner = (auction as any).currentBidder && (auction as any).currentBid
+      const finalPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+      const hasWinner = auction.currentBidder && auction.currentBid
       
       note(
         `${chalk.bold('Auction Results:')}\n` +
-        `${chalk.gray('Type:')} ${(auction.auctionType as string).toUpperCase()}\n` +
+        `${chalk.gray('Type:')} ${auction.auctionType.toUpperCase()}\n` +
         `${chalk.gray('Final Price:')} ${finalPriceSOL} SOL\n` +
         `${chalk.gray('Total Bids:')} ${auction.totalBids}\n` +
-        `${chalk.gray('Winner:')} ${hasWinner ? (auction as any).currentBidder : 'No winner (reserve not met)'}\n` +
+        `${chalk.gray('Winner:')} ${hasWinner ? auction.currentBidder?.toString() : 'No winner (reserve not met)'}\n` +
         `${chalk.gray('Status:')} ${hasWinner ? chalk.green('Successful') : chalk.yellow('Unsuccessful')}`,
         'Finalization Details'
       )
@@ -744,6 +767,9 @@ auctionCommand
       s.start('Generating analytics...')
       
       const { client, wallet } = await initializeClient('devnet')
+      // Acknowledge unused variables for future analytics implementation
+      void client
+      void wallet
       
       // Get analytics (currently mocked until SDK implementation is complete)
       const analytics = {

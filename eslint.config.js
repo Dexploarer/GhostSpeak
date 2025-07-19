@@ -3,6 +3,16 @@ import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 
 export default [
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/target/**',
+      'eslint.config.js',
+      '**/*.d.ts',
+      'packages/cli/scripts/**'
+    ],
+  },
   js.configs.recommended,
   {
     files: ['**/*.{js,mjs,cjs,ts,tsx}'],

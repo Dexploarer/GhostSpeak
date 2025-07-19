@@ -13,11 +13,26 @@ import {
   log
 } from '@clack/prompts'
 import { registerAgentPrompts } from '../prompts/agent.js'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager, AgentBackupManager, type AgentCredentials } from '../utils/agentWallet.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 import type { KeyPairSigner } from '@solana/kit'
+import type { AgentWithAddress } from '@ghostspeak/sdk'
+import type {
+  RegisterOptions,
+  ListOptions,
+  StatusOptions,
+  UpdateOptions,
+  VerifyOptions,
+  AnalyticsOptions,
+  ManageOptions,
+  isString,
+  isDefined,
+  validateString,
+  parseIntSafe,
+  isValidUrl
+} from '../types/cli-types.js'
 
 export const agentCommand = new Command('agent')
   .description('Manage AI agents on the GhostSpeak protocol')
@@ -29,7 +44,7 @@ agentCommand
   .option('-n, --name <name>', 'Agent name')
   .option('-d, --description <description>', 'Agent description')
   .option('--endpoint <endpoint>', 'Service endpoint URL')
-  .action(async (options) => {
+  .action(async (options: RegisterOptions) => {
     intro(chalk.cyan('🤖 Register New AI Agent'))
 
     try {
@@ -80,7 +95,7 @@ agentCommand
           toSDKSigner(wallet),
           {
             agentType: 1, // Default agent type
-            metadataUri: agentData.metadataUri || `https://ghostspeak.ai/agents/${agentId}.json`,
+            metadataUri: agentData.metadataUri ?? `https://ghostspeak.ai/agents/${agentId}.json`,
             agentId: agentId
           }
         )
@@ -95,7 +110,7 @@ agentCommand
           const { cnftMint, merkleTree } = await AgentCNFTManager.mintOwnershipToken(
             credentials,
             wallet,
-            client.config.rpcEndpoint || 'https://api.devnet.solana.com'
+            client.config.rpcEndpoint ?? 'https://api.devnet.solana.com'
           )
           
           console.log('CNFT Mint:', cnftMint)
@@ -123,7 +138,7 @@ agentCommand
         console.log(chalk.gray(`   ${credentials.uuid}`))
         
         outro('Agent registration completed')
-      } catch (error: any) {
+      } catch (error: unknown) {
         s.stop('❌ Registration failed')
         
         // Cleanup resources on error
@@ -132,8 +147,8 @@ agentCommand
             console.log('🧹 Cleaning up partial registration...')
             await AgentWalletManager.deleteCredentials(credentials.agentId)
             console.log('✅ Cleanup completed')
-          } catch (cleanupError: any) {
-            console.warn('⚠️  Cleanup failed:', cleanupError.message)
+          } catch (cleanupError: unknown) {
+            console.warn('⚠️  Cleanup failed:', cleanupError instanceof Error ? cleanupError.message : String(cleanupError))
           }
         }
         
@@ -153,7 +168,7 @@ agentCommand
   .command('list')
   .description('List all registered agents')
   .option('--limit <limit>', 'Maximum number of agents to display', '10')
-  .action(async (options) => {
+  .action(async (options: ListOptions) => {
     intro(chalk.cyan('📋 List Registered Agents'))
 
     const s = spinner()
@@ -186,7 +201,7 @@ agentCommand
             console.log('\n' + chalk.cyan('Local agents found (not yet synchronized with blockchain):'))
             console.log('─'.repeat(60))
             
-            localAgents.forEach((agent, index) => {
+            localAgents.forEach((agent: AgentCredentials, index: number) => {
               console.log(chalk.yellow(`${index + 1}. ${agent.name} (Local)`))
               console.log(chalk.gray(`   Description: ${agent.description}`))
               console.log(chalk.gray(`   UUID: ${agent.uuid}`))
@@ -206,15 +221,15 @@ agentCommand
       console.log('\n' + chalk.bold(`Available Agents (${agents.length}):`))
       console.log('─'.repeat(60))
 
-      agents.forEach((agentWithAddr: any, index) => {
-        const agent = 'data' in agentWithAddr ? agentWithAddr.data : agentWithAddr
+      agents.forEach((agentWithAddr: AgentWithAddress, index: number) => {
+        const agent = agentWithAddr.data as Agent
         console.log(chalk.cyan(`${index + 1}. ${agent.name}`))
         console.log(chalk.gray(`   Address: ${agentWithAddr.address.toString()}`))
         console.log(chalk.gray(`   Owner: ${agent.owner.toString()}`))
         console.log(chalk.gray(`   Capabilities: ${agent.capabilities.join(', ')}`))
         console.log(chalk.gray(`   Status: ${agent.isActive ? '🟢 Active' : '🔴 Inactive'}`))
         console.log(chalk.gray(`   Reputation: ${agent.reputationScore}/100`))
-        console.log(chalk.gray(`   Service Endpoint: ${agent.serviceEndpoint || 'Not set'}`))
+        console.log(chalk.gray(`   Service Endpoint: ${agent.serviceEndpoint ?? 'Not set'}`))
         console.log(chalk.gray(`   Registered: ${new Date(Number(agent.createdAt) * 1000).toLocaleDateString()}`))
         console.log('')
       })
@@ -287,7 +302,7 @@ agentCommand
         console.log(chalk.gray(`   All capabilities: ${agent.capabilities.join(', ')}`))
         console.log(chalk.gray(`   Reputation: ${agent.reputationScore}/100`))
         console.log(chalk.gray(`   Status: ${agent.isActive ? '🟢 Active' : '🔴 Inactive'}`))
-        console.log(chalk.gray(`   Service Endpoint: ${agent.serviceEndpoint || 'Not set'}`))
+        console.log(chalk.gray(`   Service Endpoint: ${agent.serviceEndpoint ?? 'Not set'}`))
         console.log('')
       })
       
@@ -336,8 +351,8 @@ agentCommand
       
       for (const credentials of myAgentCredentials) {
         // Find matching on-chain agent
-        const onChainAgent = onChainAgents.find((agentWithAddr: any) => {
-          const agent = 'data' in agentWithAddr ? agentWithAddr.data : agentWithAddr
+        const onChainAgent = onChainAgents.find((agentWithAddr: AgentWithAddress) => {
+          const agent = agentWithAddr.data as Agent
           return agent.owner && agent.owner.toString() === wallet.address.toString()
         })
         
@@ -441,9 +456,9 @@ agentCommand
 
         const selectedAgent = await select({
           message: 'Select agent to update:',
-          options: myAgents.map((agentWithAddr: any) => {
-            const agent = 'data' in agentWithAddr ? agentWithAddr.data : agentWithAddr
-            const addr = agentWithAddr.address || agent.address
+          options: myAgents.map((agentWithAddr: AgentWithAddress) => {
+            const agent = agentWithAddr.data as Agent
+            const addr = agentWithAddr.address
             return {
               value: addr.toString(),
               label: `${agent.name} (${agent.isActive ? 'Active' : 'Inactive'})`
@@ -456,7 +471,7 @@ agentCommand
           return
         }
 
-        agentAddress = selectedAgent as any
+        agentAddress = address(selectedAgent as string)
       }
 
       // Fetch current agent details
@@ -500,7 +515,14 @@ agentCommand
         return
       }
 
-      const updates: any = {}
+      const updates: {
+        name?: string
+        description?: string
+        endpoint?: string
+        capabilities?: string[]
+        pricePerTask?: string
+        [key: string]: unknown
+      } = {}
 
       // Name update
       if (updateChoice === 'name' || updateChoice === 'all') {
@@ -550,12 +572,10 @@ agentCommand
           initialValue: updateChoice === 'all' ? currentAgent.serviceEndpoint : undefined,
           validate: (value) => {
             if (!value) return 'Endpoint is required'
-            try {
-              new URL(value)
-              return
-            } catch {
+            if (!isValidUrl(value)) {
               return 'Please enter a valid URL'
             }
+            return
           }
         })
 
@@ -640,7 +660,7 @@ agentCommand
 
       try {
         // Convert price to lamports if updated
-        const updateData: any = { ...updates }
+        const updateData: typeof updates & { metadataUri?: string } = { ...updates }
         if (updates.pricePerTask) {
           updateData.pricePerTask = BigInt(Math.floor(parseFloat(updates.pricePerTask) * 1_000_000))
         }
@@ -720,12 +740,12 @@ agentCommand
       if (!selectedAgent) {
         const agentChoice = await select({
           message: 'Select agent to verify:',
-          options: unverifiedAgents.map((agentWithAddr: any) => {
-            const agent = 'data' in agentWithAddr ? agentWithAddr.data : agentWithAddr
-            const addr = agentWithAddr.address || agent.address
+          options: unverifiedAgents.map((agentWithAddr: AgentWithAddress) => {
+            const agent = agentWithAddr.data as Agent
+            const addr = agentWithAddr.address
             return {
               value: addr,
-              label: agent.name || 'Unnamed Agent',
+              label: agent.name ?? 'Unnamed Agent',
               hint: `Registered: ${new Date(Number(agent.createdAt) * 1000).toLocaleDateString()}`
             }
           })

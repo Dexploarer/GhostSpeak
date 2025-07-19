@@ -68,8 +68,11 @@ export interface CacheStats {
   hitRate: number
   size: number
   maxSize: number
-  averageAccessTime: number
+  memoryHits?: number
+  persistentHits?: number
+  distributedHits?: number
   evictions: number
+  averageAccessTime: number
   compressionRatio: number
   memoryUsage: number
 }
@@ -77,17 +80,17 @@ export interface CacheStats {
 /**
  * Smart cache invalidation rules
  */
-export interface InvalidationRule {
+export interface InvalidationRule<T = unknown> {
   pattern: RegExp
   dependencies: string[]
   tags: string[]
-  customValidator?: (key: string, value: any) => boolean
+  customValidator?: (key: string, value: T) => boolean
 }
 
 /**
  * Multi-tier intelligent cache system
  */
-export class AdvancedCache<T = any> {
+export class AdvancedCache<T = unknown> {
   private memoryCache = new Map<string, CacheEntry<T>>()
   private persistentCache?: Map<string, CacheEntry<T>>
   private distributedCache?: Map<string, CacheEntry<T>>
@@ -98,8 +101,11 @@ export class AdvancedCache<T = any> {
     hitRate: 0,
     size: 0,
     maxSize: 0,
-    averageAccessTime: 0,
+    memoryHits: 0,
+    persistentHits: 0,
+    distributedHits: 0,
     evictions: 0,
+    averageAccessTime: 0,
     compressionRatio: 1,
     memoryUsage: 0
   }
@@ -171,6 +177,15 @@ export class AdvancedCache<T = any> {
         
         this.stats.hits++
         this.recordAccessTime(Date.now() - startTime)
+        
+        // Track tier hit statistics for performance analysis
+        if (tier === 'memory') {
+          this.stats.memoryHits = (this.stats.memoryHits ?? 0) + 1
+        } else if (tier === 'persistent') {
+          this.stats.persistentHits = (this.stats.persistentHits ?? 0) + 1
+        } else if (tier === 'distributed') {
+          this.stats.distributedHits = (this.stats.distributedHits ?? 0) + 1
+        }
         
         return entry.value
       } else if (entry) {
@@ -366,7 +381,7 @@ export class AdvancedCache<T = any> {
   /**
    * Export cache data for backup/analysis
    */
-  export(): { memory: any[]; persistent?: any[]; distributed?: any[] } {
+  export(): { memory: { key: string; value: T; metadata: unknown }[]; persistent?: { key: string; value: T; metadata: unknown }[]; distributed?: { key: string; value: T; metadata: unknown }[] } {
     const exportTier = (cache: Map<string, CacheEntry<T>>) => 
       Array.from(cache.entries()).map(([key, entry]) => ({
         key,
@@ -376,8 +391,8 @@ export class AdvancedCache<T = any> {
           ttl: entry.ttl,
           accessCount: entry.accessCount,
           lastAccess: entry.lastAccess,
-          dependencies: Array.from(entry.dependencies || []),
-          tags: Array.from(entry.tags || [])
+          dependencies: Array.from(entry.dependencies ?? []),
+          tags: Array.from(entry.tags ?? [])
         }
       }))
 
@@ -529,8 +544,8 @@ export class AdvancedCache<T = any> {
 
   private updateStats(): void {
     this.stats.size = this.memoryCache.size + 
-                     (this.persistentCache?.size || 0) + 
-                     (this.distributedCache?.size || 0)
+                     (this.persistentCache?.size ?? 0) + 
+                     (this.distributedCache?.size ?? 0)
     
     this.stats.hitRate = this.stats.hits / (this.stats.hits + this.stats.misses) || 0
     
@@ -598,7 +613,12 @@ export class SolanaAccountCache extends AdvancedCache<AccountInfo> {
       tags: ['account'],
       customValidator: (key, value) => {
         // Invalidate if account lamports changed significantly
-        return false // Custom logic here
+        if (typeof value === 'object' && value !== null && 'lamports' in value) {
+          const account = value as { lamports?: number }
+          // Invalidate if lamports is below a threshold (e.g., rent-exempt minimum)
+          return (account.lamports ?? 0) < 890880 // Typical rent-exempt minimum
+        }
+        return false
       }
     })
   }
@@ -612,8 +632,8 @@ export class SolanaAccountCache extends AdvancedCache<AccountInfo> {
     options: { ttl?: number; tags?: string[] } = {}
   ): Promise<void> {
     await this.set(`account:${address}`, account, {
-      ttl: options.ttl || 10000,
-      tags: ['account', ...(options.tags || [])],
+      ttl: options.ttl ?? 10000,
+      tags: ['account', ...(options.tags ?? [])],
       dependencies: [`address:${address}`]
     })
   }

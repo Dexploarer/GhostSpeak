@@ -301,11 +301,33 @@ export class RbacUtils {
   /**
    * Get user's role
    */
-  static getUserRole(_rbac: RbacConfig, _user: Address): Role | null {
-    // Find user's role assignment
-    // In production, this would check role assignments
-    // Currently returns null as placeholder
-    return null
+  static getUserRole(rbac: RbacConfig, user: Address): Role | null {
+    // Find user's role assignment by checking access policies
+    // Since Role doesn't have members field, we check access policies instead
+    // We'll use the policy metadata to store user assignments
+    const userPolicy = rbac.accessPolicies.find(policy => {
+      // Check if policy metadata contains user information
+      // This is a simplified implementation - in real usage, you'd have
+      // a more structured way to associate users with policies
+      return policy.policyId.includes(user) || policy.name.includes(user)
+    })
+    
+    if (userPolicy) {
+      // Find the role associated with this policy by checking policy scope
+      // In a real implementation, you'd have a more structured relationship
+      const assignedRole = rbac.roles.find(role => 
+        role.roleId === userPolicy.policyId || 
+        role.name === userPolicy.name ||
+        userPolicy.scope.toString().includes(role.roleId)
+      )
+      
+      if (assignedRole) {
+        return assignedRole
+      }
+    }
+    
+    // If no specific role found, return default role (if exists)
+    return rbac.roles.find(role => role.name === 'default') ?? null
   }
 
   /**

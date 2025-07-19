@@ -5,6 +5,7 @@
 
 import type { Address } from '@solana/addresses'
 import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit'
+import type { Signature } from '@solana/kit'
 import type {
   Commitment,
   AccountInfo,
@@ -18,6 +19,14 @@ export interface SimpleRpcClientConfig {
   commitment?: Commitment
 }
 
+interface SolanaRpcConfig {
+  url: string
+}
+
+interface SolanaRpcSubscriptionsConfig {
+  url: string
+}
+
 /**
  * Simplified RPC client focusing on core functionality
  */
@@ -25,13 +34,15 @@ export class SimpleRpcClient {
   private rpc: ReturnType<typeof createSolanaRpc>
   private rpcSubscriptions?: ReturnType<typeof createSolanaRpcSubscriptions>
   private commitment: Commitment
+  private endpoint: string
 
   constructor(config: SimpleRpcClientConfig) {
-    this.rpc = createSolanaRpc({ url: config.endpoint } as any)
+    this.endpoint = config.endpoint
+    this.rpc = createSolanaRpc(config.endpoint)
     this.commitment = config.commitment ?? 'confirmed'
     
     if (config.wsEndpoint) {
-      this.rpcSubscriptions = createSolanaRpcSubscriptions({ url: config.wsEndpoint } as any)
+      this.rpcSubscriptions = createSolanaRpcSubscriptions(config.wsEndpoint)
     }
   }
 
@@ -55,7 +66,7 @@ export class SimpleRpcClient {
         lamports: result.value.lamports,
         owner: result.value.owner,
         rentEpoch: result.value.rentEpoch,
-        data: result.value.data as any,
+        data: result.value.data as unknown as Buffer,
         space: result.value.space
       }
     } catch (error) {
@@ -104,7 +115,7 @@ export class SimpleRpcClient {
     const result = await this.rpc.sendTransaction(transaction as any, {
       skipPreflight: options?.skipPreflight ?? false,
       preflightCommitment: options?.preflightCommitment ?? this.commitment
-    } as any).send()
+    }).send()
     
     return result
   }
@@ -112,8 +123,8 @@ export class SimpleRpcClient {
   /**
    * Get signature statuses
    */
-  async getSignatureStatuses(signatures: string[]) {
-    const result = await this.rpc.getSignatureStatuses(signatures as any).send()
+  async getSignatureStatuses(signatures: Signature[]) {
+    const result = await this.rpc.getSignatureStatuses(signatures).send()
     return result.value
   }
 
@@ -127,7 +138,7 @@ export class SimpleRpcClient {
     return this.rpc.simulateTransaction(transaction as any, {
       commitment: options?.commitment ?? this.commitment,
       replaceRecentBlockhash: options?.replaceRecentBlockhash ?? false
-    } as any).send()
+    }).send()
   }
 
   /**
@@ -139,27 +150,88 @@ export class SimpleRpcClient {
   }
 
   /**
-   * Get program accounts (placeholder implementation)
+   * Get program accounts
    */
   async getProgramAccounts(
     programId: Address,
     options?: { filters?: unknown[]; commitment?: Commitment }
   ): Promise<{ pubkey: Address; account: AccountInfo }[]> {
-    // This is a simplified implementation
-    // In a real implementation, you'd call the actual RPC method
-    console.warn('getProgramAccounts: Using simplified implementation')
-    return []
+    try {
+      console.log(`Getting program accounts for program: ${programId}`)
+      console.log(`Options: ${JSON.stringify(options)}`)
+      
+      const rpcOptions = {
+        commitment: options?.commitment ?? this.commitment,
+        ...(options?.filters && { filters: options.filters })
+      }
+      
+      // Type-safe RPC request
+      interface RpcRequest {
+        jsonrpc: '2.0'
+        id: number
+        method: 'getProgramAccounts'
+        params: [string, Record<string, unknown>]
+      }
+      
+      interface RpcError {
+        code: number
+        message: string
+      }
+      
+      interface RpcResponse {
+        jsonrpc: '2.0'
+        id: number
+        result?: { pubkey: string; account: unknown }[]
+        error?: RpcError
+      }
+      
+      const requestBody: RpcRequest = {
+        jsonrpc: '2.0',
+        id: Math.floor(Math.random() * 100000),
+        method: 'getProgramAccounts',
+        params: [programId, rpcOptions]
+      }
+      
+      const response = await globalThis.fetch(this.endpoint as string, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json() as RpcResponse
+      
+      if (data.error) {
+        throw new Error(`RPC Error: ${data.error.message}`)
+      }
+      
+      const accounts = data.result ?? []
+      console.log(`Found ${accounts.length} program accounts`)
+      
+      return accounts.map((item) => {
+        return {
+          pubkey: item.pubkey as Address,
+          account: this.parseAccountInfo(item.account)
+        }
+      })
+    } catch (error) {
+      console.error(`Failed to get program accounts:`, error)
+      throw new Error(`Failed to get program accounts: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   private parseAccountInfo(accountInfo: unknown): AccountInfo {
     const account = accountInfo as Record<string, unknown>
     return {
       executable: account.executable as boolean,
-      lamports: account.lamports as any,
+      lamports: account.lamports as any, // Cast to Lamports branded type
       owner: account.owner as Address,
-      rentEpoch: account.rentEpoch as any,
-      data: account.data as any,
-      space: account.space as any
+      rentEpoch: account.rentEpoch as bigint,
+      data: account.data as Buffer,
+      space: account.space as bigint
     }
   }
 }

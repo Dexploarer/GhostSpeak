@@ -16,6 +16,11 @@ import { createSolanaRpc, createKeyPairSignerFromBytes } from '@solana/kit'
 import { lamportsToSol } from '../utils/helpers.js'
 import { homedir } from 'os'
 import { join } from 'path'
+import type {
+  ConfigSetOptions,
+  ConfigGetOptions,
+  ConfigResetOptions
+} from '../types/cli-types.js'
 
 export const configCommand = new Command('config')
   .description('Configure GhostSpeak CLI settings')
@@ -23,7 +28,7 @@ export const configCommand = new Command('config')
 configCommand
   .command('setup')
   .description('Initial setup and wallet configuration')
-  .action(async () => {
+  .action(async (options: Record<string, unknown>) => {
     intro(chalk.green('⚙️  GhostSpeak CLI Setup'))
 
     try {
@@ -142,7 +147,7 @@ configCommand
           )
           
           const walletData = readFileSync(config.walletPath, 'utf-8')
-          const signer = createKeyPairSignerFromBytes(new Uint8Array(JSON.parse(walletData)))
+          const signer = await createKeyPairSignerFromBytes(new Uint8Array(JSON.parse(walletData)))
           const balanceResponse = await rpc.getBalance(signer.address).send()
           const balance = balanceResponse.value
           

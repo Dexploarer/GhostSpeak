@@ -12,10 +12,20 @@ import {
   multiselect,
   log
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager } from '../utils/agentWallet.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
+import type {
+  ListServicesOptions,
+  CreateServiceOptions,
+  BuyServiceOptions,
+  SearchServicesOptions,
+  JobsOptions,
+  isDefined,
+  isValidUrl,
+  parseFloatSafe
+} from '../types/cli-types.js'
 
 export const marketplaceCommand = new Command('marketplace')
   .description('Browse and interact with the GhostSpeak marketplace')
@@ -26,7 +36,7 @@ marketplaceCommand
   .command('list')
   .description('Browse available services')
   .option('--category <category>', 'Filter by category')
-  .action(async (options) => {
+  .action(async (options: ListServicesOptions) => {
     intro(chalk.magenta('🛍️  GhostSpeak Marketplace'))
 
     const s = spinner()
@@ -59,13 +69,13 @@ marketplaceCommand
       console.log('\n' + chalk.bold(`🏪 Available Services (${services.length})`))
       console.log('═'.repeat(70))
 
-      services.forEach((serviceWithAddr: any, index) => {
+      services.forEach((serviceWithAddr, index) => {
         const service = 'data' in serviceWithAddr ? serviceWithAddr.data : serviceWithAddr
         const addr = serviceWithAddr.address || service.address
         console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-        console.log(chalk.gray(`   ID: ${addr?.toString() || 'N/A'}`))
-        console.log(chalk.gray(`   Agent: ${service.agent?.toString().slice(0, 8) || 'Unknown'}...`))
-        console.log(chalk.gray(`   Category: ${service.serviceType || 'General'}`))
+        console.log(chalk.gray(`   ID: ${addr?.toString() ?? 'N/A'}`))
+        console.log(chalk.gray(`   Agent: ${service.agent?.toString().slice(0, 8) ?? 'Unknown'}...`))
+        console.log(chalk.gray(`   Category: ${service.serviceType ?? 'General'}`))
         console.log(chalk.gray(`   Price: ${Number(service.price) / 1_000_000} SOL`))
         console.log(chalk.gray(`   Available: ${service.isActive ? '✅ Yes' : '❌ No'}`))
         console.log(chalk.gray(`   ${service.description}`))
@@ -111,7 +121,7 @@ marketplaceCommand
 marketplaceCommand
   .command('create')
   .description('Create a new service listing')
-  .action(async () => {
+  .action(async (options: CreateServiceOptions) => {
     intro(chalk.magenta('📝 Create Service Listing'))
 
     try {
@@ -231,7 +241,7 @@ marketplaceCommand
           return
         }
         
-        selectedCredentials = myAgentCredentials.find(cred => cred.agentId === selectedAgentId)
+        selectedCredentials = myAgentCredentials.find(cred => cred.agentId === selectedAgentId) ?? null
       }
       
       if (!selectedCredentials) {
@@ -245,7 +255,7 @@ marketplaceCommand
       const ownershipVerified = await AgentCNFTManager.verifyOwnership(
         selectedCredentials.uuid,
         wallet.address,
-        client.config.rpcEndpoint || 'https://api.devnet.solana.com'
+        client.config.rpcEndpoint ?? 'https://api.devnet.solana.com'
       )
       
       if (!ownershipVerified) {
@@ -307,9 +317,9 @@ marketplaceCommand
         console.log(chalk.yellow('💡 Service linked to agent via UUID for ownership verification'))
         
         outro('Service creation completed')
-      } catch (error: any) {
+      } catch (error: unknown) {
         s.stop('❌ Creation failed')
-        throw new Error(handleTransactionError(error))
+        throw new Error(handleTransactionError(error as Error))
       }
 
     } catch (error) {
@@ -322,7 +332,7 @@ marketplaceCommand
   .command('purchase')
   .description('Purchase a service from the marketplace')
   .argument('[listing-id]', 'Service listing ID')
-  .action(async (listingId) => {
+  .action(async (listingId: string) => {
     intro(chalk.magenta('💳 Purchase Service'))
 
     try {
@@ -345,18 +355,18 @@ marketplaceCommand
 
         console.log('\n' + chalk.bold('🏪 Available Services'))
         console.log('─'.repeat(60))
-        services.forEach((serviceWithAddr: any, index) => {
+        services.forEach((serviceWithAddr, index) => {
           const service = 'data' in serviceWithAddr ? serviceWithAddr.data : serviceWithAddr
-          const addr = serviceWithAddr.address || service.address
+          const addr = serviceWithAddr.address ?? service.address
           console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-          console.log(chalk.gray(`   ID: ${addr?.toString() || 'N/A'} | Price: ${Number(service.price) / 1_000_000} SOL | By: ${service.agent?.toString().slice(0, 8) || 'Unknown'}...`))
+          console.log(chalk.gray(`   ID: ${addr?.toString() ?? 'N/A'} | Price: ${Number(service.price) / 1_000_000} SOL | By: ${service.agent?.toString().slice(0, 8) ?? 'Unknown'}...`))
         })
 
         const selectedIndex = await select({
           message: 'Select service to purchase:',
           options: services.map((service, index) => ({
             value: index,
-            label: `${service.data.title || 'Unknown'} - ${Number(service.data.price) / 1_000_000} SOL`
+            label: `${service.data.title ?? 'Unknown'} - ${Number(service.data.price) / 1_000_000} SOL`
           }))
         })
 
@@ -432,7 +442,7 @@ marketplaceCommand
           {
             serviceListingAddress: address(listingId),
             signer: toSDKSigner(wallet),
-            requirements: requirements as string[] || []
+            requirements: requirements as string[] ?? []
           }
         )
         
@@ -448,9 +458,9 @@ marketplaceCommand
         console.log('\n' + chalk.yellow('💡 Track your order with: npx ghostspeak escrow list'))
         
         outro('Purchase completed')
-      } catch (error: any) {
+      } catch (error: unknown) {
         purchaseSpinner.stop('❌ Purchase failed')
-        throw new Error(handleTransactionError(error))
+        throw new Error(handleTransactionError(error as Error))
       }
 
     } catch (error) {
@@ -463,11 +473,11 @@ marketplaceCommand
   .command('search')
   .description('Search marketplace services')
   .option('-q, --query <query>', 'Search query')
-  .action(async (options) => {
+  .action(async (options: SearchServicesOptions) => {
     intro(chalk.magenta('🔍 Search Marketplace'))
 
     try {
-      const query = options.query || await text({
+      const query = options.query ?? await text({
         message: 'What are you looking for?',
         placeholder: 'e.g., data analysis, content writing, smart contracts'
       })
@@ -532,7 +542,7 @@ const jobsCommand = marketplaceCommand
 jobsCommand
   .command('create')
   .description('Create a new job posting')
-  .action(async () => {
+  .action(async (options: JobsOptions) => {
     intro(chalk.magenta('💼 Create Job Posting'))
 
     try {

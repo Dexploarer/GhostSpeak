@@ -3,6 +3,8 @@
  * July 2025 Best Practices
  */
 
+/// <reference types="node" />
+
 import { SolanaRpcClient, type SolanaRpcClientConfig } from './rpc-client.js'
 import type { Address, Signature } from '@solana/kit'
 import type { AccountInfo } from '../types/rpc-types.js'
@@ -51,6 +53,29 @@ interface CacheEntry<T> {
 }
 
 /**
+ * Transaction data interface for caching
+ */
+interface TransactionData {
+  slot: bigint
+  blockTime?: number | null
+  transaction: {
+    signatures: string[] // Will be cast to Signature[] when needed
+    message: {
+      accountKeys: string[]
+      instructions: unknown[]
+      recentBlockhash: string
+    }
+  }
+  meta: {
+    err: unknown | null
+    fee: number | bigint // Support both number and Lamports (bigint)
+    preBalances: (number | bigint)[] // Support both number and Lamports arrays
+    postBalances: (number | bigint)[]
+    logMessages?: string[]
+  } | null
+}
+
+/**
  * Connection pool statistics
  */
 export interface PoolStats {
@@ -83,7 +108,7 @@ interface PooledConnection {
  */
 export class SolanaConnectionPool {
   private connections: Map<string, PooledConnection[]> = new Map()
-  private cache: Map<string, CacheEntry<any>> = new Map()
+  private cache: Map<string, CacheEntry<unknown>> = new Map()
   private config: ConnectionPoolConfig
   private cacheConfig: CacheConfig
   private stats: PoolStats = {
@@ -98,7 +123,7 @@ export class SolanaConnectionPool {
     cacheSize: 0
   }
   private responseTimeSum = 0
-  private cleanupInterval: NodeJS.Timeout | null = null
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null
 
   constructor(
     poolConfig: Partial<ConnectionPoolConfig> = {},
@@ -131,7 +156,7 @@ export class SolanaConnectionPool {
    * Get or create a connection for the endpoint
    */
   async getConnection(endpoint: string, clientConfig?: Partial<SolanaRpcClientConfig>): Promise<SolanaRpcClient> {
-    const pool = this.connections.get(endpoint) || []
+    const pool = this.connections.get(endpoint) ?? []
     
     // Find an available connection
     let connection = pool.find(conn => !conn.inUse && conn.healthy)
@@ -205,7 +230,7 @@ export class SolanaConnectionPool {
     if (this.cacheConfig.enableStats) {
       this.stats.cacheHits++
     }
-    return entry.value
+    return entry.value as T
   }
 
   /**
@@ -224,7 +249,7 @@ export class SolanaConnectionPool {
     const entry: CacheEntry<T> = {
       value,
       timestamp: Date.now(),
-      ttl: ttl || this.cacheConfig.defaultTtlMs
+      ttl: ttl ?? this.cacheConfig.defaultTtlMs
     }
 
     this.cache.set(key, entry)
@@ -269,9 +294,9 @@ export class SolanaConnectionPool {
   /**
    * Get cached transaction
    */
-  async getCachedTransaction(endpoint: string, signature: Signature): Promise<any | null> {
+  async getCachedTransaction(endpoint: string, signature: Signature): Promise<TransactionData | null> {
     const cacheKey = `transaction:${endpoint}:${signature}`
-    const cached = this.getCached<any>(cacheKey)
+    const cached = this.getCached<TransactionData>(cacheKey)
     if (cached) return cached
 
     const client = await this.getConnection(endpoint)
@@ -315,7 +340,11 @@ export class SolanaConnectionPool {
 
     // Close all connections
     for (const [endpoint, pool] of this.connections) {
+      console.log(`Closing ${pool.length} connections for endpoint: ${endpoint}`)
       pool.forEach(conn => {
+        // Mark connection as unhealthy and not in use
+        conn.healthy = false
+        conn.inUse = false
         // Note: SolanaRpcClient doesn't have a close method in the current implementation
         // This would be added if needed for proper cleanup
       })
@@ -449,9 +478,7 @@ export function getGlobalConnectionPool(
   poolConfig?: Partial<ConnectionPoolConfig>,
   cacheConfig?: Partial<CacheConfig>
 ): SolanaConnectionPool {
-  if (!globalPool) {
-    globalPool = new SolanaConnectionPool(poolConfig, cacheConfig)
-  }
+  globalPool ??= new SolanaConnectionPool(poolConfig, cacheConfig)
   return globalPool
 }
 

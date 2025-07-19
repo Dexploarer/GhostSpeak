@@ -16,6 +16,13 @@ import {
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
+import type { DisputeSummary } from '@ghostspeak/sdk'
+import type {
+  FileDisputeOptions,
+  ResolveDisputeOptions,
+  EscalateDisputeOptions,
+  ListDisputesOptions
+} from '../types/cli-types.js'
 
 export const disputeCommand = new Command('dispute')
   .description('Manage disputes and conflict resolution')
@@ -26,7 +33,7 @@ disputeCommand
   .description('File a new dispute')
   .option('-w, --work-order <address>', 'Work order address')
   .option('-r, --reason <reason>', 'Dispute reason')
-  .action(async (options) => {
+  .action(async (options: FileDisputeOptions) => {
     intro(chalk.cyan('⚖️ File Dispute'))
 
     try {
@@ -39,7 +46,12 @@ disputeCommand
         const { client, wallet } = await initializeClient('devnet')
         
         // TODO: Method getEscrowsForUser not implemented in SDK yet
-      const workOrders: any[] = [] // await client.escrow.getEscrowsForUser(wallet.address)
+      const workOrders: Array<{
+        address: Address
+        orderId: bigint
+        title?: string
+        status: string
+      }> = [] // await client.escrow.getEscrowsForUser(wallet.address)
         s.stop(`✅ Found ${workOrders.length} work orders`)
 
         if (workOrders.length === 0) {
@@ -200,16 +212,9 @@ disputeCommand
       
       try {
         const disputeParams = {
-          workOrder: address(workOrderAddress),
-          reason: disputeReason,
-          description: disputeDescription,
-          severity: disputeSeverity,
-          preferredResolution,
-          evidenceCount: evidenceList.length,
-          evidenceHash: evidenceList.length > 0 ? 
-            // Simple hash of evidence for now (in production would use proper cryptographic hash)
-            Buffer.from(evidenceList.join('|')).toString('base64').substring(0, 32) : 
-            null
+          transaction: address(workOrderAddress), // Using work order as transaction for now
+          respondent: address('11111111111111111111111111111111'), // TODO: Get actual respondent from work order
+          reason: `${disputeReason}: ${disputeDescription}`
         }
 
         // TODO: fileDispute method signature expects 3 parameters
@@ -717,17 +722,13 @@ disputeCommand
       s.start('Recording resolution on blockchain...')
       
       try {
-        const resolutionParams = {
-          ruling,
-          resolutionDetails,
-          compensationAmount: compensationAmount ? BigInt(Math.floor(compensationAmount * 1_000_000_000)) : null,
-          arbitratorNotes: `Resolved via GhostSpeak CLI on ${new Date().toISOString()}`
-        }
-
         const signature = await client.dispute.resolveDispute(
           wallet,
-          selectedDispute,
-          resolutionParams
+          {
+            dispute: address(selectedDispute),
+            resolution: resolutionDetails,
+            rulingInFavorOfComplainant: ruling === 'favor_claimant' || ruling === 'partial_claimant'
+          }
         )
 
         s.stop('✅ Dispute resolved successfully!')
@@ -796,13 +797,13 @@ disputeCommand
       if (!selectedDispute) {
         const disputeChoice = await select({
           message: 'Select dispute to escalate:',
-          options: escalatableDisputes.map(dispute => {
+          options: escalatableDisputes.map((dispute: DisputeSummary) => {
             const timeElapsed = Math.floor((Date.now() / 1000) - Number(dispute.createdAt))
             const daysElapsed = Math.floor(timeElapsed / 86400)
             
             return {
-              value: dispute.id,
-              label: `${dispute.reason.toUpperCase()} - ${dispute.severity}`,
+              value: dispute.id || dispute.dispute.toString(),
+              label: `${dispute.reason.toUpperCase()} - ${dispute.severity || 'unknown'}`,
               hint: `${daysElapsed}d under review`
             }
           })
@@ -816,7 +817,10 @@ disputeCommand
         selectedDispute = disputeChoice
       }
 
-      const dispute = escalatableDisputes.find(d => d.id === selectedDispute)
+      const dispute = escalatableDisputes.find((d: DisputeSummary) => 
+        (d.id && d.id.toString() === selectedDispute) || 
+        d.dispute.toString() === selectedDispute
+      )
       if (!dispute) {
         log.error('Dispute not found or not eligible for escalation')
         return
@@ -887,42 +891,25 @@ disputeCommand
       s.start('Escalating dispute...')
       
       try {
-        const escalationParams = {
-          reason: escalationReason,
-          details: escalationDetails,
-          urgency: dispute.severity === 'critical' ? 'high' : 'normal',
-          requestedBy: wallet.address
-        }
-
-        const signature = await client.dispute.escalateDispute(
-          wallet,
-          selectedDispute,
-          escalationParams
-        )
-
-        s.stop('✅ Dispute escalated successfully!')
-
-        const explorerUrl = getExplorerUrl(signature, 'devnet')
-        
+        // TODO: escalateDispute method not implemented in SDK yet
+        // This would escalate the dispute to human review
+        s.stop('❌ Dispute escalation not yet available')
         outro(
-          `${chalk.green('🆙 Dispute Escalated!')}\n\n` +
-          `${chalk.bold('Escalation Details:')}\n` +
+          `${chalk.yellow('🆙 Dispute Escalation Unavailable')}\n\n` +
+          `${chalk.gray('This feature is not yet implemented in the SDK.')}\n` +
+          `${chalk.gray('It will be available in a future release.')}\n\n` +
+          `${chalk.gray('Your dispute details:')}\n` +
           `${chalk.gray('Reason:')} ${escalationReason}\n` +
-          `${chalk.gray('Status:')} ${chalk.yellow('Human Review Queue')}\n` +
-          `${chalk.gray('Priority:')} ${dispute.severity === 'critical' ? chalk.red('HIGH') : chalk.blue('NORMAL')}\n\n` +
-          `${chalk.bold('Transaction:')}\n` +
-          `${chalk.gray('Signature:')} ${signature}\n` +
-          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
-          `${chalk.yellow('💡 Your dispute has been escalated to senior arbitrators.\n' +
-          'You will be notified when a human arbitrator is assigned.')}`
+          `${chalk.gray('Priority:')} ${dispute ? (dispute.severity === 'critical' ? chalk.red('HIGH') : chalk.blue('NORMAL')) : chalk.blue('NORMAL')}`
         )
+        return
         
       } catch (error) {
         s.stop('❌ Escalation failed')
-        await handleTransactionError(error, 'dispute escalation')
+        await handleTransactionError(error as Error)
       }
       
     } catch (error) {
-      log.error(`Failed to escalate dispute: ${error.message}`)
+      log.error(`Failed to escalate dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })

@@ -14,17 +14,35 @@ export class AccountCreationHelper {
   async createAgentAccount(
     signer: KeyPairSigner,
     agentId: string,
-    _agentType: number,
-    _metadataUri: string
-  ): Promise<{ agentAddress: Address; userRegistryAddress: Address }> {
+    agentType: number,
+    metadataUri: string
+  ): Promise<{ agentAddress: Address; userRegistryAddress: Address; agentType: number; metadataUri: string }> {
     const { deriveAgentPda, deriveUserRegistryPda } = await import('./pda.js')
     
     const agentAddress = await deriveAgentPda(this.config.programId!, signer.address, agentId)
     const userRegistryAddress = await deriveUserRegistryPda(this.config.programId!, signer.address)
     
+    // Validate agent type
+    if (agentType < 0 || agentType > 10) {
+      throw new Error(`Invalid agent type: ${agentType}. Must be between 0 and 10.`)
+    }
+    
+    // Validate metadata URI
+    if (!metadataUri || metadataUri.length === 0) {
+      throw new Error('Metadata URI is required')
+    }
+    
+    try {
+      new URL(metadataUri)
+    } catch {
+      throw new Error(`Invalid metadata URI format: ${metadataUri}`)
+    }
+    
     return {
       agentAddress,
-      userRegistryAddress
+      userRegistryAddress,
+      agentType,
+      metadataUri
     }
   }
 

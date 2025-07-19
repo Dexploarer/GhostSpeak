@@ -16,6 +16,11 @@ import {
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
+import type {
+  CreateAuctionOptions,
+  BidAuctionOptions,
+  ListAuctionsOptions
+} from '../types/cli-types.js'
 
 export const auctionCommand = new Command('auction')
   .description('Manage auctions on the GhostSpeak marketplace')
@@ -28,12 +33,12 @@ auctionCommand
   .option('-s, --starting-price <price>', 'Starting price in SOL')
   .option('-r, --reserve-price <price>', 'Reserve price in SOL')
   .option('-d, --duration <hours>', 'Auction duration in hours')
-  .action(async (options) => {
+  .action(async (options: CreateAuctionOptions) => {
     intro(chalk.cyan('🎯 Create Service Auction'))
 
     try {
       // Collect auction parameters
-      const auctionType = options.type || await select({
+      const auctionType = options.type ?? await select({
         message: 'Select auction type:',
         options: [
           { value: 'english', label: '📈 English Auction (ascending bids)', hint: 'Traditional highest bidder wins' },
@@ -77,7 +82,7 @@ auctionCommand
         return
       }
 
-      const startingPrice = options.startingPrice || await text({
+      const startingPrice = options.startingPrice ?? await text({
         message: 'Starting price (SOL):',
         placeholder: '0.1',
         validate: (value) => {
@@ -93,7 +98,7 @@ auctionCommand
         return
       }
 
-      const reservePrice = options.reservePrice || await text({
+      const reservePrice = options.reservePrice ?? await text({
         message: 'Reserve price (SOL):',
         placeholder: startingPrice,
         validate: (value) => {
@@ -111,7 +116,7 @@ auctionCommand
         return
       }
 
-      const duration = options.duration || await select({
+      const duration = options.duration ?? await select({
         message: 'Auction duration:',
         options: [
           { value: '1', label: '1 hour', hint: 'Quick turnaround' },
@@ -202,7 +207,7 @@ auctionCommand
         
         const auctionParams = {
           auctionData: {
-            auctionType: auctionType as any, // Will map to SDK AuctionType enum
+            auctionType: auctionType as 'english' | 'dutch' | 'sealed', // Will map to SDK AuctionType enum
             startingPrice: BigInt(Math.floor(parseFloat(startingPrice) * 1_000_000_000)), // SOL to lamports
             reservePrice: BigInt(Math.floor(parseFloat(reservePrice) * 1_000_000_000)),
             auctionEndTime,
@@ -217,7 +222,7 @@ auctionCommand
           userRegistryPda,
           {
             ...auctionParams,
-            signer: wallet as any,
+            signer: wallet,
             deadline: auctionEndTime
           }
         )
@@ -241,11 +246,11 @@ auctionCommand
         
       } catch (error) {
         s.stop('❌ Auction creation failed')
-        await handleTransactionError(error as any)
+        await handleTransactionError(error as Error)
       }
       
-    } catch (error: any) {
-      log.error(`Failed to create auction: ${error?.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      log.error(`Failed to create auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -256,7 +261,7 @@ auctionCommand
   .option('-t, --type <type>', 'Filter by auction type')
   .option('-s, --status <status>', 'Filter by status (active, ending, completed)')
   .option('--mine', 'Show only my auctions')
-  .action(async (options) => {
+  .action(async (options: ListAuctionsOptions) => {
     intro(chalk.cyan('📋 Active Auctions'))
 
     try {
@@ -266,7 +271,18 @@ auctionCommand
       const { client, wallet } = await initializeClient('devnet')
       
       // Get auctions based on filters
-      let auctions: any[] = []
+      let auctions: Array<{
+        address?: string
+        auctionType: string
+        currentBid?: bigint
+        startingPrice: bigint
+        reservePrice: bigint
+        auctionEndTime: bigint
+        totalBids: number
+        minimumBidIncrement: bigint
+        currentBidder?: string
+        creator?: string
+      }> = []
       if (options.mine) {
         // Use listAuctions with creator filter
         try {
@@ -285,7 +301,7 @@ auctionCommand
       } else {
         try {
           auctions = await client.auction.listAuctions({
-            auctionType: options.type as any
+            auctionType: options.type as 'english' | 'dutch' | 'sealed' | undefined
           })
         } catch {
           auctions = [] // TODO: Implement proper auction filtering
@@ -305,12 +321,12 @@ auctionCommand
       // Display auctions in a formatted table
       log.info(`\n${chalk.bold('Active Auctions:')}\n`)
       
-      auctions.forEach((auction: any, index: number) => {
+      auctions.forEach((auction, index: number) => {
         const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
         const hoursLeft = Math.max(0, Math.floor(timeLeft / 3600))
         const minutesLeft = Math.max(0, Math.floor((timeLeft % 3600) / 60))
         
-        const currentPriceSOL = (Number(auction.currentBid || auction.startingPrice) / 1_000_000_000).toFixed(3)
+        const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
         const reservePriceSOL = (Number(auction.reservePrice) / 1_000_000_000).toFixed(3)
         
         log.info(
@@ -330,8 +346,8 @@ auctionCommand
         `${chalk.cyan('npx ghostspeak auction finalize')} - Complete ended auctions`
       )
       
-    } catch (error: any) {
-      log.error(`Failed to load auctions: ${error?.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      log.error(`Failed to load auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -341,7 +357,7 @@ auctionCommand
   .description('Place a bid on an auction')
   .option('-a, --auction <address>', 'Auction address')
   .option('-b, --bid <amount>', 'Bid amount in SOL')
-  .action(async (options) => {
+  .action(async (options: BidAuctionOptions) => {
     intro(chalk.cyan('💰 Place Auction Bid'))
 
     try {
@@ -350,9 +366,17 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: any[] = []
+      let auctions: Array<{
+        address?: string
+        auctionType: string
+        currentBid?: bigint
+        startingPrice: bigint
+        auctionEndTime: bigint
+        totalBids: number
+        minimumBidIncrement: bigint
+      }> = []
       try {
-        auctions = await client.auction.listAuctions({ status: 'active' as any })
+        auctions = await client.auction.listAuctions({ status: 'active' as 'active' | 'ending' | 'completed' })
       } catch {
         auctions = [] // TODO: Implement proper auction listing
       }
@@ -371,8 +395,8 @@ auctionCommand
       if (!selectedAuction) {
         const auctionChoice = await select({
           message: 'Select auction to bid on:',
-          options: auctions.map((auction: any, index: number) => {
-            const currentPriceSOL = (Number(auction.currentBid || auction.startingPrice) / 1_000_000_000).toFixed(3)
+          options: auctions.map((auction, index: number) => {
+            const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
             const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
             const hoursLeft = Math.floor(timeLeft / 3600)
             
@@ -392,14 +416,14 @@ auctionCommand
         selectedAuction = auctionChoice
       }
 
-      const auction = auctions.find((a: any) => a.address === selectedAuction)
+      const auction = auctions.find((a) => a.address === selectedAuction)
       if (!auction) {
         log.error('Auction not found')
         return
       }
 
       // Calculate suggested bid
-      const currentPriceSOL = Number((auction as any).currentBid || (auction as any).startingPrice) / 1_000_000_000
+      const currentPriceSOL = Number((auction as any).currentBid ?? (auction as any).startingPrice) / 1_000_000_000
       const minIncrementSOL = Number(auction.minimumBidIncrement) / 1_000_000_000
       const suggestedBid = currentPriceSOL + minIncrementSOL
 
@@ -475,7 +499,7 @@ auctionCommand
           address(selectedAuction),
           {
             ...bidParams,
-            signer: wallet as any
+            signer: wallet
           }
         )
 
@@ -496,11 +520,11 @@ auctionCommand
         
       } catch (error) {
         s.stop('❌ Bid placement failed')
-        await handleTransactionError(error as any)
+        await handleTransactionError(error as Error)
       }
       
-    } catch (error: any) {
-      log.error(`Failed to place bid: ${error?.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      log.error(`Failed to place bid: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -509,7 +533,7 @@ auctionCommand
   .command('monitor')
   .description('Monitor auction progress in real-time')
   .option('-a, --auction <address>', 'Specific auction to monitor')
-  .action(async (options) => {
+  .action(async (options: { auction?: string }) => {
     intro(chalk.cyan('📡 Auction Monitor'))
 
     try {
@@ -525,7 +549,7 @@ auctionCommand
         // TODO: Implement real-time monitoring when SDK supports it
         // Mock monitoring for now
         const mockAuctionSummary = {
-          currentPrice: lastBidAmount || 1000000000n,
+          currentPrice: lastBidAmount ?? 1000000000n,
           timeRemaining: 3600n,
           winner: null as string | null,
           status: 'active' as const
@@ -562,11 +586,11 @@ auctionCommand
 
         log.info(`\n${chalk.bold('Auctions Ending Soon:')}\n`)
         
-        auctions.forEach((auction: any, index: number) => {
+        auctions.forEach((auction, index: number) => {
           const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
           const hoursLeft = Math.floor(timeLeft / 3600)
           const minutesLeft = Math.floor((timeLeft % 3600) / 60)
-          const currentPriceSOL = (Number(auction.currentBid || auction.startingPrice) / 1_000_000_000).toFixed(3)
+          const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
           
           const urgency = timeLeft < 3600 ? chalk.red('🔥 URGENT') : 
                          timeLeft < 6 * 3600 ? chalk.yellow('⚠️  SOON') : 
@@ -585,8 +609,8 @@ auctionCommand
         )
       }
       
-    } catch (error: any) {
-      log.error(`Failed to monitor auctions: ${error?.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      log.error(`Failed to monitor auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -595,7 +619,7 @@ auctionCommand
   .command('finalize')
   .description('Finalize completed auctions')
   .option('-a, --auction <address>', 'Auction address to finalize')
-  .action(async (options) => {
+  .action(async (options: { auction?: string }) => {
     intro(chalk.cyan('🏁 Finalize Auction'))
 
     try {
@@ -628,7 +652,7 @@ auctionCommand
         const auctionChoice = await select({
           message: 'Select auction to finalize:',
           options: myAuctions.map(auction => {
-            const finalPriceSOL = (Number(auction.currentBid || auction.startingPrice) / 1_000_000_000).toFixed(3)
+            const finalPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
             
             return {
               value: auction.address,
@@ -653,7 +677,7 @@ auctionCommand
       }
 
       // Show finalization details
-      const finalPriceSOL = (Number((auction as any).currentBid || (auction as any).startingPrice) / 1_000_000_000).toFixed(3)
+      const finalPriceSOL = (Number((auction as any).currentBid ?? (auction as any).startingPrice) / 1_000_000_000).toFixed(3)
       const hasWinner = (auction as any).currentBidder && (auction as any).currentBid
       
       note(
@@ -699,11 +723,11 @@ auctionCommand
         
       } catch (error) {
         s.stop('❌ Auction finalization failed')
-        await handleTransactionError(error as any)
+        await handleTransactionError(error as Error)
       }
       
-    } catch (error: any) {
-      log.error(`Failed to finalize auction: ${error?.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      log.error(`Failed to finalize auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -712,7 +736,7 @@ auctionCommand
   .command('analytics')
   .description('View auction analytics and insights')
   .option('--mine', 'Show only my auction analytics')
-  .action(async (options) => {
+  .action(async (options: { mine?: boolean }) => {
     intro(chalk.cyan('📊 Auction Analytics'))
 
     try {
@@ -733,7 +757,7 @@ auctionCommand
         totalFees: 0n,
         auctionTypeStats: {},
         topPerformers: []
-      } as any
+      }
       
       // TODO: Implement real analytics when SDK supports it
       // const analytics = await client.auction.getAuctionAnalytics()
@@ -762,7 +786,7 @@ auctionCommand
       log.info(`\n${chalk.bold('🎯 Auction Type Breakdown:')}\n`)
       
       if (analytics.auctionTypeStats) {
-        Object.entries(analytics.auctionTypeStats).forEach(([type, stats]: [string, any]) => {
+        Object.entries(analytics.auctionTypeStats).forEach(([type, stats]: [string, { count?: number; successRate?: number; averagePrice?: bigint }]) => {
           log.info(
             `${chalk.bold(type.toUpperCase())}:\n` +
             `   ${chalk.gray('Count:')} ${stats?.count || 0}\n` +
@@ -775,7 +799,7 @@ auctionCommand
       if (analytics.topPerformers?.length > 0) {
         log.info(`\n${chalk.bold('🏆 Top Performers:')}\n`)
         
-        analytics.topPerformers.slice(0, 5).forEach((performer: any, index: number) => {
+        analytics.topPerformers.slice(0, 5).forEach((performer: { creator?: string; auctionCount?: number; totalVolume?: bigint; successRate?: number }, index: number) => {
           log.info(
             `${index + 1}. ${performer?.creator || 'Unknown'}\n` +
             `   ${chalk.gray('Auctions:')} ${performer?.auctionCount || 0}\n` +
@@ -791,7 +815,7 @@ auctionCommand
         `${chalk.cyan('npx ghostspeak auction list')} - Browse active auctions`
       )
       
-    } catch (error: any) {
-      log.error(`Failed to load analytics: ${error?.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      log.error(`Failed to load analytics: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })

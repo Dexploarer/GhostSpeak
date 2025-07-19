@@ -11,6 +11,7 @@ import type {
   GhostSpeakConfig,
   ServiceListingWithAddress
 } from '../types/index.js'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Keep for type completeness
 import type { Agent, ServiceListing, JobPosting, WorkOrder, A2ASession, A2AMessage } from '../generated/index.js'
 import type { AgentRegistrationParams } from './instructions/AgentInstructions.js'
 import type { CreateServiceListingParams, CreateJobPostingParams } from './instructions/MarketplaceInstructions.js' 

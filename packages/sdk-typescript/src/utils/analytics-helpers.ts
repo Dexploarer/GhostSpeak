@@ -42,6 +42,83 @@ export interface UserActivityMetrics {
   pageViews: number
 }
 
+// Report-specific data interfaces
+export interface SecurityIncidentData {
+  incidents: {
+    id: string
+    type: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    timestamp: bigint
+    description: string
+    status: 'open' | 'investigating' | 'resolved'
+    affectedAccounts: string[]
+  }[]
+  summary: {
+    totalIncidents: number
+    criticalIncidents: number
+    resolvedIncidents: number
+    averageResolutionTime: number
+  }
+  metrics: PerformanceMetrics
+}
+
+export interface FinancialTransactionData {
+  transactions: {
+    id: string
+    amount: bigint
+    timestamp: bigint
+    from: string
+    to: string
+    type: 'payment' | 'escrow' | 'dispute' | 'refund'
+    status: 'pending' | 'completed' | 'failed'
+    fees: bigint
+  }[]
+  summary: {
+    totalVolume: bigint
+    totalTransactions: number
+    averageAmount: number
+    totalFees: bigint
+  }
+  period: {
+    start: bigint
+    end: bigint
+  }
+}
+
+export interface RegulatoryComplianceData {
+  policies: {
+    name: string
+    status: 'compliant' | 'non_compliant' | 'pending'
+    lastAudit: bigint
+    nextAudit: bigint
+    findings: string[]
+  }[]
+  auditTrail: {
+    timestamp: bigint
+    action: string
+    user: string
+    details: string
+  }[]
+  complianceScore: number
+  riskLevel: 'low' | 'medium' | 'high'
+}
+
+export interface AuditSummaryData {
+  auditPeriod: {
+    start: bigint
+    end: bigint
+  }
+  findings: {
+    category: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    count: number
+    details: string[]
+  }[]
+  recommendations: string[]
+  overallScore: number
+  previousScore?: number
+}
+
 // Define MetricType locally since it's not in generated types
 export enum MetricType {
   Transactions = 'Transactions',
@@ -507,7 +584,7 @@ Hourly Breakdown Available
   /**
    * Generate CSV data for export
    */
-  static generateCSV<T extends Record<string, any>>(
+  static generateCSV<T extends Record<string, unknown>>(
     data: T[],
     columns: { key: keyof T; label: string }[]
   ): string {
@@ -539,55 +616,113 @@ Hourly Breakdown Available
    */
   static formatReport(
     reportType: ReportType,
-    data: any
+    data: SecurityIncidentData | FinancialTransactionData | RegulatoryComplianceData | AuditSummaryData
   ): string {
     switch (reportType) {
       case ReportType.SecurityIncidents:
-        return this.formatPerformanceReport(data)
+        return this.formatSecurityIncidentReport(data as SecurityIncidentData)
       case ReportType.FinancialTransactions:
-        return this.formatFinancialReport(data)
+        return this.formatFinancialReport(data as FinancialTransactionData)
       case ReportType.RegulatoryCompliance:
-        return this.formatComplianceReport(data)
+        return this.formatComplianceReport(data as RegulatoryComplianceData)
       case ReportType.AuditSummary:
-        return this.formatExecutiveReport(data)
+        return this.formatAuditSummaryReport(data as AuditSummaryData)
       default:
         return JSON.stringify(data, null, 2)
     }
   }
 
-  private static formatPerformanceReport(data: any): string {
+  private static formatSecurityIncidentReport(data: SecurityIncidentData): string {
+    const { incidents, summary, metrics } = data
+    
     return `
-PERFORMANCE REPORT
-==================
+SECURITY INCIDENT REPORT
+========================
 
-${JSON.stringify(data, null, 2)}
+Summary:
+- Total Incidents: ${summary.totalIncidents}
+- Critical Incidents: ${summary.criticalIncidents}
+- Resolved Incidents: ${summary.resolvedIncidents}
+- Average Resolution Time: ${summary.averageResolutionTime}h
+
+Recent Incidents:
+${incidents.slice(0, 10).map(incident => 
+  `- [${incident.severity.toUpperCase()}] ${incident.type}: ${incident.description} (${incident.status})`
+).join('\n')}
+
+Performance Metrics:
+- Response Time: ${metrics.responseTime}ms
+- Throughput: ${metrics.throughput} TPS
+- Error Rate: ${metrics.errorRate}%
+- Uptime: ${metrics.uptime}%
     `.trim()
   }
 
-  private static formatFinancialReport(data: any): string {
+  private static formatFinancialReport(data: FinancialTransactionData): string {
+    const { transactions, summary, period } = data
+    
     return `
-FINANCIAL REPORT
-================
+FINANCIAL TRANSACTION REPORT
+============================
 
-${JSON.stringify(data, null, 2)}
+Period: ${new Date(Number(period.start) * 1000).toISOString()} to ${new Date(Number(period.end) * 1000).toISOString()}
+
+Summary:
+- Total Volume: ${summary.totalVolume.toString()} lamports
+- Total Transactions: ${summary.totalTransactions}
+- Average Amount: ${summary.averageAmount.toLocaleString()}
+- Total Fees: ${summary.totalFees.toString()} lamports
+
+Recent Transactions:
+${transactions.slice(0, 10).map(tx => 
+  `- ${tx.type}: ${tx.amount.toString()} lamports (${tx.status}) - ${new Date(Number(tx.timestamp) * 1000).toISOString()}`
+).join('\n')}
     `.trim()
   }
 
-  private static formatComplianceReport(data: any): string {
+  private static formatComplianceReport(data: RegulatoryComplianceData): string {
+    const { policies, auditTrail, complianceScore, riskLevel } = data
+    
     return `
-COMPLIANCE REPORT
-=================
+REGULATORY COMPLIANCE REPORT
+============================
 
-${JSON.stringify(data, null, 2)}
+Overall Compliance Score: ${complianceScore}%
+Risk Level: ${riskLevel.toUpperCase()}
+
+Policy Status:
+${policies.map(policy => 
+  `- ${policy.name}: ${policy.status.replace('_', ' ').toUpperCase()}`
+).join('\n')}
+
+Recent Audit Trail:
+${auditTrail.slice(0, 5).map(entry => 
+  `- ${new Date(Number(entry.timestamp) * 1000).toISOString()}: ${entry.action} by ${entry.user}`
+).join('\n')}
     `.trim()
   }
 
-  private static formatExecutiveReport(data: any): string {
+  private static formatAuditSummaryReport(data: AuditSummaryData): string {
+    const { auditPeriod, findings, recommendations, overallScore, previousScore } = data
+    
+    const scoreChange = previousScore ? overallScore - previousScore : 0
+    const scoreChangeText = scoreChange > 0 ? `(+${scoreChange})` : scoreChange < 0 ? `(${scoreChange})` : '(no change)'
+    
     return `
-EXECUTIVE SUMMARY
-=================
+AUDIT SUMMARY REPORT
+====================
 
-${JSON.stringify(data, null, 2)}
+Audit Period: ${new Date(Number(auditPeriod.start) * 1000).toISOString()} to ${new Date(Number(auditPeriod.end) * 1000).toISOString()}
+
+Overall Score: ${overallScore}% ${scoreChangeText}
+
+Findings by Severity:
+${findings.map(finding => 
+  `- ${finding.severity.toUpperCase()}: ${finding.count} findings in ${finding.category}`
+).join('\n')}
+
+Key Recommendations:
+${recommendations.slice(0, 5).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
     `.trim()
   }
 }

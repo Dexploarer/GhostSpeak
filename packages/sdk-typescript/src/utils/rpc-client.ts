@@ -13,6 +13,7 @@ import {
   type RpcSubscriptions,
   type Address,
   type Signature,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Keep for completeness
   type Blockhash,
   type Slot,
   type Lamports,
@@ -59,8 +60,11 @@ import {
   type SlotNotificationsApi,
   sendAndConfirmTransactionFactory,
   // type SendAndConfirmTransactionFactoryConfig, // Not available - defined inline
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future transaction building features
   type TransactionSigner,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future instruction building features
   type IInstruction,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future transaction building features
   type TransactionMessage,
   type Base64EncodedWireTransaction
 } from '@solana/kit'
@@ -68,6 +72,7 @@ import {
 import type {
   Commitment,
   AccountInfo,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used in generic RPC response handling
   RpcResponse,
   GetAccountInfoOptions,
   GetMultipleAccountsOptions,
@@ -84,23 +89,34 @@ import type {
   EpochInfo,
   Version,
   Supply,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future token account features
   TokenAccountBalance,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future token features
   TokenSupply,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future voting features
   VoteAccount,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future staking features
   StakeActivation,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future governance features
   InflationGovernor,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future inflation features
   InflationRate,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future epoch features
   EpochSchedule,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future identity features
   Identity,
   HealthStatus,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future block production features
   BlockProduction,
   RecentPerformanceSample,
   ParsedAccountData
 } from '../types/rpc-types.js'
+import type { PoolStats } from './connection-pool.js'
 
 /**
  * Configuration for send and confirm transaction factory
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future transaction factory features
 interface SendAndConfirmTransactionFactoryConfig {
   rpc: unknown
   rpcSubscriptions: unknown
@@ -179,6 +195,55 @@ export interface SolanaRpcClientConfig {
   }
 }
 
+// RPC options interfaces for July 2025
+interface BaseRpcOptions {
+  commitment?: Commitment
+  minContextSlot?: bigint
+}
+
+interface AccountInfoRpcOptions extends BaseRpcOptions {
+  encoding?: 'base64' | 'base64+zstd' | 'jsonParsed'
+  dataSlice?: { offset: number; length: number }
+}
+
+interface SendTransactionRpcOptions extends BaseRpcOptions {
+  skipPreflight?: boolean
+  preflightCommitment?: Commitment
+  maxRetries?: bigint
+}
+
+interface ProgramAccountsRpcOptions extends AccountInfoRpcOptions {
+  filters?: (
+    | Readonly<{ dataSize: bigint }>
+    | Readonly<{
+        memcmp: Readonly<{
+          bytes: string  // Will be cast to appropriate branded type
+          encoding: 'base58' | 'base64'
+          offset: bigint
+        }>
+      }>
+  )[]
+}
+
+interface TransactionRpcOptions extends BaseRpcOptions {
+  encoding?: 'json' | 'jsonParsed' | 'base64'
+  maxSupportedTransactionVersion?: number
+}
+
+interface RawAccountData {
+  executable: boolean
+  lamports: bigint | number
+  owner: Address | string
+  rentEpoch: bigint | number
+  data: string | [string, string] | { program: string; parsed: unknown; space?: number }
+  space?: bigint | number
+}
+
+interface TokenAccountInfo {
+  pubkey: Address
+  account: AccountInfo
+}
+
 /**
  * Modern Solana RPC Client using Web3.js v2 patterns
  * 
@@ -228,10 +293,10 @@ export class SolanaRpcClient {
 
     // Create send and confirm transaction helper
     const factoryConfig = {
-      rpc: this.rpc as any,
-      rpcSubscriptions: this.rpcSubscriptions || (null as never)
+      rpc: this.rpc,
+      rpcSubscriptions: this.rpcSubscriptions ?? (null as never)
     }
-    this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig as any)
+    this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig)
     
     // Initialize connection pool if enabled
     if (this.useConnectionPool) {
@@ -268,15 +333,15 @@ export class SolanaRpcClient {
       return this.getAccountInfoWithPool(address, options)
     }
 
-    const rpcOptions: any = {
+    const rpcOptions: AccountInfoRpcOptions = {
       commitment: options?.commitment ?? this.commitment,
       ...(options?.dataSlice && { dataSlice: options.dataSlice }),
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
     }
     
-    // Add encoding only for non-parsed requests
+    // Add encoding only for non-parsed requests, filtering out unsupported base58
     if (options?.encoding !== 'jsonParsed') {
-      rpcOptions.encoding = options?.encoding ?? 'base64'
+      rpcOptions.encoding = (options?.encoding === 'base58') ? 'base64' : (options?.encoding ?? 'base64')
     }
     
     const result = await this.rpc.getAccountInfo(address, rpcOptions).send()
@@ -316,7 +381,7 @@ export class SolanaRpcClient {
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
     }).send()
 
-    return (result.value ?? []).map((account: any) => 
+    return (result.value ?? []).map((account) => 
       account ? this.parseAccountInfo(account) : null
     )
   }
@@ -328,30 +393,39 @@ export class SolanaRpcClient {
     programId: Address,
     options?: GetProgramAccountsOptions
   ): Promise<ProgramAccount[]> {
-    const rpcOptions: any = {
+    const rpcOptions: ProgramAccountsRpcOptions = {
       commitment: options?.commitment ?? this.commitment,
       ...(options?.dataSlice && { dataSlice: options.dataSlice }),
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot }),
       ...(options?.filters && { 
         filters: options.filters.map(f => {
           if ('dataSize' in f) {
-            return { dataSize: BigInt(f.dataSize) }
+            return { dataSize: BigInt(f.dataSize) } as const
+          }
+          if ('memcmp' in f) {
+            return {
+              memcmp: {
+                bytes: f.memcmp.bytes as any, // Cast to appropriate branded type
+                encoding: 'base58' as const,
+                offset: BigInt(f.memcmp.offset)
+              }
+            } as const
           }
           return f
         })
       })
     }
     
-    // Add encoding only for non-parsed requests
+    // Add encoding only for non-parsed requests, filtering out unsupported base58
     if (options?.encoding !== 'jsonParsed') {
-      rpcOptions.encoding = options?.encoding ?? 'base64'
+      rpcOptions.encoding = (options?.encoding === 'base58') ? 'base64' : (options?.encoding ?? 'base64')
     }
     
-    const result = await this.rpc.getProgramAccounts(programId, rpcOptions).send()
+    const result = await this.rpc.getProgramAccounts(programId, rpcOptions as any).send()
 
-    return (result as any).value.map((item: any) => ({
+    return result.value.map((item) => ({
       pubkey: item.pubkey,
-      account: this.parseAccountInfo(item.account)
+      account: this.parseAccountInfo(item.account) as any // Cast to handle ParsedAccountData vs Buffer union
     }))
   }
 
@@ -406,17 +480,15 @@ export class SolanaRpcClient {
     transaction: Base64EncodedWireTransaction | Uint8Array | string,
     options?: SendTransactionOptions
   ): Promise<Signature> {
-    const rpcOptions: any = {
+    const rpcOptions: SendTransactionRpcOptions = {
       skipPreflight: options?.skipPreflight ?? false,
       preflightCommitment: options?.preflightCommitment ?? this.commitment,
-      ...(options?.maxRetries && { maxRetries: options.maxRetries }),
+      ...(options?.maxRetries && { maxRetries: BigInt(options.maxRetries) }),
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
     }
     
-    // Only set encoding if it's base58
-    if (options?.encoding === 'base58') {
-      rpcOptions.encoding = 'base58'
-    }
+    // Note: sendTransaction doesn't support encoding options in @solana/kit
+    // Transactions should already be in the correct format
     
     return this.rpc.sendTransaction(transaction as Base64EncodedWireTransaction, rpcOptions).send()
   }
@@ -487,7 +559,7 @@ export class SolanaRpcClient {
       encoding?: 'json' | 'jsonParsed' | 'base64'
     }
   ): Promise<TransactionResponse | null> {
-    const rpcOptions: any = {
+    const rpcOptions: TransactionRpcOptions = {
       commitment: options?.commitment ?? this.commitment,
       encoding: 'json' as const
     }
@@ -496,7 +568,7 @@ export class SolanaRpcClient {
       rpcOptions.maxSupportedTransactionVersion = options.maxSupportedTransactionVersion
     }
     
-    const result = await this.rpc.getTransaction(signature, rpcOptions).send()
+    const result = await this.rpc.getTransaction(signature, rpcOptions as any).send()
 
     return result as unknown as TransactionResponse | null
   }
@@ -536,7 +608,7 @@ export class SolanaRpcClient {
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
     }).send()
     
-    return { ...result, transactionCount: result.transactionCount || undefined } as EpochInfo
+    return { ...result, transactionCount: result.transactionCount ?? undefined } as EpochInfo
   }
 
   /**
@@ -604,7 +676,7 @@ export class SolanaRpcClient {
   /**
    * Helper method to parse account info from RPC response
    */
-  private parseAccountInfo(account: any): AccountInfo {
+  private parseAccountInfo(account: RawAccountData): AccountInfo {
     // Handle different data encodings
     let data: Buffer | ParsedAccountData
     
@@ -631,11 +703,11 @@ export class SolanaRpcClient {
 
     return {
       executable: account.executable,
-      lamports: account.lamports,
-      owner: account.owner,
-      rentEpoch: account.rentEpoch,
+      lamports: account.lamports as any, // Cast to Lamports branded type
+      owner: account.owner as Address,
+      rentEpoch: BigInt(account.rentEpoch as any),
       data,
-      space: account.space
+      space: account.space ? BigInt(account.space as any) : undefined
     }
   }
 
@@ -765,16 +837,19 @@ export class SolanaRpcClient {
       minContextSlot?: Slot
       encoding?: 'base64' | 'jsonParsed'
     }
-  ): Promise<any[]> {
-    const filters = mint ? { mint } : { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' }
+  ): Promise<TokenAccountInfo[]> {
+    const filters = mint ? { mint } : { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address }
     
-    const result = await this.rpc.getTokenAccountsByOwner(owner, filters as any, {
+    const result = await this.rpc.getTokenAccountsByOwner(owner, filters, {
       commitment: options?.commitment ?? this.commitment,
       encoding: options?.encoding ?? 'base64',
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
     }).send()
 
-    return [...result.value] as any[]
+    return result.value.map(item => ({
+      pubkey: item.pubkey,
+      account: this.parseAccountInfo(item.account as RawAccountData)
+    }))
   }
 
   /**
@@ -813,12 +888,15 @@ export class SolanaRpcClient {
   async getSupply(
     options?: { commitment?: Commitment; excludeNonCirculatingAccountsList?: boolean }
   ): Promise<Supply> {
-    const result = await this.rpc.getSupply({
-      commitment: options?.commitment ?? this.commitment,
-      ...(options?.excludeNonCirculatingAccountsList && {
-        excludeNonCirculatingAccountsList: options.excludeNonCirculatingAccountsList
-      })
-    } as any).send()
+    const rpcConfig: any = {
+      commitment: options?.commitment ?? this.commitment
+    }
+    
+    if (options?.excludeNonCirculatingAccountsList === true) {
+      rpcConfig.excludeNonCirculatingAccountsList = true
+    }
+    
+    const result = await this.rpc.getSupply(rpcConfig).send()
 
     return result.value as Supply
   }
@@ -948,7 +1026,7 @@ export class SolanaRpcClient {
    * Initialize connection pool
    */
   private initializeConnectionPool(config: SolanaRpcClientConfig): void {
-    if (typeof globalThis !== 'undefined' && typeof (globalThis as any).window !== 'undefined') {
+    if (typeof globalThis !== 'undefined' && 'window' in globalThis) {
       // Browser environment - connection pooling handled by browser
       console.warn('Connection pooling not supported in browser environment')
       return
@@ -980,7 +1058,7 @@ export class SolanaRpcClient {
   /**
    * Get cached transaction using connection pool
    */
-  async getCachedTransaction(signature: Signature): Promise<any | null> {
+  async getCachedTransaction(signature: Signature): Promise<TransactionResponse | null> {
     if (!this.useConnectionPool) {
       return this.getTransaction(signature)
     }
@@ -988,7 +1066,7 @@ export class SolanaRpcClient {
     try {
       const { getGlobalConnectionPool } = await import('./connection-pool.js')
       const pool = getGlobalConnectionPool()
-      return await pool.getCachedTransaction(this.endpoint, signature)
+      return await pool.getCachedTransaction(this.endpoint, signature) as TransactionResponse | null
     } catch (error) {
       console.warn('Connection pool error, falling back to direct connection:', error)
       return this.getTransaction(signature)
@@ -998,7 +1076,7 @@ export class SolanaRpcClient {
   /**
    * Get connection pool statistics
    */
-  async getPoolStats(): Promise<any> {
+  async getPoolStats(): Promise<PoolStats | null> {
     if (!this.useConnectionPool) {
       return null
     }

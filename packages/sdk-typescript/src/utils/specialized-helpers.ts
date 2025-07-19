@@ -54,6 +54,26 @@ export interface MonitorConfig {
 }
 
 /**
+ * Transaction details interface for July 2025
+ */
+interface TransactionDetails {
+  transaction: {
+    message: {
+      accountKeys: string[]
+      instructions: unknown[]
+      recentBlockhash: string
+    }
+  }
+  meta?: {
+    err: unknown | null
+    fee: number
+    preBalances: number[]
+    postBalances: number[]
+    logMessages?: string[]
+  }
+}
+
+/**
  * Specialized helper for GhostSpeak protocol operations
  */
 export class GhostSpeakHelpers {
@@ -393,10 +413,11 @@ export class GhostSpeakHelpers {
 
     try {
       // Get transaction details
-      const transaction = await (this.rpcClient as any).getTransaction(signature, {
+      // Using any to access internal RPC method since SimpleRpcClient doesn't expose getTransaction
+      const transaction = await (this.rpcClient as any).rpc.getTransaction(signature, {
         encoding: 'json',
         maxSupportedTransactionVersion: 0
-      })
+      }).send() as TransactionDetails | null
 
       if (!transaction) {
         throw new Error('Transaction not found')
@@ -411,7 +432,7 @@ export class GhostSpeakHelpers {
       const currentAccounts = await this.rpcClient.getMultipleAccounts(accountsOfInterest)
 
       accountsOfInterest.forEach((address, index) => {
-        const accountIndex = accountKeys.findIndex((key: any) => key === address)
+        const accountIndex = accountKeys.findIndex((key: string) => key === address)
         
         let before: AccountInfo | null = null
         let after: AccountInfo | null = null
@@ -423,7 +444,7 @@ export class GhostSpeakHelpers {
 
           // This is simplified - in reality we'd need more data from the transaction
           before = {
-            lamports: preBalance as Lamports,
+            lamports: preBalance as unknown as Lamports,
             data: Buffer.alloc(0), // Would need to get historical data
             owner: '11111111111111111111111111111111' as Address,
             executable: false,
@@ -431,7 +452,7 @@ export class GhostSpeakHelpers {
           }
 
           after = {
-            lamports: postBalance as Lamports,
+            lamports: postBalance as unknown as Lamports,
             data: Buffer.alloc(0), // Would need to get historical data
             owner: '11111111111111111111111111111111' as Address,
             executable: false,

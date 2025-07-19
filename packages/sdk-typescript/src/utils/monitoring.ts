@@ -3,6 +3,10 @@
  * July 2025 Best Practices
  */
 
+/// <reference types="node" />
+
+// Types available for monitoring system extensions
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Keep for future monitoring features
 import type { Address, Signature } from '@solana/kit'
 
 /**
@@ -53,7 +57,7 @@ export interface OperationContext {
   endTime?: number
   success?: boolean
   error?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 /**
@@ -125,7 +129,7 @@ export interface TraceSpan {
     timestamp: number
     level: 'debug' | 'info' | 'warn' | 'error'
     message: string
-    fields?: Record<string, any>
+    fields?: Record<string, unknown>
   }[]
 }
 
@@ -141,9 +145,9 @@ export class MonitoringSystem {
   private healthStatuses = new Map<string, HealthStatus>()
   private traces = new Map<string, TraceSpan[]>()
   
-  private cleanupTimer?: NodeJS.Timeout
-  private healthCheckTimer?: NodeJS.Timeout
-  private alertCheckTimer?: NodeJS.Timeout
+  private cleanupTimer?: ReturnType<typeof setInterval>
+  private healthCheckTimer?: ReturnType<typeof setInterval>
+  private alertCheckTimer?: ReturnType<typeof setInterval>
 
   constructor(
     private config: {
@@ -229,7 +233,7 @@ export class MonitoringSystem {
     id: string,
     operation: string,
     endpoint: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): void {
     this.activeOperations.set(id, {
       operation,
@@ -279,7 +283,7 @@ export class MonitoringSystem {
       this.recordCounter('rpc_operations_failed', 1, {
         operation: context.operation,
         endpoint: context.endpoint,
-        error: error || 'unknown'
+        error: error ?? 'unknown'
       })
     }
 
@@ -535,7 +539,7 @@ export class MonitoringSystem {
     span: TraceSpan,
     level: 'debug' | 'info' | 'warn' | 'error',
     message: string,
-    fields: Record<string, any> = {}
+    fields: Record<string, unknown> = {}
   ): void {
     span.logs.push({
       timestamp: Date.now(),
@@ -629,10 +633,10 @@ export class MonitoringSystem {
    * Export monitoring data for analysis
    */
   exportData(): {
-    metrics: any
-    traces: any
-    alerts: any
-    health: any
+    metrics: Record<string, PerformanceMetric>
+    traces: Record<string, TraceSpan[]>
+    alerts: Record<string, Alert>
+    health: Record<string, HealthStatus>
     timestamp: number
   } {
     return {
@@ -760,7 +764,7 @@ export class MonitoringSystem {
       try {
         const startTime = Date.now()
         let healthy = true
-        const checks: any[] = []
+        const checks: { name: string; status: 'pass' | 'fail'; details?: string }[] = []
 
         if (config.customCheck) {
           healthy = await config.customCheck()
@@ -771,7 +775,7 @@ export class MonitoringSystem {
         } else {
           // Default HTTP health check
           try {
-            const response = await fetch(config.endpoint, {
+            const response = await globalThis.fetch(config.endpoint, {
               method: 'GET',
               signal: AbortSignal.timeout(config.timeout)
             })
@@ -783,7 +787,7 @@ export class MonitoringSystem {
             checks.push({
               name: 'http',
               status: statusOk ? 'pass' : 'fail',
-              message: `Status: ${response.status}`
+              details: `Status: ${response.status}`
             })
             
             healthy = statusOk
@@ -791,7 +795,7 @@ export class MonitoringSystem {
             checks.push({
               name: 'http',
               status: 'fail',
-              message: error instanceof Error ? error.message : 'Unknown error'
+              details: error instanceof Error ? error.message : 'Unknown error'
             })
             healthy = false
           }
@@ -910,9 +914,7 @@ let globalMonitoring: MonitoringSystem | null = null
  * Get or create global monitoring system
  */
 export function getGlobalMonitoring(config?: ConstructorParameters<typeof MonitoringSystem>[0]): MonitoringSystem {
-  if (!globalMonitoring) {
-    globalMonitoring = new MonitoringSystem(config)
-  }
+  globalMonitoring ??= new MonitoringSystem(config)
   return globalMonitoring
 }
 
@@ -927,18 +929,22 @@ export function setGlobalMonitoring(monitoring: MonitoringSystem): void {
  * Decorator for automatic monitoring of methods
  */
 export function Monitor(metricName?: string) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value
-    const name = metricName || `${target.constructor.name}.${propertyName}`
+  return function <T extends { constructor: new (...args: unknown[]) => unknown }>(
+    target: T,
+    propertyName: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const method = descriptor.value as (...args: unknown[]) => Promise<unknown>
+    const name = metricName ?? `${target.constructor.name}.${propertyName}`
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (this: T, ...args: unknown[]) {
       const monitoring = getGlobalMonitoring()
       const operationId = `${name}-${Date.now()}-${Math.random()}`
       
       monitoring.startOperation(operationId, name, 'internal')
       
       try {
-        const result = await method.apply(this, args)
+        const result = await method.apply(this, args) as unknown
         monitoring.endOperation(operationId, true)
         return result
       } catch (error) {

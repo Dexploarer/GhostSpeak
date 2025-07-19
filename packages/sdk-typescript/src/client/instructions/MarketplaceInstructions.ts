@@ -391,7 +391,7 @@ export class MarketplaceInstructions extends BaseInstructions {
     
     // Filter by category/service type
     return allListings.filter(({ data }) => {
-      const service = data as any
+      const service = data as ServiceListing
       return service.serviceType?.toLowerCase().includes(category.toLowerCase()) ||
              service.tags?.some((tag: string) => tag.toLowerCase().includes(category.toLowerCase()))
     })

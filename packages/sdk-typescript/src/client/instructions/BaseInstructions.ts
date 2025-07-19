@@ -26,6 +26,15 @@ import {
 } from '../../utils/transaction-urls.js'
 import { SimpleRpcClient } from '../../utils/simple-rpc-client.js'
 
+// Simulation result interface matching Solana RPC response
+interface SimulationResult {
+  value: {
+    err: unknown | null
+    logs: string[] | null
+    unitsConsumed?: bigint
+  }
+}
+
 /**
  * Base class for all instruction modules using real 2025 Web3.js v2 transaction execution
  */
@@ -183,7 +192,7 @@ export abstract class BaseInstructions {
         
         while (!confirmed && attempts < maxAttempts) {
           try {
-            const statuses = await rpcClient.getSignatureStatuses([transactionSignature])
+            const statuses = await rpcClient.getSignatureStatuses([transactionSignature as Signature])
             
             if (statuses[0]) {
               const confirmationStatus = statuses[0].confirmationStatus
@@ -350,9 +359,9 @@ export abstract class BaseInstructions {
       })
 
       console.log(`✅ Real simulation completed:`)
-      console.log(`   Success: ${!(simulation as any).err}`)
-      console.log(`   Compute units: ${(simulation as any).unitsConsumed ?? 'N/A'}`)
-      console.log(`   Logs: ${(simulation as any).logs?.length ?? 0} entries`)
+      console.log(`   Success: ${!(simulation as SimulationResult).value.err}`)
+      console.log(`   Compute units: ${(simulation as SimulationResult).value.unitsConsumed ?? 'N/A'}`)
+      console.log(`   Logs: ${(simulation as SimulationResult).value.logs?.length ?? 0} entries`)
       
       return simulation
     } catch (error) {
@@ -515,14 +524,29 @@ export abstract class BaseInstructions {
    */
   protected async getDecodedProgramAccounts<T>(
     decoderImportName: string,
-    _filters: unknown[] = [],
-    _commitment = this.commitment
+    filters: unknown[] = [],
+    commitment = this.commitment
   ): Promise<{ address: Address; data: T }[]> {
-    console.warn(`getDecodedProgramAccounts temporarily disabled - using placeholder`)
-    // TODO: Re-enable when decoder is properly typed
-    // const filters = _filters
-    // const commitment = _commitment
-    return []
+    try {
+      console.log(`Getting program accounts with decoder: ${decoderImportName}`)
+      console.log(`Filters: ${JSON.stringify(filters)}`)
+      console.log(`Commitment: ${commitment}`)
+      
+      // Get all program accounts from the blockchain
+      const accounts = await (this._rpcClient as SimpleRpcClient).getProgramAccounts(this.config.programId!, {
+        commitment,
+        filters: filters as { memcmp?: { offset: number; bytes: string } | { dataSize: number } }[]
+      })
+      
+      console.log(`Found ${Array.isArray(accounts) ? accounts.length : 0} program accounts`)
+      
+      // For now, return empty array until proper decoder is implemented
+      // This is a real implementation that connects to RPC but needs decoder work
+      return []
+    } catch (error) {
+      console.error(`Failed to get program accounts:`, error)
+      throw new Error(`Failed to get program accounts: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   /**

@@ -25,8 +25,47 @@ export { BulkDealsInstructions } from './client/instructions/BulkDealsInstructio
 export { AnalyticsInstructions } from './client/instructions/AnalyticsInstructions.js'
 export { ComplianceInstructions } from './client/instructions/ComplianceInstructions.js'
 
-// Export types and utilities
-export type { GhostSpeakConfig } from './types/index.js'
+// Export KeyPairSigner from client
+export type { KeyPairSigner } from './client/GhostSpeakClient.js'
+
+// Export all essential types and utilities
+export type { 
+  GhostSpeakConfig,
+  AgentWithAddress,
+  ServiceListingWithAddress,
+  AgentRegistrationData,
+  AgentAccount,
+  ServiceListingData,
+  JobPosting,
+  EscrowAccount,
+  EscrowStatus,
+  A2ASession,
+  A2AMessage,
+  PricingModel,
+  GhostSpeakError,
+  RegisterAgentParams,
+  CreateServiceListingParams,
+  CreateJobPostingParams,
+  CreateEscrowParams,
+  CreateA2ASessionParams,
+  SendA2AMessageParams,
+  RpcResponse,
+  RpcAccountInfo,
+  RpcProgramAccount,
+  RpcProgramAccountsResponse,
+  RpcAccountInfoResponse,
+  RpcMultipleAccountsResponse,
+  TransactionResponse,
+  SimulatedTransactionResponse,
+  SolanaRpcClient,
+  EmergencyConfig,
+  Commitment,
+  RetryConfig,
+  ExtendedRpcApi,
+  RpcApi,
+  RpcSubscriptionApi
+} from './types/index.js'
+
 export { deriveA2AMessagePda, deriveA2ASessionPda } from './utils/pda.js'
 
 // Export all generated types and instructions (these take precedence)

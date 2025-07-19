@@ -13,9 +13,15 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
+import type {
+  CreateMultisigOptions,
+  CreateProposalOptions,
+  VoteOptions,
+  ListProposalsOptions
+} from '../types/cli-types.js'
 
 export const governanceCommand = new Command('governance')
   .description('Participate in protocol governance')
@@ -29,11 +35,11 @@ governanceCommand
       .description('Create a new multisig wallet')
       .option('-n, --name <name>', 'Multisig name')
       .option('-t, --threshold <number>', 'Required signatures')
-      .action(async (options) => {
+      .action(async (options: CreateMultisigOptions) => {
         intro(chalk.cyan('🔐 Create Multisig Wallet'))
 
         try {
-          const multisigName = options.name || await text({
+          const multisigName = options.name ?? await text({
             message: 'Multisig wallet name:',
             placeholder: 'GhostSpeak Treasury',
             validate: (value) => {
@@ -73,7 +79,7 @@ governanceCommand
               validate: (value) => {
                 if (!value || value.trim().length === 0) return 'Signer address is required'
                 if (value.length < 32 || value.length > 44) return 'Invalid Solana address format'
-                if (signers.includes(value)) return 'This signer is already added'
+                if (signers.includes(address(value))) return 'This signer is already added'
               }
             })
 
@@ -81,7 +87,7 @@ governanceCommand
               break
             }
 
-            signers.push(signerAddress)
+            signers.push(address(signerAddress))
             log.success(`✅ Added signer ${signers.length}: ${signerAddress}`)
 
             if (signers.length >= 10) {
@@ -103,7 +109,7 @@ governanceCommand
             return
           }
 
-          const threshold = options.threshold || await select({
+          const threshold = options.threshold ?? await select({
             message: 'Required signatures (threshold):',
             options: Array.from({ length: signers.length }, (_, i) => ({
               value: (i + 1).toString(),
@@ -189,7 +195,7 @@ governanceCommand
             const multisigParams = {
               name: multisigName,
               description,
-              signers: signers.map(s => address(s)),
+              signers,
               threshold: thresholdNum,
               multisigType,
               timelockDuration: BigInt(timelockDuration)
@@ -200,7 +206,7 @@ governanceCommand
             const userRegistryPda = address('11111111111111111111111111111111')
             
             const signature = await client.governance.createMultisig(
-              wallet,
+              toSDKSigner(wallet),
               multisigPda,
               multisigParams
             )
@@ -236,7 +242,7 @@ governanceCommand
     new Command('list')
       .description('List multisig wallets')
       .option('--mine', 'Show only multisigs where I am a signer')
-      .action(async (options) => {
+      .action(async (options: { mine?: boolean }) => {
         intro(chalk.cyan('📋 Multisig Wallets'))
 
         try {
@@ -514,7 +520,7 @@ governanceCommand
             const multisigPda = address('11111111111111111111111111111111')
             
             const signature = await client.governance.createProposal(
-              wallet,
+              toSDKSigner(wallet),
               proposalPda,
               proposalParams
             )
@@ -581,24 +587,24 @@ governanceCommand
           
           proposals.forEach((proposal, index) => {
             const statusColor = 
-              proposal.status === 'passed' ? chalk.green :
-              proposal.status === 'failed' ? chalk.red :
-              proposal.status === 'executed' ? chalk.blue :
+              proposal.status.toString() === 'passed' ? chalk.green :
+              proposal.status.toString() === 'failed' ? chalk.red :
+              proposal.status.toString() === 'executed' ? chalk.blue :
               chalk.yellow
 
-            const timeLeft = Number(proposal.votingEndTime) - Math.floor(Date.now() / 1000)
+            const timeLeft = Number(proposal.votingEndsAt || 0) - Math.floor(Date.now() / 1000)
             const daysLeft = Math.max(0, Math.floor(timeLeft / 86400))
             const hoursLeft = Math.max(0, Math.floor((timeLeft % 86400) / 3600))
 
             const participation = proposal.totalVotes > 0 ? 
-              ((proposal.totalVotes / proposal.eligibleVoters) * 100).toFixed(1) : '0'
+              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters || 1)) * 100).toFixed(1) : '0'
 
             const approval = proposal.totalVotes > 0 ? 
-              ((proposal.yesVotes / proposal.totalVotes) * 100).toFixed(1) : '0'
+              ((Number(proposal.yesVotes || 0) / Number(proposal.totalVotes)) * 100).toFixed(1) : '0'
 
             log.info(
-              `${chalk.bold(`${index + 1}. ${proposal.title}`)} [${proposal.category.toUpperCase()}]\n` +
-              `   ${chalk.gray('Status:')} ${statusColor(proposal.status.toUpperCase())}\n` +
+              `${chalk.bold(`${index + 1}. ${proposal.title}`)} [${(proposal.category || 'general').toUpperCase()}]\n` +
+              `   ${chalk.gray('Status:')} ${statusColor(proposal.status.toString().toUpperCase())}\n` +
               `   ${chalk.gray('Participation:')} ${participation}% (${proposal.totalVotes} votes)\n` +
               `   ${chalk.gray('Approval:')} ${approval}% yes votes\n` +
               `   ${chalk.gray('Time Left:')} ${timeLeft > 0 ? `${daysLeft}d ${hoursLeft}h` : 'Voting ended'}\n` +
@@ -613,7 +619,7 @@ governanceCommand
           )
           
         } catch (error) {
-          log.error(`Failed to load proposals: ${error.message}`)
+          log.error(`Failed to load proposals: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       })
   )
@@ -650,10 +656,10 @@ governanceCommand
         const proposalChoice = await select({
           message: 'Select proposal to vote on:',
           options: proposals.map(proposal => {
-            const timeLeft = Number(proposal.votingEndTime) - Math.floor(Date.now() / 1000)
+            const timeLeft = Number(proposal.votingEndsAt || 0) - Math.floor(Date.now() / 1000)
             const daysLeft = Math.floor(timeLeft / 86400)
             const participation = proposal.totalVotes > 0 ? 
-              ((proposal.totalVotes / proposal.eligibleVoters) * 100).toFixed(1) : '0'
+              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters || 1)) * 100).toFixed(1) : '0'
             
             return {
               value: proposal.id,

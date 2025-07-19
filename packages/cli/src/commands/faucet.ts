@@ -60,7 +60,7 @@ async function requestFromSolanaFaucet(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
-    const data = await response.json()
+    const data = await response.json() as any
     
     if (data.signature) {
       const explorerUrl = `https://explorer.solana.com/tx/${data.signature}?cluster=${network}`
@@ -114,11 +114,11 @@ async function requestFromAlchemyFaucet(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
-    const data = await response.json()
+    const data = await response.json() as any
     
     if (data.txHash || data.signature) {
       const signature = data.txHash || data.signature
-      const amount = data.amount || 1 // Alchemy typically gives 1 SOL
+      const amount = (data.amount as number) || 1 // Alchemy typically gives 1 SOL
       const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=${network}`
       
       return {
@@ -158,10 +158,11 @@ async function requestFromRpcAirdrop(
     const rpc = createSolanaRpc(rpcUrl)
 
     // Request airdrop via RPC
-    const { value: signature } = await rpc.requestAirdrop(
+    const airdropResult = await rpc.requestAirdrop(
       address(walletAddress),
-      BigInt(amount * 1_000_000_000) // Convert SOL to lamports
+      BigInt(amount * 1_000_000_000) as any // Convert SOL to lamports
     ).send()
+    const signature = airdropResult.value.toString()
 
     const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=${network}`
 
@@ -188,8 +189,8 @@ async function generateWallet(): Promise<{ address: string; privateKey: Uint8Arr
   const signer = await generateKeyPairSigner()
   
   // Extract private key as Uint8Array (Web3.js v2 might store it differently)
-  const privateKeyBytes = signer.privateKey instanceof Uint8Array 
-    ? signer.privateKey 
+  const privateKeyBytes = (signer as any).privateKey instanceof Uint8Array 
+    ? (signer as any).privateKey 
     : new Uint8Array(32) // Fallback - generate random bytes for demo
   
   return {

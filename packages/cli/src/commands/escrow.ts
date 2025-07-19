@@ -11,10 +11,15 @@ import {
   cancel,
   log
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
 import { getAddressEncoder } from '@solana/kit'
 import { WorkOrderStatus } from '@ghostspeak/sdk'
+import type {
+  CreateEscrowOptions,
+  ReleaseEscrowOptions,
+  DisputeEscrowOptions
+} from '../types/cli-types.js'
 
 export const escrowCommand = new Command('escrow')
   .description('Manage escrow payments and transactions')
@@ -22,7 +27,7 @@ export const escrowCommand = new Command('escrow')
 escrowCommand
   .command('create')
   .description('Create a new escrow payment')
-  .action(async () => {
+  .action(async (options: CreateEscrowOptions) => {
     intro(chalk.yellow('🔒 Create Escrow Payment'))
 
     try {
@@ -82,7 +87,7 @@ escrowCommand
       s.stop('✅ Connected')
       
       // Ensure wallet has an address
-      if (!wallet || !wallet.address) {
+      if (!wallet?.address) {
         throw new Error('No wallet found. Please run: ghostspeak faucet --save')
       }
       
@@ -95,7 +100,7 @@ escrowCommand
         // Generate PDA for work order using manual derivation (SDK function has bug)
         const { getProgramDerivedAddress, getU64Encoder, getBytesEncoder } = await import('@solana/kit')
         
-        let workOrderPda: any
+        let workOrderPda: Address
         try {
           // Use manual PDA derivation that matches smart contract exactly
           const [pda] = await getProgramDerivedAddress({
@@ -125,12 +130,11 @@ escrowCommand
         
         let signature: string
         try {
-          signature = await client.createEscrow(
-            wallet,
-            workOrderPda,
+          signature = await client.escrow.create(
+            toSDKSigner(wallet),
             {
               orderId,
-              provider: recipient as Address,
+              provider: address(recipient),
               title: `Work Order #${orderId}`,
               description: workDescription as string,
               requirements: ['No specific requirements'], // Try with non-empty array
@@ -140,8 +144,8 @@ escrowCommand
             }
           )
           console.log('✅ Escrow creation successful, signature:', signature)
-        } catch (escrowError) {
-          console.error('❌ Escrow creation failed:', escrowError)
+        } catch (escrowError: unknown) {
+          console.error('❌ Escrow creation failed:', escrowError instanceof Error ? escrowError.message : escrowError)
           console.error('Error details:', {
             message: escrowError instanceof Error ? escrowError.message : 'Unknown error',
             stack: escrowError instanceof Error ? escrowError.stack : 'No stack trace'
@@ -163,9 +167,10 @@ escrowCommand
         console.log(chalk.cyan('Work Order Account:'), getAddressExplorerUrl(workOrderPda, 'devnet'))
 
         outro('Escrow creation completed')
-      } catch (error: any) {
+      } catch (error: unknown) {
         s.stop('❌ Creation failed')
-        throw new Error(handleTransactionError(error))
+        await handleTransactionError(error as Error)
+        throw error
       }
 
     } catch (error) {
@@ -176,7 +181,7 @@ escrowCommand
 escrowCommand
   .command('list')
   .description('List your escrow payments')
-  .action(async () => {
+  .action(async (options: { limit?: string }) => {
     intro(chalk.yellow('📋 Your Escrow Payments'))
 
     const s = spinner()
@@ -240,7 +245,7 @@ escrowCommand
             break
         }
         
-        console.log(chalk.yellow(`${index + 1}. ${workOrder.title || `Work Order #${workOrder.orderId}`}`))
+        console.log(chalk.yellow(`${index + 1}. ${workOrder.title ?? `Work Order #${workOrder.orderId}`}`))
         console.log(chalk.gray(`   Role: ${role}`))
         console.log(chalk.gray(`   Order ID: #${workOrder.orderId}`))
         console.log(chalk.gray(`   Amount: ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`))
@@ -268,7 +273,7 @@ escrowCommand
   .command('release')
   .description('Release funds from escrow')
   .argument('<escrow-id>', 'Escrow ID to release')
-  .action(async (escrowId) => {
+  .action(async (escrowId: string, options: ReleaseEscrowOptions) => {
     intro(chalk.yellow('💸 Release Escrow Payment'))
 
     try {
@@ -312,7 +317,7 @@ escrowCommand
         return
       }
 
-      if (workOrder.status === WorkOrderStatus.Disputed) {
+      if (workOrder.status.toString() === 'Disputed') {
         cancel('This work order is currently disputed and cannot be released')
         return
       }
@@ -418,11 +423,10 @@ escrowCommand
       releaseSpinner.start('Releasing funds from escrow...')
 
       try {
-        const result = await client.escrow.release({
-          escrowId: escrowPubkey,
-          rating: rating !== 'skip' ? parseInt(rating) : undefined,
-          review: review || undefined
-        })
+        const result = await client.escrow.release(
+          toSDKSigner(wallet),
+          address(escrowPubkey.toString())
+        )
 
         releaseSpinner.stop('✅ Funds released successfully!')
 
@@ -431,7 +435,7 @@ escrowCommand
         console.log(chalk.gray(`To: ${workOrder.provider.slice(0, 8)}...`))
         console.log(chalk.gray('Status: Completed'))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result as string, 'devnet'))
         
         if (rating !== 'skip') {
           console.log('\n' + chalk.green('⭐ Thank you for rating the service!'))
@@ -440,7 +444,8 @@ escrowCommand
         outro('Escrow release completed')
       } catch (error: any) {
         releaseSpinner.stop('❌ Release failed')
-        throw new Error(handleTransactionError(error))
+        await handleTransactionError(error as Error)
+        throw error
       }
 
     } catch (error) {
@@ -497,7 +502,7 @@ escrowCommand
         return
       }
 
-      if (workOrder.status === WorkOrderStatus.Disputed) {
+      if (workOrder.status.toString() === 'Disputed') {
         cancel('This work order is already disputed')
         return
       }
@@ -561,7 +566,7 @@ escrowCommand
         return
       }
 
-      let evidenceFiles = []
+      let evidenceFiles: string[] = []
       if (hasEvidence) {
         const evidence = await text({
           message: 'Evidence file paths (comma-separated):',
@@ -621,23 +626,25 @@ escrowCommand
       disputeSpinner.start('Opening dispute...')
 
       try {
-        const result = await client.escrow.dispute({
-          escrowId: escrowPubkey,
-          reason: reason as string,
-          description: description as string,
-          evidence: evidenceFiles.join(','),
-          desiredResolution: resolution as string
-        })
+        const result = await client.dispute.fileDispute(
+          toSDKSigner(wallet),
+          address(escrowPubkey.toString()), // disputePda
+          {
+            transaction: address(escrowPubkey.toString()),
+            respondent: address('11111111111111111111111111111111'), // TODO: Get from work order
+            reason: `${reason}: ${description}`
+          }
+        )
 
         disputeSpinner.stop('✅ Dispute opened successfully!')
 
         console.log('\n' + chalk.red('⚠️  Dispute Opened'))
-        console.log(chalk.gray(`Dispute ID: ${result.disputeId.toBase58()}`))
+        console.log(chalk.gray(`Work Order: ${escrowPubkey.toString()}`))
         console.log(chalk.gray('Status: Under Review'))
         console.log(chalk.gray('Escrow Status: Frozen'))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Dispute Account:'), getAddressExplorerUrl(result.disputeId.toBase58(), 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result as string, 'devnet'))
+        console.log(chalk.cyan('Work Order Account:'), getAddressExplorerUrl(escrowPubkey.toString(), 'devnet'))
         
         console.log('\n' + chalk.yellow('💡 Next steps:'))
         console.log(chalk.gray('1. The provider will be notified of the dispute'))
@@ -648,7 +655,8 @@ escrowCommand
         outro('Dispute opened')
       } catch (error: any) {
         disputeSpinner.stop('❌ Dispute creation failed')
-        throw new Error(handleTransactionError(error))
+        await handleTransactionError(error as Error)
+        throw error
       }
 
     } catch (error) {

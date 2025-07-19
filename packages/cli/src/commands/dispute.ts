@@ -5,7 +5,6 @@ import {
   outro, 
   text, 
   select, 
-  multiselect, 
   confirm, 
   spinner,
   isCancel,
@@ -14,9 +13,8 @@ import {
   note
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
-import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
-import type { DisputeSummary, DisputeFilter } from '@ghostspeak/sdk'
+import type { DisputeSummary } from '@ghostspeak/sdk'
 import type {
   FileDisputeOptions
 } from '../types/cli-types.js'
@@ -30,12 +28,12 @@ disputeCommand
   .description('File a new dispute')
   .option('-w, --work-order <address>', 'Work order address')
   .option('-r, --reason <reason>', 'Dispute reason')
-  .action(async (options: FileDisputeOptions) => {
+  .action(async (_options: FileDisputeOptions) => {
     intro(chalk.cyan('⚖️ File Dispute'))
 
     try {
       // Get work order if not provided
-      let workOrderAddress = options.workOrder
+      let workOrderAddress = _options.workOrder
       if (!workOrderAddress) {
         const s = spinner()
         s.start('Loading your work orders...')
@@ -70,7 +68,7 @@ disputeCommand
         workOrderAddress = workOrderChoice
       }
 
-      const disputeReason = options.reason || await select({
+      const disputeReason = _options.reason ?? await select({
         message: 'Select dispute reason:',
         options: [
           { value: 'quality', label: '🎯 Quality Issues', hint: 'Work quality below expectations' },
@@ -245,6 +243,8 @@ disputeCommand
             }
             s.stop('✅ Evidence submitted!')
           } catch (evidenceError) {
+            // Acknowledge error for future error handling enhancement
+            void evidenceError
             s.stop('⚠️ Evidence submission partially failed')
             log.warn('Some evidence items may not have been submitted properly')
           }
@@ -283,7 +283,7 @@ disputeCommand
   .option('-s, --status <status>', 'Filter by status (pending, under_review, resolved, escalated)')
   .option('--mine', 'Show only disputes where I am involved')
   .option('--as-arbitrator', 'Show disputes I can arbitrate')
-  .action(async (options) => {
+  .action(async (_options) => {
     intro(chalk.cyan('📋 Dispute List'))
 
     try {
@@ -293,10 +293,10 @@ disputeCommand
       const { client, wallet } = await initializeClient('devnet')
       
       let disputes
-      if (options.asArbitrator) {
+      if (_options.asArbitrator) {
         // Use listDisputes with moderator filter
         disputes = await client.dispute.getActiveDisputes(wallet.address)
-      } else if (options.mine) {
+      } else if (_options.mine) {
         // Use listDisputes without filter and filter client-side by user involvement
         const allDisputes = await client.dispute.listDisputes()
         disputes = allDisputes.filter((d: DisputeSummary) => 
@@ -304,7 +304,7 @@ disputeCommand
         )
       } else {
         disputes = await client.dispute.listDisputes({
-          status: options.status
+          status: _options.status
         })
       }
 
@@ -340,10 +340,10 @@ disputeCommand
         log.info(
           `${chalk.bold(`${index + 1}. ${dispute.reason.toUpperCase()} DISPUTE`)} ${severityIcon}\n` +
           `   ${chalk.gray('Status:')} ${statusColor(dispute.status.toString().toUpperCase())}\n` +
-          `   ${chalk.gray('Severity:')} ${dispute.severity || 'unknown'}\n` +
+          `   ${chalk.gray('Severity:')} ${dispute.severity ?? 'unknown'}\n` +
           `   ${chalk.gray('Filed:')} ${daysElapsed}d ${hoursElapsed}h ago\n` +
           `   ${chalk.gray('Evidence:')} ${dispute.evidenceCount} items\n` +
-          `   ${chalk.gray('Work Order:')} ${dispute.workOrder || dispute.transaction || 'N/A'}\n` +
+          `   ${chalk.gray('Work Order:')} ${dispute.workOrder ?? dispute.transaction ?? 'N/A'}\n` +
           `   ${chalk.gray('Description:')} ${dispute.description ? dispute.description.substring(0, 80) + (dispute.description.length > 80 ? '...' : '') : dispute.reason}\n`
         )
       })
@@ -365,7 +365,7 @@ disputeCommand
   .command('evidence')
   .description('Submit additional evidence for a dispute')
   .option('-d, --dispute <id>', 'Dispute ID')
-  .action(async (options) => {
+  .action(async (_options) => {
     intro(chalk.cyan('📄 Submit Evidence'))
 
     try {
@@ -398,13 +398,13 @@ disputeCommand
       }
 
       // Select dispute if not provided
-      let selectedDispute = options.dispute
+      let selectedDispute = _options.dispute
       if (!selectedDispute) {
         const disputeChoice = await select({
           message: 'Select dispute to add evidence to:',
           options: activeDisputes.map((dispute: DisputeSummary) => ({
-            value: dispute.id || dispute.dispute.toString(),
-            label: `${dispute.reason.toUpperCase()} - ${dispute.severity || 'unknown'}`,
+            value: dispute.id ?? dispute.dispute.toString(),
+            label: `${dispute.reason.toUpperCase()} - ${dispute.severity ?? 'unknown'}`,
             hint: `${dispute.evidenceCount} evidence items`
           }))
         })
@@ -555,7 +555,7 @@ disputeCommand
   .command('resolve')
   .description('Resolve a dispute (arbitrators only)')
   .option('-d, --dispute <id>', 'Dispute ID to resolve')
-  .action(async (options) => {
+  .action(async (_options) => {
     intro(chalk.cyan('⚖️ Resolve Dispute'))
 
     try {
@@ -581,7 +581,7 @@ disputeCommand
       }
 
       // Select dispute if not provided
-      let selectedDispute = options.dispute
+      let selectedDispute = _options.dispute
       if (!selectedDispute) {
         const disputeChoice = await select({
           message: 'Select dispute to resolve:',
@@ -590,8 +590,8 @@ disputeCommand
             const daysElapsed = Math.floor(timeElapsed / 86400)
             
             return {
-              value: dispute.id || dispute.dispute.toString(),
-              label: `${dispute.reason.toUpperCase()} - ${dispute.severity || 'unknown'}`,
+              value: dispute.id ?? dispute.dispute.toString(),
+              label: `${dispute.reason.toUpperCase()} - ${dispute.severity ?? 'unknown'}`,
               hint: `${daysElapsed}d old, ${dispute.evidenceCount} evidence items`
             }
           })
@@ -619,12 +619,12 @@ disputeCommand
       log.info(
         `${chalk.gray('Reason:')} ${dispute.reason}\n` +
         `${chalk.gray('Severity:')} ${dispute.severity}\n` +
-        `${chalk.gray('Filed by:')} ${dispute.claimant || dispute.complainant}\n` +
+        `${chalk.gray('Filed by:')} ${dispute.claimant ?? dispute.complainant}\n` +
         `${chalk.gray('Against:')} ${dispute.respondent}\n` +
-        `${chalk.gray('Work Order:')} ${dispute.workOrder || dispute.transaction || 'N/A'}\n` +
-        `${chalk.gray('Description:')} ${dispute.description || dispute.reason}\n` +
+        `${chalk.gray('Work Order:')} ${dispute.workOrder ?? dispute.transaction ?? 'N/A'}\n` +
+        `${chalk.gray('Description:')} ${dispute.description ?? dispute.reason}\n` +
         `${chalk.gray('Evidence Items:')} ${dispute.evidenceCount}\n` +
-        `${chalk.gray('Preferred Resolution:')} ${dispute.preferredResolution || 'None specified'}\n`
+        `${chalk.gray('Preferred Resolution:')} ${dispute.preferredResolution ?? 'None specified'}\n`
       )
 
       // Load and display evidence
@@ -637,7 +637,7 @@ disputeCommand
         evidence.forEach((item, index) => {
           log.info(
             `${chalk.bold(`${index + 1}. ${item.evidenceType.toUpperCase()}`)}\n` +
-            `   ${chalk.gray('Description:')} ${(item as any).description || 'No description'}\n` +
+            `   ${chalk.gray('Description:')} ${(item as any).description ?? 'No description'}\n` +
             `   ${chalk.gray('Data:')} ${item.evidenceData.substring(0, 100)}${item.evidenceData.length > 100 ? '...' : ''}\n` +
             `   ${chalk.gray('Submitted:')} ${new Date(Number(item.timestamp) * 1000).toLocaleString()}\n`
           )
@@ -761,7 +761,7 @@ disputeCommand
   .command('escalate')
   .description('Escalate dispute to human review')
   .option('-d, --dispute <id>', 'Dispute ID to escalate')
-  .action(async (options) => {
+  .action(async (_options) => {
     intro(chalk.cyan('🆙 Escalate Dispute'))
 
     try {
@@ -792,7 +792,7 @@ disputeCommand
       }
 
       // Select dispute if not provided
-      let selectedDispute = options.dispute
+      let selectedDispute = _options.dispute
       if (!selectedDispute) {
         const disputeChoice = await select({
           message: 'Select dispute to escalate:',
@@ -801,8 +801,8 @@ disputeCommand
             const daysElapsed = Math.floor(timeElapsed / 86400)
             
             return {
-              value: dispute.id || dispute.dispute.toString(),
-              label: `${dispute.reason.toUpperCase()} - ${dispute.severity || 'unknown'}`,
+              value: dispute.id ?? dispute.dispute.toString(),
+              label: `${dispute.reason.toUpperCase()} - ${dispute.severity ?? 'unknown'}`,
               hint: `${daysElapsed}d under review`
             }
           })

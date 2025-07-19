@@ -2,7 +2,6 @@
  * Faucet Service - Enhanced faucet functionality with rate limiting and multiple sources
  */
 
-import { address } from '@solana/kit'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'

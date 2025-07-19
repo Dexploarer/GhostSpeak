@@ -25,8 +25,11 @@ export const escrowCommand = new Command('escrow')
 escrowCommand
   .command('create')
   .description('Create a new escrow payment')
-  .action(async (options: CreateEscrowOptions) => {
+  .action(async (_options: CreateEscrowOptions) => {
     intro(chalk.yellow('🔒 Create Escrow Payment'))
+    
+    // Acknowledge options for future create escrow implementation
+    void _options
 
     try {
       const amount = await text({
@@ -179,8 +182,11 @@ escrowCommand
 escrowCommand
   .command('list')
   .description('List your escrow payments')
-  .action(async (options: { limit?: string }) => {
+  .action(async (_options: { limit?: string }) => {
     intro(chalk.yellow('📋 Your Escrow Payments'))
+    
+    // Acknowledge options for future limit implementation
+    void _options
 
     const s = spinner()
     s.start('Connecting to Solana network...')
@@ -271,8 +277,11 @@ escrowCommand
   .command('release')
   .description('Release funds from escrow')
   .argument('<escrow-id>', 'Escrow ID to release')
-  .action(async (escrowId: string, options: ReleaseEscrowOptions) => {
+  .action(async (escrowId: string, _options: ReleaseEscrowOptions) => {
     intro(chalk.yellow('💸 Release Escrow Payment'))
+    
+    // Acknowledge options for future release options implementation
+    void _options
 
     try {
       // Fetch escrow details
@@ -331,7 +340,7 @@ escrowCommand
 
       console.log('\n' + chalk.bold('🔒 Work Order Details'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Title:') + ` ${workOrder.title || 'Untitled'}`)
+      console.log(chalk.yellow('Title:') + ` ${workOrder.title ?? 'Untitled'}`)
       console.log(chalk.yellow('Order ID:') + ` #${workOrder.orderId}`)
       console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
       console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
@@ -393,7 +402,7 @@ escrowCommand
           return
         }
 
-        review = reviewText || ''
+        review = reviewText ?? ''
       }
 
       // Final confirmation
@@ -456,7 +465,7 @@ escrowCommand
   .command('dispute')
   .description('Open a dispute for an escrow payment')
   .argument('<escrow-id>', 'Escrow ID to dispute')
-  .action(async (escrowId) => {
+  .action(async (escrowId: string) => {
     intro(chalk.red('⚠️  Open Escrow Dispute'))
 
     try {
@@ -512,7 +521,7 @@ escrowCommand
 
       console.log('\n' + chalk.bold('🔒 Work Order Details'))
       console.log('─'.repeat(40))
-      console.log(chalk.yellow('Title:') + ` ${workOrder.title || 'Untitled'}`)
+      console.log(chalk.yellow('Title:') + ` ${workOrder.title ?? 'Untitled'}`)
       console.log(chalk.yellow('Order ID:') + ` #${workOrder.orderId}`)
       console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
       console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)

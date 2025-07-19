@@ -551,6 +551,7 @@ export class InteractiveMenu {
       }
     } catch (error) {
       // Ignore errors reading recent commands
+      void error
     }
     return []
   }

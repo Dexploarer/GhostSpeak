@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 
@@ -26,7 +26,7 @@ export async function checkForUpdates(currentVersion: string): Promise<void> {
     // Check cache to avoid too frequent checks
     if (existsSync(CACHE_FILE)) {
       try {
-        const cache: UpdateCheckCache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'))
+        const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8')) as UpdateCheckCache
         const timeSinceLastCheck = Date.now() - cache.lastCheck
         
         if (timeSinceLastCheck < CHECK_INTERVAL) {
@@ -56,7 +56,7 @@ export async function checkForUpdates(currentVersion: string): Promise<void> {
         // Ensure directory exists
         const cacheDir = join(homedir(), '.ghostspeak')
         if (!existsSync(cacheDir)) {
-          require('fs').mkdirSync(cacheDir, { recursive: true })
+          mkdirSync(cacheDir, { recursive: true })
         }
         
         writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2))

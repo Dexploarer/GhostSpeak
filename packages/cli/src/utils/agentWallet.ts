@@ -9,7 +9,6 @@ import { homedir } from 'os'
 import { randomUUID } from 'crypto'
 import type { KeyPairSigner } from '@solana/kit'
 import type { Address } from '@solana/addresses'
-import { address } from '@solana/addresses'
 
 /**
  * Atomic file operations helper to prevent race conditions and resource leaks
@@ -421,6 +420,8 @@ export class AgentCNFTManager {
     ownerWallet: Address,
     rpcUrl: string
   ): Promise<boolean> {
+    // Acknowledge rpcUrl for future implementation
+    void rpcUrl
     const credentials = await AgentWalletManager.loadCredentialsByUuid(agentUuid)
     if (!credentials) return false
     

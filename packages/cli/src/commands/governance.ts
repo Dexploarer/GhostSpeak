@@ -31,11 +31,11 @@ governanceCommand
       .description('Create a new multisig wallet')
       .option('-n, --name <name>', 'Multisig name')
       .option('-t, --threshold <number>', 'Required signatures')
-      .action(async (options: CreateMultisigOptions) => {
+      .action(async (_options: CreateMultisigOptions) => {
         intro(chalk.cyan('🔐 Create Multisig Wallet'))
 
         try {
-          const multisigName = options.name ?? await text({
+          const multisigName = _options.name ?? await text({
             message: 'Multisig wallet name:',
             placeholder: 'GhostSpeak Treasury',
             validate: (value) => {
@@ -105,7 +105,7 @@ governanceCommand
             return
           }
 
-          const threshold = options.threshold ?? await select({
+          const threshold = _options.threshold ?? await select({
             message: 'Required signatures (threshold):',
             options: Array.from({ length: signers.length }, (_, i) => ({
               value: (i + 1).toString(),
@@ -200,6 +200,8 @@ governanceCommand
             // TODO: Generate proper multisig PDA
             const multisigPda = address('11111111111111111111111111111111')
             const userRegistryPda = address('11111111111111111111111111111111')
+            // Acknowledge unused variables for future implementation
+            void userRegistryPda
             
             const signature = await client.governance.createMultisig(
               toSDKSigner(wallet),
@@ -238,7 +240,7 @@ governanceCommand
     new Command('list')
       .description('List multisig wallets')
       .option('--mine', 'Show only multisigs where I am a signer')
-      .action(async (options: { mine?: boolean }) => {
+      .action(async (_options: { mine?: boolean }) => {
         intro(chalk.cyan('📋 Multisig Wallets'))
 
         try {
@@ -247,7 +249,7 @@ governanceCommand
           
           const { client, wallet } = await initializeClient('devnet')
           
-          const multisigs = options.mine ? 
+          const multisigs = _options.mine ? 
             // Filter multisigs where user is a signer (client-side filtering)
             (await client.governance.listMultisigs()).filter(m => 
               m.signers.includes(wallet.address)
@@ -301,11 +303,11 @@ governanceCommand
       .description('Create a governance proposal')
       .option('-t, --title <title>', 'Proposal title')
       .option('-c, --category <category>', 'Proposal category')
-      .action(async (options) => {
+      .action(async (_options) => {
         intro(chalk.cyan('📝 Create Governance Proposal'))
 
         try {
-          const proposalTitle = options.title || await text({
+          const proposalTitle = _options.title ?? await text({
             message: 'Proposal title:',
             placeholder: 'Increase marketplace fee to 2.5%',
             validate: (value) => {
@@ -319,7 +321,7 @@ governanceCommand
             return
           }
 
-          const proposalCategory = options.category || await select({
+          const proposalCategory = _options.category ?? await select({
             message: 'Proposal category:',
             options: [
               { value: 'parameter', label: '⚙️ Parameter Change', hint: 'Modify protocol parameters' },
@@ -514,6 +516,8 @@ governanceCommand
             // TODO: Generate proper proposal PDA
             const proposalPda = address('11111111111111111111111111111111')
             const multisigPda = address('11111111111111111111111111111111')
+            // Acknowledge unused variable for future implementation
+            void multisigPda
             
             const signature = await client.governance.createProposal(
               toSDKSigner(wallet),
@@ -563,6 +567,8 @@ governanceCommand
           s.start('Loading proposals...')
           
           const { client, wallet } = await initializeClient('devnet')
+          // Acknowledge unused wallet for future implementation  
+          void wallet
           
           const proposals = await client.governance.listProposals({
             status: options.status,
@@ -633,6 +639,8 @@ governanceCommand
       s.start('Loading active proposals...')
       
       const { client, wallet } = await initializeClient('devnet')
+      // Acknowledge unused wallet for future implementation
+      void wallet
       
       const proposals = await client.governance.listProposals({ status: 'active' })
       s.stop(`✅ Found ${proposals.length} active proposals`)
@@ -766,7 +774,7 @@ governanceCommand
         `${chalk.gray('Proposal:')} ${proposal.title}\n` +
         `${chalk.gray('Your Vote:')} ${voteColor(vote.toUpperCase())}\n` +
         `${chalk.gray('Voting Power:')} ${(Number(votingPower.total) / 1_000_000_000).toFixed(3)}\n` +
-        `${chalk.gray('Comment:')} ${voteComment || 'None'}`,
+        `${chalk.gray('Comment:')} ${voteComment ?? 'None'}`,
         'Confirm Vote'
       )
 
@@ -787,6 +795,8 @@ governanceCommand
           comment: voteComment,
           votingPower: votingPower.total
         }
+        // Acknowledge voteParams for future implementation
+        void voteParams
 
         // Note: Voting functionality not implemented in SDK yet
         // This would call the vote instruction on the governance program

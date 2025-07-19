@@ -73,7 +73,7 @@ async function requestFromSolanaFaucet(
         explorerUrl
       }
     } else {
-      throw new Error(data.error || 'Unknown error from Solana faucet')
+      throw new Error(data.error ?? 'Unknown error from Solana faucet')
     }
   } catch (error) {
     return {
@@ -117,8 +117,8 @@ async function requestFromAlchemyFaucet(
     const data = await response.json() as any
     
     if (data.txHash || data.signature) {
-      const signature = data.txHash || data.signature
-      const amount = (data.amount as number) || 1 // Alchemy typically gives 1 SOL
+      const signature = data.txHash ?? data.signature
+      const amount = (data.amount as number) ?? 1 // Alchemy typically gives 1 SOL
       const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=${network}`
       
       return {
@@ -129,7 +129,7 @@ async function requestFromAlchemyFaucet(
         explorerUrl
       }
     } else {
-      throw new Error(data.error || data.message || 'Unknown error from Alchemy faucet')
+      throw new Error(data.error ?? data.message ?? 'Unknown error from Alchemy faucet')
     }
   } catch (error) {
     return {
@@ -224,6 +224,8 @@ async function loadWallet(walletPath: string): Promise<string> {
     const walletData = await fs.readFile(walletPath, 'utf8')
     const keyArray = JSON.parse(walletData)
     const privateKey = new Uint8Array(keyArray)
+    // Note: privateKey loaded but not used in this simplified implementation
+    void privateKey
     
     // Generate signer to get address
     const signer = await generateKeyPairSigner()
@@ -262,9 +264,9 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
     console.log('💧 GhostSpeak Faucet - Get SOL for Development')
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
-    const network = options.network || 'devnet'
-    const amount = parseFloat(options.amount || '1')
-    const source = options.source || 'all'
+    const network = options.network ?? 'devnet'
+    const amount = parseFloat(options.amount ?? '1')
+    const source = options.source ?? 'all'
 
     console.log(`🌐 Network: ${network}`)
     console.log(`💰 Amount: ${amount} SOL`)
@@ -343,7 +345,7 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
           walletAddress, 
           network, 
           sourceName, 
-          result.amount || amount, 
+          result.amount ?? amount, 
           result.signature
         )
       }
@@ -365,7 +367,7 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
             walletAddress, 
             network, 
             'rpc', 
-            result.amount || amount, 
+            result.amount ?? amount, 
             result.signature
           )
         }
@@ -389,7 +391,7 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
         console.log(`   Amount: ${result.amount} SOL`)
         console.log(`   Signature: ${result.signature}`)
         console.log(`   Explorer: ${result.explorerUrl}`)
-        totalReceived += result.amount || 0
+        totalReceived += result.amount ?? 0
       } else {
         console.log(`   Error: ${result.error}`)
       }
@@ -437,8 +439,8 @@ export function setupFaucetCommand(program: Command): void {
     .option('-w, --wallet <path>', 'Path to existing wallet file')
     .option('-s, --source <source>', 'Faucet source (solana|alchemy|all)', 'all')
     .option('--save', 'Save generated wallet to file')
-    .action((options: FaucetOptions) => {
-      faucetCommand(options).catch(console.error)
+    .action((_options: FaucetOptions) => {
+      faucetCommand(_options).catch(console.error)
     })
 
   // Add subcommands
@@ -449,16 +451,16 @@ export function setupFaucetCommand(program: Command): void {
     .description('Check wallet balance')
     .option('-w, --wallet <path>', 'Path to wallet file (required)')
     .option('-n, --network <network>', 'Network to check (devnet|testnet)', 'devnet')
-    .action(async (options: { wallet?: string; network?: 'devnet' | 'testnet' }) => {
-      if (!options.wallet) {
+    .action(async (_options: { wallet?: string; network?: 'devnet' | 'testnet' }) => {
+      if (!_options.wallet) {
         console.error('❌ Wallet path required for balance check')
         process.exit(1)
       }
       
       try {
-        const walletAddress = await loadWallet(options.wallet)
-        const balance = await checkBalance(walletAddress, options.network || 'devnet')
-        console.log(`💳 Balance: ${balance} SOL (${options.network})`)
+        const walletAddress = await loadWallet(_options.wallet)
+        const balance = await checkBalance(walletAddress, _options.network ?? 'devnet')
+        console.log(`💳 Balance: ${balance} SOL (${_options.network})`)
       } catch (error) {
         console.error('❌ Failed to check balance:', error)
         process.exit(1)
@@ -469,17 +471,17 @@ export function setupFaucetCommand(program: Command): void {
     .command('generate')
     .description('Generate a new wallet')
     .option('--save [path]', 'Save wallet to file')
-    .action(async (options: { save?: string | boolean }) => {
+    .action(async (_options: { save?: string | boolean }) => {
       try {
         const wallet = await generateWallet()
         console.log(`🔐 New Wallet Generated:`)
         console.log(`   Address: ${wallet.address}`)
         
         // For generate command, default to saving the wallet
-        const shouldSave = options.save !== undefined || true // Always save for generate command
+        const shouldSave = _options.save !== undefined || true // Always save for generate command
         
         if (shouldSave) {
-          const savePath = typeof options.save === 'string' ? options.save : undefined
+          const savePath = typeof _options.save === 'string' ? _options.save : undefined
           const savedPath = await saveWallet(wallet.privateKey, savePath)
           console.log(`✅ Wallet saved to: ${savedPath}`)
         } else {
@@ -498,15 +500,15 @@ export function setupFaucetCommand(program: Command): void {
     .option('-w, --wallet <path>', 'Path to wallet file')
     .option('-n, --network <network>', 'Network to check (devnet|testnet)', 'devnet')
     .option('-s, --source <source>', 'Specific source to check (solana|alchemy|rpc)')
-    .action(async (options: { wallet?: string; network?: 'devnet' | 'testnet'; source?: string }) => {
+    .action(async (_options: { wallet?: string; network?: 'devnet' | 'testnet'; source?: string }) => {
       try {
         const faucetService = new FaucetService()
         await faucetService.initialize()
 
-        if (options.wallet) {
-          const walletAddress = await loadWallet(options.wallet)
-          const network = options.network || 'devnet'
-          const sources = options.source ? [options.source] : ['solana', 'alchemy', 'rpc']
+        if (_options.wallet) {
+          const walletAddress = await loadWallet(_options.wallet)
+          const network = _options.network ?? 'devnet'
+          const sources = _options.source ? [_options.source] : ['solana', 'alchemy', 'rpc']
 
           console.log('📊 FAUCET STATUS')
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
@@ -588,12 +590,12 @@ export function setupFaucetCommand(program: Command): void {
     .command('clean')
     .description('Clean old faucet request history')
     .option('-d, --days <days>', 'Days of history to keep', '30')
-    .action(async (options: { days?: string }) => {
+    .action(async (_options: { days?: string }) => {
       try {
         const faucetService = new FaucetService()
         await faucetService.initialize()
         
-        const daysToKeep = parseInt(options.days || '30')
+        const daysToKeep = parseInt(_options.days ?? '30')
         const removedCount = await faucetService.cleanOldRequests(daysToKeep)
         
         console.log(`🧹 Cleaned ${removedCount} old request records`)

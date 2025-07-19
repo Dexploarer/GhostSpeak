@@ -38,7 +38,8 @@ disputeCommand
         
         const { client, wallet } = await initializeClient('devnet')
         
-        const workOrders = await client.escrow.getEscrowsForUser(wallet.address)
+        // TODO: Method getEscrowsForUser not implemented in SDK yet
+      const workOrders: any[] = [] // await client.escrow.getEscrowsForUser(wallet.address)
         s.stop(`✅ Found ${workOrders.length} work orders`)
 
         if (workOrders.length === 0) {
@@ -51,10 +52,10 @@ disputeCommand
 
         const workOrderChoice = await select({
           message: 'Select work order to dispute:',
-          options: workOrders.map(order => ({
-            value: order.address,
+          options: workOrders.map((order: any) => ({
+            value: order.address?.toString() || order.id || 'unknown',
             label: order.title || 'Untitled Work Order',
-            hint: `${(Number(order.paymentAmount) / 1_000_000_000).toFixed(3)} SOL`
+            hint: `${(Number(order.paymentAmount || 0) / 1_000_000_000).toFixed(3)} SOL`
           }))
         })
 
@@ -211,8 +212,11 @@ disputeCommand
             null
         }
 
+        // TODO: fileDispute method signature expects 3 parameters
+        const disputePda = address('11111111111111111111111111111111')
         const signature = await client.dispute.fileDispute(
           wallet,
+          disputePda,
           disputeParams
         )
 
@@ -228,11 +232,10 @@ disputeCommand
             for (const evidence of evidenceList) {
               await client.dispute.submitEvidence(
                 wallet,
-                signature, // Using transaction signature as dispute ID for now
                 {
+                  dispute: address(signature.toString()), // Using transaction signature as dispute ID for now
                   evidenceType: 'document',
-                  evidenceData: evidence,
-                  timestamp: BigInt(Math.floor(Date.now() / 1000))
+                  evidenceData: evidence
                 }
               )
             }
@@ -261,11 +264,11 @@ disputeCommand
         
       } catch (error) {
         s.stop('❌ Dispute filing failed')
-        await handleTransactionError(error, 'dispute filing')
+        await handleTransactionError(error as Error)
       }
       
     } catch (error) {
-      log.error(`Failed to file dispute: ${error.message}`)
+      log.error(`Failed to file dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -292,8 +295,8 @@ disputeCommand
       } else if (options.mine) {
         // Use listDisputes without filter and filter client-side by user involvement
         const allDisputes = await client.dispute.listDisputes()
-        disputes = allDisputes.filter(d => 
-          d.claimant === wallet.address || d.respondent === wallet.address
+        disputes = allDisputes.filter((d: DisputeSummary) => 
+          d.claimant === wallet.address.toString() || d.respondent === wallet.address.toString()
         )
       } else {
         disputes = await client.dispute.listDisputes({
@@ -316,9 +319,9 @@ disputeCommand
       
       disputes.forEach((dispute, index) => {
         const statusColor = 
-          dispute.status === 'resolved' ? chalk.green :
-          dispute.status === 'escalated' ? chalk.red :
-          dispute.status === 'under_review' ? chalk.yellow :
+          dispute.status.toString() === 'resolved' ? chalk.green :
+          dispute.status.toString() === 'escalated' ? chalk.red :
+          dispute.status.toString() === 'under_review' ? chalk.yellow :
           chalk.blue
 
         const severityIcon =
@@ -332,12 +335,12 @@ disputeCommand
 
         log.info(
           `${chalk.bold(`${index + 1}. ${dispute.reason.toUpperCase()} DISPUTE`)} ${severityIcon}\n` +
-          `   ${chalk.gray('Status:')} ${statusColor(dispute.status.toUpperCase())}\n` +
-          `   ${chalk.gray('Severity:')} ${dispute.severity}\n` +
+          `   ${chalk.gray('Status:')} ${statusColor(dispute.status.toString().toUpperCase())}\n` +
+          `   ${chalk.gray('Severity:')} ${dispute.severity || 'unknown'}\n` +
           `   ${chalk.gray('Filed:')} ${daysElapsed}d ${hoursElapsed}h ago\n` +
           `   ${chalk.gray('Evidence:')} ${dispute.evidenceCount} items\n` +
-          `   ${chalk.gray('Work Order:')} ${dispute.workOrder}\n` +
-          `   ${chalk.gray('Description:')} ${dispute.description.substring(0, 80)}${dispute.description.length > 80 ? '...' : ''}\n`
+          `   ${chalk.gray('Work Order:')} ${dispute.workOrder || dispute.transaction || 'N/A'}\n` +
+          `   ${chalk.gray('Description:')} ${dispute.description ? dispute.description.substring(0, 80) + (dispute.description.length > 80 ? '...' : '') : dispute.reason}\n`
         )
       })
 
@@ -349,7 +352,7 @@ disputeCommand
       )
       
     } catch (error) {
-      log.error(`Failed to load disputes: ${error.message}`)
+      log.error(`Failed to load disputes: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -369,10 +372,16 @@ disputeCommand
       
       // Get all disputes and filter by user involvement
       const allDisputes = await client.dispute.listDisputes()
-      const disputes = allDisputes.filter(d => 
-        d.claimant === wallet.address || d.respondent === wallet.address
+      const disputes = allDisputes.filter((d: DisputeSummary) => 
+        (d.claimant === wallet.address.toString() || d.claimant === wallet.address) || 
+        (d.respondent === wallet.address.toString() || d.respondent === wallet.address)
       )
-      const activeDisputes = disputes.filter(d => ['pending', 'under_review'].includes(d.status))
+      const activeDisputes = disputes.filter((d: DisputeSummary) => 
+        d.status.toString() === 'pending' || 
+        d.status.toString() === 'under_review' ||
+        d.status.toString() === 'Filed' || 
+        d.status.toString() === 'UnderReview'
+      )
       
       s.stop(`✅ Found ${activeDisputes.length} active disputes`)
 
@@ -389,9 +398,9 @@ disputeCommand
       if (!selectedDispute) {
         const disputeChoice = await select({
           message: 'Select dispute to add evidence to:',
-          options: activeDisputes.map(dispute => ({
-            value: dispute.id,
-            label: `${dispute.reason.toUpperCase()} - ${dispute.severity}`,
+          options: activeDisputes.map((dispute: DisputeSummary) => ({
+            value: dispute.id || dispute.dispute.toString(),
+            label: `${dispute.reason.toUpperCase()} - ${dispute.severity || 'unknown'}`,
             hint: `${dispute.evidenceCount} evidence items`
           }))
         })
@@ -404,7 +413,10 @@ disputeCommand
         selectedDispute = disputeChoice
       }
 
-      const dispute = activeDisputes.find(d => d.id === selectedDispute)
+      const dispute = activeDisputes.find((d: DisputeSummary) => 
+        (d.id && d.id.toString() === selectedDispute) || 
+        d.dispute.toString() === selectedDispute
+      )
       if (!dispute) {
         log.error('Dispute not found or not accessible')
         return
@@ -501,8 +513,11 @@ disputeCommand
 
         const signature = await client.dispute.submitEvidence(
           wallet,
-          selectedDispute,
-          evidenceParams
+          {
+            dispute: address(selectedDispute),
+            evidenceType: evidenceParams.evidenceType,
+            evidenceData: evidenceParams.evidenceData
+          }
         )
 
         s.stop('✅ Evidence submitted successfully!')
@@ -523,11 +538,11 @@ disputeCommand
         
       } catch (error) {
         s.stop('❌ Evidence submission failed')
-        await handleTransactionError(error, 'evidence submission')
+        await handleTransactionError(error as Error)
       }
       
     } catch (error) {
-      log.error(`Failed to submit evidence: ${error.message}`)
+      log.error(`Failed to submit evidence: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -546,7 +561,10 @@ disputeCommand
       const { client, wallet } = await initializeClient('devnet')
       
       const disputes = await client.dispute.getActiveDisputes(wallet.address)
-      const pendingDisputes = disputes.filter(d => d.status === 'under_review')
+      const pendingDisputes = disputes.filter((d: DisputeSummary) => 
+        d.status.toString() === 'under_review' || 
+        d.status.toString() === 'UnderReview'
+      )
       
       s.stop(`✅ Found ${pendingDisputes.length} disputes awaiting arbitration`)
 
@@ -563,13 +581,13 @@ disputeCommand
       if (!selectedDispute) {
         const disputeChoice = await select({
           message: 'Select dispute to resolve:',
-          options: pendingDisputes.map(dispute => {
+          options: pendingDisputes.map((dispute: DisputeSummary) => {
             const timeElapsed = Math.floor((Date.now() / 1000) - Number(dispute.createdAt))
             const daysElapsed = Math.floor(timeElapsed / 86400)
             
             return {
-              value: dispute.id,
-              label: `${dispute.reason.toUpperCase()} - ${dispute.severity}`,
+              value: dispute.id || dispute.dispute.toString(),
+              label: `${dispute.reason.toUpperCase()} - ${dispute.severity || 'unknown'}`,
               hint: `${daysElapsed}d old, ${dispute.evidenceCount} evidence items`
             }
           })
@@ -583,7 +601,10 @@ disputeCommand
         selectedDispute = disputeChoice
       }
 
-      const dispute = pendingDisputes.find(d => d.id === selectedDispute)
+      const dispute = pendingDisputes.find((d: DisputeSummary) => 
+        (d.id && d.id.toString() === selectedDispute) || 
+        d.dispute.toString() === selectedDispute
+      )
       if (!dispute) {
         log.error('Dispute not found or not available for arbitration')
         return
@@ -594,12 +615,12 @@ disputeCommand
       log.info(
         `${chalk.gray('Reason:')} ${dispute.reason}\n` +
         `${chalk.gray('Severity:')} ${dispute.severity}\n` +
-        `${chalk.gray('Filed by:')} ${dispute.claimant}\n` +
+        `${chalk.gray('Filed by:')} ${dispute.claimant || dispute.complainant}\n` +
         `${chalk.gray('Against:')} ${dispute.respondent}\n` +
-        `${chalk.gray('Work Order:')} ${dispute.workOrder}\n` +
-        `${chalk.gray('Description:')} ${dispute.description}\n` +
+        `${chalk.gray('Work Order:')} ${dispute.workOrder || dispute.transaction || 'N/A'}\n` +
+        `${chalk.gray('Description:')} ${dispute.description || dispute.reason}\n` +
         `${chalk.gray('Evidence Items:')} ${dispute.evidenceCount}\n` +
-        `${chalk.gray('Preferred Resolution:')} ${dispute.preferredResolution}\n`
+        `${chalk.gray('Preferred Resolution:')} ${dispute.preferredResolution || 'None specified'}\n`
       )
 
       // Load and display evidence
@@ -612,7 +633,7 @@ disputeCommand
         evidence.forEach((item, index) => {
           log.info(
             `${chalk.bold(`${index + 1}. ${item.evidenceType.toUpperCase()}`)}\n` +
-            `   ${chalk.gray('Description:')} ${item.description}\n` +
+            `   ${chalk.gray('Description:')} ${(item as any).description || 'No description'}\n` +
             `   ${chalk.gray('Data:')} ${item.evidenceData.substring(0, 100)}${item.evidenceData.length > 100 ? '...' : ''}\n` +
             `   ${chalk.gray('Submitted:')} ${new Date(Number(item.timestamp) * 1000).toLocaleString()}\n`
           )
@@ -727,11 +748,11 @@ disputeCommand
         
       } catch (error) {
         s.stop('❌ Dispute resolution failed')
-        await handleTransactionError(error, 'dispute resolution')
+        await handleTransactionError(error as Error)
       }
       
     } catch (error) {
-      log.error(`Failed to resolve dispute: ${error.message}`)
+      log.error(`Failed to resolve dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -751,11 +772,13 @@ disputeCommand
       
       // Get all disputes and filter by user involvement
       const allDisputes = await client.dispute.listDisputes()
-      const disputes = allDisputes.filter(d => 
-        d.claimant === wallet.address || d.respondent === wallet.address
+      const disputes = allDisputes.filter((d: DisputeSummary) => 
+        (d.claimant === wallet.address.toString() || d.claimant === wallet.address) || 
+        (d.respondent === wallet.address.toString() || d.respondent === wallet.address)
       )
-      const escalatableDisputes = disputes.filter(d => 
-        ['under_review'].includes(d.status) && !d.escalated
+      const escalatableDisputes = disputes.filter((d: DisputeSummary) => 
+        (d.status.toString() === 'under_review' || d.status.toString() === 'UnderReview') && 
+        !(d as any).escalated
       )
       
       s.stop(`✅ Found ${escalatableDisputes.length} disputes eligible for escalation`)

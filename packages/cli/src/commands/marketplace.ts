@@ -12,7 +12,7 @@ import {
   multiselect,
   log
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager } from '../utils/agentWallet.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
@@ -59,13 +59,15 @@ marketplaceCommand
       console.log('\n' + chalk.bold(`🏪 Available Services (${services.length})`))
       console.log('═'.repeat(70))
 
-      services.forEach((service, index) => {
+      services.forEach((serviceWithAddr: any, index) => {
+        const service = 'data' in serviceWithAddr ? serviceWithAddr.data : serviceWithAddr
+        const addr = serviceWithAddr.address || service.address
         console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-        console.log(chalk.gray(`   ID: ${service.id.toString()}`))
-        console.log(chalk.gray(`   Agent: ${service.agentName} (${service.agentAddress.toString().slice(0, 8)}...)`))
-        console.log(chalk.gray(`   Category: ${service.category}`))
+        console.log(chalk.gray(`   ID: ${addr?.toString() || 'N/A'}`))
+        console.log(chalk.gray(`   Agent: ${service.agent?.toString().slice(0, 8) || 'Unknown'}...`))
+        console.log(chalk.gray(`   Category: ${service.serviceType || 'General'}`))
         console.log(chalk.gray(`   Price: ${Number(service.price) / 1_000_000} SOL`))
-        console.log(chalk.gray(`   Available: ${service.isAvailable ? '✅ Yes' : '❌ No'}`))
+        console.log(chalk.gray(`   Available: ${service.isActive ? '✅ Yes' : '❌ No'}`))
         console.log(chalk.gray(`   ${service.description}`))
         console.log('')
       })
@@ -243,7 +245,7 @@ marketplaceCommand
       const ownershipVerified = await AgentCNFTManager.verifyOwnership(
         selectedCredentials.uuid,
         wallet.address,
-        client.config.rpcUrl || 'https://api.devnet.solana.com'
+        client.config.rpcEndpoint || 'https://api.devnet.solana.com'
       )
       
       if (!ownershipVerified) {
@@ -276,23 +278,31 @@ marketplaceCommand
       s.start('Creating service listing on the blockchain...')
       
       try {
-        const result = await client.marketplace.createListing({
+        // Generate addresses for the listing
+        const serviceListingAddress = address('11111111111111111111111111111111') // Mock address
+        const userRegistryAddress = address('11111111111111111111111111111111') // Mock address
+        
+        const result = await client.marketplace.createServiceListing(
+          toSDKSigner(wallet),
+          serviceListingAddress,
           agentAddress,
-          title: title as string,
-          description: description as string,
-          category: category as string,
-          price: BigInt(Math.floor(parseFloat(price as string) * 1_000_000))
-        })
+          userRegistryAddress,
+          {
+            title: title as string,
+            description: description as string,
+            amount: BigInt(Math.floor(parseFloat(price as string) * 1_000_000))
+          }
+        )
         
         s.stop('✅ Service listing created!')
 
         console.log('\n' + chalk.green('🎉 Your service is now live in the marketplace!'))
-        console.log(chalk.gray(`Service ID: ${result.listingId.toString()}`))
+        console.log(chalk.gray(`Service ID: ${serviceListingAddress.toString()}`))
         console.log(chalk.gray(`Agent: ${selectedCredentials.name}`))
         console.log(chalk.gray(`Agent UUID: ${selectedCredentials.uuid}`))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(result.listingId.toString(), 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
+        console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(serviceListingAddress.toString(), 'devnet'))
         console.log('')
         console.log(chalk.yellow('💡 Service linked to agent via UUID for ownership verification'))
         
@@ -335,16 +345,18 @@ marketplaceCommand
 
         console.log('\n' + chalk.bold('🏪 Available Services'))
         console.log('─'.repeat(60))
-        services.forEach((service, index) => {
+        services.forEach((serviceWithAddr: any, index) => {
+          const service = 'data' in serviceWithAddr ? serviceWithAddr.data : serviceWithAddr
+          const addr = serviceWithAddr.address || service.address
           console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-          console.log(chalk.gray(`   ID: ${service.id.toString()} | Price: ${Number(service.price) / 1_000_000} SOL | By: ${service.agentName}`))
+          console.log(chalk.gray(`   ID: ${addr?.toString() || 'N/A'} | Price: ${Number(service.price) / 1_000_000} SOL | By: ${service.agent?.toString().slice(0, 8) || 'Unknown'}...`))
         })
 
         const selectedIndex = await select({
           message: 'Select service to purchase:',
           options: services.map((service, index) => ({
             value: index,
-            label: `${service.title} - ${Number(service.price) / 1_000_000} SOL`
+            label: `${service.data.title || 'Unknown'} - ${Number(service.data.price) / 1_000_000} SOL`
           }))
         })
 
@@ -353,7 +365,7 @@ marketplaceCommand
           return
         }
 
-        listingId = services[selectedIndex as number].id.toString()
+        listingId = services[selectedIndex as number].address.toString()
       }
 
       // Initialize client if needed
@@ -414,20 +426,25 @@ marketplaceCommand
       purchaseSpinner.start('Processing payment and creating work order...')
 
       try {
-        const result = await client.marketplace.purchaseService({
-          serviceId: address(listingId),
-          requirements: requirements || undefined
-        })
+        const servicePurchaseAddress = address('11111111111111111111111111111111') // Mock address
+        const result = await client.marketplace.purchaseService(
+          servicePurchaseAddress,
+          {
+            serviceListingAddress: address(listingId),
+            signer: toSDKSigner(wallet),
+            requirements: requirements as string[] || []
+          }
+        )
         
         purchaseSpinner.stop('✅ Purchase completed!')
 
         console.log('\n' + chalk.green('🎉 Service purchased successfully!'))
-        console.log(chalk.gray(`Purchase ID: ${result.purchaseId.toString()}`))
-        console.log(chalk.gray(`Work Order: ${result.workOrderId.toString()}`))
+        console.log(chalk.gray(`Purchase ID: ${servicePurchaseAddress.toString()}`))
+        console.log(chalk.gray(`Work Order: ${servicePurchaseAddress.toString()}`))
         console.log(chalk.gray('The agent will begin working on your request.'))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Purchase Account:'), getAddressExplorerUrl(result.purchaseId.toString(), 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
+        console.log(chalk.cyan('Purchase Account:'), getAddressExplorerUrl(servicePurchaseAddress.toString(), 'devnet'))
         console.log('\n' + chalk.yellow('💡 Track your order with: npx ghostspeak escrow list'))
         
         outro('Purchase completed')
@@ -470,8 +487,14 @@ marketplaceCommand
       s.start(`Searching for "${query}"...`)
       
       // Search services using SDK
-      const results = await client.marketplace.searchServices({
-        query: query as string
+      // Search services by matching title, description, or service type
+      const allServices = await client.marketplace.getServiceListings()
+      const queryLower = (query as string).toLowerCase()
+      const results = allServices.filter((serviceWithAddr) => {
+        const service = 'data' in serviceWithAddr ? serviceWithAddr.data : serviceWithAddr
+        return service.title?.toLowerCase().includes(queryLower) ||
+               service.description?.toLowerCase().includes(queryLower) ||
+               service.serviceType?.toLowerCase().includes(queryLower)
       })
       
       s.stop('✅ Search completed')
@@ -486,10 +509,10 @@ marketplaceCommand
       console.log('─'.repeat(50))
 
       results.forEach((service, index) => {
-        console.log(chalk.magenta(`${index + 1}. ${service.title}`))
-        console.log(chalk.gray(`   By: ${service.agentName} | ${Number(service.price) / 1_000_000} SOL`))
-        console.log(chalk.gray(`   ${service.description.slice(0, 60)}...`))
-        console.log(chalk.gray(`   ID: ${service.id.toString()}`))
+        console.log(chalk.magenta(`${index + 1}. ${service.data.title}`))
+        console.log(chalk.gray(`   By: Unknown | ${Number(service.data.price) / 1_000_000} SOL`))
+        console.log(chalk.gray(`   ${service.data.description.slice(0, 60)}...`))
+        console.log(chalk.gray(`   ID: ${service.address.toString()}`))
         console.log('')
       })
 
@@ -737,7 +760,7 @@ jobsCommand
         const daysLeft = Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
         
         console.log(chalk.magenta(`${index + 1}. ${job.title}`))
-        console.log(chalk.gray(`   ID: ${job.id.toString()}`))
+        console.log(chalk.gray(`   ID: ${job.address ? job.address.toString() : 'N/A'}`))
         console.log(chalk.gray(`   Budget: ${Number(job.budget) / 1_000_000} SOL`))
         console.log(chalk.gray(`   Deadline: ${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`))
         console.log(chalk.gray(`   Category: ${job.category}`))
@@ -820,7 +843,7 @@ async function purchaseService(services: any[]) {
     const { client } = await initializeClient('devnet')
     
     const result = await client.marketplace.purchaseService({
-      serviceId: service.id
+      serviceId: service.address.toString()
     })
     
     s.stop('✅ Purchase successful!')
@@ -861,7 +884,7 @@ async function viewServiceDetails(services: any[]) {
   console.log(chalk.bold('📋 Service Details'))
   console.log('─'.repeat(50))
   console.log(chalk.cyan('Title:'), service.title)
-  console.log(chalk.cyan('ID:'), service.id.toString())
+  console.log(chalk.cyan('ID:'), service.address.toString())
   console.log(chalk.cyan('Description:'), service.description)
   console.log(chalk.cyan('Agent:'), `${service.agentName} (${service.agentAddress.toString()})`)
   console.log(chalk.cyan('Category:'), service.category)

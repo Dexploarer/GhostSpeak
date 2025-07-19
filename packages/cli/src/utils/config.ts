@@ -1,7 +1,8 @@
 import { homedir } from 'os'
 import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
-import type { Cluster } from '@solana/kit'
+// Define Cluster type locally since it's not exported from @solana/kit
+type Cluster = 'devnet' | 'testnet' | 'mainnet-beta' | 'localnet'
 
 export interface GhostSpeakConfig {
   network: Cluster

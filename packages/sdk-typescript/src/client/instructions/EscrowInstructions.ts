@@ -21,28 +21,28 @@ import type {
 
 // Parameters for creating work orders (which handle escrow)
 export interface CreateEscrowParams extends BaseCreationParams, BaseTokenParams, BaseTimeParams {
-  orderId: bigint
+  orderId?: bigint
   provider: Address
-  requirements: string[]
-  paymentToken: Address
+  requirements?: string[]
+  paymentToken?: Address
 }
 
 // Parameters for payment processing
 export interface ProcessPaymentParams extends BaseInstructionParams, BaseTokenParams {
   workOrderAddress: Address
   providerAgent: Address
-  payerTokenAccount: Address
-  providerTokenAccount: Address
-  tokenMint: Address
+  payerTokenAccount?: Address
+  providerTokenAccount?: Address
+  tokenMint?: Address
   useConfidentialTransfer?: boolean
 }
 
 // Parameters for work delivery submission
 export interface SubmitDeliveryParams extends BaseInstructionParams {
   workOrderAddress: Address
-  deliverables: Deliverable[]
-  ipfsHash: string
-  metadataUri: string
+  deliverables?: Deliverable[]
+  ipfsHash?: string
+  metadataUri?: string
 }
 
 // Parameters for dispute filing
@@ -60,26 +60,94 @@ export class EscrowInstructions extends BaseInstructions {
   }
 
   /**
+   * Resolve escrow creation parameters with smart defaults
+   */
+  private async _resolveCreateParams(
+    params: CreateEscrowParams
+  ): Promise<Required<CreateEscrowParams>> {
+    // Get USDC token mint as default payment token
+    const defaultPaymentToken = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address // USDC on mainnet
+    
+    return {
+      title: params.title,
+      description: params.description,
+      amount: params.amount,
+      orderId: params.orderId ?? BigInt(Date.now()), // Use timestamp as order ID
+      provider: params.provider,
+      requirements: params.requirements ?? [],
+      paymentToken: params.paymentToken ?? defaultPaymentToken,
+      deadline: params.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60), // 30 days default
+      signer: params.signer,
+      tokenMint: params.tokenMint ?? defaultPaymentToken,
+      createdAt: params.createdAt ?? BigInt(Math.floor(Date.now() / 1000))
+    }
+  }
+
+  /**
+   * Resolve payment processing parameters with smart defaults
+   */
+  private async _resolvePaymentParams(
+    params: ProcessPaymentParams
+  ): Promise<Required<ProcessPaymentParams>> {
+    // Get USDC token mint as default
+    const defaultTokenMint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address // USDC on mainnet
+    
+    // Generate default token accounts if not provided
+    // In production, these would be derived from the user's wallet and token mint
+    const defaultPayerToken = params.payerTokenAccount ?? params.signer.address
+    const defaultProviderToken = params.providerTokenAccount ?? params.providerAgent
+    
+    return {
+      workOrderAddress: params.workOrderAddress,
+      providerAgent: params.providerAgent,
+      payerTokenAccount: defaultPayerToken,
+      providerTokenAccount: defaultProviderToken,
+      tokenMint: params.tokenMint ?? defaultTokenMint,
+      amount: params.amount,
+      useConfidentialTransfer: params.useConfidentialTransfer ?? false,
+      signer: params.signer
+    }
+  }
+
+  /**
+   * Resolve delivery submission parameters with smart defaults
+   */
+  private async _resolveDeliveryParams(
+    params: SubmitDeliveryParams
+  ): Promise<Required<SubmitDeliveryParams>> {
+    return {
+      workOrderAddress: params.workOrderAddress,
+      deliverables: params.deliverables ?? [],
+      ipfsHash: params.ipfsHash ?? `ipfs://${Date.now()}-placeholder`,
+      metadataUri: params.metadataUri ?? `https://ghostspeak.io/delivery/${Date.now()}`,
+      signer: params.signer
+    }
+  }
+
+  /**
    * Create a new escrow account via work order
    */
   async create(
     workOrderAddress: Address,
     params: CreateEscrowParams
   ): Promise<string> {
+    // Resolve parameters with smart defaults
+    const resolvedParams = await this._resolveCreateParams(params)
+    
     return this.executeInstruction(
       () => getCreateWorkOrderInstruction({
         workOrder: workOrderAddress,
-        client: params.signer as unknown as TransactionSigner,
-        orderId: params.orderId,
-        provider: params.provider,
-        title: params.title,
-        description: params.description,
-        requirements: params.requirements,
-        paymentAmount: params.amount,
-        paymentToken: params.paymentToken,
-        deadline: params.deadline
+        client: resolvedParams.signer as unknown as TransactionSigner,
+        orderId: resolvedParams.orderId,
+        provider: resolvedParams.provider,
+        title: resolvedParams.title,
+        description: resolvedParams.description,
+        requirements: resolvedParams.requirements,
+        paymentAmount: resolvedParams.amount,
+        paymentToken: resolvedParams.paymentToken,
+        deadline: resolvedParams.deadline
       }),
-      params.signer as unknown as TransactionSigner,
+      resolvedParams.signer as unknown as TransactionSigner,
       'escrow creation'
     )
   }
@@ -91,16 +159,19 @@ export class EscrowInstructions extends BaseInstructions {
     workDeliveryAddress: Address,
     params: SubmitDeliveryParams
   ): Promise<string> {
+    // Resolve parameters with smart defaults
+    const resolvedParams = await this._resolveDeliveryParams(params)
+    
     return this.executeInstruction(
       () => getSubmitWorkDeliveryInstruction({
         workDelivery: workDeliveryAddress,
-        workOrder: params.workOrderAddress,
-        provider: params.signer as unknown as TransactionSigner,
-        deliverables: params.deliverables,
-        ipfsHash: params.ipfsHash,
-        metadataUri: params.metadataUri
+        workOrder: resolvedParams.workOrderAddress,
+        provider: resolvedParams.signer as unknown as TransactionSigner,
+        deliverables: resolvedParams.deliverables,
+        ipfsHash: resolvedParams.ipfsHash,
+        metadataUri: resolvedParams.metadataUri
       }),
-      params.signer as unknown as TransactionSigner,
+      resolvedParams.signer as unknown as TransactionSigner,
       'work delivery submission'
     )
   }
@@ -168,19 +239,22 @@ export class EscrowInstructions extends BaseInstructions {
     paymentAddress: Address,
     params: ProcessPaymentParams
   ): Promise<string> {
+    // Resolve parameters with smart defaults
+    const resolvedParams = await this._resolvePaymentParams(params)
+    
     return this.executeInstruction(
       () => getProcessPaymentInstruction({
         payment: paymentAddress,
-        workOrder: params.workOrderAddress,
-        providerAgent: params.providerAgent,
-        payer: params.signer as unknown as TransactionSigner,
-        payerTokenAccount: params.payerTokenAccount,
-        providerTokenAccount: params.providerTokenAccount,
-        tokenMint: params.tokenMint,
-        amount: params.amount,
-        useConfidentialTransfer: params.useConfidentialTransfer ?? false
+        workOrder: resolvedParams.workOrderAddress,
+        providerAgent: resolvedParams.providerAgent,
+        payer: resolvedParams.signer as unknown as TransactionSigner,
+        payerTokenAccount: resolvedParams.payerTokenAccount,
+        providerTokenAccount: resolvedParams.providerTokenAccount,
+        tokenMint: resolvedParams.tokenMint,
+        amount: resolvedParams.amount,
+        useConfidentialTransfer: resolvedParams.useConfidentialTransfer
       }),
-      params.signer as unknown as TransactionSigner,
+      resolvedParams.signer as unknown as TransactionSigner,
       'payment processing'
     )
   }

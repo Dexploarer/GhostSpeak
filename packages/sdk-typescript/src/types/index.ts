@@ -1,5 +1,6 @@
 // Core types for GhostSpeak Protocol
 import type { Address } from '@solana/addresses'
+import type { Agent, ServiceListing } from '../generated/index.js'
 import type { 
   Rpc,
   RpcSubscriptions,
@@ -12,7 +13,8 @@ import type {
   GetEpochInfoApi,
   GetSignatureStatusesApi,
   SignatureNotificationsApi,
-  SlotNotificationsApi
+  SlotNotificationsApi,
+  GetMultipleAccountsApi
 } from '@solana/kit'
 
 // Import generated types and re-export for convenience
@@ -29,7 +31,7 @@ export type RpcApi = Rpc<
 >
 
 // Add missing API types for full RPC support
-export type ExtendedRpcApi = RpcApi & Rpc<GetEpochInfoApi & GetSignatureStatusesApi>
+export type ExtendedRpcApi = RpcApi & Rpc<GetEpochInfoApi & GetSignatureStatusesApi & GetMultipleAccountsApi>
 
 // RPC Subscription types
 export type RpcSubscriptionApi = RpcSubscriptions<SignatureNotificationsApi & SlotNotificationsApi>
@@ -61,6 +63,17 @@ export interface RetryConfig {
 }
 
 // Agent types
+export interface AgentWithAddress {
+  address: Address
+  data: Agent
+}
+
+// Service listing types
+export interface ServiceListingWithAddress {
+  address: Address
+  data: ServiceListing
+}
+
 export interface AgentRegistrationData {
   name: string
   description: string
@@ -86,7 +99,7 @@ export interface AgentAccount {
 }
 
 // Marketplace types
-export interface ServiceListing {
+export interface ServiceListingData {
   id: string
   agent: Address
   title: string

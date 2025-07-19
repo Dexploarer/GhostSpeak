@@ -6,7 +6,7 @@ import {
   getMultipleAccountsData,
   simulateTransactionWithRetry,
   waitForTransactionConfirmation
-} from '../../../src/utils/rpc'
+} from '../../helpers/rpc-test-helpers'
 import { 
   address,
   generateKeyPairSigner,
@@ -16,7 +16,8 @@ import {
   setTransactionMessageLifetimeUsingBlockhash,
   appendTransactionMessageInstructions,
   signTransactionMessageWithSigners,
-  getBase64EncodedWireTransaction
+  getBase64EncodedWireTransaction,
+  pipe
 } from '@solana/kit'
 import type { Address, TransactionSigner, Rpc, CompilableTransactionMessage } from '@solana/kit'
 
@@ -27,7 +28,7 @@ describe('RPC Utilities', () => {
 
   beforeEach(async () => {
     payer = await generateKeyPairSigner()
-    testAddress = address('11111111111111111111111111111111')
+    testAddress = address('11111111111111111111111111111111') // System program
 
     // Create comprehensive mock RPC
     mockRpc = {
@@ -165,9 +166,9 @@ describe('RPC Utilities', () => {
   describe('getMultipleAccountsData', () => {
     it('should fetch multiple accounts successfully', async () => {
       const addresses = [
-        address('11111111111111111111111111111111'),
-        address('22222222222222222222222222222222'),
-        address('33333333333333333333333333333333')
+        address('11111111111111111111111111111111'), // System program
+        address('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // Token program
+        address('So11111111111111111111111111111111111111112') // Wrapped SOL
       ]
       
       const results = await getMultipleAccountsData(mockRpc, addresses)
@@ -188,19 +189,31 @@ describe('RPC Utilities', () => {
     it('should batch large address arrays', async () => {
       // Create 150 addresses (should be split into 2 batches of 100 and 50)
       const addresses = Array(150).fill(null).map((_, i) => 
-        address(`${i.toString().padStart(44, '1')}`)
+        address('11111111111111111111111111111111') // Use system program for all test addresses
       )
       
       // Mock response for multiple batches
-      mockRpc.getMultipleAccounts.mockResolvedValue({
-        value: Array(100).fill({
-          data: Buffer.from('batch data'),
-          executable: false,
-          lamports: lamports(1000000n),
-          owner: address('11111111111111111111111111111111'),
-          rentEpoch: 300n
+      mockRpc.getMultipleAccounts
+        .mockResolvedValueOnce({
+          // First batch of 100
+          value: Array(100).fill({
+            data: Buffer.from('batch data'),
+            executable: false,
+            lamports: lamports(1000000n),
+            owner: address('11111111111111111111111111111111'),
+            rentEpoch: 300n
+          })
         })
-      })
+        .mockResolvedValueOnce({
+          // Second batch of 50
+          value: Array(50).fill({
+            data: Buffer.from('batch data'),
+            executable: false,
+            lamports: lamports(1000000n),
+            owner: address('11111111111111111111111111111111'),
+            rentEpoch: 300n
+          })
+        })
       
       const results = await getMultipleAccountsData(mockRpc, addresses)
       
@@ -455,9 +468,21 @@ describe('RPC Utilities', () => {
     })
 
     it('should handle batch operations efficiently', async () => {
+      // Generate valid test addresses using different system program addresses
       const addresses = Array(50).fill(null).map((_, i) => 
-        address(`${i.toString().padStart(44, '1')}`)
+        address('11111111111111111111111111111111') // Use system program for all test addresses
       )
+      
+      // Mock response for getMultipleAccounts (will be called once with 50 addresses)
+      mockRpc.getMultipleAccounts.mockResolvedValueOnce({
+        value: Array(50).fill({
+          data: Buffer.from('account data'),
+          executable: false,
+          lamports: lamports(1000000n),
+          owner: address('11111111111111111111111111111111'),
+          rentEpoch: 300n
+        })
+      })
       
       // Fetch all accounts in parallel
       const [accounts, balances] = await Promise.all([

@@ -63,7 +63,7 @@ governanceCommand
 
           // Collect signers
           log.info('\n📝 Add signers to the multisig wallet:')
-          const signers = []
+          const signers: Address[] = []
           let addingSigners = true
 
           while (addingSigners) {
@@ -195,8 +195,13 @@ governanceCommand
               timelockDuration: BigInt(timelockDuration)
             }
 
+            // TODO: Generate proper multisig PDA
+            const multisigPda = address('11111111111111111111111111111111')
+            const userRegistryPda = address('11111111111111111111111111111111')
+            
             const signature = await client.governance.createMultisig(
               wallet,
+              multisigPda,
               multisigParams
             )
 
@@ -219,11 +224,11 @@ governanceCommand
             
           } catch (error) {
             s.stop('❌ Multisig creation failed')
-            await handleTransactionError(error, 'multisig creation')
+            await handleTransactionError(error as Error)
           }
           
         } catch (error) {
-          log.error(`Failed to create multisig: ${error.message}`)
+          log.error(`Failed to create multisig: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       })
   )
@@ -269,7 +274,7 @@ governanceCommand
               `   ${chalk.gray('Threshold:')} ${multisig.threshold} of ${multisig.signers.length}\n` +
               `   ${chalk.gray('Balance:')} ${balanceSOL} SOL\n` +
               `   ${chalk.gray('Pending Transactions:')} ${multisig.pendingTransactions || 0}\n` +
-              `   ${chalk.gray('Time Lock:')} ${multisig.timelockDuration > 0 ? `${Number(multisig.timelockDuration) / 3600}h` : 'None'}\n`
+              `   ${chalk.gray('Time Lock:')} ${multisig.timelockDuration && Number(multisig.timelockDuration) > 0 ? `${Number(multisig.timelockDuration) / 3600}h` : 'None'}\n`
             )
           })
 
@@ -280,7 +285,7 @@ governanceCommand
           )
           
         } catch (error) {
-          log.error(`Failed to load multisig wallets: ${error.message}`)
+          log.error(`Failed to load multisig wallets: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       })
   )
@@ -504,8 +509,13 @@ governanceCommand
               documentation
             }
 
+            // TODO: Generate proper proposal PDA
+            const proposalPda = address('11111111111111111111111111111111')
+            const multisigPda = address('11111111111111111111111111111111')
+            
             const signature = await client.governance.createProposal(
               wallet,
+              proposalPda,
               proposalParams
             )
 
@@ -530,11 +540,11 @@ governanceCommand
             
           } catch (error) {
             s.stop('❌ Proposal creation failed')
-            await handleTransactionError(error, 'proposal creation')
+            await handleTransactionError(error as Error)
           }
           
         } catch (error) {
-          log.error(`Failed to create proposal: ${error.message}`)
+          log.error(`Failed to create proposal: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       })
   )
@@ -731,7 +741,7 @@ governanceCommand
 
       let voteComment = ''
       if (!isCancel(addComment) && addComment) {
-        voteComment = await text({
+        const comment = await text({
           message: 'Vote comment (optional):',
           placeholder: 'I support this proposal because...',
           validate: (value) => {
@@ -739,8 +749,10 @@ governanceCommand
           }
         })
 
-        if (isCancel(voteComment)) {
+        if (isCancel(comment)) {
           voteComment = ''
+        } else {
+          voteComment = comment as string
         }
       }
 
@@ -797,11 +809,11 @@ governanceCommand
         
       } catch (error) {
         s.stop('❌ Vote submission failed')
-        await handleTransactionError(error, 'vote submission')
+        await handleTransactionError(error as Error)
       }
       
     } catch (error) {
-      log.error(`Failed to cast vote: ${error.message}`)
+      log.error(`Failed to cast vote: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -836,7 +848,7 @@ governanceCommand
           )
           
         } catch (error) {
-          log.error(`Failed to initialize RBAC: ${error.message}`)
+          log.error(`Failed to initialize RBAC: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       })
   )

@@ -72,7 +72,7 @@
     "@solana/signers": "^2.3.0",
     "@solana/transaction-messages": "^2.3.0",
     "@solana/transactions": "^2.3.0",
-    "@solana/web3.js": "^2.0.0",
+    "@solana/kit": "^2.3.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

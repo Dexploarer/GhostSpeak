@@ -3,7 +3,7 @@
  */
 
 import { createSolanaRpc, createSolanaRpcSubscriptions, KeyPairSigner, createKeyPairSignerFromBytes, address } from '@solana/kit'
-import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
+import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID, type KeyPairSigner as SDKKeypairSigner } from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, existsSync, writeFileSync } from 'fs'
@@ -60,6 +60,20 @@ export async function getWallet(): Promise<KeyPairSigner> {
   log.warn(`Or request SOL from faucet using: gs faucet --save`)
   
   return signer
+}
+
+/**
+ * Adapter to convert CLI KeyPairSigner to SDK KeyPairSigner
+ */
+export function toSDKSigner(signer: KeyPairSigner): SDKKeypairSigner {
+  return {
+    address: signer.address,
+    publicKey: signer.address,
+    sign: async (message: Uint8Array) => {
+      const signature = await signer.signBytes(message)
+      return signature
+    }
+  }
 }
 
 /**
@@ -180,7 +194,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     }
   }
 
-  return { client: enhancedClient, wallet, rpc, rpcSubscriptions }
+  return { client: enhancedClient as any, wallet, rpc, rpcSubscriptions }
 }
 
 /**

@@ -89,17 +89,28 @@ export class A2AInstructions extends BaseInstructions {
   ): Promise<string> {
     try {
       // Get session account data directly (bypassing decoder which is broken)
-      const accountInfo = await this.rpc.getAccountInfo(sessionAddress, {
+      const rpcClient = this.getRpcClient()
+      const accountInfo = await rpcClient.getAccountInfo(sessionAddress, {
         commitment: 'confirmed',
         encoding: 'base64'
-      }).send()
+      })
       
-      if (!accountInfo.value) {
+      if (!accountInfo) {
         throw new Error('Session account not found')
       }
       
       // Parse created_at timestamp from session account data (at offset 8)
-      const sessionBuffer = Buffer.from(accountInfo.value.data[0], 'base64')
+      let sessionBuffer: Buffer
+      if (Buffer.isBuffer(accountInfo.data)) {
+        sessionBuffer = accountInfo.data
+      } else if (accountInfo.data instanceof Uint8Array) {
+        sessionBuffer = Buffer.from(accountInfo.data)
+      } else if (typeof accountInfo.data === 'string') {
+        sessionBuffer = Buffer.from(accountInfo.data, 'base64')
+      } else {
+        // Handle parsed account data format
+        sessionBuffer = Buffer.from((accountInfo.data as { data?: string }).data ?? accountInfo.data as unknown as string, 'base64')
+      }
       const sessionCreatedAt = sessionBuffer.readBigInt64LE(8)
 
       // Derive the message address using the session's createdAt timestamp

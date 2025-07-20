@@ -630,8 +630,9 @@ console.log('Payment status:', escrow.status)
     s.start('Testing network connection...')
     
     try {
-      const { client } = await initializeClient('devnet')
-      const slot = await client.rpc.getSlot().send()
+      const { rpc } = await initializeClient('devnet')
+      const response = await rpc.getSlot().send()
+      const slot = response
       s.stop(`✅ Connected to Solana devnet (slot: ${slot})`)
     } catch (error) {
       s.stop('❌ Connection failed')

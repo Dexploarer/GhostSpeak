@@ -12,9 +12,10 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
+import { AuctionStatus, AuctionType } from '@ghostspeak/sdk'
 import type {
   CreateAuctionOptions,
   BidAuctionOptions,
@@ -218,16 +219,24 @@ auctionCommand
           ]
         })
         
+        // Map string to AuctionType enum
+        const auctionTypeMap: Record<string, AuctionType> = {
+          'english': AuctionType.English,
+          'dutch': AuctionType.Dutch,
+          'sealed': AuctionType.SealedBid
+        }
+        
         const auctionParams = {
           auctionData: {
-            auctionType: auctionType as 'english' | 'dutch' | 'sealed', // Will map to SDK AuctionType enum
+            auctionType: auctionTypeMap[auctionType as string] ?? AuctionType.English,
             startingPrice: BigInt(Math.floor(parseFloat(startingPrice) * 1_000_000_000)), // SOL to lamports
             reservePrice: BigInt(Math.floor(parseFloat(reservePrice) * 1_000_000_000)),
             auctionEndTime,
             minimumBidIncrement: BigInt(Math.floor(parseFloat(minBidIncrement) * 1_000_000_000))
           },
           metadataUri: `${serviceTitle}|${serviceDescription}`, // Simple metadata format
-          agent: wallet.address // Using wallet as agent for now
+          agent: wallet.address, // Using wallet as agent for now
+          deadline: BigInt(Math.floor(Date.now() / 1000) + Number(duration) * 24 * 60 * 60) // Same as auctionEndTime
         }
 
         const signature = await client.auction.createServiceAuction(
@@ -235,8 +244,7 @@ auctionCommand
           userRegistryPda,
           {
             ...auctionParams,
-            signer: wallet,
-            deadline: auctionEndTime
+            signer: toSDKSigner(wallet)
           }
         )
 
@@ -276,9 +284,6 @@ auctionCommand
   .option('--mine', 'Show only my auctions')
   .action(async (options: ListAuctionsOptions) => {
     intro(chalk.cyan('📋 Active Auctions'))
-    
-    // Acknowledge options for future filtering implementation
-    void options
 
     try {
       const s = spinner()
@@ -287,6 +292,17 @@ auctionCommand
       const { client, wallet } = await initializeClient('devnet')
       
       // Get auctions based on filters
+      // Helper to convert AuctionType enum to string
+      const auctionTypeToString = (type: AuctionType): string => {
+        switch (type) {
+          case AuctionType.English: return 'english'
+          case AuctionType.Dutch: return 'dutch'
+          case AuctionType.SealedBid: return 'sealed'
+          case AuctionType.Vickrey: return 'vickrey'
+          default: return 'unknown'
+        }
+      }
+
       let auctions: {
         address?: string
         auctionType: string
@@ -299,26 +315,68 @@ auctionCommand
         currentBidder?: string
         creator?: string
       }[] = []
-      if (_options.mine) {
+      if (options.mine) {
         // Use listAuctions with creator filter
         try {
-          auctions = await client.auction.listAuctions({
+          const rawAuctions = await client.auction.listAuctions({
             creator: wallet.address
           })
+          auctions = rawAuctions.map(a => ({
+            address: a.auction.toString(),
+            auctionType: auctionTypeToString(a.auctionType),
+            currentBid: a.currentPrice,
+            startingPrice: a.startingPrice,
+            reservePrice: a.reservePrice,
+            auctionEndTime: a.auctionEndTime,
+            totalBids: a.totalBids,
+            minimumBidIncrement: a.minimumBidIncrement,
+            currentBidder: a.currentWinner?.toString(),
+            creator: a.creator.toString()
+          }))
         } catch {
           auctions = [] // TODO: Implement proper auction filtering
         }
-      } else if (_options.status === 'ending') {
+      } else if (options.status === 'ending') {
         try {
-          auctions = await client.auction.getAuctionsEndingSoon(3600) // Next hour
+          const rawAuctions = await client.auction.getAuctionsEndingSoon(3600) // Next hour
+          auctions = rawAuctions.map(a => ({
+            address: a.auction.toString(),
+            auctionType: auctionTypeToString(a.auctionType),
+            currentBid: a.currentPrice,
+            startingPrice: a.startingPrice,
+            reservePrice: a.reservePrice,
+            auctionEndTime: a.auctionEndTime,
+            totalBids: a.totalBids,
+            minimumBidIncrement: a.minimumBidIncrement,
+            currentBidder: a.currentWinner?.toString(),
+            creator: a.creator.toString()
+          }))
         } catch {
           auctions = [] // TODO: Implement proper auction filtering
         }
       } else {
         try {
-          auctions = await client.auction.listAuctions({
-            auctionType: _options.type as 'english' | 'dutch' | 'sealed' | undefined
+          const typeMap: Record<string, AuctionType> = {
+            'english': AuctionType.English,
+            'dutch': AuctionType.Dutch,
+            'sealed': AuctionType.SealedBid,
+            'vickrey': AuctionType.Vickrey
+          }
+          const rawAuctions = await client.auction.listAuctions({
+            auctionType: options.type ? typeMap[options.type] : undefined
           })
+          auctions = rawAuctions.map(a => ({
+            address: a.auction.toString(),
+            auctionType: auctionTypeToString(a.auctionType),
+            currentBid: a.currentPrice,
+            startingPrice: a.startingPrice,
+            reservePrice: a.reservePrice,
+            auctionEndTime: a.auctionEndTime,
+            totalBids: a.totalBids,
+            minimumBidIncrement: a.minimumBidIncrement,
+            currentBidder: a.currentWinner?.toString(),
+            creator: a.creator.toString()
+          }))
         } catch {
           auctions = [] // TODO: Implement proper auction filtering
         }
@@ -382,17 +440,9 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: {
-        address?: string
-        auctionType: string
-        currentBid?: bigint
-        startingPrice: bigint
-        auctionEndTime: bigint
-        totalBids: number
-        minimumBidIncrement: bigint
-      }[] = []
+      let auctions: Awaited<ReturnType<typeof client.auction.listAuctions>> = []
       try {
-        auctions = await client.auction.listAuctions({ status: 'active' as 'active' | 'ending' | 'completed' })
+        auctions = await client.auction.listAuctions({ status: AuctionStatus.Active })
       } catch {
         auctions = [] // TODO: Implement proper auction listing
       }
@@ -411,14 +461,14 @@ auctionCommand
       if (!selectedAuction) {
         const auctionChoice = await select({
           message: 'Select auction to bid on:',
-          options: auctions.map((auction, index) => {
-            const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+          options: auctions.map((auction) => {
+            const currentPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
             const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
             const hoursLeft = Math.floor(timeLeft / 3600)
             
             return {
-              value: auction.address ?? `auction-${index}`,
-              label: `${(auction.auctionType as string).toUpperCase()} - ${currentPriceSOL} SOL`,
+              value: auction.auction.toString(),
+              label: `${auction.auctionType.toString().toUpperCase()} - ${currentPriceSOL} SOL`,
               hint: `${hoursLeft}h left, ${auction.totalBids} bids`
             }
           })
@@ -432,7 +482,7 @@ auctionCommand
         selectedAuction = auctionChoice
       }
 
-      const auction = auctions.find((a) => a.address === selectedAuction)
+      const auction = auctions.find((a) => a.auction.toString() === selectedAuction)
       if (!auction) {
         log.error('Auction not found')
         return
@@ -445,9 +495,9 @@ auctionCommand
       const suggestedBid = currentPriceSOL + minIncrementSOL
 
       // Get bid amount
-      let bidAmount = _options.bid
+      let bidAmount: string = _options.bid ?? ''
       if (!bidAmount) {
-        bidAmount = await text({
+        const bidInput = await text({
           message: `Enter bid amount (SOL):`,
           placeholder: suggestedBid.toFixed(3),
           validate: (value) => {
@@ -459,14 +509,15 @@ auctionCommand
           }
         })
 
-        if (isCancel(bidAmount)) {
+        if (isCancel(bidInput)) {
           cancel('Bidding cancelled')
           return
         }
+        bidAmount = bidInput
       }
 
       // Show bid strategy suggestion
-      const bidAmountNum = parseFloat(bidAmount)
+      const bidAmountNum = parseFloat(bidAmount as string)
       let strategy = ''
       if (bidAmountNum > suggestedBid * 1.5) {
         strategy = chalk.yellow('⚠️  High bid - consider starting lower')
@@ -478,9 +529,9 @@ auctionCommand
 
       note(
         `${chalk.bold('Bid Details:')}\n` +
-        `${chalk.gray('Auction:')} ${(auction.auctionType as string).toUpperCase()}\n` +
+        `${chalk.gray('Auction:')} ${auction.auctionType.toString().toUpperCase()}\n` +
         `${chalk.gray('Current Price:')} ${currentPriceSOL.toFixed(3)} SOL\n` +
-        `${chalk.gray('Your Bid:')} ${bidAmount} SOL\n` +
+        `${chalk.gray('Your Bid:')} ${bidAmount as string} SOL\n` +
         `${chalk.gray('Strategy:')} ${strategy}`,
         'Bid Preview'
       )
@@ -510,15 +561,15 @@ auctionCommand
         void userRegistryPda
         
         const bidParams = {
-          auction: address(selectedAuction),
+          auction: address(selectedAuction as string),
           bidAmount: BigInt(Math.floor(parseFloat(bidAmount) * 1_000_000_000)) // SOL to lamports
         }
 
         const signature = await client.auction.placeAuctionBid(
-          address(selectedAuction),
+          address(selectedAuction as string),
           {
             ...bidParams,
-            signer: wallet
+            signer: toSDKSigner(wallet)
           }
         )
 
@@ -530,7 +581,7 @@ auctionCommand
           `${chalk.green('💰 Bid Placed Successfully!')}\n\n` +
           `${chalk.bold('Bid Details:')}\n` +
           `${chalk.gray('Amount:')} ${bidAmount} SOL\n` +
-          `${chalk.gray('Auction:')} ${(auction.auctionType as string).toUpperCase()}\n\n` +
+          `${chalk.gray('Auction:')} ${auction.auctionType.toString().toUpperCase()}\n\n` +
           `${chalk.bold('Transaction:')}\n` +
           `${chalk.gray('Signature:')} ${signature}\n` +
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
@@ -615,14 +666,14 @@ auctionCommand
           const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
           const hoursLeft = Math.floor(timeLeft / 3600)
           const minutesLeft = Math.floor((timeLeft % 3600) / 60)
-          const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+          const currentPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
           
           const urgency = timeLeft < 3600 ? chalk.red('🔥 URGENT') : 
                          timeLeft < 6 * 3600 ? chalk.yellow('⚠️  SOON') : 
                          chalk.blue('📅 SCHEDULED')
           
           log.info(
-            `${urgency} ${chalk.bold((auction.auctionType as string).toUpperCase())}\n` +
+            `${urgency} ${chalk.bold(auction.auctionType.toString().toUpperCase())}\n` +
             `   ${chalk.gray('Current Price:')} ${currentPriceSOL} SOL\n` +
             `   ${chalk.gray('Time Left:')} ${hoursLeft}h ${minutesLeft}m\n` +
             `   ${chalk.gray('Bids:')} ${auction.totalBids}\n`
@@ -653,9 +704,9 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: AuctionListItem[] = []
+      let auctions: Awaited<ReturnType<typeof client.auction.listAuctions>> = []
       try {
-        auctions = await client.auction.listAuctions({ status: 'completed' }) as AuctionListItem[]
+        auctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
       } catch {
         auctions = [] // TODO: Implement proper completed auction listing
       }
@@ -677,12 +728,12 @@ auctionCommand
         const auctionChoice = await select({
           message: 'Select auction to finalize:',
           options: myAuctions.map(auction => {
-            const finalPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+            const finalPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
             
             return {
-              value: auction.address,
-              label: `${auction.auctionType.toUpperCase()} - ${finalPriceSOL} SOL`,
-              hint: `${auction.totalBids} bids, winner: ${auction.currentBidder?.toString() ?? 'No bids'}`
+              value: auction.auction.toString(),
+              label: `${auction.auctionType.toString().toUpperCase()} - ${finalPriceSOL} SOL`,
+              hint: `${auction.totalBids} bids, winner: ${auction.currentWinner?.toString() ?? 'No bids'}`
             }
           })
         })
@@ -695,22 +746,22 @@ auctionCommand
         selectedAuction = auctionChoice
       }
 
-      const auction = myAuctions.find((a) => a.address === selectedAuction)
+      const auction = myAuctions.find((a) => a.auction.toString() === selectedAuction)
       if (!auction) {
         log.error('Auction not found or not owned by you')
         return
       }
 
       // Show finalization details
-      const finalPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
-      const hasWinner = auction.currentBidder && auction.currentBid
+      const finalPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+      const hasWinner = auction.currentWinner && auction.currentPrice
       
       note(
         `${chalk.bold('Auction Results:')}\n` +
-        `${chalk.gray('Type:')} ${auction.auctionType.toUpperCase()}\n` +
+        `${chalk.gray('Type:')} ${auction.auctionType.toString().toUpperCase()}\n` +
         `${chalk.gray('Final Price:')} ${finalPriceSOL} SOL\n` +
         `${chalk.gray('Total Bids:')} ${auction.totalBids}\n` +
-        `${chalk.gray('Winner:')} ${hasWinner ? auction.currentBidder?.toString() : 'No winner (reserve not met)'}\n` +
+        `${chalk.gray('Winner:')} ${hasWinner ? auction.currentWinner?.toString() : 'No winner (reserve not met)'}\n` +
         `${chalk.gray('Status:')} ${hasWinner ? chalk.green('Successful') : chalk.yellow('Unsuccessful')}`,
         'Finalization Details'
       )
@@ -727,9 +778,10 @@ auctionCommand
       s.start('Finalizing auction on blockchain...')
       
       try {
-        const signature = await client.auction.finalizeAuction(
-          address(selectedAuction)
-        )
+        const signature = await client.auction.finalizeAuction({
+          auction: address(selectedAuction),
+          signer: toSDKSigner(wallet)
+        })
 
         s.stop('✅ Auction finalized successfully!')
 
@@ -739,7 +791,7 @@ auctionCommand
           `${chalk.green('🏁 Auction Finalized!')}\n\n` +
           `${chalk.bold('Results:')}\n` +
           `${chalk.gray('Final Price:')} ${finalPriceSOL} SOL\n` +
-          `${chalk.gray('Winner:')} ${hasWinner ? (auction as any).currentBidder : 'No winner'}\n` +
+          `${chalk.gray('Winner:')} ${hasWinner ? auction.currentWinner ?? 'Unknown' : 'No winner'}\n` +
           `${chalk.gray('Status:')} ${hasWinner ? chalk.green('Service transferred') : chalk.yellow('Auction closed')}\n\n` +
           `${chalk.bold('Transaction:')}\n` +
           `${chalk.gray('Signature:')} ${signature}\n` +
@@ -817,12 +869,12 @@ auctionCommand
       log.info(`\n${chalk.bold('🎯 Auction Type Breakdown:')}\n`)
       
       if (analytics.auctionTypeStats) {
-        Object.entries(analytics.auctionTypeStats).forEach(([type, stats]: [string, { count?: number; successRate?: number; averagePrice?: bigint }]) => {
+        Object.entries(analytics.auctionTypeStats).forEach(([type, stats]) => {
           log.info(
             `${chalk.bold(type.toUpperCase())}:\n` +
-            `   ${chalk.gray('Count:')} ${stats?.count ?? 0}\n` +
-            `   ${chalk.gray('Success Rate:')} ${((stats?.successRate ?? 0) * 100).toFixed(1)}%\n` +
-            `   ${chalk.gray('Avg Price:')} ${(Number(stats?.averagePrice ?? 0) / 1_000_000_000).toFixed(3)} SOL\n`
+            `   ${chalk.gray('Count:')} ${stats && typeof stats === 'object' && 'count' in stats ? stats.count : 0}\n` +
+            `   ${chalk.gray('Success Rate:')} ${stats && typeof stats === 'object' && 'successRate' in stats ? ((stats.successRate as number) * 100).toFixed(1) : '0.0'}%\n` +
+            `   ${chalk.gray('Avg Price:')} ${stats && typeof stats === 'object' && 'averagePrice' in stats ? (Number(stats.averagePrice) / 1_000_000_000).toFixed(3) : '0.000'} SOL\n`
           )
         })
       }

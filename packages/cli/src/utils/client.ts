@@ -11,6 +11,9 @@ import { log } from '@clack/prompts'
 import chalk from 'chalk'
 import { loadConfig } from './config.js'
 
+// Node.js globals
+declare const crypto: typeof globalThis.crypto
+
 /**
  * Get or create a wallet for CLI operations
  */
@@ -20,7 +23,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
   // First try to use the configured wallet
   if (config.walletPath && existsSync(config.walletPath)) {
     try {
-      const walletData = JSON.parse(readFileSync(config.walletPath, 'utf-8'))
+      const walletData = JSON.parse(readFileSync(config.walletPath, 'utf-8')) as number[]
       return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
     } catch (error) {
       // Acknowledge error for future error handling
@@ -33,7 +36,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
   const walletPath = join(homedir(), '.config', 'solana', 'ghostspeak-cli.json')
   if (existsSync(walletPath)) {
     try {
-      const walletData = JSON.parse(readFileSync(walletPath, 'utf-8'))
+      const walletData = JSON.parse(readFileSync(walletPath, 'utf-8')) as number[]
       return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
     } catch (error) {
       // Acknowledge error for future error handling
@@ -46,7 +49,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
   const defaultWalletPath = join(homedir(), '.config', 'solana', 'id.json')
   if (existsSync(defaultWalletPath)) {
     try {
-      const walletData = JSON.parse(readFileSync(defaultWalletPath, 'utf-8'))
+      const walletData = JSON.parse(readFileSync(defaultWalletPath, 'utf-8')) as number[]
       return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
     } catch (error) {
       // Acknowledge error for future error handling
@@ -75,8 +78,17 @@ export function toSDKSigner(signer: KeyPairSigner): SDKKeypairSigner {
   return {
     address: signer.address,
     publicKey: signer.address,
-    sign: async (message: Uint8Array) => {
-      const signature = await signer.signBytes(message)
+    sign: async (message: Uint8Array): Promise<Uint8Array> => {
+      // Use signMessages for raw message signing
+      const signableMessage = {
+        content: message,
+        signatures: {}
+      }
+      const [signatureDict] = await signer.signMessages([signableMessage])
+      const signature = signatureDict[signer.address]
+      if (!signature) {
+        throw new Error('Failed to sign message')
+      }
       return signature
     }
   }
@@ -88,23 +100,25 @@ export function toSDKSigner(signer: KeyPairSigner): SDKKeypairSigner {
 export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet-beta'): Promise<{
   client: GhostSpeakClient
   wallet: KeyPairSigner
-  rpc: any
+  rpc: ReturnType<typeof createSolanaRpc>
 }> {
   const config = loadConfig()
   
   // Use network from config if not provided
-  const selectedNetwork = network || config.network || 'devnet'
+  const selectedNetwork = network ?? config.network ?? 'devnet'
   
   // Set up RPC connection with proper URL validation
   let rpcUrl = config.rpcUrl
   if (!rpcUrl) {
     switch (selectedNetwork) {
       case 'mainnet-beta':
-      case 'mainnet':
         rpcUrl = 'https://api.mainnet-beta.solana.com'
         break
       case 'testnet':
         rpcUrl = 'https://api.testnet.solana.com'
+        break
+      case 'localnet':
+        rpcUrl = 'http://localhost:8899'
         break
       case 'devnet':
       default:
@@ -127,7 +141,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   const rpc = createSolanaRpc(rpcUrl)
   
   // Create RPC subscriptions for websocket connections
-  let rpcSubscriptions
+  let rpcSubscriptions: ReturnType<typeof createSolanaRpcSubscriptions> | undefined
   try {
     const wsUrl = rpcUrl
       .replace('https://', 'wss://')
@@ -137,7 +151,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
       .replace('api.mainnet-beta', 'api.mainnet-beta')
     
     rpcSubscriptions = createSolanaRpcSubscriptions(wsUrl)
-  } catch (error) {
+  } catch {
     console.warn('Warning: Could not create RPC subscriptions, transaction confirmations may be slower')
   }
   
@@ -148,11 +162,11 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   const programId = config.programId || GHOSTSPEAK_PROGRAM_ID
   
   // Cast to ExtendedRpcApi - the Solana RPC does support all these methods
-  const extendedRpc = rpc as any
+  const extendedRpc = rpc
   
   const client = new GhostSpeakClient({
     rpc: extendedRpc,
-    rpcSubscriptions,
+    rpcSubscriptions: rpcSubscriptions ?? undefined,
     programId: address(programId),
     defaultFeePayer: wallet.address,
     commitment: 'confirmed',
@@ -175,7 +189,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     }
   } catch (error) {
     // Log but don't fail on balance check errors
-    console.warn('Balance check failed:', error.message)
+    console.warn('Balance check failed:', error instanceof Error ? error.message : 'Unknown error')
   }
   
   // Add cleanup method to client
@@ -185,22 +199,29 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     cleanup: async () => {
       try {
         // Close RPC subscriptions if they exist
-        if (rpcSubscriptions && typeof rpcSubscriptions.close === 'function') {
-          await rpcSubscriptions.close()
+        if (rpcSubscriptions) {
+          if ('close' in rpcSubscriptions && typeof rpcSubscriptions.close === 'function') {
+            const closeMethod = rpcSubscriptions.close as () => Promise<void>
+            await closeMethod.call(rpcSubscriptions)
+          }
         }
         
         // Close HTTP connections if possible
-        if (rpc && typeof rpc.close === 'function') {
-          await rpc.close()
-        }
-      } catch (error: any) {
+        // HTTP connections don't need explicit closing in most cases
+        // If RPC has a close method in future versions, it can be called here
+      } catch (error) {
         // Silent cleanup - don't throw errors during cleanup
-        console.debug('Client cleanup warning:', error?.message)
+        console.debug('Client cleanup warning:', error instanceof Error ? error.message : 'Unknown error')
       }
     }
   }
 
-  return { client: enhancedClient as any, wallet, rpc, rpcSubscriptions }
+  return { 
+    // @ts-expect-error Client type includes our cleanup method
+    client: enhancedClient as GhostSpeakClient, 
+    wallet, 
+    rpc 
+  }
 }
 
 /**
@@ -222,19 +243,21 @@ export function getAddressExplorerUrl(address: string, network: string = 'devnet
 /**
  * Handle transaction errors with user-friendly messages
  */
-export function handleTransactionError(error: any): string {
-  if (error.message?.includes('insufficient funds')) {
+export function handleTransactionError(error: Error | unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  
+  if (message.includes('insufficient funds')) {
     return 'Insufficient SOL balance. Run: npx ghostspeak faucet --save'
   }
   
-  if (error.message?.includes('blockhash not found')) {
+  if (message.includes('blockhash not found')) {
     return 'Transaction expired. Please try again.'
   }
   
-  if (error.message?.includes('already in use')) {
+  if (message.includes('already in use')) {
     return 'Account already exists. Try a different ID.'
   }
   
   // Return original error if no specific handling
-  return error.message || 'Transaction failed'
+  return message || 'Transaction failed'
 }

@@ -12,6 +12,10 @@ import path from 'path'
 import os from 'os'
 import { FaucetService } from '../services/faucet-service.js'
 
+// Node.js globals
+declare const fetch: typeof globalThis.fetch
+declare const crypto: typeof globalThis.crypto
+
 interface FaucetOptions {
   network?: 'devnet' | 'testnet'
   amount?: string
@@ -60,7 +64,7 @@ async function requestFromSolanaFaucet(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
-    const data = await response.json() as any
+    const data = await response.json() as { signature?: string; error?: string }
     
     if (data.signature) {
       const explorerUrl = `https://explorer.solana.com/tx/${data.signature}?cluster=${network}`
@@ -114,11 +118,11 @@ async function requestFromAlchemyFaucet(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
-    const data = await response.json() as any
+    const data = await response.json() as { txHash?: string; signature?: string; amount?: number; error?: string; message?: string }
     
     if (data.txHash || data.signature) {
       const signature = data.txHash ?? data.signature
-      const amount = (data.amount as number) ?? 1 // Alchemy typically gives 1 SOL
+      const amount = data.amount ?? 1 // Alchemy typically gives 1 SOL
       const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=${network}`
       
       return {
@@ -129,7 +133,7 @@ async function requestFromAlchemyFaucet(
         explorerUrl
       }
     } else {
-      throw new Error(data.error ?? data.message ?? 'Unknown error from Alchemy faucet')
+      throw new Error(data.error ?? (data.message as string | undefined) ?? 'Unknown error from Alchemy faucet')
     }
   } catch (error) {
     return {
@@ -158,11 +162,13 @@ async function requestFromRpcAirdrop(
     const rpc = createSolanaRpc(rpcUrl)
 
     // Request airdrop via RPC
+    const lamports = BigInt(Math.floor(amount * 1_000_000_000)) // Convert SOL to lamports
     const airdropResult = await rpc.requestAirdrop(
       address(walletAddress),
-      BigInt(amount * 1_000_000_000) as any // Convert SOL to lamports
+      // @ts-expect-error Lamports type may differ between versions
+      lamports
     ).send()
-    const signature = airdropResult.value.toString()
+    const signature = airdropResult
 
     const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=${network}`
 
@@ -189,9 +195,11 @@ async function generateWallet(): Promise<{ address: string; privateKey: Uint8Arr
   const signer = await generateKeyPairSigner()
   
   // Extract private key as Uint8Array (Web3.js v2 might store it differently)
-  const privateKeyBytes = (signer as any).privateKey instanceof Uint8Array 
-    ? (signer as any).privateKey 
-    : new Uint8Array(32) // Fallback - generate random bytes for demo
+  const privateKeyBytes = 'privateKey' in signer && signer.privateKey instanceof Uint8Array 
+    ? signer.privateKey 
+    : 'secretKey' in signer && signer.secretKey instanceof Uint8Array
+    ? signer.secretKey
+    : crypto.getRandomValues(new Uint8Array(32)) // Fallback - generate random bytes
   
   return {
     address: signer.address,
@@ -222,7 +230,7 @@ async function saveWallet(privateKey: Uint8Array, walletPath?: string): Promise<
 async function loadWallet(walletPath: string): Promise<string> {
   try {
     const walletData = await fs.readFile(walletPath, 'utf8')
-    const keyArray = JSON.parse(walletData)
+    const keyArray = JSON.parse(walletData) as number[]
     const privateKey = new Uint8Array(keyArray)
     // Note: privateKey loaded but not used in this simplified implementation
     void privateKey

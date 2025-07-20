@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
 
 /**
  * Script to systematically replace || with ?? where appropriate
@@ -6,9 +7,9 @@
  */
 
 import { readFileSync, writeFileSync } from 'fs'
-import { glob } from 'glob'
+import { sync as globSync } from 'glob'
 
-const files = glob.sync('packages/cli/src/commands/*.ts')
+const files = globSync('packages/cli/src/commands/*.ts')
 
 const patterns = [
   // Common patterns where || should be ??
@@ -45,7 +46,7 @@ let totalReplacements = 0
 
 for (const file of files) {
   console.log(`Processing ${file}...`)
-  let content = readFileSync(file, 'utf-8')
+  let content = readFileSync(file.toString(), 'utf-8')
   let fileReplacements = 0
   
   for (const pattern of patterns) {
@@ -57,7 +58,7 @@ for (const file of files) {
   }
   
   if (fileReplacements > 0) {
-    writeFileSync(file, content)
+    writeFileSync(file.toString(), content)
     console.log(`  ✅ ${fileReplacements} replacements in ${file}`)
     totalReplacements += fileReplacements
   }

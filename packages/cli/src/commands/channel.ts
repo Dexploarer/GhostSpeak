@@ -19,20 +19,24 @@ interface ChannelCreateResult {
   signature: string
 }
 
-interface ChannelWithAgentInfo {
+interface Channel {
   id: { toString: () => string }
   name: string
-  channelId: Address
-  creator: Address
-  participants: Address[]
-  channelType: string
-  visibility: string
-  isPrivate: boolean
+  channelId?: Address
+  creator?: Address
+  participants?: Address[]
+  channelType?: string
+  visibility?: string
+  isPrivate?: boolean
+}
+
+interface ChannelWithAgentInfo extends Channel {
+  agentName: string
+  agentAddress: Address
   messageCount: number
   createdAt: bigint
   lastActivity: bigint
   isActive: boolean
-  agentName: string
 }
 
 export const channelCommand = new Command('channel')
@@ -260,7 +264,7 @@ channelCommand
   .command('send')
   .description('Send a message in an A2A channel')
   .option('--channel <id>', 'Channel ID')
-  .action(async (options) => {
+  .action(async (options: { channel?: string }) => {
     intro(chalk.blue('📤 Send A2A Message'))
 
     try {
@@ -294,18 +298,22 @@ channelCommand
         }
         
         // Get channels for all user's agents
-        const allChannels = []
+        const allChannels: ChannelWithAgentInfo[] = []
         for (const agent of agents) {
           // TODO: Implement channel listing when SDK supports it
-          const channels: any[] = []
+          const channels: Channel[] = []
           /* const channels = await client.channel.listByParticipant({
             participant: agent.address
           }) */
           allChannels.push(...channels.map(ch => ({ 
             ...ch, 
             agentName: agent.data.name || 'Agent',
-            agentAddress: agent.address
-          })))
+            agentAddress: agent.address,
+            messageCount: 0,
+            createdAt: BigInt(0),
+            lastActivity: BigInt(0),
+            isActive: true
+          } as ChannelWithAgentInfo)))
         }
         
         s.stop('✅ Channels loaded')
@@ -319,7 +327,7 @@ channelCommand
         const selectedChannel = await select({
           message: 'Select channel:',
           options: allChannels.map(channel => ({
-            value: (channel.id as any).toString(),
+            value: channel.id.toString(),
             label: `${channel.name} (via ${channel.agentName})`
           }))
         })
@@ -332,7 +340,7 @@ channelCommand
         channelPubkey = address(selectedChannel as string)
         
         // Find the agent address for this channel
-        const selectedChannelData = allChannels.find(ch => (ch.id as any).toString() === selectedChannel)
+        const selectedChannelData = allChannels.find(ch => ch.id.toString() === selectedChannel)
         if (!selectedChannelData) {
           cancel('Channel not found')
           return
@@ -373,7 +381,7 @@ channelCommand
 
       try {
         // TODO: Implement message sending when SDK supports it
-        const result = { messageId: 'mock-message-id' } as any
+        const result = { messageId: { toString: () => 'mock-message-id' }, signature: 'mock-signature' }
         /* const result = await client.channel.sendMessage({
           channelId: channelPubkey,
           content: message as string,

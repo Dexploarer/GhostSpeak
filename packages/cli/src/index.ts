@@ -53,8 +53,8 @@ async function main() {
       
       for (const path of possiblePaths) {
         if (existsSync(path)) {
-          const pkg = JSON.parse(readFileSync(path, 'utf-8'))
-          if (pkg.name === '@ghostspeak/cli') {
+          const pkg = JSON.parse(readFileSync(path, 'utf-8')) as { name?: string; version?: string }
+          if (pkg.name === '@ghostspeak/cli' && pkg.version) {
             currentVersion = pkg.version
             break
           }

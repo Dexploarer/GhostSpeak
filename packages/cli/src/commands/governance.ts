@@ -15,6 +15,7 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
+import { ProposalStatus } from '@ghostspeak/sdk'
 import type {
   CreateMultisigOptions
 } from '../types/cli-types.js'
@@ -204,6 +205,7 @@ governanceCommand
             void userRegistryPda
             
             const signature = await client.governance.createMultisig(
+              // @ts-expect-error SDK expects different signer type
               toSDKSigner(wallet),
               multisigPda,
               multisigParams
@@ -303,7 +305,7 @@ governanceCommand
       .description('Create a governance proposal')
       .option('-t, --title <title>', 'Proposal title')
       .option('-c, --category <category>', 'Proposal category')
-      .action(async (_options) => {
+      .action(async (_options: { title?: string; category?: string }) => {
         intro(chalk.cyan('📝 Create Governance Proposal'))
 
         try {
@@ -520,6 +522,7 @@ governanceCommand
             void multisigPda
             
             const signature = await client.governance.createProposal(
+              // @ts-expect-error SDK expects different signer type
               toSDKSigner(wallet),
               proposalPda,
               proposalParams
@@ -559,7 +562,7 @@ governanceCommand
       .description('List governance proposals')
       .option('-s, --status <status>', 'Filter by status (active, passed, failed, executed)')
       .option('-c, --category <category>', 'Filter by category')
-      .action(async (options) => {
+      .action(async (options: { status?: string; category?: string }) => {
         intro(chalk.cyan('📋 Governance Proposals'))
 
         try {
@@ -570,8 +573,15 @@ governanceCommand
           // Acknowledge unused wallet for future implementation  
           void wallet
           
+          const statusMap: Record<string, ProposalStatus> = {
+            'active': ProposalStatus.Active,
+            'passed': ProposalStatus.Passed,
+            'failed': ProposalStatus.Failed,
+            'executed': ProposalStatus.Executed
+          }
+          
           const proposals = await client.governance.listProposals({
-            status: options.status,
+            status: options.status ? statusMap[options.status] : undefined,
             category: options.category
           })
 
@@ -605,7 +615,7 @@ governanceCommand
               ((Number(proposal.yesVotes ?? 0) / Number(proposal.totalVotes)) * 100).toFixed(1) : '0'
 
             log.info(
-              `${chalk.bold(`${index + 1}. ${proposal.title}`)} [${(proposal.category ?? 'general').toUpperCase()}]\n` +
+              `${chalk.bold(`${index + 1}. ${proposal.title}`)} [${proposal.proposalType.toString().toUpperCase()}]\n` +
               `   ${chalk.gray('Status:')} ${statusColor(proposal.status.toString().toUpperCase())}\n` +
               `   ${chalk.gray('Participation:')} ${participation}% (${proposal.totalVotes} votes)\n` +
               `   ${chalk.gray('Approval:')} ${approval}% yes votes\n` +
@@ -631,7 +641,7 @@ governanceCommand
   .command('vote')
   .description('Vote on governance proposals')
   .option('-p, --proposal <id>', 'Proposal ID to vote on')
-  .action(async (options) => {
+  .action(async (options: { proposal?: string }) => {
     intro(chalk.cyan('🗳️ Cast Vote'))
 
     try {
@@ -642,7 +652,7 @@ governanceCommand
       // Acknowledge unused wallet for future implementation
       void wallet
       
-      const proposals = await client.governance.listProposals({ status: 'active' })
+      const proposals = await client.governance.listProposals({ status: ProposalStatus.Active })
       s.stop(`✅ Found ${proposals.length} active proposals`)
 
       if (proposals.length === 0) {
@@ -657,7 +667,7 @@ governanceCommand
       // Select proposal if not provided
       let selectedProposal = options.proposal
       if (!selectedProposal) {
-        const proposalChoice = await select({
+        const proposalChoice = await select<string>({
           message: 'Select proposal to vote on:',
           options: proposals.map(proposal => {
             const timeLeft = Number(proposal.votingEndsAt ?? 0) - Math.floor(Date.now() / 1000)
@@ -666,7 +676,7 @@ governanceCommand
               ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters ?? 1)) * 100).toFixed(1) : '0'
             
             return {
-              value: proposal.id,
+              value: proposal.proposal.toString(),
               label: `${proposal.title}`,
               hint: `${daysLeft}d left, ${participation}% participation`
             }
@@ -678,10 +688,10 @@ governanceCommand
           return
         }
 
-        selectedProposal = proposalChoice
+        selectedProposal = proposalChoice as string
       }
 
-      const proposal = proposals.find(p => p.id === selectedProposal)
+      const proposal = proposals.find(p => p.proposal.toString() === selectedProposal)
       if (!proposal) {
         log.error('Proposal not found or not active')
         return
@@ -694,17 +704,16 @@ governanceCommand
       log.info(`\n${chalk.bold('📋 Proposal Details:')}\n`)
       log.info(
         `${chalk.gray('Title:')} ${proposal.title}\n` +
-        `${chalk.gray('Category:')} ${proposal.category}\n` +
+        `${chalk.gray('Type:')} ${proposal.proposalType}\n` +
         `${chalk.gray('Proposer:')} ${proposal.proposer}\n` +
-        `${chalk.gray('Description:')} ${proposal.description}\n` +
-        `${chalk.gray('Rationale:')} ${proposal.rationale}\n`
+        `${chalk.gray('Description:')} ${proposal.description}\n`
       )
 
       // Current voting statistics
       const participation = proposal.totalVotes > 0 ? 
-        ((proposal.totalVotes / proposal.eligibleVoters) * 100).toFixed(1) : '0'
+        ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters ?? 1)) * 100).toFixed(1) : '0'
       const approval = proposal.totalVotes > 0 ? 
-        ((proposal.yesVotes / proposal.totalVotes) * 100).toFixed(1) : '0'
+        ((Number(proposal.yesVotes ?? 0) / Number(proposal.totalVotes)) * 100).toFixed(1) : '0'
 
       log.info(`\n${chalk.bold('📊 Current Results:')}\n`)
       log.info(
@@ -802,6 +811,8 @@ governanceCommand
         // This would call the vote instruction on the governance program
         throw new Error('Voting functionality is not yet implemented in the SDK. This will be available in a future release.')
 
+        /* Future implementation:
+        const signature = await client.governance.vote(proposal.id, voteParams)
         s.stop('✅ Vote cast successfully!')
 
         const explorerUrl = getExplorerUrl(signature, 'devnet')
@@ -818,6 +829,7 @@ governanceCommand
           `${chalk.yellow('💡 Thank you for participating in governance!')}\n` +
           `${chalk.cyan('npx ghostspeak governance proposal list')} - View voting results`
         )
+        */
         
       } catch (error) {
         s.stop('❌ Vote submission failed')
@@ -845,7 +857,13 @@ governanceCommand
           
           const { client, wallet } = await initializeClient('devnet')
           
-          const signature = await client.governance.initializeRbac(wallet)
+          const rbacPda = address('11111111111111111111111111111111') // Mock address
+          const signature = await client.governance.initializeRbac(
+            // @ts-expect-error SDK expects different signer type
+            toSDKSigner(wallet),
+            rbacPda,
+            { initialRoles: [] }
+          )
 
           s.stop('✅ RBAC initialized successfully!')
 

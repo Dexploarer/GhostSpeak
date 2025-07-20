@@ -8,6 +8,13 @@ import { join } from 'path'
 
 const execAsync = promisify(exec)
 
+// Type definitions for command options
+interface InstallOptions {
+  global?: boolean
+  version?: string
+  dev?: boolean
+}
+
 export const sdkCommand = new Command('sdk')
   .description('Manage GhostSpeak SDK installation')
 
@@ -17,7 +24,7 @@ sdkCommand
   .option('-g, --global', 'Install globally', false)
   .option('-v, --version <version>', 'Specific version to install')
   .option('-D, --dev', 'Save as dev dependency', false)
-  .action(async (options) => {
+  .action(async (options: InstallOptions) => {
         try {
           intro(pc.cyan('🛠️  GhostSpeak SDK Installer'))
 
@@ -52,7 +59,7 @@ sdkCommand
           
           // Build install command
           const packageName = '@ghostspeak/sdk'
-          const version = options.version || 'latest'
+          const version = options.version ?? 'latest'
           const versionString = version === 'latest' ? '' : `@${version}`
           
           let installCmd: string
@@ -90,14 +97,14 @@ const agents = await client.agent.listAgents()
             }
 
             outro(pc.green('✅ SDK installed successfully!'))
-          } catch (error: any) {
+          } catch (error) {
             s.stop('Failed to install SDK')
-            console.error(pc.red(`\nError: ${error.message}`))
+            console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
             outro(pc.red('❌ SDK installation failed'))
             process.exit(1)
           }
-        } catch (error: any) {
-          console.error(pc.red(`\nError: ${error.message}`))
+        } catch (error) {
+          console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
           outro(pc.red('❌ SDK installation failed'))
           process.exit(1)
         }
@@ -115,7 +122,7 @@ sdkCommand
           const hasLocal = existsSync(localPath)
 
           if (hasLocal) {
-            const packageJson = JSON.parse(readFileSync(localPath, 'utf-8'))
+            const packageJson = JSON.parse(readFileSync(localPath, 'utf-8')) as { version: string }
             console.log(pc.green('\n✓ SDK installed locally'))
             console.log(pc.gray(`  Version: ${packageJson.version}`))
             console.log(pc.gray(`  Path: ${join(process.cwd(), 'node_modules', '@ghostspeak', 'sdk')}`))
@@ -153,8 +160,8 @@ sdkCommand
           }
 
           outro(pc.green('✅ SDK info complete'))
-        } catch (error: any) {
-          console.error(pc.red(`\nError: ${error.message}`))
+        } catch (error) {
+          console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
           outro(pc.red('❌ Failed to get SDK info'))
           process.exit(1)
         }

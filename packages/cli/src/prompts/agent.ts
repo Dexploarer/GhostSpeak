@@ -15,9 +15,9 @@ export interface AgentData {
   serviceEndpoint: string
 }
 
-export async function registerAgentPrompts(options: any): Promise<AgentData> {
+export async function registerAgentPrompts(options: { name?: string; description?: string; category?: string; endpoint?: string }): Promise<AgentData> {
   // Agent name
-  const name = options.name || await text({
+  const name = options.name ?? await text({
     message: 'What is your agent\'s name?',
     placeholder: 'e.g., DataAnalyzer Pro',
     validate: (value) => {
@@ -33,7 +33,7 @@ export async function registerAgentPrompts(options: any): Promise<AgentData> {
   }
 
   // Agent description
-  const description = options.description || await text({
+  const description = options.description ?? await text({
     message: 'Describe what your agent does:',
     placeholder: 'e.g., Analyzes data and generates insights for businesses',
     validate: (value) => {
@@ -72,7 +72,7 @@ export async function registerAgentPrompts(options: any): Promise<AgentData> {
   }
 
   // Service endpoint
-  const serviceEndpoint = options.endpoint || await text({
+  const serviceEndpoint = options.endpoint ?? await text({
     message: 'Enter your agent\'s service endpoint URL:',
     placeholder: 'https://api.your-agent.com/v1',
     validate: (value) => {

@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { intro, outro, spinner, confirm } from '@clack/prompts'
+import { intro, outro, spinner, confirm, isCancel, cancel } from '@clack/prompts'
 import chalk from 'chalk'
 import { exec } from 'child_process'
 import { promisify } from 'util'
@@ -9,7 +9,7 @@ const execAsync = promisify(exec)
 export const updateCommand = new Command('update')
   .description('Update GhostSpeak CLI to the latest version')
   .option('-f, --force', 'Force update without confirmation')
-  .action(async (options) => {
+  .action(async (options: { force?: boolean }) => {
     intro(chalk.cyan('🔄 GhostSpeak CLI Updater'))
 
     try {
@@ -95,10 +95,17 @@ export const updateCommand = new Command('update')
       // Confirm update
       let shouldUpdate = options.force
       if (!shouldUpdate) {
-        shouldUpdate = await confirm({
+        const confirmResult = await confirm({
           message: 'Would you like to update now?',
           initialValue: true
         })
+        
+        if (isCancel(confirmResult)) {
+          cancel('Update cancelled')
+          return
+        }
+        
+        shouldUpdate = confirmResult
       }
       
       if (!shouldUpdate) {
@@ -173,11 +180,11 @@ export const updateCommand = new Command('update')
         console.log(chalk.yellow('💡 Tip: Run "ghostspeak --help" or "gs --help" to see all available commands'))
         
         outro('Update completed successfully')
-      } catch (error: any) {
+      } catch (error) {
         updateSpinner.stop('❌ Update failed')
         
         console.error('')
-        console.error(chalk.red('Failed to update CLI:'), error.message)
+        console.error(chalk.red('Failed to update CLI:'), error instanceof Error ? error.message : 'Unknown error')
         console.error('')
         console.error(chalk.yellow('Try updating manually with one of these commands:'))
         console.error(chalk.gray('  npm install -g @ghostspeak/cli@latest'))
@@ -190,8 +197,8 @@ export const updateCommand = new Command('update')
         process.exit(1)
       }
       
-    } catch (error: any) {
-      console.error(chalk.red('Error:'), error.message)
+    } catch (error) {
+      console.error(chalk.red('Error:'), error instanceof Error ? error.message : 'Unknown error')
       outro('Update check failed')
       process.exit(1)
     }

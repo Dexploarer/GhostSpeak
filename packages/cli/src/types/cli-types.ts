@@ -156,8 +156,8 @@ export interface CreateAuctionOptions {
 }
 
 export interface BidAuctionOptions {
-  auction: string
-  amount: string
+  auction?: string
+  bid?: string
 }
 
 export interface ListAuctionsOptions {
@@ -165,6 +165,7 @@ export interface ListAuctionsOptions {
   status?: string
   agent?: string
   limit?: string
+  mine?: boolean
 }
 
 // Channel Command Options

@@ -15,9 +15,18 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
 import { address } from '@solana/addresses'
 import type { DisputeSummary } from '@ghostspeak/sdk'
+import { DisputeStatus } from '@ghostspeak/sdk'
 import type {
   FileDisputeOptions
 } from '../types/cli-types.js'
+
+// Type definitions for dispute-related structures
+interface WorkOrder {
+  address?: string
+  orderId?: string
+  title?: string
+  paymentAmount?: bigint | number
+}
 
 export const disputeCommand = new Command('dispute')
   .description('Manage disputes and conflict resolution')
@@ -40,7 +49,7 @@ disputeCommand
         
         const { client, wallet } = await initializeClient('devnet')
         
-        const workOrders = await client.escrow.getEscrowsForUser(wallet.address)
+        const workOrders = await client.escrow.getEscrowsForUser(wallet.address) as WorkOrder[]
         s.stop(`✅ Found ${workOrders.length} work orders`)
 
         if (workOrders.length === 0) {
@@ -283,7 +292,7 @@ disputeCommand
   .option('-s, --status <status>', 'Filter by status (pending, under_review, resolved, escalated)')
   .option('--mine', 'Show only disputes where I am involved')
   .option('--as-arbitrator', 'Show disputes I can arbitrate')
-  .action(async (_options) => {
+  .action(async (_options: { asArbitrator?: boolean; mine?: boolean; status?: string }) => {
     intro(chalk.cyan('📋 Dispute List'))
 
     try {
@@ -292,7 +301,7 @@ disputeCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let disputes
+      let disputes: DisputeSummary[]
       if (_options.asArbitrator) {
         // Use listDisputes with moderator filter
         disputes = await client.dispute.getActiveDisputes(wallet.address)
@@ -304,7 +313,7 @@ disputeCommand
         )
       } else {
         disputes = await client.dispute.listDisputes({
-          status: _options.status
+          status: _options.status ? DisputeStatus[_options.status as keyof typeof DisputeStatus] : undefined
         })
       }
 
@@ -365,7 +374,7 @@ disputeCommand
   .command('evidence')
   .description('Submit additional evidence for a dispute')
   .option('-d, --dispute <id>', 'Dispute ID')
-  .action(async (_options) => {
+  .action(async (_options: { dispute?: string }) => {
     intro(chalk.cyan('📄 Submit Evidence'))
 
     try {
@@ -555,7 +564,7 @@ disputeCommand
   .command('resolve')
   .description('Resolve a dispute (arbitrators only)')
   .option('-d, --dispute <id>', 'Dispute ID to resolve')
-  .action(async (_options) => {
+  .action(async (_options: { dispute?: string }) => {
     intro(chalk.cyan('⚖️ Resolve Dispute'))
 
     try {
@@ -637,7 +646,7 @@ disputeCommand
         evidence.forEach((item, index) => {
           log.info(
             `${chalk.bold(`${index + 1}. ${item.evidenceType.toUpperCase()}`)}\n` +
-            `   ${chalk.gray('Description:')} ${(item as any).description ?? 'No description'}\n` +
+            `   ${chalk.gray('Description:')} ${'description' in item && typeof item.description === 'string' ? item.description : 'No description'}\n` +
             `   ${chalk.gray('Data:')} ${item.evidenceData.substring(0, 100)}${item.evidenceData.length > 100 ? '...' : ''}\n` +
             `   ${chalk.gray('Submitted:')} ${new Date(Number(item.timestamp) * 1000).toLocaleString()}\n`
           )
@@ -761,7 +770,7 @@ disputeCommand
   .command('escalate')
   .description('Escalate dispute to human review')
   .option('-d, --dispute <id>', 'Dispute ID to escalate')
-  .action(async (_options) => {
+  .action(async (_options: { dispute?: string }) => {
     intro(chalk.cyan('🆙 Escalate Dispute'))
 
     try {
@@ -778,7 +787,7 @@ disputeCommand
       )
       const escalatableDisputes = disputes.filter((d: DisputeSummary) => 
         (d.status.toString() === 'under_review' || d.status.toString() === 'UnderReview') && 
-        !(d as any).escalated
+        !('escalated' in d && d.escalated)
       )
       
       s.stop(`✅ Found ${escalatableDisputes.length} disputes eligible for escalation`)

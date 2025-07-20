@@ -6,6 +6,9 @@ import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
 
+// Node.js globals
+declare const fetch: typeof globalThis.fetch
+
 export interface FaucetConfig {
   rateLimitMinutes: number
   maxDailyRequests: number
@@ -63,7 +66,7 @@ export class FaucetService {
   private async loadRequestHistory(): Promise<FaucetRequest[]> {
     try {
       const data = await fs.readFile(this.cacheFile, 'utf8')
-      return JSON.parse(data)
+      return JSON.parse(data) as FaucetRequest[]
     } catch {
       return []
     }
@@ -295,7 +298,7 @@ export class EnhancedSolanaFaucets {
         })
 
         if (response.ok) {
-          const data = await response.json()
+          const data = await response.json() as { signature?: string }
           if (data.signature) {
             return { success: true, signature: data.signature }
           }
@@ -337,8 +340,8 @@ export class EnhancedSolanaFaucets {
         })
 
         if (response.ok) {
-          const data = await response.json()
-          const signature = data.txHash || data.signature || data.transactionHash
+          const data = await response.json() as { txHash?: string; signature?: string; transactionHash?: string }
+          const signature = data.txHash ?? data.signature ?? data.transactionHash
           if (signature) {
             return { success: true, signature }
           }

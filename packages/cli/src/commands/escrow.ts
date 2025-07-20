@@ -131,17 +131,19 @@ escrowCommand
         
         let signature: string
         try {
+          const workOrderAddress = address('11111111111111111111111111111111') // Mock address
           signature = await client.escrow.create(
-            toSDKSigner(wallet),
+            workOrderAddress,
             {
               orderId,
               provider: address(recipient),
               title: `Work Order #${orderId}`,
               description: workDescription as string,
               requirements: ['No specific requirements'], // Try with non-empty array
-              paymentAmount: BigInt(Math.floor(parseFloat(amount as string) * 1_000_000_000)), // Convert SOL to lamports
+              amount: BigInt(Math.floor(parseFloat(amount as string) * 1_000_000_000)), // Convert SOL to lamports
               paymentToken: address('So11111111111111111111111111111111111111112'), // Native SOL
-              deadline: BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60) // 7 days from now
+              deadline: BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60), // 7 days from now
+              signer: toSDKSigner(wallet)
             }
           )
           console.log('✅ Escrow creation successful, signature:', signature)
@@ -243,15 +245,11 @@ escrowCommand
             statusIcon = '❌'
             statusText = 'Cancelled'
             break
-          case WorkOrderStatus.Disputed:
-            statusIcon = '⚠️'
-            statusText = 'Disputed'
-            break
         }
         
-        console.log(chalk.yellow(`${index + 1}. ${workOrder.title ?? `Work Order #${workOrder.orderId}`}`))
+        console.log(chalk.yellow(`${index + 1}. ${workOrder.title}`))
         console.log(chalk.gray(`   Role: ${role}`))
-        console.log(chalk.gray(`   Order ID: #${workOrder.orderId}`))
+        console.log(chalk.gray(`   Created: ${new Date(Number(workOrder.createdAt) * 1000).toLocaleDateString()}`))
         console.log(chalk.gray(`   Amount: ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`))
         console.log(chalk.gray(`   Status: ${statusIcon} ${statusText}`))
         console.log(chalk.gray(`   Client: ${workOrder.client.slice(0, 8)}...`))
@@ -341,7 +339,7 @@ escrowCommand
       console.log('\n' + chalk.bold('🔒 Work Order Details'))
       console.log('─'.repeat(40))
       console.log(chalk.yellow('Title:') + ` ${workOrder.title ?? 'Untitled'}`)
-      console.log(chalk.yellow('Order ID:') + ` #${workOrder.orderId}`)
+      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
       console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
       console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
       console.log(chalk.yellow('Provider:') + ` ${workOrder.provider.slice(0, 8)}...`)
@@ -430,9 +428,13 @@ escrowCommand
       releaseSpinner.start('Releasing funds from escrow...')
 
       try {
+        const workDeliveryAddress = address('11111111111111111111111111111111') // Mock address
         const result = await client.escrow.release(
-          toSDKSigner(wallet),
-          address(escrowPubkey.toString())
+          workDeliveryAddress,
+          {
+            workOrderAddress: address(escrowPubkey.toString()),
+            signer: toSDKSigner(wallet)
+          }
         )
 
         releaseSpinner.stop('✅ Funds released successfully!')
@@ -449,7 +451,7 @@ escrowCommand
         }
 
         outro('Escrow release completed')
-      } catch (error: any) {
+      } catch (error) {
         releaseSpinner.stop('❌ Release failed')
         await handleTransactionError(error as Error)
         throw error
@@ -522,7 +524,7 @@ escrowCommand
       console.log('\n' + chalk.bold('🔒 Work Order Details'))
       console.log('─'.repeat(40))
       console.log(chalk.yellow('Title:') + ` ${workOrder.title ?? 'Untitled'}`)
-      console.log(chalk.yellow('Order ID:') + ` #${workOrder.orderId}`)
+      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
       console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
       console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
       console.log(chalk.yellow('Provider:') + ` ${workOrder.provider.slice(0, 8)}...`)
@@ -634,6 +636,7 @@ escrowCommand
 
       try {
         const result = await client.dispute.fileDispute(
+          // @ts-expect-error SDK expects TransactionSigner
           toSDKSigner(wallet),
           address(escrowPubkey.toString()), // disputePda
           {
@@ -660,7 +663,7 @@ escrowCommand
         console.log(chalk.gray('4. You will be notified of the resolution'))
 
         outro('Dispute opened')
-      } catch (error: any) {
+      } catch (error) {
         disputeSpinner.stop('❌ Dispute creation failed')
         await handleTransactionError(error as Error)
         throw error

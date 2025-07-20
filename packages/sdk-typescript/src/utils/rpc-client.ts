@@ -392,7 +392,7 @@ export class SolanaRpcClient {
   async getProgramAccounts(
     programId: Address,
     options?: GetProgramAccountsOptions
-  ): Promise<ProgramAccount[]> {
+  ): Promise<ProgramAccount<Buffer | ParsedAccountData>[]> {
     const rpcOptions: ProgramAccountsRpcOptions = {
       commitment: options?.commitment ?? this.commitment,
       ...(options?.dataSlice && { dataSlice: options.dataSlice }),
@@ -405,7 +405,7 @@ export class SolanaRpcClient {
           if ('memcmp' in f) {
             return {
               memcmp: {
-                bytes: f.memcmp.bytes as any, // Cast to appropriate branded type
+                bytes: f.memcmp.bytes, // Base58 encoded bytes
                 encoding: 'base58' as const,
                 offset: BigInt(f.memcmp.offset)
               }
@@ -421,11 +421,12 @@ export class SolanaRpcClient {
       rpcOptions.encoding = (options?.encoding === 'base58') ? 'base64' : (options?.encoding ?? 'base64')
     }
     
-    const result = await this.rpc.getProgramAccounts(programId, rpcOptions as any).send()
+    // @ts-expect-error Type mismatch between our options and RPC method expectations
+    const result = await this.rpc.getProgramAccounts(programId, rpcOptions).send()
 
     return result.value.map((item) => ({
       pubkey: item.pubkey,
-      account: this.parseAccountInfo(item.account) as any // Cast to handle ParsedAccountData vs Buffer union
+      account: this.parseAccountInfo(item.account) as AccountInfo // Type assertion for parsed account
     }))
   }
 
@@ -568,7 +569,8 @@ export class SolanaRpcClient {
       rpcOptions.maxSupportedTransactionVersion = options.maxSupportedTransactionVersion
     }
     
-    const result = await this.rpc.getTransaction(signature, rpcOptions as any).send()
+    // @ts-expect-error Type mismatch between our options and RPC method expectations
+    const result = await this.rpc.getTransaction(signature, rpcOptions).send()
 
     return result as unknown as TransactionResponse | null
   }
@@ -665,7 +667,8 @@ export class SolanaRpcClient {
     message: string,
     options?: { commitment?: Commitment; minContextSlot?: Slot }
   ): Promise<Lamports | null> {
-    const result = await this.rpc.getFeeForMessage(message as any, {
+    // @ts-expect-error Message parameter type expects specific branded type
+    const result = await this.rpc.getFeeForMessage(message, {
       commitment: options?.commitment ?? this.commitment,
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
     }).send()
@@ -703,11 +706,11 @@ export class SolanaRpcClient {
 
     return {
       executable: account.executable,
-      lamports: account.lamports as any, // Cast to Lamports branded type
+      lamports: account.lamports as Lamports,
       owner: account.owner as Address,
-      rentEpoch: BigInt(account.rentEpoch as any),
+      rentEpoch: BigInt(account.rentEpoch),
       data,
-      space: account.space ? BigInt(account.space as any) : undefined
+      space: account.space ? BigInt(account.space) : undefined
     }
   }
 
@@ -888,14 +891,14 @@ export class SolanaRpcClient {
   async getSupply(
     options?: { commitment?: Commitment; excludeNonCirculatingAccountsList?: boolean }
   ): Promise<Supply> {
-    const rpcConfig: any = {
-      commitment: options?.commitment ?? this.commitment
+    const rpcConfig = {
+      commitment: options?.commitment ?? this.commitment,
+      ...(options?.excludeNonCirculatingAccountsList && {
+        excludeNonCirculatingAccountsList: true
+      })
     }
     
-    if (options?.excludeNonCirculatingAccountsList === true) {
-      rpcConfig.excludeNonCirculatingAccountsList = true
-    }
-    
+    // @ts-expect-error RPC method may have different parameter expectations
     const result = await this.rpc.getSupply(rpcConfig).send()
 
     return result.value as Supply

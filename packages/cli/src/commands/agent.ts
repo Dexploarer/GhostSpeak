@@ -681,9 +681,9 @@ agentCommand
 
       try {
         // Convert price to lamports if updated
-        const updateData: typeof updates & { metadataUri?: string } = { ...updates }
+        const updateData: Record<string, unknown> = { ...updates }
         if (updates.pricePerTask) {
-          updateData.pricePerTask = BigInt(Math.floor(parseFloat(updates.pricePerTask) * 1_000_000))
+          updateData.pricePerTask = BigInt(Math.floor(parseFloat(updates.pricePerTask as string) * 1_000_000))
         }
 
         // Update agent using SDK
@@ -691,7 +691,7 @@ agentCommand
           toSDKSigner(wallet),
           agentAddress,
           1, // Default agent type
-          updateData.metadataUri ?? currentAgent.metadataUri ?? '',
+          (updateData.metadataUri as string | undefined) ?? currentAgent.metadataUri ?? '',
           agentAddress.toString() // Use address as agentId for now
         )
 

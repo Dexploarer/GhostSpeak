@@ -12,21 +12,24 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { address } from '@solana/addresses'
 import type { DisputeSummary } from '@ghostspeak/sdk'
 import { DisputeStatus } from '@ghostspeak/sdk'
-import type {
-  FileDisputeOptions
-} from '../types/cli-types.js'
 
-// Type definitions for dispute-related structures
+// Define basic work order interface for type safety
 interface WorkOrder {
+  client: { toString: () => string }
+  provider: { toString: () => string }
   address?: string
   orderId?: string
   title?: string
   paymentAmount?: bigint | number
 }
+
+import type {
+  FileDisputeOptions
+} from '../types/cli-types.js'
 
 export const disputeCommand = new Command('dispute')
   .description('Manage disputes and conflict resolution')
@@ -210,15 +213,22 @@ disputeCommand
       
       try {
         // Get work order details to find the respondent
-        const workOrder = await client.escrow.getWorkOrder(address(workOrderAddress))
+        let workOrder
+        try {
+          workOrder = await client.escrow.getWorkOrder(address(workOrderAddress))
+        } catch (error) {
+          throw new Error(`Failed to fetch work order: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
+        
         if (!workOrder) {
           throw new Error('Work order not found')
         }
         
         // Determine respondent based on who is filing the dispute
-        const respondent = workOrder.client.toString() === wallet.address.toString() 
-          ? workOrder.provider  // If client is filing, respondent is provider
-          : workOrder.client    // If provider is filing, respondent is client
+        const typedWorkOrder = workOrder as WorkOrder
+        const respondent = typedWorkOrder.client.toString() === wallet.address.toString() 
+          ? typedWorkOrder.provider  // If client is filing, respondent is provider
+          : typedWorkOrder.client    // If provider is filing, respondent is client
         
         const disputeParams = {
           transaction: address(workOrderAddress),
@@ -912,7 +922,7 @@ disputeCommand
       try {
         const signature = await client.dispute.escalateDispute(
           toSDKSigner(wallet),
-          address(disputeAddress),
+          address(selectedDispute as string),
           `${escalationReason}: ${escalationDetails}`
         )
         
@@ -923,7 +933,7 @@ disputeCommand
         outro(
           `${chalk.yellow('🆙 Dispute Escalated to Human Review')}\n\n` +
           `${chalk.bold('Escalation Details:')}\n` +
-          `${chalk.gray('Dispute ID:')} ${disputeAddress}\n` +
+          `${chalk.gray('Dispute ID:')} ${selectedDispute}\n` +
           `${chalk.gray('Reason:')} ${escalationReason}\n` +
           `${chalk.gray('Status:')} Human Review Queue\n` +
           `${chalk.gray('Response Time:')} Within 24 hours\n\n` +

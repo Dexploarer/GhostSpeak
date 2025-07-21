@@ -17,7 +17,7 @@ describe('Full Workflow Integration Tests', () => {
     
     client = new GhostSpeakClient({
       rpc,
-      programId: address('GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN'),
+      programId: address('11111111111111111111111111111112'),
       cluster: 'localnet'
     })
 

@@ -1,4 +1,5 @@
 import { createKeyPairSignerFromBytes } from '@solana/kit'
+import { Keypair } from '@solana/web3.js'
 // generateKeyPairSigner is commented out - was used in the commented agentWallet generation
 // import { generateKeyPairSigner } from '@solana/kit'
 // import { createUmi } from '@metaplex-foundation/umi-bundle-defaults' // Unused, kept for future CNFT implementation
@@ -14,9 +15,21 @@ import type { KeyPairSigner } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 import { SecureStorage, promptPassword, clearMemory } from './secure-storage.js'
 import { chmod } from 'fs/promises'
+import fetch from 'node-fetch'
 
 // Node.js globals
 declare const crypto: typeof globalThis.crypto
+
+// DAS API types
+interface DASApiResponse {
+  result?: {
+    ownership?: {
+      owner?: string
+      delegate?: string
+    }
+  }
+  error?: string
+}
 
 /**
  * Atomic file operations helper to prevent race conditions and resource leaks
@@ -202,7 +215,8 @@ export class AgentWalletManager {
     // Save secret key securely if provided
     if (secretKey && password) {
       const keyStorageId = `agent-${credentials.agentId}`
-      await SecureStorage.storeKeypair(keyStorageId, { secretKey } as any, password)
+      const keypair = Keypair.fromSecretKey(secretKey)
+      await SecureStorage.storeKeypair(keyStorageId, keypair, password)
       // Clear sensitive data from memory
       clearMemory(secretKey)
     }
@@ -304,9 +318,7 @@ export class AgentWalletManager {
    */
   static async createAgentSigner(credentials: AgentCredentials, password?: string): Promise<KeyPairSigner> {
     // If no password provided, prompt for it
-    if (!password) {
-      password = await promptPassword(`Enter password for agent ${credentials.name}: `)
-    }
+    password ??= await promptPassword(`Enter password for agent ${credentials.name}: `)
     
     // Retrieve secret key from secure storage
     const keyStorageId = `agent-${credentials.agentId}`
@@ -479,7 +491,7 @@ export class AgentCNFTManager {
       
       // Use a DAS API endpoint (e.g., Helius) to verify ownership
       // Note: In production, use environment variable for API key
-      const dasApiUrl = process.env.DAS_API_URL || 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY'
+      const dasApiUrl = process.env.DAS_API_URL ?? 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY'
       
       // Get asset details using DAS API getAsset method
       const response = await fetch(dasApiUrl, {
@@ -497,7 +509,7 @@ export class AgentCNFTManager {
         }),
       })
       
-      const data = await response.json()
+      const data = await response.json() as DASApiResponse
       
       if (data.error) {
         console.error('DAS API error:', data.error)
@@ -507,13 +519,13 @@ export class AgentCNFTManager {
       const asset = data.result
       
       // Verify ownership
-      if (!asset || !asset.ownership) {
+      if (!asset?.ownership) {
         return false
       }
       
       // Check if the owner matches
       const currentOwner = asset.ownership.owner
-      const expectedOwner = owner.toString()
+      const expectedOwner = ownerWallet.toString()
       
       // Also check for delegated authority if needed
       const delegate = asset.ownership.delegate

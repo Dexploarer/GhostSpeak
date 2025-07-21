@@ -68,11 +68,12 @@
   },
   "dependencies": {
     "@solana/functional": "^2.3.0",
+    "@solana/kit": "^2.3.0",
     "@solana/rpc": "^2.3.0",
     "@solana/signers": "^2.3.0",
     "@solana/transaction-messages": "^2.3.0",
     "@solana/transactions": "^2.3.0",
-    "@solana/kit": "^2.3.0",
+    "@types/node-fetch": "^2.6.12",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

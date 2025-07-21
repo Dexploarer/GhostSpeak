@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { GhostSpeakClient } from '../../src'
-import { createSolanaRpc } from '@solana/web3.js'
+import { createSolanaRpc } from '@solana/rpc'
 import { address } from '@solana/addresses'
 
 describe('GhostSpeakClient', () => {
@@ -9,7 +9,7 @@ describe('GhostSpeakClient', () => {
     
     const client = new GhostSpeakClient({
       rpc,
-      programId: address('GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN'),
+      programId: address('11111111111111111111111111111112'),
       cluster: 'devnet'
     })
     

@@ -11,7 +11,7 @@ const mockRpc = {
 }
 
 // Mock program ID
-const programId = address('GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN')
+const programId = address('11111111111111111111111111111112')
 
 describe('AgentInstructions', () => {
   let agentInstructions: AgentInstructions

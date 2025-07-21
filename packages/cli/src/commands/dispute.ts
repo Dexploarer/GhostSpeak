@@ -209,9 +209,20 @@ disputeCommand
       const { client, wallet } = await initializeClient('devnet')
       
       try {
+        // Get work order details to find the respondent
+        const workOrder = await client.escrow.getWorkOrder(address(workOrderAddress))
+        if (!workOrder) {
+          throw new Error('Work order not found')
+        }
+        
+        // Determine respondent based on who is filing the dispute
+        const respondent = workOrder.client.toString() === wallet.address.toString() 
+          ? workOrder.provider  // If client is filing, respondent is provider
+          : workOrder.client    // If provider is filing, respondent is client
+        
         const disputeParams = {
-          transaction: address(workOrderAddress), // Using work order as transaction for now
-          respondent: address('11111111111111111111111111111111'), // TODO: Get actual respondent from work order
+          transaction: address(workOrderAddress),
+          respondent: respondent,
           reason: `${disputeReason}: ${disputeDescription}`
         }
 
@@ -899,18 +910,29 @@ disputeCommand
       s.start('Escalating dispute...')
       
       try {
-        // TODO: escalateDispute method not implemented in SDK yet
-        // This would escalate the dispute to human review
-        s.stop('❌ Dispute escalation not yet available')
-        outro(
-          `${chalk.yellow('🆙 Dispute Escalation Unavailable')}\n\n` +
-          `${chalk.gray('This feature is not yet implemented in the SDK.')}\n` +
-          `${chalk.gray('It will be available in a future release.')}\n\n` +
-          `${chalk.gray('Your dispute details:')}\n` +
-          `${chalk.gray('Reason:')} ${escalationReason}\n` +
-          `${chalk.gray('Priority:')} ${dispute ? (dispute.severity === 'critical' ? chalk.red('HIGH') : chalk.blue('NORMAL')) : chalk.blue('NORMAL')}`
+        const signature = await client.dispute.escalateDispute(
+          toSDKSigner(wallet),
+          address(disputeAddress),
+          `${escalationReason}: ${escalationDetails}`
         )
-        return
+        
+        s.stop('✅ Dispute escalated successfully!')
+        
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.yellow('🆙 Dispute Escalated to Human Review')}\n\n` +
+          `${chalk.bold('Escalation Details:')}\n` +
+          `${chalk.gray('Dispute ID:')} ${disputeAddress}\n` +
+          `${chalk.gray('Reason:')} ${escalationReason}\n` +
+          `${chalk.gray('Status:')} Human Review Queue\n` +
+          `${chalk.gray('Response Time:')} Within 24 hours\n\n` +
+          `${chalk.bold('Next Steps:')}\n` +
+          `${chalk.gray('• A human moderator will review your case')}\n` +
+          `${chalk.gray('• You will be notified of the decision')}\n` +
+          `${chalk.gray('• Additional evidence may be requested')}\n\n` +
+          `${chalk.cyan('Transaction:')} ${explorerUrl}`
+        )
         
       } catch (error) {
         s.stop('❌ Escalation failed')

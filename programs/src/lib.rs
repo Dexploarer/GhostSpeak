@@ -30,9 +30,13 @@ declare_id!("AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR");
 mod instructions;
 mod simple_optimization;
 pub mod state;
+pub mod security;
 
 // Re-export types from state module
 pub use state::*;
+
+// Re-export security utilities
+pub use security::*;
 
 // Re-export optimization utilities
 pub use simple_optimization::*;
@@ -202,6 +206,28 @@ pub struct WorkDeliverySubmittedEvent {
 // =====================================================
 // MISSING EVENT DEFINITIONS
 // =====================================================
+
+// Escrow events
+#[event]
+pub struct EscrowCreatedEvent {
+    pub escrow: Pubkey,
+    pub client: Pubkey,
+    pub agent: Pubkey,
+    pub amount: u64,
+    pub task_id: String,
+    pub expires_at: i64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct EscrowCompletedEvent {
+    pub escrow: Pubkey,
+    pub client: Pubkey,
+    pub agent: Pubkey,
+    pub amount: u64,
+    pub resolution_notes: Option<String>,
+    pub timestamp: i64,
+}
 
 // Service listing event with correct fields
 #[event]
@@ -739,6 +765,28 @@ pub enum GhostSpeakError {
 
     #[msg("Invalid extension status")]
     InvalidExtensionStatus = 2194,
+
+    // Security and Reentrancy errors (2300-2399)
+    #[msg("Reentrancy detected - operation already in progress")]
+    ReentrancyDetected = 2300,
+    #[msg("Invalid state transition")]
+    InvalidState = 2301,
+    #[msg("Channel is full - maximum participants reached")]
+    ChannelFull = 2302,
+    #[msg("User already in channel")]
+    UserAlreadyInChannel = 2303,
+    #[msg("Too many messages in channel")]
+    TooManyMessages = 2304,
+    #[msg("Too many attachments")]
+    TooManyAttachments = 2305,
+    #[msg("File too large")]
+    FileTooLarge = 2306,
+    #[msg("Too many participants")]
+    TooManyParticipants = 2307,
+    #[msg("Invalid task ID")]
+    InvalidTaskId = 2308,
+    #[msg("Invalid input data")]
+    InvalidInput = 2309,
 }
 
 // =====================================================
@@ -1192,6 +1240,112 @@ pub mod ghostspeak_marketplace {
     ) -> Result<()> {
         instructions::replication::replicate_agent(ctx, customization)
     }
+
+    // =====================================================
+    // ENHANCED ESCROW OPERATIONS WITH REENTRANCY PROTECTION
+    // =====================================================
+
+    pub fn create_escrow(
+        ctx: Context<CreateEscrow>,
+        task_id: String,
+        amount: u64,
+        expires_at: i64,
+        transfer_hook: Option<Pubkey>,
+        is_confidential: bool,
+    ) -> Result<()> {
+        instructions::escrow_operations::create_escrow(
+            ctx,
+            task_id,
+            amount,
+            expires_at,
+            transfer_hook,
+            is_confidential,
+        )
+    }
+
+    pub fn complete_escrow(
+        ctx: Context<CompleteEscrow>,
+        resolution_notes: Option<String>,
+    ) -> Result<()> {
+        instructions::escrow_operations::complete_escrow(ctx, resolution_notes)
+    }
+
+    pub fn dispute_escrow(
+        ctx: Context<DisputeEscrow>,
+        dispute_reason: String,
+    ) -> Result<()> {
+        instructions::escrow_operations::dispute_escrow(ctx, dispute_reason)
+    }
+
+    pub fn process_escrow_payment(
+        ctx: Context<ProcessEscrowPayment>,
+        work_order: Pubkey,
+    ) -> Result<()> {
+        instructions::escrow_operations::process_escrow_payment(ctx, work_order)
+    }
+
+    // =====================================================
+    // ENHANCED CHANNEL OPERATIONS WITH REAL-TIME MESSAGING
+    // =====================================================
+
+    pub fn create_enhanced_channel(
+        ctx: Context<CreateEnhancedChannel>,
+        channel_id: String,
+        participants: Vec<Pubkey>,
+        channel_type: ChannelType,
+        metadata: ChannelMetadata,
+    ) -> Result<()> {
+        instructions::channel_operations::create_enhanced_channel(
+            ctx,
+            channel_id,
+            participants,
+            channel_type,
+            metadata,
+        )
+    }
+
+    pub fn send_enhanced_message(
+        ctx: Context<SendEnhancedMessage>,
+        message_id: String,
+        content: String,
+        message_type: MessageType,
+        metadata: MessageMetadata,
+        is_encrypted: bool,
+    ) -> Result<()> {
+        instructions::channel_operations::send_enhanced_message(
+            ctx,
+            message_id,
+            content,
+            message_type,
+            metadata,
+            is_encrypted,
+        )
+    }
+
+    pub fn join_channel(ctx: Context<JoinChannel>) -> Result<()> {
+        instructions::channel_operations::join_channel(ctx)
+    }
+
+    pub fn leave_channel(ctx: Context<LeaveChannel>) -> Result<()> {
+        instructions::channel_operations::leave_channel(ctx)
+    }
+
+    pub fn update_channel_settings(
+        ctx: Context<UpdateChannelSettings>,
+        new_metadata: ChannelMetadata,
+    ) -> Result<()> {
+        instructions::channel_operations::update_channel_settings(ctx, new_metadata)
+    }
+
+    pub fn add_message_reaction(
+        ctx: Context<AddMessageReaction>,
+        reaction: String,
+    ) -> Result<()> {
+        instructions::channel_operations::add_message_reaction(ctx, reaction)
+    }
+
+    // NOTE: Reentrancy guard initialization is handled automatically by PDA creation
+    // No separate instruction needed as guards are created on-demand
 
     // =====================================================
     // ROYALTY INSTRUCTIONS

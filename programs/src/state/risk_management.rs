@@ -1408,28 +1408,253 @@ pub enum ThresholdLevel {
 // Removed duplicate definition to fix compilation error
 
 // =====================================================
-// PLACEHOLDER IMPLEMENTATIONS FOR COMPLEX STRUCTURES
+// RISK ASSESSMENT IMPLEMENTATIONS
 // =====================================================
-
-// Due to the extensive nature of the risk management system,
-// the following are simplified placeholder implementations
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct AssessmentMethodology {
     pub name: String,
     pub description: String,
+    /// Assessment approach type
+    pub approach: AssessmentApproach,
+    /// Scoring method used
+    pub scoring_method: ScoringMethod,
+    /// Data sources required
+    pub data_sources: Vec<String>,
+    /// Assessment criteria
+    pub criteria: Vec<AssessmentCriterion>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AssessmentApproach {
+    Quantitative,
+    Qualitative,
+    Hybrid,
+    Scenario,
+    Statistical,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScoringMethod {
+    Linear,
+    Logarithmic,
+    Exponential,
+    WeightedAverage,
+    MatrixBased,
+    MachineLearning,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct AssessmentCriterion {
+    pub criterion_id: String,
+    pub name: String,
+    pub weight: u8,
+    pub threshold_values: [u8; 5], // Very Low, Low, Medium, High, Very High
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct RiskScoringModel {
     pub name: String,
     pub formula: String,
+    /// Base risk calculation method
+    pub calculation_method: RiskCalculationMethod,
+    /// Impact weight (0-100)
+    pub impact_weight: u8,
+    /// Likelihood weight (0-100)
+    pub likelihood_weight: u8,
+    /// Control effectiveness factor (0-100)
+    pub control_factor: u8,
+    /// Velocity factor for emerging risks
+    pub velocity_factor: u8,
+    /// Confidence adjustment
+    pub confidence_adjustment: bool,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RiskCalculationMethod {
+    /// Risk = Impact × Likelihood
+    Simple,
+    /// Risk = (Impact × Likelihood) × (1 - Control Effectiveness)
+    ControlAdjusted,
+    /// Risk = (Impact × Likelihood × Velocity) × (1 - Control Effectiveness)
+    VelocityAdjusted,
+    /// Risk = Weighted sum of multiple factors
+    MultiFactorWeighted,
+    /// Custom formula evaluation
+    Custom,
+}
+
+impl RiskScoringModel {
+    /// Calculate risk score based on the model configuration
+    pub fn calculate_risk_score(
+        &self,
+        impact: u8,
+        likelihood: u8,
+        control_effectiveness: u8,
+        velocity: Option<u8>,
+        confidence: Option<u8>,
+    ) -> u8 {
+        let base_score = match self.calculation_method {
+            RiskCalculationMethod::Simple => {
+                ((impact as u16 * likelihood as u16) / 100) as u8
+            }
+            RiskCalculationMethod::ControlAdjusted => {
+                let risk = (impact as u16 * likelihood as u16) / 100;
+                let adjusted = risk * (100 - control_effectiveness as u16) / 100;
+                adjusted.min(100) as u8
+            }
+            RiskCalculationMethod::VelocityAdjusted => {
+                let vel = velocity.unwrap_or(50);
+                let risk = (impact as u16 * likelihood as u16 * vel as u16) / 10000;
+                let adjusted = risk * (100 - control_effectiveness as u16) / 100;
+                adjusted.min(100) as u8
+            }
+            RiskCalculationMethod::MultiFactorWeighted => {
+                let impact_score = (impact as u16 * self.impact_weight as u16) / 100;
+                let likelihood_score = (likelihood as u16 * self.likelihood_weight as u16) / 100;
+                let control_score = (control_effectiveness as u16 * self.control_factor as u16) / 100;
+                let vel_score = velocity.unwrap_or(50) as u16 * self.velocity_factor as u16 / 100;
+                
+                let total_weight = self.impact_weight as u16 + 
+                                 self.likelihood_weight as u16 + 
+                                 self.control_factor as u16 + 
+                                 self.velocity_factor as u16;
+                                 
+                if total_weight == 0 { 
+                    return 0;
+                }
+                
+                let weighted_sum = impact_score + likelihood_score + vel_score;
+                let final_score = weighted_sum * (100 - control_score) / 100;
+                (final_score * 100 / total_weight).min(100) as u8
+            }
+            RiskCalculationMethod::Custom => {
+                // For custom calculations, use the simple method as fallback
+                ((impact as u16 * likelihood as u16) / 100) as u8
+            }
+        };
+        
+        // Apply confidence adjustment if enabled
+        if self.confidence_adjustment {
+            let conf = confidence.unwrap_or(75);
+            ((base_score as u16 * conf as u16) / 100) as u8
+        } else {
+            base_score
+        }
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct RiskMatrix {
     pub dimensions: u8,
     pub scale: u8,
+    /// Matrix cells defining risk levels
+    pub cells: Vec<MatrixCell>,
+    /// Color coding for visualization
+    pub color_scheme: ColorScheme,
+    /// Thresholds for risk levels
+    pub risk_thresholds: RiskThresholds,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct MatrixCell {
+    pub impact_level: u8,
+    pub likelihood_level: u8,
+    pub risk_rating: RiskRating,
+    pub risk_score: u8,
+    pub response_strategy: ResponseStrategy,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RiskRating {
+    VeryLow,
+    Low,
+    Medium,
+    High,
+    VeryHigh,
+    Critical,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResponseStrategy {
+    Accept,
+    Monitor,
+    Mitigate,
+    Transfer,
+    Avoid,
+    Escalate,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct ColorScheme {
+    pub very_low: [u8; 3],    // RGB color
+    pub low: [u8; 3],
+    pub medium: [u8; 3],
+    pub high: [u8; 3],
+    pub very_high: [u8; 3],
+    pub critical: [u8; 3],
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct RiskThresholds {
+    pub very_low_max: u8,
+    pub low_max: u8,
+    pub medium_max: u8,
+    pub high_max: u8,
+    pub very_high_max: u8,
+    // Anything above very_high_max is Critical
+}
+
+impl RiskMatrix {
+    /// Get risk rating from impact and likelihood levels
+    pub fn get_risk_rating(&self, impact: u8, likelihood: u8) -> RiskRating {
+        let score = self.calculate_matrix_score(impact, likelihood);
+        self.score_to_rating(score)
+    }
+    
+    /// Calculate risk score based on matrix position
+    pub fn calculate_matrix_score(&self, impact: u8, likelihood: u8) -> u8 {
+        // Ensure values are within scale
+        let normalized_impact = impact.min(self.scale);
+        let normalized_likelihood = likelihood.min(self.scale);
+        
+        // Calculate score based on matrix dimensions
+        match self.dimensions {
+            2 => {
+                // 2D matrix: simple multiplication
+                ((normalized_impact as u16 * normalized_likelihood as u16 * 100) / 
+                 (self.scale as u16 * self.scale as u16)) as u8
+            }
+            3 => {
+                // 3D matrix would include additional dimension (e.g., velocity)
+                // For now, use 2D calculation
+                ((normalized_impact as u16 * normalized_likelihood as u16 * 100) / 
+                 (self.scale as u16 * self.scale as u16)) as u8
+            }
+            _ => {
+                // Default to 2D calculation
+                ((normalized_impact as u16 * normalized_likelihood as u16 * 100) / 
+                 (self.scale as u16 * self.scale as u16)) as u8
+            }
+        }
+    }
+    
+    /// Convert risk score to rating based on thresholds
+    pub fn score_to_rating(&self, score: u8) -> RiskRating {
+        if score <= self.risk_thresholds.very_low_max {
+            RiskRating::VeryLow
+        } else if score <= self.risk_thresholds.low_max {
+            RiskRating::Low
+        } else if score <= self.risk_thresholds.medium_max {
+            RiskRating::Medium
+        } else if score <= self.risk_thresholds.high_max {
+            RiskRating::High
+        } else if score <= self.risk_thresholds.very_high_max {
+            RiskRating::VeryHigh
+        } else {
+            RiskRating::Critical
+        }
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
@@ -1468,6 +1693,53 @@ pub struct RiskMitigationStrategy {
 pub struct RiskAppetite {
     pub overall_risk_appetite: u8,
     pub category_appetites: Vec<(String, u8)>,
+    pub tolerance_levels: RiskToleranceLevels,
+    pub risk_capacity: u8,
+    pub strategic_objectives_alignment: Vec<StrategicAlignment>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct RiskToleranceLevels {
+    pub financial_tolerance: u8,
+    pub operational_tolerance: u8,
+    pub reputational_tolerance: u8,
+    pub compliance_tolerance: u8,
+    pub strategic_tolerance: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct StrategicAlignment {
+    pub objective_id: String,
+    pub risk_appetite_level: u8,
+    pub justification: String,
+}
+
+impl RiskAppetite {
+    /// Check if a risk level exceeds appetite for a category
+    pub fn exceeds_appetite(&self, category: &str, risk_level: u8) -> bool {
+        if let Some((_cat, appetite)) = self.category_appetites
+            .iter()
+            .find(|(cat, _)| cat == category) {
+            risk_level > *appetite
+        } else {
+            risk_level > self.overall_risk_appetite
+        }
+    }
+    
+    /// Calculate risk appetite utilization percentage
+    pub fn calculate_utilization(&self, category: &str, current_risk: u8) -> u8 {
+        let appetite = self.category_appetites
+            .iter()
+            .find(|(cat, _)| cat == category)
+            .map(|(_, app)| *app)
+            .unwrap_or(self.overall_risk_appetite);
+            
+        if appetite == 0 {
+            return 100;
+        }
+        
+        ((current_risk as u16 * 100) / appetite as u16).min(100) as u8
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
@@ -1476,6 +1748,61 @@ pub struct KeyRiskIndicator {
     pub name: String,
     pub current_value: f64,
     pub threshold: f64,
+    pub warning_threshold: f64,
+    pub critical_threshold: f64,
+    pub target_value: f64,
+    pub measurement_unit: String,
+    pub collection_frequency: i64,
+    pub last_updated: i64,
+    pub trend: KriTrend,
+    pub status: KriStatus,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KriTrend {
+    Improving,
+    Stable,
+    Deteriorating,
+    Volatile,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KriStatus {
+    Normal,
+    Warning,
+    Alert,
+    Critical,
+    Breach,
+}
+
+impl KeyRiskIndicator {
+    /// Calculate KRI status based on current value and thresholds
+    pub fn calculate_status(&self) -> KriStatus {
+        if self.current_value >= self.critical_threshold {
+            KriStatus::Critical
+        } else if self.current_value >= self.threshold {
+            KriStatus::Breach
+        } else if self.current_value >= self.warning_threshold {
+            KriStatus::Warning
+        } else if self.current_value > self.target_value * 1.1 {
+            KriStatus::Alert
+        } else {
+            KriStatus::Normal
+        }
+    }
+    
+    /// Calculate percentage deviation from target
+    pub fn calculate_deviation_percentage(&self) -> f64 {
+        if self.target_value == 0.0 {
+            return 0.0;
+        }
+        ((self.current_value - self.target_value) / self.target_value) * 100.0
+    }
+    
+    /// Check if KRI requires immediate action
+    pub fn requires_immediate_action(&self) -> bool {
+        matches!(self.status, KriStatus::Critical | KriStatus::Breach)
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
@@ -1490,6 +1817,63 @@ pub struct RegisteredRisk {
     pub name: String,
     pub current_score: u8,
     pub target_score: u8,
+    pub inherent_risk_score: u8,
+    pub residual_risk_score: u8,
+    pub risk_velocity: RiskVelocity,
+    pub last_assessment: i64,
+    pub next_assessment: i64,
+    pub risk_owner: Pubkey,
+    pub treatment_status: TreatmentStatus,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RiskVelocity {
+    Slow,      // Risk materializes over months/years
+    Moderate,  // Risk materializes over weeks/months  
+    Fast,      // Risk materializes over days/weeks
+    VeryFast,  // Risk materializes over hours/days
+    Immediate, // Risk can materialize instantly
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TreatmentStatus {
+    NotStarted,
+    InProgress,
+    Implemented,
+    Monitoring,
+    Closed,
+}
+
+impl RegisteredRisk {
+    /// Calculate risk trend based on historical scores
+    pub fn calculate_risk_trend(&self) -> RiskTrend {
+        if self.current_score > self.target_score + 10 {
+            RiskTrend::Increasing
+        } else if self.current_score < self.target_score - 10 {
+            RiskTrend::Decreasing  
+        } else {
+            RiskTrend::Stable
+        }
+    }
+    
+    /// Calculate risk exposure (current vs target)
+    pub fn calculate_exposure_gap(&self) -> i8 {
+        self.current_score as i8 - self.target_score as i8
+    }
+    
+    /// Check if risk needs immediate attention
+    pub fn needs_immediate_attention(&self) -> bool {
+        self.current_score > 75 || 
+        self.risk_velocity == RiskVelocity::VeryFast ||
+        self.risk_velocity == RiskVelocity::Immediate
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RiskTrend {
+    Increasing,
+    Stable,
+    Decreasing,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]

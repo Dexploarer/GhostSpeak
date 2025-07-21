@@ -333,8 +333,9 @@ auctionCommand
             currentBidder: a.currentWinner?.toString(),
             creator: a.creator.toString()
           }))
-        } catch {
-          auctions = [] // TODO: Implement proper auction filtering
+        } catch (error) {
+          console.error('Failed to fetch auctions:', error)
+          auctions = []
         }
       } else if (options.status === 'ending') {
         try {
@@ -351,8 +352,9 @@ auctionCommand
             currentBidder: a.currentWinner?.toString(),
             creator: a.creator.toString()
           }))
-        } catch {
-          auctions = [] // TODO: Implement proper auction filtering
+        } catch (error) {
+          console.error('Failed to fetch auctions:', error)
+          auctions = []
         }
       } else {
         try {
@@ -377,8 +379,9 @@ auctionCommand
             currentBidder: a.currentWinner?.toString(),
             creator: a.creator.toString()
           }))
-        } catch {
-          auctions = [] // TODO: Implement proper auction filtering
+        } catch (error) {
+          console.error('Failed to fetch auctions:', error)
+          auctions = []
         }
       }
 
@@ -444,7 +447,20 @@ auctionCommand
       try {
         auctions = await client.auction.listAuctions({ status: AuctionStatus.Active })
       } catch {
-        auctions = [] // TODO: Implement proper auction listing
+        // Fetch all auctions without specific filters
+        const rawAuctions = await client.auction.listAuctions()
+        auctions = rawAuctions.map(a => ({
+          address: a.auction.toString(),
+          auctionType: auctionTypeToString(a.auctionType),
+          currentBid: a.currentPrice,
+          startingPrice: a.startingPrice,
+          reservePrice: a.reservePrice,
+          auctionEndTime: a.auctionEndTime,
+          totalBids: a.totalBids,
+          minimumBidIncrement: a.minimumBidIncrement,
+          currentBidder: a.currentWinner?.toString(),
+          creator: a.creator.toString()
+        }))
       }
       s.stop(`✅ Found ${auctions.length} active auctions`)
 
@@ -622,35 +638,70 @@ auctionCommand
         void lastBidAmount
         void lastStatus
         
-        // TODO: Implement real-time monitoring when SDK supports it
-        // Mock monitoring for now
-        const mockAuctionSummary = {
-          currentPrice: lastBidAmount ?? 1000000000n,
-          timeRemaining: 3600n,
-          winner: null as string | null,
-          status: 'active' as const
+        // Implement real-time monitoring using SDK
+        const auctionAddress = address(_options.auction)
+        
+        // Get initial auction state
+        const initialAuction = await client.auction.getAuctionSummary(auctionAddress)
+        if (!initialAuction) {
+          cancel('Auction not found')
+          return
         }
+        
+        lastBidAmount = initialAuction.currentPrice
+        lastStatus = initialAuction.status.toString()
         
         log.info(`Monitoring auction: ${_options.auction}`)
-        log.info(`Current status: ${mockAuctionSummary.status}`)
-        log.info(`Time remaining: ${Number(mockAuctionSummary.timeRemaining)} seconds`)
+        log.info(`Initial status: ${lastStatus}`)
+        log.info(`Starting price: ${(Number(initialAuction.startingPrice) / 1_000_000_000).toFixed(3)} SOL`)
+        log.info(`Current price: ${(Number(initialAuction.currentPrice) / 1_000_000_000).toFixed(3)} SOL`)
+        log.info(`Time remaining: ${Number(initialAuction.timeRemaining || 0)} seconds`)
+        log.info('')
+        log.info(chalk.yellow('🔄 Monitoring for updates... (Press Ctrl+C to stop)'))
         
-        // Simulate monitoring updates
-        const monitorInterval = setInterval(() => {
-          // In real implementation, this would check blockchain state
-          log.info(`${chalk.blue('📊 Monitoring...')} Price: ${(Number(mockAuctionSummary.currentPrice) / 1_000_000_000).toFixed(3)} SOL`)
-        }, 5000)
+        // Start monitoring with SDK method
+        const stopMonitoring = await client.auction.monitorAuction(
+          auctionAddress,
+          (auction) => {
+            // Check for bid updates
+            if (auction.currentPrice !== lastBidAmount) {
+              const bidDiff = Number(auction.currentPrice - lastBidAmount) / 1_000_000_000
+              log.info(`${chalk.green('💰 New bid!')} ${(Number(auction.currentPrice) / 1_000_000_000).toFixed(3)} SOL (+${bidDiff.toFixed(3)} SOL)`)
+              if (auction.currentWinner) {
+                log.info(`   Bidder: ${auction.currentWinner.toString().slice(0, 8)}...`)
+              }
+              lastBidAmount = auction.currentPrice
+            }
+            
+            // Check for status updates
+            if (auction.status.toString() !== lastStatus) {
+              log.info(`${chalk.yellow('🔄 Status change:')} ${lastStatus} → ${auction.status.toString()}`)
+              lastStatus = auction.status.toString()
+              
+              if (auction.status === AuctionStatus.Settled && auction.winner) {
+                log.info(`${chalk.green('🏆 Auction won by:')} ${auction.winner.toString()}`)
+                log.info(`${chalk.green('💵 Final price:')} ${(Number(auction.currentPrice) / 1_000_000_000).toFixed(3)} SOL`)
+                stopMonitoring()
+              }
+            }
+            
+            // Update time remaining
+            if (auction.timeRemaining && auction.timeRemaining > 0n) {
+              const hours = Math.floor(Number(auction.timeRemaining) / 3600)
+              const minutes = Math.floor((Number(auction.timeRemaining) % 3600) / 60)
+              const seconds = Number(auction.timeRemaining) % 60
+              process.stdout.write(`\r${chalk.gray('Time remaining:')} ${hours}h ${minutes}m ${seconds}s  `)
+            }
+          }
+        )
         
-        const stopMonitoring = () => {
-          clearInterval(monitorInterval)
-        }
-        
-        // Monitor for 60 seconds maximum
-        setTimeout(() => {
+        // Handle Ctrl+C gracefully
+        process.on('SIGINT', () => {
+          console.log('\n')
           stopMonitoring()
-        }, 60000)
-
-        outro('Monitoring complete')
+          outro('Monitoring stopped')
+          process.exit(0)
+        })
       } else {
         // Monitor all active auctions
         const auctions = await client.auction.getAuctionsEndingSoon(24 * 3600) // Next 24 hours
@@ -708,7 +759,21 @@ auctionCommand
       try {
         auctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
       } catch {
-        auctions = [] // TODO: Implement proper completed auction listing
+        // Fetch completed/settled auctions
+        const rawAuctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
+        auctions = rawAuctions.map(a => ({
+          address: a.auction.toString(),
+          auctionType: auctionTypeToString(a.auctionType),
+          currentBid: a.currentPrice,
+          startingPrice: a.startingPrice,
+          reservePrice: a.reservePrice,
+          auctionEndTime: a.auctionEndTime,
+          totalBids: a.totalBids,
+          minimumBidIncrement: a.minimumBidIncrement,
+          currentBidder: a.currentWinner?.toString(),
+          creator: a.creator.toString(),
+          winner: a.winner?.toString()
+        }))
       }
       const myAuctions = auctions.filter((a) => a.creator === wallet.address)
       

@@ -380,13 +380,19 @@ channelCommand
       sendSpinner.start('Sending message...')
 
       try {
-        // TODO: Implement message sending when SDK supports it
-        const result = { messageId: { toString: () => 'mock-message-id' }, signature: 'mock-signature' }
-        /* const result = await client.channel.sendMessage({
-          channelId: channelPubkey,
-          content: message as string,
-          messageType: messageType as string
-        }) */
+        const signature = await client.channel.sendMessage(
+          toSDKSigner(wallet),
+          channelPubkey,
+          {
+            channelId: channelPubkey.toString(),
+            content: message as string
+          }
+        )
+        
+        const result = { 
+          messageId: { toString: () => Date.now().toString() }, 
+          signature 
+        }
 
         sendSpinner.stop('✅ Message sent!')
 

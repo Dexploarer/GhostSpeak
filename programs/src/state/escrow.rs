@@ -49,6 +49,7 @@ pub struct Escrow {
     pub payment_token: Pubkey,         // SPL token mint (could be SPL-2022)
     pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook for compliance
     pub is_confidential: bool,         // For confidential transfers
+    pub bump: u8,                      // PDA bump
 }
 
 #[account]
@@ -78,7 +79,8 @@ impl Escrow {
         1 + 4 + MAX_RESOLUTION_NOTES_LENGTH + // resolution_notes
         32 + // payment_token
         1 + 32 + // transfer_hook Option
-        1; // is_confidential
+        1 + // is_confidential
+        1; // bump
 }
 
 impl Escrow {
@@ -92,6 +94,7 @@ impl Escrow {
         payment_token: Pubkey,
         transfer_hook: Option<Pubkey>,
         is_confidential: bool,
+        bump: u8,
     ) -> Result<()> {
         require!(
             task_id.len() <= MAX_TASK_ID_LENGTH,
@@ -117,6 +120,7 @@ impl Escrow {
         self.payment_token = payment_token;
         self.transfer_hook = transfer_hook;
         self.is_confidential = is_confidential;
+        self.bump = bump;
 
         Ok(())
     }

@@ -15,7 +15,7 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
-import { ProposalStatus } from '@ghostspeak/sdk'
+import { ProposalStatus, deriveMultisigPda, deriveProposalPda } from '@ghostspeak/sdk'
 import type {
   CreateMultisigOptions
 } from '../types/cli-types.js'
@@ -198,17 +198,25 @@ governanceCommand
               timelockDuration: BigInt(timelockDuration)
             }
 
-            // TODO: Generate proper multisig PDA
-            const multisigPda = address('11111111111111111111111111111111')
-            const userRegistryPda = address('11111111111111111111111111111111')
-            // Acknowledge unused variables for future implementation
-            void userRegistryPda
+            // Generate proper multisig PDA
+            const multisigId = BigInt(Math.floor(Math.random() * 1000000))
+            const multisigPda = await deriveMultisigPda(
+              client.programId,
+              address(wallet.publicKey.toString()),
+              multisigId
+            )
+            
+            // Update multisig params with the ID
+            const multisigParamsWithId = {
+              ...multisigParams,
+              multisigId
+            }
             
             const signature = await client.governance.createMultisig(
               // @ts-expect-error SDK expects different signer type
               toSDKSigner(wallet),
               multisigPda,
-              multisigParams
+              multisigParamsWithId
             )
 
             s.stop('✅ Multisig wallet created successfully!')
@@ -515,17 +523,32 @@ governanceCommand
               documentation
             }
 
-            // TODO: Generate proper proposal PDA
-            const proposalPda = address('11111111111111111111111111111111')
-            const multisigPda = address('11111111111111111111111111111111')
-            // Acknowledge unused variable for future implementation
-            void multisigPda
+            // Get multisig address from prompt
+            const multisigAddress = multisigAddressPrompt as string
+            if (!multisigAddress || multisigAddress === '11111111111111111111111111111111') {
+              throw new Error('Valid multisig address required for proposal creation')
+            }
+            
+            // Generate proper proposal PDA
+            const proposalId = BigInt(Math.floor(Math.random() * 1000000))
+            const proposalPda = await deriveProposalPda(
+              client.programId,
+              address(multisigAddress),
+              proposalId
+            )
+            
+            // Update proposal params with the ID
+            const proposalParamsWithId = {
+              ...proposalParams,
+              proposalId,
+              multisig: address(multisigAddress)
+            }
             
             const signature = await client.governance.createProposal(
               // @ts-expect-error SDK expects different signer type
               toSDKSigner(wallet),
               proposalPda,
-              proposalParams
+              proposalParamsWithId
             )
 
             s.stop('✅ Proposal created successfully!')

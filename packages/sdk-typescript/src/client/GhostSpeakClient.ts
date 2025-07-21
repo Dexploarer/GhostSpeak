@@ -28,6 +28,7 @@ import { GovernanceInstructions } from './instructions/GovernanceInstructions.js
 import { BulkDealsInstructions } from './instructions/BulkDealsInstructions.js'
 import { AnalyticsInstructions } from './instructions/AnalyticsInstructions.js'
 import { ComplianceInstructions } from './instructions/ComplianceInstructions.js'
+import { ChannelInstructions } from './instructions/ChannelInstructions.js'
 
 /**
  * Main client for interacting with the GhostSpeak Protocol
@@ -44,6 +45,7 @@ export class GhostSpeakClient {
   public readonly bulkDeals: BulkDealsInstructions
   public readonly analytics: AnalyticsInstructions
   public readonly compliance: ComplianceInstructions
+  public readonly channel: ChannelInstructions
 
   constructor(config: GhostSpeakConfig) {
     this.config = {
@@ -63,6 +65,7 @@ export class GhostSpeakClient {
     this.bulkDeals = new BulkDealsInstructions(this.config)
     this.analytics = new AnalyticsInstructions(this.config)
     this.compliance = new ComplianceInstructions(this.config)
+    this.channel = new ChannelInstructions(this.config)
   }
 
   /**

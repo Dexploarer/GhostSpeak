@@ -16,6 +16,7 @@ import {
   AuctionStatus,
   type AuctionMarketplace
 } from '../../generated/index.js'
+import { SYSTEM_PROGRAM_ADDRESS_32, SYSVAR_CLOCK_ADDRESS } from '../../constants/index.js'
 import { type TransactionResult } from '../../utils/transaction-urls.js'
 import type {
   BaseInstructionParams,
@@ -169,8 +170,8 @@ export class AuctionInstructions extends BaseInstructions {
         agent: params.agent,
         userRegistry,
         creator: params.signer as unknown as TransactionSigner,
-        systemProgram: '11111111111111111111111111111112' as Address,
-        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
+        clock: SYSVAR_CLOCK_ADDRESS,
         auctionType: params.auctionData.auctionType,
         startingPrice: params.auctionData.startingPrice,
         reservePrice: params.auctionData.reservePrice,
@@ -203,8 +204,8 @@ export class AuctionInstructions extends BaseInstructions {
         agent: params.agent,
         userRegistry,
         creator: params.signer as unknown as TransactionSigner,
-        systemProgram: '11111111111111111111111111111112' as Address,
-        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
+        clock: SYSVAR_CLOCK_ADDRESS,
         auctionType: params.auctionData.auctionType,
         startingPrice: params.auctionData.startingPrice,
         reservePrice: params.auctionData.reservePrice,
@@ -269,8 +270,8 @@ export class AuctionInstructions extends BaseInstructions {
         auction: params.auction,
         userRegistry,
         bidder: params.signer as unknown as TransactionSigner,
-        systemProgram: '11111111111111111111111111111112' as Address,
-        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
+        clock: SYSVAR_CLOCK_ADDRESS,
         bidAmount: params.bidAmount
       }),
       params.signer as unknown as TransactionSigner,
@@ -299,8 +300,8 @@ export class AuctionInstructions extends BaseInstructions {
         auction: params.auction,
         userRegistry,
         bidder: params.signer as unknown as TransactionSigner,
-        systemProgram: '11111111111111111111111111111112' as Address,
-        clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+        systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
+        clock: SYSVAR_CLOCK_ADDRESS,
         bidAmount: params.bidAmount
       }),
       params.signer as unknown as TransactionSigner,
@@ -346,7 +347,7 @@ export class AuctionInstructions extends BaseInstructions {
       () => getFinalizeAuctionInstruction({
         auction: params.auction,
         authority: params.signer as unknown as TransactionSigner,
-        clock: 'SysvarC1ock11111111111111111111111111111111' as Address
+        clock: SYSVAR_CLOCK_ADDRESS
       }),
       params.signer as unknown as TransactionSigner,
       'auction finalization'
@@ -370,7 +371,7 @@ export class AuctionInstructions extends BaseInstructions {
       () => getFinalizeAuctionInstruction({
         auction: params.auction,
         authority: params.signer as unknown as TransactionSigner,
-        clock: 'SysvarC1ock11111111111111111111111111111111' as Address
+        clock: SYSVAR_CLOCK_ADDRESS
       }),
       params.signer as unknown as TransactionSigner,
       'auction finalization'

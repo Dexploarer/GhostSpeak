@@ -14,6 +14,7 @@ import {
   type VolumeTier,
   type DealType
 } from '../../generated/index.js'
+import { SYSTEM_PROGRAM_ADDRESS_32, SYSVAR_CLOCK_ADDRESS } from '../../constants/index.js'
 
 export interface CreateBulkDealParams {
   dealId: bigint
@@ -55,8 +56,8 @@ export class BulkDealsInstructions extends BaseInstructions {
       agent: params.agent ?? bulkDealPda, // Placeholder - should be provided
       userRegistry: await this.deriveUserRegistry(creator),
       customer: creator,
-      systemProgram: '11111111111111111111111111111112' as Address,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
+      clock: SYSVAR_CLOCK_ADDRESS,
       dealId: params.dealId,
       dealType: params.dealType,
       totalVolume: Number(params.minimumVolume), // Map to available field - convert bigint to number
@@ -90,7 +91,7 @@ export class BulkDealsInstructions extends BaseInstructions {
       deal: params.bulkDeal,
       userRegistry: await this.deriveUserRegistry(executor),
       authority: executor,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       batchSize: params.batchSize
     })
 

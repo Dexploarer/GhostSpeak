@@ -100,11 +100,43 @@ agentCommand
         
         agentWallet = walletResult.agentWallet
         credentials = walletResult.credentials
+        const secretKey = (walletResult as any).secretKey
         
-        // Save credentials locally
-        await AgentWalletManager.saveCredentials(credentials)
-        
+        // Prompt for password to secure the agent's private key
         s.stop('✅ Agent wallet generated')
+        
+        const password = await text({
+          message: 'Enter a password to secure your agent\'s private key:',
+          validate: (value) => {
+            if (value.length < 8) return 'Password must be at least 8 characters'
+            return undefined
+          }
+        }) as string
+        
+        if (isCancel(password)) {
+          cancel('Agent registration cancelled')
+          return
+        }
+        
+        const confirmPassword = await text({
+          message: 'Confirm password:',
+          validate: (value) => {
+            if (value !== password) return 'Passwords do not match'
+            return undefined
+          }
+        }) as string
+        
+        if (isCancel(confirmPassword)) {
+          cancel('Agent registration cancelled')
+          return
+        }
+        
+        s.start('Saving agent credentials...')
+        
+        // Save credentials locally with secure key storage
+        await AgentWalletManager.saveCredentials(credentials, secretKey, password)
+        
+        s.stop('✅ Agent credentials saved securely')
         s.start('Registering agent on the blockchain...')
         
         // Register the agent using SDK with all required parameters

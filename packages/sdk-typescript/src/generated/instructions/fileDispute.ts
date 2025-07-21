@@ -446,8 +446,7 @@ export function parseFileDisputeInstruction<
     IInstructionWithData<Uint8Array>
 ): ParsedFileDisputeInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 7) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+    throw new Error('Invalid number of accounts provided');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

@@ -20,6 +20,7 @@ import {
   // getAnalyticsDashboardDecoder,
   // getMarketAnalyticsDecoder
 } from '../../generated/index.js'
+import { SYSTEM_PROGRAM_ADDRESS_32, SYSVAR_CLOCK_ADDRESS } from '../../constants/index.js'
 
 // Enhanced types for better developer experience
 export interface CreateDashboardParams {
@@ -207,8 +208,8 @@ export class AnalyticsInstructions extends BaseInstructions {
       dashboard: dashboardPda,
       userRegistry: await this.deriveUserRegistry(creator),
       owner: creator,
-      systemProgram: '11111111111111111111111111111112' as Address,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
+      clock: SYSVAR_CLOCK_ADDRESS,
       dashboardId: params.dashboardId,
       metrics: JSON.stringify(metricsData)
     })
@@ -273,7 +274,7 @@ export class AnalyticsInstructions extends BaseInstructions {
       dashboard: params.dashboard,
       userRegistry: await this.deriveUserRegistry(updater),
       owner: updater,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       newMetrics: JSON.stringify(metricsData)
     })
 
@@ -320,8 +321,8 @@ export class AnalyticsInstructions extends BaseInstructions {
     const instruction = getCreateMarketAnalyticsInstruction({
       marketAnalytics: marketAnalyticsPda,
       authority: creator,
-      systemProgram: '11111111111111111111111111111112' as Address,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
+      clock: SYSVAR_CLOCK_ADDRESS,
       periodStart,
       periodEnd
     })
@@ -360,7 +361,7 @@ export class AnalyticsInstructions extends BaseInstructions {
     const instruction = getUpdateMarketAnalyticsInstruction({
       marketAnalytics: params.marketAnalytics,
       authority: updater,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       volume: params.totalRevenue,
       price: params.averageTransactionValue
     })
@@ -403,7 +404,7 @@ export class AnalyticsInstructions extends BaseInstructions {
     const instruction = getAddTopAgentInstruction({
       marketAnalytics: await this.deriveMarketAnalyticsPda(),
       authority,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       agent: params.agent
     })
 

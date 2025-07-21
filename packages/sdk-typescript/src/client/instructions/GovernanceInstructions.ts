@@ -21,6 +21,7 @@ import {
   type ExecutionParams,
   type Role
 } from '../../generated/index.js'
+import { SYSTEM_PROGRAM_ADDRESS_32 } from '../../constants/index.js'
 import { type TransactionResult } from '../../utils/transaction-urls.js'
 
 // Enhanced types for better developer experience
@@ -195,7 +196,7 @@ export class GovernanceInstructions extends BaseInstructions {
     const instruction = getCreateMultisigInstruction({
       multisig: multisigPda,
       owner: creator,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       multisigId: params.multisigId,
       threshold: params.threshold,
       signers: params.signers,
@@ -223,7 +224,7 @@ export class GovernanceInstructions extends BaseInstructions {
     const instruction = getCreateMultisigInstruction({
       multisig: multisigPda,
       owner: creator,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       multisigId: params.multisigId,
       threshold: params.threshold,
       signers: params.signers,
@@ -285,7 +286,7 @@ export class GovernanceInstructions extends BaseInstructions {
     const instruction = getInitializeGovernanceProposalInstruction({
       proposal: proposalPda,
       proposer,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       proposalId: params.proposalId,
       title: params.title,
       description: params.description,
@@ -314,7 +315,7 @@ export class GovernanceInstructions extends BaseInstructions {
     const instruction = getInitializeGovernanceProposalInstruction({
       proposal: proposalPda,
       proposer,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       proposalId: params.proposalId,
       title: params.title,
       description: params.description,
@@ -377,7 +378,7 @@ export class GovernanceInstructions extends BaseInstructions {
     const instruction = getInitializeRbacConfigInstruction({
       rbacConfig: rbacPda,
       authority: admin,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       initialRoles: params.initialRoles
     })
 
@@ -402,7 +403,7 @@ export class GovernanceInstructions extends BaseInstructions {
     const instruction = getInitializeRbacConfigInstruction({
       rbacConfig: rbacPda,
       authority: admin,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       initialRoles: params.initialRoles
     })
 

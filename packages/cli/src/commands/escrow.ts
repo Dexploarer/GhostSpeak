@@ -635,13 +635,24 @@ escrowCommand
       disputeSpinner.start('Opening dispute...')
 
       try {
+        // Get escrow/work order details to find the respondent
+        const workOrder = await client.escrow.getWorkOrder(escrowPubkey)
+        if (!workOrder) {
+          throw new Error('Work order not found')
+        }
+        
+        // Determine respondent based on who is filing the dispute
+        const respondent = workOrder.client.toString() === wallet.address.toString() 
+          ? workOrder.provider  // If client is filing, respondent is provider
+          : workOrder.client    // If provider is filing, respondent is client
+        
         const result = await client.dispute.fileDispute(
           // @ts-expect-error SDK expects TransactionSigner
           toSDKSigner(wallet),
           address(escrowPubkey.toString()), // disputePda
           {
             transaction: address(escrowPubkey.toString()),
-            respondent: address('11111111111111111111111111111111'), // TODO: Get from work order
+            respondent: respondent,
             reason: `${reason}: ${description}`
           }
         )

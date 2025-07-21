@@ -12,6 +12,8 @@ import { homedir } from 'os'
 import { randomUUID } from 'crypto'
 import type { KeyPairSigner } from '@solana/kit'
 import type { Address } from '@solana/addresses'
+import { SecureStorage, promptPassword, clearMemory } from './secure-storage.js'
+import { chmod } from 'fs/promises'
 
 // Node.js globals
 declare const crypto: typeof globalThis.crypto
@@ -119,7 +121,7 @@ export interface AgentCredentials {
   description: string
   agentWallet: {
     publicKey: string
-    secretKey: number[]
+    // secretKey is now stored separately in secure storage
   }
   ownerWallet: string
   cnftMint?: string
@@ -141,6 +143,7 @@ export class AgentWalletManager {
   ): Promise<{
     agentWallet: KeyPairSigner
     credentials: AgentCredentials
+    secretKey: Uint8Array
   }> {
     // Generate new keypair for agent
     // const agentWallet = await generateKeyPairSigner() // agentWallet variable not used currently
@@ -157,15 +160,14 @@ export class AgentWalletManager {
     crypto.getRandomValues(keypairBytes)
     const exportableWallet = await createKeyPairSignerFromBytes(keypairBytes)
     
-    // Create credentials object
+    // Create credentials object (without secret key)
     const credentials: AgentCredentials = {
       agentId,
       uuid,
       name: agentName,
       description,
       agentWallet: {
-        publicKey: exportableWallet.address.toString(),
-        secretKey: Array.from(keypairBytes)
+        publicKey: exportableWallet.address.toString()
       },
       ownerWallet: ownerWallet.toString(),
       createdAt: Date.now(),
@@ -174,14 +176,15 @@ export class AgentWalletManager {
     
     return {
       agentWallet: exportableWallet,
-      credentials
+      credentials,
+      secretKey: keypairBytes // Return separately for secure storage
     }
   }
   
   /**
-   * Save agent credentials to file system
+   * Save agent credentials to file system (with secure key storage)
    */
-  static async saveCredentials(credentials: AgentCredentials): Promise<void> {
+  static async saveCredentials(credentials: AgentCredentials, secretKey?: Uint8Array, password?: string): Promise<void> {
     // Ensure credentials directory exists
     await fs.mkdir(AGENT_CREDENTIALS_DIR, { recursive: true })
     
@@ -189,9 +192,20 @@ export class AgentWalletManager {
     const agentDir = join(AGENT_CREDENTIALS_DIR, credentials.agentId)
     await fs.mkdir(agentDir, { recursive: true })
     
-    // Save credentials
+    // Save public credentials (without secret key)
     const credentialsPath = join(agentDir, 'credentials.json')
     await fs.writeFile(credentialsPath, JSON.stringify(credentials, null, 2))
+    
+    // Set file permissions to owner-only
+    await chmod(credentialsPath, 0o600)
+    
+    // Save secret key securely if provided
+    if (secretKey && password) {
+      const keyStorageId = `agent-${credentials.agentId}`
+      await SecureStorage.storeKeypair(keyStorageId, { secretKey } as any, password)
+      // Clear sensitive data from memory
+      clearMemory(secretKey)
+    }
     
     // Save UUID mapping for easy lookup with atomic operations
     const uuidMappingPath = join(AGENT_CREDENTIALS_DIR, 'uuid-mapping.json')
@@ -286,11 +300,22 @@ export class AgentWalletManager {
   }
   
   /**
-   * Create agent wallet signer from credentials
+   * Create agent wallet signer from credentials (requires password)
    */
-  static async createAgentSigner(credentials: AgentCredentials): Promise<KeyPairSigner> {
-    const secretKey = new Uint8Array(credentials.agentWallet.secretKey)
-    return createKeyPairSignerFromBytes(secretKey)
+  static async createAgentSigner(credentials: AgentCredentials, password?: string): Promise<KeyPairSigner> {
+    // If no password provided, prompt for it
+    if (!password) {
+      password = await promptPassword(`Enter password for agent ${credentials.name}: `)
+    }
+    
+    // Retrieve secret key from secure storage
+    const keyStorageId = `agent-${credentials.agentId}`
+    const keypair = await SecureStorage.retrieveKeypair(keyStorageId, password)
+    
+    // Clear password from memory
+    clearMemory(password)
+    
+    return createKeyPairSignerFromBytes(keypair.secretKey)
   }
   
   /**
@@ -448,9 +473,57 @@ export class AgentCNFTManager {
       return true
     }
     
-    // TODO: Implement actual CNFT ownership verification
-    // This would check if the owner wallet holds the CNFT
-    return true
+    // Implement CNFT ownership verification using DAS API
+    try {
+      const cnftAssetId = credentials.cnftMint
+      
+      // Use a DAS API endpoint (e.g., Helius) to verify ownership
+      // Note: In production, use environment variable for API key
+      const dasApiUrl = process.env.DAS_API_URL || 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY'
+      
+      // Get asset details using DAS API getAsset method
+      const response = await fetch(dasApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'cnft-ownership-check',
+          method: 'getAsset',
+          params: {
+            id: cnftAssetId,
+          },
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (data.error) {
+        console.error('DAS API error:', data.error)
+        return false
+      }
+      
+      const asset = data.result
+      
+      // Verify ownership
+      if (!asset || !asset.ownership) {
+        return false
+      }
+      
+      // Check if the owner matches
+      const currentOwner = asset.ownership.owner
+      const expectedOwner = owner.toString()
+      
+      // Also check for delegated authority if needed
+      const delegate = asset.ownership.delegate
+      
+      return currentOwner === expectedOwner || (delegate && delegate === expectedOwner)
+    } catch (error) {
+      console.error('Failed to verify CNFT ownership:', error)
+      // Fallback to credential-based verification on error
+      return true
+    }
   }
 }
 

@@ -18,6 +18,7 @@ import {
   BackupFrequency,
   AuditAction
 } from '../../generated/index.js'
+import { SYSTEM_PROGRAM_ADDRESS_32 } from '../../constants/index.js'
 
 // Enhanced types for better developer experience
 export interface GenerateReportParams {
@@ -175,7 +176,7 @@ export class ComplianceInstructions extends BaseInstructions {
       report: reportPda,
       auditTrail: await this.deriveAuditTrailPda(),
       authority,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       reportId: params.reportId,
       reportType: params.reportType,
       dateRangeStart: params.startPeriod,
@@ -217,7 +218,7 @@ export class ComplianceInstructions extends BaseInstructions {
       auditTrail: auditTrailPda,
       entity: params.entityId,
       authority: auditor,
-      systemProgram: '11111111111111111111111111111112' as Address,
+      systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       entityType: 'Agent', // Default entity type
       config: {
         maxEntries: 10000,

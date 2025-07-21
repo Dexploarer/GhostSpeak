@@ -6,6 +6,7 @@
 import type { Address, Signature, Lamports } from '@solana/kit'
 import type { AccountInfo } from '../types/rpc-types.js'
 import { SimpleRpcClient } from './simple-rpc-client.js'
+import { SYSTEM_PROGRAM_ADDRESS } from '../constants/index.js'
 
 /**
  * Batch operation configuration
@@ -450,7 +451,7 @@ export class GhostSpeakHelpers {
           before = {
             lamports: preBalance as unknown as Lamports,
             data: Buffer.alloc(0), // Would need to get historical data
-            owner: '11111111111111111111111111111111' as Address,
+            owner: SYSTEM_PROGRAM_ADDRESS,
             executable: false,
             rentEpoch: 0n
           }
@@ -458,7 +459,7 @@ export class GhostSpeakHelpers {
           after = {
             lamports: postBalance as unknown as Lamports,
             data: Buffer.alloc(0), // Would need to get historical data
-            owner: '11111111111111111111111111111111' as Address,
+            owner: SYSTEM_PROGRAM_ADDRESS,
             executable: false,
             rentEpoch: 0n
           }

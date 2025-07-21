@@ -3,6 +3,13 @@ seed.txt
 faucet-keypair.json
 *-keypair.json
 *.key
+keys/
+
+# === Environment files ===
+.env
+.env.local
+.env.*.local
+!.env.example
 
 # === Test files in root ===
 test-*.mjs

@@ -170,8 +170,7 @@ export function parseExportRuleConditionInstruction<
     IInstructionWithData<Uint8Array>
 ): ParsedExportRuleConditionInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 1) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+    throw new Error('Invalid number of accounts provided');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

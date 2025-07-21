@@ -353,8 +353,7 @@ export function parseGenerateComplianceReportInstruction<
     IInstructionWithData<Uint8Array>
 ): ParsedGenerateComplianceReportInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+    throw new Error('Invalid number of accounts provided');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

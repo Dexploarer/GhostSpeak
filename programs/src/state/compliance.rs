@@ -1618,41 +1618,459 @@ impl RegulatoryContact {
     }
 }
 
-// Define placeholder sizes for complex types to be implemented
+// Implement proper size calculations for complex types
 impl KycAmlConfig {
     pub const fn size() -> usize {
-        2048
-    } // Placeholder
+        1 + // kyc_enabled
+        1 + // aml_enabled
+        4 + (MAX_KYC_LEVELS * KycLevel::size()) + // kyc_levels
+        AmlScreeningConfig::size() + // aml_screening
+        PepScreeningConfig::size() + // pep_screening
+        4 + (20 * EddTrigger::size()) + // edd_triggers
+        CustomerRiskConfig::size() + // risk_assessment
+        RecordRetentionConfig::size() + // record_retention
+        ReportingThresholds::size() // reporting_thresholds
+    }
 }
 
 impl DataPrivacyConfig {
     pub const fn size() -> usize {
-        2048
-    } // Placeholder
+        4 + (10 * PrivacyFramework::size()) + // privacy_frameworks
+        DataClassificationConfig::size() + // data_classification
+        ConsentManagementConfig::size() + // consent_management
+        DataSubjectRightsConfig::size() + // data_subject_rights
+        DataRetentionConfig::size() + // data_retention
+        CrossBorderTransferConfig::size() + // cross_border_transfers
+        PrivacyByDesignConfig::size() + // privacy_by_design
+        BreachNotificationConfig::size() // breach_notification
+    }
 }
 
 impl SanctionsConfig {
     pub const fn size() -> usize {
-        1024
-    } // Placeholder
+        1 + // enabled
+        1 + // screening_frequency
+        4 + (MAX_WATCHLIST_SOURCES * WatchlistSource::size()) + // watchlist_sources
+        32 // padding for future fields
+    }
 }
 
 impl FinancialComplianceConfig {
     pub const fn size() -> usize {
-        1024
-    } // Placeholder
+        1 + // transaction_monitoring
+        ReportingThresholds::size() + // reporting_thresholds
+        32 // padding for future fields
+    }
 }
 
 impl ReportingConfig {
     pub const fn size() -> usize {
-        1024
-    } // Placeholder
+        1 + // automated_reporting
+        1 + // report_frequency
+        32 // padding for future fields
+    }
 }
 
 impl MonitoringConfig {
     pub const fn size() -> usize {
-        1024
-    } // Placeholder
+        1 + // real_time_monitoring
+        4 + (10 * 8) + // alert_thresholds (up to 10 u64 values)
+        32 // padding for future fields
+    }
+}
+
+// Add size implementations for nested structures
+impl KycLevel {
+    pub const fn size() -> usize {
+        1 + // level
+        4 + 64 + // name
+        4 + (MAX_DOCUMENTS_PER_LEVEL * DocumentRequirement::size()) + // required_documents
+        4 + (10 * 1) + // verification_methods (enum values)
+        TransactionLimits::size() + // transaction_limits
+        4 + (20 * (4 + 64)) + // service_access
+        1 + 8 // re_verification_period
+    }
+}
+
+impl DocumentRequirement {
+    pub const fn size() -> usize {
+        1 + // document_type
+        1 + // mandatory
+        4 + (5 * 1) + // alternatives (enum values)
+        4 + (10 * ValidationRequirement::size()) + // validation_requirements
+        8 // retention_period
+    }
+}
+
+impl ValidationRequirement {
+    pub const fn size() -> usize {
+        1 + // validation_type
+        1 + // accuracy_threshold
+        1 + 4 + 64 + // service_provider
+        8 + // validation_timeout
+        1 // manual_review_required
+    }
+}
+
+impl TransactionLimits {
+    pub const fn size() -> usize {
+        8 + // daily_limit
+        8 + // monthly_limit
+        8 + // annual_limit
+        8 + // single_transaction_limit
+        VelocityLimits::size() // velocity_limits
+    }
+}
+
+impl VelocityLimits {
+    pub const fn size() -> usize {
+        4 + // max_hourly_transactions
+        4 + // max_daily_transactions
+        8 + // cooling_off_period
+        8 // large_transaction_threshold
+    }
+}
+
+impl AmlScreeningConfig {
+    pub const fn size() -> usize {
+        1 + // enabled
+        1 + // screening_frequency
+        4 + (MAX_WATCHLIST_SOURCES * WatchlistSource::size()) + // watchlist_sources
+        ScreeningThresholds::size() + // screening_thresholds
+        FalsePositiveConfig::size() + // false_positive_handling
+        4 + (MAX_ESCALATION_PROCEDURES * EscalationProcedure::size()) // escalation_procedures
+    }
+}
+
+impl WatchlistSource {
+    pub const fn size() -> usize {
+        4 + 64 + // name
+        1 + // source_type
+        1 + // priority
+        8 + // last_updated
+        8 + // update_frequency
+        1 // reliability_score
+    }
+}
+
+impl ScreeningThresholds {
+    pub const fn size() -> usize {
+        1 + // alert_threshold
+        1 + // block_threshold
+        1 + // manual_review_threshold
+        1 // fuzzy_match_sensitivity
+    }
+}
+
+impl FalsePositiveConfig {
+    pub const fn size() -> usize {
+        1 + // whitelist_enabled
+        1 + // ml_tuning_enabled
+        1 + // feedback_collection
+        1 + // auto_resolution_threshold
+        1 // manual_override_allowed
+    }
+}
+
+impl EscalationProcedure {
+    pub const fn size() -> usize {
+        1 + // trigger
+        1 + // level
+        4 + (10 * 32) + // recipients
+        8 + // response_time
+        4 + (10 * 1) // actions (enum values)
+    }
+}
+
+impl PepScreeningConfig {
+    pub const fn size() -> usize {
+        1 + // enabled
+        4 + (10 * 1) + // pep_categories (enum values)
+        1 + // family_screening_enabled
+        1 + // associate_screening_enabled
+        8 + // enhanced_monitoring_period
+        4 + (10 * 1) // additional_verification (enum values)
+    }
+}
+
+impl EddTrigger {
+    pub const fn size() -> usize {
+        1 + // trigger_type
+        8 + // threshold
+        4 + (10 * (4 + 64)) + // additional_requirements
+        8 + // monitoring_period
+        8 // review_frequency
+    }
+}
+
+impl CustomerRiskConfig {
+    pub const fn size() -> usize {
+        1 + // risk_scoring_enabled
+        4 + (MAX_RISK_FACTORS * RiskFactor::size()) + // risk_factors
+        4 + (10 * RiskCategory::size()) + // risk_categories
+        8 + // assessment_frequency
+        4 + 32 + // model_version
+        1 // ml_enabled
+    }
+}
+
+impl RiskFactor {
+    pub const fn size() -> usize {
+        4 + 64 + // name
+        1 + // factor_type
+        1 + // weight
+        1 + // scoring_method
+        4 + (20 * (4 + 32 + 4 + 32)) // parameters (key-value pairs)
+    }
+}
+
+impl RiskCategory {
+    pub const fn size() -> usize {
+        4 + 64 + // name
+        1 + // risk_level
+        ScoreRange::size() + // score_range
+        4 + (20 * (4 + 64)) + // required_controls
+        4 + (20 * (4 + 64)) + // monitoring_requirements
+        8 // review_frequency
+    }
+}
+
+impl ScoreRange {
+    pub const fn size() -> usize {
+        4 + // min_score
+        4 // max_score
+    }
+}
+
+impl RecordRetentionConfig {
+    pub const fn size() -> usize {
+        8 + // default_retention_period
+        4 + (50 * RetentionRule::size()) + // record_retention_rules
+        1 + // secure_deletion_enabled
+        8 + // backup_retention_period
+        4 + (10 * (4 + 256)) // legal_hold_procedures
+    }
+}
+
+impl RetentionRule {
+    pub const fn size() -> usize {
+        1 + // record_type
+        8 + // retention_period
+        1 + // destruction_method
+        4 + (10 * (4 + 128)) + // legal_requirements
+        4 + (10 * (4 + 128)) // exceptions
+    }
+}
+
+impl ReportingThresholds {
+    pub const fn size() -> usize {
+        8 + // ctr_threshold
+        8 + // sar_threshold
+        8 + // large_cash_threshold
+        8 + // wire_transfer_threshold
+        8 + // aggregation_period
+        1 // structured_transaction_detection
+    }
+}
+
+impl PrivacyFramework {
+    pub const fn size() -> usize {
+        4 + 64 + // name
+        4 + (10 * (4 + 8)) + // jurisdictions
+        4 + (50 * PrivacyRequirement::size()) + // requirements
+        1 + // compliance_status
+        1 + 8 + // implementation_deadline
+        1 + 8 // last_assessment
+    }
+}
+
+impl PrivacyRequirement {
+    pub const fn size() -> usize {
+        4 + 64 + // requirement_id
+        4 + 256 + // description
+        1 + // status
+        4 + (20 * (4 + 128)) + // technical_measures
+        4 + (20 * (4 + 128)) + // organizational_measures
+        4 + (MAX_EVIDENCE_PER_REQUIREMENT * ComplianceEvidence::size()) // evidence
+    }
+}
+
+impl DataClassificationConfig {
+    pub const fn size() -> usize {
+        1 + // classification_scheme
+        4 + (MAX_DATA_CATEGORIES * DataCategory::size()) + // data_categories
+        4 + (10 * SensitivityLevel::size()) + // sensitivity_levels
+        4 + (MAX_CLASSIFICATION_RULES * ClassificationRule::size()) + // classification_rules
+        1 // auto_classification
+    }
+}
+
+impl DataCategory {
+    pub const fn size() -> usize {
+        4 + 64 + // name
+        1 + // category_type
+        4 + (20 * ProtectionRequirement::size()) + // protection_requirements
+        8 + // retention_period
+        4 + (10 * AccessRestriction::size()) // access_restrictions
+    }
+}
+
+impl SensitivityLevel {
+    pub const fn size() -> usize {
+        4 + 64 + // name
+        1 + // score
+        4 + (20 * (4 + 64)) + // required_protections
+        4 + (20 * (4 + 64)) + // access_controls
+        EncryptionRequirement::size() // encryption_requirements
+    }
+}
+
+impl EncryptionRequirement {
+    pub const fn size() -> usize {
+        1 + // required
+        2 + // minimum_strength
+        4 + (10 * (4 + 32)) + // allowed_algorithms
+        4 + (10 * (4 + 64)) + // key_management
+        1 + // at_rest_required
+        1 // in_transit_required
+    }
+}
+
+impl ProtectionRequirement {
+    pub const fn size() -> usize {
+        1 + // protection_type
+        4 + (10 * (4 + 128)) + // implementation_details
+        4 + 128 + // verification_method
+        8 // review_frequency
+    }
+}
+
+impl AccessRestriction {
+    pub const fn size() -> usize {
+        1 + // restriction_type
+        4 + (20 * (4 + 32)) + // allowed_roles
+        4 + (20 * (4 + 64)) + // allowed_purposes
+        1 + TimeRestriction::size() + // time_restrictions
+        1 + 4 + (10 * (4 + 32)) // location_restrictions
+    }
+}
+
+impl TimeRestriction {
+    pub const fn size() -> usize {
+        1 + // start_hour
+        1 + // end_hour
+        4 + (7 * 1) + // allowed_days
+        4 + 32 + // timezone
+        4 + (50 * 8) // exception_dates
+    }
+}
+
+impl ClassificationRule {
+    pub const fn size() -> usize {
+        4 + 64 + // name
+        4 + (10 * ClassificationCondition::size()) + // conditions
+        4 + 64 + // classification
+        1 + // priority
+        1 // enabled
+    }
+}
+
+impl ClassificationCondition {
+    pub const fn size() -> usize {
+        4 + 64 + // field
+        1 + // operator
+        4 + 256 + // value
+        1 // case_sensitive
+    }
+}
+
+impl ConsentManagementConfig {
+    pub const fn size() -> usize {
+        1 + // consent_required
+        4 + (MAX_CONSENT_TYPES * ConsentType::size()) + // consent_types
+        1 + // granularity_level
+        1 + // withdrawal_enabled
+        ConsentExpiration::size() + // consent_expiration
+        ConsentVerification::size() // verification_requirements
+    }
+}
+
+impl ConsentType {
+    pub const fn size() -> usize {
+        4 + 128 + // purpose
+        4 + 256 + // description
+        1 + // legal_basis
+        1 + // consent_method
+        1 + // required
+        4 + (10 * (4 + 64)) // dependencies
+    }
+}
+
+impl ConsentExpiration {
+    pub const fn size() -> usize {
+        8 + // default_expiration
+        4 + (20 * (4 + 64 + 8)) + // purpose_expiration
+        1 + // auto_renewal
+        8 + // renewal_notification
+        1 // expired_consent_handling
+    }
+}
+
+impl ConsentVerification {
+    pub const fn size() -> usize {
+        1 + // identity_verification
+        1 + // age_verification
+        1 + // capacity_verification
+        4 + (10 * 1) + // verification_methods (enum values)
+        8 // evidence_retention_period
+    }
+}
+
+impl DataSubjectRightsConfig {
+    pub const fn size() -> usize {
+        1 + // right_to_access
+        1 + // right_to_rectification
+        1 + // right_to_erasure
+        1 + // right_to_portability
+        1 + // right_to_object
+        4 // response_time_days
+    }
+}
+
+impl DataRetentionConfig {
+    pub const fn size() -> usize {
+        4 + // default_retention_days
+        4 + // max_retention_days
+        1 + // auto_deletion_enabled
+        4 + 256 // retention_schedule
+    }
+}
+
+impl CrossBorderTransferConfig {
+    pub const fn size() -> usize {
+        4 + (20 * (4 + 64)) + // allowed_mechanisms
+        4 + (50 * (4 + 8)) + // prohibited_countries
+        1 + // requires_explicit_consent
+        1 // data_localization_required
+    }
+}
+
+impl PrivacyByDesignConfig {
+    pub const fn size() -> usize {
+        1 + // data_minimization
+        1 + // purpose_limitation
+        1 + // pia_required
+        1 // default_privacy_high
+    }
+}
+
+impl BreachNotificationConfig {
+    pub const fn size() -> usize {
+        4 + // notification_timeline_hours
+        4 + (10 * (4 + 128)) + // notify_authorities
+        1 + // notify_users
+        4 // breach_threshold
+    }
 }
 
 // Additional type definitions that are referenced but not fully defined

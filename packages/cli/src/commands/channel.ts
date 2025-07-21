@@ -9,7 +9,7 @@ import {
   isCancel,
   cancel
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
 // Types imported from SDK when needed
 

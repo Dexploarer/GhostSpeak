@@ -13,6 +13,7 @@ import {
   note
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { auctionTypeToString, formatSOL, solToLamports } from '../utils/auction-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
 import { AuctionStatus, AuctionType } from '@ghostspeak/sdk'
@@ -229,10 +230,10 @@ auctionCommand
         const auctionParams = {
           auctionData: {
             auctionType: auctionTypeMap[auctionType as string] ?? AuctionType.English,
-            startingPrice: BigInt(Math.floor(parseFloat(startingPrice) * 1_000_000_000)), // SOL to lamports
-            reservePrice: BigInt(Math.floor(parseFloat(reservePrice) * 1_000_000_000)),
+            startingPrice: solToLamports(startingPrice), // SOL to lamports
+            reservePrice: solToLamports(reservePrice),
             auctionEndTime,
-            minimumBidIncrement: BigInt(Math.floor(parseFloat(minBidIncrement) * 1_000_000_000))
+            minimumBidIncrement: solToLamports(minBidIncrement)
           },
           metadataUri: `${serviceTitle}|${serviceDescription}`, // Simple metadata format
           agent: wallet.address, // Using wallet as agent for now
@@ -292,16 +293,6 @@ auctionCommand
       const { client, wallet } = await initializeClient('devnet')
       
       // Get auctions based on filters
-      // Helper to convert AuctionType enum to string
-      const auctionTypeToString = (type: AuctionType): string => {
-        switch (type) {
-          case AuctionType.English: return 'english'
-          case AuctionType.Dutch: return 'dutch'
-          case AuctionType.SealedBid: return 'sealed'
-          case AuctionType.Vickrey: return 'vickrey'
-          default: return 'unknown'
-        }
-      }
 
       let auctions: {
         address?: string
@@ -403,8 +394,8 @@ auctionCommand
         const hoursLeft = Math.max(0, Math.floor(timeLeft / 3600))
         const minutesLeft = Math.max(0, Math.floor((timeLeft % 3600) / 60))
         
-        const currentPriceSOL = (Number(auction.currentBid ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
-        const reservePriceSOL = (Number(auction.reservePrice) / 1_000_000_000).toFixed(3)
+        const currentPriceSOL = formatSOL(auction.currentBid ?? auction.startingPrice)
+        const reservePriceSOL = formatSOL(auction.reservePrice)
         
         log.info(
           `${chalk.bold(`${index + 1}. ${(auction.auctionType as string).toUpperCase()} AUCTION`)}\n` +
@@ -478,7 +469,7 @@ auctionCommand
         const auctionChoice = await select({
           message: 'Select auction to bid on:',
           options: auctions.map((auction) => {
-            const currentPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+            const currentPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
             const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
             const hoursLeft = Math.floor(timeLeft / 3600)
             
@@ -578,7 +569,7 @@ auctionCommand
         
         const bidParams = {
           auction: address(selectedAuction as string),
-          bidAmount: BigInt(Math.floor(parseFloat(bidAmount) * 1_000_000_000)) // SOL to lamports
+          bidAmount: solToLamports(bidAmount) // SOL to lamports
         }
 
         const signature = await client.auction.placeAuctionBid(
@@ -653,9 +644,9 @@ auctionCommand
         
         log.info(`Monitoring auction: ${_options.auction}`)
         log.info(`Initial status: ${lastStatus}`)
-        log.info(`Starting price: ${(Number(initialAuction.startingPrice) / 1_000_000_000).toFixed(3)} SOL`)
-        log.info(`Current price: ${(Number(initialAuction.currentPrice) / 1_000_000_000).toFixed(3)} SOL`)
-        log.info(`Time remaining: ${Number(initialAuction.timeRemaining || 0)} seconds`)
+        log.info(`Starting price: ${formatSOL(initialAuction.startingPrice)} SOL`)
+        log.info(`Current price: ${formatSOL(initialAuction.currentPrice)} SOL`)
+        log.info(`Time remaining: ${Number(initialAuction.timeRemaining ?? 0)} seconds`)
         log.info('')
         log.info(chalk.yellow('🔄 Monitoring for updates... (Press Ctrl+C to stop)'))
         
@@ -666,7 +657,7 @@ auctionCommand
             // Check for bid updates
             if (auction.currentPrice !== lastBidAmount) {
               const bidDiff = Number(auction.currentPrice - lastBidAmount) / 1_000_000_000
-              log.info(`${chalk.green('💰 New bid!')} ${(Number(auction.currentPrice) / 1_000_000_000).toFixed(3)} SOL (+${bidDiff.toFixed(3)} SOL)`)
+              log.info(`${chalk.green('💰 New bid!')} ${formatSOL(auction.currentPrice)} SOL (+${bidDiff.toFixed(3)} SOL)`)
               if (auction.currentWinner) {
                 log.info(`   Bidder: ${auction.currentWinner.toString().slice(0, 8)}...`)
               }
@@ -680,7 +671,7 @@ auctionCommand
               
               if (auction.status === AuctionStatus.Settled && auction.winner) {
                 log.info(`${chalk.green('🏆 Auction won by:')} ${auction.winner.toString()}`)
-                log.info(`${chalk.green('💵 Final price:')} ${(Number(auction.currentPrice) / 1_000_000_000).toFixed(3)} SOL`)
+                log.info(`${chalk.green('💵 Final price:')} ${formatSOL(auction.currentPrice)} SOL`)
                 stopMonitoring()
               }
             }
@@ -717,7 +708,7 @@ auctionCommand
           const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
           const hoursLeft = Math.floor(timeLeft / 3600)
           const minutesLeft = Math.floor((timeLeft % 3600) / 60)
-          const currentPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+          const currentPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
           
           const urgency = timeLeft < 3600 ? chalk.red('🔥 URGENT') : 
                          timeLeft < 6 * 3600 ? chalk.yellow('⚠️  SOON') : 
@@ -793,7 +784,7 @@ auctionCommand
         const auctionChoice = await select({
           message: 'Select auction to finalize:',
           options: myAuctions.map(auction => {
-            const finalPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+            const finalPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
             
             return {
               value: auction.auction.toString(),
@@ -818,7 +809,7 @@ auctionCommand
       }
 
       // Show finalization details
-      const finalPriceSOL = (Number(auction.currentPrice ?? auction.startingPrice) / 1_000_000_000).toFixed(3)
+      const finalPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
       const hasWinner = auction.currentWinner && auction.currentPrice
       
       note(
@@ -925,10 +916,10 @@ auctionCommand
       log.info(`\n${chalk.bold('💰 Financial Metrics:')}\n`)
       
       log.info(
-        `${chalk.gray('Total Volume:')} ${(Number(analytics.totalVolume ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
-        `${chalk.gray('Average Price:')} ${(Number(analytics.averagePrice ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
-        `${chalk.gray('Highest Sale:')} ${(Number(analytics.highestSale ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
-        `${chalk.gray('Total Fees Collected:')} ${(Number(analytics.totalFees ?? 0) / 1_000_000_000).toFixed(3)} SOL\n`
+        `${chalk.gray('Total Volume:')} ${formatSOL(analytics.totalVolume ?? 0)} SOL\n` +
+        `${chalk.gray('Average Price:')} ${formatSOL(analytics.averagePrice ?? 0)} SOL\n` +
+        `${chalk.gray('Highest Sale:')} ${formatSOL(analytics.highestSale ?? 0)} SOL\n` +
+        `${chalk.gray('Total Fees Collected:')} ${formatSOL(analytics.totalFees ?? 0)} SOL\n`
       )
 
       log.info(`\n${chalk.bold('🎯 Auction Type Breakdown:')}\n`)
@@ -939,7 +930,7 @@ auctionCommand
             `${chalk.bold(type.toUpperCase())}:\n` +
             `   ${chalk.gray('Count:')} ${stats && typeof stats === 'object' && 'count' in stats ? stats.count : 0}\n` +
             `   ${chalk.gray('Success Rate:')} ${stats && typeof stats === 'object' && 'successRate' in stats ? ((stats.successRate as number) * 100).toFixed(1) : '0.0'}%\n` +
-            `   ${chalk.gray('Avg Price:')} ${stats && typeof stats === 'object' && 'averagePrice' in stats ? (Number(stats.averagePrice) / 1_000_000_000).toFixed(3) : '0.000'} SOL\n`
+            `   ${chalk.gray('Avg Price:')} ${stats && typeof stats === 'object' && 'averagePrice' in stats ? formatSOL(Number(stats.averagePrice)) : '0.000'} SOL\n`
           )
         })
       }
@@ -951,7 +942,7 @@ auctionCommand
           log.info(
             `${index + 1}. ${performer?.creator ?? 'Unknown'}\n` +
             `   ${chalk.gray('Auctions:')} ${performer?.auctionCount ?? 0}\n` +
-            `   ${chalk.gray('Total Volume:')} ${(Number(performer?.totalVolume ?? 0) / 1_000_000_000).toFixed(3)} SOL\n` +
+            `   ${chalk.gray('Total Volume:')} ${formatSOL(performer?.totalVolume ?? 0)} SOL\n` +
             `   ${chalk.gray('Success Rate:')} ${((performer?.successRate ?? 0) * 100).toFixed(1)}%\n`
           )
         })

@@ -11,7 +11,7 @@ describe('Performance Benchmarks', () => {
     const rpc = createSolanaRpc('http://localhost:8899')
     client = new GhostSpeakClient({
       rpc,
-      programId: address('GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN'),
+      programId: address('11111111111111111111111111111112'),
       cluster: 'localnet'
     })
   })

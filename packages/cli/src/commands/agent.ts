@@ -100,7 +100,7 @@ agentCommand
         
         agentWallet = walletResult.agentWallet
         credentials = walletResult.credentials
-        const secretKey = (walletResult as any).secretKey
+        const secretKey: Uint8Array = walletResult.secretKey
         
         // Prompt for password to secure the agent's private key
         s.stop('✅ Agent wallet generated')

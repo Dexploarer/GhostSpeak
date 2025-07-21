@@ -636,15 +636,22 @@ escrowCommand
 
       try {
         // Get escrow/work order details to find the respondent
-        const workOrder = await client.escrow.getWorkOrder(escrowPubkey)
+        let workOrder
+        try {
+          workOrder = await client.escrow.getWorkOrder(escrowPubkey)
+        } catch (error) {
+          throw new Error(`Failed to fetch work order: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
+        
         if (!workOrder) {
           throw new Error('Work order not found')
         }
         
         // Determine respondent based on who is filing the dispute
-        const respondent = workOrder.client.toString() === wallet.address.toString() 
-          ? workOrder.provider  // If client is filing, respondent is provider
-          : workOrder.client    // If provider is filing, respondent is client
+        const typedWorkOrder = workOrder as { client: { toString: () => string }; provider: unknown }
+        const respondent = typedWorkOrder.client.toString() === wallet.address.toString() 
+          ? typedWorkOrder.provider  // If client is filing, respondent is provider
+          : typedWorkOrder.client    // If provider is filing, respondent is client
         
         const result = await client.dispute.fileDispute(
           // @ts-expect-error SDK expects TransactionSigner

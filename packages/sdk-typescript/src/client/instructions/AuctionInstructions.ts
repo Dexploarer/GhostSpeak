@@ -8,16 +8,22 @@
 import type { Address, Signature, TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
 import type { GhostSpeakConfig } from '../../types/index.js'
+import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import { 
   getCreateServiceAuctionInstruction,
   getPlaceAuctionBidInstruction,
   getFinalizeAuctionInstruction,
-  type AuctionType,
+  AuctionType,
   AuctionStatus,
   type AuctionMarketplace
 } from '../../generated/index.js'
 import { SYSTEM_PROGRAM_ADDRESS_32, SYSVAR_CLOCK_ADDRESS } from '../../constants/index.js'
+import { deriveAuctionPda, deriveUserRegistryPda } from '../../utils/auction-helpers.js'
 import { type TransactionResult } from '../../utils/transaction-urls.js'
+import {
+  safeDecodeAccount,
+  createDiscriminatorErrorMessage
+} from '../../utils/discriminator-validator.js'
 import type {
   BaseInstructionParams,
   BaseTimeParams
@@ -35,7 +41,7 @@ export interface AuctionData {
   totalBids: number
 }
 
-export interface CreateAuctionParams extends BaseInstructionParams, BaseTimeParams {
+export interface CreateAuctionParams extends BaseTimeParams {
   auctionData: {
     auctionType: AuctionType
     startingPrice: bigint
@@ -45,11 +51,13 @@ export interface CreateAuctionParams extends BaseInstructionParams, BaseTimePara
   }
   metadataUri?: string
   agent: Address
+  signer: TransactionSigner
 }
 
-export interface PlaceBidParams extends BaseInstructionParams {
+export interface PlaceBidParams {
   auction: Address
   bidAmount: bigint
+  signer: TransactionSigner
 }
 
 export interface FinalizeAuctionParams extends BaseInstructionParams {
@@ -118,6 +126,120 @@ export class AuctionInstructions extends BaseInstructions {
   // =====================================================
   // AUCTION CREATION
   // =====================================================
+
+  /**
+   * Create a new auction (simplified interface)
+   */
+  async create(
+    signer: KeyPairSigner,
+    params: {
+      title: string
+      description: string
+      category: string
+      requirements: string[]
+      startPrice: bigint
+      minIncrement: bigint
+      duration: bigint
+      paymentToken: Address
+      agentAddress: Address
+    }
+  ): Promise<string> {
+    // Calculate auction PDA using proper derivation (agent + creator)
+    const auctionPda = await deriveAuctionPda(
+      this.programId,
+      params.agentAddress,
+      signer.address
+    )
+    
+    // Create user registry PDA using proper derivation
+    const userRegistryPda = await deriveUserRegistryPda(
+      this.programId,
+      signer.address
+    )
+    
+    // Map category to auction type
+    const auctionTypeMap: Record<string, AuctionType> = {
+      'data-analysis': AuctionType.English,
+      'writing': AuctionType.English,
+      'coding': AuctionType.Dutch,
+      'translation': AuctionType.English,
+      'automation': AuctionType.SealedBid,
+      'default': AuctionType.English
+    }
+    
+    const auctionType = auctionTypeMap[params.category] || auctionTypeMap['default']
+    
+    // Create metadata
+    const metadata = {
+      title: params.title,
+      description: params.description,
+      category: params.category,
+      requirements: params.requirements,
+      createdAt: new Date().toISOString()
+    }
+    
+    const metadataUri = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString('base64')}`
+    
+    // Create auction params
+    const auctionParams: CreateAuctionParams = {
+      auctionData: {
+        auctionType,
+        startingPrice: params.startPrice,
+        reservePrice: params.startPrice, // Set reserve equal to start for simplicity
+        auctionEndTime: BigInt(Math.floor(Date.now() / 1000)) + params.duration,
+        minimumBidIncrement: params.minIncrement
+      },
+      metadataUri,
+      agent: params.agentAddress,
+      signer: signer as unknown as TransactionSigner
+    } as CreateAuctionParams
+    
+    // Create the auction
+    const signature = await this.createServiceAuction(
+      auctionPda,
+      userRegistryPda,
+      auctionParams
+    )
+    
+    console.log('✅ Auction created successfully')
+    console.log(`   Address: ${auctionPda}`)
+    console.log(`   Signature: ${signature}`)
+    
+    return auctionPda
+  }
+
+  /**
+   * Place a bid on an auction (simplified interface)
+   */
+  async placeBid(
+    signer: KeyPairSigner,
+    auctionAddress: Address,
+    bidAmount: bigint
+  ): Promise<string> {
+    // Fetch auction to get marketplace address
+    const auction = await this.getAuction(auctionAddress)
+    if (!auction) {
+      throw new Error('Auction not found')
+    }
+    
+    // Create user registry PDA using proper derivation
+    const userRegistryPda = await deriveUserRegistryPda(
+      this.programId,
+      signer.address
+    )
+    
+    // Remove marketplace PDA logic for now - not needed for auction bidding
+    // Marketplace PDA derivation can be added later if needed
+    
+    return this.placeAuctionBid(
+      userRegistryPda,
+      {
+        auction: auctionAddress,
+        bidAmount,
+        signer: signer as unknown as TransactionSigner
+      }
+    )
+  }
 
   /**
    * Create a new service auction
@@ -383,13 +505,48 @@ export class AuctionInstructions extends BaseInstructions {
   // =====================================================
 
   /**
-   * Get auction account data
+   * Get auction account data with discriminator validation
    * 
    * @param auctionAddress - The auction account address
    * @returns Auction account data or null if not found
    */
   async getAuction(auctionAddress: Address): Promise<AuctionMarketplace | null> {
-    return this.getDecodedAccount<AuctionMarketplace>(auctionAddress, 'getAuctionMarketplaceDecoder')
+    try {
+      // First try the standard approach
+      const account = await this.getDecodedAccount<AuctionMarketplace>(auctionAddress, 'getAuctionMarketplaceDecoder')
+      return account
+    } catch (error) {
+      // If standard decoding fails, use safe decode with validation
+      console.warn(`Standard Auction account decoding failed for ${auctionAddress}:`, error instanceof Error ? error.message : String(error))
+      
+      try {
+        // Import AuctionMarketplace discriminator for validation
+        const { AUCTION_MARKETPLACE_DISCRIMINATOR, getAuctionMarketplaceDecoder } = await import('../../generated/accounts/auctionMarketplace.js')
+        
+        // Use safe decode with discriminator validation
+        const result = await safeDecodeAccount(
+          this.rpc,
+          auctionAddress,
+          (data: Uint8Array) => getAuctionMarketplaceDecoder().decode(data),
+          AUCTION_MARKETPLACE_DISCRIMINATOR,
+          'AuctionMarketplace'
+        )
+
+        if (result.needsAttention) {
+          const errorMessage = createDiscriminatorErrorMessage(
+            result.validation, 
+            'AuctionMarketplace', 
+            auctionAddress
+          )
+          console.warn(errorMessage)
+        }
+
+        return result.account
+      } catch (fallbackError) {
+        console.error(`Safe decode also failed for AuctionMarketplace ${auctionAddress}:`, fallbackError instanceof Error ? fallbackError.message : String(fallbackError))
+        return null
+      }
+    }
   }
 
   /**
@@ -680,6 +837,13 @@ export class AuctionInstructions extends BaseInstructions {
       timeRemaining,
       metadataUri: `Auction for ${auction.agent}` // Generate metadata URI
     }
+  }
+
+  /**
+   * List auctions (alias for listAuctions for CLI compatibility)
+   */
+  async list(options: { filter?: AuctionFilter; limit?: number } = {}): Promise<AuctionSummary[]> {
+    return this.listAuctions(options.filter, options.limit)
   }
 
   private applyAuctionFilter(summary: AuctionSummary, filter?: AuctionFilter): boolean {

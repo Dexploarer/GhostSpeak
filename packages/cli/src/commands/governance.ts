@@ -75,7 +75,7 @@ governanceCommand
               placeholder: 'FfGhMd5nwQB5dL1kMfKKo1vdpme83JMHChgSNvhiYBZ7',
               validate: (value) => {
                 if (!value || value.trim().length === 0) return 'Signer address is required'
-                if (value.length < 32 || value.length > 44) return 'Invalid Solana address format'
+                if (value.length < 32 || value.length > 88) return 'Invalid Solana address format'
                 if (signers.includes(address(value))) return 'This signer is already added'
               }
             })
@@ -200,9 +200,10 @@ governanceCommand
 
             // Generate proper multisig PDA
             const multisigId = BigInt(Math.floor(Math.random() * 1000000))
-            const multisigPda = await deriveMultisigPda(
-              client.programId,
-              address(wallet.publicKey.toString()),
+            const multisigDerive = deriveMultisigPda
+            const multisigPda = await multisigDerive(
+              client.config.programId!,
+              wallet.address,
               multisigId
             )
             
@@ -504,6 +505,21 @@ governanceCommand
             return
           }
 
+          // Get multisig address for the proposal
+          const multisigAddressPrompt = await text({
+            message: 'Enter the multisig address for this proposal:',
+            placeholder: 'e.g., 7JxH8YK...',
+            validate: (value) => {
+              if (!value || value.length < 30) return 'Please enter a valid multisig address'
+              return
+            }
+          })
+
+          if (isCancel(multisigAddressPrompt)) {
+            cancel('Proposal creation cancelled')
+            return
+          }
+
           const s = spinner()
           s.start('Creating governance proposal...')
           
@@ -531,8 +547,9 @@ governanceCommand
             
             // Generate proper proposal PDA
             const proposalId = BigInt(Math.floor(Math.random() * 1000000))
-            const proposalPda = await deriveProposalPda(
-              client.programId,
+            const proposalDerive = deriveProposalPda
+            const proposalPda = await proposalDerive(
+              client.config.programId!,
               address(multisigAddress),
               proposalId
             )

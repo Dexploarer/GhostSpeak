@@ -21,7 +21,7 @@ export interface EnvironmentConfig {
  * Get the current network from environment
  */
 function getCurrentNetwork(): 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet' {
-  const network = process.env.GHOSTSPEAK_NETWORK || 'devnet';
+  const network = process.env.GHOSTSPEAK_NETWORK ?? 'devnet';
   if (!['mainnet-beta', 'devnet', 'testnet', 'localnet'].includes(network)) {
     throw new Error(`Invalid network: ${network}`);
   }
@@ -56,7 +56,7 @@ function getProgramId(): PublicKey {
   
   try {
     return new PublicKey(programIdStr);
-  } catch (error) {
+  } catch {
     throw new Error(`Invalid program ID for ${network}: ${programIdStr}`);
   }
 }
@@ -70,15 +70,15 @@ function getUsdcMint(): PublicKey {
   
   switch (network) {
     case 'mainnet-beta':
-      mintStr = process.env.GHOSTSPEAK_USDC_MINT_MAINNET || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+      mintStr = process.env.GHOSTSPEAK_USDC_MINT_MAINNET ?? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
       break;
     case 'devnet':
-      mintStr = process.env.GHOSTSPEAK_USDC_MINT_DEVNET || '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+      mintStr = process.env.GHOSTSPEAK_USDC_MINT_DEVNET ?? '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
       break;
     case 'testnet':
     case 'localnet':
       // For testnet/localnet, we'll use a mock USDC or create our own
-      mintStr = process.env.GHOSTSPEAK_USDC_MINT_TESTNET || '11111111111111111111111111111111';
+      mintStr = process.env.GHOSTSPEAK_USDC_MINT_TESTNET ?? '11111111111111111111111111111111';
       break;
   }
   
@@ -93,14 +93,14 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
   
   return {
     network,
-    rpcUrl: process.env.GHOSTSPEAK_RPC_URL || getDefaultRpcUrl(network),
+    rpcUrl: process.env.GHOSTSPEAK_RPC_URL ?? getDefaultRpcUrl(network),
     programId: getProgramId(),
-    walletPath: process.env.GHOSTSPEAK_WALLET_PATH || '~/.config/solana/ghostspeak.json',
+    walletPath: process.env.GHOSTSPEAK_WALLET_PATH ?? '~/.config/solana/ghostspeak.json',
     usdcMint: getUsdcMint(),
     debug: process.env.GHOSTSPEAK_DEBUG === 'true',
-    logLevel: (process.env.GHOSTSPEAK_LOG_LEVEL as any) || 'info',
+    logLevel: (process.env.GHOSTSPEAK_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error' | undefined) ?? 'info',
     encryptionSalt: process.env.GHOSTSPEAK_ENCRYPTION_SALT,
-    keyDerivationIterations: parseInt(process.env.GHOSTSPEAK_KEY_DERIVATION_ITERATIONS || '100000', 10),
+    keyDerivationIterations: parseInt(process.env.GHOSTSPEAK_KEY_DERIVATION_ITERATIONS ?? '100000', 10),
   };
 }
 

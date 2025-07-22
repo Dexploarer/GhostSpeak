@@ -32,6 +32,9 @@ mod simple_optimization;
 pub mod state;
 pub mod security;
 
+#[cfg(test)]
+mod tests;
+
 // Re-export types from state module
 pub use state::*;
 

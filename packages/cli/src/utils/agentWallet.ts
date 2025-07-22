@@ -530,7 +530,7 @@ export class AgentCNFTManager {
       // Also check for delegated authority if needed
       const delegate = asset.ownership.delegate
       
-      return currentOwner === expectedOwner || (delegate && delegate === expectedOwner)
+      return currentOwner === expectedOwner || (delegate !== undefined && delegate === expectedOwner)
     } catch (error) {
       console.error('Failed to verify CNFT ownership:', error)
       // Fallback to credential-based verification on error

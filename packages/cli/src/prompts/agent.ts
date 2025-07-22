@@ -6,6 +6,7 @@ import {
   cancel
 } from '@clack/prompts'
 import chalk from 'chalk'
+import { URL } from 'node:url'
 
 export interface AgentData {
   name: string

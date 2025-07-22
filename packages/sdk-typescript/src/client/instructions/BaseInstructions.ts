@@ -25,6 +25,7 @@ import {
   type TransactionResult 
 } from '../../utils/transaction-urls.js'
 import { SimpleRpcClient } from '../../utils/simple-rpc-client.js'
+import type { EncodedAccount } from '@solana/kit'
 
 // Simulation result interface matching Solana RPC response
 interface SimulationResult {
@@ -116,6 +117,21 @@ export abstract class BaseInstructions {
   }
 
   /**
+   * Calculate estimated transaction size for validation
+   */
+  protected estimateTransactionSize(instructions: IInstruction[]): number {
+    let totalSize = 64 // Base transaction overhead
+    
+    for (const instruction of instructions) {
+      totalSize += 32 // Program ID
+      totalSize += (instruction.accounts?.length ?? 0) * 32 // Account metas
+      totalSize += instruction.data?.length ?? 0 // Instruction data
+    }
+    
+    return totalSize
+  }
+
+  /**
    * Send a transaction with instructions and signers using REAL Web3.js v2 patterns
    * Returns transaction result with verification URLs
    */
@@ -123,6 +139,12 @@ export abstract class BaseInstructions {
     instructions: IInstruction[],
     signers: TransactionSigner[]
   ): Promise<Signature> {
+    // Check transaction size before sending
+    const estimatedSize = this.estimateTransactionSize(instructions)
+    if (estimatedSize > 1232) {
+      console.warn(`⚠️ Transaction size (${estimatedSize} bytes) may exceed Solana limit (1232 bytes)`)
+    }
+    
     return this.sendTransactionWithDetails(instructions, signers).then(result => result.signature)
   }
 
@@ -165,6 +187,17 @@ export abstract class BaseInstructions {
 
       // Step 3: Sign transaction using 2025 pattern
       const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
+      
+      // Debug: Log instruction data
+      console.log('📝 Debug - Instruction data:')
+      instructions.forEach((instr, idx) => {
+        console.log(`   Instruction ${idx}: data length = ${instr.data?.length ?? 0} bytes`)
+        if (instr.data) {
+          // Log first 50 bytes of data in hex
+          const hexData = Buffer.from(instr.data as Uint8Array).toString('hex').substring(0, 100)
+          console.log(`   Data (hex): ${hexData}...`)
+        }
+      })
 
       // Step 4: Send and confirm using factory pattern
       
@@ -176,6 +209,11 @@ export abstract class BaseInstructions {
         
         // Convert signed transaction to wire format
         const wireTransaction = getBase64EncodedWireTransaction(signedTransaction)
+        
+        // Debug: Log the wire transaction
+        console.log('🔍 Debug - Wire transaction:')
+        console.log(`   Base64 length: ${wireTransaction.length}`)
+        console.log(`   First 100 chars: ${wireTransaction.substring(0, 100)}`)
         
         // Send transaction first
         const transactionSignature = await rpcClient.sendTransaction(wireTransaction, {
@@ -470,6 +508,12 @@ export abstract class BaseInstructions {
       
       return decoder.decode(rawData)
     } catch (error) {
+      // Check if this is a discriminator validation error that should be handled by safe decoding
+      if (error instanceof Error && error.message.includes('expected 8 bytes, got')) {
+        // Rethrow discriminator errors so they can be caught by safe decoding fallback
+        throw error
+      }
+      
       console.warn(`Failed to fetch account ${address}:`, error)
       return null
     }
@@ -532,8 +576,11 @@ export abstract class BaseInstructions {
       console.log(`Filters: ${JSON.stringify(filters)}`)
       console.log(`Commitment: ${commitment}`)
       
+      // Ensure RPC client is initialized
+      const rpcClient = this.getRpcClient()
+      
       // Get all program accounts from the blockchain
-      const accounts = await (this._rpcClient as SimpleRpcClient).getProgramAccounts(this.config.programId!, {
+      const accounts = await rpcClient.getProgramAccounts(this.config.programId!, {
         commitment,
         filters: filters as { memcmp?: { offset: number; bytes: string } | { dataSize: number } }[]
       })
@@ -621,6 +668,74 @@ export abstract class BaseInstructions {
       const operation = context ?? 'instruction execution'
       console.error(`❌ Failed to execute ${operation}:`, error)
       throw error
+    }
+  }
+
+  /**
+   * Get raw account data without decoding (for discriminator validation)
+   */
+  protected async getRawAccount(
+    address: Address,
+    commitment = this.commitment
+  ): Promise<EncodedAccount | null> {
+    try {
+      const rpcClient = this.getRpcClient()
+      const accountInfo = await rpcClient.getAccountInfo(address, { commitment })
+      
+      if (!accountInfo) {
+        return null
+      }
+      
+      // Convert account info to EncodedAccount format
+      const data = Buffer.isBuffer(accountInfo.data) || accountInfo.data instanceof Uint8Array
+        ? accountInfo.data
+        : Buffer.from((accountInfo.data as { data?: string }).data ?? accountInfo.data as unknown as string, 'base64')
+      
+      return {
+        exists: true,
+        address,
+        data: new Uint8Array(data),
+        owner: accountInfo.owner,
+        executable: accountInfo.executable ?? false,
+        lamports: BigInt(accountInfo.lamports ?? 0),
+        programAddress: accountInfo.owner,
+        space: data.length
+      } as unknown as EncodedAccount
+    } catch (error) {
+      console.warn(`Failed to fetch raw account ${address}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Get all program accounts without filtering (for recovery operations)
+   */
+  protected async getAllProgramAccounts(
+    commitment = this.commitment
+  ): Promise<EncodedAccount[]> {
+    try {
+      const rpcClient = this.getRpcClient()
+      const accounts = await rpcClient.getProgramAccounts(this.config.programId!, {
+        commitment
+      })
+      
+      return accounts.map(({ pubkey, account }) => ({
+        exists: true,
+        address: pubkey,
+        data: Buffer.isBuffer(account.data) || account.data instanceof Uint8Array
+          ? new Uint8Array(account.data)
+          : new Uint8Array(Buffer.from((account.data as { data?: string }).data ?? account.data as unknown as string, 'base64')),
+        owner: account.owner,
+        executable: account.executable ?? false,
+        lamports: BigInt(account.lamports ?? 0),
+        programAddress: account.owner,
+        space: Buffer.isBuffer(account.data) || account.data instanceof Uint8Array
+          ? account.data.length
+          : Buffer.from((account.data as { data?: string }).data ?? account.data as unknown as string, 'base64').length
+      } as unknown as EncodedAccount))
+    } catch (error) {
+      console.error('Failed to get all program accounts:', error)
+      return []
     }
   }
 }

@@ -28,6 +28,37 @@ export { ComplianceInstructions } from './client/instructions/ComplianceInstruct
 // Export KeyPairSigner from client
 export type { KeyPairSigner } from './client/GhostSpeakClient.js'
 
+// Export discriminator validation and account migration utilities
+export {
+  safeDecodeAgent,
+  validateAccountDiscriminator,
+  createDiscriminatorErrorMessage,
+  inspectAccountData,
+  type DiscriminatorValidationResult,
+  type AccountInspectionResult
+} from './utils/discriminator-validator.js'
+
+export {
+  createMigrationPlan,
+  createMigrationReport,
+  simulateMigration,
+  getMigrationInstructions,
+  extractLegacyData,
+  type MigrationPlan,
+  type MigrationResult,
+  type LegacyAgentData
+} from './utils/account-migration.js'
+
+export {
+  runAccountDiagnostics,
+  runBatchDiagnostics,
+  diagnoseAccountFromChain,
+  diagnoseBatchFromChain,
+  exportDiagnosticReport,
+  type DiagnosticReport,
+  type BatchDiagnosticReport
+} from './utils/account-diagnostics.js'
+
 // Export all essential types and utilities
 export type { 
   GhostSpeakConfig,
@@ -73,5 +104,11 @@ export * from './generated/index.js'
 
 // Export program constants
 export { GHOSTSPEAK_PROGRAM_ID } from './constants.js'
+
+// Export system addresses
+export { NATIVE_MINT_ADDRESS } from './constants/system-addresses.js'
+
+// Export governance helpers
+export { deriveMultisigPda, deriveProposalPda } from './utils/governance-helpers.js'
 
 // All necessary functionality is available through the modern client implementation above

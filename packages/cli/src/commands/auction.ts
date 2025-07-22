@@ -16,7 +16,7 @@ import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner }
 import { auctionTypeToString, formatSOL, solToLamports } from '../utils/auction-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
-import { AuctionStatus, AuctionType } from '@ghostspeak/sdk'
+import { AuctionStatus, AuctionType, NATIVE_MINT_ADDRESS } from '@ghostspeak/sdk'
 import type {
   CreateAuctionOptions,
   BidAuctionOptions,
@@ -227,26 +227,22 @@ auctionCommand
           'sealed': AuctionType.SealedBid
         }
         
+        // Create auction params matching SDK expectations
         const auctionParams = {
-          auctionData: {
-            auctionType: auctionTypeMap[auctionType as string] ?? AuctionType.English,
-            startingPrice: solToLamports(startingPrice), // SOL to lamports
-            reservePrice: solToLamports(reservePrice),
-            auctionEndTime,
-            minimumBidIncrement: solToLamports(minBidIncrement)
-          },
-          metadataUri: `${serviceTitle}|${serviceDescription}`, // Simple metadata format
-          agent: wallet.address, // Using wallet as agent for now
-          deadline: BigInt(Math.floor(Date.now() / 1000) + Number(duration) * 24 * 60 * 60) // Same as auctionEndTime
+          title: serviceTitle,
+          description: serviceDescription,
+          category: auctionType as string, // Use auction type as category
+          requirements: ['Complete the service as described'], // Default requirement
+          startPrice: solToLamports(startingPrice),
+          minIncrement: solToLamports(minBidIncrement),
+          duration: BigInt(duration), // duration in hours
+          paymentToken: NATIVE_MINT_ADDRESS, // SOL
+          agentAddress: wallet.address // Using wallet as agent for now
         }
 
-        const signature = await client.auction.createServiceAuction(
-          auctionPda,
-          userRegistryPda,
-          {
-            ...auctionParams,
-            signer: toSDKSigner(wallet)
-          }
+        const signature = await client.auction.create(
+          toSDKSigner(wallet),
+          auctionParams
         )
 
         s.stop('✅ Auction created successfully!')
@@ -434,24 +430,13 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: Awaited<ReturnType<typeof client.auction.listAuctions>> = []
+      let auctions: any[] = []
       try {
-        auctions = await client.auction.listAuctions({ status: AuctionStatus.Active })
+        const rawAuctions = await client.auction.listAuctions({ status: AuctionStatus.Active })
+        auctions = rawAuctions
       } catch {
         // Fetch all auctions without specific filters
-        const rawAuctions = await client.auction.listAuctions()
-        auctions = rawAuctions.map(a => ({
-          address: a.auction.toString(),
-          auctionType: auctionTypeToString(a.auctionType),
-          currentBid: a.currentPrice,
-          startingPrice: a.startingPrice,
-          reservePrice: a.reservePrice,
-          auctionEndTime: a.auctionEndTime,
-          totalBids: a.totalBids,
-          minimumBidIncrement: a.minimumBidIncrement,
-          currentBidder: a.currentWinner?.toString(),
-          creator: a.creator.toString()
-        }))
+        auctions = await client.auction.listAuctions()
       }
       s.stop(`✅ Found ${auctions.length} active auctions`)
 
@@ -564,8 +549,6 @@ auctionCommand
             getAddressEncoder().encode(wallet.address)
           ]
         })
-        // Acknowledge unused variable for future development
-        void userRegistryPda
         
         const bidParams = {
           auction: address(selectedAuction as string),
@@ -573,10 +556,10 @@ auctionCommand
         }
 
         const signature = await client.auction.placeAuctionBid(
-          address(selectedAuction as string),
+          userRegistryPda,
           {
             ...bidParams,
-            signer: toSDKSigner(wallet)
+            signer: toSDKSigner(wallet) as any
           }
         )
 
@@ -746,26 +729,8 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: Awaited<ReturnType<typeof client.auction.listAuctions>> = []
-      try {
-        auctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
-      } catch {
-        // Fetch completed/settled auctions
-        const rawAuctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
-        auctions = rawAuctions.map(a => ({
-          address: a.auction.toString(),
-          auctionType: auctionTypeToString(a.auctionType),
-          currentBid: a.currentPrice,
-          startingPrice: a.startingPrice,
-          reservePrice: a.reservePrice,
-          auctionEndTime: a.auctionEndTime,
-          totalBids: a.totalBids,
-          minimumBidIncrement: a.minimumBidIncrement,
-          currentBidder: a.currentWinner?.toString(),
-          creator: a.creator.toString(),
-          winner: a.winner?.toString()
-        }))
-      }
+      // Fetch completed/settled auctions
+      const auctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
       const myAuctions = auctions.filter((a) => a.creator === wallet.address)
       
       s.stop(`✅ Found ${myAuctions.length} completed auctions`)

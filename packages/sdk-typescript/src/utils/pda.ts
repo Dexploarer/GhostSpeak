@@ -4,9 +4,7 @@ import {
   getBytesEncoder,
   getAddressEncoder,
   getUtf8Encoder,
-  getU32Encoder,
-  getU64Encoder,
-  addEncoderSizePrefix
+  getU64Encoder
 } from '@solana/kit'
 
 /**
@@ -29,7 +27,7 @@ export async function deriveAgentPda(
     seeds: [
       getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])), // 'agent'
       getAddressEncoder().encode(owner),
-      addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(agentId)
+      getUtf8Encoder().encode(agentId)
     ]
   })
   return address
@@ -51,7 +49,7 @@ export async function deriveServiceListingPda(
         115, 101, 114, 118, 105, 99, 101, 95, 108, 105, 115, 116, 105, 110, 103
       ])), // 'service_listing'
       getAddressEncoder().encode(creator),
-      addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(listingId)
+      getUtf8Encoder().encode(listingId)
     ]
   })
   return address
@@ -73,7 +71,7 @@ export async function deriveJobPostingPda(
         106, 111, 98, 95, 112, 111, 115, 116, 105, 110, 103
       ])), // 'job_posting'
       getAddressEncoder().encode(employer),
-      addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(jobId)
+      getUtf8Encoder().encode(jobId)
     ]
   })
   return address
@@ -103,21 +101,27 @@ export async function deriveJobApplicationPda(
 
 /**
  * Derive work order PDA (used for escrow functionality)
- * Pattern: ['work_order', employer, orderId]
+ * Pattern: ['work_order', client, orderId] (little-endian bytes)
+ * NOTE: Smart contract expects orderId as little-endian bytes, not U64 encoded
  */
 export async function deriveWorkOrderPda(
   programId: Address,
-  employer: Address,
+  client: Address,
   orderId: bigint
 ): Promise<Address> {
+  // Convert orderId to little-endian bytes (8 bytes) to match smart contract expectation
+  const orderIdBytes = new Uint8Array(8)
+  const dataView = new DataView(orderIdBytes.buffer)
+  dataView.setBigUint64(0, orderId, true) // little-endian
+  
   const [address] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
       getBytesEncoder().encode(new Uint8Array([
         119, 111, 114, 107, 95, 111, 114, 100, 101, 114
       ])), // 'work_order'
-      getAddressEncoder().encode(employer),
-      getU64Encoder().encode(orderId)
+      getAddressEncoder().encode(client),
+      orderIdBytes
     ]
   })
   return address

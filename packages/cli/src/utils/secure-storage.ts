@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'node:crypto';
 import { readFile, writeFile, access, chmod, mkdir } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { Keypair } from '@solana/web3.js';
 import { envConfig } from './env-config.js';
@@ -122,7 +122,7 @@ export class SecureStorage {
       ]);
       
       return decrypted.toString('utf8');
-    } catch (error) {
+    } catch {
       throw new Error('Failed to decrypt: Invalid password or corrupted data');
     }
   }
@@ -150,10 +150,10 @@ export class SecureStorage {
     
     try {
       const content = await readFile(path, 'utf8');
-      const encrypted: EncryptedData = JSON.parse(content);
+      const encrypted = JSON.parse(content) as EncryptedData;
       return await this.decrypt(encrypted, password);
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         throw new Error(`No data found for key: ${key}`);
       }
       throw error;
@@ -185,7 +185,7 @@ export class SecureStorage {
    */
   static async retrieveKeypair(key: string, password: string): Promise<Keypair> {
     const secretKeyJson = await this.retrieve(key, password);
-    const secretKey = new Uint8Array(JSON.parse(secretKeyJson));
+    const secretKey = new Uint8Array(JSON.parse(secretKeyJson) as number[]);
     return Keypair.fromSecretKey(secretKey);
   }
   
@@ -197,8 +197,8 @@ export class SecureStorage {
     const { unlink } = await import('node:fs/promises');
     try {
       await unlink(path);
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
         throw error;
       }
     }

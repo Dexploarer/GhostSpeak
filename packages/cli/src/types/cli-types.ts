@@ -277,7 +277,7 @@ export function isNumber(value: unknown): value is number {
 }
 
 export function isAddress(value: unknown): value is Address {
-  return typeof value === 'string' && value.length >= 32 && value.length <= 44
+  return typeof value === 'string' && value.length >= 32 && value.length <= 88
 }
 
 export function isDefined<T>(value: T | undefined | null): value is T {

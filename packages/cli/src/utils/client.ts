@@ -8,6 +8,7 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, existsSync, writeFileSync } from 'fs'
 import { log } from '@clack/prompts'
+import { URL } from 'node:url'
 import chalk from 'chalk'
 import { loadConfig } from './config.js'
 

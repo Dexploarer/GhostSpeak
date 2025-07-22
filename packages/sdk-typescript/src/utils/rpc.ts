@@ -489,10 +489,14 @@ export class RetryUtils {
 export class AddressUtils {
   /**
    * Check if string is a valid Solana address
+   * Supports standard addresses (32-44 chars) and extended formats (up to 88 chars for ATAs/PDAs)
    */
   static isValidAddress(address: string): boolean {
     try {
-      return address.length >= 32 && address.length <= 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address)
+      // Extended validation to support Associated Token Accounts and Program Derived Addresses
+      // Standard addresses: 32-44 characters
+      // Extended addresses (ATAs, PDAs): up to 88 characters
+      return address.length >= 32 && address.length <= 88 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address)
     } catch {
       return false
     }

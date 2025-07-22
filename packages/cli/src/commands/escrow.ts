@@ -12,7 +12,6 @@ import {
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
-import { getAddressEncoder } from '@solana/kit'
 import { WorkOrderStatus } from '@ghostspeak/sdk'
 import type {
   CreateEscrowOptions,
@@ -95,52 +94,30 @@ escrowCommand
       s.start('Creating escrow contract...')
 
       try {
-        // Generate a unique order ID
-        const orderId = BigInt(Date.now())
+        // Generate a unique task ID as description
+        const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
         
-        // Generate PDA for work order using manual derivation (SDK function has bug)
-        const { getProgramDerivedAddress, getU64Encoder, getBytesEncoder } = await import('@solana/kit')
-        
-        let workOrderPda: Address
-        try {
-          // Use manual PDA derivation that matches smart contract exactly
-          const [pda] = await getProgramDerivedAddress({
-            programAddress: client.config.programId!,
-            seeds: [
-              getBytesEncoder().encode(new Uint8Array([119, 111, 114, 107, 95, 111, 114, 100, 101, 114])),  // 'work_order'
-              getAddressEncoder().encode(wallet.address), // client.key().as_ref()
-              getU64Encoder().encode(orderId) // &order_id.to_le_bytes()
-            ]
-          })
-          workOrderPda = pda
-          
-          console.log('Generated work order PDA:', workOrderPda)
-        } catch (error) {
-          console.error('PDA generation failed:', error)
-          throw error
-        }
-        
-        // Create the work order (escrow)
+        // Create the escrow using the client's createEscrow method which internally calls create()
         console.log('Creating escrow with params:', {
-          orderId: orderId.toString(),
+          taskId,
           provider: recipient,
-          workOrderPda: workOrderPda.toString(),
+          amount: `${amount} SOL`,
         })
         
         console.log('About to call client.createEscrow...')
         
         let signature: string
         try {
+          // Use the escrow.create method directly which expects the correct params
           signature = await client.escrow.create({
-              orderId,
+              signer: toSDKSigner(wallet),
+              title: `Task ${taskId}`,
+              description: `${workDescription} (${taskId})`,
               provider: address(recipient),
-              title: `Work Order #${orderId}`,
-              description: workDescription as string,
-              requirements: ['No specific requirements'], // Try with non-empty array
               amount: BigInt(Math.floor(parseFloat(amount as string) * 1_000_000_000)), // Convert SOL to lamports
-              paymentToken: address('So11111111111111111111111111111111111111112'), // Native SOL
               deadline: BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60), // 7 days from now
-              signer: toSDKSigner(wallet)
+              paymentToken: address('So11111111111111111111111111111111111111112'), // Native SOL
+              requirements: []
             }
           )
           console.log('✅ Escrow creation successful, signature:', signature)
@@ -156,15 +133,14 @@ escrowCommand
         s.stop('✅ Escrow created successfully!')
 
         console.log('\n' + chalk.green('🎉 Escrow payment created!'))
-        console.log(chalk.gray(`Work Order ID: #${orderId}`))
-        console.log(chalk.gray(`Work Order Address: ${workOrderPda}`))
+        console.log(chalk.gray(`Task ID: ${taskId}`))
         console.log(chalk.gray(`Amount: ${amount} SOL`))
-        console.log(chalk.gray(`Recipient: ${recipient}`))
+        console.log(chalk.gray(`Provider: ${recipient}`))
         console.log(chalk.gray(`Description: ${workDescription}`))
         console.log(chalk.gray(`Status: Active - Awaiting completion`))
+        console.log(chalk.gray(`Deadline: ${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleString()}`))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(signature, 'devnet'))
-        console.log(chalk.cyan('Work Order Account:'), getAddressExplorerUrl(workOrderPda, 'devnet'))
 
         outro('Escrow creation completed')
       } catch (error: unknown) {
@@ -366,6 +342,34 @@ escrowCommand
         }
       }
 
+      // Get work delivery proof
+      let workDeliveryUri = ''
+      if (workOrder.status === WorkOrderStatus.Submitted) {
+        console.log('\n' + chalk.yellow('ℹ️  Work has been submitted by the provider'))
+        const useSubmittedWork = await confirm({
+          message: 'Use the submitted work delivery for approval?'
+        })
+
+        if (isCancel(useSubmittedWork)) {
+          cancel('Release cancelled')
+          return
+        }
+
+        if (!useSubmittedWork) {
+          const customUri = await text({
+            message: 'Enter work delivery proof/URI (optional):',
+            placeholder: 'ipfs://... or https://...'
+          })
+
+          if (isCancel(customUri)) {
+            cancel('Release cancelled')
+            return
+          }
+
+          workDeliveryUri = customUri || ''
+        }
+      }
+
       // Rating prompt
       const rating = await select({
         message: 'Rate the service (optional):',
@@ -422,17 +426,26 @@ escrowCommand
       }
 
       const releaseSpinner = spinner()
-      releaseSpinner.start('Releasing funds from escrow...')
+      releaseSpinner.start('Processing escrow release...')
 
       try {
-        const workDeliveryAddress = address('11111111111111111111111111111111') // Mock address
-        const result = await client.escrow.release(
-          workDeliveryAddress,
-          {
-            workOrderAddress: address(escrowPubkey.toString()),
-            signer: toSDKSigner(wallet)
-          }
-        )
+        // Step 1: Complete the escrow (mark work as done)
+        console.log('\n' + chalk.gray('Step 1: Marking work as complete...'))
+        const completeResult = await client.escrow.completeEscrow({
+          escrowAddress: escrowPubkey,
+          resolutionNotes: workDeliveryUri || null,
+          signer: toSDKSigner(wallet)
+        })
+        console.log(chalk.green('✓ Work marked as complete'))
+
+        // Step 2: Process the payment release
+        console.log(chalk.gray('Step 2: Releasing payment to provider...'))
+        const paymentResult = await client.escrow.processEscrowPayment({
+          escrowAddress: escrowPubkey,
+          workOrder: escrowPubkey, // The escrow address is the work order
+          paymentToken: workOrder.paymentToken,
+          signer: toSDKSigner(wallet)
+        })
 
         releaseSpinner.stop('✅ Funds released successfully!')
 
@@ -441,7 +454,8 @@ escrowCommand
         console.log(chalk.gray(`To: ${workOrder.provider.slice(0, 8)}...`))
         console.log(chalk.gray('Status: Completed'))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result as string, 'devnet'))
+        console.log(chalk.cyan('Complete Transaction:'), getExplorerUrl(completeResult, 'devnet'))
+        console.log(chalk.cyan('Payment Transaction:'), getExplorerUrl(paymentResult, 'devnet'))
         
         if (rating !== 'skip') {
           console.log('\n' + chalk.green('⭐ Thank you for rating the service!'))
@@ -632,45 +646,25 @@ escrowCommand
       disputeSpinner.start('Opening dispute...')
 
       try {
-        // Get escrow/work order details to find the respondent
-        let workOrder
-        try {
-          const escrowClient = client.escrow
-          workOrder = await escrowClient.getAccount(escrowPubkey)
-        } catch (error) {
-          throw new Error(`Failed to fetch work order: ${error instanceof Error ? error.message : 'Unknown error'}`)
-        }
+        // Combine reason and description into a single dispute reason string
+        const disputeReason = `${reason}: ${description}`
         
-        if (!workOrder) {
-          throw new Error('Work order not found')
-        }
-        
-        // Determine respondent based on who is filing the dispute
-        const typedWorkOrder = workOrder as { client: { toString: () => string }; provider: unknown }
-        const respondent = typedWorkOrder.client.toString() === wallet.address.toString() 
-          ? typedWorkOrder.provider  // If client is filing, respondent is provider
-          : typedWorkOrder.client    // If provider is filing, respondent is client
-        
-        const result = await client.dispute.fileDispute(
-          // @ts-expect-error SDK expects TransactionSigner
-          toSDKSigner(wallet),
-          address(escrowPubkey.toString()), // disputePda
-          {
-            transaction: address(escrowPubkey.toString()),
-            respondent: respondent,
-            reason: `${reason}: ${description}`
-          }
-        )
+        // Use the escrow.disputeEscrow method
+        const result = await client.escrow.disputeEscrow({
+          escrowAddress: escrowPubkey,
+          disputeReason: disputeReason,
+          signer: toSDKSigner(wallet)
+        })
 
         disputeSpinner.stop('✅ Dispute opened successfully!')
 
         console.log('\n' + chalk.red('⚠️  Dispute Opened'))
-        console.log(chalk.gray(`Work Order: ${escrowPubkey.toString()}`))
+        console.log(chalk.gray(`Escrow: ${escrowPubkey.toString()}`))
         console.log(chalk.gray('Status: Under Review'))
         console.log(chalk.gray('Escrow Status: Frozen'))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result as string, 'devnet'))
-        console.log(chalk.cyan('Work Order Account:'), getAddressExplorerUrl(escrowPubkey.toString(), 'devnet'))
+        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
+        console.log(chalk.cyan('Escrow Account:'), getAddressExplorerUrl(escrowPubkey.toString(), 'devnet'))
         
         console.log('\n' + chalk.yellow('💡 Next steps:'))
         console.log(chalk.gray('1. The provider will be notified of the dispute'))

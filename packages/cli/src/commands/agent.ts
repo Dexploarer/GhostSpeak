@@ -542,6 +542,44 @@ agentCommand
         return
       }
 
+      // Try to extract agent_id from metadata
+      let agentId: string | undefined
+      if (currentAgent.metadataUri?.startsWith('data:application/json')) {
+        try {
+          const base64Data = currentAgent.metadataUri.split(',')[1] ?? ''
+          const metadata = JSON.parse(Buffer.from(base64Data, 'base64').toString()) as Record<string, unknown>
+          if (typeof metadata.agentId === 'string') {
+            agentId = metadata.agentId
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+      }
+
+      // If we couldn't extract agent_id from metadata, ask the user
+      if (!agentId) {
+        console.log('\n' + chalk.yellow('⚠️  Agent ID Required'))
+        console.log(chalk.gray('The original agent ID is needed to update this agent.'))
+        console.log(chalk.gray('This was generated when you created the agent (e.g., "agent_1234567890_123")'))
+        
+        const inputAgentId = await text({
+          message: 'Enter the original agent ID:',
+          placeholder: 'agent_1234567890_123',
+          validate: (value) => {
+            if (!value) return 'Agent ID is required'
+            if (!value.startsWith('agent_')) return 'Agent ID should start with "agent_"'
+            return
+          }
+        })
+
+        if (isCancel(inputAgentId)) {
+          cancel('Update cancelled')
+          return
+        }
+
+        agentId = inputAgentId
+      }
+
       console.log('\n' + chalk.bold('Current Agent Details:'))
       console.log('─'.repeat(40))
       console.log(chalk.cyan('Name:') + ` ${currentAgent.name}`)
@@ -549,6 +587,7 @@ agentCommand
       console.log(chalk.cyan('Service Endpoint:') + ` ${currentAgent.serviceEndpoint ?? 'Not set'}`)
       console.log(chalk.cyan('Capabilities:') + ` ${currentAgent.capabilities.join(', ')}`)
       console.log(chalk.cyan('Reputation:') + ` ${currentAgent.reputationScore}/100`)
+      console.log(chalk.cyan('Agent ID:') + ` ${agentId}`)
 
       // Update options
       const updateChoice = await select({
@@ -712,19 +751,20 @@ agentCommand
       updateSpinner.start('Updating agent on the blockchain...')
 
       try {
-        // Convert price to lamports if updated
-        const updateData: Record<string, unknown> = { ...updates }
-        if (updates.pricePerTask) {
-          updateData.pricePerTask = BigInt(Math.floor(parseFloat(updates.pricePerTask as string) * 1_000_000))
+        // Prepare update parameters
+        const updateParams = {
+          description: updates.description,
+          metadataUri: undefined, // Let the SDK create it from the provided data
+          capabilities: updates.capabilities,
+          serviceEndpoint: updates.endpoint
         }
 
         // Update agent using SDK
         const result = await client.agent.update(
           toSDKSigner(wallet),
           agentAddress,
-          1, // Default agent type
-          (updateData.metadataUri as string | undefined) ?? currentAgent.metadataUri ?? '',
-          agentAddress.toString() // Use address as agentId for now
+          agentId!, // We ensured this is set above
+          updateParams
         )
 
         updateSpinner.stop('✅ Agent updated successfully!')
@@ -982,13 +1022,33 @@ agentCommand
         // }
 
         // TODO: Implement verify method when available in SDK
-        // For now, use update to set isVerified flag
+        // For now, we need the agent_id to update
+        // Try to extract it from metadata
+        const agentData = agent.data
+        let agentId: string | undefined
+        if (agentData.metadataUri?.startsWith('data:application/json')) {
+          try {
+            const base64Data = agentData.metadataUri.split(',')[1] ?? ''
+            const metadata = JSON.parse(Buffer.from(base64Data, 'base64').toString()) as Record<string, unknown>
+            if (typeof metadata.agentId === 'string') {
+              agentId = metadata.agentId
+            }
+          } catch {
+            // Ignore parsing errors
+          }
+        }
+        
+        if (!agentId) {
+          log.error('Cannot verify agent: agent_id not found in metadata')
+          outro('Agent verification requires the original agent_id. Please ask the agent owner to provide it.')
+          return
+        }
+        
         const signature = await client.agent.update(
           toSDKSigner(wallet),
           address(selectedAgent as string),
-          1, // Default agent type
-          agent.data.metadataUri ?? '',
-          selectedAgent as string
+          agentId,
+          {} // Empty update params for now
         )
 
         s.stop('✅ Agent verified successfully!')

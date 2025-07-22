@@ -13,7 +13,7 @@ import {
   note
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
-import { address } from '@solana/addresses'
+import { address, type Address } from '@solana/addresses'
 import type { DisputeSummary } from '@ghostspeak/sdk'
 import { DisputeStatus } from '@ghostspeak/sdk'
 
@@ -215,7 +215,8 @@ disputeCommand
         // Get work order details to find the respondent
         let workOrder
         try {
-          workOrder = await client.escrow.getWorkOrder(address(workOrderAddress))
+          const escrowClient = client.escrow
+          workOrder = await escrowClient.getAccount(address(workOrderAddress))
         } catch (error) {
           throw new Error(`Failed to fetch work order: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
@@ -232,7 +233,7 @@ disputeCommand
         
         const disputeParams = {
           transaction: address(workOrderAddress),
-          respondent: respondent,
+          respondent: respondent as Address,
           reason: `${disputeReason}: ${disputeDescription}`
         }
 
@@ -921,7 +922,7 @@ disputeCommand
       
       try {
         const signature = await client.dispute.escalateDispute(
-          toSDKSigner(wallet),
+          toSDKSigner(wallet) as any,
           address(selectedDispute as string),
           `${escalationReason}: ${escalationDetails}`
         )

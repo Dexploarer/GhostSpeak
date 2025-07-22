@@ -106,6 +106,7 @@
     "url": "https://github.com/Prompt-or-Die/ghostspeak"
   },
   "dependencies": {
+    "@ghostspeak/sdk": "^1.6.3",
     "@solana/functional": "^2.3.0",
     "@solana/kit": "^2.3.0",
     "@solana/rpc": "^2.3.0",

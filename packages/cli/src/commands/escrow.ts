@@ -131,10 +131,7 @@ escrowCommand
         
         let signature: string
         try {
-          const workOrderAddress = address('11111111111111111111111111111111') // Mock address
-          signature = await client.escrow.create(
-            workOrderAddress,
-            {
+          signature = await client.escrow.create({
               orderId,
               provider: address(recipient),
               title: `Work Order #${orderId}`,
@@ -638,7 +635,8 @@ escrowCommand
         // Get escrow/work order details to find the respondent
         let workOrder
         try {
-          workOrder = await client.escrow.getWorkOrder(escrowPubkey)
+          const escrowClient = client.escrow
+          workOrder = await escrowClient.getAccount(escrowPubkey)
         } catch (error) {
           throw new Error(`Failed to fetch work order: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }

@@ -38,11 +38,11 @@ wallet = "~/.config/solana/id.json"
 
 # Enhanced test configuration
 [scripts]
-# Use bun for faster testing and enhanced features
-test = "bun run test:rust"
-lint = "bun run lint:all"
-build = "bun run build:optimized"
-deploy = "bun run deploy:safe"
+# Use standard anchor testing with TypeScript/JavaScript  
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests-js/**/*.ts"
+lint = "npm run lint:rust"
+build = "npm run build"
+deploy = "npm run deploy"
 
 # Enhanced test validator configuration
 [test.validator]

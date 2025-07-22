@@ -6,7 +6,7 @@
  */
 
 import type { Address } from '@solana/kit'
-import { getProgramDerivedAddress } from '@solana/addresses'
+import { getProgramDerivedAddress, getBytesEncoder, getAddressEncoder } from '@solana/kit'
 import { AuctionType, AuctionStatus } from '../generated/index.js'
 
 /**
@@ -25,9 +25,30 @@ export async function deriveAuctionPda(
   const [address] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
-      'auction',
-      agent,
-      creator
+      getBytesEncoder().encode(new TextEncoder().encode('auction')),
+      getAddressEncoder().encode(agent),
+      getAddressEncoder().encode(creator)
+    ]
+  })
+  return address
+}
+
+/**
+ * Derive user registry PDA address
+ * 
+ * @param programId - The program ID
+ * @param user - User public key
+ * @returns The user registry PDA address
+ */
+export async function deriveUserRegistryPda(
+  programId: Address,
+  user: Address
+): Promise<Address> {
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new TextEncoder().encode('user_registry')),
+      getAddressEncoder().encode(user)
     ]
   })
   return address

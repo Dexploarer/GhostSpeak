@@ -56,12 +56,16 @@ export class SimpleRpcClient {
 
       if (!result.value) return null
 
+      // Handle RPC data format: [base64_string, encoding_type]
+      const dataArray = result.value.data as [string, string]
+      const base64Data = Array.isArray(dataArray) ? dataArray[0] : dataArray as string
+      
       return {
         executable: result.value.executable,
         lamports: result.value.lamports,
         owner: result.value.owner,
         rentEpoch: result.value.rentEpoch,
-        data: result.value.data as unknown as Buffer,
+        data: Buffer.from(base64Data, 'base64'),
         space: result.value.space
       }
     } catch (error) {
@@ -107,12 +111,57 @@ export class SimpleRpcClient {
     transaction: string,
     options?: { skipPreflight?: boolean; preflightCommitment?: Commitment }
   ): Promise<string> {
-    const result = await this.rpc.sendTransaction(transaction as unknown as Parameters<typeof this.rpc.sendTransaction>[0], {
-      skipPreflight: options?.skipPreflight ?? false,
-      preflightCommitment: options?.preflightCommitment ?? this.commitment
-    }).send()
-    
-    return result
+    try {
+      console.log('🔍 Debug - Sending transaction to RPC:')
+      console.log(`   Transaction length: ${transaction.length}`)
+      console.log(`   First 50 chars: ${transaction.substring(0, 50)}...`)
+      console.log(`   Options: ${JSON.stringify(options)}`)
+      
+      // For Solana Web3.js v2, the sendTransaction method should work with base64
+      // But we need to make sure we're calling it correctly
+      
+      // Try to send using the proper RPC format
+      // The Solana JSON-RPC expects: sendTransaction(transaction, options)
+      // where transaction is a base64-encoded string
+      
+      // Direct JSON-RPC call to bypass any library issues
+      const requestBody = {
+        jsonrpc: '2.0',
+        id: Math.floor(Math.random() * 100000),
+        method: 'sendTransaction',
+        params: [
+          transaction, // base64-encoded transaction
+          {
+            skipPreflight: options?.skipPreflight ?? false,
+            preflightCommitment: options?.preflightCommitment ?? this.commitment,
+            encoding: 'base64'
+          }
+        ]
+      }
+      
+      console.log('🔍 Debug - RPC request:')
+      console.log(`   Method: ${requestBody.method}`)
+      console.log(`   Transaction (first 50): ${transaction.substring(0, 50)}...`)
+      console.log(`   Params count: ${requestBody.params.length}`)
+      
+      const response = await globalThis.fetch(this.endpoint as string, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      })
+      
+      const data = await response.json() as { error?: { message: string }; result?: unknown }
+      
+      if (data.error) {
+        console.error('🔴 RPC error response:', data.error)
+        throw new Error(`RPC Error: ${data.error.message}`)
+      }
+      
+      return data.result as string
+    } catch (error) {
+      console.error('🔴 RPC sendTransaction error:', error)
+      throw error
+    }
   }
 
   /**
@@ -159,6 +208,7 @@ export class SimpleRpcClient {
       
       const rpcOptions = {
         commitment: options?.commitment ?? this.commitment,
+        encoding: 'base64' as const,  // Always use base64 for large data
         ...(options?.filters && { filters: options.filters })
       }
       
@@ -182,11 +232,17 @@ export class SimpleRpcClient {
         error?: RpcError
       }
       
+      // Validate program ID is a valid base58 address
+      const programIdStr = programId.toString()
+      if (!programIdStr || programIdStr.includes('/') || programIdStr.length < 32) {
+        throw new Error(`Invalid program ID format: ${programIdStr}. Expected base58 Solana address.`)
+      }
+      
       const requestBody: RpcRequest = {
         jsonrpc: '2.0',
         id: Math.floor(Math.random() * 100000),
         method: 'getProgramAccounts',
-        params: [programId, rpcOptions]
+        params: [programIdStr, rpcOptions]
       }
       
       const response = await globalThis.fetch(this.endpoint as string, {
@@ -222,12 +278,17 @@ export class SimpleRpcClient {
 
   private parseAccountInfo(accountInfo: unknown): AccountInfo {
     const account = accountInfo as Record<string, unknown>
+    
+    // Handle RPC data format: [base64_string, encoding_type]
+    const dataArray = account.data as [string, string]
+    const base64Data = Array.isArray(dataArray) ? dataArray[0] : dataArray as string
+    
     return {
       executable: account.executable as boolean,
       lamports: BigInt(account.lamports as string | number) as unknown as AccountInfo['lamports'], // Cast to Lamports branded type
       owner: account.owner as Address,
       rentEpoch: account.rentEpoch as bigint,
-      data: account.data as Buffer,
+      data: Buffer.from(base64Data, 'base64'),
       space: account.space as bigint
     }
   }

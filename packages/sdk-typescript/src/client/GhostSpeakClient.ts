@@ -140,10 +140,9 @@ export class GhostSpeakClient {
    */
   async createEscrow(
     signer: KeyPairSigner,
-    workOrderAddress: Address,
     params: CreateEscrowParams
   ): Promise<string> {
-    return this.escrow.create(workOrderAddress, { ...params, signer })
+    return this.escrow.create({ ...params, signer })
   }
 
   /**

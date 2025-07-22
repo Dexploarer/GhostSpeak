@@ -92,10 +92,19 @@ export class EscrowInstructions extends BaseInstructions {
     // Get USDC token mint as default
     const defaultTokenMint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address // USDC on mainnet
     
-    // Generate default token accounts if not provided
-    // In production, these would be derived from the user's wallet and token mint
+    // Generate Associated Token Accounts if not provided
+    // For SPL Token 2022, we need to derive the correct ATAs from wallet + token mint
+    const tokenMint = params.tokenMint ?? defaultTokenMint
+    
+    // TODO: Implement proper ATA derivation for SPL Token 2022
+    // For now, use wallet addresses as placeholders (this will be improved)
     const defaultPayerToken = params.payerTokenAccount ?? params.signer.address
     const defaultProviderToken = params.providerTokenAccount ?? params.providerAgent
+    
+    console.log('🔍 Debug - Payment params resolution:')
+    console.log(`   Token mint: ${tokenMint}`)
+    console.log(`   Payer token: ${defaultPayerToken}`)
+    console.log(`   Provider token: ${defaultProviderToken}`)
     
     return {
       workOrderAddress: params.workOrderAddress,
@@ -128,28 +137,46 @@ export class EscrowInstructions extends BaseInstructions {
    * Create a new escrow account via work order
    */
   async create(
-    workOrderAddress: Address,
     params: CreateEscrowParams
   ): Promise<string> {
     // Resolve parameters with smart defaults
     const resolvedParams = await this._resolveCreateParams(params)
     
-    return this.executeInstruction(
-      () => getCreateWorkOrderInstruction({
-        workOrder: workOrderAddress,
-        client: resolvedParams.signer as unknown as TransactionSigner,
-        orderId: resolvedParams.orderId,
-        provider: resolvedParams.provider,
-        title: resolvedParams.title,
-        description: resolvedParams.description,
-        requirements: resolvedParams.requirements,
-        paymentAmount: resolvedParams.amount,
-        paymentToken: resolvedParams.paymentToken,
-        deadline: resolvedParams.deadline
-      }),
-      resolvedParams.signer as unknown as TransactionSigner,
-      'escrow creation'
+    // Derive the work order PDA using the correct seeds
+    const { deriveWorkOrderPda } = await import('../../utils/pda.js')
+    const workOrderAddress = await deriveWorkOrderPda(
+      this.config.programId!,
+      resolvedParams.signer.address,
+      resolvedParams.orderId
     )
+    
+    // Build the instruction for creating a work order
+    const instruction = getCreateWorkOrderInstruction({
+      workOrder: workOrderAddress,
+      client: resolvedParams.signer as unknown as TransactionSigner,
+      orderId: resolvedParams.orderId,
+      provider: resolvedParams.provider,
+      title: resolvedParams.title,
+      description: resolvedParams.description,
+      requirements: resolvedParams.requirements,
+      paymentAmount: resolvedParams.amount,
+      paymentToken: resolvedParams.paymentToken,
+      deadline: resolvedParams.deadline
+    })
+    
+    // Send the transaction using the base class method
+    const result = await this.sendTransactionWithDetails(
+      [instruction],
+      [resolvedParams.signer as unknown as TransactionSigner]
+    )
+    
+    // Log the transaction signature for debugging
+    console.log(`✅ Escrow created with signature: ${result.signature}`)
+    console.log(`   Work order address: ${workOrderAddress.toString()}`)
+    
+    // Return the work order address instead of the transaction signature
+    // This allows the caller to immediately fetch the account
+    return workOrderAddress.toString()
   }
 
   /**
@@ -162,18 +189,21 @@ export class EscrowInstructions extends BaseInstructions {
     // Resolve parameters with smart defaults
     const resolvedParams = await this._resolveDeliveryParams(params)
     
-    return this.executeInstruction(
-      () => getSubmitWorkDeliveryInstruction({
-        workDelivery: workDeliveryAddress,
-        workOrder: resolvedParams.workOrderAddress,
-        provider: resolvedParams.signer as unknown as TransactionSigner,
-        deliverables: resolvedParams.deliverables,
-        ipfsHash: resolvedParams.ipfsHash,
-        metadataUri: resolvedParams.metadataUri
-      }),
-      resolvedParams.signer as unknown as TransactionSigner,
-      'work delivery submission'
+    const instruction = getSubmitWorkDeliveryInstruction({
+      workDelivery: workDeliveryAddress,
+      workOrder: resolvedParams.workOrderAddress,
+      provider: resolvedParams.signer as unknown as TransactionSigner,
+      deliverables: resolvedParams.deliverables,
+      ipfsHash: resolvedParams.ipfsHash,
+      metadataUri: resolvedParams.metadataUri
+    })
+    
+    const result = await this.sendTransactionWithDetails(
+      [instruction],
+      [resolvedParams.signer as unknown as TransactionSigner]
     )
+    
+    return result.signature
   }
 
   /**
@@ -240,21 +270,24 @@ export class EscrowInstructions extends BaseInstructions {
     // Resolve parameters with smart defaults
     const resolvedParams = await this._resolvePaymentParams(params)
     
-    return this.executeInstruction(
-      () => getProcessPaymentInstruction({
-        payment: paymentAddress,
-        workOrder: resolvedParams.workOrderAddress,
-        providerAgent: resolvedParams.providerAgent,
-        payer: resolvedParams.signer as unknown as TransactionSigner,
-        payerTokenAccount: resolvedParams.payerTokenAccount,
-        providerTokenAccount: resolvedParams.providerTokenAccount,
-        tokenMint: resolvedParams.tokenMint,
-        amount: resolvedParams.amount,
-        useConfidentialTransfer: resolvedParams.useConfidentialTransfer
-      }),
-      resolvedParams.signer as unknown as TransactionSigner,
-      'payment processing'
+    const instruction = getProcessPaymentInstruction({
+      payment: paymentAddress,
+      workOrder: resolvedParams.workOrderAddress,
+      providerAgent: resolvedParams.providerAgent,
+      payer: resolvedParams.signer as unknown as TransactionSigner,
+      payerTokenAccount: resolvedParams.payerTokenAccount,
+      providerTokenAccount: resolvedParams.providerTokenAccount,
+      tokenMint: resolvedParams.tokenMint,
+      amount: resolvedParams.amount,
+      useConfidentialTransfer: resolvedParams.useConfidentialTransfer
+    })
+    
+    const result = await this.sendTransactionWithDetails(
+      [instruction],
+      [resolvedParams.signer as unknown as TransactionSigner]
     )
+    
+    return result.signature
   }
 
   /**

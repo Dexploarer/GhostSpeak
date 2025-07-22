@@ -1014,8 +1014,8 @@ export class SolanaRpcClient {
    */
   isValidAddress(address: string): boolean {
     try {
-      // Solana addresses are 32-44 characters in base58
-      return address.length >= 32 && address.length <= 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address)
+      // Solana addresses: 32-44 characters (standard) or up to 88 characters (ATAs/PDAs)
+      return address.length >= 32 && address.length <= 88 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address)
     } catch {
       return false
     }

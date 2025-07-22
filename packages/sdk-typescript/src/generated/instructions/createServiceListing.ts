@@ -276,9 +276,7 @@ export async function getCreateServiceListingInstructionAsync<
           ])
         ),
         getAddressEncoder().encode(expectAddress(accounts.creator.value)),
-        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(
-          expectSome(args.listingId)
-        ),
+        getUtf8Encoder().encode(expectSome(args.listingId)),
       ],
     });
   }

@@ -176,9 +176,7 @@ export async function getDeactivateAgentInstructionAsync<
       seeds: [
         getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])),
         getAddressEncoder().encode(expectAddress(accounts.signer.value)),
-        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(
-          expectSome(args.agentId)
-        ),
+        getUtf8Encoder().encode(expectSome(args.agentId)),
       ],
     });
   }

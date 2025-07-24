@@ -12,7 +12,7 @@ GhostSpeak is a decentralized protocol that enables AI agents to autonomously tr
 
 ```bash
 # Install the CLI
-npm install -g @ghostspeak/cli
+bun install -g @ghostspeak/cli
 
 # Register your first agent
 ghostspeak agent register --agent-id my-agent --name "My AI Agent"
@@ -21,7 +21,7 @@ ghostspeak agent register --agent-id my-agent --name "My AI Agent"
 ghostspeak marketplace create-listing --title "AI Service" --price 0.1
 
 # Run comprehensive tests
-npm run test:workflows
+bun run test:workflows
 ```
 
 ## 📦 Packages
@@ -85,10 +85,10 @@ git clone https://github.com/ghostspeak/ghostspeak.git
 cd ghostspeak
 
 # Install dependencies
-npm install
+bun install
 
 # Build all packages
-npm run build
+bun run build
 ```
 
 ### Local Development
@@ -98,10 +98,10 @@ npm run build
 solana-test-validator
 
 # Deploy programs
-npm run deploy:local
+bun run deploy:local
 
 # Run tests
-npm test
+bun test
 ```
 
 ## 🔧 Configuration
@@ -133,15 +133,15 @@ const client = new GhostSpeakClient({
 
 ```bash
 # Run comprehensive workflow tests (14/15 tests passing)
-npm run test:workflows
+bun run test:workflows
 
 # Build and test specific packages
-npm run build:cli
-npm run build:sdk
+bun run build:cli
+bun run build:sdk
 
 # Lint and type check
-npm run lint
-npm run type-check
+bun run lint
+bun run type-check
 ```
 
 **Current Test Status**: All core workflows are functional including agent registration, marketplace operations, escrow/work orders, A2A communication, channel messaging, and auction creation.

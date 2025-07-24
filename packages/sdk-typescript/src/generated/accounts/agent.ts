@@ -69,12 +69,12 @@ export function getAgentDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(AGENT_DISCRIMINATOR);
 }
 
-export interface Agent {
+export type Agent = {
   discriminator: ReadonlyUint8Array;
   owner: Address;
   name: string;
   description: string;
-  capabilities: string[];
+  capabilities: Array<string>;
   pricingModel: PricingModel;
   reputationScore: number;
   totalJobsCompleted: number;
@@ -91,19 +91,19 @@ export interface Agent {
   verificationTimestamp: bigint;
   metadataUri: string;
   frameworkOrigin: string;
-  supportedTokens: Address[];
+  supportedTokens: Array<Address>;
   cnftMint: Option<Address>;
   merkleTree: Option<Address>;
   supportsA2a: boolean;
   transferHook: Option<Address>;
   bump: number;
-}
+};
 
-export interface AgentArgs {
+export type AgentArgs = {
   owner: Address;
   name: string;
   description: string;
-  capabilities: string[];
+  capabilities: Array<string>;
   pricingModel: PricingModelArgs;
   reputationScore: number;
   totalJobsCompleted: number;
@@ -120,13 +120,13 @@ export interface AgentArgs {
   verificationTimestamp: number | bigint;
   metadataUri: string;
   frameworkOrigin: string;
-  supportedTokens: Address[];
+  supportedTokens: Array<Address>;
   cnftMint: OptionOrNullable<Address>;
   merkleTree: OptionOrNullable<Address>;
   supportsA2a: boolean;
   transferHook: OptionOrNullable<Address>;
   bump: number;
-}
+};
 
 export function getAgentEncoder(): Encoder<AgentArgs> {
   return transformEncoder(
@@ -255,7 +255,7 @@ export async function fetchMaybeAgent<TAddress extends string = string>(
 
 export async function fetchAllAgent(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<Agent>[]> {
   const maybeAccounts = await fetchAllMaybeAgent(rpc, addresses, config);
@@ -265,7 +265,7 @@ export async function fetchAllAgent(
 
 export async function fetchAllMaybeAgent(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<Agent>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

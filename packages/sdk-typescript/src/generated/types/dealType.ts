@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum DealType {
@@ -24,14 +24,14 @@ export enum DealType {
 
 export type DealTypeArgs = DealType;
 
-export function getDealTypeEncoder(): Encoder<DealTypeArgs> {
+export function getDealTypeEncoder(): FixedSizeEncoder<DealTypeArgs> {
   return getEnumEncoder(DealType);
 }
 
-export function getDealTypeDecoder(): Decoder<DealType> {
+export function getDealTypeDecoder(): FixedSizeDecoder<DealType> {
   return getEnumDecoder(DealType);
 }
 
-export function getDealTypeCodec(): Codec<DealTypeArgs, DealType> {
+export function getDealTypeCodec(): FixedSizeCodec<DealTypeArgs, DealType> {
   return combineCodec(getDealTypeEncoder(), getDealTypeDecoder());
 }

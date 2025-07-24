@@ -25,15 +25,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -60,19 +60,19 @@ export function getRegisterAgentDiscriminatorBytes() {
 
 export type RegisterAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAgentAccount extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountSigner extends string | IAccountMeta<string> = string,
+  TAccountAgentAccount extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountSigner extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAgentAccount extends string
         ? WritableAccount<TAccountAgentAccount>
@@ -82,7 +82,7 @@ export type RegisterAgentInstruction<
         : TAccountUserRegistry,
       TAccountSigner extends string
         ? WritableSignerAccount<TAccountSigner> &
-            IAccountSignerMeta<TAccountSigner>
+            AccountSignerMeta<TAccountSigner>
         : TAccountSigner,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -94,18 +94,18 @@ export type RegisterAgentInstruction<
     ]
   >;
 
-export interface RegisterAgentInstructionData {
+export type RegisterAgentInstructionData = {
   discriminator: ReadonlyUint8Array;
   agentType: number;
   metadataUri: string;
   agentId: string;
-}
+};
 
-export interface RegisterAgentInstructionDataArgs {
+export type RegisterAgentInstructionDataArgs = {
   agentType: number;
   metadataUri: string;
   agentId: string;
-}
+};
 
 export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentInstructionDataArgs> {
   return transformEncoder(
@@ -115,13 +115,7 @@ export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentI
       ['metadataUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['agentId', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ]),
-    (value) => {
-      // Ensure agentType is a valid number
-      if (typeof value.agentType !== 'number' || isNaN(value.agentType)) {
-        throw new Error(`Invalid agentType: ${value.agentType}. Must be a valid number.`);
-      }
-      return { ...value, discriminator: REGISTER_AGENT_DISCRIMINATOR };
-    }
+    (value) => ({ ...value, discriminator: REGISTER_AGENT_DISCRIMINATOR })
   );
 }
 
@@ -144,13 +138,13 @@ export function getRegisterAgentInstructionDataCodec(): Codec<
   );
 }
 
-export interface RegisterAgentAsyncInput<
+export type RegisterAgentAsyncInput<
   TAccountAgentAccount extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Agent account with enhanced 2025 PDA security */
   agentAccount?: Address<TAccountAgentAccount>;
   /** User registry with enhanced validation */
@@ -164,7 +158,7 @@ export interface RegisterAgentAsyncInput<
   agentType: RegisterAgentInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentInstructionDataArgs['agentId'];
-}
+};
 
 export async function getRegisterAgentInstructionAsync<
   TAccountAgentAccount extends string,
@@ -220,7 +214,9 @@ export async function getRegisterAgentInstructionAsync<
       seeds: [
         getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])),
         getAddressEncoder().encode(expectAddress(accounts.signer.value)),
-        getUtf8Encoder().encode(expectSome(args.agentId)),
+        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(
+          expectSome(args.agentId)
+        ),
       ],
     });
   }
@@ -271,13 +267,13 @@ export async function getRegisterAgentInstructionAsync<
   return instruction;
 }
 
-export interface RegisterAgentInput<
+export type RegisterAgentInput<
   TAccountAgentAccount extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Agent account with enhanced 2025 PDA security */
   agentAccount: Address<TAccountAgentAccount>;
   /** User registry with enhanced validation */
@@ -291,7 +287,7 @@ export interface RegisterAgentInput<
   agentType: RegisterAgentInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentInstructionDataArgs['agentId'];
-}
+};
 
 export function getRegisterAgentInstruction<
   TAccountAgentAccount extends string,
@@ -373,10 +369,10 @@ export function getRegisterAgentInstruction<
   return instruction;
 }
 
-export interface ParsedRegisterAgentInstruction<
+export type ParsedRegisterAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with enhanced 2025 PDA security */
@@ -391,18 +387,19 @@ export interface ParsedRegisterAgentInstruction<
     clock: TAccountMetas[4];
   };
   data: RegisterAgentInstructionData;
-}
+};
 
 export function parseRegisterAgentInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedRegisterAgentInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

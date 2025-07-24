@@ -32,15 +32,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type Option,
   type OptionOrNullable,
   type ReadonlyAccount,
@@ -68,22 +68,22 @@ export function getUpdateAgentServiceDiscriminatorBytes() {
 
 export type UpdateAgentServiceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountOwner extends string | IAccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountOwner extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAgent extends string
         ? WritableAccount<TAccountAgent>
         : TAccountAgent,
       TAccountOwner extends string
         ? WritableSignerAccount<TAccountOwner> &
-            IAccountSignerMeta<TAccountOwner>
+            AccountSignerMeta<TAccountOwner>
         : TAccountOwner,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -92,7 +92,7 @@ export type UpdateAgentServiceInstruction<
     ]
   >;
 
-export interface UpdateAgentServiceInstructionData {
+export type UpdateAgentServiceInstructionData = {
   discriminator: ReadonlyUint8Array;
   /** Agent's public key for verification (must match PDA derivation) */
   agentPubkey: Address;
@@ -105,10 +105,10 @@ export interface UpdateAgentServiceInstructionData {
   /** Optional metadata URI for extended agent information */
   metadataUri: Option<string>;
   /** Service capability tags for filtering */
-  capabilities: string[];
-}
+  capabilities: Array<string>;
+};
 
-export interface UpdateAgentServiceInstructionDataArgs {
+export type UpdateAgentServiceInstructionDataArgs = {
   /** Agent's public key for verification (must match PDA derivation) */
   agentPubkey: Address;
   /** Service endpoint URL (validated for length and format) */
@@ -120,8 +120,8 @@ export interface UpdateAgentServiceInstructionDataArgs {
   /** Optional metadata URI for extended agent information */
   metadataUri: OptionOrNullable<string>;
   /** Service capability tags for filtering */
-  capabilities: string[];
-}
+  capabilities: Array<string>;
+};
 
 export function getUpdateAgentServiceInstructionDataEncoder(): Encoder<UpdateAgentServiceInstructionDataArgs> {
   return transformEncoder(
@@ -182,11 +182,11 @@ export function getUpdateAgentServiceInstructionDataCodec(): Codec<
   );
 }
 
-export interface UpdateAgentServiceAsyncInput<
+export type UpdateAgentServiceAsyncInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   /** Agent account with enhanced 2025 security patterns */
   agent?: Address<TAccountAgent>;
   /** Owner must be signer for security (2025 pattern) */
@@ -199,7 +199,7 @@ export interface UpdateAgentServiceAsyncInput<
   lastUpdated: UpdateAgentServiceInstructionDataArgs['lastUpdated'];
   metadataUri: UpdateAgentServiceInstructionDataArgs['metadataUri'];
   capabilities: UpdateAgentServiceInstructionDataArgs['capabilities'];
-}
+};
 
 export async function getUpdateAgentServiceInstructionAsync<
   TAccountAgent extends string,
@@ -276,11 +276,11 @@ export async function getUpdateAgentServiceInstructionAsync<
   return instruction;
 }
 
-export interface UpdateAgentServiceInput<
+export type UpdateAgentServiceInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   /** Agent account with enhanced 2025 security patterns */
   agent: Address<TAccountAgent>;
   /** Owner must be signer for security (2025 pattern) */
@@ -293,7 +293,7 @@ export interface UpdateAgentServiceInput<
   lastUpdated: UpdateAgentServiceInstructionDataArgs['lastUpdated'];
   metadataUri: UpdateAgentServiceInstructionDataArgs['metadataUri'];
   capabilities: UpdateAgentServiceInstructionDataArgs['capabilities'];
-}
+};
 
 export function getUpdateAgentServiceInstruction<
   TAccountAgent extends string,
@@ -359,10 +359,10 @@ export function getUpdateAgentServiceInstruction<
   return instruction;
 }
 
-export interface ParsedUpdateAgentServiceInstruction<
+export type ParsedUpdateAgentServiceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with enhanced 2025 security patterns */
@@ -373,18 +373,19 @@ export interface ParsedUpdateAgentServiceInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: UpdateAgentServiceInstructionData;
-}
+};
 
 export function parseUpdateAgentServiceInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedUpdateAgentServiceInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

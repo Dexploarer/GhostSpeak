@@ -34,31 +34,31 @@ import {
 } from '.';
 
 /** Segregation of duties constraint */
-export interface SodConstraint {
+export type SodConstraint = {
   /** Constraint name */
   name: string;
   /** Conflicting roles */
-  conflictingRoles: string[];
+  conflictingRoles: Array<string>;
   /** Constraint type */
   constraintType: SodConstraintType;
   /** Enforcement level */
   enforcementLevel: EnforcementLevel;
   /** Exception procedures */
-  exceptionProcedures: string[];
-}
+  exceptionProcedures: Array<string>;
+};
 
-export interface SodConstraintArgs {
+export type SodConstraintArgs = {
   /** Constraint name */
   name: string;
   /** Conflicting roles */
-  conflictingRoles: string[];
+  conflictingRoles: Array<string>;
   /** Constraint type */
   constraintType: SodConstraintTypeArgs;
   /** Enforcement level */
   enforcementLevel: EnforcementLevelArgs;
   /** Exception procedures */
-  exceptionProcedures: string[];
-}
+  exceptionProcedures: Array<string>;
+};
 
 export function getSodConstraintEncoder(): Encoder<SodConstraintArgs> {
   return getStructEncoder([

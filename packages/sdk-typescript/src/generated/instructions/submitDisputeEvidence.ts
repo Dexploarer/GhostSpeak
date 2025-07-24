@@ -23,15 +23,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -57,16 +57,16 @@ export function getSubmitDisputeEvidenceDiscriminatorBytes() {
 
 export type SubmitDisputeEvidenceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountDispute extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountSubmitter extends string | IAccountMeta<string> = string,
+  TAccountDispute extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountSubmitter extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountDispute extends string
         ? WritableAccount<TAccountDispute>
@@ -76,7 +76,7 @@ export type SubmitDisputeEvidenceInstruction<
         : TAccountUserRegistry,
       TAccountSubmitter extends string
         ? ReadonlySignerAccount<TAccountSubmitter> &
-            IAccountSignerMeta<TAccountSubmitter>
+            AccountSignerMeta<TAccountSubmitter>
         : TAccountSubmitter,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -85,16 +85,16 @@ export type SubmitDisputeEvidenceInstruction<
     ]
   >;
 
-export interface SubmitDisputeEvidenceInstructionData {
+export type SubmitDisputeEvidenceInstructionData = {
   discriminator: ReadonlyUint8Array;
   evidenceType: string;
   evidenceData: string;
-}
+};
 
-export interface SubmitDisputeEvidenceInstructionDataArgs {
+export type SubmitDisputeEvidenceInstructionDataArgs = {
   evidenceType: string;
   evidenceData: string;
-}
+};
 
 export function getSubmitDisputeEvidenceInstructionDataEncoder(): Encoder<SubmitDisputeEvidenceInstructionDataArgs> {
   return transformEncoder(
@@ -128,12 +128,12 @@ export function getSubmitDisputeEvidenceInstructionDataCodec(): Codec<
   );
 }
 
-export interface SubmitDisputeEvidenceAsyncInput<
+export type SubmitDisputeEvidenceAsyncInput<
   TAccountDispute extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSubmitter extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dispute account with canonical bump validation */
   dispute: Address<TAccountDispute>;
   /** User registry for rate limiting */
@@ -144,7 +144,7 @@ export interface SubmitDisputeEvidenceAsyncInput<
   clock?: Address<TAccountClock>;
   evidenceType: SubmitDisputeEvidenceInstructionDataArgs['evidenceType'];
   evidenceData: SubmitDisputeEvidenceInstructionDataArgs['evidenceData'];
-}
+};
 
 export async function getSubmitDisputeEvidenceInstructionAsync<
   TAccountDispute extends string,
@@ -231,12 +231,12 @@ export async function getSubmitDisputeEvidenceInstructionAsync<
   return instruction;
 }
 
-export interface SubmitDisputeEvidenceInput<
+export type SubmitDisputeEvidenceInput<
   TAccountDispute extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountSubmitter extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dispute account with canonical bump validation */
   dispute: Address<TAccountDispute>;
   /** User registry for rate limiting */
@@ -247,7 +247,7 @@ export interface SubmitDisputeEvidenceInput<
   clock?: Address<TAccountClock>;
   evidenceType: SubmitDisputeEvidenceInstructionDataArgs['evidenceType'];
   evidenceData: SubmitDisputeEvidenceInstructionDataArgs['evidenceData'];
-}
+};
 
 export function getSubmitDisputeEvidenceInstruction<
   TAccountDispute extends string,
@@ -319,10 +319,10 @@ export function getSubmitDisputeEvidenceInstruction<
   return instruction;
 }
 
-export interface ParsedSubmitDisputeEvidenceInstruction<
+export type ParsedSubmitDisputeEvidenceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dispute account with canonical bump validation */
@@ -335,18 +335,19 @@ export interface ParsedSubmitDisputeEvidenceInstruction<
     clock: TAccountMetas[3];
   };
   data: SubmitDisputeEvidenceInstructionData;
-}
+};
 
 export function parseSubmitDisputeEvidenceInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedSubmitDisputeEvidenceInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

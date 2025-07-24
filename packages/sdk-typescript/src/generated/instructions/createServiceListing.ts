@@ -30,15 +30,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -65,20 +65,20 @@ export function getCreateServiceListingDiscriminatorBytes() {
 
 export type CreateServiceListingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountServiceListing extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountCreator extends string | IAccountMeta<string> = string,
+  TAccountServiceListing extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountCreator extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountServiceListing extends string
         ? WritableAccount<TAccountServiceListing>
@@ -91,7 +91,7 @@ export type CreateServiceListingInstruction<
         : TAccountUserRegistry,
       TAccountCreator extends string
         ? WritableSignerAccount<TAccountCreator> &
-            IAccountSignerMeta<TAccountCreator>
+            AccountSignerMeta<TAccountCreator>
         : TAccountCreator,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -103,7 +103,7 @@ export type CreateServiceListingInstruction<
     ]
   >;
 
-export interface CreateServiceListingInstructionData {
+export type CreateServiceListingInstructionData = {
   discriminator: ReadonlyUint8Array;
   title: string;
   description: string;
@@ -112,11 +112,11 @@ export interface CreateServiceListingInstructionData {
   serviceType: string;
   paymentToken: Address;
   estimatedDelivery: bigint;
-  tags: string[];
+  tags: Array<string>;
   listingId: string;
-}
+};
 
-export interface CreateServiceListingInstructionDataArgs {
+export type CreateServiceListingInstructionDataArgs = {
   title: string;
   description: string;
   price: number | bigint;
@@ -124,9 +124,9 @@ export interface CreateServiceListingInstructionDataArgs {
   serviceType: string;
   paymentToken: Address;
   estimatedDelivery: number | bigint;
-  tags: string[];
+  tags: Array<string>;
   listingId: string;
-}
+};
 
 export function getCreateServiceListingInstructionDataEncoder(): Encoder<CreateServiceListingInstructionDataArgs> {
   return transformEncoder(
@@ -182,14 +182,14 @@ export function getCreateServiceListingInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateServiceListingAsyncInput<
+export type CreateServiceListingAsyncInput<
   TAccountServiceListing extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Service listing account with enhanced PDA security */
   serviceListing?: Address<TAccountServiceListing>;
   /** Agent account with ownership validation */
@@ -211,7 +211,7 @@ export interface CreateServiceListingAsyncInput<
   estimatedDelivery: CreateServiceListingInstructionDataArgs['estimatedDelivery'];
   tags: CreateServiceListingInstructionDataArgs['tags'];
   listingId: CreateServiceListingInstructionDataArgs['listingId'];
-}
+};
 
 export async function getCreateServiceListingInstructionAsync<
   TAccountServiceListing extends string,
@@ -276,7 +276,9 @@ export async function getCreateServiceListingInstructionAsync<
           ])
         ),
         getAddressEncoder().encode(expectAddress(accounts.creator.value)),
-        getUtf8Encoder().encode(expectSome(args.listingId)),
+        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(
+          expectSome(args.listingId)
+        ),
       ],
     });
   }
@@ -329,14 +331,14 @@ export async function getCreateServiceListingInstructionAsync<
   return instruction;
 }
 
-export interface CreateServiceListingInput<
+export type CreateServiceListingInput<
   TAccountServiceListing extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Service listing account with enhanced PDA security */
   serviceListing: Address<TAccountServiceListing>;
   /** Agent account with ownership validation */
@@ -358,7 +360,7 @@ export interface CreateServiceListingInput<
   estimatedDelivery: CreateServiceListingInstructionDataArgs['estimatedDelivery'];
   tags: CreateServiceListingInstructionDataArgs['tags'];
   listingId: CreateServiceListingInstructionDataArgs['listingId'];
-}
+};
 
 export function getCreateServiceListingInstruction<
   TAccountServiceListing extends string,
@@ -446,10 +448,10 @@ export function getCreateServiceListingInstruction<
   return instruction;
 }
 
-export interface ParsedCreateServiceListingInstruction<
+export type ParsedCreateServiceListingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Service listing account with enhanced PDA security */
@@ -466,18 +468,19 @@ export interface ParsedCreateServiceListingInstruction<
     clock: TAccountMetas[5];
   };
   data: CreateServiceListingInstructionData;
-}
+};
 
 export function parseCreateServiceListingInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateServiceListingInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 6) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

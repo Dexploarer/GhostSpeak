@@ -1495,9 +1495,7 @@ impl RiskScoringModel {
         confidence: Option<u8>,
     ) -> u8 {
         let base_score = match self.calculation_method {
-            RiskCalculationMethod::Simple => {
-                ((impact as u16 * likelihood as u16) / 100) as u8
-            }
+            RiskCalculationMethod::Simple => ((impact as u16 * likelihood as u16) / 100) as u8,
             RiskCalculationMethod::ControlAdjusted => {
                 let risk = (impact as u16 * likelihood as u16) / 100;
                 let adjusted = risk * (100 - control_effectiveness as u16) / 100;
@@ -1512,18 +1510,19 @@ impl RiskScoringModel {
             RiskCalculationMethod::MultiFactorWeighted => {
                 let impact_score = (impact as u16 * self.impact_weight as u16) / 100;
                 let likelihood_score = (likelihood as u16 * self.likelihood_weight as u16) / 100;
-                let control_score = (control_effectiveness as u16 * self.control_factor as u16) / 100;
+                let control_score =
+                    (control_effectiveness as u16 * self.control_factor as u16) / 100;
                 let vel_score = velocity.unwrap_or(50) as u16 * self.velocity_factor as u16 / 100;
-                
-                let total_weight = self.impact_weight as u16 + 
-                                 self.likelihood_weight as u16 + 
-                                 self.control_factor as u16 + 
-                                 self.velocity_factor as u16;
-                                 
-                if total_weight == 0 { 
+
+                let total_weight = self.impact_weight as u16
+                    + self.likelihood_weight as u16
+                    + self.control_factor as u16
+                    + self.velocity_factor as u16;
+
+                if total_weight == 0 {
                     return 0;
                 }
-                
+
                 let weighted_sum = impact_score + likelihood_score + vel_score;
                 let final_score = weighted_sum * (100 - control_score) / 100;
                 (final_score * 100 / total_weight).min(100) as u8
@@ -1533,7 +1532,7 @@ impl RiskScoringModel {
                 ((impact as u16 * likelihood as u16) / 100) as u8
             }
         };
-        
+
         // Apply confidence adjustment if enabled
         if self.confidence_adjustment {
             let conf = confidence.unwrap_or(75);
@@ -1587,7 +1586,7 @@ pub enum ResponseStrategy {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct ColorScheme {
-    pub very_low: [u8; 3],    // RGB color
+    pub very_low: [u8; 3], // RGB color
     pub low: [u8; 3],
     pub medium: [u8; 3],
     pub high: [u8; 3],
@@ -1611,34 +1610,34 @@ impl RiskMatrix {
         let score = self.calculate_matrix_score(impact, likelihood);
         self.score_to_rating(score)
     }
-    
+
     /// Calculate risk score based on matrix position
     pub fn calculate_matrix_score(&self, impact: u8, likelihood: u8) -> u8 {
         // Ensure values are within scale
         let normalized_impact = impact.min(self.scale);
         let normalized_likelihood = likelihood.min(self.scale);
-        
+
         // Calculate score based on matrix dimensions
         match self.dimensions {
             2 => {
                 // 2D matrix: simple multiplication
-                ((normalized_impact as u16 * normalized_likelihood as u16 * 100) / 
-                 (self.scale as u16 * self.scale as u16)) as u8
+                ((normalized_impact as u16 * normalized_likelihood as u16 * 100)
+                    / (self.scale as u16 * self.scale as u16)) as u8
             }
             3 => {
                 // 3D matrix would include additional dimension (e.g., velocity)
                 // For now, use 2D calculation
-                ((normalized_impact as u16 * normalized_likelihood as u16 * 100) / 
-                 (self.scale as u16 * self.scale as u16)) as u8
+                ((normalized_impact as u16 * normalized_likelihood as u16 * 100)
+                    / (self.scale as u16 * self.scale as u16)) as u8
             }
             _ => {
                 // Default to 2D calculation
-                ((normalized_impact as u16 * normalized_likelihood as u16 * 100) / 
-                 (self.scale as u16 * self.scale as u16)) as u8
+                ((normalized_impact as u16 * normalized_likelihood as u16 * 100)
+                    / (self.scale as u16 * self.scale as u16)) as u8
             }
         }
     }
-    
+
     /// Convert risk score to rating based on thresholds
     pub fn score_to_rating(&self, score: u8) -> RiskRating {
         if score <= self.risk_thresholds.very_low_max {
@@ -1717,27 +1716,30 @@ pub struct StrategicAlignment {
 impl RiskAppetite {
     /// Check if a risk level exceeds appetite for a category
     pub fn exceeds_appetite(&self, category: &str, risk_level: u8) -> bool {
-        if let Some((_cat, appetite)) = self.category_appetites
+        if let Some((_cat, appetite)) = self
+            .category_appetites
             .iter()
-            .find(|(cat, _)| cat == category) {
+            .find(|(cat, _)| cat == category)
+        {
             risk_level > *appetite
         } else {
             risk_level > self.overall_risk_appetite
         }
     }
-    
+
     /// Calculate risk appetite utilization percentage
     pub fn calculate_utilization(&self, category: &str, current_risk: u8) -> u8 {
-        let appetite = self.category_appetites
+        let appetite = self
+            .category_appetites
             .iter()
             .find(|(cat, _)| cat == category)
             .map(|(_, app)| *app)
             .unwrap_or(self.overall_risk_appetite);
-            
+
         if appetite == 0 {
             return 100;
         }
-        
+
         ((current_risk as u16 * 100) / appetite as u16).min(100) as u8
     }
 }
@@ -1790,7 +1792,7 @@ impl KeyRiskIndicator {
             KriStatus::Normal
         }
     }
-    
+
     /// Calculate percentage deviation from target
     pub fn calculate_deviation_percentage(&self) -> f64 {
         if self.target_value == 0.0 {
@@ -1798,7 +1800,7 @@ impl KeyRiskIndicator {
         }
         ((self.current_value - self.target_value) / self.target_value) * 100.0
     }
-    
+
     /// Check if KRI requires immediate action
     pub fn requires_immediate_action(&self) -> bool {
         matches!(self.status, KriStatus::Critical | KriStatus::Breach)
@@ -1829,7 +1831,7 @@ pub struct RegisteredRisk {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RiskVelocity {
     Slow,      // Risk materializes over months/years
-    Moderate,  // Risk materializes over weeks/months  
+    Moderate,  // Risk materializes over weeks/months
     Fast,      // Risk materializes over days/weeks
     VeryFast,  // Risk materializes over hours/days
     Immediate, // Risk can materialize instantly
@@ -1850,22 +1852,22 @@ impl RegisteredRisk {
         if self.current_score > self.target_score + 10 {
             RiskTrend::Increasing
         } else if self.current_score < self.target_score - 10 {
-            RiskTrend::Decreasing  
+            RiskTrend::Decreasing
         } else {
             RiskTrend::Stable
         }
     }
-    
+
     /// Calculate risk exposure (current vs target)
     pub fn calculate_exposure_gap(&self) -> i8 {
         self.current_score as i8 - self.target_score as i8
     }
-    
+
     /// Check if risk needs immediate attention
     pub fn needs_immediate_attention(&self) -> bool {
-        self.current_score > 75 || 
-        self.risk_velocity == RiskVelocity::VeryFast ||
-        self.risk_velocity == RiskVelocity::Immediate
+        self.current_score > 75
+            || self.risk_velocity == RiskVelocity::VeryFast
+            || self.risk_velocity == RiskVelocity::Immediate
     }
 }
 

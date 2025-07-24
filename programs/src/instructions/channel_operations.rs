@@ -7,17 +7,12 @@
 
 use anchor_lang::prelude::*;
 
-use crate::security::{ReentrancyGuard};
+use crate::security::ReentrancyGuard;
 use crate::state::{
-    channel::Channel, 
-    message::Message,
-    ChannelType, 
-    MessageType,
-    MAX_PARTICIPANTS_COUNT,
-    MAX_MESSAGE_LENGTH,
-    MAX_GENERAL_STRING_LENGTH,
+    channel::Channel, message::Message, ChannelType, MessageType, MAX_GENERAL_STRING_LENGTH,
+    MAX_MESSAGE_LENGTH, MAX_PARTICIPANTS_COUNT,
 };
-use crate::{GhostSpeakError, Agent};
+use crate::{Agent, GhostSpeakError};
 
 // =====================================================
 // ENHANCED DATA STRUCTURES
@@ -282,10 +277,7 @@ pub fn create_enhanced_channel(
     }
 
     if let Some(ref description) = metadata.description {
-        require!(
-            description.len() <= 512,
-            GhostSpeakError::InputTooLong
-        );
+        require!(description.len() <= 512, GhostSpeakError::InputTooLong);
     }
 
     // Initialize channel
@@ -410,10 +402,10 @@ pub fn send_enhanced_message(
         sender: ctx.accounts.sender.key(),
         message_type,
         metadata: metadata.clone(),
-        content_preview: if content.len() > 50 { 
+        content_preview: if content.len() > 50 {
             format!("{}...", &content[..50])
-        } else { 
-            content 
+        } else {
+            content
         },
         timestamp: clock.unix_timestamp,
         mentions: metadata.mentions,
@@ -435,7 +427,7 @@ pub fn join_channel(ctx: Context<JoinChannel>) -> Result<()> {
     ctx.accounts.reentrancy_guard.lock()?;
 
     let channel = &mut ctx.accounts.channel;
-    
+
     // Check if channel allows new participants
     require!(
         channel.participants.len() < MAX_PARTICIPANTS_COUNT,
@@ -466,9 +458,11 @@ pub fn leave_channel(ctx: Context<LeaveChannel>) -> Result<()> {
     ctx.accounts.reentrancy_guard.lock()?;
 
     let channel = &mut ctx.accounts.channel;
-    
+
     // Remove user from participants
-    channel.participants.retain(|&x| x != ctx.accounts.user.key());
+    channel
+        .participants
+        .retain(|&x| x != ctx.accounts.user.key());
     channel.last_activity = Clock::get()?.unix_timestamp;
 
     emit!(UserLeftChannelEvent {
@@ -494,7 +488,7 @@ pub fn update_channel_settings(
     ctx.accounts.reentrancy_guard.lock()?;
 
     let channel = &mut ctx.accounts.channel;
-    
+
     // Update channel privacy based on settings
     channel.is_private = new_metadata.settings.require_encryption;
     channel.last_activity = Clock::get()?.unix_timestamp;
@@ -512,10 +506,7 @@ pub fn update_channel_settings(
 /// Adds a reaction to a message
 ///
 /// Allows channel participants to react to messages with emojis.
-pub fn add_message_reaction(
-    ctx: Context<AddMessageReaction>,
-    reaction: String,
-) -> Result<()> {
+pub fn add_message_reaction(ctx: Context<AddMessageReaction>, reaction: String) -> Result<()> {
     msg!("Adding reaction to message: {}", ctx.accounts.message.key());
 
     // SECURITY: Apply reentrancy protection

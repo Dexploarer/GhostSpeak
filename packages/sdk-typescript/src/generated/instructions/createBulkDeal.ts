@@ -31,15 +31,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -75,20 +75,20 @@ export function getCreateBulkDealDiscriminatorBytes() {
 
 export type CreateBulkDealInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountDeal extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountCustomer extends string | IAccountMeta<string> = string,
+  TAccountDeal extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountCustomer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountDeal extends string
         ? WritableAccount<TAccountDeal>
@@ -101,7 +101,7 @@ export type CreateBulkDealInstruction<
         : TAccountUserRegistry,
       TAccountCustomer extends string
         ? WritableSignerAccount<TAccountCustomer> &
-            IAccountSignerMeta<TAccountCustomer>
+            AccountSignerMeta<TAccountCustomer>
         : TAccountCustomer,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -113,30 +113,30 @@ export type CreateBulkDealInstruction<
     ]
   >;
 
-export interface CreateBulkDealInstructionData {
+export type CreateBulkDealInstructionData = {
   discriminator: ReadonlyUint8Array;
   dealId: bigint;
   dealType: DealType;
   totalVolume: number;
   totalValue: bigint;
   discountPercentage: number;
-  volumeTiers: VolumeTier[];
+  volumeTiers: Array<VolumeTier>;
   slaTerms: string;
   contractDuration: bigint;
   endDate: bigint;
-}
+};
 
-export interface CreateBulkDealInstructionDataArgs {
+export type CreateBulkDealInstructionDataArgs = {
   dealId: number | bigint;
   dealType: DealTypeArgs;
   totalVolume: number;
   totalValue: number | bigint;
   discountPercentage: number;
-  volumeTiers: VolumeTierArgs[];
+  volumeTiers: Array<VolumeTierArgs>;
   slaTerms: string;
   contractDuration: number | bigint;
   endDate: number | bigint;
-}
+};
 
 export function getCreateBulkDealInstructionDataEncoder(): Encoder<CreateBulkDealInstructionDataArgs> {
   return transformEncoder(
@@ -181,14 +181,14 @@ export function getCreateBulkDealInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateBulkDealAsyncInput<
+export type CreateBulkDealAsyncInput<
   TAccountDeal extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCustomer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Bulk deal account with collision prevention */
   deal: Address<TAccountDeal>;
   /** Agent account with enhanced constraints */
@@ -210,7 +210,7 @@ export interface CreateBulkDealAsyncInput<
   slaTerms: CreateBulkDealInstructionDataArgs['slaTerms'];
   contractDuration: CreateBulkDealInstructionDataArgs['contractDuration'];
   endDate: CreateBulkDealInstructionDataArgs['endDate'];
-}
+};
 
 export async function getCreateBulkDealInstructionAsync<
   TAccountDeal extends string,
@@ -313,14 +313,14 @@ export async function getCreateBulkDealInstructionAsync<
   return instruction;
 }
 
-export interface CreateBulkDealInput<
+export type CreateBulkDealInput<
   TAccountDeal extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCustomer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Bulk deal account with collision prevention */
   deal: Address<TAccountDeal>;
   /** Agent account with enhanced constraints */
@@ -342,7 +342,7 @@ export interface CreateBulkDealInput<
   slaTerms: CreateBulkDealInstructionDataArgs['slaTerms'];
   contractDuration: CreateBulkDealInstructionDataArgs['contractDuration'];
   endDate: CreateBulkDealInstructionDataArgs['endDate'];
-}
+};
 
 export function getCreateBulkDealInstruction<
   TAccountDeal extends string,
@@ -430,10 +430,10 @@ export function getCreateBulkDealInstruction<
   return instruction;
 }
 
-export interface ParsedCreateBulkDealInstruction<
+export type ParsedCreateBulkDealInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Bulk deal account with collision prevention */
@@ -450,18 +450,19 @@ export interface ParsedCreateBulkDealInstruction<
     clock: TAccountMetas[5];
   };
   data: CreateBulkDealInstructionData;
-}
+};
 
 export function parseCreateBulkDealInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateBulkDealInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 6) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

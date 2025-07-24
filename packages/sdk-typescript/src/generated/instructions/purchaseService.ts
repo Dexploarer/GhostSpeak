@@ -29,15 +29,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -63,16 +63,16 @@ export function getPurchaseServiceDiscriminatorBytes() {
 
 export type PurchaseServiceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountServicePurchase extends string | IAccountMeta<string> = string,
-  TAccountServiceListing extends string | IAccountMeta<string> = string,
-  TAccountBuyer extends string | IAccountMeta<string> = string,
+  TAccountServicePurchase extends string | AccountMeta<string> = string,
+  TAccountServiceListing extends string | AccountMeta<string> = string,
+  TAccountBuyer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountServicePurchase extends string
         ? WritableAccount<TAccountServicePurchase>
@@ -82,7 +82,7 @@ export type PurchaseServiceInstruction<
         : TAccountServiceListing,
       TAccountBuyer extends string
         ? WritableSignerAccount<TAccountBuyer> &
-            IAccountSignerMeta<TAccountBuyer>
+            AccountSignerMeta<TAccountBuyer>
         : TAccountBuyer,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -91,22 +91,22 @@ export type PurchaseServiceInstruction<
     ]
   >;
 
-export interface PurchaseServiceInstructionData {
+export type PurchaseServiceInstructionData = {
   discriminator: ReadonlyUint8Array;
   listingId: bigint;
   quantity: number;
-  requirements: string[];
+  requirements: Array<string>;
   customInstructions: string;
   deadline: bigint;
-}
+};
 
-export interface PurchaseServiceInstructionDataArgs {
+export type PurchaseServiceInstructionDataArgs = {
   listingId: number | bigint;
   quantity: number;
-  requirements: string[];
+  requirements: Array<string>;
   customInstructions: string;
   deadline: number | bigint;
-}
+};
 
 export function getPurchaseServiceInstructionDataEncoder(): Encoder<PurchaseServiceInstructionDataArgs> {
   return transformEncoder(
@@ -157,12 +157,12 @@ export function getPurchaseServiceInstructionDataCodec(): Codec<
   );
 }
 
-export interface PurchaseServiceAsyncInput<
+export type PurchaseServiceAsyncInput<
   TAccountServicePurchase extends string = string,
   TAccountServiceListing extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   servicePurchase?: Address<TAccountServicePurchase>;
   serviceListing: Address<TAccountServiceListing>;
   buyer: TransactionSigner<TAccountBuyer>;
@@ -172,7 +172,7 @@ export interface PurchaseServiceAsyncInput<
   requirements: PurchaseServiceInstructionDataArgs['requirements'];
   customInstructions: PurchaseServiceInstructionDataArgs['customInstructions'];
   deadline: PurchaseServiceInstructionDataArgs['deadline'];
-}
+};
 
 export async function getPurchaseServiceInstructionAsync<
   TAccountServicePurchase extends string,
@@ -263,12 +263,12 @@ export async function getPurchaseServiceInstructionAsync<
   return instruction;
 }
 
-export interface PurchaseServiceInput<
+export type PurchaseServiceInput<
   TAccountServicePurchase extends string = string,
   TAccountServiceListing extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   servicePurchase: Address<TAccountServicePurchase>;
   serviceListing: Address<TAccountServiceListing>;
   buyer: TransactionSigner<TAccountBuyer>;
@@ -278,7 +278,7 @@ export interface PurchaseServiceInput<
   requirements: PurchaseServiceInstructionDataArgs['requirements'];
   customInstructions: PurchaseServiceInstructionDataArgs['customInstructions'];
   deadline: PurchaseServiceInstructionDataArgs['deadline'];
-}
+};
 
 export function getPurchaseServiceInstruction<
   TAccountServicePurchase extends string,
@@ -350,10 +350,10 @@ export function getPurchaseServiceInstruction<
   return instruction;
 }
 
-export interface ParsedPurchaseServiceInstruction<
+export type ParsedPurchaseServiceInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     servicePurchase: TAccountMetas[0];
@@ -362,18 +362,19 @@ export interface ParsedPurchaseServiceInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: PurchaseServiceInstructionData;
-}
+};
 
 export function parsePurchaseServiceInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedPurchaseServiceInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

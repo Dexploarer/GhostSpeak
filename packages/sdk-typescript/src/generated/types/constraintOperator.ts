@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Operators for constraint conditions */
@@ -33,15 +33,15 @@ export enum ConstraintOperator {
 
 export type ConstraintOperatorArgs = ConstraintOperator;
 
-export function getConstraintOperatorEncoder(): Encoder<ConstraintOperatorArgs> {
+export function getConstraintOperatorEncoder(): FixedSizeEncoder<ConstraintOperatorArgs> {
   return getEnumEncoder(ConstraintOperator);
 }
 
-export function getConstraintOperatorDecoder(): Decoder<ConstraintOperator> {
+export function getConstraintOperatorDecoder(): FixedSizeDecoder<ConstraintOperator> {
   return getEnumDecoder(ConstraintOperator);
 }
 
-export function getConstraintOperatorCodec(): Codec<
+export function getConstraintOperatorCodec(): FixedSizeCodec<
   ConstraintOperatorArgs,
   ConstraintOperator
 > {

@@ -23,15 +23,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -58,21 +58,21 @@ export function getFileDisputeDiscriminatorBytes() {
 
 export type FileDisputeInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountDispute extends string | IAccountMeta<string> = string,
-  TAccountTransaction extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountComplainant extends string | IAccountMeta<string> = string,
-  TAccountRespondent extends string | IAccountMeta<string> = string,
+  TAccountDispute extends string | AccountMeta<string> = string,
+  TAccountTransaction extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountComplainant extends string | AccountMeta<string> = string,
+  TAccountRespondent extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountDispute extends string
         ? WritableAccount<TAccountDispute>
@@ -85,7 +85,7 @@ export type FileDisputeInstruction<
         : TAccountUserRegistry,
       TAccountComplainant extends string
         ? WritableSignerAccount<TAccountComplainant> &
-            IAccountSignerMeta<TAccountComplainant>
+            AccountSignerMeta<TAccountComplainant>
         : TAccountComplainant,
       TAccountRespondent extends string
         ? ReadonlyAccount<TAccountRespondent>
@@ -100,12 +100,12 @@ export type FileDisputeInstruction<
     ]
   >;
 
-export interface FileDisputeInstructionData {
+export type FileDisputeInstructionData = {
   discriminator: ReadonlyUint8Array;
   reason: string;
-}
+};
 
-export interface FileDisputeInstructionDataArgs { reason: string }
+export type FileDisputeInstructionDataArgs = { reason: string };
 
 export function getFileDisputeInstructionDataEncoder(): Encoder<FileDisputeInstructionDataArgs> {
   return transformEncoder(
@@ -134,7 +134,7 @@ export function getFileDisputeInstructionDataCodec(): Codec<
   );
 }
 
-export interface FileDisputeAsyncInput<
+export type FileDisputeAsyncInput<
   TAccountDispute extends string = string,
   TAccountTransaction extends string = string,
   TAccountUserRegistry extends string = string,
@@ -142,7 +142,7 @@ export interface FileDisputeAsyncInput<
   TAccountRespondent extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dispute account with collision prevention */
   dispute?: Address<TAccountDispute>;
   /**
@@ -162,7 +162,7 @@ export interface FileDisputeAsyncInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   reason: FileDisputeInstructionDataArgs['reason'];
-}
+};
 
 export async function getFileDisputeInstructionAsync<
   TAccountDispute extends string,
@@ -286,7 +286,7 @@ export async function getFileDisputeInstructionAsync<
   return instruction;
 }
 
-export interface FileDisputeInput<
+export type FileDisputeInput<
   TAccountDispute extends string = string,
   TAccountTransaction extends string = string,
   TAccountUserRegistry extends string = string,
@@ -294,7 +294,7 @@ export interface FileDisputeInput<
   TAccountRespondent extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dispute account with collision prevention */
   dispute: Address<TAccountDispute>;
   /**
@@ -314,7 +314,7 @@ export interface FileDisputeInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   reason: FileDisputeInstructionDataArgs['reason'];
-}
+};
 
 export function getFileDisputeInstruction<
   TAccountDispute extends string,
@@ -408,10 +408,10 @@ export function getFileDisputeInstruction<
   return instruction;
 }
 
-export interface ParsedFileDisputeInstruction<
+export type ParsedFileDisputeInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dispute account with collision prevention */
@@ -435,18 +435,19 @@ export interface ParsedFileDisputeInstruction<
     clock: TAccountMetas[6];
   };
   data: FileDisputeInstructionData;
-}
+};
 
 export function parseFileDisputeInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedFileDisputeInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 7) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

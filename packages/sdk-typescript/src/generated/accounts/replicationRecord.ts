@@ -55,7 +55,7 @@ export function getReplicationRecordDiscriminatorBytes() {
   );
 }
 
-export interface ReplicationRecord {
+export type ReplicationRecord = {
   discriminator: ReadonlyUint8Array;
   recordId: bigint;
   originalAgent: Address;
@@ -65,9 +65,9 @@ export interface ReplicationRecord {
   replicatedAt: bigint;
   cnftMint: Option<Address>;
   bump: number;
-}
+};
 
-export interface ReplicationRecordArgs {
+export type ReplicationRecordArgs = {
   recordId: number | bigint;
   originalAgent: Address;
   replicatedAgent: Address;
@@ -76,7 +76,7 @@ export interface ReplicationRecordArgs {
   replicatedAt: number | bigint;
   cnftMint: OptionOrNullable<Address>;
   bump: number;
-}
+};
 
 export function getReplicationRecordEncoder(): Encoder<ReplicationRecordArgs> {
   return transformEncoder(
@@ -159,7 +159,7 @@ export async function fetchMaybeReplicationRecord<
 
 export async function fetchAllReplicationRecord(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<ReplicationRecord>[]> {
   const maybeAccounts = await fetchAllMaybeReplicationRecord(
@@ -173,7 +173,7 @@ export async function fetchAllReplicationRecord(
 
 export async function fetchAllMaybeReplicationRecord(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<ReplicationRecord>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

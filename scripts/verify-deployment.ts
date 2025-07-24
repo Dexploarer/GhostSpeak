@@ -7,8 +7,7 @@
 
 import { execSync } from 'child_process'
 import chalk from 'chalk'
-import { createSolanaRpc } from '@solana/web3.js'
-import { address } from '@solana/addresses'
+import { createSolanaRpc, address } from '@solana/kit'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 
@@ -43,13 +42,20 @@ async function verifyDeployment() {
     
     // Check if program is deployed
     try {
-      const accountInfo = await rpc.getAccountInfo(address(programId)).send()
+      // Use base64 encoding to avoid base58 encoding errors with large account data
+      const accountInfo = await rpc.getAccountInfo(address(programId), {
+        encoding: 'base64'
+      }).send()
       
       if (accountInfo.value) {
         console.log(chalk.green('✅ Program is deployed'))
         console.log(chalk.gray(`   Owner: ${accountInfo.value.owner}`))
         console.log(chalk.gray(`   Executable: ${accountInfo.value.executable}`))
-        console.log(chalk.gray(`   Size: ${accountInfo.value.data.length} bytes`))
+        
+        // Calculate actual data size from base64 encoding
+        const dataSize = accountInfo.value.data[0] ? 
+          Buffer.from(accountInfo.value.data[0], 'base64').length : 0
+        console.log(chalk.gray(`   Size: ${dataSize} bytes`))
         console.log(chalk.gray(`   Lamports: ${accountInfo.value.lamports}`))
       } else {
         console.log(chalk.red('❌ Program not found on chain'))

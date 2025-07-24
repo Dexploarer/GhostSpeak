@@ -17,13 +17,13 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Agent status management event (2025 pattern) */
-export interface AgentStatusChangedEvent {
+export type AgentStatusChangedEvent = {
   /** Agent public key */
   agent: Address;
   /** Previous status */
@@ -34,9 +34,9 @@ export interface AgentStatusChangedEvent {
   timestamp: bigint;
   /** Owner who made the change */
   authority: Address;
-}
+};
 
-export interface AgentStatusChangedEventArgs {
+export type AgentStatusChangedEventArgs = {
   /** Agent public key */
   agent: Address;
   /** Previous status */
@@ -47,9 +47,9 @@ export interface AgentStatusChangedEventArgs {
   timestamp: number | bigint;
   /** Owner who made the change */
   authority: Address;
-}
+};
 
-export function getAgentStatusChangedEventEncoder(): Encoder<AgentStatusChangedEventArgs> {
+export function getAgentStatusChangedEventEncoder(): FixedSizeEncoder<AgentStatusChangedEventArgs> {
   return getStructEncoder([
     ['agent', getAddressEncoder()],
     ['previousStatus', getBooleanEncoder()],
@@ -59,7 +59,7 @@ export function getAgentStatusChangedEventEncoder(): Encoder<AgentStatusChangedE
   ]);
 }
 
-export function getAgentStatusChangedEventDecoder(): Decoder<AgentStatusChangedEvent> {
+export function getAgentStatusChangedEventDecoder(): FixedSizeDecoder<AgentStatusChangedEvent> {
   return getStructDecoder([
     ['agent', getAddressDecoder()],
     ['previousStatus', getBooleanDecoder()],
@@ -69,7 +69,7 @@ export function getAgentStatusChangedEventDecoder(): Decoder<AgentStatusChangedE
   ]);
 }
 
-export function getAgentStatusChangedEventCodec(): Codec<
+export function getAgentStatusChangedEventCodec(): FixedSizeCodec<
   AgentStatusChangedEventArgs,
   AgentStatusChangedEvent
 > {

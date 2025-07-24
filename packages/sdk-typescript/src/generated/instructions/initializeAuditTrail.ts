@@ -23,15 +23,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -63,16 +63,16 @@ export function getInitializeAuditTrailDiscriminatorBytes() {
 
 export type InitializeAuditTrailInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAuditTrail extends string | IAccountMeta<string> = string,
-  TAccountEntity extends string | IAccountMeta<string> = string,
-  TAccountAuthority extends string | IAccountMeta<string> = string,
+  TAccountAuditTrail extends string | AccountMeta<string> = string,
+  TAccountEntity extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAuditTrail extends string
         ? WritableAccount<TAccountAuditTrail>
@@ -82,7 +82,7 @@ export type InitializeAuditTrailInstruction<
         : TAccountEntity,
       TAccountAuthority extends string
         ? WritableSignerAccount<TAccountAuthority> &
-            IAccountSignerMeta<TAccountAuthority>
+            AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -91,16 +91,16 @@ export type InitializeAuditTrailInstruction<
     ]
   >;
 
-export interface InitializeAuditTrailInstructionData {
+export type InitializeAuditTrailInstructionData = {
   discriminator: ReadonlyUint8Array;
   entityType: string;
   config: AuditConfig;
-}
+};
 
-export interface InitializeAuditTrailInstructionDataArgs {
+export type InitializeAuditTrailInstructionDataArgs = {
   entityType: string;
   config: AuditConfigArgs;
-}
+};
 
 export function getInitializeAuditTrailInstructionDataEncoder(): Encoder<InitializeAuditTrailInstructionDataArgs> {
   return transformEncoder(
@@ -134,12 +134,12 @@ export function getInitializeAuditTrailInstructionDataCodec(): Codec<
   );
 }
 
-export interface InitializeAuditTrailAsyncInput<
+export type InitializeAuditTrailAsyncInput<
   TAccountAuditTrail extends string = string,
   TAccountEntity extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   auditTrail?: Address<TAccountAuditTrail>;
   /** Entity being audited */
   entity: Address<TAccountEntity>;
@@ -147,7 +147,7 @@ export interface InitializeAuditTrailAsyncInput<
   systemProgram?: Address<TAccountSystemProgram>;
   entityType: InitializeAuditTrailInstructionDataArgs['entityType'];
   config: InitializeAuditTrailInstructionDataArgs['config'];
-}
+};
 
 export async function getInitializeAuditTrailInstructionAsync<
   TAccountAuditTrail extends string,
@@ -232,12 +232,12 @@ export async function getInitializeAuditTrailInstructionAsync<
   return instruction;
 }
 
-export interface InitializeAuditTrailInput<
+export type InitializeAuditTrailInput<
   TAccountAuditTrail extends string = string,
   TAccountEntity extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   auditTrail: Address<TAccountAuditTrail>;
   /** Entity being audited */
   entity: Address<TAccountEntity>;
@@ -245,7 +245,7 @@ export interface InitializeAuditTrailInput<
   systemProgram?: Address<TAccountSystemProgram>;
   entityType: InitializeAuditTrailInstructionDataArgs['entityType'];
   config: InitializeAuditTrailInstructionDataArgs['config'];
-}
+};
 
 export function getInitializeAuditTrailInstruction<
   TAccountAuditTrail extends string,
@@ -317,10 +317,10 @@ export function getInitializeAuditTrailInstruction<
   return instruction;
 }
 
-export interface ParsedInitializeAuditTrailInstruction<
+export type ParsedInitializeAuditTrailInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     auditTrail: TAccountMetas[0];
@@ -330,18 +330,19 @@ export interface ParsedInitializeAuditTrailInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: InitializeAuditTrailInstructionData;
-}
+};
 
 export function parseInitializeAuditTrailInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedInitializeAuditTrailInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

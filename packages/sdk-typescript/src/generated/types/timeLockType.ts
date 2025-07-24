@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of time locks */
@@ -25,14 +25,17 @@ export enum TimeLockType {
 
 export type TimeLockTypeArgs = TimeLockType;
 
-export function getTimeLockTypeEncoder(): Encoder<TimeLockTypeArgs> {
+export function getTimeLockTypeEncoder(): FixedSizeEncoder<TimeLockTypeArgs> {
   return getEnumEncoder(TimeLockType);
 }
 
-export function getTimeLockTypeDecoder(): Decoder<TimeLockType> {
+export function getTimeLockTypeDecoder(): FixedSizeDecoder<TimeLockType> {
   return getEnumDecoder(TimeLockType);
 }
 
-export function getTimeLockTypeCodec(): Codec<TimeLockTypeArgs, TimeLockType> {
+export function getTimeLockTypeCodec(): FixedSizeCodec<
+  TimeLockTypeArgs,
+  TimeLockType
+> {
   return combineCodec(getTimeLockTypeEncoder(), getTimeLockTypeDecoder());
 }

@@ -15,20 +15,20 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface IncentiveProgramCreatedEvent {
+export type IncentiveProgramCreatedEvent = {
   program: Address;
   referralBonus: number;
   performanceBonus: number;
-}
+};
 
 export type IncentiveProgramCreatedEventArgs = IncentiveProgramCreatedEvent;
 
-export function getIncentiveProgramCreatedEventEncoder(): Encoder<IncentiveProgramCreatedEventArgs> {
+export function getIncentiveProgramCreatedEventEncoder(): FixedSizeEncoder<IncentiveProgramCreatedEventArgs> {
   return getStructEncoder([
     ['program', getAddressEncoder()],
     ['referralBonus', getF64Encoder()],
@@ -36,7 +36,7 @@ export function getIncentiveProgramCreatedEventEncoder(): Encoder<IncentiveProgr
   ]);
 }
 
-export function getIncentiveProgramCreatedEventDecoder(): Decoder<IncentiveProgramCreatedEvent> {
+export function getIncentiveProgramCreatedEventDecoder(): FixedSizeDecoder<IncentiveProgramCreatedEvent> {
   return getStructDecoder([
     ['program', getAddressDecoder()],
     ['referralBonus', getF64Decoder()],
@@ -44,7 +44,7 @@ export function getIncentiveProgramCreatedEventDecoder(): Decoder<IncentiveProgr
   ]);
 }
 
-export function getIncentiveProgramCreatedEventCodec(): Codec<
+export function getIncentiveProgramCreatedEventCodec(): FixedSizeCodec<
   IncentiveProgramCreatedEventArgs,
   IncentiveProgramCreatedEvent
 > {

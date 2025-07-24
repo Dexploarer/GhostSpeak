@@ -15,24 +15,24 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AuctionFinalizedEvent {
+export type AuctionFinalizedEvent = {
   auction: Address;
   winner: Address;
   winningBid: bigint;
-}
+};
 
-export interface AuctionFinalizedEventArgs {
+export type AuctionFinalizedEventArgs = {
   auction: Address;
   winner: Address;
   winningBid: number | bigint;
-}
+};
 
-export function getAuctionFinalizedEventEncoder(): Encoder<AuctionFinalizedEventArgs> {
+export function getAuctionFinalizedEventEncoder(): FixedSizeEncoder<AuctionFinalizedEventArgs> {
   return getStructEncoder([
     ['auction', getAddressEncoder()],
     ['winner', getAddressEncoder()],
@@ -40,7 +40,7 @@ export function getAuctionFinalizedEventEncoder(): Encoder<AuctionFinalizedEvent
   ]);
 }
 
-export function getAuctionFinalizedEventDecoder(): Decoder<AuctionFinalizedEvent> {
+export function getAuctionFinalizedEventDecoder(): FixedSizeDecoder<AuctionFinalizedEvent> {
   return getStructDecoder([
     ['auction', getAddressDecoder()],
     ['winner', getAddressDecoder()],
@@ -48,7 +48,7 @@ export function getAuctionFinalizedEventDecoder(): Decoder<AuctionFinalizedEvent
   ]);
 }
 
-export function getAuctionFinalizedEventCodec(): Codec<
+export function getAuctionFinalizedEventCodec(): FixedSizeCodec<
   AuctionFinalizedEventArgs,
   AuctionFinalizedEvent
 > {

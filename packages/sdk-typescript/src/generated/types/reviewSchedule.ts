@@ -33,7 +33,7 @@ import {
 } from '@solana/kit';
 
 /** Review schedule for policies */
-export interface ReviewSchedule {
+export type ReviewSchedule = {
   /** Review frequency */
   frequency: bigint;
   /** Last review date */
@@ -41,12 +41,12 @@ export interface ReviewSchedule {
   /** Next review date */
   nextReview: bigint;
   /** Review owners */
-  reviewOwners: Address[];
+  reviewOwners: Array<Address>;
   /** Review criteria */
-  reviewCriteria: string[];
-}
+  reviewCriteria: Array<string>;
+};
 
-export interface ReviewScheduleArgs {
+export type ReviewScheduleArgs = {
   /** Review frequency */
   frequency: number | bigint;
   /** Last review date */
@@ -54,10 +54,10 @@ export interface ReviewScheduleArgs {
   /** Next review date */
   nextReview: number | bigint;
   /** Review owners */
-  reviewOwners: Address[];
+  reviewOwners: Array<Address>;
   /** Review criteria */
-  reviewCriteria: string[];
-}
+  reviewCriteria: Array<string>;
+};
 
 export function getReviewScheduleEncoder(): Encoder<ReviewScheduleArgs> {
   return getStructEncoder([

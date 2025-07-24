@@ -15,27 +15,14 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { auctionTypeToString, formatSOL, solToLamports } from '../utils/auction-helpers.js'
 import { address } from '@solana/addresses'
-import type { Address } from '@solana/addresses'
 import { AuctionStatus, AuctionType, NATIVE_MINT_ADDRESS } from '@ghostspeak/sdk'
 import type {
   CreateAuctionOptions,
   BidAuctionOptions,
-  ListAuctionsOptions
+  ListAuctionsOptions,
+  AuctionData
 } from '../types/cli-types.js'
-
-// Auction types for better type safety
-interface AuctionListItem {
-  address: string
-  creator: Address
-  auctionType: string
-  startingPrice: bigint
-  currentBid?: bigint
-  currentPrice: bigint
-  currentBidder?: Address
-  minimumBidIncrement: bigint
-  totalBids: number
-  status: string
-}
+import { isValidAuctionData } from '../types/cli-types.js'
 
 export const auctionCommand = new Command('auction')
   .description('Manage auctions on the GhostSpeak marketplace')
@@ -195,37 +182,7 @@ auctionCommand
       
       try {
         // Convert to proper types for SDK
-        const auctionEndTime = BigInt(Math.floor(Date.now() / 1000) + (parseInt(duration) * 60 * 60))
-        
-        // Generate PDAs for auction creation
-        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } = await import('@solana/kit')
-        const auctionId = `${serviceTitle.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
-        
-        // Derive auction PDA
-        const [auctionPda] = await getProgramDerivedAddress({
-          programAddress: client.config.programId!,
-          seeds: [
-            getBytesEncoder().encode(new Uint8Array([97, 117, 99, 116, 105, 111, 110])), // 'auction'
-            getAddressEncoder().encode(wallet.address),
-            addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(auctionId)
-          ]
-        })
-        
-        // Derive user registry PDA
-        const [userRegistryPda] = await getProgramDerivedAddress({
-          programAddress: client.config.programId!,
-          seeds: [
-            getBytesEncoder().encode(new Uint8Array([117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121])), // 'user_registry'
-            getAddressEncoder().encode(wallet.address)
-          ]
-        })
-        
-        // Map string to AuctionType enum
-        const auctionTypeMap: Record<string, AuctionType> = {
-          'english': AuctionType.English,
-          'dutch': AuctionType.Dutch,
-          'sealed': AuctionType.SealedBid
-        }
+        // Convert duration for use in auction creation (currently stored for future enhancement)
         
         // Create auction params matching SDK expectations
         const auctionParams = {
@@ -430,13 +387,14 @@ auctionCommand
       
       const { client, wallet } = await initializeClient('devnet')
       
-      let auctions: any[] = []
+      let auctions: AuctionData[] = []
       try {
         const rawAuctions = await client.auction.listAuctions({ status: AuctionStatus.Active })
-        auctions = rawAuctions
+        auctions = (rawAuctions as unknown[]).filter(isValidAuctionData)
       } catch {
         // Fetch all auctions without specific filters
-        auctions = await client.auction.listAuctions()
+        const allAuctions = await client.auction.listAuctions()
+        auctions = (allAuctions as unknown[]).filter(isValidAuctionData)
       }
       s.stop(`✅ Found ${auctions.length} active auctions`)
 
@@ -454,13 +412,23 @@ auctionCommand
         const auctionChoice = await select({
           message: 'Select auction to bid on:',
           options: auctions.map((auction) => {
-            const currentPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
+            const currentPrice = typeof auction.currentPrice === 'bigint' ? auction.currentPrice : 
+                               typeof auction.currentPrice === 'string' ? BigInt(auction.currentPrice) : 
+                               BigInt(auction.currentPrice)
+            const startingPrice = typeof auction.startingPrice === 'bigint' ? auction.startingPrice : 
+                                 typeof auction.startingPrice === 'string' ? BigInt(auction.startingPrice) : 
+                                 BigInt(auction.startingPrice)
+            const currentPriceSOL = formatSOL(currentPrice ?? startingPrice)
             const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
             const hoursLeft = Math.floor(timeLeft / 3600)
             
+            const auctionTypeStr = typeof auction.auctionType === 'string' ? 
+                                  auction.auctionType : 
+                                  auction.auctionType.toString()
+            
             return {
-              value: auction.auction.toString(),
-              label: `${auction.auctionType.toString().toUpperCase()} - ${currentPriceSOL} SOL`,
+              value: auction.auction,
+              label: `${auctionTypeStr.toUpperCase()} - ${currentPriceSOL} SOL`,
               hint: `${hoursLeft}h left, ${auction.totalBids} bids`
             }
           })
@@ -474,16 +442,23 @@ auctionCommand
         selectedAuction = auctionChoice
       }
 
-      const auction = auctions.find((a) => a.auction.toString() === selectedAuction)
+      const auction = auctions.find((a) => a.auction === selectedAuction)
       if (!auction) {
         log.error('Auction not found')
         return
       }
 
-      // Calculate suggested bid
-      const auctionData = auction as unknown as AuctionListItem
-      const currentPriceSOL = Number(auctionData.currentBid ?? auctionData.startingPrice) / 1_000_000_000
-      const minIncrementSOL = Number(auctionData.minimumBidIncrement) / 1_000_000_000
+      // Calculate suggested bid with proper typing
+      const startingPrice = typeof auction.startingPrice === 'bigint' ? auction.startingPrice : 
+                           typeof auction.startingPrice === 'string' ? BigInt(auction.startingPrice) : 
+                           BigInt(auction.startingPrice)
+      
+      const currentPriceSOL = Number(auction.currentBid ? 
+        (typeof auction.currentBid === 'bigint' ? auction.currentBid : BigInt(auction.currentBid)) : 
+        startingPrice) / 1_000_000_000
+      
+      // Use a default minimum increment of 1% if not available
+      const minIncrementSOL = currentPriceSOL * 0.01 // 1% minimum increment
       const suggestedBid = currentPriceSOL + minIncrementSOL
 
       // Get bid amount
@@ -509,7 +484,7 @@ auctionCommand
       }
 
       // Show bid strategy suggestion
-      const bidAmountNum = parseFloat(bidAmount as string)
+      const bidAmountNum = parseFloat(bidAmount)
       let strategy = ''
       if (bidAmountNum > suggestedBid * 1.5) {
         strategy = chalk.yellow('⚠️  High bid - consider starting lower')
@@ -519,11 +494,15 @@ auctionCommand
         strategy = chalk.green('✅ Strategic bid amount')
       }
 
+      const auctionTypeStr = typeof auction.auctionType === 'string' ? 
+                            auction.auctionType : 
+                            auction.auctionType.toString()
+      
       note(
         `${chalk.bold('Bid Details:')}\n` +
-        `${chalk.gray('Auction:')} ${auction.auctionType.toString().toUpperCase()}\n` +
+        `${chalk.gray('Auction:')} ${auctionTypeStr.toUpperCase()}\n` +
         `${chalk.gray('Current Price:')} ${currentPriceSOL.toFixed(3)} SOL\n` +
-        `${chalk.gray('Your Bid:')} ${bidAmount as string} SOL\n` +
+        `${chalk.gray('Your Bid:')} ${bidAmount} SOL\n` +
         `${chalk.gray('Strategy:')} ${strategy}`,
         'Bid Preview'
       )
@@ -551,7 +530,7 @@ auctionCommand
         })
         
         const bidParams = {
-          auction: address(selectedAuction as string),
+          auction: address(selectedAuction!),
           bidAmount: solToLamports(bidAmount) // SOL to lamports
         }
 
@@ -559,7 +538,7 @@ auctionCommand
           userRegistryPda,
           {
             ...bidParams,
-            signer: toSDKSigner(wallet) as any
+            signer: toSDKSigner(wallet)
           }
         )
 
@@ -571,7 +550,7 @@ auctionCommand
           `${chalk.green('💰 Bid Placed Successfully!')}\n\n` +
           `${chalk.bold('Bid Details:')}\n` +
           `${chalk.gray('Amount:')} ${bidAmount} SOL\n` +
-          `${chalk.gray('Auction:')} ${auction.auctionType.toString().toUpperCase()}\n\n` +
+          `${chalk.gray('Auction:')} ${auctionTypeStr.toUpperCase()}\n\n` +
           `${chalk.bold('Transaction:')}\n` +
           `${chalk.gray('Signature:')} ${signature}\n` +
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +

@@ -12,33 +12,33 @@ import {
   getBooleanEncoder,
   getStructDecoder,
   getStructEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AuthorizationPolicies {
+export type AuthorizationPolicies = {
   defaultDeny: boolean;
   explicitPermissionsRequired: boolean;
-}
+};
 
 export type AuthorizationPoliciesArgs = AuthorizationPolicies;
 
-export function getAuthorizationPoliciesEncoder(): Encoder<AuthorizationPoliciesArgs> {
+export function getAuthorizationPoliciesEncoder(): FixedSizeEncoder<AuthorizationPoliciesArgs> {
   return getStructEncoder([
     ['defaultDeny', getBooleanEncoder()],
     ['explicitPermissionsRequired', getBooleanEncoder()],
   ]);
 }
 
-export function getAuthorizationPoliciesDecoder(): Decoder<AuthorizationPolicies> {
+export function getAuthorizationPoliciesDecoder(): FixedSizeDecoder<AuthorizationPolicies> {
   return getStructDecoder([
     ['defaultDeny', getBooleanDecoder()],
     ['explicitPermissionsRequired', getBooleanDecoder()],
   ]);
 }
 
-export function getAuthorizationPoliciesCodec(): Codec<
+export function getAuthorizationPoliciesCodec(): FixedSizeCodec<
   AuthorizationPoliciesArgs,
   AuthorizationPolicies
 > {

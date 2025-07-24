@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Authentication levels */
@@ -25,15 +25,15 @@ export enum AuthenticationLevel {
 
 export type AuthenticationLevelArgs = AuthenticationLevel;
 
-export function getAuthenticationLevelEncoder(): Encoder<AuthenticationLevelArgs> {
+export function getAuthenticationLevelEncoder(): FixedSizeEncoder<AuthenticationLevelArgs> {
   return getEnumEncoder(AuthenticationLevel);
 }
 
-export function getAuthenticationLevelDecoder(): Decoder<AuthenticationLevel> {
+export function getAuthenticationLevelDecoder(): FixedSizeDecoder<AuthenticationLevel> {
   return getEnumDecoder(AuthenticationLevel);
 }
 
-export function getAuthenticationLevelCodec(): Codec<
+export function getAuthenticationLevelCodec(): FixedSizeCodec<
   AuthenticationLevelArgs,
   AuthenticationLevel
 > {

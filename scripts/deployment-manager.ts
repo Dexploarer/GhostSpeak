@@ -368,7 +368,7 @@ class DeploymentManager {
       });
 
       // Extract program ID from deployment output
-      const programIdMatch = deployOutput.match(/Program Id: ([A-Za-z0-9]{32,})/);
+      const programIdMatch = /Program Id: ([A-Za-z0-9]{32,})/.exec(deployOutput);
       if (programIdMatch) {
         deploymentRecord.programId = programIdMatch[1];
         environment.solana.programId = programIdMatch[1];
@@ -752,4 +752,5 @@ if (require.main === module) {
   });
 }
 
-export { DeploymentManager, DeploymentEnvironment, DeploymentRecord };
+export { DeploymentManager };
+export type { DeploymentEnvironment, DeploymentRecord };

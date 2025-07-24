@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Transaction execution status */
@@ -28,15 +28,15 @@ export enum TransactionStatus {
 
 export type TransactionStatusArgs = TransactionStatus;
 
-export function getTransactionStatusEncoder(): Encoder<TransactionStatusArgs> {
+export function getTransactionStatusEncoder(): FixedSizeEncoder<TransactionStatusArgs> {
   return getEnumEncoder(TransactionStatus);
 }
 
-export function getTransactionStatusDecoder(): Decoder<TransactionStatus> {
+export function getTransactionStatusDecoder(): FixedSizeDecoder<TransactionStatus> {
   return getEnumDecoder(TransactionStatus);
 }
 
-export function getTransactionStatusCodec(): Codec<
+export function getTransactionStatusCodec(): FixedSizeCodec<
   TransactionStatusArgs,
   TransactionStatus
 > {

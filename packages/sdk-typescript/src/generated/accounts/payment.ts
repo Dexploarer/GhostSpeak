@@ -55,7 +55,7 @@ export function getPaymentDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(PAYMENT_DISCRIMINATOR);
 }
 
-export interface Payment {
+export type Payment = {
   discriminator: ReadonlyUint8Array;
   workOrder: Address;
   payer: Address;
@@ -67,9 +67,9 @@ export interface Payment {
   transferHook: Option<Address>;
   transferFeeApplied: boolean;
   bump: number;
-}
+};
 
-export interface PaymentArgs {
+export type PaymentArgs = {
   workOrder: Address;
   payer: Address;
   recipient: Address;
@@ -80,7 +80,7 @@ export interface PaymentArgs {
   transferHook: OptionOrNullable<Address>;
   transferFeeApplied: boolean;
   bump: number;
-}
+};
 
 export function getPaymentEncoder(): Encoder<PaymentArgs> {
   return transformEncoder(
@@ -157,7 +157,7 @@ export async function fetchMaybePayment<TAddress extends string = string>(
 
 export async function fetchAllPayment(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<Payment>[]> {
   const maybeAccounts = await fetchAllMaybePayment(rpc, addresses, config);
@@ -167,7 +167,7 @@ export async function fetchAllPayment(
 
 export async function fetchAllMaybePayment(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<Payment>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

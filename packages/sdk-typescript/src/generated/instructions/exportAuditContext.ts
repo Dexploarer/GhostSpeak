@@ -15,14 +15,14 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
 } from '@solana/kit';
@@ -49,11 +49,11 @@ export type ExportAuditContextInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -62,12 +62,12 @@ export type ExportAuditContextInstruction<
     ]
   >;
 
-export interface ExportAuditContextInstructionData {
+export type ExportAuditContextInstructionData = {
   discriminator: ReadonlyUint8Array;
   data: AuditContext;
-}
+};
 
-export interface ExportAuditContextInstructionDataArgs { data: AuditContextArgs }
+export type ExportAuditContextInstructionDataArgs = { data: AuditContextArgs };
 
 export function getExportAuditContextInstructionDataEncoder(): Encoder<ExportAuditContextInstructionDataArgs> {
   return transformEncoder(
@@ -96,12 +96,12 @@ export function getExportAuditContextInstructionDataCodec(): Codec<
   );
 }
 
-export interface ExportAuditContextInput<
+export type ExportAuditContextInput<
   TAccountSystemProgram extends string = string,
-> {
+> = {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportAuditContextInstructionDataArgs['data'];
-}
+};
 
 export function getExportAuditContextInstruction<
   TAccountSystemProgram extends string,
@@ -145,27 +145,28 @@ export function getExportAuditContextInstruction<
   return instruction;
 }
 
-export interface ParsedExportAuditContextInstruction<
+export type ParsedExportAuditContextInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportAuditContextInstructionData;
-}
+};
 
 export function parseExportAuditContextInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedExportAuditContextInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 1) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

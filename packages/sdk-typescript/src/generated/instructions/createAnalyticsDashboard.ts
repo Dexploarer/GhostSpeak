@@ -25,15 +25,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -60,19 +60,19 @@ export function getCreateAnalyticsDashboardDiscriminatorBytes() {
 
 export type CreateAnalyticsDashboardInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountDashboard extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountOwner extends string | IAccountMeta<string> = string,
+  TAccountDashboard extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountOwner extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountDashboard extends string
         ? WritableAccount<TAccountDashboard>
@@ -82,7 +82,7 @@ export type CreateAnalyticsDashboardInstruction<
         : TAccountUserRegistry,
       TAccountOwner extends string
         ? WritableSignerAccount<TAccountOwner> &
-            IAccountSignerMeta<TAccountOwner>
+            AccountSignerMeta<TAccountOwner>
         : TAccountOwner,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -94,16 +94,16 @@ export type CreateAnalyticsDashboardInstruction<
     ]
   >;
 
-export interface CreateAnalyticsDashboardInstructionData {
+export type CreateAnalyticsDashboardInstructionData = {
   discriminator: ReadonlyUint8Array;
   dashboardId: bigint;
   metrics: string;
-}
+};
 
-export interface CreateAnalyticsDashboardInstructionDataArgs {
+export type CreateAnalyticsDashboardInstructionDataArgs = {
   dashboardId: number | bigint;
   metrics: string;
-}
+};
 
 export function getCreateAnalyticsDashboardInstructionDataEncoder(): Encoder<CreateAnalyticsDashboardInstructionDataArgs> {
   return transformEncoder(
@@ -137,13 +137,13 @@ export function getCreateAnalyticsDashboardInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateAnalyticsDashboardAsyncInput<
+export type CreateAnalyticsDashboardAsyncInput<
   TAccountDashboard extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dashboard account with collision prevention */
   dashboard?: Address<TAccountDashboard>;
   /** User registry for rate limiting and spam prevention */
@@ -156,7 +156,7 @@ export interface CreateAnalyticsDashboardAsyncInput<
   clock?: Address<TAccountClock>;
   dashboardId: CreateAnalyticsDashboardInstructionDataArgs['dashboardId'];
   metrics: CreateAnalyticsDashboardInstructionDataArgs['metrics'];
-}
+};
 
 export async function getCreateAnalyticsDashboardInstructionAsync<
   TAccountDashboard extends string,
@@ -265,13 +265,13 @@ export async function getCreateAnalyticsDashboardInstructionAsync<
   return instruction;
 }
 
-export interface CreateAnalyticsDashboardInput<
+export type CreateAnalyticsDashboardInput<
   TAccountDashboard extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dashboard account with collision prevention */
   dashboard: Address<TAccountDashboard>;
   /** User registry for rate limiting and spam prevention */
@@ -284,7 +284,7 @@ export interface CreateAnalyticsDashboardInput<
   clock?: Address<TAccountClock>;
   dashboardId: CreateAnalyticsDashboardInstructionDataArgs['dashboardId'];
   metrics: CreateAnalyticsDashboardInstructionDataArgs['metrics'];
-}
+};
 
 export function getCreateAnalyticsDashboardInstruction<
   TAccountDashboard extends string,
@@ -366,10 +366,10 @@ export function getCreateAnalyticsDashboardInstruction<
   return instruction;
 }
 
-export interface ParsedCreateAnalyticsDashboardInstruction<
+export type ParsedCreateAnalyticsDashboardInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dashboard account with collision prevention */
@@ -384,18 +384,19 @@ export interface ParsedCreateAnalyticsDashboardInstruction<
     clock: TAccountMetas[4];
   };
   data: CreateAnalyticsDashboardInstructionData;
-}
+};
 
 export function parseCreateAnalyticsDashboardInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateAnalyticsDashboardInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

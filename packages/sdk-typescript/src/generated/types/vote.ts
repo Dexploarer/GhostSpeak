@@ -43,7 +43,7 @@ import {
 } from '.';
 
 /** Individual vote record */
-export interface Vote {
+export type Vote = {
   /** Voter public key */
   voter: Address;
   /** Vote choice */
@@ -56,9 +56,9 @@ export interface Vote {
   reasoning: Option<string>;
   /** Delegation info (if delegated vote) */
   delegationInfo: Option<DelegationInfo>;
-}
+};
 
-export interface VoteArgs {
+export type VoteArgs = {
   /** Voter public key */
   voter: Address;
   /** Vote choice */
@@ -71,7 +71,7 @@ export interface VoteArgs {
   reasoning: OptionOrNullable<string>;
   /** Delegation info (if delegated vote) */
   delegationInfo: OptionOrNullable<DelegationInfoArgs>;
-}
+};
 
 export function getVoteEncoder(): Encoder<VoteArgs> {
   return getStructEncoder([

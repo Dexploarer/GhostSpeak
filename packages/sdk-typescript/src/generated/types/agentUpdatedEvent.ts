@@ -15,24 +15,24 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AgentUpdatedEvent {
+export type AgentUpdatedEvent = {
   agent: Address;
   owner: Address;
   timestamp: bigint;
-}
+};
 
-export interface AgentUpdatedEventArgs {
+export type AgentUpdatedEventArgs = {
   agent: Address;
   owner: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getAgentUpdatedEventEncoder(): Encoder<AgentUpdatedEventArgs> {
+export function getAgentUpdatedEventEncoder(): FixedSizeEncoder<AgentUpdatedEventArgs> {
   return getStructEncoder([
     ['agent', getAddressEncoder()],
     ['owner', getAddressEncoder()],
@@ -40,7 +40,7 @@ export function getAgentUpdatedEventEncoder(): Encoder<AgentUpdatedEventArgs> {
   ]);
 }
 
-export function getAgentUpdatedEventDecoder(): Decoder<AgentUpdatedEvent> {
+export function getAgentUpdatedEventDecoder(): FixedSizeDecoder<AgentUpdatedEvent> {
   return getStructDecoder([
     ['agent', getAddressDecoder()],
     ['owner', getAddressDecoder()],
@@ -48,7 +48,7 @@ export function getAgentUpdatedEventDecoder(): Decoder<AgentUpdatedEvent> {
   ]);
 }
 
-export function getAgentUpdatedEventCodec(): Codec<
+export function getAgentUpdatedEventCodec(): FixedSizeCodec<
   AgentUpdatedEventArgs,
   AgentUpdatedEvent
 > {

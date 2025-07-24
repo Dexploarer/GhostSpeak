@@ -5,6 +5,15 @@
 
 import type { Address } from '@solana/addresses'
 
+
+// Address validation helper
+export function assertValidAddress(value: unknown): Address {
+  if (typeof value === 'string' && value.length >= 32) {
+    return value as Address
+  }
+  throw new Error(`Invalid address: expected string with length >= 32, got ${typeof value}`)
+}
+
 // Command Option Interfaces
 export interface RegisterOptions {
   name?: string
@@ -344,4 +353,81 @@ export function parseIntSafe(value: string): number | undefined {
 export function parseFloatSafe(value: string): number | undefined {
   const parsed = parseFloat(value)
   return isNaN(parsed) ? undefined : parsed
+}
+
+// Auction Data Types
+export interface AuctionData {
+  auction: string
+  auctionType: string | { toString(): string }
+  currentPrice: bigint | number | string
+  startingPrice: bigint | number | string
+  currentBid?: bigint | number | string
+  auctionEndTime: number | string | bigint
+  totalBids: number
+  currentWinner?: Address | string
+  currentBidder?: Address | string
+}
+
+export interface AuctionListItem {
+  address: string
+  creator: Address
+  auctionType: string
+  startingPrice: bigint
+  currentBid?: bigint
+  currentPrice: bigint
+  currentBidder?: Address
+  minimumBidIncrement: bigint
+  totalBids: number
+  status: string
+  auctionEndTime: number
+  currentWinner?: Address
+}
+
+// Diagnose Command Types
+export interface DiagnoseOptions {
+  network?: 'devnet' | 'testnet' | 'mainnet-beta'
+  verbose?: boolean
+  export?: string
+  dryRun?: boolean
+}
+
+export interface DiagnosticReport {
+  account: string
+  network: string
+  exists: boolean
+  owner?: string
+  lamports?: number
+  data?: Uint8Array
+  executable?: boolean
+  rentEpoch?: number
+  errors: string[]
+  warnings: string[]
+}
+
+// Type Guards for Auction Data
+export function isValidAuctionData(data: unknown): data is AuctionData {
+  if (typeof data !== 'object' || data === null) return false
+  
+  const auction = data as Record<string, unknown>
+  return (
+    typeof auction.auction === 'string' &&
+    (typeof auction.auctionType === 'string' || 
+     (typeof auction.auctionType === 'object' && auction.auctionType !== null && 'toString' in auction.auctionType)) &&
+    (typeof auction.currentPrice === 'bigint' || typeof auction.currentPrice === 'number' || typeof auction.currentPrice === 'string') &&
+    (typeof auction.startingPrice === 'bigint' || typeof auction.startingPrice === 'number' || typeof auction.startingPrice === 'string') &&
+    (typeof auction.auctionEndTime === 'number' || typeof auction.auctionEndTime === 'string' || typeof auction.auctionEndTime === 'bigint') &&
+    typeof auction.totalBids === 'number'
+  )
+}
+
+export function isValidDiagnoseOptions(options: unknown): options is DiagnoseOptions {
+  if (typeof options !== 'object' || options === null) return false
+  
+  const opts = options as Record<string, unknown>
+  return (
+    (opts.network === undefined || ['devnet', 'testnet', 'mainnet-beta'].includes(opts.network as string)) &&
+    (opts.verbose === undefined || typeof opts.verbose === 'boolean') &&
+    (opts.export === undefined || typeof opts.export === 'string') &&
+    (opts.dryRun === undefined || typeof opts.dryRun === 'boolean')
+  )
 }

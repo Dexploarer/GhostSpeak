@@ -17,28 +17,28 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AgentReplicatedEvent {
+export type AgentReplicatedEvent = {
   originalAgent: Address;
   replicatedAgent: Address;
   replicator: Address;
   feePaid: bigint;
   timestamp: bigint;
-}
+};
 
-export interface AgentReplicatedEventArgs {
+export type AgentReplicatedEventArgs = {
   originalAgent: Address;
   replicatedAgent: Address;
   replicator: Address;
   feePaid: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getAgentReplicatedEventEncoder(): Encoder<AgentReplicatedEventArgs> {
+export function getAgentReplicatedEventEncoder(): FixedSizeEncoder<AgentReplicatedEventArgs> {
   return getStructEncoder([
     ['originalAgent', getAddressEncoder()],
     ['replicatedAgent', getAddressEncoder()],
@@ -48,7 +48,7 @@ export function getAgentReplicatedEventEncoder(): Encoder<AgentReplicatedEventAr
   ]);
 }
 
-export function getAgentReplicatedEventDecoder(): Decoder<AgentReplicatedEvent> {
+export function getAgentReplicatedEventDecoder(): FixedSizeDecoder<AgentReplicatedEvent> {
   return getStructDecoder([
     ['originalAgent', getAddressDecoder()],
     ['replicatedAgent', getAddressDecoder()],
@@ -58,7 +58,7 @@ export function getAgentReplicatedEventDecoder(): Decoder<AgentReplicatedEvent> 
   ]);
 }
 
-export function getAgentReplicatedEventCodec(): Codec<
+export function getAgentReplicatedEventCodec(): FixedSizeCodec<
   AgentReplicatedEventArgs,
   AgentReplicatedEvent
 > {

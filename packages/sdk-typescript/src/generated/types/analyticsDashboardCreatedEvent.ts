@@ -17,26 +17,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AnalyticsDashboardCreatedEvent {
+export type AnalyticsDashboardCreatedEvent = {
   dashboard: Address;
   owner: Address;
   dashboardId: bigint;
   timestamp: bigint;
-}
+};
 
-export interface AnalyticsDashboardCreatedEventArgs {
+export type AnalyticsDashboardCreatedEventArgs = {
   dashboard: Address;
   owner: Address;
   dashboardId: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getAnalyticsDashboardCreatedEventEncoder(): Encoder<AnalyticsDashboardCreatedEventArgs> {
+export function getAnalyticsDashboardCreatedEventEncoder(): FixedSizeEncoder<AnalyticsDashboardCreatedEventArgs> {
   return getStructEncoder([
     ['dashboard', getAddressEncoder()],
     ['owner', getAddressEncoder()],
@@ -45,7 +45,7 @@ export function getAnalyticsDashboardCreatedEventEncoder(): Encoder<AnalyticsDas
   ]);
 }
 
-export function getAnalyticsDashboardCreatedEventDecoder(): Decoder<AnalyticsDashboardCreatedEvent> {
+export function getAnalyticsDashboardCreatedEventDecoder(): FixedSizeDecoder<AnalyticsDashboardCreatedEvent> {
   return getStructDecoder([
     ['dashboard', getAddressDecoder()],
     ['owner', getAddressDecoder()],
@@ -54,7 +54,7 @@ export function getAnalyticsDashboardCreatedEventDecoder(): Decoder<AnalyticsDas
   ]);
 }
 
-export function getAnalyticsDashboardCreatedEventCodec(): Codec<
+export function getAnalyticsDashboardCreatedEventCodec(): FixedSizeCodec<
   AnalyticsDashboardCreatedEventArgs,
   AnalyticsDashboardCreatedEvent
 > {

@@ -14,16 +14,28 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getAuditContextDecoder,
-  getAuditContextEncoder,
-  type AuditContext,
-  type AuditContextArgs,
-} from '.';
 
-export interface AuditContextExport { data: AuditContext }
 
-export interface AuditContextExportArgs { data: AuditContextArgs }
+// Define AuditContext interface
+export interface AuditContext {
+  // Properties defined by the IDL
+  [key: string]: unknown;
+}
+
+export type AuditContextArgs = AuditContext;
+
+// Define encoder/decoder for AuditContext
+export function getAuditContextEncoder(): Encoder<AuditContextArgs> {
+  return getStructEncoder([]);
+}
+
+export function getAuditContextDecoder(): Decoder<AuditContext> {
+  return getStructDecoder([]);
+}
+
+export type AuditContextExport = { data: AuditContext };
+
+export type AuditContextExportArgs = { data: AuditContextArgs };
 
 export function getAuditContextExportEncoder(): Encoder<AuditContextExportArgs> {
   return getStructEncoder([['data', getAuditContextEncoder()]]);

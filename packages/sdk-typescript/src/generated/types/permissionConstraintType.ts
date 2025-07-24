@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of permission constraints */
@@ -27,15 +27,15 @@ export enum PermissionConstraintType {
 
 export type PermissionConstraintTypeArgs = PermissionConstraintType;
 
-export function getPermissionConstraintTypeEncoder(): Encoder<PermissionConstraintTypeArgs> {
+export function getPermissionConstraintTypeEncoder(): FixedSizeEncoder<PermissionConstraintTypeArgs> {
   return getEnumEncoder(PermissionConstraintType);
 }
 
-export function getPermissionConstraintTypeDecoder(): Decoder<PermissionConstraintType> {
+export function getPermissionConstraintTypeDecoder(): FixedSizeDecoder<PermissionConstraintType> {
   return getEnumDecoder(PermissionConstraintType);
 }
 
-export function getPermissionConstraintTypeCodec(): Codec<
+export function getPermissionConstraintTypeCodec(): FixedSizeCodec<
   PermissionConstraintTypeArgs,
   PermissionConstraintType
 > {

@@ -17,28 +17,28 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface PaymentProcessedEvent {
+export type PaymentProcessedEvent = {
   workOrder: Address;
   from: Address;
   to: Address;
   amount: bigint;
   timestamp: bigint;
-}
+};
 
-export interface PaymentProcessedEventArgs {
+export type PaymentProcessedEventArgs = {
   workOrder: Address;
   from: Address;
   to: Address;
   amount: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getPaymentProcessedEventEncoder(): Encoder<PaymentProcessedEventArgs> {
+export function getPaymentProcessedEventEncoder(): FixedSizeEncoder<PaymentProcessedEventArgs> {
   return getStructEncoder([
     ['workOrder', getAddressEncoder()],
     ['from', getAddressEncoder()],
@@ -48,7 +48,7 @@ export function getPaymentProcessedEventEncoder(): Encoder<PaymentProcessedEvent
   ]);
 }
 
-export function getPaymentProcessedEventDecoder(): Decoder<PaymentProcessedEvent> {
+export function getPaymentProcessedEventDecoder(): FixedSizeDecoder<PaymentProcessedEvent> {
   return getStructDecoder([
     ['workOrder', getAddressDecoder()],
     ['from', getAddressDecoder()],
@@ -58,7 +58,7 @@ export function getPaymentProcessedEventDecoder(): Decoder<PaymentProcessedEvent
   ]);
 }
 
-export function getPaymentProcessedEventCodec(): Codec<
+export function getPaymentProcessedEventCodec(): FixedSizeCodec<
   PaymentProcessedEventArgs,
   PaymentProcessedEvent
 > {

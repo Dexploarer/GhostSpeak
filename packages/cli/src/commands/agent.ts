@@ -144,12 +144,19 @@ agentCommand
         
         const agentId = credentials.agentId
         
-        const signature = await client.agent.register(
+        // Use the create method with all collected data
+        const agentAddress = await client.agent.create(
           toSDKSigner(wallet),
           {
-            agentType: 1, // Default agent type
-            metadataUri: agentData.metadataUri ?? `https://ghostspeak.ai/agents/${agentId}.json`,
-            agentId: agentId
+            name: agentData.name,
+            description: agentData.description,
+            category: agentData.capabilities[0] || 'automation', // Use first capability as category
+            capabilities: agentData.capabilities,
+            serviceEndpoint: agentData.serviceEndpoint,
+            agentId: agentId,
+            // Optional: Add IPFS configuration if available
+            ipfsConfig: undefined, // Can be configured later if needed
+            forceIPFS: false
           }
         )
         
@@ -181,14 +188,15 @@ agentCommand
         console.log(chalk.gray(`Capabilities: ${agentData.capabilities.join(', ')}`))
         console.log(chalk.gray(`Agent ID: ${credentials.agentId}`))
         console.log(chalk.gray(`Agent UUID: ${credentials.uuid}`))
+        console.log(chalk.gray(`Agent Address: ${agentAddress}`))
         console.log(chalk.gray(`Agent Wallet: ${agentWallet.address.toString()}`))
-        console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(signature, 'devnet'))
         console.log('')
         console.log(chalk.yellow('💡 Agent credentials saved to:'))
         console.log(chalk.gray(`   ~/.ghostspeak/agents/${credentials.agentId}/credentials.json`))
         console.log(chalk.yellow('💡 Use your agent UUID for marketplace operations:'))
         console.log(chalk.gray(`   ${credentials.uuid}`))
+        console.log(chalk.yellow('💡 Use your agent ID for future updates:'))
+        console.log(chalk.gray(`   ${credentials.agentId}`))
         
         outro('Agent registration completed')
       } catch (error: unknown) {
@@ -531,9 +539,7 @@ agentCommand
       const fetchSpinner = spinner()
       fetchSpinner.start(`Loading agent details...`)
       
-      const currentAgent = await client.agent.get({
-        agentAddress
-      })
+      const currentAgent = await client.agent.get(agentAddress)
       
       fetchSpinner.stop('✅ Agent details loaded')
 
@@ -759,12 +765,14 @@ agentCommand
           serviceEndpoint: updates.endpoint
         }
 
-        // Update agent using SDK
-        const result = await client.agent.update(
+        // Update agent using SDK (using the new updateAgent method that can auto-detect agent_id)
+        const result = await client.agent.updateAgent(
           toSDKSigner(wallet),
           agentAddress,
-          agentId!, // We ensured this is set above
-          updateParams
+          {
+            ...updateParams,
+            agentId: agentId // Include agentId in params for convenience method
+          }
         )
 
         updateSpinner.stop('✅ Agent updated successfully!')
@@ -802,10 +810,7 @@ agentCommand
       const { client, wallet } = await initializeClient('devnet')
       
       // Check if user has admin privileges
-      // TODO: Implement admin check when available in SDK
-      // For now, assume admin access for testing
-      const isAdmin = true // await client.agent.isAdmin(wallet.address)
-      void isAdmin // Mark as used for future implementation
+      const isAdmin = await client.agent.isAdmin(wallet.address)
       if (!isAdmin) {
         s.stop('❌ Access denied')
         outro(
@@ -815,10 +820,8 @@ agentCommand
         return
       }
 
-      // TODO: Implement getUnverifiedAgents when available in SDK
-      // For now, get all agents and filter unverified ones
-      const allAgents = await client.agent.list()
-      const unverifiedAgents = allAgents.filter(agent => !agent.data.isVerified)
+      // Get unverified agents using SDK method
+      const unverifiedAgents = await client.agent.getUnverifiedAgents()
       s.stop(`✅ Found ${unverifiedAgents.length} agents pending verification`)
 
       if (unverifiedAgents.length === 0) {
@@ -933,13 +936,15 @@ agentCommand
           s.start('Recording rejection...')
           
           try {
-            // TODO: Implement rejectVerification when available in SDK
-            // const signature = await client.agent.rejectVerification(
-            //   wallet,
-            //   address(selectedAgent),
-            //   { reason: rejectionReason }
-            // )
-            // const signature = 'mock-signature' // Temporary mock
+            // Use agent name as ID for rejection
+            const agentId = agent.data.name || `agent_${selectedAgent.slice(0, 8)}`
+            const signer = toSDKSigner(wallet)
+            await client.agent.rejectVerification(
+              signer,
+              address(selectedAgent),
+              agentId,
+              { reason: rejectionReason }
+            )
 
             s.stop('✅ Rejection recorded')
             
@@ -1021,28 +1026,8 @@ agentCommand
         //   criteria: verificationCriteria.map(c => ({ [c.key]: c.check }))
         // }
 
-        // TODO: Implement verify method when available in SDK
-        // For now, we need the agent_id to update
-        // Try to extract it from metadata
-        const agentData = agent.data
-        let agentId: string | undefined
-        if (agentData.metadataUri?.startsWith('data:application/json')) {
-          try {
-            const base64Data = agentData.metadataUri.split(',')[1] ?? ''
-            const metadata = JSON.parse(Buffer.from(base64Data, 'base64').toString()) as Record<string, unknown>
-            if (typeof metadata.agentId === 'string') {
-              agentId = metadata.agentId
-            }
-          } catch {
-            // Ignore parsing errors
-          }
-        }
-        
-        if (!agentId) {
-          log.error('Cannot verify agent: agent_id not found in metadata')
-          outro('Agent verification requires the original agent_id. Please ask the agent owner to provide it.')
-          return
-        }
+        // Use agent name as ID for verification (same approach as rejection)
+        const agentId = agent.data.name || `agent_${selectedAgent.slice(0, 8)}`
         
         const signature = await client.agent.update(
           toSDKSigner(wallet),

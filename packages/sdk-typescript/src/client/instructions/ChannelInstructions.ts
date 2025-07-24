@@ -1,11 +1,15 @@
+import '../../utils/text-encoder-polyfill.js'
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import { getProgramDerivedAddress, getAddressEncoder } from '@solana/kit'
 import type { IInstruction } from '@solana/instructions'
-import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
-  GhostSpeakConfig
+  GhostSpeakConfig,
+  ResolvedMessageContent,
+  AttachmentUploadResult
 } from '../../types/index.js'
+import { isIPFSReference } from '../../types/index.js'
+import type { IPFSConfig } from '../../types/ipfs-types.js'
 import {
   getCreateChannelInstruction,
   getSendMessageInstruction,
@@ -14,6 +18,7 @@ import {
   type MessageType
 } from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
+import { createIPFSUtils } from '../../utils/ipfs-utils.js'
 
 // Parameters for channel creation
 export interface CreateChannelParams {
@@ -31,6 +36,10 @@ export interface SendChannelMessageParams {
   content: string
   messageType?: MessageType
   attachments?: string[]
+  /** IPFS configuration for large message content */
+  ipfsConfig?: IPFSConfig
+  /** Force IPFS storage even for small messages */
+  forceIPFS?: boolean
 }
 
 // Channel with metadata
@@ -46,15 +55,29 @@ export interface ChannelWithMetadata {
  * Instructions for channel management operations
  */
 export class ChannelInstructions extends BaseInstructions {
-  constructor(config: GhostSpeakConfig) {
+  private ipfsUtils: ReturnType<typeof createIPFSUtils> | null = null
+
+  constructor(config: GhostSpeakConfig & { ipfsConfig?: IPFSConfig }) {
     super(config)
+    
+    // Initialize IPFS utils if configuration is provided
+    if (config.ipfsConfig) {
+      this.ipfsUtils = createIPFSUtils(config.ipfsConfig)
+    }
+  }
+
+  /**
+   * Configure IPFS for large message content storage
+   */
+  configureIPFS(ipfsConfig: IPFSConfig): void {
+    this.ipfsUtils = createIPFSUtils(ipfsConfig)
   }
 
   /**
    * Create a new communication channel with smart defaults
    */
   async create(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     params: CreateChannelParams
   ): Promise<{ channelId: Address; signature: string }> {
     // Resolve visibility from either visibility or isPublic fields
@@ -99,7 +122,7 @@ export class ChannelInstructions extends BaseInstructions {
     const instruction = getCreateChannelInstruction({
       channel: channelAddress,
       creator: signer as unknown as TransactionSigner,
-      channelId: BigInt(channelId.replace(/[^0-9]/g, '') || Date.now()), // Extract numeric part for generated instruction
+      channelId: BigInt(channelId.replace(/[^0-9]/g, '') ?? Date.now()), // Extract numeric part for generated instruction
       participants,
       channelType,
       isPrivate: visibility === 'private'
@@ -114,7 +137,7 @@ export class ChannelInstructions extends BaseInstructions {
    * Send a message to a channel (supports both object params and string content)
    */
   async sendMessage(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     channelAddress: Address,
     contentOrParams: string | SendChannelMessageParams,
     _metadata?: unknown  // For backward compatibility with beta test
@@ -133,6 +156,50 @@ export class ChannelInstructions extends BaseInstructions {
       }
     } else {
       params = contentOrParams
+    }
+
+    // Handle large message content with IPFS
+    let finalContent = params.content
+    const ipfsUtils = params.ipfsConfig ? createIPFSUtils(params.ipfsConfig) : this.ipfsUtils
+    
+    try {
+      // Check if content should be stored on IPFS
+      const contentSize = new TextEncoder().encode(params.content).length
+      const shouldUseIpfs = params.forceIPFS ?? contentSize > 500 // Lower threshold for messages
+      
+      if (shouldUseIpfs && ipfsUtils) {
+        console.log(`📤 Storing large message content (${contentSize} bytes) on IPFS...`)
+        
+        const messageData = {
+          content: params.content,
+          messageType: params.messageType ?? 0,
+          attachments: params.attachments ?? [],
+          channelId: channelAddress,
+          sender: signer.address,
+          timestamp: new Date().toISOString()
+        }
+
+        const storageResult = await ipfsUtils.storeChannelMessage(messageData, {
+          filename: `message-${Date.now()}.json`
+        })
+
+        if (storageResult.useIpfs && storageResult.ipfsMetadata) {
+          // Replace content with IPFS reference
+          finalContent = JSON.stringify({
+            type: 'ipfs_reference',
+            ipfsHash: storageResult.ipfsMetadata.ipfsHash,
+            ipfsUri: storageResult.uri,
+            originalSize: storageResult.size,
+            contentPreview: params.content.substring(0, 100) + (params.content.length > 100 ? '...' : ''),
+            uploadedAt: storageResult.ipfsMetadata.uploadedAt
+          })
+          
+          console.log(`🌐 Message content stored on IPFS: ${storageResult.ipfsMetadata.ipfsHash}`)
+        }
+      }
+    } catch (ipfsError) {
+      console.warn(`⚠️ IPFS storage failed for message, using original content:`, ipfsError instanceof Error ? ipfsError.message : String(ipfsError))
+      // Continue with original content
     }
     
     // First, fetch the channel to get current message count
@@ -161,7 +228,7 @@ export class ChannelInstructions extends BaseInstructions {
       channel: channelAddress,
       sender: signer as unknown as TransactionSigner,
       message: messagePda[0],
-      content: params.content,
+      content: finalContent, // Use processed content (may include IPFS reference)
       messageType: params.messageType ?? 0, // Default to text message
       isEncrypted: false
     })
@@ -232,13 +299,115 @@ export class ChannelInstructions extends BaseInstructions {
   }
 
   /**
+   * Resolve message content from IPFS if needed
+   */
+  async resolveMessageContent(content: string): Promise<ResolvedMessageContent> {
+    try {
+      // Check if content is an IPFS reference
+      const parsedContent: unknown = JSON.parse(content)
+      
+      if (isIPFSReference(parsedContent)) {
+        if (!this.ipfsUtils) {
+          throw new Error('IPFS utils not configured but message requires IPFS retrieval')
+        }
+
+        console.log(`📥 Retrieving message content from IPFS: ${parsedContent.ipfsHash}`)
+        
+        const messageData = await this.ipfsUtils.retrieveChannelMessage(parsedContent.ipfsUri)
+        
+        return {
+          resolvedContent: messageData.content,
+          isIPFS: true,
+          metadata: {
+            ipfsHash: parsedContent.ipfsHash,
+            originalSize: parsedContent.originalSize,
+            contentPreview: parsedContent.contentPreview,
+            uploadedAt: parsedContent.uploadedAt
+          }
+        }
+      }
+    } catch (error) {
+      // Content is not JSON or not an IPFS reference, treat as regular content
+      void error;
+    }
+
+    return {
+      resolvedContent: content,
+      isIPFS: false
+    }
+  }
+
+  /**
+   * Send a message with file attachments via IPFS
+   */
+  async sendMessageWithAttachments(
+    signer: TransactionSigner,
+    channelAddress: Address,
+    content: string,
+    attachments: {
+      filename: string
+      content: Uint8Array | string
+      contentType: string
+    }[],
+    options?: {
+      messageType?: MessageType
+      ipfsConfig?: IPFSConfig
+    }
+  ): Promise<string> {
+    const ipfsUtils = options?.ipfsConfig ? createIPFSUtils(options.ipfsConfig) : this.ipfsUtils
+    
+    if (!ipfsUtils) {
+      throw new Error('IPFS configuration required for file attachments')
+    }
+
+    console.log(`📎 Uploading ${attachments.length} attachments to IPFS...`)
+
+    // Upload attachments to IPFS
+    const attachmentResults = await Promise.allSettled(
+      attachments.map(async (attachment) => {
+        const result = await ipfsUtils.storeFileAttachment(
+          attachment.content,
+          attachment.filename,
+          attachment.contentType
+        )
+        return {
+          filename: attachment.filename,
+          contentType: attachment.contentType,
+          ipfsHash: result.ipfsMetadata?.ipfsHash ?? '',
+          ipfsUri: result.uri,
+          size: result.size
+        }
+      })
+    )
+
+    const successfulAttachments = attachmentResults
+      .filter((result): result is PromiseFulfilledResult<AttachmentUploadResult> => result.status === 'fulfilled')
+      .map(result => result.value)
+
+    const failedCount = attachmentResults.length - successfulAttachments.length
+    if (failedCount > 0) {
+      console.warn(`⚠️ ${failedCount} attachments failed to upload`)
+    }
+
+    // Send message with attachment references
+    return this.sendMessage(signer, channelAddress, {
+      channelId: channelAddress,
+      content,
+      messageType: options?.messageType ?? 0,
+      attachments: successfulAttachments.map(att => att.ipfsUri),
+      ipfsConfig: options?.ipfsConfig,
+      forceIPFS: true // Force IPFS for messages with attachments
+    })
+  }
+
+  /**
    * Derive channel PDA
    */
   private async deriveChannelPda(creator: Address, channelId: string): Promise<Address> {
     const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
     
     // Convert string channel ID to u64 little-endian bytes
-    const channelIdNumber = BigInt(channelId.replace(/[^0-9]/g, '') || Date.now())
+    const channelIdNumber = BigInt(channelId.replace(/[^0-9]/g, '') ?? Date.now())
     const channelIdBytes = new Uint8Array(8)
     const dataView = new DataView(channelIdBytes.buffer)
     dataView.setBigUint64(0, channelIdNumber, true) // little-endian

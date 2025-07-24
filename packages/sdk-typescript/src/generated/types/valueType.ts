@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Value types for constraint conditions */
@@ -29,14 +29,14 @@ export enum ValueType {
 
 export type ValueTypeArgs = ValueType;
 
-export function getValueTypeEncoder(): Encoder<ValueTypeArgs> {
+export function getValueTypeEncoder(): FixedSizeEncoder<ValueTypeArgs> {
   return getEnumEncoder(ValueType);
 }
 
-export function getValueTypeDecoder(): Decoder<ValueType> {
+export function getValueTypeDecoder(): FixedSizeDecoder<ValueType> {
   return getEnumDecoder(ValueType);
 }
 
-export function getValueTypeCodec(): Codec<ValueTypeArgs, ValueType> {
+export function getValueTypeCodec(): FixedSizeCodec<ValueTypeArgs, ValueType> {
   return combineCodec(getValueTypeEncoder(), getValueTypeDecoder());
 }

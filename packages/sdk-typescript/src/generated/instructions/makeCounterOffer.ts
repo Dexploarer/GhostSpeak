@@ -23,15 +23,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -52,34 +52,34 @@ export function getMakeCounterOfferDiscriminatorBytes() {
 
 export type MakeCounterOfferInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountNegotiation extends string | IAccountMeta<string> = string,
-  TAccountSender extends string | IAccountMeta<string> = string,
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+  TAccountNegotiation extends string | AccountMeta<string> = string,
+  TAccountSender extends string | AccountMeta<string> = string,
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountNegotiation extends string
         ? WritableAccount<TAccountNegotiation>
         : TAccountNegotiation,
       TAccountSender extends string
         ? ReadonlySignerAccount<TAccountSender> &
-            IAccountSignerMeta<TAccountSender>
+            AccountSignerMeta<TAccountSender>
         : TAccountSender,
       ...TRemainingAccounts,
     ]
   >;
 
-export interface MakeCounterOfferInstructionData {
+export type MakeCounterOfferInstructionData = {
   discriminator: ReadonlyUint8Array;
   counterOffer: bigint;
   message: string;
-}
+};
 
-export interface MakeCounterOfferInstructionDataArgs {
+export type MakeCounterOfferInstructionDataArgs = {
   counterOffer: number | bigint;
   message: string;
-}
+};
 
 export function getMakeCounterOfferInstructionDataEncoder(): Encoder<MakeCounterOfferInstructionDataArgs> {
   return transformEncoder(
@@ -110,15 +110,15 @@ export function getMakeCounterOfferInstructionDataCodec(): Codec<
   );
 }
 
-export interface MakeCounterOfferInput<
+export type MakeCounterOfferInput<
   TAccountNegotiation extends string = string,
   TAccountSender extends string = string,
-> {
+> = {
   negotiation: Address<TAccountNegotiation>;
   sender: TransactionSigner<TAccountSender>;
   counterOffer: MakeCounterOfferInstructionDataArgs['counterOffer'];
   message: MakeCounterOfferInstructionDataArgs['message'];
-}
+};
 
 export function getMakeCounterOfferInstruction<
   TAccountNegotiation extends string,
@@ -169,28 +169,29 @@ export function getMakeCounterOfferInstruction<
   return instruction;
 }
 
-export interface ParsedMakeCounterOfferInstruction<
+export type ParsedMakeCounterOfferInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     negotiation: TAccountMetas[0];
     sender: TAccountMetas[1];
   };
   data: MakeCounterOfferInstructionData;
-}
+};
 
 export function parseMakeCounterOfferInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedMakeCounterOfferInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 2) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

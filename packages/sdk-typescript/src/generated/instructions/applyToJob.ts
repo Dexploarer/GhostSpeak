@@ -29,15 +29,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -63,17 +63,17 @@ export function getApplyToJobDiscriminatorBytes() {
 
 export type ApplyToJobInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountJobApplication extends string | IAccountMeta<string> = string,
-  TAccountJobPosting extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountAgentOwner extends string | IAccountMeta<string> = string,
+  TAccountJobApplication extends string | AccountMeta<string> = string,
+  TAccountJobPosting extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountAgentOwner extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountJobApplication extends string
         ? WritableAccount<TAccountJobApplication>
@@ -86,7 +86,7 @@ export type ApplyToJobInstruction<
         : TAccountAgent,
       TAccountAgentOwner extends string
         ? WritableSignerAccount<TAccountAgentOwner> &
-            IAccountSignerMeta<TAccountAgentOwner>
+            AccountSignerMeta<TAccountAgentOwner>
         : TAccountAgentOwner,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -95,24 +95,24 @@ export type ApplyToJobInstruction<
     ]
   >;
 
-export interface ApplyToJobInstructionData {
+export type ApplyToJobInstructionData = {
   discriminator: ReadonlyUint8Array;
   coverLetter: string;
   proposedPrice: bigint;
   estimatedDuration: number;
   proposedRate: bigint;
   estimatedDelivery: bigint;
-  portfolioItems: string[];
-}
+  portfolioItems: Array<string>;
+};
 
-export interface ApplyToJobInstructionDataArgs {
+export type ApplyToJobInstructionDataArgs = {
   coverLetter: string;
   proposedPrice: number | bigint;
   estimatedDuration: number;
   proposedRate: number | bigint;
   estimatedDelivery: number | bigint;
-  portfolioItems: string[];
-}
+  portfolioItems: Array<string>;
+};
 
 export function getApplyToJobInstructionDataEncoder(): Encoder<ApplyToJobInstructionDataArgs> {
   return transformEncoder(
@@ -159,13 +159,13 @@ export function getApplyToJobInstructionDataCodec(): Codec<
   );
 }
 
-export interface ApplyToJobAsyncInput<
+export type ApplyToJobAsyncInput<
   TAccountJobApplication extends string = string,
   TAccountJobPosting extends string = string,
   TAccountAgent extends string = string,
   TAccountAgentOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   jobApplication?: Address<TAccountJobApplication>;
   jobPosting: Address<TAccountJobPosting>;
   agent: Address<TAccountAgent>;
@@ -177,7 +177,7 @@ export interface ApplyToJobAsyncInput<
   proposedRate: ApplyToJobInstructionDataArgs['proposedRate'];
   estimatedDelivery: ApplyToJobInstructionDataArgs['estimatedDelivery'];
   portfolioItems: ApplyToJobInstructionDataArgs['portfolioItems'];
-}
+};
 
 export async function getApplyToJobInstructionAsync<
   TAccountJobApplication extends string,
@@ -272,13 +272,13 @@ export async function getApplyToJobInstructionAsync<
   return instruction;
 }
 
-export interface ApplyToJobInput<
+export type ApplyToJobInput<
   TAccountJobApplication extends string = string,
   TAccountJobPosting extends string = string,
   TAccountAgent extends string = string,
   TAccountAgentOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   jobApplication: Address<TAccountJobApplication>;
   jobPosting: Address<TAccountJobPosting>;
   agent: Address<TAccountAgent>;
@@ -290,7 +290,7 @@ export interface ApplyToJobInput<
   proposedRate: ApplyToJobInstructionDataArgs['proposedRate'];
   estimatedDelivery: ApplyToJobInstructionDataArgs['estimatedDelivery'];
   portfolioItems: ApplyToJobInstructionDataArgs['portfolioItems'];
-}
+};
 
 export function getApplyToJobInstruction<
   TAccountJobApplication extends string,
@@ -368,10 +368,10 @@ export function getApplyToJobInstruction<
   return instruction;
 }
 
-export interface ParsedApplyToJobInstruction<
+export type ParsedApplyToJobInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     jobApplication: TAccountMetas[0];
@@ -381,18 +381,19 @@ export interface ParsedApplyToJobInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: ApplyToJobInstructionData;
-}
+};
 
 export function parseApplyToJobInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedApplyToJobInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

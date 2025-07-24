@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Methods to unlock accounts */
@@ -26,14 +26,17 @@ export enum UnlockMethod {
 
 export type UnlockMethodArgs = UnlockMethod;
 
-export function getUnlockMethodEncoder(): Encoder<UnlockMethodArgs> {
+export function getUnlockMethodEncoder(): FixedSizeEncoder<UnlockMethodArgs> {
   return getEnumEncoder(UnlockMethod);
 }
 
-export function getUnlockMethodDecoder(): Decoder<UnlockMethod> {
+export function getUnlockMethodDecoder(): FixedSizeDecoder<UnlockMethod> {
   return getEnumDecoder(UnlockMethod);
 }
 
-export function getUnlockMethodCodec(): Codec<UnlockMethodArgs, UnlockMethod> {
+export function getUnlockMethodCodec(): FixedSizeCodec<
+  UnlockMethodArgs,
+  UnlockMethod
+> {
   return combineCodec(getUnlockMethodEncoder(), getUnlockMethodDecoder());
 }

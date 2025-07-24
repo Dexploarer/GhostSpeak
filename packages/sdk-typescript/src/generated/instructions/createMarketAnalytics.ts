@@ -18,15 +18,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -52,25 +52,25 @@ export function getCreateMarketAnalyticsDiscriminatorBytes() {
 
 export type CreateMarketAnalyticsInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMarketAnalytics extends string | IAccountMeta<string> = string,
-  TAccountAuthority extends string | IAccountMeta<string> = string,
+  TAccountMarketAnalytics extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountMarketAnalytics extends string
         ? WritableAccount<TAccountMarketAnalytics>
         : TAccountMarketAnalytics,
       TAccountAuthority extends string
         ? WritableSignerAccount<TAccountAuthority> &
-            IAccountSignerMeta<TAccountAuthority>
+            AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -82,18 +82,18 @@ export type CreateMarketAnalyticsInstruction<
     ]
   >;
 
-export interface CreateMarketAnalyticsInstructionData {
+export type CreateMarketAnalyticsInstructionData = {
   discriminator: ReadonlyUint8Array;
   periodStart: bigint;
   periodEnd: bigint;
-}
+};
 
-export interface CreateMarketAnalyticsInstructionDataArgs {
+export type CreateMarketAnalyticsInstructionDataArgs = {
   periodStart: number | bigint;
   periodEnd: number | bigint;
-}
+};
 
-export function getCreateMarketAnalyticsInstructionDataEncoder(): Encoder<CreateMarketAnalyticsInstructionDataArgs> {
+export function getCreateMarketAnalyticsInstructionDataEncoder(): FixedSizeEncoder<CreateMarketAnalyticsInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -107,7 +107,7 @@ export function getCreateMarketAnalyticsInstructionDataEncoder(): Encoder<Create
   );
 }
 
-export function getCreateMarketAnalyticsInstructionDataDecoder(): Decoder<CreateMarketAnalyticsInstructionData> {
+export function getCreateMarketAnalyticsInstructionDataDecoder(): FixedSizeDecoder<CreateMarketAnalyticsInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['periodStart', getI64Decoder()],
@@ -115,7 +115,7 @@ export function getCreateMarketAnalyticsInstructionDataDecoder(): Decoder<Create
   ]);
 }
 
-export function getCreateMarketAnalyticsInstructionDataCodec(): Codec<
+export function getCreateMarketAnalyticsInstructionDataCodec(): FixedSizeCodec<
   CreateMarketAnalyticsInstructionDataArgs,
   CreateMarketAnalyticsInstructionData
 > {
@@ -125,12 +125,12 @@ export function getCreateMarketAnalyticsInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateMarketAnalyticsAsyncInput<
+export type CreateMarketAnalyticsAsyncInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Market analytics account with enhanced PDA security */
   marketAnalytics?: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification - must be protocol admin */
@@ -141,7 +141,7 @@ export interface CreateMarketAnalyticsAsyncInput<
   clock?: Address<TAccountClock>;
   periodStart: CreateMarketAnalyticsInstructionDataArgs['periodStart'];
   periodEnd: CreateMarketAnalyticsInstructionDataArgs['periodEnd'];
-}
+};
 
 export async function getCreateMarketAnalyticsInstructionAsync<
   TAccountMarketAnalytics extends string,
@@ -234,12 +234,12 @@ export async function getCreateMarketAnalyticsInstructionAsync<
   return instruction;
 }
 
-export interface CreateMarketAnalyticsInput<
+export type CreateMarketAnalyticsInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Market analytics account with enhanced PDA security */
   marketAnalytics: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification - must be protocol admin */
@@ -250,7 +250,7 @@ export interface CreateMarketAnalyticsInput<
   clock?: Address<TAccountClock>;
   periodStart: CreateMarketAnalyticsInstructionDataArgs['periodStart'];
   periodEnd: CreateMarketAnalyticsInstructionDataArgs['periodEnd'];
-}
+};
 
 export function getCreateMarketAnalyticsInstruction<
   TAccountMarketAnalytics extends string,
@@ -326,10 +326,10 @@ export function getCreateMarketAnalyticsInstruction<
   return instruction;
 }
 
-export interface ParsedCreateMarketAnalyticsInstruction<
+export type ParsedCreateMarketAnalyticsInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Market analytics account with enhanced PDA security */
@@ -342,18 +342,19 @@ export interface ParsedCreateMarketAnalyticsInstruction<
     clock: TAccountMetas[3];
   };
   data: CreateMarketAnalyticsInstructionData;
-}
+};
 
 export function parseCreateMarketAnalyticsInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateMarketAnalyticsInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

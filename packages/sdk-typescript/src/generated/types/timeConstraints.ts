@@ -31,7 +31,7 @@ import {
 } from '@solana/kit';
 
 /** Time-based access constraints */
-export interface TimeConstraints {
+export type TimeConstraints = {
   /** Allowed hours (0-23) */
   allowedHours: ReadonlyUint8Array;
   /** Allowed days of week (1-7) */
@@ -44,9 +44,9 @@ export interface TimeConstraints {
   expiresAt: Option<bigint>;
   /** Periodic reactivation required */
   reactivationPeriod: Option<bigint>;
-}
+};
 
-export interface TimeConstraintsArgs {
+export type TimeConstraintsArgs = {
   /** Allowed hours (0-23) */
   allowedHours: ReadonlyUint8Array;
   /** Allowed days of week (1-7) */
@@ -59,7 +59,7 @@ export interface TimeConstraintsArgs {
   expiresAt: OptionOrNullable<number | bigint>;
   /** Periodic reactivation required */
   reactivationPeriod: OptionOrNullable<number | bigint>;
-}
+};
 
 export function getTimeConstraintsEncoder(): Encoder<TimeConstraintsArgs> {
   return getStructEncoder([

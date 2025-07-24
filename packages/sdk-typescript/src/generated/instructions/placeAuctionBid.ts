@@ -17,15 +17,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -47,19 +47,19 @@ export function getPlaceAuctionBidDiscriminatorBytes() {
 
 export type PlaceAuctionBidInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAuction extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountBidder extends string | IAccountMeta<string> = string,
+  TAccountAuction extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountBidder extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAuction extends string
         ? WritableAccount<TAccountAuction>
@@ -69,7 +69,7 @@ export type PlaceAuctionBidInstruction<
         : TAccountUserRegistry,
       TAccountBidder extends string
         ? WritableSignerAccount<TAccountBidder> &
-            IAccountSignerMeta<TAccountBidder>
+            AccountSignerMeta<TAccountBidder>
         : TAccountBidder,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -81,14 +81,14 @@ export type PlaceAuctionBidInstruction<
     ]
   >;
 
-export interface PlaceAuctionBidInstructionData {
+export type PlaceAuctionBidInstructionData = {
   discriminator: ReadonlyUint8Array;
   bidAmount: bigint;
-}
+};
 
-export interface PlaceAuctionBidInstructionDataArgs { bidAmount: number | bigint }
+export type PlaceAuctionBidInstructionDataArgs = { bidAmount: number | bigint };
 
-export function getPlaceAuctionBidInstructionDataEncoder(): Encoder<PlaceAuctionBidInstructionDataArgs> {
+export function getPlaceAuctionBidInstructionDataEncoder(): FixedSizeEncoder<PlaceAuctionBidInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -98,14 +98,14 @@ export function getPlaceAuctionBidInstructionDataEncoder(): Encoder<PlaceAuction
   );
 }
 
-export function getPlaceAuctionBidInstructionDataDecoder(): Decoder<PlaceAuctionBidInstructionData> {
+export function getPlaceAuctionBidInstructionDataDecoder(): FixedSizeDecoder<PlaceAuctionBidInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['bidAmount', getU64Decoder()],
   ]);
 }
 
-export function getPlaceAuctionBidInstructionDataCodec(): Codec<
+export function getPlaceAuctionBidInstructionDataCodec(): FixedSizeCodec<
   PlaceAuctionBidInstructionDataArgs,
   PlaceAuctionBidInstructionData
 > {
@@ -115,13 +115,13 @@ export function getPlaceAuctionBidInstructionDataCodec(): Codec<
   );
 }
 
-export interface PlaceAuctionBidInput<
+export type PlaceAuctionBidInput<
   TAccountAuction extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountBidder extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Auction account with canonical bump validation */
   auction: Address<TAccountAuction>;
   /** User registry for rate limiting */
@@ -133,7 +133,7 @@ export interface PlaceAuctionBidInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   bidAmount: PlaceAuctionBidInstructionDataArgs['bidAmount'];
-}
+};
 
 export function getPlaceAuctionBidInstruction<
   TAccountAuction extends string,
@@ -215,10 +215,10 @@ export function getPlaceAuctionBidInstruction<
   return instruction;
 }
 
-export interface ParsedPlaceAuctionBidInstruction<
+export type ParsedPlaceAuctionBidInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Auction account with canonical bump validation */
@@ -233,18 +233,19 @@ export interface ParsedPlaceAuctionBidInstruction<
     clock: TAccountMetas[4];
   };
   data: PlaceAuctionBidInstructionData;
-}
+};
 
 export function parsePlaceAuctionBidInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedPlaceAuctionBidInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

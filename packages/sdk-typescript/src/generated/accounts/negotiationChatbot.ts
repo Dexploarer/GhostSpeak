@@ -65,7 +65,7 @@ export function getNegotiationChatbotDiscriminatorBytes() {
   );
 }
 
-export interface NegotiationChatbot {
+export type NegotiationChatbot = {
   discriminator: ReadonlyUint8Array;
   initiator: Address;
   counterparty: Address;
@@ -73,28 +73,28 @@ export interface NegotiationChatbot {
   currentOffer: bigint;
   status: NegotiationStatus;
   negotiationDeadline: bigint;
-  terms: string[];
-  counterOffers: bigint[];
+  terms: Array<string>;
+  counterOffers: Array<bigint>;
   autoAcceptThreshold: bigint;
   createdAt: bigint;
   lastActivity: bigint;
   bump: number;
-}
+};
 
-export interface NegotiationChatbotArgs {
+export type NegotiationChatbotArgs = {
   initiator: Address;
   counterparty: Address;
   initialOffer: number | bigint;
   currentOffer: number | bigint;
   status: NegotiationStatusArgs;
   negotiationDeadline: number | bigint;
-  terms: string[];
-  counterOffers: (number | bigint)[];
+  terms: Array<string>;
+  counterOffers: Array<number | bigint>;
   autoAcceptThreshold: number | bigint;
   createdAt: number | bigint;
   lastActivity: number | bigint;
   bump: number;
-}
+};
 
 export function getNegotiationChatbotEncoder(): Encoder<NegotiationChatbotArgs> {
   return transformEncoder(
@@ -193,7 +193,7 @@ export async function fetchMaybeNegotiationChatbot<
 
 export async function fetchAllNegotiationChatbot(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<NegotiationChatbot>[]> {
   const maybeAccounts = await fetchAllMaybeNegotiationChatbot(
@@ -207,7 +207,7 @@ export async function fetchAllNegotiationChatbot(
 
 export async function fetchAllMaybeNegotiationChatbot(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<NegotiationChatbot>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

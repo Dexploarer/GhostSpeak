@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Notification timing */
@@ -25,15 +25,15 @@ export enum NotificationTiming {
 
 export type NotificationTimingArgs = NotificationTiming;
 
-export function getNotificationTimingEncoder(): Encoder<NotificationTimingArgs> {
+export function getNotificationTimingEncoder(): FixedSizeEncoder<NotificationTimingArgs> {
   return getEnumEncoder(NotificationTiming);
 }
 
-export function getNotificationTimingDecoder(): Decoder<NotificationTiming> {
+export function getNotificationTimingDecoder(): FixedSizeDecoder<NotificationTiming> {
   return getEnumDecoder(NotificationTiming);
 }
 
-export function getNotificationTimingCodec(): Codec<
+export function getNotificationTimingCodec(): FixedSizeCodec<
   NotificationTimingArgs,
   NotificationTiming
 > {

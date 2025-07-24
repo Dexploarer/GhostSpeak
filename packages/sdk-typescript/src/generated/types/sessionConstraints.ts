@@ -14,13 +14,13 @@ import {
   getI64Encoder,
   getStructDecoder,
   getStructEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Session-based access constraints */
-export interface SessionConstraints {
+export type SessionConstraints = {
   /** Maximum session duration */
   maxSessionDuration: bigint;
   /** Idle timeout */
@@ -33,9 +33,9 @@ export interface SessionConstraints {
   deviceFingerprinting: boolean;
   /** Session encryption required */
   sessionEncryption: boolean;
-}
+};
 
-export interface SessionConstraintsArgs {
+export type SessionConstraintsArgs = {
   /** Maximum session duration */
   maxSessionDuration: number | bigint;
   /** Idle timeout */
@@ -48,9 +48,9 @@ export interface SessionConstraintsArgs {
   deviceFingerprinting: boolean;
   /** Session encryption required */
   sessionEncryption: boolean;
-}
+};
 
-export function getSessionConstraintsEncoder(): Encoder<SessionConstraintsArgs> {
+export function getSessionConstraintsEncoder(): FixedSizeEncoder<SessionConstraintsArgs> {
   return getStructEncoder([
     ['maxSessionDuration', getI64Encoder()],
     ['idleTimeout', getI64Encoder()],
@@ -61,7 +61,7 @@ export function getSessionConstraintsEncoder(): Encoder<SessionConstraintsArgs> 
   ]);
 }
 
-export function getSessionConstraintsDecoder(): Decoder<SessionConstraints> {
+export function getSessionConstraintsDecoder(): FixedSizeDecoder<SessionConstraints> {
   return getStructDecoder([
     ['maxSessionDuration', getI64Decoder()],
     ['idleTimeout', getI64Decoder()],
@@ -72,7 +72,7 @@ export function getSessionConstraintsDecoder(): Decoder<SessionConstraints> {
   ]);
 }
 
-export function getSessionConstraintsCodec(): Codec<
+export function getSessionConstraintsCodec(): FixedSizeCodec<
   SessionConstraintsArgs,
   SessionConstraints
 > {

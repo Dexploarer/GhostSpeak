@@ -15,26 +15,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AgentListedForResaleEvent {
+export type AgentListedForResaleEvent = {
   resale: Address;
   agent: Address;
   seller: Address;
   listingPrice: bigint;
-}
+};
 
-export interface AgentListedForResaleEventArgs {
+export type AgentListedForResaleEventArgs = {
   resale: Address;
   agent: Address;
   seller: Address;
   listingPrice: number | bigint;
-}
+};
 
-export function getAgentListedForResaleEventEncoder(): Encoder<AgentListedForResaleEventArgs> {
+export function getAgentListedForResaleEventEncoder(): FixedSizeEncoder<AgentListedForResaleEventArgs> {
   return getStructEncoder([
     ['resale', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -43,7 +43,7 @@ export function getAgentListedForResaleEventEncoder(): Encoder<AgentListedForRes
   ]);
 }
 
-export function getAgentListedForResaleEventDecoder(): Decoder<AgentListedForResaleEvent> {
+export function getAgentListedForResaleEventDecoder(): FixedSizeDecoder<AgentListedForResaleEvent> {
   return getStructDecoder([
     ['resale', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -52,7 +52,7 @@ export function getAgentListedForResaleEventDecoder(): Decoder<AgentListedForRes
   ]);
 }
 
-export function getAgentListedForResaleEventCodec(): Codec<
+export function getAgentListedForResaleEventCodec(): FixedSizeCodec<
   AgentListedForResaleEventArgs,
   AgentListedForResaleEvent
 > {

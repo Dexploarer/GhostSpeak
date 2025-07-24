@@ -15,24 +15,24 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface JobPostingCreatedEvent {
+export type JobPostingCreatedEvent = {
   job: Address;
   creator: Address;
   timestamp: bigint;
-}
+};
 
-export interface JobPostingCreatedEventArgs {
+export type JobPostingCreatedEventArgs = {
   job: Address;
   creator: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getJobPostingCreatedEventEncoder(): Encoder<JobPostingCreatedEventArgs> {
+export function getJobPostingCreatedEventEncoder(): FixedSizeEncoder<JobPostingCreatedEventArgs> {
   return getStructEncoder([
     ['job', getAddressEncoder()],
     ['creator', getAddressEncoder()],
@@ -40,7 +40,7 @@ export function getJobPostingCreatedEventEncoder(): Encoder<JobPostingCreatedEve
   ]);
 }
 
-export function getJobPostingCreatedEventDecoder(): Decoder<JobPostingCreatedEvent> {
+export function getJobPostingCreatedEventDecoder(): FixedSizeDecoder<JobPostingCreatedEvent> {
   return getStructDecoder([
     ['job', getAddressDecoder()],
     ['creator', getAddressDecoder()],
@@ -48,7 +48,7 @@ export function getJobPostingCreatedEventDecoder(): Decoder<JobPostingCreatedEve
   ]);
 }
 
-export function getJobPostingCreatedEventCodec(): Codec<
+export function getJobPostingCreatedEventCodec(): FixedSizeCodec<
   JobPostingCreatedEventArgs,
   JobPostingCreatedEvent
 > {

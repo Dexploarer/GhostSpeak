@@ -15,24 +15,24 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface TopAgentAddedEvent {
+export type TopAgentAddedEvent = {
   marketAnalytics: Address;
   agent: Address;
   timestamp: bigint;
-}
+};
 
-export interface TopAgentAddedEventArgs {
+export type TopAgentAddedEventArgs = {
   marketAnalytics: Address;
   agent: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getTopAgentAddedEventEncoder(): Encoder<TopAgentAddedEventArgs> {
+export function getTopAgentAddedEventEncoder(): FixedSizeEncoder<TopAgentAddedEventArgs> {
   return getStructEncoder([
     ['marketAnalytics', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -40,7 +40,7 @@ export function getTopAgentAddedEventEncoder(): Encoder<TopAgentAddedEventArgs> 
   ]);
 }
 
-export function getTopAgentAddedEventDecoder(): Decoder<TopAgentAddedEvent> {
+export function getTopAgentAddedEventDecoder(): FixedSizeDecoder<TopAgentAddedEvent> {
   return getStructDecoder([
     ['marketAnalytics', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -48,7 +48,7 @@ export function getTopAgentAddedEventDecoder(): Decoder<TopAgentAddedEvent> {
   ]);
 }
 
-export function getTopAgentAddedEventCodec(): Codec<
+export function getTopAgentAddedEventCodec(): FixedSizeCodec<
   TopAgentAddedEventArgs,
   TopAgentAddedEvent
 > {

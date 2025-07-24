@@ -14,7 +14,7 @@ import {
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager } from '../utils/agentWallet.js'
-import { address } from '@solana/addresses'
+import { address, type Address } from '@solana/addresses'
 import type { KeyPairSigner } from '@solana/kit'
 import type { GhostSpeakClient, ServiceListingWithAddress, ServiceListing, JobPosting } from '@ghostspeak/sdk'
 import type {
@@ -23,6 +23,19 @@ import type {
   SearchServicesOptions,
   JobsOptions
 } from '../types/cli-types.js'
+import { 
+  deriveServiceListingPda, 
+  deriveUserRegistryPda, 
+  deriveAgentPda,
+  deriveServicePurchasePda,
+  deriveWorkOrderPda,
+  deriveJobPostingPda,
+  deriveJobApplicationPda,
+  generateUniqueId,
+  solToLamports,
+  getDefaultPaymentToken,
+  calculateDeadline
+} from '../utils/pda.js'
 
 export const marketplaceCommand = new Command('marketplace')
   .description('Browse and interact with the GhostSpeak marketplace')
@@ -275,25 +288,26 @@ marketplaceCommand
       console.log(chalk.gray(`  Agent Wallet: ${selectedCredentials.agentWallet.publicKey}`))
       
       // Get the agent's on-chain address for the listing
-      const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } = await import('@solana/kit')
-      
-      const [agentPda] = await getProgramDerivedAddress({
-        programAddress: client.config.programId!,
-        seeds: [
-          getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])), // 'agent'
-          getAddressEncoder().encode(wallet.address),
-          addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(selectedCredentials.agentId)
-        ]
-      })
-      
-      const agentAddress = agentPda
+      const agentAddress = await deriveAgentPda(
+        client.config.programId!,
+        wallet.address,
+        selectedCredentials.agentId
+      )
       
       s.start('Creating service listing on the blockchain...')
       
       try {
-        // Generate addresses for the listing
-        const serviceListingAddress = address('11111111111111111111111111111111') // Mock address
-        const userRegistryAddress = address('11111111111111111111111111111111') // Mock address
+        // Generate unique listing ID and derive addresses
+        const listingId = generateUniqueId('listing')
+        const serviceListingAddress = await deriveServiceListingPda(
+          client.config.programId!,
+          wallet.address,
+          listingId
+        )
+        const userRegistryAddress = await deriveUserRegistryPda(
+          client.config.programId!,
+          wallet.address
+        )
         
         const result = await client.marketplace.createServiceListing(
           toSDKSigner(wallet),
@@ -303,8 +317,11 @@ marketplaceCommand
           {
             title: title as string,
             description: description as string,
-            amount: BigInt(Math.floor(parseFloat(price as string) * 1_000_000)),
-            signer: toSDKSigner(wallet)
+            amount: solToLamports(price as string),
+            signer: toSDKSigner(wallet),
+            serviceType: category as string,
+            paymentToken: getDefaultPaymentToken(),
+            listingId
           }
         )
         
@@ -443,25 +460,54 @@ marketplaceCommand
       purchaseSpinner.start('Processing payment and creating work order...')
 
       try {
-        const servicePurchaseAddress = address('11111111111111111111111111111111') // Mock address
-        const result = await client.marketplace.purchaseService(
+        // Generate service purchase PDA
+        const servicePurchaseAddress = await deriveServicePurchasePda(
+          client.config.programId!,
+          address(listingId),
+          wallet.address
+        )
+        
+        // Generate work order ID and PDA for escrow
+        const orderId = BigInt(Date.now())
+        const workOrderAddress = await deriveWorkOrderPda(
+          client.config.programId!,
+          wallet.address,
+          orderId
+        )
+        
+        // First create the purchase
+        const purchaseResult = await client.marketplace.purchaseService(
           servicePurchaseAddress,
           {
             serviceListingAddress: address(listingId),
             signer: toSDKSigner(wallet),
-            requirements: typeof requirements === 'string' ? [requirements] : requirements as string[] ?? []
+            requirements: typeof requirements === 'string' ? [requirements] : requirements as string[] ?? [],
+            deadline: calculateDeadline(14) // 14 days default
           }
         )
+        
+        // Then create the work order/escrow
+        const escrowResult = await client.escrow.create({
+          signer: toSDKSigner(wallet),
+          title: service.title,
+          description: service.description + (requirements ? `\n\nRequirements: ${requirements}` : ''),
+          provider: service.agent,
+          amount: BigInt(service.price),
+          deadline: calculateDeadline(14),
+          paymentToken: service.paymentToken || getDefaultPaymentToken(),
+          requirements: typeof requirements === 'string' ? [requirements] : requirements as string[] ?? []
+        })
         
         purchaseSpinner.stop('✅ Purchase completed!')
 
         console.log('\n' + chalk.green('🎉 Service purchased successfully!'))
         console.log(chalk.gray(`Purchase ID: ${servicePurchaseAddress.toString()}`))
-        console.log(chalk.gray(`Work Order: ${servicePurchaseAddress.toString()}`))
+        console.log(chalk.gray(`Work Order: ${workOrderAddress.toString()}`))
         console.log(chalk.gray('The agent will begin working on your request.'))
         console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
-        console.log(chalk.cyan('Purchase Account:'), getAddressExplorerUrl(servicePurchaseAddress.toString(), 'devnet'))
+        console.log(chalk.cyan('Purchase Transaction:'), getExplorerUrl(purchaseResult, 'devnet'))
+        console.log(chalk.cyan('Escrow Transaction:'), getExplorerUrl(escrowResult, 'devnet'))
+        console.log(chalk.cyan('Work Order Account:'), getAddressExplorerUrl(workOrderAddress.toString(), 'devnet'))
         console.log('\n' + chalk.yellow('💡 Track your order with: npx ghostspeak escrow list'))
         
         outro('Purchase completed')
@@ -680,23 +726,22 @@ jobsCommand
       
       try {
         // Convert deadline to timestamp
-        const deadlineMs = deadline === '1d' ? 86400000 :
-                          deadline === '3d' ? 259200000 :
-                          deadline === '1w' ? 604800000 : 2592000000
-        const deadlineTimestamp = BigInt(Date.now() + deadlineMs) / 1000n
+        const deadlineDays = deadline === '1d' ? 1 :
+                            deadline === '3d' ? 3 :
+                            deadline === '1w' ? 7 : 
+                            deadline === '2w' ? 14 : 30
+        const deadlineTimestamp = calculateDeadline(deadlineDays)
         
-        // Generate job posting address
-        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder } = await import('@solana/kit')
-        const [jobPostingAddress] = await getProgramDerivedAddress({
-          programAddress: client.config.programId!,
-          seeds: [
-            getBytesEncoder().encode(new Uint8Array([106, 111, 98, 95, 112, 111, 115, 116, 105, 110, 103])), // 'job_posting'
-            getAddressEncoder().encode(wallet.address)
-          ]
-        })
+        // Generate unique job ID and derive PDA
+        const jobId = generateUniqueId('job')
+        const jobPostingAddress = await deriveJobPostingPda(
+          client.config.programId!,
+          wallet.address,
+          jobId
+        )
         
         // Convert budget to bigint
-        const budgetAmount = BigInt(Math.floor(parseFloat(budget as string) * 1_000_000))
+        const budgetAmount = solToLamports(budget as string)
         
         const result = await client.marketplace.createJobPosting(
           jobPostingAddress,
@@ -707,10 +752,10 @@ jobsCommand
             signer: toSDKSigner(wallet),
             requirements: requirements as string[],
             deadline: deadlineTimestamp,
-            skillsNeeded: [], // Optional field
+            skillsNeeded: requirements as string[], // Use requirements as skills
             budgetMin: budgetAmount, // Use same as budget
             budgetMax: budgetAmount, // Use same as budget
-            paymentToken: client.config.programId!, // Use program ID as placeholder
+            paymentToken: getDefaultPaymentToken(), // Use native SOL
             jobType: category as string, // Use category as jobType
             experienceLevel: 'intermediate' // Default value
           }
@@ -874,7 +919,13 @@ async function purchaseService(services: ServiceListingWithAddress[]) {
   try {
     const { client, wallet } = await initializeClient('devnet')
     
-    const servicePurchaseAddress = address('11111111111111111111111111111111') // Mock address
+    // Generate service purchase PDA
+    const servicePurchaseAddress = await deriveServicePurchasePda(
+      client.config.programId!,
+      service.address,
+      wallet.address
+    )
+    
     const result = await client.marketplace.purchaseService(
       servicePurchaseAddress,
       {
@@ -1001,15 +1052,35 @@ async function applyToJob(jobs: JobPosting[], client: GhostSpeakClient, wallet: 
   s.start('Submitting application...')
   
   try {
-    const jobApplicationAddress = address('11111111111111111111111111111111') // Mock address
-    const jobPostingAddress = address('11111111111111111111111111111111') // Mock address - would need to get from job
+    // Get the actual job posting from the selected index
+    const job = jobs[selectedJob as number]
+    
+    // Generate job ID from job data (title + poster + created timestamp)
+    // This is a workaround since we don't have the original job ID
+    const jobId = generateUniqueId(`job-${job.poster?.toString().slice(0, 8)}`)
+    const jobPostingAddress = await deriveJobPostingPda(
+      client.config.programId!,
+      job.poster as Address,
+      jobId
+    )
+    
+    // Generate job application PDA
+    const jobApplicationAddress = await deriveJobApplicationPda(
+      client.config.programId!,
+      jobPostingAddress,
+      agentAddress
+    )
+    
     const result = await client.marketplace.applyToJob(
       jobApplicationAddress,
       {
         jobPostingAddress,
         agentAddress,
         signer: toSDKSigner(wallet),
-        coverLetter: proposal as string
+        coverLetter: proposal as string,
+        proposedPrice: job.budget || BigInt(0), // Use job budget as proposed price
+        estimatedDuration: 7, // Default 7 days
+        estimatedDelivery: calculateDeadline(7)
       }
     )
     

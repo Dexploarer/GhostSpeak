@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of transactions that can be executed */
@@ -38,15 +38,15 @@ export enum TransactionType {
 
 export type TransactionTypeArgs = TransactionType;
 
-export function getTransactionTypeEncoder(): Encoder<TransactionTypeArgs> {
+export function getTransactionTypeEncoder(): FixedSizeEncoder<TransactionTypeArgs> {
   return getEnumEncoder(TransactionType);
 }
 
-export function getTransactionTypeDecoder(): Decoder<TransactionType> {
+export function getTransactionTypeDecoder(): FixedSizeDecoder<TransactionType> {
   return getEnumDecoder(TransactionType);
 }
 
-export function getTransactionTypeCodec(): Codec<
+export function getTransactionTypeCodec(): FixedSizeCodec<
   TransactionTypeArgs,
   TransactionType
 > {

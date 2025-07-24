@@ -17,15 +17,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -47,22 +47,22 @@ export function getUpdateMarketAnalyticsDiscriminatorBytes() {
 
 export type UpdateMarketAnalyticsInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMarketAnalytics extends string | IAccountMeta<string> = string,
-  TAccountAuthority extends string | IAccountMeta<string> = string,
+  TAccountMarketAnalytics extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountMarketAnalytics extends string
         ? WritableAccount<TAccountMarketAnalytics>
         : TAccountMarketAnalytics,
       TAccountAuthority extends string
         ? ReadonlySignerAccount<TAccountAuthority> &
-            IAccountSignerMeta<TAccountAuthority>
+            AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -71,18 +71,18 @@ export type UpdateMarketAnalyticsInstruction<
     ]
   >;
 
-export interface UpdateMarketAnalyticsInstructionData {
+export type UpdateMarketAnalyticsInstructionData = {
   discriminator: ReadonlyUint8Array;
   volume: bigint;
   price: bigint;
-}
+};
 
-export interface UpdateMarketAnalyticsInstructionDataArgs {
+export type UpdateMarketAnalyticsInstructionDataArgs = {
   volume: number | bigint;
   price: number | bigint;
-}
+};
 
-export function getUpdateMarketAnalyticsInstructionDataEncoder(): Encoder<UpdateMarketAnalyticsInstructionDataArgs> {
+export function getUpdateMarketAnalyticsInstructionDataEncoder(): FixedSizeEncoder<UpdateMarketAnalyticsInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -96,7 +96,7 @@ export function getUpdateMarketAnalyticsInstructionDataEncoder(): Encoder<Update
   );
 }
 
-export function getUpdateMarketAnalyticsInstructionDataDecoder(): Decoder<UpdateMarketAnalyticsInstructionData> {
+export function getUpdateMarketAnalyticsInstructionDataDecoder(): FixedSizeDecoder<UpdateMarketAnalyticsInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['volume', getU64Decoder()],
@@ -104,7 +104,7 @@ export function getUpdateMarketAnalyticsInstructionDataDecoder(): Decoder<Update
   ]);
 }
 
-export function getUpdateMarketAnalyticsInstructionDataCodec(): Codec<
+export function getUpdateMarketAnalyticsInstructionDataCodec(): FixedSizeCodec<
   UpdateMarketAnalyticsInstructionDataArgs,
   UpdateMarketAnalyticsInstructionData
 > {
@@ -114,11 +114,11 @@ export function getUpdateMarketAnalyticsInstructionDataCodec(): Codec<
   );
 }
 
-export interface UpdateMarketAnalyticsInput<
+export type UpdateMarketAnalyticsInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Market analytics account with canonical bump validation */
   marketAnalytics: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification */
@@ -127,7 +127,7 @@ export interface UpdateMarketAnalyticsInput<
   clock?: Address<TAccountClock>;
   volume: UpdateMarketAnalyticsInstructionDataArgs['volume'];
   price: UpdateMarketAnalyticsInstructionDataArgs['price'];
-}
+};
 
 export function getUpdateMarketAnalyticsInstruction<
   TAccountMarketAnalytics extends string,
@@ -193,10 +193,10 @@ export function getUpdateMarketAnalyticsInstruction<
   return instruction;
 }
 
-export interface ParsedUpdateMarketAnalyticsInstruction<
+export type ParsedUpdateMarketAnalyticsInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Market analytics account with canonical bump validation */
@@ -207,18 +207,19 @@ export interface ParsedUpdateMarketAnalyticsInstruction<
     clock: TAccountMetas[2];
   };
   data: UpdateMarketAnalyticsInstructionData;
-}
+};
 
 export function parseUpdateMarketAnalyticsInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedUpdateMarketAnalyticsInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

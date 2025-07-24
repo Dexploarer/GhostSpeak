@@ -17,26 +17,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface ServiceListingCreatedEvent {
+export type ServiceListingCreatedEvent = {
   listing: Address;
   creator: Address;
   price: bigint;
   timestamp: bigint;
-}
+};
 
-export interface ServiceListingCreatedEventArgs {
+export type ServiceListingCreatedEventArgs = {
   listing: Address;
   creator: Address;
   price: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getServiceListingCreatedEventEncoder(): Encoder<ServiceListingCreatedEventArgs> {
+export function getServiceListingCreatedEventEncoder(): FixedSizeEncoder<ServiceListingCreatedEventArgs> {
   return getStructEncoder([
     ['listing', getAddressEncoder()],
     ['creator', getAddressEncoder()],
@@ -45,7 +45,7 @@ export function getServiceListingCreatedEventEncoder(): Encoder<ServiceListingCr
   ]);
 }
 
-export function getServiceListingCreatedEventDecoder(): Decoder<ServiceListingCreatedEvent> {
+export function getServiceListingCreatedEventDecoder(): FixedSizeDecoder<ServiceListingCreatedEvent> {
   return getStructDecoder([
     ['listing', getAddressDecoder()],
     ['creator', getAddressDecoder()],
@@ -54,7 +54,7 @@ export function getServiceListingCreatedEventDecoder(): Decoder<ServiceListingCr
   ]);
 }
 
-export function getServiceListingCreatedEventCodec(): Codec<
+export function getServiceListingCreatedEventCodec(): FixedSizeCodec<
   ServiceListingCreatedEventArgs,
   ServiceListingCreatedEvent
 > {

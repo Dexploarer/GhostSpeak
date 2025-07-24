@@ -23,11 +23,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface CompliancePolicies {
-  frameworks: string[];
-  auditRequirements: string[];
-  reportingRequirements: string[];
-}
+export type CompliancePolicies = {
+  frameworks: Array<string>;
+  auditRequirements: Array<string>;
+  reportingRequirements: Array<string>;
+};
 
 export type CompliancePoliciesArgs = CompliancePolicies;
 

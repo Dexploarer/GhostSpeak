@@ -32,7 +32,7 @@ import {
 } from '.';
 
 /** Time lock mechanism for delayed execution */
-export interface TimeLock {
+export type TimeLock = {
   /** Lock duration in seconds */
   duration: bigint;
   /** Lock start timestamp */
@@ -40,14 +40,14 @@ export interface TimeLock {
   /** Unlock timestamp */
   unlocksAt: bigint;
   /** Early unlock conditions */
-  earlyUnlockConditions: ExecutionCondition[];
+  earlyUnlockConditions: Array<ExecutionCondition>;
   /** Lock type */
   lockType: TimeLockType;
   /** Can be cancelled before execution */
   cancellable: boolean;
-}
+};
 
-export interface TimeLockArgs {
+export type TimeLockArgs = {
   /** Lock duration in seconds */
   duration: number | bigint;
   /** Lock start timestamp */
@@ -55,12 +55,12 @@ export interface TimeLockArgs {
   /** Unlock timestamp */
   unlocksAt: number | bigint;
   /** Early unlock conditions */
-  earlyUnlockConditions: ExecutionConditionArgs[];
+  earlyUnlockConditions: Array<ExecutionConditionArgs>;
   /** Lock type */
   lockType: TimeLockTypeArgs;
   /** Can be cancelled before execution */
   cancellable: boolean;
-}
+};
 
 export function getTimeLockEncoder(): Encoder<TimeLockArgs> {
   return getStructEncoder([

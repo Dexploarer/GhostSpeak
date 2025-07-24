@@ -57,7 +57,7 @@ export function getA2AMessageDiscriminatorBytes() {
   );
 }
 
-export interface A2AMessage {
+export type A2AMessage = {
   discriminator: ReadonlyUint8Array;
   messageId: bigint;
   session: Address;
@@ -66,9 +66,9 @@ export interface A2AMessage {
   messageType: string;
   sentAt: bigint;
   bump: number;
-}
+};
 
-export interface A2AMessageArgs {
+export type A2AMessageArgs = {
   messageId: number | bigint;
   session: Address;
   sender: Address;
@@ -76,7 +76,7 @@ export interface A2AMessageArgs {
   messageType: string;
   sentAt: number | bigint;
   bump: number;
-}
+};
 
 export function getA2AMessageEncoder(): Encoder<A2AMessageArgs> {
   return transformEncoder(
@@ -147,7 +147,7 @@ export async function fetchMaybeA2AMessage<TAddress extends string = string>(
 
 export async function fetchAllA2AMessage(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<A2AMessage>[]> {
   const maybeAccounts = await fetchAllMaybeA2AMessage(rpc, addresses, config);
@@ -157,7 +157,7 @@ export async function fetchAllA2AMessage(
 
 export async function fetchAllMaybeA2AMessage(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<A2AMessage>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

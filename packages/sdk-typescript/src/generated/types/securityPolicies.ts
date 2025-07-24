@@ -50,7 +50,7 @@ import {
 } from '.';
 
 /** Comprehensive security policies configuration */
-export interface SecurityPolicies {
+export type SecurityPolicies = {
   /** Authentication policies */
   authentication: AuthenticationPolicies;
   /** Authorization policies */
@@ -67,9 +67,9 @@ export interface SecurityPolicies {
   incidentResponse: IncidentResponsePolicies;
   /** Compliance policies */
   compliance: CompliancePolicies;
-}
+};
 
-export interface SecurityPoliciesArgs {
+export type SecurityPoliciesArgs = {
   /** Authentication policies */
   authentication: AuthenticationPoliciesArgs;
   /** Authorization policies */
@@ -86,7 +86,7 @@ export interface SecurityPoliciesArgs {
   incidentResponse: IncidentResponsePoliciesArgs;
   /** Compliance policies */
   compliance: CompliancePoliciesArgs;
-}
+};
 
 export function getSecurityPoliciesEncoder(): Encoder<SecurityPoliciesArgs> {
   return getStructEncoder([

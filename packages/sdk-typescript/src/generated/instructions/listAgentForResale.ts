@@ -19,15 +19,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -53,16 +53,16 @@ export function getListAgentForResaleDiscriminatorBytes() {
 
 export type ListAgentForResaleInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountResale extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountSeller extends string | IAccountMeta<string> = string,
+  TAccountResale extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountSeller extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountResale extends string
         ? WritableAccount<TAccountResale>
@@ -72,7 +72,7 @@ export type ListAgentForResaleInstruction<
         : TAccountAgent,
       TAccountSeller extends string
         ? WritableSignerAccount<TAccountSeller> &
-            IAccountSignerMeta<TAccountSeller>
+            AccountSignerMeta<TAccountSeller>
         : TAccountSeller,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -81,16 +81,16 @@ export type ListAgentForResaleInstruction<
     ]
   >;
 
-export interface ListAgentForResaleInstructionData {
+export type ListAgentForResaleInstructionData = {
   discriminator: ReadonlyUint8Array;
   listingPrice: bigint;
-}
+};
 
-export interface ListAgentForResaleInstructionDataArgs {
+export type ListAgentForResaleInstructionDataArgs = {
   listingPrice: number | bigint;
-}
+};
 
-export function getListAgentForResaleInstructionDataEncoder(): Encoder<ListAgentForResaleInstructionDataArgs> {
+export function getListAgentForResaleInstructionDataEncoder(): FixedSizeEncoder<ListAgentForResaleInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -103,14 +103,14 @@ export function getListAgentForResaleInstructionDataEncoder(): Encoder<ListAgent
   );
 }
 
-export function getListAgentForResaleInstructionDataDecoder(): Decoder<ListAgentForResaleInstructionData> {
+export function getListAgentForResaleInstructionDataDecoder(): FixedSizeDecoder<ListAgentForResaleInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['listingPrice', getU64Decoder()],
   ]);
 }
 
-export function getListAgentForResaleInstructionDataCodec(): Codec<
+export function getListAgentForResaleInstructionDataCodec(): FixedSizeCodec<
   ListAgentForResaleInstructionDataArgs,
   ListAgentForResaleInstructionData
 > {
@@ -120,18 +120,18 @@ export function getListAgentForResaleInstructionDataCodec(): Codec<
   );
 }
 
-export interface ListAgentForResaleAsyncInput<
+export type ListAgentForResaleAsyncInput<
   TAccountResale extends string = string,
   TAccountAgent extends string = string,
   TAccountSeller extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   resale?: Address<TAccountResale>;
   agent: Address<TAccountAgent>;
   seller: TransactionSigner<TAccountSeller>;
   systemProgram?: Address<TAccountSystemProgram>;
   listingPrice: ListAgentForResaleInstructionDataArgs['listingPrice'];
-}
+};
 
 export async function getListAgentForResaleInstructionAsync<
   TAccountResale extends string,
@@ -215,18 +215,18 @@ export async function getListAgentForResaleInstructionAsync<
   return instruction;
 }
 
-export interface ListAgentForResaleInput<
+export type ListAgentForResaleInput<
   TAccountResale extends string = string,
   TAccountAgent extends string = string,
   TAccountSeller extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   resale: Address<TAccountResale>;
   agent: Address<TAccountAgent>;
   seller: TransactionSigner<TAccountSeller>;
   systemProgram?: Address<TAccountSystemProgram>;
   listingPrice: ListAgentForResaleInstructionDataArgs['listingPrice'];
-}
+};
 
 export function getListAgentForResaleInstruction<
   TAccountResale extends string,
@@ -298,10 +298,10 @@ export function getListAgentForResaleInstruction<
   return instruction;
 }
 
-export interface ParsedListAgentForResaleInstruction<
+export type ParsedListAgentForResaleInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     resale: TAccountMetas[0];
@@ -310,18 +310,19 @@ export interface ParsedListAgentForResaleInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: ListAgentForResaleInstructionData;
-}
+};
 
 export function parseListAgentForResaleInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedListAgentForResaleInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

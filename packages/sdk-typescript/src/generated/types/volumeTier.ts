@@ -12,20 +12,20 @@ import {
   getStructEncoder,
   getU32Decoder,
   getU32Encoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface VolumeTier {
+export type VolumeTier = {
   minQuantity: number;
   maxQuantity: number;
   discountPercentage: number;
-}
+};
 
 export type VolumeTierArgs = VolumeTier;
 
-export function getVolumeTierEncoder(): Encoder<VolumeTierArgs> {
+export function getVolumeTierEncoder(): FixedSizeEncoder<VolumeTierArgs> {
   return getStructEncoder([
     ['minQuantity', getU32Encoder()],
     ['maxQuantity', getU32Encoder()],
@@ -33,7 +33,7 @@ export function getVolumeTierEncoder(): Encoder<VolumeTierArgs> {
   ]);
 }
 
-export function getVolumeTierDecoder(): Decoder<VolumeTier> {
+export function getVolumeTierDecoder(): FixedSizeDecoder<VolumeTier> {
   return getStructDecoder([
     ['minQuantity', getU32Decoder()],
     ['maxQuantity', getU32Decoder()],
@@ -41,6 +41,9 @@ export function getVolumeTierDecoder(): Decoder<VolumeTier> {
   ]);
 }
 
-export function getVolumeTierCodec(): Codec<VolumeTierArgs, VolumeTier> {
+export function getVolumeTierCodec(): FixedSizeCodec<
+  VolumeTierArgs,
+  VolumeTier
+> {
   return combineCodec(getVolumeTierEncoder(), getVolumeTierDecoder());
 }

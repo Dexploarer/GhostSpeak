@@ -3,8 +3,7 @@ import {
   getProgramDerivedAddress,
   getBytesEncoder,
   getAddressEncoder,
-  getUtf8Encoder,
-  getU64Encoder
+  getUtf8Encoder
 } from '@solana/kit'
 
 /**
@@ -15,7 +14,7 @@ import {
 /**
  * Derive agent PDA
  * Pattern: ['agent', owner, agentId]
- * NOTE: Uses length-prefixed string encoding to match smart contract expectations
+ * NOTE: Uses raw UTF-8 bytes to match smart contract's agent_id.as_bytes()
  */
 export async function deriveAgentPda(
   programId: Address,
@@ -27,6 +26,7 @@ export async function deriveAgentPda(
     seeds: [
       getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])), // 'agent'
       getAddressEncoder().encode(owner),
+      // Use raw UTF-8 bytes to match smart contract: agent_id.as_bytes()
       getUtf8Encoder().encode(agentId)
     ]
   })
@@ -194,13 +194,18 @@ export async function deriveA2ASessionPda(
 /**
  * Derive A2A message PDA
  * Pattern: ['a2a_message', session, session.created_at]
- * NOTE: Fixed to match smart contract expectation - uses session.created_at, not messageId
+ * NOTE: Fixed to match smart contract expectation - uses session.created_at as little-endian bytes
  */
 export async function deriveA2AMessagePda(
   programId: Address,
   session: Address,
   sessionCreatedAt: bigint  // Changed from messageId to sessionCreatedAt
 ): Promise<Address> {
+  // Convert sessionCreatedAt to little-endian bytes (8 bytes) to match smart contract expectation
+  const createdAtBytes = new Uint8Array(8)
+  const dataView = new DataView(createdAtBytes.buffer)
+  dataView.setBigInt64(0, sessionCreatedAt, true) // little-endian
+  
   const [address] = await getProgramDerivedAddress({
     programAddress: programId,
     seeds: [
@@ -208,9 +213,10 @@ export async function deriveA2AMessagePda(
         97, 50, 97, 95, 109, 101, 115, 115, 97, 103, 101
       ])), // 'a2a_message'
       getAddressEncoder().encode(session),
-      getU64Encoder().encode(sessionCreatedAt)  // Fixed: use session.created_at
+      createdAtBytes  // Fixed: use raw little-endian bytes instead of U64 encoder
     ]
   })
+  
   return address
 }
 

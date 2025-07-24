@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of auditable actions */
@@ -54,14 +54,17 @@ export enum AuditAction {
 
 export type AuditActionArgs = AuditAction;
 
-export function getAuditActionEncoder(): Encoder<AuditActionArgs> {
+export function getAuditActionEncoder(): FixedSizeEncoder<AuditActionArgs> {
   return getEnumEncoder(AuditAction);
 }
 
-export function getAuditActionDecoder(): Decoder<AuditAction> {
+export function getAuditActionDecoder(): FixedSizeDecoder<AuditAction> {
   return getEnumDecoder(AuditAction);
 }
 
-export function getAuditActionCodec(): Codec<AuditActionArgs, AuditAction> {
+export function getAuditActionCodec(): FixedSizeCodec<
+  AuditActionArgs,
+  AuditAction
+> {
   return combineCodec(getAuditActionEncoder(), getAuditActionDecoder());
 }

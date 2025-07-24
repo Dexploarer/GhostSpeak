@@ -15,9 +15,9 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getAuctionTypeDecoder,
@@ -26,23 +26,23 @@ import {
   type AuctionTypeArgs,
 } from '.';
 
-export interface ServiceAuctionCreatedEvent {
+export type ServiceAuctionCreatedEvent = {
   auction: Address;
   agent: Address;
   creator: Address;
   startingPrice: bigint;
   auctionType: AuctionType;
-}
+};
 
-export interface ServiceAuctionCreatedEventArgs {
+export type ServiceAuctionCreatedEventArgs = {
   auction: Address;
   agent: Address;
   creator: Address;
   startingPrice: number | bigint;
   auctionType: AuctionTypeArgs;
-}
+};
 
-export function getServiceAuctionCreatedEventEncoder(): Encoder<ServiceAuctionCreatedEventArgs> {
+export function getServiceAuctionCreatedEventEncoder(): FixedSizeEncoder<ServiceAuctionCreatedEventArgs> {
   return getStructEncoder([
     ['auction', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -52,7 +52,7 @@ export function getServiceAuctionCreatedEventEncoder(): Encoder<ServiceAuctionCr
   ]);
 }
 
-export function getServiceAuctionCreatedEventDecoder(): Decoder<ServiceAuctionCreatedEvent> {
+export function getServiceAuctionCreatedEventDecoder(): FixedSizeDecoder<ServiceAuctionCreatedEvent> {
   return getStructDecoder([
     ['auction', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -62,7 +62,7 @@ export function getServiceAuctionCreatedEventDecoder(): Decoder<ServiceAuctionCr
   ]);
 }
 
-export function getServiceAuctionCreatedEventCodec(): Codec<
+export function getServiceAuctionCreatedEventCodec(): FixedSizeCodec<
   ServiceAuctionCreatedEventArgs,
   ServiceAuctionCreatedEvent
 > {

@@ -12,20 +12,20 @@ import {
   getBooleanEncoder,
   getStructDecoder,
   getStructEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface DataProtectionPolicies {
+export type DataProtectionPolicies = {
   encryptionRequired: boolean;
   classificationRequired: boolean;
   dlpEnabled: boolean;
-}
+};
 
 export type DataProtectionPoliciesArgs = DataProtectionPolicies;
 
-export function getDataProtectionPoliciesEncoder(): Encoder<DataProtectionPoliciesArgs> {
+export function getDataProtectionPoliciesEncoder(): FixedSizeEncoder<DataProtectionPoliciesArgs> {
   return getStructEncoder([
     ['encryptionRequired', getBooleanEncoder()],
     ['classificationRequired', getBooleanEncoder()],
@@ -33,7 +33,7 @@ export function getDataProtectionPoliciesEncoder(): Encoder<DataProtectionPolici
   ]);
 }
 
-export function getDataProtectionPoliciesDecoder(): Decoder<DataProtectionPolicies> {
+export function getDataProtectionPoliciesDecoder(): FixedSizeDecoder<DataProtectionPolicies> {
   return getStructDecoder([
     ['encryptionRequired', getBooleanDecoder()],
     ['classificationRequired', getBooleanDecoder()],
@@ -41,7 +41,7 @@ export function getDataProtectionPoliciesDecoder(): Decoder<DataProtectionPolici
   ]);
 }
 
-export function getDataProtectionPoliciesCodec(): Codec<
+export function getDataProtectionPoliciesCodec(): FixedSizeCodec<
   DataProtectionPoliciesArgs,
   DataProtectionPolicies
 > {

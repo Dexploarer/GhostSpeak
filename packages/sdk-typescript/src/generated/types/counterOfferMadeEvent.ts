@@ -28,21 +28,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface CounterOfferMadeEvent {
+export type CounterOfferMadeEvent = {
   negotiation: Address;
   sender: Address;
   counterOffer: bigint;
   message: string;
   autoAccepted: boolean;
-}
+};
 
-export interface CounterOfferMadeEventArgs {
+export type CounterOfferMadeEventArgs = {
   negotiation: Address;
   sender: Address;
   counterOffer: number | bigint;
   message: string;
   autoAccepted: boolean;
-}
+};
 
 export function getCounterOfferMadeEventEncoder(): Encoder<CounterOfferMadeEventArgs> {
   return getStructEncoder([

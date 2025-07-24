@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum WorkOrderStatus {
@@ -27,15 +27,15 @@ export enum WorkOrderStatus {
 
 export type WorkOrderStatusArgs = WorkOrderStatus;
 
-export function getWorkOrderStatusEncoder(): Encoder<WorkOrderStatusArgs> {
+export function getWorkOrderStatusEncoder(): FixedSizeEncoder<WorkOrderStatusArgs> {
   return getEnumEncoder(WorkOrderStatus);
 }
 
-export function getWorkOrderStatusDecoder(): Decoder<WorkOrderStatus> {
+export function getWorkOrderStatusDecoder(): FixedSizeDecoder<WorkOrderStatus> {
   return getEnumDecoder(WorkOrderStatus);
 }
 
-export function getWorkOrderStatusCodec(): Codec<
+export function getWorkOrderStatusCodec(): FixedSizeCodec<
   WorkOrderStatusArgs,
   WorkOrderStatus
 > {

@@ -15,14 +15,14 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
 } from '@solana/kit';
@@ -49,11 +49,11 @@ export type ExportComplianceStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -62,14 +62,14 @@ export type ExportComplianceStatusInstruction<
     ]
   >;
 
-export interface ExportComplianceStatusInstructionData {
+export type ExportComplianceStatusInstructionData = {
   discriminator: ReadonlyUint8Array;
   data: ComplianceStatus;
-}
+};
 
-export interface ExportComplianceStatusInstructionDataArgs {
+export type ExportComplianceStatusInstructionDataArgs = {
   data: ComplianceStatusArgs;
-}
+};
 
 export function getExportComplianceStatusInstructionDataEncoder(): Encoder<ExportComplianceStatusInstructionDataArgs> {
   return transformEncoder(
@@ -101,12 +101,12 @@ export function getExportComplianceStatusInstructionDataCodec(): Codec<
   );
 }
 
-export interface ExportComplianceStatusInput<
+export type ExportComplianceStatusInput<
   TAccountSystemProgram extends string = string,
-> {
+> = {
   systemProgram?: Address<TAccountSystemProgram>;
   data: ExportComplianceStatusInstructionDataArgs['data'];
-}
+};
 
 export function getExportComplianceStatusInstruction<
   TAccountSystemProgram extends string,
@@ -153,27 +153,28 @@ export function getExportComplianceStatusInstruction<
   return instruction;
 }
 
-export interface ParsedExportComplianceStatusInstruction<
+export type ParsedExportComplianceStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     systemProgram: TAccountMetas[0];
   };
   data: ExportComplianceStatusInstructionData;
-}
+};
 
 export function parseExportComplianceStatusInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedExportComplianceStatusInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 1) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

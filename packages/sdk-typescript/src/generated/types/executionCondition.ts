@@ -32,7 +32,7 @@ import {
 } from '.';
 
 /** Execution conditions for transactions */
-export interface ExecutionCondition {
+export type ExecutionCondition = {
   /** Condition type */
   conditionType: ConditionType;
   /** Target value/threshold */
@@ -43,9 +43,9 @@ export interface ExecutionCondition {
   met: boolean;
   /** Condition description */
   description: string;
-}
+};
 
-export interface ExecutionConditionArgs {
+export type ExecutionConditionArgs = {
   /** Condition type */
   conditionType: ConditionTypeArgs;
   /** Target value/threshold */
@@ -56,7 +56,7 @@ export interface ExecutionConditionArgs {
   met: boolean;
   /** Condition description */
   description: string;
-}
+};
 
 export function getExecutionConditionEncoder(): Encoder<ExecutionConditionArgs> {
   return getStructEncoder([

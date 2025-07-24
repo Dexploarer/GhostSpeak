@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Risk categories */
@@ -28,14 +28,17 @@ export enum RiskCategory {
 
 export type RiskCategoryArgs = RiskCategory;
 
-export function getRiskCategoryEncoder(): Encoder<RiskCategoryArgs> {
+export function getRiskCategoryEncoder(): FixedSizeEncoder<RiskCategoryArgs> {
   return getEnumEncoder(RiskCategory);
 }
 
-export function getRiskCategoryDecoder(): Decoder<RiskCategory> {
+export function getRiskCategoryDecoder(): FixedSizeDecoder<RiskCategory> {
   return getEnumDecoder(RiskCategory);
 }
 
-export function getRiskCategoryCodec(): Codec<RiskCategoryArgs, RiskCategory> {
+export function getRiskCategoryCodec(): FixedSizeCodec<
+  RiskCategoryArgs,
+  RiskCategory
+> {
   return combineCodec(getRiskCategoryEncoder(), getRiskCategoryDecoder());
 }

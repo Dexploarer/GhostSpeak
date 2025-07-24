@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of governance proposals */
@@ -29,14 +29,17 @@ export enum ProposalType {
 
 export type ProposalTypeArgs = ProposalType;
 
-export function getProposalTypeEncoder(): Encoder<ProposalTypeArgs> {
+export function getProposalTypeEncoder(): FixedSizeEncoder<ProposalTypeArgs> {
   return getEnumEncoder(ProposalType);
 }
 
-export function getProposalTypeDecoder(): Decoder<ProposalType> {
+export function getProposalTypeDecoder(): FixedSizeDecoder<ProposalType> {
   return getEnumDecoder(ProposalType);
 }
 
-export function getProposalTypeCodec(): Codec<ProposalTypeArgs, ProposalType> {
+export function getProposalTypeCodec(): FixedSizeCodec<
+  ProposalTypeArgs,
+  ProposalType
+> {
   return combineCodec(getProposalTypeEncoder(), getProposalTypeDecoder());
 }

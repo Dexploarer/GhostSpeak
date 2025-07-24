@@ -65,7 +65,7 @@ export function getJobApplicationDiscriminatorBytes() {
   );
 }
 
-export interface JobApplication {
+export type JobApplication = {
   discriminator: ReadonlyUint8Array;
   jobPosting: Address;
   agent: Address;
@@ -73,24 +73,24 @@ export interface JobApplication {
   coverLetter: string;
   proposedRate: bigint;
   estimatedDelivery: bigint;
-  portfolioItems: string[];
+  portfolioItems: Array<string>;
   status: ApplicationStatus;
   appliedAt: bigint;
   bump: number;
-}
+};
 
-export interface JobApplicationArgs {
+export type JobApplicationArgs = {
   jobPosting: Address;
   agent: Address;
   agentOwner: Address;
   coverLetter: string;
   proposedRate: number | bigint;
   estimatedDelivery: number | bigint;
-  portfolioItems: string[];
+  portfolioItems: Array<string>;
   status: ApplicationStatusArgs;
   appliedAt: number | bigint;
   bump: number;
-}
+};
 
 export function getJobApplicationEncoder(): Encoder<JobApplicationArgs> {
   return transformEncoder(
@@ -180,7 +180,7 @@ export async function fetchMaybeJobApplication<
 
 export async function fetchAllJobApplication(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<JobApplication>[]> {
   const maybeAccounts = await fetchAllMaybeJobApplication(
@@ -194,7 +194,7 @@ export async function fetchAllJobApplication(
 
 export async function fetchAllMaybeJobApplication(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<JobApplication>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

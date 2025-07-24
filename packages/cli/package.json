@@ -1,11 +1,11 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "1.9.2",
-  "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol",
+  "version": "1.0.0",
+  "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "bin": {
-    "ghostspeak": "./dist/index.js",
-    "gs": "./dist/index.js"
+    "ghostspeak": "dist/index.js",
+    "gs": "dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,7 +31,13 @@
     "ai-agents",
     "cli",
     "typescript",
-    "web3"
+    "web3",
+    "protocol",
+    "commerce",
+    "autonomous-agents",
+    "marketplace",
+    "command-line",
+    "devnet-ready"
   ],
   "author": "GhostSpeak Protocol",
   "license": "MIT",
@@ -50,7 +56,7 @@
   "dependencies": {
     "@clack/core": "^0.5.0",
     "@clack/prompts": "^0.11.0",
-    "@ghostspeak/sdk": "^1.6.2",
+    "@ghostspeak/sdk": "^1.0.0",
     "@metaplex-foundation/mpl-bubblegum": "^5.0.2",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
@@ -62,11 +68,13 @@
     "commander": "^14.0.0",
     "dotenv": "^17.2.0",
     "figlet": "^1.7.0",
+    "node-fetch": "^2.7.0",
     "ora": "^8.0.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.15",
+    "@types/node-fetch": "^2.6.11",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
     "eslint": "^9.31.0",

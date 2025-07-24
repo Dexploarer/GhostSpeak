@@ -15,15 +15,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -45,22 +45,22 @@ export function getApproveExtensionDiscriminatorBytes() {
 
 export type ApproveExtensionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountExtension extends string | IAccountMeta<string> = string,
-  TAccountAuthority extends string | IAccountMeta<string> = string,
+  TAccountExtension extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountExtension extends string
         ? WritableAccount<TAccountExtension>
         : TAccountExtension,
       TAccountAuthority extends string
         ? ReadonlySignerAccount<TAccountAuthority> &
-            IAccountSignerMeta<TAccountAuthority>
+            AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -69,26 +69,26 @@ export type ApproveExtensionInstruction<
     ]
   >;
 
-export interface ApproveExtensionInstructionData {
+export type ApproveExtensionInstructionData = {
   discriminator: ReadonlyUint8Array;
-}
+};
 
-export interface ApproveExtensionInstructionDataArgs {}
+export type ApproveExtensionInstructionDataArgs = {};
 
-export function getApproveExtensionInstructionDataEncoder(): Encoder<ApproveExtensionInstructionDataArgs> {
+export function getApproveExtensionInstructionDataEncoder(): FixedSizeEncoder<ApproveExtensionInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({ ...value, discriminator: APPROVE_EXTENSION_DISCRIMINATOR })
   );
 }
 
-export function getApproveExtensionInstructionDataDecoder(): Decoder<ApproveExtensionInstructionData> {
+export function getApproveExtensionInstructionDataDecoder(): FixedSizeDecoder<ApproveExtensionInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
   ]);
 }
 
-export function getApproveExtensionInstructionDataCodec(): Codec<
+export function getApproveExtensionInstructionDataCodec(): FixedSizeCodec<
   ApproveExtensionInstructionDataArgs,
   ApproveExtensionInstructionData
 > {
@@ -98,18 +98,18 @@ export function getApproveExtensionInstructionDataCodec(): Codec<
   );
 }
 
-export interface ApproveExtensionInput<
+export type ApproveExtensionInput<
   TAccountExtension extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Extension account with canonical validation */
   extension: Address<TAccountExtension>;
   /** Enhanced authority verification - only protocol admin */
   authority: TransactionSigner<TAccountAuthority>;
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
-}
+};
 
 export function getApproveExtensionInstruction<
   TAccountExtension extends string,
@@ -170,10 +170,10 @@ export function getApproveExtensionInstruction<
   return instruction;
 }
 
-export interface ParsedApproveExtensionInstruction<
+export type ParsedApproveExtensionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Extension account with canonical validation */
@@ -184,18 +184,19 @@ export interface ParsedApproveExtensionInstruction<
     clock: TAccountMetas[2];
   };
   data: ApproveExtensionInstructionData;
-}
+};
 
 export function parseApproveExtensionInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedApproveExtensionInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

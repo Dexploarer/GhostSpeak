@@ -15,26 +15,26 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface ExtensionApprovedEvent {
+export type ExtensionApprovedEvent = {
   extension: Address;
   developer: Address;
   authority: Address;
   timestamp: bigint;
-}
+};
 
-export interface ExtensionApprovedEventArgs {
+export type ExtensionApprovedEventArgs = {
   extension: Address;
   developer: Address;
   authority: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getExtensionApprovedEventEncoder(): Encoder<ExtensionApprovedEventArgs> {
+export function getExtensionApprovedEventEncoder(): FixedSizeEncoder<ExtensionApprovedEventArgs> {
   return getStructEncoder([
     ['extension', getAddressEncoder()],
     ['developer', getAddressEncoder()],
@@ -43,7 +43,7 @@ export function getExtensionApprovedEventEncoder(): Encoder<ExtensionApprovedEve
   ]);
 }
 
-export function getExtensionApprovedEventDecoder(): Decoder<ExtensionApprovedEvent> {
+export function getExtensionApprovedEventDecoder(): FixedSizeDecoder<ExtensionApprovedEvent> {
   return getStructDecoder([
     ['extension', getAddressDecoder()],
     ['developer', getAddressDecoder()],
@@ -52,7 +52,7 @@ export function getExtensionApprovedEventDecoder(): Decoder<ExtensionApprovedEve
   ]);
 }
 
-export function getExtensionApprovedEventCodec(): Codec<
+export function getExtensionApprovedEventCodec(): FixedSizeCodec<
   ExtensionApprovedEventArgs,
   ExtensionApprovedEvent
 > {

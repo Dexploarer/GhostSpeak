@@ -15,20 +15,20 @@ import {
   getU32Decoder,
   getU32Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface DisputeEvidenceSubmittedEvent {
+export type DisputeEvidenceSubmittedEvent = {
   dispute: Address;
   submitter: Address;
   evidenceCount: number;
-}
+};
 
 export type DisputeEvidenceSubmittedEventArgs = DisputeEvidenceSubmittedEvent;
 
-export function getDisputeEvidenceSubmittedEventEncoder(): Encoder<DisputeEvidenceSubmittedEventArgs> {
+export function getDisputeEvidenceSubmittedEventEncoder(): FixedSizeEncoder<DisputeEvidenceSubmittedEventArgs> {
   return getStructEncoder([
     ['dispute', getAddressEncoder()],
     ['submitter', getAddressEncoder()],
@@ -36,7 +36,7 @@ export function getDisputeEvidenceSubmittedEventEncoder(): Encoder<DisputeEviden
   ]);
 }
 
-export function getDisputeEvidenceSubmittedEventDecoder(): Decoder<DisputeEvidenceSubmittedEvent> {
+export function getDisputeEvidenceSubmittedEventDecoder(): FixedSizeDecoder<DisputeEvidenceSubmittedEvent> {
   return getStructDecoder([
     ['dispute', getAddressDecoder()],
     ['submitter', getAddressDecoder()],
@@ -44,7 +44,7 @@ export function getDisputeEvidenceSubmittedEventDecoder(): Decoder<DisputeEviden
   ]);
 }
 
-export function getDisputeEvidenceSubmittedEventCodec(): Codec<
+export function getDisputeEvidenceSubmittedEventCodec(): FixedSizeCodec<
   DisputeEvidenceSubmittedEventArgs,
   DisputeEvidenceSubmittedEvent
 > {

@@ -27,7 +27,7 @@ import {
 } from '@solana/kit';
 
 /** Account specification for proposal instruction */
-export interface ProposalAccount {
+export type ProposalAccount = {
   /** Account public key */
   pubkey: Address;
   /** Is signer required */
@@ -36,7 +36,7 @@ export interface ProposalAccount {
   isWritable: boolean;
   /** Account description */
   description: string;
-}
+};
 
 export type ProposalAccountArgs = ProposalAccount;
 

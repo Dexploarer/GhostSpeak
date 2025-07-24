@@ -38,7 +38,7 @@ import {
 } from '.';
 
 /** Audit trail configuration */
-export interface AuditConfig {
+export type AuditConfig = {
   /** Maximum entries before archival */
   maxEntries: number;
   /** Retention period in seconds */
@@ -48,14 +48,14 @@ export interface AuditConfig {
   /** Compliance reporting frequency */
   reportingFrequency: ReportingFrequency;
   /** Required approval levels */
-  approvalLevels: ApprovalLevel[];
+  approvalLevels: Array<ApprovalLevel>;
   /** Encryption requirements */
   encryptionRequired: boolean;
   /** Backup frequency */
   backupFrequency: BackupFrequency;
-}
+};
 
-export interface AuditConfigArgs {
+export type AuditConfigArgs = {
   /** Maximum entries before archival */
   maxEntries: number;
   /** Retention period in seconds */
@@ -65,12 +65,12 @@ export interface AuditConfigArgs {
   /** Compliance reporting frequency */
   reportingFrequency: ReportingFrequencyArgs;
   /** Required approval levels */
-  approvalLevels: ApprovalLevelArgs[];
+  approvalLevels: Array<ApprovalLevelArgs>;
   /** Encryption requirements */
   encryptionRequired: boolean;
   /** Backup frequency */
   backupFrequency: BackupFrequencyArgs;
-}
+};
 
 export function getAuditConfigEncoder(): Encoder<AuditConfigArgs> {
   return getStructEncoder([

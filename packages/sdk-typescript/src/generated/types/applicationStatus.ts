@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum ApplicationStatus {
@@ -24,15 +24,15 @@ export enum ApplicationStatus {
 
 export type ApplicationStatusArgs = ApplicationStatus;
 
-export function getApplicationStatusEncoder(): Encoder<ApplicationStatusArgs> {
+export function getApplicationStatusEncoder(): FixedSizeEncoder<ApplicationStatusArgs> {
   return getEnumEncoder(ApplicationStatus);
 }
 
-export function getApplicationStatusDecoder(): Decoder<ApplicationStatus> {
+export function getApplicationStatusDecoder(): FixedSizeDecoder<ApplicationStatus> {
   return getEnumDecoder(ApplicationStatus);
 }
 
-export function getApplicationStatusCodec(): Codec<
+export function getApplicationStatusCodec(): FixedSizeCodec<
   ApplicationStatusArgs,
   ApplicationStatus
 > {

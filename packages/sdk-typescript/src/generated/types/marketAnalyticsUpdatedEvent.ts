@@ -17,26 +17,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface MarketAnalyticsUpdatedEvent {
+export type MarketAnalyticsUpdatedEvent = {
   marketAnalytics: Address;
   volume: bigint;
   price: bigint;
   timestamp: bigint;
-}
+};
 
-export interface MarketAnalyticsUpdatedEventArgs {
+export type MarketAnalyticsUpdatedEventArgs = {
   marketAnalytics: Address;
   volume: number | bigint;
   price: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getMarketAnalyticsUpdatedEventEncoder(): Encoder<MarketAnalyticsUpdatedEventArgs> {
+export function getMarketAnalyticsUpdatedEventEncoder(): FixedSizeEncoder<MarketAnalyticsUpdatedEventArgs> {
   return getStructEncoder([
     ['marketAnalytics', getAddressEncoder()],
     ['volume', getU64Encoder()],
@@ -45,7 +45,7 @@ export function getMarketAnalyticsUpdatedEventEncoder(): Encoder<MarketAnalytics
   ]);
 }
 
-export function getMarketAnalyticsUpdatedEventDecoder(): Decoder<MarketAnalyticsUpdatedEvent> {
+export function getMarketAnalyticsUpdatedEventDecoder(): FixedSizeDecoder<MarketAnalyticsUpdatedEvent> {
   return getStructDecoder([
     ['marketAnalytics', getAddressDecoder()],
     ['volume', getU64Decoder()],
@@ -54,7 +54,7 @@ export function getMarketAnalyticsUpdatedEventDecoder(): Decoder<MarketAnalytics
   ]);
 }
 
-export function getMarketAnalyticsUpdatedEventCodec(): Codec<
+export function getMarketAnalyticsUpdatedEventCodec(): FixedSizeCodec<
   MarketAnalyticsUpdatedEventArgs,
   MarketAnalyticsUpdatedEvent
 > {

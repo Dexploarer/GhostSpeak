@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of biometric authentication */
@@ -28,15 +28,15 @@ export enum BiometricType {
 
 export type BiometricTypeArgs = BiometricType;
 
-export function getBiometricTypeEncoder(): Encoder<BiometricTypeArgs> {
+export function getBiometricTypeEncoder(): FixedSizeEncoder<BiometricTypeArgs> {
   return getEnumEncoder(BiometricType);
 }
 
-export function getBiometricTypeDecoder(): Decoder<BiometricType> {
+export function getBiometricTypeDecoder(): FixedSizeDecoder<BiometricType> {
   return getEnumDecoder(BiometricType);
 }
 
-export function getBiometricTypeCodec(): Codec<
+export function getBiometricTypeCodec(): FixedSizeCodec<
   BiometricTypeArgs,
   BiometricType
 > {

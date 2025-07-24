@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Notification priorities */
@@ -26,15 +26,15 @@ export enum NotificationPriority {
 
 export type NotificationPriorityArgs = NotificationPriority;
 
-export function getNotificationPriorityEncoder(): Encoder<NotificationPriorityArgs> {
+export function getNotificationPriorityEncoder(): FixedSizeEncoder<NotificationPriorityArgs> {
   return getEnumEncoder(NotificationPriority);
 }
 
-export function getNotificationPriorityDecoder(): Decoder<NotificationPriority> {
+export function getNotificationPriorityDecoder(): FixedSizeDecoder<NotificationPriority> {
   return getEnumDecoder(NotificationPriority);
 }
 
-export function getNotificationPriorityCodec(): Codec<
+export function getNotificationPriorityCodec(): FixedSizeCodec<
   NotificationPriorityArgs,
   NotificationPriority
 > {

@@ -231,7 +231,7 @@ class AutomatedDeployment {
     );
 
     // Extract program ID from deployment output
-    const programIdMatch = deployOutput.match(/Program Id: ([A-Za-z0-9]{32,})/);
+    const programIdMatch = /Program Id: ([A-Za-z0-9]{32,})/.exec(deployOutput);
     const programId = programIdMatch ? programIdMatch[1] : this.config.programId || '';
 
     if (!programId) {
@@ -444,4 +444,5 @@ if (require.main === module) {
   });
 }
 
-export { AutomatedDeployment, DeploymentConfig, DeploymentResult };
+export { AutomatedDeployment };
+export type { DeploymentConfig, DeploymentResult };

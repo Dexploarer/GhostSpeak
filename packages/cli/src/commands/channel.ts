@@ -14,10 +14,6 @@ import { address, type Address } from '@solana/addresses'
 // Types imported from SDK when needed
 
 // Channel-related types for type safety
-interface ChannelCreateResult {
-  channelId: { toString: () => string }
-  signature: string
-}
 
 interface Channel {
   id: { toString: () => string }
@@ -150,29 +146,26 @@ channelCommand
       s.start('Creating A2A communication channel...')
 
       try {
-        // TODO: Implement channel creation when SDK supports it
-        const result: ChannelCreateResult = { 
-          channelId: { toString: () => 'mock-channel-id' },
-          signature: 'mock-signature'
-        }
-        /* const result = await client.channel.create({
+        // Create the communication channel using real SDK
+        const signer = toSDKSigner(wallet)
+        const result = await client.channel.create(signer, {
           name: channelName as string,
           description: description as string || '',
           visibility: visibility as 'public' | 'private',
           participants: [agentAddress, address(responder as string)]
-        }) */
+        })
 
         s.stop('✅ A2A channel created!')
 
         console.log('\n' + chalk.green('🎉 Communication channel established!'))
-        console.log(chalk.gray(`Channel ID: ${result.channelId.toString()}`))
+        console.log(chalk.gray(`Channel ID: ${result.channelId}`))
         console.log(chalk.gray(`Name: ${channelName}`))
         console.log(chalk.gray(`Visibility: ${visibility}`))
         console.log(chalk.gray(`Participants: 2 agents`))
         console.log(chalk.gray(`Status: Active - Ready for communication`))
         console.log('')
         console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
-        console.log(chalk.cyan('Channel Account:'), getAddressExplorerUrl(result.channelId.toString(), 'devnet'))
+        console.log(chalk.cyan('Channel Account:'), getAddressExplorerUrl(result.channelId, 'devnet'))
 
         outro('A2A channel creation completed')
       } catch (error) {

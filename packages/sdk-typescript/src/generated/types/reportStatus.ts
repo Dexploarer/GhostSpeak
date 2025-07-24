@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Report status */
@@ -28,14 +28,17 @@ export enum ReportStatus {
 
 export type ReportStatusArgs = ReportStatus;
 
-export function getReportStatusEncoder(): Encoder<ReportStatusArgs> {
+export function getReportStatusEncoder(): FixedSizeEncoder<ReportStatusArgs> {
   return getEnumEncoder(ReportStatus);
 }
 
-export function getReportStatusDecoder(): Decoder<ReportStatus> {
+export function getReportStatusDecoder(): FixedSizeDecoder<ReportStatus> {
   return getEnumDecoder(ReportStatus);
 }
 
-export function getReportStatusCodec(): Codec<ReportStatusArgs, ReportStatus> {
+export function getReportStatusCodec(): FixedSizeCodec<
+  ReportStatusArgs,
+  ReportStatus
+> {
   return combineCodec(getReportStatusEncoder(), getReportStatusDecoder());
 }

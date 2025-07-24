@@ -24,12 +24,12 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface DisputeFiledEvent {
+export type DisputeFiledEvent = {
   dispute: Address;
   complainant: Address;
   respondent: Address;
   reason: string;
-}
+};
 
 export type DisputeFiledEventArgs = DisputeFiledEvent;
 

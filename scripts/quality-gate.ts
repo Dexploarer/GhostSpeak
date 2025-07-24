@@ -332,7 +332,7 @@ class QualityGate {
         const passRate = total > 0 ? (passed / total) * 100 : 0;
         
         // Parse coverage (simplified)
-        const coverageMatch = testOutput.match(/Statements\s+:\s+([0-9.]+)%/);
+        const coverageMatch = /Statements\s+:\s+([0-9.]+)%/.exec(testOutput);
         const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 0;
 
         this.metrics.testing = {
@@ -451,7 +451,7 @@ class QualityGate {
           const line = lines[i].trim();
           
           // Look for function/class/interface declarations
-          if (line.match(/^(export\s+)?(function|class|interface)\s+/)) {
+          if (/^(export\s+)?(function|class|interface)\s+/.exec(line)) {
             totalItems++;
             
             // Check if previous lines contain JSDoc comment

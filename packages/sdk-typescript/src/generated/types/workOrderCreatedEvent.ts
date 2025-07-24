@@ -17,28 +17,28 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface WorkOrderCreatedEvent {
+export type WorkOrderCreatedEvent = {
   workOrder: Address;
   client: Address;
   provider: Address;
   amount: bigint;
   timestamp: bigint;
-}
+};
 
-export interface WorkOrderCreatedEventArgs {
+export type WorkOrderCreatedEventArgs = {
   workOrder: Address;
   client: Address;
   provider: Address;
   amount: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getWorkOrderCreatedEventEncoder(): Encoder<WorkOrderCreatedEventArgs> {
+export function getWorkOrderCreatedEventEncoder(): FixedSizeEncoder<WorkOrderCreatedEventArgs> {
   return getStructEncoder([
     ['workOrder', getAddressEncoder()],
     ['client', getAddressEncoder()],
@@ -48,7 +48,7 @@ export function getWorkOrderCreatedEventEncoder(): Encoder<WorkOrderCreatedEvent
   ]);
 }
 
-export function getWorkOrderCreatedEventDecoder(): Decoder<WorkOrderCreatedEvent> {
+export function getWorkOrderCreatedEventDecoder(): FixedSizeDecoder<WorkOrderCreatedEvent> {
   return getStructDecoder([
     ['workOrder', getAddressDecoder()],
     ['client', getAddressDecoder()],
@@ -58,7 +58,7 @@ export function getWorkOrderCreatedEventDecoder(): Decoder<WorkOrderCreatedEvent
   ]);
 }
 
-export function getWorkOrderCreatedEventCodec(): Codec<
+export function getWorkOrderCreatedEventCodec(): FixedSizeCodec<
   WorkOrderCreatedEventArgs,
   WorkOrderCreatedEvent
 > {

@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Backup frequency options */
@@ -25,15 +25,15 @@ export enum BackupFrequency {
 
 export type BackupFrequencyArgs = BackupFrequency;
 
-export function getBackupFrequencyEncoder(): Encoder<BackupFrequencyArgs> {
+export function getBackupFrequencyEncoder(): FixedSizeEncoder<BackupFrequencyArgs> {
   return getEnumEncoder(BackupFrequency);
 }
 
-export function getBackupFrequencyDecoder(): Decoder<BackupFrequency> {
+export function getBackupFrequencyDecoder(): FixedSizeDecoder<BackupFrequency> {
   return getEnumDecoder(BackupFrequency);
 }
 
-export function getBackupFrequencyCodec(): Codec<
+export function getBackupFrequencyCodec(): FixedSizeCodec<
   BackupFrequencyArgs,
   BackupFrequency
 > {

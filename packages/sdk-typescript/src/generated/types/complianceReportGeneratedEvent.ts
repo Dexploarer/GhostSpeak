@@ -15,9 +15,9 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getReportTypeDecoder,
@@ -26,21 +26,21 @@ import {
   type ReportTypeArgs,
 } from '.';
 
-export interface ComplianceReportGeneratedEvent {
+export type ComplianceReportGeneratedEvent = {
   report: Address;
   reportId: bigint;
   reportType: ReportType;
   complianceRate: bigint;
-}
+};
 
-export interface ComplianceReportGeneratedEventArgs {
+export type ComplianceReportGeneratedEventArgs = {
   report: Address;
   reportId: number | bigint;
   reportType: ReportTypeArgs;
   complianceRate: number | bigint;
-}
+};
 
-export function getComplianceReportGeneratedEventEncoder(): Encoder<ComplianceReportGeneratedEventArgs> {
+export function getComplianceReportGeneratedEventEncoder(): FixedSizeEncoder<ComplianceReportGeneratedEventArgs> {
   return getStructEncoder([
     ['report', getAddressEncoder()],
     ['reportId', getU64Encoder()],
@@ -49,7 +49,7 @@ export function getComplianceReportGeneratedEventEncoder(): Encoder<ComplianceRe
   ]);
 }
 
-export function getComplianceReportGeneratedEventDecoder(): Decoder<ComplianceReportGeneratedEvent> {
+export function getComplianceReportGeneratedEventDecoder(): FixedSizeDecoder<ComplianceReportGeneratedEvent> {
   return getStructDecoder([
     ['report', getAddressDecoder()],
     ['reportId', getU64Decoder()],
@@ -58,7 +58,7 @@ export function getComplianceReportGeneratedEventDecoder(): Decoder<ComplianceRe
   ]);
 }
 
-export function getComplianceReportGeneratedEventCodec(): Codec<
+export function getComplianceReportGeneratedEventCodec(): FixedSizeCodec<
   ComplianceReportGeneratedEventArgs,
   ComplianceReportGeneratedEvent
 > {

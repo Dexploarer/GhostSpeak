@@ -38,31 +38,31 @@ import {
 } from '.';
 
 /** Policy rule definition */
-export interface PolicyRule {
+export type PolicyRule = {
   /** Rule identifier */
   ruleId: string;
   /** Rule conditions */
-  conditions: RuleCondition[];
+  conditions: Array<RuleCondition>;
   /** Rule effect */
   effect: RuleEffect;
   /** Rule priority */
   priority: number;
   /** Rule enabled */
   enabled: boolean;
-}
+};
 
-export interface PolicyRuleArgs {
+export type PolicyRuleArgs = {
   /** Rule identifier */
   ruleId: string;
   /** Rule conditions */
-  conditions: RuleConditionArgs[];
+  conditions: Array<RuleConditionArgs>;
   /** Rule effect */
   effect: RuleEffectArgs;
   /** Rule priority */
   priority: number;
   /** Rule enabled */
   enabled: boolean;
-}
+};
 
 export function getPolicyRuleEncoder(): Encoder<PolicyRuleArgs> {
   return getStructEncoder([

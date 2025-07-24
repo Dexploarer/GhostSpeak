@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Notification methods */
@@ -27,15 +27,15 @@ export enum NotificationMethod {
 
 export type NotificationMethodArgs = NotificationMethod;
 
-export function getNotificationMethodEncoder(): Encoder<NotificationMethodArgs> {
+export function getNotificationMethodEncoder(): FixedSizeEncoder<NotificationMethodArgs> {
   return getEnumEncoder(NotificationMethod);
 }
 
-export function getNotificationMethodDecoder(): Decoder<NotificationMethod> {
+export function getNotificationMethodDecoder(): FixedSizeDecoder<NotificationMethod> {
   return getEnumDecoder(NotificationMethod);
 }
 
-export function getNotificationMethodCodec(): Codec<
+export function getNotificationMethodCodec(): FixedSizeCodec<
   NotificationMethodArgs,
   NotificationMethod
 > {

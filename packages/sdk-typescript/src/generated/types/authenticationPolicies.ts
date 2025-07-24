@@ -42,31 +42,31 @@ import {
 } from '.';
 
 /** Authentication policies */
-export interface AuthenticationPolicies {
+export type AuthenticationPolicies = {
   /** Multi-factor authentication required */
   mfaRequired: boolean;
   /** Supported authentication methods */
-  supportedMethods: AuthenticationMethod[];
+  supportedMethods: Array<AuthenticationMethod>;
   /** Authentication strength requirements */
   strengthRequirements: AuthenticationStrength;
   /** Account lockout policies */
   lockoutPolicies: AccountLockoutPolicies;
   /** Biometric policies */
   biometricPolicies: Option<BiometricPolicies>;
-}
+};
 
-export interface AuthenticationPoliciesArgs {
+export type AuthenticationPoliciesArgs = {
   /** Multi-factor authentication required */
   mfaRequired: boolean;
   /** Supported authentication methods */
-  supportedMethods: AuthenticationMethodArgs[];
+  supportedMethods: Array<AuthenticationMethodArgs>;
   /** Authentication strength requirements */
   strengthRequirements: AuthenticationStrengthArgs;
   /** Account lockout policies */
   lockoutPolicies: AccountLockoutPoliciesArgs;
   /** Biometric policies */
   biometricPolicies: OptionOrNullable<BiometricPoliciesArgs>;
-}
+};
 
 export function getAuthenticationPoliciesEncoder(): Encoder<AuthenticationPoliciesArgs> {
   return getStructEncoder([

@@ -26,15 +26,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type Option,
   type OptionOrNullable,
   type ReadonlyAccount,
@@ -68,20 +68,20 @@ export function getCreateServiceAuctionDiscriminatorBytes() {
 
 export type CreateServiceAuctionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAuction extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountCreator extends string | IAccountMeta<string> = string,
+  TAccountAuction extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountCreator extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAuction extends string
         ? WritableAccount<TAccountAuction>
@@ -94,7 +94,7 @@ export type CreateServiceAuctionInstruction<
         : TAccountUserRegistry,
       TAccountCreator extends string
         ? WritableSignerAccount<TAccountCreator> &
-            IAccountSignerMeta<TAccountCreator>
+            AccountSignerMeta<TAccountCreator>
         : TAccountCreator,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -106,7 +106,7 @@ export type CreateServiceAuctionInstruction<
     ]
   >;
 
-export interface CreateServiceAuctionInstructionData {
+export type CreateServiceAuctionInstructionData = {
   discriminator: ReadonlyUint8Array;
   auctionType: AuctionType;
   startingPrice: bigint;
@@ -116,9 +116,9 @@ export interface CreateServiceAuctionInstructionData {
   auctionEndTime: bigint;
   minimumBidIncrement: bigint;
   totalBids: number;
-}
+};
 
-export interface CreateServiceAuctionInstructionDataArgs {
+export type CreateServiceAuctionInstructionDataArgs = {
   auctionType: AuctionTypeArgs;
   startingPrice: number | bigint;
   reservePrice: number | bigint;
@@ -127,7 +127,7 @@ export interface CreateServiceAuctionInstructionDataArgs {
   auctionEndTime: number | bigint;
   minimumBidIncrement: number | bigint;
   totalBids: number;
-}
+};
 
 export function getCreateServiceAuctionInstructionDataEncoder(): Encoder<CreateServiceAuctionInstructionDataArgs> {
   return transformEncoder(
@@ -173,14 +173,14 @@ export function getCreateServiceAuctionInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateServiceAuctionAsyncInput<
+export type CreateServiceAuctionAsyncInput<
   TAccountAuction extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Auction account with canonical PDA validation and collision prevention */
   auction?: Address<TAccountAuction>;
   /** Agent account with enhanced constraints */
@@ -201,7 +201,7 @@ export interface CreateServiceAuctionAsyncInput<
   auctionEndTime: CreateServiceAuctionInstructionDataArgs['auctionEndTime'];
   minimumBidIncrement: CreateServiceAuctionInstructionDataArgs['minimumBidIncrement'];
   totalBids: CreateServiceAuctionInstructionDataArgs['totalBids'];
-}
+};
 
 export async function getCreateServiceAuctionInstructionAsync<
   TAccountAuction extends string,
@@ -303,14 +303,14 @@ export async function getCreateServiceAuctionInstructionAsync<
   return instruction;
 }
 
-export interface CreateServiceAuctionInput<
+export type CreateServiceAuctionInput<
   TAccountAuction extends string = string,
   TAccountAgent extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Auction account with canonical PDA validation and collision prevention */
   auction: Address<TAccountAuction>;
   /** Agent account with enhanced constraints */
@@ -331,7 +331,7 @@ export interface CreateServiceAuctionInput<
   auctionEndTime: CreateServiceAuctionInstructionDataArgs['auctionEndTime'];
   minimumBidIncrement: CreateServiceAuctionInstructionDataArgs['minimumBidIncrement'];
   totalBids: CreateServiceAuctionInstructionDataArgs['totalBids'];
-}
+};
 
 export function getCreateServiceAuctionInstruction<
   TAccountAuction extends string,
@@ -419,10 +419,10 @@ export function getCreateServiceAuctionInstruction<
   return instruction;
 }
 
-export interface ParsedCreateServiceAuctionInstruction<
+export type ParsedCreateServiceAuctionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Auction account with canonical PDA validation and collision prevention */
@@ -439,18 +439,19 @@ export interface ParsedCreateServiceAuctionInstruction<
     clock: TAccountMetas[5];
   };
   data: CreateServiceAuctionInstructionData;
-}
+};
 
 export function parseCreateServiceAuctionInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateServiceAuctionInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 6) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

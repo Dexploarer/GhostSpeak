@@ -17,15 +17,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -57,16 +57,16 @@ export function getCreateDynamicPricingEngineDiscriminatorBytes() {
 
 export type CreateDynamicPricingEngineInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountEngine extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountOwner extends string | IAccountMeta<string> = string,
+  TAccountEngine extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountOwner extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountEngine extends string
         ? WritableAccount<TAccountEngine>
@@ -76,7 +76,7 @@ export type CreateDynamicPricingEngineInstruction<
         : TAccountAgent,
       TAccountOwner extends string
         ? WritableSignerAccount<TAccountOwner> &
-            IAccountSignerMeta<TAccountOwner>
+            AccountSignerMeta<TAccountOwner>
         : TAccountOwner,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -85,14 +85,14 @@ export type CreateDynamicPricingEngineInstruction<
     ]
   >;
 
-export interface CreateDynamicPricingEngineInstructionData {
+export type CreateDynamicPricingEngineInstructionData = {
   discriminator: ReadonlyUint8Array;
   config: DynamicPricingConfig;
-}
+};
 
-export interface CreateDynamicPricingEngineInstructionDataArgs {
+export type CreateDynamicPricingEngineInstructionDataArgs = {
   config: DynamicPricingConfigArgs;
-}
+};
 
 export function getCreateDynamicPricingEngineInstructionDataEncoder(): Encoder<CreateDynamicPricingEngineInstructionDataArgs> {
   return transformEncoder(
@@ -124,18 +124,18 @@ export function getCreateDynamicPricingEngineInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateDynamicPricingEngineAsyncInput<
+export type CreateDynamicPricingEngineAsyncInput<
   TAccountEngine extends string = string,
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   engine?: Address<TAccountEngine>;
   agent: Address<TAccountAgent>;
   owner: TransactionSigner<TAccountOwner>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateDynamicPricingEngineInstructionDataArgs['config'];
-}
+};
 
 export async function getCreateDynamicPricingEngineInstructionAsync<
   TAccountEngine extends string,
@@ -223,18 +223,18 @@ export async function getCreateDynamicPricingEngineInstructionAsync<
   return instruction;
 }
 
-export interface CreateDynamicPricingEngineInput<
+export type CreateDynamicPricingEngineInput<
   TAccountEngine extends string = string,
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   engine: Address<TAccountEngine>;
   agent: Address<TAccountAgent>;
   owner: TransactionSigner<TAccountOwner>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateDynamicPricingEngineInstructionDataArgs['config'];
-}
+};
 
 export function getCreateDynamicPricingEngineInstruction<
   TAccountEngine extends string,
@@ -306,10 +306,10 @@ export function getCreateDynamicPricingEngineInstruction<
   return instruction;
 }
 
-export interface ParsedCreateDynamicPricingEngineInstruction<
+export type ParsedCreateDynamicPricingEngineInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     engine: TAccountMetas[0];
@@ -318,18 +318,19 @@ export interface ParsedCreateDynamicPricingEngineInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: CreateDynamicPricingEngineInstructionData;
-}
+};
 
 export function parseCreateDynamicPricingEngineInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateDynamicPricingEngineInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

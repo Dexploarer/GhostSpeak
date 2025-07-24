@@ -29,7 +29,7 @@ import {
 } from '@solana/kit';
 
 /** Enhanced event structure following 2025 patterns */
-export interface AgentServiceUpdatedEvent {
+export type AgentServiceUpdatedEvent = {
   /** Agent account public key */
   agent: Address;
   /** Owner who performed the update */
@@ -40,9 +40,9 @@ export interface AgentServiceUpdatedEvent {
   serviceEndpoint: string;
   /** New active status */
   isActive: boolean;
-}
+};
 
-export interface AgentServiceUpdatedEventArgs {
+export type AgentServiceUpdatedEventArgs = {
   /** Agent account public key */
   agent: Address;
   /** Owner who performed the update */
@@ -53,7 +53,7 @@ export interface AgentServiceUpdatedEventArgs {
   serviceEndpoint: string;
   /** New active status */
   isActive: boolean;
-}
+};
 
 export function getAgentServiceUpdatedEventEncoder(): Encoder<AgentServiceUpdatedEventArgs> {
   return getStructEncoder([

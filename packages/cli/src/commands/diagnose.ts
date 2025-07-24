@@ -17,6 +17,8 @@ import {
   type BatchDiagnosticReport
 } from '@ghostspeak/sdk';
 import { initializeClient } from '../utils/client.js';
+import type { DiagnoseOptions } from '../types/cli-types.js'
+import { assertValidAddress } from '../types/cli-types.js';
 import chalk from 'chalk';
 
 const program = new Command();
@@ -34,16 +36,16 @@ program
   .option('-n, --network <network>', 'Network to use (devnet, testnet, mainnet)', 'devnet')
   .option('-v, --verbose', 'Show detailed diagnostics')
   .option('-e, --export <filename>', 'Export results to JSON file')
-  .action(async (address: string, options: any) => {
+  .action(async (address: string, options: DiagnoseOptions) => {
     try {
       console.log(chalk.blue(`🔍 Diagnosing account: ${address}`));
-      console.log(chalk.gray(`Network: ${options.network}`));
+      console.log(chalk.gray(`Network: ${options.network ?? 'devnet'}`));
       console.log();
 
-      const { client } = await initializeClient(options.network || 'devnet');
-      const rpc = client.config.rpc as any;
+      const { client } = await initializeClient(options.network ?? 'devnet');
+      const rpc = client.config.rpc;
       
-      const report = await diagnoseAccountFromChain(rpc, address as any, { 
+      const report = await diagnoseAccountFromChain(rpc, assertValidAddress(address), { 
         logToConsole: options.verbose ?? false
       });
 
@@ -69,16 +71,21 @@ program
   .option('-v, --verbose', 'Show detailed diagnostics')
   .option('-c, --concurrent <number>', 'Number of concurrent requests', '10')
   .option('-e, --export <filename>', 'Export results to JSON file')
-  .action(async (programId: string | undefined, options: any) => {
+  .action(async (programId: string | undefined, options: DiagnoseOptions & { concurrent?: string }) => {
     try {
-      console.log(chalk.blue(`🔍 Running batch diagnostics for ${programId || 'default program'}`));
-      console.log(chalk.gray(`Network: ${options.network}`));
+      console.log(chalk.blue(`🔍 Running batch diagnostics for ${programId ?? 'default program'}`));
+      console.log(chalk.gray(`Network: ${options.network ?? 'devnet'}`));
       console.log();
 
-      const { client } = await initializeClient(options.network || 'devnet');
-      const rpc = client.config.rpc as any;
+      const { client } = await initializeClient(options.network ?? 'devnet');
+      const rpc = client.config.rpc;
       
-      const report = await diagnoseBatchFromChain(rpc, programId as any ?? undefined, options.concurrent || '10');
+      const concurrentCount = options.concurrent ? parseInt(options.concurrent) : 10;
+      const programIds = programId ? [assertValidAddress(programId)] : []
+      const report = await diagnoseBatchFromChain(rpc, programIds, { 
+        maxConcurrent: concurrentCount,
+        logToConsole: false 
+      });
 
       displayBatchReport(report, options.verbose ?? false);
 
@@ -98,17 +105,17 @@ program
   .command('check-health')
   .description('Quick health check for all program accounts')
   .option('-n, --network <network>', 'Network to use', 'devnet')
-  .action(async (options: any) => {
+  .action(async (options: Pick<DiagnoseOptions, 'network'>) => {
     try {
       console.log(chalk.blue('🏥 Running health check...'));
       
-      const { client } = await initializeClient(options.network || 'devnet');
-      const rpc = client.config.rpc as any;
+      const { client } = await initializeClient(options.network ?? 'devnet');
+      const rpc = client.config.rpc;
       
-      // Get all program accounts
-      const accounts = await (rpc as any).getProgramAccounts(client.config.programId, {
+      // Get all program accounts - assuming rpc has proper typing from SDK
+      const accounts = await rpc.getProgramAccounts(client.config.programId!, {
         commitment: 'confirmed'
-      });
+      }).send();
       
       console.log(chalk.gray(`Found ${accounts.length} accounts`));
       
@@ -117,7 +124,7 @@ program
       
       for (const { pubkey } of accounts) {
         try {
-          const report = await diagnoseAccountFromChain(rpc, pubkey.toString(), {
+          const report = await diagnoseAccountFromChain(rpc, assertValidAddress(pubkey.toString()), {
             logToConsole: false
           });
           
@@ -150,15 +157,15 @@ program
   .argument('<address>', 'Account address to migrate')
   .option('-n, --network <network>', 'Network to use', 'devnet')
   .option('-d, --dry-run', 'Show migration plan without executing')
-  .action(async (address: string, options: any) => {
+  .action(async (address: string, options: Pick<DiagnoseOptions, 'network' | 'dryRun'>) => {
     try {
       console.log(chalk.blue(`🔄 Generating migration plan for: ${address}`));
       
-      const { client } = await initializeClient(options.network || 'devnet');
-      const rpc = client.config.rpc as any;
+      const { client } = await initializeClient(options.network ?? 'devnet');
+      const rpc = client.config.rpc;
       
       // First diagnose the account to get migration plan
-      const report = await diagnoseAccountFromChain(rpc, address as any, {
+      const report = await diagnoseAccountFromChain(rpc, assertValidAddress(address), {
         logToConsole: false
       });
       
@@ -244,7 +251,7 @@ function displayBatchReport(report: BatchDiagnosticReport, verbose: boolean) {
     report.reports
       .filter(r => !r.discriminatorValidation.isValid || r.migrationPlan.migrationType !== 'none')
       .forEach(r => {
-        console.log(`  ${r.address}: ${r.discriminatorValidation.errorMessage || 'Needs migration'}`);
+        console.log(`  ${r.address}: ${r.discriminatorValidation.errorMessage ?? 'Needs migration'}`);
       });
   }
 }

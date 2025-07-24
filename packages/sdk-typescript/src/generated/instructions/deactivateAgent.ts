@@ -23,15 +23,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -58,22 +58,22 @@ export function getDeactivateAgentDiscriminatorBytes() {
 
 export type DeactivateAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAgentAccount extends string | IAccountMeta<string> = string,
-  TAccountSigner extends string | IAccountMeta<string> = string,
+  TAccountAgentAccount extends string | AccountMeta<string> = string,
+  TAccountSigner extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAgentAccount extends string
         ? WritableAccount<TAccountAgentAccount>
         : TAccountAgentAccount,
       TAccountSigner extends string
         ? WritableSignerAccount<TAccountSigner> &
-            IAccountSignerMeta<TAccountSigner>
+            AccountSignerMeta<TAccountSigner>
         : TAccountSigner,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -82,12 +82,12 @@ export type DeactivateAgentInstruction<
     ]
   >;
 
-export interface DeactivateAgentInstructionData {
+export type DeactivateAgentInstructionData = {
   discriminator: ReadonlyUint8Array;
   agentId: string;
-}
+};
 
-export interface DeactivateAgentInstructionDataArgs { agentId: string }
+export type DeactivateAgentInstructionDataArgs = { agentId: string };
 
 export function getDeactivateAgentInstructionDataEncoder(): Encoder<DeactivateAgentInstructionDataArgs> {
   return transformEncoder(
@@ -116,11 +116,11 @@ export function getDeactivateAgentInstructionDataCodec(): Codec<
   );
 }
 
-export interface DeactivateAgentAsyncInput<
+export type DeactivateAgentAsyncInput<
   TAccountAgentAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Agent account with canonical PDA validation */
   agentAccount?: Address<TAccountAgentAccount>;
   /** Enhanced authority verification */
@@ -128,7 +128,7 @@ export interface DeactivateAgentAsyncInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   agentId: DeactivateAgentInstructionDataArgs['agentId'];
-}
+};
 
 export async function getDeactivateAgentInstructionAsync<
   TAccountAgentAccount extends string,
@@ -176,7 +176,9 @@ export async function getDeactivateAgentInstructionAsync<
       seeds: [
         getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])),
         getAddressEncoder().encode(expectAddress(accounts.signer.value)),
-        getUtf8Encoder().encode(expectSome(args.agentId)),
+        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(
+          expectSome(args.agentId)
+        ),
       ],
     });
   }
@@ -206,11 +208,11 @@ export async function getDeactivateAgentInstructionAsync<
   return instruction;
 }
 
-export interface DeactivateAgentInput<
+export type DeactivateAgentInput<
   TAccountAgentAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Agent account with canonical PDA validation */
   agentAccount: Address<TAccountAgentAccount>;
   /** Enhanced authority verification */
@@ -218,7 +220,7 @@ export interface DeactivateAgentInput<
   /** Clock sysvar for rate limiting */
   clock?: Address<TAccountClock>;
   agentId: DeactivateAgentInstructionDataArgs['agentId'];
-}
+};
 
 export function getDeactivateAgentInstruction<
   TAccountAgentAccount extends string,
@@ -284,10 +286,10 @@ export function getDeactivateAgentInstruction<
   return instruction;
 }
 
-export interface ParsedDeactivateAgentInstruction<
+export type ParsedDeactivateAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with canonical PDA validation */
@@ -298,18 +300,19 @@ export interface ParsedDeactivateAgentInstruction<
     clock: TAccountMetas[2];
   };
   data: DeactivateAgentInstructionData;
-}
+};
 
 export function parseDeactivateAgentInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedDeactivateAgentInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

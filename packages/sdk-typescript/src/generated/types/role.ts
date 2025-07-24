@@ -44,7 +44,7 @@ import {
 } from '.';
 
 /** Role definition with permissions and constraints */
-export interface Role {
+export type Role = {
   /** Role identifier */
   roleId: string;
   /** Role name */
@@ -54,11 +54,11 @@ export interface Role {
   /** Role type */
   roleType: RoleType;
   /** Permission assignments */
-  permissions: string[];
+  permissions: Array<string>;
   /** Role constraints */
   constraints: RoleConstraints;
   /** Inheritance relationships */
-  inheritsFrom: string[];
+  inheritsFrom: Array<string>;
   /** Role metadata */
   metadata: RoleMetadata;
   /** Role status */
@@ -67,9 +67,9 @@ export interface Role {
   createdAt: bigint;
   /** Last modification timestamp */
   modifiedAt: bigint;
-}
+};
 
-export interface RoleArgs {
+export type RoleArgs = {
   /** Role identifier */
   roleId: string;
   /** Role name */
@@ -79,11 +79,11 @@ export interface RoleArgs {
   /** Role type */
   roleType: RoleTypeArgs;
   /** Permission assignments */
-  permissions: string[];
+  permissions: Array<string>;
   /** Role constraints */
   constraints: RoleConstraintsArgs;
   /** Inheritance relationships */
-  inheritsFrom: string[];
+  inheritsFrom: Array<string>;
   /** Role metadata */
   metadata: RoleMetadataArgs;
   /** Role status */
@@ -92,7 +92,7 @@ export interface RoleArgs {
   createdAt: number | bigint;
   /** Last modification timestamp */
   modifiedAt: number | bigint;
-}
+};
 
 export function getRoleEncoder(): Encoder<RoleArgs> {
   return getStructEncoder([

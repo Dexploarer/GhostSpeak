@@ -15,20 +15,20 @@ import {
   getU32Decoder,
   getU32Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface RbacConfigInitializedEvent {
+export type RbacConfigInitializedEvent = {
   rbacConfig: Address;
   authority: Address;
   rolesCount: number;
-}
+};
 
 export type RbacConfigInitializedEventArgs = RbacConfigInitializedEvent;
 
-export function getRbacConfigInitializedEventEncoder(): Encoder<RbacConfigInitializedEventArgs> {
+export function getRbacConfigInitializedEventEncoder(): FixedSizeEncoder<RbacConfigInitializedEventArgs> {
   return getStructEncoder([
     ['rbacConfig', getAddressEncoder()],
     ['authority', getAddressEncoder()],
@@ -36,7 +36,7 @@ export function getRbacConfigInitializedEventEncoder(): Encoder<RbacConfigInitia
   ]);
 }
 
-export function getRbacConfigInitializedEventDecoder(): Decoder<RbacConfigInitializedEvent> {
+export function getRbacConfigInitializedEventDecoder(): FixedSizeDecoder<RbacConfigInitializedEvent> {
   return getStructDecoder([
     ['rbacConfig', getAddressDecoder()],
     ['authority', getAddressDecoder()],
@@ -44,7 +44,7 @@ export function getRbacConfigInitializedEventDecoder(): Decoder<RbacConfigInitia
   ]);
 }
 
-export function getRbacConfigInitializedEventCodec(): Codec<
+export function getRbacConfigInitializedEventCodec(): FixedSizeCodec<
   RbacConfigInitializedEventArgs,
   RbacConfigInitializedEvent
 > {

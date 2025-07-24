@@ -1,10 +1,8 @@
 #!/usr/bin/env tsx
 
-import { createFromRoot } from '@codama/nodes'
 import { rootNodeFromAnchor } from '@codama/nodes-from-anchor'
 import { renderVisitor as renderJavaScriptVisitor } from '@codama/renderers-js'
 import { visit } from '@codama/visitors'
-import { updateInstructionsVisitor } from '@codama/visitors'
 import path from 'path'
 import { readFileSync, existsSync } from 'fs'
 import { fileURLToPath } from 'url'
@@ -37,26 +35,6 @@ async function generateClient() {
     console.log(`Generating client in: ${outDir}`)
     
     const jsVisitor = renderJavaScriptVisitor(outDir, {
-      // Web3.js v2 compatibility settings
-      clientName: 'ghostspeakMarketplace',
-      // Use proper package imports for Web3.js v2
-      importMap: {
-        '@solana/web3.js': '@solana/kit',
-        codecs: '@solana/codecs-core',
-        'codecs-core': '@solana/codecs-core',
-        'codecs-strings': '@solana/codecs-strings',
-        'codecs-numbers': '@solana/codecs-numbers',
-        'codecs-data-structures': '@solana/codecs-data-structures',
-        options: '@solana/options',
-        addresses: '@solana/addresses',
-        instructions: '@solana/instructions',
-        programs: '@solana/programs',
-        rpc: '@solana/rpc',
-        signers: '@solana/signers',
-        transactions: '@solana/transactions',
-        accounts: '@solana/accounts',
-        errors: '@solana/errors'
-      },
       // ESLint compatibility settings
       preferNullishCoalescing: true,
       avoidDuplicateOverloads: true,

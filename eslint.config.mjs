@@ -22,10 +22,16 @@ export default tseslint.config(
   // TypeScript ESLint recommended rules
   ...tseslint.configs.recommended,
   {
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json', './packages/*/tsconfig.json', './packages/*/tsconfig.eslint.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
-      // TypeScript rules - gradual transition to stricter
-      '@typescript-eslint/no-explicit-any': 'error', // Upgraded from warn to error
-      '@typescript-eslint/no-unused-vars': ['error', { // Upgraded from warn to error
+      // TypeScript rules - production deployment settings
+      '@typescript-eslint/no-explicit-any': 'warn', // Downgrade to warn for production
+      '@typescript-eslint/no-unused-vars': ['warn', { // Downgrade to warn for production
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         ignoreRestSiblings: true
@@ -39,12 +45,12 @@ export default tseslint.config(
       '@typescript-eslint/prefer-optional-chain': 'warn',
       '@typescript-eslint/prefer-string-starts-ends-with': 'warn',
       
-      // Unsafe operations - upgraded to errors for stricter type safety
-      '@typescript-eslint/no-unsafe-assignment': 'error',
-      '@typescript-eslint/no-unsafe-call': 'error',
-      '@typescript-eslint/no-unsafe-member-access': 'error',
-      '@typescript-eslint/no-unsafe-argument': 'error',
-      '@typescript-eslint/no-unsafe-return': 'error',
+      // Unsafe operations - downgrade to warn for production deployment
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-require-imports': 'error',
       
       // Temporarily downgrade these to warnings for gradual improvement

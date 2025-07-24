@@ -32,12 +32,12 @@ import {
   transformEncoder,
   type Account,
   type Address,
-  type Codec,
-  type Decoder,
   type EncodedAccount,
-  type Encoder,
   type FetchAccountConfig,
   type FetchAccountsConfig,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type MaybeAccount,
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
@@ -59,7 +59,7 @@ export function getIncentiveProgramDiscriminatorBytes() {
   );
 }
 
-export interface IncentiveProgram {
+export type IncentiveProgram = {
   discriminator: ReadonlyUint8Array;
   owner: Address;
   config: IncentiveConfig;
@@ -68,9 +68,9 @@ export interface IncentiveProgram {
   createdAt: bigint;
   updatedAt: bigint;
   bump: number;
-}
+};
 
-export interface IncentiveProgramArgs {
+export type IncentiveProgramArgs = {
   owner: Address;
   config: IncentiveConfigArgs;
   totalRewardsDistributed: number | bigint;
@@ -78,9 +78,9 @@ export interface IncentiveProgramArgs {
   createdAt: number | bigint;
   updatedAt: number | bigint;
   bump: number;
-}
+};
 
-export function getIncentiveProgramEncoder(): Encoder<IncentiveProgramArgs> {
+export function getIncentiveProgramEncoder(): FixedSizeEncoder<IncentiveProgramArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -96,7 +96,7 @@ export function getIncentiveProgramEncoder(): Encoder<IncentiveProgramArgs> {
   );
 }
 
-export function getIncentiveProgramDecoder(): Decoder<IncentiveProgram> {
+export function getIncentiveProgramDecoder(): FixedSizeDecoder<IncentiveProgram> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['owner', getAddressDecoder()],
@@ -109,7 +109,7 @@ export function getIncentiveProgramDecoder(): Decoder<IncentiveProgram> {
   ]);
 }
 
-export function getIncentiveProgramCodec(): Codec<
+export function getIncentiveProgramCodec(): FixedSizeCodec<
   IncentiveProgramArgs,
   IncentiveProgram
 > {
@@ -159,7 +159,7 @@ export async function fetchMaybeIncentiveProgram<
 
 export async function fetchAllIncentiveProgram(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<IncentiveProgram>[]> {
   const maybeAccounts = await fetchAllMaybeIncentiveProgram(
@@ -173,7 +173,7 @@ export async function fetchAllIncentiveProgram(
 
 export async function fetchAllMaybeIncentiveProgram(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<IncentiveProgram>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

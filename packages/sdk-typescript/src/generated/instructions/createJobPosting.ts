@@ -30,15 +30,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -64,22 +64,22 @@ export function getCreateJobPostingDiscriminatorBytes() {
 
 export type CreateJobPostingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountJobPosting extends string | IAccountMeta<string> = string,
-  TAccountEmployer extends string | IAccountMeta<string> = string,
+  TAccountJobPosting extends string | AccountMeta<string> = string,
+  TAccountEmployer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountJobPosting extends string
         ? WritableAccount<TAccountJobPosting>
         : TAccountJobPosting,
       TAccountEmployer extends string
         ? WritableSignerAccount<TAccountEmployer> &
-            IAccountSignerMeta<TAccountEmployer>
+            AccountSignerMeta<TAccountEmployer>
         : TAccountEmployer,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -88,34 +88,34 @@ export type CreateJobPostingInstruction<
     ]
   >;
 
-export interface CreateJobPostingInstructionData {
+export type CreateJobPostingInstructionData = {
   discriminator: ReadonlyUint8Array;
   title: string;
   description: string;
-  requirements: string[];
+  requirements: Array<string>;
   budget: bigint;
   deadline: bigint;
-  skillsNeeded: string[];
+  skillsNeeded: Array<string>;
   budgetMin: bigint;
   budgetMax: bigint;
   paymentToken: Address;
   jobType: string;
   experienceLevel: string;
-}
+};
 
-export interface CreateJobPostingInstructionDataArgs {
+export type CreateJobPostingInstructionDataArgs = {
   title: string;
   description: string;
-  requirements: string[];
+  requirements: Array<string>;
   budget: number | bigint;
   deadline: number | bigint;
-  skillsNeeded: string[];
+  skillsNeeded: Array<string>;
   budgetMin: number | bigint;
   budgetMax: number | bigint;
   paymentToken: Address;
   jobType: string;
   experienceLevel: string;
-}
+};
 
 export function getCreateJobPostingInstructionDataEncoder(): Encoder<CreateJobPostingInstructionDataArgs> {
   return transformEncoder(
@@ -186,11 +186,11 @@ export function getCreateJobPostingInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateJobPostingAsyncInput<
+export type CreateJobPostingAsyncInput<
   TAccountJobPosting extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   jobPosting?: Address<TAccountJobPosting>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -205,7 +205,7 @@ export interface CreateJobPostingAsyncInput<
   paymentToken: CreateJobPostingInstructionDataArgs['paymentToken'];
   jobType: CreateJobPostingInstructionDataArgs['jobType'];
   experienceLevel: CreateJobPostingInstructionDataArgs['experienceLevel'];
-}
+};
 
 export async function getCreateJobPostingInstructionAsync<
   TAccountJobPosting extends string,
@@ -284,11 +284,11 @@ export async function getCreateJobPostingInstructionAsync<
   return instruction;
 }
 
-export interface CreateJobPostingInput<
+export type CreateJobPostingInput<
   TAccountJobPosting extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   jobPosting: Address<TAccountJobPosting>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -303,7 +303,7 @@ export interface CreateJobPostingInput<
   paymentToken: CreateJobPostingInstructionDataArgs['paymentToken'];
   jobType: CreateJobPostingInstructionDataArgs['jobType'];
   experienceLevel: CreateJobPostingInstructionDataArgs['experienceLevel'];
-}
+};
 
 export function getCreateJobPostingInstruction<
   TAccountJobPosting extends string,
@@ -369,10 +369,10 @@ export function getCreateJobPostingInstruction<
   return instruction;
 }
 
-export interface ParsedCreateJobPostingInstruction<
+export type ParsedCreateJobPostingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     jobPosting: TAccountMetas[0];
@@ -380,18 +380,19 @@ export interface ParsedCreateJobPostingInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateJobPostingInstructionData;
-}
+};
 
 export function parseCreateJobPostingInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateJobPostingInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

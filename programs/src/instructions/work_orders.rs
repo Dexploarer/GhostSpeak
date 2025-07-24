@@ -11,7 +11,8 @@ use crate::state::work_order::{
     WorkDelivery, WorkDeliveryData, WorkOrder, WorkOrderData, WorkOrderStatus,
 };
 use crate::{
-    GhostSpeakError, WorkDeliverySubmittedEvent, WorkOrderCreatedEvent, MAX_DESCRIPTION_LENGTH,
+    GhostSpeakError, WorkDeliveryRejectedEvent, WorkDeliverySubmittedEvent,
+    WorkDeliveryVerifiedEvent, WorkOrderCreatedEvent, MAX_DESCRIPTION_LENGTH,
     MAX_GENERAL_STRING_LENGTH, MAX_REQUIREMENTS_ITEMS, MAX_TITLE_LENGTH,
 };
 use anchor_lang::prelude::*;
@@ -230,6 +231,191 @@ pub fn submit_work_delivery(
     Ok(())
 }
 
+/// Verifies completed work delivery and approves payment release
+///
+/// Client uses this to verify that the delivered work meets requirements. Once verified,
+/// the work order moves to Approved status, enabling payment release to the provider.
+///
+/// # Arguments
+///
+/// * `ctx` - The context containing work order, work delivery, and payment accounts
+/// * `verification_notes` - Optional notes about the verification (max 500 chars)
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful verification
+///
+/// # Errors
+///
+/// * `UnauthorizedAccess` - If caller is not the work order client
+/// * `InvalidWorkOrderStatus` - If work order is not in `Submitted` status
+/// * `WorkDeliveryNotFound` - If no work delivery exists for this order
+///
+/// # State Changes
+///
+/// - Updates work order status to `Approved`
+/// - Updates delivered_at timestamp
+/// - Enables payment release through separate instruction
+pub fn verify_work_delivery(
+    ctx: Context<VerifyWorkDelivery>,
+    verification_notes: Option<String>,
+) -> Result<()> {
+    // SECURITY: Comprehensive authorization
+    require!(
+        ctx.accounts.client.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // Copy required values before mutating
+    let work_order_key = ctx.accounts.work_order.key();
+    let work_order_client = ctx.accounts.work_order.client;
+    let work_order_provider = ctx.accounts.work_order.provider;
+    let work_order_status = ctx.accounts.work_order.status;
+
+    // SECURITY: Verify client is authorized for this work order
+    require!(
+        ctx.accounts.client.key() == work_order_client,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // SECURITY: Verify work order state transition is valid
+    require!(
+        work_order_status == WorkOrderStatus::Submitted,
+        GhostSpeakError::InvalidWorkOrderStatus
+    );
+
+    // SECURITY: Validate verification notes if provided
+    if let Some(notes) = &verification_notes {
+        InputValidator::validate_string(notes, 500, "verification_notes")?;
+    }
+
+    // Log work verification for security audit
+    SecurityLogger::log_security_event(
+        "WORK_DELIVERY_VERIFIED",
+        ctx.accounts.client.key(),
+        &format!(
+            "work_order: {work_order_key}, provider: {work_order_provider}, notes: {}",
+            verification_notes.as_deref().unwrap_or("None")
+        ),
+    );
+
+    let timestamp = Clock::get()?.unix_timestamp;
+
+    // Update work order status to Approved
+    ctx.accounts.work_order.status = WorkOrderStatus::Approved;
+    ctx.accounts.work_order.delivered_at = Some(timestamp);
+    ctx.accounts.work_order.updated_at = timestamp;
+
+    emit!(WorkDeliveryVerifiedEvent {
+        work_order: work_order_key,
+        client: ctx.accounts.client.key(),
+        provider: work_order_provider,
+        verification_notes,
+        timestamp,
+    });
+
+    Ok(())
+}
+
+/// Rejects work delivery and triggers dispute resolution
+///
+/// Client uses this when delivered work doesn't meet requirements. This prevents payment
+/// release and can trigger the dispute resolution process.
+///
+/// # Arguments
+///
+/// * `ctx` - The context containing work order, work delivery, and dispute accounts
+/// * `rejection_reason` - Detailed reason for rejection (max 1000 chars)
+/// * `requested_changes` - Specific changes requested (optional, max 5 items)
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful rejection
+///
+/// # Errors
+///
+/// * `UnauthorizedAccess` - If caller is not the work order client
+/// * `InvalidWorkOrderStatus` - If work order is not in `Submitted` status
+/// * `InvalidRejectionReason` - If reason is empty or too long
+///
+/// # State Changes
+///
+/// - Updates work order status to `InProgress` (allowing resubmission)
+/// - Records rejection reason and requested changes
+/// - May trigger dispute if provider contests rejection
+pub fn reject_work_delivery(
+    ctx: Context<RejectWorkDelivery>,
+    rejection_reason: String,
+    requested_changes: Option<Vec<String>>,
+) -> Result<()> {
+    // SECURITY: Comprehensive authorization
+    require!(
+        ctx.accounts.client.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // Copy required values before mutating
+    let work_order_key = ctx.accounts.work_order.key();
+    let work_order_client = ctx.accounts.work_order.client;
+    let work_order_provider = ctx.accounts.work_order.provider;
+    let work_order_status = ctx.accounts.work_order.status;
+
+    // SECURITY: Verify client is authorized for this work order
+    require!(
+        ctx.accounts.client.key() == work_order_client,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // SECURITY: Verify work order state transition is valid
+    require!(
+        work_order_status == WorkOrderStatus::Submitted,
+        GhostSpeakError::InvalidWorkOrderStatus
+    );
+
+    // SECURITY: Validate rejection reason
+    InputValidator::validate_string(&rejection_reason, 1000, "rejection_reason")?;
+    require!(
+        !rejection_reason.trim().is_empty(),
+        GhostSpeakError::InvalidRejectionReason
+    );
+
+    // SECURITY: Validate requested changes if provided
+    if let Some(changes) = &requested_changes {
+        InputValidator::validate_string_vec(
+            changes,
+            5,
+            MAX_GENERAL_STRING_LENGTH,
+            "requested_changes",
+        )?;
+    }
+
+    // Log work rejection for security audit
+    SecurityLogger::log_security_event(
+        "WORK_DELIVERY_REJECTED",
+        ctx.accounts.client.key(),
+        &format!(
+            "work_order: {work_order_key}, provider: {work_order_provider}, reason: {rejection_reason}"
+        ),
+    );
+
+    let timestamp = Clock::get()?.unix_timestamp;
+
+    // Update work order status back to InProgress to allow resubmission
+    ctx.accounts.work_order.status = WorkOrderStatus::InProgress;
+    ctx.accounts.work_order.updated_at = timestamp;
+
+    emit!(WorkDeliveryRejectedEvent {
+        work_order: work_order_key,
+        client: ctx.accounts.client.key(),
+        provider: work_order_provider,
+        rejection_reason: rejection_reason.clone(),
+        requested_changes: requested_changes.clone(),
+        timestamp,
+    });
+
+    Ok(())
+}
+
 // =====================================================
 // ACCOUNT VALIDATION CONTEXTS
 // =====================================================
@@ -273,4 +459,44 @@ pub struct SubmitWorkDelivery<'info> {
 
     pub clock: Sysvar<'info, Clock>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct VerifyWorkDelivery<'info> {
+    #[account(
+        mut,
+        constraint = work_order.status == WorkOrderStatus::Submitted @ GhostSpeakError::InvalidWorkOrderStatus,
+        constraint = work_order.client == client.key() @ GhostSpeakError::UnauthorizedAccess
+    )]
+    pub work_order: Account<'info, WorkOrder>,
+
+    #[account(
+        constraint = work_delivery.work_order == work_order.key() @ GhostSpeakError::InvalidWorkDelivery
+    )]
+    pub work_delivery: Account<'info, WorkDelivery>,
+
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    pub clock: Sysvar<'info, Clock>,
+}
+
+#[derive(Accounts)]
+pub struct RejectWorkDelivery<'info> {
+    #[account(
+        mut,
+        constraint = work_order.status == WorkOrderStatus::Submitted @ GhostSpeakError::InvalidWorkOrderStatus,
+        constraint = work_order.client == client.key() @ GhostSpeakError::UnauthorizedAccess
+    )]
+    pub work_order: Account<'info, WorkOrder>,
+
+    #[account(
+        constraint = work_delivery.work_order == work_order.key() @ GhostSpeakError::InvalidWorkDelivery
+    )]
+    pub work_delivery: Account<'info, WorkDelivery>,
+
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    pub clock: Sysvar<'info, Clock>,
 }

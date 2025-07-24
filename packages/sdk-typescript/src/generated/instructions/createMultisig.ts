@@ -24,15 +24,15 @@ import {
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -65,22 +65,22 @@ export function getCreateMultisigDiscriminatorBytes() {
 
 export type CreateMultisigInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMultisig extends string | IAccountMeta<string> = string,
-  TAccountOwner extends string | IAccountMeta<string> = string,
+  TAccountMultisig extends string | AccountMeta<string> = string,
+  TAccountOwner extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountMultisig extends string
         ? WritableAccount<TAccountMultisig>
         : TAccountMultisig,
       TAccountOwner extends string
         ? WritableSignerAccount<TAccountOwner> &
-            IAccountSignerMeta<TAccountOwner>
+            AccountSignerMeta<TAccountOwner>
         : TAccountOwner,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -89,20 +89,20 @@ export type CreateMultisigInstruction<
     ]
   >;
 
-export interface CreateMultisigInstructionData {
+export type CreateMultisigInstructionData = {
   discriminator: ReadonlyUint8Array;
   multisigId: bigint;
   threshold: number;
-  signers: Address[];
+  signers: Array<Address>;
   config: MultisigConfig;
-}
+};
 
-export interface CreateMultisigInstructionDataArgs {
+export type CreateMultisigInstructionDataArgs = {
   multisigId: number | bigint;
   threshold: number;
-  signers: Address[];
+  signers: Array<Address>;
   config: MultisigConfigArgs;
-}
+};
 
 export function getCreateMultisigInstructionDataEncoder(): Encoder<CreateMultisigInstructionDataArgs> {
   return transformEncoder(
@@ -137,11 +137,11 @@ export function getCreateMultisigInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateMultisigAsyncInput<
+export type CreateMultisigAsyncInput<
   TAccountMultisig extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   multisig?: Address<TAccountMultisig>;
   owner: TransactionSigner<TAccountOwner>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -149,7 +149,7 @@ export interface CreateMultisigAsyncInput<
   threshold: CreateMultisigInstructionDataArgs['threshold'];
   signers: CreateMultisigInstructionDataArgs['signers'];
   config: CreateMultisigInstructionDataArgs['config'];
-}
+};
 
 export async function getCreateMultisigInstructionAsync<
   TAccountMultisig extends string,
@@ -229,11 +229,11 @@ export async function getCreateMultisigInstructionAsync<
   return instruction;
 }
 
-export interface CreateMultisigInput<
+export type CreateMultisigInput<
   TAccountMultisig extends string = string,
   TAccountOwner extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   multisig: Address<TAccountMultisig>;
   owner: TransactionSigner<TAccountOwner>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -241,7 +241,7 @@ export interface CreateMultisigInput<
   threshold: CreateMultisigInstructionDataArgs['threshold'];
   signers: CreateMultisigInstructionDataArgs['signers'];
   config: CreateMultisigInstructionDataArgs['config'];
-}
+};
 
 export function getCreateMultisigInstruction<
   TAccountMultisig extends string,
@@ -307,10 +307,10 @@ export function getCreateMultisigInstruction<
   return instruction;
 }
 
-export interface ParsedCreateMultisigInstruction<
+export type ParsedCreateMultisigInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     multisig: TAccountMetas[0];
@@ -318,18 +318,19 @@ export interface ParsedCreateMultisigInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateMultisigInstructionData;
-}
+};
 
 export function parseCreateMultisigInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateMultisigInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

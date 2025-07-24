@@ -14,16 +14,28 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getRuleConditionDecoder,
-  getRuleConditionEncoder,
-  type RuleCondition,
-  type RuleConditionArgs,
-} from '.';
 
-export interface RuleConditionExport { data: RuleCondition }
 
-export interface RuleConditionExportArgs { data: RuleConditionArgs }
+// Define RuleCondition interface
+export interface RuleCondition {
+  // Properties defined by the IDL
+  [key: string]: unknown;
+}
+
+export type RuleConditionArgs = RuleCondition;
+
+// Define encoder/decoder for RuleCondition
+export function getRuleConditionEncoder(): Encoder<RuleConditionArgs> {
+  return getStructEncoder([]);
+}
+
+export function getRuleConditionDecoder(): Decoder<RuleCondition> {
+  return getStructDecoder([]);
+}
+
+export type RuleConditionExport = { data: RuleCondition };
+
+export type RuleConditionExportArgs = { data: RuleConditionArgs };
 
 export function getRuleConditionExportEncoder(): Encoder<RuleConditionExportArgs> {
   return getStructEncoder([['data', getRuleConditionEncoder()]]);

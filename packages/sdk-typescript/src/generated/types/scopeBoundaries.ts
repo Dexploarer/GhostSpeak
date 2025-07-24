@@ -30,27 +30,27 @@ import {
 } from '.';
 
 /** Scope boundaries definition */
-export interface ScopeBoundaries {
+export type ScopeBoundaries = {
   /** Included resources */
-  includedResources: string[];
+  includedResources: Array<string>;
   /** Excluded resources */
-  excludedResources: string[];
+  excludedResources: Array<string>;
   /** Resource patterns (regex) */
-  resourcePatterns: string[];
+  resourcePatterns: Array<string>;
   /** Hierarchical boundaries */
-  hierarchicalBoundaries: HierarchicalBoundary[];
-}
+  hierarchicalBoundaries: Array<HierarchicalBoundary>;
+};
 
-export interface ScopeBoundariesArgs {
+export type ScopeBoundariesArgs = {
   /** Included resources */
-  includedResources: string[];
+  includedResources: Array<string>;
   /** Excluded resources */
-  excludedResources: string[];
+  excludedResources: Array<string>;
   /** Resource patterns (regex) */
-  resourcePatterns: string[];
+  resourcePatterns: Array<string>;
   /** Hierarchical boundaries */
-  hierarchicalBoundaries: HierarchicalBoundaryArgs[];
-}
+  hierarchicalBoundaries: Array<HierarchicalBoundaryArgs>;
+};
 
 export function getScopeBoundariesEncoder(): Encoder<ScopeBoundariesArgs> {
   return getStructEncoder([

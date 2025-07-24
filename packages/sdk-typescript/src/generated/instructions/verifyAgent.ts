@@ -30,15 +30,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -64,19 +64,19 @@ export function getVerifyAgentDiscriminatorBytes() {
 
 export type VerifyAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAgentVerification extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountVerifier extends string | IAccountMeta<string> = string,
+  TAccountAgentVerification extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountVerifier extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAgentVerification extends string
         ? WritableAccount<TAccountAgentVerification>
@@ -86,7 +86,7 @@ export type VerifyAgentInstruction<
         : TAccountAgent,
       TAccountVerifier extends string
         ? WritableSignerAccount<TAccountVerifier> &
-            IAccountSignerMeta<TAccountVerifier>
+            AccountSignerMeta<TAccountVerifier>
         : TAccountVerifier,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -98,20 +98,20 @@ export type VerifyAgentInstruction<
     ]
   >;
 
-export interface VerifyAgentInstructionData {
+export type VerifyAgentInstructionData = {
   discriminator: ReadonlyUint8Array;
   agentPubkey: Address;
   serviceEndpoint: string;
-  supportedCapabilities: bigint[];
+  supportedCapabilities: Array<bigint>;
   verifiedAt: bigint;
-}
+};
 
-export interface VerifyAgentInstructionDataArgs {
+export type VerifyAgentInstructionDataArgs = {
   agentPubkey: Address;
   serviceEndpoint: string;
-  supportedCapabilities: (number | bigint)[];
+  supportedCapabilities: Array<number | bigint>;
   verifiedAt: number | bigint;
-}
+};
 
 export function getVerifyAgentInstructionDataEncoder(): Encoder<VerifyAgentInstructionDataArgs> {
   return transformEncoder(
@@ -152,13 +152,13 @@ export function getVerifyAgentInstructionDataCodec(): Codec<
   );
 }
 
-export interface VerifyAgentAsyncInput<
+export type VerifyAgentAsyncInput<
   TAccountAgentVerification extends string = string,
   TAccountAgent extends string = string,
   TAccountVerifier extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Verification account with enhanced PDA security */
   agentVerification?: Address<TAccountAgentVerification>;
   /** Agent account being verified (enhanced validation) */
@@ -173,7 +173,7 @@ export interface VerifyAgentAsyncInput<
   serviceEndpoint: VerifyAgentInstructionDataArgs['serviceEndpoint'];
   supportedCapabilities: VerifyAgentInstructionDataArgs['supportedCapabilities'];
   verifiedAt: VerifyAgentInstructionDataArgs['verifiedAt'];
-}
+};
 
 export async function getVerifyAgentInstructionAsync<
   TAccountAgentVerification extends string,
@@ -275,13 +275,13 @@ export async function getVerifyAgentInstructionAsync<
   return instruction;
 }
 
-export interface VerifyAgentInput<
+export type VerifyAgentInput<
   TAccountAgentVerification extends string = string,
   TAccountAgent extends string = string,
   TAccountVerifier extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Verification account with enhanced PDA security */
   agentVerification: Address<TAccountAgentVerification>;
   /** Agent account being verified (enhanced validation) */
@@ -296,7 +296,7 @@ export interface VerifyAgentInput<
   serviceEndpoint: VerifyAgentInstructionDataArgs['serviceEndpoint'];
   supportedCapabilities: VerifyAgentInstructionDataArgs['supportedCapabilities'];
   verifiedAt: VerifyAgentInstructionDataArgs['verifiedAt'];
-}
+};
 
 export function getVerifyAgentInstruction<
   TAccountAgentVerification extends string,
@@ -381,10 +381,10 @@ export function getVerifyAgentInstruction<
   return instruction;
 }
 
-export interface ParsedVerifyAgentInstruction<
+export type ParsedVerifyAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Verification account with enhanced PDA security */
@@ -399,18 +399,19 @@ export interface ParsedVerifyAgentInstruction<
     clock: TAccountMetas[4];
   };
   data: VerifyAgentInstructionData;
-}
+};
 
 export function parseVerifyAgentInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedVerifyAgentInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

@@ -26,19 +26,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface IncentiveDistributedEvent {
+export type IncentiveDistributedEvent = {
   program: Address;
   agent: Address;
   incentiveType: string;
   amount: bigint;
-}
+};
 
-export interface IncentiveDistributedEventArgs {
+export type IncentiveDistributedEventArgs = {
   program: Address;
   agent: Address;
   incentiveType: string;
   amount: number | bigint;
-}
+};
 
 export function getIncentiveDistributedEventEncoder(): Encoder<IncentiveDistributedEventArgs> {
   return getStructEncoder([

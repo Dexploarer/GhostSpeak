@@ -13,9 +13,9 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getMessageTypeDecoder,
@@ -24,21 +24,21 @@ import {
   type MessageTypeArgs,
 } from '.';
 
-export interface MessageSentEvent {
+export type MessageSentEvent = {
   message: Address;
   channel: Address;
   sender: Address;
   messageType: MessageType;
-}
+};
 
-export interface MessageSentEventArgs {
+export type MessageSentEventArgs = {
   message: Address;
   channel: Address;
   sender: Address;
   messageType: MessageTypeArgs;
-}
+};
 
-export function getMessageSentEventEncoder(): Encoder<MessageSentEventArgs> {
+export function getMessageSentEventEncoder(): FixedSizeEncoder<MessageSentEventArgs> {
   return getStructEncoder([
     ['message', getAddressEncoder()],
     ['channel', getAddressEncoder()],
@@ -47,7 +47,7 @@ export function getMessageSentEventEncoder(): Encoder<MessageSentEventArgs> {
   ]);
 }
 
-export function getMessageSentEventDecoder(): Decoder<MessageSentEvent> {
+export function getMessageSentEventDecoder(): FixedSizeDecoder<MessageSentEvent> {
   return getStructDecoder([
     ['message', getAddressDecoder()],
     ['channel', getAddressDecoder()],
@@ -56,7 +56,7 @@ export function getMessageSentEventDecoder(): Decoder<MessageSentEvent> {
   ]);
 }
 
-export function getMessageSentEventCodec(): Codec<
+export function getMessageSentEventCodec(): FixedSizeCodec<
   MessageSentEventArgs,
   MessageSentEvent
 > {

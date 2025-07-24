@@ -57,24 +57,24 @@ export function getA2AStatusDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(A2_A_STATUS_DISCRIMINATOR);
 }
 
-export interface A2AStatus {
+export type A2AStatus = {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   status: string;
-  capabilities: string[];
+  capabilities: Array<string>;
   availability: boolean;
   lastUpdated: bigint;
   bump: number;
-}
+};
 
-export interface A2AStatusArgs {
+export type A2AStatusArgs = {
   agent: Address;
   status: string;
-  capabilities: string[];
+  capabilities: Array<string>;
   availability: boolean;
   lastUpdated: number | bigint;
   bump: number;
-}
+};
 
 export function getA2AStatusEncoder(): Encoder<A2AStatusArgs> {
   return transformEncoder(
@@ -151,7 +151,7 @@ export async function fetchMaybeA2AStatus<TAddress extends string = string>(
 
 export async function fetchAllA2AStatus(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<A2AStatus>[]> {
   const maybeAccounts = await fetchAllMaybeA2AStatus(rpc, addresses, config);
@@ -161,7 +161,7 @@ export async function fetchAllA2AStatus(
 
 export async function fetchAllMaybeA2AStatus(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<A2AStatus>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

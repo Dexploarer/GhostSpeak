@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of security events */
@@ -29,15 +29,15 @@ export enum SecurityEventType {
 
 export type SecurityEventTypeArgs = SecurityEventType;
 
-export function getSecurityEventTypeEncoder(): Encoder<SecurityEventTypeArgs> {
+export function getSecurityEventTypeEncoder(): FixedSizeEncoder<SecurityEventTypeArgs> {
   return getEnumEncoder(SecurityEventType);
 }
 
-export function getSecurityEventTypeDecoder(): Decoder<SecurityEventType> {
+export function getSecurityEventTypeDecoder(): FixedSizeDecoder<SecurityEventType> {
   return getEnumDecoder(SecurityEventType);
 }
 
-export function getSecurityEventTypeCodec(): Codec<
+export function getSecurityEventTypeCodec(): FixedSizeCodec<
   SecurityEventTypeArgs,
   SecurityEventType
 > {

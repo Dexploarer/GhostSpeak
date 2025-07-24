@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum ChannelType {
@@ -24,14 +24,17 @@ export enum ChannelType {
 
 export type ChannelTypeArgs = ChannelType;
 
-export function getChannelTypeEncoder(): Encoder<ChannelTypeArgs> {
+export function getChannelTypeEncoder(): FixedSizeEncoder<ChannelTypeArgs> {
   return getEnumEncoder(ChannelType);
 }
 
-export function getChannelTypeDecoder(): Decoder<ChannelType> {
+export function getChannelTypeDecoder(): FixedSizeDecoder<ChannelType> {
   return getEnumDecoder(ChannelType);
 }
 
-export function getChannelTypeCodec(): Codec<ChannelTypeArgs, ChannelType> {
+export function getChannelTypeCodec(): FixedSizeCodec<
+  ChannelTypeArgs,
+  ChannelType
+> {
   return combineCodec(getChannelTypeEncoder(), getChannelTypeDecoder());
 }

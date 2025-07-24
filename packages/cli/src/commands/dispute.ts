@@ -922,8 +922,8 @@ disputeCommand
       
       try {
         const signature = await client.dispute.escalateDispute(
-          toSDKSigner(wallet) as any,
-          address(selectedDispute as string),
+          toSDKSigner(wallet),
+          address(selectedDispute!),
           `${escalationReason}: ${escalationDetails}`
         )
         

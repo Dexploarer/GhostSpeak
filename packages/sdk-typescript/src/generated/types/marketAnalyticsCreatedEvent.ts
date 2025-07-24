@@ -15,26 +15,26 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface MarketAnalyticsCreatedEvent {
+export type MarketAnalyticsCreatedEvent = {
   marketAnalytics: Address;
   periodStart: bigint;
   periodEnd: bigint;
   timestamp: bigint;
-}
+};
 
-export interface MarketAnalyticsCreatedEventArgs {
+export type MarketAnalyticsCreatedEventArgs = {
   marketAnalytics: Address;
   periodStart: number | bigint;
   periodEnd: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getMarketAnalyticsCreatedEventEncoder(): Encoder<MarketAnalyticsCreatedEventArgs> {
+export function getMarketAnalyticsCreatedEventEncoder(): FixedSizeEncoder<MarketAnalyticsCreatedEventArgs> {
   return getStructEncoder([
     ['marketAnalytics', getAddressEncoder()],
     ['periodStart', getI64Encoder()],
@@ -43,7 +43,7 @@ export function getMarketAnalyticsCreatedEventEncoder(): Encoder<MarketAnalytics
   ]);
 }
 
-export function getMarketAnalyticsCreatedEventDecoder(): Decoder<MarketAnalyticsCreatedEvent> {
+export function getMarketAnalyticsCreatedEventDecoder(): FixedSizeDecoder<MarketAnalyticsCreatedEvent> {
   return getStructDecoder([
     ['marketAnalytics', getAddressDecoder()],
     ['periodStart', getI64Decoder()],
@@ -52,7 +52,7 @@ export function getMarketAnalyticsCreatedEventDecoder(): Decoder<MarketAnalytics
   ]);
 }
 
-export function getMarketAnalyticsCreatedEventCodec(): Codec<
+export function getMarketAnalyticsCreatedEventCodec(): FixedSizeCodec<
   MarketAnalyticsCreatedEventArgs,
   MarketAnalyticsCreatedEvent
 > {

@@ -29,15 +29,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -59,25 +59,25 @@ export function getCreateWorkOrderDiscriminatorBytes() {
 
 export type CreateWorkOrderInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountWorkOrder extends string | IAccountMeta<string> = string,
-  TAccountClient extends string | IAccountMeta<string> = string,
+  TAccountWorkOrder extends string | AccountMeta<string> = string,
+  TAccountClient extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountWorkOrder extends string
         ? WritableAccount<TAccountWorkOrder>
         : TAccountWorkOrder,
       TAccountClient extends string
         ? WritableSignerAccount<TAccountClient> &
-            IAccountSignerMeta<TAccountClient>
+            AccountSignerMeta<TAccountClient>
         : TAccountClient,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -89,28 +89,28 @@ export type CreateWorkOrderInstruction<
     ]
   >;
 
-export interface CreateWorkOrderInstructionData {
+export type CreateWorkOrderInstructionData = {
   discriminator: ReadonlyUint8Array;
   orderId: bigint;
   provider: Address;
   title: string;
   description: string;
-  requirements: string[];
+  requirements: Array<string>;
   paymentAmount: bigint;
   paymentToken: Address;
   deadline: bigint;
-}
+};
 
-export interface CreateWorkOrderInstructionDataArgs {
+export type CreateWorkOrderInstructionDataArgs = {
   orderId: number | bigint;
   provider: Address;
   title: string;
   description: string;
-  requirements: string[];
+  requirements: Array<string>;
   paymentAmount: number | bigint;
   paymentToken: Address;
   deadline: number | bigint;
-}
+};
 
 export function getCreateWorkOrderInstructionDataEncoder(): Encoder<CreateWorkOrderInstructionDataArgs> {
   return transformEncoder(
@@ -161,12 +161,12 @@ export function getCreateWorkOrderInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateWorkOrderInput<
+export type CreateWorkOrderInput<
   TAccountWorkOrder extends string = string,
   TAccountClient extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   workOrder: Address<TAccountWorkOrder>;
   client: TransactionSigner<TAccountClient>;
   clock?: Address<TAccountClock>;
@@ -179,7 +179,7 @@ export interface CreateWorkOrderInput<
   paymentAmount: CreateWorkOrderInstructionDataArgs['paymentAmount'];
   paymentToken: CreateWorkOrderInstructionDataArgs['paymentToken'];
   deadline: CreateWorkOrderInstructionDataArgs['deadline'];
-}
+};
 
 export function getCreateWorkOrderInstruction<
   TAccountWorkOrder extends string,
@@ -255,10 +255,10 @@ export function getCreateWorkOrderInstruction<
   return instruction;
 }
 
-export interface ParsedCreateWorkOrderInstruction<
+export type ParsedCreateWorkOrderInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     workOrder: TAccountMetas[0];
@@ -267,18 +267,19 @@ export interface ParsedCreateWorkOrderInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: CreateWorkOrderInstructionData;
-}
+};
 
 export function parseCreateWorkOrderInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateWorkOrderInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

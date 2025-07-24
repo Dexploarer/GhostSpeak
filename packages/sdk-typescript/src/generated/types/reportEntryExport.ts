@@ -14,16 +14,28 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getReportEntryDecoder,
-  getReportEntryEncoder,
-  type ReportEntry,
-  type ReportEntryArgs,
-} from '.';
 
-export interface ReportEntryExport { data: ReportEntry }
 
-export interface ReportEntryExportArgs { data: ReportEntryArgs }
+// Define ReportEntry interface
+export interface ReportEntry {
+  // Properties defined by the IDL
+  [key: string]: unknown;
+}
+
+export type ReportEntryArgs = ReportEntry;
+
+// Define encoder/decoder for ReportEntry
+export function getReportEntryEncoder(): Encoder<ReportEntryArgs> {
+  return getStructEncoder([]);
+}
+
+export function getReportEntryDecoder(): Decoder<ReportEntry> {
+  return getStructDecoder([]);
+}
+
+export type ReportEntryExport = { data: ReportEntry };
+
+export type ReportEntryExportArgs = { data: ReportEntryArgs };
 
 export function getReportEntryExportEncoder(): Encoder<ReportEntryExportArgs> {
   return getStructEncoder([['data', getReportEntryEncoder()]]);

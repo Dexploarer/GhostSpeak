@@ -24,14 +24,14 @@ import {
 } from '@solana/kit';
 
 /** Hierarchical boundary definition */
-export interface HierarchicalBoundary {
+export type HierarchicalBoundary = {
   /** Boundary level */
   level: string;
   /** Boundary value */
   value: string;
   /** Include descendants */
   includeDescendants: boolean;
-}
+};
 
 export type HierarchicalBoundaryArgs = HierarchicalBoundary;
 

@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of access policies */
@@ -27,14 +27,17 @@ export enum PolicyType {
 
 export type PolicyTypeArgs = PolicyType;
 
-export function getPolicyTypeEncoder(): Encoder<PolicyTypeArgs> {
+export function getPolicyTypeEncoder(): FixedSizeEncoder<PolicyTypeArgs> {
   return getEnumEncoder(PolicyType);
 }
 
-export function getPolicyTypeDecoder(): Decoder<PolicyType> {
+export function getPolicyTypeDecoder(): FixedSizeDecoder<PolicyType> {
   return getEnumDecoder(PolicyType);
 }
 
-export function getPolicyTypeCodec(): Codec<PolicyTypeArgs, PolicyType> {
+export function getPolicyTypeCodec(): FixedSizeCodec<
+  PolicyTypeArgs,
+  PolicyType
+> {
   return combineCodec(getPolicyTypeEncoder(), getPolicyTypeDecoder());
 }

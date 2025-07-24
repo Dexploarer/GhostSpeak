@@ -14,13 +14,13 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Report summary statistics */
-export interface ReportSummary {
+export type ReportSummary = {
   /** Total transactions */
   totalTransactions: bigint;
   /** Total volume */
@@ -33,9 +33,9 @@ export interface ReportSummary {
   securityIncidents: bigint;
   /** Average risk score */
   averageRiskScore: number;
-}
+};
 
-export interface ReportSummaryArgs {
+export type ReportSummaryArgs = {
   /** Total transactions */
   totalTransactions: number | bigint;
   /** Total volume */
@@ -48,9 +48,9 @@ export interface ReportSummaryArgs {
   securityIncidents: number | bigint;
   /** Average risk score */
   averageRiskScore: number;
-}
+};
 
-export function getReportSummaryEncoder(): Encoder<ReportSummaryArgs> {
+export function getReportSummaryEncoder(): FixedSizeEncoder<ReportSummaryArgs> {
   return getStructEncoder([
     ['totalTransactions', getU64Encoder()],
     ['totalVolume', getU64Encoder()],
@@ -61,7 +61,7 @@ export function getReportSummaryEncoder(): Encoder<ReportSummaryArgs> {
   ]);
 }
 
-export function getReportSummaryDecoder(): Decoder<ReportSummary> {
+export function getReportSummaryDecoder(): FixedSizeDecoder<ReportSummary> {
   return getStructDecoder([
     ['totalTransactions', getU64Decoder()],
     ['totalVolume', getU64Decoder()],
@@ -72,7 +72,7 @@ export function getReportSummaryDecoder(): Decoder<ReportSummary> {
   ]);
 }
 
-export function getReportSummaryCodec(): Codec<
+export function getReportSummaryCodec(): FixedSizeCodec<
   ReportSummaryArgs,
   ReportSummary
 > {

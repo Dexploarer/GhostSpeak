@@ -30,7 +30,7 @@ import {
 } from '.';
 
 /** Authentication strength requirements */
-export interface AuthenticationStrength {
+export type AuthenticationStrength = {
   /** Minimum authentication level */
   minimumLevel: AuthenticationLevel;
   /** Risk-based authentication */
@@ -38,10 +38,10 @@ export interface AuthenticationStrength {
   /** Adaptive authentication */
   adaptive: boolean;
   /** Step-up authentication triggers */
-  stepUpTriggers: StepUpTrigger[];
-}
+  stepUpTriggers: Array<StepUpTrigger>;
+};
 
-export interface AuthenticationStrengthArgs {
+export type AuthenticationStrengthArgs = {
   /** Minimum authentication level */
   minimumLevel: AuthenticationLevelArgs;
   /** Risk-based authentication */
@@ -49,8 +49,8 @@ export interface AuthenticationStrengthArgs {
   /** Adaptive authentication */
   adaptive: boolean;
   /** Step-up authentication triggers */
-  stepUpTriggers: StepUpTriggerArgs[];
-}
+  stepUpTriggers: Array<StepUpTriggerArgs>;
+};
 
 export function getAuthenticationStrengthEncoder(): Encoder<AuthenticationStrengthArgs> {
   return getStructEncoder([

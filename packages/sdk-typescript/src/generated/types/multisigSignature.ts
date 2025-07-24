@@ -36,7 +36,7 @@ import {
 } from '@solana/kit';
 
 /** Individual signature in multisig */
-export interface MultisigSignature {
+export type MultisigSignature = {
   /** Signer public key */
   signer: Address;
   /** Signature data */
@@ -47,9 +47,9 @@ export interface MultisigSignature {
   signatureMethod: string;
   /** Additional verification data */
   verificationData: Option<ReadonlyUint8Array>;
-}
+};
 
-export interface MultisigSignatureArgs {
+export type MultisigSignatureArgs = {
   /** Signer public key */
   signer: Address;
   /** Signature data */
@@ -60,7 +60,7 @@ export interface MultisigSignatureArgs {
   signatureMethod: string;
   /** Additional verification data */
   verificationData: OptionOrNullable<ReadonlyUint8Array>;
-}
+};
 
 export function getMultisigSignatureEncoder(): Encoder<MultisigSignatureArgs> {
   return getStructEncoder([

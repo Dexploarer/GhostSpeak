@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Handling of template degradation */
@@ -25,15 +25,15 @@ export enum DegradationHandling {
 
 export type DegradationHandlingArgs = DegradationHandling;
 
-export function getDegradationHandlingEncoder(): Encoder<DegradationHandlingArgs> {
+export function getDegradationHandlingEncoder(): FixedSizeEncoder<DegradationHandlingArgs> {
   return getEnumEncoder(DegradationHandling);
 }
 
-export function getDegradationHandlingDecoder(): Decoder<DegradationHandling> {
+export function getDegradationHandlingDecoder(): FixedSizeDecoder<DegradationHandling> {
   return getEnumDecoder(DegradationHandling);
 }
 
-export function getDegradationHandlingCodec(): Codec<
+export function getDegradationHandlingCodec(): FixedSizeCodec<
   DegradationHandlingArgs,
   DegradationHandling
 > {

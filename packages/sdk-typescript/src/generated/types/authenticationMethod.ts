@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Authentication methods */
@@ -30,15 +30,15 @@ export enum AuthenticationMethod {
 
 export type AuthenticationMethodArgs = AuthenticationMethod;
 
-export function getAuthenticationMethodEncoder(): Encoder<AuthenticationMethodArgs> {
+export function getAuthenticationMethodEncoder(): FixedSizeEncoder<AuthenticationMethodArgs> {
   return getEnumEncoder(AuthenticationMethod);
 }
 
-export function getAuthenticationMethodDecoder(): Decoder<AuthenticationMethod> {
+export function getAuthenticationMethodDecoder(): FixedSizeDecoder<AuthenticationMethod> {
   return getEnumDecoder(AuthenticationMethod);
 }
 
-export function getAuthenticationMethodCodec(): Codec<
+export function getAuthenticationMethodCodec(): FixedSizeCodec<
   AuthenticationMethodArgs,
   AuthenticationMethod
 > {

@@ -19,26 +19,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AuctionBid {
+export type AuctionBid = {
   bidder: Address;
   amount: bigint;
   timestamp: bigint;
   isWinning: boolean;
-}
+};
 
-export interface AuctionBidArgs {
+export type AuctionBidArgs = {
   bidder: Address;
   amount: number | bigint;
   timestamp: number | bigint;
   isWinning: boolean;
-}
+};
 
-export function getAuctionBidEncoder(): Encoder<AuctionBidArgs> {
+export function getAuctionBidEncoder(): FixedSizeEncoder<AuctionBidArgs> {
   return getStructEncoder([
     ['bidder', getAddressEncoder()],
     ['amount', getU64Encoder()],
@@ -47,7 +47,7 @@ export function getAuctionBidEncoder(): Encoder<AuctionBidArgs> {
   ]);
 }
 
-export function getAuctionBidDecoder(): Decoder<AuctionBid> {
+export function getAuctionBidDecoder(): FixedSizeDecoder<AuctionBid> {
   return getStructDecoder([
     ['bidder', getAddressDecoder()],
     ['amount', getU64Decoder()],
@@ -56,6 +56,9 @@ export function getAuctionBidDecoder(): Decoder<AuctionBid> {
   ]);
 }
 
-export function getAuctionBidCodec(): Codec<AuctionBidArgs, AuctionBid> {
+export function getAuctionBidCodec(): FixedSizeCodec<
+  AuctionBidArgs,
+  AuctionBid
+> {
   return combineCodec(getAuctionBidEncoder(), getAuctionBidDecoder());
 }

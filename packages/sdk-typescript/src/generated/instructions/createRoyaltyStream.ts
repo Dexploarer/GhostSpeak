@@ -17,15 +17,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -57,16 +57,16 @@ export function getCreateRoyaltyStreamDiscriminatorBytes() {
 
 export type CreateRoyaltyStreamInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountStream extends string | IAccountMeta<string> = string,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountCreator extends string | IAccountMeta<string> = string,
+  TAccountStream extends string | AccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountCreator extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountStream extends string
         ? WritableAccount<TAccountStream>
@@ -76,7 +76,7 @@ export type CreateRoyaltyStreamInstruction<
         : TAccountAgent,
       TAccountCreator extends string
         ? WritableSignerAccount<TAccountCreator> &
-            IAccountSignerMeta<TAccountCreator>
+            AccountSignerMeta<TAccountCreator>
         : TAccountCreator,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -85,16 +85,16 @@ export type CreateRoyaltyStreamInstruction<
     ]
   >;
 
-export interface CreateRoyaltyStreamInstructionData {
+export type CreateRoyaltyStreamInstructionData = {
   discriminator: ReadonlyUint8Array;
   config: RoyaltyConfig;
-}
+};
 
-export interface CreateRoyaltyStreamInstructionDataArgs {
+export type CreateRoyaltyStreamInstructionDataArgs = {
   config: RoyaltyConfigArgs;
-}
+};
 
-export function getCreateRoyaltyStreamInstructionDataEncoder(): Encoder<CreateRoyaltyStreamInstructionDataArgs> {
+export function getCreateRoyaltyStreamInstructionDataEncoder(): FixedSizeEncoder<CreateRoyaltyStreamInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -107,14 +107,14 @@ export function getCreateRoyaltyStreamInstructionDataEncoder(): Encoder<CreateRo
   );
 }
 
-export function getCreateRoyaltyStreamInstructionDataDecoder(): Decoder<CreateRoyaltyStreamInstructionData> {
+export function getCreateRoyaltyStreamInstructionDataDecoder(): FixedSizeDecoder<CreateRoyaltyStreamInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['config', getRoyaltyConfigDecoder()],
   ]);
 }
 
-export function getCreateRoyaltyStreamInstructionDataCodec(): Codec<
+export function getCreateRoyaltyStreamInstructionDataCodec(): FixedSizeCodec<
   CreateRoyaltyStreamInstructionDataArgs,
   CreateRoyaltyStreamInstructionData
 > {
@@ -124,18 +124,18 @@ export function getCreateRoyaltyStreamInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateRoyaltyStreamAsyncInput<
+export type CreateRoyaltyStreamAsyncInput<
   TAccountStream extends string = string,
   TAccountAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   stream?: Address<TAccountStream>;
   agent: Address<TAccountAgent>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateRoyaltyStreamInstructionDataArgs['config'];
-}
+};
 
 export async function getCreateRoyaltyStreamInstructionAsync<
   TAccountStream extends string,
@@ -222,18 +222,18 @@ export async function getCreateRoyaltyStreamInstructionAsync<
   return instruction;
 }
 
-export interface CreateRoyaltyStreamInput<
+export type CreateRoyaltyStreamInput<
   TAccountStream extends string = string,
   TAccountAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   stream: Address<TAccountStream>;
   agent: Address<TAccountAgent>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateRoyaltyStreamInstructionDataArgs['config'];
-}
+};
 
 export function getCreateRoyaltyStreamInstruction<
   TAccountStream extends string,
@@ -305,10 +305,10 @@ export function getCreateRoyaltyStreamInstruction<
   return instruction;
 }
 
-export interface ParsedCreateRoyaltyStreamInstruction<
+export type ParsedCreateRoyaltyStreamInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     stream: TAccountMetas[0];
@@ -317,18 +317,19 @@ export interface ParsedCreateRoyaltyStreamInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: CreateRoyaltyStreamInstructionData;
-}
+};
 
 export function parseCreateRoyaltyStreamInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateRoyaltyStreamInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

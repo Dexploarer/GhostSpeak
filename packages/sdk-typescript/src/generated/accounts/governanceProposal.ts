@@ -85,7 +85,7 @@ export function getGovernanceProposalDiscriminatorBytes() {
   );
 }
 
-export interface GovernanceProposal {
+export type GovernanceProposal = {
   discriminator: ReadonlyUint8Array;
   /** Proposal ID */
   proposalId: bigint;
@@ -117,9 +117,9 @@ export interface GovernanceProposal {
   metadata: ProposalMetadata;
   /** Reserved space */
   reserved: ReadonlyUint8Array;
-}
+};
 
-export interface GovernanceProposalArgs {
+export type GovernanceProposalArgs = {
   /** Proposal ID */
   proposalId: number | bigint;
   /** Proposer */
@@ -150,7 +150,7 @@ export interface GovernanceProposalArgs {
   metadata: ProposalMetadataArgs;
   /** Reserved space */
   reserved: ReadonlyUint8Array;
-}
+};
 
 export function getGovernanceProposalEncoder(): Encoder<GovernanceProposalArgs> {
   return transformEncoder(
@@ -247,7 +247,7 @@ export async function fetchMaybeGovernanceProposal<
 
 export async function fetchAllGovernanceProposal(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<GovernanceProposal>[]> {
   const maybeAccounts = await fetchAllMaybeGovernanceProposal(
@@ -261,7 +261,7 @@ export async function fetchAllGovernanceProposal(
 
 export async function fetchAllMaybeGovernanceProposal(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<GovernanceProposal>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

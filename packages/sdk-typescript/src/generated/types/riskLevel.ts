@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Risk levels for roles */
@@ -25,14 +25,14 @@ export enum RiskLevel {
 
 export type RiskLevelArgs = RiskLevel;
 
-export function getRiskLevelEncoder(): Encoder<RiskLevelArgs> {
+export function getRiskLevelEncoder(): FixedSizeEncoder<RiskLevelArgs> {
   return getEnumEncoder(RiskLevel);
 }
 
-export function getRiskLevelDecoder(): Decoder<RiskLevel> {
+export function getRiskLevelDecoder(): FixedSizeDecoder<RiskLevel> {
   return getEnumDecoder(RiskLevel);
 }
 
-export function getRiskLevelCodec(): Codec<RiskLevelArgs, RiskLevel> {
+export function getRiskLevelCodec(): FixedSizeCodec<RiskLevelArgs, RiskLevel> {
   return combineCodec(getRiskLevelEncoder(), getRiskLevelDecoder());
 }

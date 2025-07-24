@@ -24,15 +24,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -68,22 +68,22 @@ export function getInitializeGovernanceProposalDiscriminatorBytes() {
 
 export type InitializeGovernanceProposalInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountProposal extends string | IAccountMeta<string> = string,
-  TAccountProposer extends string | IAccountMeta<string> = string,
+  TAccountProposal extends string | AccountMeta<string> = string,
+  TAccountProposer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountProposal extends string
         ? WritableAccount<TAccountProposal>
         : TAccountProposal,
       TAccountProposer extends string
         ? WritableSignerAccount<TAccountProposer> &
-            IAccountSignerMeta<TAccountProposer>
+            AccountSignerMeta<TAccountProposer>
         : TAccountProposer,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -92,22 +92,22 @@ export type InitializeGovernanceProposalInstruction<
     ]
   >;
 
-export interface InitializeGovernanceProposalInstructionData {
+export type InitializeGovernanceProposalInstructionData = {
   discriminator: ReadonlyUint8Array;
   proposalId: bigint;
   title: string;
   description: string;
   proposalType: ProposalType;
   executionParams: ExecutionParams;
-}
+};
 
-export interface InitializeGovernanceProposalInstructionDataArgs {
+export type InitializeGovernanceProposalInstructionDataArgs = {
   proposalId: number | bigint;
   title: string;
   description: string;
   proposalType: ProposalTypeArgs;
   executionParams: ExecutionParamsArgs;
-}
+};
 
 export function getInitializeGovernanceProposalInstructionDataEncoder(): Encoder<InitializeGovernanceProposalInstructionDataArgs> {
   return transformEncoder(
@@ -147,11 +147,11 @@ export function getInitializeGovernanceProposalInstructionDataCodec(): Codec<
   );
 }
 
-export interface InitializeGovernanceProposalAsyncInput<
+export type InitializeGovernanceProposalAsyncInput<
   TAccountProposal extends string = string,
   TAccountProposer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   proposal?: Address<TAccountProposal>;
   proposer: TransactionSigner<TAccountProposer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -160,7 +160,7 @@ export interface InitializeGovernanceProposalAsyncInput<
   description: InitializeGovernanceProposalInstructionDataArgs['description'];
   proposalType: InitializeGovernanceProposalInstructionDataArgs['proposalType'];
   executionParams: InitializeGovernanceProposalInstructionDataArgs['executionParams'];
-}
+};
 
 export async function getInitializeGovernanceProposalInstructionAsync<
   TAccountProposal extends string,
@@ -242,11 +242,11 @@ export async function getInitializeGovernanceProposalInstructionAsync<
   return instruction;
 }
 
-export interface InitializeGovernanceProposalInput<
+export type InitializeGovernanceProposalInput<
   TAccountProposal extends string = string,
   TAccountProposer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   proposal: Address<TAccountProposal>;
   proposer: TransactionSigner<TAccountProposer>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -255,7 +255,7 @@ export interface InitializeGovernanceProposalInput<
   description: InitializeGovernanceProposalInstructionDataArgs['description'];
   proposalType: InitializeGovernanceProposalInstructionDataArgs['proposalType'];
   executionParams: InitializeGovernanceProposalInstructionDataArgs['executionParams'];
-}
+};
 
 export function getInitializeGovernanceProposalInstruction<
   TAccountProposal extends string,
@@ -321,10 +321,10 @@ export function getInitializeGovernanceProposalInstruction<
   return instruction;
 }
 
-export interface ParsedInitializeGovernanceProposalInstruction<
+export type ParsedInitializeGovernanceProposalInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     proposal: TAccountMetas[0];
@@ -332,18 +332,19 @@ export interface ParsedInitializeGovernanceProposalInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: InitializeGovernanceProposalInstructionData;
-}
+};
 
 export function parseInitializeGovernanceProposalInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedInitializeGovernanceProposalInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

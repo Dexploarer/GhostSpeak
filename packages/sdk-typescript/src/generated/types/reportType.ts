@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of compliance reports */
@@ -29,14 +29,17 @@ export enum ReportType {
 
 export type ReportTypeArgs = ReportType;
 
-export function getReportTypeEncoder(): Encoder<ReportTypeArgs> {
+export function getReportTypeEncoder(): FixedSizeEncoder<ReportTypeArgs> {
   return getEnumEncoder(ReportType);
 }
 
-export function getReportTypeDecoder(): Decoder<ReportType> {
+export function getReportTypeDecoder(): FixedSizeDecoder<ReportType> {
   return getEnumDecoder(ReportType);
 }
 
-export function getReportTypeCodec(): Codec<ReportTypeArgs, ReportType> {
+export function getReportTypeCodec(): FixedSizeCodec<
+  ReportTypeArgs,
+  ReportType
+> {
   return combineCodec(getReportTypeEncoder(), getReportTypeDecoder());
 }

@@ -301,7 +301,7 @@ class SecurityAuditor {
           }
 
           // Check for integer overflow potential
-          if (line.match(/\+|\-|\*/) && line.includes('u64') && !line.includes('checked_')) {
+          if ((/\+|\-|\*/.exec(line)) && line.includes('u64') && !line.includes('checked_')) {
             issues.push({
               id: `rust-overflow-${filePath}-${lineNumber}`,
               severity: 'medium',

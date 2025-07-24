@@ -36,7 +36,7 @@ import {
 } from '.';
 
 /** Risk indicator */
-export interface RiskIndicator {
+export type RiskIndicator = {
   /** Indicator name */
   name: string;
   /** Current value */
@@ -48,10 +48,10 @@ export interface RiskIndicator {
   /** Severity if threshold exceeded */
   severity: ViolationSeverity;
   /** Recommended actions */
-  recommendedActions: string[];
-}
+  recommendedActions: Array<string>;
+};
 
-export interface RiskIndicatorArgs {
+export type RiskIndicatorArgs = {
   /** Indicator name */
   name: string;
   /** Current value */
@@ -63,8 +63,8 @@ export interface RiskIndicatorArgs {
   /** Severity if threshold exceeded */
   severity: ViolationSeverityArgs;
   /** Recommended actions */
-  recommendedActions: string[];
-}
+  recommendedActions: Array<string>;
+};
 
 export function getRiskIndicatorEncoder(): Encoder<RiskIndicatorArgs> {
   return getStructEncoder([

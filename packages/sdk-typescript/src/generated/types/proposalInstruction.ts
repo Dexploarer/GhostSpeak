@@ -36,27 +36,27 @@ import {
 } from '.';
 
 /** Individual instruction in proposal */
-export interface ProposalInstruction {
+export type ProposalInstruction = {
   /** Target program */
   programId: Address;
   /** Accounts required */
-  accounts: ProposalAccount[];
+  accounts: Array<ProposalAccount>;
   /** Instruction data */
   data: ReadonlyUint8Array;
   /** Instruction description */
   description: string;
-}
+};
 
-export interface ProposalInstructionArgs {
+export type ProposalInstructionArgs = {
   /** Target program */
   programId: Address;
   /** Accounts required */
-  accounts: ProposalAccountArgs[];
+  accounts: Array<ProposalAccountArgs>;
   /** Instruction data */
   data: ReadonlyUint8Array;
   /** Instruction description */
   description: string;
-}
+};
 
 export function getProposalInstructionEncoder(): Encoder<ProposalInstructionArgs> {
   return getStructEncoder([

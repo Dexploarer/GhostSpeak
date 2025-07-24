@@ -14,24 +14,24 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface SessionPolicies {
+export type SessionPolicies = {
   maxSessionDuration: bigint;
   idleTimeout: bigint;
   concurrentSessions: number;
-}
+};
 
-export interface SessionPoliciesArgs {
+export type SessionPoliciesArgs = {
   maxSessionDuration: number | bigint;
   idleTimeout: number | bigint;
   concurrentSessions: number;
-}
+};
 
-export function getSessionPoliciesEncoder(): Encoder<SessionPoliciesArgs> {
+export function getSessionPoliciesEncoder(): FixedSizeEncoder<SessionPoliciesArgs> {
   return getStructEncoder([
     ['maxSessionDuration', getI64Encoder()],
     ['idleTimeout', getI64Encoder()],
@@ -39,7 +39,7 @@ export function getSessionPoliciesEncoder(): Encoder<SessionPoliciesArgs> {
   ]);
 }
 
-export function getSessionPoliciesDecoder(): Decoder<SessionPolicies> {
+export function getSessionPoliciesDecoder(): FixedSizeDecoder<SessionPolicies> {
   return getStructDecoder([
     ['maxSessionDuration', getI64Decoder()],
     ['idleTimeout', getI64Decoder()],
@@ -47,7 +47,7 @@ export function getSessionPoliciesDecoder(): Decoder<SessionPolicies> {
   ]);
 }
 
-export function getSessionPoliciesCodec(): Codec<
+export function getSessionPoliciesCodec(): FixedSizeCodec<
   SessionPoliciesArgs,
   SessionPolicies
 > {

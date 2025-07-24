@@ -1,6 +1,5 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig
 } from '../../types/index.js'
@@ -61,21 +60,38 @@ export class A2AInstructions extends BaseInstructions {
    * Create a new A2A communication session
    */
   async createSession(
-    sessionAddress: Address,
-    params: CreateA2ASessionParams
+    signer: TransactionSigner,
+    params: {
+      metadata: string
+      sessionId?: bigint
+    }
   ): Promise<string> {
+    // Derive the session PDA
+    const { deriveA2ASessionPda } = await import('../../utils/pda.js')
+    const sessionAddress = await deriveA2ASessionPda(
+      this.config.programId!,
+      signer.address
+    )
+    
+    // Generate session ID if not provided
+    const sessionId = params.sessionId ?? BigInt(Date.now())
+    
+    // Set default values
+    const sessionType = 'general'
+    const expiresAt = BigInt(Math.floor(Date.now() / 1000) + 86400) // 24 hours
+    
     return this.executeInstruction(
       () => getCreateA2aSessionInstruction({
         session: sessionAddress,
-        creator: params.signer as unknown as TransactionSigner,
-        sessionId: params.sessionId,
-        initiator: params.initiator,
-        responder: params.responder,
-        sessionType: params.sessionType,
+        creator: signer as unknown as TransactionSigner,
+        sessionId,
+        initiator: signer.address,
+        responder: signer.address, // Self-session for testing
+        sessionType,
         metadata: params.metadata,
-        expiresAt: params.expiresAt
+        expiresAt
       }),
-      params.signer as unknown as TransactionSigner,
+      signer as unknown as TransactionSigner,
       'A2A session creation'
     )
   }
@@ -84,55 +100,50 @@ export class A2AInstructions extends BaseInstructions {
    * Send a message in an A2A session
    */
   async sendMessage(
-    sessionAddress: Address,
-    params: SendA2AMessageParams
+    signer: TransactionSigner,
+    params: {
+      session: Address
+      content: string
+      messageId?: bigint
+    }
   ): Promise<string> {
     try {
-      // Get session account data directly (bypassing decoder which is broken)
-      const rpcClient = this.getRpcClient()
-      const accountInfo = await rpcClient.getAccountInfo(sessionAddress, {
-        commitment: 'confirmed',
-        encoding: 'base64'
-      })
+      // Get session account data properly decoded
+      const session = await this.getSession(params.session)
       
-      if (!accountInfo) {
+      if (!session) {
         throw new Error('Session account not found')
       }
       
-      // Parse created_at timestamp from session account data (at offset 8)
-      let sessionBuffer: Buffer
-      if (Buffer.isBuffer(accountInfo.data)) {
-        sessionBuffer = accountInfo.data
-      } else if (accountInfo.data instanceof Uint8Array) {
-        sessionBuffer = Buffer.from(accountInfo.data)
-      } else if (typeof accountInfo.data === 'string') {
-        sessionBuffer = Buffer.from(accountInfo.data, 'base64')
-      } else {
-        // Handle parsed account data format
-        sessionBuffer = Buffer.from((accountInfo.data as { data?: string }).data ?? accountInfo.data as unknown as string, 'base64')
-      }
-      const sessionCreatedAt = sessionBuffer.readBigInt64LE(8)
+      // Use the session's createdAt timestamp directly
+      const sessionCreatedAt = session.createdAt
 
       // Derive the message address using the session's createdAt timestamp
       const messageAddress = await deriveA2AMessagePda(
         this.programId,
-        sessionAddress,
+        params.session,
         sessionCreatedAt
       )
+
+      // Generate message ID if not provided
+      const messageId = params.messageId ?? BigInt(Date.now())
+      const sessionId = BigInt(0) // Default session ID
+      const messageType = 'text'
+      const timestamp = BigInt(Math.floor(Date.now() / 1000))
 
       return await this.executeInstruction(
         () => getSendA2aMessageInstruction({
           message: messageAddress,
-          session: sessionAddress,
-          sender: params.signer as unknown as TransactionSigner,
-          messageId: params.messageId,
-          sessionId: params.sessionId,
-          senderArg: params.sender, // Renamed to avoid conflict
+          session: params.session,
+          sender: signer as unknown as TransactionSigner,
+          messageId,
+          sessionId,
+          senderArg: signer.address,
           content: params.content,
-          messageType: params.messageType,
-          timestamp: params.timestamp
+          messageType,
+          timestamp
         }),
-        params.signer as unknown as TransactionSigner,
+        signer as unknown as TransactionSigner,
         'A2A message sending'
       )
     } catch (error) {
@@ -169,7 +180,7 @@ export class A2AInstructions extends BaseInstructions {
    * Close an A2A session
    */
   async closeSession(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     sessionAddress: Address
   ): Promise<string> {
     // Since there's no specific close instruction in the contract,

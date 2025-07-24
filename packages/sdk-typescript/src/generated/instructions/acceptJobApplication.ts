@@ -17,15 +17,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -51,17 +51,17 @@ export function getAcceptJobApplicationDiscriminatorBytes() {
 
 export type AcceptJobApplicationInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountJobContract extends string | IAccountMeta<string> = string,
-  TAccountJobPosting extends string | IAccountMeta<string> = string,
-  TAccountJobApplication extends string | IAccountMeta<string> = string,
-  TAccountEmployer extends string | IAccountMeta<string> = string,
+  TAccountJobContract extends string | AccountMeta<string> = string,
+  TAccountJobPosting extends string | AccountMeta<string> = string,
+  TAccountJobApplication extends string | AccountMeta<string> = string,
+  TAccountEmployer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountJobContract extends string
         ? WritableAccount<TAccountJobContract>
@@ -74,7 +74,7 @@ export type AcceptJobApplicationInstruction<
         : TAccountJobApplication,
       TAccountEmployer extends string
         ? WritableSignerAccount<TAccountEmployer> &
-            IAccountSignerMeta<TAccountEmployer>
+            AccountSignerMeta<TAccountEmployer>
         : TAccountEmployer,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -83,13 +83,13 @@ export type AcceptJobApplicationInstruction<
     ]
   >;
 
-export interface AcceptJobApplicationInstructionData {
+export type AcceptJobApplicationInstructionData = {
   discriminator: ReadonlyUint8Array;
-}
+};
 
-export interface AcceptJobApplicationInstructionDataArgs {}
+export type AcceptJobApplicationInstructionDataArgs = {};
 
-export function getAcceptJobApplicationInstructionDataEncoder(): Encoder<AcceptJobApplicationInstructionDataArgs> {
+export function getAcceptJobApplicationInstructionDataEncoder(): FixedSizeEncoder<AcceptJobApplicationInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({
@@ -99,13 +99,13 @@ export function getAcceptJobApplicationInstructionDataEncoder(): Encoder<AcceptJ
   );
 }
 
-export function getAcceptJobApplicationInstructionDataDecoder(): Decoder<AcceptJobApplicationInstructionData> {
+export function getAcceptJobApplicationInstructionDataDecoder(): FixedSizeDecoder<AcceptJobApplicationInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
   ]);
 }
 
-export function getAcceptJobApplicationInstructionDataCodec(): Codec<
+export function getAcceptJobApplicationInstructionDataCodec(): FixedSizeCodec<
   AcceptJobApplicationInstructionDataArgs,
   AcceptJobApplicationInstructionData
 > {
@@ -115,19 +115,19 @@ export function getAcceptJobApplicationInstructionDataCodec(): Codec<
   );
 }
 
-export interface AcceptJobApplicationAsyncInput<
+export type AcceptJobApplicationAsyncInput<
   TAccountJobContract extends string = string,
   TAccountJobPosting extends string = string,
   TAccountJobApplication extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   jobContract?: Address<TAccountJobContract>;
   jobPosting: Address<TAccountJobPosting>;
   jobApplication: Address<TAccountJobApplication>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
-}
+};
 
 export async function getAcceptJobApplicationInstructionAsync<
   TAccountJobContract extends string,
@@ -218,19 +218,19 @@ export async function getAcceptJobApplicationInstructionAsync<
   return instruction;
 }
 
-export interface AcceptJobApplicationInput<
+export type AcceptJobApplicationInput<
   TAccountJobContract extends string = string,
   TAccountJobPosting extends string = string,
   TAccountJobApplication extends string = string,
   TAccountEmployer extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   jobContract: Address<TAccountJobContract>;
   jobPosting: Address<TAccountJobPosting>;
   jobApplication: Address<TAccountJobApplication>;
   employer: TransactionSigner<TAccountEmployer>;
   systemProgram?: Address<TAccountSystemProgram>;
-}
+};
 
 export function getAcceptJobApplicationInstruction<
   TAccountJobContract extends string,
@@ -303,10 +303,10 @@ export function getAcceptJobApplicationInstruction<
   return instruction;
 }
 
-export interface ParsedAcceptJobApplicationInstruction<
+export type ParsedAcceptJobApplicationInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     jobContract: TAccountMetas[0];
@@ -316,18 +316,19 @@ export interface ParsedAcceptJobApplicationInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: AcceptJobApplicationInstructionData;
-}
+};
 
 export function parseAcceptJobApplicationInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedAcceptJobApplicationInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

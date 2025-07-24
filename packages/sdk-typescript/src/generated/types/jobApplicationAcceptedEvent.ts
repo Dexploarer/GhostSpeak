@@ -15,28 +15,28 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface JobApplicationAcceptedEvent {
+export type JobApplicationAcceptedEvent = {
   application: Address;
   jobPosting: Address;
   agent: Address;
   employer: Address;
   timestamp: bigint;
-}
+};
 
-export interface JobApplicationAcceptedEventArgs {
+export type JobApplicationAcceptedEventArgs = {
   application: Address;
   jobPosting: Address;
   agent: Address;
   employer: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getJobApplicationAcceptedEventEncoder(): Encoder<JobApplicationAcceptedEventArgs> {
+export function getJobApplicationAcceptedEventEncoder(): FixedSizeEncoder<JobApplicationAcceptedEventArgs> {
   return getStructEncoder([
     ['application', getAddressEncoder()],
     ['jobPosting', getAddressEncoder()],
@@ -46,7 +46,7 @@ export function getJobApplicationAcceptedEventEncoder(): Encoder<JobApplicationA
   ]);
 }
 
-export function getJobApplicationAcceptedEventDecoder(): Decoder<JobApplicationAcceptedEvent> {
+export function getJobApplicationAcceptedEventDecoder(): FixedSizeDecoder<JobApplicationAcceptedEvent> {
   return getStructDecoder([
     ['application', getAddressDecoder()],
     ['jobPosting', getAddressDecoder()],
@@ -56,7 +56,7 @@ export function getJobApplicationAcceptedEventDecoder(): Decoder<JobApplicationA
   ]);
 }
 
-export function getJobApplicationAcceptedEventCodec(): Codec<
+export function getJobApplicationAcceptedEventCodec(): FixedSizeCodec<
   JobApplicationAcceptedEventArgs,
   JobApplicationAcceptedEvent
 > {

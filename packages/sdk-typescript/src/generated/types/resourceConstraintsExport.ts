@@ -14,16 +14,28 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getResourceConstraintsDecoder,
-  getResourceConstraintsEncoder,
-  type ResourceConstraints,
-  type ResourceConstraintsArgs,
-} from '.';
 
-export interface ResourceConstraintsExport { data: ResourceConstraints }
 
-export interface ResourceConstraintsExportArgs { data: ResourceConstraintsArgs }
+// Define ResourceConstraints interface
+export interface ResourceConstraints {
+  // Properties defined by the IDL
+  [key: string]: unknown;
+}
+
+export type ResourceConstraintsArgs = ResourceConstraints;
+
+// Define encoder/decoder for ResourceConstraints
+export function getResourceConstraintsEncoder(): Encoder<ResourceConstraintsArgs> {
+  return getStructEncoder([]);
+}
+
+export function getResourceConstraintsDecoder(): Decoder<ResourceConstraints> {
+  return getStructDecoder([]);
+}
+
+export type ResourceConstraintsExport = { data: ResourceConstraints };
+
+export type ResourceConstraintsExportArgs = { data: ResourceConstraintsArgs };
 
 export function getResourceConstraintsExportEncoder(): Encoder<ResourceConstraintsExportArgs> {
   return getStructEncoder([['data', getResourceConstraintsEncoder()]]);

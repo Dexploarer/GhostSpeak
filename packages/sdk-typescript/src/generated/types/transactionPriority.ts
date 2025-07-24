@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Transaction priority levels */
@@ -26,15 +26,15 @@ export enum TransactionPriority {
 
 export type TransactionPriorityArgs = TransactionPriority;
 
-export function getTransactionPriorityEncoder(): Encoder<TransactionPriorityArgs> {
+export function getTransactionPriorityEncoder(): FixedSizeEncoder<TransactionPriorityArgs> {
   return getEnumEncoder(TransactionPriority);
 }
 
-export function getTransactionPriorityDecoder(): Decoder<TransactionPriority> {
+export function getTransactionPriorityDecoder(): FixedSizeDecoder<TransactionPriority> {
   return getEnumDecoder(TransactionPriority);
 }
 
-export function getTransactionPriorityCodec(): Codec<
+export function getTransactionPriorityCodec(): FixedSizeCodec<
   TransactionPriorityArgs,
   TransactionPriority
 > {

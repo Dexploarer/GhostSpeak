@@ -26,19 +26,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface AgentRegisteredEvent {
+export type AgentRegisteredEvent = {
   agent: Address;
   owner: Address;
   name: string;
   timestamp: bigint;
-}
+};
 
-export interface AgentRegisteredEventArgs {
+export type AgentRegisteredEventArgs = {
   agent: Address;
   owner: Address;
   name: string;
   timestamp: number | bigint;
-}
+};
 
 export function getAgentRegisteredEventEncoder(): Encoder<AgentRegisteredEventArgs> {
   return getStructEncoder([

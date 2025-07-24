@@ -16,9 +16,9 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getQuorumMethodDecoder,
@@ -28,7 +28,7 @@ import {
 } from '.';
 
 /** Quorum requirements for proposals */
-export interface QuorumRequirements {
+export type QuorumRequirements = {
   /** Minimum participation rate (0-100) */
   minimumParticipation: number;
   /** Approval threshold (0-100) */
@@ -39,9 +39,9 @@ export interface QuorumRequirements {
   minimumVotingPower: bigint;
   /** Quorum calculation method */
   quorumMethod: QuorumMethod;
-}
+};
 
-export interface QuorumRequirementsArgs {
+export type QuorumRequirementsArgs = {
   /** Minimum participation rate (0-100) */
   minimumParticipation: number;
   /** Approval threshold (0-100) */
@@ -52,9 +52,9 @@ export interface QuorumRequirementsArgs {
   minimumVotingPower: number | bigint;
   /** Quorum calculation method */
   quorumMethod: QuorumMethodArgs;
-}
+};
 
-export function getQuorumRequirementsEncoder(): Encoder<QuorumRequirementsArgs> {
+export function getQuorumRequirementsEncoder(): FixedSizeEncoder<QuorumRequirementsArgs> {
   return getStructEncoder([
     ['minimumParticipation', getU8Encoder()],
     ['approvalThreshold', getU8Encoder()],
@@ -64,7 +64,7 @@ export function getQuorumRequirementsEncoder(): Encoder<QuorumRequirementsArgs> 
   ]);
 }
 
-export function getQuorumRequirementsDecoder(): Decoder<QuorumRequirements> {
+export function getQuorumRequirementsDecoder(): FixedSizeDecoder<QuorumRequirements> {
   return getStructDecoder([
     ['minimumParticipation', getU8Decoder()],
     ['approvalThreshold', getU8Decoder()],
@@ -74,7 +74,7 @@ export function getQuorumRequirementsDecoder(): Decoder<QuorumRequirements> {
   ]);
 }
 
-export function getQuorumRequirementsCodec(): Codec<
+export function getQuorumRequirementsCodec(): FixedSizeCodec<
   QuorumRequirementsArgs,
   QuorumRequirements
 > {

@@ -23,15 +23,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -59,16 +59,16 @@ export function getSendMessageDiscriminatorBytes() {
 
 export type SendMessageInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMessage extends string | IAccountMeta<string> = string,
-  TAccountChannel extends string | IAccountMeta<string> = string,
-  TAccountSender extends string | IAccountMeta<string> = string,
+  TAccountMessage extends string | AccountMeta<string> = string,
+  TAccountChannel extends string | AccountMeta<string> = string,
+  TAccountSender extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountMessage extends string
         ? WritableAccount<TAccountMessage>
@@ -78,7 +78,7 @@ export type SendMessageInstruction<
         : TAccountChannel,
       TAccountSender extends string
         ? WritableSignerAccount<TAccountSender> &
-            IAccountSignerMeta<TAccountSender>
+            AccountSignerMeta<TAccountSender>
         : TAccountSender,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -87,18 +87,18 @@ export type SendMessageInstruction<
     ]
   >;
 
-export interface SendMessageInstructionData {
+export type SendMessageInstructionData = {
   discriminator: ReadonlyUint8Array;
   content: string;
   messageType: MessageType;
   isEncrypted: boolean;
-}
+};
 
-export interface SendMessageInstructionDataArgs {
+export type SendMessageInstructionDataArgs = {
   content: string;
   messageType: MessageTypeArgs;
   isEncrypted: boolean;
-}
+};
 
 export function getSendMessageInstructionDataEncoder(): Encoder<SendMessageInstructionDataArgs> {
   return transformEncoder(
@@ -131,12 +131,12 @@ export function getSendMessageInstructionDataCodec(): Codec<
   );
 }
 
-export interface SendMessageInput<
+export type SendMessageInput<
   TAccountMessage extends string = string,
   TAccountChannel extends string = string,
   TAccountSender extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   message: Address<TAccountMessage>;
   channel: Address<TAccountChannel>;
   sender: TransactionSigner<TAccountSender>;
@@ -144,7 +144,7 @@ export interface SendMessageInput<
   content: SendMessageInstructionDataArgs['content'];
   messageType: SendMessageInstructionDataArgs['messageType'];
   isEncrypted: SendMessageInstructionDataArgs['isEncrypted'];
-}
+};
 
 export function getSendMessageInstruction<
   TAccountMessage extends string,
@@ -216,10 +216,10 @@ export function getSendMessageInstruction<
   return instruction;
 }
 
-export interface ParsedSendMessageInstruction<
+export type ParsedSendMessageInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     message: TAccountMetas[0];
@@ -228,18 +228,19 @@ export interface ParsedSendMessageInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: SendMessageInstructionData;
-}
+};
 
 export function parseSendMessageInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedSendMessageInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

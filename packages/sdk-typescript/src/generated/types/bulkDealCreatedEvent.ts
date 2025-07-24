@@ -15,9 +15,9 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getDealTypeDecoder,
@@ -26,23 +26,23 @@ import {
   type DealTypeArgs,
 } from '.';
 
-export interface BulkDealCreatedEvent {
+export type BulkDealCreatedEvent = {
   deal: Address;
   agent: Address;
   customer: Address;
   dealType: DealType;
   totalValue: bigint;
-}
+};
 
-export interface BulkDealCreatedEventArgs {
+export type BulkDealCreatedEventArgs = {
   deal: Address;
   agent: Address;
   customer: Address;
   dealType: DealTypeArgs;
   totalValue: number | bigint;
-}
+};
 
-export function getBulkDealCreatedEventEncoder(): Encoder<BulkDealCreatedEventArgs> {
+export function getBulkDealCreatedEventEncoder(): FixedSizeEncoder<BulkDealCreatedEventArgs> {
   return getStructEncoder([
     ['deal', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -52,7 +52,7 @@ export function getBulkDealCreatedEventEncoder(): Encoder<BulkDealCreatedEventAr
   ]);
 }
 
-export function getBulkDealCreatedEventDecoder(): Decoder<BulkDealCreatedEvent> {
+export function getBulkDealCreatedEventDecoder(): FixedSizeDecoder<BulkDealCreatedEvent> {
   return getStructDecoder([
     ['deal', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -62,7 +62,7 @@ export function getBulkDealCreatedEventDecoder(): Decoder<BulkDealCreatedEvent> 
   ]);
 }
 
-export function getBulkDealCreatedEventCodec(): Codec<
+export function getBulkDealCreatedEventCodec(): FixedSizeCodec<
   BulkDealCreatedEventArgs,
   BulkDealCreatedEvent
 > {

@@ -34,7 +34,7 @@ function findAllExportTypes(): ExportTypeInfo[] {
       const content = fs.readFileSync(filePath, 'utf-8')
       
       // Extract the export type name
-      const exportTypeMatch = content.match(/export type (\w+Export) = /)
+      const exportTypeMatch = /export type (\w+Export) = /.exec(content)
       if (exportTypeMatch) {
         const exportTypeName = exportTypeMatch[1]
         const baseTypeName = exportTypeName.slice(0, -6) // Remove 'Export' suffix

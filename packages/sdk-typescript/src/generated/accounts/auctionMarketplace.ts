@@ -77,7 +77,7 @@ export function getAuctionMarketplaceDiscriminatorBytes() {
   );
 }
 
-export interface AuctionMarketplace {
+export type AuctionMarketplace = {
   discriminator: ReadonlyUint8Array;
   auction: Address;
   agent: Address;
@@ -92,14 +92,14 @@ export interface AuctionMarketplace {
   minimumBidIncrement: bigint;
   totalBids: number;
   status: AuctionStatus;
-  bids: AuctionBid[];
+  bids: Array<AuctionBid>;
   createdAt: bigint;
   endedAt: Option<bigint>;
   metadataUri: string;
   bump: number;
-}
+};
 
-export interface AuctionMarketplaceArgs {
+export type AuctionMarketplaceArgs = {
   auction: Address;
   agent: Address;
   creator: Address;
@@ -113,12 +113,12 @@ export interface AuctionMarketplaceArgs {
   minimumBidIncrement: number | bigint;
   totalBids: number;
   status: AuctionStatusArgs;
-  bids: AuctionBidArgs[];
+  bids: Array<AuctionBidArgs>;
   createdAt: number | bigint;
   endedAt: OptionOrNullable<number | bigint>;
   metadataUri: string;
   bump: number;
-}
+};
 
 export function getAuctionMarketplaceEncoder(): Encoder<AuctionMarketplaceArgs> {
   return transformEncoder(
@@ -221,7 +221,7 @@ export async function fetchMaybeAuctionMarketplace<
 
 export async function fetchAllAuctionMarketplace(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<AuctionMarketplace>[]> {
   const maybeAccounts = await fetchAllMaybeAuctionMarketplace(
@@ -235,7 +235,7 @@ export async function fetchAllAuctionMarketplace(
 
 export async function fetchAllMaybeAuctionMarketplace(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<AuctionMarketplace>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

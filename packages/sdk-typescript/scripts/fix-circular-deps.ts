@@ -155,7 +155,7 @@ export function get${typeInfo.baseTypeName}Decoder(): Decoder<${typeInfo.baseTyp
   }
   
   // Insert the type definition after the imports
-  const lastImportMatch = content.match(/from ['"]@solana\/kit['"];/)
+  const lastImportMatch = /from ['"]@solana\/kit['"];/.exec(content)
   if (lastImportMatch) {
     const lastImportIndex = content.indexOf(lastImportMatch[0]) + lastImportMatch[0].length
     const insertPoint = content.indexOf('\n', lastImportIndex) + 1

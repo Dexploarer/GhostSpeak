@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Biometric template storage methods */
@@ -26,15 +26,15 @@ export enum BiometricStorageMethod {
 
 export type BiometricStorageMethodArgs = BiometricStorageMethod;
 
-export function getBiometricStorageMethodEncoder(): Encoder<BiometricStorageMethodArgs> {
+export function getBiometricStorageMethodEncoder(): FixedSizeEncoder<BiometricStorageMethodArgs> {
   return getEnumEncoder(BiometricStorageMethod);
 }
 
-export function getBiometricStorageMethodDecoder(): Decoder<BiometricStorageMethod> {
+export function getBiometricStorageMethodDecoder(): FixedSizeDecoder<BiometricStorageMethod> {
   return getEnumDecoder(BiometricStorageMethod);
 }
 
-export function getBiometricStorageMethodCodec(): Codec<
+export function getBiometricStorageMethodCodec(): FixedSizeCodec<
   BiometricStorageMethodArgs,
   BiometricStorageMethod
 > {

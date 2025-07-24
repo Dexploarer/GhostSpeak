@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of notification targets */
@@ -28,15 +28,15 @@ export enum NotificationTargetType {
 
 export type NotificationTargetTypeArgs = NotificationTargetType;
 
-export function getNotificationTargetTypeEncoder(): Encoder<NotificationTargetTypeArgs> {
+export function getNotificationTargetTypeEncoder(): FixedSizeEncoder<NotificationTargetTypeArgs> {
   return getEnumEncoder(NotificationTargetType);
 }
 
-export function getNotificationTargetTypeDecoder(): Decoder<NotificationTargetType> {
+export function getNotificationTargetTypeDecoder(): FixedSizeDecoder<NotificationTargetType> {
   return getEnumDecoder(NotificationTargetType);
 }
 
-export function getNotificationTargetTypeCodec(): Codec<
+export function getNotificationTargetTypeCodec(): FixedSizeCodec<
   NotificationTargetTypeArgs,
   NotificationTargetType
 > {

@@ -8,7 +8,6 @@
 import type { Address, Signature, TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
 import type { GhostSpeakConfig } from '../../types/index.js'
-import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import { 
   getCreateServiceAuctionInstruction,
   getPlaceAuctionBidInstruction,
@@ -28,6 +27,16 @@ import type {
   BaseInstructionParams,
   BaseTimeParams
 } from './BaseInterfaces.js'
+import {
+  getAssociatedTokenAccount,
+  detectTokenProgram,
+  isToken2022Mint,
+  type AssociatedTokenAccount
+} from '../../utils/token-utils.js'
+import {
+  calculateTransferFee,
+  type TransferFeeCalculation
+} from '../../utils/token-2022-extensions.js'
 
 // Enhanced types for better developer experience
 export interface AuctionData {
@@ -52,12 +61,22 @@ export interface CreateAuctionParams extends BaseTimeParams {
   metadataUri?: string
   agent: Address
   signer: TransactionSigner
+  /** Payment token mint for the auction (defaults to SOL) */
+  paymentToken?: Address
+  /** Whether to expect transfer fees for Token 2022 payments */
+  expectTransferFees?: boolean
 }
 
 export interface PlaceBidParams {
   auction: Address
   bidAmount: bigint
   signer: TransactionSigner
+  /** Payment token mint (if different from auction default) */
+  paymentToken?: Address
+  /** Bidder's token account (auto-derived if not provided) */
+  bidderTokenAccount?: Address
+  /** Whether to account for Token 2022 transfer fees in bid */
+  includeTransferFees?: boolean
 }
 
 export interface FinalizeAuctionParams extends BaseInstructionParams {
@@ -131,7 +150,7 @@ export class AuctionInstructions extends BaseInstructions {
    * Create a new auction (simplified interface)
    */
   async create(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     params: {
       title: string
       description: string
@@ -212,7 +231,7 @@ export class AuctionInstructions extends BaseInstructions {
    * Place a bid on an auction (simplified interface)
    */
   async placeBid(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     auctionAddress: Address,
     bidAmount: bigint
   ): Promise<string> {
@@ -239,6 +258,170 @@ export class AuctionInstructions extends BaseInstructions {
         signer: signer as unknown as TransactionSigner
       }
     )
+  }
+
+  /**
+   * Calculate bid amount with Token 2022 transfer fees
+   * 
+   * @param baseBidAmount - The desired bid amount (what bidder wants to bid)
+   * @param paymentToken - Token mint address for payment
+   * @returns Promise<{ totalAmount: bigint, feeCalculation?: TransferFeeCalculation }>
+   */
+  async calculateBidWithFees(
+    baseBidAmount: bigint,
+    paymentToken: Address
+  ): Promise<{ totalAmount: bigint, feeCalculation?: TransferFeeCalculation }> {
+    try {
+      // Check if this is a Token 2022 mint with transfer fees
+      const isToken2022 = await isToken2022Mint(paymentToken)
+      if (!isToken2022) {
+        return { totalAmount: baseBidAmount } // No fees for SPL Token
+      }
+
+      // Get transfer fee configuration (placeholder - would need RPC implementation)
+      const exampleFeeConfig = {
+        transferFeeBasisPoints: 100, // 1% fee for auctions
+        maximumFee: 500000n, // 0.5 token maximum fee
+        transferFeeConfigAuthority: null,
+        withdrawWithheldAuthority: null
+      }
+
+      console.log('💰 Calculating bid with Token 2022 transfer fees:')
+      const feeCalculation = calculateTransferFee(baseBidAmount, exampleFeeConfig)
+      
+      // For bids, the total amount should include the fee
+      const totalAmount = baseBidAmount + feeCalculation.feeAmount
+      
+      console.log(`   Base bid amount: ${baseBidAmount}`)
+      console.log(`   Transfer fee: ${feeCalculation.feeAmount}`)
+      console.log(`   Total required: ${totalAmount}`)
+      console.log(`   Fee rate: ${feeCalculation.feeBasisPoints / 100}%`)
+
+      return { 
+        totalAmount,
+        feeCalculation 
+      }
+    } catch (error) {
+      console.error('Failed to calculate bid fees:', error)
+      return { totalAmount: baseBidAmount }
+    }
+  }
+
+  /**
+   * Create bidder's Associated Token Account if needed
+   * 
+   * @param bidder - Bidder's wallet address
+   * @param paymentToken - Token mint address
+   * @returns Promise<AssociatedTokenAccount> - ATA information
+   */
+  async ensureBidderTokenAccount(
+    bidder: Address,
+    paymentToken: Address
+  ): Promise<AssociatedTokenAccount> {
+    console.log('🏦 Ensuring bidder token account exists...')
+    
+    const tokenProgram = await detectTokenProgram(paymentToken)
+    const isToken2022 = await isToken2022Mint(paymentToken)
+    
+    console.log(`   Bidder: ${bidder}`)
+    console.log(`   Payment token: ${paymentToken}`)
+    console.log(`   Token program: ${tokenProgram}`)
+    console.log(`   Is Token 2022: ${isToken2022}`)
+    
+    const ataInfo = await getAssociatedTokenAccount(
+      bidder,
+      paymentToken,
+      tokenProgram
+    )
+    
+    console.log(`   Bidder ATA: ${ataInfo.address}`)
+    
+    return ataInfo
+  }
+
+  /**
+   * Place bid with Token 2022 support including fee calculation
+   * 
+   * @param signer - The bidder's keypair signer
+   * @param auctionAddress - The auction to bid on
+   * @param baseBidAmount - The base bid amount (excluding fees)
+   * @param options - Additional bid options
+   * @returns Promise<{ signature: string, totalBidAmount: bigint, feeCalculation?: TransferFeeCalculation }>
+   */
+  async placeBidWithToken2022Support(
+    signer: TransactionSigner,
+    auctionAddress: Address,
+    baseBidAmount: bigint,
+    options: {
+      paymentToken?: Address
+      includeTransferFees?: boolean
+    } = {}
+  ): Promise<{ 
+    signature: string
+    totalBidAmount: bigint
+    feeCalculation?: TransferFeeCalculation 
+  }> {
+    console.log('🏷️ Placing bid with Token 2022 support...')
+    
+    // Use SOL as default payment token (native mint)
+    const paymentToken = options.paymentToken ?? '11111111111111111111111111111111' as Address
+    
+    // Calculate total bid amount including fees if needed
+    const { totalAmount, feeCalculation } = options.includeTransferFees 
+      ? await this.calculateBidWithFees(baseBidAmount, paymentToken)
+      : { totalAmount: baseBidAmount }
+    
+    // Ensure bidder has the appropriate token account
+    await this.ensureBidderTokenAccount(signer.address, paymentToken)
+    
+    // Place the bid using the existing method
+    const signature = await this.placeBid(signer, auctionAddress, totalAmount)
+    
+    console.log('✅ Bid placed successfully')
+    console.log(`   Base bid: ${baseBidAmount}`)
+    console.log(`   Total paid: ${totalAmount}`)
+    if (feeCalculation) {
+      console.log(`   Transfer fee: ${feeCalculation.feeAmount}`)
+    }
+    
+    return {
+      signature,
+      totalBidAmount: totalAmount,
+      feeCalculation
+    }
+  }
+
+  /**
+   * Get auction payment requirements including Token 2022 details
+   * 
+   * @param auctionAddress - The auction address
+   * @returns Promise<AuctionPaymentInfo> - Payment requirements
+   */
+  async getAuctionPaymentInfo(auctionAddress: Address): Promise<{
+    paymentToken: Address
+    isToken2022: boolean
+    hasTransferFees: boolean
+    minimumBidIncrement: bigint
+    currentPrice: bigint
+    estimatedFeeRate?: number
+  }> {
+    const auction = await this.getAuction(auctionAddress)
+    if (!auction) {
+      throw new Error('Auction not found')
+    }
+
+    // For now, assume SOL payments - could be extended to support custom tokens
+    const paymentToken = '11111111111111111111111111111111' as Address // SOL native mint
+    const isToken2022 = await isToken2022Mint(paymentToken)
+    
+    return {
+      paymentToken,
+      isToken2022,
+      hasTransferFees: isToken2022, // Simplified - would need to check actual fee config
+      minimumBidIncrement: auction.minimumBidIncrement,
+      currentPrice: auction.currentPrice,
+      estimatedFeeRate: isToken2022 ? 1.0 : undefined // 1% estimated fee rate
+    }
   }
 
   /**
@@ -755,16 +938,28 @@ export class AuctionInstructions extends BaseInstructions {
   private validateCreateAuctionParams(params: CreateAuctionParams): void {
     const { auctionData } = params
     
-    if (auctionData.startingPrice <= 0n) {
-      throw new Error('Starting price must be greater than 0')
+    // Smart contract constants (based on error 0x1bbd analysis)
+    const MIN_PAYMENT_AMOUNT = 1000n  // 1,000 lamports
+    const MAX_PAYMENT_AMOUNT = 1000000000000n  // 1,000,000,000,000 lamports
+    const MIN_BID_INCREMENT = 100n // Assumed minimum
+    
+    // Validate starting price range
+    if (auctionData.startingPrice < MIN_PAYMENT_AMOUNT || auctionData.startingPrice > MAX_PAYMENT_AMOUNT) {
+      throw new Error(`Starting price must be between ${MIN_PAYMENT_AMOUNT} and ${MAX_PAYMENT_AMOUNT} lamports`)
     }
     
-    if (auctionData.reservePrice < 0n) {
-      throw new Error('Reserve price cannot be negative')
+    // Validate reserve price range
+    if (auctionData.reservePrice < MIN_PAYMENT_AMOUNT || auctionData.reservePrice > MAX_PAYMENT_AMOUNT) {
+      throw new Error(`Reserve price must be between ${MIN_PAYMENT_AMOUNT} and ${MAX_PAYMENT_AMOUNT} lamports`)
     }
     
-    if (auctionData.minimumBidIncrement <= 0n) {
-      throw new Error('Minimum bid increment must be greater than 0')
+    // Validate minimum bid increment constraints
+    const maxAllowedIncrement = auctionData.startingPrice / 10n
+    if (auctionData.minimumBidIncrement < MIN_BID_INCREMENT) {
+      throw new Error(`Minimum bid increment must be at least ${MIN_BID_INCREMENT} lamports`)
+    }
+    if (auctionData.minimumBidIncrement > maxAllowedIncrement) {
+      throw new Error(`Minimum bid increment (${auctionData.minimumBidIncrement}) cannot exceed 10% of starting price (${maxAllowedIncrement})`)
     }
     
     const now = BigInt(Math.floor(Date.now() / 1000))

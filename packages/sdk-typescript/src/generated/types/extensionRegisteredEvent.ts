@@ -13,9 +13,9 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getExtensionTypeDecoder,
@@ -24,19 +24,19 @@ import {
   type ExtensionTypeArgs,
 } from '.';
 
-export interface ExtensionRegisteredEvent {
+export type ExtensionRegisteredEvent = {
   extension: Address;
   developer: Address;
   extensionType: ExtensionType;
-}
+};
 
-export interface ExtensionRegisteredEventArgs {
+export type ExtensionRegisteredEventArgs = {
   extension: Address;
   developer: Address;
   extensionType: ExtensionTypeArgs;
-}
+};
 
-export function getExtensionRegisteredEventEncoder(): Encoder<ExtensionRegisteredEventArgs> {
+export function getExtensionRegisteredEventEncoder(): FixedSizeEncoder<ExtensionRegisteredEventArgs> {
   return getStructEncoder([
     ['extension', getAddressEncoder()],
     ['developer', getAddressEncoder()],
@@ -44,7 +44,7 @@ export function getExtensionRegisteredEventEncoder(): Encoder<ExtensionRegistere
   ]);
 }
 
-export function getExtensionRegisteredEventDecoder(): Decoder<ExtensionRegisteredEvent> {
+export function getExtensionRegisteredEventDecoder(): FixedSizeDecoder<ExtensionRegisteredEvent> {
   return getStructDecoder([
     ['extension', getAddressDecoder()],
     ['developer', getAddressDecoder()],
@@ -52,7 +52,7 @@ export function getExtensionRegisteredEventDecoder(): Decoder<ExtensionRegistere
   ]);
 }
 
-export function getExtensionRegisteredEventCodec(): Codec<
+export function getExtensionRegisteredEventCodec(): FixedSizeCodec<
   ExtensionRegisteredEventArgs,
   ExtensionRegisteredEvent
 > {

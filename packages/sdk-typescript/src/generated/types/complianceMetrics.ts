@@ -14,13 +14,13 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Compliance metrics */
-export interface ComplianceMetrics {
+export type ComplianceMetrics = {
   /** Compliance score (0-100) */
   complianceScore: number;
   /** Policy adherence rate */
@@ -33,9 +33,9 @@ export interface ComplianceMetrics {
   coveragePercentage: number;
   /** Audit readiness score */
   auditReadinessScore: number;
-}
+};
 
-export interface ComplianceMetricsArgs {
+export type ComplianceMetricsArgs = {
   /** Compliance score (0-100) */
   complianceScore: number;
   /** Policy adherence rate */
@@ -48,9 +48,9 @@ export interface ComplianceMetricsArgs {
   coveragePercentage: number;
   /** Audit readiness score */
   auditReadinessScore: number;
-}
+};
 
-export function getComplianceMetricsEncoder(): Encoder<ComplianceMetricsArgs> {
+export function getComplianceMetricsEncoder(): FixedSizeEncoder<ComplianceMetricsArgs> {
   return getStructEncoder([
     ['complianceScore', getU8Encoder()],
     ['policyAdherenceRate', getU8Encoder()],
@@ -61,7 +61,7 @@ export function getComplianceMetricsEncoder(): Encoder<ComplianceMetricsArgs> {
   ]);
 }
 
-export function getComplianceMetricsDecoder(): Decoder<ComplianceMetrics> {
+export function getComplianceMetricsDecoder(): FixedSizeDecoder<ComplianceMetrics> {
   return getStructDecoder([
     ['complianceScore', getU8Decoder()],
     ['policyAdherenceRate', getU8Decoder()],
@@ -72,7 +72,7 @@ export function getComplianceMetricsDecoder(): Decoder<ComplianceMetrics> {
   ]);
 }
 
-export function getComplianceMetricsCodec(): Codec<
+export function getComplianceMetricsCodec(): FixedSizeCodec<
   ComplianceMetricsArgs,
   ComplianceMetrics
 > {

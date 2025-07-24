@@ -54,7 +54,7 @@ import {
 } from '.';
 
 /** Access policy definition */
-export interface AccessPolicy {
+export type AccessPolicy = {
   /** Policy identifier */
   policyId: string;
   /** Policy name */
@@ -64,7 +64,7 @@ export interface AccessPolicy {
   /** Policy type */
   policyType: PolicyType;
   /** Policy rules */
-  rules: PolicyRule[];
+  rules: Array<PolicyRule>;
   /** Policy scope */
   scope: PolicyScope;
   /** Policy priority */
@@ -77,9 +77,9 @@ export interface AccessPolicy {
   expirationDate: Option<bigint>;
   /** Policy metadata */
   metadata: PolicyMetadata;
-}
+};
 
-export interface AccessPolicyArgs {
+export type AccessPolicyArgs = {
   /** Policy identifier */
   policyId: string;
   /** Policy name */
@@ -89,7 +89,7 @@ export interface AccessPolicyArgs {
   /** Policy type */
   policyType: PolicyTypeArgs;
   /** Policy rules */
-  rules: PolicyRuleArgs[];
+  rules: Array<PolicyRuleArgs>;
   /** Policy scope */
   scope: PolicyScopeArgs;
   /** Policy priority */
@@ -102,7 +102,7 @@ export interface AccessPolicyArgs {
   expirationDate: OptionOrNullable<number | bigint>;
   /** Policy metadata */
   metadata: PolicyMetadataArgs;
-}
+};
 
 export function getAccessPolicyEncoder(): Encoder<AccessPolicyArgs> {
   return getStructEncoder([

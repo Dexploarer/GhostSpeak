@@ -30,27 +30,27 @@ import {
 } from '.';
 
 /** Policy scope */
-export interface PolicyScope {
+export type PolicyScope = {
   /** Applicable subjects */
-  subjects: string[];
+  subjects: Array<string>;
   /** Applicable resources */
-  resources: string[];
+  resources: Array<string>;
   /** Applicable actions */
-  actions: string[];
+  actions: Array<string>;
   /** Scope inheritance */
   inheritance: ScopeInheritance;
-}
+};
 
-export interface PolicyScopeArgs {
+export type PolicyScopeArgs = {
   /** Applicable subjects */
-  subjects: string[];
+  subjects: Array<string>;
   /** Applicable resources */
-  resources: string[];
+  resources: Array<string>;
   /** Applicable actions */
-  actions: string[];
+  actions: Array<string>;
   /** Scope inheritance */
   inheritance: ScopeInheritanceArgs;
-}
+};
 
 export function getPolicyScopeEncoder(): Encoder<PolicyScopeArgs> {
   return getStructEncoder([

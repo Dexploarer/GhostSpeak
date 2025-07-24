@@ -32,12 +32,12 @@ import {
   transformEncoder,
   type Account,
   type Address,
-  type Codec,
-  type Decoder,
   type EncodedAccount,
-  type Encoder,
   type FetchAccountConfig,
   type FetchAccountsConfig,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type MaybeAccount,
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
@@ -59,7 +59,7 @@ export function getRoyaltyStreamDiscriminatorBytes() {
   );
 }
 
-export interface RoyaltyStream {
+export type RoyaltyStream = {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   originalCreator: Address;
@@ -69,9 +69,9 @@ export interface RoyaltyStream {
   isActive: boolean;
   createdAt: bigint;
   bump: number;
-}
+};
 
-export interface RoyaltyStreamArgs {
+export type RoyaltyStreamArgs = {
   agent: Address;
   originalCreator: Address;
   config: RoyaltyConfigArgs;
@@ -80,9 +80,9 @@ export interface RoyaltyStreamArgs {
   isActive: boolean;
   createdAt: number | bigint;
   bump: number;
-}
+};
 
-export function getRoyaltyStreamEncoder(): Encoder<RoyaltyStreamArgs> {
+export function getRoyaltyStreamEncoder(): FixedSizeEncoder<RoyaltyStreamArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -99,7 +99,7 @@ export function getRoyaltyStreamEncoder(): Encoder<RoyaltyStreamArgs> {
   );
 }
 
-export function getRoyaltyStreamDecoder(): Decoder<RoyaltyStream> {
+export function getRoyaltyStreamDecoder(): FixedSizeDecoder<RoyaltyStream> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['agent', getAddressDecoder()],
@@ -113,7 +113,7 @@ export function getRoyaltyStreamDecoder(): Decoder<RoyaltyStream> {
   ]);
 }
 
-export function getRoyaltyStreamCodec(): Codec<
+export function getRoyaltyStreamCodec(): FixedSizeCodec<
   RoyaltyStreamArgs,
   RoyaltyStream
 > {
@@ -156,7 +156,7 @@ export async function fetchMaybeRoyaltyStream<TAddress extends string = string>(
 
 export async function fetchAllRoyaltyStream(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<RoyaltyStream>[]> {
   const maybeAccounts = await fetchAllMaybeRoyaltyStream(
@@ -170,7 +170,7 @@ export async function fetchAllRoyaltyStream(
 
 export async function fetchAllMaybeRoyaltyStream(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<RoyaltyStream>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

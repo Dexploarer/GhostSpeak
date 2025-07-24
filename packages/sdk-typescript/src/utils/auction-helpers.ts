@@ -5,6 +5,7 @@
  * validation, calculation helpers, and auction analytics.
  */
 
+import './text-encoder-polyfill.js'
 import type { Address } from '@solana/kit'
 import { getProgramDerivedAddress, getBytesEncoder, getAddressEncoder } from '@solana/kit'
 import { AuctionType, AuctionStatus } from '../generated/index.js'

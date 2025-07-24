@@ -26,19 +26,19 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface GovernanceProposalCreatedEvent {
+export type GovernanceProposalCreatedEvent = {
   proposal: Address;
   proposalId: bigint;
   proposer: Address;
   title: string;
-}
+};
 
-export interface GovernanceProposalCreatedEventArgs {
+export type GovernanceProposalCreatedEventArgs = {
   proposal: Address;
   proposalId: number | bigint;
   proposer: Address;
   title: string;
-}
+};
 
 export function getGovernanceProposalCreatedEventEncoder(): Encoder<GovernanceProposalCreatedEventArgs> {
   return getStructEncoder([

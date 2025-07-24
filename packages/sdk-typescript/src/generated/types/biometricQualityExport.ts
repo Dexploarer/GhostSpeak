@@ -14,16 +14,31 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getBiometricQualityDecoder,
-  getBiometricQualityEncoder,
-  type BiometricQuality,
-  type BiometricQualityArgs,
-} from '.';
 
-export interface BiometricQualityExport { data: BiometricQuality }
 
-export interface BiometricQualityExportArgs { data: BiometricQualityArgs }
+// Define BiometricQuality enum
+export enum BiometricQuality {
+  Low = 0,
+  Medium = 1,
+  High = 2
+}
+
+export type BiometricQualityArgs = BiometricQuality;
+
+// Define encoder/decoder for BiometricQuality
+import { getEnumEncoder, getEnumDecoder } from '@solana/kit';
+
+export function getBiometricQualityEncoder(): Encoder<BiometricQualityArgs> {
+  return getEnumEncoder(BiometricQuality);
+}
+
+export function getBiometricQualityDecoder(): Decoder<BiometricQuality> {
+  return getEnumDecoder(BiometricQuality);
+}
+
+export type BiometricQualityExport = { data: BiometricQuality };
+
+export type BiometricQualityExportArgs = { data: BiometricQualityArgs };
 
 export function getBiometricQualityExportEncoder(): Encoder<BiometricQualityExportArgs> {
   return getStructEncoder([['data', getBiometricQualityEncoder()]]);

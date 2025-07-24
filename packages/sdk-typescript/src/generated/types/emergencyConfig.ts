@@ -37,15 +37,15 @@ import {
 } from '.';
 
 /** Emergency configuration for multisig */
-export interface EmergencyConfig {
+export type EmergencyConfig = {
   /** Emergency contacts */
-  emergencyContacts: Address[];
+  emergencyContacts: Array<Address>;
   /** Emergency threshold override */
   emergencyThreshold: number;
   /** Emergency timeout (shorter than normal) */
   emergencyTimeout: bigint;
   /** Allowed emergency transaction types */
-  emergencyTransactionTypes: TransactionType[];
+  emergencyTransactionTypes: Array<TransactionType>;
   /** Emergency freeze enabled */
   freezeEnabled: boolean;
   /** Current freeze status */
@@ -54,17 +54,17 @@ export interface EmergencyConfig {
   frozenAt: Option<bigint>;
   /** Auto-unfreeze after duration */
   autoUnfreezeDuration: Option<bigint>;
-}
+};
 
-export interface EmergencyConfigArgs {
+export type EmergencyConfigArgs = {
   /** Emergency contacts */
-  emergencyContacts: Address[];
+  emergencyContacts: Array<Address>;
   /** Emergency threshold override */
   emergencyThreshold: number;
   /** Emergency timeout (shorter than normal) */
   emergencyTimeout: number | bigint;
   /** Allowed emergency transaction types */
-  emergencyTransactionTypes: TransactionTypeArgs[];
+  emergencyTransactionTypes: Array<TransactionTypeArgs>;
   /** Emergency freeze enabled */
   freezeEnabled: boolean;
   /** Current freeze status */
@@ -73,7 +73,7 @@ export interface EmergencyConfigArgs {
   frozenAt: OptionOrNullable<number | bigint>;
   /** Auto-unfreeze after duration */
   autoUnfreezeDuration: OptionOrNullable<number | bigint>;
-}
+};
 
 export function getEmergencyConfigEncoder(): Encoder<EmergencyConfigArgs> {
   return getStructEncoder([

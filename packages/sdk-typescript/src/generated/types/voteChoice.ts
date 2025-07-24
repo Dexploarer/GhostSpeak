@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Vote choices */
@@ -24,14 +24,17 @@ export enum VoteChoice {
 
 export type VoteChoiceArgs = VoteChoice;
 
-export function getVoteChoiceEncoder(): Encoder<VoteChoiceArgs> {
+export function getVoteChoiceEncoder(): FixedSizeEncoder<VoteChoiceArgs> {
   return getEnumEncoder(VoteChoice);
 }
 
-export function getVoteChoiceDecoder(): Decoder<VoteChoice> {
+export function getVoteChoiceDecoder(): FixedSizeDecoder<VoteChoice> {
   return getEnumDecoder(VoteChoice);
 }
 
-export function getVoteChoiceCodec(): Codec<VoteChoiceArgs, VoteChoice> {
+export function getVoteChoiceCodec(): FixedSizeCodec<
+  VoteChoiceArgs,
+  VoteChoice
+> {
   return combineCodec(getVoteChoiceEncoder(), getVoteChoiceDecoder());
 }

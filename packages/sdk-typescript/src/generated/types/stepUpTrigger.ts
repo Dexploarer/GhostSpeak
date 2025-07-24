@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Triggers for step-up authentication */
@@ -28,15 +28,15 @@ export enum StepUpTrigger {
 
 export type StepUpTriggerArgs = StepUpTrigger;
 
-export function getStepUpTriggerEncoder(): Encoder<StepUpTriggerArgs> {
+export function getStepUpTriggerEncoder(): FixedSizeEncoder<StepUpTriggerArgs> {
   return getEnumEncoder(StepUpTrigger);
 }
 
-export function getStepUpTriggerDecoder(): Decoder<StepUpTrigger> {
+export function getStepUpTriggerDecoder(): FixedSizeDecoder<StepUpTrigger> {
   return getEnumDecoder(StepUpTrigger);
 }
 
-export function getStepUpTriggerCodec(): Codec<
+export function getStepUpTriggerCodec(): FixedSizeCodec<
   StepUpTriggerArgs,
   StepUpTrigger
 > {

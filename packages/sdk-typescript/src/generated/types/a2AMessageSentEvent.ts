@@ -17,26 +17,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface A2AMessageSentEvent {
+export type A2AMessageSentEvent = {
   messageId: bigint;
   sessionId: bigint;
   sender: Address;
   timestamp: bigint;
-}
+};
 
-export interface A2AMessageSentEventArgs {
+export type A2AMessageSentEventArgs = {
   messageId: number | bigint;
   sessionId: number | bigint;
   sender: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getA2AMessageSentEventEncoder(): Encoder<A2AMessageSentEventArgs> {
+export function getA2AMessageSentEventEncoder(): FixedSizeEncoder<A2AMessageSentEventArgs> {
   return getStructEncoder([
     ['messageId', getU64Encoder()],
     ['sessionId', getU64Encoder()],
@@ -45,7 +45,7 @@ export function getA2AMessageSentEventEncoder(): Encoder<A2AMessageSentEventArgs
   ]);
 }
 
-export function getA2AMessageSentEventDecoder(): Decoder<A2AMessageSentEvent> {
+export function getA2AMessageSentEventDecoder(): FixedSizeDecoder<A2AMessageSentEvent> {
   return getStructDecoder([
     ['messageId', getU64Decoder()],
     ['sessionId', getU64Decoder()],
@@ -54,7 +54,7 @@ export function getA2AMessageSentEventDecoder(): Decoder<A2AMessageSentEvent> {
   ]);
 }
 
-export function getA2AMessageSentEventCodec(): Codec<
+export function getA2AMessageSentEventCodec(): FixedSizeCodec<
   A2AMessageSentEventArgs,
   A2AMessageSentEvent
 > {

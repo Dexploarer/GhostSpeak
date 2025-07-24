@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Proposal execution status */
@@ -28,15 +28,15 @@ export enum ProposalStatus {
 
 export type ProposalStatusArgs = ProposalStatus;
 
-export function getProposalStatusEncoder(): Encoder<ProposalStatusArgs> {
+export function getProposalStatusEncoder(): FixedSizeEncoder<ProposalStatusArgs> {
   return getEnumEncoder(ProposalStatus);
 }
 
-export function getProposalStatusDecoder(): Decoder<ProposalStatus> {
+export function getProposalStatusDecoder(): FixedSizeDecoder<ProposalStatus> {
   return getEnumDecoder(ProposalStatus);
 }
 
-export function getProposalStatusCodec(): Codec<
+export function getProposalStatusCodec(): FixedSizeCodec<
   ProposalStatusArgs,
   ProposalStatus
 > {

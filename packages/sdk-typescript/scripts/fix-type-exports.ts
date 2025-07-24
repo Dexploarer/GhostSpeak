@@ -42,7 +42,7 @@ function findMissingBaseTypes(): TypeMapping[] {
       const content = fs.readFileSync(filePath, 'utf-8')
       
       // Extract the export type name from the file
-      const exportTypeMatch = content.match(/export type (\w+Export) = /)
+      const exportTypeMatch = /export type (\w+Export) = /.exec(content)
       if (exportTypeMatch) {
         const exportTypeName = exportTypeMatch[1]
         const baseTypeName = extractBaseTypeName(exportTypeName)

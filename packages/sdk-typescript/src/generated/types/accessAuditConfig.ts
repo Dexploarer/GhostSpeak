@@ -14,24 +14,24 @@ import {
   getI64Encoder,
   getStructDecoder,
   getStructEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AccessAuditConfig {
+export type AccessAuditConfig = {
   auditEnabled: boolean;
   realTimeMonitoring: boolean;
   retentionPeriod: bigint;
-}
+};
 
-export interface AccessAuditConfigArgs {
+export type AccessAuditConfigArgs = {
   auditEnabled: boolean;
   realTimeMonitoring: boolean;
   retentionPeriod: number | bigint;
-}
+};
 
-export function getAccessAuditConfigEncoder(): Encoder<AccessAuditConfigArgs> {
+export function getAccessAuditConfigEncoder(): FixedSizeEncoder<AccessAuditConfigArgs> {
   return getStructEncoder([
     ['auditEnabled', getBooleanEncoder()],
     ['realTimeMonitoring', getBooleanEncoder()],
@@ -39,7 +39,7 @@ export function getAccessAuditConfigEncoder(): Encoder<AccessAuditConfigArgs> {
   ]);
 }
 
-export function getAccessAuditConfigDecoder(): Decoder<AccessAuditConfig> {
+export function getAccessAuditConfigDecoder(): FixedSizeDecoder<AccessAuditConfig> {
   return getStructDecoder([
     ['auditEnabled', getBooleanDecoder()],
     ['realTimeMonitoring', getBooleanDecoder()],
@@ -47,7 +47,7 @@ export function getAccessAuditConfigDecoder(): Decoder<AccessAuditConfig> {
   ]);
 }
 
-export function getAccessAuditConfigCodec(): Codec<
+export function getAccessAuditConfigCodec(): FixedSizeCodec<
   AccessAuditConfigArgs,
   AccessAuditConfig
 > {

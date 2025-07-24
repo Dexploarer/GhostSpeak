@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Data access levels */
@@ -26,15 +26,15 @@ export enum DataAccessLevel {
 
 export type DataAccessLevelArgs = DataAccessLevel;
 
-export function getDataAccessLevelEncoder(): Encoder<DataAccessLevelArgs> {
+export function getDataAccessLevelEncoder(): FixedSizeEncoder<DataAccessLevelArgs> {
   return getEnumEncoder(DataAccessLevel);
 }
 
-export function getDataAccessLevelDecoder(): Decoder<DataAccessLevel> {
+export function getDataAccessLevelDecoder(): FixedSizeDecoder<DataAccessLevel> {
   return getEnumDecoder(DataAccessLevel);
 }
 
-export function getDataAccessLevelCodec(): Codec<
+export function getDataAccessLevelCodec(): FixedSizeCodec<
   DataAccessLevelArgs,
   DataAccessLevel
 > {

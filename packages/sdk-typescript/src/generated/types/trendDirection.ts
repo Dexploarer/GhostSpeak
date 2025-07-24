@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Trend direction for risk indicators */
@@ -25,15 +25,15 @@ export enum TrendDirection {
 
 export type TrendDirectionArgs = TrendDirection;
 
-export function getTrendDirectionEncoder(): Encoder<TrendDirectionArgs> {
+export function getTrendDirectionEncoder(): FixedSizeEncoder<TrendDirectionArgs> {
   return getEnumEncoder(TrendDirection);
 }
 
-export function getTrendDirectionDecoder(): Decoder<TrendDirection> {
+export function getTrendDirectionDecoder(): FixedSizeDecoder<TrendDirection> {
   return getEnumDecoder(TrendDirection);
 }
 
-export function getTrendDirectionCodec(): Codec<
+export function getTrendDirectionCodec(): FixedSizeCodec<
   TrendDirectionArgs,
   TrendDirection
 > {

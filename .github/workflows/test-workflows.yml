@@ -1,0 +1,108 @@
+name: End-to-End Workflow Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  SOLANA_VERSION: 1.18.17
+  ANCHOR_VERSION: 0.31.1
+  NODE_VERSION: 20
+
+jobs:
+  test-workflows:
+    name: Test GhostSpeak Workflows
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install Solana
+      run: |
+        sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+        echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        solana --version
+
+    - name: Install Anchor
+      run: |
+        cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
+        anchor --version
+
+    - name: Setup Solana Wallet
+      run: |
+        solana-keygen new --no-bip39-passphrase --force
+        solana config set --url devnet
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build SDK
+      run: npm run build:sdk
+
+    - name: Build CLI
+      run: npm run build:cli
+
+    - name: Create test environment file
+      run: |
+        cat > .env << EOF
+        GHOSTSPEAK_NETWORK=devnet
+        GHOSTSPEAK_RPC_URL=https://api.devnet.solana.com
+        GHOSTSPEAK_PROGRAM_ID_DEVNET=${{ secrets.PROGRAM_ID || '3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot' }}
+        GHOSTSPEAK_DEBUG=true
+        GHOSTSPEAK_LOG_LEVEL=info
+        EOF
+
+    - name: Run Bash Test Suite
+      run: npm run test:workflows
+      continue-on-error: true
+
+    - name: Run Node.js Test Suite
+      run: npm run test:workflows:node
+      continue-on-error: true
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: test-results/
+        retention-days: 30
+
+    - name: Generate Test Summary
+      if: always()
+      run: |
+        echo "## Workflow Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f test-results/test-report-*.json ]; then
+          echo "### Latest Test Report" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat test-results/test-report-*.json | jq '.summary' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No test results found" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Check Test Results
+      run: |
+        # Exit with error if any test failed
+        if [ -f test-results/test-report-*.json ]; then
+          FAILED=$(cat test-results/test-report-*.json | jq '.summary.failed')
+          if [ "$FAILED" -gt 0 ]; then
+            echo "Tests failed: $FAILED failures detected"
+            exit 1
+          fi
+        fi

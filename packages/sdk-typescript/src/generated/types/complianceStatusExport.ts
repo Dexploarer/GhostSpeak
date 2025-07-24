@@ -14,16 +14,32 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getComplianceStatusDecoder,
-  getComplianceStatusEncoder,
-  type ComplianceStatus,
-  type ComplianceStatusArgs,
-} from '.';
 
-export interface ComplianceStatusExport { data: ComplianceStatus }
 
-export interface ComplianceStatusExportArgs { data: ComplianceStatusArgs }
+// Define ComplianceStatus enum
+export enum ComplianceStatus {
+  Pending = 0,
+  Approved = 1,
+  Rejected = 2,
+  UnderReview = 3
+}
+
+export type ComplianceStatusArgs = ComplianceStatus;
+
+// Define encoder/decoder for ComplianceStatus
+import { getEnumEncoder, getEnumDecoder } from '@solana/kit';
+
+export function getComplianceStatusEncoder(): Encoder<ComplianceStatusArgs> {
+  return getEnumEncoder(ComplianceStatus);
+}
+
+export function getComplianceStatusDecoder(): Decoder<ComplianceStatus> {
+  return getEnumDecoder(ComplianceStatus);
+}
+
+export type ComplianceStatusExport = { data: ComplianceStatus };
+
+export type ComplianceStatusExportArgs = { data: ComplianceStatusArgs };
 
 export function getComplianceStatusExportEncoder(): Encoder<ComplianceStatusExportArgs> {
   return getStructEncoder([['data', getComplianceStatusEncoder()]]);

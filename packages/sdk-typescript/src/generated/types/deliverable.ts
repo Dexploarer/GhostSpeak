@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum Deliverable {
@@ -25,14 +25,17 @@ export enum Deliverable {
 
 export type DeliverableArgs = Deliverable;
 
-export function getDeliverableEncoder(): Encoder<DeliverableArgs> {
+export function getDeliverableEncoder(): FixedSizeEncoder<DeliverableArgs> {
   return getEnumEncoder(Deliverable);
 }
 
-export function getDeliverableDecoder(): Decoder<Deliverable> {
+export function getDeliverableDecoder(): FixedSizeDecoder<Deliverable> {
   return getEnumDecoder(Deliverable);
 }
 
-export function getDeliverableCodec(): Codec<DeliverableArgs, Deliverable> {
+export function getDeliverableCodec(): FixedSizeCodec<
+  DeliverableArgs,
+  Deliverable
+> {
   return combineCodec(getDeliverableEncoder(), getDeliverableDecoder());
 }

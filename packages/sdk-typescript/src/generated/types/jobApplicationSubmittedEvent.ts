@@ -17,28 +17,28 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface JobApplicationSubmittedEvent {
+export type JobApplicationSubmittedEvent = {
   application: Address;
   jobPosting: Address;
   agent: Address;
   proposedRate: bigint;
   timestamp: bigint;
-}
+};
 
-export interface JobApplicationSubmittedEventArgs {
+export type JobApplicationSubmittedEventArgs = {
   application: Address;
   jobPosting: Address;
   agent: Address;
   proposedRate: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getJobApplicationSubmittedEventEncoder(): Encoder<JobApplicationSubmittedEventArgs> {
+export function getJobApplicationSubmittedEventEncoder(): FixedSizeEncoder<JobApplicationSubmittedEventArgs> {
   return getStructEncoder([
     ['application', getAddressEncoder()],
     ['jobPosting', getAddressEncoder()],
@@ -48,7 +48,7 @@ export function getJobApplicationSubmittedEventEncoder(): Encoder<JobApplication
   ]);
 }
 
-export function getJobApplicationSubmittedEventDecoder(): Decoder<JobApplicationSubmittedEvent> {
+export function getJobApplicationSubmittedEventDecoder(): FixedSizeDecoder<JobApplicationSubmittedEvent> {
   return getStructDecoder([
     ['application', getAddressDecoder()],
     ['jobPosting', getAddressDecoder()],
@@ -58,7 +58,7 @@ export function getJobApplicationSubmittedEventDecoder(): Decoder<JobApplication
   ]);
 }
 
-export function getJobApplicationSubmittedEventCodec(): Codec<
+export function getJobApplicationSubmittedEventCodec(): FixedSizeCodec<
   JobApplicationSubmittedEventArgs,
   JobApplicationSubmittedEvent
 > {

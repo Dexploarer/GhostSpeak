@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Scope inheritance options */
@@ -25,15 +25,15 @@ export enum ScopeInheritance {
 
 export type ScopeInheritanceArgs = ScopeInheritance;
 
-export function getScopeInheritanceEncoder(): Encoder<ScopeInheritanceArgs> {
+export function getScopeInheritanceEncoder(): FixedSizeEncoder<ScopeInheritanceArgs> {
   return getEnumEncoder(ScopeInheritance);
 }
 
-export function getScopeInheritanceDecoder(): Decoder<ScopeInheritance> {
+export function getScopeInheritanceDecoder(): FixedSizeDecoder<ScopeInheritance> {
   return getEnumDecoder(ScopeInheritance);
 }
 
-export function getScopeInheritanceCodec(): Codec<
+export function getScopeInheritanceCodec(): FixedSizeCodec<
   ScopeInheritanceArgs,
   ScopeInheritance
 > {

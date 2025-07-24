@@ -25,15 +25,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -65,19 +65,19 @@ export function getRegisterExtensionDiscriminatorBytes() {
 
 export type RegisterExtensionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountExtension extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountDeveloper extends string | IAccountMeta<string> = string,
+  TAccountExtension extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountDeveloper extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountExtension extends string
         ? WritableAccount<TAccountExtension>
@@ -87,7 +87,7 @@ export type RegisterExtensionInstruction<
         : TAccountUserRegistry,
       TAccountDeveloper extends string
         ? WritableSignerAccount<TAccountDeveloper> &
-            IAccountSignerMeta<TAccountDeveloper>
+            AccountSignerMeta<TAccountDeveloper>
         : TAccountDeveloper,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -99,18 +99,18 @@ export type RegisterExtensionInstruction<
     ]
   >;
 
-export interface RegisterExtensionInstructionData {
+export type RegisterExtensionInstructionData = {
   discriminator: ReadonlyUint8Array;
   metadata: ExtensionMetadata;
   codeHash: string;
   revenueShare: number;
-}
+};
 
-export interface RegisterExtensionInstructionDataArgs {
+export type RegisterExtensionInstructionDataArgs = {
   metadata: ExtensionMetadataArgs;
   codeHash: string;
   revenueShare: number;
-}
+};
 
 export function getRegisterExtensionInstructionDataEncoder(): Encoder<RegisterExtensionInstructionDataArgs> {
   return transformEncoder(
@@ -143,13 +143,13 @@ export function getRegisterExtensionInstructionDataCodec(): Codec<
   );
 }
 
-export interface RegisterExtensionAsyncInput<
+export type RegisterExtensionAsyncInput<
   TAccountExtension extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountDeveloper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Extension account with collision prevention */
   extension: Address<TAccountExtension>;
   /** User registry for rate limiting and spam prevention */
@@ -163,7 +163,7 @@ export interface RegisterExtensionAsyncInput<
   metadata: RegisterExtensionInstructionDataArgs['metadata'];
   codeHash: RegisterExtensionInstructionDataArgs['codeHash'];
   revenueShare: RegisterExtensionInstructionDataArgs['revenueShare'];
-}
+};
 
 export async function getRegisterExtensionInstructionAsync<
   TAccountExtension extends string,
@@ -260,13 +260,13 @@ export async function getRegisterExtensionInstructionAsync<
   return instruction;
 }
 
-export interface RegisterExtensionInput<
+export type RegisterExtensionInput<
   TAccountExtension extends string = string,
   TAccountUserRegistry extends string = string,
   TAccountDeveloper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Extension account with collision prevention */
   extension: Address<TAccountExtension>;
   /** User registry for rate limiting and spam prevention */
@@ -280,7 +280,7 @@ export interface RegisterExtensionInput<
   metadata: RegisterExtensionInstructionDataArgs['metadata'];
   codeHash: RegisterExtensionInstructionDataArgs['codeHash'];
   revenueShare: RegisterExtensionInstructionDataArgs['revenueShare'];
-}
+};
 
 export function getRegisterExtensionInstruction<
   TAccountExtension extends string,
@@ -362,10 +362,10 @@ export function getRegisterExtensionInstruction<
   return instruction;
 }
 
-export interface ParsedRegisterExtensionInstruction<
+export type ParsedRegisterExtensionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Extension account with collision prevention */
@@ -380,18 +380,19 @@ export interface ParsedRegisterExtensionInstruction<
     clock: TAccountMetas[4];
   };
   data: RegisterExtensionInstructionData;
-}
+};
 
 export function parseRegisterExtensionInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedRegisterExtensionInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

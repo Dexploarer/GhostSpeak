@@ -25,15 +25,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -59,26 +59,26 @@ export function getRegisterAgentCompressedDiscriminatorBytes() {
 
 export type RegisterAgentCompressedInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountTreeAuthority extends string | IAccountMeta<string> = string,
-  TAccountMerkleTree extends string | IAccountMeta<string> = string,
-  TAccountUserRegistry extends string | IAccountMeta<string> = string,
-  TAccountSigner extends string | IAccountMeta<string> = string,
+  TAccountTreeAuthority extends string | AccountMeta<string> = string,
+  TAccountMerkleTree extends string | AccountMeta<string> = string,
+  TAccountUserRegistry extends string | AccountMeta<string> = string,
+  TAccountSigner extends string | AccountMeta<string> = string,
   TAccountCompressionProgram extends
     | string
-    | IAccountMeta<string> = 'cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK',
+    | AccountMeta<string> = 'cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK',
   TAccountLogWrapper extends
     | string
-    | IAccountMeta<string> = 'noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV',
+    | AccountMeta<string> = 'noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV',
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountTreeAuthority extends string
         ? WritableAccount<TAccountTreeAuthority>
@@ -91,7 +91,7 @@ export type RegisterAgentCompressedInstruction<
         : TAccountUserRegistry,
       TAccountSigner extends string
         ? WritableSignerAccount<TAccountSigner> &
-            IAccountSignerMeta<TAccountSigner>
+            AccountSignerMeta<TAccountSigner>
         : TAccountSigner,
       TAccountCompressionProgram extends string
         ? ReadonlyAccount<TAccountCompressionProgram>
@@ -109,18 +109,18 @@ export type RegisterAgentCompressedInstruction<
     ]
   >;
 
-export interface RegisterAgentCompressedInstructionData {
+export type RegisterAgentCompressedInstructionData = {
   discriminator: ReadonlyUint8Array;
   agentType: number;
   metadataUri: string;
   agentId: string;
-}
+};
 
-export interface RegisterAgentCompressedInstructionDataArgs {
+export type RegisterAgentCompressedInstructionDataArgs = {
   agentType: number;
   metadataUri: string;
   agentId: string;
-}
+};
 
 export function getRegisterAgentCompressedInstructionDataEncoder(): Encoder<RegisterAgentCompressedInstructionDataArgs> {
   return transformEncoder(
@@ -156,7 +156,7 @@ export function getRegisterAgentCompressedInstructionDataCodec(): Codec<
   );
 }
 
-export interface RegisterAgentCompressedAsyncInput<
+export type RegisterAgentCompressedAsyncInput<
   TAccountTreeAuthority extends string = string,
   TAccountMerkleTree extends string = string,
   TAccountUserRegistry extends string = string,
@@ -165,7 +165,7 @@ export interface RegisterAgentCompressedAsyncInput<
   TAccountLogWrapper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Tree authority PDA that manages the compressed Agent tree */
   treeAuthority?: Address<TAccountTreeAuthority>;
   /** The Merkle tree account that stores compressed Agent data */
@@ -185,7 +185,7 @@ export interface RegisterAgentCompressedAsyncInput<
   agentType: RegisterAgentCompressedInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentCompressedInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentCompressedInstructionDataArgs['agentId'];
-}
+};
 
 export async function getRegisterAgentCompressedInstructionAsync<
   TAccountTreeAuthority extends string,
@@ -325,7 +325,7 @@ export async function getRegisterAgentCompressedInstructionAsync<
   return instruction;
 }
 
-export interface RegisterAgentCompressedInput<
+export type RegisterAgentCompressedInput<
   TAccountTreeAuthority extends string = string,
   TAccountMerkleTree extends string = string,
   TAccountUserRegistry extends string = string,
@@ -334,7 +334,7 @@ export interface RegisterAgentCompressedInput<
   TAccountLogWrapper extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Tree authority PDA that manages the compressed Agent tree */
   treeAuthority: Address<TAccountTreeAuthority>;
   /** The Merkle tree account that stores compressed Agent data */
@@ -354,7 +354,7 @@ export interface RegisterAgentCompressedInput<
   agentType: RegisterAgentCompressedInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentCompressedInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentCompressedInstructionDataArgs['agentId'];
-}
+};
 
 export function getRegisterAgentCompressedInstruction<
   TAccountTreeAuthority extends string,
@@ -465,10 +465,10 @@ export function getRegisterAgentCompressedInstruction<
   return instruction;
 }
 
-export interface ParsedRegisterAgentCompressedInstruction<
+export type ParsedRegisterAgentCompressedInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Tree authority PDA that manages the compressed Agent tree */
@@ -489,18 +489,19 @@ export interface ParsedRegisterAgentCompressedInstruction<
     clock: TAccountMetas[7];
   };
   data: RegisterAgentCompressedInstructionData;
-}
+};
 
 export function parseRegisterAgentCompressedInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedRegisterAgentCompressedInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 8) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

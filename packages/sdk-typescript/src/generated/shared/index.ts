@@ -10,9 +10,9 @@ import {
   AccountRole,
   isProgramDerivedAddress,
   isTransactionSigner as kitIsTransactionSigner,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type IAccountMeta,
-  type IAccountSignerMeta,
   type ProgramDerivedAddress,
   type TransactionSigner,
   upgradeRoleToSigner,
@@ -93,7 +93,7 @@ export function expectTransactionSigner<T extends string = string>(
  * Defines an instruction account to resolve.
  * @internal
  */
-export interface ResolvedAccount<
+export type ResolvedAccount<
   T extends string = string,
   U extends
     | Address<T>
@@ -104,18 +104,18 @@ export interface ResolvedAccount<
     | ProgramDerivedAddress<T>
     | TransactionSigner<T>
     | null,
-> {
+> = {
   isWritable: boolean;
   value: U;
-}
+};
 
 /**
  * Defines an instruction that stores additional bytes on-chain.
  * @internal
  */
-export interface IInstructionWithByteDelta {
+export type InstructionWithByteDelta = {
   byteDelta: number;
-}
+};
 
 /**
  * Get account metas and signers from resolved accounts.
@@ -127,7 +127,7 @@ export function getAccountMetaFactory(
 ) {
   return (
     account: ResolvedAccount
-  ): IAccountMeta | IAccountSignerMeta | undefined => {
+  ): AccountMeta | AccountSignerMeta | undefined => {
     if (!account.value) {
       if (optionalAccountStrategy === 'omitted') return;
       return Object.freeze({

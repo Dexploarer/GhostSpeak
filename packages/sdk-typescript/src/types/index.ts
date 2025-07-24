@@ -1,6 +1,7 @@
 // Core types for GhostSpeak Protocol
 import type { Address } from '@solana/addresses'
 import type { Agent, ServiceListing } from '../generated/index.js'
+import type { IPFSConfig } from './ipfs-types.js'
 import type { 
   Rpc,
   RpcSubscriptions,
@@ -19,6 +20,9 @@ import type {
 
 // Import generated types and re-export for convenience
 export * from '../generated/index.js'
+
+// Export IPFS types
+export * from './ipfs-types.js'
 
 // Modern RPC API types using 2025 Web3.js v2 patterns
 export type RpcApi = Rpc<
@@ -52,6 +56,25 @@ export interface GhostSpeakConfig {
   retryConfig?: RetryConfig
   cluster?: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
   rpcEndpoint?: string
+  /** Token 2022 configuration options */
+  token2022?: Token2022Config
+  /** IPFS configuration for large content storage */
+  ipfsConfig?: IPFSConfig
+}
+
+export interface Token2022Config {
+  /** Enable Token 2022 features by default */
+  enabled?: boolean
+  /** Default behavior for transfer fees */
+  defaultExpectTransferFees?: boolean
+  /** Maximum transfer fee slippage (basis points) */
+  maxFeeSlippageBasisPoints?: number
+  /** Enable confidential transfers by default */
+  enableConfidentialTransfers?: boolean
+  /** Default Token 2022 program address (for custom deployments) */
+  programAddress?: Address
+  /** Cache token program detection results for this many seconds */
+  tokenProgramCacheTtl?: number
 }
 
 export interface RetryConfig {
@@ -308,4 +331,66 @@ export interface EmergencyConfig {
   emergencySigners?: Address[]
   canEmergencyPause?: boolean
   emergencyContact?: string
+}
+
+// IPFS Message Content Types
+export interface IPFSReference {
+  type: 'ipfs_reference'
+  ipfsUri: string
+  ipfsHash: string
+  originalSize: number
+  contentPreview: string
+  uploadedAt: number
+}
+
+// Type guard for IPFS reference
+export function isIPFSReference(data: unknown): data is IPFSReference {
+  if (typeof data !== 'object' || data === null) return false
+  const obj = data as Record<string, unknown>
+  return (
+    obj.type === 'ipfs_reference' &&
+    typeof obj.ipfsUri === 'string' &&
+    typeof obj.ipfsHash === 'string' &&
+    typeof obj.originalSize === 'number' &&
+    typeof obj.contentPreview === 'string' &&
+    typeof obj.uploadedAt === 'number'
+  )
+}
+
+// Message metadata type
+export interface MessageMetadata {
+  ipfsHash: string
+  originalSize: number
+  contentPreview: string
+  uploadedAt: number
+}
+
+// Resolved message content type
+export interface ResolvedMessageContent {
+  resolvedContent: string
+  isIPFS: boolean
+  metadata?: MessageMetadata
+}
+
+// IPFS Upload Response
+export interface IPFSUploadResponse {
+  IpfsHash: string
+  PinSize?: number
+  Timestamp?: string
+}
+
+// Type guard for IPFS upload response
+export function isIPFSUploadResponse(data: unknown): data is IPFSUploadResponse {
+  if (typeof data !== 'object' || data === null) return false
+  const obj = data as Record<string, unknown>
+  return typeof obj.IpfsHash === 'string'
+}
+
+// Attachment upload result type
+export interface AttachmentUploadResult {
+  filename: string
+  contentType: string
+  ipfsHash: string
+  ipfsUri: string
+  size: number
 }

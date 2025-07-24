@@ -17,26 +17,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AuctionBidPlacedEvent {
+export type AuctionBidPlacedEvent = {
   auction: Address;
   bidder: Address;
   bidAmount: bigint;
   totalBids: number;
-}
+};
 
-export interface AuctionBidPlacedEventArgs {
+export type AuctionBidPlacedEventArgs = {
   auction: Address;
   bidder: Address;
   bidAmount: number | bigint;
   totalBids: number;
-}
+};
 
-export function getAuctionBidPlacedEventEncoder(): Encoder<AuctionBidPlacedEventArgs> {
+export function getAuctionBidPlacedEventEncoder(): FixedSizeEncoder<AuctionBidPlacedEventArgs> {
   return getStructEncoder([
     ['auction', getAddressEncoder()],
     ['bidder', getAddressEncoder()],
@@ -45,7 +45,7 @@ export function getAuctionBidPlacedEventEncoder(): Encoder<AuctionBidPlacedEvent
   ]);
 }
 
-export function getAuctionBidPlacedEventDecoder(): Decoder<AuctionBidPlacedEvent> {
+export function getAuctionBidPlacedEventDecoder(): FixedSizeDecoder<AuctionBidPlacedEvent> {
   return getStructDecoder([
     ['auction', getAddressDecoder()],
     ['bidder', getAddressDecoder()],
@@ -54,7 +54,7 @@ export function getAuctionBidPlacedEventDecoder(): Decoder<AuctionBidPlacedEvent
   ]);
 }
 
-export function getAuctionBidPlacedEventCodec(): Codec<
+export function getAuctionBidPlacedEventCodec(): FixedSizeCodec<
   AuctionBidPlacedEventArgs,
   AuctionBidPlacedEvent
 > {

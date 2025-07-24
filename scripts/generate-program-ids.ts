@@ -15,7 +15,7 @@ const programIds: Record<string, string> = {};
 networks.forEach((network) => {
   if (network === 'devnet') {
     // Keep existing devnet program ID
-    programIds[network] = 'AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR';
+    programIds[network] = 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX';
   } else {
     // Generate new program ID
     const keypair = Keypair.generate();

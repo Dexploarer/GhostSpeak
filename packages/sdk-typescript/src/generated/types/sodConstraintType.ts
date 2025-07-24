@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of segregation of duties constraints */
@@ -25,15 +25,15 @@ export enum SodConstraintType {
 
 export type SodConstraintTypeArgs = SodConstraintType;
 
-export function getSodConstraintTypeEncoder(): Encoder<SodConstraintTypeArgs> {
+export function getSodConstraintTypeEncoder(): FixedSizeEncoder<SodConstraintTypeArgs> {
   return getEnumEncoder(SodConstraintType);
 }
 
-export function getSodConstraintTypeDecoder(): Decoder<SodConstraintType> {
+export function getSodConstraintTypeDecoder(): FixedSizeDecoder<SodConstraintType> {
   return getEnumDecoder(SodConstraintType);
 }
 
-export function getSodConstraintTypeCodec(): Codec<
+export function getSodConstraintTypeCodec(): FixedSizeCodec<
   SodConstraintTypeArgs,
   SodConstraintType
 > {

@@ -1,12 +1,6 @@
 import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import type { ExtendedRpcApi } from '../types/index.js'
-
-// KeyPairSigner interface - compatible with TransactionSigner
-export interface KeyPairSigner {
-  address: Address
-  publicKey: Address
-  sign: (message: Uint8Array) => Promise<Uint8Array>
-}
 import type { 
   GhostSpeakConfig,
   ServiceListingWithAddress
@@ -16,6 +10,8 @@ import type { Agent, ServiceListing, JobPosting, WorkOrder, A2ASession, A2AMessa
 import type { AgentRegistrationParams } from './instructions/AgentInstructions.js'
 import type { CreateServiceListingParams, CreateJobPostingParams } from './instructions/MarketplaceInstructions.js' 
 import type { CreateEscrowParams } from './instructions/EscrowInstructions.js'
+// Types from A2A Instructions - imported but not used directly in this file
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { CreateA2ASessionParams, SendA2AMessageParams } from './instructions/A2AInstructions.js'
 import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js'
 import { AgentInstructions } from './instructions/AgentInstructions.js'
@@ -55,6 +51,7 @@ export class GhostSpeakClient {
     }
 
     // Initialize instruction modules
+    // IPFS config is already included in this.config
     this.agent = new AgentInstructions(this.config)
     this.marketplace = new MarketplaceInstructions(this.config)
     this.escrow = new EscrowInstructions(this.config)
@@ -84,7 +81,7 @@ export class GhostSpeakClient {
    * Register a new AI agent
    */
   async registerAgent(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     params: AgentRegistrationParams
   ): Promise<string> {
     return this.agent.register(signer, params)
@@ -101,7 +98,7 @@ export class GhostSpeakClient {
    * Create a new service listing
    */
   async createServiceListing(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     serviceListingAddress: Address,
     agentAddress: Address,
     userRegistryAddress: Address,
@@ -114,7 +111,7 @@ export class GhostSpeakClient {
    * Create a new job posting
    */
   async createJobPosting(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     jobPostingAddress: Address,
     params: CreateJobPostingParams
   ): Promise<string> {
@@ -139,7 +136,7 @@ export class GhostSpeakClient {
    * Create an escrow account
    */
   async createEscrow(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     params: CreateEscrowParams
   ): Promise<string> {
     return this.escrow.create({ ...params, signer })
@@ -156,22 +153,20 @@ export class GhostSpeakClient {
    * Create an A2A communication session
    */
   async createA2ASession(
-    signer: KeyPairSigner,
-    sessionAddress: Address,
-    params: CreateA2ASessionParams
+    signer: TransactionSigner,
+    params: { metadata: string; sessionId?: bigint }
   ): Promise<string> {
-    return this.a2a.createSession(sessionAddress, { ...params, signer })
+    return this.a2a.createSession(signer, params)
   }
 
   /**
    * Send a message in an A2A session
    */
   async sendA2AMessage(
-    signer: KeyPairSigner,
-    sessionAddress: Address,
-    params: SendA2AMessageParams
+    signer: TransactionSigner,
+    params: { session: Address; content: string; messageId?: bigint }
   ): Promise<string> {
-    return this.a2a.sendMessage(sessionAddress, { ...params, signer })
+    return this.a2a.sendMessage(signer, params)
   }
 
   /**

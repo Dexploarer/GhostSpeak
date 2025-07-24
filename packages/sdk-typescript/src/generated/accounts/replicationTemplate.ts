@@ -65,12 +65,12 @@ export function getReplicationTemplateDiscriminatorBytes() {
   );
 }
 
-export interface ReplicationTemplate {
+export type ReplicationTemplate = {
   discriminator: ReadonlyUint8Array;
   sourceAgent: Address;
   creator: Address;
   genomeHash: string;
-  baseCapabilities: string[];
+  baseCapabilities: Array<string>;
   replicationFee: bigint;
   maxReplications: number;
   currentReplications: number;
@@ -80,13 +80,13 @@ export interface ReplicationTemplate {
   merkleTree: Option<Address>;
   metadataUri: string;
   bump: number;
-}
+};
 
-export interface ReplicationTemplateArgs {
+export type ReplicationTemplateArgs = {
   sourceAgent: Address;
   creator: Address;
   genomeHash: string;
-  baseCapabilities: string[];
+  baseCapabilities: Array<string>;
   replicationFee: number | bigint;
   maxReplications: number;
   currentReplications: number;
@@ -96,7 +96,7 @@ export interface ReplicationTemplateArgs {
   merkleTree: OptionOrNullable<Address>;
   metadataUri: string;
   bump: number;
-}
+};
 
 export function getReplicationTemplateEncoder(): Encoder<ReplicationTemplateArgs> {
   return transformEncoder(
@@ -203,7 +203,7 @@ export async function fetchMaybeReplicationTemplate<
 
 export async function fetchAllReplicationTemplate(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<ReplicationTemplate>[]> {
   const maybeAccounts = await fetchAllMaybeReplicationTemplate(
@@ -217,7 +217,7 @@ export async function fetchAllReplicationTemplate(
 
 export async function fetchAllMaybeReplicationTemplate(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<ReplicationTemplate>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

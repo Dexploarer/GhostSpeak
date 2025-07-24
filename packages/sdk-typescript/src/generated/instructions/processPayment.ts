@@ -21,15 +21,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -55,23 +55,23 @@ export function getProcessPaymentDiscriminatorBytes() {
 
 export type ProcessPaymentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountPayment extends string | IAccountMeta<string> = string,
-  TAccountWorkOrder extends string | IAccountMeta<string> = string,
-  TAccountProviderAgent extends string | IAccountMeta<string> = string,
-  TAccountPayer extends string | IAccountMeta<string> = string,
-  TAccountPayerTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountProviderTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountTokenMint extends string | IAccountMeta<string> = string,
+  TAccountPayment extends string | AccountMeta<string> = string,
+  TAccountWorkOrder extends string | AccountMeta<string> = string,
+  TAccountProviderAgent extends string | AccountMeta<string> = string,
+  TAccountPayer extends string | AccountMeta<string> = string,
+  TAccountPayerTokenAccount extends string | AccountMeta<string> = string,
+  TAccountProviderTokenAccount extends string | AccountMeta<string> = string,
+  TAccountTokenMint extends string | AccountMeta<string> = string,
   TAccountTokenProgram extends
     | string
-    | IAccountMeta<string> = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+    | AccountMeta<string> = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountPayment extends string
         ? WritableAccount<TAccountPayment>
@@ -84,7 +84,7 @@ export type ProcessPaymentInstruction<
         : TAccountProviderAgent,
       TAccountPayer extends string
         ? WritableSignerAccount<TAccountPayer> &
-            IAccountSignerMeta<TAccountPayer>
+            AccountSignerMeta<TAccountPayer>
         : TAccountPayer,
       TAccountPayerTokenAccount extends string
         ? WritableAccount<TAccountPayerTokenAccount>
@@ -105,18 +105,18 @@ export type ProcessPaymentInstruction<
     ]
   >;
 
-export interface ProcessPaymentInstructionData {
+export type ProcessPaymentInstructionData = {
   discriminator: ReadonlyUint8Array;
   amount: bigint;
   useConfidentialTransfer: boolean;
-}
+};
 
-export interface ProcessPaymentInstructionDataArgs {
+export type ProcessPaymentInstructionDataArgs = {
   amount: number | bigint;
   useConfidentialTransfer: boolean;
-}
+};
 
-export function getProcessPaymentInstructionDataEncoder(): Encoder<ProcessPaymentInstructionDataArgs> {
+export function getProcessPaymentInstructionDataEncoder(): FixedSizeEncoder<ProcessPaymentInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -127,7 +127,7 @@ export function getProcessPaymentInstructionDataEncoder(): Encoder<ProcessPaymen
   );
 }
 
-export function getProcessPaymentInstructionDataDecoder(): Decoder<ProcessPaymentInstructionData> {
+export function getProcessPaymentInstructionDataDecoder(): FixedSizeDecoder<ProcessPaymentInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['amount', getU64Decoder()],
@@ -135,7 +135,7 @@ export function getProcessPaymentInstructionDataDecoder(): Decoder<ProcessPaymen
   ]);
 }
 
-export function getProcessPaymentInstructionDataCodec(): Codec<
+export function getProcessPaymentInstructionDataCodec(): FixedSizeCodec<
   ProcessPaymentInstructionDataArgs,
   ProcessPaymentInstructionData
 > {
@@ -145,7 +145,7 @@ export function getProcessPaymentInstructionDataCodec(): Codec<
   );
 }
 
-export interface ProcessPaymentAsyncInput<
+export type ProcessPaymentAsyncInput<
   TAccountPayment extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProviderAgent extends string = string,
@@ -155,7 +155,7 @@ export interface ProcessPaymentAsyncInput<
   TAccountTokenMint extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   payment?: Address<TAccountPayment>;
   workOrder: Address<TAccountWorkOrder>;
   providerAgent: Address<TAccountProviderAgent>;
@@ -167,7 +167,7 @@ export interface ProcessPaymentAsyncInput<
   systemProgram?: Address<TAccountSystemProgram>;
   amount: ProcessPaymentInstructionDataArgs['amount'];
   useConfidentialTransfer: ProcessPaymentInstructionDataArgs['useConfidentialTransfer'];
-}
+};
 
 export async function getProcessPaymentInstructionAsync<
   TAccountPayment extends string,
@@ -292,7 +292,7 @@ export async function getProcessPaymentInstructionAsync<
   return instruction;
 }
 
-export interface ProcessPaymentInput<
+export type ProcessPaymentInput<
   TAccountPayment extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProviderAgent extends string = string,
@@ -302,7 +302,7 @@ export interface ProcessPaymentInput<
   TAccountTokenMint extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   payment: Address<TAccountPayment>;
   workOrder: Address<TAccountWorkOrder>;
   providerAgent: Address<TAccountProviderAgent>;
@@ -314,7 +314,7 @@ export interface ProcessPaymentInput<
   systemProgram?: Address<TAccountSystemProgram>;
   amount: ProcessPaymentInstructionDataArgs['amount'];
   useConfidentialTransfer: ProcessPaymentInstructionDataArgs['useConfidentialTransfer'];
-}
+};
 
 export function getProcessPaymentInstruction<
   TAccountPayment extends string,
@@ -426,10 +426,10 @@ export function getProcessPaymentInstruction<
   return instruction;
 }
 
-export interface ParsedProcessPaymentInstruction<
+export type ParsedProcessPaymentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     payment: TAccountMetas[0];
@@ -443,18 +443,19 @@ export interface ParsedProcessPaymentInstruction<
     systemProgram: TAccountMetas[8];
   };
   data: ProcessPaymentInstructionData;
-}
+};
 
 export function parseProcessPaymentInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedProcessPaymentInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 9) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

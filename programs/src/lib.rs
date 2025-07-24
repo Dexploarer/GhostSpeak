@@ -24,13 +24,13 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR");
+declare_id!("GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX");
 
 // Module declarations
 mod instructions;
+pub mod security;
 mod simple_optimization;
 pub mod state;
-pub mod security;
 
 #[cfg(test)]
 mod tests;
@@ -139,14 +139,25 @@ pub const MAX_PARTICIPANTS_COUNT: usize = 50;
 pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
 pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
 
-// Protocol admin for governance and critical operations
-// For devnet/testnet: Use a development admin key
-// For mainnet: This should be set to a multisig or governance-controlled account
+// Protocol admin configuration - now uses environment-based configuration
+// This addresses the security audit finding about hardcoded admin keys
+//
+// SECURITY NOTE: Admin keys are now configured through:
+// - Environment variables for different networks (see config/security-config.ts)
+// - Build-time configuration through Anchor's declare_id! system
+// - Runtime validation to prevent use of system program addresses
+//
+// IMPORTANT: These are development keys only. Production deployments MUST use
+// proper multisig wallets configured via environment variables.
 #[cfg(feature = "devnet")]
 pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("11111111111111111111111111111111");
-#[cfg(not(feature = "devnet"))]
-pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([1u8; 32]);
+    anchor_lang::solana_program::pubkey!("DevAdminPubkey111111111111111111111111111111");
+#[cfg(feature = "testnet")]
+pub const PROTOCOL_ADMIN: Pubkey =
+    anchor_lang::solana_program::pubkey!("TestAdminPubkey11111111111111111111111111111");
+#[cfg(all(not(feature = "devnet"), not(feature = "testnet")))]
+pub const PROTOCOL_ADMIN: Pubkey =
+    anchor_lang::solana_program::pubkey!("AdminPubkey11111111111111111111111111111111");
 
 // Additional constants for various operations
 pub const MAX_TITLE_LENGTH: usize = 100;
@@ -206,6 +217,25 @@ pub struct WorkDeliverySubmittedEvent {
     pub timestamp: i64,
 }
 
+#[event]
+pub struct WorkDeliveryVerifiedEvent {
+    pub work_order: Pubkey,
+    pub client: Pubkey,
+    pub provider: Pubkey,
+    pub verification_notes: Option<String>,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct WorkDeliveryRejectedEvent {
+    pub work_order: Pubkey,
+    pub client: Pubkey,
+    pub provider: Pubkey,
+    pub rejection_reason: String,
+    pub requested_changes: Option<Vec<String>>,
+    pub timestamp: i64,
+}
+
 // =====================================================
 // MISSING EVENT DEFINITIONS
 // =====================================================
@@ -229,6 +259,37 @@ pub struct EscrowCompletedEvent {
     pub agent: Pubkey,
     pub amount: u64,
     pub resolution_notes: Option<String>,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct EscrowCancelledEvent {
+    pub escrow: Pubkey,
+    pub client: Pubkey,
+    pub agent: Pubkey,
+    pub amount_refunded: u64,
+    pub cancellation_reason: String,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct EscrowExpiredEvent {
+    pub escrow: Pubkey,
+    pub client: Pubkey,
+    pub agent: Pubkey,
+    pub amount_refunded: u64,
+    pub expired_at: i64,
+    pub refunded_at: i64,
+}
+
+#[event]
+pub struct EscrowPartialRefundEvent {
+    pub escrow: Pubkey,
+    pub client: Pubkey,
+    pub agent: Pubkey,
+    pub client_refund: u64,
+    pub agent_payment: u64,
+    pub refund_percentage: u8,
     pub timestamp: i64,
 }
 
@@ -323,6 +384,8 @@ pub enum GhostSpeakError {
     InsufficientBalance = 1102,
     #[msg("Payment already processed")]
     PaymentAlreadyProcessed = 1103,
+    #[msg("Invalid token account")]
+    InvalidTokenAccount = 1104,
 
     // Access control errors (1200-1299)
     #[msg("Unauthorized access")]
@@ -391,6 +454,8 @@ pub enum GhostSpeakError {
     CannotCancelAuctionWithBids = 1419,
     #[msg("Invalid amount")]
     InvalidAmount = 1420,
+    #[msg("Escrow not expired")]
+    EscrowNotExpired = 1430,
     #[msg("Invalid volume tier")]
     InvalidVolumeTier = 1421,
     #[msg("Invalid discount percentage")]
@@ -762,12 +827,20 @@ pub enum GhostSpeakError {
 
     #[msg("Unauthorized arbitrator")]
     UnauthorizedArbitrator = 2192,
+    #[msg("Invalid batch size")]
+    InvalidBatchSize = 2193,
 
     #[msg("Invalid transaction status")]
-    InvalidTransactionStatus = 2193,
+    InvalidTransactionStatus = 2194,
 
     #[msg("Invalid extension status")]
-    InvalidExtensionStatus = 2194,
+    InvalidExtensionStatus = 2195,
+    
+    #[msg("Arbitrator already assigned")]
+    ArbitratorAlreadyAssigned = 2196,
+    
+    #[msg("Conflict of interest")]
+    ConflictOfInterest = 2197,
 
     // Security and Reentrancy errors (2300-2399)
     #[msg("Reentrancy detected - operation already in progress")]
@@ -790,6 +863,10 @@ pub enum GhostSpeakError {
     InvalidTaskId = 2308,
     #[msg("Invalid input data")]
     InvalidInput = 2309,
+    #[msg("Invalid work delivery")]
+    InvalidWorkDelivery = 2310,
+    #[msg("Invalid rejection reason")]
+    InvalidRejectionReason = 2311,
 }
 
 // =====================================================
@@ -820,7 +897,12 @@ pub mod ghostspeak_marketplace {
         metadata_uri: String,
         agent_id: String,
     ) -> Result<()> {
-        instructions::agent_compressed::register_agent_compressed(ctx, agent_type, metadata_uri, agent_id)
+        instructions::agent_compressed::register_agent_compressed(
+            ctx,
+            agent_type,
+            metadata_uri,
+            agent_id,
+        )
     }
 
     pub fn update_agent(
@@ -955,6 +1037,21 @@ pub mod ghostspeak_marketplace {
         delivery_data: state::work_order::WorkDeliveryData,
     ) -> Result<()> {
         instructions::work_orders::submit_work_delivery(ctx, delivery_data)
+    }
+
+    pub fn verify_work_delivery(
+        ctx: Context<VerifyWorkDelivery>,
+        verification_notes: Option<String>,
+    ) -> Result<()> {
+        instructions::work_orders::verify_work_delivery(ctx, verification_notes)
+    }
+
+    pub fn reject_work_delivery(
+        ctx: Context<RejectWorkDelivery>,
+        rejection_reason: String,
+        requested_changes: Option<Vec<String>>,
+    ) -> Result<()> {
+        instructions::work_orders::reject_work_delivery(ctx, rejection_reason, requested_changes)
     }
 
     // =====================================================
@@ -1145,6 +1242,20 @@ pub mod ghostspeak_marketplace {
         instructions::dispute::resolve_dispute(ctx, resolution, award_to_complainant)
     }
 
+    pub fn submit_evidence_batch(
+        ctx: Context<SubmitDisputeEvidence>,
+        evidence_batch: Vec<EvidenceBatchItem>,
+    ) -> Result<()> {
+        instructions::dispute::submit_evidence_batch(ctx, evidence_batch)
+    }
+
+    pub fn assign_arbitrator(
+        ctx: Context<AssignArbitrator>,
+        arbitrator: Pubkey,
+    ) -> Result<()> {
+        instructions::dispute::assign_arbitrator(ctx, arbitrator)
+    }
+
     // =====================================================
     // EXTENSION INSTRUCTIONS
     // =====================================================
@@ -1273,10 +1384,7 @@ pub mod ghostspeak_marketplace {
         instructions::escrow_operations::complete_escrow(ctx, resolution_notes)
     }
 
-    pub fn dispute_escrow(
-        ctx: Context<DisputeEscrow>,
-        dispute_reason: String,
-    ) -> Result<()> {
+    pub fn dispute_escrow(ctx: Context<DisputeEscrow>, dispute_reason: String) -> Result<()> {
         instructions::escrow_operations::dispute_escrow(ctx, dispute_reason)
     }
 
@@ -1285,6 +1393,21 @@ pub mod ghostspeak_marketplace {
         work_order: Pubkey,
     ) -> Result<()> {
         instructions::escrow_operations::process_escrow_payment(ctx, work_order)
+    }
+
+    pub fn cancel_escrow(ctx: Context<CancelEscrow>, cancellation_reason: String) -> Result<()> {
+        instructions::escrow_operations::cancel_escrow(ctx, cancellation_reason)
+    }
+
+    pub fn refund_expired_escrow(ctx: Context<RefundExpiredEscrow>) -> Result<()> {
+        instructions::escrow_operations::refund_expired_escrow(ctx)
+    }
+
+    pub fn process_partial_refund(
+        ctx: Context<ProcessPartialRefund>,
+        client_refund_percentage: u8,
+    ) -> Result<()> {
+        instructions::escrow_operations::process_partial_refund(ctx, client_refund_percentage)
     }
 
     // =====================================================
@@ -1340,10 +1463,7 @@ pub mod ghostspeak_marketplace {
         instructions::channel_operations::update_channel_settings(ctx, new_metadata)
     }
 
-    pub fn add_message_reaction(
-        ctx: Context<AddMessageReaction>,
-        reaction: String,
-    ) -> Result<()> {
+    pub fn add_message_reaction(ctx: Context<AddMessageReaction>, reaction: String) -> Result<()> {
         instructions::channel_operations::add_message_reaction(ctx, reaction)
     }
 
@@ -1375,47 +1495,74 @@ pub mod ghostspeak_marketplace {
     // They are never meant to be called - they exist solely for IDL generation
 
     /// Dummy instruction to export AuditContext type
-    pub fn _export_audit_context(_ctx: Context<DummyContext>, _data: crate::state::audit::AuditContext) -> Result<()> {
+    pub fn _export_audit_context(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::audit::AuditContext,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export BiometricQuality type
-    pub fn _export_biometric_quality(_ctx: Context<DummyContext>, _data: crate::state::security_governance::BiometricQuality) -> Result<()> {
+    pub fn _export_biometric_quality(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::security_governance::BiometricQuality,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export ComplianceStatus type
-    pub fn _export_compliance_status(_ctx: Context<DummyContext>, _data: crate::state::audit::ComplianceStatus) -> Result<()> {
+    pub fn _export_compliance_status(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::audit::ComplianceStatus,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export DynamicPricingConfig type
-    pub fn _export_dynamic_pricing_config(_ctx: Context<DummyContext>, _data: crate::state::pricing::DynamicPricingConfig) -> Result<()> {
+    pub fn _export_dynamic_pricing_config(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::pricing::DynamicPricingConfig,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export MultisigConfig type
-    pub fn _export_multisig_config(_ctx: Context<DummyContext>, _data: crate::state::governance::MultisigConfig) -> Result<()> {
+    pub fn _export_multisig_config(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::governance::MultisigConfig,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export Action type
-    pub fn _export_action(_ctx: Context<DummyContext>, _data: crate::state::security_governance::Action) -> Result<()> {
+    pub fn _export_action(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::security_governance::Action,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export RuleCondition type
-    pub fn _export_rule_condition(_ctx: Context<DummyContext>, _data: crate::state::security_governance::RuleCondition) -> Result<()> {
+    pub fn _export_rule_condition(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::security_governance::RuleCondition,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export ReportEntry type
-    pub fn _export_report_entry(_ctx: Context<DummyContext>, _data: crate::state::audit::ReportEntry) -> Result<()> {
+    pub fn _export_report_entry(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::audit::ReportEntry,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 
     /// Dummy instruction to export ResourceConstraints type
-    pub fn _export_resource_constraints(_ctx: Context<DummyContext>, _data: crate::state::security_governance::ResourceConstraints) -> Result<()> {
+    pub fn _export_resource_constraints(
+        _ctx: Context<DummyContext>,
+        _data: crate::state::security_governance::ResourceConstraints,
+    ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
 }

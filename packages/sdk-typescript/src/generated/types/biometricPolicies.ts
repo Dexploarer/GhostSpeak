@@ -34,27 +34,27 @@ import {
 } from '.';
 
 /** Biometric authentication policies */
-export interface BiometricPolicies {
+export type BiometricPolicies = {
   /** Supported biometric types */
-  supportedTypes: BiometricType[];
+  supportedTypes: Array<BiometricType>;
   /** Biometric quality requirements */
   qualityRequirements: BiometricQuality;
   /** Liveness detection required */
   livenessDetection: boolean;
   /** Biometric template protection */
   templateProtection: BiometricProtection;
-}
+};
 
-export interface BiometricPoliciesArgs {
+export type BiometricPoliciesArgs = {
   /** Supported biometric types */
-  supportedTypes: BiometricTypeArgs[];
+  supportedTypes: Array<BiometricTypeArgs>;
   /** Biometric quality requirements */
   qualityRequirements: BiometricQualityArgs;
   /** Liveness detection required */
   livenessDetection: boolean;
   /** Biometric template protection */
   templateProtection: BiometricProtectionArgs;
-}
+};
 
 export function getBiometricPoliciesEncoder(): Encoder<BiometricPoliciesArgs> {
   return getStructEncoder([

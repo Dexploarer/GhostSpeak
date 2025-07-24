@@ -27,15 +27,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -57,16 +57,16 @@ export function getSendA2aMessageDiscriminatorBytes() {
 
 export type SendA2aMessageInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMessage extends string | IAccountMeta<string> = string,
-  TAccountSession extends string | IAccountMeta<string> = string,
-  TAccountSender extends string | IAccountMeta<string> = string,
+  TAccountMessage extends string | AccountMeta<string> = string,
+  TAccountSession extends string | AccountMeta<string> = string,
+  TAccountSender extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountMessage extends string
         ? WritableAccount<TAccountMessage>
@@ -76,7 +76,7 @@ export type SendA2aMessageInstruction<
         : TAccountSession,
       TAccountSender extends string
         ? WritableSignerAccount<TAccountSender> &
-            IAccountSignerMeta<TAccountSender>
+            AccountSignerMeta<TAccountSender>
         : TAccountSender,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -85,7 +85,7 @@ export type SendA2aMessageInstruction<
     ]
   >;
 
-export interface SendA2aMessageInstructionData {
+export type SendA2aMessageInstructionData = {
   discriminator: ReadonlyUint8Array;
   messageId: bigint;
   sessionId: bigint;
@@ -93,16 +93,16 @@ export interface SendA2aMessageInstructionData {
   content: string;
   messageType: string;
   timestamp: bigint;
-}
+};
 
-export interface SendA2aMessageInstructionDataArgs {
+export type SendA2aMessageInstructionDataArgs = {
   messageId: number | bigint;
   sessionId: number | bigint;
   sender: Address;
   content: string;
   messageType: string;
   timestamp: number | bigint;
-}
+};
 
 export function getSendA2aMessageInstructionDataEncoder(): Encoder<SendA2aMessageInstructionDataArgs> {
   return transformEncoder(
@@ -141,12 +141,12 @@ export function getSendA2aMessageInstructionDataCodec(): Codec<
   );
 }
 
-export interface SendA2aMessageInput<
+export type SendA2aMessageInput<
   TAccountMessage extends string = string,
   TAccountSession extends string = string,
   TAccountSender extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   message: Address<TAccountMessage>;
   session: Address<TAccountSession>;
   sender: TransactionSigner<TAccountSender>;
@@ -157,7 +157,7 @@ export interface SendA2aMessageInput<
   content: SendA2aMessageInstructionDataArgs['content'];
   messageType: SendA2aMessageInstructionDataArgs['messageType'];
   timestamp: SendA2aMessageInstructionDataArgs['timestamp'];
-}
+};
 
 export function getSendA2aMessageInstruction<
   TAccountMessage extends string,
@@ -229,10 +229,10 @@ export function getSendA2aMessageInstruction<
   return instruction;
 }
 
-export interface ParsedSendA2aMessageInstruction<
+export type ParsedSendA2aMessageInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     message: TAccountMetas[0];
@@ -241,18 +241,19 @@ export interface ParsedSendA2aMessageInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: SendA2aMessageInstructionData;
-}
+};
 
 export function parseSendA2aMessageInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedSendA2aMessageInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

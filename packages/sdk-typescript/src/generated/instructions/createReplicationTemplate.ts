@@ -27,15 +27,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -61,19 +61,19 @@ export function getCreateReplicationTemplateDiscriminatorBytes() {
 
 export type CreateReplicationTemplateInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountReplicationTemplate extends string | IAccountMeta<string> = string,
-  TAccountSourceAgent extends string | IAccountMeta<string> = string,
-  TAccountCreator extends string | IAccountMeta<string> = string,
+  TAccountReplicationTemplate extends string | AccountMeta<string> = string,
+  TAccountSourceAgent extends string | AccountMeta<string> = string,
+  TAccountCreator extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountReplicationTemplate extends string
         ? WritableAccount<TAccountReplicationTemplate>
@@ -83,7 +83,7 @@ export type CreateReplicationTemplateInstruction<
         : TAccountSourceAgent,
       TAccountCreator extends string
         ? WritableSignerAccount<TAccountCreator> &
-            IAccountSignerMeta<TAccountCreator>
+            AccountSignerMeta<TAccountCreator>
         : TAccountCreator,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -95,20 +95,20 @@ export type CreateReplicationTemplateInstruction<
     ]
   >;
 
-export interface CreateReplicationTemplateInstructionData {
+export type CreateReplicationTemplateInstructionData = {
   discriminator: ReadonlyUint8Array;
   genomeHash: string;
-  baseCapabilities: string[];
+  baseCapabilities: Array<string>;
   replicationFee: bigint;
   maxReplications: number;
-}
+};
 
-export interface CreateReplicationTemplateInstructionDataArgs {
+export type CreateReplicationTemplateInstructionDataArgs = {
   genomeHash: string;
-  baseCapabilities: string[];
+  baseCapabilities: Array<string>;
   replicationFee: number | bigint;
   maxReplications: number;
-}
+};
 
 export function getCreateReplicationTemplateInstructionDataEncoder(): Encoder<CreateReplicationTemplateInstructionDataArgs> {
   return transformEncoder(
@@ -154,13 +154,13 @@ export function getCreateReplicationTemplateInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateReplicationTemplateAsyncInput<
+export type CreateReplicationTemplateAsyncInput<
   TAccountReplicationTemplate extends string = string,
   TAccountSourceAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   replicationTemplate?: Address<TAccountReplicationTemplate>;
   sourceAgent: Address<TAccountSourceAgent>;
   creator: TransactionSigner<TAccountCreator>;
@@ -170,7 +170,7 @@ export interface CreateReplicationTemplateAsyncInput<
   baseCapabilities: CreateReplicationTemplateInstructionDataArgs['baseCapabilities'];
   replicationFee: CreateReplicationTemplateInstructionDataArgs['replicationFee'];
   maxReplications: CreateReplicationTemplateInstructionDataArgs['maxReplications'];
-}
+};
 
 export async function getCreateReplicationTemplateInstructionAsync<
   TAccountReplicationTemplate extends string,
@@ -271,13 +271,13 @@ export async function getCreateReplicationTemplateInstructionAsync<
   return instruction;
 }
 
-export interface CreateReplicationTemplateInput<
+export type CreateReplicationTemplateInput<
   TAccountReplicationTemplate extends string = string,
   TAccountSourceAgent extends string = string,
   TAccountCreator extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   replicationTemplate: Address<TAccountReplicationTemplate>;
   sourceAgent: Address<TAccountSourceAgent>;
   creator: TransactionSigner<TAccountCreator>;
@@ -287,7 +287,7 @@ export interface CreateReplicationTemplateInput<
   baseCapabilities: CreateReplicationTemplateInstructionDataArgs['baseCapabilities'];
   replicationFee: CreateReplicationTemplateInstructionDataArgs['replicationFee'];
   maxReplications: CreateReplicationTemplateInstructionDataArgs['maxReplications'];
-}
+};
 
 export function getCreateReplicationTemplateInstruction<
   TAccountReplicationTemplate extends string,
@@ -372,10 +372,10 @@ export function getCreateReplicationTemplateInstruction<
   return instruction;
 }
 
-export interface ParsedCreateReplicationTemplateInstruction<
+export type ParsedCreateReplicationTemplateInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     replicationTemplate: TAccountMetas[0];
@@ -385,18 +385,19 @@ export interface ParsedCreateReplicationTemplateInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: CreateReplicationTemplateInstructionData;
-}
+};
 
 export function parseCreateReplicationTemplateInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateReplicationTemplateInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

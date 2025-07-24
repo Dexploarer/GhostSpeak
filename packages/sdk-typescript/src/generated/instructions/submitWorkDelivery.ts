@@ -25,15 +25,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -65,19 +65,19 @@ export function getSubmitWorkDeliveryDiscriminatorBytes() {
 
 export type SubmitWorkDeliveryInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountWorkDelivery extends string | IAccountMeta<string> = string,
-  TAccountWorkOrder extends string | IAccountMeta<string> = string,
-  TAccountProvider extends string | IAccountMeta<string> = string,
+  TAccountWorkDelivery extends string | AccountMeta<string> = string,
+  TAccountWorkOrder extends string | AccountMeta<string> = string,
+  TAccountProvider extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountWorkDelivery extends string
         ? WritableAccount<TAccountWorkDelivery>
@@ -87,7 +87,7 @@ export type SubmitWorkDeliveryInstruction<
         : TAccountWorkOrder,
       TAccountProvider extends string
         ? WritableSignerAccount<TAccountProvider> &
-            IAccountSignerMeta<TAccountProvider>
+            AccountSignerMeta<TAccountProvider>
         : TAccountProvider,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -99,18 +99,18 @@ export type SubmitWorkDeliveryInstruction<
     ]
   >;
 
-export interface SubmitWorkDeliveryInstructionData {
+export type SubmitWorkDeliveryInstructionData = {
   discriminator: ReadonlyUint8Array;
-  deliverables: Deliverable[];
+  deliverables: Array<Deliverable>;
   ipfsHash: string;
   metadataUri: string;
-}
+};
 
-export interface SubmitWorkDeliveryInstructionDataArgs {
-  deliverables: DeliverableArgs[];
+export type SubmitWorkDeliveryInstructionDataArgs = {
+  deliverables: Array<DeliverableArgs>;
   ipfsHash: string;
   metadataUri: string;
-}
+};
 
 export function getSubmitWorkDeliveryInstructionDataEncoder(): Encoder<SubmitWorkDeliveryInstructionDataArgs> {
   return transformEncoder(
@@ -143,13 +143,13 @@ export function getSubmitWorkDeliveryInstructionDataCodec(): Codec<
   );
 }
 
-export interface SubmitWorkDeliveryAsyncInput<
+export type SubmitWorkDeliveryAsyncInput<
   TAccountWorkDelivery extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProvider extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   workDelivery?: Address<TAccountWorkDelivery>;
   workOrder: Address<TAccountWorkOrder>;
   provider: TransactionSigner<TAccountProvider>;
@@ -158,7 +158,7 @@ export interface SubmitWorkDeliveryAsyncInput<
   deliverables: SubmitWorkDeliveryInstructionDataArgs['deliverables'];
   ipfsHash: SubmitWorkDeliveryInstructionDataArgs['ipfsHash'];
   metadataUri: SubmitWorkDeliveryInstructionDataArgs['metadataUri'];
-}
+};
 
 export async function getSubmitWorkDeliveryInstructionAsync<
   TAccountWorkDelivery extends string,
@@ -255,13 +255,13 @@ export async function getSubmitWorkDeliveryInstructionAsync<
   return instruction;
 }
 
-export interface SubmitWorkDeliveryInput<
+export type SubmitWorkDeliveryInput<
   TAccountWorkDelivery extends string = string,
   TAccountWorkOrder extends string = string,
   TAccountProvider extends string = string,
   TAccountClock extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   workDelivery: Address<TAccountWorkDelivery>;
   workOrder: Address<TAccountWorkOrder>;
   provider: TransactionSigner<TAccountProvider>;
@@ -270,7 +270,7 @@ export interface SubmitWorkDeliveryInput<
   deliverables: SubmitWorkDeliveryInstructionDataArgs['deliverables'];
   ipfsHash: SubmitWorkDeliveryInstructionDataArgs['ipfsHash'];
   metadataUri: SubmitWorkDeliveryInstructionDataArgs['metadataUri'];
-}
+};
 
 export function getSubmitWorkDeliveryInstruction<
   TAccountWorkDelivery extends string,
@@ -352,10 +352,10 @@ export function getSubmitWorkDeliveryInstruction<
   return instruction;
 }
 
-export interface ParsedSubmitWorkDeliveryInstruction<
+export type ParsedSubmitWorkDeliveryInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     workDelivery: TAccountMetas[0];
@@ -365,18 +365,19 @@ export interface ParsedSubmitWorkDeliveryInstruction<
     systemProgram: TAccountMetas[4];
   };
   data: SubmitWorkDeliveryInstructionData;
-}
+};
 
 export function parseSubmitWorkDeliveryInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedSubmitWorkDeliveryInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

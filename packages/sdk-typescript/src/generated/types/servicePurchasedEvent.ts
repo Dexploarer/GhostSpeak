@@ -17,28 +17,28 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface ServicePurchasedEvent {
+export type ServicePurchasedEvent = {
   service: Address;
   buyer: Address;
   quantity: bigint;
   price: bigint;
   timestamp: bigint;
-}
+};
 
-export interface ServicePurchasedEventArgs {
+export type ServicePurchasedEventArgs = {
   service: Address;
   buyer: Address;
   quantity: number | bigint;
   price: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getServicePurchasedEventEncoder(): Encoder<ServicePurchasedEventArgs> {
+export function getServicePurchasedEventEncoder(): FixedSizeEncoder<ServicePurchasedEventArgs> {
   return getStructEncoder([
     ['service', getAddressEncoder()],
     ['buyer', getAddressEncoder()],
@@ -48,7 +48,7 @@ export function getServicePurchasedEventEncoder(): Encoder<ServicePurchasedEvent
   ]);
 }
 
-export function getServicePurchasedEventDecoder(): Decoder<ServicePurchasedEvent> {
+export function getServicePurchasedEventDecoder(): FixedSizeDecoder<ServicePurchasedEvent> {
   return getStructDecoder([
     ['service', getAddressDecoder()],
     ['buyer', getAddressDecoder()],
@@ -58,7 +58,7 @@ export function getServicePurchasedEventDecoder(): Decoder<ServicePurchasedEvent
   ]);
 }
 
-export function getServicePurchasedEventCodec(): Codec<
+export function getServicePurchasedEventCodec(): FixedSizeCodec<
   ServicePurchasedEventArgs,
   ServicePurchasedEvent
 > {

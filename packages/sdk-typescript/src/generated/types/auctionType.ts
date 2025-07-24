@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum AuctionType {
@@ -24,14 +24,17 @@ export enum AuctionType {
 
 export type AuctionTypeArgs = AuctionType;
 
-export function getAuctionTypeEncoder(): Encoder<AuctionTypeArgs> {
+export function getAuctionTypeEncoder(): FixedSizeEncoder<AuctionTypeArgs> {
   return getEnumEncoder(AuctionType);
 }
 
-export function getAuctionTypeDecoder(): Decoder<AuctionType> {
+export function getAuctionTypeDecoder(): FixedSizeDecoder<AuctionType> {
   return getEnumDecoder(AuctionType);
 }
 
-export function getAuctionTypeCodec(): Codec<AuctionTypeArgs, AuctionType> {
+export function getAuctionTypeCodec(): FixedSizeCodec<
+  AuctionTypeArgs,
+  AuctionType
+> {
   return combineCodec(getAuctionTypeEncoder(), getAuctionTypeDecoder());
 }

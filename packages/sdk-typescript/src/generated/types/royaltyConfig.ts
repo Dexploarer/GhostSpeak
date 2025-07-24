@@ -14,24 +14,24 @@ import {
   getU32Encoder,
   getU64Decoder,
   getU64Encoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface RoyaltyConfig {
+export type RoyaltyConfig = {
   percentage: number;
   minAmount: bigint;
   maxAmount: bigint;
-}
+};
 
-export interface RoyaltyConfigArgs {
+export type RoyaltyConfigArgs = {
   percentage: number;
   minAmount: number | bigint;
   maxAmount: number | bigint;
-}
+};
 
-export function getRoyaltyConfigEncoder(): Encoder<RoyaltyConfigArgs> {
+export function getRoyaltyConfigEncoder(): FixedSizeEncoder<RoyaltyConfigArgs> {
   return getStructEncoder([
     ['percentage', getU32Encoder()],
     ['minAmount', getU64Encoder()],
@@ -39,7 +39,7 @@ export function getRoyaltyConfigEncoder(): Encoder<RoyaltyConfigArgs> {
   ]);
 }
 
-export function getRoyaltyConfigDecoder(): Decoder<RoyaltyConfig> {
+export function getRoyaltyConfigDecoder(): FixedSizeDecoder<RoyaltyConfig> {
   return getStructDecoder([
     ['percentage', getU32Decoder()],
     ['minAmount', getU64Decoder()],
@@ -47,7 +47,7 @@ export function getRoyaltyConfigDecoder(): Decoder<RoyaltyConfig> {
   ]);
 }
 
-export function getRoyaltyConfigCodec(): Codec<
+export function getRoyaltyConfigCodec(): FixedSizeCodec<
   RoyaltyConfigArgs,
   RoyaltyConfig
 > {

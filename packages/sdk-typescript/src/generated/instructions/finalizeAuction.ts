@@ -15,15 +15,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -45,22 +45,22 @@ export function getFinalizeAuctionDiscriminatorBytes() {
 
 export type FinalizeAuctionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAuction extends string | IAccountMeta<string> = string,
-  TAccountAuthority extends string | IAccountMeta<string> = string,
+  TAccountAuction extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAuction extends string
         ? WritableAccount<TAccountAuction>
         : TAccountAuction,
       TAccountAuthority extends string
         ? WritableSignerAccount<TAccountAuthority> &
-            IAccountSignerMeta<TAccountAuthority>
+            AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -69,26 +69,26 @@ export type FinalizeAuctionInstruction<
     ]
   >;
 
-export interface FinalizeAuctionInstructionData {
+export type FinalizeAuctionInstructionData = {
   discriminator: ReadonlyUint8Array;
-}
+};
 
-export interface FinalizeAuctionInstructionDataArgs {}
+export type FinalizeAuctionInstructionDataArgs = {};
 
-export function getFinalizeAuctionInstructionDataEncoder(): Encoder<FinalizeAuctionInstructionDataArgs> {
+export function getFinalizeAuctionInstructionDataEncoder(): FixedSizeEncoder<FinalizeAuctionInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({ ...value, discriminator: FINALIZE_AUCTION_DISCRIMINATOR })
   );
 }
 
-export function getFinalizeAuctionInstructionDataDecoder(): Decoder<FinalizeAuctionInstructionData> {
+export function getFinalizeAuctionInstructionDataDecoder(): FixedSizeDecoder<FinalizeAuctionInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
   ]);
 }
 
-export function getFinalizeAuctionInstructionDataCodec(): Codec<
+export function getFinalizeAuctionInstructionDataCodec(): FixedSizeCodec<
   FinalizeAuctionInstructionDataArgs,
   FinalizeAuctionInstructionData
 > {
@@ -98,18 +98,18 @@ export function getFinalizeAuctionInstructionDataCodec(): Codec<
   );
 }
 
-export interface FinalizeAuctionInput<
+export type FinalizeAuctionInput<
   TAccountAuction extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Auction account with canonical validation */
   auction: Address<TAccountAuction>;
   /** Enhanced authority verification - only creator or protocol admin */
   authority: TransactionSigner<TAccountAuthority>;
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
-}
+};
 
 export function getFinalizeAuctionInstruction<
   TAccountAuction extends string,
@@ -170,10 +170,10 @@ export function getFinalizeAuctionInstruction<
   return instruction;
 }
 
-export interface ParsedFinalizeAuctionInstruction<
+export type ParsedFinalizeAuctionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Auction account with canonical validation */
@@ -184,18 +184,19 @@ export interface ParsedFinalizeAuctionInstruction<
     clock: TAccountMetas[2];
   };
   data: FinalizeAuctionInstructionData;
-}
+};
 
 export function parseFinalizeAuctionInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedFinalizeAuctionInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

@@ -17,15 +17,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -57,22 +57,22 @@ export function getCreateIncentiveProgramDiscriminatorBytes() {
 
 export type CreateIncentiveProgramInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountProgram extends string | IAccountMeta<string> = string,
-  TAccountCreator extends string | IAccountMeta<string> = string,
+  TAccountProgram extends string | AccountMeta<string> = string,
+  TAccountCreator extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountProgram extends string
         ? WritableAccount<TAccountProgram>
         : TAccountProgram,
       TAccountCreator extends string
         ? WritableSignerAccount<TAccountCreator> &
-            IAccountSignerMeta<TAccountCreator>
+            AccountSignerMeta<TAccountCreator>
         : TAccountCreator,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -81,16 +81,16 @@ export type CreateIncentiveProgramInstruction<
     ]
   >;
 
-export interface CreateIncentiveProgramInstructionData {
+export type CreateIncentiveProgramInstructionData = {
   discriminator: ReadonlyUint8Array;
   config: IncentiveConfig;
-}
+};
 
-export interface CreateIncentiveProgramInstructionDataArgs {
+export type CreateIncentiveProgramInstructionDataArgs = {
   config: IncentiveConfigArgs;
-}
+};
 
-export function getCreateIncentiveProgramInstructionDataEncoder(): Encoder<CreateIncentiveProgramInstructionDataArgs> {
+export function getCreateIncentiveProgramInstructionDataEncoder(): FixedSizeEncoder<CreateIncentiveProgramInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -103,14 +103,14 @@ export function getCreateIncentiveProgramInstructionDataEncoder(): Encoder<Creat
   );
 }
 
-export function getCreateIncentiveProgramInstructionDataDecoder(): Decoder<CreateIncentiveProgramInstructionData> {
+export function getCreateIncentiveProgramInstructionDataDecoder(): FixedSizeDecoder<CreateIncentiveProgramInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['config', getIncentiveConfigDecoder()],
   ]);
 }
 
-export function getCreateIncentiveProgramInstructionDataCodec(): Codec<
+export function getCreateIncentiveProgramInstructionDataCodec(): FixedSizeCodec<
   CreateIncentiveProgramInstructionDataArgs,
   CreateIncentiveProgramInstructionData
 > {
@@ -120,16 +120,16 @@ export function getCreateIncentiveProgramInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateIncentiveProgramAsyncInput<
+export type CreateIncentiveProgramAsyncInput<
   TAccountProgram extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   program?: Address<TAccountProgram>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateIncentiveProgramInstructionDataArgs['config'];
-}
+};
 
 export async function getCreateIncentiveProgramInstructionAsync<
   TAccountProgram extends string,
@@ -211,16 +211,16 @@ export async function getCreateIncentiveProgramInstructionAsync<
   return instruction;
 }
 
-export interface CreateIncentiveProgramInput<
+export type CreateIncentiveProgramInput<
   TAccountProgram extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   program: Address<TAccountProgram>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
   config: CreateIncentiveProgramInstructionDataArgs['config'];
-}
+};
 
 export function getCreateIncentiveProgramInstruction<
   TAccountProgram extends string,
@@ -286,10 +286,10 @@ export function getCreateIncentiveProgramInstruction<
   return instruction;
 }
 
-export interface ParsedCreateIncentiveProgramInstruction<
+export type ParsedCreateIncentiveProgramInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     program: TAccountMetas[0];
@@ -297,18 +297,19 @@ export interface ParsedCreateIncentiveProgramInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateIncentiveProgramInstructionData;
-}
+};
 
 export function parseCreateIncentiveProgramInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateIncentiveProgramInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

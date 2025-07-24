@@ -1,6 +1,6 @@
 /*!
  * Reentrancy Protection Module
- * 
+ *
  * Implements comprehensive reentrancy protection for GhostSpeak protocol
  * using Anchor-compatible patterns and modern Solana security practices.
  * Based on July 2025 security standards and recommendations.
@@ -21,16 +21,16 @@ pub enum ReentrancyState {
 pub struct ReentrancyGuard {
     /// Current state of the guard
     pub state: ReentrancyState,
-    
+
     /// Nonce to prevent replay attacks
     pub nonce: u64,
-    
+
     /// Last interaction timestamp
     pub last_interaction: i64,
-    
+
     /// Authority that can reset the guard (for emergency situations)
     pub authority: Pubkey,
-    
+
     /// Bump seed for PDA
     pub bump: u8,
 }
@@ -40,19 +40,19 @@ pub struct ReentrancyGuard {
 pub struct InstructionLock {
     /// Instruction discriminator being locked
     pub instruction_hash: [u8; 8],
-    
+
     /// Account that initiated the lock
     pub locked_by: Pubkey,
-    
+
     /// Timestamp when locked
     pub locked_at: i64,
-    
+
     /// Maximum lock duration (prevents deadlocks)
     pub max_duration: i64,
-    
+
     /// Is currently locked
     pub is_locked: bool,
-    
+
     /// Bump seed
     pub bump: u8,
 }
@@ -62,25 +62,25 @@ pub struct InstructionLock {
 pub struct AccountLock {
     /// The account being protected
     pub protected_account: Pubkey,
-    
+
     /// Current operation type
     pub operation_type: String,
-    
+
     /// Transaction signature that initiated the lock
     pub lock_signature: String,
-    
+
     /// Locked by which authority
     pub locked_by: Pubkey,
-    
+
     /// Lock timestamp
     pub locked_at: i64,
-    
+
     /// Lock expiration
     pub expires_at: i64,
-    
+
     /// Lock status
     pub is_active: bool,
-    
+
     /// Bump seed
     pub bump: u8,
 }
@@ -109,11 +109,11 @@ impl ReentrancyGuard {
             self.state == ReentrancyState::Unlocked,
             crate::GhostSpeakError::ReentrancyDetected
         );
-        
+
         self.state = ReentrancyState::Locked;
         self.nonce = self.nonce.checked_add(1).unwrap();
         self.last_interaction = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 
@@ -123,10 +123,10 @@ impl ReentrancyGuard {
             self.state == ReentrancyState::Locked,
             crate::GhostSpeakError::InvalidState
         );
-        
+
         self.state = ReentrancyState::Unlocked;
         self.last_interaction = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 
@@ -136,11 +136,11 @@ impl ReentrancyGuard {
             authority.key() == self.authority,
             crate::GhostSpeakError::UnauthorizedAccess
         );
-        
+
         self.state = ReentrancyState::Unlocked;
         self.nonce = self.nonce.checked_add(1).unwrap();
         self.last_interaction = Clock::get()?.unix_timestamp;
-        
+
         Ok(())
     }
 }
@@ -166,14 +166,14 @@ impl InstructionLock {
         bump: u8,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         self.instruction_hash = instruction_hash;
         self.locked_by = locked_by;
         self.locked_at = clock.unix_timestamp;
         self.max_duration = max_duration.unwrap_or(Self::DEFAULT_LOCK_DURATION);
         self.is_locked = true;
         self.bump = bump;
-        
+
         Ok(())
     }
 
@@ -187,12 +187,12 @@ impl InstructionLock {
     pub fn release(&mut self, authority: &Signer) -> Result<()> {
         // Can be released by the original locker or if expired
         let is_expired = self.is_expired()?;
-        
+
         require!(
             authority.key() == self.locked_by || is_expired,
             crate::GhostSpeakError::UnauthorizedAccess
         );
-        
+
         self.is_locked = false;
         Ok(())
     }
@@ -223,17 +223,17 @@ impl AccountLock {
         bump: u8,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        
+
         require!(
             operation_type.len() <= 64,
             crate::GhostSpeakError::InputTooLong
         );
-        
+
         require!(
             lock_signature.len() <= 88, // Max base58 signature length
             crate::GhostSpeakError::InputTooLong
         );
-        
+
         self.protected_account = protected_account;
         self.operation_type = operation_type;
         self.lock_signature = lock_signature;
@@ -242,7 +242,7 @@ impl AccountLock {
         self.expires_at = clock.unix_timestamp + duration.unwrap_or(Self::DEFAULT_LOCK_DURATION);
         self.is_active = true;
         self.bump = bump;
-        
+
         Ok(())
     }
 
@@ -251,7 +251,7 @@ impl AccountLock {
         if !self.is_active {
             return Ok(false);
         }
-        
+
         let clock = Clock::get()?;
         Ok(clock.unix_timestamp <= self.expires_at)
     }
@@ -259,12 +259,12 @@ impl AccountLock {
     /// Release the account lock
     pub fn release(&mut self, authority: &Signer) -> Result<()> {
         let is_expired = !self.is_valid()?;
-        
+
         require!(
             authority.key() == self.locked_by || is_expired,
             crate::GhostSpeakError::UnauthorizedAccess
         );
-        
+
         self.is_active = false;
         Ok(())
     }
@@ -278,7 +278,7 @@ macro_rules! nonreentrant {
     ($ctx:expr, $guard_account:expr) => {{
         // Lock the reentrancy guard
         $guard_account.lock()?;
-        
+
         // Store the guard for cleanup
         let _guard = ReentrancyCleanup {
             guard: $guard_account,
@@ -310,10 +310,10 @@ pub struct InitializeReentrancyGuard<'info> {
         bump
     )]
     pub reentrancy_guard: Account<'info, ReentrancyGuard>,
-    
+
     #[account(mut)]
     pub authority: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -328,10 +328,10 @@ pub struct CreateInstructionLock<'info> {
         bump
     )]
     pub instruction_lock: Account<'info, InstructionLock>,
-    
+
     #[account(mut)]
     pub authority: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -346,10 +346,10 @@ pub struct CreateAccountLock<'info> {
         bump
     )]
     pub account_lock: Account<'info, AccountLock>,
-    
+
     #[account(mut)]
     pub authority: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
 }
 
@@ -358,7 +358,7 @@ pub struct CreateAccountLock<'info> {
 /// Check if an instruction is currently locked
 /// This function should be called with proper account context from the instruction handler
 pub fn is_instruction_locked<'info>(
-    instruction_hash: [u8; 8], 
+    instruction_hash: [u8; 8],
     program_id: &Pubkey,
     accounts: &[AccountInfo<'info>],
 ) -> Result<bool> {
@@ -367,70 +367,70 @@ pub fn is_instruction_locked<'info>(
         &[b"instruction_lock", instruction_hash.as_ref()],
         program_id,
     );
-    
+
     // Find the lock account in the provided accounts
     let lock_account = accounts.iter().find(|acc| acc.key == &lock_pda);
-    
+
     let lock_account = match lock_account {
         Some(acc) => acc,
         None => return Ok(false), // Lock account not provided, assume not locked
     };
-    
+
     // Check if account exists and has data
     if lock_account.data_len() == 0 {
         return Ok(false);
     }
-    
+
     // Check if the account is owned by the program
     if lock_account.owner != program_id {
         return Ok(false);
     }
-    
+
     // Deserialize the InstructionLock to check its state
     let lock_data = lock_account.try_borrow_data()?;
-    
+
     // Verify minimum size for InstructionLock
     if lock_data.len() < InstructionLock::LEN {
         return Ok(false);
     }
-    
+
     // Parse the lock data manually to check is_locked and expiration
     // Skip discriminator (8 bytes) and instruction_hash (8 bytes)
     // locked_by: 32 bytes (offset 16)
     // locked_at: 8 bytes (offset 48)
     // max_duration: 8 bytes (offset 56)
     // is_locked: 1 byte (offset 64)
-    
+
     let is_locked_offset = 64;
     if lock_data.len() <= is_locked_offset {
         return Ok(false);
     }
-    
+
     let is_locked = lock_data[is_locked_offset] != 0;
-    
+
     if !is_locked {
         return Ok(false);
     }
-    
+
     // Check if lock has expired
     let locked_at_offset = 48;
     let max_duration_offset = 56;
-    
+
     let locked_at = i64::from_le_bytes(
         lock_data[locked_at_offset..locked_at_offset + 8]
             .try_into()
-            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?
+            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?,
     );
-    
+
     let max_duration = i64::from_le_bytes(
         lock_data[max_duration_offset..max_duration_offset + 8]
             .try_into()
-            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?
+            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?,
     );
-    
+
     let clock = Clock::get()?;
     let is_expired = clock.unix_timestamp > locked_at + max_duration;
-    
+
     Ok(!is_expired)
 }
 
@@ -447,59 +447,59 @@ pub fn is_account_locked<'info>(
         &[b"account_lock", account.as_ref(), operation.as_bytes()],
         program_id,
     );
-    
+
     // Find the lock account in the provided accounts
     let lock_account = accounts.iter().find(|acc| acc.key == &lock_pda);
-    
+
     let lock_account = match lock_account {
         Some(acc) => acc,
         None => return Ok(false), // Lock account not provided, assume not locked
     };
-    
+
     // Check if account exists and has data
     if lock_account.data_len() == 0 {
         return Ok(false);
     }
-    
+
     // Check if the account is owned by the program
     if lock_account.owner != program_id {
         return Ok(false);
     }
-    
+
     // Deserialize the AccountLock to check its state
     let lock_data = lock_account.try_borrow_data()?;
-    
+
     // Verify minimum size for AccountLock
     if lock_data.len() < AccountLock::LEN {
         return Ok(false);
     }
-    
+
     // Parse the lock data manually to check is_active and expiration
-    // Structure: discriminator(8) + protected_account(32) + operation_type(4+64) + 
+    // Structure: discriminator(8) + protected_account(32) + operation_type(4+64) +
     // lock_signature(4+88) + locked_by(32) + locked_at(8) + expires_at(8) + is_active(1)
     let is_active_offset = 8 + 32 + 4 + 64 + 4 + 88 + 32 + 8 + 8;
-    
+
     if lock_data.len() <= is_active_offset {
         return Ok(false);
     }
-    
+
     let is_active = lock_data[is_active_offset] != 0;
-    
+
     if !is_active {
         return Ok(false);
     }
-    
+
     // Check expiration
     let expires_at_offset = is_active_offset - 8;
     let expires_at = i64::from_le_bytes(
         lock_data[expires_at_offset..expires_at_offset + 8]
             .try_into()
-            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?
+            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?,
     );
-    
+
     let clock = Clock::get()?;
     let is_valid = clock.unix_timestamp <= expires_at;
-    
+
     Ok(is_valid)
 }
 
@@ -510,7 +510,7 @@ macro_rules! check_reentrancy {
     ($ctx:expr, $instruction_hash:expr) => {{
         let program_id = $ctx.program_id;
         let accounts: Vec<AccountInfo> = $ctx.remaining_accounts.to_vec();
-        
+
         if is_instruction_locked($instruction_hash, program_id, &accounts)? {
             return Err(error!(crate::GhostSpeakError::ReentrancyDetected));
         }

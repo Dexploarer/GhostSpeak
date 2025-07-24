@@ -64,7 +64,7 @@ import {
 } from '.';
 
 /** Pending transaction in multisig queue */
-export interface PendingTransaction {
+export type PendingTransaction = {
   /** Transaction ID */
   transactionId: bigint;
   /** Transaction type */
@@ -76,7 +76,7 @@ export interface PendingTransaction {
   /** Required signatures */
   requiredSignatures: number;
   /** Current signatures */
-  signatures: MultisigSignature[];
+  signatures: Array<MultisigSignature>;
   /** Creation timestamp */
   createdAt: bigint;
   /** Expiration timestamp */
@@ -84,14 +84,14 @@ export interface PendingTransaction {
   /** Transaction priority */
   priority: TransactionPriority;
   /** Execution conditions */
-  executionConditions: ExecutionCondition[];
+  executionConditions: Array<ExecutionCondition>;
   /** Transaction status */
   status: TransactionStatus;
   /** Time lock (if applicable) */
   timeLock: Option<TimeLock>;
-}
+};
 
-export interface PendingTransactionArgs {
+export type PendingTransactionArgs = {
   /** Transaction ID */
   transactionId: number | bigint;
   /** Transaction type */
@@ -103,7 +103,7 @@ export interface PendingTransactionArgs {
   /** Required signatures */
   requiredSignatures: number;
   /** Current signatures */
-  signatures: MultisigSignatureArgs[];
+  signatures: Array<MultisigSignatureArgs>;
   /** Creation timestamp */
   createdAt: number | bigint;
   /** Expiration timestamp */
@@ -111,12 +111,12 @@ export interface PendingTransactionArgs {
   /** Transaction priority */
   priority: TransactionPriorityArgs;
   /** Execution conditions */
-  executionConditions: ExecutionConditionArgs[];
+  executionConditions: Array<ExecutionConditionArgs>;
   /** Transaction status */
   status: TransactionStatusArgs;
   /** Time lock (if applicable) */
   timeLock: OptionOrNullable<TimeLockArgs>;
-}
+};
 
 export function getPendingTransactionEncoder(): Encoder<PendingTransactionArgs> {
   return getStructEncoder([

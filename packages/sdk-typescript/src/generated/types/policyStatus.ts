@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Policy status */
@@ -27,14 +27,17 @@ export enum PolicyStatus {
 
 export type PolicyStatusArgs = PolicyStatus;
 
-export function getPolicyStatusEncoder(): Encoder<PolicyStatusArgs> {
+export function getPolicyStatusEncoder(): FixedSizeEncoder<PolicyStatusArgs> {
   return getEnumEncoder(PolicyStatus);
 }
 
-export function getPolicyStatusDecoder(): Decoder<PolicyStatus> {
+export function getPolicyStatusDecoder(): FixedSizeDecoder<PolicyStatus> {
   return getEnumDecoder(PolicyStatus);
 }
 
-export function getPolicyStatusCodec(): Codec<PolicyStatusArgs, PolicyStatus> {
+export function getPolicyStatusCodec(): FixedSizeCodec<
+  PolicyStatusArgs,
+  PolicyStatus
+> {
   return combineCodec(getPolicyStatusEncoder(), getPolicyStatusDecoder());
 }

@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum PurchaseStatus {
@@ -25,15 +25,15 @@ export enum PurchaseStatus {
 
 export type PurchaseStatusArgs = PurchaseStatus;
 
-export function getPurchaseStatusEncoder(): Encoder<PurchaseStatusArgs> {
+export function getPurchaseStatusEncoder(): FixedSizeEncoder<PurchaseStatusArgs> {
   return getEnumEncoder(PurchaseStatus);
 }
 
-export function getPurchaseStatusDecoder(): Decoder<PurchaseStatus> {
+export function getPurchaseStatusDecoder(): FixedSizeDecoder<PurchaseStatus> {
   return getEnumDecoder(PurchaseStatus);
 }
 
-export function getPurchaseStatusCodec(): Codec<
+export function getPurchaseStatusCodec(): FixedSizeCodec<
   PurchaseStatusArgs,
   PurchaseStatus
 > {

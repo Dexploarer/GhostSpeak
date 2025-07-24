@@ -22,11 +22,11 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface EmergencyAccessConfig {
+export type EmergencyAccessConfig = {
   breakGlassEnabled: boolean;
-  emergencyContacts: Address[];
+  emergencyContacts: Array<Address>;
   approvalRequired: boolean;
-}
+};
 
 export type EmergencyAccessConfigArgs = EmergencyAccessConfig;
 

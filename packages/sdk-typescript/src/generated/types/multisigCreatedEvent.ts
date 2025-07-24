@@ -17,28 +17,28 @@ import {
   getU8Decoder,
   getU8Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface MultisigCreatedEvent {
+export type MultisigCreatedEvent = {
   multisig: Address;
   multisigId: bigint;
   owner: Address;
   threshold: number;
   signersCount: number;
-}
+};
 
-export interface MultisigCreatedEventArgs {
+export type MultisigCreatedEventArgs = {
   multisig: Address;
   multisigId: number | bigint;
   owner: Address;
   threshold: number;
   signersCount: number;
-}
+};
 
-export function getMultisigCreatedEventEncoder(): Encoder<MultisigCreatedEventArgs> {
+export function getMultisigCreatedEventEncoder(): FixedSizeEncoder<MultisigCreatedEventArgs> {
   return getStructEncoder([
     ['multisig', getAddressEncoder()],
     ['multisigId', getU64Encoder()],
@@ -48,7 +48,7 @@ export function getMultisigCreatedEventEncoder(): Encoder<MultisigCreatedEventAr
   ]);
 }
 
-export function getMultisigCreatedEventDecoder(): Decoder<MultisigCreatedEvent> {
+export function getMultisigCreatedEventDecoder(): FixedSizeDecoder<MultisigCreatedEvent> {
   return getStructDecoder([
     ['multisig', getAddressDecoder()],
     ['multisigId', getU64Decoder()],
@@ -58,7 +58,7 @@ export function getMultisigCreatedEventDecoder(): Decoder<MultisigCreatedEvent> 
   ]);
 }
 
-export function getMultisigCreatedEventCodec(): Codec<
+export function getMultisigCreatedEventCodec(): FixedSizeCodec<
   MultisigCreatedEventArgs,
   MultisigCreatedEvent
 > {

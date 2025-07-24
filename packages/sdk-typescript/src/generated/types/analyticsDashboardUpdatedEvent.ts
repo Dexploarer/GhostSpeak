@@ -15,24 +15,24 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface AnalyticsDashboardUpdatedEvent {
+export type AnalyticsDashboardUpdatedEvent = {
   dashboard: Address;
   owner: Address;
   timestamp: bigint;
-}
+};
 
-export interface AnalyticsDashboardUpdatedEventArgs {
+export type AnalyticsDashboardUpdatedEventArgs = {
   dashboard: Address;
   owner: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getAnalyticsDashboardUpdatedEventEncoder(): Encoder<AnalyticsDashboardUpdatedEventArgs> {
+export function getAnalyticsDashboardUpdatedEventEncoder(): FixedSizeEncoder<AnalyticsDashboardUpdatedEventArgs> {
   return getStructEncoder([
     ['dashboard', getAddressEncoder()],
     ['owner', getAddressEncoder()],
@@ -40,7 +40,7 @@ export function getAnalyticsDashboardUpdatedEventEncoder(): Encoder<AnalyticsDas
   ]);
 }
 
-export function getAnalyticsDashboardUpdatedEventDecoder(): Decoder<AnalyticsDashboardUpdatedEvent> {
+export function getAnalyticsDashboardUpdatedEventDecoder(): FixedSizeDecoder<AnalyticsDashboardUpdatedEvent> {
   return getStructDecoder([
     ['dashboard', getAddressDecoder()],
     ['owner', getAddressDecoder()],
@@ -48,7 +48,7 @@ export function getAnalyticsDashboardUpdatedEventDecoder(): Decoder<AnalyticsDas
   ]);
 }
 
-export function getAnalyticsDashboardUpdatedEventCodec(): Codec<
+export function getAnalyticsDashboardUpdatedEventCodec(): FixedSizeCodec<
   AnalyticsDashboardUpdatedEventArgs,
   AnalyticsDashboardUpdatedEvent
 > {

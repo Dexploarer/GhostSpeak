@@ -1,7 +1,7 @@
 {
   "name": "@ghostspeak/sdk",
-  "version": "1.6.3",
-  "description": "TypeScript SDK for GhostSpeak AI Agent Commerce Protocol",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -44,7 +44,13 @@
     "ai-agents",
     "defi",
     "typescript",
-    "web3"
+    "web3",
+    "protocol",
+    "commerce",
+    "autonomous-agents",
+    "marketplace",
+    "escrow",
+    "devnet-ready"
   ],
   "author": "GhostSpeak Protocol",
   "license": "MIT",
@@ -61,6 +67,9 @@
     "access": "public"
   },
   "dependencies": {
+    "@noble/curves": "^1.9.4",
+    "@noble/hashes": "^1.8.0",
+    "@solana-program/system": "^0.7.0",
     "@solana/accounts": "^2.3.0",
     "@solana/addresses": "^2.3.0",
     "@solana/codecs-core": "^2.3.0",

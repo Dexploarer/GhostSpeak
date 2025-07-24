@@ -23,15 +23,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -52,25 +52,25 @@ export function getUpdateDynamicPricingDiscriminatorBytes() {
 
 export type UpdateDynamicPricingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountEngine extends string | IAccountMeta<string> = string,
-  TAccountUpdater extends string | IAccountMeta<string> = string,
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+  TAccountEngine extends string | AccountMeta<string> = string,
+  TAccountUpdater extends string | AccountMeta<string> = string,
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountEngine extends string
         ? WritableAccount<TAccountEngine>
         : TAccountEngine,
       TAccountUpdater extends string
         ? ReadonlySignerAccount<TAccountUpdater> &
-            IAccountSignerMeta<TAccountUpdater>
+            AccountSignerMeta<TAccountUpdater>
         : TAccountUpdater,
       ...TRemainingAccounts,
     ]
   >;
 
-export interface UpdateDynamicPricingInstructionData {
+export type UpdateDynamicPricingInstructionData = {
   discriminator: ReadonlyUint8Array;
   currentDemand: bigint;
   peakDemand: bigint;
@@ -78,18 +78,18 @@ export interface UpdateDynamicPricingInstructionData {
   demandTrend: number;
   demandVolatility: number;
   lastUpdated: bigint;
-}
+};
 
-export interface UpdateDynamicPricingInstructionDataArgs {
+export type UpdateDynamicPricingInstructionDataArgs = {
   currentDemand: number | bigint;
   peakDemand: number | bigint;
   averageDemand: number | bigint;
   demandTrend: number;
   demandVolatility: number;
   lastUpdated: number | bigint;
-}
+};
 
-export function getUpdateDynamicPricingInstructionDataEncoder(): Encoder<UpdateDynamicPricingInstructionDataArgs> {
+export function getUpdateDynamicPricingInstructionDataEncoder(): FixedSizeEncoder<UpdateDynamicPricingInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -107,7 +107,7 @@ export function getUpdateDynamicPricingInstructionDataEncoder(): Encoder<UpdateD
   );
 }
 
-export function getUpdateDynamicPricingInstructionDataDecoder(): Decoder<UpdateDynamicPricingInstructionData> {
+export function getUpdateDynamicPricingInstructionDataDecoder(): FixedSizeDecoder<UpdateDynamicPricingInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['currentDemand', getU64Decoder()],
@@ -119,7 +119,7 @@ export function getUpdateDynamicPricingInstructionDataDecoder(): Decoder<UpdateD
   ]);
 }
 
-export function getUpdateDynamicPricingInstructionDataCodec(): Codec<
+export function getUpdateDynamicPricingInstructionDataCodec(): FixedSizeCodec<
   UpdateDynamicPricingInstructionDataArgs,
   UpdateDynamicPricingInstructionData
 > {
@@ -129,10 +129,10 @@ export function getUpdateDynamicPricingInstructionDataCodec(): Codec<
   );
 }
 
-export interface UpdateDynamicPricingInput<
+export type UpdateDynamicPricingInput<
   TAccountEngine extends string = string,
   TAccountUpdater extends string = string,
-> {
+> = {
   engine: Address<TAccountEngine>;
   updater: TransactionSigner<TAccountUpdater>;
   currentDemand: UpdateDynamicPricingInstructionDataArgs['currentDemand'];
@@ -141,7 +141,7 @@ export interface UpdateDynamicPricingInput<
   demandTrend: UpdateDynamicPricingInstructionDataArgs['demandTrend'];
   demandVolatility: UpdateDynamicPricingInstructionDataArgs['demandVolatility'];
   lastUpdated: UpdateDynamicPricingInstructionDataArgs['lastUpdated'];
-}
+};
 
 export function getUpdateDynamicPricingInstruction<
   TAccountEngine extends string,
@@ -192,28 +192,29 @@ export function getUpdateDynamicPricingInstruction<
   return instruction;
 }
 
-export interface ParsedUpdateDynamicPricingInstruction<
+export type ParsedUpdateDynamicPricingInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     engine: TAccountMetas[0];
     updater: TAccountMetas[1];
   };
   data: UpdateDynamicPricingInstructionData;
-}
+};
 
 export function parseUpdateDynamicPricingInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedUpdateDynamicPricingInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 2) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

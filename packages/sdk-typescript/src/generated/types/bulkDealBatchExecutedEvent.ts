@@ -17,28 +17,28 @@ import {
   getU32Decoder,
   getU32Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface BulkDealBatchExecutedEvent {
+export type BulkDealBatchExecutedEvent = {
   deal: Address;
   executor: Address;
   batchSize: number;
   totalExecuted: number;
   timestamp: bigint;
-}
+};
 
-export interface BulkDealBatchExecutedEventArgs {
+export type BulkDealBatchExecutedEventArgs = {
   deal: Address;
   executor: Address;
   batchSize: number;
   totalExecuted: number;
   timestamp: number | bigint;
-}
+};
 
-export function getBulkDealBatchExecutedEventEncoder(): Encoder<BulkDealBatchExecutedEventArgs> {
+export function getBulkDealBatchExecutedEventEncoder(): FixedSizeEncoder<BulkDealBatchExecutedEventArgs> {
   return getStructEncoder([
     ['deal', getAddressEncoder()],
     ['executor', getAddressEncoder()],
@@ -48,7 +48,7 @@ export function getBulkDealBatchExecutedEventEncoder(): Encoder<BulkDealBatchExe
   ]);
 }
 
-export function getBulkDealBatchExecutedEventDecoder(): Decoder<BulkDealBatchExecutedEvent> {
+export function getBulkDealBatchExecutedEventDecoder(): FixedSizeDecoder<BulkDealBatchExecutedEvent> {
   return getStructDecoder([
     ['deal', getAddressDecoder()],
     ['executor', getAddressDecoder()],
@@ -58,7 +58,7 @@ export function getBulkDealBatchExecutedEventDecoder(): Decoder<BulkDealBatchExe
   ]);
 }
 
-export function getBulkDealBatchExecutedEventCodec(): Codec<
+export function getBulkDealBatchExecutedEventCodec(): FixedSizeCodec<
   BulkDealBatchExecutedEventArgs,
   BulkDealBatchExecutedEvent
 > {

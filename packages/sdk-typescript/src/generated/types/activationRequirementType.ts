@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of role activation requirements */
@@ -29,15 +29,15 @@ export enum ActivationRequirementType {
 
 export type ActivationRequirementTypeArgs = ActivationRequirementType;
 
-export function getActivationRequirementTypeEncoder(): Encoder<ActivationRequirementTypeArgs> {
+export function getActivationRequirementTypeEncoder(): FixedSizeEncoder<ActivationRequirementTypeArgs> {
   return getEnumEncoder(ActivationRequirementType);
 }
 
-export function getActivationRequirementTypeDecoder(): Decoder<ActivationRequirementType> {
+export function getActivationRequirementTypeDecoder(): FixedSizeDecoder<ActivationRequirementType> {
   return getEnumDecoder(ActivationRequirementType);
 }
 
-export function getActivationRequirementTypeCodec(): Codec<
+export function getActivationRequirementTypeCodec(): FixedSizeCodec<
   ActivationRequirementTypeArgs,
   ActivationRequirementType
 > {

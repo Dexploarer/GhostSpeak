@@ -2,8 +2,8 @@
  * Shared SDK client initialization for CLI commands - July 2025 Standards
  */
 
-import { createSolanaRpc, createSolanaRpcSubscriptions, KeyPairSigner, createKeyPairSignerFromBytes, address } from '@solana/kit'
-import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID, type KeyPairSigner as SDKKeypairSigner } from '@ghostspeak/sdk'
+import { createSolanaRpc, createSolanaRpcSubscriptions, KeyPairSigner, createKeyPairSignerFromBytes, address, type TransactionSigner } from '@solana/kit'
+import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, existsSync, writeFileSync } from 'fs'
@@ -73,26 +73,14 @@ export async function getWallet(): Promise<KeyPairSigner> {
 }
 
 /**
- * Adapter to convert CLI KeyPairSigner to SDK KeyPairSigner
+ * Convert CLI KeyPairSigner to TransactionSigner for SDK compatibility
+ * Since KeyPairSigner already implements TransactionPartialSigner, which is part of TransactionSigner,
+ * we can directly cast it to TransactionSigner.
  */
-export function toSDKSigner(signer: KeyPairSigner): SDKKeypairSigner {
-  return {
-    address: signer.address,
-    publicKey: signer.address,
-    sign: async (message: Uint8Array): Promise<Uint8Array> => {
-      // Use signMessages for raw message signing
-      const signableMessage = {
-        content: message,
-        signatures: {}
-      }
-      const [signatureDict] = await signer.signMessages([signableMessage])
-      const signature = signatureDict[signer.address]
-      if (!signature) {
-        throw new Error('Failed to sign message')
-      }
-      return signature
-    }
-  }
+export function toSDKSigner(signer: KeyPairSigner): TransactionSigner {
+  // KeyPairSigner from @solana/kit already implements TransactionPartialSigner
+  // which is part of the TransactionSigner union type, so direct casting is safe
+  return signer as TransactionSigner
 }
 
 /**

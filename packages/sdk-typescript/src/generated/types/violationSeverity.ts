@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Violation severity levels */
@@ -25,15 +25,15 @@ export enum ViolationSeverity {
 
 export type ViolationSeverityArgs = ViolationSeverity;
 
-export function getViolationSeverityEncoder(): Encoder<ViolationSeverityArgs> {
+export function getViolationSeverityEncoder(): FixedSizeEncoder<ViolationSeverityArgs> {
   return getEnumEncoder(ViolationSeverity);
 }
 
-export function getViolationSeverityDecoder(): Decoder<ViolationSeverity> {
+export function getViolationSeverityDecoder(): FixedSizeDecoder<ViolationSeverity> {
   return getEnumDecoder(ViolationSeverity);
 }
 
-export function getViolationSeverityCodec(): Codec<
+export function getViolationSeverityCodec(): FixedSizeCodec<
   ViolationSeverityArgs,
   ViolationSeverity
 > {

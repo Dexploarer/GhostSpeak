@@ -32,15 +32,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -66,16 +66,16 @@ export function getUpdateA2aStatusDiscriminatorBytes() {
 
 export type UpdateA2aStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountStatus extends string | IAccountMeta<string> = string,
-  TAccountSession extends string | IAccountMeta<string> = string,
-  TAccountUpdater extends string | IAccountMeta<string> = string,
+  TAccountStatus extends string | AccountMeta<string> = string,
+  TAccountSession extends string | AccountMeta<string> = string,
+  TAccountUpdater extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountStatus extends string
         ? WritableAccount<TAccountStatus>
@@ -85,7 +85,7 @@ export type UpdateA2aStatusInstruction<
         : TAccountSession,
       TAccountUpdater extends string
         ? WritableSignerAccount<TAccountUpdater> &
-            IAccountSignerMeta<TAccountUpdater>
+            AccountSignerMeta<TAccountUpdater>
         : TAccountUpdater,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -94,24 +94,24 @@ export type UpdateA2aStatusInstruction<
     ]
   >;
 
-export interface UpdateA2aStatusInstructionData {
+export type UpdateA2aStatusInstructionData = {
   discriminator: ReadonlyUint8Array;
   statusId: bigint;
   agent: Address;
   status: string;
-  capabilities: string[];
+  capabilities: Array<string>;
   availability: boolean;
   lastUpdated: bigint;
-}
+};
 
-export interface UpdateA2aStatusInstructionDataArgs {
+export type UpdateA2aStatusInstructionDataArgs = {
   statusId: number | bigint;
   agent: Address;
   status: string;
-  capabilities: string[];
+  capabilities: Array<string>;
   availability: boolean;
   lastUpdated: number | bigint;
-}
+};
 
 export function getUpdateA2aStatusInstructionDataEncoder(): Encoder<UpdateA2aStatusInstructionDataArgs> {
   return transformEncoder(
@@ -158,12 +158,12 @@ export function getUpdateA2aStatusInstructionDataCodec(): Codec<
   );
 }
 
-export interface UpdateA2aStatusAsyncInput<
+export type UpdateA2aStatusAsyncInput<
   TAccountStatus extends string = string,
   TAccountSession extends string = string,
   TAccountUpdater extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   status?: Address<TAccountStatus>;
   session: Address<TAccountSession>;
   updater: TransactionSigner<TAccountUpdater>;
@@ -174,7 +174,7 @@ export interface UpdateA2aStatusAsyncInput<
   capabilities: UpdateA2aStatusInstructionDataArgs['capabilities'];
   availability: UpdateA2aStatusInstructionDataArgs['availability'];
   lastUpdated: UpdateA2aStatusInstructionDataArgs['lastUpdated'];
-}
+};
 
 export async function getUpdateA2aStatusInstructionAsync<
   TAccountStatus extends string,
@@ -259,12 +259,12 @@ export async function getUpdateA2aStatusInstructionAsync<
   return instruction;
 }
 
-export interface UpdateA2aStatusInput<
+export type UpdateA2aStatusInput<
   TAccountStatus extends string = string,
   TAccountSession extends string = string,
   TAccountUpdater extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   status: Address<TAccountStatus>;
   session: Address<TAccountSession>;
   updater: TransactionSigner<TAccountUpdater>;
@@ -275,7 +275,7 @@ export interface UpdateA2aStatusInput<
   capabilities: UpdateA2aStatusInstructionDataArgs['capabilities'];
   availability: UpdateA2aStatusInstructionDataArgs['availability'];
   lastUpdated: UpdateA2aStatusInstructionDataArgs['lastUpdated'];
-}
+};
 
 export function getUpdateA2aStatusInstruction<
   TAccountStatus extends string,
@@ -347,10 +347,10 @@ export function getUpdateA2aStatusInstruction<
   return instruction;
 }
 
-export interface ParsedUpdateA2aStatusInstruction<
+export type ParsedUpdateA2aStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     status: TAccountMetas[0];
@@ -359,18 +359,19 @@ export interface ParsedUpdateA2aStatusInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: UpdateA2aStatusInstructionData;
-}
+};
 
 export function parseUpdateA2aStatusInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedUpdateA2aStatusInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

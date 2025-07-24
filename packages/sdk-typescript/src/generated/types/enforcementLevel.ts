@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Enforcement levels for constraints */
@@ -25,15 +25,15 @@ export enum EnforcementLevel {
 
 export type EnforcementLevelArgs = EnforcementLevel;
 
-export function getEnforcementLevelEncoder(): Encoder<EnforcementLevelArgs> {
+export function getEnforcementLevelEncoder(): FixedSizeEncoder<EnforcementLevelArgs> {
   return getEnumEncoder(EnforcementLevel);
 }
 
-export function getEnforcementLevelDecoder(): Decoder<EnforcementLevel> {
+export function getEnforcementLevelDecoder(): FixedSizeDecoder<EnforcementLevel> {
   return getEnumDecoder(EnforcementLevel);
 }
 
-export function getEnforcementLevelCodec(): Codec<
+export function getEnforcementLevelCodec(): FixedSizeCodec<
   EnforcementLevelArgs,
   EnforcementLevel
 > {

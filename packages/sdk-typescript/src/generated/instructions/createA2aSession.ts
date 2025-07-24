@@ -28,15 +28,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -62,22 +62,22 @@ export function getCreateA2aSessionDiscriminatorBytes() {
 
 export type CreateA2aSessionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountSession extends string | IAccountMeta<string> = string,
-  TAccountCreator extends string | IAccountMeta<string> = string,
+  TAccountSession extends string | AccountMeta<string> = string,
+  TAccountCreator extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountSession extends string
         ? WritableAccount<TAccountSession>
         : TAccountSession,
       TAccountCreator extends string
         ? WritableSignerAccount<TAccountCreator> &
-            IAccountSignerMeta<TAccountCreator>
+            AccountSignerMeta<TAccountCreator>
         : TAccountCreator,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -86,7 +86,7 @@ export type CreateA2aSessionInstruction<
     ]
   >;
 
-export interface CreateA2aSessionInstructionData {
+export type CreateA2aSessionInstructionData = {
   discriminator: ReadonlyUint8Array;
   sessionId: bigint;
   initiator: Address;
@@ -94,16 +94,16 @@ export interface CreateA2aSessionInstructionData {
   sessionType: string;
   metadata: string;
   expiresAt: bigint;
-}
+};
 
-export interface CreateA2aSessionInstructionDataArgs {
+export type CreateA2aSessionInstructionDataArgs = {
   sessionId: number | bigint;
   initiator: Address;
   responder: Address;
   sessionType: string;
   metadata: string;
   expiresAt: number | bigint;
-}
+};
 
 export function getCreateA2aSessionInstructionDataEncoder(): Encoder<CreateA2aSessionInstructionDataArgs> {
   return transformEncoder(
@@ -142,11 +142,11 @@ export function getCreateA2aSessionInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateA2aSessionAsyncInput<
+export type CreateA2aSessionAsyncInput<
   TAccountSession extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   session?: Address<TAccountSession>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -156,7 +156,7 @@ export interface CreateA2aSessionAsyncInput<
   sessionType: CreateA2aSessionInstructionDataArgs['sessionType'];
   metadata: CreateA2aSessionInstructionDataArgs['metadata'];
   expiresAt: CreateA2aSessionInstructionDataArgs['expiresAt'];
-}
+};
 
 export async function getCreateA2aSessionInstructionAsync<
   TAccountSession extends string,
@@ -235,11 +235,11 @@ export async function getCreateA2aSessionInstructionAsync<
   return instruction;
 }
 
-export interface CreateA2aSessionInput<
+export type CreateA2aSessionInput<
   TAccountSession extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   session: Address<TAccountSession>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -249,7 +249,7 @@ export interface CreateA2aSessionInput<
   sessionType: CreateA2aSessionInstructionDataArgs['sessionType'];
   metadata: CreateA2aSessionInstructionDataArgs['metadata'];
   expiresAt: CreateA2aSessionInstructionDataArgs['expiresAt'];
-}
+};
 
 export function getCreateA2aSessionInstruction<
   TAccountSession extends string,
@@ -315,10 +315,10 @@ export function getCreateA2aSessionInstruction<
   return instruction;
 }
 
-export interface ParsedCreateA2aSessionInstruction<
+export type ParsedCreateA2aSessionInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     session: TAccountMetas[0];
@@ -326,18 +326,19 @@ export interface ParsedCreateA2aSessionInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateA2aSessionInstructionData;
-}
+};
 
 export function parseCreateA2aSessionInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateA2aSessionInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

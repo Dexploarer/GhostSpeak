@@ -67,14 +67,14 @@ export function getServicePurchaseDiscriminatorBytes() {
   );
 }
 
-export interface ServicePurchase {
+export type ServicePurchase = {
   discriminator: ReadonlyUint8Array;
   customer: Address;
   agent: Address;
   listing: Address;
   listingId: bigint;
   quantity: number;
-  requirements: string[];
+  requirements: Array<string>;
   customInstructions: string;
   deadline: bigint;
   paymentAmount: bigint;
@@ -84,15 +84,15 @@ export interface ServicePurchase {
   updatedAt: bigint;
   transferHookApplied: boolean;
   bump: number;
-}
+};
 
-export interface ServicePurchaseArgs {
+export type ServicePurchaseArgs = {
   customer: Address;
   agent: Address;
   listing: Address;
   listingId: number | bigint;
   quantity: number;
-  requirements: string[];
+  requirements: Array<string>;
   customInstructions: string;
   deadline: number | bigint;
   paymentAmount: number | bigint;
@@ -102,7 +102,7 @@ export interface ServicePurchaseArgs {
   updatedAt: number | bigint;
   transferHookApplied: boolean;
   bump: number;
-}
+};
 
 export function getServicePurchaseEncoder(): Encoder<ServicePurchaseArgs> {
   return transformEncoder(
@@ -210,7 +210,7 @@ export async function fetchMaybeServicePurchase<
 
 export async function fetchAllServicePurchase(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<ServicePurchase>[]> {
   const maybeAccounts = await fetchAllMaybeServicePurchase(
@@ -224,7 +224,7 @@ export async function fetchAllServicePurchase(
 
 export async function fetchAllMaybeServicePurchase(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<ServicePurchase>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

@@ -14,16 +14,28 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getDynamicPricingConfigDecoder,
-  getDynamicPricingConfigEncoder,
-  type DynamicPricingConfig,
-  type DynamicPricingConfigArgs,
-} from '.';
 
-export interface DynamicPricingConfigExport { data: DynamicPricingConfig }
 
-export interface DynamicPricingConfigExportArgs { data: DynamicPricingConfigArgs }
+// Define DynamicPricingConfig interface
+export interface DynamicPricingConfig {
+  // Properties defined by the IDL
+  [key: string]: unknown;
+}
+
+export type DynamicPricingConfigArgs = DynamicPricingConfig;
+
+// Define encoder/decoder for DynamicPricingConfig
+export function getDynamicPricingConfigEncoder(): Encoder<DynamicPricingConfigArgs> {
+  return getStructEncoder([]);
+}
+
+export function getDynamicPricingConfigDecoder(): Decoder<DynamicPricingConfig> {
+  return getStructDecoder([]);
+}
+
+export type DynamicPricingConfigExport = { data: DynamicPricingConfig };
+
+export type DynamicPricingConfigExportArgs = { data: DynamicPricingConfigArgs };
 
 export function getDynamicPricingConfigExportEncoder(): Encoder<DynamicPricingConfigExportArgs> {
   return getStructEncoder([['data', getDynamicPricingConfigEncoder()]]);

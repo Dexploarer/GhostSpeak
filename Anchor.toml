@@ -17,13 +17,13 @@ skip-lint = false
 
 # Enhanced program configurations for different clusters
 [programs.localnet]
-ghostspeak_marketplace = "AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR"
+ghostspeak_marketplace = "GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX"
 
 [programs.devnet]
-ghostspeak_marketplace = "AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR"
+ghostspeak_marketplace = "GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX"
 
 [programs.mainnet]
-ghostspeak_marketplace = "AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR"  # Will be updated for mainnet deployment
+ghostspeak_marketplace = "GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX"  # Will be updated for mainnet deployment
 
 # Registry configuration for Anchor programs
 [registry]

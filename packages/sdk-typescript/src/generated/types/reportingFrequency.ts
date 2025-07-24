@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Reporting frequency options */
@@ -27,15 +27,15 @@ export enum ReportingFrequency {
 
 export type ReportingFrequencyArgs = ReportingFrequency;
 
-export function getReportingFrequencyEncoder(): Encoder<ReportingFrequencyArgs> {
+export function getReportingFrequencyEncoder(): FixedSizeEncoder<ReportingFrequencyArgs> {
   return getEnumEncoder(ReportingFrequency);
 }
 
-export function getReportingFrequencyDecoder(): Decoder<ReportingFrequency> {
+export function getReportingFrequencyDecoder(): FixedSizeDecoder<ReportingFrequency> {
   return getEnumDecoder(ReportingFrequency);
 }
 
-export function getReportingFrequencyCodec(): Codec<
+export function getReportingFrequencyCodec(): FixedSizeCodec<
   ReportingFrequencyArgs,
   ReportingFrequency
 > {

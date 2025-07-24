@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of permission scopes */
@@ -27,14 +27,14 @@ export enum ScopeType {
 
 export type ScopeTypeArgs = ScopeType;
 
-export function getScopeTypeEncoder(): Encoder<ScopeTypeArgs> {
+export function getScopeTypeEncoder(): FixedSizeEncoder<ScopeTypeArgs> {
   return getEnumEncoder(ScopeType);
 }
 
-export function getScopeTypeDecoder(): Decoder<ScopeType> {
+export function getScopeTypeDecoder(): FixedSizeDecoder<ScopeType> {
   return getEnumDecoder(ScopeType);
 }
 
-export function getScopeTypeCodec(): Codec<ScopeTypeArgs, ScopeType> {
+export function getScopeTypeCodec(): FixedSizeCodec<ScopeTypeArgs, ScopeType> {
   return combineCodec(getScopeTypeEncoder(), getScopeTypeDecoder());
 }

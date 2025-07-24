@@ -17,15 +17,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -47,22 +47,22 @@ export function getAddTopAgentDiscriminatorBytes() {
 
 export type AddTopAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMarketAnalytics extends string | IAccountMeta<string> = string,
-  TAccountAuthority extends string | IAccountMeta<string> = string,
+  TAccountMarketAnalytics extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountMarketAnalytics extends string
         ? WritableAccount<TAccountMarketAnalytics>
         : TAccountMarketAnalytics,
       TAccountAuthority extends string
         ? ReadonlySignerAccount<TAccountAuthority> &
-            IAccountSignerMeta<TAccountAuthority>
+            AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -71,14 +71,14 @@ export type AddTopAgentInstruction<
     ]
   >;
 
-export interface AddTopAgentInstructionData {
+export type AddTopAgentInstructionData = {
   discriminator: ReadonlyUint8Array;
   agent: Address;
-}
+};
 
-export interface AddTopAgentInstructionDataArgs { agent: Address }
+export type AddTopAgentInstructionDataArgs = { agent: Address };
 
-export function getAddTopAgentInstructionDataEncoder(): Encoder<AddTopAgentInstructionDataArgs> {
+export function getAddTopAgentInstructionDataEncoder(): FixedSizeEncoder<AddTopAgentInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -88,14 +88,14 @@ export function getAddTopAgentInstructionDataEncoder(): Encoder<AddTopAgentInstr
   );
 }
 
-export function getAddTopAgentInstructionDataDecoder(): Decoder<AddTopAgentInstructionData> {
+export function getAddTopAgentInstructionDataDecoder(): FixedSizeDecoder<AddTopAgentInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['agent', getAddressDecoder()],
   ]);
 }
 
-export function getAddTopAgentInstructionDataCodec(): Codec<
+export function getAddTopAgentInstructionDataCodec(): FixedSizeCodec<
   AddTopAgentInstructionDataArgs,
   AddTopAgentInstructionData
 > {
@@ -105,11 +105,11 @@ export function getAddTopAgentInstructionDataCodec(): Codec<
   );
 }
 
-export interface AddTopAgentInput<
+export type AddTopAgentInput<
   TAccountMarketAnalytics extends string = string,
   TAccountAuthority extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Market analytics account with canonical bump validation */
   marketAnalytics: Address<TAccountMarketAnalytics>;
   /** Enhanced authority verification */
@@ -117,7 +117,7 @@ export interface AddTopAgentInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   agent: AddTopAgentInstructionDataArgs['agent'];
-}
+};
 
 export function getAddTopAgentInstruction<
   TAccountMarketAnalytics extends string,
@@ -183,10 +183,10 @@ export function getAddTopAgentInstruction<
   return instruction;
 }
 
-export interface ParsedAddTopAgentInstruction<
+export type ParsedAddTopAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Market analytics account with canonical bump validation */
@@ -197,18 +197,19 @@ export interface ParsedAddTopAgentInstruction<
     clock: TAccountMetas[2];
   };
   data: AddTopAgentInstructionData;
-}
+};
 
 export function parseAddTopAgentInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedAddTopAgentInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

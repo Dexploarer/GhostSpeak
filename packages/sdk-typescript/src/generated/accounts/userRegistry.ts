@@ -34,12 +34,12 @@ import {
   transformEncoder,
   type Account,
   type Address,
-  type Codec,
-  type Decoder,
   type EncodedAccount,
-  type Encoder,
   type FetchAccountConfig,
   type FetchAccountsConfig,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type MaybeAccount,
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
@@ -55,7 +55,7 @@ export function getUserRegistryDiscriminatorBytes() {
   );
 }
 
-export interface UserRegistry {
+export type UserRegistry = {
   discriminator: ReadonlyUint8Array;
   user: Address;
   agentCount: number;
@@ -75,9 +75,9 @@ export interface UserRegistry {
   lastBulkDealCreation: bigint;
   lastDashboardCreation: bigint;
   bump: number;
-}
+};
 
-export interface UserRegistryArgs {
+export type UserRegistryArgs = {
   user: Address;
   agentCount: number;
   listingCount: number;
@@ -96,9 +96,9 @@ export interface UserRegistryArgs {
   lastBulkDealCreation: number | bigint;
   lastDashboardCreation: number | bigint;
   bump: number;
-}
+};
 
-export function getUserRegistryEncoder(): Encoder<UserRegistryArgs> {
+export function getUserRegistryEncoder(): FixedSizeEncoder<UserRegistryArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -125,7 +125,7 @@ export function getUserRegistryEncoder(): Encoder<UserRegistryArgs> {
   );
 }
 
-export function getUserRegistryDecoder(): Decoder<UserRegistry> {
+export function getUserRegistryDecoder(): FixedSizeDecoder<UserRegistry> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['user', getAddressDecoder()],
@@ -149,7 +149,10 @@ export function getUserRegistryDecoder(): Decoder<UserRegistry> {
   ]);
 }
 
-export function getUserRegistryCodec(): Codec<UserRegistryArgs, UserRegistry> {
+export function getUserRegistryCodec(): FixedSizeCodec<
+  UserRegistryArgs,
+  UserRegistry
+> {
   return combineCodec(getUserRegistryEncoder(), getUserRegistryDecoder());
 }
 
@@ -189,7 +192,7 @@ export async function fetchMaybeUserRegistry<TAddress extends string = string>(
 
 export async function fetchAllUserRegistry(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<UserRegistry>[]> {
   const maybeAccounts = await fetchAllMaybeUserRegistry(rpc, addresses, config);
@@ -199,7 +202,7 @@ export async function fetchAllUserRegistry(
 
 export async function fetchAllMaybeUserRegistry(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<UserRegistry>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

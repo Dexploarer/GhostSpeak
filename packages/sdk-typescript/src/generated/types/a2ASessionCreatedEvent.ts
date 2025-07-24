@@ -17,26 +17,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface A2ASessionCreatedEvent {
+export type A2ASessionCreatedEvent = {
   sessionId: bigint;
   initiator: Address;
   responder: Address;
   timestamp: bigint;
-}
+};
 
-export interface A2ASessionCreatedEventArgs {
+export type A2ASessionCreatedEventArgs = {
   sessionId: number | bigint;
   initiator: Address;
   responder: Address;
   timestamp: number | bigint;
-}
+};
 
-export function getA2ASessionCreatedEventEncoder(): Encoder<A2ASessionCreatedEventArgs> {
+export function getA2ASessionCreatedEventEncoder(): FixedSizeEncoder<A2ASessionCreatedEventArgs> {
   return getStructEncoder([
     ['sessionId', getU64Encoder()],
     ['initiator', getAddressEncoder()],
@@ -45,7 +45,7 @@ export function getA2ASessionCreatedEventEncoder(): Encoder<A2ASessionCreatedEve
   ]);
 }
 
-export function getA2ASessionCreatedEventDecoder(): Decoder<A2ASessionCreatedEvent> {
+export function getA2ASessionCreatedEventDecoder(): FixedSizeDecoder<A2ASessionCreatedEvent> {
   return getStructDecoder([
     ['sessionId', getU64Decoder()],
     ['initiator', getAddressDecoder()],
@@ -54,7 +54,7 @@ export function getA2ASessionCreatedEventDecoder(): Decoder<A2ASessionCreatedEve
   ]);
 }
 
-export function getA2ASessionCreatedEventCodec(): Codec<
+export function getA2ASessionCreatedEventCodec(): FixedSizeCodec<
   A2ASessionCreatedEventArgs,
   A2ASessionCreatedEvent
 > {

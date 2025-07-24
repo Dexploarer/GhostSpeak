@@ -28,12 +28,12 @@ import {
   transformEncoder,
   type Account,
   type Address,
-  type Codec,
-  type Decoder,
   type EncodedAccount,
-  type Encoder,
   type FetchAccountConfig,
   type FetchAccountsConfig,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type MaybeAccount,
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
@@ -49,7 +49,7 @@ export function getAgentTreeConfigDiscriminatorBytes() {
   );
 }
 
-export interface AgentTreeConfig {
+export type AgentTreeConfig = {
   discriminator: ReadonlyUint8Array;
   /** Tree creator/owner */
   treeCreator: Address;
@@ -59,9 +59,9 @@ export interface AgentTreeConfig {
   numMinted: bigint;
   /** Bump seed */
   bump: number;
-}
+};
 
-export interface AgentTreeConfigArgs {
+export type AgentTreeConfigArgs = {
   /** Tree creator/owner */
   treeCreator: Address;
   /** Tree delegate authority */
@@ -70,9 +70,9 @@ export interface AgentTreeConfigArgs {
   numMinted: number | bigint;
   /** Bump seed */
   bump: number;
-}
+};
 
-export function getAgentTreeConfigEncoder(): Encoder<AgentTreeConfigArgs> {
+export function getAgentTreeConfigEncoder(): FixedSizeEncoder<AgentTreeConfigArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -85,7 +85,7 @@ export function getAgentTreeConfigEncoder(): Encoder<AgentTreeConfigArgs> {
   );
 }
 
-export function getAgentTreeConfigDecoder(): Decoder<AgentTreeConfig> {
+export function getAgentTreeConfigDecoder(): FixedSizeDecoder<AgentTreeConfig> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['treeCreator', getAddressDecoder()],
@@ -95,7 +95,7 @@ export function getAgentTreeConfigDecoder(): Decoder<AgentTreeConfig> {
   ]);
 }
 
-export function getAgentTreeConfigCodec(): Codec<
+export function getAgentTreeConfigCodec(): FixedSizeCodec<
   AgentTreeConfigArgs,
   AgentTreeConfig
 > {
@@ -142,7 +142,7 @@ export async function fetchMaybeAgentTreeConfig<
 
 export async function fetchAllAgentTreeConfig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<AgentTreeConfig>[]> {
   const maybeAccounts = await fetchAllMaybeAgentTreeConfig(
@@ -156,7 +156,7 @@ export async function fetchAllAgentTreeConfig(
 
 export async function fetchAllMaybeAgentTreeConfig(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<AgentTreeConfig>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

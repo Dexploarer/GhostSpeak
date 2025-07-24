@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum PricingModel {
@@ -28,14 +28,17 @@ export enum PricingModel {
 
 export type PricingModelArgs = PricingModel;
 
-export function getPricingModelEncoder(): Encoder<PricingModelArgs> {
+export function getPricingModelEncoder(): FixedSizeEncoder<PricingModelArgs> {
   return getEnumEncoder(PricingModel);
 }
 
-export function getPricingModelDecoder(): Decoder<PricingModel> {
+export function getPricingModelDecoder(): FixedSizeDecoder<PricingModel> {
   return getEnumDecoder(PricingModel);
 }
 
-export function getPricingModelCodec(): Codec<PricingModelArgs, PricingModel> {
+export function getPricingModelCodec(): FixedSizeCodec<
+  PricingModelArgs,
+  PricingModel
+> {
   return combineCodec(getPricingModelEncoder(), getPricingModelDecoder());
 }

@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum MessageType {
@@ -25,14 +25,17 @@ export enum MessageType {
 
 export type MessageTypeArgs = MessageType;
 
-export function getMessageTypeEncoder(): Encoder<MessageTypeArgs> {
+export function getMessageTypeEncoder(): FixedSizeEncoder<MessageTypeArgs> {
   return getEnumEncoder(MessageType);
 }
 
-export function getMessageTypeDecoder(): Decoder<MessageType> {
+export function getMessageTypeDecoder(): FixedSizeDecoder<MessageType> {
   return getEnumDecoder(MessageType);
 }
 
-export function getMessageTypeCodec(): Codec<MessageTypeArgs, MessageType> {
+export function getMessageTypeCodec(): FixedSizeCodec<
+  MessageTypeArgs,
+  MessageType
+> {
   return combineCodec(getMessageTypeEncoder(), getMessageTypeDecoder());
 }

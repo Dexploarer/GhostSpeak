@@ -4,11 +4,9 @@
  */
 
 import type { Address, TransactionSigner } from '@solana/kit'
-import type { KeyPairSigner } from '../GhostSpeakClient.js'
-
 // Base parameter interfaces
 export interface BaseInstructionParams {
-  signer: KeyPairSigner
+  signer: TransactionSigner
 }
 
 export interface BaseCreationParams extends BaseInstructionParams {

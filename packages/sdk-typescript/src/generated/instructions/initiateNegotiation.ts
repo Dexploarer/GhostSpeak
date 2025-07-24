@@ -21,15 +21,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -55,23 +55,23 @@ export function getInitiateNegotiationDiscriminatorBytes() {
 
 export type InitiateNegotiationInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountNegotiation extends string | IAccountMeta<string> = string,
-  TAccountInitiator extends string | IAccountMeta<string> = string,
-  TAccountCounterparty extends string | IAccountMeta<string> = string,
+  TAccountNegotiation extends string | AccountMeta<string> = string,
+  TAccountInitiator extends string | AccountMeta<string> = string,
+  TAccountCounterparty extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountNegotiation extends string
         ? WritableAccount<TAccountNegotiation>
         : TAccountNegotiation,
       TAccountInitiator extends string
         ? WritableSignerAccount<TAccountInitiator> &
-            IAccountSignerMeta<TAccountInitiator>
+            AccountSignerMeta<TAccountInitiator>
         : TAccountInitiator,
       TAccountCounterparty extends string
         ? ReadonlyAccount<TAccountCounterparty>
@@ -83,20 +83,20 @@ export type InitiateNegotiationInstruction<
     ]
   >;
 
-export interface InitiateNegotiationInstructionData {
+export type InitiateNegotiationInstructionData = {
   discriminator: ReadonlyUint8Array;
   initialOffer: bigint;
   autoAcceptThreshold: bigint;
   negotiationDeadline: bigint;
-}
+};
 
-export interface InitiateNegotiationInstructionDataArgs {
+export type InitiateNegotiationInstructionDataArgs = {
   initialOffer: number | bigint;
   autoAcceptThreshold: number | bigint;
   negotiationDeadline: number | bigint;
-}
+};
 
-export function getInitiateNegotiationInstructionDataEncoder(): Encoder<InitiateNegotiationInstructionDataArgs> {
+export function getInitiateNegotiationInstructionDataEncoder(): FixedSizeEncoder<InitiateNegotiationInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -108,7 +108,7 @@ export function getInitiateNegotiationInstructionDataEncoder(): Encoder<Initiate
   );
 }
 
-export function getInitiateNegotiationInstructionDataDecoder(): Decoder<InitiateNegotiationInstructionData> {
+export function getInitiateNegotiationInstructionDataDecoder(): FixedSizeDecoder<InitiateNegotiationInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['initialOffer', getU64Decoder()],
@@ -117,7 +117,7 @@ export function getInitiateNegotiationInstructionDataDecoder(): Decoder<Initiate
   ]);
 }
 
-export function getInitiateNegotiationInstructionDataCodec(): Codec<
+export function getInitiateNegotiationInstructionDataCodec(): FixedSizeCodec<
   InitiateNegotiationInstructionDataArgs,
   InitiateNegotiationInstructionData
 > {
@@ -127,12 +127,12 @@ export function getInitiateNegotiationInstructionDataCodec(): Codec<
   );
 }
 
-export interface InitiateNegotiationAsyncInput<
+export type InitiateNegotiationAsyncInput<
   TAccountNegotiation extends string = string,
   TAccountInitiator extends string = string,
   TAccountCounterparty extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   negotiation?: Address<TAccountNegotiation>;
   initiator: TransactionSigner<TAccountInitiator>;
   counterparty: Address<TAccountCounterparty>;
@@ -140,7 +140,7 @@ export interface InitiateNegotiationAsyncInput<
   initialOffer: InitiateNegotiationInstructionDataArgs['initialOffer'];
   autoAcceptThreshold: InitiateNegotiationInstructionDataArgs['autoAcceptThreshold'];
   negotiationDeadline: InitiateNegotiationInstructionDataArgs['negotiationDeadline'];
-}
+};
 
 export async function getInitiateNegotiationInstructionAsync<
   TAccountNegotiation extends string,
@@ -226,12 +226,12 @@ export async function getInitiateNegotiationInstructionAsync<
   return instruction;
 }
 
-export interface InitiateNegotiationInput<
+export type InitiateNegotiationInput<
   TAccountNegotiation extends string = string,
   TAccountInitiator extends string = string,
   TAccountCounterparty extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   negotiation: Address<TAccountNegotiation>;
   initiator: TransactionSigner<TAccountInitiator>;
   counterparty: Address<TAccountCounterparty>;
@@ -239,7 +239,7 @@ export interface InitiateNegotiationInput<
   initialOffer: InitiateNegotiationInstructionDataArgs['initialOffer'];
   autoAcceptThreshold: InitiateNegotiationInstructionDataArgs['autoAcceptThreshold'];
   negotiationDeadline: InitiateNegotiationInstructionDataArgs['negotiationDeadline'];
-}
+};
 
 export function getInitiateNegotiationInstruction<
   TAccountNegotiation extends string,
@@ -311,10 +311,10 @@ export function getInitiateNegotiationInstruction<
   return instruction;
 }
 
-export interface ParsedInitiateNegotiationInstruction<
+export type ParsedInitiateNegotiationInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     negotiation: TAccountMetas[0];
@@ -323,18 +323,19 @@ export interface ParsedInitiateNegotiationInstruction<
     systemProgram: TAccountMetas[3];
   };
   data: InitiateNegotiationInstructionData;
-}
+};
 
 export function parseInitiateNegotiationInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedInitiateNegotiationInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

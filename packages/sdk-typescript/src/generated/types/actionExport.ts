@@ -14,16 +14,28 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getActionDecoder,
-  getActionEncoder,
-  type Action,
-  type ActionArgs,
-} from '.';
 
-export interface ActionExport { data: Action }
 
-export interface ActionExportArgs { data: ActionArgs }
+// Define Action interface
+export interface Action {
+  // Properties defined by the IDL
+  [key: string]: unknown;
+}
+
+export type ActionArgs = Action;
+
+// Define encoder/decoder for Action
+export function getActionEncoder(): Encoder<ActionArgs> {
+  return getStructEncoder([]);
+}
+
+export function getActionDecoder(): Decoder<Action> {
+  return getStructDecoder([]);
+}
+
+export type ActionExport = { data: Action };
+
+export type ActionExportArgs = { data: ActionArgs };
 
 export function getActionExportEncoder(): Encoder<ActionExportArgs> {
   return getStructEncoder([['data', getActionEncoder()]]);

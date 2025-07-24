@@ -15,21 +15,21 @@ import {
   getU32Decoder,
   getU32Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface RoyaltyStreamCreatedEvent {
+export type RoyaltyStreamCreatedEvent = {
   stream: Address;
   agent: Address;
   creator: Address;
   percentage: number;
-}
+};
 
 export type RoyaltyStreamCreatedEventArgs = RoyaltyStreamCreatedEvent;
 
-export function getRoyaltyStreamCreatedEventEncoder(): Encoder<RoyaltyStreamCreatedEventArgs> {
+export function getRoyaltyStreamCreatedEventEncoder(): FixedSizeEncoder<RoyaltyStreamCreatedEventArgs> {
   return getStructEncoder([
     ['stream', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -38,7 +38,7 @@ export function getRoyaltyStreamCreatedEventEncoder(): Encoder<RoyaltyStreamCrea
   ]);
 }
 
-export function getRoyaltyStreamCreatedEventDecoder(): Decoder<RoyaltyStreamCreatedEvent> {
+export function getRoyaltyStreamCreatedEventDecoder(): FixedSizeDecoder<RoyaltyStreamCreatedEvent> {
   return getStructDecoder([
     ['stream', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -47,7 +47,7 @@ export function getRoyaltyStreamCreatedEventDecoder(): Decoder<RoyaltyStreamCrea
   ]);
 }
 
-export function getRoyaltyStreamCreatedEventCodec(): Codec<
+export function getRoyaltyStreamCreatedEventCodec(): FixedSizeCodec<
   RoyaltyStreamCreatedEventArgs,
   RoyaltyStreamCreatedEvent
 > {

@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Methods for calculating quorum */
@@ -25,14 +25,17 @@ export enum QuorumMethod {
 
 export type QuorumMethodArgs = QuorumMethod;
 
-export function getQuorumMethodEncoder(): Encoder<QuorumMethodArgs> {
+export function getQuorumMethodEncoder(): FixedSizeEncoder<QuorumMethodArgs> {
   return getEnumEncoder(QuorumMethod);
 }
 
-export function getQuorumMethodDecoder(): Decoder<QuorumMethod> {
+export function getQuorumMethodDecoder(): FixedSizeDecoder<QuorumMethod> {
   return getEnumDecoder(QuorumMethod);
 }
 
-export function getQuorumMethodCodec(): Codec<QuorumMethodArgs, QuorumMethod> {
+export function getQuorumMethodCodec(): FixedSizeCodec<
+  QuorumMethodArgs,
+  QuorumMethod
+> {
   return combineCodec(getQuorumMethodEncoder(), getQuorumMethodDecoder());
 }

@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Rule effects */
@@ -27,14 +27,17 @@ export enum RuleEffect {
 
 export type RuleEffectArgs = RuleEffect;
 
-export function getRuleEffectEncoder(): Encoder<RuleEffectArgs> {
+export function getRuleEffectEncoder(): FixedSizeEncoder<RuleEffectArgs> {
   return getEnumEncoder(RuleEffect);
 }
 
-export function getRuleEffectDecoder(): Decoder<RuleEffect> {
+export function getRuleEffectDecoder(): FixedSizeDecoder<RuleEffect> {
   return getEnumDecoder(RuleEffect);
 }
 
-export function getRuleEffectCodec(): Codec<RuleEffectArgs, RuleEffect> {
+export function getRuleEffectCodec(): FixedSizeCodec<
+  RuleEffectArgs,
+  RuleEffect
+> {
   return combineCodec(getRuleEffectEncoder(), getRuleEffectDecoder());
 }

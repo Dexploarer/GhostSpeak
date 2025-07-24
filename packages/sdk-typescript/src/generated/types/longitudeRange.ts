@@ -12,36 +12,36 @@ import {
   getF64Encoder,
   getStructDecoder,
   getStructEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Longitude range for geographic constraints */
-export interface LongitudeRange {
+export type LongitudeRange = {
   /** Minimum longitude */
   min: number;
   /** Maximum longitude */
   max: number;
-}
+};
 
 export type LongitudeRangeArgs = LongitudeRange;
 
-export function getLongitudeRangeEncoder(): Encoder<LongitudeRangeArgs> {
+export function getLongitudeRangeEncoder(): FixedSizeEncoder<LongitudeRangeArgs> {
   return getStructEncoder([
     ['min', getF64Encoder()],
     ['max', getF64Encoder()],
   ]);
 }
 
-export function getLongitudeRangeDecoder(): Decoder<LongitudeRange> {
+export function getLongitudeRangeDecoder(): FixedSizeDecoder<LongitudeRange> {
   return getStructDecoder([
     ['min', getF64Decoder()],
     ['max', getF64Decoder()],
   ]);
 }
 
-export function getLongitudeRangeCodec(): Codec<
+export function getLongitudeRangeCodec(): FixedSizeCodec<
   LongitudeRangeArgs,
   LongitudeRange
 > {

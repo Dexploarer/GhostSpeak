@@ -46,9 +46,7 @@ pub use agent::{
 };
 // Import compressed agent types
 pub use crate::instructions::agent_compressed::{
-    AgentTreeConfig,
-    CompressedAgentMetadata,
-    CompressedAgentCreatedEvent,
+    AgentTreeConfig, CompressedAgentCreatedEvent, CompressedAgentMetadata,
 };
 // Import from analytics with conflict resolution
 pub use analytics::{

@@ -46,7 +46,7 @@ import {
 } from '.';
 
 /** Individual audit entry (immutable) */
-export interface AuditEntry {
+export type AuditEntry = {
   /** Unique entry ID */
   entryId: bigint;
   /** Timestamp of the action */
@@ -67,9 +67,9 @@ export interface AuditEntry {
   entryHash: ReadonlyUint8Array;
   /** Digital signature for non-repudiation */
   signature: Option<ReadonlyUint8Array>;
-}
+};
 
-export interface AuditEntryArgs {
+export type AuditEntryArgs = {
   /** Unique entry ID */
   entryId: number | bigint;
   /** Timestamp of the action */
@@ -90,7 +90,7 @@ export interface AuditEntryArgs {
   entryHash: ReadonlyUint8Array;
   /** Digital signature for non-repudiation */
   signature: OptionOrNullable<ReadonlyUint8Array>;
-}
+};
 
 export function getAuditEntryEncoder(): Encoder<AuditEntryArgs> {
   return getStructEncoder([

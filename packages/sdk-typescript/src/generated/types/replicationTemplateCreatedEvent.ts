@@ -17,28 +17,28 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface ReplicationTemplateCreatedEvent {
+export type ReplicationTemplateCreatedEvent = {
   template: Address;
   agent: Address;
   owner: Address;
   fee: bigint;
   timestamp: bigint;
-}
+};
 
-export interface ReplicationTemplateCreatedEventArgs {
+export type ReplicationTemplateCreatedEventArgs = {
   template: Address;
   agent: Address;
   owner: Address;
   fee: number | bigint;
   timestamp: number | bigint;
-}
+};
 
-export function getReplicationTemplateCreatedEventEncoder(): Encoder<ReplicationTemplateCreatedEventArgs> {
+export function getReplicationTemplateCreatedEventEncoder(): FixedSizeEncoder<ReplicationTemplateCreatedEventArgs> {
   return getStructEncoder([
     ['template', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -48,7 +48,7 @@ export function getReplicationTemplateCreatedEventEncoder(): Encoder<Replication
   ]);
 }
 
-export function getReplicationTemplateCreatedEventDecoder(): Decoder<ReplicationTemplateCreatedEvent> {
+export function getReplicationTemplateCreatedEventDecoder(): FixedSizeDecoder<ReplicationTemplateCreatedEvent> {
   return getStructDecoder([
     ['template', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -58,7 +58,7 @@ export function getReplicationTemplateCreatedEventDecoder(): Decoder<Replication
   ]);
 }
 
-export function getReplicationTemplateCreatedEventCodec(): Codec<
+export function getReplicationTemplateCreatedEventCodec(): FixedSizeCodec<
   ReplicationTemplateCreatedEventArgs,
   ReplicationTemplateCreatedEvent
 > {

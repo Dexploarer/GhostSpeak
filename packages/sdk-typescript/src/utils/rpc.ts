@@ -6,6 +6,7 @@
  * using modern patterns without backward compatibility
  */
 
+
 import type { Address } from '@solana/addresses'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future RPC data decoding features
 import { getBase58Decoder, getBase64Decoder } from '@solana/codecs-strings'

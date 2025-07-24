@@ -42,7 +42,7 @@ import {
 } from '.';
 
 /** Permission definition */
-export interface Permission {
+export type Permission = {
   /** Permission identifier */
   permissionId: string;
   /** Permission name */
@@ -52,16 +52,16 @@ export interface Permission {
   /** Resource type this permission applies to */
   resourceType: string;
   /** Actions allowed by this permission */
-  actions: Action[];
+  actions: Array<Action>;
   /** Permission scope */
   scope: PermissionScope;
   /** Permission constraints */
-  constraints: PermissionConstraint[];
+  constraints: Array<PermissionConstraint>;
   /** Permission metadata */
   metadata: PermissionMetadata;
-}
+};
 
-export interface PermissionArgs {
+export type PermissionArgs = {
   /** Permission identifier */
   permissionId: string;
   /** Permission name */
@@ -71,14 +71,14 @@ export interface PermissionArgs {
   /** Resource type this permission applies to */
   resourceType: string;
   /** Actions allowed by this permission */
-  actions: ActionArgs[];
+  actions: Array<ActionArgs>;
   /** Permission scope */
   scope: PermissionScopeArgs;
   /** Permission constraints */
-  constraints: PermissionConstraintArgs[];
+  constraints: Array<PermissionConstraintArgs>;
   /** Permission metadata */
   metadata: PermissionMetadataArgs;
-}
+};
 
 export function getPermissionEncoder(): Encoder<PermissionArgs> {
   return getStructEncoder([

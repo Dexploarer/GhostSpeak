@@ -11,7 +11,7 @@ use anchor_lang::prelude::*;
 use spl_account_compression::{program::SplAccountCompression, Noop};
 
 /// Register Agent using ZK compression (Metaplex Bubblegum pattern)
-/// 
+///
 /// Creates a compressed representation of the Agent data in a Merkle tree
 /// instead of a traditional large account, solving the compute budget issue.
 /// This achieves 5000x cost reduction as mentioned in CLAUDE.md.
@@ -78,7 +78,7 @@ impl AgentTreeConfig {
         32 + // tree_creator
         32 + // tree_delegate  
         8 +  // num_minted
-        1;   // bump
+        1; // bump
 }
 
 /// Compressed Agent metadata structure for Merkle tree storage
@@ -109,7 +109,10 @@ pub fn register_agent_compressed(
 
     // Validate input parameters
     require!(agent_id.len() <= 32, GhostSpeakError::AgentNotFound);
-    require!(metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH, GhostSpeakError::AgentNotFound);
+    require!(
+        metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
+        GhostSpeakError::AgentNotFound
+    );
 
     // Initialize tree config if needed
     let tree_authority = &mut ctx.accounts.tree_authority;
@@ -138,15 +141,17 @@ pub fn register_agent_compressed(
 
     // Serialize metadata for compression
     let metadata_bytes = compressed_metadata.try_to_vec()?;
-    
+
     // Create hash for the compressed data
     let data_hash = anchor_lang::solana_program::keccak::hash(&metadata_bytes);
 
     // For now, we store a simplified version in the tree_authority
     // In a full implementation, this would use proper Merkle tree operations
     // via CPI to the compression program
-    
-    tree_authority.num_minted = tree_authority.num_minted.checked_add(1)
+
+    tree_authority.num_minted = tree_authority
+        .num_minted
+        .checked_add(1)
         .ok_or(GhostSpeakError::InvalidPaymentAmount)?;
 
     // Initialize/update user registry
@@ -157,7 +162,9 @@ pub fn register_agent_compressed(
         user_registry.bump = ctx.bumps.user_registry;
     }
     user_registry.last_activity = clock.unix_timestamp;
-    user_registry.agent_count = user_registry.agent_count.checked_add(1)
+    user_registry.agent_count = user_registry
+        .agent_count
+        .checked_add(1)
         .ok_or(GhostSpeakError::InvalidPaymentAmount)?;
 
     // Emit event for compressed agent creation

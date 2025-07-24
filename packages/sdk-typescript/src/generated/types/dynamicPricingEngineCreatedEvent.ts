@@ -15,9 +15,9 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getPricingAlgorithmDecoder,
@@ -26,23 +26,23 @@ import {
   type PricingAlgorithmArgs,
 } from '.';
 
-export interface DynamicPricingEngineCreatedEvent {
+export type DynamicPricingEngineCreatedEvent = {
   engine: Address;
   agent: Address;
   owner: Address;
   algorithm: PricingAlgorithm;
   basePrice: bigint;
-}
+};
 
-export interface DynamicPricingEngineCreatedEventArgs {
+export type DynamicPricingEngineCreatedEventArgs = {
   engine: Address;
   agent: Address;
   owner: Address;
   algorithm: PricingAlgorithmArgs;
   basePrice: number | bigint;
-}
+};
 
-export function getDynamicPricingEngineCreatedEventEncoder(): Encoder<DynamicPricingEngineCreatedEventArgs> {
+export function getDynamicPricingEngineCreatedEventEncoder(): FixedSizeEncoder<DynamicPricingEngineCreatedEventArgs> {
   return getStructEncoder([
     ['engine', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -52,7 +52,7 @@ export function getDynamicPricingEngineCreatedEventEncoder(): Encoder<DynamicPri
   ]);
 }
 
-export function getDynamicPricingEngineCreatedEventDecoder(): Decoder<DynamicPricingEngineCreatedEvent> {
+export function getDynamicPricingEngineCreatedEventDecoder(): FixedSizeDecoder<DynamicPricingEngineCreatedEvent> {
   return getStructDecoder([
     ['engine', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -62,7 +62,7 @@ export function getDynamicPricingEngineCreatedEventDecoder(): Decoder<DynamicPri
   ]);
 }
 
-export function getDynamicPricingEngineCreatedEventCodec(): Codec<
+export function getDynamicPricingEngineCreatedEventCodec(): FixedSizeCodec<
   DynamicPricingEngineCreatedEventArgs,
   DynamicPricingEngineCreatedEvent
 > {

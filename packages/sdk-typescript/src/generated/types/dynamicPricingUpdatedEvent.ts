@@ -17,30 +17,30 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface DynamicPricingUpdatedEvent {
+export type DynamicPricingUpdatedEvent = {
   engine: Address;
   agent: Address;
   owner: Address;
   newPrice: bigint;
   demandMultiplier: number;
   supplyMultiplier: number;
-}
+};
 
-export interface DynamicPricingUpdatedEventArgs {
+export type DynamicPricingUpdatedEventArgs = {
   engine: Address;
   agent: Address;
   owner: Address;
   newPrice: number | bigint;
   demandMultiplier: number;
   supplyMultiplier: number;
-}
+};
 
-export function getDynamicPricingUpdatedEventEncoder(): Encoder<DynamicPricingUpdatedEventArgs> {
+export function getDynamicPricingUpdatedEventEncoder(): FixedSizeEncoder<DynamicPricingUpdatedEventArgs> {
   return getStructEncoder([
     ['engine', getAddressEncoder()],
     ['agent', getAddressEncoder()],
@@ -51,7 +51,7 @@ export function getDynamicPricingUpdatedEventEncoder(): Encoder<DynamicPricingUp
   ]);
 }
 
-export function getDynamicPricingUpdatedEventDecoder(): Decoder<DynamicPricingUpdatedEvent> {
+export function getDynamicPricingUpdatedEventDecoder(): FixedSizeDecoder<DynamicPricingUpdatedEvent> {
   return getStructDecoder([
     ['engine', getAddressDecoder()],
     ['agent', getAddressDecoder()],
@@ -62,7 +62,7 @@ export function getDynamicPricingUpdatedEventDecoder(): Decoder<DynamicPricingUp
   ]);
 }
 
-export function getDynamicPricingUpdatedEventCodec(): Codec<
+export function getDynamicPricingUpdatedEventCodec(): FixedSizeCodec<
   DynamicPricingUpdatedEventArgs,
   DynamicPricingUpdatedEvent
 > {

@@ -69,7 +69,7 @@ export function getComplianceReportDiscriminatorBytes() {
   );
 }
 
-export interface ComplianceReport {
+export type ComplianceReport = {
   discriminator: ReadonlyUint8Array;
   /** Report ID */
   reportId: bigint;
@@ -91,9 +91,9 @@ export interface ComplianceReport {
   submissionDetails: Option<SubmissionDetails>;
   /** Reserved space */
   reserved: ReadonlyUint8Array;
-}
+};
 
-export interface ComplianceReportArgs {
+export type ComplianceReportArgs = {
   /** Report ID */
   reportId: number | bigint;
   /** Report type */
@@ -114,7 +114,7 @@ export interface ComplianceReportArgs {
   submissionDetails: OptionOrNullable<SubmissionDetailsArgs>;
   /** Reserved space */
   reserved: ReadonlyUint8Array;
-}
+};
 
 export function getComplianceReportEncoder(): Encoder<ComplianceReportArgs> {
   return transformEncoder(
@@ -201,7 +201,7 @@ export async function fetchMaybeComplianceReport<
 
 export async function fetchAllComplianceReport(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<ComplianceReport>[]> {
   const maybeAccounts = await fetchAllMaybeComplianceReport(
@@ -215,7 +215,7 @@ export async function fetchAllComplianceReport(
 
 export async function fetchAllMaybeComplianceReport(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<ComplianceReport>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

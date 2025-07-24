@@ -13,9 +13,9 @@ import {
   getStructDecoder,
   getStructEncoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 import {
   getChannelTypeDecoder,
@@ -24,19 +24,19 @@ import {
   type ChannelTypeArgs,
 } from '.';
 
-export interface ChannelCreatedEvent {
+export type ChannelCreatedEvent = {
   channel: Address;
   creator: Address;
   channelType: ChannelType;
-}
+};
 
-export interface ChannelCreatedEventArgs {
+export type ChannelCreatedEventArgs = {
   channel: Address;
   creator: Address;
   channelType: ChannelTypeArgs;
-}
+};
 
-export function getChannelCreatedEventEncoder(): Encoder<ChannelCreatedEventArgs> {
+export function getChannelCreatedEventEncoder(): FixedSizeEncoder<ChannelCreatedEventArgs> {
   return getStructEncoder([
     ['channel', getAddressEncoder()],
     ['creator', getAddressEncoder()],
@@ -44,7 +44,7 @@ export function getChannelCreatedEventEncoder(): Encoder<ChannelCreatedEventArgs
   ]);
 }
 
-export function getChannelCreatedEventDecoder(): Decoder<ChannelCreatedEvent> {
+export function getChannelCreatedEventDecoder(): FixedSizeDecoder<ChannelCreatedEvent> {
   return getStructDecoder([
     ['channel', getAddressDecoder()],
     ['creator', getAddressDecoder()],
@@ -52,7 +52,7 @@ export function getChannelCreatedEventDecoder(): Decoder<ChannelCreatedEvent> {
   ]);
 }
 
-export function getChannelCreatedEventCodec(): Codec<
+export function getChannelCreatedEventCodec(): FixedSizeCodec<
   ChannelCreatedEventArgs,
   ChannelCreatedEvent
 > {

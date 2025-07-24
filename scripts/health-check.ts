@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { createConnection, Connection } from '@solana/rpc';
+import { createSolanaRpc } from '@solana/rpc';
 import { program } from 'commander';
 import chalk from 'chalk';
 import { table } from 'table';
@@ -188,7 +188,7 @@ class HealthChecker {
       this.checkPackageDependencies(),
       this.checkSolanaCluster('https://api.devnet.solana.com', 'Devnet'),
       this.checkSolanaCluster('https://api.testnet.solana.com', 'Testnet'),
-      this.checkProgramDeployment('AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR')
+      this.checkProgramDeployment('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX')
     ];
 
     this.results = await Promise.all(checks);

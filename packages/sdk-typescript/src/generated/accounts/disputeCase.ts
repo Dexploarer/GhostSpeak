@@ -75,7 +75,7 @@ export function getDisputeCaseDiscriminatorBytes() {
   );
 }
 
-export interface DisputeCase {
+export type DisputeCase = {
   discriminator: ReadonlyUint8Array;
   transaction: Address;
   complainant: Address;
@@ -83,30 +83,30 @@ export interface DisputeCase {
   moderator: Option<Address>;
   reason: string;
   status: DisputeStatus;
-  evidence: DisputeEvidence[];
+  evidence: Array<DisputeEvidence>;
   resolution: Option<string>;
   aiScore: number;
   humanReview: boolean;
   createdAt: bigint;
   resolvedAt: Option<bigint>;
   bump: number;
-}
+};
 
-export interface DisputeCaseArgs {
+export type DisputeCaseArgs = {
   transaction: Address;
   complainant: Address;
   respondent: Address;
   moderator: OptionOrNullable<Address>;
   reason: string;
   status: DisputeStatusArgs;
-  evidence: DisputeEvidenceArgs[];
+  evidence: Array<DisputeEvidenceArgs>;
   resolution: OptionOrNullable<string>;
   aiScore: number;
   humanReview: boolean;
   createdAt: number | bigint;
   resolvedAt: OptionOrNullable<number | bigint>;
   bump: number;
-}
+};
 
 export function getDisputeCaseEncoder(): Encoder<DisputeCaseArgs> {
   return transformEncoder(
@@ -197,7 +197,7 @@ export async function fetchMaybeDisputeCase<TAddress extends string = string>(
 
 export async function fetchAllDisputeCase(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<DisputeCase>[]> {
   const maybeAccounts = await fetchAllMaybeDisputeCase(rpc, addresses, config);
@@ -207,7 +207,7 @@ export async function fetchAllDisputeCase(
 
 export async function fetchAllMaybeDisputeCase(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<DisputeCase>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

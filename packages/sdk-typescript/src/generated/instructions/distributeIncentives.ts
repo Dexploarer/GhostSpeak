@@ -25,15 +25,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -54,13 +54,13 @@ export function getDistributeIncentivesDiscriminatorBytes() {
 
 export type DistributeIncentivesInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountProgram extends string | IAccountMeta<string> = string,
-  TAccountIncentives extends string | IAccountMeta<string> = string,
-  TAccountDistributor extends string | IAccountMeta<string> = string,
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+  TAccountProgram extends string | AccountMeta<string> = string,
+  TAccountIncentives extends string | AccountMeta<string> = string,
+  TAccountDistributor extends string | AccountMeta<string> = string,
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountProgram extends string
         ? WritableAccount<TAccountProgram>
@@ -70,24 +70,24 @@ export type DistributeIncentivesInstruction<
         : TAccountIncentives,
       TAccountDistributor extends string
         ? ReadonlySignerAccount<TAccountDistributor> &
-            IAccountSignerMeta<TAccountDistributor>
+            AccountSignerMeta<TAccountDistributor>
         : TAccountDistributor,
       ...TRemainingAccounts,
     ]
   >;
 
-export interface DistributeIncentivesInstructionData {
+export type DistributeIncentivesInstructionData = {
   discriminator: ReadonlyUint8Array;
   agent: Address;
   incentiveType: string;
   amount: bigint;
-}
+};
 
-export interface DistributeIncentivesInstructionDataArgs {
+export type DistributeIncentivesInstructionDataArgs = {
   agent: Address;
   incentiveType: string;
   amount: number | bigint;
-}
+};
 
 export function getDistributeIncentivesInstructionDataEncoder(): Encoder<DistributeIncentivesInstructionDataArgs> {
   return transformEncoder(
@@ -126,18 +126,18 @@ export function getDistributeIncentivesInstructionDataCodec(): Codec<
   );
 }
 
-export interface DistributeIncentivesInput<
+export type DistributeIncentivesInput<
   TAccountProgram extends string = string,
   TAccountIncentives extends string = string,
   TAccountDistributor extends string = string,
-> {
+> = {
   program: Address<TAccountProgram>;
   incentives: Address<TAccountIncentives>;
   distributor: TransactionSigner<TAccountDistributor>;
   agent: DistributeIncentivesInstructionDataArgs['agent'];
   incentiveType: DistributeIncentivesInstructionDataArgs['incentiveType'];
   amount: DistributeIncentivesInstructionDataArgs['amount'];
-}
+};
 
 export function getDistributeIncentivesInstruction<
   TAccountProgram extends string,
@@ -197,10 +197,10 @@ export function getDistributeIncentivesInstruction<
   return instruction;
 }
 
-export interface ParsedDistributeIncentivesInstruction<
+export type ParsedDistributeIncentivesInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     program: TAccountMetas[0];
@@ -208,18 +208,19 @@ export interface ParsedDistributeIncentivesInstruction<
     distributor: TAccountMetas[2];
   };
   data: DistributeIncentivesInstructionData;
-}
+};
 
 export function parseDistributeIncentivesInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedDistributeIncentivesInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

@@ -15,7 +15,7 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
-import { ProposalStatus, deriveMultisigPda, deriveProposalPda } from '@ghostspeak/sdk'
+import { ProposalStatus, ProposalType, deriveMultisigPda, deriveProposalPda } from '@ghostspeak/sdk'
 import type {
   CreateMultisigOptions
 } from '../types/cli-types.js'
@@ -214,10 +214,15 @@ governanceCommand
             }
             
             const signature = await client.governance.createMultisig(
-              // @ts-expect-error SDK expects different signer type
               toSDKSigner(wallet),
               multisigPda,
-              multisigParamsWithId
+              {
+                ...multisigParamsWithId,
+                config: {
+                  requireSequentialSigning: false,
+                  allowOwnerOffCurve: false
+                }
+              }
             )
 
             s.stop('✅ Multisig wallet created successfully!')
@@ -562,10 +567,20 @@ governanceCommand
             }
             
             const signature = await client.governance.createProposal(
-              // @ts-expect-error SDK expects different signer type
               toSDKSigner(wallet),
               proposalPda,
-              proposalParamsWithId
+              {
+                ...proposalParamsWithId,
+                proposalType: ProposalType.Custom,
+                executionParams: {
+                  instructions: [],
+                  executionDelay: BigInt(86400),
+                  executionConditions: [],
+                  cancellable: true,
+                  autoExecute: false,
+                  executionAuthority: address('11111111111111111111111111111111')
+                }
+              }
             )
 
             s.stop('✅ Proposal created successfully!')
@@ -899,7 +914,6 @@ governanceCommand
           
           const rbacPda = address('11111111111111111111111111111111') // Mock address
           const signature = await client.governance.initializeRbac(
-            // @ts-expect-error SDK expects different signer type
             toSDKSigner(wallet),
             rbacPda,
             { initialRoles: [] }

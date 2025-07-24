@@ -1,9 +1,48 @@
 import { config } from 'dotenv';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 import { PublicKey } from '@solana/web3.js';
 
-// Load environment variables
-config({ path: resolve(process.cwd(), '.env') });
+// Load environment variables from multiple possible locations
+function loadEnvFiles() {
+  const envLocations = [
+    // 1. Current working directory
+    resolve(process.cwd(), '.env'),
+    // 2. Project root (two levels up from CLI package)
+    resolve(process.cwd(), '../../.env'),
+    // 3. CLI package directory (same as this file)
+    (() => {
+      try {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+        return resolve(__dirname, '../../.env');
+      } catch {
+        return '';
+      }
+    })(),
+    // 4. Parent of CLI package directory
+    (() => {
+      try {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+        return resolve(__dirname, '../../../.env');
+      } catch {
+        return '';
+      }
+    })()
+  ].filter(Boolean);
+
+  for (const envPath of envLocations) {
+    if (existsSync(envPath)) {
+      config({ path: envPath });
+      console.debug(`Loaded environment from: ${envPath}`);
+      break;
+    }
+  }
+}
+
+loadEnvFiles();
 
 export interface EnvironmentConfig {
   network: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet';

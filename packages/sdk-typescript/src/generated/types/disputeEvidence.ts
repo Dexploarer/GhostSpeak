@@ -28,21 +28,21 @@ import {
   type Encoder,
 } from '@solana/kit';
 
-export interface DisputeEvidence {
+export type DisputeEvidence = {
   submitter: Address;
   evidenceType: string;
   evidenceData: string;
   timestamp: bigint;
   isVerified: boolean;
-}
+};
 
-export interface DisputeEvidenceArgs {
+export type DisputeEvidenceArgs = {
   submitter: Address;
   evidenceType: string;
   evidenceData: string;
   timestamp: number | bigint;
   isVerified: boolean;
-}
+};
 
 export function getDisputeEvidenceEncoder(): Encoder<DisputeEvidenceArgs> {
   return getStructEncoder([

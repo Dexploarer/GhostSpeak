@@ -63,7 +63,7 @@ export function getDynamicPricingEngineDiscriminatorBytes() {
   );
 }
 
-export interface DynamicPricingEngine {
+export type DynamicPricingEngine = {
   discriminator: ReadonlyUint8Array;
   engineId: bigint;
   agent: Address;
@@ -73,9 +73,9 @@ export interface DynamicPricingEngine {
   lastUpdated: bigint;
   isActive: boolean;
   bump: number;
-}
+};
 
-export interface DynamicPricingEngineArgs {
+export type DynamicPricingEngineArgs = {
   engineId: number | bigint;
   agent: Address;
   algorithm: PricingAlgorithmArgs;
@@ -84,7 +84,7 @@ export interface DynamicPricingEngineArgs {
   lastUpdated: number | bigint;
   isActive: boolean;
   bump: number;
-}
+};
 
 export function getDynamicPricingEngineEncoder(): Encoder<DynamicPricingEngineArgs> {
   return transformEncoder(
@@ -176,7 +176,7 @@ export async function fetchMaybeDynamicPricingEngine<
 
 export async function fetchAllDynamicPricingEngine(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<DynamicPricingEngine>[]> {
   const maybeAccounts = await fetchAllMaybeDynamicPricingEngine(
@@ -190,7 +190,7 @@ export async function fetchAllDynamicPricingEngine(
 
 export async function fetchAllMaybeDynamicPricingEngine(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<DynamicPricingEngine>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

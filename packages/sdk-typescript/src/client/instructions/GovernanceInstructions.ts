@@ -200,7 +200,10 @@ export class GovernanceInstructions extends BaseInstructions {
       multisigId: params.multisigId,
       threshold: params.threshold,
       signers: params.signers,
-      config: params.config
+      config: {
+        requireSequentialSigning: params.config.requireSequentialSigning,
+        allowOwnerOffCurve: params.config.allowOwnerOffCurve
+      }
     })
 
     const signature = await this.sendTransaction([instruction], [creator])

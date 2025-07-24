@@ -1,7 +1,6 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import type { IInstruction } from '@solana/instructions'
-import type { KeyPairSigner } from '../GhostSpeakClient.js'
 import type { 
   GhostSpeakConfig,
   ServiceListingWithAddress
@@ -79,8 +78,8 @@ export class MarketplaceInstructions extends BaseInstructions {
    * Resolve service listing parameters with smart defaults
    */
   private async _resolveServiceListingParams(
-    params: CreateServiceListingParams & { signer: KeyPairSigner }
-  ): Promise<Required<CreateServiceListingParams> & { signer: KeyPairSigner }> {
+    params: CreateServiceListingParams & { signer: TransactionSigner }
+  ): Promise<Required<CreateServiceListingParams> & { signer: TransactionSigner }> {
     // Auto-generate listing ID if not provided
     const listingId = params.listingId ?? `listing-${Date.now()}-${Math.random().toString(36).substring(7)}`
     
@@ -172,7 +171,7 @@ export class MarketplaceInstructions extends BaseInstructions {
    * Create a new service listing
    */
   async createServiceListing(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     serviceListingAddress: Address,
     agentAddress: Address,
     userRegistryAddress: Address,
@@ -186,7 +185,7 @@ export class MarketplaceInstructions extends BaseInstructions {
         serviceListing: serviceListingAddress,
         agent: agentAddress,
         userRegistry: userRegistryAddress,
-        creator: signer as unknown as TransactionSigner,
+        creator: signer,
         title: resolvedParams.title,
         description: resolvedParams.description,
         price: resolvedParams.amount,
@@ -197,7 +196,7 @@ export class MarketplaceInstructions extends BaseInstructions {
         tags: resolvedParams.tags,
         listingId: resolvedParams.listingId
       }),
-      signer as unknown as TransactionSigner,
+      signer,
       'service listing creation'
     )
   }
@@ -206,7 +205,7 @@ export class MarketplaceInstructions extends BaseInstructions {
    * Update a service listing
    */
   async updateServiceListing(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     listingAddress: Address,
     updateData: Partial<CreateServiceListingParams>
   ): Promise<string> {
@@ -230,7 +229,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       // Update agent service with new capabilities/tags
       const instruction = getUpdateAgentServiceInstruction({
         agent: listing.agent,
-        owner: signer as unknown as TransactionSigner,
+        owner: signer,
         agentPubkey: listing.agent,
         serviceEndpoint: updateData.title ?? `${listing.title} - ${listing.description}`,
         isActive: listing.isActive,
@@ -239,7 +238,7 @@ export class MarketplaceInstructions extends BaseInstructions {
         capabilities: updateData.tags ?? []
       })
       
-      return await this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      return await this.sendTransaction([instruction as unknown as IInstruction], [signer])
     } catch (error) {
       console.warn('Failed to update service listing via agent service:', error)
       throw new Error('Service listing updates require implementing updateServiceListing instruction in the smart contract, or create a new listing')
@@ -260,7 +259,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       () => getPurchaseServiceInstruction({
         servicePurchase: servicePurchaseAddress,
         serviceListing: resolvedParams.serviceListingAddress,
-        buyer: resolvedParams.signer as unknown as TransactionSigner,
+        buyer: resolvedParams.signer,
         listingId: resolvedParams.listingId,
         quantity: resolvedParams.quantity,
         requirements: resolvedParams.requirements,
@@ -285,7 +284,7 @@ export class MarketplaceInstructions extends BaseInstructions {
     return this.executeInstruction(
       () => getCreateJobPostingInstruction({
         jobPosting: jobPostingAddress,
-        employer: resolvedParams.signer as unknown as TransactionSigner,
+        employer: resolvedParams.signer,
         title: resolvedParams.title,
         description: resolvedParams.description,
         requirements: resolvedParams.requirements,
@@ -318,7 +317,7 @@ export class MarketplaceInstructions extends BaseInstructions {
         jobApplication: jobApplicationAddress,
         jobPosting: resolvedParams.jobPostingAddress,
         agent: resolvedParams.agentAddress,
-        agentOwner: resolvedParams.signer as unknown as TransactionSigner,
+        agentOwner: resolvedParams.signer,
         coverLetter: resolvedParams.coverLetter,
         proposedPrice: resolvedParams.proposedPrice,
         estimatedDuration: resolvedParams.estimatedDuration,
@@ -335,7 +334,7 @@ export class MarketplaceInstructions extends BaseInstructions {
    * Accept a job application
    */
   async acceptJobApplication(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     jobContractAddress: Address,
     jobPostingAddress: Address,
     jobApplicationAddress: Address
@@ -345,9 +344,9 @@ export class MarketplaceInstructions extends BaseInstructions {
         jobContract: jobContractAddress,
         jobPosting: jobPostingAddress,
         jobApplication: jobApplicationAddress,
-        employer: signer as unknown as TransactionSigner
+        employer: signer
       }),
-      signer as unknown as TransactionSigner,
+      signer,
       'job application acceptance'
     )
   }

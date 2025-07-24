@@ -14,16 +14,36 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getMultisigConfigDecoder,
-  getMultisigConfigEncoder,
-  type MultisigConfig,
-  type MultisigConfigArgs,
-} from '.';
 
-export interface MultisigConfigExport { data: MultisigConfig }
 
-export interface MultisigConfigExportArgs { data: MultisigConfigArgs }
+// Define MultisigConfig interface
+export interface MultisigConfig {
+  requireSequentialSigning: boolean;
+  allowOwnerOffCurve: boolean;
+}
+
+export type MultisigConfigArgs = MultisigConfig;
+
+// Define encoder/decoder for MultisigConfig
+import { getBooleanEncoder, getBooleanDecoder } from '@solana/kit';
+
+export function getMultisigConfigEncoder(): Encoder<MultisigConfigArgs> {
+  return getStructEncoder([
+    ['requireSequentialSigning', getBooleanEncoder()],
+    ['allowOwnerOffCurve', getBooleanEncoder()]
+  ]);
+}
+
+export function getMultisigConfigDecoder(): Decoder<MultisigConfig> {
+  return getStructDecoder([
+    ['requireSequentialSigning', getBooleanDecoder()],
+    ['allowOwnerOffCurve', getBooleanDecoder()]
+  ]);
+}
+
+export type MultisigConfigExport = { data: MultisigConfig };
+
+export type MultisigConfigExportArgs = { data: MultisigConfigArgs };
 
 export function getMultisigConfigExportEncoder(): Encoder<MultisigConfigExportArgs> {
   return getStructEncoder([['data', getMultisigConfigEncoder()]]);

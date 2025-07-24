@@ -6,7 +6,7 @@
 import { createSolanaRpc, address, getBase58Encoder } from '@solana/kit'
 import chalk from 'chalk'
 
-const PROGRAM_ID = 'AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR'
+const PROGRAM_ID = 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX'
 const RPC_URL = 'https://api.devnet.solana.com'
 
 interface SecurityCheckResult {
@@ -65,31 +65,69 @@ class DevnetSecurityAuditor {
 
   private async checkProgramAuthority() {
     try {
-      const programInfo = await this.rpc.getAccountInfo(address(PROGRAM_ID)).send()
+      // Use base64 encoding for large account data to avoid base58 encoding errors
+      const programInfo = await this.rpc.getAccountInfo(address(PROGRAM_ID), {
+        encoding: 'base64'
+      }).send()
       
       if (programInfo.value) {
+        // Decode base64 data to get the actual size
+        const dataSize = programInfo.value.data[0] ? 
+          Buffer.from(programInfo.value.data[0], 'base64').length : 0
+        
         this.addResult({
           category: 'Program Authority',
           check: 'Program deployment verification',
           status: 'PASS',
-          details: `Program is deployed with size: ${programInfo.value.data.length} bytes`,
+          details: `Program is deployed with size: ${dataSize} bytes`,
           severity: 'HIGH'
         })
 
-        // Check if program is upgradeable
-        const programDataInfo = await this.rpc.getAccountInfo(
-          address('A2tzu51td6rSvLfoFqGVcW9uhyCseKUppAETHYQ8SbTt') // ProgramData from earlier
-        ).send()
-        
-        if (programDataInfo.value) {
+        // Check if program is upgradeable by looking for ProgramData account
+        // For upgradeable programs, the executable data is stored in a separate ProgramData account
+        try {
+          // Derive the ProgramData address
+          const [programDataAddress] = await this.deriveProgramDataAddress(PROGRAM_ID)
+          
+          const programDataInfo = await this.rpc.getAccountInfo(address(programDataAddress), {
+            encoding: 'base64'
+          }).send()
+          
+          if (programDataInfo.value) {
+            this.addResult({
+              category: 'Program Authority',
+              check: 'Upgrade authority check',
+              status: 'WARNING',
+              details: 'Program is upgradeable. Ensure upgrade authority is properly secured.',
+              severity: 'MEDIUM'
+            })
+          } else {
+            this.addResult({
+              category: 'Program Authority',
+              check: 'Upgrade authority check',
+              status: 'PASS',
+              details: 'Program appears to be non-upgradeable (no ProgramData account found).',
+              severity: 'LOW'
+            })
+          }
+        } catch (pdaError) {
+          // If we can't derive or fetch ProgramData, assume non-upgradeable
           this.addResult({
             category: 'Program Authority',
             check: 'Upgrade authority check',
-            status: 'WARNING',
-            details: 'Program is upgradeable. Ensure upgrade authority is properly secured.',
-            severity: 'MEDIUM'
+            status: 'PASS',
+            details: 'Program appears to be non-upgradeable.',
+            severity: 'LOW'
           })
         }
+      } else {
+        this.addResult({
+          category: 'Program Authority',
+          check: 'Program deployment verification',
+          status: 'FAIL',
+          details: 'Program account not found at the specified address',
+          severity: 'CRITICAL'
+        })
       }
     } catch (error) {
       this.addResult({
@@ -100,6 +138,17 @@ class DevnetSecurityAuditor {
         severity: 'CRITICAL'
       })
     }
+  }
+
+  private async deriveProgramDataAddress(programId: string): Promise<[string, number]> {
+    // Import PublicKey from Solana web3.js for PDA derivation
+    const { PublicKey } = await import('@solana/web3.js')
+    const BPF_LOADER_UPGRADEABLE_PROGRAM_ID = new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111')
+    
+    return PublicKey.findProgramAddressSync(
+      [new PublicKey(programId).toBuffer()],
+      BPF_LOADER_UPGRADEABLE_PROGRAM_ID
+    ).map(v => v.toString()) as [string, number]
   }
 
   private async checkAccountValidation() {

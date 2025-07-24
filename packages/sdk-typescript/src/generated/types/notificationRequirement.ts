@@ -36,27 +36,27 @@ import {
 } from '.';
 
 /** Notification requirements for security events */
-export interface NotificationRequirement {
+export type NotificationRequirement = {
   /** Event type */
   eventType: SecurityEventType;
   /** Notification targets */
-  targets: NotificationTarget[];
+  targets: Array<NotificationTarget>;
   /** Notification method */
   method: NotificationMethod;
   /** Notification timing */
   timing: NotificationTiming;
-}
+};
 
-export interface NotificationRequirementArgs {
+export type NotificationRequirementArgs = {
   /** Event type */
   eventType: SecurityEventTypeArgs;
   /** Notification targets */
-  targets: NotificationTargetArgs[];
+  targets: Array<NotificationTargetArgs>;
   /** Notification method */
   method: NotificationMethodArgs;
   /** Notification timing */
   timing: NotificationTimingArgs;
-}
+};
 
 export function getNotificationRequirementEncoder(): Encoder<NotificationRequirementArgs> {
   return getStructEncoder([

@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 export enum PricingAlgorithm {
@@ -32,15 +32,15 @@ export enum PricingAlgorithm {
 
 export type PricingAlgorithmArgs = PricingAlgorithm;
 
-export function getPricingAlgorithmEncoder(): Encoder<PricingAlgorithmArgs> {
+export function getPricingAlgorithmEncoder(): FixedSizeEncoder<PricingAlgorithmArgs> {
   return getEnumEncoder(PricingAlgorithm);
 }
 
-export function getPricingAlgorithmDecoder(): Decoder<PricingAlgorithm> {
+export function getPricingAlgorithmDecoder(): FixedSizeDecoder<PricingAlgorithm> {
   return getEnumDecoder(PricingAlgorithm);
 }
 
-export function getPricingAlgorithmCodec(): Codec<
+export function getPricingAlgorithmCodec(): FixedSizeCodec<
   PricingAlgorithmArgs,
   PricingAlgorithm
 > {

@@ -24,15 +24,15 @@ import {
   getUtf8Decoder,
   getUtf8Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -54,16 +54,16 @@ export function getResolveDisputeDiscriminatorBytes() {
 
 export type ResolveDisputeInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountDispute extends string | IAccountMeta<string> = string,
-  TAccountArbitratorRegistry extends string | IAccountMeta<string> = string,
-  TAccountArbitrator extends string | IAccountMeta<string> = string,
+  TAccountDispute extends string | AccountMeta<string> = string,
+  TAccountArbitratorRegistry extends string | AccountMeta<string> = string,
+  TAccountArbitrator extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountDispute extends string
         ? WritableAccount<TAccountDispute>
@@ -73,7 +73,7 @@ export type ResolveDisputeInstruction<
         : TAccountArbitratorRegistry,
       TAccountArbitrator extends string
         ? ReadonlySignerAccount<TAccountArbitrator> &
-            IAccountSignerMeta<TAccountArbitrator>
+            AccountSignerMeta<TAccountArbitrator>
         : TAccountArbitrator,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -82,16 +82,16 @@ export type ResolveDisputeInstruction<
     ]
   >;
 
-export interface ResolveDisputeInstructionData {
+export type ResolveDisputeInstructionData = {
   discriminator: ReadonlyUint8Array;
   resolution: string;
   awardToComplainant: boolean;
-}
+};
 
-export interface ResolveDisputeInstructionDataArgs {
+export type ResolveDisputeInstructionDataArgs = {
   resolution: string;
   awardToComplainant: boolean;
-}
+};
 
 export function getResolveDisputeInstructionDataEncoder(): Encoder<ResolveDisputeInstructionDataArgs> {
   return transformEncoder(
@@ -122,12 +122,12 @@ export function getResolveDisputeInstructionDataCodec(): Codec<
   );
 }
 
-export interface ResolveDisputeAsyncInput<
+export type ResolveDisputeAsyncInput<
   TAccountDispute extends string = string,
   TAccountArbitratorRegistry extends string = string,
   TAccountArbitrator extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dispute account with canonical validation */
   dispute: Address<TAccountDispute>;
   /** Arbitrator registry for authority validation */
@@ -138,7 +138,7 @@ export interface ResolveDisputeAsyncInput<
   clock?: Address<TAccountClock>;
   resolution: ResolveDisputeInstructionDataArgs['resolution'];
   awardToComplainant: ResolveDisputeInstructionDataArgs['awardToComplainant'];
-}
+};
 
 export async function getResolveDisputeInstructionAsync<
   TAccountDispute extends string,
@@ -228,12 +228,12 @@ export async function getResolveDisputeInstructionAsync<
   return instruction;
 }
 
-export interface ResolveDisputeInput<
+export type ResolveDisputeInput<
   TAccountDispute extends string = string,
   TAccountArbitratorRegistry extends string = string,
   TAccountArbitrator extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Dispute account with canonical validation */
   dispute: Address<TAccountDispute>;
   /** Arbitrator registry for authority validation */
@@ -244,7 +244,7 @@ export interface ResolveDisputeInput<
   clock?: Address<TAccountClock>;
   resolution: ResolveDisputeInstructionDataArgs['resolution'];
   awardToComplainant: ResolveDisputeInstructionDataArgs['awardToComplainant'];
-}
+};
 
 export function getResolveDisputeInstruction<
   TAccountDispute extends string,
@@ -319,10 +319,10 @@ export function getResolveDisputeInstruction<
   return instruction;
 }
 
-export interface ParsedResolveDisputeInstruction<
+export type ParsedResolveDisputeInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Dispute account with canonical validation */
@@ -335,18 +335,19 @@ export interface ParsedResolveDisputeInstruction<
     clock: TAccountMetas[3];
   };
   data: ResolveDisputeInstructionData;
-}
+};
 
 export function parseResolveDisputeInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedResolveDisputeInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

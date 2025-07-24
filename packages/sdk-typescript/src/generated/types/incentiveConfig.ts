@@ -12,21 +12,21 @@ import {
   getF64Encoder,
   getStructDecoder,
   getStructEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface IncentiveConfig {
+export type IncentiveConfig = {
   referralBonus: number;
   performanceBonus: number;
   loyaltyMultiplier: number;
   earlyBirdDiscount: number;
-}
+};
 
 export type IncentiveConfigArgs = IncentiveConfig;
 
-export function getIncentiveConfigEncoder(): Encoder<IncentiveConfigArgs> {
+export function getIncentiveConfigEncoder(): FixedSizeEncoder<IncentiveConfigArgs> {
   return getStructEncoder([
     ['referralBonus', getF64Encoder()],
     ['performanceBonus', getF64Encoder()],
@@ -35,7 +35,7 @@ export function getIncentiveConfigEncoder(): Encoder<IncentiveConfigArgs> {
   ]);
 }
 
-export function getIncentiveConfigDecoder(): Decoder<IncentiveConfig> {
+export function getIncentiveConfigDecoder(): FixedSizeDecoder<IncentiveConfig> {
   return getStructDecoder([
     ['referralBonus', getF64Decoder()],
     ['performanceBonus', getF64Decoder()],
@@ -44,7 +44,7 @@ export function getIncentiveConfigDecoder(): Decoder<IncentiveConfig> {
   ]);
 }
 
-export function getIncentiveConfigCodec(): Codec<
+export function getIncentiveConfigCodec(): FixedSizeCodec<
   IncentiveConfigArgs,
   IncentiveConfig
 > {

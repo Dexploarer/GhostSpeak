@@ -23,15 +23,15 @@ import {
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -59,22 +59,22 @@ export function getCreateChannelDiscriminatorBytes() {
 
 export type CreateChannelInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountChannel extends string | IAccountMeta<string> = string,
-  TAccountCreator extends string | IAccountMeta<string> = string,
+  TAccountChannel extends string | AccountMeta<string> = string,
+  TAccountCreator extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
-    | IAccountMeta<string> = '11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountChannel extends string
         ? WritableAccount<TAccountChannel>
         : TAccountChannel,
       TAccountCreator extends string
         ? WritableSignerAccount<TAccountCreator> &
-            IAccountSignerMeta<TAccountCreator>
+            AccountSignerMeta<TAccountCreator>
         : TAccountCreator,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
@@ -83,20 +83,20 @@ export type CreateChannelInstruction<
     ]
   >;
 
-export interface CreateChannelInstructionData {
+export type CreateChannelInstructionData = {
   discriminator: ReadonlyUint8Array;
   channelId: bigint;
-  participants: Address[];
+  participants: Array<Address>;
   channelType: ChannelType;
   isPrivate: boolean;
-}
+};
 
-export interface CreateChannelInstructionDataArgs {
+export type CreateChannelInstructionDataArgs = {
   channelId: number | bigint;
-  participants: Address[];
+  participants: Array<Address>;
   channelType: ChannelTypeArgs;
   isPrivate: boolean;
-}
+};
 
 export function getCreateChannelInstructionDataEncoder(): Encoder<CreateChannelInstructionDataArgs> {
   return transformEncoder(
@@ -131,11 +131,11 @@ export function getCreateChannelInstructionDataCodec(): Codec<
   );
 }
 
-export interface CreateChannelInput<
+export type CreateChannelInput<
   TAccountChannel extends string = string,
   TAccountCreator extends string = string,
   TAccountSystemProgram extends string = string,
-> {
+> = {
   channel: Address<TAccountChannel>;
   creator: TransactionSigner<TAccountCreator>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -143,7 +143,7 @@ export interface CreateChannelInput<
   participants: CreateChannelInstructionDataArgs['participants'];
   channelType: CreateChannelInstructionDataArgs['channelType'];
   isPrivate: CreateChannelInstructionDataArgs['isPrivate'];
-}
+};
 
 export function getCreateChannelInstruction<
   TAccountChannel extends string,
@@ -209,10 +209,10 @@ export function getCreateChannelInstruction<
   return instruction;
 }
 
-export interface ParsedCreateChannelInstruction<
+export type ParsedCreateChannelInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     channel: TAccountMetas[0];
@@ -220,18 +220,19 @@ export interface ParsedCreateChannelInstruction<
     systemProgram: TAccountMetas[2];
   };
   data: CreateChannelInstructionData;
-}
+};
 
 export function parseCreateChannelInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateChannelInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

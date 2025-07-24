@@ -12,20 +12,20 @@ import {
   getBooleanEncoder,
   getStructDecoder,
   getStructEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface NetworkSecurityPolicies {
+export type NetworkSecurityPolicies = {
   firewallRequired: boolean;
   intrusionDetection: boolean;
   trafficMonitoring: boolean;
-}
+};
 
 export type NetworkSecurityPoliciesArgs = NetworkSecurityPolicies;
 
-export function getNetworkSecurityPoliciesEncoder(): Encoder<NetworkSecurityPoliciesArgs> {
+export function getNetworkSecurityPoliciesEncoder(): FixedSizeEncoder<NetworkSecurityPoliciesArgs> {
   return getStructEncoder([
     ['firewallRequired', getBooleanEncoder()],
     ['intrusionDetection', getBooleanEncoder()],
@@ -33,7 +33,7 @@ export function getNetworkSecurityPoliciesEncoder(): Encoder<NetworkSecurityPoli
   ]);
 }
 
-export function getNetworkSecurityPoliciesDecoder(): Decoder<NetworkSecurityPolicies> {
+export function getNetworkSecurityPoliciesDecoder(): FixedSizeDecoder<NetworkSecurityPolicies> {
   return getStructDecoder([
     ['firewallRequired', getBooleanDecoder()],
     ['intrusionDetection', getBooleanDecoder()],
@@ -41,7 +41,7 @@ export function getNetworkSecurityPoliciesDecoder(): Decoder<NetworkSecurityPoli
   ]);
 }
 
-export function getNetworkSecurityPoliciesCodec(): Codec<
+export function getNetworkSecurityPoliciesCodec(): FixedSizeCodec<
   NetworkSecurityPoliciesArgs,
   NetworkSecurityPolicies
 > {

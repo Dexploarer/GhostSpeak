@@ -15,26 +15,26 @@ import {
   getU64Decoder,
   getU64Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
-export interface NegotiationInitiatedEvent {
+export type NegotiationInitiatedEvent = {
   negotiation: Address;
   initiator: Address;
   counterparty: Address;
   initialOffer: bigint;
-}
+};
 
-export interface NegotiationInitiatedEventArgs {
+export type NegotiationInitiatedEventArgs = {
   negotiation: Address;
   initiator: Address;
   counterparty: Address;
   initialOffer: number | bigint;
-}
+};
 
-export function getNegotiationInitiatedEventEncoder(): Encoder<NegotiationInitiatedEventArgs> {
+export function getNegotiationInitiatedEventEncoder(): FixedSizeEncoder<NegotiationInitiatedEventArgs> {
   return getStructEncoder([
     ['negotiation', getAddressEncoder()],
     ['initiator', getAddressEncoder()],
@@ -43,7 +43,7 @@ export function getNegotiationInitiatedEventEncoder(): Encoder<NegotiationInitia
   ]);
 }
 
-export function getNegotiationInitiatedEventDecoder(): Decoder<NegotiationInitiatedEvent> {
+export function getNegotiationInitiatedEventDecoder(): FixedSizeDecoder<NegotiationInitiatedEvent> {
   return getStructDecoder([
     ['negotiation', getAddressDecoder()],
     ['initiator', getAddressDecoder()],
@@ -52,7 +52,7 @@ export function getNegotiationInitiatedEventDecoder(): Decoder<NegotiationInitia
   ]);
 }
 
-export function getNegotiationInitiatedEventCodec(): Codec<
+export function getNegotiationInitiatedEventCodec(): FixedSizeCodec<
   NegotiationInitiatedEventArgs,
   NegotiationInitiatedEvent
 > {

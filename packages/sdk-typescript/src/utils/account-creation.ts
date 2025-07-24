@@ -1,5 +1,5 @@
 import type { Address } from '@solana/addresses'
-import type { KeyPairSigner } from '../client/GhostSpeakClient.js'
+import type { TransactionSigner } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
 
 /**
@@ -12,7 +12,7 @@ export class AccountCreationHelper {
    * Helper to create an agent account with derived PDA
    */
   async createAgentAccount(
-    signer: KeyPairSigner,
+    signer: TransactionSigner,
     agentId: string,
     agentType: number,
     metadataUri: string
@@ -50,7 +50,7 @@ export class AccountCreationHelper {
    * Helper to create a service listing account with derived PDA
    */
   async createServiceListingAccount(
-    creator: KeyPairSigner,
+    creator: TransactionSigner,
     listingId: string
   ): Promise<Address> {
     const { deriveServiceListingPda } = await import('./pda.js')
@@ -62,7 +62,7 @@ export class AccountCreationHelper {
    * Helper to create a job posting account with derived PDA
    */
   async createJobPostingAccount(
-    employer: KeyPairSigner,
+    employer: TransactionSigner,
     jobId: string
   ): Promise<Address> {
     const { deriveJobPostingPda } = await import('./pda.js')
@@ -74,7 +74,7 @@ export class AccountCreationHelper {
    * Helper to create a work order account with derived PDA
    */
   async createWorkOrderAccount(
-    employer: KeyPairSigner,
+    employer: TransactionSigner,
     orderId: bigint
   ): Promise<Address> {
     const { deriveWorkOrderPda } = await import('./pda.js')
@@ -86,7 +86,7 @@ export class AccountCreationHelper {
    * Helper to create an A2A session account with derived PDA
    */
   async createA2ASessionAccount(
-    creator: KeyPairSigner
+    creator: TransactionSigner
   ): Promise<Address> {
     const { deriveA2ASessionPda } = await import('./pda.js')
     
@@ -98,7 +98,7 @@ export class AccountCreationHelper {
    */
   async createServicePurchaseAccount(
     serviceListing: Address,
-    buyer: KeyPairSigner
+    buyer: TransactionSigner
   ): Promise<Address> {
     const { deriveServicePurchasePda } = await import('./pda.js')
     
@@ -110,7 +110,7 @@ export class AccountCreationHelper {
    */
   async createJobApplicationAccount(
     jobPosting: Address,
-    applicant: KeyPairSigner
+    applicant: TransactionSigner
   ): Promise<Address> {
     const { deriveJobApplicationPda } = await import('./pda.js')
     
@@ -122,7 +122,7 @@ export class AccountCreationHelper {
    */
   async createPaymentAccount(
     workOrder: Address,
-    payer: KeyPairSigner
+    payer: TransactionSigner
   ): Promise<Address> {
     const { derivePaymentPda } = await import('./pda.js')
     
@@ -134,7 +134,7 @@ export class AccountCreationHelper {
    */
   async createWorkDeliveryAccount(
     workOrder: Address,
-    provider: KeyPairSigner
+    provider: TransactionSigner
   ): Promise<Address> {
     const { deriveWorkDeliveryPda } = await import('./pda.js')
     
@@ -146,7 +146,7 @@ export class AccountCreationHelper {
    */
   async createAgentVerificationAccount(
     agent: Address,
-    verifier: KeyPairSigner
+    verifier: TransactionSigner
   ): Promise<Address> {
     const { deriveAgentVerificationPda } = await import('./pda.js')
     

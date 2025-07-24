@@ -1,72 +1,43 @@
 {
-  "timestamp": "2025-07-22T03:39:23.124Z",
+  "timestamp": "2025-07-22T16:55:45.126Z",
   "network": "devnet",
   "programId": "AJVoWJ4JC1xJR9ufGBGuMgFpHMLouB29sFRTJRvEK1ZR",
   "results": [
     {
       "category": "Agent Registration",
-      "test": "Create new agent",
-      "status": "PASS",
-      "details": "Agent created with address: 3YCxQWAUBd7FSP4RA9hCeuhGhLsffGc98z3SsqaAzJjH",
-      "duration": 1389
-    },
-    {
-      "category": "Agent Registration",
-      "test": "Fetch agent details",
-      "status": "PASS",
-      "details": "Agent retrieved successfully. Owner: FfGhMd5nwQB5dL1kMfKKo1vdpme83JMHChgSNvhiYBZ7",
-      "duration": 2377
-    },
-    {
-      "category": "Agent Registration",
       "test": "Agent registration flow",
       "status": "FAIL",
       "details": "Failed to complete agent registration",
-      "duration": 3738,
-      "error": "Transaction failed: RPC Error: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x7d6"
+      "duration": 144,
+      "error": "Transaction failed: RPC Error: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x1d4c"
     },
     {
       "category": "Agent Verification",
-      "test": "Initial verification status",
-      "status": "PASS",
-      "details": "Agent correctly shows as unverified",
-      "duration": 2736
-    },
-    {
-      "category": "Agent Verification",
-      "test": "Verification process",
+      "test": "Verification flow",
       "status": "SKIP",
-      "details": "Requires admin privileges on devnet",
-      "duration": 2736
+      "details": "No test agent available",
+      "duration": 0
     },
     {
       "category": "Escrow Operations",
       "test": "Create escrow",
       "status": "PASS",
-      "details": "Escrow created: 4nhGveGdGfQpr8rHUeJenUDQTA2Mpo1zpS4oE1nQ1YRm",
-      "duration": 1246
+      "details": "Escrow created: 5yVZNHHiNgDxtbYAGmTU8iUPTPt7cbzoYjmHYuLESXB5",
+      "duration": 1206
     },
     {
       "category": "Escrow Operations",
       "test": "Get escrow info",
       "status": "PASS",
       "details": "Successfully retrieved escrow account with orderId: undefined",
-      "duration": 1902
-    },
-    {
-      "category": "Auction System",
-      "test": "Create auction",
-      "status": "PASS",
-      "details": "Auction created: 9p8wgSTwdSyuSPSe1Ckt6fspfqQeDyyAepgpVXS1VCvg",
-      "duration": 1206
+      "duration": 1264
     },
     {
       "category": "Auction System",
       "test": "Auction flow",
-      "status": "FAIL",
-      "details": "Failed auction operations",
-      "duration": 2066,
-      "error": "Transaction failed: RPC Error: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x1c20"
+      "status": "SKIP",
+      "details": "Requires valid agent account",
+      "duration": 0
     },
     {
       "category": "Dispute Resolution",
@@ -80,50 +51,49 @@
       "test": "Evidence submission",
       "status": "SKIP",
       "details": "Requires active dispute",
-      "duration": 0
+      "duration": 1
     },
     {
       "category": "Channel Operations",
       "test": "Create channel",
       "status": "PASS",
-      "details": "Channel created: C4p9meqKBx4yHDi3QaMMcnQqqrndZaeooUwRmadA51KT",
-      "duration": 1230
+      "details": "Channel created: 3DwtnzntKPAfcfdayyCYs2JZ6ueaVo7AsH6ujfkRMCU1",
+      "duration": 1450
     },
     {
       "category": "Channel Operations",
-      "test": "Channel flow",
-      "status": "FAIL",
-      "details": "Failed channel operations",
-      "duration": 1346,
-      "error": "Transaction failed: RPC Error: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x7d6"
+      "test": "Send message",
+      "status": "PASS",
+      "details": "Message sent successfully",
+      "duration": 2698
     },
     {
       "category": "Performance",
       "test": "Transaction speed",
       "status": "PASS",
-      "details": "Query completed in 1972ms",
-      "duration": 1972
+      "details": "Query completed in 67ms",
+      "duration": 67
     },
     {
       "category": "Performance",
       "test": "Batch operations",
       "status": "PASS",
-      "details": "Batch completed in 725ms",
-      "duration": 725
+      "details": "Batch completed in 753ms",
+      "duration": 753
     },
     {
       "category": "Edge Cases",
       "test": "Invalid address handling",
       "status": "PASS",
       "details": "Properly handles non-existent accounts",
-      "duration": 341
+      "duration": 42
     },
     {
       "category": "Edge Cases",
       "test": "Large data handling",
       "status": "PASS",
-      "details": "Handles 500-character descriptions",
-      "duration": 1569
+      "details": "Successfully stored and retrieved large metadata via IPFS (1000 chars, 50 capabilities)",
+      "duration": 1394
     },
     {
       "category": "Integrations",
@@ -140,25 +110,32 @@
       "duration": 0
     },
     {
+      "category": "Integrations",
+      "test": "IPFS integration",
+      "status": "PASS",
+      "details": "Successfully uploaded and retrieved content via test IPFS (hash: QmQ1KVLJcrSte6dbD3nVZCoGs3eyn3SJVsSVUaAstw_test_2)",
+      "duration": 102
+    },
+    {
       "category": "Stress Testing",
       "test": "Sequential transactions",
       "status": "PASS",
-      "details": "5 transactions, avg 71ms each",
-      "duration": 353
+      "details": "5 transactions, avg 53ms each",
+      "duration": 266
     },
     {
       "category": "Stress Testing",
       "test": "Concurrent operations",
       "status": "PASS",
-      "details": "3 concurrent ops in 189ms",
-      "duration": 189
+      "details": "3 concurrent ops in 218ms",
+      "duration": 218
     }
   ],
   "summary": {
-    "total": 21,
-    "passed": 14,
-    "failed": 3,
-    "skipped": 4,
-    "duration": 27121
+    "total": 18,
+    "passed": 12,
+    "failed": 1,
+    "skipped": 5,
+    "duration": 9605
   }
 }

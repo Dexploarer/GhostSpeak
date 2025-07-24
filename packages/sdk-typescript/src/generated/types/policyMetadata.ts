@@ -39,7 +39,7 @@ import {
 } from '.';
 
 /** Policy metadata */
-export interface PolicyMetadata {
+export type PolicyMetadata = {
   /** Policy author */
   author: Option<Address>;
   /** Policy approver */
@@ -49,14 +49,14 @@ export interface PolicyMetadata {
   /** Business justification */
   businessJustification: string;
   /** Compliance references */
-  complianceReferences: string[];
+  complianceReferences: Array<string>;
   /** Risk assessment */
   riskAssessment: Option<string>;
   /** Review schedule */
   reviewSchedule: ReviewSchedule;
-}
+};
 
-export interface PolicyMetadataArgs {
+export type PolicyMetadataArgs = {
   /** Policy author */
   author: OptionOrNullable<Address>;
   /** Policy approver */
@@ -66,12 +66,12 @@ export interface PolicyMetadataArgs {
   /** Business justification */
   businessJustification: string;
   /** Compliance references */
-  complianceReferences: string[];
+  complianceReferences: Array<string>;
   /** Risk assessment */
   riskAssessment: OptionOrNullable<string>;
   /** Review schedule */
   reviewSchedule: ReviewScheduleArgs;
-}
+};
 
 export function getPolicyMetadataEncoder(): Encoder<PolicyMetadataArgs> {
   return getStructEncoder([

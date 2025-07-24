@@ -442,7 +442,7 @@ pub fn generate_compliance_report(
     let period_end_bytes = report.period_end.to_le_bytes();
     let compliance_rate_bytes = compliance_rate.to_le_bytes();
     let authority_key = ctx.accounts.authority.key();
-    
+
     let signature_data = [
         report_id_bytes.as_ref(),
         report_type_byte.as_ref(),
@@ -452,10 +452,10 @@ pub fn generate_compliance_report(
         compliance_rate_bytes.as_ref(),
         authority_key.as_ref(),
     ];
-    
+
     // Create a hash of the report data for the signature
     let report_hash = hashv(&signature_data);
-    
+
     // For compliance reports, we create a deterministic signature
     // In production, this would integrate with Solana's ed25519 program
     // for actual cryptographic signing by the authority
@@ -463,12 +463,9 @@ pub fn generate_compliance_report(
     signature[..32].copy_from_slice(&report_hash.to_bytes());
     // Second half includes timestamp and authority key hash for uniqueness
     let timestamp_bytes = clock.unix_timestamp.to_le_bytes();
-    let second_half = hashv(&[
-        timestamp_bytes.as_ref(),
-        authority_key.as_ref(),
-    ]);
+    let second_half = hashv(&[timestamp_bytes.as_ref(), authority_key.as_ref()]);
     signature[32..].copy_from_slice(&second_half.to_bytes()[..32]);
-    
+
     report.signature = signature;
     report.status = crate::state::audit::ReportStatus::Generated;
     report.submission_details = None;
@@ -497,7 +494,7 @@ pub fn verify_compliance_report_signature(
     let generated_at_bytes = report.generated_at.to_le_bytes();
     let period_start_bytes = report.period_start.to_le_bytes();
     let period_end_bytes = report.period_end.to_le_bytes();
-    
+
     let signature_data = [
         report_id_bytes.as_ref(),
         report_type_byte.as_ref(),
@@ -508,20 +505,17 @@ pub fn verify_compliance_report_signature(
         // For now, we verify the structure
         authority.as_ref(),
     ];
-    
+
     // Verify first half of signature
     let expected_hash = hashv(&signature_data);
     let first_half_valid = report.signature[..32] == expected_hash.to_bytes();
-    
+
     // Verify second half includes timestamp and authority
     let timestamp_bytes = report.generated_at.to_le_bytes();
-    let second_half_data = [
-        timestamp_bytes.as_ref(),
-        authority.as_ref(),
-    ];
+    let second_half_data = [timestamp_bytes.as_ref(), authority.as_ref()];
     let expected_second_half = hashv(&second_half_data);
     let second_half_valid = report.signature[32..] == expected_second_half.to_bytes()[..32];
-    
+
     Ok(first_half_valid && second_half_valid)
 }
 

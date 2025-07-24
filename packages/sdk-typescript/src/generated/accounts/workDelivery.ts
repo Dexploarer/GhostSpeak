@@ -63,26 +63,26 @@ export function getWorkDeliveryDiscriminatorBytes() {
   );
 }
 
-export interface WorkDelivery {
+export type WorkDelivery = {
   discriminator: ReadonlyUint8Array;
   workOrder: Address;
   provider: Address;
-  deliverables: Deliverable[];
+  deliverables: Array<Deliverable>;
   ipfsHash: string;
   metadataUri: string;
   submittedAt: bigint;
   bump: number;
-}
+};
 
-export interface WorkDeliveryArgs {
+export type WorkDeliveryArgs = {
   workOrder: Address;
   provider: Address;
-  deliverables: DeliverableArgs[];
+  deliverables: Array<DeliverableArgs>;
   ipfsHash: string;
   metadataUri: string;
   submittedAt: number | bigint;
   bump: number;
-}
+};
 
 export function getWorkDeliveryEncoder(): Encoder<WorkDeliveryArgs> {
   return transformEncoder(
@@ -153,7 +153,7 @@ export async function fetchMaybeWorkDelivery<TAddress extends string = string>(
 
 export async function fetchAllWorkDelivery(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<Account<WorkDelivery>[]> {
   const maybeAccounts = await fetchAllMaybeWorkDelivery(rpc, addresses, config);
@@ -163,7 +163,7 @@ export async function fetchAllWorkDelivery(
 
 export async function fetchAllMaybeWorkDelivery(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
-  addresses: Address[],
+  addresses: Array<Address>,
   config?: FetchAccountsConfig
 ): Promise<MaybeAccount<WorkDelivery>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);

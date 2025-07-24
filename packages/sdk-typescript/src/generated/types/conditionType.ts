@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of execution conditions */
@@ -27,15 +27,15 @@ export enum ConditionType {
 
 export type ConditionTypeArgs = ConditionType;
 
-export function getConditionTypeEncoder(): Encoder<ConditionTypeArgs> {
+export function getConditionTypeEncoder(): FixedSizeEncoder<ConditionTypeArgs> {
   return getEnumEncoder(ConditionType);
 }
 
-export function getConditionTypeDecoder(): Decoder<ConditionType> {
+export function getConditionTypeDecoder(): FixedSizeDecoder<ConditionType> {
   return getEnumDecoder(ConditionType);
 }
 
-export function getConditionTypeCodec(): Codec<
+export function getConditionTypeCodec(): FixedSizeCodec<
   ConditionTypeArgs,
   ConditionType
 > {

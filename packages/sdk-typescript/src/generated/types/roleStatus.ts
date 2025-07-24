@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Role status */
@@ -26,14 +26,17 @@ export enum RoleStatus {
 
 export type RoleStatusArgs = RoleStatus;
 
-export function getRoleStatusEncoder(): Encoder<RoleStatusArgs> {
+export function getRoleStatusEncoder(): FixedSizeEncoder<RoleStatusArgs> {
   return getEnumEncoder(RoleStatus);
 }
 
-export function getRoleStatusDecoder(): Decoder<RoleStatus> {
+export function getRoleStatusDecoder(): FixedSizeDecoder<RoleStatus> {
   return getEnumDecoder(RoleStatus);
 }
 
-export function getRoleStatusCodec(): Codec<RoleStatusArgs, RoleStatus> {
+export function getRoleStatusCodec(): FixedSizeCodec<
+  RoleStatusArgs,
+  RoleStatus
+> {
   return combineCodec(getRoleStatusEncoder(), getRoleStatusDecoder());
 }

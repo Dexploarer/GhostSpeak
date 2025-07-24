@@ -10,9 +10,9 @@ import {
   combineCodec,
   getEnumDecoder,
   getEnumEncoder,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from '@solana/kit';
 
 /** Types of roles in the system */
@@ -29,14 +29,14 @@ export enum RoleType {
 
 export type RoleTypeArgs = RoleType;
 
-export function getRoleTypeEncoder(): Encoder<RoleTypeArgs> {
+export function getRoleTypeEncoder(): FixedSizeEncoder<RoleTypeArgs> {
   return getEnumEncoder(RoleType);
 }
 
-export function getRoleTypeDecoder(): Decoder<RoleType> {
+export function getRoleTypeDecoder(): FixedSizeDecoder<RoleType> {
   return getEnumDecoder(RoleType);
 }
 
-export function getRoleTypeCodec(): Codec<RoleTypeArgs, RoleType> {
+export function getRoleTypeCodec(): FixedSizeCodec<RoleTypeArgs, RoleType> {
   return combineCodec(getRoleTypeEncoder(), getRoleTypeDecoder());
 }

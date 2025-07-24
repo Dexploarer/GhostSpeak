@@ -19,15 +19,15 @@ import {
   getStructDecoder,
   getStructEncoder,
   transformEncoder,
+  type AccountMeta,
+  type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type IAccountMeta,
-  type IAccountSignerMeta,
-  type IInstruction,
-  type IInstructionWithAccounts,
-  type IInstructionWithData,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  type Instruction,
+  type InstructionWithAccounts,
+  type InstructionWithData,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -53,22 +53,22 @@ export function getManageAgentStatusDiscriminatorBytes() {
 
 export type ManageAgentStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountAgent extends string | IAccountMeta<string> = string,
-  TAccountOwner extends string | IAccountMeta<string> = string,
+  TAccountAgent extends string | AccountMeta<string> = string,
+  TAccountOwner extends string | AccountMeta<string> = string,
   TAccountClock extends
     | string
-    | IAccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
-  TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
-> = IInstruction<TProgram> &
-  IInstructionWithData<Uint8Array> &
-  IInstructionWithAccounts<
+    | AccountMeta<string> = 'SysvarC1ock11111111111111111111111111111111',
+  TRemainingAccounts extends readonly AccountMeta<string>[] = [],
+> = Instruction<TProgram> &
+  InstructionWithData<ReadonlyUint8Array> &
+  InstructionWithAccounts<
     [
       TAccountAgent extends string
         ? WritableAccount<TAccountAgent>
         : TAccountAgent,
       TAccountOwner extends string
         ? ReadonlySignerAccount<TAccountOwner> &
-            IAccountSignerMeta<TAccountOwner>
+            AccountSignerMeta<TAccountOwner>
         : TAccountOwner,
       TAccountClock extends string
         ? ReadonlyAccount<TAccountClock>
@@ -77,14 +77,14 @@ export type ManageAgentStatusInstruction<
     ]
   >;
 
-export interface ManageAgentStatusInstructionData {
+export type ManageAgentStatusInstructionData = {
   discriminator: ReadonlyUint8Array;
   newStatus: boolean;
-}
+};
 
-export interface ManageAgentStatusInstructionDataArgs { newStatus: boolean }
+export type ManageAgentStatusInstructionDataArgs = { newStatus: boolean };
 
-export function getManageAgentStatusInstructionDataEncoder(): Encoder<ManageAgentStatusInstructionDataArgs> {
+export function getManageAgentStatusInstructionDataEncoder(): FixedSizeEncoder<ManageAgentStatusInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -94,14 +94,14 @@ export function getManageAgentStatusInstructionDataEncoder(): Encoder<ManageAgen
   );
 }
 
-export function getManageAgentStatusInstructionDataDecoder(): Decoder<ManageAgentStatusInstructionData> {
+export function getManageAgentStatusInstructionDataDecoder(): FixedSizeDecoder<ManageAgentStatusInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['newStatus', getBooleanDecoder()],
   ]);
 }
 
-export function getManageAgentStatusInstructionDataCodec(): Codec<
+export function getManageAgentStatusInstructionDataCodec(): FixedSizeCodec<
   ManageAgentStatusInstructionDataArgs,
   ManageAgentStatusInstructionData
 > {
@@ -111,11 +111,11 @@ export function getManageAgentStatusInstructionDataCodec(): Codec<
   );
 }
 
-export interface ManageAgentStatusAsyncInput<
+export type ManageAgentStatusAsyncInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Agent account with strict validation */
   agent?: Address<TAccountAgent>;
   /** Owner authority */
@@ -123,7 +123,7 @@ export interface ManageAgentStatusAsyncInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   newStatus: ManageAgentStatusInstructionDataArgs['newStatus'];
-}
+};
 
 export async function getManageAgentStatusInstructionAsync<
   TAccountAgent extends string,
@@ -200,11 +200,11 @@ export async function getManageAgentStatusInstructionAsync<
   return instruction;
 }
 
-export interface ManageAgentStatusInput<
+export type ManageAgentStatusInput<
   TAccountAgent extends string = string,
   TAccountOwner extends string = string,
   TAccountClock extends string = string,
-> {
+> = {
   /** Agent account with strict validation */
   agent: Address<TAccountAgent>;
   /** Owner authority */
@@ -212,7 +212,7 @@ export interface ManageAgentStatusInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   newStatus: ManageAgentStatusInstructionDataArgs['newStatus'];
-}
+};
 
 export function getManageAgentStatusInstruction<
   TAccountAgent extends string,
@@ -274,10 +274,10 @@ export function getManageAgentStatusInstruction<
   return instruction;
 }
 
-export interface ParsedManageAgentStatusInstruction<
+export type ParsedManageAgentStatusInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
-> {
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
+> = {
   programAddress: Address<TProgram>;
   accounts: {
     /** Agent account with strict validation */
@@ -288,18 +288,19 @@ export interface ParsedManageAgentStatusInstruction<
     clock: TAccountMetas[2];
   };
   data: ManageAgentStatusInstructionData;
-}
+};
 
 export function parseManageAgentStatusInstruction<
   TProgram extends string,
-  TAccountMetas extends readonly IAccountMeta[],
+  TAccountMetas extends readonly AccountMeta[],
 >(
-  instruction: IInstruction<TProgram> &
-    IInstructionWithAccounts<TAccountMetas> &
-    IInstructionWithData<Uint8Array>
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
 ): ParsedManageAgentStatusInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 3) {
-    throw new Error('Invalid number of accounts provided');
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

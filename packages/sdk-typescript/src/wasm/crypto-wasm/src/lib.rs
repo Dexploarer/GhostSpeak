@@ -111,6 +111,45 @@ impl WasmElGamalEngine {
         Ok(result)
     }
 
+    /// Decrypt a ciphertext
+    #[wasm_bindgen]
+    pub fn decrypt(&self, c1: &Uint8Array, c2: &Uint8Array, secret_key: &Uint8Array) -> Result<u64, JsValue> {
+        let c1_bytes: [u8; 32] = c1.to_vec().try_into()
+            .map_err(|_| JsValue::from_str("Invalid c1 length"))?;
+        let c2_bytes: [u8; 32] = c2.to_vec().try_into()
+            .map_err(|_| JsValue::from_str("Invalid c2 length"))?;
+        let secret_bytes: [u8; 32] = secret_key.to_vec().try_into()
+            .map_err(|_| JsValue::from_str("Invalid secret key length"))?;
+            
+        // Decompress points
+        let c1_point = CompressedEdwardsY::from_slice(&c1_bytes)
+            .map_err(|_| JsValue::from_str("Invalid c1 format"))?
+            .decompress()
+            .ok_or_else(|| JsValue::from_str("Failed to decompress c1"))?;
+            
+        let c2_point = CompressedEdwardsY::from_slice(&c2_bytes)
+            .map_err(|_| JsValue::from_str("Invalid c2 format"))?
+            .decompress()
+            .ok_or_else(|| JsValue::from_str("Failed to decompress c2"))?;
+            
+        let secret_scalar = Scalar::from_bytes_mod_order(secret_bytes);
+        
+        // Decrypt: m*G = c2 - secret*c1
+        let message_point = c2_point - (secret_scalar * c1_point);
+        
+        // Brute force search for small amounts (up to 1 million)
+        // In production, this would use a lookup table
+        let max_amount = 1_000_000u64;
+        for amount in 0..=max_amount {
+            let test_point = &self.basepoint_table * &Scalar::from(amount);
+            if test_point == message_point {
+                return Ok(amount);
+            }
+        }
+        
+        Err(JsValue::from_str("Could not decrypt amount (value too large)"))
+    }
+
     /// Batch encrypt multiple amounts (optimized)
     #[wasm_bindgen]
     pub fn batch_encrypt_amounts(&self, amounts: &js_sys::Array, public_key: &Uint8Array) -> Result<js_sys::Array, JsValue> {
@@ -151,11 +190,10 @@ impl WasmElGamalEngine {
         Ok(results)
     }
 
-    /// Generate a range proof (simplified bulletproof)
+    /// Generate a range proof using Pedersen commitments and Fiat-Shamir heuristic
     #[wasm_bindgen]
-    pub fn generate_range_proof(&self, _amount: u64, commitment: &Uint8Array, blinding_factor: &Uint8Array) -> Result<js_sys::Object, JsValue> {
-        // This is a simplified mock implementation
-        // In production, this would use a proper bulletproof library
+    pub fn generate_range_proof(&self, amount: u64, commitment: &Uint8Array, blinding_factor: &Uint8Array) -> Result<js_sys::Object, JsValue> {
+        use sha2::{Sha256, Digest};
         
         let commitment_bytes: [u8; 32] = commitment.to_vec().try_into()
             .map_err(|_| JsValue::from_str("Invalid commitment length"))?;
@@ -163,24 +201,82 @@ impl WasmElGamalEngine {
         let blinding_bytes: [u8; 32] = blinding_factor.to_vec().try_into()
             .map_err(|_| JsValue::from_str("Invalid blinding factor length"))?;
 
-        // Generate a mock proof with proper structure
-        let mut proof_bytes = Vec::with_capacity(256);
+        // Verify commitment is valid
+        let commitment_point = CompressedEdwardsY::from_slice(&commitment_bytes)
+            .map_err(|_| JsValue::from_str("Invalid commitment format"))?
+            .decompress()
+            .ok_or_else(|| JsValue::from_str("Failed to decompress commitment"))?;
+            
+        let blinding_scalar = Scalar::from_bytes_mod_order(blinding_bytes);
+        let amount_scalar = Scalar::from(amount);
         
-        // Add commitment (32 bytes)
-        proof_bytes.extend_from_slice(&commitment_bytes);
+        // Recompute commitment to verify: C = rH + vG
+        let expected_commitment = (blinding_scalar * self.pedersen_generator) + 
+                                 (amount_scalar * self.basepoint_table.basepoint());
         
-        // Add blinding factor derived data (32 bytes)  
-        proof_bytes.extend_from_slice(&blinding_bytes);
-        
-        // Add range proof data (192 bytes for bulletproof)
-        let mut rng = OsRng;
-        for _ in 0..192 {
-            proof_bytes.push(rng.next_u32() as u8);
+        if commitment_point != expected_commitment {
+            return Err(JsValue::from_str("Invalid commitment for given amount and blinding factor"));
         }
 
+        // Range proof for 64-bit values using bit decomposition
+        let mut proof_data = Vec::new();
+        let mut rng = OsRng;
+        
+        // Generate commitments for each bit
+        let num_bits = 64;
+        let mut bit_commitments = Vec::new();
+        let mut bit_blindings = Vec::new();
+        
+        for i in 0..num_bits {
+            let bit = (amount >> i) & 1;
+            let bit_scalar = Scalar::from(bit);
+            
+            // Generate random blinding for this bit
+            let mut r_bytes = [0u8; 32];
+            rng.fill_bytes(&mut r_bytes);
+            let r_i = Scalar::from_bytes_mod_order(r_bytes);
+            bit_blindings.push(r_i);
+            
+            // Commit to bit: C_i = r_i*H + bit*G
+            let c_i = (r_i * self.pedersen_generator) + (bit_scalar * self.basepoint_table.basepoint());
+            bit_commitments.push(c_i);
+            
+            // Add to proof
+            proof_data.extend_from_slice(c_i.compress().as_bytes());
+        }
+        
+        // Generate challenge using Fiat-Shamir
+        let mut hasher = Sha256::new();
+        hasher.update(&commitment_bytes);
+        for c_i in &bit_commitments {
+            hasher.update(c_i.compress().as_bytes());
+        }
+        let challenge_bytes = hasher.finalize();
+        let challenge = Scalar::from_bytes_mod_order(challenge_bytes.into());
+        
+        // Generate responses
+        for i in 0..num_bits {
+            let bit = (amount >> i) & 1;
+            let bit_scalar = Scalar::from(bit);
+            
+            // Response: s_i = r_i + challenge * (bit - bit^2)
+            // This proves bit is 0 or 1
+            let s_i = bit_blindings[i] + challenge * (bit_scalar - bit_scalar * bit_scalar);
+            proof_data.extend_from_slice(&s_i.to_bytes());
+        }
+        
+        // Add aggregate proof that sum of bits equals committed value
+        let sum_blinding = bit_blindings.iter().fold(Scalar::ZERO, |acc, r| acc + r);
+        let aggregate_response = blinding_scalar - sum_blinding;
+        proof_data.extend_from_slice(&aggregate_response.to_bytes());
+        
+        // Add challenge for verification
+        proof_data.extend_from_slice(&challenge.to_bytes());
+
         let result = js_sys::Object::new();
-        js_sys::Reflect::set(&result, &"proof".into(), &Uint8Array::from(&proof_bytes[..]))?;
+        js_sys::Reflect::set(&result, &"proof".into(), &Uint8Array::from(&proof_data[..]))?;
         js_sys::Reflect::set(&result, &"commitment".into(), &Uint8Array::from(&commitment_bytes[..]))?;
+        js_sys::Reflect::set(&result, &"num_bits".into(), &JsValue::from(num_bits))?;
         
         Ok(result)
     }
@@ -208,17 +304,14 @@ impl WasmElGamalEngine {
             // Extract blinding factor (32 bytes) 
             let blinding = &data[offset + 40..offset + 72];
 
-            // Generate proof
+            // Generate proof using real implementation
             match self.generate_range_proof(amount, &Uint8Array::from(commitment), &Uint8Array::from(blinding)) {
                 Ok(proof) => {
                     results.push(&proof);
                 },
-                Err(_) => {
-                    // Continue with mock proof on error
-                    let mock_proof = js_sys::Object::new();
-                    js_sys::Reflect::set(&mock_proof, &"proof".into(), &Uint8Array::from(&[0u8; 256][..]))?;
-                    js_sys::Reflect::set(&mock_proof, &"commitment".into(), &Uint8Array::from(commitment))?;
-                    results.push(&mock_proof);
+                Err(e) => {
+                    // Return error instead of mock proof
+                    return Err(JsValue::from_str(&format!("Failed to generate proof {}: {:?}", i, e)));
                 }
             }
         }

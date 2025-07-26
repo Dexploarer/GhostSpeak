@@ -327,7 +327,7 @@ export function generateBulletproof(
   
   // Convert value to binary
   const aL = toBinaryVector(value, n)
-  const aR = VectorOps.sub(aL, Array(n).fill(1n))
+  const aR = VectorOps.sub(aL, Array(n).fill(1n) as bigint[])
   
   // Blinding vectors
   const alpha = bytesToNumberLE(crypto.getRandomValues(new Uint8Array(32))) % ed25519.CURVE.n
@@ -353,11 +353,11 @@ export function generateBulletproof(
   
   // Compute t coefficients
   const yPowers = VectorOps.powers(y, n)
-  const l0 = VectorOps.sub(aL, VectorOps.scale(Array(n).fill(1n), z))
+  const l0 = VectorOps.sub(aL, VectorOps.scale(Array(n).fill(1n) as bigint[], z))
   const l1 = sL
   const r0 = VectorOps.add(
-    VectorOps.hadamard(yPowers, VectorOps.add(aR, VectorOps.scale(Array(n).fill(1n), z))),
-    VectorOps.scale(Array(n).fill(1n), z * z)
+    VectorOps.hadamard(yPowers, VectorOps.add(aR, VectorOps.scale(Array(n).fill(1n) as bigint[], z))),
+    VectorOps.scale(Array(n).fill(1n) as bigint[], z * z)
   )
   const r1 = VectorOps.hadamard(yPowers, sR)
   
@@ -496,7 +496,7 @@ export function verifyBulletproof(
     // Compute P
     const P = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.A))
       .add(ed25519.ExtendedPoint.fromHex(bytesToHex(proof.S)).multiply(x))
-      .add(multiExp(gVec, VectorOps.scale(Array(n).fill(1n), (ed25519.CURVE.n - z) % ed25519.CURVE.n)))
+      .add(multiExp(gVec, VectorOps.scale(Array(n).fill(1n) as bigint[], (ed25519.CURVE.n - z) % ed25519.CURVE.n)))
       .add(multiExp(hPrime, VectorOps.add(
         VectorOps.scale(yPowers, z),
         VectorOps.scale(VectorOps.powers(y, n), z * z)

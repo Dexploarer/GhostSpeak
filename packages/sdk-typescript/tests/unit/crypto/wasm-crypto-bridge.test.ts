@@ -21,7 +21,8 @@ import {
   generateRangeProof,
   batchGenerateRangeProofs,
   getCryptoPerformanceInfo,
-  runCryptoBenchmarks
+  runCryptoBenchmarks,
+  __resetWasmCrypto
 } from '../../../src/utils/wasm-crypto-bridge'
 import { mockWasmModule, mockPerformanceAPI } from '../../helpers/mocks'
 import { setupTestEnvironment } from '../../helpers/setup'
@@ -31,8 +32,8 @@ describe('WASM Crypto Bridge', () => {
     setupTestEnvironment()
     vi.clearAllMocks()
     
-    // Reset module state
-    vi.resetModules()
+    // Reset WASM state
+    __resetWasmCrypto()
     
     // Mock global objects
     global.performance = mockPerformanceAPI() as any
@@ -40,17 +41,19 @@ describe('WASM Crypto Bridge', () => {
       instantiate: vi.fn(),
       compile: vi.fn()
     } as any
+    
+    // Set up WASM mock for test environment
+    ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    // Clean up WASM mock
+    delete (globalThis as any).__WASM_MOCK__
   })
 
   describe('Module Initialization', () => {
     it('should initialize WASM module successfully', async () => {
-      // Mock dynamic import
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
-      
       const result = await initializeWasmCrypto()
       
       expect(result).toBe(true)
@@ -58,10 +61,8 @@ describe('WASM Crypto Bridge', () => {
     })
 
     it('should handle WASM initialization failure gracefully', async () => {
-      // Mock failed import
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => {
-        throw new Error('Module not found')
-      })
+      // Remove the mock to test failure path
+      delete (globalThis as any).__WASM_MOCK__
       
       const result = await initializeWasmCrypto()
       
@@ -80,8 +81,6 @@ describe('WASM Crypto Bridge', () => {
     })
 
     it('should return cached initialization promise', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
-      
       // First call
       const promise1 = initializeWasmCrypto()
       // Second call should return same promise

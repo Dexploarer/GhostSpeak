@@ -123,6 +123,14 @@ let wasmEngine: WasmElGamalEngine | null = null
 let isWasmSupported = false
 let initializationPromise: Promise<boolean> | null = null
 
+// Reset function for testing
+export function __resetWasmCrypto() {
+  wasmModule = null
+  wasmEngine = null
+  isWasmSupported = false
+  initializationPromise = null
+}
+
 /**
  * Initialize the WebAssembly crypto module
  */
@@ -135,23 +143,23 @@ export async function initializeWasmCrypto(): Promise<boolean> {
     try {
       console.log('🚀 Initializing WebAssembly crypto module...')
 
-      // Check if we're in a browser environment
-      if (typeof window === 'undefined' && typeof self === 'undefined') {
-        console.warn('⚠️ WebAssembly not supported in this environment')
-        return false
-      }
-
       // Check if WebAssembly is supported
       if (typeof WebAssembly === 'undefined') {
-        console.warn('⚠️ WebAssembly not supported in this browser')
+        console.warn('⚠️ WebAssembly not supported in this environment')
         return false
       }
 
       // Dynamic import of the actual compiled WASM module (with fallback)
       let wasmModuleImport: WasmModuleExports | null = null
       try {
-        // @ts-expect-error - WASM module may not exist during development
-        wasmModuleImport = await import('../../dist/wasm/ghostspeak_crypto_wasm.js') as unknown as WasmModuleExports
+        // Check if we're in a test environment with a mocked module
+        const globalWithMock = globalThis as { __WASM_MOCK__?: WasmModuleExports }
+        if (globalWithMock.__WASM_MOCK__) {
+          wasmModuleImport = globalWithMock.__WASM_MOCK__
+        } else {
+          // @ts-expect-error - WASM module may not exist during development
+          wasmModuleImport = await import('../../dist/wasm/ghostspeak_crypto_wasm.js') as unknown as WasmModuleExports
+        }
       } catch {
         console.warn('WASM module not found, disabling WASM features')
         return false

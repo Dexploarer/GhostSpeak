@@ -22,7 +22,7 @@ import {
   batchEncryptAmounts,
   batchGenerateRangeProofs,
   type ElGamalConfig
-} from '../../../src/utils/elgamal-wasm-optimized'
+} from '../../../src/utils/elgamal-wasm-optimized.js'
 import { mockWasmModule, mockBrowserEnvironment, mockPerformanceAPI } from '../../helpers/mocks'
 import { setupTestEnvironment } from '../../helpers/setup'
 

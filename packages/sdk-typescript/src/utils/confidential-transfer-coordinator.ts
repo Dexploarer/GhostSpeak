@@ -364,24 +364,10 @@ async function processBatchTransfers(
 
   // Auto-close all proof contexts if requested
   if (options.autoCloseProofContexts && !options.skipProofVerification) {
-    for (const proofContext of proofContexts) {
-      const sourceAddress = address(Buffer.from(sourceKeypair.publicKey).toString('base64').slice(0, 44))
-      // Create a mock signer for the source address
-      const mockSigner: TransactionSigner = {
-        address: sourceAddress,
-        signAndSendTransactions: async () => {
-          throw new Error('Mock signer - should not be used for signing')
-        }
-      }
-      instructions.push(
-        createCloseProofContextInstruction(
-          proofContext,
-          mockSigner,
-          sourceAddress
-        )
-      )
-    }
-    proofContexts.length = 0 // Clear array since contexts will be closed
+    // Note: Closing proof contexts requires the actual transaction signer
+    // This should be done by the caller with the actual signer
+    // For now, we'll leave the proof contexts open for the caller to close
+    // This is a limitation of the current implementation
   }
 
   return {

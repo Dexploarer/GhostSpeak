@@ -10,19 +10,19 @@ import {
   type ConfidentialTransferOptions,
   type BatchTransferRequest,
   type TransferParticipant
-} from '../../src/utils/confidential-transfer-coordinator'
+} from '../../src/utils/confidential-transfer-coordinator.js'
 import {
   generateElGamalKeypair,
   encryptAmount,
   type ElGamalKeypair,
   type ElGamalCiphertext
-} from '../../src/utils/elgamal'
-import { ProofInstruction } from '../../src/constants/zk-proof-program'
+} from '../../src/utils/elgamal.js'
+import { ProofInstruction } from '../../src/constants/zk-proof-program.js'
 import type { TransactionSigner } from '@solana/kit'
 
 // Mock the ElGamal module to control decryption results
-vi.mock('../../src/utils/elgamal', async () => {
-  const actual = await vi.importActual('../../src/utils/elgamal') as any
+vi.mock('../../src/utils/elgamal.js', async () => {
+  const actual = await vi.importActual('../../src/utils/elgamal.js') as any
   return {
     ...actual,
     decryptAmount: vi.fn().mockReturnValue(1000000n), // Default balance
@@ -133,7 +133,7 @@ describe('Confidential Transfer Coordinator', () => {
     })
 
     it('should reject insufficient balance', async () => {
-      const { decryptAmount } = await import('../../src/utils/elgamal')
+      const { decryptAmount } = await import('../../src/utils/elgamal.js')
       vi.mocked(decryptAmount).mockReturnValueOnce(50n) // Low balance
       
       await expect(
@@ -207,7 +207,7 @@ describe('Confidential Transfer Coordinator', () => {
     })
 
     it('should reject insufficient total balance', async () => {
-      const { decryptAmount } = await import('../../src/utils/elgamal')
+      const { decryptAmount } = await import('../../src/utils/elgamal.js')
       vi.mocked(decryptAmount).mockReturnValueOnce(50000n) // Limited balance
       
       const recipients: TransferParticipant[] = [
@@ -272,7 +272,7 @@ describe('Confidential Transfer Coordinator', () => {
     })
 
     it('should reject insufficient balance for withdrawal', async () => {
-      const { decryptAmount } = await import('../../src/utils/elgamal')
+      const { decryptAmount } = await import('../../src/utils/elgamal.js')
       vi.mocked(decryptAmount).mockReturnValueOnce(10000n)
       
       await expect(

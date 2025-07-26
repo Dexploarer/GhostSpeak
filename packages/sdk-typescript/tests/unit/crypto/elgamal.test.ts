@@ -28,9 +28,9 @@ import {
   MAX_DECRYPTABLE_VALUE,
   type ElGamalKeypair,
   type ElGamalCiphertext
-} from '../../../src/utils/elgamal'
+} from '../../../src/utils/elgamal.js'
 import type { TransactionSigner } from '@solana/kit'
-import { PerformanceTimer } from '../../helpers/setup'
+import { PerformanceTimer } from '../../helpers/setup.js'
 
 describe('ElGamal Encryption', () => {
   let keypair: ElGamalKeypair
@@ -739,7 +739,7 @@ describe('ElGamal Encryption', () => {
 
   describe('Interoperability', () => {
     it('should serialize ciphertexts for network transmission', () => {
-      const amount = 123456n
+      const amount = 1234n // Use smaller amount for faster test
       const cipher = encryptAmount(amount, keypair.publicKey)
       
       // Serialize for network
@@ -756,8 +756,8 @@ describe('ElGamal Encryption', () => {
       expect(deserialized.commitment.commitment).toEqual(cipher.commitment.commitment)
       expect(deserialized.handle.handle).toEqual(cipher.handle.handle)
       
-      // Verify decryptable
-      const decrypted = decryptAmount(deserialized, keypair.secretKey, 200000n)
+      // Verify decryptable with smaller search space
+      const decrypted = decryptAmount(deserialized, keypair.secretKey, 2000n)
       expect(decrypted).toBe(amount)
     })
     

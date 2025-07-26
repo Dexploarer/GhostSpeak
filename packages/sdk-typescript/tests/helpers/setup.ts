@@ -17,6 +17,74 @@ export function setupTestEnvironment() {
   
   // Keep error output for debugging
   // vi.spyOn(console, 'error').mockImplementation(() => {})
+  
+  // Setup browser globals if needed
+  setupBrowserGlobals()
+}
+
+// Setup browser-specific globals for tests
+export function setupBrowserGlobals() {
+  // Mock crypto API
+  if (typeof globalThis.crypto === 'undefined') {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: {
+        getRandomValues: (array: Uint8Array) => {
+          for (let i = 0; i < array.length; i++) {
+            array[i] = Math.floor(Math.random() * 256)
+          }
+          return array
+        },
+        subtle: {
+          digest: vi.fn(),
+          encrypt: vi.fn(),
+          decrypt: vi.fn(),
+          sign: vi.fn(),
+          verify: vi.fn()
+        }
+      }
+    })
+  }
+  
+  // Mock performance API
+  if (typeof globalThis.performance === 'undefined') {
+    Object.defineProperty(globalThis, 'performance', {
+      value: {
+        now: () => Date.now(),
+        mark: vi.fn(),
+        measure: vi.fn(),
+        clearMarks: vi.fn(),
+        clearMeasures: vi.fn()
+      }
+    })
+  }
+  
+  // Mock navigator API
+  if (typeof globalThis.navigator === 'undefined') {
+    Object.defineProperty(globalThis, 'navigator', {
+      value: {
+        userAgent: 'node.js',
+        language: 'en-US',
+        languages: ['en-US', 'en'],
+        onLine: true,
+        hardwareConcurrency: 4,
+        platform: 'nodejs'
+      }
+    })
+  }
+  
+  // Mock window object for browser compatibility tests
+  if (typeof globalThis.window === 'undefined') {
+    Object.defineProperty(globalThis, 'window', {
+      value: globalThis
+    })
+  }
+  
+  // Mock TextEncoder/TextDecoder if not available
+  if (typeof globalThis.TextEncoder === 'undefined') {
+    const { TextEncoder, TextDecoder } = require('util')
+    Object.defineProperty(globalThis, 'TextEncoder', { value: TextEncoder })
+    Object.defineProperty(globalThis, 'TextDecoder', { value: TextDecoder })
+  }
 }
 
 // Common test addresses

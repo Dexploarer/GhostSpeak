@@ -20,16 +20,16 @@ import {
   type ConfidentialTransferParams,
   type ConfidentialTransferMintConfig,
   type ConfidentialTransferAccountInfo
-} from '../../src/utils/confidential-transfer-helpers'
+} from '../../src/utils/confidential-transfer-helpers.js'
 import {
   generateElGamalKeypair,
   encryptAmount,
   serializeCiphertext,
   type ElGamalKeypair
-} from '../../src/utils/elgamal'
+} from '../../src/utils/elgamal.js'
 
 // Mock the token-2022-extensions module
-vi.mock('../../src/utils/token-2022-extensions', () => ({
+vi.mock('../../src/utils/token-2022-extensions.js', () => ({
   generateConfidentialTransferProof: vi.fn().mockResolvedValue({
     encryptedAmount: new Uint8Array(64),
     rangeProof: new Uint8Array(674),
@@ -333,7 +333,7 @@ describe('Confidential Transfer Helpers', () => {
       
       it('should handle invalid proof', async () => {
         // Mock invalid proof verification
-        const { verifyConfidentialTransferProof } = await import('../../src/utils/token-2022-extensions')
+        const { verifyConfidentialTransferProof } = await import('../../src/utils/token-2022-extensions.js')
         vi.mocked(verifyConfidentialTransferProof).mockResolvedValueOnce(false)
         
         const params: ConfidentialTransferParams = {
@@ -400,7 +400,7 @@ describe('Confidential Transfer Helpers', () => {
         
         expect(result.signature).toBe('mock-signature')
         // Verify that both transfer and fee proofs were generated
-        const { generateConfidentialTransferProof } = await import('../../src/utils/token-2022-extensions')
+        const { generateConfidentialTransferProof } = await import('../../src/utils/token-2022-extensions.js')
         expect(generateConfidentialTransferProof).toHaveBeenCalledWith(
           expectedNet,
           keypair,

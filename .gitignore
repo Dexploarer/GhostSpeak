@@ -18,6 +18,10 @@ test-*.sh
 test-*.txt
 check-*.mjs
 debug-*.mjs
+
+# === Vitest cache ===
+.vitest/
+packages/*/.vitest/
 pda-*.mjs
 test-report.json
 current_program_idl.json

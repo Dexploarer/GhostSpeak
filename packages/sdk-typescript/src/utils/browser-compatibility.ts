@@ -151,7 +151,7 @@ function detectWebAssemblyThreads(): boolean {
  * Detect browser name, version, and engine
  */
 function detectBrowser(): { name: string; version: string; engine: string } {
-  const userAgent = navigator.userAgent.toLowerCase()
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : ''
   
   // Chrome
   if (userAgent.includes('chrome') && !userAgent.includes('edg')) {

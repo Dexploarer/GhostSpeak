@@ -59,6 +59,45 @@ export class AccountCreationHelper {
   }
 
   /**
+   * Helper to create a service listing with validation
+   */
+  async createServiceListing(
+    signer: TransactionSigner,
+    agentAddress: Address,
+    serviceId: string,
+    basePrice: bigint
+  ): Promise<{
+    serviceAddress: Address
+    agentAddress: Address
+    serviceId: string
+    basePrice: bigint
+  }> {
+    // Validate service ID
+    if (!serviceId || serviceId.length === 0) {
+      throw new Error('Service ID is required')
+    }
+    
+    if (serviceId.length > 64) {
+      throw new Error('Service ID too long (max 64 characters)')
+    }
+    
+    // Validate base price
+    if (basePrice <= 0n) {
+      throw new Error('Base price must be greater than 0')
+    }
+    
+    const { deriveServiceListingPda } = await import('./pda.js')
+    const serviceAddress = await deriveServiceListingPda(this.config.programId!, agentAddress, serviceId)
+    
+    return {
+      serviceAddress,
+      agentAddress,
+      serviceId,
+      basePrice
+    }
+  }
+
+  /**
    * Helper to create a job posting account with derived PDA
    */
   async createJobPostingAccount(

@@ -11,41 +11,44 @@ import type { ElGamalKeypair, ElGamalCiphertext } from '../../src/utils/elgamal-
 
 // Mock WASM module
 export function mockWasmModule() {
+  const mockEngine = {
+    encrypt_amount: vi.fn().mockReturnValue({
+      c1: new Uint8Array(32).fill(1),
+      c2: new Uint8Array(32).fill(2)
+    }),
+    batch_encrypt_amounts: vi.fn().mockReturnValue([
+      { c1: new Uint8Array(32).fill(1), c2: new Uint8Array(32).fill(2) }
+    ]),
+    generate_range_proof: vi.fn().mockReturnValue({
+      proof: new Uint8Array(674).fill(0),
+      commitment: new Uint8Array(32).fill(3)
+    }),
+    batch_generate_range_proofs: vi.fn().mockReturnValue([
+      { proof: new Uint8Array(674).fill(0), commitment: new Uint8Array(32).fill(3) }
+    ]),
+    get_performance_info: vi.fn().mockReturnValue({
+      simd_enabled: true,
+      estimated_speedup: 10,
+      memory_allocator: 'wee_alloc'
+    }),
+    generate_keypair: vi.fn().mockReturnValue({
+      publicKey: new Uint8Array(32).fill(1),
+      secretKey: new Uint8Array(32).fill(2)
+    }),
+    run_benchmarks: vi.fn().mockReturnValue({
+      encryption: { avg_time_ms: 0.5 },
+      range_proof: { avg_time_ms: 5.0 }
+    })
+  }
+
   return {
-    WasmElGamalEngine: vi.fn().mockImplementation(() => ({
-      encrypt_amount: vi.fn().mockReturnValue({
-        c1: new Uint8Array(32).fill(1),
-        c2: new Uint8Array(32).fill(2)
-      }),
-      batch_encrypt_amounts: vi.fn().mockReturnValue([
-        { c1: new Uint8Array(32).fill(1), c2: new Uint8Array(32).fill(2) }
-      ]),
-      generate_range_proof: vi.fn().mockReturnValue({
-        proof: new Uint8Array(674).fill(0),
-        commitment: new Uint8Array(32).fill(3)
-      }),
-      batch_generate_range_proofs: vi.fn().mockReturnValue([
-        { proof: new Uint8Array(674).fill(0), commitment: new Uint8Array(32).fill(3) }
-      ]),
-      get_performance_info: vi.fn().mockReturnValue({
-        simd_enabled: true,
-        estimated_speedup: 10,
-        memory_allocator: 'wee_alloc'
-      }),
-      generate_keypair: vi.fn().mockReturnValue({
-        publicKey: new Uint8Array(32).fill(4),
-        secretKey: new Uint8Array(32).fill(5)
-      }),
-      run_benchmarks: vi.fn().mockReturnValue({
-        encryption: { avg_time_ms: 2 }
-      })
-    })),
+    default: vi.fn().mockResolvedValue(undefined),
+    WasmElGamalEngine: vi.fn().mockImplementation(() => mockEngine),
     is_wasm_available: vi.fn().mockReturnValue(true),
     get_wasm_info: vi.fn().mockReturnValue({
       version: '1.0.0',
-      features: { simd: true }
-    }),
-    default: vi.fn().mockResolvedValue(undefined)
+      features: { simd: true, threads: false }
+    })
   }
 }
 

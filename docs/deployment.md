@@ -1,6 +1,6 @@
-# Deployment Guide
+# GhostSpeak Deployment Guide
 
-This guide covers deploying GhostSpeak to various Solana networks.
+This comprehensive guide covers deploying the GhostSpeak protocol to various Solana networks.
 
 ## Prerequisites
 

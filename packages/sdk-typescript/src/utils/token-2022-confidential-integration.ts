@@ -8,6 +8,7 @@
 
 import type { Address, IInstruction, TransactionSigner } from '@solana/kit'
 import { address } from '@solana/addresses'
+import { getAddressEncoder } from '@solana/kit'
 // Types from token-2022-rpc.js will be imported when needed
 import {
   decryptAmount,
@@ -178,6 +179,21 @@ export interface ConfidentialTransferOperationResult {
 }
 
 // =====================================================
+// UTILITIES
+// =====================================================
+
+/**
+ * Convert base58 address to bytes
+ */
+function base58ToBytes(addressStr: Address): Uint8Array {
+  const encoder = getAddressEncoder()
+  return new Uint8Array(encoder.encode(addressStr))
+}
+
+
+
+
+// =====================================================
 // MINT INITIALIZATION
 // =====================================================
 
@@ -192,20 +208,32 @@ function createLocalInitializeConfidentialTransferMintInstruction(
     auditorElgamalPubkey?: Uint8Array
   }
 ): IInstruction {
-  // This would use the actual Token-2022 instruction format
-  // For now, return a placeholder that represents the operation
+  // Token-2022 instruction format: ConfidentialTransferInstruction::InitializeMint
+  // Instruction index 25 for ConfidentialTransfer extension
+  const instructionData = new Uint8Array(67)
+  
+  // Set instruction discriminator (ConfidentialTransfer variant)
+  instructionData[0] = 25 // ConfidentialTransferInstruction
+  instructionData[1] = 0  // InitializeMint sub-instruction
+  
+  // Auto approve new accounts flag
+  instructionData[2] = config.autoApproveNewAccounts ? 1 : 0
+  
+  // Authority (32 bytes) - convert address to bytes
+  const authorityBytes = base58ToBytes(config.authority)
+  instructionData.set(authorityBytes, 3)
+  
+  // Auditor ElGamal public key (32 bytes) - optional
+  if (config.auditorElgamalPubkey) {
+    instructionData.set(config.auditorElgamalPubkey, 35)
+  }
+  
   return {
     programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     accounts: [
       { address: mint, role: 2 }, // WritableNonSigner
     ],
-    data: new Uint8Array([
-      27, // ConfidentialTransferExtension
-      0,  // InitializeConfidentialTransferMint
-      config.autoApproveNewAccounts ? 1 : 0,
-      ...(Array(32).fill(0) as number[]), // authority placeholder
-      ...(config.auditorElgamalPubkey ?? new Uint8Array(32))
-    ])
+    data: instructionData
   }
 }
 
@@ -242,20 +270,31 @@ function createLocalInitializeConfidentialTransferAccountInstruction(
   elgamalPubkey: Uint8Array,
   maximumPendingBalanceCreditCounter: bigint
 ): IInstruction {
+  // Token-2022 instruction format: ConfidentialTransferInstruction::ConfigureAccount
+  const instructionData = new Uint8Array(42)
+  
+  // Set instruction discriminator
+  instructionData[0] = 25 // ConfidentialTransferInstruction
+  instructionData[1] = 1  // ConfigureAccount sub-instruction
+  
+  // ElGamal public key (32 bytes)
+  instructionData.set(elgamalPubkey, 2)
+  
+  // Maximum pending balance credit counter (8 bytes, little-endian)
+  const counterBytes = numberToBytes(maximumPendingBalanceCreditCounter, 8)
+  instructionData.set(counterBytes, 34)
+  
   return {
     programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     accounts: [
       { address: account, role: 2 }, // WritableNonSigner
       { address: mint, role: 0 }, // ReadonlyNonSigner
     ],
-    data: new Uint8Array([
-      27, // ConfidentialTransferExtension
-      1,  // InitializeConfidentialTransferAccount
-      ...elgamalPubkey,
-      ...numberToBytes(maximumPendingBalanceCreditCounter, 8)
-    ])
+    data: instructionData
   }
 }
+
+
 
 /**
  * Initialize a token account with confidential transfer support
@@ -518,17 +557,24 @@ function createLocalApplyPendingBalanceInstruction(
   owner: TransactionSigner,
   expectedCreditCounter: bigint
 ): IInstruction {
+  // Token-2022 instruction format: ConfidentialTransferInstruction::ApplyPendingBalance
+  const instructionData = new Uint8Array(10)
+  
+  // Set instruction discriminator
+  instructionData[0] = 25 // ConfidentialTransferInstruction
+  instructionData[1] = 3  // ApplyPendingBalance sub-instruction
+  
+  // Expected credit counter (8 bytes, little-endian)
+  const counterBytes = numberToBytes(expectedCreditCounter, 8)
+  instructionData.set(counterBytes, 2)
+  
   return {
     programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     accounts: [
       { address: account, role: 2 }, // WritableNonSigner
-      { address: owner.address, role: 1 }, // ReadonlySigner
+      { address: owner.address, role: 3 }, // ReadonlySigner
     ],
-    data: new Uint8Array([
-      27, // ConfidentialTransferExtension
-      3,  // ApplyPendingBalance
-      ...numberToBytes(expectedCreditCounter, 8)
-    ])
+    data: instructionData
   }
 }
 
@@ -539,16 +585,20 @@ function createLocalEnableConfidentialCreditsInstruction(
   account: Address,
   owner: TransactionSigner
 ): IInstruction {
+  // Token-2022 instruction format: ConfidentialTransferInstruction::EnableConfidentialCredits
+  const instructionData = new Uint8Array(2)
+  
+  // Set instruction discriminator
+  instructionData[0] = 25 // ConfidentialTransferInstruction
+  instructionData[1] = 4  // EnableConfidentialCredits sub-instruction
+  
   return {
     programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     accounts: [
       { address: account, role: 2 }, // WritableNonSigner
-      { address: owner.address, role: 1 }, // ReadonlySigner
+      { address: owner.address, role: 3 }, // ReadonlySigner
     ],
-    data: new Uint8Array([
-      27, // ConfidentialTransferExtension
-      4,  // EnableConfidentialCredits
-    ])
+    data: instructionData
   }
 }
 
@@ -560,16 +610,20 @@ function createLocalDisableConfidentialCreditsInstruction(
   account: Address,
   owner: TransactionSigner
 ): IInstruction {
+  // Token-2022 instruction format: ConfidentialTransferInstruction::DisableConfidentialCredits
+  const instructionData = new Uint8Array(2)
+  
+  // Set instruction discriminator
+  instructionData[0] = 25 // ConfidentialTransferInstruction
+  instructionData[1] = 5  // DisableConfidentialCredits sub-instruction
+  
   return {
     programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     accounts: [
       { address: account, role: 2 }, // WritableNonSigner
-      { address: owner.address, role: 1 }, // ReadonlySigner
+      { address: owner.address, role: 3 }, // ReadonlySigner
     ],
-    data: new Uint8Array([
-      27, // ConfidentialTransferExtension
-      5,  // DisableConfidentialCredits
-    ])
+    data: instructionData
   }
 }
 
@@ -583,19 +637,26 @@ function createLocalWithdrawConfidentialInstruction(
   owner: TransactionSigner,
   proofContext: Address
 ): IInstruction {
+  // Token-2022 instruction format: ConfidentialTransferInstruction::Withdraw
+  const instructionData = new Uint8Array(10)
+  
+  // Set instruction discriminator
+  instructionData[0] = 25 // ConfidentialTransferInstruction
+  instructionData[1] = 6  // Withdraw sub-instruction
+  
+  // Amount to withdraw (8 bytes, little-endian)
+  const amountBytes = numberToBytes(amount, 8)
+  instructionData.set(amountBytes, 2)
+  
   return {
     programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     accounts: [
       { address: account, role: 2 }, // WritableNonSigner
       { address: mint, role: 0 }, // ReadonlyNonSigner
-      { address: owner.address, role: 1 }, // ReadonlySigner
-      { address: proofContext, role: 0 }, // ReadonlyNonSigner
+      { address: owner.address, role: 3 }, // ReadonlySigner
+      { address: proofContext, role: 0 }, // ReadonlyNonSigner (proof context)
     ],
-    data: new Uint8Array([
-      27, // ConfidentialTransferExtension
-      6,  // Withdraw
-      ...numberToBytes(amount, 8)
-    ])
+    data: instructionData
   }
 }
 
@@ -608,18 +669,25 @@ function createLocalDepositConfidentialInstruction(
   amount: bigint,
   owner: TransactionSigner
 ): IInstruction {
+  // Token-2022 instruction format: ConfidentialTransferInstruction::Deposit
+  const instructionData = new Uint8Array(10)
+  
+  // Set instruction discriminator
+  instructionData[0] = 25 // ConfidentialTransferInstruction
+  instructionData[1] = 7  // Deposit sub-instruction
+  
+  // Amount to deposit (8 bytes, little-endian)
+  const amountBytes = numberToBytes(amount, 8)
+  instructionData.set(amountBytes, 2)
+  
   return {
     programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     accounts: [
       { address: account, role: 2 }, // WritableNonSigner
       { address: mint, role: 0 }, // ReadonlyNonSigner
-      { address: owner.address, role: 1 }, // ReadonlySigner
+      { address: owner.address, role: 3 }, // ReadonlySigner
     ],
-    data: new Uint8Array([
-      27, // ConfidentialTransferExtension
-      7,  // Deposit
-      ...numberToBytes(amount, 8)
-    ])
+    data: instructionData
   }
 }
 
@@ -653,34 +721,102 @@ export function parseConfidentialTransferAccount(
   mint: Address
 ): ConfidentialTokenAccount | null {
   try {
-    // This would parse the actual account data structure
-    // For now, return a mock structure
-    const elgamalPubkey = accountData.slice(0, 32)
-    const pendingBalanceCommitment = accountData.slice(32, 64)
-    const pendingBalanceHandle = accountData.slice(64, 96)
-    const availableBalanceCommitment = accountData.slice(96, 128)
-    const availableBalanceHandle = accountData.slice(128, 160)
+    // Token-2022 confidential transfer extension layout
+    // The extension data starts after the base account data
+    // Base token account is 165 bytes, then extensions follow
     
-    return {
-      address,
-      owner,
-      mint,
-      elgamalPubkey,
-      pendingBalance: {
-        commitment: { commitment: pendingBalanceCommitment },
-        handle: { handle: pendingBalanceHandle }
-      },
-      availableBalance: {
-        commitment: { commitment: availableBalanceCommitment },
-        handle: { handle: availableBalanceHandle }
-      },
-      confidentialTransfersEnabled: true,
-      allowConfidentialCredits: true,
-      pendingBalanceCreditCounter: 0n,
-      maximumPendingBalanceCreditCounter: 65536n,
-      expectedPendingBalanceCreditCounter: 0n,
-      actualPendingBalanceCreditCounter: 0n
+    if (accountData.length < 165 + 97) {
+      // Not enough data for confidential transfer extension
+      return null
     }
+    
+    let offset = 165 // Skip base token account data
+    
+    // Read extension type and length
+    while (offset < accountData.length - 4) {
+      const extensionType = accountData[offset] | (accountData[offset + 1] << 8)
+      offset += 2
+      const extensionLength = accountData[offset] | (accountData[offset + 1] << 8)
+      offset += 2
+      
+      // ExtensionType.ConfidentialTransferAccount = 5
+      if (extensionType === 5) {
+        // Parse confidential transfer account extension
+        const elgamalPubkey = accountData.slice(offset, offset + 32)
+        offset += 32
+        
+        // Pending balance ciphertext (64 bytes: 32 commitment + 32 handle)
+        const pendingBalanceCommitment = accountData.slice(offset, offset + 32)
+        const pendingBalanceHandle = accountData.slice(offset + 32, offset + 64)
+        offset += 64
+        
+        // Available balance ciphertext (64 bytes: 32 commitment + 32 handle)
+        const availableBalanceCommitment = accountData.slice(offset, offset + 32)
+        const availableBalanceHandle = accountData.slice(offset + 32, offset + 64)
+        offset += 64
+        
+        // Flags (1 byte)
+        const flags = accountData[offset]
+        const confidentialTransfersEnabled = (flags & 0x01) !== 0
+        const allowConfidentialCredits = (flags & 0x02) !== 0
+        offset += 1
+        
+        // Credit counters (8 bytes each)
+        const pendingBalanceCreditCounter = 
+          BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
+          (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
+          (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+        offset += 8
+        
+        const maximumPendingBalanceCreditCounter = 
+          BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
+          (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
+          (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+        offset += 8
+        
+        const expectedPendingBalanceCreditCounter = 
+          BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
+          (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
+          (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+        offset += 8
+        
+        const actualPendingBalanceCreditCounter = 
+          BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
+          (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
+          (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+        
+        return {
+          address,
+          owner,
+          mint,
+          elgamalPubkey,
+          pendingBalance: {
+            commitment: { commitment: pendingBalanceCommitment },
+            handle: { handle: pendingBalanceHandle }
+          },
+          availableBalance: {
+            commitment: { commitment: availableBalanceCommitment },
+            handle: { handle: availableBalanceHandle }
+          },
+          confidentialTransfersEnabled,
+          allowConfidentialCredits,
+          pendingBalanceCreditCounter,
+          maximumPendingBalanceCreditCounter,
+          expectedPendingBalanceCreditCounter,
+          actualPendingBalanceCreditCounter
+        }
+      } else {
+        // Skip this extension
+        offset += extensionLength
+      }
+    }
+    
+    // No confidential transfer extension found
+    return null
   } catch {
     return null
   }

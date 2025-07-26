@@ -55,6 +55,7 @@ pub struct AgentReplicatedEvent {
 }
 
 impl ReplicationTemplate {
+    
     pub const LEN: usize = 8 + // discriminator
         32 + // source_agent
         32 + // creator
@@ -72,6 +73,7 @@ impl ReplicationTemplate {
 }
 
 impl ReplicationRecord {
+    
     pub const LEN: usize = 8 + // discriminator
         8 + // record_id
         32 + // original_agent

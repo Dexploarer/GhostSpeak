@@ -21,6 +21,8 @@ import {
   getAddressEncoder,
   getArrayDecoder,
   getArrayEncoder,
+  getBooleanDecoder,
+  getBooleanEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getI64Decoder,
@@ -59,12 +61,16 @@ import {
   getAuctionStatusEncoder,
   getAuctionTypeDecoder,
   getAuctionTypeEncoder,
+  getDutchAuctionConfigDecoder,
+  getDutchAuctionConfigEncoder,
   type AuctionBid,
   type AuctionBidArgs,
   type AuctionStatus,
   type AuctionStatusArgs,
   type AuctionType,
   type AuctionTypeArgs,
+  type DutchAuctionConfig,
+  type DutchAuctionConfigArgs,
 } from '../types';
 
 export const AUCTION_MARKETPLACE_DISCRIMINATOR = new Uint8Array([
@@ -85,6 +91,8 @@ export type AuctionMarketplace = {
   auctionType: AuctionType;
   startingPrice: bigint;
   reservePrice: bigint;
+  isReserveHidden: boolean;
+  reserveMet: boolean;
   currentPrice: bigint;
   currentWinner: Option<Address>;
   winner: Option<Address>;
@@ -96,6 +104,11 @@ export type AuctionMarketplace = {
   createdAt: bigint;
   endedAt: Option<bigint>;
   metadataUri: string;
+  dutchConfig: Option<DutchAuctionConfig>;
+  extensionCount: number;
+  originalEndTime: bigint;
+  reservePriceLocked: boolean;
+  reserveShortfallNotified: boolean;
   bump: number;
 };
 
@@ -106,6 +119,8 @@ export type AuctionMarketplaceArgs = {
   auctionType: AuctionTypeArgs;
   startingPrice: number | bigint;
   reservePrice: number | bigint;
+  isReserveHidden: boolean;
+  reserveMet: boolean;
   currentPrice: number | bigint;
   currentWinner: OptionOrNullable<Address>;
   winner: OptionOrNullable<Address>;
@@ -117,6 +132,11 @@ export type AuctionMarketplaceArgs = {
   createdAt: number | bigint;
   endedAt: OptionOrNullable<number | bigint>;
   metadataUri: string;
+  dutchConfig: OptionOrNullable<DutchAuctionConfigArgs>;
+  extensionCount: number;
+  originalEndTime: number | bigint;
+  reservePriceLocked: boolean;
+  reserveShortfallNotified: boolean;
   bump: number;
 };
 
@@ -130,6 +150,8 @@ export function getAuctionMarketplaceEncoder(): Encoder<AuctionMarketplaceArgs> 
       ['auctionType', getAuctionTypeEncoder()],
       ['startingPrice', getU64Encoder()],
       ['reservePrice', getU64Encoder()],
+      ['isReserveHidden', getBooleanEncoder()],
+      ['reserveMet', getBooleanEncoder()],
       ['currentPrice', getU64Encoder()],
       ['currentWinner', getOptionEncoder(getAddressEncoder())],
       ['winner', getOptionEncoder(getAddressEncoder())],
@@ -141,6 +163,11 @@ export function getAuctionMarketplaceEncoder(): Encoder<AuctionMarketplaceArgs> 
       ['createdAt', getI64Encoder()],
       ['endedAt', getOptionEncoder(getI64Encoder())],
       ['metadataUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['dutchConfig', getOptionEncoder(getDutchAuctionConfigEncoder())],
+      ['extensionCount', getU8Encoder()],
+      ['originalEndTime', getI64Encoder()],
+      ['reservePriceLocked', getBooleanEncoder()],
+      ['reserveShortfallNotified', getBooleanEncoder()],
       ['bump', getU8Encoder()],
     ]),
     (value) => ({ ...value, discriminator: AUCTION_MARKETPLACE_DISCRIMINATOR })
@@ -156,6 +183,8 @@ export function getAuctionMarketplaceDecoder(): Decoder<AuctionMarketplace> {
     ['auctionType', getAuctionTypeDecoder()],
     ['startingPrice', getU64Decoder()],
     ['reservePrice', getU64Decoder()],
+    ['isReserveHidden', getBooleanDecoder()],
+    ['reserveMet', getBooleanDecoder()],
     ['currentPrice', getU64Decoder()],
     ['currentWinner', getOptionDecoder(getAddressDecoder())],
     ['winner', getOptionDecoder(getAddressDecoder())],
@@ -167,6 +196,11 @@ export function getAuctionMarketplaceDecoder(): Decoder<AuctionMarketplace> {
     ['createdAt', getI64Decoder()],
     ['endedAt', getOptionDecoder(getI64Decoder())],
     ['metadataUri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['dutchConfig', getOptionDecoder(getDutchAuctionConfigDecoder())],
+    ['extensionCount', getU8Decoder()],
+    ['originalEndTime', getI64Decoder()],
+    ['reservePriceLocked', getBooleanDecoder()],
+    ['reserveShortfallNotified', getBooleanDecoder()],
     ['bump', getU8Decoder()],
   ]);
 }

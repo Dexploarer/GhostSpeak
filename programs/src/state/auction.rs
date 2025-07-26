@@ -32,6 +32,13 @@ pub enum AuctionType {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DutchAuctionDecayType {
+    Linear,     // Linear price decrease over time
+    Exponential, // Exponential decay (slower at start, faster toward end)
+    Stepped,    // Price decreases in discrete steps
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AuctionStatus {
     Active,
     Ended,
@@ -54,11 +61,21 @@ pub struct AuctionData {
     pub auction_type: AuctionType,
     pub starting_price: u64,
     pub reserve_price: u64,
+    pub is_reserve_hidden: bool,
     pub current_bid: u64,
     pub current_bidder: Option<Pubkey>,
     pub auction_end_time: i64,
     pub minimum_bid_increment: u64,
     pub total_bids: u32,
+    pub dutch_config: Option<DutchAuctionConfig>, // Configuration for Dutch auctions
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
+pub struct DutchAuctionConfig {
+    pub decay_type: DutchAuctionDecayType,
+    pub price_step_count: u32,      // For stepped decay, number of price steps
+    pub step_duration: i64,         // Duration for each step in seconds
+    pub decay_rate_basis_points: u16, // Custom decay rate (0-10000, where 10000 = 100%)
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
@@ -114,6 +131,8 @@ pub struct AuctionMarketplace {
     pub auction_type: AuctionType,
     pub starting_price: u64,
     pub reserve_price: u64,
+    pub is_reserve_hidden: bool,
+    pub reserve_met: bool,
     pub current_price: u64,
     pub current_winner: Option<Pubkey>,
     pub winner: Option<Pubkey>,
@@ -125,6 +144,12 @@ pub struct AuctionMarketplace {
     pub created_at: i64,
     pub ended_at: Option<i64>,
     pub metadata_uri: String,
+    pub dutch_config: Option<DutchAuctionConfig>, // Configuration for Dutch auctions
+    // Enhanced reserve price features
+    pub extension_count: u8,           // Number of times auction has been extended
+    pub original_end_time: i64,        // Original auction end time (before extensions)
+    pub reserve_price_locked: bool,    // Prevents reserve price manipulation after first bid
+    pub reserve_shortfall_notified: bool, // Track if bidders were notified of reserve shortfall
     pub bump: u8,
 }
 
@@ -389,6 +414,8 @@ impl AuctionMarketplace {
         1 + // auction_type
         8 + // starting_price
         8 + // reserve_price
+        1 + // is_reserve_hidden
+        1 + // reserve_met
         8 + // current_price
         1 + 32 + // current_winner (Option<Pubkey>)
         1 + 32 + // winner (Option<Pubkey>)
@@ -400,6 +427,12 @@ impl AuctionMarketplace {
         8 + // created_at
         1 + 8 + // ended_at (Option<i64>)
         4 + MAX_GENERAL_STRING_LENGTH + // metadata_uri
+        1 + (1 + (1 + 1 + 4 + 4 + 2)) + // dutch_config (Option<DutchAuctionConfig>)
+        // Enhanced reserve price features
+        1 + // extension_count
+        8 + // original_end_time
+        1 + // reserve_price_locked
+        1 + // reserve_shortfall_notified
         1; // bump
 
     pub fn initialize(
@@ -410,6 +443,7 @@ impl AuctionMarketplace {
         auction_type: AuctionType,
         starting_price: u64,
         reserve_price: u64,
+        is_reserve_hidden: bool,
         auction_end_time: i64,
         minimum_bid_increment: u64,
         metadata_uri: String,
@@ -428,6 +462,8 @@ impl AuctionMarketplace {
         self.auction_type = auction_type;
         self.starting_price = starting_price;
         self.reserve_price = reserve_price;
+        self.is_reserve_hidden = is_reserve_hidden;
+        self.reserve_met = false;
         self.current_price = starting_price;
         self.current_winner = None;
         self.winner = None;
@@ -439,6 +475,12 @@ impl AuctionMarketplace {
         self.created_at = clock.unix_timestamp;
         self.ended_at = None;
         self.metadata_uri = metadata_uri;
+        self.dutch_config = None;
+        // Initialize enhanced reserve price features
+        self.extension_count = 0;
+        self.original_end_time = auction_end_time;
+        self.reserve_price_locked = false;
+        self.reserve_shortfall_notified = false;
         self.bump = bump;
 
         Ok(())
@@ -460,14 +502,32 @@ impl AuctionMarketplace {
             GhostSpeakError::TooManyBids
         );
 
-        let minimum_bid = if self.current_winner.is_none() {
-            self.starting_price
-        } else {
-            self.current_price
-                .saturating_add(self.minimum_bid_increment)
+        let minimum_bid = match self.auction_type {
+            AuctionType::Dutch => {
+                // For Dutch auctions, bid must meet current calculated price
+                let dutch_price = self.calculate_dutch_price(clock.unix_timestamp)?;
+                dutch_price
+            }
+            _ => {
+                // For other auction types, use standard logic
+                if self.current_winner.is_none() {
+                    self.starting_price
+                } else {
+                    self.current_price
+                        .saturating_add(self.minimum_bid_increment)
+                }
+            }
         };
 
         require!(amount >= minimum_bid, GhostSpeakError::BidTooLow);
+        
+        // For Dutch auctions, any valid bid wins immediately
+        if self.auction_type == AuctionType::Dutch {
+            // Update current price to the bid amount for Dutch auctions
+            self.current_price = amount;
+            // Dutch auction ends immediately on first valid bid
+            self.auction_end_time = clock.unix_timestamp;
+        }
 
         // Mark previous winning bid as not winning
         if let Some(last_bid) = self.bids.last_mut() {
@@ -485,6 +545,16 @@ impl AuctionMarketplace {
         self.current_price = amount;
         self.current_winner = Some(bidder);
         self.total_bids = self.total_bids.saturating_add(1);
+
+        // Lock reserve price after first bid to prevent manipulation
+        if self.total_bids == 1 && !self.reserve_price_locked {
+            self.reserve_price_locked = true;
+        }
+
+        // Update reserve met status
+        if amount >= self.reserve_price {
+            self.reserve_met = true;
+        }
 
         Ok(())
     }
@@ -514,12 +584,63 @@ impl AuctionMarketplace {
         );
 
         // Check if reserve price was met
-        if self.current_price >= self.reserve_price {
+        if self.reserve_met {
             self.status = AuctionStatus::Settled;
+            self.winner = self.current_winner;
         } else {
             self.status = AuctionStatus::Cancelled;
         }
 
         Ok(())
+    }
+    
+    /// Calculate current price for Dutch auction based on time progression
+    pub fn calculate_dutch_price(&self, current_time: i64) -> Result<u64> {
+        if self.auction_type != AuctionType::Dutch {
+            return Ok(self.current_price);
+        }
+        
+        let Some(dutch_config) = &self.dutch_config else {
+            return Ok(self.current_price);
+        };
+        
+        // Calculate time progression (0.0 to 1.0)
+        let auction_duration = self.auction_end_time - self.created_at;
+        let elapsed_time = current_time - self.created_at;
+        
+        // Ensure we don't go beyond auction bounds
+        if elapsed_time <= 0 {
+            return Ok(self.starting_price);
+        }
+        if elapsed_time >= auction_duration {
+            return Ok(self.reserve_price);
+        }
+        
+        let time_progress = elapsed_time as f64 / auction_duration as f64;
+        let price_range = (self.starting_price - self.reserve_price) as f64;
+        
+        let price_reduction = match dutch_config.decay_type {
+            DutchAuctionDecayType::Linear => {
+                // Linear decay: price decreases evenly over time
+                price_range * time_progress
+            }
+            DutchAuctionDecayType::Exponential => {
+                // Exponential decay: slower at start, faster toward end
+                let decay_factor = (dutch_config.decay_rate_basis_points as f64) / 10000.0;
+                price_range * (1.0 - (1.0 - time_progress).powf(1.0 / decay_factor))
+            }
+            DutchAuctionDecayType::Stepped => {
+                // Stepped decay: price decreases in discrete steps
+                let step_size = auction_duration / (dutch_config.price_step_count as i64);
+                let current_step = elapsed_time / step_size;
+                let step_ratio = (current_step as f64) / (dutch_config.price_step_count as f64);
+                price_range * step_ratio
+            }
+        };
+        
+        let current_price = self.starting_price - (price_reduction as u64);
+        
+        // Ensure price doesn't go below reserve
+        Ok(current_price.max(self.reserve_price))
     }
 }

@@ -26,6 +26,14 @@ import {
   type ReadonlyAccount,
   type ReadonlyUint8Array,
 } from '@solana/kit';
+import {
+  GHOSTSPEAK_MARKETPLACE_ERROR__INSUFFICIENT_ACCOUNTS,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_INSTRUCTION_DATA,
+  GHOSTSPEAK_MARKETPLACE_ERROR__MISSING_REQUIRED_ACCOUNT,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_ACCOUNT,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INSTRUCTION_PARSING_FAILED,
+  isGhostspeakMarketplaceError,
+} from '../errors';
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 import {
@@ -170,8 +178,7 @@ export function parseExportMultisigConfigInstruction<
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedExportMultisigConfigInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 1) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+    throw new Error('[GHOSTSPEAK_MARKETPLACE_ERROR__INSUFFICIENT_ACCOUNTS] Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

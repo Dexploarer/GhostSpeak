@@ -21,7 +21,9 @@ import {
   type ParsedApplyToJobInstruction,
   type ParsedApproveExtensionInstruction,
   type ParsedAssignArbitratorInstruction,
+  type ParsedBatchReplicateAgentsInstruction,
   type ParsedCancelEscrowInstruction,
+  type ParsedCastVoteInstruction,
   type ParsedCompleteEscrowInstruction,
   type ParsedCreateA2aSessionInstruction,
   type ParsedCreateAnalyticsDashboardInstruction,
@@ -38,11 +40,14 @@ import {
   type ParsedCreateRoyaltyStreamInstruction,
   type ParsedCreateServiceAuctionInstruction,
   type ParsedCreateServiceListingInstruction,
+  type ParsedCreateToken2022MintInstruction,
   type ParsedCreateWorkOrderInstruction,
   type ParsedDeactivateAgentInstruction,
+  type ParsedDelegateVoteInstruction,
   type ParsedDisputeEscrowInstruction,
   type ParsedDistributeIncentivesInstruction,
   type ParsedExecuteBulkDealBatchInstruction,
+  type ParsedExecuteProposalInstruction,
   type ParsedExportActionInstruction,
   type ParsedExportAuditContextInstruction,
   type ParsedExportBiometricQualityInstruction,
@@ -52,12 +57,18 @@ import {
   type ParsedExportReportEntryInstruction,
   type ParsedExportResourceConstraintsInstruction,
   type ParsedExportRuleConditionInstruction,
+  type ParsedExtendAuctionForReserveInstruction,
   type ParsedFileDisputeInstruction,
   type ParsedFinalizeAuctionInstruction,
   type ParsedGenerateComplianceReportInstruction,
   type ParsedInitializeAuditTrailInstruction,
+  type ParsedInitializeConfidentialTransferMintInstruction,
+  type ParsedInitializeDefaultAccountStateInstruction,
   type ParsedInitializeGovernanceProposalInstruction,
+  type ParsedInitializeInterestBearingConfigInstruction,
+  type ParsedInitializeMintCloseAuthorityInstruction,
   type ParsedInitializeRbacConfigInstruction,
+  type ParsedInitializeTransferFeeConfigInstruction,
   type ParsedInitiateNegotiationInstruction,
   type ParsedJoinChannelInstruction,
   type ParsedLeaveChannelInstruction,
@@ -65,6 +76,7 @@ import {
   type ParsedMakeCounterOfferInstruction,
   type ParsedManageAgentStatusInstruction,
   type ParsedPlaceAuctionBidInstruction,
+  type ParsedPlaceDutchAuctionBidInstruction,
   type ParsedProcessEscrowPaymentInstruction,
   type ParsedProcessPartialRefundInstruction,
   type ParsedProcessPaymentInstruction,
@@ -82,11 +94,13 @@ import {
   type ParsedSubmitDisputeEvidenceInstruction,
   type ParsedSubmitEvidenceBatchInstruction,
   type ParsedSubmitWorkDeliveryInstruction,
+  type ParsedTallyVotesInstruction,
   type ParsedUpdateA2aStatusInstruction,
   type ParsedUpdateAgentInstruction,
   type ParsedUpdateAgentReputationInstruction,
   type ParsedUpdateAgentServiceInstruction,
   type ParsedUpdateAnalyticsDashboardInstruction,
+  type ParsedUpdateAuctionReservePriceInstruction,
   type ParsedUpdateChannelSettingsInstruction,
   type ParsedUpdateDynamicPricingInstruction,
   type ParsedUpdateMarketAnalyticsInstruction,
@@ -594,7 +608,9 @@ export enum GhostspeakMarketplaceInstruction {
   ApplyToJob,
   ApproveExtension,
   AssignArbitrator,
+  BatchReplicateAgents,
   CancelEscrow,
+  CastVote,
   CompleteEscrow,
   CreateA2aSession,
   CreateAnalyticsDashboard,
@@ -611,17 +627,26 @@ export enum GhostspeakMarketplaceInstruction {
   CreateRoyaltyStream,
   CreateServiceAuction,
   CreateServiceListing,
+  CreateToken2022Mint,
   CreateWorkOrder,
   DeactivateAgent,
+  DelegateVote,
   DisputeEscrow,
   DistributeIncentives,
   ExecuteBulkDealBatch,
+  ExecuteProposal,
+  ExtendAuctionForReserve,
   FileDispute,
   FinalizeAuction,
   GenerateComplianceReport,
   InitializeAuditTrail,
+  InitializeConfidentialTransferMint,
+  InitializeDefaultAccountState,
   InitializeGovernanceProposal,
+  InitializeInterestBearingConfig,
+  InitializeMintCloseAuthority,
   InitializeRbacConfig,
+  InitializeTransferFeeConfig,
   InitiateNegotiation,
   JoinChannel,
   LeaveChannel,
@@ -629,6 +654,7 @@ export enum GhostspeakMarketplaceInstruction {
   MakeCounterOffer,
   ManageAgentStatus,
   PlaceAuctionBid,
+  PlaceDutchAuctionBid,
   ProcessEscrowPayment,
   ProcessPartialRefund,
   ProcessPayment,
@@ -646,11 +672,13 @@ export enum GhostspeakMarketplaceInstruction {
   SubmitDisputeEvidence,
   SubmitEvidenceBatch,
   SubmitWorkDelivery,
+  TallyVotes,
   UpdateA2aStatus,
   UpdateAgent,
   UpdateAgentReputation,
   UpdateAgentService,
   UpdateAnalyticsDashboard,
+  UpdateAuctionReservePrice,
   UpdateChannelSettings,
   UpdateDynamicPricing,
   UpdateMarketAnalytics,
@@ -842,12 +870,34 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([224, 241, 221, 158, 57, 55, 110, 180])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.BatchReplicateAgents;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([156, 203, 54, 179, 38, 72, 33, 21])
       ),
       0
     )
   ) {
     return GhostspeakMarketplaceInstruction.CancelEscrow;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([20, 212, 15, 189, 69, 180, 69, 151])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.CastVote;
   }
   if (
     containsBytes(
@@ -1029,6 +1079,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([4, 45, 127, 74, 240, 104, 83, 178])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.CreateToken2022Mint;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([143, 17, 248, 200, 217, 85, 10, 175])
       ),
       0
@@ -1046,6 +1107,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     )
   ) {
     return GhostspeakMarketplaceInstruction.DeactivateAgent;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([12, 116, 204, 68, 87, 205, 40, 205])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.DelegateVote;
   }
   if (
     containsBytes(
@@ -1079,6 +1151,28 @@ export function identifyGhostspeakMarketplaceInstruction(
     )
   ) {
     return GhostspeakMarketplaceInstruction.ExecuteBulkDealBatch;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([186, 60, 116, 133, 108, 128, 111, 28])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExecuteProposal;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([99, 201, 28, 182, 134, 0, 55, 181])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.ExtendAuctionForReserve;
   }
   if (
     containsBytes(
@@ -1128,6 +1222,28 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([154, 47, 116, 20, 167, 57, 114, 41])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.InitializeConfidentialTransferMint;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([175, 89, 119, 112, 150, 203, 202, 198])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.InitializeDefaultAccountState;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([137, 84, 234, 206, 17, 58, 54, 215])
       ),
       0
@@ -1139,12 +1255,45 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([59, 39, 17, 210, 123, 130, 101, 67])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.InitializeInterestBearingConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([117, 167, 56, 158, 201, 160, 209, 109])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.InitializeMintCloseAuthority;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([215, 68, 129, 228, 237, 165, 0, 240])
       ),
       0
     )
   ) {
     return GhostspeakMarketplaceInstruction.InitializeRbacConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([189, 189, 171, 33, 115, 17, 231, 2])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.InitializeTransferFeeConfig;
   }
   if (
     containsBytes(
@@ -1222,6 +1371,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     )
   ) {
     return GhostspeakMarketplaceInstruction.PlaceAuctionBid;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([209, 244, 155, 47, 62, 54, 119, 34])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.PlaceDutchAuctionBid;
   }
   if (
     containsBytes(
@@ -1414,6 +1574,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([144, 82, 0, 72, 160, 132, 35, 121])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.TallyVotes;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([10, 122, 84, 103, 225, 186, 125, 183])
       ),
       0
@@ -1464,6 +1635,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     )
   ) {
     return GhostspeakMarketplaceInstruction.UpdateAnalyticsDashboard;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([97, 2, 209, 24, 27, 236, 50, 174])
+      ),
+      0
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.UpdateAuctionReservePrice;
   }
   if (
     containsBytes(
@@ -1577,8 +1759,14 @@ export type ParsedGhostspeakMarketplaceInstruction<
       instructionType: GhostspeakMarketplaceInstruction.AssignArbitrator;
     } & ParsedAssignArbitratorInstruction<TProgram>)
   | ({
+      instructionType: GhostspeakMarketplaceInstruction.BatchReplicateAgents;
+    } & ParsedBatchReplicateAgentsInstruction<TProgram>)
+  | ({
       instructionType: GhostspeakMarketplaceInstruction.CancelEscrow;
     } & ParsedCancelEscrowInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.CastVote;
+    } & ParsedCastVoteInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.CompleteEscrow;
     } & ParsedCompleteEscrowInstruction<TProgram>)
@@ -1628,11 +1816,17 @@ export type ParsedGhostspeakMarketplaceInstruction<
       instructionType: GhostspeakMarketplaceInstruction.CreateServiceListing;
     } & ParsedCreateServiceListingInstruction<TProgram>)
   | ({
+      instructionType: GhostspeakMarketplaceInstruction.CreateToken2022Mint;
+    } & ParsedCreateToken2022MintInstruction<TProgram>)
+  | ({
       instructionType: GhostspeakMarketplaceInstruction.CreateWorkOrder;
     } & ParsedCreateWorkOrderInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.DeactivateAgent;
     } & ParsedDeactivateAgentInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.DelegateVote;
+    } & ParsedDelegateVoteInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.DisputeEscrow;
     } & ParsedDisputeEscrowInstruction<TProgram>)
@@ -1642,6 +1836,12 @@ export type ParsedGhostspeakMarketplaceInstruction<
   | ({
       instructionType: GhostspeakMarketplaceInstruction.ExecuteBulkDealBatch;
     } & ParsedExecuteBulkDealBatchInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExecuteProposal;
+    } & ParsedExecuteProposalInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.ExtendAuctionForReserve;
+    } & ParsedExtendAuctionForReserveInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.FileDispute;
     } & ParsedFileDisputeInstruction<TProgram>)
@@ -1655,11 +1855,26 @@ export type ParsedGhostspeakMarketplaceInstruction<
       instructionType: GhostspeakMarketplaceInstruction.InitializeAuditTrail;
     } & ParsedInitializeAuditTrailInstruction<TProgram>)
   | ({
+      instructionType: GhostspeakMarketplaceInstruction.InitializeConfidentialTransferMint;
+    } & ParsedInitializeConfidentialTransferMintInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.InitializeDefaultAccountState;
+    } & ParsedInitializeDefaultAccountStateInstruction<TProgram>)
+  | ({
       instructionType: GhostspeakMarketplaceInstruction.InitializeGovernanceProposal;
     } & ParsedInitializeGovernanceProposalInstruction<TProgram>)
   | ({
+      instructionType: GhostspeakMarketplaceInstruction.InitializeInterestBearingConfig;
+    } & ParsedInitializeInterestBearingConfigInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.InitializeMintCloseAuthority;
+    } & ParsedInitializeMintCloseAuthorityInstruction<TProgram>)
+  | ({
       instructionType: GhostspeakMarketplaceInstruction.InitializeRbacConfig;
     } & ParsedInitializeRbacConfigInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.InitializeTransferFeeConfig;
+    } & ParsedInitializeTransferFeeConfigInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.InitiateNegotiation;
     } & ParsedInitiateNegotiationInstruction<TProgram>)
@@ -1681,6 +1896,9 @@ export type ParsedGhostspeakMarketplaceInstruction<
   | ({
       instructionType: GhostspeakMarketplaceInstruction.PlaceAuctionBid;
     } & ParsedPlaceAuctionBidInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.PlaceDutchAuctionBid;
+    } & ParsedPlaceDutchAuctionBidInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.ProcessEscrowPayment;
     } & ParsedProcessEscrowPaymentInstruction<TProgram>)
@@ -1733,6 +1951,9 @@ export type ParsedGhostspeakMarketplaceInstruction<
       instructionType: GhostspeakMarketplaceInstruction.SubmitWorkDelivery;
     } & ParsedSubmitWorkDeliveryInstruction<TProgram>)
   | ({
+      instructionType: GhostspeakMarketplaceInstruction.TallyVotes;
+    } & ParsedTallyVotesInstruction<TProgram>)
+  | ({
       instructionType: GhostspeakMarketplaceInstruction.UpdateA2aStatus;
     } & ParsedUpdateA2aStatusInstruction<TProgram>)
   | ({
@@ -1747,6 +1968,9 @@ export type ParsedGhostspeakMarketplaceInstruction<
   | ({
       instructionType: GhostspeakMarketplaceInstruction.UpdateAnalyticsDashboard;
     } & ParsedUpdateAnalyticsDashboardInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.UpdateAuctionReservePrice;
+    } & ParsedUpdateAuctionReservePriceInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.UpdateChannelSettings;
     } & ParsedUpdateChannelSettingsInstruction<TProgram>)

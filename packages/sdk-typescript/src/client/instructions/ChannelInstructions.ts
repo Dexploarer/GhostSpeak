@@ -288,9 +288,7 @@ export class ChannelInstructions extends BaseInstructions {
    * Get messages from a channel (paginated)
    */
   async getChannelMessages(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _channelAddress: Address,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _options?: { limit?: number; offset?: number }
   ): Promise<{ message: Address; content: string; sender: Address; timestamp: number }[]> {
     // This would need a separate message account structure

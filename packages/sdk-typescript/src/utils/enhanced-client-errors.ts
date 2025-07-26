@@ -6,6 +6,7 @@
  */
 
 import { enhanceErrorMessage, debugInstructionCall } from './instruction-error-handler.js';
+import type { Address } from '@solana/addresses';
 
 /**
  * Enhanced error class for SDK operations
@@ -16,8 +17,8 @@ export class GhostSpeakSDKError extends Error {
   public readonly instructionName?: string;
 
   constructor(operation: string, originalError: Error, instructionName?: string) {
-    const enhancedError = enhanceErrorMessage(originalError, instructionName);
-    super(enhancedError.message);
+    const enhancedError = enhanceErrorMessage(originalError, instructionName ?? 'unknown');
+    super(enhancedError ?? 'Unknown error');
     
     this.name = 'GhostSpeakSDKError';
     this.operation = operation;
@@ -27,13 +28,18 @@ export class GhostSpeakSDKError extends Error {
 }
 
 /**
+ * Type for account context
+ */
+export type AccountContext = Address | { address: Address; name?: string };
+
+/**
  * Wrapper for async operations that enhances errors with instruction context
  */
 export async function withEnhancedErrors<T>(
   operation: string,
   instructionName: string | undefined,
   fn: () => Promise<T>,
-  debugAccounts?: any[]
+  debugAccounts?: AccountContext[]
 ): Promise<T> {
   try {
     if (debugAccounts && instructionName) {
@@ -56,7 +62,7 @@ export function withEnhancedErrorsSync<T>(
   operation: string,
   instructionName: string | undefined,
   fn: () => T,
-  debugAccounts?: any[]
+  debugAccounts?: AccountContext[]
 ): T {
   try {
     if (debugAccounts && instructionName) {
@@ -78,14 +84,14 @@ export function withEnhancedErrorsSync<T>(
 export function enhanceTransactionError(
   error: Error,
   instructionName?: string,
-  accounts?: any[]
+  accounts?: AccountContext[]
 ): Error {
   // Extract common Solana transaction error patterns
   const message = error.message;
   
   // Check for instruction-specific errors
   if (message.includes('custom program error')) {
-    const enhancedMessage = `${message}\n\nInstruction: ${instructionName || 'unknown'}`;
+    const enhancedMessage = `${message}\n\nInstruction: ${instructionName ?? 'unknown'}`;
     if (accounts && instructionName) {
       const debugInfo = `\nAccounts provided: ${accounts.length}`;
       return new Error(enhancedMessage + debugInfo);
@@ -98,7 +104,7 @@ export function enhanceTransactionError(
       message.includes('account') ||
       message.includes('signer') ||
       message.includes('writable')) {
-    return enhanceErrorMessage(error, instructionName);
+    return new Error(enhanceErrorMessage(error, instructionName ?? 'unknown'));
   }
   
   return error;
@@ -110,8 +116,8 @@ export function enhanceTransactionError(
 export function logEnhancedError(error: Error, context?: {
   operation?: string;
   instructionName?: string;
-  accounts?: any[];
-  params?: Record<string, any>;
+  accounts?: AccountContext[];
+  params?: Record<string, unknown>;
 }): void {
   console.error('🚨 GhostSpeak SDK Error:', error.message);
   
@@ -127,7 +133,15 @@ export function logEnhancedError(error: Error, context?: {
     if (context.accounts) {
       console.error('🏦 Accounts provided:', context.accounts.length);
       context.accounts.forEach((account, index) => {
-        console.error(`  ${index + 1}. ${account?.toString?.() || account}`);
+        if (typeof account === 'string') {
+          console.error(`  ${index + 1}. ${account}`);
+        } else if (typeof account === 'object' && account !== null) {
+          const addr = 'address' in account ? account.address : account;
+          const name = 'name' in account ? account.name : undefined;
+          console.error(`  ${index + 1}. ${addr}${name ? ` (${name})` : ''}`);
+        } else {
+          console.error(`  ${index + 1}. ${String(account)}`);
+        }
       });
     }
     
@@ -150,13 +164,13 @@ export function logEnhancedError(error: Error, context?: {
 export function createErrorContext(
   operation: string,
   instructionName?: string,
-  accounts?: any[],
-  params?: Record<string, any>
+  accounts?: AccountContext[],
+  params?: Record<string, unknown>
 ): {
   operation: string;
   instructionName?: string;
-  accounts?: any[];
-  params?: Record<string, any>;
+  accounts?: AccountContext[];
+  params?: Record<string, unknown>;
 } {
   return {
     operation,
@@ -177,7 +191,8 @@ export function validatePreconditions(checks: {
   for (const check of checks) {
     if (!check.condition) {
       const error = new Error(check.message);
-      throw enhanceErrorMessage(error, check.instructionName);
+      const enhanced = enhanceErrorMessage(error, check.instructionName ?? 'unknown');
+      throw new Error(enhanced ?? 'Unknown error');
     }
   }
 }
@@ -206,6 +221,12 @@ export function extractInstructionName(operation: string): string | undefined {
     'applyToJob': 'apply_to_job',
     'submit_work_delivery': 'submit_work_delivery',
     'submitWorkDelivery': 'submit_work_delivery',
+    'verify_work_delivery': 'verify_work_delivery',
+    'verifyWorkDelivery': 'verify_work_delivery',
+    'reject_work_delivery': 'reject_work_delivery',
+    'rejectWorkDelivery': 'reject_work_delivery',
+    'create_work_order': 'create_work_order',
+    'createWorkOrder': 'create_work_order',
     'create_channel': 'create_channel',
     'createChannel': 'create_channel',
     'send_message': 'send_message',
@@ -219,6 +240,40 @@ export function extractInstructionName(operation: string): string | undefined {
   return operationToInstruction[operation];
 }
 
+/**
+ * Work order specific error messages
+ */
+export function getWorkOrderErrorMessage(instructionName: string, accountCount: number): string {
+  const errorMessages: Record<string, (count: number) => string> = {
+    'verify_work_delivery': (count) => 
+      count < 4 
+        ? `Work delivery verification requires 4 accounts: workOrder, workDelivery, client, clock. Only ${count} provided.`
+        : 'Work delivery verification failed due to invalid account configuration.',
+    
+    'submit_work_delivery': (count) =>
+      count < 5
+        ? `Work delivery submission requires 5 accounts: workDelivery, workOrder, provider, clock, systemProgram. Only ${count} provided.`
+        : 'Work delivery submission failed due to invalid account configuration.',
+    
+    'reject_work_delivery': (count) =>
+      count < 4
+        ? `Work delivery rejection requires 4 accounts: workOrder, workDelivery, client, clock. Only ${count} provided.`
+        : 'Work delivery rejection failed due to invalid account configuration.',
+    
+    'create_work_order': (count) =>
+      count < 3
+        ? `Work order creation requires at least 3 accounts: workOrder, client, systemProgram. Only ${count} provided.`
+        : 'Work order creation failed due to invalid account configuration.'
+  };
+
+  const getErrorMessage = errorMessages[instructionName];
+  if (getErrorMessage) {
+    return getErrorMessage(accountCount);
+  }
+
+  return `Instruction ${instructionName} failed with ${accountCount} accounts provided.`;
+}
+
 // Export all utilities
 export default {
   GhostSpeakSDKError,
@@ -228,5 +283,6 @@ export default {
   logEnhancedError,
   createErrorContext,
   validatePreconditions,
-  extractInstructionName
+  extractInstructionName,
+  getWorkOrderErrorMessage
 };

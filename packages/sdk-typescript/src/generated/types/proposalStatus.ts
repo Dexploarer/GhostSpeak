@@ -24,6 +24,7 @@ export enum ProposalStatus {
   Executed,
   Cancelled,
   Expired,
+  Queued,
 }
 
 export type ProposalStatusArgs = ProposalStatus;

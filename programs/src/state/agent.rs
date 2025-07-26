@@ -78,10 +78,13 @@ pub struct Agent {
     pub merkle_tree: Option<Pubkey>, // Merkle tree for verification
     pub supports_a2a: bool,       // Agent-to-agent communication
     pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook
+    pub parent_agent: Option<Pubkey>, // Parent agent for lineage tracking
+    pub generation: u32,          // Generation number (0 for original, 1+ for replicas)
     pub bump: u8,
 }
 
 impl Agent {
+    
     pub const LEN: usize = 8 + // discriminator
         32 + // owner
         4 + MAX_NAME_LENGTH + // name
@@ -108,6 +111,8 @@ impl Agent {
         1 + 32 + // merkle_tree Option
         1 + // supports_a2a
         1 + 32 + // transfer_hook Option
+        1 + 32 + // parent_agent Option<Pubkey>
+        4 + // generation u32
         1; // bump
 
     /// Deactivate the agent

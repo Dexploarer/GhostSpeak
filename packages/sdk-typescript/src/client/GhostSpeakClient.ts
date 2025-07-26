@@ -6,7 +6,7 @@ import type {
   ServiceListingWithAddress
 } from '../types/index.js'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Keep for type completeness
-import type { Agent, ServiceListing, JobPosting, WorkOrder, A2ASession, A2AMessage } from '../generated/index.js'
+import type { Agent, ServiceListing, JobPosting, WorkOrder, WorkDelivery, A2ASession, A2AMessage } from '../generated/index.js'
 import type { AgentRegistrationParams } from './instructions/AgentInstructions.js'
 import type { CreateServiceListingParams, CreateJobPostingParams } from './instructions/MarketplaceInstructions.js' 
 import type { CreateEscrowParams } from './instructions/EscrowInstructions.js'
@@ -25,6 +25,9 @@ import { BulkDealsInstructions } from './instructions/BulkDealsInstructions.js'
 import { AnalyticsInstructions } from './instructions/AnalyticsInstructions.js'
 import { ComplianceInstructions } from './instructions/ComplianceInstructions.js'
 import { ChannelInstructions } from './instructions/ChannelInstructions.js'
+import { WorkOrderInstructions } from './instructions/WorkOrderInstructions.js'
+import { fetchWorkOrder, fetchWorkDelivery } from '../generated/accounts/index.js'
+import { ReputationInstructions } from './instructions/ReputationInstructions.js'
 
 /**
  * Main client for interacting with the GhostSpeak Protocol
@@ -42,6 +45,8 @@ export class GhostSpeakClient {
   public readonly analytics: AnalyticsInstructions
   public readonly compliance: ComplianceInstructions
   public readonly channel: ChannelInstructions
+  public readonly workOrder: WorkOrderInstructions
+  public readonly reputation: ReputationInstructions
 
   constructor(config: GhostSpeakConfig) {
     this.config = {
@@ -63,6 +68,8 @@ export class GhostSpeakClient {
     this.analytics = new AnalyticsInstructions(this.config)
     this.compliance = new ComplianceInstructions(this.config)
     this.channel = new ChannelInstructions(this.config)
+    this.workOrder = new WorkOrderInstructions(this.config)
+    this.reputation = new ReputationInstructions(this.config)
   }
 
   /**
@@ -182,4 +189,23 @@ export class GhostSpeakClient {
   async getA2AMessages(sessionAddress: Address): Promise<A2AMessage[]> {
     return this.a2a.getMessages(sessionAddress)
   }
+
+  /**
+   * Fetch a work order account
+   */
+  async fetchWorkOrder(workOrderAddress: Address): Promise<WorkOrder> {
+    const account = await fetchWorkOrder(this.config.rpc, workOrderAddress)
+    return account.data
+  }
+
+  /**
+   * Fetch a work delivery account
+   */
+  async fetchWorkDelivery(workDeliveryAddress: Address): Promise<WorkDelivery> {
+    const account = await fetchWorkDelivery(this.config.rpc, workDeliveryAddress)
+    return account.data
+  }
 }
+
+// Export the config type for external use
+export type GhostSpeakClientConfig = GhostSpeakConfig

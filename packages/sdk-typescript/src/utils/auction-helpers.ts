@@ -498,6 +498,711 @@ export class AuctionNotificationUtils {
 }
 
 /**
+ * Dutch auction pricing utilities
+ */
+export class DutchAuctionUtils {
+  /**
+   * Calculate current price for Dutch auction based on time decay
+   * 
+   * @param startingPrice - Initial auction price
+   * @param reservePrice - Minimum price (auction won't go below this)
+   * @param startTime - Auction start timestamp
+   * @param endTime - Auction end timestamp
+   * @param currentTime - Current timestamp (defaults to now)
+   * @param decayType - Type of price decay curve ('linear' | 'exponential')
+   * @returns Current price based on time progression
+   */
+  static calculateCurrentPrice(
+    startingPrice: bigint,
+    reservePrice: bigint,
+    startTime: bigint,
+    endTime: bigint,
+    currentTime?: bigint,
+    decayType: 'linear' | 'exponential' = 'linear'
+  ): bigint {
+    const now = currentTime ?? AuctionTimeUtils.now()
+    
+    // If auction hasn't started, return starting price
+    if (now <= startTime) {
+      return startingPrice
+    }
+    
+    // If auction has ended, return reserve price
+    if (now >= endTime) {
+      return reservePrice
+    }
+    
+    // Calculate time progression (0 to 1)
+    const totalDuration = endTime - startTime
+    const timeElapsed = now - startTime
+    const timeProgress = Number(timeElapsed) / Number(totalDuration)
+    
+    // Calculate price range
+    const priceRange = startingPrice - reservePrice
+    
+    let priceDecrease: bigint
+    
+    switch (decayType) {
+      case 'linear':
+        // Linear price decay
+        priceDecrease = BigInt(Math.floor(Number(priceRange) * timeProgress))
+        break
+        
+      case 'exponential': {
+        // Exponential decay (slower at start, faster toward end)
+        // Use a curve that accelerates aggressively: y = x^3
+        const exponentialProgress = Math.pow(timeProgress, 3)
+        priceDecrease = BigInt(Math.floor(Number(priceRange) * exponentialProgress))
+        break
+      }
+        
+      default:
+        priceDecrease = BigInt(Math.floor(Number(priceRange) * timeProgress))
+    }
+    
+    const currentPrice = startingPrice - priceDecrease
+    
+    // Ensure price doesn't go below reserve
+    return currentPrice > reservePrice ? currentPrice : reservePrice
+  }
+  
+  /**
+   * Calculate price at specific future time
+   * 
+   * @param startingPrice - Initial auction price
+   * @param reservePrice - Minimum price
+   * @param startTime - Auction start timestamp
+   * @param endTime - Auction end timestamp
+   * @param targetTime - Time to calculate price for
+   * @param decayType - Type of price decay curve
+   * @returns Price at the target time
+   */
+  static calculatePriceAtTime(
+    startingPrice: bigint,
+    reservePrice: bigint,
+    startTime: bigint,
+    endTime: bigint,
+    targetTime: bigint,
+    decayType: 'linear' | 'exponential' = 'linear'
+  ): bigint {
+    return this.calculateCurrentPrice(
+      startingPrice,
+      reservePrice,
+      startTime,
+      endTime,
+      targetTime,
+      decayType
+    )
+  }
+  
+  /**
+   * Calculate how much price will decrease per second
+   * 
+   * @param startingPrice - Initial auction price
+   * @param reservePrice - Minimum price
+   * @param duration - Auction duration in seconds
+   * @param decayType - Type of price decay curve
+   * @returns Average price decrease per second
+   */
+  static calculatePriceDecayRate(
+    startingPrice: bigint,
+    reservePrice: bigint,
+    duration: bigint,
+    decayType: 'linear' | 'exponential' = 'linear'
+  ): number {
+    const priceRange = Number(startingPrice - reservePrice)
+    const durationSeconds = Number(duration)
+    
+    switch (decayType) {
+      case 'linear':
+        return priceRange / durationSeconds
+        
+      case 'exponential':
+        // For exponential, return average rate (actual rate varies)
+        return priceRange / durationSeconds
+        
+      default:
+        return priceRange / durationSeconds
+    }
+  }
+  
+  /**
+   * Get time when auction will reach target price
+   * 
+   * @param startingPrice - Initial auction price
+   * @param reservePrice - Minimum price
+   * @param targetPrice - Desired price to reach
+   * @param startTime - Auction start timestamp
+   * @param endTime - Auction end timestamp
+   * @param decayType - Type of price decay curve
+   * @returns Timestamp when target price will be reached, or null if never reached
+   */
+  static getTimeForTargetPrice(
+    startingPrice: bigint,
+    reservePrice: bigint,
+    targetPrice: bigint,
+    startTime: bigint,
+    endTime: bigint,
+    decayType: 'linear' | 'exponential' = 'linear'
+  ): bigint | null {
+    // Validate target price is achievable
+    if (targetPrice > startingPrice || targetPrice < reservePrice) {
+      return null
+    }
+    
+    const totalDuration = endTime - startTime
+    const priceRange = startingPrice - reservePrice
+    const targetDecrease = startingPrice - targetPrice
+    
+    let timeProgress: number
+    
+    switch (decayType) {
+      case 'linear':
+        timeProgress = Number(targetDecrease) / Number(priceRange)
+        break
+        
+      case 'exponential':
+        // Solve: targetDecrease = priceRange * progress^2
+        timeProgress = Math.sqrt(Number(targetDecrease) / Number(priceRange))
+        break
+        
+      default:
+        timeProgress = Number(targetDecrease) / Number(priceRange)
+    }
+    
+    const timeElapsed = BigInt(Math.floor(Number(totalDuration) * timeProgress))
+    return startTime + timeElapsed
+  }
+  
+  /**
+   * Validate Dutch auction parameters
+   * 
+   * @param params - Dutch auction parameters
+   * @returns Validation result with errors if any
+   */
+  static validateDutchAuctionParams(params: {
+    startingPrice: bigint
+    reservePrice: bigint
+    startTime: bigint
+    endTime: bigint
+    decayType?: 'linear' | 'exponential'
+  }): { valid: boolean; errors: string[] } {
+    const errors: string[] = []
+    
+    // Price validations
+    if (params.startingPrice <= params.reservePrice) {
+      errors.push('Starting price must be greater than reserve price for Dutch auction')
+    }
+    
+    if (params.reservePrice < 0n) {
+      errors.push('Reserve price cannot be negative')
+    }
+    
+    // Time validations
+    if (params.endTime <= params.startTime) {
+      errors.push('End time must be after start time')
+    }
+    
+    const duration = params.endTime - params.startTime
+    if (duration < 300n) { // 5 minutes minimum
+      errors.push('Dutch auction duration must be at least 5 minutes')
+    }
+    
+    if (duration > 86400n * 7n) { // 7 days maximum
+      errors.push('Dutch auction duration cannot exceed 7 days')
+    }
+    
+    // Price range validation
+    const priceRange = params.startingPrice - params.reservePrice
+    const minimumRange = params.startingPrice / 20n // At least 5% price range
+    if (priceRange < minimumRange) {
+      errors.push('Price range (starting - reserve) must be at least 5% of starting price')
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  }
+
+  /**
+   * Get Dutch auction features and capabilities
+   * 
+   * @returns Feature set available for Dutch auctions
+   */
+  static getDutchAuctionFeatures(): {
+    supportedDecayTypes: string[]
+    maxDuration: number
+    minDuration: number
+    minPriceRangePercent: number
+    supportsBuyNow: boolean
+    supportsReservePrice: boolean
+    supportsTimeExtension: boolean
+  } {
+    return {
+      supportedDecayTypes: ['linear', 'exponential'],
+      maxDuration: 86400 * 7, // 7 days in seconds
+      minDuration: 300, // 5 minutes in seconds
+      minPriceRangePercent: 5, // 5% minimum price range
+      supportsBuyNow: true,
+      supportsReservePrice: true,
+      supportsTimeExtension: true
+    }
+  }
+
+  /**
+   * Validate if a bid is valid for Dutch auction
+   * 
+   * @param bidAmount - Amount of the bid
+   * @param currentPrice - Current calculated price  
+   * @param reservePrice - Minimum reserve price
+   * @returns Whether the bid is valid
+   */
+  static isValidBid(
+    bidAmount: bigint,
+    currentPrice: bigint, 
+    reservePrice: bigint
+  ): boolean {
+    return bidAmount >= currentPrice && bidAmount >= reservePrice
+  }
+}
+
+/**
+ * Reserve price utilities for all auction types
+ */
+export class ReservePriceUtils {
+  /**
+   * Check if current bid meets reserve price
+   * 
+   * @param bidAmount - The bid amount to check
+   * @param reservePrice - The auction's reserve price
+   * @param auctionType - Type of auction
+   * @param isReserveHidden - Whether the reserve price is hidden
+   * @returns True if bid meets reserve requirements
+   */
+  static meetsBidReserve(
+    bidAmount: bigint,
+    reservePrice: bigint,
+    auctionType: AuctionType,
+    isReserveHidden: boolean = false
+  ): boolean {
+    void auctionType // Mark as intentionally unused
+    void isReserveHidden // Mark as intentionally unused
+    // For all auction types, bid must meet or exceed reserve
+    // Hidden reserve doesn't change the requirement, just visibility
+    return bidAmount >= reservePrice
+  }
+  
+  /**
+   * Check if auction can be finalized based on reserve price
+   * 
+   * @param currentPrice - Current highest bid/price
+   * @param reservePrice - The auction's reserve price
+   * @param auctionType - Type of auction
+   * @param hasBids - Whether auction has received any bids
+   * @returns True if auction can be finalized with current price
+   */
+  static canFinalizeWithReserve(
+    currentPrice: bigint,
+    reservePrice: bigint,
+    auctionType: AuctionType,
+    hasBids: boolean
+  ): boolean {
+    // If no bids and reserve not met, cannot finalize successfully
+    if (!hasBids && currentPrice < reservePrice) {
+      return false
+    }
+    
+    // For Dutch auctions, current price includes time decay
+    // For others, current price is highest bid
+    return currentPrice >= reservePrice
+  }
+  
+  /**
+   * Calculate minimum acceptable bid considering reserve price
+   * 
+   * @param currentPrice - Current auction price
+   * @param reservePrice - The auction's reserve price
+   * @param minimumIncrement - Minimum bid increment
+   * @param auctionType - Type of auction
+   * @returns Minimum acceptable bid amount
+   */
+  static calculateMinimumBid(
+    currentPrice: bigint,
+    reservePrice: bigint,
+    minimumIncrement: bigint,
+    auctionType: AuctionType
+  ): bigint {
+    switch (auctionType) {
+      case AuctionType.English: {
+        // For English auctions, next bid must exceed current + increment and meet reserve
+        const nextBid = currentPrice + minimumIncrement
+        return nextBid > reservePrice ? nextBid : reservePrice
+      }
+        
+      case AuctionType.Dutch:
+        // For Dutch auctions, any bid >= current price is acceptable if it meets reserve
+        return currentPrice >= reservePrice ? currentPrice : reservePrice
+        
+      case AuctionType.SealedBid:
+      case AuctionType.Vickrey:
+        // For sealed auctions, bid must meet reserve (current price not relevant)
+        return reservePrice
+        
+      default:
+        return reservePrice
+    }
+  }
+  
+  /**
+   * Get reserve price status message for auction
+   * 
+   * @param currentPrice - Current auction price
+   * @param reservePrice - The auction's reserve price
+   * @param auctionType - Type of auction
+   * @param isReserveHidden - Whether reserve is hidden
+   * @param reserveMet - Explicit reserve met status (for hidden reserves)
+   * @param extensionCount - Number of extensions used
+   * @param maxExtensions - Maximum extensions allowed
+   * @returns Status message about reserve price
+   */
+  static getReserveStatus(
+    currentPrice: bigint,
+    reservePrice: bigint,
+    _auctionType: AuctionType,
+    isReserveHidden: boolean = false,
+    reserveMet?: boolean,
+    extensionCount?: number,
+    maxExtensions: number = 3
+  ): {
+    met: boolean
+    message: string
+    shortfall?: bigint
+    canExtend?: boolean
+    extensionsRemaining?: number
+  } {
+    // If reserve is hidden and we have explicit reserveMet status, use it
+    if (isReserveHidden && reserveMet !== undefined) {
+      const canExtend = !reserveMet && (extensionCount ?? 0) < maxExtensions
+      const extensionsRemaining = maxExtensions - (extensionCount ?? 0)
+      
+      return {
+        met: reserveMet,
+        message: reserveMet 
+          ? 'Reserve price has been met'
+          : canExtend 
+            ? `Reserve price not yet met (${extensionsRemaining} extensions available)`
+            : 'Reserve price not met (no extensions available)',
+        canExtend,
+        extensionsRemaining
+      }
+    }
+    
+    // Otherwise calculate based on actual prices
+    const met = currentPrice >= reservePrice
+    const canExtend = !met && (extensionCount ?? 0) < maxExtensions
+    const extensionsRemaining = maxExtensions - (extensionCount ?? 0)
+    
+    if (met) {
+      return {
+        met: true,
+        message: 'Reserve price has been met',
+        canExtend: false,
+        extensionsRemaining
+      }
+    }
+    
+    // For hidden reserves, don't reveal the actual amount
+    if (isReserveHidden) {
+      return {
+        met: false,
+        message: canExtend 
+          ? `Reserve price not yet met (${extensionsRemaining} extensions available)`
+          : 'Reserve price not met (no extensions available)',
+        canExtend,
+        extensionsRemaining
+      }
+    }
+    
+    // For public reserves, show the shortfall
+    const shortfall = reservePrice - currentPrice
+    return {
+      met: false,
+      message: canExtend
+        ? `Reserve price not met (${AuctionPricingUtils.lamportsToSol(shortfall)} SOL below reserve, ${extensionsRemaining} extensions available)`
+        : `Reserve price not met (${AuctionPricingUtils.lamportsToSol(shortfall)} SOL below reserve, no extensions available)`,
+      shortfall,
+      canExtend,
+      extensionsRemaining
+    }
+  }
+  
+  /**
+   * Validate reserve price for auction creation
+   * 
+   * @param reservePrice - Proposed reserve price
+   * @param startingPrice - Starting/opening price
+   * @param auctionType - Type of auction
+   * @returns Validation result
+   */
+  static validateReservePrice(
+    reservePrice: bigint,
+    startingPrice: bigint,
+    auctionType: AuctionType
+  ): { valid: boolean; errors: string[] } {
+    const errors: string[] = []
+    
+    // Basic validations
+    if (reservePrice < 0n) {
+      errors.push('Reserve price cannot be negative')
+    }
+    
+    // Type-specific validations
+    switch (auctionType) {
+      case AuctionType.English:
+        // For English auctions, reserve can be at or below starting price
+        if (reservePrice > startingPrice) {
+          errors.push('Reserve price cannot exceed starting price for English auction')
+        }
+        break
+        
+      case AuctionType.Dutch:
+        // For Dutch auctions, reserve must be below starting price
+        if (reservePrice >= startingPrice) {
+          errors.push('Reserve price must be below starting price for Dutch auction')
+        }
+        break
+        
+      case AuctionType.SealedBid:
+      case AuctionType.Vickrey:
+        // For sealed auctions, reserve should typically be below starting price
+        if (reservePrice > startingPrice) {
+          errors.push('Reserve price should not exceed starting price for sealed bid auction')
+        }
+        break
+    }
+    
+    // Practical limits
+    const maxReasonableReserve = startingPrice * 95n / 100n // 95% of starting price
+    if (reservePrice > maxReasonableReserve && auctionType !== AuctionType.English) {
+      errors.push('Reserve price should not exceed 95% of starting price')
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  }
+}
+
+/**
+ * Reserve price extension utilities
+ */
+export class ReserveExtensionUtils {
+  /**
+   * Check if auction is eligible for extension
+   */
+  static checkExtensionEligibility(params: {
+    status: AuctionStatus
+    reserveMet: boolean
+    extensionCount: number
+    totalBids: number
+    auctionEndTime: bigint
+    currentTime?: bigint
+    maxExtensions?: number
+    thresholdSeconds?: bigint
+  }): {
+    eligible: boolean
+    reason?: string
+    extensionsRemaining: number
+    timeToDeadline: bigint
+  } {
+    const {
+      status,
+      reserveMet,
+      extensionCount,
+      totalBids,
+      auctionEndTime,
+      currentTime = AuctionTimeUtils.now(),
+      maxExtensions = 3,
+      thresholdSeconds = 300n // 5 minutes
+    } = params
+
+    const extensionsRemaining = maxExtensions - extensionCount
+    const timeToDeadline = auctionEndTime - currentTime
+
+    // Check auction status
+    if (status !== AuctionStatus.Active) {
+      return {
+        eligible: false,
+        reason: 'Auction is not active',
+        extensionsRemaining,
+        timeToDeadline
+      }
+    }
+
+    // Check if reserve already met
+    if (reserveMet) {
+      return {
+        eligible: false,
+        reason: 'Reserve price already met',
+        extensionsRemaining,
+        timeToDeadline
+      }
+    }
+
+    // Check extension limit
+    if (extensionCount >= maxExtensions) {
+      return {
+        eligible: false,
+        reason: 'Maximum extensions reached',
+        extensionsRemaining: 0,
+        timeToDeadline
+      }
+    }
+
+    // Check if there are bids to justify extension
+    if (totalBids === 0) {
+      return {
+        eligible: false,
+        reason: 'No bids to justify extension',
+        extensionsRemaining,
+        timeToDeadline
+      }
+    }
+
+    // Check if we're within the extension threshold
+    if (timeToDeadline > thresholdSeconds) {
+      return {
+        eligible: false,
+        reason: `Too early to extend (must be within ${Number(thresholdSeconds)} seconds of end)`,
+        extensionsRemaining,
+        timeToDeadline
+      }
+    }
+
+    return {
+      eligible: true,
+      extensionsRemaining,
+      timeToDeadline
+    }
+  }
+
+  /**
+   * Calculate new end time after extension
+   */
+  static calculateExtendedEndTime(
+    currentEndTime: bigint,
+    extensionDuration: bigint = 3600n // 1 hour default
+  ): bigint {
+    return currentEndTime + extensionDuration
+  }
+
+  /**
+   * Get extension recommendation based on auction state
+   */
+  static getExtensionRecommendation(params: {
+    currentPrice: bigint
+    reservePrice: bigint
+    totalBids: number
+    timeRemaining: bigint
+    extensionCount: number
+    maxExtensions?: number
+  }): {
+    recommend: boolean
+    reason: string
+    urgency: 'low' | 'medium' | 'high'
+  } {
+    const {
+      currentPrice,
+      reservePrice,
+      totalBids,
+      // timeRemaining value not used but part of API
+      extensionCount,
+      maxExtensions = 3
+    } = params
+
+    const shortfall = reservePrice - currentPrice
+    const shortfallPercent = Number(shortfall * 100n / reservePrice)
+    const extensionsRemaining = maxExtensions - extensionCount
+
+    // No extensions left
+    if (extensionsRemaining <= 0) {
+      return {
+        recommend: false,
+        reason: 'No extensions remaining',
+        urgency: 'low'
+      }
+    }
+
+    // Very close to reserve (within 10%)
+    if (shortfallPercent <= 10) {
+      return {
+        recommend: true,
+        reason: `Very close to reserve (${shortfallPercent.toFixed(1)}% away)`,
+        urgency: 'high'
+      }
+    }
+
+    // Good bidding activity and reasonable shortfall
+    if (totalBids >= 3 && shortfallPercent <= 25) {
+      return {
+        recommend: true,
+        reason: `Active bidding with ${totalBids} bids, ${shortfallPercent.toFixed(1)}% below reserve`,
+        urgency: 'medium'
+      }
+    }
+
+    // Last extension opportunity
+    if (extensionsRemaining === 1 && totalBids >= 2) {
+      return {
+        recommend: true,
+        reason: 'Last extension opportunity with bidding activity',
+        urgency: 'medium'
+      }
+    }
+
+    // Not recommended
+    return {
+      recommend: false,
+      reason: shortfallPercent > 50 
+        ? 'Too far from reserve price'
+        : 'Limited bidding activity',
+      urgency: 'low'
+    }
+  }
+
+  /**
+   * Format extension status message
+   */
+  static formatExtensionStatus(
+    extensionCount: number,
+    maxExtensions: number = 3,
+    lastExtensionTime?: bigint
+  ): string {
+    const remaining = maxExtensions - extensionCount
+    
+    if (extensionCount === 0) {
+      return `No extensions used (${maxExtensions} available)`
+    }
+
+    if (remaining === 0) {
+      return 'All extensions used'
+    }
+
+    let message = `${extensionCount} extension(s) used, ${remaining} remaining`
+    
+    if (lastExtensionTime) {
+      const timeAgo = AuctionTimeUtils.now() - lastExtensionTime
+      const timeAgoStr = AuctionTimeUtils.formatTimeRemaining(timeAgo)
+      message += ` (last extension ${timeAgoStr} ago)`
+    }
+
+    return message
+  }
+}
+
+/**
  * Auction type helpers
  */
 export class AuctionTypeUtils {
@@ -532,4 +1237,113 @@ export class AuctionTypeUtils {
   static hasHiddenBids(auctionType: AuctionType): boolean {
     return auctionType === AuctionType.SealedBid || auctionType === AuctionType.Vickrey
   }
+  
+  /**
+   * Check if auction type supports time-based pricing
+   */
+  static hasTimeDependentPricing(auctionType: AuctionType): boolean {
+    return auctionType === AuctionType.Dutch
+  }
+  
+  /**
+   * Get optimal auction type for given parameters
+   */
+  static suggestAuctionType(params: {
+    expectedBidders: number
+    urgency: 'low' | 'medium' | 'high'
+    priceDiscovery: 'important' | 'not_important'
+    privacy: 'public' | 'private'
+  }): AuctionType {
+    // Private bidding required
+    if (params.privacy === 'private') {
+      return params.priceDiscovery === 'important' 
+        ? AuctionType.Vickrey 
+        : AuctionType.SealedBid
+    }
+    
+    // High urgency with good price discovery
+    if (params.urgency === 'high' && params.expectedBidders > 3) {
+      return AuctionType.Dutch
+    }
+    
+    // Default to English for most cases
+    return AuctionType.English
+  }
+}
+
+// Implementation of Dutch auction methods
+function getDutchAuctionInfo(
+  startingPrice: bigint,
+  reservePrice: bigint,
+  startTime: bigint,
+  endTime: bigint,
+  currentTime: bigint,
+  decayType: 'linear' | 'exponential'
+): {
+  startingPrice: bigint
+  reservePrice: bigint
+  currentCalculatedPrice: bigint
+  startTime: bigint
+  endTime: bigint
+  decayType: 'linear' | 'exponential'
+  priceDecayRate: number
+  timeToReachReserve?: bigint
+  priceReductionTotal: bigint
+  priceReductionPercentage: number
+} {
+  const currentPrice = DutchAuctionUtils.calculateCurrentPrice(
+    startingPrice,
+    reservePrice,
+    startTime,
+    endTime,
+    currentTime,
+    decayType
+  )
+  
+  const priceReductionTotal = startingPrice - currentPrice
+  const totalPriceRange = startingPrice - reservePrice
+  const priceReductionPercentage = totalPriceRange === 0n ? 0 : 
+    Number((priceReductionTotal * 100n) / totalPriceRange)
+  
+  const timeToReachReserve = currentPrice <= reservePrice ? 0n : endTime - currentTime
+  
+  const totalTime = endTime - startTime
+  const priceDecayRate = totalTime === 0n ? 0 :
+    Number((totalPriceRange * 10000n) / totalTime) / 10000
+  
+  return {
+    startingPrice,
+    reservePrice,
+    currentCalculatedPrice: currentPrice,
+    startTime,
+    endTime,
+    decayType,
+    priceDecayRate,
+    timeToReachReserve,
+    priceReductionTotal,
+    priceReductionPercentage
+  }
+}
+
+function isDutchAuction(auctionType: AuctionType): boolean {
+  return auctionType === AuctionType.Dutch
+}
+
+function isValidBid(
+  bidAmount: bigint,
+  currentPrice: bigint,
+  reservePrice: bigint
+): boolean {
+  return bidAmount >= currentPrice && bidAmount >= reservePrice
+}
+
+// Create calculateDutchAuctionPrice alias
+const calculateDutchAuctionPrice = DutchAuctionUtils.calculateCurrentPrice
+
+// Export Dutch auction utilities
+export const DutchAuctionUtilsExports = {
+  getDutchAuctionInfo,
+  isDutchAuction,
+  isValidBid,
+  calculateCurrentPrice: calculateDutchAuctionPrice
 }

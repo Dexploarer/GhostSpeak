@@ -44,6 +44,7 @@ import {
 } from '@solana/kit';
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import { getWorkOrderErrorMessage } from '../../utils/enhanced-client-errors.js';
 
 export const REJECT_WORK_DELIVERY_DISCRIMINATOR = new Uint8Array([
   123, 7, 32, 171, 41, 109, 58, 250,
@@ -250,8 +251,7 @@ export function parseRejectWorkDeliveryInstruction<
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedRejectWorkDeliveryInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 4) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+    throw new Error(getWorkOrderErrorMessage("reject_work_delivery", instruction.accounts.length));
   }
   let accountIndex = 0;
   const getNextAccount = () => {

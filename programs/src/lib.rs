@@ -454,6 +454,8 @@ pub enum GhostSpeakError {
     CannotCancelAuctionWithBids = 1419,
     #[msg("Invalid amount")]
     InvalidAmount = 1420,
+    #[msg("Invalid auction type")]
+    InvalidAuctionType = 1431,
     #[msg("Escrow not expired")]
     EscrowNotExpired = 1430,
     #[msg("Invalid volume tier")]
@@ -474,6 +476,22 @@ pub enum GhostSpeakError {
     InvalidMinParticipants = 1428,
     #[msg("Invalid max participants")]
     InvalidMaxParticipants = 1429,
+
+    // Reserve price and auction extension errors (1432-1449)
+    #[msg("Reserve price already met")]
+    ReservePriceAlreadyMet = 1432,
+    #[msg("Maximum extensions reached")]
+    MaxExtensionsReached = 1433,
+    #[msg("Auction not eligible for extension")]
+    AuctionNotEligibleForExtension = 1434,
+    #[msg("No valid bids for extension")]
+    NoValidBids = 1435,
+    #[msg("Reserve price locked after first bid")]
+    ReservePriceLocked = 1436,
+    #[msg("Invalid reserve price")]
+    InvalidReservePrice = 1437,
+    #[msg("Reserve price too low")]
+    ReservePriceTooLow = 1438,
 
     // Input validation errors (1500-1599)
     #[msg("Input too long")]
@@ -655,7 +673,7 @@ pub enum GhostSpeakError {
     InvalidChannelConfiguration = 2135,
 
     #[msg("Work order already exists")]
-    WorkOrderAlreadyExists = 2200,
+    WorkOrderAlreadyExists = 2203,
 
     #[msg("Invalid delivery status")]
     InvalidDeliveryStatus = 2136,
@@ -696,23 +714,38 @@ pub enum GhostSpeakError {
     #[msg("Invalid extension configuration")]
     InvalidExtensionConfiguration = 2148,
 
+    #[msg("Invalid account data provided")]
+    InvalidAccountData = 2149,
+
+    #[msg("Invalid auction type specified")]
+    InvalidAuctionTypeSpecified = 2150,
+
+    #[msg("Insufficient accounts provided for operation")]
+    InsufficientAccounts = 2151,
+
+    #[msg("Invalid target program specified")]
+    InvalidTargetProgram = 2152,
+
+    #[msg("Account mismatch detected")]
+    AccountMismatch = 2153,
+
     #[msg("Incentive pool exhausted")]
-    IncentivePoolExhausted = 2149,
+    IncentivePoolExhausted = 2154,
 
     #[msg("Invalid incentive configuration")]
-    InvalidIncentiveConfiguration = 2150,
+    InvalidIncentiveConfiguration = 2197,
 
     #[msg("Compliance check failed")]
-    ComplianceCheckFailed = 2151,
+    ComplianceCheckFailed = 2198,
 
     #[msg("Governance proposal invalid")]
-    GovernanceProposalInvalid = 2152,
+    GovernanceProposalInvalid = 2199,
 
     #[msg("Voting period ended")]
-    VotingPeriodEnded = 2153,
+    VotingPeriodEnded = 2200,
 
     #[msg("Already voted")]
-    AlreadyVoted = 2154,
+    AlreadyVoted = 2201,
 
     #[msg("Insufficient voting power")]
     InsufficientVotingPower = 2155,
@@ -840,7 +873,7 @@ pub enum GhostSpeakError {
     ArbitratorAlreadyAssigned = 2196,
     
     #[msg("Conflict of interest")]
-    ConflictOfInterest = 2197,
+    ConflictOfInterest = 2202,
 
     // Security and Reentrancy errors (2300-2399)
     #[msg("Reentrancy detected - operation already in progress")]
@@ -867,6 +900,51 @@ pub enum GhostSpeakError {
     InvalidWorkDelivery = 2310,
     #[msg("Invalid rejection reason")]
     InvalidRejectionReason = 2311,
+    
+    // Token-2022 and agent validation errors (2312-2330)
+    #[msg("Agent is inactive")]
+    InactiveAgent = 2312,
+    #[msg("Agent is not verified")]
+    UnverifiedAgent = 2313,
+    #[msg("Token not supported by agent")]
+    UnsupportedToken = 2314,
+    #[msg("Agent does not support A2A communication")]
+    A2ANotSupported = 2315,
+    #[msg("Agent reputation insufficient")]
+    InsufficientReputation = 2316,
+
+    #[msg("Voting has not started yet")]
+    VotingNotStarted = 2317,
+
+    #[msg("Voting has ended")]
+    VotingEnded = 2318,
+
+    #[msg("Voting period has not ended")]
+    VotingNotEnded = 2319,
+
+    #[msg("Proposal is not active")]
+    ProposalNotActive = 2320,
+
+    #[msg("Proposal has not passed")]
+    ProposalNotPassed = 2321,
+
+    #[msg("Proposal execution not scheduled")]
+    ExecutionNotScheduled = 2322,
+
+    #[msg("Execution delay not met")]
+    ExecutionDelayNotMet = 2323,
+
+    #[msg("Proposal is still in grace period")]
+    InGracePeriod = 2324,
+
+    #[msg("Proposal execution failed during CPI")]
+    ProposalExecutionFailed = 2325,
+
+    #[msg("Unauthorized executor")]
+    UnauthorizedExecutor = 2326,
+
+    #[msg("No instructions to execute")]
+    NoInstructionsToExecute = 2327,
 }
 
 // =====================================================
@@ -1133,8 +1211,24 @@ pub mod ghostspeak_marketplace {
         instructions::auction::place_auction_bid(ctx, bid_amount)
     }
 
+    pub fn place_dutch_auction_bid(ctx: Context<PlaceDutchAuctionBid>) -> Result<()> {
+        instructions::auction::place_dutch_auction_bid(ctx)
+    }
+
     pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
         instructions::auction::finalize_auction(ctx)
+    }
+    
+    pub fn update_auction_reserve_price(
+        ctx: Context<UpdateAuctionReservePrice>,
+        new_reserve_price: u64,
+        reveal_hidden: bool,
+    ) -> Result<()> {
+        instructions::auction::update_auction_reserve_price(ctx, new_reserve_price, reveal_hidden)
+    }
+    
+    pub fn extend_auction_for_reserve(ctx: Context<ExtendAuctionForReserve>) -> Result<()> {
+        instructions::auction::extend_auction_for_reserve(ctx)
     }
 
     // =====================================================
@@ -1351,8 +1445,16 @@ pub mod ghostspeak_marketplace {
     pub fn replicate_agent(
         ctx: Context<ReplicateAgent>,
         customization: instructions::replication::AgentCustomization,
+        royalty_percentage: u32,
     ) -> Result<()> {
-        instructions::replication::replicate_agent(ctx, customization)
+        instructions::replication::replicate_agent(ctx, customization, royalty_percentage)
+    }
+    
+    pub fn batch_replicate_agents(
+        ctx: Context<BatchReplicateAgents>,
+        batch_request: instructions::replication::BatchReplicationRequest,
+    ) -> Result<()> {
+        instructions::replication::batch_replicate_agents(ctx, batch_request)
     }
 
     // =====================================================
@@ -1486,6 +1588,84 @@ pub mod ghostspeak_marketplace {
         listing_price: u64,
     ) -> Result<()> {
         instructions::royalty::list_agent_for_resale(ctx, listing_price)
+    }
+
+    // =====================================================
+    // TOKEN-2022 INSTRUCTIONS
+    // =====================================================
+
+    pub fn create_token_2022_mint(
+        ctx: Context<CreateToken2022Mint>,
+        params: CreateToken2022MintParams,
+    ) -> Result<()> {
+        instructions::token_2022_operations::create_token_2022_mint(ctx, params)
+    }
+
+    pub fn initialize_transfer_fee_config(
+        ctx: Context<InitializeTransferFeeConfig>,
+        params: TransferFeeConfigParams,
+    ) -> Result<()> {
+        instructions::token_2022_operations::initialize_transfer_fee_config(ctx, params)
+    }
+
+    pub fn initialize_confidential_transfer_mint(
+        ctx: Context<InitializeConfidentialTransferMint>,
+        params: ConfidentialTransferMintParams,
+    ) -> Result<()> {
+        instructions::token_2022_operations::initialize_confidential_transfer_mint(ctx, params)
+    }
+
+    pub fn initialize_interest_bearing_config(
+        ctx: Context<InitializeInterestBearingConfig>,
+        params: InterestBearingConfigParams,
+    ) -> Result<()> {
+        instructions::token_2022_operations::initialize_interest_bearing_config(ctx, params)
+    }
+
+    pub fn initialize_mint_close_authority(
+        ctx: Context<InitializeMintCloseAuthority>,
+    ) -> Result<()> {
+        instructions::token_2022_operations::initialize_mint_close_authority(ctx)
+    }
+
+    pub fn initialize_default_account_state(
+        ctx: Context<InitializeDefaultAccountState>,
+        state: instructions::token_2022_operations::AccountState,
+    ) -> Result<()> {
+        instructions::token_2022_operations::initialize_default_account_state(ctx, state)
+    }
+
+    // =====================================================
+    // GOVERNANCE VOTING INSTRUCTIONS
+    // =====================================================
+    
+    /// Cast a vote on a governance proposal
+    pub fn cast_vote(
+        ctx: Context<CastVote>,
+        vote_choice: VoteChoice,
+        reasoning: Option<String>,
+    ) -> Result<()> {
+        instructions::governance_voting::cast_vote(ctx, vote_choice, reasoning)
+    }
+
+    /// Delegate voting power to another account
+    pub fn delegate_vote(
+        ctx: Context<DelegateVote>,
+        proposal_id: u64,
+        scope: DelegationScope,
+        expires_at: Option<i64>,
+    ) -> Result<()> {
+        instructions::governance_voting::delegate_vote(ctx, proposal_id, scope, expires_at)
+    }
+
+    /// Tally votes and finalize proposal voting
+    pub fn tally_votes(ctx: Context<TallyVotes>) -> Result<()> {
+        instructions::governance_voting::tally_votes(ctx)
+    }
+
+    /// Execute a passed proposal
+    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+        instructions::governance_voting::execute_proposal(ctx)
     }
 
     // =====================================================

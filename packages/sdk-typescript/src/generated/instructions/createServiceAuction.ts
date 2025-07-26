@@ -12,6 +12,8 @@ import {
   fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
+  getBooleanDecoder,
+  getBooleanEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getI64Decoder,
@@ -43,6 +45,14 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import {
+  GHOSTSPEAK_MARKETPLACE_ERROR__INSUFFICIENT_ACCOUNTS,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_INSTRUCTION_DATA,
+  GHOSTSPEAK_MARKETPLACE_ERROR__MISSING_REQUIRED_ACCOUNT,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_ACCOUNT,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INSTRUCTION_PARSING_FAILED,
+  isGhostspeakMarketplaceError,
+} from '../errors';
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
@@ -52,8 +62,12 @@ import {
 import {
   getAuctionTypeDecoder,
   getAuctionTypeEncoder,
+  getDutchAuctionConfigDecoder,
+  getDutchAuctionConfigEncoder,
   type AuctionType,
   type AuctionTypeArgs,
+  type DutchAuctionConfig,
+  type DutchAuctionConfigArgs,
 } from '../types';
 
 export const CREATE_SERVICE_AUCTION_DISCRIMINATOR = new Uint8Array([
@@ -111,22 +125,26 @@ export type CreateServiceAuctionInstructionData = {
   auctionType: AuctionType;
   startingPrice: bigint;
   reservePrice: bigint;
+  isReserveHidden: boolean;
   currentBid: bigint;
   currentBidder: Option<Address>;
   auctionEndTime: bigint;
   minimumBidIncrement: bigint;
   totalBids: number;
+  dutchConfig: Option<DutchAuctionConfig>;
 };
 
 export type CreateServiceAuctionInstructionDataArgs = {
   auctionType: AuctionTypeArgs;
   startingPrice: number | bigint;
   reservePrice: number | bigint;
+  isReserveHidden: boolean;
   currentBid: number | bigint;
   currentBidder: OptionOrNullable<Address>;
   auctionEndTime: number | bigint;
   minimumBidIncrement: number | bigint;
   totalBids: number;
+  dutchConfig: OptionOrNullable<DutchAuctionConfigArgs>;
 };
 
 export function getCreateServiceAuctionInstructionDataEncoder(): Encoder<CreateServiceAuctionInstructionDataArgs> {
@@ -136,11 +154,13 @@ export function getCreateServiceAuctionInstructionDataEncoder(): Encoder<CreateS
       ['auctionType', getAuctionTypeEncoder()],
       ['startingPrice', getU64Encoder()],
       ['reservePrice', getU64Encoder()],
+      ['isReserveHidden', getBooleanEncoder()],
       ['currentBid', getU64Encoder()],
       ['currentBidder', getOptionEncoder(getAddressEncoder())],
       ['auctionEndTime', getI64Encoder()],
       ['minimumBidIncrement', getU64Encoder()],
       ['totalBids', getU32Encoder()],
+      ['dutchConfig', getOptionEncoder(getDutchAuctionConfigEncoder())],
     ]),
     (value) => ({
       ...value,
@@ -155,11 +175,13 @@ export function getCreateServiceAuctionInstructionDataDecoder(): Decoder<CreateS
     ['auctionType', getAuctionTypeDecoder()],
     ['startingPrice', getU64Decoder()],
     ['reservePrice', getU64Decoder()],
+    ['isReserveHidden', getBooleanDecoder()],
     ['currentBid', getU64Decoder()],
     ['currentBidder', getOptionDecoder(getAddressDecoder())],
     ['auctionEndTime', getI64Decoder()],
     ['minimumBidIncrement', getU64Decoder()],
     ['totalBids', getU32Decoder()],
+    ['dutchConfig', getOptionDecoder(getDutchAuctionConfigDecoder())],
   ]);
 }
 
@@ -196,11 +218,13 @@ export type CreateServiceAuctionAsyncInput<
   auctionType: CreateServiceAuctionInstructionDataArgs['auctionType'];
   startingPrice: CreateServiceAuctionInstructionDataArgs['startingPrice'];
   reservePrice: CreateServiceAuctionInstructionDataArgs['reservePrice'];
+  isReserveHidden: CreateServiceAuctionInstructionDataArgs['isReserveHidden'];
   currentBid: CreateServiceAuctionInstructionDataArgs['currentBid'];
   currentBidder: CreateServiceAuctionInstructionDataArgs['currentBidder'];
   auctionEndTime: CreateServiceAuctionInstructionDataArgs['auctionEndTime'];
   minimumBidIncrement: CreateServiceAuctionInstructionDataArgs['minimumBidIncrement'];
   totalBids: CreateServiceAuctionInstructionDataArgs['totalBids'];
+  dutchConfig: CreateServiceAuctionInstructionDataArgs['dutchConfig'];
 };
 
 export async function getCreateServiceAuctionInstructionAsync<
@@ -326,11 +350,13 @@ export type CreateServiceAuctionInput<
   auctionType: CreateServiceAuctionInstructionDataArgs['auctionType'];
   startingPrice: CreateServiceAuctionInstructionDataArgs['startingPrice'];
   reservePrice: CreateServiceAuctionInstructionDataArgs['reservePrice'];
+  isReserveHidden: CreateServiceAuctionInstructionDataArgs['isReserveHidden'];
   currentBid: CreateServiceAuctionInstructionDataArgs['currentBid'];
   currentBidder: CreateServiceAuctionInstructionDataArgs['currentBidder'];
   auctionEndTime: CreateServiceAuctionInstructionDataArgs['auctionEndTime'];
   minimumBidIncrement: CreateServiceAuctionInstructionDataArgs['minimumBidIncrement'];
   totalBids: CreateServiceAuctionInstructionDataArgs['totalBids'];
+  dutchConfig: CreateServiceAuctionInstructionDataArgs['dutchConfig'];
 };
 
 export function getCreateServiceAuctionInstruction<
@@ -450,8 +476,7 @@ export function parseCreateServiceAuctionInstruction<
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateServiceAuctionInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 6) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+    throw new Error('[GHOSTSPEAK_MARKETPLACE_ERROR__INSUFFICIENT_ACCOUNTS] Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {

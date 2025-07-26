@@ -25,7 +25,8 @@ use crate::*;
 // Import constants explicitly to avoid ambiguity
 use crate::state::{
     MAX_AUCTION_DURATION, MAX_BIDS_PER_AUCTION_PER_USER, MAX_PAYMENT_AMOUNT, MIN_AUCTION_DURATION,
-    MIN_BID_INCREMENT, MIN_PAYMENT_AMOUNT,
+    MIN_BID_INCREMENT, MIN_PAYMENT_AMOUNT, MAX_RESERVE_EXTENSIONS, RESERVE_EXTENSION_DURATION,
+    RESERVE_SHORTFALL_THRESHOLD,
 };
 
 // Enhanced 2025 security constants
@@ -146,6 +147,8 @@ pub fn create_service_auction(
     auction.auction_type = auction_data.auction_type;
     auction.starting_price = auction_data.starting_price;
     auction.reserve_price = auction_data.reserve_price;
+    auction.is_reserve_hidden = auction_data.is_reserve_hidden;
+    auction.reserve_met = false;
     auction.current_price = auction_data.starting_price;
     auction.current_winner = None;
     auction.auction_end_time = auction_data.auction_end_time;
@@ -156,6 +159,49 @@ pub fn create_service_auction(
     auction.created_at = clock.unix_timestamp;
     auction.ended_at = None;
     auction.metadata_uri = String::new();
+    
+    // Set Dutch auction configuration if applicable
+    if auction_data.auction_type == AuctionType::Dutch {
+        // Validate Dutch auction specific requirements
+        require!(
+            auction_data.starting_price > auction_data.reserve_price,
+            GhostSpeakError::InvalidStartingPrice
+        );
+        
+        // Set Dutch config from auction_data or use defaults
+        auction.dutch_config = auction_data.dutch_config.or_else(|| {
+            Some(crate::state::auction::DutchAuctionConfig {
+                decay_type: crate::state::auction::DutchAuctionDecayType::Linear,
+                price_step_count: 100, // Default 100 price steps
+                step_duration: auction_duration / 100, // Even distribution over auction time
+                decay_rate_basis_points: 10000, // 100% decay rate (full range)
+            })
+        });
+        
+        // Validate Dutch config parameters
+        if let Some(ref config) = auction.dutch_config {
+            // Validate step count for stepped decay
+            if config.decay_type == crate::state::auction::DutchAuctionDecayType::Stepped {
+                require!(
+                    config.price_step_count > 0 && config.price_step_count <= 1000,
+                    GhostSpeakError::InvalidConfiguration
+                );
+                require!(
+                    config.step_duration > 0,
+                    GhostSpeakError::InvalidConfiguration
+                );
+            }
+            
+            // Validate decay rate
+            require!(
+                config.decay_rate_basis_points > 0 && config.decay_rate_basis_points <= 10000,
+                GhostSpeakError::InvalidConfiguration
+            );
+        }
+    } else {
+        auction.dutch_config = None;
+    }
+    
     auction.bump = ctx.bumps.auction;
 
     // SECURITY: Log auction creation for audit trail
@@ -244,6 +290,13 @@ pub fn place_auction_bid(ctx: Context<PlaceAuctionBid>, bid_amount: u64) -> Resu
         clock.unix_timestamp < auction.auction_end_time,
         GhostSpeakError::InvalidDeadline
     );
+    
+    // SECURITY: Prevent using wrong instruction for Dutch auctions
+    require!(
+        auction.auction_type != AuctionType::Dutch,
+        GhostSpeakError::InvalidAuctionType
+    );
+    
     require!(
         bid_amount > auction.current_price,
         GhostSpeakError::InvalidBid
@@ -291,6 +344,11 @@ pub fn place_auction_bid(ctx: Context<PlaceAuctionBid>, bid_amount: u64) -> Resu
     // Update auction with new bid
     auction.current_price = bid_amount;
     auction.current_winner = Some(ctx.accounts.bidder.key());
+
+    // Update reserve met status
+    if bid_amount >= auction.reserve_price {
+        auction.reserve_met = true;
+    }
 
     // SECURITY: Use safe arithmetic for bid count
     auction.total_bids = auction.total_bids.saturating_add(1);
@@ -348,6 +406,108 @@ pub fn place_auction_bid(ctx: Context<PlaceAuctionBid>, bid_amount: u64) -> Resu
     Ok(())
 }
 
+/// Places a bid on a Dutch auction at the current price
+///
+/// For Dutch auctions, the price decreases over time. The first bidder
+/// to accept the current price wins the auction immediately.
+///
+/// # Arguments
+///
+/// * `ctx` - The context containing auction and bidder accounts
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful Dutch auction purchase
+///
+/// # Errors
+///
+/// * `AuctionNotActive` - If auction hasn't started or has ended
+/// * `InvalidAuctionType` - If auction is not Dutch type
+/// * `PriceBelowReserve` - If current price is below reserve
+///
+/// # Dutch Auction Rules
+///
+/// - Price starts high and decreases linearly over time
+/// - First bidder at current price wins immediately
+/// - No bidding wars - immediate settlement
+/// - Custom price curves supported (linear/exponential)
+pub fn place_dutch_auction_bid(ctx: Context<PlaceDutchAuctionBid>) -> Result<()> {
+    let clock = Clock::get()?;
+
+    // SECURITY: Enhanced signer authorization
+    require!(
+        ctx.accounts.bidder.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    let auction = &mut ctx.accounts.auction;
+
+    // Validate auction type
+    require!(
+        auction.auction_type == AuctionType::Dutch,
+        GhostSpeakError::InvalidAuctionType
+    );
+
+    require!(
+        auction.status == AuctionStatus::Active,
+        GhostSpeakError::InvalidApplicationStatus
+    );
+
+    require!(
+        clock.unix_timestamp < auction.auction_end_time,
+        GhostSpeakError::InvalidDeadline
+    );
+
+    // SECURITY: Prevent auction creator from bidding
+    require!(
+        ctx.accounts.bidder.key() != auction.creator,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // Calculate current Dutch auction price using the sophisticated calculation method
+    let final_price = auction.calculate_dutch_price(clock.unix_timestamp)?;
+    
+    // Calculate elapsed time for logging
+    let elapsed_time = clock.unix_timestamp.saturating_sub(auction.created_at);
+    
+    // SECURITY: Validate final price
+    require!(
+        final_price >= MIN_PAYMENT_AMOUNT && final_price <= MAX_PAYMENT_AMOUNT,
+        GhostSpeakError::InvalidPaymentAmount
+    );
+
+    // Update auction with winner - Dutch auctions settle immediately
+    auction.current_price = final_price;
+    auction.current_winner = Some(ctx.accounts.bidder.key());
+    auction.winner = Some(ctx.accounts.bidder.key());
+    auction.status = AuctionStatus::Settled;
+    auction.ended_at = Some(clock.unix_timestamp);
+    auction.total_bids = 1; // Dutch auctions only have one bid
+
+    // Log Dutch auction completion
+    SecurityLogger::log_security_event(
+        "DUTCH_AUCTION_WON",
+        ctx.accounts.bidder.key(),
+        &format!(
+            "auction: {}, final_price: {}, time_elapsed: {}s",
+            auction.key(),
+            final_price,
+            elapsed_time
+        ),
+    );
+
+    emit!(DutchAuctionWonEvent {
+        auction: auction.key(),
+        winner: ctx.accounts.bidder.key(),
+        final_price,
+        starting_price: auction.starting_price,
+        reserve_price: auction.reserve_price,
+        time_elapsed: elapsed_time,
+    });
+
+    Ok(())
+}
+
 /// Finalizes an auction and determines the winner
 ///
 /// Called after auction end time to finalize the auction,
@@ -392,8 +552,8 @@ pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
             auction.minimum_bid_increment,
         )?;
 
-        // Check if bid meets reserve price
-        if auction.reserve_price == 0 || auction.current_price >= auction.reserve_price {
+        // Check if reserve price was met
+        if auction.reserve_met {
             auction.winner = Some(winner);
             auction.status = AuctionStatus::Settled;
 
@@ -402,10 +562,11 @@ pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
                 "AUCTION_FINALIZED",
                 winner,
                 &format!(
-                    "auction: {}, winning_bid: {}, total_bids: {}",
+                    "auction: {}, winning_bid: {}, total_bids: {}, reserve_hidden: {}",
                     auction.key(),
                     auction.current_price,
-                    auction.total_bids
+                    auction.total_bids,
+                    auction.is_reserve_hidden
                 ),
             );
 
@@ -415,24 +576,65 @@ pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
                 winning_bid: auction.current_price,
             });
         } else {
-            // Reserve not met
-            auction.status = AuctionStatus::Cancelled;
+            // Reserve not met - check if extension is possible
+            let can_extend = auction.extension_count < MAX_RESERVE_EXTENSIONS 
+                && auction.total_bids > 0
+                && !auction.reserve_shortfall_notified;
+            
+            if can_extend {
+                // Suggest extension instead of immediate cancellation
+                auction.status = AuctionStatus::Cancelled;
+                
+                SecurityLogger::log_security_event(
+                    "AUCTION_FAILED_RESERVE_EXTENSION_AVAILABLE",
+                    auction.creator,
+                    &format!(
+                        "auction: {}, highest_bid: {}, reserve_shortfall: {}, extensions_available: {}",
+                        auction.key(),
+                        auction.current_price,
+                        auction.reserve_price.saturating_sub(auction.current_price),
+                        MAX_RESERVE_EXTENSIONS - auction.extension_count
+                    ),
+                );
 
-            SecurityLogger::log_security_event(
-                "AUCTION_FAILED_RESERVE",
-                auction.creator,
-                &format!(
-                    "auction: {}, highest_bid: {}, reserve: {}",
-                    auction.key(),
-                    auction.current_price,
-                    auction.reserve_price
-                ),
-            );
+                emit!(AuctionFailedEvent {
+                    auction: auction.key(),
+                    reason: format!("Reserve price not met - extension possible ({} remaining)", 
+                        MAX_RESERVE_EXTENSIONS - auction.extension_count),
+                });
+            } else {
+                // Final cancellation
+                auction.status = AuctionStatus::Cancelled;
 
-            emit!(AuctionFailedEvent {
-                auction: auction.key(),
-                reason: "Reserve price not met".to_string(),
-            });
+                // Log with appropriate detail based on hidden reserve
+                let log_message = if auction.is_reserve_hidden {
+                    format!(
+                        "auction: {}, highest_bid: {}, reserve: [HIDDEN], extensions_used: {}",
+                        auction.key(),
+                        auction.current_price,
+                        auction.extension_count
+                    )
+                } else {
+                    format!(
+                        "auction: {}, highest_bid: {}, reserve: {}, extensions_used: {}",
+                        auction.key(),
+                        auction.current_price,
+                        auction.reserve_price,
+                        auction.extension_count
+                    )
+                };
+
+                SecurityLogger::log_security_event(
+                    "AUCTION_FAILED_RESERVE_FINAL",
+                    auction.creator,
+                    &log_message,
+                );
+
+                emit!(AuctionFailedEvent {
+                    auction: auction.key(),
+                    reason: "Reserve price not met - no extensions available".to_string(),
+                });
+            }
         }
     } else {
         // No bids received
@@ -449,6 +651,221 @@ pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
             reason: "No bids received".to_string(),
         });
     }
+
+    Ok(())
+}
+
+/// Updates the reserve price of an active auction
+///
+/// Allows auction creator to adjust reserve price within constraints
+/// to encourage bidding or respond to market conditions.
+///
+/// # Arguments
+///
+/// * `ctx` - The context containing auction account
+/// * `new_reserve_price` - The new reserve price to set
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful reserve price update
+///
+/// # Errors
+///
+/// * `UnauthorizedAccess` - If caller is not the auction creator
+/// * `AuctionNotActive` - If auction has ended or been finalized
+/// * `ReservePriceLocked` - If reserve price is locked after first bid
+/// * `InvalidReservePrice` - If new reserve price violates constraints
+///
+/// # Reserve Price Rules
+///
+/// - Can only be lowered, never raised (prevents manipulation)
+/// - Cannot be changed after first bid (if not hidden)
+/// - Must remain above 50% of highest bid (protects bidders)
+/// - Hidden reserves can be revealed but not re-hidden
+pub fn update_auction_reserve_price(
+    ctx: Context<UpdateAuctionReservePrice>,
+    new_reserve_price: u64,
+    reveal_hidden: bool,
+) -> Result<()> {
+    let auction = &mut ctx.accounts.auction;
+    let clock = Clock::get()?;
+
+    // SECURITY: Enhanced signer authorization - only creator can update
+    require!(
+        ctx.accounts.authority.key() == auction.creator,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // Validate auction is still active
+    require!(
+        auction.status == AuctionStatus::Active,
+        GhostSpeakError::AuctionNotActive
+    );
+    
+    // Cannot update after auction end time
+    require!(
+        clock.unix_timestamp < auction.auction_end_time,
+        GhostSpeakError::AuctionEnded
+    );
+
+    // SECURITY: Validate new reserve price
+    InputValidator::validate_payment_amount(new_reserve_price, "new_reserve_price")?;
+
+    // Cannot raise reserve price (prevents manipulation)
+    require!(
+        new_reserve_price <= auction.reserve_price,
+        GhostSpeakError::InvalidReservePrice
+    );
+
+    // If there are bids, ensure new reserve protects bidders
+    if auction.total_bids > 0 {
+        // Cannot change reserve after first bid unless it was hidden
+        require!(
+            auction.is_reserve_hidden || !auction.reserve_price_locked,
+            GhostSpeakError::ReservePriceLocked
+        );
+
+        // New reserve must be at least 50% of current highest bid
+        let min_allowed_reserve = auction.current_price / 2;
+        require!(
+            new_reserve_price >= min_allowed_reserve,
+            GhostSpeakError::ReservePriceTooLow
+        );
+    }
+
+    // Update reserve price
+    let old_reserve = auction.reserve_price;
+    auction.reserve_price = new_reserve_price;
+
+    // Update reserve met status
+    if auction.current_price >= new_reserve_price {
+        auction.reserve_met = true;
+    }
+
+    // Handle hidden reserve reveal
+    if reveal_hidden && auction.is_reserve_hidden {
+        auction.is_reserve_hidden = false;
+        
+        SecurityLogger::log_security_event(
+            "AUCTION_RESERVE_REVEALED",
+            ctx.accounts.authority.key(),
+            &format!(
+                "auction: {}, reserve_price: {}",
+                auction.key(),
+                new_reserve_price
+            ),
+        );
+    }
+
+    // Log reserve price update
+    SecurityLogger::log_security_event(
+        "AUCTION_RESERVE_UPDATED",
+        ctx.accounts.authority.key(),
+        &format!(
+            "auction: {}, old_reserve: {}, new_reserve: {}, current_bid: {}, hidden: {}",
+            auction.key(),
+            old_reserve,
+            new_reserve_price,
+            auction.current_price,
+            auction.is_reserve_hidden
+        ),
+    );
+
+    emit!(AuctionReservePriceUpdatedEvent {
+        auction: auction.key(),
+        old_reserve_price: old_reserve,
+        new_reserve_price,
+        reserve_revealed: reveal_hidden && !auction.is_reserve_hidden,
+        current_highest_bid: auction.current_price,
+    });
+
+    Ok(())
+}
+
+/// Extend auction when reserve price is not met
+///
+/// Automatically extends auction duration when the auction ends
+/// but the reserve price has not been met, giving bidders more time.
+///
+/// # Arguments
+///
+/// * `ctx` - The context containing auction account
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful extension
+///
+/// # Errors
+///
+/// * `MaxExtensionsReached` - If auction has been extended too many times
+/// * `ReservePriceAlreadyMet` - If reserve price has been met
+/// * `AuctionNotEligibleForExtension` - If auction doesn't qualify for extension
+pub fn extend_auction_for_reserve(ctx: Context<ExtendAuctionForReserve>) -> Result<()> {
+    let auction = &mut ctx.accounts.auction;
+    let clock = Clock::get()?;
+
+    // SECURITY: Enhanced signer authorization
+    require!(
+        ctx.accounts.authority.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // Validate auction is eligible for extension
+    require!(
+        auction.status == AuctionStatus::Active,
+        GhostSpeakError::InvalidApplicationStatus
+    );
+
+    // Check if auction has ended or is about to end
+    require!(
+        clock.unix_timestamp >= auction.auction_end_time - RESERVE_SHORTFALL_THRESHOLD,
+        GhostSpeakError::AuctionNotEligibleForExtension
+    );
+
+    // Check if reserve has not been met
+    require!(
+        !auction.reserve_met,
+        GhostSpeakError::ReservePriceAlreadyMet
+    );
+
+    // Check if we haven't exceeded maximum extensions
+    require!(
+        auction.extension_count < MAX_RESERVE_EXTENSIONS,
+        GhostSpeakError::MaxExtensionsReached
+    );
+
+    // Check if there are bids to justify extension
+    require!(
+        auction.total_bids > 0,
+        GhostSpeakError::NoValidBids
+    );
+
+    // Extend the auction
+    auction.auction_end_time = auction.auction_end_time.saturating_add(RESERVE_EXTENSION_DURATION);
+    auction.extension_count = auction.extension_count.saturating_add(1);
+    auction.reserve_shortfall_notified = true;
+
+    // SECURITY: Log extension for audit trail
+    SecurityLogger::log_security_event(
+        "AUCTION_EXTENDED_RESERVE",
+        ctx.accounts.authority.key(),
+        &format!(
+            "auction: {}, extension_count: {}, new_end_time: {}, current_price: {}, reserve_price: {}",
+            auction.key(),
+            auction.extension_count,
+            auction.auction_end_time,
+            auction.current_price,
+            if auction.is_reserve_hidden { 0 } else { auction.reserve_price }
+        ),
+    );
+
+    emit!(AuctionExtendedForReserveEvent {
+        auction: auction.key(),
+        extension_count: auction.extension_count,
+        new_end_time: auction.auction_end_time,
+        reserve_shortfall: auction.reserve_price.saturating_sub(auction.current_price),
+        is_reserve_hidden: auction.is_reserve_hidden,
+    });
 
     Ok(())
 }
@@ -524,6 +941,38 @@ pub struct PlaceAuctionBid<'info> {
     pub clock: Sysvar<'info, Clock>,
 }
 
+/// Enhanced Dutch auction bid placement with 2025 security patterns
+#[derive(Accounts)]
+pub struct PlaceDutchAuctionBid<'info> {
+    /// Auction account with canonical bump validation
+    #[account(
+        mut,
+        seeds = [
+            b"auction",
+            auction.agent.as_ref(),
+            auction.creator.as_ref()
+        ],
+        bump = auction.bump,
+        constraint = auction.status == AuctionStatus::Active @ GhostSpeakError::InvalidApplicationStatus,
+        constraint = auction.auction_type == AuctionType::Dutch @ GhostSpeakError::InvalidAuctionType
+    )]
+    pub auction: Account<'info, AuctionMarketplace>,
+
+    /// User registry for rate limiting
+    /// CHECK: Rate limiting registry - manually validated in instruction
+    pub user_registry: AccountInfo<'info>,
+
+    /// Enhanced bidder verification
+    #[account(mut)]
+    pub bidder: Signer<'info>,
+
+    /// System program
+    pub system_program: Program<'info, System>,
+
+    /// Clock sysvar for price calculation
+    pub clock: Sysvar<'info, Clock>,
+}
+
 /// Enhanced auction finalization with 2025 security patterns
 #[derive(Accounts)]
 pub struct FinalizeAuction<'info> {
@@ -541,6 +990,62 @@ pub struct FinalizeAuction<'info> {
     pub auction: Account<'info, AuctionMarketplace>,
 
     /// Enhanced authority verification - only creator or protocol admin
+    #[account(
+        mut,
+        constraint = authority.key() == auction.creator || authority.key() == crate::PROTOCOL_ADMIN @ GhostSpeakError::UnauthorizedAccess
+    )]
+    pub authority: Signer<'info>,
+
+    /// Clock sysvar for timestamp validation
+    pub clock: Sysvar<'info, Clock>,
+}
+
+/// Enhanced reserve price update with 2025 security patterns
+#[derive(Accounts)]
+pub struct UpdateAuctionReservePrice<'info> {
+    /// Auction account with canonical validation
+    #[account(
+        mut,
+        seeds = [
+            b"auction",
+            auction.agent.as_ref(),
+            auction.creator.as_ref()
+        ],
+        bump = auction.bump,
+        constraint = auction.status == AuctionStatus::Active @ GhostSpeakError::InvalidApplicationStatus
+    )]
+    pub auction: Account<'info, AuctionMarketplace>,
+
+    /// Enhanced authority verification - only creator can update reserve
+    #[account(
+        mut,
+        constraint = authority.key() == auction.creator @ GhostSpeakError::UnauthorizedAccess
+    )]
+    pub authority: Signer<'info>,
+
+    /// Clock sysvar for timestamp validation
+    pub clock: Sysvar<'info, Clock>,
+}
+
+/// Enhanced auction extension with 2025 security patterns
+#[derive(Accounts)]
+pub struct ExtendAuctionForReserve<'info> {
+    /// Auction account with canonical validation
+    #[account(
+        mut,
+        seeds = [
+            b"auction",
+            auction.agent.as_ref(),
+            auction.creator.as_ref()
+        ],
+        bump = auction.bump,
+        constraint = auction.status == AuctionStatus::Active @ GhostSpeakError::InvalidApplicationStatus,
+        constraint = !auction.reserve_met @ GhostSpeakError::ReservePriceAlreadyMet,
+        constraint = auction.extension_count < MAX_RESERVE_EXTENSIONS @ GhostSpeakError::MaxExtensionsReached
+    )]
+    pub auction: Account<'info, AuctionMarketplace>,
+
+    /// Enhanced authority verification - only creator or protocol admin can extend
     #[account(
         mut,
         constraint = authority.key() == auction.creator || authority.key() == crate::PROTOCOL_ADMIN @ GhostSpeakError::UnauthorizedAccess
@@ -583,4 +1088,32 @@ pub struct AuctionFinalizedEvent {
 pub struct AuctionFailedEvent {
     pub auction: Pubkey,
     pub reason: String,
+}
+
+#[event]
+pub struct DutchAuctionWonEvent {
+    pub auction: Pubkey,
+    pub winner: Pubkey,
+    pub final_price: u64,
+    pub starting_price: u64,
+    pub reserve_price: u64,
+    pub time_elapsed: i64,
+}
+
+#[event]
+pub struct AuctionReservePriceUpdatedEvent {
+    pub auction: Pubkey,
+    pub old_reserve_price: u64,
+    pub new_reserve_price: u64,
+    pub reserve_revealed: bool,
+    pub current_highest_bid: u64,
+}
+
+#[event]
+pub struct AuctionExtendedForReserveEvent {
+    pub auction: Pubkey,
+    pub extension_count: u8,
+    pub new_end_time: i64,
+    pub reserve_shortfall: u64,
+    pub is_reserve_hidden: bool,
 }

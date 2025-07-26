@@ -220,13 +220,13 @@ export class WasmOptimizedElGamalEngine {
       } catch (error) {
         console.warn('⚠️ WASM encryption failed, falling back to JS:', error)
         result = randomness ? 
-          JSCrypto.encryptAmountWithRandomness(amount, publicKey, randomness) :
+          JSCrypto.encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :
           JSCrypto.encryptAmount(amount, publicKey)
         implementation = 'javascript'
       }
     } else {
       result = randomness ? 
-        JSCrypto.encryptAmountWithRandomness(amount, publicKey, randomness) :
+        JSCrypto.encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :
         JSCrypto.encryptAmount(amount, publicKey)
       implementation = 'javascript'
     }
@@ -575,12 +575,12 @@ export class WasmOptimizedElGamalEngine {
   exportPerformanceData(): {
     config: ElGamalConfig
     browserInfo: BrowserCapabilities | null
-    performanceHistory: Array<{
+    performanceHistory: {
       operation: string
       timeMs: number
       usedWasm: boolean
       timestamp: number
-    }>
+    }[]
     stats: ReturnType<WasmOptimizedElGamalEngine['getPerformanceStats']>
   } {
     const browserManager = getBrowserCompatibilityManager()

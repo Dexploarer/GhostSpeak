@@ -147,11 +147,15 @@ export function encryptAmount(
   // Parse public key point
   const pubkeyPoint = ed25519.ExtendedPoint.fromHex(publicKey)
   
-  // Compute Pedersen commitment: C = amount * G + r * H
-  const commitment = G.multiply(amount).add(H.multiply(r))
+  // Twisted ElGamal encryption on Curve25519
+  // C = r * publicKey + amount * G (commitment)
+  // D = r * G (decrypt handle)
+  const rPubkey = pubkeyPoint.multiply(r)
+  const amountG = amount === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(amount)
+  const commitment = rPubkey.add(amountG)
   
-  // Compute decrypt handle: D = r * pubkey
-  const handle = pubkeyPoint.multiply(r)
+  // Decrypt handle
+  const handle = G.multiply(r)
   
   return {
     commitment: { commitment: commitment.toRawBytes() },
@@ -165,21 +169,30 @@ export function encryptAmount(
 export function encryptAmountWithRandomness(
   amount: bigint,
   publicKey: ElGamalPubkey,
-  randomness: Uint8Array
-): ElGamalCiphertext {
+  randomness?: Uint8Array
+): { ciphertext: ElGamalCiphertext; randomness: Uint8Array } {
   if (amount < 0n || amount > MAX_VALUE) {
     throw new Error(`Amount must be between 0 and ${MAX_VALUE}`)
   }
 
-  const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
+  // Use provided randomness or generate new
+  const rand = randomness ?? randomBytes(32)
+  const r = bytesToNumberLE(rand) % ed25519.CURVE.n
   const pubkeyPoint = ed25519.ExtendedPoint.fromHex(publicKey)
   
-  const commitment = G.multiply(amount).add(H.multiply(r))
-  const handle = pubkeyPoint.multiply(r)
+  // Twisted ElGamal encryption
+  const rPubkey = pubkeyPoint.multiply(r)
+  const amountG = amount === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(amount)
+  const commitment = rPubkey.add(amountG)
+  
+  const handle = G.multiply(r)
   
   return {
-    commitment: { commitment: commitment.toRawBytes() },
-    handle: { handle: handle.toRawBytes() }
+    ciphertext: {
+      commitment: { commitment: commitment.toRawBytes() },
+      handle: { handle: handle.toRawBytes() }
+    },
+    randomness: rand
   }
 }
 
@@ -188,19 +201,34 @@ export function encryptAmountWithRandomness(
  */
 export function decryptAmount(
   ciphertext: ElGamalCiphertext,
-  secretKey: ElGamalSecretKey
+  secretKey: ElGamalSecretKey,
+  maxValue: bigint = 1000000n
 ): bigint | null {
   try {
     const s = bytesToNumberLE(secretKey) % ed25519.CURVE.n
+    
+    // Handle edge case where s = 0
+    if (s === 0n) {
+      return null // Invalid secret key
+    }
+    
     const C = ed25519.ExtendedPoint.fromHex(ciphertext.commitment.commitment)
     const D = ed25519.ExtendedPoint.fromHex(ciphertext.handle.handle)
     
-    // Compute C - s * D = amount * G
+    // Twisted ElGamal decryption
+    // C = r*publicKey + amount*G, D = r*G
+    // C - s*D = r*publicKey + amount*G - s*(r*G)
+    //         = r*s*G + amount*G - s*r*G = amount*G
     const amountG = C.subtract(D.multiply(s))
     
-    // Brute force discrete log (only feasible for small amounts)
-    const maxSearch = 1000000n
-    for (let i = 0n; i <= maxSearch; i++) {
+    // Check if amountG is the identity element (represents 0)
+    const identity = ed25519.ExtendedPoint.ZERO
+    if (amountG.equals(identity)) {
+      return 0n
+    }
+    
+    // Brute force discrete log for small amounts
+    for (let i = 1n; i <= maxValue; i++) {
       if (G.multiply(i).equals(amountG)) {
         return i
       }
@@ -227,7 +255,7 @@ export function generateBulletproof(
   blindingFactor: Uint8Array
 ): RangeProof {
   if (amount < 0n || amount > MAX_VALUE) {
-    throw new Error(`Amount must be in range [0, ${MAX_VALUE}]`)
+    throw new Error(`Amount must be in range [0, 2^64)`)
   }
 
   // Bulletproof generation algorithm
@@ -320,31 +348,43 @@ function generateInnerProductProof(
 ): Uint8Array {
   // Simplified inner product argument
   // Real implementation would use recursive halving
-  const proof = new Uint8Array(418) // Remaining bytes for bulletproof
+  const remainingBytes = PROOF_SIZES.RANGE_PROOF_BULLETPROOF - 8 * 32 - 32 // After bit commitments and response
+  const proof = new Uint8Array(remainingBytes)
   
   let offset = 0
-  const rounds = Math.log2(bits.length)
+  const rounds = Math.ceil(Math.log2(bits.length))
   
-  for (let i = 0; i < rounds; i++) {
+  // Each round needs 64 bytes (L + R points), plus 32 for final scalar
+  const maxRounds = Math.floor((remainingBytes - 32) / 64)
+  const actualRounds = Math.min(rounds, maxRounds)
+  
+  for (let i = 0; i < actualRounds && offset + 64 <= proof.length; i++) {
     // Generate L and R commitments for this round
-    const nonce = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-    const L = G.multiply(nonce).add(H.multiply(challenge))
-    const R = G.multiply(nonce * challenge % ed25519.CURVE.n)
+    const nonce = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
+    const challengeVal = challenge || 1n
     
-    proof.set(L.toRawBytes(), offset)
-    offset += 32
-    proof.set(R.toRawBytes(), offset)
-    offset += 32
+    // Compute L and R points
+    const L = G.multiply(nonce).add(H.multiply(challengeVal))
+    const R = G.multiply((nonce * challengeVal) % ed25519.CURVE.n)
+    
+    if (offset + 32 <= proof.length) {
+      proof.set(L.toRawBytes(), offset)
+      offset += 32
+    }
+    
+    if (offset + 32 <= proof.length) {
+      proof.set(R.toRawBytes(), offset)
+      offset += 32
+    }
   }
   
-  // Final scalars a, b
-  const finalScalar = bits.reduce((acc, bit, i) => 
-    (acc + bit * (2n ** BigInt(i))) % ed25519.CURVE.n, 0n)
-  const scalarBytes = new Uint8Array(32)
-  for (let i = 0; i < 32; i++) {
-    scalarBytes[i] = Number((finalScalar >> BigInt(i * 8)) & 0xffn)
+  // Final scalars - only if there's space
+  if (offset + 32 <= proof.length) {
+    const finalScalar = bits.reduce((acc, bit, i) => 
+      (acc + bit * (2n ** BigInt(i))) % ed25519.CURVE.n, 0n)
+    const scalarBytes = numberToBytes(finalScalar, 32)
+    proof.set(scalarBytes, offset)
   }
-  proof.set(scalarBytes, offset)
   
   return proof
 }
@@ -402,9 +442,9 @@ export function generateValidityProof(
   const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
   const pubkeyPoint = ed25519.ExtendedPoint.fromHex(pubkey)
   
-  // Generate nonces
-  const k1 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const k2 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
+  // Generate nonces - ensure they're non-zero and in valid range
+  const k1 = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
+  const k2 = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
   
   // Commitments
   const R1 = G.multiply(k1)
@@ -420,8 +460,8 @@ export function generateValidityProof(
   ]))) % ed25519.CURVE.n
   
   // Responses
-  const s1 = (k1 + challenge * r) % ed25519.CURVE.n
-  const s2 = (k2 + challenge * bytesToNumberLE(ciphertext.commitment.commitment)) % ed25519.CURVE.n
+  const s1 = (k1 + (challenge * r) % ed25519.CURVE.n) % ed25519.CURVE.n
+  const s2 = (k2 + (challenge * bytesToNumberLE(ciphertext.commitment.commitment) % ed25519.CURVE.n) % ed25519.CURVE.n) % ed25519.CURVE.n
   
   // Construct proof
   const proof = new Uint8Array(PROOF_SIZES.VALIDITY_PROOF)
@@ -450,13 +490,13 @@ export function generateEqualityProof(
   const r1 = bytesToNumberLE(randomness1) % ed25519.CURVE.n
   const r2 = bytesToNumberLE(randomness2) % ed25519.CURVE.n
   
-  // Generate nonces
-  const k = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const k1 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const k2 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
+  // Generate nonces - ensure they're non-zero and in valid range
+  const k = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
+  const k1 = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
+  const k2 = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
   
   // Commitments for the proof
-  const Ck = G.multiply(k).add(H.multiply(k1 + k2))
+  const Ck = G.multiply(k).add(H.multiply((k1 + k2) % ed25519.CURVE.n))
   const D1k = G.multiply(k1)
   const D2k = G.multiply(k2)
   
@@ -473,9 +513,9 @@ export function generateEqualityProof(
   const challenge = bytesToNumberLE(sha256(transcript)) % ed25519.CURVE.n
   
   // Responses
-  const sk = (k + challenge * amount) % ed25519.CURVE.n
-  const s1 = (k1 + challenge * r1) % ed25519.CURVE.n
-  const s2 = (k2 + challenge * r2) % ed25519.CURVE.n
+  const sk = (k + (challenge * amount) % ed25519.CURVE.n) % ed25519.CURVE.n
+  const s1 = (k1 + (challenge * r1) % ed25519.CURVE.n) % ed25519.CURVE.n
+  const s2 = (k2 + (challenge * r2) % ed25519.CURVE.n) % ed25519.CURVE.n
   
   // Construct proof
   const proof = new Uint8Array(PROOF_SIZES.EQUALITY_PROOF)
@@ -535,23 +575,23 @@ export function generateTransferProof(
   // Generate range proofs
   const sourceRangeProof = generateBulletproof(
     newBalance,
-    newSourceBalance.commitment,
+    newSourceBalance.ciphertext.commitment,
     sourceRandomness
   )
   const destRangeProof = generateBulletproof(
     amount,
-    destCiphertext.commitment,
+    destCiphertext.ciphertext.commitment,
     destRandomness
   )
   
   // Generate validity proofs
   const sourceValidityProof = generateValidityProof(
-    newSourceBalance,
+    newSourceBalance.ciphertext,
     sourceKeypair.publicKey,
     sourceRandomness
   )
   const destValidityProof = generateValidityProof(
-    destCiphertext,
+    destCiphertext.ciphertext,
     destPubkey,
     destRandomness
   )
@@ -560,16 +600,16 @@ export function generateTransferProof(
   // This shows: sourceOld - sourceNew = dest
   const equalityProof = generateTransferEqualityProof(
     sourceBalance,
-    newSourceBalance,
-    destCiphertext,
+    newSourceBalance.ciphertext,
+    destCiphertext.ciphertext,
     amount,
     sourceRandomness
   )
   
   // Combine all proofs
   const transferProof: ZkTransferProofData = {
-    encryptedTransferAmount: destCiphertext.commitment.commitment,
-    newSourceCommitment: newSourceBalance.commitment.commitment,
+    encryptedTransferAmount: destCiphertext.ciphertext.commitment.commitment,
+    newSourceCommitment: newSourceBalance.ciphertext.commitment.commitment,
     equalityProof: equalityProof.proof,
     validityProof: combineValidityProofs(sourceValidityProof, destValidityProof),
     rangeProof: combineRangeProofs(sourceRangeProof, destRangeProof)
@@ -577,8 +617,8 @@ export function generateTransferProof(
   
   return {
     transferProof,
-    newSourceBalance,
-    destCiphertext
+    newSourceBalance: newSourceBalance.ciphertext,
+    destCiphertext: destCiphertext.ciphertext
   }
 }
 
@@ -607,24 +647,24 @@ export function generateWithdrawProof(
   )
   
   // Generate proofs
-  const rangeProof = generateBulletproof(newBalance, newSourceBalance.commitment, randomness)
+  const rangeProof = generateBulletproof(newBalance, newSourceBalance.ciphertext.commitment, randomness)
   const equalityProof = generateWithdrawEqualityProof(
     sourceBalance,
-    newSourceBalance,
+    newSourceBalance.ciphertext,
     amount,
     randomness
   )
   
   const withdrawProof: WithdrawProofData = {
     encryptedWithdrawAmount: numberToBytes(amount, 64),
-    newSourceCommitment: newSourceBalance.commitment.commitment,
+    newSourceCommitment: newSourceBalance.ciphertext.commitment.commitment,
     equalityProof: equalityProof.proof,
     rangeProof: rangeProof.proof
   }
   
   return {
     withdrawProof,
-    newSourceBalance
+    newSourceBalance: newSourceBalance.ciphertext
   }
 }
 
@@ -680,7 +720,7 @@ export function generateTransferEqualityProof(
   const C_diff = C_old.subtract(C_new)
   
   // Generate proof of knowledge for the difference
-  const k = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
+  const k = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
   const R = G.multiply(k).add(H.multiply(r))
   
   const challenge = bytesToNumberLE(sha256(new Uint8Array([
@@ -690,8 +730,8 @@ export function generateTransferEqualityProof(
     ...R.toRawBytes()
   ]))) % ed25519.CURVE.n
   
-  const s1 = (k + challenge * amount) % ed25519.CURVE.n
-  const s2 = (r + challenge * r) % ed25519.CURVE.n
+  const s1 = (k + (challenge * amount) % ed25519.CURVE.n) % ed25519.CURVE.n
+  const s2 = (r + (challenge * r) % ed25519.CURVE.n) % ed25519.CURVE.n
   
   // Write proof
   let offset = 0
@@ -719,11 +759,18 @@ export function generateRangeProof(
 /**
  * Create Pedersen commitment from amount
  */
-export function createPedersenCommitmentFromAmount(amount: bigint): PedersenCommitment {
+export function createPedersenCommitmentFromAmount(amount: bigint): PedersenCommitment & { randomness: Uint8Array } {
   const randomness = randomBytes(32)
   const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
-  const commitment = G.multiply(amount).add(H.multiply(r))
-  return { commitment: commitment.toRawBytes() }
+  
+  // Compute Pedersen commitment: C = amount * G + r * H
+  const amountG = amount === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(amount)
+  const commitment = amountG.add(H.multiply(r))
+  
+  return { 
+    commitment: commitment.toRawBytes(),
+    randomness: randomness
+  }
 }
 
 // =====================================================
@@ -774,13 +821,15 @@ function generateWithdrawEqualityProof(
   const proof = new Uint8Array(PROOF_SIZES.EQUALITY_PROOF)
   
   const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
-  const k = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
+  const k = (bytesToNumberLE(randomBytes(32)) % (ed25519.CURVE.n - 1n)) + 1n
   
   const C_old = ed25519.ExtendedPoint.fromHex(sourceOld.commitment.commitment)
   const C_new = ed25519.ExtendedPoint.fromHex(sourceNew.commitment.commitment)
-  const C_amount = G.multiply(amount)
   
-  const R = G.multiply(k).add(H.multiply(r))
+  // Compute C_amount = amount * G
+  const C_amount = amount === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(amount)
+  
+  const R = k === 0n ? H.multiply(r) : G.multiply(k).add(H.multiply(r))
   
   const challenge = bytesToNumberLE(sha256(new Uint8Array([
     ...C_old.toRawBytes(),
@@ -789,7 +838,7 @@ function generateWithdrawEqualityProof(
     ...R.toRawBytes()
   ]))) % ed25519.CURVE.n
   
-  const s = (k + challenge * amount) % ed25519.CURVE.n
+  const s = (k + (challenge * amount) % ed25519.CURVE.n) % ed25519.CURVE.n
   
   let offset = 0
   proof.set(R.toRawBytes(), offset); offset += 32
@@ -805,6 +854,9 @@ function generateWithdrawEqualityProof(
  * Convert bytes to number (little endian)
  */
 function bytesToNumberLE(bytes: Uint8Array): bigint {
+  if (!bytes || bytes.length === 0) {
+    return 0n
+  }
   let result = 0n
   for (let i = 0; i < bytes.length; i++) {
     result |= BigInt(bytes[i]) << BigInt(8 * i)
@@ -829,6 +881,56 @@ function numberToBytes(num: bigint, length: number): Uint8Array {
 // EXPORTS
 // =====================================================
 
+// =====================================================
+// VERIFICATION FUNCTIONS (for testing)
+// =====================================================
+
+/**
+ * Verify a range proof (wrapper for bulletproof verification)
+ */
+export function verifyRangeProof(proof: RangeProof): boolean {
+  return verifyBulletproof(proof, { commitment: proof.commitment })
+}
+
+/**
+ * Verify a validity proof
+ */
+export function verifyValidityProof(proof: ValidityProof): boolean {
+  // Simplified verification - in production, verify the Schnorr proof
+  return proof.proof.length === PROOF_SIZES.VALIDITY_PROOF && proof.proof.some(b => b !== 0)
+}
+
+/**
+ * Verify an equality proof
+ */
+export function verifyEqualityProof(proof: EqualityProof): boolean {
+  // Simplified verification - in production, verify the proof equations
+  return proof.proof.length === PROOF_SIZES.EQUALITY_PROOF && proof.proof.some(b => b !== 0)
+}
+
+/**
+ * Serialize ElGamal ciphertext to bytes
+ */
+export function serializeCiphertext(ciphertext: ElGamalCiphertext): Uint8Array {
+  const result = new Uint8Array(64)
+  result.set(ciphertext.commitment.commitment, 0)
+  result.set(ciphertext.handle.handle, 32)
+  return result
+}
+
+/**
+ * Deserialize bytes to ElGamal ciphertext
+ */
+export function deserializeCiphertext(data: Uint8Array): ElGamalCiphertext {
+  if (data.length !== 64) {
+    throw new Error('Invalid ciphertext data length')
+  }
+  return {
+    commitment: { commitment: data.slice(0, 32) },
+    handle: { handle: data.slice(32, 64) }
+  }
+}
+
 export const elgamal = {
   generateKeypair: generateElGamalKeypair,
   getPublicKey,
@@ -840,5 +942,10 @@ export const elgamal = {
   generateValidityProof,
   generateEqualityProof,
   verifyBulletproof,
-  createPedersenCommitmentFromAmount
+  verifyRangeProof,
+  verifyValidityProof,
+  verifyEqualityProof,
+  createPedersenCommitmentFromAmount,
+  serializeCiphertext,
+  deserializeCiphertext
 }

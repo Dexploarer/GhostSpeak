@@ -19,7 +19,7 @@ import {
   generateValidityProof,
   generateEqualityProof,
   serializeCiphertext
-} from './elgamal.js'
+} from './elgamal-complete.js'
 
 // Node.js globals
 declare const crypto: { getRandomValues: <T extends Uint8Array>(array: T) => T }
@@ -228,6 +228,7 @@ export async function generateConfidentialTransferProof(
     const equalityProof = generateEqualityProof(
       recipientCiphertext,
       auditorCiphertext,
+      amount,
       randomness,
       auditorRandomness
     )
@@ -359,7 +360,7 @@ export interface InterestCalculation {
   /** Calculated interest amount */
   interestAmount: bigint
   /** New total balance */
-  newBalance: bigint
+  newAmount: bigint
   /** Effective annual rate */
   effectiveAnnualRate: number
 }
@@ -397,7 +398,7 @@ export function calculateInterest(
     annualRateBasisPoints: config.currentRate,
     timePeriodSeconds,
     interestAmount,
-    newBalance,
+    newAmount: newBalance,
     effectiveAnnualRate
   }
 }
@@ -433,7 +434,7 @@ export function calculateCompoundInterest(
     annualRateBasisPoints,
     timePeriodSeconds,
     interestAmount,
-    newBalance,
+    newAmount: newBalance,
     effectiveAnnualRate: (compoundFactor - 1) * 100
   }
 }
@@ -750,4 +751,118 @@ export function estimateComputeUnits(
   }
   
   return baseUnits + extensionUnits
+}
+
+// =====================================================
+// CONFIGURATION FACTORY FUNCTIONS
+// =====================================================
+
+/**
+ * Create transfer fee configuration with validation
+ */
+export function createTransferFeeConfig(params: {
+  transferFeeBasisPoints: number
+  maximumFee: bigint
+  transferFeeConfigAuthority: Address | null
+  withdrawWithheldAuthority: Address | null
+}): TransferFeeConfig {
+  if (params.transferFeeBasisPoints > 10000) {
+    throw new Error('Transfer fee basis points cannot exceed 10000')
+  }
+
+  return {
+    transferFeeBasisPoints: params.transferFeeBasisPoints,
+    maximumFee: params.maximumFee,
+    transferFeeConfigAuthority: params.transferFeeConfigAuthority,
+    withdrawWithheldAuthority: params.withdrawWithheldAuthority,
+    withheldAmount: BigInt(0),
+    olderTransferFee: {
+      epoch: BigInt(0),
+      transferFeeBasisPoints: 0,
+      maximumFee: BigInt(0)
+    },
+    newerTransferFee: {
+      epoch: BigInt(1),
+      transferFeeBasisPoints: params.transferFeeBasisPoints,
+      maximumFee: params.maximumFee
+    }
+  }
+}
+
+/**
+ * Create interest bearing configuration with validation
+ */
+export function createInterestBearingConfig(params: {
+  rateAuthority: Address | null
+  currentRate: number
+}): InterestBearingConfig {
+  if (params.currentRate > 32767 || params.currentRate < -32768) {
+    throw new Error('Interest rate must be within i16 range')
+  }
+
+  const currentTimestamp = BigInt(Math.floor(Date.now() / 1000))
+
+  return {
+    rateAuthority: params.rateAuthority,
+    initializationTimestamp: currentTimestamp,
+    preUpdateAverageRate: 0,
+    lastUpdateTimestamp: currentTimestamp,
+    currentRate: params.currentRate
+  }
+}
+
+/**
+ * Parse token extension data from raw bytes
+ */
+export function parseTokenExtension(
+  extensionType: 'TransferFeeConfig' | 'InterestBearingConfig' | string,
+  data: Uint8Array
+): TransferFeeConfig | InterestBearingConfig {
+  switch (extensionType) {
+    case 'TransferFeeConfig': {
+      if (data.length < 108) {
+        throw new Error('Invalid extension data length')
+      }
+      // Simple parsing - in production would use proper borsh deserialization
+      const transferFeeBasisPoints = data[0] | (data[1] << 8)
+      return {
+        transferFeeBasisPoints,
+        maximumFee: BigInt(0), // Would parse from bytes 2-9
+        transferFeeConfigAuthority: null,
+        withdrawWithheldAuthority: null,
+        withheldAmount: BigInt(0),
+        olderTransferFee: {
+          epoch: BigInt(0),
+          transferFeeBasisPoints: 0,
+          maximumFee: BigInt(0)
+        },
+        newerTransferFee: {
+          epoch: BigInt(1),
+          transferFeeBasisPoints,
+          maximumFee: BigInt(0)
+        }
+      }
+    }
+    
+    case 'InterestBearingConfig': {
+      if (data.length < 40) {
+        throw new Error('Invalid extension data length')
+      }
+      // Parse timestamp from first 8 bytes (little endian)
+      let timestamp = 0n
+      for (let i = 0; i < 8; i++) {
+        timestamp |= BigInt(data[i]) << BigInt(i * 8)
+      }
+      return {
+        rateAuthority: null,
+        initializationTimestamp: timestamp,
+        preUpdateAverageRate: 0,
+        lastUpdateTimestamp: timestamp,
+        currentRate: 0
+      }
+    }
+    
+    default:
+      throw new Error('Unknown extension type')
+  }
 }

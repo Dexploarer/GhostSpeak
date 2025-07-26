@@ -37,6 +37,7 @@ import {
 } from '../../utils/token-utils.js'
 import {
   calculateTransferFee,
+  createTransferFeeConfig,
   type TransferFeeCalculation,
   type ConfidentialTransferProof
 } from '../../utils/token-2022-extensions.js'
@@ -840,12 +841,12 @@ export class EscrowInstructions extends BaseInstructions {
 
       // Get transfer fee configuration (this would need RPC implementation)
       // For now, using example fee configuration
-      const exampleFeeConfig = {
+      const exampleFeeConfig = createTransferFeeConfig({
         transferFeeBasisPoints: 250, // 2.5% fee
         maximumFee: 1000000n, // 1 token maximum fee
         transferFeeConfigAuthority: null,
         withdrawWithheldAuthority: null
-      }
+      })
 
       console.log('💰 Calculating Token 2022 transfer fees:')
       const feeCalculation = calculateTransferFee(amount, exampleFeeConfig)

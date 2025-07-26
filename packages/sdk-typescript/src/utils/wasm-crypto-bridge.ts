@@ -147,8 +147,15 @@ export async function initializeWasmCrypto(): Promise<boolean> {
         return false
       }
 
-      // Dynamic import of the actual compiled WASM module
-      const wasmModuleImport = await import('../../dist/wasm/ghostspeak_crypto_wasm.js') as unknown as WasmModuleExports
+      // Dynamic import of the actual compiled WASM module (with fallback)
+      let wasmModuleImport: WasmModuleExports | null = null
+      try {
+        // @ts-expect-error - WASM module may not exist during development
+        wasmModuleImport = await import('../../dist/wasm/ghostspeak_crypto_wasm.js') as unknown as WasmModuleExports
+      } catch {
+        console.warn('WASM module not found, disabling WASM features')
+        return false
+      }
       
       // Initialize the WASM module
       await wasmModuleImport.default()
@@ -167,7 +174,7 @@ export async function initializeWasmCrypto(): Promise<boolean> {
           private engine: WasmEngineType
 
           constructor() {
-            this.engine = new wasmModuleImport.WasmElGamalEngine()
+            this.engine = new wasmModuleImport!.WasmElGamalEngine()
             console.log('🚀 Real WasmElGamalEngine initialized')
           }
 
@@ -239,7 +246,7 @@ export async function initializeWasmCrypto(): Promise<boolean> {
           public readonly secret_key: Uint8Array
 
           constructor() {
-            const engine = new wasmModuleImport.WasmElGamalEngine()
+            const engine = new wasmModuleImport!.WasmElGamalEngine()
             const keypair = engine.generate_keypair()
             this.public_key = keypair.publicKey
             this.secret_key = keypair.secretKey
@@ -393,7 +400,7 @@ export async function encryptAmount(
   // Fallback to JavaScript implementation
   const { encryptAmount: jsEncryptAmount, encryptAmountWithRandomness } = await import('./elgamal-complete.js')
   return randomness ? 
-    encryptAmountWithRandomness(amount, publicKey, randomness) :
+    encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :
     jsEncryptAmount(amount, publicKey)
 }
 

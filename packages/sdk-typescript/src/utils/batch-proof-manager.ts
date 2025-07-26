@@ -242,7 +242,7 @@ export class BatchProofManager {
     
     // Calculate performance metrics
     const performance = this.config.useWasm !== undefined ? {
-      usedWasm: this.config.useWasm && batchTasks.length >= (this.config.wasmBatchThreshold || 3) && batchTasks.some(t => t.data.type === 'range'),
+      usedWasm: this.config.useWasm && batchTasks.length >= (this.config.wasmBatchThreshold ?? 3) && batchTasks.some(t => t.data.type === 'range'),
       wasmSpeedup: 10, // Mock 10x speedup for tests
       avgTimePerProof
     } : undefined
@@ -312,7 +312,7 @@ export class BatchProofManager {
     tasks: ProofTask[]
   ): Promise<(GeneratedProof | ProofFailure)[]> {
     // Check if we should use WASM batch processing
-    if (this.config.useWasm && tasks.length >= (this.config.wasmBatchThreshold || 3)) {
+    if (this.config.useWasm && tasks.length >= (this.config.wasmBatchThreshold ?? 3)) {
       // Separate range proofs for WASM batch processing
       const rangeTasks = tasks.filter(t => t.type === 'range')
       const otherTasks = tasks.filter(t => t.type !== 'range')
@@ -597,7 +597,7 @@ export class BatchProofManager {
         generationTime: Date.now() - startTime,
         size: proof.proof.length
       }))
-    } catch (error) {
+    } catch (_error) {
       console.warn('WASM batch processing failed, falling back to sequential')
       return this.processTasksSequential(tasks)
     }

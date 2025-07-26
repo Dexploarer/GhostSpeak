@@ -114,6 +114,20 @@ export interface TransferFeeConfig {
   transferFeeConfigAuthority: Address | null
   /** Authority that can withdraw collected fees */
   withdrawWithheldAuthority: Address | null
+  /** Amount of fees currently withheld */
+  withheldAmount: bigint
+  /** Older transfer fee configuration */
+  olderTransferFee: {
+    epoch: bigint
+    transferFeeBasisPoints: number
+    maximumFee: bigint
+  }
+  /** Newer transfer fee configuration */
+  newerTransferFee: {
+    epoch: bigint
+    transferFeeBasisPoints: number
+    maximumFee: bigint
+  }
 }
 
 /**
@@ -136,6 +150,8 @@ export interface InterestBearingConfig {
   rateAuthority: Address | null
   /** Current interest rate (basis points per year) */
   currentRate: number
+  /** Timestamp when interest bearing was initialized */
+  initializationTimestamp: bigint
   /** Timestamp of last rate update */
   lastUpdateTimestamp: bigint
   /** Pre-computed interest rate */
@@ -487,7 +503,18 @@ export async function getTransferFeeConfig(
       transferFeeBasisPoints: config.newerTransferFee.transferFeeBasisPoints,
       maximumFee: config.newerTransferFee.maximumFee,
       transferFeeConfigAuthority: config.transferFeeConfigAuthority,
-      withdrawWithheldAuthority: config.withdrawWithheldAuthority
+      withdrawWithheldAuthority: config.withdrawWithheldAuthority,
+      withheldAmount: BigInt(0),
+      olderTransferFee: {
+        epoch: config.olderTransferFee?.epoch || BigInt(0),
+        transferFeeBasisPoints: config.olderTransferFee?.transferFeeBasisPoints || 0,
+        maximumFee: config.olderTransferFee?.maximumFee || BigInt(0)
+      },
+      newerTransferFee: {
+        epoch: config.newerTransferFee.epoch,
+        transferFeeBasisPoints: config.newerTransferFee.transferFeeBasisPoints,
+        maximumFee: config.newerTransferFee.maximumFee
+      }
     }
   } catch (error) {
     console.error(`Failed to get transfer fee config for mint ${mint}:`, error)
@@ -561,6 +588,7 @@ export async function getInterestBearingConfig(
     return {
       rateAuthority: config.rateAuthority,
       currentRate: config.currentRate,
+      initializationTimestamp: config.initializationTimestamp || BigInt(Math.floor(Date.now() / 1000)),
       lastUpdateTimestamp: config.lastUpdateTimestamp,
       preUpdateAverageRate: config.preUpdateAverageRate
     }
@@ -830,7 +858,20 @@ export function parseTransferFeeConfig(
           ? config.maximumFee 
           : BigInt(config.maximumFee ?? 0),
         transferFeeConfigAuthority: config.transferFeeConfigAuthority as Address | null ?? null,
-        withdrawWithheldAuthority: config.withdrawWithheldAuthority as Address | null ?? null
+        withdrawWithheldAuthority: config.withdrawWithheldAuthority as Address | null ?? null,
+        withheldAmount: BigInt(0),
+        olderTransferFee: {
+          epoch: BigInt(0),
+          transferFeeBasisPoints: 0,
+          maximumFee: BigInt(0)
+        },
+        newerTransferFee: {
+          epoch: BigInt(1),
+          transferFeeBasisPoints: config.transferFeeBasisPoints ?? 0,
+          maximumFee: typeof config.maximumFee === 'bigint' 
+            ? config.maximumFee 
+            : BigInt(config.maximumFee ?? 0)
+        }
       }
     }
   } catch (error) {
@@ -842,7 +883,18 @@ export function parseTransferFeeConfig(
     transferFeeBasisPoints: 0,
     maximumFee: BigInt(0),
     transferFeeConfigAuthority: null,
-    withdrawWithheldAuthority: null
+    withdrawWithheldAuthority: null,
+    withheldAmount: BigInt(0),
+    olderTransferFee: {
+      epoch: BigInt(0),
+      transferFeeBasisPoints: 0,
+      maximumFee: BigInt(0)
+    },
+    newerTransferFee: {
+      epoch: BigInt(1),
+      transferFeeBasisPoints: 0,
+      maximumFee: BigInt(0)
+    }
   }
 }
 

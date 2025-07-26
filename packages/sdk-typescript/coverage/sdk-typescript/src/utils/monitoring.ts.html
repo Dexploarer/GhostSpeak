@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">0.91% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/548</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
-                <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
-                <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>5/548</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/4</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0.91% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/548</span>
+                <span class='fraction'>5/548</span>
             </div>
         
             
@@ -1160,6 +1160,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1167,7 +1168,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1932,27 +1932,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -2118,7 +2118,7 @@ export interface TraceSpan {
 /**
  * Comprehensive monitoring system
  */
-<span class="cstat-no" title="statement not covered" >export class MonitoringSystem {</span>
+export class MonitoringSystem <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >{</span></span>
 <span class="cstat-no" title="statement not covered" >  private metrics = new Map&lt;string, PerformanceMetric&gt;()</span>
 <span class="cstat-no" title="statement not covered" >  private activeOperations = new Map&lt;string, OperationContext&gt;()</span>
 <span class="cstat-no" title="statement not covered" >  private alerts = new Map&lt;string, Alert&gt;()</span>
@@ -2890,12 +2890,12 @@ export interface TraceSpan {
 /**
  * Global monitoring instance
  */
-<span class="cstat-no" title="statement not covered" >let globalMonitoring: MonitoringSystem | null = null</span>
+let globalMonitoring: MonitoringSystem | null = null
 &nbsp;
 /**
  * Get or create global monitoring system
  */
-<span class="cstat-no" title="statement not covered" >export function getGlobalMonitoring(config?: ConstructorParameters&lt;typeof MonitoringSystem&gt;[0]): MonitoringSystem {</span>
+export <span class="fstat-no" title="function not covered" >function getGlobalMonitoring(config?: ConstructorParameters&lt;typeof MonitoringSystem&gt;[0]): MonitoringSystem {</span>
 <span class="cstat-no" title="statement not covered" >  globalMonitoring ??= new MonitoringSystem(config)</span>
 <span class="cstat-no" title="statement not covered" >  return globalMonitoring</span>
 <span class="cstat-no" title="statement not covered" >}</span>
@@ -2903,14 +2903,14 @@ export interface TraceSpan {
 /**
  * Set global monitoring system
  */
-<span class="cstat-no" title="statement not covered" >export function setGlobalMonitoring(monitoring: MonitoringSystem): void {</span>
+export <span class="fstat-no" title="function not covered" >function setGlobalMonitoring(monitoring: MonitoringSystem): void {</span>
 <span class="cstat-no" title="statement not covered" >  globalMonitoring = monitoring</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 /**
  * Decorator for automatic monitoring of methods
  */
-<span class="cstat-no" title="statement not covered" >export function Monitor(metricName?: string) {</span>
+export <span class="fstat-no" title="function not covered" >function Monitor(metricName?: string) {</span>
 <span class="cstat-no" title="statement not covered" >  return function &lt;T extends { constructor: new (...args: unknown[]) =&gt; unknown }&gt;(</span>
 <span class="cstat-no" title="statement not covered" >    target: T,</span>
 <span class="cstat-no" title="statement not covered" >    propertyName: string,</span>
@@ -2944,7 +2944,7 @@ export interface TraceSpan {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-26T14:28:17.235Z
+                at 2025-07-26T18:01:48.653Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

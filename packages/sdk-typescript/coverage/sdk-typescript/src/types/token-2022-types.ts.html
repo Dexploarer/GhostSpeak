@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>27/27</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>27/27</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -640,10 +640,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -853,29 +853,29 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1133,10 +1133,10 @@ export interface DefaultAccountState {
 /**
  * Account state enum
  */
-<span class="cstat-no" title="statement not covered" >export enum AccountState {</span>
-<span class="cstat-no" title="statement not covered" >  Uninitialized = 0,</span>
-<span class="cstat-no" title="statement not covered" >  Initialized = 1,</span>
-<span class="cstat-no" title="statement not covered" >  Frozen = 2</span>
+export enum AccountState {
+  Uninitialized = 0,
+  Initialized = 1,
+  Frozen = 2
 }
 &nbsp;
 /**
@@ -1346,29 +1346,29 @@ export interface TokenGroupMember {
 /**
  * All possible Token-2022 extensions
  */
-<span class="cstat-no" title="statement not covered" >export enum ExtensionType {</span>
-<span class="cstat-no" title="statement not covered" >  Uninitialized = 0,</span>
-<span class="cstat-no" title="statement not covered" >  TransferFeeConfig = 1,</span>
-<span class="cstat-no" title="statement not covered" >  TransferFeeAmount = 2,</span>
-<span class="cstat-no" title="statement not covered" >  MintCloseAuthority = 3,</span>
-<span class="cstat-no" title="statement not covered" >  ConfidentialTransferMint = 4,</span>
-<span class="cstat-no" title="statement not covered" >  ConfidentialTransferAccount = 5,</span>
-<span class="cstat-no" title="statement not covered" >  DefaultAccountState = 6,</span>
-<span class="cstat-no" title="statement not covered" >  ImmutableOwner = 7,</span>
-<span class="cstat-no" title="statement not covered" >  MemoTransfer = 8,</span>
-<span class="cstat-no" title="statement not covered" >  NonTransferable = 9,</span>
-<span class="cstat-no" title="statement not covered" >  InterestBearingConfig = 10,</span>
-<span class="cstat-no" title="statement not covered" >  CpiGuard = 11,</span>
-<span class="cstat-no" title="statement not covered" >  PermanentDelegate = 12,</span>
-<span class="cstat-no" title="statement not covered" >  NonTransferableAccount = 13,</span>
-<span class="cstat-no" title="statement not covered" >  TransferHook = 14,</span>
-<span class="cstat-no" title="statement not covered" >  TransferHookAccount = 15,</span>
-<span class="cstat-no" title="statement not covered" >  MetadataPointer = 16,</span>
-<span class="cstat-no" title="statement not covered" >  TokenMetadata = 17,</span>
-<span class="cstat-no" title="statement not covered" >  GroupPointer = 18,</span>
-<span class="cstat-no" title="statement not covered" >  GroupMemberPointer = 19,</span>
-<span class="cstat-no" title="statement not covered" >  TokenGroup = 20,</span>
-<span class="cstat-no" title="statement not covered" >  TokenGroupMember = 21</span>
+export enum ExtensionType {
+  Uninitialized = 0,
+  TransferFeeConfig = 1,
+  TransferFeeAmount = 2,
+  MintCloseAuthority = 3,
+  ConfidentialTransferMint = 4,
+  ConfidentialTransferAccount = 5,
+  DefaultAccountState = 6,
+  ImmutableOwner = 7,
+  MemoTransfer = 8,
+  NonTransferable = 9,
+  InterestBearingConfig = 10,
+  CpiGuard = 11,
+  PermanentDelegate = 12,
+  NonTransferableAccount = 13,
+  TransferHook = 14,
+  TransferHookAccount = 15,
+  MetadataPointer = 16,
+  TokenMetadata = 17,
+  GroupPointer = 18,
+  GroupMemberPointer = 19,
+  TokenGroup = 20,
+  TokenGroupMember = 21
 }
 &nbsp;
 // =====================================================
@@ -1549,7 +1549,7 @@ export interface Token2022Config {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-26T14:28:17.235Z
+                at 2025-07-26T18:01:48.653Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

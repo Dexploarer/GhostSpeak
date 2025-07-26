@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">1.78% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/617</span>
+                <span class='fraction'>11/617</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
-                <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/15</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">1.78% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/617</span>
+                <span class='fraction'>11/617</span>
             </div>
         
             
@@ -1003,10 +1003,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1017,10 +1017,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1054,19 +1054,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1825,7 +1825,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1936,10 +1936,10 @@
  * Includes parsers for all Token-2022 extension types
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import './text-encoder-polyfill.js'</span>
+import './text-encoder-polyfill.js'
 import type { Address } from '@solana/addresses'
-<span class="cstat-no" title="statement not covered" >import { getAddressDecoder, getAddressEncoder } from '@solana/kit'</span>
-<span class="cstat-no" title="statement not covered" >import { </span>
+import { getAddressDecoder, getAddressEncoder } from '@solana/kit'
+import { 
   getU8Decoder, 
   getU16Decoder, 
   getU32Decoder, 
@@ -1950,10 +1950,10 @@ import type { Address } from '@solana/addresses'
 import { 
   type Commitment
 } from '../types/rpc-types.js'
-<span class="cstat-no" title="statement not covered" >import {</span>
+import {
   createTypedRpcClient
 } from '../types/rpc-client-types.js'
-<span class="cstat-no" title="statement not covered" >import {</span>
+import {
   type MintWithExtensions,
   type TokenAccountWithExtensions,
   ExtensionType,
@@ -1987,19 +1987,19 @@ import {
 // =====================================================
 &nbsp;
 /** Token-2022 program ID */
-<span class="cstat-no" title="statement not covered" >export const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address</span>
+export const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address
 &nbsp;
 /** Mint account size without extensions */
-<span class="cstat-no" title="statement not covered" >const MINT_SIZE = 82</span>
+const MINT_SIZE = 82
 &nbsp;
 /** Token account size without extensions */
-<span class="cstat-no" title="statement not covered" >const ACCOUNT_SIZE = 165</span>
+const ACCOUNT_SIZE = 165
 &nbsp;
 /** Extension discriminator size */
-<span class="cstat-no" title="statement not covered" >const EXTENSION_TYPE_SIZE = 2</span>
+const EXTENSION_TYPE_SIZE = 2
 &nbsp;
 /** Extension length size */
-<span class="cstat-no" title="statement not covered" >const EXTENSION_LENGTH_SIZE = 2</span>
+const EXTENSION_LENGTH_SIZE = 2
 &nbsp;
 // =====================================================
 // EXTENSION PARSERS
@@ -2008,7 +2008,7 @@ import {
 /**
  * Parse TLV (Type-Length-Value) extensions from account data
  */
-<span class="cstat-no" title="statement not covered" >function parseExtensions(data: Uint8Array, baseSize: number): ParsedExtensions {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function parseExtensions(data: Uint8Array, baseSize: number): ParsedExtensions {</span></span>
 <span class="cstat-no" title="statement not covered" >  const extensions: ExtensionTLV[] = []</span>
 <span class="cstat-no" title="statement not covered" >  let offset = baseSize</span>
 &nbsp;
@@ -2048,7 +2048,7 @@ import {
 /**
  * Parse transfer fee configuration
  */
-<span class="cstat-no" title="statement not covered" >function parseTransferFeeConfig(data: Uint8Array): TransferFeeConfig {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function parseTransferFeeConfig(data: Uint8Array): TransferFeeConfig {</span></span>
 <span class="cstat-no" title="statement not covered" >  let offset = 0</span>
   
   // Transfer fee config authority (32 bytes, optional)
@@ -2100,7 +2100,7 @@ import {
 /**
  * Parse interest-bearing configuration
  */
-<span class="cstat-no" title="statement not covered" >function parseInterestBearingConfig(data: Uint8Array): InterestBearingConfig {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function parseInterestBearingConfig(data: Uint8Array): InterestBearingConfig {</span></span>
 <span class="cstat-no" title="statement not covered" >  let offset = 0</span>
 &nbsp;
   // Rate authority (32 bytes, optional)
@@ -2135,7 +2135,7 @@ import {
 /**
  * Parse confidential transfer mint configuration
  */
-<span class="cstat-no" title="statement not covered" >function parseConfidentialTransferMint(data: Uint8Array): ConfidentialTransferMint {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function parseConfidentialTransferMint(data: Uint8Array): ConfidentialTransferMint {</span></span>
 <span class="cstat-no" title="statement not covered" >  let offset = 0</span>
 &nbsp;
   // Authority (32 bytes, optional)
@@ -2161,7 +2161,7 @@ import {
 /**
  * Parse confidential transfer account configuration
  */
-<span class="cstat-no" title="statement not covered" >function parseConfidentialTransferAccount(data: Uint8Array): ConfidentialTransferAccount {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function parseConfidentialTransferAccount(data: Uint8Array): ConfidentialTransferAccount {</span></span>
 <span class="cstat-no" title="statement not covered" >  let offset = 0</span>
 &nbsp;
   // Approved (1 byte)
@@ -2240,7 +2240,7 @@ import {
 /**
  * Parse token metadata
  */
-<span class="cstat-no" title="statement not covered" >function parseTokenMetadata(data: Uint8Array): TokenMetadata {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function parseTokenMetadata(data: Uint8Array): TokenMetadata {</span></span>
 <span class="cstat-no" title="statement not covered" >  let offset = 0</span>
 &nbsp;
   // Update authority (33 bytes - 1 byte option + 32 bytes pubkey)
@@ -2305,7 +2305,7 @@ import {
 /**
  * Parse extension based on type
  */
-<span class="cstat-no" title="statement not covered" >function parseExtension(extensionType: ExtensionType, data: Uint8Array): unknown {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function parseExtension(extensionType: ExtensionType, data: Uint8Array): unknown {</span></span>
 <span class="cstat-no" title="statement not covered" >  switch (extensionType) {</span>
 <span class="cstat-no" title="statement not covered" >    case ExtensionType.TransferFeeConfig:</span>
 <span class="cstat-no" title="statement not covered" >      return parseTransferFeeConfig(data)</span>
@@ -2385,7 +2385,7 @@ import {
 /**
  * Get mint account with extensions
  */
-<span class="cstat-no" title="statement not covered" >export async function getMintWithExtensions(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function getMintWithExtensions(</span></span>
 <span class="cstat-no" title="statement not covered" >  rpc: unknown,</span>
 <span class="cstat-no" title="statement not covered" >  mint: Address,</span>
 <span class="cstat-no" title="statement not covered" >  commitment?: Commitment</span>
@@ -2504,7 +2504,7 @@ import {
 /**
  * Get multiple mints with extensions
  */
-<span class="cstat-no" title="statement not covered" >export async function getMultipleMintsWithExtensions(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function getMultipleMintsWithExtensions(</span></span>
 <span class="cstat-no" title="statement not covered" >  rpc: unknown,</span>
 <span class="cstat-no" title="statement not covered" >  mints: Address[],</span>
 <span class="cstat-no" title="statement not covered" >  commitment?: Commitment</span>
@@ -2528,7 +2528,7 @@ import {
 /**
  * Check if a mint has a specific extension
  */
-<span class="cstat-no" title="statement not covered" >export async function mintHasExtension(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function mintHasExtension(</span></span>
 <span class="cstat-no" title="statement not covered" >  rpc: unknown,</span>
 <span class="cstat-no" title="statement not covered" >  mint: Address,</span>
 <span class="cstat-no" title="statement not covered" >  extensionType: ExtensionType,</span>
@@ -2574,7 +2574,7 @@ import {
 /**
  * Get token account with extensions
  */
-<span class="cstat-no" title="statement not covered" >export async function getTokenAccountWithExtensions(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function getTokenAccountWithExtensions(</span></span>
 <span class="cstat-no" title="statement not covered" >  rpc: unknown,</span>
 <span class="cstat-no" title="statement not covered" >  account: Address,</span>
 <span class="cstat-no" title="statement not covered" >  commitment?: Commitment</span>
@@ -2700,7 +2700,7 @@ import {
 /**
  * Get all token accounts for a wallet with extensions
  */
-<span class="cstat-no" title="statement not covered" >export async function getTokenAccountsByOwnerWithExtensions(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function getTokenAccountsByOwnerWithExtensions(</span></span>
 <span class="cstat-no" title="statement not covered" >  rpc: unknown,</span>
 <span class="cstat-no" title="statement not covered" >  owner: Address,</span>
 <span class="cstat-no" title="statement not covered" >  mint?: Address,</span>
@@ -2758,7 +2758,7 @@ import {
 /**
  * Calculate required account size for extensions
  */
-<span class="cstat-no" title="statement not covered" >export function getAccountSizeForExtensions(</span>
+export <span class="fstat-no" title="function not covered" >function getAccountSizeForExtensions(</span>
 <span class="cstat-no" title="statement not covered" >  baseSize: number,</span>
 <span class="cstat-no" title="statement not covered" >  extensions: ExtensionType[]</span>
 <span class="cstat-no" title="statement not covered" >): number {</span>
@@ -2824,7 +2824,7 @@ import {
 /**
  * Check if a token is Token-2022
  */
-<span class="cstat-no" title="statement not covered" >export async function isToken2022(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function isToken2022(</span></span>
 <span class="cstat-no" title="statement not covered" >  rpc: unknown,</span>
 <span class="cstat-no" title="statement not covered" >  mint: Address,</span>
 <span class="cstat-no" title="statement not covered" >  commitment?: Commitment</span>
@@ -2838,7 +2838,7 @@ import {
 /**
  * Get token program for a mint (Token or Token-2022)
  */
-<span class="cstat-no" title="statement not covered" >export async function getTokenProgramForMint(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export async function getTokenProgramForMint(</span></span>
 <span class="cstat-no" title="statement not covered" >  rpc: unknown,</span>
 <span class="cstat-no" title="statement not covered" >  mint: Address,</span>
 <span class="cstat-no" title="statement not covered" >  commitment?: Commitment</span>
@@ -2869,7 +2869,7 @@ import {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-26T14:28:17.235Z
+                at 2025-07-26T18:01:48.653Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

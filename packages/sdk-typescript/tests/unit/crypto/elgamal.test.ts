@@ -18,9 +18,7 @@ import {
   generateEqualityProof,
   verifyEqualityProof,
   generateTransferValidityProof,
-  verifyTransferValidityProof,
   generateTransferEqualityProof,
-  verifyTransferEqualityProof,
   isValidCiphertext,
   reRandomizeCiphertext,
   serializeCiphertext,
@@ -28,7 +26,7 @@ import {
   MAX_DECRYPTABLE_VALUE,
   type ElGamalKeypair,
   type ElGamalCiphertext
-} from '../../../src/utils/elgamal-complete'
+} from '../../../src/utils/elgamal'
 import type { TransactionSigner } from '@solana/kit'
 import { PerformanceTimer } from '../../helpers/setup'
 
@@ -270,8 +268,8 @@ describe('ElGamal Encryption', () => {
         }
         expect(rangeProof.commitment).toEqual(result.ciphertext.commitment.commitment)
         
-        // Verify using the elgamal helper
-        const isValid = elgamal.verifyRangeProof(rangeProof)
+        // Verify the range proof
+        const isValid = verifyRangeProof(rangeProof, result.ciphertext.commitment.commitment)
         expect(isValid).toBe(true)
       })
       
@@ -302,8 +300,8 @@ describe('ElGamal Encryption', () => {
         expect(rangeProof.proof.length).toBeGreaterThan(128) // Full bulletproof is larger
         expect(rangeProof.commitment).toEqual(result.ciphertext.commitment.commitment)
         
-        // Verify using the elgamal helper
-        const isValid = elgamal.verifyRangeProof(rangeProof)
+        // Verify the range proof
+        const isValid = verifyRangeProof(rangeProof, result.ciphertext.commitment.commitment)
         expect(isValid).toBe(true)
       })
       

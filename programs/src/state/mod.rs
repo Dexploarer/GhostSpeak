@@ -201,6 +201,11 @@ pub const MIN_AUCTION_DURATION: i64 = 3600; // 1 hour
 pub const MAX_AUCTION_DURATION: i64 = 2592000; // 30 days
 pub const MAX_BIDS_PER_AUCTION_PER_USER: usize = 50;
 
+// Reserve price extension constants
+pub const MAX_RESERVE_EXTENSIONS: u8 = 3; // Maximum number of extensions when reserve not met
+pub const RESERVE_EXTENSION_DURATION: i64 = 3600; // 1 hour extension each time
+pub const RESERVE_SHORTFALL_THRESHOLD: i64 = 300; // Notify bidders if < 5 minutes left without reserve
+
 // Common enums used across modules
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum ChannelType {

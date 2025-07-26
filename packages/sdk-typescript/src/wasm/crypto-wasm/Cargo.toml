@@ -1,0 +1,61 @@
+[package]
+name = "ghostspeak-crypto-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance WebAssembly module for GhostSpeak cryptographic operations"
+authors = ["GhostSpeak Protocol"]
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+# Exclude from parent workspace
+[workspace]
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+getrandom = { version = "0.2", features = ["js"] }
+wee_alloc = "0.4"
+
+# Cryptographic dependencies
+ed25519-dalek = { version = "2.0", features = ["serde", "rand_core"] }
+curve25519-dalek = { version = "4.0", features = ["serde"] }
+sha2 = "0.10"
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+serde_json = "1.0"
+
+# Console logging for debugging
+console_error_panic_hook = "0.1"
+wasm-bindgen-console-logger = "0.1"
+
+# Web APIs with all needed features
+web-sys = { version = "0.3", features = [
+  "console",
+  "Performance",
+  "Window",
+  "Crypto",
+  "CryptoKey",
+  "SubtleCrypto",
+  "CryptoKeyPair"
+] }
+
+[profile.release]
+# Enable maximum optimizations for WebAssembly
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# Enable specific target features for SIMD and threading
+[profile.release.package."*"]
+opt-level = 3
+
+# Development profile with faster build times
+[profile.dev]
+opt-level = 1
+debug = true

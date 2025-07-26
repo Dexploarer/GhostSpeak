@@ -33,6 +33,7 @@ export {
 export { BulkDealsInstructions } from './client/instructions/BulkDealsInstructions.js'
 export { AnalyticsInstructions } from './client/instructions/AnalyticsInstructions.js'
 export { ComplianceInstructions } from './client/instructions/ComplianceInstructions.js'
+export { ReputationInstructions } from './client/instructions/ReputationInstructions.js'
 
 // Export TransactionSigner type from Solana kit
 export type { TransactionSigner } from '@solana/kit'
@@ -182,6 +183,14 @@ export {
   parseTokenAmount,
   TokenProgram,
   TokenExtension,
+  // New Token-2022 extension detection functions
+  hasTransferFeeExtension,
+  hasConfidentialTransferExtension,
+  hasInterestBearingExtension,
+  // New Token-2022 configuration retrieval functions
+  getTransferFeeConfig,
+  getConfidentialTransferConfig,
+  getInterestBearingConfig,
   type AssociatedTokenAccount,
   type TransferFeeConfig,
   type ConfidentialTransferConfig,

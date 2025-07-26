@@ -372,6 +372,7 @@ pub enum ProposalStatus {
     Executed,
     Cancelled,
     Expired,
+    Queued,
 }
 
 /// Voting results for proposal
@@ -1024,6 +1025,184 @@ pub enum EmergencyConditionType {
 }
 
 // =====================================================
+// EXECUTION QUEUE STRUCTURES
+// =====================================================
+
+/// Execution queue for batched proposal execution
+#[account]
+pub struct ExecutionQueue {
+    /// Unique batch ID
+    pub batch_id: u64,
+
+    /// Queue creator/executor
+    pub executor: Pubkey,
+
+    /// Creation timestamp
+    pub created_at: i64,
+
+    /// Last execution timestamp
+    pub last_execution_at: Option<i64>,
+
+    /// Queue status
+    pub status: ExecutionQueueStatus,
+
+    /// Queued proposals in priority order
+    pub queued_proposals: Vec<QueuedProposal>,
+
+    /// Maximum proposals in single batch
+    pub max_batch_size: u8,
+
+    /// Auto-execution enabled
+    pub auto_execute: bool,
+
+    /// Execution window (seconds)
+    pub execution_window: i64,
+
+    /// Reserved space
+    pub reserved: [u8; 64],
+}
+
+/// Status of execution queue
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExecutionQueueStatus {
+    Pending,
+    Processing,
+    PartiallyExecuted,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+/// Individual queued proposal
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct QueuedProposal {
+    /// Proposal account
+    pub proposal: Pubkey,
+
+    /// Proposal ID for reference
+    pub proposal_id: u64,
+
+    /// Execution priority
+    pub priority: TransactionPriority,
+
+    /// Timestamp when queued
+    pub queued_at: i64,
+
+    /// Execution status
+    pub execution_status: ExecutionStatus,
+
+    /// Execution result
+    pub execution_result: Option<ExecutionResult>,
+}
+
+/// Execution status for individual proposals
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExecutionStatus {
+    Queued,
+    Processing,
+    Executed,
+    Failed,
+    Skipped,
+}
+
+/// Result of proposal execution
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct ExecutionResult {
+    /// Whether execution succeeded
+    pub success: bool,
+
+    /// Execution timestamp
+    pub executed_at: i64,
+
+    /// Error message if failed
+    pub error_message: Option<String>,
+
+    /// Gas used (for tracking)
+    pub gas_used: u64,
+}
+
+// =====================================================
+// AUTOMATIC EXECUTION STRUCTURES
+// =====================================================
+
+/// Automatic execution trigger configuration
+#[account]
+pub struct AutoExecutionTrigger {
+    /// Trigger ID
+    pub trigger_id: u64,
+
+    /// Associated proposal or queue
+    pub target: Pubkey,
+
+    /// Trigger type
+    pub trigger_type: TriggerType,
+
+    /// Trigger conditions
+    pub conditions: Vec<TriggerCondition>,
+
+    /// Is trigger active
+    pub active: bool,
+
+    /// Created timestamp
+    pub created_at: i64,
+
+    /// Last triggered timestamp
+    pub last_triggered_at: Option<i64>,
+
+    /// Maximum trigger count (0 = unlimited)
+    pub max_triggers: u32,
+
+    /// Current trigger count
+    pub trigger_count: u32,
+
+    /// Reserved
+    pub reserved: [u8; 32],
+}
+
+/// Types of execution triggers
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TriggerType {
+    /// Time-based trigger
+    TimeBased,
+    /// Event-based trigger
+    EventBased,
+    /// Condition-based trigger
+    ConditionBased,
+    /// Oracle-based trigger
+    OracleBased,
+}
+
+/// Individual trigger condition
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct TriggerCondition {
+    /// Condition type
+    pub condition_type: String,
+
+    /// Target value
+    pub target_value: Vec<u8>,
+
+    /// Comparison operator
+    pub operator: ComparisonOperator,
+
+    /// Is condition met
+    pub met: bool,
+
+    /// Last checked timestamp
+    pub last_checked_at: Option<i64>,
+}
+
+/// Comparison operators for conditions
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ComparisonOperator {
+    Equal,
+    NotEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+}
+
+// =====================================================
 // CONSTANTS
 // =====================================================
 
@@ -1044,6 +1223,12 @@ pub const MAX_EMERGENCY_CONDITIONS: usize = 20;
 
 /// Maximum voting power multiplier (10x)
 pub const MAX_VOTING_POWER_MULTIPLIER: u32 = 100000; // Basis points
+
+/// Maximum proposals in execution queue
+pub const MAX_QUEUED_PROPOSALS: usize = 50;
+
+/// Maximum trigger conditions
+pub const MAX_TRIGGER_CONDITIONS: usize = 10;
 
 // =====================================================
 // SPACE CALCULATIONS
@@ -1441,5 +1626,67 @@ impl EmergencyCondition {
         4 + 256 + // detection_method
         1 + // auto_activate
         1 // required_confirmations
+    }
+}
+
+impl ExecutionQueue {
+    pub const fn space() -> usize {
+        8 + // discriminator
+        8 + // batch_id
+        32 + // executor
+        8 + // created_at
+        1 + 8 + // last_execution_at
+        1 + // status
+        4 + (MAX_QUEUED_PROPOSALS * QueuedProposal::size()) + // queued_proposals
+        1 + // max_batch_size
+        1 + // auto_execute
+        8 + // execution_window
+        64 // reserved
+    }
+}
+
+impl QueuedProposal {
+    pub const fn size() -> usize {
+        32 + // proposal
+        8 + // proposal_id
+        1 + // priority
+        8 + // queued_at
+        1 + // execution_status
+        1 + ExecutionResult::size() // execution_result
+    }
+}
+
+impl ExecutionResult {
+    pub const fn size() -> usize {
+        1 + // success
+        8 + // executed_at
+        1 + 4 + 256 + // error_message
+        8 // gas_used
+    }
+}
+
+impl AutoExecutionTrigger {
+    pub const fn space() -> usize {
+        8 + // discriminator
+        8 + // trigger_id
+        32 + // target
+        1 + // trigger_type
+        4 + (MAX_TRIGGER_CONDITIONS * TriggerCondition::size()) + // conditions
+        1 + // active
+        8 + // created_at
+        1 + 8 + // last_triggered_at
+        4 + // max_triggers
+        4 + // trigger_count
+        32 // reserved
+    }
+}
+
+impl TriggerCondition {
+    pub const fn size() -> usize {
+        4 + 64 + // condition_type
+        4 + 256 + // target_value
+        1 + // operator
+        1 + // met
+        1 + 8 // last_checked_at
     }
 }

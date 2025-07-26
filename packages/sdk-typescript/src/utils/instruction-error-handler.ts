@@ -6,11 +6,20 @@
  */
 
 import { 
-  INSTRUCTION_MAPPINGS, 
-  AccountInfo,
-  getInstructionMapping,
-  generateAccountValidationError 
-} from '../generated/instruction-mappings';
+  instructionAccountMappings,
+  type InstructionMapping
+} from '../generated/instruction-mappings.js'
+
+interface ExpectedAccount {
+  name: string
+  pda: boolean
+};
+
+interface AccountInfo {
+  name: string;
+  pda: boolean;
+}
+
 
 /**
  * Enhanced error class for instruction validation errors
@@ -41,7 +50,7 @@ export class InstructionValidationError extends Error {
  * Check if an instruction exists in our mappings
  */
 export function isKnownInstruction(instructionName: string): boolean {
-  return instructionName in INSTRUCTION_MAPPINGS;
+  return instructionName in instructionAccountMappings;
 }
 
 /**
@@ -49,7 +58,7 @@ export function isKnownInstruction(instructionName: string): boolean {
  */
 export function validateInstructionAccounts(
   instructionName: string,
-  providedAccounts: any[],
+  providedAccounts: unknown[],
   accountNames?: string[]
 ): void {
   const mapping = getInstructionMapping(instructionName);
@@ -63,7 +72,7 @@ export function validateInstructionAccounts(
     );
   }
   
-  if (providedAccounts.length !== mapping.expectedAccounts) {
+  if (providedAccounts.length !== mapping.expectedAccounts.length) {
     const errorMessage = generateAccountValidationError(
       instructionName, 
       providedAccounts.length, 
@@ -72,10 +81,10 @@ export function validateInstructionAccounts(
     
     throw new InstructionValidationError(
       instructionName,
-      mapping.expectedAccounts,
+      mapping.expectedAccounts.length,
       providedAccounts.length,
       errorMessage,
-      mapping.accounts
+      mapping.expectedAccounts
     );
   }
 }
@@ -94,22 +103,18 @@ export function createAccountMismatchError(
     return `Unknown instruction: ${instructionName}`;
   }
   
-  if (providedCount === mapping.expectedAccounts) {
+  if (providedCount === mapping.expectedAccounts.length) {
     return `Accounts are correctly provided for ${instructionName}`;
   }
   
   let error = `❌ Account validation failed for "${instructionName}"\n\n`;
   
-  error += `📊 Expected: ${mapping.expectedAccounts} accounts\n`;
+  error += `📊 Expected: ${mapping.expectedAccounts.length} accounts\n`;
   error += `📊 Provided: ${providedCount} accounts\n\n`;
   
   error += `📋 Required accounts:\n`;
-  mapping.accounts.forEach((account, index) => {
+  mapping.expectedAccounts.forEach((account: ExpectedAccount, index: number) => {
     const attributes = [];
-    if (account.writable) attributes.push('writable');
-    if (account.signer) attributes.push('signer');
-    if (account.optional) attributes.push('optional');
-    if (account.address) attributes.push('fixed address');
     if (account.pda) attributes.push('PDA');
     
     const attrStr = attributes.length > 0 ? ` (${attributes.join(', ')})` : '';
@@ -123,8 +128,8 @@ export function createAccountMismatchError(
     });
   }
   
-  if (mapping.docs && mapping.docs.length > 0) {
-    error += `\n📖 Description: ${mapping.docs.join(' ')}\n`;
+  if (mapping.docs) {
+    error += `\n📖 Description: ${mapping.docs}\n`;
   }
   
   error += `\n💡 Tip: Make sure all required accounts are provided in the correct order.`;
@@ -142,132 +147,156 @@ export function getAccountRequirements(instructionName: string): string {
     return `Unknown instruction: ${instructionName}`;
   }
   
-  let requirements = `${instructionName} requires ${mapping.expectedAccounts} accounts:\n\n`;
+  let requirements = `${instructionName} requires ${mapping.expectedAccounts.length} accounts:\n\n`;
   
-  mapping.accounts.forEach((account, index) => {
+  mapping.expectedAccounts.forEach((account: ExpectedAccount, index: number) => {
     const attributes = [];
-    if (account.writable) attributes.push('writable');
-    if (account.signer) attributes.push('signer');
-    if (account.optional) attributes.push('optional');
-    if (account.address) attributes.push(`fixed: ${account.address}`);
     if (account.pda) attributes.push('PDA-derived');
     
     const attrStr = attributes.length > 0 ? ` [${attributes.join(', ')}]` : '';
-    requirements += `${index + 1}. ${account.name}${attrStr}\n`;
-    
-    if (account.docs && account.docs.length > 0) {
-      requirements += `   → ${account.docs.join(' ')}\n`;
-    }
+    requirements += `  ${index + 1}. ${account.name}${attrStr}\n`;
   });
   
-  if (mapping.docs && mapping.docs.length > 0) {
-    requirements += `\nDescription: ${mapping.docs.join(' ')}`;
+  if (mapping.docs) {
+    requirements += `\nDescription: ${mapping.docs}\n`;
   }
   
   return requirements;
 }
 
 /**
- * Check if instruction requires specific account types
+ * Get helpful suggestions for fixing account errors
  */
-export function getRequiredSigners(instructionName: string): string[] {
+export function getAccountErrorSuggestions(
+  instructionName: string,
+  providedCount: number
+): string[] {
   const mapping = getInstructionMapping(instructionName);
-  if (!mapping) return [];
   
-  return mapping.accounts
-    .filter(account => account.signer)
-    .map(account => account.name);
-}
-
-export function getWritableAccounts(instructionName: string): string[] {
-  const mapping = getInstructionMapping(instructionName);
-  if (!mapping) return [];
+  if (!mapping) {
+    return [
+      `Check if "${instructionName}" is spelled correctly`,
+      'Verify that the instruction exists in the current program version',
+      'Review the IDL file for available instructions'
+    ];
+  }
   
-  return mapping.accounts
-    .filter(account => account.writable)
-    .map(account => account.name);
-}
-
-export function getPDAAccounts(instructionName: string): string[] {
-  const mapping = getInstructionMapping(instructionName);
-  if (!mapping) return [];
+  const expectedCount = mapping.expectedAccounts.length;
+  const suggestions: string[] = [];
   
-  return mapping.accounts
-    .filter(account => account.pda)
-    .map(account => account.name);
+  if (providedCount < expectedCount) {
+    suggestions.push(`Add ${expectedCount - providedCount} more account(s)`);
+    suggestions.push('Check if any required accounts are missing');
+  } else if (providedCount > expectedCount) {
+    suggestions.push(`Remove ${providedCount - expectedCount} extra account(s)`);
+    suggestions.push('Check for duplicate accounts');
+  }
+  
+  suggestions.push(`Review the account order - accounts must be in the exact order specified`);
+  suggestions.push(`Check PDAs are correctly derived`);
+  
+  return suggestions;
 }
 
 /**
- * Replace generic error messages with detailed ones
+ * Handle instruction errors with enhanced error messages
  */
-export function enhanceErrorMessage(error: Error, instructionName?: string): Error {
-  const message = error.message;
-  
-  // Handle common Anchor/Solana error patterns
-  if (message.includes('Not enough accounts') || 
-      message.includes('insufficient accounts') ||
-      message.includes('account length mismatch')) {
-    
-    if (instructionName && isKnownInstruction(instructionName)) {
-      const mapping = getInstructionMapping(instructionName);
-      if (mapping) {
-        const enhancedMessage = `${message}\n\n${getAccountRequirements(instructionName)}`;
-        return new InstructionValidationError(
-          instructionName,
-          mapping.expectedAccounts,
-          0, // We don't know the provided count from the generic error
-          enhancedMessage,
-          mapping.accounts
-        );
-      }
-    }
-  }
-  
-  // Handle discriminator errors
-  if (message.includes('Invalid instruction discriminator') || 
-      message.includes('unknown instruction')) {
-    
-    const availableInstructions = Object.keys(INSTRUCTION_MAPPINGS).sort().slice(0, 10);
-    const suggestion = `\n\nAvailable instructions include: ${availableInstructions.join(', ')}...`;
-    return new Error(message + suggestion);
+export function handleInstructionError(
+  error: Error,
+  instructionName: string,
+  accountCount?: number
+): Error {
+  if (error.message.includes('insufficient funds') || error.message.includes('account not found')) {
+    return new InstructionValidationError(
+      instructionName,
+      0,
+      accountCount ?? 0,
+      `${error.message}\n\n${getAccountRequirements(instructionName)}`,
+    );
   }
   
   return error;
 }
 
 /**
- * Utility to help debug instruction calls
+ * Get instruction mapping (exported for external use)
  */
-export function debugInstructionCall(instructionName: string, accounts: any[]): void {
-  const mapping = getInstructionMapping(instructionName);
-  
-  console.log(`🔍 Debugging instruction: ${instructionName}`);
-  
-  if (!mapping) {
-    console.log(`❌ Unknown instruction: ${instructionName}`);
-    return;
-  }
-  
-  console.log(`📊 Expected accounts: ${mapping.expectedAccounts}`);
-  console.log(`📊 Provided accounts: ${accounts.length}`);
-  console.log(`✅ Match: ${mapping.expectedAccounts === accounts.length ? 'YES' : 'NO'}`);
-  
-  console.log('\n📋 Account mapping:');
-  mapping.accounts.forEach((expectedAccount, index) => {
-    const providedAccount = accounts[index];
-    const status = providedAccount ? '✅' : '❌';
-    
-    console.log(`  ${status} ${index + 1}. ${expectedAccount.name} ${providedAccount ? `(${providedAccount.toString().slice(0, 8)}...)` : '(missing)'}`);
-  });
-  
-  if (mapping.docs && mapping.docs.length > 0) {
-    console.log(`\n📖 Description: ${mapping.docs.join(' ')}`);
-  }
+export function getInstructionMapping(instructionName: string): InstructionMapping | null {
+  return instructionAccountMappings[instructionName as keyof typeof instructionAccountMappings] || null;
 }
 
-// Export all functions and mappings for easy access
-export {
-  INSTRUCTION_MAPPINGS,
-  getInstructionMapping,
-  generateAccountValidationError
-};
+/**
+ * Generate account validation error message (exported for external use)
+ */
+export function generateAccountValidationError(
+  instructionName: string, 
+  providedCount: number, 
+  accountNames?: string[]
+): string {
+  const mapping = getInstructionMapping(instructionName);
+  if (!mapping) {
+    return `Unknown instruction: ${instructionName}`;
+  }
+  
+  let error = `Account mismatch for ${instructionName}: expected ${mapping.expectedAccounts.length} accounts, got ${providedCount}`;
+  if (accountNames) {
+    error += `. Provided: ${accountNames.join(', ')}`;
+  }
+  return error;
+}
+
+/**
+ * Enhanced error message helper
+ */
+export function enhanceErrorMessage(error: Error, context: string): string {
+  return `${error.message}\n\nContext: ${context}`;
+}
+
+/**
+ * Debug instruction call helper
+ */
+export function debugInstructionCall(instructionName: string, accounts: unknown[]): string {
+  return `Instruction: ${instructionName}\nAccounts: ${accounts.length}\nMapping: ${JSON.stringify(getInstructionMapping(instructionName), null, 2)}`;
+}
+
+/**
+ * Get required signers for an instruction
+ */
+export function getRequiredSigners(instructionName: string): string[] {
+  const mapping = getInstructionMapping(instructionName);
+  if (!mapping) return [];
+  
+  return mapping.expectedAccounts
+    .filter(account => account.name.includes('authority') || account.name.includes('signer'))
+    .map(account => account.name);
+}
+
+/**
+ * Get writable accounts for an instruction
+ */
+export function getWritableAccounts(instructionName: string): string[] {
+  const mapping = getInstructionMapping(instructionName);
+  if (!mapping) return [];
+  
+  // Return accounts that are likely writable (PDAs and data accounts)
+  return mapping.expectedAccounts
+    .filter(account => account.pda || account.name.includes('data') || account.name.includes('account'))
+    .map(account => account.name);
+}
+
+/**
+ * Get PDA accounts for an instruction
+ */
+export function getPDAAccounts(instructionName: string): string[] {
+  const mapping = getInstructionMapping(instructionName);
+  if (!mapping) return [];
+  
+  return mapping.expectedAccounts
+    .filter(account => account.pda)
+    .map(account => account.name);
+}
+
+/**
+ * Instruction mappings constant for external access
+ */
+export const INSTRUCTION_MAPPINGS = instructionAccountMappings;

@@ -307,117 +307,6 @@ export async function getTokenProgramType(mint: Address): Promise<TokenProgram> 
 // TOKEN 2022 EXTENSION UTILITIES
 // =====================================================
 
-/**
- * Extension type discriminators for Token-2022 TLV parsing
- * Based on the ExtensionType enum from the Token-2022 program
- */
-const EXTENSION_TYPE_DISCRIMINATORS = {
-  [TokenExtension.TRANSFER_FEE_CONFIG]: 1,
-  [TokenExtension.TRANSFER_HOOK]: 2,
-  [TokenExtension.CONFIDENTIAL_TRANSFER_MINT]: 3,
-  [TokenExtension.METADATA_POINTER]: 18,
-  [TokenExtension.MINT_CLOSE_AUTHORITY]: 5,
-  [TokenExtension.PERMANENT_DELEGATE]: 4,
-  [TokenExtension.INTEREST_BEARING_MINT]: 6,
-  [TokenExtension.CPI_GUARD]: 11,
-} as const
-
-/**
- * Parse TLV (Type-Length-Value) extension data from Token-2022 account data
- * @param tlvData - The raw TLV data buffer
- * @returns Set of found extension types
- */
-function parseTLVExtensions(tlvData: Buffer): Set<TokenExtension> {
-  const foundExtensions = new Set<TokenExtension>()
-  let offset = 0
-  
-  while (offset < tlvData.length) {
-    // Ensure we have enough bytes for type and length fields
-    if (offset + 8 > tlvData.length) break
-    
-    // Read extension type (4 bytes, little-endian)
-    const extensionType = tlvData.readUInt32LE(offset)
-    offset += 4
-    
-    // Read extension length (4 bytes, little-endian)  
-    const extensionLength = tlvData.readUInt32LE(offset)
-    offset += 4
-    
-    // Ensure we have enough bytes for the extension data
-    if (offset + extensionLength > tlvData.length) break
-    
-    // Map discriminator to extension type
-    for (const [extensionKey, discriminator] of Object.entries(EXTENSION_TYPE_DISCRIMINATORS)) {
-      if (discriminator === extensionType) {
-        // Convert string key back to enum value  
-        const extensionValue = TokenExtension[extensionKey as keyof typeof TokenExtension]
-        if (extensionValue !== undefined) {
-          foundExtensions.add(extensionValue)
-        }
-        break
-      }
-    }
-    
-    // Skip over the extension data
-    offset += extensionLength
-  }
-  
-  return foundExtensions
-}
-
-/**
- * Parse transfer fee extension data from Token-2022 mint account
- * @param rawData - The complete mint account data
- * @returns TransferFeeConfig or null if not found
- */
-function parseTransferFeeExtension(rawData: Buffer): TransferFeeConfig | null {
-  try {
-    const MINT_BASE_SIZE = 82
-    
-    // Check if there's extension data
-    if (rawData.length <= MINT_BASE_SIZE) {
-      return null
-    }
-    
-    const tlvData = rawData.subarray(MINT_BASE_SIZE)
-    let offset = 0
-    
-    // Search for transfer fee extension in TLV data
-    while (offset < tlvData.length) {
-      if (offset + 8 > tlvData.length) break
-      
-      const extensionType = tlvData.readUInt32LE(offset)
-      offset += 4
-      const extensionLength = tlvData.readUInt32LE(offset) 
-      offset += 4
-      
-      if (offset + extensionLength > tlvData.length) break
-      
-      // Check if this is the transfer fee extension (type 1)
-      if (extensionType === 1) {
-        // Parse transfer fee config structure
-        // Transfer fee config has specific layout defined by Token-2022 program
-        const configData = tlvData.subarray(offset, offset + extensionLength)
-        
-        if (configData.length >= 40) { // Minimum size for transfer fee config
-          return {
-            transferFeeBasisPoints: configData.readUInt16LE(0),
-            maximumFee: configData.readBigUInt64LE(2),
-            transferFeeConfigAuthority: configData.subarray(10, 42).toString('base64') as Address, // 32-byte pubkey
-            withdrawWithheldAuthority: configData.subarray(42, 74).toString('base64') as Address // 32-byte pubkey  
-          }
-        }
-      }
-      
-      offset += extensionLength
-    }
-    
-    return null
-  } catch (error) {
-    console.error('Error parsing transfer fee extension:', error)
-    return null
-  }
-}
 
 /**
  * Check if a mint has specific Token 2022 extensions
@@ -433,40 +322,17 @@ export async function checkToken2022Extensions(
   rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<Record<TokenExtension, boolean>> {
   try {
-    // First check if it's even a Token-2022 mint
-    const tokenProgram = await detectTokenProgram(mint, rpcEndpoint)
-    if (tokenProgram !== TOKEN_2022_PROGRAM_ADDRESS) {
-      // SPL Token mints don't have extensions
-      const result = {} as Record<TokenExtension, boolean>
-      for (const extension of extensions) {
-        result[extension] = false
-      }
-      return result
-    }
-
-    // Import RPC utilities for account fetching
+    // Import the Token-2022 RPC functions
+    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
     const { createSolanaRpc } = await import('@solana/kit')
+    
     const rpc = createSolanaRpc(rpcEndpoint)
     
-    // Fetch mint account info with full data
-    const accountInfo = await rpc.getAccountInfo(mint, {
-      encoding: 'base64',
-      commitment: 'confirmed'
-    }).send()
+    // Get mint data with extensions
+    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
     
-    if (!accountInfo.value || !accountInfo.value.data[0]) {
-      throw new Error(`Mint account ${mint} not found or has no data`)
-    }
-    
-    // Decode the base64 data to get raw bytes
-    const rawData = Buffer.from(accountInfo.value.data[0], 'base64')
-    
-    // Token-2022 mint base size is 82 bytes (same as SPL Token)
-    const MINT_BASE_SIZE = 82
-    
-    // Check if there's extension data after the base mint account
-    if (rawData.length <= MINT_BASE_SIZE) {
-      // No extensions present
+    if (!mintData) {
+      // Mint not found, return all false
       const result = {} as Record<TokenExtension, boolean>
       for (const extension of extensions) {
         result[extension] = false
@@ -474,14 +340,51 @@ export async function checkToken2022Extensions(
       return result
     }
     
-    // Parse TLV data after the base mint account
-    const tlvData = rawData.subarray(MINT_BASE_SIZE)
-    const foundExtensions = parseTLVExtensions(tlvData)
-    
-    // Map requested extensions to found extensions
+    // Check each requested extension based on TokenExtension enum values
     const result = {} as Record<TokenExtension, boolean>
     for (const extension of extensions) {
-      result[extension] = foundExtensions.has(extension)
+      // Check if the extension exists in the mint data based on enum value
+      switch (extension) {
+        case TokenExtension.TRANSFER_FEE_CONFIG:
+          result[extension] = !!mintData.extensions.transferFeeConfig
+          break
+        case TokenExtension.MINT_CLOSE_AUTHORITY:
+          result[extension] = !!mintData.extensions.mintCloseAuthority
+          break
+        case TokenExtension.CONFIDENTIAL_TRANSFER_MINT:
+          result[extension] = !!mintData.extensions.confidentialTransferMint
+          break
+        case TokenExtension.DEFAULT_ACCOUNT_STATE:
+          result[extension] = !!mintData.extensions.defaultAccountState
+          break
+        case TokenExtension.NON_TRANSFERABLE:
+          result[extension] = !!mintData.extensions.nonTransferable
+          break
+        case TokenExtension.INTEREST_BEARING_MINT:
+          result[extension] = !!mintData.extensions.interestBearingConfig
+          break
+        case TokenExtension.PERMANENT_DELEGATE:
+          result[extension] = !!mintData.extensions.permanentDelegate
+          break
+        case TokenExtension.TRANSFER_HOOK:
+          result[extension] = !!mintData.extensions.transferHook
+          break
+        case TokenExtension.METADATA_POINTER:
+          result[extension] = !!mintData.extensions.metadataPointer
+          break
+        case TokenExtension.TOKEN_METADATA:
+          result[extension] = !!mintData.extensions.tokenMetadata
+          break
+        case TokenExtension.GROUP_POINTER:
+          result[extension] = !!mintData.extensions.groupPointer
+          break
+        case TokenExtension.TOKEN_GROUP:
+          result[extension] = !!mintData.extensions.tokenGroup
+          break
+        default:
+          // Extensions that don't apply to mints or are account-specific
+          result[extension] = false
+      }
     }
     
     return result
@@ -498,6 +401,63 @@ export async function checkToken2022Extensions(
 }
 
 /**
+ * Check if a mint has the transfer fee extension
+ * 
+ * @param mint - The token mint address
+ * @param rpcEndpoint - Optional RPC endpoint
+ * @returns Promise<boolean> - True if mint has transfer fee extension
+ */
+export async function hasTransferFeeExtension(
+  mint: Address,
+  rpcEndpoint = 'https://api.devnet.solana.com'
+): Promise<boolean> {
+  const result = await checkToken2022Extensions(
+    mint,
+    [TokenExtension.TRANSFER_FEE_CONFIG],
+    rpcEndpoint
+  )
+  return result[TokenExtension.TRANSFER_FEE_CONFIG] ?? false
+}
+
+/**
+ * Check if a mint has the confidential transfer extension
+ * 
+ * @param mint - The token mint address
+ * @param rpcEndpoint - Optional RPC endpoint
+ * @returns Promise<boolean> - True if mint has confidential transfer extension
+ */
+export async function hasConfidentialTransferExtension(
+  mint: Address,
+  rpcEndpoint = 'https://api.devnet.solana.com'
+): Promise<boolean> {
+  const result = await checkToken2022Extensions(
+    mint,
+    [TokenExtension.CONFIDENTIAL_TRANSFER_MINT],
+    rpcEndpoint
+  )
+  return result[TokenExtension.CONFIDENTIAL_TRANSFER_MINT] ?? false
+}
+
+/**
+ * Check if a mint has the interest-bearing extension
+ * 
+ * @param mint - The token mint address
+ * @param rpcEndpoint - Optional RPC endpoint
+ * @returns Promise<boolean> - True if mint has interest-bearing extension
+ */
+export async function hasInterestBearingExtension(
+  mint: Address,
+  rpcEndpoint = 'https://api.devnet.solana.com'
+): Promise<boolean> {
+  const result = await checkToken2022Extensions(
+    mint,
+    [TokenExtension.INTEREST_BEARING_MINT],
+    rpcEndpoint
+  )
+  return result[TokenExtension.INTEREST_BEARING_MINT] ?? false
+}
+
+/**
  * Get transfer fee configuration for a Token 2022 mint
  * 
  * @param mint - The Token 2022 mint address
@@ -508,36 +468,27 @@ export async function getTransferFeeConfig(
   rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<TransferFeeConfig | null> {
   try {
-    // Check if the mint has the transfer fee extension
-    const extensionResult = await checkToken2022Extensions(
-      mint, 
-      [TokenExtension.TRANSFER_FEE_CONFIG],
-      rpcEndpoint
-    )
-    
-    if (!extensionResult[TokenExtension.TRANSFER_FEE_CONFIG]) {
-      return null // No transfer fee extension
-    }
-
-    // Import RPC utilities for account fetching
+    // Import the Token-2022 RPC functions
+    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
     const { createSolanaRpc } = await import('@solana/kit')
+    
     const rpc = createSolanaRpc(rpcEndpoint)
     
-    // Fetch mint account info with full data
-    const accountInfo = await rpc.getAccountInfo(mint, {
-      encoding: 'base64',
-      commitment: 'confirmed'
-    }).send()
+    // Get mint data with extensions
+    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
     
-    if (!accountInfo.value || !accountInfo.value.data[0]) {
-      throw new Error(`Mint account ${mint} not found or has no data`)
+    if (!mintData?.extensions.transferFeeConfig) {
+      return null
     }
     
-    // Decode the base64 data and parse transfer fee extension
-    const rawData = Buffer.from(accountInfo.value.data[0], 'base64')
-    const transferFeeConfig = parseTransferFeeExtension(rawData)
-    
-    return transferFeeConfig
+    // Convert from RPC type to our local type
+    const config = mintData.extensions.transferFeeConfig
+    return {
+      transferFeeBasisPoints: config.newerTransferFee.transferFeeBasisPoints,
+      maximumFee: config.newerTransferFee.maximumFee,
+      transferFeeConfigAuthority: config.transferFeeConfigAuthority,
+      withdrawWithheldAuthority: config.withdrawWithheldAuthority
+    }
   } catch (error) {
     console.error(`Failed to get transfer fee config for mint ${mint}:`, error)
     return null
@@ -551,15 +502,34 @@ export async function getTransferFeeConfig(
  * @returns Promise<ConfidentialTransferConfig | null> - Confidential transfer config or null
  */
 export async function getConfidentialTransferConfig(
-  mint: Address
+  mint: Address,
+  rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<ConfidentialTransferConfig | null> {
-  // TODO: Implement RPC call to fetch mint account data and parse confidential transfer extension
-  console.warn('Confidential transfer config fetching not implemented yet')
-  
-  // Acknowledge parameter to avoid unused variable warning
-  void mint
-  
-  return null
+  try {
+    // Import the Token-2022 RPC functions
+    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
+    const { createSolanaRpc } = await import('@solana/kit')
+    
+    const rpc = createSolanaRpc(rpcEndpoint)
+    
+    // Get mint data with extensions
+    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
+    
+    if (!mintData?.extensions.confidentialTransferMint) {
+      return null
+    }
+    
+    // Convert from RPC type to our local type
+    const config = mintData.extensions.confidentialTransferMint
+    return {
+      authority: config.authority,
+      autoApproveNewAccounts: config.autoApproveNewAccounts,
+      auditorElgamalPubkey: config.auditorElgamalPubkey
+    }
+  } catch (error) {
+    console.error(`Failed to get confidential transfer config for mint ${mint}:`, error)
+    return null
+  }
 }
 
 /**
@@ -569,15 +539,35 @@ export async function getConfidentialTransferConfig(
  * @returns Promise<InterestBearingConfig | null> - Interest-bearing config or null
  */
 export async function getInterestBearingConfig(
-  mint: Address
+  mint: Address,
+  rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<InterestBearingConfig | null> {
-  // TODO: Implement RPC call to fetch mint account data and parse interest-bearing extension
-  console.warn('Interest-bearing config fetching not implemented yet')
-  
-  // Acknowledge parameter to avoid unused variable warning
-  void mint
-  
-  return null
+  try {
+    // Import the Token-2022 RPC functions
+    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
+    const { createSolanaRpc } = await import('@solana/kit')
+    
+    const rpc = createSolanaRpc(rpcEndpoint)
+    
+    // Get mint data with extensions
+    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
+    
+    if (!mintData?.extensions.interestBearingConfig) {
+      return null
+    }
+    
+    // Convert from RPC type to our local type
+    const config = mintData.extensions.interestBearingConfig
+    return {
+      rateAuthority: config.rateAuthority,
+      currentRate: config.currentRate,
+      lastUpdateTimestamp: config.lastUpdateTimestamp,
+      preUpdateAverageRate: config.preUpdateAverageRate
+    }
+  } catch (error) {
+    console.error(`Failed to get interest-bearing config for mint ${mint}:`, error)
+    return null
+  }
 }
 
 // =====================================================
@@ -746,4 +736,157 @@ export function parseTokenAmount(formatted: string, decimals: number): bigint {
   const paddedFraction = fraction.padEnd(decimals, '0').slice(0, decimals)
   const rawAmount = whole + paddedFraction
   return BigInt(rawAmount)
+}
+
+/**
+ * Get token extension data from mint account
+ * 
+ * @param mintData - The mint account data from getMintWithExtensions
+ * @param extensionType - The extension type to get
+ * @returns Extension data or null if not found
+ */
+export function getTokenExtensionData(
+  mintData: { extensions?: Record<string, unknown> } | null,
+  extensionType: TokenExtension
+): Buffer | null {
+  if (!mintData?.extensions) {
+    return null
+  }
+
+  // Map extension type enum to string keys used in the parsed extensions
+  const extensionKeys: Record<TokenExtension, string> = {
+    [TokenExtension.UNINITIALIZED]: 'uninitialized',
+    [TokenExtension.TRANSFER_FEE_CONFIG]: 'transferFeeConfig',
+    [TokenExtension.TRANSFER_FEE_AMOUNT]: 'transferFeeAmount',
+    [TokenExtension.MINT_CLOSE_AUTHORITY]: 'mintCloseAuthority',
+    [TokenExtension.CONFIDENTIAL_TRANSFER_MINT]: 'confidentialTransferMint',
+    [TokenExtension.CONFIDENTIAL_TRANSFER_ACCOUNT]: 'confidentialTransferAccount',
+    [TokenExtension.DEFAULT_ACCOUNT_STATE]: 'defaultAccountState',
+    [TokenExtension.IMMUTABLE_OWNER]: 'immutableOwner',
+    [TokenExtension.MEMO_TRANSFER]: 'memoTransfer',
+    [TokenExtension.NON_TRANSFERABLE]: 'nonTransferable',
+    [TokenExtension.INTEREST_BEARING_MINT]: 'interestBearingConfig',
+    [TokenExtension.CPI_GUARD]: 'cpiGuard',
+    [TokenExtension.PERMANENT_DELEGATE]: 'permanentDelegate',
+    [TokenExtension.NON_TRANSFERABLE_ACCOUNT]: 'nonTransferableAccount',
+    [TokenExtension.TRANSFER_HOOK]: 'transferHook',
+    [TokenExtension.TRANSFER_HOOK_ACCOUNT]: 'transferHookAccount',
+    [TokenExtension.METADATA_POINTER]: 'metadataPointer',
+    [TokenExtension.TOKEN_METADATA]: 'tokenMetadata',
+    [TokenExtension.GROUP_POINTER]: 'groupPointer',
+    [TokenExtension.TOKEN_GROUP]: 'tokenGroup',
+    [TokenExtension.GROUP_MEMBER_POINTER]: 'groupMemberPointer',
+    [TokenExtension.TOKEN_GROUP_MEMBER]: 'tokenGroupMember'
+  }
+
+  const extensionKey = extensionKeys[extensionType]
+  const extensionData = mintData.extensions[extensionKey]
+
+  if (!extensionData) {
+    return null
+  }
+
+  // Convert extension data to Buffer for backward compatibility
+  // In the future, we might want to return the parsed data directly
+  try {
+    return Buffer.from(JSON.stringify(extensionData))
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Parse transfer fee configuration from extension data
+ * 
+ * @param extensionData - The raw extension data or parsed extension object
+ * @returns TransferFeeConfig - Parsed transfer fee configuration
+ */
+export function parseTransferFeeConfig(
+  extensionData: Buffer | unknown
+): TransferFeeConfig {
+  try {
+    let parsedData: unknown
+
+    // Handle both Buffer (from getTokenExtensionData) and direct parsed data
+    if (Buffer.isBuffer(extensionData)) {
+      const dataStr = extensionData.toString()
+      parsedData = JSON.parse(dataStr)
+    } else {
+      parsedData = extensionData
+    }
+
+    // Type guard and validation for transfer fee config structure
+    if (parsedData && typeof parsedData === 'object' && parsedData !== null) {
+      const config = parsedData as {
+        transferFeeBasisPoints?: number
+        maximumFee?: bigint | string | number
+        transferFeeConfigAuthority?: Address | null | string
+        withdrawWithheldAuthority?: Address | null | string
+      }
+
+      return {
+        transferFeeBasisPoints: config.transferFeeBasisPoints ?? 0,
+        maximumFee: typeof config.maximumFee === 'bigint' 
+          ? config.maximumFee 
+          : BigInt(config.maximumFee ?? 0),
+        transferFeeConfigAuthority: config.transferFeeConfigAuthority as Address | null ?? null,
+        withdrawWithheldAuthority: config.withdrawWithheldAuthority as Address | null ?? null
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to parse transfer fee config:', error)
+  }
+
+  // Return default config if parsing fails
+  return {
+    transferFeeBasisPoints: 0,
+    maximumFee: BigInt(0),
+    transferFeeConfigAuthority: null,
+    withdrawWithheldAuthority: null
+  }
+}
+
+/**
+ * Fetch transfer fee configuration for a Token-2022 mint via RPC
+ * 
+ * @param rpc - RPC client for making requests
+ * @param mint - The mint address to query
+ * @returns Promise<TransferFeeConfig | null> - Transfer fee config or null if not found
+ */
+export async function fetchTransferFeeConfig(
+  rpc: unknown,
+  mint: Address
+): Promise<TransferFeeConfig | null> {
+  try {
+    // Dynamically import to avoid circular dependencies
+    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
+    
+    // Fetch mint data with extensions
+    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
+    
+    if (!mintData?.extensions?.transferFeeConfig) {
+      return null
+    }
+
+    // Parse the transfer fee config from the mint extensions
+    return parseTransferFeeConfig(mintData.extensions.transferFeeConfig)
+  } catch (error) {
+    console.warn(`Failed to fetch transfer fee config for mint ${mint}:`, error)
+    return null
+  }
+}
+
+/**
+ * Check if a mint has transfer fees enabled
+ * 
+ * @param rpc - RPC client for making requests  
+ * @param mint - The mint address to check
+ * @returns Promise<boolean> - True if transfer fees are enabled
+ */
+export async function hasTransferFees(
+  rpc: unknown,
+  mint: Address
+): Promise<boolean> {
+  const feeConfig = await fetchTransferFeeConfig(rpc, mint)
+  return feeConfig !== null && feeConfig.transferFeeBasisPoints > 0
 }

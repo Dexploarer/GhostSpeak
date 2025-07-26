@@ -11,10 +11,22 @@ import {
   getPurchaseServiceInstruction,
   getApplyToJobInstruction,
   getAcceptJobApplicationInstruction,
+  getProcessEscrowPaymentInstructionAsync,
+  getVerifyWorkDeliveryInstruction,
   type ServiceListing,
-  type JobPosting
+  type JobPosting,
+  type WorkOrder
 } from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
+import {
+  calculateTransferFee,
+  calculateRequiredAmountForNetTransfer,
+  type TransferFeeCalculation
+} from '../../utils/token-2022-extensions.js'
+import {
+  hasTransferFees,
+  fetchTransferFeeConfig
+} from '../../utils/token-utils.js'
 
 import type {
   BaseCreationParams,
@@ -52,6 +64,10 @@ export interface PurchaseServiceParams extends BaseInstructionParams {
   requirements?: string[]
   customInstructions?: string
   deadline?: bigint
+  // Token-2022 specific parameters
+  paymentTokenMint?: Address
+  calculateTransferFees?: boolean
+  expectedNetAmount?: bigint
 }
 
 // Job application parameters
@@ -64,6 +80,32 @@ export interface JobApplicationParams extends BaseInstructionParams {
   proposedRate?: bigint
   estimatedDelivery?: bigint
   portfolioItems?: string[]
+}
+
+// Work order verification parameters
+export interface WorkOrderVerificationParams extends BaseInstructionParams {
+  workOrderAddress: Address
+  workDeliveryAddress: Address
+  verificationNotes?: string
+  approveDelivery: boolean
+}
+
+// Milestone-based payment parameters
+export interface MilestonePaymentParams extends BaseInstructionParams {
+  workOrderAddress: Address
+  escrowAddress: Address
+  milestoneIndex: number
+  paymentAmount: bigint
+  paymentToken: Address
+}
+
+// Token-2022 transfer fee result
+export interface TokenTransferResult {
+  originalAmount: bigint
+  feeAmount: bigint
+  netAmount: bigint
+  totalRequired: bigint
+  feeCalculation: TransferFeeCalculation
 }
 
 /**
@@ -144,7 +186,11 @@ export class MarketplaceInstructions extends BaseInstructions {
       requirements: params.requirements ?? [],
       customInstructions: params.customInstructions ?? '',
       deadline: params.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 14 * 24 * 60 * 60), // 14 days default
-      signer: params.signer // Keep signer as-is
+      signer: params.signer, // Keep signer as-is
+      // Token-2022 specific defaults
+      paymentTokenMint: params.paymentTokenMint ?? ('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address), // Default to USDC
+      calculateTransferFees: params.calculateTransferFees ?? true, // Default to calculating fees
+      expectedNetAmount: params.expectedNetAmount ?? BigInt(0)
     }
   }
 
@@ -246,7 +292,7 @@ export class MarketplaceInstructions extends BaseInstructions {
   }
 
   /**
-   * Purchase a service
+   * Purchase a service with Token-2022 transfer fee support
    */
   async purchaseService(
     servicePurchaseAddress: Address,
@@ -254,6 +300,30 @@ export class MarketplaceInstructions extends BaseInstructions {
   ): Promise<string> {
     // Resolve parameters with smart defaults
     const resolvedParams = await this._resolvePurchaseParams(params)
+    
+    // Get service listing to determine payment details
+    const serviceListing = await this.getServiceListing(resolvedParams.serviceListingAddress)
+    if (!serviceListing) {
+      throw new Error('Service listing not found')
+    }
+
+    // Calculate transfer fees if requested
+    let feeResult: TokenTransferResult | undefined
+    if (params.calculateTransferFees && params.paymentTokenMint) {
+      const paymentAmount = params.expectedNetAmount ?? serviceListing.price
+      feeResult = await this.calculateTokenTransferFees(
+        paymentAmount,
+        params.paymentTokenMint,
+        !!params.expectedNetAmount // Use net calculation if expectedNetAmount provided
+      )
+      
+      console.log(`Service purchase with transfer fees:`, {
+        originalAmount: feeResult.originalAmount,
+        feeAmount: feeResult.feeAmount,
+        netAmount: feeResult.netAmount,
+        totalRequired: feeResult.totalRequired
+      })
+    }
     
     return this.executeInstruction(
       () => getPurchaseServiceInstruction({
@@ -267,7 +337,7 @@ export class MarketplaceInstructions extends BaseInstructions {
         deadline: resolvedParams.deadline
       }),
       resolvedParams.signer as unknown as TransactionSigner,
-      'service purchase'
+      `service purchase${feeResult ? ` (with ${feeResult.feeAmount} transfer fee)` : ''}`
     )
   }
 
@@ -380,6 +450,212 @@ export class MarketplaceInstructions extends BaseInstructions {
     return accounts
       .map(({ data }) => data)
       .filter(posting => posting.isActive)
+  }
+
+  /**
+   * Calculate Token-2022 transfer fees for a payment
+   * 
+   * @param paymentAmount - The base payment amount
+   * @param tokenMint - The token mint address  
+   * @param useNetAmount - If true, calculate required gross amount for desired net
+   * @returns TokenTransferResult with fee calculations
+   */
+  async calculateTokenTransferFees(
+    paymentAmount: bigint, 
+    tokenMint: Address,
+    useNetAmount: boolean = false
+  ): Promise<TokenTransferResult> {
+    try {
+      // Check if token has transfer fees using the new RPC-based function
+      const hasFeeExtension = await hasTransferFees(this.config.rpc, tokenMint)
+      
+      if (!hasFeeExtension) {
+        // No transfer fees - return original amounts
+        return {
+          originalAmount: paymentAmount,
+          feeAmount: 0n,
+          netAmount: paymentAmount, 
+          totalRequired: paymentAmount,
+          feeCalculation: {
+            transferAmount: paymentAmount,
+            feeAmount: 0n,
+            netAmount: paymentAmount,
+            feeBasisPoints: 0,
+            wasFeeCapped: false
+          }
+        }
+      }
+
+      // Fetch real transfer fee configuration via RPC
+      const feeConfig = await fetchTransferFeeConfig(this.config.rpc, tokenMint)
+      
+      if (!feeConfig) {
+        // If we can't fetch fee config, treat as no fees
+        return {
+          originalAmount: paymentAmount,
+          feeAmount: 0n,
+          netAmount: paymentAmount, 
+          totalRequired: paymentAmount,
+          feeCalculation: {
+            transferAmount: paymentAmount,
+            feeAmount: 0n,
+            netAmount: paymentAmount,
+            feeBasisPoints: 0,
+            wasFeeCapped: false
+          }
+        }
+      }
+      
+      let feeCalculation: TransferFeeCalculation
+      
+      if (useNetAmount) {
+        // Calculate required gross amount for desired net payment
+        feeCalculation = calculateRequiredAmountForNetTransfer(paymentAmount, feeConfig)
+        
+        return {
+          originalAmount: paymentAmount, // This is the desired net amount
+          feeAmount: feeCalculation.feeAmount,
+          netAmount: feeCalculation.netAmount,
+          totalRequired: feeCalculation.transferAmount, // Gross amount needed
+          feeCalculation
+        }
+      } else {
+        // Calculate fee for gross payment amount
+        feeCalculation = calculateTransferFee(paymentAmount, feeConfig)
+        
+        return {
+          originalAmount: paymentAmount,
+          feeAmount: feeCalculation.feeAmount,
+          netAmount: feeCalculation.netAmount,
+          totalRequired: paymentAmount,
+          feeCalculation
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to calculate transfer fees, assuming no fees:', error)
+      
+      // Fallback to no fees if calculation fails
+      return {
+        originalAmount: paymentAmount,
+        feeAmount: 0n,
+        netAmount: paymentAmount,
+        totalRequired: paymentAmount,
+        feeCalculation: {
+          transferAmount: paymentAmount,
+          feeAmount: 0n,
+          netAmount: paymentAmount,
+          feeBasisPoints: 0,
+          wasFeeCapped: false
+        }
+      }
+    }
+  }
+
+  /**
+   * Process milestone-based escrow payment with Token-2022 support
+   * 
+   * @param params - Milestone payment parameters
+   * @returns Transaction signature
+   */
+  async processMilestonePayment(
+    params: MilestonePaymentParams
+  ): Promise<string> {
+    // Calculate any transfer fees
+    const feeResult = await this.calculateTokenTransferFees(
+      params.paymentAmount,
+      params.paymentToken,
+      false // Use gross amount calculation
+    )
+
+    // Get work order to validate milestone
+    const workOrder = await this.getDecodedAccount<WorkOrder>(
+      params.workOrderAddress,
+      'getWorkOrderDecoder'
+    )
+    
+    if (!workOrder) {
+      throw new Error('Work order not found')
+    }
+
+    // Validate milestone index (basic validation)
+    if (params.milestoneIndex < 0) {
+      throw new Error('Invalid milestone index')
+    }
+
+    // Create escrow payment instruction with fee handling
+    const instruction = await getProcessEscrowPaymentInstructionAsync({
+      escrow: params.escrowAddress,
+      recipient: workOrder.provider,
+      paymentToken: params.paymentToken,
+      authority: params.signer,
+      workOrder: params.workOrderAddress
+    })
+
+    // Include fee information in transaction memo if fees apply
+    const instructions = [instruction]
+    
+    if (feeResult.feeAmount > 0n) {
+      console.log(`Processing milestone payment with transfer fee: ${feeResult.feeAmount} (${feeResult.feeCalculation.feeBasisPoints} basis points)`)
+    }
+
+    return this.sendTransaction(instructions, [params.signer])
+  }
+
+  /**
+   * Verify work delivery and optionally process milestone payment
+   * 
+   * @param params - Work order verification parameters
+   * @returns Transaction signature
+   */
+  async verifyWorkDelivery(
+    params: WorkOrderVerificationParams
+  ): Promise<string> {
+    const instruction = getVerifyWorkDeliveryInstruction({
+      workOrder: params.workOrderAddress,
+      workDelivery: params.workDeliveryAddress,
+      client: params.signer,
+      verificationNotes: params.verificationNotes ?? null
+    })
+
+    return this.executeInstruction(
+      () => instruction,
+      params.signer,
+      'work delivery verification'
+    )
+  }
+
+  /**
+   * Get work order details
+   * 
+   * @param workOrderAddress - Work order account address
+   * @returns Work order data or null if not found
+   */
+  async getWorkOrder(workOrderAddress: Address): Promise<WorkOrder | null> {
+    return this.getDecodedAccount<WorkOrder>(workOrderAddress, 'getWorkOrderDecoder')
+  }
+
+  /**
+   * Get all work orders for a client or provider
+   * 
+   * @param userAddress - Client or provider address to filter by
+   * @param role - Filter by 'client' or 'provider' role
+   * @returns Array of work orders
+   */
+  async getWorkOrdersByUser(
+    userAddress: Address,
+    role: 'client' | 'provider' = 'client'
+  ): Promise<WorkOrder[]> {
+    const accounts = await this.getDecodedProgramAccounts<WorkOrder>('getWorkOrderDecoder')
+    
+    return accounts
+      .map(({ data }) => data)
+      .filter(workOrder => {
+        if (role === 'client') {
+          return workOrder.client === userAddress
+        } else {
+          return workOrder.provider === userAddress
+        }
+      })
   }
 
   /**

@@ -81,6 +81,19 @@ export {
 // Re-export RPC types
 export * from '../types/rpc-types.js'
 
+// Re-export Token-2022 RPC functions
+export {
+  getMintWithExtensions,
+  getMultipleMintsWithExtensions,
+  mintHasExtension,
+  getTokenAccountWithExtensions,
+  getTokenAccountsByOwnerWithExtensions,
+  getAccountSizeForExtensions,
+  isToken2022,
+  getTokenProgramForMint,
+  TOKEN_2022_PROGRAM_ID
+} from './token-2022-rpc.js'
+
 /**
  * Account decoder with proper TypeScript typing
  */

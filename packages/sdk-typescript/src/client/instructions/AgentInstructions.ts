@@ -13,12 +13,18 @@ import {
   getVerifyAgentInstruction,
   getDeactivateAgentInstruction,
   getActivateAgentInstruction,
+  getCreateReplicationTemplateInstructionAsync,
+  getReplicateAgentInstructionAsync,
+  getRegisterAgentCompressedInstructionAsync,
   type Agent,
   type WorkOrder,
   type Payment,
   type ServicePurchase,
   type MarketAnalytics,
-  type AnalyticsDashboard
+  type AnalyticsDashboard,
+  type ReplicationTemplate,
+  type ReplicationRecord,
+  type PricingModel
 } from '../../generated/index.js'
 import { BaseInstructions } from './BaseInstructions.js'
 import {
@@ -28,6 +34,16 @@ import {
 } from '../../utils/discriminator-validator.js'
 import { logEnhancedError, createErrorContext } from '../../utils/enhanced-client-errors.js'
 import { createIPFSUtils, createMetadataUri } from '../../utils/ipfs-utils.js'
+import {
+  createCompressedAgentTree,
+  createCompressedAgentBatch,
+  getCompressedTreeState,
+  estimateCompressionSavings,
+  migrateToCompressedAgent,
+  type CreateMerkleTreeParams,
+  type CompressedAgentParams,
+  type BatchCreationResult
+} from '../../utils/compressed-agent-helpers.js'
 
 // Parameters for agent registration
 export interface AgentRegistrationParams {
@@ -818,6 +834,30 @@ export class AgentInstructions extends BaseInstructions {
   }
 
   /**
+   * Find the PDA for a replication template
+   */
+  private async findReplicationTemplatePDA(sourceAgent: Address): Promise<Address> {
+    const { deriveReplicationTemplatePda } = await import('../../utils/pda.js')
+    return deriveReplicationTemplatePda(this.programId, sourceAgent)
+  }
+
+  /**
+   * Find the PDA for a replication record
+   */
+  private async findReplicationRecordPDA(template: Address, buyer: Address): Promise<Address> {
+    const { deriveReplicationRecordPda } = await import('../../utils/pda.js')
+    return deriveReplicationRecordPda(this.programId, template, buyer)
+  }
+
+  /**
+   * Find the PDA for agent tree config (compressed agents)
+   */
+  private async findAgentTreeConfigPDA(signer: Address): Promise<Address> {
+    const { deriveAgentTreeConfigPda } = await import('../../utils/pda.js')
+    return deriveAgentTreeConfigPda(this.programId, signer)
+  }
+
+  /**
    * Get an agent by address (alias for getAccount for CLI compatibility)
    */
   async get(agentAddress: Address): Promise<Agent | null> {
@@ -1445,6 +1485,473 @@ export class AgentInstructions extends BaseInstructions {
     } catch (error) {
       console.warn('Failed to fetch analytics dashboard:', error)
       return null
+    }
+  }
+
+  /**
+   * Create a replication template for an agent (enables others to replicate this agent)
+   */
+  async createReplicationTemplate(
+    signer: TransactionSigner,
+    params: {
+      sourceAgent: Address
+      genomeHash: string
+      baseCapabilities: string[]
+      replicationFee: bigint
+      maxReplications: number
+    }
+  ): Promise<string> {
+    console.log('🧬 Creating replication template...')
+    console.log(`   Source agent: ${params.sourceAgent}`)
+    console.log(`   Genome hash: ${params.genomeHash}`)
+    console.log(`   Replication fee: ${params.replicationFee}`)
+    console.log(`   Max replications: ${params.maxReplications}`)
+
+    try {
+      const instruction = await getCreateReplicationTemplateInstructionAsync({
+        sourceAgent: params.sourceAgent,
+        creator: signer as unknown as TransactionSigner,
+        genomeHash: params.genomeHash,
+        baseCapabilities: params.baseCapabilities,
+        replicationFee: params.replicationFee,
+        maxReplications: params.maxReplications
+      }, { programAddress: this.programId })
+
+      const signature = await this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      
+      console.log('✅ Replication template created successfully')
+      console.log(`   Signature: ${signature}`)
+      
+      return signature
+    } catch (error) {
+      const context = createErrorContext(
+        'createReplicationTemplate',
+        'create_replication_template',
+        undefined,
+        { sourceAgent: params.sourceAgent, genomeHash: params.genomeHash }
+      )
+      logEnhancedError(error instanceof Error ? error : new Error(String(error)), context)
+      throw error
+    }
+  }
+
+  /**
+   * Replicate an agent from a template (template-based agent creation)
+   */
+  async replicateAgent(
+    signer: TransactionSigner,
+    params: {
+      replicationTemplate: Address
+      name: string
+      description?: string
+      additionalCapabilities?: string[]
+      pricingModel: PricingModel
+      isReplicable?: boolean
+      replicationFee?: bigint
+    }
+  ): Promise<{
+    signature: string
+    newAgentAddress: Address
+    replicationRecordAddress: Address
+  }> {
+    console.log('🔬 Replicating agent from template...')
+    console.log(`   Template: ${params.replicationTemplate}`)
+    console.log(`   Name: ${params.name}`)
+    console.log(`   Additional capabilities: ${params.additionalCapabilities?.join(', ') ?? 'none'}`)
+
+    try {
+      // Pre-calculate PDAs
+      const newAgentPda = await this.findAgentPDA(signer.address, `replicated_${Date.now()}`)
+      const recordPda = await this.findReplicationRecordPDA(params.replicationTemplate, signer.address)
+      
+      const instruction = await getReplicateAgentInstructionAsync({
+        replicationTemplate: params.replicationTemplate,
+        newAgent: newAgentPda,
+        replicationRecord: recordPda,
+        buyer: signer as unknown as TransactionSigner,
+        customization: {
+          name: params.name,
+          description: params.description ?? null,
+          additionalCapabilities: params.additionalCapabilities ?? [],
+          pricingModel: params.pricingModel,
+          isReplicable: params.isReplicable ?? true,
+          replicationFee: params.replicationFee ?? null
+        },
+        royaltyPercentage: 1000 // 10% royalty (in basis points)
+      }, { programAddress: this.programId })
+
+      const signature = await this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      
+      console.log('✅ Agent replicated successfully')
+      console.log(`   New agent address: ${newAgentPda}`)
+      console.log(`   Replication record: ${recordPda}`)
+      console.log(`   Signature: ${signature}`)
+      
+      return {
+        signature,
+        newAgentAddress: newAgentPda,
+        replicationRecordAddress: recordPda
+      }
+    } catch (error) {
+      const context = createErrorContext(
+        'replicateAgent',
+        'replicate_agent',
+        undefined,
+        { template: params.replicationTemplate, name: params.name }
+      )
+      logEnhancedError(error instanceof Error ? error : new Error(String(error)), context)
+      throw error
+    }
+  }
+
+  /**
+   * Create a compressed agent using ZK compression (5000x cost reduction)
+   */
+  async createCompressedAgent(
+    signer: TransactionSigner,
+    params: {
+      merkleTree: Address
+      agentType: number
+      metadataUri: string
+      agentId: string
+      name?: string
+      description?: string
+      capabilities?: string[]
+      serviceEndpoint?: string
+    }
+  ): Promise<{
+    signature: string
+    treeAuthority: Address
+    userRegistry: Address
+  }> {
+    console.log('🗜️ Creating compressed agent with ZK compression...')
+    console.log(`   Agent ID: ${params.agentId}`)
+    console.log(`   Merkle tree: ${params.merkleTree}`)
+    console.log(`   Agent type: ${params.agentType}`)
+    console.log(`   💰 Cost reduction: ~5000x vs regular agent creation`)
+
+    try {
+      // Pre-calculate PDAs
+      const treeAuthority = await this.findAgentTreeConfigPDA(signer.address)
+      const { deriveUserRegistryPda } = await import('../../utils/pda.js')
+      const userRegistry = await deriveUserRegistryPda(this.programId, signer.address)
+      
+      const instruction = await getRegisterAgentCompressedInstructionAsync({
+        merkleTree: params.merkleTree,
+        treeAuthority,
+        userRegistry,
+        signer: signer as unknown as TransactionSigner,
+        agentType: params.agentType,
+        metadataUri: params.metadataUri,
+        agentId: params.agentId
+      }, { programAddress: this.programId })
+
+      const signature = await this.sendTransaction([instruction as unknown as IInstruction], [signer as unknown as TransactionSigner])
+      
+      console.log('✅ Compressed agent created successfully')
+      console.log(`   Tree authority: ${treeAuthority}`)
+      console.log(`   User registry: ${userRegistry}`)
+      console.log(`   Signature: ${signature}`)
+      console.log(`   🎉 Agent created with massive cost savings using ZK compression!`)
+      
+      return {
+        signature,
+        treeAuthority,
+        userRegistry
+      }
+    } catch (error) {
+      const context = createErrorContext(
+        'createCompressedAgent',
+        'register_agent_compressed',
+        undefined,
+        { agentId: params.agentId, merkleTree: params.merkleTree }
+      )
+      logEnhancedError(error instanceof Error ? error : new Error(String(error)), context)
+      throw error
+    }
+  }
+
+  /**
+   * Create a compressed agent with metadata generation (convenience method)
+   */
+  async createCompressedAgentWithMetadata(
+    signer: TransactionSigner,
+    params: {
+      merkleTree: Address
+      name: string
+      description: string
+      category: string
+      capabilities: string[]
+      serviceEndpoint: string
+      agentId?: string
+      ipfsConfig?: IPFSConfig
+      forceIPFS?: boolean
+    }
+  ): Promise<{
+    signature: string
+    agentId: string
+    treeAuthority: Address
+    userRegistry: Address
+  }> {
+    // Generate agent ID if not provided
+    const agentId = params.agentId ?? `compressed_agent_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+    
+    // Map category to agent type
+    const agentTypeMap: Record<string, number> = {
+      'data-analysis': 1,
+      'writing': 2,
+      'coding': 3,
+      'translation': 4,
+      'image-processing': 5,
+      'automation': 6,
+      'research': 7,
+      'customer-service': 8,
+      'financial-analysis': 9,
+      'content-moderation': 10
+    }
+    
+    const agentType = agentTypeMap[params.category] ?? 1
+    
+    // Create metadata object
+    const metadata = {
+      name: params.name,
+      description: params.description,
+      capabilities: params.capabilities,
+      serviceEndpoint: params.serviceEndpoint,
+      agentId,
+      createdAt: new Date().toISOString(),
+      compressed: true // Mark as compressed agent
+    }
+    
+    // Handle metadata with IPFS support
+    let metadataUri: string
+    const ipfsUtils = params.ipfsConfig ? createIPFSUtils(params.ipfsConfig) : this.ipfsUtils
+    
+    try {
+      metadataUri = await createMetadataUri(
+        metadata,
+        ipfsUtils ?? undefined,
+        {
+          type: 'agent-metadata',
+          filename: `compressed-agent-${agentId}.json`,
+          forceIPFS: params.forceIPFS
+        }
+      )
+      
+      console.log(`📝 Compressed agent metadata created:`)
+      console.log(`   Storage: ${metadataUri.startsWith('ipfs://') ? 'IPFS' : 'Inline'}`)
+      console.log(`   URI: ${metadataUri.substring(0, 80)}${metadataUri.length > 80 ? '...' : ''}`)
+      
+    } catch (ipfsError) {
+      console.warn('⚠️ IPFS failed, using inline storage:', ipfsError instanceof Error ? ipfsError.message : String(ipfsError))
+      
+      // Fallback to compressed inline storage
+      const metadataJson = JSON.stringify({
+        n: params.name.substring(0, 30),
+        d: params.description.substring(0, 100),
+        c: params.capabilities.slice(0, 5).join(','),
+        e: params.serviceEndpoint.substring(0, 50),
+        t: Math.floor(Date.now() / 1000),
+        agentId,
+        compressed: true
+      })
+      const metadataBase64 = Buffer.from(metadataJson).toString('base64')
+      metadataUri = `data:application/json;base64,${metadataBase64}`
+    }
+    
+    const result = await this.createCompressedAgent(signer, {
+      merkleTree: params.merkleTree,
+      agentType,
+      metadataUri,
+      agentId
+    })
+    
+    return {
+      ...result,
+      agentId
+    }
+  }
+
+  /**
+   * Get replication template account
+   */
+  async getReplicationTemplate(templateAddress: Address): Promise<ReplicationTemplate | null> {
+    try {
+      return await this.getDecodedAccount<ReplicationTemplate>(templateAddress, 'getReplicationTemplateDecoder')
+    } catch (error) {
+      console.warn(`Failed to get replication template ${templateAddress}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Get replication record account
+   */
+  async getReplicationRecord(recordAddress: Address): Promise<ReplicationRecord | null> {
+    try {
+      return await this.getDecodedAccount<ReplicationRecord>(recordAddress, 'getReplicationRecordDecoder')
+    } catch (error) {
+      console.warn(`Failed to get replication record ${recordAddress}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Create a new Merkle tree for compressed agent storage
+   * This is required before creating any compressed agents
+   */
+  async createCompressedTree(
+    payer: TransactionSigner,
+    params?: Partial<CreateMerkleTreeParams>
+  ): Promise<{
+    treeAddress: Address
+    treeAuthority: Address
+    signature: string
+  }> {
+    console.log('🌳 Creating compressed agent tree...')
+    
+    const result = await createCompressedAgentTree(
+      this.rpc,
+      {
+        payer,
+        ...params
+      },
+      this.programId
+    )
+    
+    console.log('✅ Compressed tree created successfully')
+    return result
+  }
+
+  /**
+   * Create multiple compressed agents in a single batch
+   * Most efficient method for creating many agents
+   */
+  async createCompressedBatch(
+    signer: TransactionSigner,
+    merkleTree: Address,
+    agents: CompressedAgentParams[]
+  ): Promise<BatchCreationResult> {
+    console.log(`🚀 Creating batch of ${agents.length} compressed agents...`)
+    
+    const result = await createCompressedAgentBatch(
+      this.rpc,
+      signer,
+      merkleTree,
+      agents,
+      this.programId
+    )
+    
+    return result
+  }
+
+  /**
+   * Get the current state of a compressed agent tree
+   */
+  async getTreeState(treeAuthority: Address): Promise<{
+    numMinted: number
+    capacity: number
+    utilizationPercent: number
+    treeCreator: Address
+  }> {
+    return getCompressedTreeState(this.rpc, treeAuthority)
+  }
+
+  /**
+   * Migrate an existing regular agent to compressed format
+   * Helps existing users benefit from 5000x cost savings
+   */
+  async migrateToCompressed(
+    signer: TransactionSigner,
+    regularAgentAddress: Address,
+    merkleTree: Address
+  ): Promise<{
+    signature: string
+    compressedAgentId: string
+  }> {
+    console.log('🔄 Migrating agent to compressed format...')
+    
+    const result = await migrateToCompressedAgent(
+      this.rpc,
+      signer,
+      regularAgentAddress,
+      merkleTree,
+      this.programId
+    )
+    
+    return result
+  }
+
+  /**
+   * Estimate cost savings for using compressed agents
+   */
+  estimateSavings(numAgents: number): {
+    regularCostSOL: number
+    compressedCostSOL: number
+    savingsSOL: number
+    savingsPercent: number
+    costReductionFactor: number
+  } {
+    return estimateCompressionSavings(numAgents)
+  }
+
+  /**
+   * List all replication templates
+   */
+  async listReplicationTemplates(options: { limit?: number; offset?: number } = {}): Promise<{address: Address; data: ReplicationTemplate}[]> {
+    try {
+      const { REPLICATION_TEMPLATE_DISCRIMINATOR } = await import('../../generated/index.js')
+      
+      const filters = [{
+        memcmp: {
+          offset: 0,
+          bytes: bs58.encode(Buffer.from(REPLICATION_TEMPLATE_DISCRIMINATOR))
+        }
+      }]
+      
+      const accounts = await this.getDecodedProgramAccounts<ReplicationTemplate>('getReplicationTemplateDecoder', filters)
+      
+      // Apply pagination
+      const paginatedAccounts = accounts.slice(options.offset ?? 0, (options.offset ?? 0) + (options.limit ?? 100))
+      return paginatedAccounts.map(({ address, data }) => ({ address, data }))
+    } catch (error) {
+      console.warn('Failed to list replication templates:', error)
+      return []
+    }
+  }
+
+  /**
+   * List replication records for a template
+   */
+  async listReplicationRecords(templateAddress?: Address, options: { limit?: number; offset?: number } = {}): Promise<{address: Address; data: ReplicationRecord}[]> {
+    try {
+      const { REPLICATION_RECORD_DISCRIMINATOR } = await import('../../generated/index.js')
+      
+      let filters = [{
+        memcmp: {
+          offset: 0,
+          bytes: bs58.encode(Buffer.from(REPLICATION_RECORD_DISCRIMINATOR))
+        }
+      }]
+      
+      // Add template filter if specified
+      if (templateAddress) {
+        filters.push({
+          memcmp: {
+            offset: 40, // Offset to originalAgent field (after discriminator + recordId)
+            bytes: bs58.encode(Buffer.from(templateAddress as string))
+          }
+        })
+      }
+      
+      const accounts = await this.getDecodedProgramAccounts<ReplicationRecord>('getReplicationRecordDecoder', filters)
+      
+      // Apply pagination
+      const paginatedAccounts = accounts.slice(options.offset ?? 0, (options.offset ?? 0) + (options.limit ?? 100))
+      return paginatedAccounts.map(({ address, data }) => ({ address, data }))
+    } catch (error) {
+      console.warn('Failed to list replication records:', error)
+      return []
     }
   }
 

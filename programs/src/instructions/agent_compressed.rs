@@ -145,9 +145,26 @@ pub fn register_agent_compressed(
     // Create hash for the compressed data
     let data_hash = anchor_lang::solana_program::keccak::hash(&metadata_bytes);
 
-    // For now, we store a simplified version in the tree_authority
-    // In a full implementation, this would use proper Merkle tree operations
-    // via CPI to the compression program
+    // Prepare the leaf node data for the Merkle tree
+    let _leaf_node = metadata_bytes.as_slice();
+    
+    // CPI to SPL Account Compression program to append the leaf
+    let cpi_accounts = spl_account_compression::cpi::accounts::Modify {
+        merkle_tree: ctx.accounts.merkle_tree.to_account_info(),
+        authority: tree_authority.to_account_info(),
+        noop: ctx.accounts.log_wrapper.to_account_info(),
+    };
+    
+    let cpi_ctx = CpiContext::new(
+        ctx.accounts.compression_program.to_account_info(),
+        cpi_accounts,
+    );
+    
+    // Append the compressed agent data to the Merkle tree
+    spl_account_compression::cpi::append(
+        cpi_ctx,
+        data_hash.to_bytes(),
+    )?;
 
     tree_authority.num_minted = tree_authority
         .num_minted

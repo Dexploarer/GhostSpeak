@@ -52,6 +52,7 @@ import {
   type Deliverable,
   type DeliverableArgs,
 } from '../types';
+import { getWorkOrderErrorMessage } from '../../utils/enhanced-client-errors.js';
 
 export const SUBMIT_WORK_DELIVERY_DISCRIMINATOR = new Uint8Array([
   151, 198, 209, 252, 41, 69, 106, 93,
@@ -376,8 +377,7 @@ export function parseSubmitWorkDeliveryInstruction<
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedSubmitWorkDeliveryInstruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 5) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+    throw new Error(getWorkOrderErrorMessage("submit_work_delivery", instruction.accounts.length));
   }
   let accountIndex = 0;
   const getNextAccount = () => {

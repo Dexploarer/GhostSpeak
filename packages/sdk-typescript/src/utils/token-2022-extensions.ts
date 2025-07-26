@@ -14,7 +14,6 @@
 import './text-encoder-polyfill.js'
 import {
   type ElGamalKeypair,
-  type ElGamalCiphertext,
   encryptAmount,
   generateRangeProof,
   generateValidityProof,
@@ -39,6 +38,9 @@ import type {
   TransferFeeConfig,
   InterestBearingConfig
 } from './token-utils.js'
+
+// Re-export the TransferFeeConfig type
+export type { TransferFeeConfig } from './token-utils.js'
 
 // =====================================================
 // TRANSFER FEE EXTENSION
@@ -284,13 +286,56 @@ export async function verifyConfidentialTransferProof(
       return false
     }
     
-    // In a real implementation, we would:
-    // 1. Verify the range proof using bulletproofs
-    // 2. Verify the validity proof using Schnorr signatures
-    // 3. Verify the equality proof if auditor is present
-    // 4. Check all commitments are on the curve
+    // Import verification functions
+    const { 
+      verifyRangeProof, 
+      verifyValidityProof, 
+      verifyEqualityProof,
+      deserializeCiphertext
+    } = await import('./elgamal.js')
     
-    // For now, return true if basic structure is valid
+    // Deserialize the encrypted amount ciphertext
+    const encryptedAmountCiphertext = deserializeCiphertext(proof.encryptedAmount)
+    
+    // 1. Verify the range proof using bulletproofs
+    const rangeProofValid = verifyRangeProof(
+      { proof: proof.rangeProof, commitment: encryptedAmountCiphertext.commitment.commitment },
+      encryptedAmountCiphertext.commitment.commitment
+    )
+    
+    if (!rangeProofValid) {
+      return false
+    }
+    
+    // 2. Verify the validity proof using Schnorr signatures
+    const validityProofValid = verifyValidityProof(
+      { proof: proof.validityProof },
+      encryptedAmountCiphertext,
+      publicInputs.recipientPubkey
+    )
+    
+    if (!validityProofValid) {
+      return false
+    }
+    
+    // 3. Verify the equality proof if auditor is present
+    if (proof.auditorProof && publicInputs.auditorPubkey) {
+      // Extract auditor ciphertext and equality proof from combined data
+      const auditorCiphertext = deserializeCiphertext(proof.auditorProof.slice(0, 64))
+      const equalityProofData = proof.auditorProof.slice(64)
+      
+      const equalityProofValid = verifyEqualityProof(
+        { proof: equalityProofData },
+        encryptedAmountCiphertext,
+        auditorCiphertext
+      )
+      
+      if (!equalityProofValid) {
+        return false
+      }
+    }
+    
+    // 4. All proofs are valid
     return true
   } catch {
     return false

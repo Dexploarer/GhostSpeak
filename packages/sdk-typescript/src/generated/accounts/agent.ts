@@ -96,6 +96,8 @@ export type Agent = {
   merkleTree: Option<Address>;
   supportsA2a: boolean;
   transferHook: Option<Address>;
+  parentAgent: Option<Address>;
+  generation: number;
   bump: number;
 };
 
@@ -125,6 +127,8 @@ export type AgentArgs = {
   merkleTree: OptionOrNullable<Address>;
   supportsA2a: boolean;
   transferHook: OptionOrNullable<Address>;
+  parentAgent: OptionOrNullable<Address>;
+  generation: number;
   bump: number;
 };
 
@@ -168,6 +172,8 @@ export function getAgentEncoder(): Encoder<AgentArgs> {
       ['merkleTree', getOptionEncoder(getAddressEncoder())],
       ['supportsA2a', getBooleanEncoder()],
       ['transferHook', getOptionEncoder(getAddressEncoder())],
+      ['parentAgent', getOptionEncoder(getAddressEncoder())],
+      ['generation', getU32Encoder()],
       ['bump', getU8Encoder()],
     ]),
     (value) => ({ ...value, discriminator: AGENT_DISCRIMINATOR })
@@ -211,6 +217,8 @@ export function getAgentDecoder(): Decoder<Agent> {
     ['merkleTree', getOptionDecoder(getAddressDecoder())],
     ['supportsA2a', getBooleanDecoder()],
     ['transferHook', getOptionDecoder(getAddressDecoder())],
+    ['parentAgent', getOptionDecoder(getAddressDecoder())],
+    ['generation', getU32Decoder()],
     ['bump', getU8Decoder()],
   ]);
 }

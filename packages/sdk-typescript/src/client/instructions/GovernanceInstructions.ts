@@ -12,6 +12,10 @@ import {
   getCreateMultisigInstruction,
   getInitializeGovernanceProposalInstruction,
   getInitializeRbacConfigInstruction,
+  getCastVoteInstruction,
+  getDelegateVoteInstruction,
+  getTallyVotesInstruction,
+  getExecuteProposalInstruction,
   ProposalStatus,
   type Multisig,
   type GovernanceProposal,
@@ -19,7 +23,9 @@ import {
   type ProposalType,
   type MultisigConfig,
   type ExecutionParams,
-  type Role
+  type Role,
+  type VoteChoice,
+  type DelegationScope
 } from '../../generated/index.js'
 import { SYSTEM_PROGRAM_ADDRESS_32 } from '../../constants/index.js'
 import { type TransactionResult } from '../../utils/transaction-urls.js'
@@ -231,7 +237,10 @@ export class GovernanceInstructions extends BaseInstructions {
       multisigId: params.multisigId,
       threshold: params.threshold,
       signers: params.signers,
-      config: params.config
+      config: params.config ?? {
+        requireSequentialSigning: false,
+        allowOwnerOffCurve: false
+      }
     })
 
     return this.sendTransactionWithDetails([instruction], [creator])
@@ -411,6 +420,157 @@ export class GovernanceInstructions extends BaseInstructions {
     })
 
     return this.sendTransactionWithDetails([instruction], [admin])
+  }
+
+  // =====================================================
+  // VOTING OPERATIONS
+  // =====================================================
+
+  /**
+   * Cast a vote on a governance proposal
+   * 
+   * @param voter - The signer casting the vote
+   * @param proposal - The proposal to vote on
+   * @param voterTokenAccount - The voter's token account for voting power
+   * @param voteChoice - The vote choice (For, Against, Abstain)
+   * @param reasoning - Optional reasoning for the vote
+   * @returns Transaction signature
+   * 
+   * @example
+   * ```typescript
+   * const signature = await client.governance.castVote(
+   *   voter,
+   *   proposalAddress,
+   *   voterTokenAccount,
+   *   VoteChoice.For,
+   *   "I support this proposal because it improves protocol security"
+   * )
+   * ```
+   */
+  async castVote(
+    voter: TransactionSigner,
+    proposal: Address,
+    voterTokenAccount: Address,
+    voteChoice: VoteChoice,
+    reasoning?: string
+  ): Promise<Signature> {
+    console.log('🗳️ Casting vote on proposal...')
+    console.log(`   Proposal: ${proposal}`)
+    console.log(`   Vote: ${voteChoice}`)
+
+    const instruction = getCastVoteInstruction({
+      proposal,
+      voter,
+      voterTokenAccount,
+      voteChoice,
+      reasoning: reasoning ?? null
+    })
+
+    const signature = await this.sendTransaction([instruction], [voter])
+    
+    console.log(`✅ Vote cast with signature: ${signature}`)
+    return signature
+  }
+
+  /**
+   * Delegate voting power to another account
+   * 
+   * @param delegator - The signer delegating their voting power
+   * @param delegate - The account to delegate to
+   * @param delegatorTokenAccount - The delegator's token account
+   * @param proposalId - The proposal ID (0 for all proposals)
+   * @param scope - The delegation scope
+   * @param expiresAt - Optional expiration timestamp
+   * @returns Transaction signature
+   */
+  async delegateVote(
+    delegator: TransactionSigner,
+    delegate: Address,
+    delegatorTokenAccount: Address,
+    proposalId: bigint,
+    scope: DelegationScope,
+    expiresAt?: bigint
+  ): Promise<Signature> {
+    console.log('🤝 Delegating voting power...')
+    console.log(`   Delegate: ${delegate}`)
+    console.log(`   Scope: ${scope}`)
+
+    const instruction = getDelegateVoteInstruction({
+      delegator,
+      delegate,
+      delegatorTokenAccount,
+      proposalId,
+      scope,
+      expiresAt: expiresAt ?? null
+    })
+
+    const signature = await this.sendTransaction([instruction], [delegator])
+    
+    console.log(`✅ Voting power delegated with signature: ${signature}`)
+    return signature
+  }
+
+  /**
+   * Tally votes and finalize proposal voting
+   * 
+   * @param authority - The signer with authority to tally votes
+   * @param proposal - The proposal to tally
+   * @returns Transaction signature
+   */
+  async tallyVotes(
+    authority: TransactionSigner,
+    proposal: Address
+  ): Promise<Signature> {
+    console.log('📊 Tallying votes for proposal...')
+    console.log(`   Proposal: ${proposal}`)
+
+    const instruction = getTallyVotesInstruction({
+      proposal,
+      authority
+    })
+
+    const signature = await this.sendTransaction([instruction], [authority])
+    
+    console.log(`✅ Votes tallied with signature: ${signature}`)
+    return signature
+  }
+
+  /**
+   * Execute a passed proposal
+   * 
+   * @param executor - The signer executing the proposal
+   * @param proposal - The proposal to execute
+   * @param targetProgram - The target program for execution
+   * @returns Transaction signature
+   * 
+   * @example
+   * ```typescript
+   * const signature = await client.governance.executeProposal(
+   *   executor,
+   *   proposalAddress,
+   *   targetProgramAddress
+   * )
+   * ```
+   */
+  async executeProposal(
+    executor: TransactionSigner,
+    proposal: Address,
+    targetProgram: Address
+  ): Promise<Signature> {
+    console.log('⚡ Executing governance proposal...')
+    console.log(`   Proposal: ${proposal}`)
+    console.log(`   Target Program: ${targetProgram}`)
+
+    const instruction = getExecuteProposalInstruction({
+      proposal,
+      executor,
+      targetProgram
+    })
+
+    const signature = await this.sendTransaction([instruction], [executor])
+    
+    console.log(`✅ Proposal executed with signature: ${signature}`)
+    return signature
   }
 
   // =====================================================
@@ -617,17 +777,87 @@ export class GovernanceInstructions extends BaseInstructions {
   async getGovernanceAnalytics(): Promise<GovernanceAnalytics> {
     console.log('📊 Generating governance analytics...')
     
-    // In production, this would aggregate data from all governance accounts
-    return {
-      totalMultisigs: 0,
-      activeMultisigs: 0,
-      totalProposals: 0,
-      activeProposals: 0,
-      passedProposals: 0,
-      failedProposals: 0,
-      averageVotingParticipation: 0,
-      topSigners: [],
-      proposalSuccess: { rate: 0, averageVotes: 0n }
+    try {
+      // Get all multisigs and proposals to calculate real analytics
+      const [multisigs, proposals] = await Promise.all([
+        this.listMultisigs(),
+        this.listProposals()
+      ])
+
+      // Calculate multisig statistics
+      const totalMultisigs = multisigs.length
+      const activeMultisigs = multisigs.filter(m => m.isActive).length
+
+      // Calculate proposal statistics
+      const totalProposals = proposals.length
+      const activeProposals = proposals.filter(p => 
+        p.status === ProposalStatus.Draft || p.status === ProposalStatus.Active
+      ).length
+      const passedProposals = proposals.filter(p => p.status === ProposalStatus.Passed).length
+      const failedProposals = proposals.filter(p => p.status === ProposalStatus.Failed).length
+
+      // Calculate voting participation
+      const proposalsWithVotes = proposals.filter(p => (p.yesVotes ?? 0n) > 0n || (p.noVotes ?? 0n) > 0n)
+      const totalVotes = proposalsWithVotes.reduce((sum, p) => sum + Number((p.yesVotes ?? 0n) + (p.noVotes ?? 0n)), 0)
+      const averageVotingParticipation = proposalsWithVotes.length > 0 ? 
+        Math.round(totalVotes / proposalsWithVotes.length) : 0
+
+      // Calculate top signers from multisig data
+      const signerStats = new Map<string, { multisigCount: number; transactionCount: number }>()
+      
+      multisigs.forEach(multisig => {
+        multisig.signers.forEach(signer => {
+          const current = signerStats.get(signer) ?? { multisigCount: 0, transactionCount: 0 }
+          signerStats.set(signer, {
+            multisigCount: current.multisigCount + 1,
+            transactionCount: current.transactionCount + 1 // Count multisig participation
+          })
+        })
+      })
+
+      const topSigners = Array.from(signerStats.entries())
+        .map(([signer, stats]) => ({
+          signer: signer as Address,
+          multisigCount: stats.multisigCount,
+          transactionCount: stats.transactionCount
+        }))
+        .sort((a, b) => b.transactionCount - a.transactionCount)
+        .slice(0, 10) // Top 10 signers
+
+      // Calculate proposal success metrics
+      const finishedProposals = passedProposals + failedProposals
+      const successRate = finishedProposals > 0 ? 
+        Math.round((passedProposals / finishedProposals) * 100) : 0
+      
+      const averageVotes = proposalsWithVotes.length > 0 ?
+        BigInt(Math.round(totalVotes / proposalsWithVotes.length)) : 0n
+
+      return {
+        totalMultisigs,
+        activeMultisigs,
+        totalProposals,
+        activeProposals,
+        passedProposals,
+        failedProposals,
+        averageVotingParticipation,
+        topSigners,
+        proposalSuccess: { rate: successRate, averageVotes }
+      }
+    } catch (error) {
+      console.error('Failed to generate governance analytics:', error)
+      
+      // Return default analytics on error
+      return {
+        totalMultisigs: 0,
+        activeMultisigs: 0,
+        totalProposals: 0,
+        activeProposals: 0,
+        passedProposals: 0,
+        failedProposals: 0,
+        averageVotingParticipation: 0,
+        topSigners: [],
+        proposalSuccess: { rate: 0, averageVotes: 0n }
+      }
     }
   }
 

@@ -19,6 +19,8 @@ import {
   fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getI64Decoder,
@@ -46,6 +48,28 @@ import {
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
 } from '@solana/kit';
+import {
+  getAgentPerformanceEntryDecoder,
+  getAgentPerformanceEntryEncoder,
+  getEconomicMetricsDecoder,
+  getEconomicMetricsEncoder,
+  getMarketplaceMetricsDecoder,
+  getMarketplaceMetricsEncoder,
+  getMetricSampleDecoder,
+  getMetricSampleEncoder,
+  getNetworkHealthMetricsDecoder,
+  getNetworkHealthMetricsEncoder,
+  type AgentPerformanceEntry,
+  type AgentPerformanceEntryArgs,
+  type EconomicMetrics,
+  type EconomicMetricsArgs,
+  type MarketplaceMetrics,
+  type MarketplaceMetricsArgs,
+  type MetricSample,
+  type MetricSampleArgs,
+  type NetworkHealthMetrics,
+  type NetworkHealthMetricsArgs,
+} from '../types';
 
 export const ANALYTICS_DASHBOARD_DISCRIMINATOR = new Uint8Array([
   50, 162, 197, 10, 93, 40, 12, 147,
@@ -61,7 +85,14 @@ export type AnalyticsDashboard = {
   discriminator: ReadonlyUint8Array;
   dashboardId: bigint;
   owner: Address;
+  authority: Address;
+  programId: Address;
   metrics: string;
+  networkMetrics: NetworkHealthMetrics;
+  marketplaceMetrics: MarketplaceMetrics;
+  economicMetrics: EconomicMetrics;
+  metricSamples: Array<MetricSample>;
+  agentPerformance: Array<AgentPerformanceEntry>;
   createdAt: bigint;
   updatedAt: bigint;
   bump: number;
@@ -70,7 +101,14 @@ export type AnalyticsDashboard = {
 export type AnalyticsDashboardArgs = {
   dashboardId: number | bigint;
   owner: Address;
+  authority: Address;
+  programId: Address;
   metrics: string;
+  networkMetrics: NetworkHealthMetricsArgs;
+  marketplaceMetrics: MarketplaceMetricsArgs;
+  economicMetrics: EconomicMetricsArgs;
+  metricSamples: Array<MetricSampleArgs>;
+  agentPerformance: Array<AgentPerformanceEntryArgs>;
   createdAt: number | bigint;
   updatedAt: number | bigint;
   bump: number;
@@ -82,7 +120,14 @@ export function getAnalyticsDashboardEncoder(): Encoder<AnalyticsDashboardArgs> 
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['dashboardId', getU64Encoder()],
       ['owner', getAddressEncoder()],
+      ['authority', getAddressEncoder()],
+      ['programId', getAddressEncoder()],
       ['metrics', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['networkMetrics', getNetworkHealthMetricsEncoder()],
+      ['marketplaceMetrics', getMarketplaceMetricsEncoder()],
+      ['economicMetrics', getEconomicMetricsEncoder()],
+      ['metricSamples', getArrayEncoder(getMetricSampleEncoder())],
+      ['agentPerformance', getArrayEncoder(getAgentPerformanceEntryEncoder())],
       ['createdAt', getI64Encoder()],
       ['updatedAt', getI64Encoder()],
       ['bump', getU8Encoder()],
@@ -96,7 +141,14 @@ export function getAnalyticsDashboardDecoder(): Decoder<AnalyticsDashboard> {
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['dashboardId', getU64Decoder()],
     ['owner', getAddressDecoder()],
+    ['authority', getAddressDecoder()],
+    ['programId', getAddressDecoder()],
     ['metrics', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['networkMetrics', getNetworkHealthMetricsDecoder()],
+    ['marketplaceMetrics', getMarketplaceMetricsDecoder()],
+    ['economicMetrics', getEconomicMetricsDecoder()],
+    ['metricSamples', getArrayDecoder(getMetricSampleDecoder())],
+    ['agentPerformance', getArrayDecoder(getAgentPerformanceEntryDecoder())],
     ['createdAt', getI64Decoder()],
     ['updatedAt', getI64Decoder()],
     ['bump', getU8Decoder()],

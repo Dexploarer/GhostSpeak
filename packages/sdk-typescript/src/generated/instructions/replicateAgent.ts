@@ -7,29 +7,17 @@
  */
 
 import {
-  addDecoderSizePrefix,
-  addEncoderSizePrefix,
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
   getAddressEncoder,
-  getArrayDecoder,
-  getArrayEncoder,
-  getBooleanDecoder,
-  getBooleanEncoder,
   getBytesDecoder,
   getBytesEncoder,
-  getOptionDecoder,
-  getOptionEncoder,
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
   getU32Decoder,
   getU32Encoder,
-  getU64Decoder,
-  getU64Encoder,
-  getUtf8Decoder,
-  getUtf8Encoder,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -40,14 +28,20 @@ import {
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
-  type Option,
-  type OptionOrNullable,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import {
+  GHOSTSPEAK_MARKETPLACE_ERROR__INSUFFICIENT_ACCOUNTS,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_INSTRUCTION_DATA,
+  GHOSTSPEAK_MARKETPLACE_ERROR__MISSING_REQUIRED_ACCOUNT,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_ACCOUNT,
+  GHOSTSPEAK_MARKETPLACE_ERROR__INSTRUCTION_PARSING_FAILED,
+  isGhostspeakMarketplaceError,
+} from '../errors';
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
@@ -55,10 +49,10 @@ import {
   type ResolvedAccount,
 } from '../shared';
 import {
-  getPricingModelDecoder,
-  getPricingModelEncoder,
-  type PricingModel,
-  type PricingModelArgs,
+  getAgentCustomizationDecoder,
+  getAgentCustomizationEncoder,
+  type AgentCustomization,
+  type AgentCustomizationArgs,
 } from '../types';
 
 export const REPLICATE_AGENT_DISCRIMINATOR = new Uint8Array([
@@ -76,6 +70,7 @@ export type ReplicateAgentInstruction<
   TAccountReplicationTemplate extends string | AccountMeta<string> = string,
   TAccountNewAgent extends string | AccountMeta<string> = string,
   TAccountReplicationRecord extends string | AccountMeta<string> = string,
+  TAccountRoyaltyStream extends string | AccountMeta<string> = string,
   TAccountBuyer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
@@ -94,6 +89,9 @@ export type ReplicateAgentInstruction<
       TAccountReplicationRecord extends string
         ? WritableAccount<TAccountReplicationRecord>
         : TAccountReplicationRecord,
+      TAccountRoyaltyStream extends string
+        ? WritableAccount<TAccountRoyaltyStream>
+        : TAccountRoyaltyStream,
       TAccountBuyer extends string
         ? WritableSignerAccount<TAccountBuyer> &
             AccountSignerMeta<TAccountBuyer>
@@ -107,43 +105,21 @@ export type ReplicateAgentInstruction<
 
 export type ReplicateAgentInstructionData = {
   discriminator: ReadonlyUint8Array;
-  name: string;
-  description: Option<string>;
-  additionalCapabilities: Array<string>;
-  pricingModel: PricingModel;
-  isReplicable: boolean;
-  replicationFee: Option<bigint>;
+  customization: AgentCustomization;
+  royaltyPercentage: number;
 };
 
 export type ReplicateAgentInstructionDataArgs = {
-  name: string;
-  description: OptionOrNullable<string>;
-  additionalCapabilities: Array<string>;
-  pricingModel: PricingModelArgs;
-  isReplicable: boolean;
-  replicationFee: OptionOrNullable<number | bigint>;
+  customization: AgentCustomizationArgs;
+  royaltyPercentage: number;
 };
 
 export function getReplicateAgentInstructionDataEncoder(): Encoder<ReplicateAgentInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      [
-        'description',
-        getOptionEncoder(
-          addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())
-        ),
-      ],
-      [
-        'additionalCapabilities',
-        getArrayEncoder(
-          addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())
-        ),
-      ],
-      ['pricingModel', getPricingModelEncoder()],
-      ['isReplicable', getBooleanEncoder()],
-      ['replicationFee', getOptionEncoder(getU64Encoder())],
+      ['customization', getAgentCustomizationEncoder()],
+      ['royaltyPercentage', getU32Encoder()],
     ]),
     (value) => ({ ...value, discriminator: REPLICATE_AGENT_DISCRIMINATOR })
   );
@@ -152,18 +128,8 @@ export function getReplicateAgentInstructionDataEncoder(): Encoder<ReplicateAgen
 export function getReplicateAgentInstructionDataDecoder(): Decoder<ReplicateAgentInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    [
-      'description',
-      getOptionDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())),
-    ],
-    [
-      'additionalCapabilities',
-      getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())),
-    ],
-    ['pricingModel', getPricingModelDecoder()],
-    ['isReplicable', getBooleanDecoder()],
-    ['replicationFee', getOptionDecoder(getU64Decoder())],
+    ['customization', getAgentCustomizationDecoder()],
+    ['royaltyPercentage', getU32Decoder()],
   ]);
 }
 
@@ -181,26 +147,25 @@ export type ReplicateAgentAsyncInput<
   TAccountReplicationTemplate extends string = string,
   TAccountNewAgent extends string = string,
   TAccountReplicationRecord extends string = string,
+  TAccountRoyaltyStream extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   replicationTemplate: Address<TAccountReplicationTemplate>;
   newAgent?: Address<TAccountNewAgent>;
   replicationRecord?: Address<TAccountReplicationRecord>;
+  royaltyStream?: Address<TAccountRoyaltyStream>;
   buyer: TransactionSigner<TAccountBuyer>;
   systemProgram?: Address<TAccountSystemProgram>;
-  name: ReplicateAgentInstructionDataArgs['name'];
-  description: ReplicateAgentInstructionDataArgs['description'];
-  additionalCapabilities: ReplicateAgentInstructionDataArgs['additionalCapabilities'];
-  pricingModel: ReplicateAgentInstructionDataArgs['pricingModel'];
-  isReplicable: ReplicateAgentInstructionDataArgs['isReplicable'];
-  replicationFee: ReplicateAgentInstructionDataArgs['replicationFee'];
+  customization: ReplicateAgentInstructionDataArgs['customization'];
+  royaltyPercentage: ReplicateAgentInstructionDataArgs['royaltyPercentage'];
 };
 
 export async function getReplicateAgentInstructionAsync<
   TAccountReplicationTemplate extends string,
   TAccountNewAgent extends string,
   TAccountReplicationRecord extends string,
+  TAccountRoyaltyStream extends string,
   TAccountBuyer extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends
@@ -210,6 +175,7 @@ export async function getReplicateAgentInstructionAsync<
     TAccountReplicationTemplate,
     TAccountNewAgent,
     TAccountReplicationRecord,
+    TAccountRoyaltyStream,
     TAccountBuyer,
     TAccountSystemProgram
   >,
@@ -220,6 +186,7 @@ export async function getReplicateAgentInstructionAsync<
     TAccountReplicationTemplate,
     TAccountNewAgent,
     TAccountReplicationRecord,
+    TAccountRoyaltyStream,
     TAccountBuyer,
     TAccountSystemProgram
   >
@@ -239,6 +206,7 @@ export async function getReplicateAgentInstructionAsync<
       value: input.replicationRecord ?? null,
       isWritable: true,
     },
+    royaltyStream: { value: input.royaltyStream ?? null, isWritable: true },
     buyer: { value: input.buyer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
@@ -277,6 +245,19 @@ export async function getReplicateAgentInstructionAsync<
       ],
     });
   }
+  if (!accounts.royaltyStream.value) {
+    accounts.royaltyStream.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([
+            114, 111, 121, 97, 108, 116, 121, 95, 115, 116, 114, 101, 97, 109,
+          ])
+        ),
+        getAddressEncoder().encode(expectAddress(accounts.newAgent.value)),
+      ],
+    });
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -288,6 +269,7 @@ export async function getReplicateAgentInstructionAsync<
       getAccountMeta(accounts.replicationTemplate),
       getAccountMeta(accounts.newAgent),
       getAccountMeta(accounts.replicationRecord),
+      getAccountMeta(accounts.royaltyStream),
       getAccountMeta(accounts.buyer),
       getAccountMeta(accounts.systemProgram),
     ],
@@ -300,6 +282,7 @@ export async function getReplicateAgentInstructionAsync<
     TAccountReplicationTemplate,
     TAccountNewAgent,
     TAccountReplicationRecord,
+    TAccountRoyaltyStream,
     TAccountBuyer,
     TAccountSystemProgram
   >;
@@ -311,26 +294,25 @@ export type ReplicateAgentInput<
   TAccountReplicationTemplate extends string = string,
   TAccountNewAgent extends string = string,
   TAccountReplicationRecord extends string = string,
+  TAccountRoyaltyStream extends string = string,
   TAccountBuyer extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   replicationTemplate: Address<TAccountReplicationTemplate>;
   newAgent: Address<TAccountNewAgent>;
   replicationRecord: Address<TAccountReplicationRecord>;
+  royaltyStream: Address<TAccountRoyaltyStream>;
   buyer: TransactionSigner<TAccountBuyer>;
   systemProgram?: Address<TAccountSystemProgram>;
-  name: ReplicateAgentInstructionDataArgs['name'];
-  description: ReplicateAgentInstructionDataArgs['description'];
-  additionalCapabilities: ReplicateAgentInstructionDataArgs['additionalCapabilities'];
-  pricingModel: ReplicateAgentInstructionDataArgs['pricingModel'];
-  isReplicable: ReplicateAgentInstructionDataArgs['isReplicable'];
-  replicationFee: ReplicateAgentInstructionDataArgs['replicationFee'];
+  customization: ReplicateAgentInstructionDataArgs['customization'];
+  royaltyPercentage: ReplicateAgentInstructionDataArgs['royaltyPercentage'];
 };
 
 export function getReplicateAgentInstruction<
   TAccountReplicationTemplate extends string,
   TAccountNewAgent extends string,
   TAccountReplicationRecord extends string,
+  TAccountRoyaltyStream extends string,
   TAccountBuyer extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends
@@ -340,6 +322,7 @@ export function getReplicateAgentInstruction<
     TAccountReplicationTemplate,
     TAccountNewAgent,
     TAccountReplicationRecord,
+    TAccountRoyaltyStream,
     TAccountBuyer,
     TAccountSystemProgram
   >,
@@ -349,6 +332,7 @@ export function getReplicateAgentInstruction<
   TAccountReplicationTemplate,
   TAccountNewAgent,
   TAccountReplicationRecord,
+  TAccountRoyaltyStream,
   TAccountBuyer,
   TAccountSystemProgram
 > {
@@ -367,6 +351,7 @@ export function getReplicateAgentInstruction<
       value: input.replicationRecord ?? null,
       isWritable: true,
     },
+    royaltyStream: { value: input.royaltyStream ?? null, isWritable: true },
     buyer: { value: input.buyer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
@@ -390,6 +375,7 @@ export function getReplicateAgentInstruction<
       getAccountMeta(accounts.replicationTemplate),
       getAccountMeta(accounts.newAgent),
       getAccountMeta(accounts.replicationRecord),
+      getAccountMeta(accounts.royaltyStream),
       getAccountMeta(accounts.buyer),
       getAccountMeta(accounts.systemProgram),
     ],
@@ -402,6 +388,7 @@ export function getReplicateAgentInstruction<
     TAccountReplicationTemplate,
     TAccountNewAgent,
     TAccountReplicationRecord,
+    TAccountRoyaltyStream,
     TAccountBuyer,
     TAccountSystemProgram
   >;
@@ -418,8 +405,9 @@ export type ParsedReplicateAgentInstruction<
     replicationTemplate: TAccountMetas[0];
     newAgent: TAccountMetas[1];
     replicationRecord: TAccountMetas[2];
-    buyer: TAccountMetas[3];
-    systemProgram: TAccountMetas[4];
+    royaltyStream: TAccountMetas[3];
+    buyer: TAccountMetas[4];
+    systemProgram: TAccountMetas[5];
   };
   data: ReplicateAgentInstructionData;
 };
@@ -432,9 +420,8 @@ export function parseReplicateAgentInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedReplicateAgentInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
-    // TODO: Coded error.
-    throw new Error('Not enough accounts');
+  if (instruction.accounts.length < 6) {
+    throw new Error('[GHOSTSPEAK_MARKETPLACE_ERROR__INSUFFICIENT_ACCOUNTS] Not enough accounts');
   }
   let accountIndex = 0;
   const getNextAccount = () => {
@@ -448,6 +435,7 @@ export function parseReplicateAgentInstruction<
       replicationTemplate: getNextAccount(),
       newAgent: getNextAccount(),
       replicationRecord: getNextAccount(),
+      royaltyStream: getNextAccount(),
       buyer: getNextAccount(),
       systemProgram: getNextAccount(),
     },

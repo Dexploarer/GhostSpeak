@@ -64,7 +64,7 @@ export interface InstructionAccountMap {
  */
 export function parseIdlInstructions(idlPath?: string): InstructionAccountMap {
   const defaultIdlPath = path.join(__dirname, '../../../../../target/idl/ghostspeak_marketplace.json');
-  const resolvedPath = idlPath || defaultIdlPath;
+  const resolvedPath = idlPath ?? defaultIdlPath;
   
   if (!fs.existsSync(resolvedPath)) {
     throw new Error(`IDL file not found at: ${resolvedPath}`);
@@ -160,7 +160,7 @@ export function generateAccountValidationError(
  */
 export function validateInstructionAccounts(
   instructionName: string,
-  providedAccounts: any[]
+  providedAccounts: unknown[]
 ): { isValid: boolean; error?: string } {
   const mapping = getInstructionMapping(instructionName);
   
@@ -229,7 +229,7 @@ export function getCommonInstructions(): InstructionAccountMap {
  */
 export function exportInstructionMappings(outputPath?: string): void {
   const mappings = parseIdlInstructions();
-  const output = outputPath || path.join(__dirname, '../../../../../instruction-mappings.json');
+  const output = outputPath ?? path.join(__dirname, '../../../../../instruction-mappings.json');
   
   fs.writeFileSync(output, JSON.stringify(mappings, null, 2));
   console.log(`Instruction mappings exported to: ${output}`);

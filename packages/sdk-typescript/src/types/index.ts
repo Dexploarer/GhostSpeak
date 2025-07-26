@@ -24,6 +24,54 @@ export * from '../generated/index.js'
 // Export IPFS types
 export * from './ipfs-types.js'
 
+// Export RPC client types
+export * from './rpc-client-types.js'
+
+// Export Token-2022 types (excluding conflicting types)
+export {
+  // Mint extensions
+  type TransferFeeConfig,
+  type TransferFee,
+  type InterestBearingConfig,
+  type MintCloseAuthority,
+  type PermanentDelegate,
+  type DefaultAccountState,
+  AccountState,
+  type TransferHook,
+  type MetadataPointer,
+  type GroupPointer,
+  type GroupMemberPointer,
+  type ConfidentialTransferMint,
+  type TransferFeeAmount,
+  // Account extensions
+  type ImmutableOwner,
+  type NonTransferable,
+  type MemoTransfer,
+  type CpiGuard,
+  type ConfidentialTransferAccount,
+  type TransferHookAccount,
+  // Token metadata
+  type TokenMetadata,
+  type AdditionalMetadata,
+  // Group extensions
+  type TokenGroup,
+  type TokenGroupMember,
+  // Composite types
+  type MintExtensions,
+  type AccountExtensions,
+  type MintWithExtensions,
+  type TokenAccountWithExtensions,
+  // RPC types
+  type ParsedMintAccount,
+  type ParsedTokenAccount,
+  // Utility types
+  type ExtensionTLV,
+  type ParsedExtensions
+} from './token-2022-types.js'
+
+// Export reputation types
+export * from './reputation-types.js'
+
 // Modern RPC API types using 2025 Web3.js v2 patterns
 export type RpcApi = Rpc<
   GetLatestBlockhashApi &

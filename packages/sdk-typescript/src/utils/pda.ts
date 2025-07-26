@@ -3,7 +3,8 @@ import {
   getProgramDerivedAddress,
   getBytesEncoder,
   getAddressEncoder,
-  getUtf8Encoder
+  getUtf8Encoder,
+  getU64Encoder
 } from '@solana/kit'
 
 /**
@@ -286,6 +287,68 @@ export async function deriveAgentVerificationPda(
 }
 
 /**
+ * Derive replication template PDA
+ * Pattern: ['replication_template', sourceAgent]
+ */
+export async function deriveReplicationTemplatePda(
+  programId: Address,
+  sourceAgent: Address
+): Promise<Address> {
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([
+        114, 101, 112, 108, 105, 99, 97, 116, 105, 111, 110, 95, 116, 101, 109, 112, 108, 97, 116, 101
+      ])), // 'replication_template'
+      getAddressEncoder().encode(sourceAgent)
+    ]
+  })
+  return address
+}
+
+/**
+ * Derive replication record PDA
+ * Pattern: ['replication_record', replicationTemplate, buyer]
+ */
+export async function deriveReplicationRecordPda(
+  programId: Address,
+  replicationTemplate: Address,
+  buyer: Address
+): Promise<Address> {
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([
+        114, 101, 112, 108, 105, 99, 97, 116, 105, 111, 110, 95, 114, 101, 99, 111, 114, 100
+      ])), // 'replication_record'
+      getAddressEncoder().encode(replicationTemplate),
+      getAddressEncoder().encode(buyer)
+    ]
+  })
+  return address
+}
+
+/**
+ * Derive agent tree config PDA for compressed agents
+ * Pattern: ['agent_tree_config', signer]
+ */
+export async function deriveAgentTreeConfigPda(
+  programId: Address,
+  signer: Address
+): Promise<Address> {
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([
+        97, 103, 101, 110, 116, 95, 116, 114, 101, 101, 95, 99, 111, 110, 102, 105, 103
+      ])), // 'agent_tree_config'
+      getAddressEncoder().encode(signer)
+    ]
+  })
+  return address
+}
+
+/**
  * Generic PDA finder for custom use cases
  * Pattern: seeds array with automatic encoding
  */
@@ -308,5 +371,73 @@ export async function findProgramDerivedAddress(
     programAddress: programId,
     seeds: encodedSeeds
   })
+  return [result[0], result[1]]
+}
+
+/**
+ * Derive work order PDA
+ * Pattern: ['work_order', client, orderId]
+ */
+export async function deriveWorkOrderPDA(
+  client: Address,
+  orderId: bigint,
+  programId: Address
+): Promise<[Address, number]> {
+  const seeds = [
+    getBytesEncoder().encode(new Uint8Array([119, 111, 114, 107, 95, 111, 114, 100, 101, 114])), // 'work_order'
+    getAddressEncoder().encode(client),
+    getU64Encoder().encode(orderId)
+  ]
+  
+  const result = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds
+  })
+  
+  // getProgramDerivedAddress returns a tuple
+  return [result[0], result[1]]
+}
+
+/**
+ * Derive work delivery PDA
+ * Pattern: ['work_delivery', workOrder]
+ */
+export async function deriveWorkDeliveryPDA(
+  workOrder: Address,
+  programId: Address
+): Promise<[Address, number]> {
+  const seeds = [
+    getBytesEncoder().encode(new Uint8Array([119, 111, 114, 107, 95, 100, 101, 108, 105, 118, 101, 114, 121])), // 'work_delivery'
+    getAddressEncoder().encode(workOrder)
+  ]
+  
+  const result = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds
+  })
+  
+  // getProgramDerivedAddress returns a tuple
+  return [result[0], result[1]]
+}
+
+/**
+ * Derive escrow PDA
+ * Pattern: ['escrow', workOrder]
+ */
+export async function deriveEscrowPDA(
+  workOrder: Address,
+  programId: Address
+): Promise<[Address, number]> {
+  const seeds = [
+    getBytesEncoder().encode(new Uint8Array([101, 115, 99, 114, 111, 119])), // 'escrow'
+    getAddressEncoder().encode(workOrder)
+  ]
+  
+  const result = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds
+  })
+  
+  // getProgramDerivedAddress returns a tuple
   return [result[0], result[1]]
 }

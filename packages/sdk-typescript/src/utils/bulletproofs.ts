@@ -10,7 +10,7 @@
 
 import { ed25519 } from '@noble/curves/ed25519'
 import { sha256 } from '@noble/hashes/sha256'
-import { bytesToNumberLE, numberToBytesBE } from '@noble/curves/abstract/utils'
+import { bytesToNumberLE, numberToBytesBE, bytesToHex } from '@noble/curves/abstract/utils'
 
 // Polyfill for crypto if not available
 const crypto = globalThis.crypto || {
@@ -26,7 +26,7 @@ const crypto = globalThis.crypto || {
 const G = ed25519.ExtendedPoint.BASE
 
 // Generate H as hash-to-curve of G
-function generateH(): ed25519.ExtendedPoint {
+function generateH(): typeof ed25519.ExtendedPoint.BASE {
   const gBytes = G.toRawBytes()
   let hash = sha256(gBytes)
   
@@ -34,7 +34,7 @@ function generateH(): ed25519.ExtendedPoint {
   while (true) {
     try {
       // Try to decode as a point
-      return ed25519.ExtendedPoint.fromHex(hash)
+      return ed25519.ExtendedPoint.fromHex(bytesToHex(hash))
     } catch {
       // If not valid, hash again
       hash = sha256(hash)
@@ -42,7 +42,7 @@ function generateH(): ed25519.ExtendedPoint {
   }
 }
 
-const H = generateH()
+const H = generateH() as typeof ed25519.ExtendedPoint.BASE
 
 // Constants for bulletproofs
 const RANGE_BITS = 64 // Prove values in range [0, 2^64)
@@ -146,7 +146,7 @@ class VectorOps {
 /**
  * Multi-exponentiation for efficiency
  */
-function multiExp(points: ed25519.ExtendedPoint[], scalars: bigint[]): ed25519.ExtendedPoint {
+function multiExp(points: typeof ed25519.ExtendedPoint.BASE[], scalars: bigint[]): typeof ed25519.ExtendedPoint.BASE {
   if (points.length !== scalars.length) throw new Error('Length mismatch')
   
   let result = ed25519.ExtendedPoint.ZERO
@@ -154,7 +154,8 @@ function multiExp(points: ed25519.ExtendedPoint[], scalars: bigint[]): ed25519.E
     const scalar = scalars[i]
     const point = points[i]
     if (scalar !== undefined && scalar !== 0n && point !== undefined) {
-      result = result.add(point.multiply(scalar))
+      const mult = point.multiply(scalar) as typeof ed25519.ExtendedPoint.BASE
+      result = result.add(mult)
     }
   }
   return result
@@ -187,19 +188,19 @@ function toBinaryVector(value: bigint, bits: number): bigint[] {
 /**
  * Generate bulletproof generators
  */
-function generateGenerators(n: number): { g: ed25519.ExtendedPoint[], h: ed25519.ExtendedPoint[] } {
-  const g: ed25519.ExtendedPoint[] = []
-  const h: ed25519.ExtendedPoint[] = []
+function generateGenerators(n: number): { g: typeof ed25519.ExtendedPoint.BASE[], h: typeof ed25519.ExtendedPoint.BASE[] } {
+  const g: typeof ed25519.ExtendedPoint.BASE[] = []
+  const h: typeof ed25519.ExtendedPoint.BASE[] = []
   
   // Hash-to-curve for each generator
-  function hashToPoint(prefix: string, index: number): ed25519.ExtendedPoint {
+  function hashToPoint(prefix: string, index: number): typeof ed25519.ExtendedPoint.BASE {
     const input = new Uint8Array([...new TextEncoder().encode(prefix), ...numberToBytesBE(BigInt(index), 4)])
     let hash = sha256(input)
     
     // Keep hashing until we get a valid point
     while (true) {
       try {
-        return ed25519.ExtendedPoint.fromHex(hash)
+        return ed25519.ExtendedPoint.fromHex(bytesToHex(hash))
       } catch {
         hash = sha256(hash)
       }
@@ -219,10 +220,10 @@ function generateGenerators(n: number): { g: ed25519.ExtendedPoint[], h: ed25519
  */
 function innerProductArgument(
   transcript: ProofTranscript,
-  g: ed25519.ExtendedPoint[],
-  h: ed25519.ExtendedPoint[],
-  u: ed25519.ExtendedPoint,
-  P: ed25519.ExtendedPoint,
+  g: typeof ed25519.ExtendedPoint.BASE[],
+  h: typeof ed25519.ExtendedPoint.BASE[],
+  u: typeof ed25519.ExtendedPoint.BASE,
+  P: typeof ed25519.ExtendedPoint.BASE,
   a: bigint[],
   b: bigint[]
 ): InnerProductProof {
@@ -236,8 +237,8 @@ function innerProductArgument(
   
   let aVec: bigint[] = [...a]
   let bVec: bigint[] = [...b]
-  let gVec: ed25519.ExtendedPoint[] = [...g]
-  let hVec: ed25519.ExtendedPoint[] = [...h]
+  let gVec: typeof ed25519.ExtendedPoint.BASE[] = [...g]
+  let hVec: typeof ed25519.ExtendedPoint.BASE[] = [...h]
   
   while (aVec.length > 1) {
     const nPrime = aVec.length / 2
@@ -254,11 +255,11 @@ function innerProductArgument(
     const cL = VectorOps.innerProduct(aL, bR)
     const cR = VectorOps.innerProduct(aR, bL)
     
-    const LPoints: ed25519.ExtendedPoint[] = [...gR, ...hL, u]
+    const LPoints: typeof ed25519.ExtendedPoint.BASE[] = [...gR, ...hL, u]
     const LScalars: bigint[] = [...aL, ...bR, cL]
     const LPoint = multiExp(LPoints, LScalars)
     
-    const RPoints: ed25519.ExtendedPoint[] = [...gL, ...hR, u]
+    const RPoints: typeof ed25519.ExtendedPoint.BASE[] = [...gL, ...hR, u]
     const RScalars: bigint[] = [...aR, ...bL, cR]
     const RPoint = multiExp(RPoints, RScalars)
     
@@ -276,8 +277,12 @@ function innerProductArgument(
     gVec = []
     hVec = []
     for (let i = 0; i < nPrime; i++) {
-      gVec.push(gL[i].multiply(xInv).add(gR[i].multiply(x)))
-      hVec.push(hL[i].multiply(x).add(hR[i].multiply(xInv)))
+      const gLi = gL[i] as typeof ed25519.ExtendedPoint.BASE
+      const gRi = gR[i] as typeof ed25519.ExtendedPoint.BASE
+      const hLi = hL[i] as typeof ed25519.ExtendedPoint.BASE
+      const hRi = hR[i] as typeof ed25519.ExtendedPoint.BASE
+      gVec.push(gLi.multiply(xInv).add(gRi.multiply(x)))
+      hVec.push(hLi.multiply(x).add(hRi.multiply(xInv)))
     }
   }
   
@@ -304,7 +309,7 @@ function modInverse(a: bigint, m: bigint): bigint {
  */
 export function generateBulletproof(
   value: bigint,
-  commitment: ed25519.ExtendedPoint,
+  commitment: typeof ed25519.ExtendedPoint.BASE,
   blindingFactor: bigint
 ): Bulletproof {
   if (value < 0n || value >= (1n << BigInt(RANGE_BITS))) {
@@ -313,7 +318,9 @@ export function generateBulletproof(
 
   const transcript = new ProofTranscript('range_proof')
   const n = RANGE_BITS
-  const { g: gVec, h: hVec } = generateGenerators(n)
+  const generators = generateGenerators(n)
+  const gVec = generators.g
+  const hVec = generators.h
   
   // Commit to value
   transcript.append('commitment', commitment.toRawBytes())
@@ -329,11 +336,11 @@ export function generateBulletproof(
   const rho = bytesToNumberLE(crypto.getRandomValues(new Uint8Array(32))) % ed25519.CURVE.n
   
   // Commitments
-  const APoints: ed25519.ExtendedPoint[] = [...gVec, ...hVec, H]
+  const APoints: typeof ed25519.ExtendedPoint.BASE[] = [...gVec, ...hVec, H]
   const AScalars: bigint[] = [...aL, ...aR, alpha]
   const A = multiExp(APoints, AScalars)
   
-  const SPoints: ed25519.ExtendedPoint[] = [...gVec, ...hVec, H]
+  const SPoints: typeof ed25519.ExtendedPoint.BASE[] = [...gVec, ...hVec, H]
   const SScalars: bigint[] = [...sL, ...sR, rho]
   const S = multiExp(SPoints, SScalars)
   
@@ -389,7 +396,7 @@ export function generateBulletproof(
     const yInv = modInverse(yPowers[i] ?? 1n, ed25519.CURVE.n)
     return h.multiply(yInv)
   })
-  const PPoints: ed25519.ExtendedPoint[] = [...gVec, ...hPrime, G, H]
+  const PPoints: typeof ed25519.ExtendedPoint.BASE[] = [...gVec, ...hPrime, G, H]
   const PScalars: bigint[] = [...lVec, ...rVec, tx, mu]
   const P = multiExp(PPoints, PScalars)
   
@@ -399,10 +406,10 @@ export function generateBulletproof(
   let uHash = sha256(uBytes)
   
   // Hash until we get a valid point
-  let u: ed25519.ExtendedPoint
+  let u: typeof ed25519.ExtendedPoint.BASE
   while (true) {
     try {
-      u = ed25519.ExtendedPoint.fromHex(uHash)
+      u = ed25519.ExtendedPoint.fromHex(bytesToHex(uHash))
       break
     } catch {
       uHash = sha256(uHash)
@@ -427,12 +434,14 @@ export function generateBulletproof(
  */
 export function verifyBulletproof(
   proof: Bulletproof,
-  commitment: ed25519.ExtendedPoint
+  commitment: typeof ed25519.ExtendedPoint.BASE
 ): boolean {
   try {
     const transcript = new ProofTranscript('range_proof')
     const n = RANGE_BITS
-    const { g: gVec, h: hVec } = generateGenerators(n)
+    const generators = generateGenerators(n)
+  const gVec = generators.g
+  const hVec = generators.h
     
     // Reconstruct transcript
     transcript.append('commitment', commitment.toRawBytes())
@@ -458,8 +467,8 @@ export function verifyBulletproof(
     const lhs = G.multiply(proof.tx).add(H.multiply(proof.taux))
     const rhs = commitment.multiply(z * z)
       .add(G.multiply(delta))
-      .add(ed25519.ExtendedPoint.fromHex(proof.T1).multiply(x))
-      .add(ed25519.ExtendedPoint.fromHex(proof.T2).multiply(x * x))
+      .add(ed25519.ExtendedPoint.fromHex(bytesToHex(proof.T1)).multiply(x))
+      .add(ed25519.ExtendedPoint.fromHex(bytesToHex(proof.T2)).multiply(x * x))
     
     if (!lhs.equals(rhs)) return false
     
@@ -470,10 +479,10 @@ export function verifyBulletproof(
   let uHash = sha256(uBytes)
   
   // Hash until we get a valid point
-  let u: ed25519.ExtendedPoint
+  let u: typeof ed25519.ExtendedPoint.BASE
   while (true) {
     try {
-      u = ed25519.ExtendedPoint.fromHex(uHash)
+      u = ed25519.ExtendedPoint.fromHex(bytesToHex(uHash))
       break
     } catch {
       uHash = sha256(uHash)
@@ -485,8 +494,8 @@ export function verifyBulletproof(
   })
     
     // Compute P
-    const P = ed25519.ExtendedPoint.fromHex(proof.A)
-      .add(ed25519.ExtendedPoint.fromHex(proof.S).multiply(x))
+    const P = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.A))
+      .add(ed25519.ExtendedPoint.fromHex(bytesToHex(proof.S)).multiply(x))
       .add(multiExp(gVec, VectorOps.scale(Array(n).fill(1n), (ed25519.CURVE.n - z) % ed25519.CURVE.n)))
       .add(multiExp(hPrime, VectorOps.add(
         VectorOps.scale(yPowers, z),
@@ -501,8 +510,8 @@ export function verifyBulletproof(
     let PCur = P
     
     for (let i = 0; i < proof.innerProduct.L.length; i++) {
-      const L = ed25519.ExtendedPoint.fromHex(proof.innerProduct.L[i])
-      const R = ed25519.ExtendedPoint.fromHex(proof.innerProduct.R[i])
+      const L = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.innerProduct.L[i]))
+      const R = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.innerProduct.R[i]))
       
       transcript.append('L', proof.innerProduct.L[i])
       transcript.append('R', proof.innerProduct.R[i])
@@ -512,8 +521,8 @@ export function verifyBulletproof(
       PCur = L.multiply(xi * xi).add(PCur).add(R.multiply(xiInv * xiInv))
       
       const nPrime = gCur.length / 2
-      const newG: ed25519.ExtendedPoint[] = []
-      const newH: ed25519.ExtendedPoint[] = []
+      const newG: typeof ed25519.ExtendedPoint.BASE[] = []
+      const newH: typeof ed25519.ExtendedPoint.BASE[] = []
       
       for (let j = 0; j < nPrime; j++) {
         const gL = gCur[j]
@@ -537,8 +546,8 @@ export function verifyBulletproof(
     const h0 = hCur[0]
     if (!g0 || !h0) return false
     
-    const expected = g0.multiply(proof.innerProduct.a)
-      .add(h0.multiply(proof.innerProduct.b))
+    const expected = (g0 as typeof ed25519.ExtendedPoint.BASE).multiply(proof.innerProduct.a)
+      .add((h0 as typeof ed25519.ExtendedPoint.BASE).multiply(proof.innerProduct.b))
       .add(u.multiply((proof.innerProduct.a * proof.innerProduct.b) % ed25519.CURVE.n))
     
     return PCur.equals(expected)

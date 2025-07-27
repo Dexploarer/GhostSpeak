@@ -12,9 +12,9 @@ import {
   type Address
 } from '@solana/kit'
 import { Connection, PublicKey } from '@solana/web3.js'
-import { AnalyticsCollector } from '../../src/client/instructions/AnalyticsCollector'
-import type { AnalyticsCollectorConfig } from '../../src/client/instructions/AnalyticsCollector'
-import { EscrowStatus } from '../../src/generated/types'
+import { AnalyticsCollector } from '../../../src/client/instructions/AnalyticsCollector.js'
+import type { AnalyticsCollectorConfig } from '../../../src/client/instructions/AnalyticsCollector.js'
+import { EscrowStatus } from '../../../src/generated/types/index.js'
 
 // Mock the Web3.js Connection
 vi.mock('@solana/web3.js', () => ({

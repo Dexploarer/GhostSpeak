@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { GhostSpeakClient } from '../../src'
+import { GhostSpeakClient } from '../../../src/index.js'
 import { createSolanaRpc } from '@solana/rpc'
 import { address } from '@solana/addresses'
 

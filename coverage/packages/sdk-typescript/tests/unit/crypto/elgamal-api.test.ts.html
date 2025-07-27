@@ -541,7 +541,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >describe('ElGamal API Structure', () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  describe('Module Exports', () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    it('should export all required functions and types', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const elgamalModule = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const elgamalModule = await import('../../../src/utils/elgamal.js')</span>
       
       // Key generation functions
 <span class="cstat-no" title="statement not covered" >      expect(typeof elgamalModule.generateElGamalKeypair).toBe('function')</span>
@@ -580,7 +580,7 @@ import type { TransactionSigner } from '@solana/kit'
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  describe('Key Generation API', () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    it('should generate keypair with correct structure', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
       
@@ -593,7 +593,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >    })</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    it('should derive keypair from signer', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { deriveElGamalKeypair } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { deriveElGamalKeypair } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const mockSigner: TransactionSigner = {</span>
 <span class="cstat-no" title="statement not covered" >        address: address('11111111111111111111111111111112'),</span>
@@ -612,7 +612,7 @@ import type { TransactionSigner } from '@solana/kit'
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  describe('Encryption API', () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    it('should create ciphertext with correct structure', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmount } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmount } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
 <span class="cstat-no" title="statement not covered" >      const amount = 100n</span>
@@ -630,7 +630,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >    })</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    it('should return randomness with encryption result', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmountWithRandomness } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmountWithRandomness } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
 <span class="cstat-no" title="statement not covered" >      const amount = 50n</span>
@@ -644,7 +644,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >    })</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    it('should validate input ranges', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmount, MAX_DECRYPTABLE_VALUE } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmount, MAX_DECRYPTABLE_VALUE } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
       
@@ -664,7 +664,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >        generateElGamalKeypair, </span>
 <span class="cstat-no" title="statement not covered" >        encryptAmountWithRandomness, </span>
 <span class="cstat-no" title="statement not covered" >        generateRangeProof </span>
-<span class="cstat-no" title="statement not covered" >      } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
 <span class="cstat-no" title="statement not covered" >      const amount = 1000n</span>
@@ -687,7 +687,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >        generateElGamalKeypair, </span>
 <span class="cstat-no" title="statement not covered" >        encryptAmountWithRandomness, </span>
 <span class="cstat-no" title="statement not covered" >        generateValidityProof </span>
-<span class="cstat-no" title="statement not covered" >      } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
 <span class="cstat-no" title="statement not covered" >      const amount = 500n</span>
@@ -711,7 +711,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >        encryptAmount, </span>
 <span class="cstat-no" title="statement not covered" >        serializeCiphertext, </span>
 <span class="cstat-no" title="statement not covered" >        deserializeCiphertext </span>
-<span class="cstat-no" title="statement not covered" >      } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
 <span class="cstat-no" title="statement not covered" >      const amount = 200n</span>
@@ -727,7 +727,7 @@ import type { TransactionSigner } from '@solana/kit'
 <span class="cstat-no" title="statement not covered" >    })</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    it('should validate ciphertext structure', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmount, isValidCiphertext } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { generateElGamalKeypair, encryptAmount, isValidCiphertext } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      const keypair = generateElGamalKeypair()</span>
 <span class="cstat-no" title="statement not covered" >      const amount = 150n</span>
@@ -747,23 +747,23 @@ import type { TransactionSigner } from '@solana/kit'
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  describe('Error Handling', () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    it('should handle serialization errors', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { deserializeCiphertext } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { deserializeCiphertext } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      expect(() =&gt; deserializeCiphertext(new Uint8Array(50)))</span>
 <span class="cstat-no" title="statement not covered" >        .toThrow('Invalid ciphertext length')</span>
 <span class="cstat-no" title="statement not covered" >    })</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    it('should handle range proof validation', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { generateRangeProof } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { generateRangeProof } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      expect(() =&gt; generateRangeProof(-1n, { commitment: new Uint8Array(32) }, new Uint8Array(32)))</span>
-<span class="cstat-no" title="statement not covered" >        .toThrow('Amount must be in range [0, 2^64)')</span>
+<span class="cstat-no" title="statement not covered" >        .toThrow('Amount must be in range [0, 2^32)')</span>
 <span class="cstat-no" title="statement not covered" >    })</span>
 <span class="cstat-no" title="statement not covered" >  })</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  describe('Constants', () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    it('should export correct maximum decryptable value', async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { MAX_DECRYPTABLE_VALUE } = await import('../../src/utils/elgamal.js')</span>
+<span class="cstat-no" title="statement not covered" >      const { MAX_DECRYPTABLE_VALUE } = await import('../../../src/utils/elgamal.js')</span>
       
 <span class="cstat-no" title="statement not covered" >      expect(MAX_DECRYPTABLE_VALUE).toBe(4_294_967_295n)</span>
 <span class="cstat-no" title="statement not covered" >    })</span>
@@ -775,7 +775,7 @@ import type { TransactionSigner } from '@solana/kit'
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-26T23:16:09.474Z
+                at 2025-07-27T03:45:00.079Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

@@ -190,7 +190,7 @@ export class RetryHandler {
     
     return this.config.retryableErrors.some(retryableError => 
       errorMessage.includes(retryableError.toLowerCase())
-    ) ?? this.isNetworkError(error)
+    ) || this.isNetworkError(error)
   }
 
   /**

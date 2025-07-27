@@ -16,8 +16,8 @@ import {
   type CompressedAgentProof,
   MERKLE_TREE_HEIGHT,
   MAX_BATCH_SIZE
-} from '../../src/utils/compressed-agent-helpers'
-import type { CompressedAgentMetadata } from '../../src/generated/index'
+} from '../../../src/utils/compressed-agent-helpers.js'
+import type { CompressedAgentMetadata } from '../../../src/generated/index.js'
 
 // Mock RPC and other dependencies
 vi.mock('@solana/kit', async () => {

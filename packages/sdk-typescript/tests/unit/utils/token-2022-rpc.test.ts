@@ -12,8 +12,8 @@ import {
   getTokenProgramForMint,
   type MintWithExtensions,
   type TokenAccountWithExtensions
-} from '../../src/utils/token-2022-rpc'
-import { ExtensionType, AccountState } from '../../src/types/token-2022-types'
+} from '../../../src/utils/token-2022-rpc.js'
+import { ExtensionType, AccountState } from '../../../src/types/token-2022-types.js'
 import type { Address } from '@solana/addresses'
 
 // Mock RPC client

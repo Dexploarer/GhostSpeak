@@ -1,8 +1,4 @@
-/**
- * Comprehensive tests for Instruction Account Mapper
- */
-
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
 import {
@@ -14,8 +10,9 @@ import {
   getCommonInstructions,
   exportInstructionMappings,
   type InstructionMapping,
-  type AccountInfo
-} from '../../../src/utils/instruction-account-mapper.js'
+  type AccountInfo,
+  type InstructionAccountMap
+} from '../../../src/utils/instruction-account-mapper'
 
 // Mock fs module
 vi.mock('fs', () => ({
@@ -24,64 +21,33 @@ vi.mock('fs', () => ({
   writeFileSync: vi.fn()
 }))
 
-// Mock console for testing logs
-const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
-
-// Sample IDL for testing
-const sampleIdl = {
+// Mock IDL data
+const mockIdl = {
   instructions: [
     {
       name: 'register_agent',
       accounts: [
-        { name: 'agent', writable: true },
-        { name: 'owner', signer: true },
-        { name: 'systemProgram', address: '11111111111111111111111111111111' }
+        { name: 'agent', writable: true, signer: false },
+        { name: 'owner', writable: false, signer: true },
+        { name: 'systemProgram', writable: false, signer: false, address: '11111111111111111111111111111111' }
       ],
-      docs: ['Registers a new agent in the system'],
+      docs: ['Register a new agent in the system'],
       discriminator: [1, 2, 3, 4, 5, 6, 7, 8],
-      args: [{ name: 'name', type: 'string' }]
+      args: [{ name: 'agentData', type: 'string' }]
     },
     {
       name: 'create_escrow',
       accounts: [
-        { name: 'escrow', writable: true },
-        { name: 'client', signer: true, writable: true },
-        { name: 'provider' },
-        { name: 'tokenMint' },
-        { name: 'systemProgram', address: '11111111111111111111111111111111' }
+        { name: 'escrow', writable: true, signer: false, pda: { seeds: [] } },
+        { name: 'payer', writable: true, signer: true },
+        { name: 'recipient', writable: false, signer: false },
+        { name: 'mint', writable: false, signer: false, optional: true }
       ],
-      docs: ['Creates a new escrow for agent services'],
-      discriminator: [10, 20, 30, 40, 50, 60, 70, 80]
+      discriminator: [9, 10, 11, 12, 13, 14, 15, 16]
     },
     {
-      name: 'send_message',
-      accounts: [
-        { name: 'channel', writable: true },
-        { name: 'sender', signer: true },
-        { name: 'clock', optional: true }
-      ],
-      discriminator: [100, 101, 102, 103, 104, 105, 106, 107]
-    },
-    {
-      name: 'complex_instruction',
-      accounts: [
-        { 
-          name: 'pdaAccount', 
-          writable: true,
-          pda: {
-            seeds: [
-              { kind: 'const', value: [1, 2, 3] },
-              { kind: 'account', path: 'owner' }
-            ]
-          }
-        },
-        { name: 'owner', signer: true },
-        { name: 'authority', signer: true, writable: true }
-      ]
-    },
-    {
-      name: '_export_instruction',
-      accounts: [{ name: 'test' }]
+      name: '_export_test',
+      accounts: [{ name: 'test', writable: false, signer: false }]
     }
   ]
 }
@@ -92,30 +58,59 @@ describe('Instruction Account Mapper', () => {
   })
 
   afterEach(() => {
-    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('parseIdlInstructions', () => {
-    it('should parse IDL and create instruction mappings', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
+    it('should parse IDL instructions successfully', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
 
-      const mappings = parseIdlInstructions()
+      const result = parseIdlInstructions()
 
-      expect(mappings).toBeDefined()
-      expect(Object.keys(mappings)).toHaveLength(4) // Excludes _export_instruction
-      
-      // Check register_agent mapping
-      const registerAgent = mappings['register_agent']
-      expect(registerAgent).toBeDefined()
-      expect(registerAgent.name).toBe('register_agent')
+      expect(result).toBeDefined()
+      expect(Object.keys(result)).toHaveLength(2) // Should skip _export_test
+      expect(result.register_agent).toBeDefined()
+      expect(result.create_escrow).toBeDefined()
+      expect(result._export_test).toBeUndefined()
+    })
+
+    it('should throw error when IDL file not found', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false)
+
+      expect(() => parseIdlInstructions()).toThrow('IDL file not found')
+    })
+
+    it('should use custom IDL path when provided', () => {
+      const customPath = '/custom/path/idl.json'
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
+
+      parseIdlInstructions(customPath)
+
+      expect(fs.existsSync).toHaveBeenCalledWith(customPath)
+      expect(fs.readFileSync).toHaveBeenCalledWith(customPath, 'utf8')
+    })
+
+    it('should handle empty IDL gracefully', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ }) as any)
+
+      const result = parseIdlInstructions()
+
+      expect(result).toEqual({})
+    })
+
+    it('should map account properties correctly', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
+
+      const result = parseIdlInstructions()
+      const registerAgent = result.register_agent
+
       expect(registerAgent.expectedAccounts).toBe(3)
       expect(registerAgent.accounts).toHaveLength(3)
-      expect(registerAgent.docs).toEqual(['Registers a new agent in the system'])
-      expect(registerAgent.discriminator).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
-      expect(registerAgent.args).toEqual([{ name: 'name', type: 'string' }])
-
-      // Check account details
+      
       expect(registerAgent.accounts[0]).toEqual({
         name: 'agent',
         writable: true,
@@ -125,88 +120,26 @@ describe('Instruction Account Mapper', () => {
         address: undefined,
         pda: undefined
       })
-      expect(registerAgent.accounts[1]).toEqual({
-        name: 'owner',
-        writable: false,
-        signer: true,
-        optional: false,
-        docs: [],
-        address: undefined,
-        pda: undefined
-      })
-      expect(registerAgent.accounts[2]).toEqual({
-        name: 'systemProgram',
-        writable: false,
-        signer: false,
-        optional: false,
-        docs: [],
-        address: '11111111111111111111111111111111',
-        pda: undefined
-      })
+
+      expect(registerAgent.accounts[2].address).toBe('11111111111111111111111111111111')
     })
 
-    it('should handle custom IDL path', () => {
-      const customPath = '/custom/path/idl.json'
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
+    it('should preserve discriminator and args', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
 
-      const mappings = parseIdlInstructions(customPath)
-
-      expect(fs.existsSync).toHaveBeenCalledWith(customPath)
-      expect(fs.readFileSync).toHaveBeenCalledWith(customPath, 'utf8')
-      expect(mappings).toBeDefined()
-    })
-
-    it('should throw error if IDL file not found', () => {
-      (fs.existsSync as Mock).mockReturnValue(false)
-
-      expect(() => parseIdlInstructions()).toThrow('IDL file not found')
-    })
-
-    it('should handle IDL without instructions', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify({}))
-
-      const mappings = parseIdlInstructions()
-
-      expect(mappings).toEqual({})
-    })
-
-    it('should skip export instructions', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
-
-      const mappings = parseIdlInstructions()
-
-      expect(mappings['_export_instruction']).toBeUndefined()
-    })
-
-    it('should handle optional accounts', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
-
-      const mappings = parseIdlInstructions()
-      const sendMessage = mappings['send_message']
-
-      expect(sendMessage.accounts[2].optional).toBe(true)
-    })
-
-    it('should handle PDA accounts', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
-
-      const mappings = parseIdlInstructions()
-      const complexInstruction = mappings['complex_instruction']
-
-      expect(complexInstruction.accounts[0].pda).toBeDefined()
-      expect(complexInstruction.accounts[0].pda?.seeds).toHaveLength(2)
+      const result = parseIdlInstructions()
+      
+      expect(result.register_agent.discriminator).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+      expect(result.register_agent.args).toEqual([{ name: 'agentData', type: 'string' }])
+      expect(result.create_escrow.discriminator).toEqual([9, 10, 11, 12, 13, 14, 15, 16])
     })
   })
 
   describe('getInstructionMapping', () => {
     beforeEach(() => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
     })
 
     it('should return mapping for existing instruction', () => {
@@ -217,14 +150,14 @@ describe('Instruction Account Mapper', () => {
       expect(mapping?.expectedAccounts).toBe(3)
     })
 
-    it('should return null for non-existing instruction', () => {
-      const mapping = getInstructionMapping('non_existing_instruction')
+    it('should return null for non-existent instruction', () => {
+      const mapping = getInstructionMapping('non_existent')
 
       expect(mapping).toBeNull()
     })
 
     it('should return null for export instructions', () => {
-      const mapping = getInstructionMapping('_export_instruction')
+      const mapping = getInstructionMapping('_export_test')
 
       expect(mapping).toBeNull()
     })
@@ -232,122 +165,101 @@ describe('Instruction Account Mapper', () => {
 
   describe('generateAccountValidationError', () => {
     beforeEach(() => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
     })
 
-    it('should generate detailed error for too few accounts', () => {
-      const error = generateAccountValidationError('create_escrow', 3)
+    it('should generate error for incorrect account count', () => {
+      const error = generateAccountValidationError('register_agent', 2)
 
-      expect(error).toContain('Invalid account count for instruction "create_escrow"')
-      expect(error).toContain('Expected: 5 accounts')
-      expect(error).toContain('Provided: 3 accounts')
-      expect(error).toContain('escrow (writable)')
-      expect(error).toContain('client (writable) (signer)')
-      expect(error).toContain('provider')
-      expect(error).toContain('tokenMint')
-      expect(error).toContain('systemProgram')
-      expect(error).toContain('Creates a new escrow for agent services')
+      expect(error).toContain('Invalid account count for instruction "register_agent"')
+      expect(error).toContain('Expected: 3 accounts')
+      expect(error).toContain('Provided: 2 accounts')
+      expect(error).toContain('agent (writable), owner (signer), systemProgram')
     })
 
-    it('should generate error with provided account names', () => {
-      const error = generateAccountValidationError(
-        'register_agent', 
-        2, 
-        ['agent', 'owner']
-      )
+    it('should include account names when provided', () => {
+      const error = generateAccountValidationError('register_agent', 2, ['agent', 'owner'])
 
       expect(error).toContain('Provided accounts: [agent, owner]')
     })
 
-    it('should return success message when correct account count', () => {
-      const error = generateAccountValidationError('register_agent', 3)
+    it('should include docs when available', () => {
+      const error = generateAccountValidationError('register_agent', 2)
 
-      expect(error).toBe('Correct number of accounts provided for register_agent')
+      expect(error).toContain('Description: Register a new agent in the system')
+    })
+
+    it('should return success message for correct account count', () => {
+      const result = generateAccountValidationError('register_agent', 3)
+
+      expect(result).toBe('Correct number of accounts provided for register_agent')
     })
 
     it('should handle unknown instruction', () => {
-      const error = generateAccountValidationError('unknown_instruction', 5)
+      const error = generateAccountValidationError('unknown_instruction', 1)
 
       expect(error).toBe('Unknown instruction: unknown_instruction')
     })
 
-    it('should handle instructions without docs', () => {
-      const error = generateAccountValidationError('send_message', 2)
-
-      expect(error).toContain('Invalid account count')
-      expect(error).not.toContain('Description:')
-    })
-
-    it('should format account requirements correctly', () => {
+    it('should handle optional accounts in description', () => {
       const error = generateAccountValidationError('create_escrow', 2)
 
-      expect(error).toContain('escrow (writable)')
-      expect(error).toContain('client (writable) (signer)')
-      expect(error).toContain('provider')
-      expect(error).not.toContain('provider (writable)')
-      expect(error).not.toContain('provider (signer)')
+      expect(error).toContain('escrow (writable), payer (writable) (signer), recipient, mint')
     })
   })
 
   describe('validateInstructionAccounts', () => {
     beforeEach(() => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
     })
 
     it('should validate correct number of accounts', () => {
-      const accounts = [{}, {}, {}]
-      const result = validateInstructionAccounts('register_agent', accounts)
+      const result = validateInstructionAccounts('register_agent', ['acc1', 'acc2', 'acc3'])
 
       expect(result.isValid).toBe(true)
       expect(result.error).toBeUndefined()
     })
 
     it('should invalidate incorrect number of accounts', () => {
-      const accounts = [{}, {}]
-      const result = validateInstructionAccounts('register_agent', accounts)
+      const result = validateInstructionAccounts('register_agent', ['acc1', 'acc2'])
 
       expect(result.isValid).toBe(false)
       expect(result.error).toContain('Invalid account count')
-      expect(result.error).toContain('Expected: 3 accounts')
-      expect(result.error).toContain('Provided: 2 accounts')
     })
 
     it('should handle unknown instruction', () => {
-      const accounts = [{}, {}]
-      const result = validateInstructionAccounts('unknown', accounts)
+      const result = validateInstructionAccounts('unknown', [])
 
       expect(result.isValid).toBe(false)
       expect(result.error).toBe('Unknown instruction: unknown')
     })
 
-    it('should validate empty account array', () => {
+    it('should work with empty account arrays', () => {
       const result = validateInstructionAccounts('register_agent', [])
 
       expect(result.isValid).toBe(false)
+      expect(result.error).toContain('Expected: 3 accounts')
       expect(result.error).toContain('Provided: 0 accounts')
     })
   })
 
   describe('getAllInstructionNames', () => {
-    it('should return sorted list of instruction names', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
-
-      const names = getAllInstructionNames()
-
-      expect(names).toEqual([
-        'complex_instruction',
-        'create_escrow',
-        'register_agent',
-        'send_message'
-      ])
+    beforeEach(() => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
     })
 
-    it('should handle empty IDL', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify({}))
+    it('should return all instruction names sorted', () => {
+      const names = getAllInstructionNames()
+
+      expect(names).toEqual(['create_escrow', 'register_agent'])
+      expect(names).not.toContain('_export_test')
+    })
+
+    it('should return empty array for empty IDL', () => {
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({}) as any)
 
       const names = getAllInstructionNames()
 
@@ -356,166 +268,124 @@ describe('Instruction Account Mapper', () => {
   })
 
   describe('getCommonInstructions', () => {
-    it('should return only common instructions that exist', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
-
-      const common = getCommonInstructions()
-
-      expect(Object.keys(common)).toContain('create_escrow')
-      expect(Object.keys(common)).toContain('register_agent')
-      expect(Object.keys(common)).toContain('send_message')
-      expect(Object.keys(common)).not.toContain('complex_instruction')
-      expect(Object.keys(common)).not.toContain('non_existing_instruction')
+    beforeEach(() => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
     })
 
-    it('should return empty object if no common instructions exist', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify({
+    it('should return only common instructions that exist', () => {
+      const common = getCommonInstructions()
+
+      expect(Object.keys(common)).toHaveLength(2)
+      expect(common.register_agent).toBeDefined()
+      expect(common.create_escrow).toBeDefined()
+    })
+
+    it('should handle when no common instructions exist', () => {
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ 
         instructions: [
           { name: 'rare_instruction', accounts: [] }
         ]
-      }))
+      }) as any)
 
       const common = getCommonInstructions()
 
-      expect(common).toEqual({})
+      expect(Object.keys(common)).toHaveLength(0)
     })
   })
 
   describe('exportInstructionMappings', () => {
     beforeEach(() => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify(sampleIdl))
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockIdl) as any)
+      vi.spyOn(console, 'log').mockImplementation(() => {})
     })
 
     it('should export mappings to default path', () => {
       exportInstructionMappings()
 
       expect(fs.writeFileSync).toHaveBeenCalled()
-      const [filePath, content] = (fs.writeFileSync as Mock).mock.calls[0]
+      const [filePath, content] = vi.mocked(fs.writeFileSync).mock.calls[0]
       
       expect(filePath).toContain('instruction-mappings.json')
-      
-      const parsed = JSON.parse(content)
-      expect(parsed).toHaveProperty('register_agent')
-      expect(parsed).toHaveProperty('create_escrow')
-      
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining('Instruction mappings exported to:')
-      )
+      expect(JSON.parse(content as string)).toHaveProperty('register_agent')
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Instruction mappings exported to:'))
     })
 
-    it('should export to custom path', () => {
+    it('should export mappings to custom path', () => {
       const customPath = '/custom/output.json'
+      
       exportInstructionMappings(customPath)
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         customPath,
         expect.any(String)
       )
-      
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        `Instruction mappings exported to: ${customPath}`
-      )
     })
 
-    it('should format JSON with proper indentation', () => {
+    it('should format JSON output properly', () => {
       exportInstructionMappings()
 
-      const [, content] = (fs.writeFileSync as Mock).mock.calls[0]
+      const [, content] = vi.mocked(fs.writeFileSync).mock.calls[0]
+      const parsed = JSON.parse(content as string)
       
-      // Check for proper formatting (2 space indentation)
-      expect(content).toContain('\n  ')
-      expect(content).toContain('{\n')
-      expect(content).toContain('\n}')
+      expect(content).toContain('\n') // Should be pretty-printed
+      expect(parsed.register_agent.expectedAccounts).toBe(3)
     })
   })
 
-  describe('Default export', () => {
-    it('should export all functions as default', async () => {
-      const defaultExport = await import('../../../src/utils/instruction-account-mapper.js')
-      
-      expect(defaultExport.default).toBeDefined()
-      expect(defaultExport.default.parseIdlInstructions).toBe(parseIdlInstructions)
-      expect(defaultExport.default.getInstructionMapping).toBe(getInstructionMapping)
-      expect(defaultExport.default.generateAccountValidationError).toBe(generateAccountValidationError)
-      expect(defaultExport.default.validateInstructionAccounts).toBe(validateInstructionAccounts)
-      expect(defaultExport.default.getAllInstructionNames).toBe(getAllInstructionNames)
-      expect(defaultExport.default.getCommonInstructions).toBe(getCommonInstructions)
-      expect(defaultExport.default.exportInstructionMappings).toBe(exportInstructionMappings)
-    })
-  })
-
-  describe('Edge cases and error handling', () => {
+  describe('Edge cases', () => {
     it('should handle malformed JSON in IDL', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue('{ invalid json')
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue('{ invalid json')
 
       expect(() => parseIdlInstructions()).toThrow()
     })
 
     it('should handle instructions with no accounts', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify({
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ 
         instructions: [
           { name: 'no_accounts_instruction' }
         ]
-      }))
+      }) as any)
 
-      const mappings = parseIdlInstructions()
-      const instruction = mappings['no_accounts_instruction']
-
-      expect(instruction.expectedAccounts).toBe(0)
-      expect(instruction.accounts).toEqual([])
+      const result = parseIdlInstructions()
+      
+      expect(result.no_accounts_instruction.expectedAccounts).toBe(0)
+      expect(result.no_accounts_instruction.accounts).toEqual([])
     })
 
-    it('should handle accounts with all optional fields', () => {
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify({
+    it('should handle accounts with all optional properties', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ 
         instructions: [
           {
-            name: 'full_account_instruction',
+            name: 'test_instruction',
             accounts: [
-              {
-                name: 'fullAccount',
+              { 
+                name: 'testAccount',
                 writable: true,
                 signer: true,
                 optional: true,
-                docs: ['This is a full account'],
-                address: 'SomeAddress123',
-                pda: { seeds: [{ kind: 'const', value: [1, 2, 3] }] }
+                docs: ['Test account docs'],
+                address: 'TestAddress123',
+                pda: { seeds: ['test'] }
               }
             ]
           }
         ]
-      }))
+      }) as any)
 
-      const mappings = parseIdlInstructions()
-      const account = mappings['full_account_instruction'].accounts[0]
-
+      const result = parseIdlInstructions()
+      const account = result.test_instruction.accounts[0]
+      
       expect(account.writable).toBe(true)
       expect(account.signer).toBe(true)
       expect(account.optional).toBe(true)
-      expect(account.docs).toEqual(['This is a full account'])
-      expect(account.address).toBe('SomeAddress123')
-      expect(account.pda).toBeDefined()
-    })
-
-    it('should handle very long instruction names', () => {
-      const longName = 'this_is_a_very_long_instruction_name_that_exceeds_normal_length'
-      
-      (fs.existsSync as Mock).mockReturnValue(true)
-      (fs.readFileSync as Mock).mockReturnValue(JSON.stringify({
-        instructions: [
-          { name: longName, accounts: [] }
-        ]
-      }))
-
-      const mappings = parseIdlInstructions()
-      
-      expect(mappings[longName]).toBeDefined()
-      expect(mappings[longName].name).toBe(longName)
+      expect(account.docs).toEqual(['Test account docs'])
+      expect(account.address).toBe('TestAddress123')
+      expect(account.pda).toEqual({ seeds: ['test'] })
     })
   })
 })

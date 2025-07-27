@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { toAddress, toSignature, formatLamports, parseAmount } from '../../src/utils/format'
-import { address, signature } from '@solana/addresses'
+import { toAddress, toSignature, formatLamports, parseAmount } from '../../../src/utils/format'
+import { address } from '@solana/addresses'
 
 describe('Format Utils', () => {
   describe('toAddress', () => {
@@ -24,7 +24,7 @@ describe('Format Utils', () => {
       const sig = '1111111111111111111111111111111111111111111111111111111111111111'
       const result = toSignature(sig)
       
-      expect(result).toBe(signature(sig))
+      expect(result).toBe(sig)
     })
   })
   

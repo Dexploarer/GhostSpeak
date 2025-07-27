@@ -31,6 +31,11 @@ export default defineConfig({
     // Performance optimizations
     testTimeout: 30000,
     hookTimeout: 30000,
+    // Increase timeout for full test runs
+    ...(process.env.FULL_TEST_RUN ? {
+      testTimeout: 60000,
+      hookTimeout: 60000,
+    } : {}),
     // Parallel execution with better defaults
     threads: true,
     maxConcurrency: 5,

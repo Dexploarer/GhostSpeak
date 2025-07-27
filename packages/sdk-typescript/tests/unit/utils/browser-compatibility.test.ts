@@ -35,6 +35,20 @@ describe('Browser Compatibility', () => {
   let originalWorker: any
   let originalSharedArrayBuffer: any
 
+  // Helper function to safely set global properties
+  function setGlobal(key: string, value: any) {
+    Object.defineProperty(global, key, {
+      value,
+      writable: true,
+      configurable: true
+    })
+  }
+
+  // Helper function to delete global properties
+  function deleteGlobal(key: string) {
+    delete (global as any)[key]
+  }
+
   beforeEach(() => {
     setupTestEnvironment()
     vi.clearAllMocks()
@@ -49,56 +63,72 @@ describe('Browser Compatibility', () => {
     originalWorker = global.Worker
     originalSharedArrayBuffer = global.SharedArrayBuffer
     
-    // Set up default mocks
-    global.navigator = {
+    // Set up default mocks using helper function
+    setGlobal('navigator', {
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0'
-    } as any
+    })
     
-    global.WebAssembly = {
+    setGlobal('WebAssembly', {
       instantiate: vi.fn(),
       compile: vi.fn()
-    } as any
+    })
     
-    global.BigInt = BigInt
-    global.TextEncoder = TextEncoder
-    global.TextDecoder = TextDecoder
+    setGlobal('BigInt', BigInt)
+    setGlobal('TextEncoder', TextEncoder)
+    setGlobal('TextDecoder', TextDecoder)
     
-    global.crypto = {
+    setGlobal('crypto', {
       getRandomValues: (array: Uint8Array) => {
         for (let i = 0; i < array.length; i++) {
           array[i] = Math.floor(Math.random() * 256)
         }
         return array
       }
-    } as any
+    })
     
-    global.performance = {
+    setGlobal('performance', {
       now: vi.fn(() => Date.now())
-    } as any
+    })
     
-    global.Worker = vi.fn() as any
-    global.SharedArrayBuffer = SharedArrayBuffer
+    setGlobal('Worker', vi.fn())
+    setGlobal('SharedArrayBuffer', SharedArrayBuffer)
   })
 
   afterEach(() => {
-    // Restore original globals
-    global.navigator = originalNavigator
-    global.WebAssembly = originalWebAssembly
-    global.BigInt = originalBigInt
-    global.TextEncoder = originalTextEncoder
-    global.crypto = originalCrypto
-    global.performance = originalPerformance
-    global.Worker = originalWorker
-    global.SharedArrayBuffer = originalSharedArrayBuffer
+    // Restore original globals using defineProperty
+    if (originalNavigator !== undefined) {
+      Object.defineProperty(global, 'navigator', { value: originalNavigator, writable: true, configurable: true })
+    }
+    if (originalWebAssembly !== undefined) {
+      Object.defineProperty(global, 'WebAssembly', { value: originalWebAssembly, writable: true, configurable: true })
+    }
+    if (originalBigInt !== undefined) {
+      Object.defineProperty(global, 'BigInt', { value: originalBigInt, writable: true, configurable: true })
+    }
+    if (originalTextEncoder !== undefined) {
+      Object.defineProperty(global, 'TextEncoder', { value: originalTextEncoder, writable: true, configurable: true })
+    }
+    if (originalCrypto !== undefined) {
+      Object.defineProperty(global, 'crypto', { value: originalCrypto, writable: true, configurable: true })
+    }
+    if (originalPerformance !== undefined) {
+      Object.defineProperty(global, 'performance', { value: originalPerformance, writable: true, configurable: true })
+    }
+    if (originalWorker !== undefined) {
+      Object.defineProperty(global, 'Worker', { value: originalWorker, writable: true, configurable: true })
+    }
+    if (originalSharedArrayBuffer !== undefined) {
+      Object.defineProperty(global, 'SharedArrayBuffer', { value: originalSharedArrayBuffer, writable: true, configurable: true })
+    }
     
     vi.restoreAllMocks()
   })
 
   describe('Browser Detection', () => {
     it('should detect Chrome browser', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       
@@ -108,9 +138,9 @@ describe('Browser Compatibility', () => {
     })
 
     it('should detect Firefox browser', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Firefox/109.0'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       
@@ -120,9 +150,9 @@ describe('Browser Compatibility', () => {
     })
 
     it('should detect Safari browser', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Version/16.1 Safari/605.1.15'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       
@@ -132,9 +162,9 @@ describe('Browser Compatibility', () => {
     })
 
     it('should detect Edge browser', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edg/120.0.0.0'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       
@@ -144,9 +174,9 @@ describe('Browser Compatibility', () => {
     })
 
     it('should handle unknown browser', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Unknown Browser/1.0'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       
@@ -163,14 +193,14 @@ describe('Browser Compatibility', () => {
     })
 
     it('should detect missing WebAssembly', async () => {
-      delete (global as any).WebAssembly
+      deleteGlobal('WebAssembly')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssembly).toBe(false)
     })
 
     it('should handle WebAssembly object without methods', async () => {
-      global.WebAssembly = {} as any
+      setGlobal('WebAssembly', {})
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssembly).toBe(false)
@@ -179,36 +209,36 @@ describe('Browser Compatibility', () => {
 
   describe('SIMD Detection', () => {
     it('should detect SIMD support in Chrome 91+', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 Chrome/91.0.0.0'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssemblySIMD).toBe(true)
     })
 
     it('should detect no SIMD in older Chrome', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 Chrome/90.0.0.0'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssemblySIMD).toBe(false)
     })
 
     it('should detect SIMD support in Firefox 89+', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 Firefox/89.0'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssemblySIMD).toBe(true)
     })
 
     it('should detect SIMD support in Safari 14.1+', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 Version/14.1 Safari/605.1.15'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssemblySIMD).toBe(true)
@@ -222,14 +252,14 @@ describe('Browser Compatibility', () => {
     })
 
     it('should detect no threads without SharedArrayBuffer', async () => {
-      delete (global as any).SharedArrayBuffer
+      deleteGlobal('SharedArrayBuffer')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssemblyThreads).toBe(false)
     })
 
     it('should detect no threads without Atomics', async () => {
-      delete (global as any).Atomics
+      deleteGlobal('Atomics')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.webAssemblyThreads).toBe(false)
@@ -249,36 +279,36 @@ describe('Browser Compatibility', () => {
     })
 
     it('should detect missing BigInt', async () => {
-      delete (global as any).BigInt
+      deleteGlobal('BigInt')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.bigInt).toBe(false)
     })
 
     it('should detect missing TextEncoder/TextDecoder', async () => {
-      delete (global as any).TextEncoder
-      delete (global as any).TextDecoder
+      deleteGlobal('TextEncoder')
+      deleteGlobal('TextDecoder')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.textEncoding).toBe(false)
     })
 
     it('should detect missing crypto.getRandomValues', async () => {
-      delete (global as any).crypto
+      deleteGlobal('crypto')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.cryptoRandom).toBe(false)
     })
 
     it('should detect missing performance.now', async () => {
-      delete (global as any).performance
+      deleteGlobal('performance')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.performanceNow).toBe(false)
     })
 
     it('should detect missing Worker', async () => {
-      delete (global as any).Worker
+      deleteGlobal('Worker')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.workers).toBe(false)
@@ -297,8 +327,8 @@ describe('Browser Compatibility', () => {
     })
 
     it('should calculate reduced score for missing features', async () => {
-      delete (global as any).WebAssembly
-      delete (global as any).SharedArrayBuffer
+      deleteGlobal('WebAssembly')
+      deleteGlobal('SharedArrayBuffer')
       
       const capabilities = await detectBrowserCapabilities()
       expect(capabilities.performanceScore).toBeLessThan(100)
@@ -307,13 +337,13 @@ describe('Browser Compatibility', () => {
 
     it('should give appropriate weight to critical features', async () => {
       // Missing WebAssembly should significantly reduce score
-      delete (global as any).WebAssembly
+      deleteGlobal('WebAssembly')
       
       const capabilitiesNoWasm = await detectBrowserCapabilities()
       
       // Restore WebAssembly, remove less critical feature
-      global.WebAssembly = { instantiate: vi.fn(), compile: vi.fn() } as any
-      delete (global as any).Worker
+      setGlobal('WebAssembly', { instantiate: vi.fn(), compile: vi.fn() })
+      deleteGlobal('Worker')
       
       const capabilitiesNoWorker = await detectBrowserCapabilities()
       
@@ -527,8 +557,8 @@ describe('Browser Compatibility', () => {
     })
 
     it('should provide recommendations for missing features', async () => {
-      delete (global as any).WebAssembly
-      delete (global as any).BigInt
+      deleteGlobal('WebAssembly')
+      deleteGlobal('BigInt')
       
       await manager.initialize()
       
@@ -542,9 +572,9 @@ describe('Browser Compatibility', () => {
     it('should log browser-specific recommendations', async () => {
       const consoleSpy = vi.spyOn(console, 'log')
       
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'Mozilla/5.0 Version/15.0 Safari/605.1.15' // Older Safari
-      } as any
+      })
       
       await manager.initialize()
       
@@ -581,8 +611,8 @@ describe('Browser Compatibility', () => {
     })
 
     it('should fail without critical features', async () => {
-      delete (global as any).BigInt
-      delete (global as any).crypto
+      deleteGlobal('BigInt')
+      deleteGlobal('crypto')
       
       const result = await checkMinimumRequirements()
       
@@ -592,7 +622,7 @@ describe('Browser Compatibility', () => {
     })
 
     it('should provide performance warnings', async () => {
-      delete (global as any).WebAssembly
+      deleteGlobal('WebAssembly')
       
       const result = await checkMinimumRequirements()
       
@@ -601,12 +631,12 @@ describe('Browser Compatibility', () => {
 
     it('should warn about very low performance score', async () => {
       // Remove many features to get low score
-      delete (global as any).WebAssembly
-      delete (global as any).Worker
-      delete (global as any).SharedArrayBuffer
-      global.navigator = {
+      deleteGlobal('WebAssembly')
+      deleteGlobal('Worker')
+      deleteGlobal('SharedArrayBuffer')
+      setGlobal('navigator', {
         userAgent: 'Unknown Browser/1.0'
-      } as any
+      })
       
       const result = await checkMinimumRequirements()
       
@@ -622,8 +652,8 @@ describe('Browser Compatibility', () => {
     })
 
     it('should return not supported message for incompatible browser', async () => {
-      delete (global as any).BigInt
-      delete (global as any).crypto
+      deleteGlobal('BigInt')
+      deleteGlobal('crypto')
       
       const message = await getBrowserCompatibilityMessage()
       
@@ -633,7 +663,7 @@ describe('Browser Compatibility', () => {
     })
 
     it('should return warning message for limited support', async () => {
-      delete (global as any).WebAssembly
+      deleteGlobal('WebAssembly')
       
       const message = await getBrowserCompatibilityMessage()
       
@@ -644,7 +674,7 @@ describe('Browser Compatibility', () => {
 
   describe('Edge Cases', () => {
     it('should handle missing navigator object', async () => {
-      delete (global as any).navigator
+      deleteGlobal('navigator')
       
       const capabilities = await detectBrowserCapabilities()
       
@@ -652,9 +682,9 @@ describe('Browser Compatibility', () => {
     })
 
     it('should handle malformed user agent', async () => {
-      global.navigator = {
+      setGlobal('navigator', {
         userAgent: 'This is not a valid user agent string'
-      } as any
+      })
       
       const capabilities = await detectBrowserCapabilities()
       

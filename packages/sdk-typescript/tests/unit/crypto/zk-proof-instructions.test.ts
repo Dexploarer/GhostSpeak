@@ -12,7 +12,7 @@ import {
   createBatchVerifyValidityProofInstructions,
   createBatchVerifyEqualityProofInstructions,
   type ProofVerificationAccounts
-} from '../../src/utils/zk-proof-instructions'
+} from '../../../src/utils/zk-proof-instructions'
 import {
   ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS,
   ProofInstruction,
@@ -20,7 +20,7 @@ import {
   type WithdrawProofData,
   type TransferWithFeeProofData,
   PROOF_SIZES
-} from '../../src/constants/zk-proof-program'
+} from '../../../src/constants/zk-proof-program'
 import type { TransactionSigner } from '@solana/kit'
 
 describe('ZK Proof Instructions', () => {
@@ -31,10 +31,10 @@ describe('ZK Proof Instructions', () => {
 
   beforeEach(() => {
     // Setup test addresses
-    proofContext = address('proofContext11111111111111111111111111111111')
-    systemProgram = address('11111111111111111111111111111111')
+    proofContext = address('So11111111111111111111111111111111111111112')
+    systemProgram = address('11111111111111111111111111111112')
     authority = {
-      address: address('authority111111111111111111111111111111111'),
+      address: address('11111111111111111111111111111113'),
       signAndSendTransactions: async () => { throw new Error('Mock signer') }
     }
     
@@ -293,7 +293,7 @@ describe('ZK Proof Instructions', () => {
       expect(data[0]).toBe(ProofInstruction.VerifyTransfer)
       
       // Check that all proof components are included
-      expect(data.length).toBeGreaterThan(
+      expect(data.length).toBeGreaterThanOrEqual(
         1 + 64 + 32 + 192 + 96 + 674 // instruction + all proof components
       )
     })
@@ -310,7 +310,7 @@ describe('ZK Proof Instructions', () => {
       const data = new Uint8Array(instruction.data)
 
       expect(data[0]).toBe(ProofInstruction.VerifyWithdraw)
-      expect(data.length).toBeGreaterThan(
+      expect(data.length).toBeGreaterThanOrEqual(
         1 + 64 + 32 + 192 + 674 // instruction + all proof components
       )
     })

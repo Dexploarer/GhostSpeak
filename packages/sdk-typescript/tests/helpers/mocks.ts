@@ -16,16 +16,35 @@ export function mockWasmModule() {
       c1: new Uint8Array(32).fill(1),
       c2: new Uint8Array(32).fill(2)
     }),
-    batch_encrypt_amounts: vi.fn().mockReturnValue([
-      { c1: new Uint8Array(32).fill(1), c2: new Uint8Array(32).fill(2) }
-    ]),
+    batch_encrypt: vi.fn().mockImplementation((amounts) => {
+      // Return array matching the input length
+      const numAmounts = amounts.length / 8 // Each amount is 8 bytes
+      return Array(numAmounts).fill(null).map((_, i) => ({
+        commitment: new Uint8Array(32).fill(1 + i),
+        handle: new Uint8Array(32).fill(2 + i)
+      }))
+    }),
+    batch_encrypt_amounts: vi.fn().mockImplementation((amounts) => {
+      // Return array matching the input length
+      const numAmounts = amounts.length / 8 // Each amount is 8 bytes
+      return Array(numAmounts).fill(null).map((_, i) => ({
+        c1: new Uint8Array(32).fill(1 + i),
+        c2: new Uint8Array(32).fill(2 + i)
+      }))
+    }),
     generate_range_proof: vi.fn().mockReturnValue({
       proof: new Uint8Array(674).fill(0),
       commitment: new Uint8Array(32).fill(3)
     }),
-    batch_generate_range_proofs: vi.fn().mockReturnValue([
-      { proof: new Uint8Array(674).fill(0), commitment: new Uint8Array(32).fill(3) }
-    ]),
+    batch_generate_range_proofs: vi.fn().mockImplementation((proofData) => {
+      // Estimate number of proofs based on input data size
+      // Each proof request would typically be amount (8 bytes) + commitment (32 bytes) + blinding factor (32 bytes) = 72 bytes
+      const numProofs = Math.max(1, Math.floor(proofData.length / 72))
+      return Array(numProofs).fill(null).map((_, i) => ({
+        proof: new Uint8Array(674).fill(i),
+        commitment: new Uint8Array(32).fill(3 + i)
+      }))
+    }),
     get_performance_info: vi.fn().mockReturnValue({
       simd_enabled: true,
       estimated_speedup: 10,
@@ -43,7 +62,9 @@ export function mockWasmModule() {
 
   return {
     default: vi.fn().mockResolvedValue(undefined),
-    WasmElGamalEngine: vi.fn().mockImplementation(() => mockEngine),
+    WasmElGamalEngine: vi.fn().mockImplementation(function() {
+      return mockEngine
+    }),
     is_wasm_available: vi.fn().mockReturnValue(true),
     get_wasm_info: vi.fn().mockReturnValue({
       version: '1.0.0',

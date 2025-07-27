@@ -6,7 +6,7 @@ import type { TransactionSigner } from '@solana/kit'
 describe('ElGamal API Structure', () => {
   describe('Module Exports', () => {
     it('should export all required functions and types', async () => {
-      const elgamalModule = await import('../../src/utils/elgamal.js')
+      const elgamalModule = await import('../../../src/utils/elgamal.js')
       
       // Key generation functions
       expect(typeof elgamalModule.generateElGamalKeypair).toBe('function')
@@ -45,7 +45,7 @@ describe('ElGamal API Structure', () => {
 
   describe('Key Generation API', () => {
     it('should generate keypair with correct structure', async () => {
-      const { generateElGamalKeypair } = await import('../../src/utils/elgamal.js')
+      const { generateElGamalKeypair } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       
@@ -58,7 +58,7 @@ describe('ElGamal API Structure', () => {
     })
 
     it('should derive keypair from signer', async () => {
-      const { deriveElGamalKeypair } = await import('../../src/utils/elgamal.js')
+      const { deriveElGamalKeypair } = await import('../../../src/utils/elgamal.js')
       
       const mockSigner: TransactionSigner = {
         address: address('11111111111111111111111111111112'),
@@ -77,7 +77,7 @@ describe('ElGamal API Structure', () => {
 
   describe('Encryption API', () => {
     it('should create ciphertext with correct structure', async () => {
-      const { generateElGamalKeypair, encryptAmount } = await import('../../src/utils/elgamal.js')
+      const { generateElGamalKeypair, encryptAmount } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       const amount = 100n
@@ -95,7 +95,7 @@ describe('ElGamal API Structure', () => {
     })
 
     it('should return randomness with encryption result', async () => {
-      const { generateElGamalKeypair, encryptAmountWithRandomness } = await import('../../src/utils/elgamal.js')
+      const { generateElGamalKeypair, encryptAmountWithRandomness } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       const amount = 50n
@@ -109,7 +109,7 @@ describe('ElGamal API Structure', () => {
     })
 
     it('should validate input ranges', async () => {
-      const { generateElGamalKeypair, encryptAmount, MAX_DECRYPTABLE_VALUE } = await import('../../src/utils/elgamal.js')
+      const { generateElGamalKeypair, encryptAmount, MAX_DECRYPTABLE_VALUE } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       
@@ -129,7 +129,7 @@ describe('ElGamal API Structure', () => {
         generateElGamalKeypair, 
         encryptAmountWithRandomness, 
         generateRangeProof 
-      } = await import('../../src/utils/elgamal.js')
+      } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       const amount = 1000n
@@ -152,7 +152,7 @@ describe('ElGamal API Structure', () => {
         generateElGamalKeypair, 
         encryptAmountWithRandomness, 
         generateValidityProof 
-      } = await import('../../src/utils/elgamal.js')
+      } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       const amount = 500n
@@ -176,7 +176,7 @@ describe('ElGamal API Structure', () => {
         encryptAmount, 
         serializeCiphertext, 
         deserializeCiphertext 
-      } = await import('../../src/utils/elgamal.js')
+      } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       const amount = 200n
@@ -192,7 +192,7 @@ describe('ElGamal API Structure', () => {
     })
 
     it('should validate ciphertext structure', async () => {
-      const { generateElGamalKeypair, encryptAmount, isValidCiphertext } = await import('../../src/utils/elgamal.js')
+      const { generateElGamalKeypair, encryptAmount, isValidCiphertext } = await import('../../../src/utils/elgamal.js')
       
       const keypair = generateElGamalKeypair()
       const amount = 150n
@@ -212,23 +212,23 @@ describe('ElGamal API Structure', () => {
 
   describe('Error Handling', () => {
     it('should handle serialization errors', async () => {
-      const { deserializeCiphertext } = await import('../../src/utils/elgamal.js')
+      const { deserializeCiphertext } = await import('../../../src/utils/elgamal.js')
       
       expect(() => deserializeCiphertext(new Uint8Array(50)))
         .toThrow('Invalid ciphertext length')
     })
 
     it('should handle range proof validation', async () => {
-      const { generateRangeProof } = await import('../../src/utils/elgamal.js')
+      const { generateRangeProof } = await import('../../../src/utils/elgamal.js')
       
       expect(() => generateRangeProof(-1n, { commitment: new Uint8Array(32) }, new Uint8Array(32)))
-        .toThrow('Amount must be in range [0, 2^64)')
+        .toThrow('Amount must be in range [0, 2^32)')
     })
   })
 
   describe('Constants', () => {
     it('should export correct maximum decryptable value', async () => {
-      const { MAX_DECRYPTABLE_VALUE } = await import('../../src/utils/elgamal.js')
+      const { MAX_DECRYPTABLE_VALUE } = await import('../../../src/utils/elgamal.js')
       
       expect(MAX_DECRYPTABLE_VALUE).toBe(4_294_967_295n)
     })

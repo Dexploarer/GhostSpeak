@@ -11,7 +11,7 @@ import {
   createPedersenCommitmentFromAmount,
   type ElGamalKeypair,
   type ElGamalCiphertext
-} from '../../src/utils/elgamal.js'
+} from '../../../src/utils/elgamal.js'
 import {
   createVerifyTransferProofInstruction,
   createVerifyRangeProofInstruction,
@@ -19,7 +19,7 @@ import {
   createVerifyEqualityProofInstruction,
   createBatchVerifyRangeProofInstructions,
   type ProofVerificationAccounts
-} from '../../src/utils/zk-proof-instructions.js'
+} from '../../../src/utils/zk-proof-instructions.js'
 import {
   prepareConfidentialTransfer,
   prepareBatchConfidentialTransfer,
@@ -27,23 +27,23 @@ import {
   type ConfidentialTransferOptions,
   type BatchTransferRequest,
   type TransferParticipant
-} from '../../src/utils/confidential-transfer-coordinator.js'
+} from '../../../src/utils/confidential-transfer-coordinator.js'
 import {
   BatchProofManager,
   createOptimizedBatchManager,
   type BatchManagerConfig
-} from '../../src/utils/batch-proof-manager.js'
+} from '../../../src/utils/batch-proof-manager.js'
 import {
   ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS,
   ProofInstruction,
   PROOF_SIZES,
   PROOF_COMPUTE_UNITS
-} from '../../src/constants/zk-proof-program.js'
+} from '../../../src/constants/zk-proof-program.js'
 import type { TransactionSigner } from '@solana/kit'
 
 // Mock the ElGamal module to control decryption results  
-vi.mock('../../src/utils/elgamal.js', async () => {
-  const actual = await vi.importActual('../../src/utils/elgamal.js') as any
+vi.mock('../../../src/utils/elgamal.js', async () => {
+  const actual = await vi.importActual('../../../src/utils/elgamal.js') as any
   return {
     ...actual,
     decryptAmount: vi.fn().mockImplementation((ciphertext, secretKey) => {

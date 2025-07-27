@@ -390,6 +390,50 @@ export class SolanaConnectionPool {
   }
 
   /**
+   * Validate connection health
+   */
+  async validateConnection(endpoint: string, client: SolanaRpcClient): Promise<boolean> {
+    try {
+      // Try to get slot to check if connection is healthy
+      await client.getSlot()
+      return true
+    } catch (error) {
+      console.error(`Connection validation failed for ${endpoint}:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Get cache key for consistent caching
+   */
+  getCacheKey(method: string, params: unknown[]): string {
+    return `${method}:${JSON.stringify(params)}`
+  }
+
+  /**
+   * Get cached data with automatic fetching if not present
+   */
+  async getCachedData<T>(
+    key: string, 
+    fetcher: () => Promise<T>, 
+    ttl?: number
+  ): Promise<T> {
+    // Try to get from cache first
+    const cached = this.getCached<T>(key)
+    if (cached !== null) {
+      return cached
+    }
+    
+    // Fetch new data
+    const data = await fetcher()
+    
+    // Cache it
+    this.setCached(key, data, ttl)
+    
+    return data
+  }
+
+  /**
    * Update statistics
    */
   private updateStats(): void {

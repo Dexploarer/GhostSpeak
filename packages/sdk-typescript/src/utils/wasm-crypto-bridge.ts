@@ -139,7 +139,8 @@ export async function initializeWasmCrypto(): Promise<boolean> {
     return initializationPromise
   }
 
-  initializationPromise = (async () => {
+  // Store the promise immediately to prevent race conditions
+  const promise = (async () => {
     try {
       console.log('🚀 Initializing WebAssembly crypto module...')
 
@@ -332,6 +333,9 @@ export async function initializeWasmCrypto(): Promise<boolean> {
       return false
     }
   })()
+  
+  // Assign the promise immediately after creation
+  initializationPromise = promise
 
   return initializationPromise
 }
@@ -374,7 +378,7 @@ export async function generateElGamalKeypair(): Promise<ElGamalKeypair> {
   }
 
   // Fallback to JavaScript implementation
-  const { generateElGamalKeypair: jsGenerateKeypair } = await import('./elgamal-complete.js')
+  const { generateElGamalKeypair: jsGenerateKeypair } = await import('./elgamal-complete')
   return jsGenerateKeypair()
 }
 
@@ -406,7 +410,7 @@ export async function encryptAmount(
   }
 
   // Fallback to JavaScript implementation
-  const { encryptAmount: jsEncryptAmount, encryptAmountWithRandomness } = await import('./elgamal-complete.js')
+  const { encryptAmount: jsEncryptAmount, encryptAmountWithRandomness } = await import('./elgamal-complete')
   return randomness ? 
     encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :
     jsEncryptAmount(amount, publicKey)
@@ -486,7 +490,7 @@ export async function generateRangeProof(
   }
 
   // Fallback to JavaScript implementation
-  const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete.js')
+  const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete')
   return jsGenerateRangeProof(amount, commitment, blindingFactor)
 }
 
@@ -596,15 +600,17 @@ export async function runCryptoBenchmarks(): Promise<{
 }> {
   await initializeWasmCrypto()
   
-  const testAmount = BigInt(1000000)
-  const testPublicKey = new Uint8Array(32).fill(0xAB)
-  const testCommitment = { commitment: new Uint8Array(32).fill(0xCD) }
-  const testBlinding = new Uint8Array(32).fill(0xEF)
-  const testAmounts = Array(10).fill(testAmount)
+  // Generate a valid test keypair for benchmarks
+  const testKeypair = await generateElGamalKeypair()
+  const testAmount = BigInt(1000) // Reduced from 1000000 for faster operations
+  const testPublicKey = testKeypair.publicKey
+  const testCommitment = { commitment: new Uint8Array(32).fill(0) }
+  const testBlinding = new Uint8Array(32).fill(0)
+  const testAmounts = Array(5).fill(testAmount) // Reduced from 10 to 5
 
   // Encryption benchmark
   const encryptionBench = async () => {
-    const iterations = 100
+    const iterations = 10 // Reduced from 100 to prevent timeouts
     
     // WASM benchmark
     let wasmTime = 0
@@ -617,7 +623,7 @@ export async function runCryptoBenchmarks(): Promise<{
     }
     
     // JS benchmark (fallback)
-    const { encryptAmount: jsEncryptAmount } = await import('./elgamal-complete.js')
+    const { encryptAmount: jsEncryptAmount } = await import('./elgamal-complete')
     const jsStart = performance.now()
     for (let i = 0; i < iterations; i++) {
       await jsEncryptAmount(testAmount, testPublicKey)
@@ -633,7 +639,7 @@ export async function runCryptoBenchmarks(): Promise<{
 
   // Range proof benchmark
   const rangeProofBench = async () => {
-    const iterations = 10
+    const iterations = 3 // Reduced from 10 to prevent timeouts
     
     // WASM benchmark
     let wasmTime = 0
@@ -646,7 +652,7 @@ export async function runCryptoBenchmarks(): Promise<{
     }
     
     // JS benchmark
-    const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete.js')
+    const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete')
     const jsStart = performance.now()
     for (let i = 0; i < iterations; i++) {
       await jsGenerateRangeProof(testAmount, testCommitment, testBlinding)

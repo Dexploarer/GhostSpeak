@@ -19,12 +19,12 @@ import {
   closeGlobalConnectionPool
 } from '../../../src/utils/connection-pool'
 import type { ConnectionPoolConfig, CacheConfig } from '../../../src/utils/connection-pool'
-import { SolanaRpcClient } from '../../../src/utils/rpc-client'
+import type { SolanaRpcClient } from '../../../src/utils/rpc-client'
 
-// Mock the rpc-client module
-vi.mock('../../../src/utils/rpc-client', () => ({
-  SolanaRpcClient: vi.fn().mockImplementation((config) => ({
-    endpoint: config.endpoint,
+// Helper to create mock RPC client
+function createMockRpcClient(endpoint: string): SolanaRpcClient {
+  return {
+    endpoint,
     getAccountInfo: vi.fn().mockResolvedValue({
       lamports: 1000000000n,
       data: new Uint8Array(0),
@@ -39,8 +39,8 @@ vi.mock('../../../src/utils/rpc-client', () => ({
       blockhash: 'mock-blockhash',
       lastValidBlockHeight: 1000n
     })
-  }))
-}))
+  } as unknown as SolanaRpcClient
+}
 
 describe('SolanaConnectionPool', () => {
   let pool: SolanaConnectionPool

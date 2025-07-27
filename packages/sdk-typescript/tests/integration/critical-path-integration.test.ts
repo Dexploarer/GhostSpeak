@@ -26,30 +26,36 @@ import { BaseInstructions } from '../../src/client/instructions/BaseInstructions
 import type { GhostSpeakConfig } from '../../src/types'
 import { SimpleRpcClient } from '../../src/utils/simple-rpc-client'
 
-// Mock implementations
-const mockRpcClientInstance = {
-  getLatestBlockhash: vi.fn().mockResolvedValue({
-    blockhash: 'mock-blockhash',
-    lastValidBlockHeight: 1000
-  }),
-  getAccountInfo: vi.fn().mockResolvedValue(null),
-  getMultipleAccounts: vi.fn().mockResolvedValue([]),
-  getProgramAccounts: vi.fn().mockResolvedValue([]),
-  sendTransaction: vi.fn().mockResolvedValue('mock-signature'),
-  getSignatureStatuses: vi.fn().mockResolvedValue([{ confirmationStatus: 'confirmed' }]),
-  getFeeForMessage: vi.fn().mockResolvedValue(5000),
-  simulateTransaction: vi.fn().mockResolvedValue({
-    value: {
-      err: null,
-      logs: ['Program log: Success'],
-      unitsConsumed: BigInt(100000)
-    }
-  })
-}
+// Use vi.hoisted to define mocks that can be used in vi.mock
+const { mockRpcClientInstance, MockedSimpleRpcClient } = vi.hoisted(() => {
+  const mockRpcClientInstance = {
+    getLatestBlockhash: vi.fn().mockResolvedValue({
+      blockhash: 'mock-blockhash',
+      lastValidBlockHeight: 1000
+    }),
+    getAccountInfo: vi.fn().mockResolvedValue(null),
+    getMultipleAccounts: vi.fn().mockResolvedValue([]),
+    getProgramAccounts: vi.fn().mockResolvedValue([]),
+    sendTransaction: vi.fn().mockResolvedValue('mock-signature'),
+    getSignatureStatuses: vi.fn().mockResolvedValue([{ confirmationStatus: 'confirmed' }]),
+    getFeeForMessage: vi.fn().mockResolvedValue(5000),
+    simulateTransaction: vi.fn().mockResolvedValue({
+      value: {
+        err: null,
+        logs: ['Program log: Success'],
+        unitsConsumed: BigInt(100000)
+      }
+    })
+  }
+  
+  const MockedSimpleRpcClient = vi.fn().mockImplementation(() => mockRpcClientInstance)
+  
+  return { mockRpcClientInstance, MockedSimpleRpcClient }
+})
 
 // Mock modules
 vi.mock('../../src/utils/simple-rpc-client', () => ({
-  SimpleRpcClient: vi.fn().mockImplementation(() => mockRpcClientInstance)
+  SimpleRpcClient: MockedSimpleRpcClient
 }))
 
 // Mock @solana/addresses for PDA derivation

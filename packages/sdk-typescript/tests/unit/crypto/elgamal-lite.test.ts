@@ -9,7 +9,7 @@ import {
   deserializeCiphertext,
   MAX_DECRYPTABLE_VALUE,
   type ElGamalKeypair
-} from '../../src/utils/elgamal.js'
+} from '../../../src/utils/elgamal.js'
 
 describe('ElGamal Encryption (Lightweight)', () => {
   let keypair: ElGamalKeypair

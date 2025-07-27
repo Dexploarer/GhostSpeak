@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/424</span>
+                <span class='fraction'>0/428</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/424</span>
+                <span class='fraction'>0/428</span>
             </div>
         
             
@@ -631,7 +631,13 @@
 <a name='L566'></a><a href='#L566'>566</a>
 <a name='L567'></a><a href='#L567'>567</a>
 <a name='L568'></a><a href='#L568'>568</a>
-<a name='L569'></a><a href='#L569'>569</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L569'></a><a href='#L569'>569</a>
+<a name='L570'></a><a href='#L570'>570</a>
+<a name='L571'></a><a href='#L571'>571</a>
+<a name='L572'></a><a href='#L572'>572</a>
+<a name='L573'></a><a href='#L573'>573</a>
+<a name='L574'></a><a href='#L574'>574</a>
+<a name='L575'></a><a href='#L575'>575</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -677,6 +683,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1227,30 +1239,36 @@ import type { IInstruction, TransactionSigner } from '@solana/kit'
 import type { GhostSpeakConfig } from '../../src/types'
 <span class="cstat-no" title="statement not covered" >import { SimpleRpcClient } from '../../src/utils/simple-rpc-client'</span>
 &nbsp;
-// Mock implementations
-<span class="cstat-no" title="statement not covered" >const mockRpcClientInstance = {</span>
-<span class="cstat-no" title="statement not covered" >  getLatestBlockhash: vi.fn().mockResolvedValue({</span>
-<span class="cstat-no" title="statement not covered" >    blockhash: 'mock-blockhash',</span>
-<span class="cstat-no" title="statement not covered" >    lastValidBlockHeight: 1000</span>
-<span class="cstat-no" title="statement not covered" >  }),</span>
-<span class="cstat-no" title="statement not covered" >  getAccountInfo: vi.fn().mockResolvedValue(null),</span>
-<span class="cstat-no" title="statement not covered" >  getMultipleAccounts: vi.fn().mockResolvedValue([]),</span>
-<span class="cstat-no" title="statement not covered" >  getProgramAccounts: vi.fn().mockResolvedValue([]),</span>
-<span class="cstat-no" title="statement not covered" >  sendTransaction: vi.fn().mockResolvedValue('mock-signature'),</span>
-<span class="cstat-no" title="statement not covered" >  getSignatureStatuses: vi.fn().mockResolvedValue([{ confirmationStatus: 'confirmed' }]),</span>
-<span class="cstat-no" title="statement not covered" >  getFeeForMessage: vi.fn().mockResolvedValue(5000),</span>
-<span class="cstat-no" title="statement not covered" >  simulateTransaction: vi.fn().mockResolvedValue({</span>
-<span class="cstat-no" title="statement not covered" >    value: {</span>
-<span class="cstat-no" title="statement not covered" >      err: null,</span>
-<span class="cstat-no" title="statement not covered" >      logs: ['Program log: Success'],</span>
-<span class="cstat-no" title="statement not covered" >      unitsConsumed: BigInt(100000)</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  })</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+// Use vi.hoisted to define mocks that can be used in vi.mock
+<span class="cstat-no" title="statement not covered" >const { mockRpcClientInstance, MockedSimpleRpcClient } = vi.hoisted(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const mockRpcClientInstance = {</span>
+<span class="cstat-no" title="statement not covered" >    getLatestBlockhash: vi.fn().mockResolvedValue({</span>
+<span class="cstat-no" title="statement not covered" >      blockhash: 'mock-blockhash',</span>
+<span class="cstat-no" title="statement not covered" >      lastValidBlockHeight: 1000</span>
+<span class="cstat-no" title="statement not covered" >    }),</span>
+<span class="cstat-no" title="statement not covered" >    getAccountInfo: vi.fn().mockResolvedValue(null),</span>
+<span class="cstat-no" title="statement not covered" >    getMultipleAccounts: vi.fn().mockResolvedValue([]),</span>
+<span class="cstat-no" title="statement not covered" >    getProgramAccounts: vi.fn().mockResolvedValue([]),</span>
+<span class="cstat-no" title="statement not covered" >    sendTransaction: vi.fn().mockResolvedValue('mock-signature'),</span>
+<span class="cstat-no" title="statement not covered" >    getSignatureStatuses: vi.fn().mockResolvedValue([{ confirmationStatus: 'confirmed' }]),</span>
+<span class="cstat-no" title="statement not covered" >    getFeeForMessage: vi.fn().mockResolvedValue(5000),</span>
+<span class="cstat-no" title="statement not covered" >    simulateTransaction: vi.fn().mockResolvedValue({</span>
+<span class="cstat-no" title="statement not covered" >      value: {</span>
+<span class="cstat-no" title="statement not covered" >        err: null,</span>
+<span class="cstat-no" title="statement not covered" >        logs: ['Program log: Success'],</span>
+<span class="cstat-no" title="statement not covered" >        unitsConsumed: BigInt(100000)</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    })</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+  
+<span class="cstat-no" title="statement not covered" >  const MockedSimpleRpcClient = vi.fn().mockImplementation(() =&gt; mockRpcClientInstance)</span>
+  
+<span class="cstat-no" title="statement not covered" >  return { mockRpcClientInstance, MockedSimpleRpcClient }</span>
+<span class="cstat-no" title="statement not covered" >})</span>
 &nbsp;
 // Mock modules
 <span class="cstat-no" title="statement not covered" >vi.mock('../../src/utils/simple-rpc-client', () =&gt; ({</span>
-<span class="cstat-no" title="statement not covered" >  SimpleRpcClient: vi.fn().mockImplementation(() =&gt; mockRpcClientInstance)</span>
+<span class="cstat-no" title="statement not covered" >  SimpleRpcClient: MockedSimpleRpcClient</span>
 <span class="cstat-no" title="statement not covered" >}))</span>
 &nbsp;
 // Mock @solana/addresses for PDA derivation
@@ -1774,7 +1792,7 @@ import type { GhostSpeakConfig } from '../../src/types'
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-26T23:16:09.474Z
+                at 2025-07-27T03:45:00.079Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

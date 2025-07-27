@@ -14,14 +14,14 @@ import {
   type Rpc,
   type Blockhash
 } from '@solana/kit'
-import { Token2022Instructions as Token2022Operations } from '../../src/client/instructions/Token2022Instructions'
-import type { GhostSpeakConfig } from '../../src/types'
+import { Token2022Instructions as Token2022Operations } from '../../../src/client/instructions/Token2022Instructions.js'
+import type { GhostSpeakConfig } from '../../../src/types/index.js'
 import type { 
   Token2022ExtensionsEnabled,
   TransferFeeConfig,
   ConfidentialTransferConfig,
   InterestBearingConfig
-} from '../../src/types/token-2022-types'
+} from '../../../src/types/token-2022-types.js'
 import {
   calculateTransferFee,
   calculateRequiredAmountForNetTransfer,
@@ -29,10 +29,10 @@ import {
   hasTransferFees,
   hasConfidentialTransfers,
   fetchTransferFeeConfig
-} from '../../src/utils/token-2022-extensions'
+} from '../../../src/utils/token-2022-extensions.js'
 
 // Mock the generated instructions
-vi.mock('../../src/generated', () => ({
+vi.mock('../../../src/generated/index.js', () => ({
   getCreateToken2022MintInstruction: vi.fn(),
   getInitializeTransferFeeConfigInstruction: vi.fn(),
   getInitializeConfidentialTransferMintInstruction: vi.fn(),

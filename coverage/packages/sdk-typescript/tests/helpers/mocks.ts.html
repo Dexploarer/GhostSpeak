@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/139</span>
+                <span class='fraction'>0/156</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/139</span>
+                <span class='fraction'>0/156</span>
             </div>
         
             
@@ -237,7 +237,28 @@
 <a name='L172'></a><a href='#L172'>172</a>
 <a name='L173'></a><a href='#L173'>173</a>
 <a name='L174'></a><a href='#L174'>174</a>
-<a name='L175'></a><a href='#L175'>175</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -256,9 +277,28 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -280,6 +320,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -429,16 +471,35 @@ import type { ElGamalKeypair, ElGamalCiphertext } from '../../src/utils/elgamal-
 <span class="cstat-no" title="statement not covered" >      c1: new Uint8Array(32).fill(1),</span>
 <span class="cstat-no" title="statement not covered" >      c2: new Uint8Array(32).fill(2)</span>
 <span class="cstat-no" title="statement not covered" >    }),</span>
-<span class="cstat-no" title="statement not covered" >    batch_encrypt_amounts: vi.fn().mockReturnValue([</span>
-<span class="cstat-no" title="statement not covered" >      { c1: new Uint8Array(32).fill(1), c2: new Uint8Array(32).fill(2) }</span>
-<span class="cstat-no" title="statement not covered" >    ]),</span>
+<span class="cstat-no" title="statement not covered" >    batch_encrypt: vi.fn().mockImplementation((amounts) =&gt; {</span>
+      // Return array matching the input length
+<span class="cstat-no" title="statement not covered" >      const numAmounts = amounts.length / 8 // Each amount is 8 bytes</span>
+<span class="cstat-no" title="statement not covered" >      return Array(numAmounts).fill(null).map((_, i) =&gt; ({</span>
+<span class="cstat-no" title="statement not covered" >        commitment: new Uint8Array(32).fill(1 + i),</span>
+<span class="cstat-no" title="statement not covered" >        handle: new Uint8Array(32).fill(2 + i)</span>
+<span class="cstat-no" title="statement not covered" >      }))</span>
+<span class="cstat-no" title="statement not covered" >    }),</span>
+<span class="cstat-no" title="statement not covered" >    batch_encrypt_amounts: vi.fn().mockImplementation((amounts) =&gt; {</span>
+      // Return array matching the input length
+<span class="cstat-no" title="statement not covered" >      const numAmounts = amounts.length / 8 // Each amount is 8 bytes</span>
+<span class="cstat-no" title="statement not covered" >      return Array(numAmounts).fill(null).map((_, i) =&gt; ({</span>
+<span class="cstat-no" title="statement not covered" >        c1: new Uint8Array(32).fill(1 + i),</span>
+<span class="cstat-no" title="statement not covered" >        c2: new Uint8Array(32).fill(2 + i)</span>
+<span class="cstat-no" title="statement not covered" >      }))</span>
+<span class="cstat-no" title="statement not covered" >    }),</span>
 <span class="cstat-no" title="statement not covered" >    generate_range_proof: vi.fn().mockReturnValue({</span>
 <span class="cstat-no" title="statement not covered" >      proof: new Uint8Array(674).fill(0),</span>
 <span class="cstat-no" title="statement not covered" >      commitment: new Uint8Array(32).fill(3)</span>
 <span class="cstat-no" title="statement not covered" >    }),</span>
-<span class="cstat-no" title="statement not covered" >    batch_generate_range_proofs: vi.fn().mockReturnValue([</span>
-<span class="cstat-no" title="statement not covered" >      { proof: new Uint8Array(674).fill(0), commitment: new Uint8Array(32).fill(3) }</span>
-<span class="cstat-no" title="statement not covered" >    ]),</span>
+<span class="cstat-no" title="statement not covered" >    batch_generate_range_proofs: vi.fn().mockImplementation((proofData) =&gt; {</span>
+      // Estimate number of proofs based on input data size
+      // Each proof request would typically be amount (8 bytes) + commitment (32 bytes) + blinding factor (32 bytes) = 72 bytes
+<span class="cstat-no" title="statement not covered" >      const numProofs = Math.max(1, Math.floor(proofData.length / 72))</span>
+<span class="cstat-no" title="statement not covered" >      return Array(numProofs).fill(null).map((_, i) =&gt; ({</span>
+<span class="cstat-no" title="statement not covered" >        proof: new Uint8Array(674).fill(i),</span>
+<span class="cstat-no" title="statement not covered" >        commitment: new Uint8Array(32).fill(3 + i)</span>
+<span class="cstat-no" title="statement not covered" >      }))</span>
+<span class="cstat-no" title="statement not covered" >    }),</span>
 <span class="cstat-no" title="statement not covered" >    get_performance_info: vi.fn().mockReturnValue({</span>
 <span class="cstat-no" title="statement not covered" >      simd_enabled: true,</span>
 <span class="cstat-no" title="statement not covered" >      estimated_speedup: 10,</span>
@@ -456,7 +517,9 @@ import type { ElGamalKeypair, ElGamalCiphertext } from '../../src/utils/elgamal-
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return {</span>
 <span class="cstat-no" title="statement not covered" >    default: vi.fn().mockResolvedValue(undefined),</span>
-<span class="cstat-no" title="statement not covered" >    WasmElGamalEngine: vi.fn().mockImplementation(() =&gt; mockEngine),</span>
+<span class="cstat-no" title="statement not covered" >    WasmElGamalEngine: vi.fn().mockImplementation(function() {</span>
+<span class="cstat-no" title="statement not covered" >      return mockEngine</span>
+<span class="cstat-no" title="statement not covered" >    }),</span>
 <span class="cstat-no" title="statement not covered" >    is_wasm_available: vi.fn().mockReturnValue(true),</span>
 <span class="cstat-no" title="statement not covered" >    get_wasm_info: vi.fn().mockReturnValue({</span>
 <span class="cstat-no" title="statement not covered" >      version: '1.0.0',</span>
@@ -592,7 +655,7 @@ import type { ElGamalKeypair, ElGamalCiphertext } from '../../src/utils/elgamal-
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-26T23:16:09.474Z
+                at 2025-07-27T03:45:00.079Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

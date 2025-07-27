@@ -6,8 +6,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { DutchAuctionUtils, AuctionTimeUtils } from '../../src/utils/auction-helpers.js'
-import { AuctionType } from '../../src/generated/index.js'
+import { DutchAuctionUtils, AuctionTimeUtils } from '../../../src/utils/auction-helpers.js'
+import { AuctionType } from '../../../src/generated/index.js'
 
 describe('Dutch Auction Utils', () => {
   describe('Price Calculation', () => {

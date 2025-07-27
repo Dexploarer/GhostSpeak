@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/405</span>
+                <span class='fraction'>0/407</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/405</span>
+                <span class='fraction'>0/407</span>
             </div>
         
             
@@ -767,7 +767,13 @@
 <a name='L702'></a><a href='#L702'>702</a>
 <a name='L703'></a><a href='#L703'>703</a>
 <a name='L704'></a><a href='#L704'>704</a>
-<a name='L705'></a><a href='#L705'>705</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L705'></a><a href='#L705'>705</a>
+<a name='L706'></a><a href='#L706'>706</a>
+<a name='L707'></a><a href='#L707'>707</a>
+<a name='L708'></a><a href='#L708'>708</a>
+<a name='L709'></a><a href='#L709'>709</a>
+<a name='L710'></a><a href='#L710'>710</a>
+<a name='L711'></a><a href='#L711'>711</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -908,6 +914,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1100,6 +1107,9 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1365,6 +1375,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1612,7 +1624,8 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >    return initializationPromise</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  initializationPromise = (async () =&gt; {</span>
+  // Store the promise immediately to prevent race conditions
+<span class="cstat-no" title="statement not covered" >  const promise = (async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      console.log('🚀 Initializing WebAssembly crypto module...')</span>
 &nbsp;
@@ -1805,6 +1818,9 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >      return false</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  })()</span>
+  
+  // Assign the promise immediately after creation
+<span class="cstat-no" title="statement not covered" >  initializationPromise = promise</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return initializationPromise</span>
 <span class="cstat-no" title="statement not covered" >}</span>
@@ -1847,7 +1863,7 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >  }</span>
 &nbsp;
   // Fallback to JavaScript implementation
-<span class="cstat-no" title="statement not covered" >  const { generateElGamalKeypair: jsGenerateKeypair } = await import('./elgamal-complete.js')</span>
+<span class="cstat-no" title="statement not covered" >  const { generateElGamalKeypair: jsGenerateKeypair } = await import('./elgamal-complete')</span>
 <span class="cstat-no" title="statement not covered" >  return jsGenerateKeypair()</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
@@ -1879,7 +1895,7 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >  }</span>
 &nbsp;
   // Fallback to JavaScript implementation
-<span class="cstat-no" title="statement not covered" >  const { encryptAmount: jsEncryptAmount, encryptAmountWithRandomness } = await import('./elgamal-complete.js')</span>
+<span class="cstat-no" title="statement not covered" >  const { encryptAmount: jsEncryptAmount, encryptAmountWithRandomness } = await import('./elgamal-complete')</span>
 <span class="cstat-no" title="statement not covered" >  return randomness ? </span>
 <span class="cstat-no" title="statement not covered" >    encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :</span>
 <span class="cstat-no" title="statement not covered" >    jsEncryptAmount(amount, publicKey)</span>
@@ -1959,7 +1975,7 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >  }</span>
 &nbsp;
   // Fallback to JavaScript implementation
-<span class="cstat-no" title="statement not covered" >  const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete.js')</span>
+<span class="cstat-no" title="statement not covered" >  const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete')</span>
 <span class="cstat-no" title="statement not covered" >  return jsGenerateRangeProof(amount, commitment, blindingFactor)</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
@@ -2069,15 +2085,17 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >}&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  await initializeWasmCrypto()</span>
   
-<span class="cstat-no" title="statement not covered" >  const testAmount = BigInt(1000000)</span>
-<span class="cstat-no" title="statement not covered" >  const testPublicKey = new Uint8Array(32).fill(0xAB)</span>
-<span class="cstat-no" title="statement not covered" >  const testCommitment = { commitment: new Uint8Array(32).fill(0xCD) }</span>
-<span class="cstat-no" title="statement not covered" >  const testBlinding = new Uint8Array(32).fill(0xEF)</span>
-<span class="cstat-no" title="statement not covered" >  const testAmounts = Array(10).fill(testAmount)</span>
+  // Generate a valid test keypair for benchmarks
+<span class="cstat-no" title="statement not covered" >  const testKeypair = await generateElGamalKeypair()</span>
+<span class="cstat-no" title="statement not covered" >  const testAmount = BigInt(1000) // Reduced from 1000000 for faster operations</span>
+<span class="cstat-no" title="statement not covered" >  const testPublicKey = testKeypair.publicKey</span>
+<span class="cstat-no" title="statement not covered" >  const testCommitment = { commitment: new Uint8Array(32).fill(0) }</span>
+<span class="cstat-no" title="statement not covered" >  const testBlinding = new Uint8Array(32).fill(0)</span>
+<span class="cstat-no" title="statement not covered" >  const testAmounts = Array(5).fill(testAmount) // Reduced from 10 to 5</span>
 &nbsp;
   // Encryption benchmark
 <span class="cstat-no" title="statement not covered" >  const encryptionBench = async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    const iterations = 100</span>
+<span class="cstat-no" title="statement not covered" >    const iterations = 10 // Reduced from 100 to prevent timeouts</span>
     
     // WASM benchmark
 <span class="cstat-no" title="statement not covered" >    let wasmTime = 0</span>
@@ -2090,7 +2108,7 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >    }</span>
     
     // JS benchmark (fallback)
-<span class="cstat-no" title="statement not covered" >    const { encryptAmount: jsEncryptAmount } = await import('./elgamal-complete.js')</span>
+<span class="cstat-no" title="statement not covered" >    const { encryptAmount: jsEncryptAmount } = await import('./elgamal-complete')</span>
 <span class="cstat-no" title="statement not covered" >    const jsStart = performance.now()</span>
 <span class="cstat-no" title="statement not covered" >    for (let i = 0; i &lt; iterations; i++) {</span>
 <span class="cstat-no" title="statement not covered" >      await jsEncryptAmount(testAmount, testPublicKey)</span>
@@ -2106,7 +2124,7 @@ interface WasmCryptoUtilsConstructor {
 &nbsp;
   // Range proof benchmark
 <span class="cstat-no" title="statement not covered" >  const rangeProofBench = async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    const iterations = 10</span>
+<span class="cstat-no" title="statement not covered" >    const iterations = 3 // Reduced from 10 to prevent timeouts</span>
     
     // WASM benchmark
 <span class="cstat-no" title="statement not covered" >    let wasmTime = 0</span>
@@ -2119,7 +2137,7 @@ interface WasmCryptoUtilsConstructor {
 <span class="cstat-no" title="statement not covered" >    }</span>
     
     // JS benchmark
-<span class="cstat-no" title="statement not covered" >    const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete.js')</span>
+<span class="cstat-no" title="statement not covered" >    const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete')</span>
 <span class="cstat-no" title="statement not covered" >    const jsStart = performance.now()</span>
 <span class="cstat-no" title="statement not covered" >    for (let i = 0; i &lt; iterations; i++) {</span>
 <span class="cstat-no" title="statement not covered" >      await jsGenerateRangeProof(testAmount, testCommitment, testBlinding)</span>
@@ -2182,7 +2200,7 @@ interface WasmCryptoUtilsConstructor {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-07-26T23:16:09.474Z
+                at 2025-07-27T03:45:00.079Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

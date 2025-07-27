@@ -19,7 +19,7 @@ import {
   type TransferInstructionParams,
   type TransferWithFeeParams,
   type ConfidentialTransferParams
-} from '../../src/utils/token-2022-cpi-enhanced'
+} from '../../../src/utils/token-2022-cpi-enhanced.js'
 import type { TransactionSigner } from '@solana/kit'
 
 describe('Token-2022 CPI Enhanced', () => {

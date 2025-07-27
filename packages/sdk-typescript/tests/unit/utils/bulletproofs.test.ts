@@ -15,12 +15,16 @@ import { bytesToNumberLE } from '@noble/curves/abstract/utils'
 
 // Mock crypto for consistent test results
 const mockRandomBytes = vi.fn()
-global.crypto = {
-  getRandomValues: mockRandomBytes,
-  subtle: {
-    digest: vi.fn(async () => new ArrayBuffer(32))
-  }
-} as unknown as Crypto
+Object.defineProperty(global, 'crypto', {
+  value: {
+    getRandomValues: mockRandomBytes,
+    subtle: {
+      digest: vi.fn(async () => new ArrayBuffer(32))
+    }
+  },
+  writable: true,
+  configurable: true
+})
 
 describe('Bulletproofs', () => {
   beforeEach(() => {

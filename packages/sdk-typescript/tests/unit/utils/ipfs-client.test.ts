@@ -11,17 +11,21 @@ const mockFetch = vi.fn()
 global.fetch = mockFetch as unknown as typeof fetch
 
 // Mock crypto for Node.js environment
-global.crypto = {
-  subtle: {
-    digest: vi.fn(async () => new ArrayBuffer(32))
+Object.defineProperty(global, 'crypto', {
+  value: {
+    subtle: {
+      digest: vi.fn(async () => new ArrayBuffer(32))
+    },
+    getRandomValues: vi.fn((array: Uint8Array) => {
+      for (let i = 0; i < array.length; i++) {
+        array[i] = Math.floor(Math.random() * 256)
+      }
+      return array
+    })
   },
-  getRandomValues: vi.fn((array: Uint8Array) => {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256)
-    }
-    return array
-  })
-} as unknown as Crypto
+  writable: true,
+  configurable: true
+})
 
 // Mock btoa for Node.js
 global.btoa = (str: string) => Buffer.from(str).toString('base64')

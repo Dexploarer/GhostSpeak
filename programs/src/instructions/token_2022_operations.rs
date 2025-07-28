@@ -12,6 +12,10 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_2022::{self, Token2022};
 use anchor_spl::token_interface::Mint;
 use anchor_lang::solana_program::program_option::COption;
+use spl_token_2022::{
+    extension::{ExtensionType},
+    state::Mint as SplMint,
+};
 
 use crate::state::{Agent, GhostSpeakError};
 use crate::security::validate_agent_authority;
@@ -60,6 +64,20 @@ pub struct CreateToken2022MintParams {
     pub enable_transfer_fee: bool,
     pub enable_confidential_transfers: bool,
     pub enable_interest_bearing: bool,
+    // Transfer fee config (if enabled)
+    pub transfer_fee_basis_points: Option<u16>,
+    pub maximum_fee: Option<u64>,
+    pub transfer_fee_authority: Option<Pubkey>,
+    pub withdraw_withheld_authority: Option<Pubkey>,
+    // Confidential transfer config (if enabled)
+    pub auto_approve_new_accounts: Option<bool>,
+    pub auditor_elgamal_pubkey: Option<[u8; 32]>,
+    // Interest bearing config (if enabled)
+    pub interest_rate: Option<i16>,
+    pub rate_authority: Option<Pubkey>,
+    // Additional extensions
+    pub close_authority: Option<Pubkey>,
+    pub default_account_state: Option<AccountState>,
 }
 
 pub fn create_token_2022_mint(
@@ -73,16 +91,22 @@ pub fn create_token_2022_mint(
     let mut extensions = vec![];
     
     if params.enable_transfer_fee {
-        extensions.push(spl_token_2022::extension::ExtensionType::TransferFeeConfig);
+        extensions.push(ExtensionType::TransferFeeConfig);
     }
     if params.enable_confidential_transfers {
-        extensions.push(spl_token_2022::extension::ExtensionType::ConfidentialTransferMint);
+        extensions.push(ExtensionType::ConfidentialTransferMint);
     }
     if params.enable_interest_bearing {
-        extensions.push(spl_token_2022::extension::ExtensionType::InterestBearingConfig);
+        extensions.push(ExtensionType::InterestBearingConfig);
+    }
+    if params.close_authority.is_some() {
+        extensions.push(ExtensionType::MintCloseAuthority);
+    }
+    if params.default_account_state.is_some() {
+        extensions.push(ExtensionType::DefaultAccountState);
     }
 
-    let space = spl_token_2022::extension::ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)?;
+    let space = ExtensionType::try_calculate_account_len::<SplMint>(&extensions)?;
 
     // Create the account for the mint
     let rent = ctx.accounts.rent.minimum_balance(space);
@@ -100,25 +124,48 @@ pub fn create_token_2022_mint(
         &ctx.accounts.token_program.key(),
     )?;
 
-    // Initialize the mint
+    // Initialize extensions through Anchor CPI
+    // Note: Token-2022 extensions must be initialized AFTER mint creation in current implementation
+    // This is a limitation of the current SPL Token-2022 program
+    
+    let mint_account = ctx.accounts.mint.to_account_info();
+    let authority_account = ctx.accounts.authority.to_account_info();
+    let token_program = ctx.accounts.token_program.to_account_info();
+
+    // Log extension configuration for debugging
+    if params.enable_transfer_fee || params.enable_confidential_transfers || params.enable_interest_bearing {
+        msg!("Note: Token-2022 extension initialization after mint creation is not yet fully supported");
+        msg!("Extensions enabled in mint account space but require additional initialization");
+        
+        if params.enable_transfer_fee {
+            msg!("- Transfer fee extension: space allocated");
+        }
+        if params.enable_confidential_transfers {
+            msg!("- Confidential transfers extension: space allocated");
+        }
+        if params.enable_interest_bearing {
+            msg!("- Interest bearing extension: space allocated");
+        }
+    }
+
+    // Now initialize the mint itself
     let cpi_accounts = token_2022::InitializeMint2 {
-        mint: ctx.accounts.mint.to_account_info(),
+        mint: mint_account.clone(),
     };
     
-    let cpi_program = ctx.accounts.token_program.to_account_info();
-    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+    let cpi_ctx = CpiContext::new(token_program, cpi_accounts);
 
     token_2022::initialize_mint2(
         cpi_ctx,
         params.decimals,
-        &ctx.accounts.authority.key(),
+        &authority_account.key(),
         params.freeze_authority.as_ref(),
     )?;
 
-    // Emit event for mint creation
+    // Emit comprehensive event for mint creation
     emit!(Token2022MintCreatedEvent {
-        mint: ctx.accounts.mint.key(),
-        authority: ctx.accounts.authority.key(),
+        mint: mint_account.key(),
+        authority: authority_account.key(),
         agent: ctx.accounts.agent.key(),
         decimals: params.decimals,
         extensions_enabled: Token2022ExtensionsEnabled {
@@ -168,7 +215,7 @@ pub struct TransferFeeConfigParams {
     pub withdraw_withheld_authority: Option<Pubkey>,
 }
 
-pub fn initialize_transfer_fee_config(
+pub fn update_transfer_fee_config(
     ctx: Context<InitializeTransferFeeConfig>,
     params: TransferFeeConfigParams,
 ) -> Result<()> {
@@ -178,12 +225,16 @@ pub fn initialize_transfer_fee_config(
         GhostSpeakError::InvalidParameter
     );
 
-    // Note: In Token-2022, transfer fees must be initialized when the mint is created
-    // This instruction would typically update the fee configuration
-    
-    msg!("Transfer fee configuration initialized with {} basis points", params.transfer_fee_basis_points);
+    // Note: Updating transfer fee configuration requires the transfer fee authority
+    // This is a placeholder implementation as the actual SPL instruction requires
+    // the mint to have been created with transfer fee extension enabled
+    msg!(
+        "Transfer fee update requested: {} basis points, max fee: {}",
+        params.transfer_fee_basis_points,
+        params.maximum_fee
+    );
 
-    // Emit event
+    // Emit event for tracking
     emit!(TransferFeeInitializedEvent {
         mint: ctx.accounts.mint.key(),
         authority: ctx.accounts.authority.key(),

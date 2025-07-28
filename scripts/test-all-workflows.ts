@@ -81,8 +81,7 @@ async function testAllWorkflows() {
   
   // Create GhostSpeak client
   const client = new GhostSpeakClient({
-    rpcEndpoint: DEVNET_URL,
-    keypair: walletKeypair
+    rpcEndpoint: DEVNET_URL
   });
   
   // Test data
@@ -98,6 +97,7 @@ async function testAllWorkflows() {
   let jobPostingAddress: string;
   let workOrderAddress: string;
   let a2aSessionAddress: string;
+  let channelAddress: string;
   
   console.log(chalk.yellow('\n=== 1. AGENT MANAGEMENT TESTS ===\n'));
   
@@ -120,7 +120,7 @@ async function testAllWorkflows() {
       agentId
     });
     
-    agentAddress = await client.agent.findAgentPDA(signer.address, agentId);
+    // agentAddress is returned from the create method above
     console.log(`   Agent address: ${agentAddress}`);
   });
   
@@ -184,6 +184,7 @@ async function testAllWorkflows() {
       address(agentAddress),
       userRegistryPda,
       {
+        signer,
         title: 'AI Code Review Service',
         description: 'Professional AI-powered code review',
         amount: BigInt(0.1 * LAMPORTS_PER_SOL),
@@ -356,7 +357,7 @@ async function testAllWorkflows() {
     console.log(`   Channel: ${channelResult.channelId}`);
     
     // Store for next test
-    client['_testChannelAddress'] = channelResult.channelId;
+    channelAddress = channelResult.channelId;
   });
   
   // Wait for state propagation
@@ -364,7 +365,7 @@ async function testAllWorkflows() {
   
   // 5.2 Channel Message Sending
   await runTest('Channel Message Sending', async () => {
-    const channelAddress = client['_testChannelAddress'];
+    // channelAddress was set in the previous test
     if (!channelAddress) throw new Error('Channel address not found');
     
     const signature = await client.channel.sendMessage(

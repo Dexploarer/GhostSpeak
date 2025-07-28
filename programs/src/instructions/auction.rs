@@ -169,14 +169,14 @@ pub fn create_service_auction(
         );
         
         // Set Dutch config from auction_data or use defaults
-        auction.dutch_config = auction_data.dutch_config.or_else(|| {
+        auction.dutch_config = auction_data.dutch_config.or(
             Some(crate::state::auction::DutchAuctionConfig {
                 decay_type: crate::state::auction::DutchAuctionDecayType::Linear,
                 price_step_count: 100, // Default 100 price steps
                 step_duration: auction_duration / 100, // Even distribution over auction time
                 decay_rate_basis_points: 10000, // 100% decay rate (full range)
             })
-        });
+        );
         
         // Validate Dutch config parameters
         if let Some(ref config) = auction.dutch_config {

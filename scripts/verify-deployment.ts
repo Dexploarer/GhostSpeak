@@ -93,7 +93,7 @@ async function verifyDeployment() {
       if (signatures.length > 0) {
         console.log(chalk.green(`✅ Found ${signatures.length} recent transactions`))
         signatures.forEach((sig, i) => {
-          const time = sig.blockTime ? new Date(sig.blockTime * 1000).toLocaleString() : 'Unknown'
+          const time = sig.blockTime ? new Date(Number(sig.blockTime) * 1000).toLocaleString() : 'Unknown'
           const status = sig.err ? chalk.red('Failed') : chalk.green('Success')
           console.log(chalk.gray(`   ${i + 1}. ${sig.signature.slice(0, 20)}... - ${status} - ${time}`))
         })

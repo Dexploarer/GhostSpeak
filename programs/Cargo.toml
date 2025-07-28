@@ -53,6 +53,6 @@ spl-noop = { version = "1.0.0", features = ["no-entrypoint"] }
 # Remove proc-macro2 constraint to use system default
 
 [dev-dependencies]
-solana-program-test = "2.1"
+solana-program-test = "2.3"
 solana-sdk = "2.1"
 tokio = { version = "1.0", features = ["rt", "macros"] } 

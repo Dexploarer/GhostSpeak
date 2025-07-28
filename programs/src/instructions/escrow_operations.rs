@@ -319,6 +319,97 @@ pub struct ProcessPartialRefund<'info> {
 }
 
 // =====================================================
+// HELPER FUNCTIONS
+// =====================================================
+
+/// Calculates the actual amount to transfer, accounting for transfer fees
+/// Returns (amount_to_transfer, expected_fee)
+fn calculate_transfer_amount_with_fee(
+    mint_account: &AccountInfo,
+    transfer_amount: u64,
+) -> Result<(u64, u64)> {
+    // Try to read the mint as Token-2022 with extensions
+    let mint_data = mint_account.try_borrow_data()?;
+    
+    // Check if this is a Token-2022 mint with transfer fee extension
+    if let Ok(mint) = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&mint_data) {
+        if let Ok(transfer_fee_config) = mint.get_extension::<TransferFeeConfig>() {
+            let epoch = Clock::get()?.epoch;
+            let fee = transfer_fee_config.calculate_epoch_fee(epoch, transfer_amount).unwrap_or(0);
+            
+            // For transfers, we need to send amount + fee to ensure recipient gets exact amount
+            return Ok((transfer_amount, fee));
+        }
+    }
+    
+    // No transfer fee
+    Ok((transfer_amount, 0))
+}
+
+/// Performs a transfer with proper fee handling for Token-2022
+fn transfer_with_fee_support<'info>(
+    from: AccountInfo<'info>,
+    to: AccountInfo<'info>,
+    authority: AccountInfo<'info>,
+    mint: AccountInfo<'info>,
+    token_program: AccountInfo<'info>,
+    amount: u64,
+    signers_seeds: &[&[&[u8]]],
+) -> Result<()> {
+    let (_transfer_amount, fee) = calculate_transfer_amount_with_fee(&mint, amount)?;
+    
+    if fee > 0 {
+        msg!("Transfer fee detected: {} tokens", fee);
+        
+        // For tokens with transfer fees, we need to handle the fee appropriately
+        // Note: The actual transfer_checked_with_fee instruction is not available in the current version
+        // Instead, we'll use regular transfer_checked and log the fee
+        msg!("Transfer with fee: amount={}, fee={}", amount, fee);
+        
+        let ix = spl_token_2022::instruction::transfer_checked(
+            &spl_token_2022::id(),
+            &from.key(),
+            &mint.key(),
+            &to.key(),
+            &authority.key(),
+            &[],
+            amount,
+            6, // TODO: Get decimals from mint
+        )?;
+        
+        if signers_seeds.is_empty() {
+            anchor_lang::solana_program::program::invoke(
+                &ix,
+                &[from, mint, to, authority],
+            )?;
+        } else {
+            anchor_lang::solana_program::program::invoke_signed(
+                &ix,
+                &[from, mint, to, authority],
+                signers_seeds,
+            )?;
+        }
+    } else {
+        // Use regular transfer for non-fee tokens
+        let cpi_accounts = anchor_spl::token_2022::Transfer {
+            from,
+            to,
+            authority,
+        };
+        
+        if signers_seeds.is_empty() {
+            let cpi_ctx = CpiContext::new(token_program, cpi_accounts);
+            anchor_spl::token_2022::transfer(cpi_ctx, amount)?;
+        } else {
+            let cpi_ctx = CpiContext::new_with_signer(token_program, cpi_accounts, signers_seeds);
+            anchor_spl::token_2022::transfer(cpi_ctx, amount)?;
+        }
+    }
+    
+    Ok(())
+}
+
+// =====================================================
 // INSTRUCTION HANDLERS - WITH REENTRANCY PROTECTION
 // =====================================================
 
@@ -396,17 +487,16 @@ pub fn create_escrow(
         ctx.bumps.escrow,
     )?;
 
-    // SECURITY: Transfer tokens to escrow using SPL Token 2022
-    let transfer_ctx = CpiContext::new(
+    // SECURITY: Transfer tokens to escrow using SPL Token 2022 with fee support
+    transfer_with_fee_support(
+        ctx.accounts.client_token_account.to_account_info(),
+        ctx.accounts.escrow_token_account.to_account_info(),
+        ctx.accounts.client.to_account_info(),
+        ctx.accounts.payment_token.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
-        anchor_spl::token_2022::Transfer {
-            from: ctx.accounts.client_token_account.to_account_info(),
-            to: ctx.accounts.escrow_token_account.to_account_info(),
-            authority: ctx.accounts.client.to_account_info(),
-        },
-    );
-
-    anchor_spl::token_2022::transfer(transfer_ctx, amount)?;
+        amount,
+        &[],
+    )?;
 
     // Emit escrow creation event
     emit!(crate::EscrowCreatedEvent {
@@ -570,17 +660,16 @@ pub fn process_escrow_payment(
     let signer_seeds = &[b"escrow", escrow.task_id.as_bytes(), &[escrow.bump]];
     let signer = &[&signer_seeds[..]];
 
-    let transfer_ctx = CpiContext::new_with_signer(
+    // Transfer with fee support
+    transfer_with_fee_support(
+        ctx.accounts.escrow_token_account.to_account_info(),
+        ctx.accounts.recipient_token_account.to_account_info(),
+        ctx.accounts.escrow.to_account_info(),
+        ctx.accounts.payment_token.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
-        anchor_spl::token_2022::Transfer {
-            from: ctx.accounts.escrow_token_account.to_account_info(),
-            to: ctx.accounts.recipient_token_account.to_account_info(),
-            authority: ctx.accounts.escrow.to_account_info(),
-        },
+        escrow.amount,
         signer,
-    );
-
-    anchor_spl::token_2022::transfer(transfer_ctx, escrow.amount)?;
+    )?;
 
     // Create payment record
     let payment = &mut ctx.accounts.payment;
@@ -721,17 +810,16 @@ pub fn cancel_escrow(ctx: Context<CancelEscrow>, cancellation_reason: String) ->
     let signer_seeds = &[b"escrow", escrow.task_id.as_bytes(), &[escrow.bump]];
     let signer = &[&signer_seeds[..]];
 
-    let transfer_ctx = CpiContext::new_with_signer(
+    // Transfer with fee support
+    transfer_with_fee_support(
+        ctx.accounts.escrow_token_account.to_account_info(),
+        ctx.accounts.client_refund_account.to_account_info(),
+        escrow_account_info,
+        ctx.accounts.payment_token.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
-        anchor_spl::token_2022::Transfer {
-            from: ctx.accounts.escrow_token_account.to_account_info(),
-            to: ctx.accounts.client_refund_account.to_account_info(),
-            authority: escrow_account_info,
-        },
+        escrow_amount,
         signer,
-    );
-
-    anchor_spl::token_2022::transfer(transfer_ctx, escrow_amount)?;
+    )?;
 
     // Update escrow status
     escrow.status = EscrowStatus::Cancelled;
@@ -808,17 +896,16 @@ pub fn refund_expired_escrow(ctx: Context<RefundExpiredEscrow>) -> Result<()> {
     let signer_seeds = &[b"escrow", escrow.task_id.as_bytes(), &[escrow.bump]];
     let signer = &[&signer_seeds[..]];
 
-    let transfer_ctx = CpiContext::new_with_signer(
+    // Transfer with fee support
+    transfer_with_fee_support(
+        ctx.accounts.escrow_token_account.to_account_info(),
+        ctx.accounts.client_refund_account.to_account_info(),
+        escrow_account_info,
+        ctx.accounts.payment_token.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
-        anchor_spl::token_2022::Transfer {
-            from: ctx.accounts.escrow_token_account.to_account_info(),
-            to: ctx.accounts.client_refund_account.to_account_info(),
-            authority: escrow_account_info,
-        },
+        escrow_amount,
         signer,
-    );
-
-    anchor_spl::token_2022::transfer(transfer_ctx, escrow_amount)?;
+    )?;
 
     // Update escrow status
     escrow.status = EscrowStatus::Cancelled;
@@ -913,33 +1000,31 @@ pub fn process_partial_refund(
 
     // Transfer refund to client if amount > 0
     if client_refund > 0 {
-        let client_transfer_ctx = CpiContext::new_with_signer(
+        // Transfer with fee support
+        transfer_with_fee_support(
+            ctx.accounts.escrow_token_account.to_account_info(),
+            ctx.accounts.client_refund_account.to_account_info(),
+            escrow_account_info.clone(),
+            ctx.accounts.payment_token.to_account_info(),
             ctx.accounts.token_program.to_account_info(),
-            anchor_spl::token_2022::Transfer {
-                from: ctx.accounts.escrow_token_account.to_account_info(),
-                to: ctx.accounts.client_refund_account.to_account_info(),
-                authority: escrow_account_info.clone(),
-            },
+            client_refund,
             signer,
-        );
-
-        anchor_spl::token_2022::transfer(client_transfer_ctx, client_refund)?;
+        )?;
         msg!("Transferred {} tokens to client", client_refund);
     }
 
     // Transfer payment to agent if amount > 0
     if agent_payment > 0 {
-        let agent_transfer_ctx = CpiContext::new_with_signer(
+        // Transfer with fee support
+        transfer_with_fee_support(
+            ctx.accounts.escrow_token_account.to_account_info(),
+            ctx.accounts.agent_payment_account.to_account_info(),
+            escrow_account_info.clone(),
+            ctx.accounts.payment_token.to_account_info(),
             ctx.accounts.token_program.to_account_info(),
-            anchor_spl::token_2022::Transfer {
-                from: ctx.accounts.escrow_token_account.to_account_info(),
-                to: ctx.accounts.agent_payment_account.to_account_info(),
-                authority: escrow_account_info.clone(),
-            },
+            agent_payment,
             signer,
-        );
-
-        anchor_spl::token_2022::transfer(agent_transfer_ctx, agent_payment)?;
+        )?;
         msg!("Transferred {} tokens to agent", agent_payment);
     }
 

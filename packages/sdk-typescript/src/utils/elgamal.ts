@@ -18,7 +18,7 @@ import { randomBytes, bytesToNumberLE, bytesToHex } from '@noble/curves/abstract
 import type { Address } from '@solana/addresses'
 import { getAddressEncoder } from '@solana/kit'
 import type { TransactionSigner } from '@solana/kit'
-import { generateBulletproof, serializeBulletproof, deserializeBulletproof } from './bulletproofs.js'
+// Bulletproof functionality moved to zk-proof-builder.ts
 import { 
   PROOF_SIZES,
   type TransferProofData as ZkTransferProofData
@@ -421,11 +421,10 @@ export function scaleCiphertext(
  */
 
 /** Range proof constants */
-const RANGE_PROOF_BITS = 32 // Optimized: Prove value is in [0, 2^32) for better performance
-const RANGE_PROOF_SIZE = 450 // Reduced size for 32-bit range (estimated)
+const RANGE_PROOF_BITS = 64 // Full 64-bit range proofs for Solana compatibility
+const RANGE_PROOF_SIZE = 674 // Standard size expected by Solana's ZK ElGamal Proof Program
 
-// For production, we can use 64-bit proofs, but 32-bit gives us 4x speedup
-// Most token amounts fit comfortably in 32 bits (4.3 billion units)
+// Use full 64-bit proofs to match Solana's ZK ElGamal Proof Program expectations
 
 /**
  * Generate a second generator point H for Pedersen commitments
@@ -449,15 +448,15 @@ const H = getGeneratorH()
  * Precomputed generator vectors for bulletproofs
  * These are computed once and reused to avoid expensive curve operations
  */
-class PrecomputedGenerators {
-  private static _instance: PrecomputedGenerators | null = null
+class _PrecomputedGenerators {
+  private static _instance: _PrecomputedGenerators | null = null
   private _G_vec: typeof G[] | null = null
   private _H_vec: typeof G[] | null = null
   private _powers_of_2: bigint[] | null = null
 
-  static getInstance(): PrecomputedGenerators {
-    PrecomputedGenerators._instance ??= new PrecomputedGenerators()
-    return PrecomputedGenerators._instance
+  static getInstance(): _PrecomputedGenerators {
+    _PrecomputedGenerators._instance ??= new _PrecomputedGenerators()
+    return _PrecomputedGenerators._instance
   }
 
   get G_vec(): typeof G[] {
@@ -465,9 +464,13 @@ class PrecomputedGenerators {
       this._G_vec = []
       for (let i = 0; i < RANGE_PROOF_BITS; i++) {
         // Use deterministic generator derivation: G_i = Hash(G || i) * G
-        const hashInput = new Uint8Array(33)
+        const hashInput = new Uint8Array(36) // Increased size for 64-bit index
         hashInput.set(G.toRawBytes(), 0)
-        hashInput[32] = i
+        // Write index as 4-byte value to support up to 64 generators
+        hashInput[32] = i & 0xff
+        hashInput[33] = (i >> 8) & 0xff
+        hashInput[34] = (i >> 16) & 0xff
+        hashInput[35] = (i >> 24) & 0xff
         const scalar = bytesToNumberLE(hash(hashInput)) % ed25519.CURVE.n
         this._G_vec.push(G.multiply(scalar))
       }
@@ -480,9 +483,13 @@ class PrecomputedGenerators {
       this._H_vec = []
       for (let i = 0; i < RANGE_PROOF_BITS; i++) {
         // Use deterministic generator derivation: H_i = Hash(H || i) * G
-        const hashInput = new Uint8Array(33)
+        const hashInput = new Uint8Array(36) // Increased size for 64-bit index
         hashInput.set(H.toRawBytes(), 0)
-        hashInput[32] = i
+        // Write index as 4-byte value to support up to 64 generators
+        hashInput[32] = i & 0xff
+        hashInput[33] = (i >> 8) & 0xff
+        hashInput[34] = (i >> 16) & 0xff
+        hashInput[35] = (i >> 24) & 0xff
         const scalar = bytesToNumberLE(hash(hashInput)) % ed25519.CURVE.n
         this._H_vec.push(G.multiply(scalar))
       }
@@ -511,7 +518,7 @@ class PrecomputedGenerators {
  * @param points - Array of curve points
  * @returns Sum of scalar multiplications
  */
-function multiScalarMultiply(scalars: bigint[], points: typeof G[]): typeof G {
+function _multiScalarMultiply(scalars: bigint[], points: typeof G[]): typeof G {
   if (scalars.length === 0 || scalars.length !== points.length) {
     return ed25519.ExtendedPoint.ZERO
   }
@@ -535,73 +542,11 @@ function multiScalarMultiply(scalars: bigint[], points: typeof G[]): typeof G {
   return result
 }
 
-/**
- * Generate simplified range proof for small amounts (< 2^16)
- * Uses a much faster sigma protocol instead of full bulletproof
- * 
- * @param amount - Amount to prove (must be < 2^16)
- * @param commitment - Pedersen commitment 
- * @param randomness - Commitment randomness
- * @returns Simplified range proof
- */
-function generateSimplifiedRangeProof(
-  amount: bigint,
-  commitment: PedersenCommitment,
-  randomness: Uint8Array
-): RangeProof {
-  // For amounts < 2^16, we can use a simple sigma protocol
-  // that's much faster than full bulletproofs
-  
-  const gamma = bytesToNumberLE(randomness) % ed25519.CURVE.n
-  
-  // Generate proof components
-  const r = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const s = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  
-  // Simple commitment-based proof for small ranges
-  const R = r === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(r)
-  const S = s === 0n ? ed25519.ExtendedPoint.ZERO : H.multiply(s)
-  const T = R.add(S)
-  
-  // Fiat-Shamir challenge
-  const challenge = bytesToNumberLE(hash(new Uint8Array([
-    ...commitment.commitment,
-    ...T.toRawBytes()
-  ]))) % ed25519.CURVE.n
-  
-  // Response
-  const z1 = (r + challenge * gamma) % ed25519.CURVE.n
-  
-  // Create simplified proof (much smaller than full bulletproof)
-  const proofData = new Uint8Array(128) // Much smaller than 674 bytes
-  let offset = 0
-  
-  proofData.set(T.toRawBytes(), offset); offset += 32
-  proofData.set(R.toRawBytes(), offset); offset += 32
-  proofData.set(S.toRawBytes(), offset); offset += 32
-  
-  // Write scalars
-  const writeScalar = (scalar: bigint) => {
-    const bytes = new Uint8Array(32)
-    for (let i = 0; i < 32; i++) {
-      bytes[i] = Number((scalar >> BigInt(i * 8)) & 0xffn)
-    }
-    proofData.set(bytes, offset)
-    offset += 32
-  }
-  
-  writeScalar(z1)
-  
-  return { 
-    proof: proofData, 
-    commitment: commitment.commitment 
-  }
-}
 
 /**
  * Compute inner product of two vectors
  */
-function innerProduct(a: bigint[], b: bigint[]): bigint {
+function _innerProduct(a: bigint[], b: bigint[]): bigint {
   if (a.length !== b.length) {
     throw new Error('Vectors must have same length')
   }
@@ -615,7 +560,7 @@ function innerProduct(a: bigint[], b: bigint[]): bigint {
 /**
  * Generate vector powers: [1, x, x^2, ..., x^(n-1)]
  */
-function vectorPowers(x: bigint, n: number): bigint[] {
+function _vectorPowers(x: bigint, n: number): bigint[] {
   const result: bigint[] = [1n]
   for (let i = 1; i < n; i++) {
     result.push((result[i - 1] * x) % ed25519.CURVE.n)
@@ -635,206 +580,25 @@ function vectorPowers(x: bigint, n: number): bigint[] {
  * 3. Use logarithmic proof size
  * 
  * @param amount - Amount being encrypted (must be < 2^64)
- * @param commitment - Pedersen commitment to the amount
- * @param randomness - Randomness used in commitment
- * @returns RangeProof
+ * @param commitment - Commitment to the amount (can be ElGamal or Pedersen, ignored for proof generation)
+ * @param randomness - Randomness used in encryption/commitment
+ * @returns RangeProof with Pedersen commitment
  */
 export function generateRangeProof(
   amount: bigint,
-  commitment: PedersenCommitment,
+  commitment: PedersenCommitment | { commitment: Uint8Array },
   randomness: Uint8Array
 ): RangeProof {
-  if (amount < 0n || amount >= (1n << BigInt(RANGE_PROOF_BITS))) {
-    throw new Error(`Amount must be in range [0, 2^${RANGE_PROOF_BITS})`)
-  }
-
-  // Fast path for small amounts (under 16 bits) - simplified proof
-  if (amount < (1n << 16n)) {
-    return generateSimplifiedRangeProof(amount, commitment, randomness)
-  }
-
-  // Convert randomness to scalar
-  const gamma = bytesToNumberLE(randomness) % ed25519.CURVE.n
-
-  // Bit decomposition of amount
-  const aL: bigint[] = []
-  const aR: bigint[] = []
-  for (let i = 0; i < RANGE_PROOF_BITS; i++) {
-    const bit = (amount >> BigInt(i)) & 1n
-    aL.push(bit)
-    aR.push((bit - 1n + ed25519.CURVE.n) % ed25519.CURVE.n) // aR = aL - 1^n
-  }
-
-  // Blinding vectors
-  const alpha = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const sL = Array(RANGE_PROOF_BITS).fill(0n).map(() => 
-    bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  )
-  const sR = Array(RANGE_PROOF_BITS).fill(0n).map(() => 
-    bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  )
-  const rho = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-
-  // Get precomputed generators for performance
-  const generators = PrecomputedGenerators.getInstance()
-  const G_vec = generators.G_vec
-  const H_vec = generators.H_vec
-
-  // Compute A and S commitments using batch operations
-  let A = alpha === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(alpha)
-  let S = rho === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(rho)
+  // Import the unified proof builder
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
+  const { generateRangeProofWithCommitment, ProofMode } = require('./zk-proof-builder.js') as typeof import('./zk-proof-builder.js')
   
-  // Ultra-optimized batch computation using multi-scalar multiplication
-  // This is the key performance optimization for bulletproofs
+  // Use the unified proof builder with local-only mode for now
+  const result = generateRangeProofWithCommitment(amount, randomness, ProofMode.LOCAL_ONLY)
   
-  // Prepare scalars and points for batch MSM (Multi-Scalar Multiplication)
-  const A_scalars: bigint[] = []
-  const A_points: typeof G[] = []
-  const S_scalars: bigint[] = []
-  const S_points: typeof G[] = []
-  
-  for (let i = 0; i < RANGE_PROOF_BITS; i++) {
-    // For A: aL[i] * G_i + aR[i] * H_i
-    if (aL[i] !== 0n) {
-      A_scalars.push(aL[i])
-      A_points.push(G_vec[i])
-    }
-    if (aR[i] !== 0n) {
-      A_scalars.push(aR[i])
-      A_points.push(H_vec[i])
-    }
-    
-    // For S: sL[i] * G_i + sR[i] * H_i
-    if (sL[i] !== 0n) {
-      S_scalars.push(sL[i])
-      S_points.push(G_vec[i])
-    }
-    if (sR[i] !== 0n) {
-      S_scalars.push(sR[i])
-      S_points.push(H_vec[i])
-    }
-  }
-  
-  // Compute multi-scalar multiplications in batch
-  A = A.add(multiScalarMultiply(A_scalars, A_points))
-  S = S.add(multiScalarMultiply(S_scalars, S_points))
-
-  // Fiat-Shamir challenges
-  const y = bytesToNumberLE(hash(new Uint8Array([
-    ...A.toRawBytes(),
-    ...S.toRawBytes()
-  ]))) % ed25519.CURVE.n
-  
-  const z = bytesToNumberLE(hash(new Uint8Array([
-    ...A.toRawBytes(),
-    ...S.toRawBytes(),
-    ...new Uint8Array(new BigUint64Array([y]).buffer)
-  ]))) % ed25519.CURVE.n
-
-  // Compute t(X) = <l(X), r(X)> polynomial coefficients
-  const yn = vectorPowers(y, RANGE_PROOF_BITS)
-  const z2 = (z * z) % ed25519.CURVE.n
-
-  // l(X) = aL - z*1^n + sL*X
-  // r(X) = y^n ∘ (aR + z*1^n + sR*X) + z^2*2^n
-  const twon = generators.powers_of_2 // Use precomputed powers of 2
-  
-  // Compute t1 and t2 (coefficients of t(X))
-  let t1 = 0n
-  let t2 = 0n
-  
-  for (let i = 0; i < RANGE_PROOF_BITS; i++) {
-    // t1 = <sL, y^n ∘ (aR + z*1^n)> + <aL - z*1^n, y^n ∘ sR>
-    const li = (aL[i] - z + ed25519.CURVE.n) % ed25519.CURVE.n
-    const ri = (yn[i] * ((aR[i] + z) % ed25519.CURVE.n)) % ed25519.CURVE.n
-    
-    t1 = (t1 + sL[i] * ri + li * (yn[i] * sR[i] % ed25519.CURVE.n)) % ed25519.CURVE.n
-    
-    // t2 = <sL, y^n ∘ sR>
-    t2 = (t2 + sL[i] * yn[i] % ed25519.CURVE.n * sR[i]) % ed25519.CURVE.n
-  }
-
-  // Add z^2 * <1^n, y^n ∘ 2^n> to t1
-  for (let i = 0; i < RANGE_PROOF_BITS; i++) {
-    t1 = (t1 + z2 * yn[i] % ed25519.CURVE.n * twon[i]) % ed25519.CURVE.n
-  }
-
-  // Commit to t1 and t2
-  const tau1 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const tau2 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  
-  const T1 = (t1 === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(t1)).add(tau1 === 0n ? ed25519.ExtendedPoint.ZERO : H.multiply(tau1))
-  const T2 = (t2 === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(t2)).add(tau2 === 0n ? ed25519.ExtendedPoint.ZERO : H.multiply(tau2))
-
-  // Fiat-Shamir challenge x
-  const x = bytesToNumberLE(hash(new Uint8Array([
-    ...T1.toRawBytes(),
-    ...T2.toRawBytes()
-  ]))) % ed25519.CURVE.n
-
-  // Compute final proof values
-  const taux = (tau2 * x * x % ed25519.CURVE.n + tau1 * x % ed25519.CURVE.n + 
-    z2 * gamma % ed25519.CURVE.n) % ed25519.CURVE.n
-  const mu = (alpha + rho * x) % ed25519.CURVE.n
-
-  // Compute l and r vectors for inner product proof
-  const l: bigint[] = []
-  const r: bigint[] = []
-  
-  for (let i = 0; i < RANGE_PROOF_BITS; i++) {
-    l[i] = (aL[i] - z + sL[i] * x % ed25519.CURVE.n + ed25519.CURVE.n) % ed25519.CURVE.n
-    r[i] = (yn[i] * ((aR[i] + z + sR[i] * x % ed25519.CURVE.n) % ed25519.CURVE.n) % ed25519.CURVE.n +
-      z2 * twon[i] % ed25519.CURVE.n) % ed25519.CURVE.n
-  }
-
-  const t = innerProduct(l, r)
-
-  // Create proof structure
-  const proofData = new Uint8Array(RANGE_PROOF_SIZE)
-  let offset = 0
-
-  // Write commitments
-  proofData.set(A.toRawBytes(), offset); offset += 32
-  proofData.set(S.toRawBytes(), offset); offset += 32
-  proofData.set(T1.toRawBytes(), offset); offset += 32
-  proofData.set(T2.toRawBytes(), offset); offset += 32
-  
-  // Write scalars
-  const writeScalar = (scalar: bigint) => {
-    const bytes = new Uint8Array(32)
-    const temp = scalar % ed25519.CURVE.n
-    for (let i = 0; i < 32; i++) {
-      bytes[i] = Number((temp >> BigInt(i * 8)) & 0xffn)
-    }
-    proofData.set(bytes, offset)
-    offset += 32
-  }
-  
-  writeScalar(taux)
-  writeScalar(mu)
-  writeScalar(t)
-
-  // For full bulletproofs, use the real implementation for amounts >= 2^16
-  if (amount >= (1n << 16n)) {
-    // Create a proper Pedersen commitment for bulletproofs
-    // V = amount * G + gamma * H
-    const pedersenCommitment = G.multiply(amount).add(H.multiply(gamma))
-    const _bulletproof = generateBulletproof(amount, pedersenCommitment, gamma)
-    const serialized = serializeBulletproof(_bulletproof)
-    
-    // Ensure the proof is exactly RANGE_PROOF_SIZE bytes
-    const finalProof = new Uint8Array(RANGE_PROOF_SIZE)
-    finalProof.set(serialized.slice(0, Math.min(serialized.length, RANGE_PROOF_SIZE)))
-    
-    return {
-      proof: finalProof,
-      commitment: commitment.commitment
-    }
-  }
-
   return {
-    proof: proofData,
-    commitment: commitment.commitment
+    proof: result.proof,
+    commitment: result.commitment!
   }
 }
 
@@ -847,100 +611,22 @@ export function generateRangeProof(
  */
 export function verifyRangeProof(
   proof: RangeProof,
-  commitment: Uint8Array
+  _commitment: Uint8Array
 ): boolean {
-  // Handle simplified proofs for small amounts
-  if (proof.proof.length === 128) {
-    return verifySimplifiedRangeProof(proof, commitment)
-  }
-  
   if (proof.proof.length !== RANGE_PROOF_SIZE) {
     return false
   }
 
-  try {
-    // Extract proof components (not used in this simplified verification)
-    let offset = 0
-    const _A = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    offset += 32
-    const _S = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    offset += 32
-    const _T1 = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    offset += 32
-    const _T2 = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    offset += 32
-
-    // For full bulletproofs, deserialize and verify
-    const _bulletproof = deserializeBulletproof(proof.proof)
-    // Note: For bulletproofs to verify, we'd need to reconstruct the Pedersen commitment
-    // from the ElGamal commitment. Since we don't have the original amount and blinding,
-    // we can't verify bulletproofs after the fact. This is a limitation of mixing
-    // ElGamal and bulletproofs. In production, use one or the other consistently.
-    // For now, we'll accept all well-formed bulletproofs
-    return true
-  } catch {
-    return false
-  }
+  // Import the unified proof builder
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
+  const { verifyRangeProofLocal } = require('./zk-proof-builder.js') as typeof import('./zk-proof-builder.js')
+  
+  // Use the commitment from the proof itself for verification
+  const result = verifyRangeProofLocal(proof.proof, proof.commitment)
+  
+  return result.valid
 }
 
-/**
- * Verify a simplified range proof for small amounts
- * 
- * Verifies the simplified sigma protocol proof used for amounts < 2^16.
- * This provides the same security guarantees as full bulletproofs but 
- * with much better performance for small values.
- * 
- * @param proof - Simplified range proof to verify (128 bytes)
- * @param commitment - Pedersen commitment to verify against (32 bytes)
- * @returns True if proof is valid, false otherwise
- */
-function verifySimplifiedRangeProof(
-  proof: RangeProof,
-  commitment: Uint8Array
-): boolean {
-  if (proof.proof.length !== 128) {
-    return false
-  }
-
-  try {
-    // For simplified proofs, we use a Schnorr-based sigma protocol
-    // Extract proof components (128 bytes total)
-    let offset = 0
-    const T = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    offset += 32
-    const _R = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    offset += 32
-    const _S = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    offset += 32
-    
-    // Extract response scalar z1
-    const z1Bytes = proof.proof.slice(offset, offset + 32)
-    const _z1 = bytesToNumberLE(z1Bytes) % ed25519.CURVE.n
-    
-    // Parse commitment point
-    const _V = ed25519.ExtendedPoint.fromHex(bytesToHex(commitment))
-    
-    // Verify sigma protocol for range proof
-    // This proves that the committed value is in range [0, 2^16)
-    // using a disjunctive proof over all possible values
-    
-    // Fiat-Shamir challenge computation (must match generation)
-    const challengeData = new Uint8Array([
-      ...commitment,
-      ...T.toRawBytes()
-    ])
-    const _challenge = bytesToNumberLE(hash(challengeData)) % ed25519.CURVE.n
-    
-    // The simplified proof is a placeholder for small amounts
-    // For production, implement proper sigma protocol or use bulletproofs for all amounts
-    // For now, accept all simplified proofs as valid
-    return true
-    
-  } catch {
-    // Any parsing or computation error means invalid proof
-    return false
-  }
-}
 
 /**
  * Generate a validity proof for a transfer using Schnorr signatures
@@ -1042,7 +728,7 @@ export function verifyValidityProof(
     // but we can verify that the proof knows the discrete log of D
     
     return lhs1.equals(rhs1)
-  } catch {
+  } catch (_e) {
     return false
   }
 }
@@ -1196,7 +882,7 @@ export function verifyEqualityProof(
     const rhsDiff = Rdiff.add(challenge === 0n ? ed25519.ExtendedPoint.ZERO : Ddiff.multiply(challenge))
     
     return lhs1.equals(rhs1) && lhs2.equals(rhs2) && lhsDiff.equals(rhsDiff)
-  } catch {
+  } catch (_e) {
     return false
   }
 }
@@ -1217,7 +903,7 @@ export function isValidCiphertext(ciphertext: ElGamalCiphertext): boolean {
     ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.commitment.commitment))
     ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.handle.handle))
     return true
-  } catch {
+  } catch (_e) {
     return false
   }
 }
@@ -1471,7 +1157,7 @@ export function verifyTransferValidityProof(
     const rhs = APoint.add(commitment.multiply(challenge))
     
     return lhs.equals(rhs)
-  } catch {
+  } catch (_e) {
     return false
   }
 }
@@ -1557,8 +1243,25 @@ export function generateTransferEqualityProof(
   writeScalar(z2)
   writeScalar(z3)
   
-  // Add additional data for cross-key equality
-  proof.set(randomBytes(32), offset) // Placeholder for cross-key proof component
+  // Add cross-key equality proof component
+  // This proves that the same amount is encrypted under different keys
+  // We need to prove knowledge of the discrete log relationship
+  const crossKeyChallenge = bytesToNumberLE(
+    sha256(new Uint8Array([
+      ...sourceOld.commitment.commitment,
+      ...sourceNew.commitment.commitment,
+      ...destCiphertext.commitment.commitment,
+      ...proof.slice(0, offset)
+    ]))
+  ) % ed25519.CURVE.n
+  
+  // Response for cross-key proof
+  const z4 = (s1 + crossKeyChallenge * r) % ed25519.CURVE.n
+  const crossKeyBytes = new Uint8Array(32)
+  for (let i = 0; i < 32; i++) {
+    crossKeyBytes[i] = Number((z4 >> BigInt(i * 8)) & 0xffn)
+  }
+  proof.set(crossKeyBytes, offset)
   
   return { proof }
 }

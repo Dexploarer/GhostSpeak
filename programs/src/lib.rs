@@ -1601,11 +1601,11 @@ pub mod ghostspeak_marketplace {
         instructions::token_2022_operations::create_token_2022_mint(ctx, params)
     }
 
-    pub fn initialize_transfer_fee_config(
+    pub fn update_transfer_fee_config(
         ctx: Context<InitializeTransferFeeConfig>,
         params: TransferFeeConfigParams,
     ) -> Result<()> {
-        instructions::token_2022_operations::initialize_transfer_fee_config(ctx, params)
+        instructions::token_2022_operations::update_transfer_fee_config(ctx, params)
     }
 
     pub fn initialize_confidential_transfer_mint(

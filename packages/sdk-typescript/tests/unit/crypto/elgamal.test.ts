@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { address } from '@solana/addresses'
+import { randomBytes } from '@noble/curves/abstract/utils'
 import {
   generateElGamalKeypair,
   deriveElGamalKeypair,
@@ -252,40 +253,42 @@ describe('ElGamal Encryption', () => {
     describe('Range Proofs', () => {
       it('should generate and verify valid range proof', () => {
         const amount = 1000n
-        const result = encryptAmountWithRandomness(amount, keypair.publicKey)
         
+        // Generate randomness explicitly (formatted like in encryptAmountWithRandomness)
+        const randomness = randomBytes(32)
+        randomness[0] &= 248
+        randomness[31] &= 127
+        randomness[31] |= 64
+        
+        // Generate range proof directly
         const rangeProof = generateRangeProof(
           amount,
-          result.ciphertext.commitment,
-          result.randomness
+          { commitment: new Uint8Array(32) }, // dummy commitment, not used
+          randomness
         )
         
         expect(rangeProof.proof).toBeInstanceOf(Uint8Array)
-        // Small amounts (<2^16) use simplified proofs (128 bytes)
-        // Larger amounts use full bulletproofs (larger size)
-        if (amount < (1n << 16n)) {
-          expect(rangeProof.proof).toHaveLength(128) // Simplified proof for small amounts
-        } else {
-          expect(rangeProof.proof.length).toBeGreaterThan(128) // Full bulletproof
-        }
-        expect(rangeProof.commitment).toEqual(result.ciphertext.commitment.commitment)
+        // All amounts now use full bulletproofs for consistency with Solana
+        expect(rangeProof.proof).toHaveLength(674) // Standard bulletproof size for 64-bit range
+        expect(rangeProof.commitment).toBeInstanceOf(Uint8Array)
+        expect(rangeProof.commitment).toHaveLength(32)
         
-        // Verify the range proof
-        const isValid = verifyRangeProof(rangeProof, result.ciphertext.commitment.commitment)
+        // Verify the range proof using the commitment from the proof
+        const isValid = verifyRangeProof(rangeProof, rangeProof.commitment)
         expect(isValid).toBe(true)
       })
       
       it('should reject range proof for negative amount', () => {
         expect(() => {
           generateRangeProof(-1n, { commitment: new Uint8Array(32) }, new Uint8Array(32))
-        }).toThrow('Amount must be in range [0, 2^32)')
+        }).toThrow('Amount must be in range [0, 2^64)')
       })
       
-      it('should reject range proof for amount exceeding 32 bits', () => {
-        const tooLarge = 1n << 32n
+      it('should reject range proof for amount exceeding 64 bits', () => {
+        const tooLarge = 1n << 64n
         expect(() => {
           generateRangeProof(tooLarge, { commitment: new Uint8Array(32) }, new Uint8Array(32))
-        }).toThrow('Amount must be in range [0, 2^32)')
+        }).toThrow('Amount must be in range [0, 2^64)')
       })
       
       it('should generate and verify full bulletproof for larger amounts', () => {
@@ -299,11 +302,12 @@ describe('ElGamal Encryption', () => {
         )
 
         expect(rangeProof.proof).toBeInstanceOf(Uint8Array)
-        expect(rangeProof.proof.length).toBeGreaterThan(128) // Full bulletproof is larger
-        expect(rangeProof.commitment).toEqual(result.ciphertext.commitment.commitment)
+        expect(rangeProof.proof).toHaveLength(674) // All amounts use 674-byte bulletproofs
+        expect(rangeProof.commitment).toBeInstanceOf(Uint8Array)
+        expect(rangeProof.commitment).toHaveLength(32)
         
-        // Verify the range proof
-        const isValid = verifyRangeProof(rangeProof, result.ciphertext.commitment.commitment)
+        // Verify the range proof using the commitment from the proof
+        const isValid = verifyRangeProof(rangeProof, rangeProof.commitment)
         expect(isValid).toBe(true)
       })
       

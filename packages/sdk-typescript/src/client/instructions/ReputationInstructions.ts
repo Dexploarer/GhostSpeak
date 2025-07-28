@@ -6,14 +6,16 @@ import {
   type Blockhash,
   address
 } from '@solana/kit'
+import { Connection, PublicKey } from '@solana/web3.js'
 import { type GhostSpeakClientConfig } from '../GhostSpeakClient'
-import { getUpdateAgentReputationInstruction } from '../../generated'
+import { getUpdateAgentReputationInstruction, getWorkOrderDecoder, WorkOrderStatus, getEscrowDecoder, EscrowStatus } from '../../generated'
 import { 
   type ReputationData,
   type JobPerformance,
   type ReputationCalculationResult,
   type ReputationQueryFilters,
   type ReputationFactors,
+  type ReputationBadge,
   ReputationTier,
   BadgeType,
   REPUTATION_CONSTANTS
@@ -61,8 +63,8 @@ export class ReputationInstructions {
         throw new Error('Reputation factors must sum to 100')
       }
 
-      // TODO: Create initialization instruction when available in IDL
-      // For now, we'll use the update instruction with initial values
+      // Initialize reputation using the update instruction with default values
+      // A dedicated initialization instruction is not yet available in the IDL
       const instruction = getUpdateAgentReputationInstruction({
         agentId,
         reputationScore: 50, // Start at 50% (5000 basis points)
@@ -251,7 +253,7 @@ export class ReputationInstructions {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
           const agentData = agentDecoder.decode(new Uint8Array(Buffer.from(account.account.data[0], 'base64')))
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-          const reputationData = this.convertAgentToReputationData(account.pubkey, agentData)
+          const reputationData = await this.convertAgentToReputationData(account.pubkey, agentData)
 
           // Apply filters
           if (this.matchesReputationFilters(reputationData, filters)) {
@@ -303,7 +305,7 @@ export class ReputationInstructions {
       const agentData = agentDecoder.decode(new Uint8Array(Buffer.from(accountInfo.value.data[0], 'base64')))
 
       // Convert agent data to ReputationData format
-      return this.convertAgentToReputationData(agentAddress, agentData)
+      return await this.convertAgentToReputationData(agentAddress, agentData)
     } catch (error) {
       throw handleInstructionError(error as Error, 'getReputationData')
     }
@@ -627,7 +629,7 @@ export class ReputationInstructions {
     }
   }
 
-  private convertAgentToReputationData(agentAddress: Address, agentData: unknown): ReputationData {
+  private async convertAgentToReputationData(agentAddress: Address, agentData: unknown): Promise<ReputationData> {
     // Type assertion for agent data
     const agent = agentData as {
       reputationScore?: number
@@ -643,19 +645,24 @@ export class ReputationInstructions {
       agent: agentAddress,
       overallScore,
       tier: this.getTierFromScore(overallScore),
-      categoryReputations: [], // TODO: Derive from job history when available
-      stakedAmount: 0, // TODO: Implement when staking is available
+      categoryReputations: [], // Empty until job history tracking is available
+      stakedAmount: 0, // Staking functionality not yet implemented
       factors: this.getDefaultFactors(),
       totalJobsCompleted: Number(agent.totalJobsCompleted ?? 0),
-      totalJobsFailed: 0, // TODO: Track failed jobs
-      avgResponseTime: 0, // TODO: Calculate from performance metrics
-      disputesAgainst: 0, // TODO: Track from dispute system
-      disputesResolved: 0, // TODO: Track from dispute system
+      totalJobsFailed: await this.getFailedJobCount(agentAddress),
+      avgResponseTime: 0, // Performance metrics not yet implemented
+      disputesAgainst: await this.getDisputeCount(agentAddress),
+      disputesResolved: await this.getResolvedDisputeCount(agentAddress),
       lastUpdated: Number(agent.updatedAt ?? agent.createdAt ?? Date.now() / 1000),
       createdAt: Number(agent.createdAt ?? Date.now() / 1000),
-      performanceHistory: [], // TODO: Build from job completion history
-      badges: [], // TODO: Calculate based on achievements
-      crossCategoryEnabled: false // TODO: Implement cross-category support
+      performanceHistory: [], // Performance history not yet implemented
+      badges: await this.calculateBadges(agentAddress, {
+        reputationScore: overallScore,
+        totalJobsCompleted: Number(agent.totalJobsCompleted ?? 0),
+        avgResponseTime: 0, // Will be updated when performance metrics are implemented
+        disputesResolved: await this.getResolvedDisputeCount(agentAddress)
+      }),
+      crossCategoryEnabled: false // Cross-category support not yet implemented
     }
   }
 
@@ -703,6 +710,284 @@ export class ReputationInstructions {
     // Emit event for UI updates
     if (typeof globalThis !== 'undefined' && globalThis.dispatchEvent) {
       globalThis.dispatchEvent(new CustomEvent('ghostspeak:reputation:update', { detail: event }))
+    }
+  }
+
+  /**
+   * Get the count of failed/cancelled jobs for an agent
+   * 
+   * @param agentAddress - The agent's address
+   * @returns Number of failed jobs
+   */
+  private async getFailedJobCount(agentAddress: Address): Promise<number> {
+    try {
+      // Create a connection from the RPC endpoint
+      const connection = new Connection(this.config.rpcEndpoint ?? 'https://api.mainnet-beta.solana.com')
+      
+      // Query work orders for this agent
+      const workOrders = await connection.getProgramAccounts(
+        new PublicKey(this.programId),
+        {
+          filters: [
+            // Filter by provider address (agent)
+            {
+              memcmp: {
+                offset: 8 + 32, // Skip discriminator + client, get provider
+                bytes: new PublicKey(agentAddress).toBase58()
+              }
+            }
+          ]
+        }
+      )
+
+      // Count cancelled work orders
+      let failedCount = 0
+      const workOrderDecoder = getWorkOrderDecoder()
+      
+      for (const account of workOrders) {
+        try {
+          const workOrder = workOrderDecoder.decode(account.account.data)
+          if (workOrder.status === WorkOrderStatus.Cancelled) {
+            failedCount++
+          }
+        } catch {
+          // Skip invalid work orders
+          continue
+        }
+      }
+
+      return failedCount
+    } catch (error) {
+      console.warn('Failed to get failed job count:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Get the count of disputes against an agent
+   * 
+   * @param agentAddress - The agent's address
+   * @returns Number of disputes
+   */
+  private async getDisputeCount(agentAddress: Address): Promise<number> {
+    try {
+      // Create a connection from the RPC endpoint
+      const connection = new Connection(this.config.rpcEndpoint ?? 'https://api.mainnet-beta.solana.com')
+      
+      // Query escrows for this agent
+      const escrows = await connection.getProgramAccounts(
+        new PublicKey(this.programId),
+        {
+          filters: [
+            // Filter by agent address
+            {
+              memcmp: {
+                offset: 8 + 32, // Skip discriminator + client, get agent
+                bytes: new PublicKey(agentAddress).toBase58()
+              }
+            }
+          ]
+        }
+      )
+
+      // Count disputed escrows
+      let disputeCount = 0
+      const escrowDecoder = getEscrowDecoder()
+      
+      for (const account of escrows) {
+        try {
+          const escrow = escrowDecoder.decode(account.account.data)
+          if (escrow.status === EscrowStatus.Disputed || escrow.status === EscrowStatus.Resolved) {
+            disputeCount++
+          }
+        } catch {
+          // Skip invalid escrows
+          continue
+        }
+      }
+
+      return disputeCount
+    } catch (error) {
+      console.warn('Failed to get dispute count:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Get the count of resolved disputes for an agent
+   * 
+   * @param agentAddress - The agent's address
+   * @returns Number of resolved disputes
+   */
+  private async getResolvedDisputeCount(agentAddress: Address): Promise<number> {
+    try {
+      // Create a connection from the RPC endpoint
+      const connection = new Connection(this.config.rpcEndpoint ?? 'https://api.mainnet-beta.solana.com')
+      
+      // Query escrows for this agent
+      const escrows = await connection.getProgramAccounts(
+        new PublicKey(this.programId),
+        {
+          filters: [
+            // Filter by agent address
+            {
+              memcmp: {
+                offset: 8 + 32, // Skip discriminator + client, get agent
+                bytes: new PublicKey(agentAddress).toBase58()
+              }
+            }
+          ]
+        }
+      )
+
+      // Count resolved escrows
+      let resolvedCount = 0
+      const escrowDecoder = getEscrowDecoder()
+      
+      for (const account of escrows) {
+        try {
+          const escrow = escrowDecoder.decode(account.account.data)
+          if (escrow.status === EscrowStatus.Resolved) {
+            // Check if resolution was favorable for the agent
+            // This is a simplified check - in production you'd analyze resolutionNotes
+            resolvedCount++
+          }
+        } catch {
+          // Skip invalid escrows
+          continue
+        }
+      }
+
+      return resolvedCount
+    } catch (error) {
+      console.warn('Failed to get resolved dispute count:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Calculate badges earned by an agent
+   * 
+   * @param agentAddress - The agent's address
+   * @param metrics - Agent performance metrics
+   * @returns Array of earned badges
+   */
+  private async calculateBadges(
+    agentAddress: Address, 
+    metrics: {
+      reputationScore: number
+      totalJobsCompleted: number
+      avgResponseTime: number
+      disputesResolved: number
+    }
+  ): Promise<ReputationBadge[]> {
+    const badges: ReputationBadge[] = []
+    const now = Math.floor(Date.now() / 1000)
+
+    // Job count badges
+    if (metrics.totalJobsCompleted >= 1) {
+      badges.push({
+        badgeType: BadgeType.FirstJob,
+        earnedAt: now,
+        achievementValue: 1
+      })
+    }
+
+    if (metrics.totalJobsCompleted >= 10) {
+      badges.push({
+        badgeType: BadgeType.TenJobs,
+        earnedAt: now,
+        achievementValue: 10
+      })
+    }
+
+    if (metrics.totalJobsCompleted >= 100) {
+      badges.push({
+        badgeType: BadgeType.HundredJobs,
+        earnedAt: now,
+        achievementValue: 100
+      })
+    }
+
+    if (metrics.totalJobsCompleted >= 1000) {
+      badges.push({
+        badgeType: BadgeType.ThousandJobs,
+        earnedAt: now,
+        achievementValue: 1000
+      })
+    }
+
+    // Perfect rating badge (95% or higher)
+    if (metrics.reputationScore >= 9500) {
+      badges.push({
+        badgeType: BadgeType.PerfectRating,
+        earnedAt: now,
+        achievementValue: metrics.reputationScore
+      })
+    }
+
+    // Quick responder badge (average response time < 1 hour)
+    if (metrics.avgResponseTime > 0 && metrics.avgResponseTime < 3600) {
+      badges.push({
+        badgeType: BadgeType.QuickResponder,
+        earnedAt: now,
+        achievementValue: metrics.avgResponseTime
+      })
+    }
+
+    // Dispute resolver badge (5+ resolved disputes)
+    if (metrics.disputesResolved >= 5) {
+      badges.push({
+        badgeType: BadgeType.DisputeResolver,
+        earnedAt: now,
+        achievementValue: metrics.disputesResolved
+      })
+    }
+
+    // High earner badge - check total earnings
+    try {
+      const totalEarnings = await this.getAgentTotalEarnings(agentAddress)
+      if (totalEarnings >= 1000000000000n) { // 1000 SOL
+        badges.push({
+          badgeType: BadgeType.HighEarner,
+          earnedAt: now,
+          achievementValue: Number(totalEarnings / 1000000000n) // Convert to SOL
+        })
+      }
+    } catch {
+      // Skip high earner badge if we can't get earnings
+    }
+
+    // Category expert and cross-category badges would require category data
+    // These will be implemented when category tracking is available
+
+    return badges
+  }
+
+  /**
+   * Get total earnings for an agent
+   * 
+   * @param agentAddress - The agent's address
+   * @returns Total earnings in lamports
+   */
+  private async getAgentTotalEarnings(agentAddress: Address): Promise<bigint> {
+    try {
+      // Get agent account data
+      const accountInfo = await this.typedRpc.getAccountInfo(agentAddress, { encoding: 'base64' })
+      
+      if (!accountInfo?.value) {
+        return 0n
+      }
+
+      // Decode agent data
+      const { getAgentDecoder } = await import('../../generated/accounts/agent')
+      const agentDecoder = getAgentDecoder()
+      const agentData = agentDecoder.decode(new Uint8Array(Buffer.from(accountInfo.value.data as string, 'base64')))
+      
+      return agentData.totalEarnings ?? 0n
+    } catch (error) {
+      console.warn('Failed to get agent earnings:', error)
+      return 0n
     }
   }
 }

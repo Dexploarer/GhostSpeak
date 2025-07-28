@@ -6,7 +6,7 @@
  * analytics, monitoring, and data aggregation.
  */
 
-use crate::state::analytics::{AnalyticsDashboard, MarketAnalytics};
+// Removed unused imports: AnalyticsDashboard, MarketAnalytics
 use crate::*;
 
 // =====================================================
@@ -280,17 +280,17 @@ pub enum AgentOperation {
     RatingReceived,
 }
 
-impl ToString for AgentOperation {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for AgentOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AgentOperation::Register => "register".to_string(),
-            AgentOperation::Update => "update".to_string(),
-            AgentOperation::Activate => "activate".to_string(),
-            AgentOperation::Deactivate => "deactivate".to_string(),
-            AgentOperation::ServiceListed => "service_listed".to_string(),
-            AgentOperation::ServicePurchased => "service_purchased".to_string(),
-            AgentOperation::JobCompleted => "job_completed".to_string(),
-            AgentOperation::RatingReceived => "rating_received".to_string(),
+            AgentOperation::Register => write!(f, "register"),
+            AgentOperation::Update => write!(f, "update"),
+            AgentOperation::Activate => write!(f, "activate"),
+            AgentOperation::Deactivate => write!(f, "deactivate"),
+            AgentOperation::ServiceListed => write!(f, "service_listed"),
+            AgentOperation::ServicePurchased => write!(f, "service_purchased"),
+            AgentOperation::JobCompleted => write!(f, "job_completed"),
+            AgentOperation::RatingReceived => write!(f, "rating_received"),
         }
     }
 }
@@ -306,16 +306,16 @@ pub enum TransactionType {
     DisputeResolution,
 }
 
-impl ToString for TransactionType {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for TransactionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TransactionType::ServicePurchase => "service_purchase".to_string(),
-            TransactionType::EscrowCreation => "escrow_creation".to_string(),
-            TransactionType::EscrowCompletion => "escrow_completion".to_string(),
-            TransactionType::EscrowRefund => "escrow_refund".to_string(),
-            TransactionType::DirectPayment => "direct_payment".to_string(),
-            TransactionType::AuctionBid => "auction_bid".to_string(),
-            TransactionType::DisputeResolution => "dispute_resolution".to_string(),
+            TransactionType::ServicePurchase => write!(f, "service_purchase"),
+            TransactionType::EscrowCreation => write!(f, "escrow_creation"),
+            TransactionType::EscrowCompletion => write!(f, "escrow_completion"),
+            TransactionType::EscrowRefund => write!(f, "escrow_refund"),
+            TransactionType::DirectPayment => write!(f, "direct_payment"),
+            TransactionType::AuctionBid => write!(f, "auction_bid"),
+            TransactionType::DisputeResolution => write!(f, "dispute_resolution"),
         }
     }
 }
@@ -329,14 +329,14 @@ pub enum TransactionStatus {
     Cancelled,
 }
 
-impl ToString for TransactionStatus {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for TransactionStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TransactionStatus::Pending => "pending".to_string(),
-            TransactionStatus::Processing => "processing".to_string(),
-            TransactionStatus::Completed => "completed".to_string(),
-            TransactionStatus::Failed => "failed".to_string(),
-            TransactionStatus::Cancelled => "cancelled".to_string(),
+            TransactionStatus::Pending => write!(f, "pending"),
+            TransactionStatus::Processing => write!(f, "processing"),
+            TransactionStatus::Completed => write!(f, "completed"),
+            TransactionStatus::Failed => write!(f, "failed"),
+            TransactionStatus::Cancelled => write!(f, "cancelled"),
         }
     }
 }
@@ -352,16 +352,16 @@ pub enum MarketplaceActivity {
     JobAccepted,
 }
 
-impl ToString for MarketplaceActivity {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for MarketplaceActivity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MarketplaceActivity::ServiceListed => "service_listed".to_string(),
-            MarketplaceActivity::ServiceDelisted => "service_delisted".to_string(),
-            MarketplaceActivity::ServiceUpdated => "service_updated".to_string(),
-            MarketplaceActivity::AuctionCreated => "auction_created".to_string(),
-            MarketplaceActivity::AuctionFinalized => "auction_finalized".to_string(),
-            MarketplaceActivity::JobPosted => "job_posted".to_string(),
-            MarketplaceActivity::JobAccepted => "job_accepted".to_string(),
+            MarketplaceActivity::ServiceListed => write!(f, "service_listed"),
+            MarketplaceActivity::ServiceDelisted => write!(f, "service_delisted"),
+            MarketplaceActivity::ServiceUpdated => write!(f, "service_updated"),
+            MarketplaceActivity::AuctionCreated => write!(f, "auction_created"),
+            MarketplaceActivity::AuctionFinalized => write!(f, "auction_finalized"),
+            MarketplaceActivity::JobPosted => write!(f, "job_posted"),
+            MarketplaceActivity::JobAccepted => write!(f, "job_accepted"),
         }
     }
 }
@@ -377,16 +377,16 @@ pub enum UserAction {
     DisputeFiled,
 }
 
-impl ToString for UserAction {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for UserAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UserAction::Login => "login".to_string(),
-            UserAction::Logout => "logout".to_string(),
-            UserAction::ServiceView => "service_view".to_string(),
-            UserAction::ServicePurchase => "service_purchase".to_string(),
-            UserAction::MessageSent => "message_sent".to_string(),
-            UserAction::ChannelJoined => "channel_joined".to_string(),
-            UserAction::DisputeFiled => "dispute_filed".to_string(),
+            UserAction::Login => write!(f, "login"),
+            UserAction::Logout => write!(f, "logout"),
+            UserAction::ServiceView => write!(f, "service_view"),
+            UserAction::ServicePurchase => write!(f, "service_purchase"),
+            UserAction::MessageSent => write!(f, "message_sent"),
+            UserAction::ChannelJoined => write!(f, "channel_joined"),
+            UserAction::DisputeFiled => write!(f, "dispute_filed"),
         }
     }
 }

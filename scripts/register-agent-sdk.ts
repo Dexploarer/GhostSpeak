@@ -4,7 +4,7 @@
  */
 
 import { Keypair, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { GhostSpeakClient } from '../packages/sdk-typescript/dist/index.js';
+import { GhostSpeakClient, type Address } from '../packages/sdk-typescript/dist/index.js';
 import { createKeyPairSignerFromBytes } from '@solana/signers';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -40,8 +40,7 @@ async function registerAgent() {
     
     // Create GhostSpeak client
     const client = new GhostSpeakClient({
-      rpcEndpoint: 'https://api.devnet.solana.com',
-      keypair: walletKeypair
+      rpcEndpoint: 'https://api.devnet.solana.com'
     });
     
     console.log(chalk.blue('\nRegistering agent...'));
@@ -50,9 +49,9 @@ async function registerAgent() {
     const agentData = {
       name: `TestAgent_${Date.now()}`,
       description: 'Test agent registered via SDK',
+      category: 'AI',
       capabilities: ['data-analysis', 'automation'],
-      serviceEndpoint: 'https://test-agent.example.com',
-      hourlyRate: 0.1 * LAMPORTS_PER_SOL // 0.1 SOL per hour
+      serviceEndpoint: 'https://test-agent.example.com'
     };
     
     console.log('Agent data:', agentData);
@@ -64,11 +63,11 @@ async function registerAgent() {
     console.log(`Agent Address: ${agentAddress}`);
     
     // Fetch the agent data to verify
-    const agentAccount = await client.agent.getAccount(agentAddress);
+    const agentAccount = await client.agent.getAccount(agentAddress as Address);
     if (agentAccount) {
       console.log(chalk.cyan('\nAgent Account Data:'));
       console.log(`- Owner: ${agentAccount.owner}`);
-      console.log(`- Agent Type: ${agentAccount.agentType}`);
+      console.log(`- Is Active: ${agentAccount.isActive}`);
       console.log(`- Metadata URI: ${agentAccount.metadataUri}`);
       console.log(`- Active: ${agentAccount.isActive}`);
       console.log(`- Created: ${new Date(Number(agentAccount.createdAt) * 1000).toLocaleString()}`);

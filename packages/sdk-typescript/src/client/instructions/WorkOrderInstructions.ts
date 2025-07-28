@@ -624,17 +624,13 @@ export class WorkOrderInstructions extends BaseInstructions {
       console.log(`   Metadata stored: ${uploadResult.data.hash}`)
     }
 
-    // In a full implementation, this would call an updateWorkOrderStatus instruction
-    // For now, we'll return success but note that the actual status update would need
-    // to be implemented in the Rust program
-    const signature = 'status_update_placeholder_' + Date.now().toString()
-
-    return {
-      signature,
-      previousStatus,
-      newStatus,
-      isValidTransition
-    }
+    // The updateWorkOrderStatus instruction is not yet implemented in the Rust program
+    // This function performs validation and metadata storage, but cannot actually update the on-chain status
+    throw new Error(
+      'updateWorkOrderStatus instruction not yet implemented in the Rust program. ' +
+      'Status transitions must be handled through other instructions like submitWorkDelivery, ' +
+      'verifyWorkDelivery, or rejectWorkDelivery which automatically update the work order status.'
+    )
   }
 
   /**

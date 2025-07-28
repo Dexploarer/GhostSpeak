@@ -505,8 +505,7 @@ impl AuctionMarketplace {
         let minimum_bid = match self.auction_type {
             AuctionType::Dutch => {
                 // For Dutch auctions, bid must meet current calculated price
-                let dutch_price = self.calculate_dutch_price(clock.unix_timestamp)?;
-                dutch_price
+                self.calculate_dutch_price(clock.unix_timestamp)?
             }
             _ => {
                 // For other auction types, use standard logic

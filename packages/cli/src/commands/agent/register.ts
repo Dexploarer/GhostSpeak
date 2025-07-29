@@ -21,6 +21,7 @@ import type { RegisterOptions } from '../../types/cli-types.js'
 import { validateAgentParams } from '../agent/helpers.js'
 import { container, ServiceTokens } from '../../core/Container.js'
 import type { IAgentService } from '../../types/services.js'
+import { displayErrorAndCancel } from '../../utils/enhanced-error-handler.js'
 
 export function registerRegisterCommand(parentCommand: Command): void {
   parentCommand
@@ -90,7 +91,7 @@ export function registerRegisterCommand(parentCommand: Command): void {
         }
 
       } catch (error) {
-        cancel(chalk.red('Failed to register agent: ' + (error instanceof Error ? error.message : 'Unknown error')))
+        displayErrorAndCancel(error, 'Agent registration')
       }
     })
 }

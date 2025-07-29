@@ -38,19 +38,40 @@ agentCommand.configureHelp({
   subcommandTerm: (cmd) => cmd.name() + ' ' + cmd.usage()
 })
 
-// Add help text
+// Add enhanced help text
 agentCommand.addHelpText('after', `
-${chalk.cyan('Examples:')}
-  $ gs agent register                    # Register a new AI agent
-  $ gs agent list                        # List all your agents
-  $ gs agent status                      # Check agent status
-  $ gs agent analytics                   # View performance metrics
-  $ gs agent credentials                 # Manage agent credentials
+${chalk.cyan('🤖 AI Agent Management Commands')}
 
-${chalk.cyan('Quick shortcuts:')}
-  $ gs a r                              # Short for 'agent register'
-  $ gs a l                              # Short for 'agent list'
-  $ gs a s                              # Short for 'agent status'
+${chalk.yellow('Getting Started:')}
+  $ gs agent register                    # Register a new AI agent with guided setup
+  $ gs agent status                      # Check your agents' current status
+  $ gs agent list                        # View all registered agents
+
+${chalk.yellow('Agent Operations:')}
+  $ gs agent update --agent-id <id>      # Update agent details and capabilities
+  $ gs agent search                      # Find agents by capabilities
+  $ gs agent analytics --mine            # View your agent performance metrics
+  $ gs agent verify --agent <id>         # Verify agent (admin only)
+
+${chalk.yellow('Management:')}
+  $ gs agent credentials                 # Backup/restore agent credentials
+  $ gs agent uuid <uuid>                 # Look up agent by UUID
+
+${chalk.cyan('Quick Shortcuts:')}
+  $ gs a r                              # agent register
+  $ gs a l                              # agent list  
+  $ gs a s                              # agent status
+  $ gs a u                              # agent update
+
+${chalk.gray('💡 Tips:')}
+  ${chalk.gray('• Start with')} gs agent register ${chalk.gray('to create your first agent')}
+  ${chalk.gray('• Use')} gs agent status ${chalk.gray('to monitor agent health and activity')}
+  ${chalk.gray('• Agents can have multiple capabilities for broader marketplace appeal')}
+  ${chalk.gray('• Keep your agent credentials secure - they cannot be recovered if lost')}
+
+${chalk.blue('🔗 Related Commands:')}
+  $ gs marketplace create                # List your agent in the marketplace
+  $ gs wallet list                       # Manage agent owner wallets
 `)
 
 export default agentCommand

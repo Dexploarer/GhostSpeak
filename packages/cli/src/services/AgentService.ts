@@ -15,9 +15,19 @@ import type {
   IWalletService,
   IStorageService
 } from '../types/services.js'
+import { 
+  ValidationError, 
+  NotFoundError, 
+  NetworkError, 
+  UnauthorizedError 
+} from '../types/services.js'
 import { randomUUID } from 'crypto'
 
 export class AgentService implements IAgentService {
+  private agentCache = new Map<string, { data: Agent; timestamp: number }>()
+  private listCache = new Map<string, { data: Agent[]; timestamp: number }>()
+  private readonly CACHE_TTL = 30000 // 30 seconds
+  
   constructor(private deps: AgentServiceDependencies) {}
 
   /**
@@ -30,7 +40,10 @@ export class AgentService implements IAgentService {
     // Get current wallet for owner
     const wallet = this.deps.walletService.getActiveWalletInterface()
     if (!wallet) {
-      throw new Error('No active wallet found. Please create or select a wallet first.')
+      throw new ValidationError(
+        'No active wallet found',
+        'Create or select a wallet first using the wallet command'
+      )
     }
 
     // Create agent data
@@ -66,7 +79,13 @@ export class AgentService implements IAgentService {
       console.log(`Agent registered with signature: ${signature}`)
       return agent
     } catch (error) {
-      throw new Error(`Failed to register agent: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      if (error instanceof ValidationError || error instanceof NetworkError) {
+        throw error // Re-throw service errors as-is
+      }
+      throw new NetworkError(
+        `Failed to register agent: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'Check your network connection and try again'
+      )
     }
   }
 
@@ -103,16 +122,35 @@ export class AgentService implements IAgentService {
       const limit = params.limit || 50
       return filteredAgents.slice(offset, offset + limit)
     } catch (error) {
-      throw new Error(`Failed to list agents: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new NetworkError(
+        `Failed to list agents: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'Check your network connection and try again'
+      )
     }
   }
 
   /**
-   * Get agent by ID
+   * Get agent by ID with caching
    */
   async getById(agentId: string): Promise<Agent | null> {
+    // Check cache first
+    const cached = this.agentCache.get(agentId)
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return cached.data
+    }
+    
     try {
-      return await this.deps.storageService.load<Agent>(`agent:${agentId}`)
+      const agent = await this.deps.storageService.load<Agent>(`agent:${agentId}`)
+      
+      // Cache the result if found
+      if (agent) {
+        this.agentCache.set(agentId, {
+          data: agent,
+          timestamp: Date.now()
+        })
+      }
+      
+      return agent
     } catch (error) {
       console.error(`Error getting agent ${agentId}:`, error)
       return null
@@ -125,13 +163,13 @@ export class AgentService implements IAgentService {
   async update(agentId: string, updates: UpdateAgentParams): Promise<Agent> {
     const agent = await this.getById(agentId)
     if (!agent) {
-      throw new Error(`Agent not found: ${agentId}`)
+      throw new NotFoundError('Agent', agentId)
     }
 
     // Verify ownership
     const wallet = this.deps.walletService.getActiveWalletInterface()
     if (!wallet || agent.owner !== wallet.address) {
-      throw new Error('Unauthorized: You can only update your own agents')
+      throw new UnauthorizedError('You can only update your own agents')
     }
 
     // Apply updates
@@ -144,9 +182,25 @@ export class AgentService implements IAgentService {
     // Update on blockchain and storage
     try {
       await this.deps.storageService.save(`agent:${agentId}`, updatedAgent)
+      
+      // Update cache
+      this.agentCache.set(agentId, {
+        data: updatedAgent,
+        timestamp: Date.now()
+      })
+      
+      // Invalidate list cache as data has changed
+      this.listCache.clear()
+      
       return updatedAgent
     } catch (error) {
-      throw new Error(`Failed to update agent: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
+        throw error // Re-throw service errors as-is
+      }
+      throw new NetworkError(
+        `Failed to update agent: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'Check your network connection and try again'
+      )
     }
   }
 
@@ -163,7 +217,7 @@ export class AgentService implements IAgentService {
   async getAnalytics(agentId: string): Promise<AgentAnalytics> {
     const agent = await this.getById(agentId)
     if (!agent) {
-      throw new Error(`Agent not found: ${agentId}`)
+      throw new NotFoundError('Agent', agentId)
     }
 
     // In real implementation, this would aggregate data from multiple sources
@@ -183,13 +237,22 @@ export class AgentService implements IAgentService {
    */
   private async validateRegisterParams(params: RegisterAgentParams): Promise<void> {
     if (!params.name || params.name.length < 3) {
-      throw new Error('Agent name must be at least 3 characters long')
+      throw new ValidationError(
+        'Agent name must be at least 3 characters long',
+        'Provide a descriptive name for your agent'
+      )
     }
     if (!params.description || params.description.length < 10) {
-      throw new Error('Agent description must be at least 10 characters long')
+      throw new ValidationError(
+        'Agent description must be at least 10 characters long',
+        'Add more details about what your agent can do'
+      )
     }
     if (!params.capabilities || params.capabilities.length === 0) {
-      throw new Error('Agent must have at least one capability')
+      throw new ValidationError(
+        'Agent must have at least one capability',
+        'Select at least one capability from the available options'
+      )
     }
   }
 

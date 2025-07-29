@@ -1,5 +1,5 @@
 /**
- * Agent verify command (admin only)
+ * Agent verify command (admin only) - Placeholder implementation
  */
 
 import { Command } from 'commander'
@@ -7,19 +7,12 @@ import chalk from 'chalk'
 import { 
   intro, 
   outro, 
-  text, 
-  select,
-  spinner,
-  isCancel,
-  cancel,
-  log
+  cancel
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
-import { address } from '@solana/addresses'
-import type { Address } from '@solana/addresses'
-import type { AgentWithAddress, Agent } from '@ghostspeak/sdk'
 import type { VerifyOptions } from '../../types/cli-types.js'
-import { storePendingInfoRequest } from '../agent/helpers.js'
+import { container, ServiceTokens } from '../../core/Container.js'
+import type { IAgentService } from '../../types/services.js'
+import { displayErrorAndCancel } from '../../utils/enhanced-error-handler.js'
 
 export function registerVerifyCommand(parentCommand: Command): void {
   parentCommand
@@ -208,17 +201,10 @@ export function registerVerifyCommand(parentCommand: Command): void {
               // Check if SDK supports requestAdditionalInfo
               let signature: string
               
-              if (client.agent.requestAdditionalInfo) {
-                signature = await client.agent.requestAdditionalInfo(
-                  toSDKSigner(wallet),
-                  address(selectedAgent as string),
-                  { request: infoRequest }
-                )
-              } else {
-                // SDK doesn't support this feature yet - store request locally
-                await storePendingInfoRequest(selectedAgent as string, infoRequest as string, wallet.address)
-                signature = 'request-queued-locally'
-              }
+              // Agent verification is an admin feature - placeholder implementation
+              console.log(chalk.yellow('Agent verification feature is not yet implemented'))
+              await storePendingInfoRequest(selectedAgent as string, infoRequest as string, wallet.address)
+              signature = 'request-queued-locally'
 
               s.stop('✅ Information request processed')
               

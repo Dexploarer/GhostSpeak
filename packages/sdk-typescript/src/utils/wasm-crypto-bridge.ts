@@ -52,7 +52,6 @@ interface WasmModuleExports {
 
 // Legacy interfaces for backward compatibility  
 interface WasmElGamalEngine {
-  new(): WasmElGamalEngine
   encrypt_amount(amount: bigint, publicKey: Uint8Array, randomness?: Uint8Array): WasmElGamalCiphertext
   batch_encrypt(amounts: Uint8Array, publicKey: Uint8Array): WasmElGamalCiphertext[]
   decrypt_amount(ciphertext: WasmElGamalCiphertext, secretKey: Uint8Array): bigint

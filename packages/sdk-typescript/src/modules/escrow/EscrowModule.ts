@@ -33,15 +33,19 @@ export class EscrowModule extends BaseModule {
       () => getCreateEscrowInstructionAsync({
         escrow: escrowAddress,
         reentrancyGuard: this.systemProgramId,
-        payer: params.buyer,
-        seller: params.seller,
+        client: params.signer,
+        agent: params.seller,
+        paymentToken: this.nativeMint,
+        clientTokenAccount: this.deriveTokenAccount(params.buyer),
         escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
-        buyerTokenAccount: this.deriveTokenAccount(params.buyer),
-        sellerTokenAccount: this.deriveTokenAccount(params.seller),
         tokenProgram: this.tokenProgramId,
+        associatedTokenProgram: this.associatedTokenProgramId,
         systemProgram: this.systemProgramId,
+        taskId: params.description,
         amount: params.amount,
-        description: params.description
+        expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
+        transferHook: null,
+        isConfidential: false
       }),
       [params.signer]
     )
@@ -59,8 +63,9 @@ export class EscrowModule extends BaseModule {
         agent: signer.address,
         escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
         agentTokenAccount: this.deriveTokenAccount(signer.address),
-        completor: signer,
-        tokenProgram: this.tokenProgramId
+        authority: signer,
+        tokenProgram: this.tokenProgramId,
+        resolutionNotes: 'Work completed successfully'
       }),
       [signer]
     )
@@ -69,13 +74,16 @@ export class EscrowModule extends BaseModule {
   /**
    * Cancel an escrow
    */
-  async cancel(signer: TransactionSigner, escrowAddress: Address): Promise<string> {
+  async cancel(signer: TransactionSigner, escrowAddress: Address, params: { buyer: Address }): Promise<string> {
     return this.execute(
       'cancelEscrow',
       () => getCancelEscrowInstruction({
         escrow: escrowAddress,
         reentrancyGuard: this.systemProgramId,
         authority: signer,
+        clientRefundAccount: this.deriveTokenAccount(params.buyer),
+        paymentToken: this.nativeMint,
+        cancellationReason: 'User cancelled',
         escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
         tokenProgram: this.tokenProgramId
       }),
@@ -92,7 +100,8 @@ export class EscrowModule extends BaseModule {
       () => getDisputeEscrowInstruction({
         escrow: escrowAddress,
         reentrancyGuard: this.systemProgramId,
-        disputer: signer
+        authority: signer,
+        disputeReason: reason
       }),
       [signer]
     )
@@ -104,17 +113,21 @@ export class EscrowModule extends BaseModule {
   async processPartialRefund(
     signer: TransactionSigner,
     escrowAddress: Address,
-    refundAmount: bigint
+    refundAmount: bigint,
+    totalAmount: bigint
   ): Promise<string> {
     return this.execute(
       'processPartialRefund',
       () => getProcessPartialRefundInstruction({
         escrow: escrowAddress,
         reentrancyGuard: this.systemProgramId,
-        authority: signer,
         escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
+        clientRefundAccount: this.deriveTokenAccount(escrowAddress),
+        agentPaymentAccount: this.deriveTokenAccount(signer.address),
+        paymentToken: this.nativeMint,
+        authority: signer,
         tokenProgram: this.tokenProgramId,
-        refundAmount
+        clientRefundPercentage: Math.min(100, Math.max(0, Number((refundAmount * 100n / totalAmount).toString())))
       }),
       [signer]
     )
@@ -140,8 +153,9 @@ export class EscrowModule extends BaseModule {
   async getEscrowsByBuyer(buyer: Address): Promise<{ address: Address; data: Escrow }[]> {
     const filters = [{
       memcmp: {
-        offset: 8, // Skip discriminator
-        bytes: buyer
+        offset: 8n, // Skip discriminator
+        bytes: buyer as string,
+        encoding: 'base58' as const
       }
     }]
     
@@ -154,8 +168,9 @@ export class EscrowModule extends BaseModule {
   async getEscrowsBySeller(seller: Address): Promise<{ address: Address; data: Escrow }[]> {
     const filters = [{
       memcmp: {
-        offset: 40, // Skip discriminator + buyer
-        bytes: seller
+        offset: 40n, // Skip discriminator + buyer
+        bytes: seller as string,
+        encoding: 'base58' as const
       }
     }]
     
@@ -188,6 +203,10 @@ export class EscrowModule extends BaseModule {
 
   private get tokenProgramId(): Address {
     return 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address
+  }
+
+  private get associatedTokenProgramId(): Address {
+    return 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address
   }
 
   private get systemProgramId(): Address {

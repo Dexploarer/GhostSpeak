@@ -6,19 +6,19 @@
  */
 
 import type { Address } from '@solana/addresses'
-import { GhostSpeak } from './types.js'
+import { ErrorCode, type SDKError } from './types.js'
 
 /**
  * Base GhostSpeak error class
  */
 export class GhostSpeakError extends Error {
-  public readonly code: GhostSpeak.ErrorCode
+  public readonly code: ErrorCode
   public readonly context: Record<string, unknown>
   public readonly solution?: string
   public readonly instruction?: string
 
   constructor(
-    code: GhostSpeak.ErrorCode,
+    code: ErrorCode,
     message: string,
     context: Record<string, unknown> = {},
     solution?: string,
@@ -56,7 +56,7 @@ export class GhostSpeakError extends Error {
   /**
    * Convert to SDK error type
    */
-  toSDKError(): GhostSpeak.SDKError {
+  toSDKError(): SDKError {
     return {
       code: this.code,
       message: this.message,
@@ -77,7 +77,7 @@ export class GhostSpeakError extends Error {
 export class NetworkError extends GhostSpeakError {
   constructor(endpoint: string, originalError?: Error) {
     super(
-      GhostSpeak.ErrorCode.NETWORK_ERROR,
+      ErrorCode.NETWORK_ERROR,
       `Failed to connect to RPC endpoint: ${endpoint}`,
       { endpoint, originalError: originalError?.message },
       'Check your internet connection and verify the RPC endpoint is correct. Try using a different RPC provider.'
@@ -95,7 +95,7 @@ export class InsufficientBalanceError extends GhostSpeakError {
     const neededSOL = requiredSOL - availableSOL
     
     super(
-      GhostSpeak.ErrorCode.INSUFFICIENT_BALANCE,
+      ErrorCode.INSUFFICIENT_BALANCE,
       `Insufficient balance: need ${requiredSOL} SOL but only have ${availableSOL} SOL`,
       { 
         required: required.toString(),
@@ -118,7 +118,7 @@ export class InsufficientBalanceError extends GhostSpeakError {
 export class AccountNotFoundError extends GhostSpeakError {
   constructor(address: Address, accountType: string) {
     super(
-      GhostSpeak.ErrorCode.ACCOUNT_NOT_FOUND,
+      ErrorCode.ACCOUNT_NOT_FOUND,
       `${accountType} account not found at address: ${address}`,
       { address, accountType },
       `The ${accountType} account doesn't exist. Possible solutions:\n` +
@@ -135,7 +135,7 @@ export class AccountNotFoundError extends GhostSpeakError {
 export class InvalidInputError extends GhostSpeakError {
   constructor(field: string, value: unknown, requirement: string) {
     super(
-      GhostSpeak.ErrorCode.INVALID_INPUT,
+      ErrorCode.INVALID_INPUT,
       `Invalid ${field}: ${JSON.stringify(value)}`,
       { field, value, requirement },
       `The ${field} must ${requirement}`
@@ -151,7 +151,7 @@ export class TransactionFailedError extends GhostSpeakError {
     const errorLog = logs.find(log => log.includes('Error') || log.includes('failed'))
     
     super(
-      GhostSpeak.ErrorCode.TRANSACTION_FAILED,
+      ErrorCode.TRANSACTION_FAILED,
       `Transaction failed: ${programError || errorLog || 'Unknown error'}`,
       { signature, logs, programError },
       TransactionFailedError.getSolution(logs, programError),
@@ -198,7 +198,7 @@ export class TransactionFailedError extends GhostSpeakError {
 export class SimulationFailedError extends GhostSpeakError {
   constructor(logs: string[], unitsConsumed?: bigint) {
     super(
-      GhostSpeak.ErrorCode.SIMULATION_FAILED,
+      ErrorCode.SIMULATION_FAILED,
       'Transaction simulation failed',
       { logs, unitsConsumed: unitsConsumed?.toString() },
       'The transaction would fail if submitted. Review the simulation logs to identify the issue.'
@@ -212,7 +212,7 @@ export class SimulationFailedError extends GhostSpeakError {
 export class TimeoutError extends GhostSpeakError {
   constructor(operation: string, timeoutMs: number) {
     super(
-      GhostSpeak.ErrorCode.TIMEOUT,
+      ErrorCode.TIMEOUT,
       `Operation timed out after ${timeoutMs}ms: ${operation}`,
       { operation, timeoutMs },
       'The operation took too long. Try:\n' +
@@ -264,7 +264,7 @@ export class ErrorFactory {
       
       if (error.message.includes('429')) {
         return new GhostSpeakError(
-          GhostSpeak.ErrorCode.RPC_ERROR,
+          ErrorCode.RPC_ERROR,
           'Rate limit exceeded',
           { endpoint, error: error.message },
           'You are making too many requests. Try:\n' +
@@ -276,7 +276,7 @@ export class ErrorFactory {
     }
     
     return new GhostSpeakError(
-      GhostSpeak.ErrorCode.RPC_ERROR,
+      ErrorCode.RPC_ERROR,
       'RPC request failed',
       { endpoint, error: String(error) },
       'Check your RPC endpoint and network connection'
@@ -292,32 +292,32 @@ export class ErrorFactory {
  * Global error handler for consistent error handling
  */
 export class ErrorHandler {
-  private static handlers: Map<GhostSpeak.ErrorCode, (error: GhostSpeakError) => void> = new Map()
+  private static handlers: Map<ErrorCode, (error: GhostSpeakError) => void> = new Map()
 
   /**
    * Register error handler
    */
-  static on(code: GhostSpeak.ErrorCode, handler: (error: GhostSpeakError) => void): void {
+  static on(code: ErrorCode, handler: (error: GhostSpeakError) => void): void {
     this.handlers.set(code, handler)
   }
 
   /**
    * Handle error
    */
-  static handle(error: unknown): GhostSpeak.SDKError {
+  static handle(error: unknown): SDKError {
     let ghostSpeakError: GhostSpeakError
     
     if (error instanceof GhostSpeakError) {
       ghostSpeakError = error
     } else if (error instanceof Error) {
       ghostSpeakError = new GhostSpeakError(
-        GhostSpeak.ErrorCode.UNKNOWN_ERROR,
+        ErrorCode.UNKNOWN_ERROR,
         error.message,
         { originalError: error.name }
       )
     } else {
       ghostSpeakError = new GhostSpeakError(
-        GhostSpeak.ErrorCode.UNKNOWN_ERROR,
+        ErrorCode.UNKNOWN_ERROR,
         String(error)
       )
     }
@@ -343,7 +343,7 @@ export class ErrorHandler {
 export class ValidationError extends GhostSpeakError {
   constructor(message: string, context: Record<string, unknown> = {}) {
     super(
-      GhostSpeak.ErrorCode.INVALID_INPUT,
+      ErrorCode.INVALID_INPUT,
       message,
       context,
       'Check input parameters and ensure they meet the required format and constraints'

@@ -48,4 +48,11 @@ export function bootstrapServices(): void {
       storageService
     })
   })
+  
+  // Warm up frequently used services for better performance
+  container.warmUp([
+    ServiceTokens.WALLET_SERVICE,
+    ServiceTokens.STORAGE_SERVICE,
+    ServiceTokens.AGENT_SERVICE
+  ])
 }

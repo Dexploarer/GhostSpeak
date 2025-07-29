@@ -5,6 +5,47 @@
 import type { Address } from '@solana/addresses'
 import type { KeyPairSigner } from '@solana/kit'
 
+// Standardized Error Types
+export class ServiceError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public suggestion?: string,
+    public canRetry: boolean = false
+  ) {
+    super(message)
+    this.name = 'ServiceError'
+  }
+}
+
+export class ValidationError extends ServiceError {
+  constructor(message: string, suggestion?: string) {
+    super(message, 'VALIDATION_ERROR', suggestion, false)
+    this.name = 'ValidationError'
+  }
+}
+
+export class NotFoundError extends ServiceError {
+  constructor(resource: string, id: string) {
+    super(`${resource} not found: ${id}`, 'NOT_FOUND', `Check that the ${resource.toLowerCase()} ID is correct`, false)
+    this.name = 'NotFoundError'
+  }
+}
+
+export class NetworkError extends ServiceError {
+  constructor(message: string, suggestion?: string) {
+    super(message, 'NETWORK_ERROR', suggestion || 'Check your network connection and try again', true)
+    this.name = 'NetworkError'
+  }
+}
+
+export class UnauthorizedError extends ServiceError {
+  constructor(message: string = 'Unauthorized access') {
+    super(message, 'UNAUTHORIZED', 'Make sure you have permission to perform this action', false)
+    this.name = 'UnauthorizedError'
+  }
+}
+
 // Core business types
 export interface Agent {
   id: string

@@ -206,7 +206,7 @@ export async function waitForTransactionConfirmation(
   signature: string | Signature,
   cluster: SolanaCluster,
   commitment: Commitment = 'confirmed',
-  timeoutMs: number = 30000
+  timeoutMs = 30000
 ): Promise<void> {
   console.log(`⏳ Waiting for transaction confirmation...`)
   console.log(`   Signature: ${signature}`)

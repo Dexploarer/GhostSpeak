@@ -21,13 +21,15 @@ export class GhostSpeakError extends Error {
     code: GhostSpeak.ErrorCode,
     message: string,
     context: Record<string, unknown> = {},
-    solution?: string
+    solution?: string,
+    instruction?: string
   ) {
     super(message)
     this.name = 'GhostSpeakError'
     this.code = code
     this.context = context
     this.solution = solution
+    ;(this as any).instruction = instruction
   }
 
   /**
@@ -152,10 +154,9 @@ export class TransactionFailedError extends GhostSpeakError {
       GhostSpeak.ErrorCode.TRANSACTION_FAILED,
       `Transaction failed: ${programError || errorLog || 'Unknown error'}`,
       { signature, logs, programError },
-      TransactionFailedError.getSolution(logs, programError)
+      TransactionFailedError.getSolution(logs, programError),
+      `https://explorer.solana.com/tx/${signature}?cluster=devnet`
     )
-    
-    this.instruction = `https://explorer.solana.com/tx/${signature}?cluster=devnet`
   }
 
   private static getSolution(logs: string[], programError?: string): string {
@@ -336,6 +337,21 @@ export class ErrorHandler {
   }
 }
 
+/**
+ * Validation error for invalid inputs
+ */
+export class ValidationError extends GhostSpeakError {
+  constructor(message: string, context: Record<string, unknown> = {}) {
+    super(
+      GhostSpeak.ErrorCode.INVALID_INPUT,
+      message,
+      context,
+      'Check input parameters and ensure they meet the required format and constraints'
+    )
+    this.name = 'ValidationError'
+  }
+}
+
 // =====================================================
 // EXPORTS
 // =====================================================
@@ -349,6 +365,7 @@ export default {
   TransactionFailedError,
   SimulationFailedError,
   TimeoutError,
+  ValidationError,
   ErrorFactory,
   ErrorHandler
 }

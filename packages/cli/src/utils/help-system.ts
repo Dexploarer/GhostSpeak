@@ -62,7 +62,7 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     tips: [
       'Run the quickstart for a guided setup experience',
       'Use interactive mode if you prefer menus over commands',
-      'Check your setup status anytime with \"gs status\"'
+      'Check your setup status anytime with "gs status"'
     ],
     relatedTopics: ['wallet', 'agent']
   },
@@ -150,7 +150,7 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
       {
         command: 'gs marketplace search',
         description: 'Search for services',
-        example: 'gs marketplace search \"data analysis\"',
+        example: 'gs marketplace search "data analysis"',
         aliases: ['m s', 'ms', 'search']
       },
       {
@@ -246,4 +246,430 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
   },
   
   'troubleshooting': {
-    title: '🔧 Troubleshooting',\n    description: 'Common issues and solutions',\n    commands: [\n      {\n        command: 'gs diagnose',\n        description: 'Diagnose common issues',\n        example: 'gs diagnose'\n      },\n      {\n        command: 'gs config show',\n        description: 'Show current configuration',\n        example: 'gs config show'\n      },\n      {\n        command: 'gs update',\n        description: 'Update to latest version',\n        example: 'gs update'\n      }\n    ],\n    tips: [\n      'Check your internet connection for network errors',\n      'Ensure you have sufficient SOL for transactions',\n      'Verify wallet configuration if commands fail',\n      'Use DEBUG=1 for detailed error information'\n    ]\n  }\n}\n\nexport class HelpSystem {\n  private context: HelpContext\n  \n  constructor() {\n    this.context = this.buildContext()\n  }\n  \n  /**\n   * Show contextual help based on user state\n   */\n  showContextualHelp(): void {\n    console.log(chalk.cyan.bold('\\n📚 GhostSpeak CLI Help\\n'))\n    \n    // Show different help based on user state\n    if (this.context.isFirstRun) {\n      this.showFirstRunHelp()\n    } else if (!this.context.hasWallet) {\n      this.showWalletSetupHelp()\n    } else if (!this.context.hasFunding) {\n      this.showFundingHelp()\n    } else if (!this.context.hasAgent) {\n      this.showAgentSetupHelp()\n    } else {\n      this.showGeneralHelp()\n    }\n    \n    // Show recent command suggestions\n    if (this.context.recentCommands.length > 0) {\n      this.showRecentCommandHelp()\n    }\n    \n    // Show error-based suggestions\n    if (this.context.errorHistory.length > 0) {\n      this.showErrorBasedHelp()\n    }\n    \n    this.showQuickReference()\n  }\n  \n  /**\n   * Show help for a specific topic\n   */\n  showTopicHelp(topic: string): void {\n    const helpTopic = HELP_TOPICS[topic]\n    if (!helpTopic) {\n      console.log(chalk.red(`Unknown help topic: ${topic}`))\n      this.showAvailableTopics()\n      return\n    }\n    \n    console.log(infoBox(helpTopic.title, helpTopic.description))\n    console.log('')\n    \n    if (helpTopic.commands.length > 0) {\n      console.log(chalk.bold('Commands:'))\n      console.log('')\n      \n      helpTopic.commands.forEach(cmd => {\n        console.log(`  ${chalk.cyan(cmd.command.padEnd(30))} ${cmd.description}`)\n        if (cmd.example) {\n          console.log(`  ${' '.repeat(30)} ${chalk.gray('Example: ' + cmd.example)}`)\n        }\n        if (cmd.aliases && cmd.aliases.length > 0) {\n          console.log(`  ${' '.repeat(30)} ${chalk.gray('Aliases: ' + cmd.aliases.join(', '))}`)\n        }\n        console.log('')\n      })\n    }\n    \n    if (helpTopic.tips && helpTopic.tips.length > 0) {\n      console.log(chalk.bold('💡 Tips:'))\n      console.log(bulletList(helpTopic.tips))\n      console.log('')\n    }\n    \n    if (helpTopic.relatedTopics && helpTopic.relatedTopics.length > 0) {\n      console.log(chalk.bold('🔗 Related Topics:'))\n      const related = helpTopic.relatedTopics.map(t => `gs help ${t}`).join(', ')\n      console.log(chalk.gray(`  ${related}`))\n      console.log('')\n    }\n  }\n  \n  /**\n   * Show available help topics\n   */\n  showAvailableTopics(): void {\n    console.log(chalk.bold('\\n📋 Available Help Topics:\\n'))\n    \n    Object.entries(HELP_TOPICS).forEach(([key, topic]) => {\n      console.log(`  ${chalk.cyan(('gs help ' + key).padEnd(25))} ${topic.description}`)\n    })\n    \n    console.log('')\n    console.log(chalk.gray('Example: gs help wallet'))\n  }\n  \n  /**\n   * Search help content\n   */\n  searchHelp(query: string): void {\n    const results = this.findHelpContent(query)\n    \n    if (results.length === 0) {\n      console.log(chalk.yellow(`No help found for \"${query}\"`))  \n      this.showSuggestions(query)\n      return\n    }\n    \n    console.log(chalk.bold(`\\n🔍 Help results for \"${query}\":\\n`))\n    \n    results.forEach(result => {\n      console.log(chalk.cyan(`${result.topic}: ${result.title}`))\n      console.log(chalk.gray(`  ${result.description}`))\n      console.log(chalk.gray(`  Command: gs help ${result.topic}`))\n      console.log('')\n    })\n  }\n  \n  /**\n   * Show command suggestions based on partial input\n   */\n  showSuggestions(partial: string): void {\n    const suggestions = getSuggestions(partial)\n    \n    if (suggestions.length > 0) {\n      console.log(chalk.bold('\\n💡 Did you mean:'))\n      suggestions.forEach(suggestion => {\n        console.log(`  ${chalk.cyan(suggestion.aliases[0].padEnd(15))} ${suggestion.description}`)\n      })\n      console.log('')\n    }\n  }\n  \n  /**\n   * Build user context for personalized help\n   */\n  private buildContext(): HelpContext {\n    const walletService = new WalletService()\n    \n    return {\n      hasWallet: walletService.getActiveWallet() !== null,\n      hasFunding: false, // Would check balance\n      hasAgent: false,   // Would check for registered agents\n      recentCommands: this.getRecentCommands(),\n      errorHistory: this.getErrorHistory(),\n      networkStatus: 'unknown',\n      isFirstRun: !hasCompletedOnboarding()\n    }\n  }\n  \n  /**\n   * Show help for first-time users\n   */\n  private showFirstRunHelp(): void {\n    console.log(infoBox('👋 Welcome to GhostSpeak!', [\n      'It looks like this is your first time using GhostSpeak.',\n      'Let\\'s get you started with the essential commands.'\n    ]))\n    \n    console.log('')\n    console.log(chalk.bold('🚀 Quick Start:'))\n    console.log('')\n    console.log(`  ${chalk.cyan('gs quickstart'.padEnd(20))} Complete guided setup`)\n    console.log(`  ${chalk.cyan('gs --interactive'.padEnd(20))} Interactive menu mode`)\n    console.log(`  ${chalk.cyan('gs help getting-started'.padEnd(20))} Detailed getting started guide`)\n    console.log('')\n  }\n  \n  /**\n   * Show wallet setup help\n   */\n  private showWalletSetupHelp(): void {\n    console.log(infoBox('💳 Wallet Setup Required', [\n      'You need a wallet to interact with the Solana blockchain.',\n      'Your wallet stores SOL and manages transactions.'\n    ]))\n    \n    console.log('')\n    console.log(chalk.bold('Wallet Commands:'))\n    console.log('')\n    console.log(`  ${chalk.cyan('gs wallet create'.padEnd(20))} Create a new wallet`)\n    console.log(`  ${chalk.cyan('gs wallet import'.padEnd(20))} Import existing wallet`)\n    console.log(`  ${chalk.cyan('gs help wallet'.padEnd(20))} Complete wallet guide`)\n    console.log('')\n  }\n  \n  /**\n   * Show funding help\n   */\n  private showFundingHelp(): void {\n    console.log(infoBox('💰 Wallet Funding', [\n      'Your wallet needs SOL for transactions.',\n      'On devnet, you can get free SOL from the faucet.'\n    ]))\n    \n    console.log('')\n    console.log(chalk.bold('Funding Commands:'))\n    console.log('')\n    console.log(`  ${chalk.cyan('gs faucet --save'.padEnd(20))} Get free SOL (devnet)`)\n    console.log(`  ${chalk.cyan('gs wallet balance'.padEnd(20))} Check current balance`)\n    console.log('')\n  }\n  \n  /**\n   * Show agent setup help\n   */\n  private showAgentSetupHelp(): void {\n    console.log(infoBox('🤖 Agent Registration', [\n      'Register an AI agent to provide services.',\n      'Agents can earn SOL by completing tasks.'\n    ]))\n    \n    console.log('')\n    console.log(chalk.bold('Agent Commands:'))\n    console.log('')\n    console.log(`  ${chalk.cyan('gs agent register'.padEnd(20))} Register new agent`)\n    console.log(`  ${chalk.cyan('gs agent list'.padEnd(20))} List your agents`)\n    console.log(`  ${chalk.cyan('gs help agent'.padEnd(20))} Complete agent guide`)\n    console.log('')\n  }\n  \n  /**\n   * Show general help for experienced users\n   */\n  private showGeneralHelp(): void {\n    console.log(chalk.bold('📋 Common Commands:'))\n    console.log('')\n    \n    const commonCommands = [\n      { cmd: 'gs marketplace list', desc: 'Browse services' },\n      { cmd: 'gs escrow create', desc: 'Create secure payment' },\n      { cmd: 'gs agent status', desc: 'Check agent performance' },\n      { cmd: 'gs wallet balance', desc: 'Check SOL balance' },\n      { cmd: 'gs --interactive', desc: 'Interactive menu' }\n    ]\n    \n    commonCommands.forEach(({ cmd, desc }) => {\n      console.log(`  ${chalk.cyan(cmd.padEnd(25))} ${desc}`)\n    })\n    \n    console.log('')\n  }\n  \n  /**\n   * Show help based on recent commands\n   */\n  private showRecentCommandHelp(): void {\n    console.log(chalk.bold('⏱️  Recent Activity:'))\n    console.log('')\n    console.log(chalk.gray('Based on your recent commands, you might want to:'))\n    \n    const suggestions = this.getContextualSuggestions()\n    suggestions.forEach(suggestion => {\n      console.log(`  ${chalk.cyan('•')} ${suggestion}`)\n    })\n    \n    console.log('')\n  }\n  \n  /**\n   * Show help based on error history\n   */\n  private showErrorBasedHelp(): void {\n    console.log(chalk.bold('🔧 Troubleshooting:'))\n    console.log('')\n    console.log(chalk.gray('If you\\'re experiencing issues, try:'))\n    console.log('')\n    console.log(`  ${chalk.cyan('gs diagnose'.padEnd(20))} Run diagnostic checks`)\n    console.log(`  ${chalk.cyan('gs config show'.padEnd(20))} Verify configuration`)\n    console.log(`  ${chalk.cyan('gs help troubleshooting'.padEnd(20))} Troubleshooting guide`)\n    console.log('')\n  }\n  \n  /**\n   * Show quick reference\n   */\n  private showQuickReference(): void {\n    console.log(divider())\n    console.log('')\n    console.log(chalk.bold('⚡ Quick Reference:'))\n    console.log('')\n    console.log(`  ${chalk.gray('Get help for any command:')} ${chalk.cyan('gs <command> --help')}`)\n    console.log(`  ${chalk.gray('Interactive mode:')} ${chalk.cyan('gs --interactive')}`)\n    console.log(`  ${chalk.gray('View all help topics:')} ${chalk.cyan('gs help')}`)\n    console.log(`  ${chalk.gray('Search help:')} ${chalk.cyan('gs help search <query>')}`)\n    console.log('')\n    console.log(chalk.gray('💡 Tip: Use tab completion and command shortcuts to work faster!'))\n    console.log('')\n  }\n  \n  /**\n   * Get recent commands from history\n   */\n  private getRecentCommands(): string[] {\n    try {\n      const historyFile = join(homedir(), '.ghostspeak', 'recent-commands.json')\n      if (existsSync(historyFile)) {\n        const data = JSON.parse(readFileSync(historyFile, 'utf-8'))\n        return data.map((item: any) => item.command).slice(0, 5)\n      }\n    } catch {\n      // Ignore errors\n    }\n    return []\n  }\n  \n  /**\n   * Get error history for better suggestions\n   */\n  private getErrorHistory(): string[] {\n    // This would read from error logs if implemented\n    return []\n  }\n  \n  /**\n   * Get contextual suggestions based on recent activity\n   */\n  private getContextualSuggestions(): string[] {\n    const suggestions = []\n    \n    if (this.context.recentCommands.includes('agent register')) {\n      suggestions.push('Create a service listing: gs marketplace create')\n    }\n    \n    if (this.context.recentCommands.includes('marketplace create')) {\n      suggestions.push('Check your listings: gs marketplace list --mine')\n    }\n    \n    if (this.context.recentCommands.includes('escrow create')) {\n      suggestions.push('Monitor escrow status: gs escrow list')\n    }\n    \n    if (suggestions.length === 0) {\n      suggestions.push('Explore the marketplace: gs marketplace list')\n      suggestions.push('Check your agent status: gs agent list')\n    }\n    \n    return suggestions\n  }\n  \n  /**\n   * Find help content matching query\n   */\n  private findHelpContent(query: string): Array<{\n    topic: string\n    title: string\n    description: string\n  }> {\n    const results: Array<{ topic: string; title: string; description: string }> = []\n    const lowerQuery = query.toLowerCase()\n    \n    Object.entries(HELP_TOPICS).forEach(([key, topic]) => {\n      const searchText = `${topic.title} ${topic.description} ${topic.commands.map(c => c.command + ' ' + c.description).join(' ')}`.toLowerCase()\n      \n      if (searchText.includes(lowerQuery)) {\n        results.push({\n          topic: key,\n          title: topic.title,\n          description: topic.description\n        })\n      }\n    })\n    \n    return results\n  }\n}\n\n/**\n * Show contextual help\n */\nexport function showContextualHelp(): void {\n  const helpSystem = new HelpSystem()\n  helpSystem.showContextualHelp()\n}\n\n/**\n * Show help for specific topic\n */\nexport function showTopicHelp(topic: string): void {\n  const helpSystem = new HelpSystem()\n  helpSystem.showTopicHelp(topic)\n}\n\n/**\n * Search help content\n */\nexport function searchHelp(query: string): void {\n  const helpSystem = new HelpSystem()\n  helpSystem.searchHelp(query)\n}\n\n/**\n * Show available help topics\n */\nexport function showAvailableTopics(): void {\n  const helpSystem = new HelpSystem()\n  helpSystem.showAvailableTopics()\n}"
+    title: '🔧 Troubleshooting',
+    description: 'Common issues and solutions',
+    commands: [
+      {
+        command: 'gs diagnose',
+        description: 'Diagnose common issues',
+        example: 'gs diagnose'
+      },
+      {
+        command: 'gs config show',
+        description: 'Show current configuration',
+        example: 'gs config show'
+      },
+      {
+        command: 'gs update',
+        description: 'Update to latest version',
+        example: 'gs update'
+      }
+    ],
+    tips: [
+      'Check your internet connection for network errors',
+      'Ensure you have sufficient SOL for transactions',
+      'Verify wallet configuration if commands fail',
+      'Use DEBUG=1 for detailed error information'
+    ]
+  }
+}
+
+export class HelpSystem {
+  private context: HelpContext
+  
+  constructor() {
+    this.context = this.buildContext()
+  }
+  
+  /**
+   * Show contextual help based on user state
+   */
+  showContextualHelp(): void {
+    console.log(chalk.cyan.bold('\n📚 GhostSpeak CLI Help\n'))
+    
+    // Show different help based on user state
+    if (this.context.isFirstRun) {
+      this.showFirstRunHelp()
+    } else if (!this.context.hasWallet) {
+      this.showWalletSetupHelp()
+    } else if (!this.context.hasFunding) {
+      this.showFundingHelp()
+    } else if (!this.context.hasAgent) {
+      this.showAgentSetupHelp()
+    } else {
+      this.showGeneralHelp()
+    }
+    
+    // Show recent command suggestions
+    if (this.context.recentCommands.length > 0) {
+      this.showRecentCommandHelp()
+    }
+    
+    // Show error-based suggestions
+    if (this.context.errorHistory.length > 0) {
+      this.showErrorBasedHelp()
+    }
+    
+    this.showQuickReference()
+  }
+  
+  /**
+   * Show help for a specific topic
+   */
+  showTopicHelp(topic: string): void {
+    const helpTopic = HELP_TOPICS[topic]
+    if (!helpTopic) {
+      console.log(chalk.red(`Unknown help topic: ${topic}`))
+      this.showAvailableTopics()
+      return
+    }
+    
+    console.log(infoBox(helpTopic.title, helpTopic.description))
+    console.log('')
+    
+    if (helpTopic.commands.length > 0) {
+      console.log(chalk.bold('Commands:'))
+      console.log('')
+      
+      helpTopic.commands.forEach(cmd => {
+        console.log(`  ${chalk.cyan(cmd.command.padEnd(30))} ${cmd.description}`)
+        if (cmd.example) {
+          console.log(`  ${' '.repeat(30)} ${chalk.gray('Example: ' + cmd.example)}`)
+        }
+        if (cmd.aliases && cmd.aliases.length > 0) {
+          console.log(`  ${' '.repeat(30)} ${chalk.gray('Aliases: ' + cmd.aliases.join(', '))}`)
+        }
+        console.log('')
+      })
+    }
+    
+    if (helpTopic.tips && helpTopic.tips.length > 0) {
+      console.log(chalk.bold('💡 Tips:'))
+      console.log(bulletList(helpTopic.tips))
+      console.log('')
+    }
+    
+    if (helpTopic.relatedTopics && helpTopic.relatedTopics.length > 0) {
+      console.log(chalk.bold('🔗 Related Topics:'))
+      const related = helpTopic.relatedTopics.map(t => `gs help ${t}`).join(', ')
+      console.log(chalk.gray(`  ${related}`))
+      console.log('')
+    }
+  }
+  
+  /**
+   * Show available help topics
+   */
+  showAvailableTopics(): void {
+    console.log(chalk.bold('\n📋 Available Help Topics:\n'))
+    
+    Object.entries(HELP_TOPICS).forEach(([key, topic]) => {
+      console.log(`  ${chalk.cyan(('gs help ' + key).padEnd(25))} ${topic.description}`)
+    })
+    
+    console.log('')
+    console.log(chalk.gray('Example: gs help wallet'))
+  }
+  
+  /**
+   * Search help content
+   */
+  searchHelp(query: string): void {
+    const results = this.findHelpContent(query)
+    
+    if (results.length === 0) {
+      console.log(chalk.yellow(`No help found for "${query}"`))  
+      this.showSuggestions(query)
+      return
+    }
+    
+    console.log(chalk.bold(`\n🔍 Help results for "${query}":\n`))
+    
+    results.forEach(result => {
+      console.log(chalk.cyan(`${result.topic}: ${result.title}`))
+      console.log(chalk.gray(`  ${result.description}`))
+      console.log(chalk.gray(`  Command: gs help ${result.topic}`))
+      console.log('')
+    })
+  }
+  
+  /**
+   * Show command suggestions based on partial input
+   */
+  showSuggestions(partial: string): void {
+    const suggestions = getSuggestions(partial)
+    
+    if (suggestions.length > 0) {
+      console.log(chalk.bold('\n💡 Did you mean:'))
+      suggestions.forEach(suggestion => {
+        console.log(`  ${chalk.cyan(suggestion.aliases[0].padEnd(15))} ${suggestion.description}`)
+      })
+      console.log('')
+    }
+  }
+  
+  /**
+   * Build user context for personalized help
+   */
+  private buildContext(): HelpContext {
+    const walletService = new WalletService()
+    
+    return {
+      hasWallet: walletService.getActiveWallet() !== null,
+      hasFunding: false, // Would check balance
+      hasAgent: false,   // Would check for registered agents
+      recentCommands: this.getRecentCommands(),
+      errorHistory: this.getErrorHistory(),
+      networkStatus: 'unknown',
+      isFirstRun: !hasCompletedOnboarding()
+    }
+  }
+  
+  /**
+   * Show help for first-time users
+   */
+  private showFirstRunHelp(): void {
+    console.log(infoBox('👋 Welcome to GhostSpeak!', [
+      'It looks like this is your first time using GhostSpeak.',
+      'Let\'s get you started with the essential commands.'
+    ]))
+    
+    console.log('')
+    console.log(chalk.bold('🚀 Quick Start:'))
+    console.log('')
+    console.log(`  ${chalk.cyan('gs quickstart'.padEnd(20))} Complete guided setup`)
+    console.log(`  ${chalk.cyan('gs --interactive'.padEnd(20))} Interactive menu mode`)
+    console.log(`  ${chalk.cyan('gs help getting-started'.padEnd(20))} Detailed getting started guide`)
+    console.log('')
+  }
+  
+  /**
+   * Show wallet setup help
+   */
+  private showWalletSetupHelp(): void {
+    console.log(infoBox('💳 Wallet Setup Required', [
+      'You need a wallet to interact with the Solana blockchain.',
+      'Your wallet stores SOL and manages transactions.'
+    ]))
+    
+    console.log('')
+    console.log(chalk.bold('Wallet Commands:'))
+    console.log('')
+    console.log(`  ${chalk.cyan('gs wallet create'.padEnd(20))} Create a new wallet`)
+    console.log(`  ${chalk.cyan('gs wallet import'.padEnd(20))} Import existing wallet`)
+    console.log(`  ${chalk.cyan('gs help wallet'.padEnd(20))} Complete wallet guide`)
+    console.log('')
+  }
+  
+  /**
+   * Show funding help
+   */
+  private showFundingHelp(): void {
+    console.log(infoBox('💰 Wallet Funding', [
+      'Your wallet needs SOL for transactions.',
+      'On devnet, you can get free SOL from the faucet.'
+    ]))
+    
+    console.log('')
+    console.log(chalk.bold('Funding Commands:'))
+    console.log('')
+    console.log(`  ${chalk.cyan('gs faucet --save'.padEnd(20))} Get free SOL (devnet)`)
+    console.log(`  ${chalk.cyan('gs wallet balance'.padEnd(20))} Check current balance`)
+    console.log('')
+  }
+  
+  /**
+   * Show agent setup help
+   */
+  private showAgentSetupHelp(): void {
+    console.log(infoBox('🤖 Agent Registration', [
+      'Register an AI agent to provide services.',
+      'Agents can earn SOL by completing tasks.'
+    ]))
+    
+    console.log('')
+    console.log(chalk.bold('Agent Commands:'))
+    console.log('')
+    console.log(`  ${chalk.cyan('gs agent register'.padEnd(20))} Register new agent`)
+    console.log(`  ${chalk.cyan('gs agent list'.padEnd(20))} List your agents`)
+    console.log(`  ${chalk.cyan('gs help agent'.padEnd(20))} Complete agent guide`)
+    console.log('')
+  }
+  
+  /**
+   * Show general help for experienced users
+   */
+  private showGeneralHelp(): void {
+    console.log(chalk.bold('📋 Common Commands:'))
+    console.log('')
+    
+    const commonCommands = [
+      { cmd: 'gs marketplace list', desc: 'Browse services' },
+      { cmd: 'gs escrow create', desc: 'Create secure payment' },
+      { cmd: 'gs agent status', desc: 'Check agent performance' },
+      { cmd: 'gs wallet balance', desc: 'Check SOL balance' },
+      { cmd: 'gs --interactive', desc: 'Interactive menu' }
+    ]
+    
+    commonCommands.forEach(({ cmd, desc }) => {
+      console.log(`  ${chalk.cyan(cmd.padEnd(25))} ${desc}`)
+    })
+    
+    console.log('')
+  }
+  
+  /**
+   * Show help based on recent commands
+   */
+  private showRecentCommandHelp(): void {
+    console.log(chalk.bold('⏱️  Recent Activity:'))
+    console.log('')
+    console.log(chalk.gray('Based on your recent commands, you might want to:'))
+    
+    const suggestions = this.getContextualSuggestions()
+    suggestions.forEach(suggestion => {
+      console.log(`  ${chalk.cyan('•')} ${suggestion}`)
+    })
+    
+    console.log('')
+  }
+  
+  /**
+   * Show help based on error history
+   */
+  private showErrorBasedHelp(): void {
+    console.log(chalk.bold('🔧 Troubleshooting:'))
+    console.log('')
+    console.log(chalk.gray('If you\'re experiencing issues, try:'))
+    console.log('')
+    console.log(`  ${chalk.cyan('gs diagnose'.padEnd(20))} Run diagnostic checks`)
+    console.log(`  ${chalk.cyan('gs config show'.padEnd(20))} Verify configuration`)
+    console.log(`  ${chalk.cyan('gs help troubleshooting'.padEnd(20))} Troubleshooting guide`)
+    console.log('')
+  }
+  
+  /**
+   * Show quick reference
+   */
+  private showQuickReference(): void {
+    console.log(divider())
+    console.log('')
+    console.log(chalk.bold('⚡ Quick Reference:'))
+    console.log('')
+    console.log(`  ${chalk.gray('Get help for any command:')} ${chalk.cyan('gs <command> --help')}`)
+    console.log(`  ${chalk.gray('Interactive mode:')} ${chalk.cyan('gs --interactive')}`)
+    console.log(`  ${chalk.gray('View all help topics:')} ${chalk.cyan('gs help')}`)
+    console.log(`  ${chalk.gray('Search help:')} ${chalk.cyan('gs help search <query>')}`)
+    console.log('')
+    console.log(chalk.gray('💡 Tip: Use tab completion and command shortcuts to work faster!'))
+    console.log('')
+  }
+  
+  /**
+   * Get recent commands from history
+   */
+  private getRecentCommands(): string[] {
+    try {
+      const historyFile = join(homedir(), '.ghostspeak', 'recent-commands.json')
+      if (existsSync(historyFile)) {
+        const data = JSON.parse(readFileSync(historyFile, 'utf-8'))
+        return data.map((item: any) => item.command).slice(0, 5)
+      }
+    } catch {
+      // Ignore errors
+    }
+    return []
+  }
+  
+  /**
+   * Get error history for better suggestions
+   */
+  private getErrorHistory(): string[] {
+    // This would read from error logs if implemented
+    return []
+  }
+  
+  /**
+   * Get contextual suggestions based on recent activity
+   */
+  private getContextualSuggestions(): string[] {
+    const suggestions = []
+    
+    if (this.context.recentCommands.includes('agent register')) {
+      suggestions.push('Create a service listing: gs marketplace create')
+    }
+    
+    if (this.context.recentCommands.includes('marketplace create')) {
+      suggestions.push('Check your listings: gs marketplace list --mine')
+    }
+    
+    if (this.context.recentCommands.includes('escrow create')) {
+      suggestions.push('Monitor escrow status: gs escrow list')
+    }
+    
+    if (suggestions.length === 0) {
+      suggestions.push('Explore the marketplace: gs marketplace list')
+      suggestions.push('Check your agent status: gs agent list')
+    }
+    
+    return suggestions
+  }
+  
+  /**
+   * Find help content matching query
+   */
+  private findHelpContent(query: string): Array<{
+    topic: string
+    title: string
+    description: string
+  }> {
+    const results: Array<{ topic: string; title: string; description: string }> = []
+    const lowerQuery = query.toLowerCase()
+    
+    Object.entries(HELP_TOPICS).forEach(([key, topic]) => {
+      const searchText = `${topic.title} ${topic.description} ${topic.commands.map(c => c.command + ' ' + c.description).join(' ')}`.toLowerCase()
+      
+      if (searchText.includes(lowerQuery)) {
+        results.push({
+          topic: key,
+          title: topic.title,
+          description: topic.description
+        })
+      }
+    })
+    
+    return results
+  }
+}
+
+/**
+ * Show contextual help
+ */
+export function showContextualHelp(): void {
+  const helpSystem = new HelpSystem()
+  helpSystem.showContextualHelp()
+}
+
+/**
+ * Show help for specific topic
+ */
+export function showTopicHelp(topic: string): void {
+  const helpSystem = new HelpSystem()
+  helpSystem.showTopicHelp(topic)
+}
+
+/**
+ * Search help content
+ */
+export function searchHelp(query: string): void {
+  const helpSystem = new HelpSystem()
+  helpSystem.searchHelp(query)
+}
+
+/**
+ * Show available help topics
+ */
+export function showAvailableTopics(): void {
+  const helpSystem = new HelpSystem()
+  helpSystem.showAvailableTopics()
+}

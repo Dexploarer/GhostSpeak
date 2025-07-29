@@ -1,33 +1,48 @@
 /**
- * Enhanced onboarding experience for new users
- * Provides guided setup with clear explanations
+ * Onboarding service - comprehensive setup flow for new users
  */
 
-import chalk from 'chalk'
-import { intro, outro, text, select, confirm, isCancel, cancel, spinner, log } from '@clack/prompts'
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
-import { infoBox, successBox, warningBox, stepIndicator, divider } from './format-helpers.js'
+import chalk from 'chalk'
+import { 
+  intro, 
+  outro, 
+  text, 
+  select, 
+  confirm, 
+  spinner, 
+  cancel, 
+  isCancel 
+} from '@clack/prompts'
 import { WalletService } from '../services/wallet-service.js'
 import { initializeClient } from './client.js'
-import { estimateAndDisplay } from '../services/cost-estimator.js'
-
-export interface OnboardingProgress {
-  step: number
-  totalSteps: number
-  completedSteps: Set<string>
-  skippedSteps: Set<string>
-}
+import { 
+  successBox, 
+  warningBox, 
+  infoBox, 
+  divider, 
+  stepIndicator 
+} from './ui-helpers.js'
+import { estimateAndDisplay } from './cost-estimation.js'
 
 export interface OnboardingConfig {
-  skipWelcome?: boolean
   network?: 'devnet' | 'testnet' | 'mainnet-beta'
   autoFaucet?: boolean
-  createAgent?: boolean
+  skipSteps?: OnboardingStep[]
 }
 
-const ONBOARDING_STEPS = [
+export type OnboardingStep = 
+  | 'welcome'
+  | 'network-selection' 
+  | 'wallet-setup'
+  | 'funding'
+  | 'first-agent'
+  | 'marketplace-tour'
+  | 'completion'
+
+const ONBOARDING_STEPS: OnboardingStep[] = [
   'welcome',
   'network-selection',
   'wallet-setup',
@@ -35,50 +50,685 @@ const ONBOARDING_STEPS = [
   'first-agent',
   'marketplace-tour',
   'completion'
-] as const
+]
 
-type OnboardingStep = typeof ONBOARDING_STEPS[number]
+interface OnboardingProgress {
+  step: number
+  completedSteps: Set<OnboardingStep>
+  skippedSteps: Set<OnboardingStep>
+  totalSteps: number
+}
 
+/**
+ * Comprehensive onboarding service
+ */
 export class OnboardingService {
-  private progress: OnboardingProgress
-  private config: OnboardingConfig
+  private progress: OnboardingProgress = {
+    step: 1,
+    completedSteps: new Set(),
+    skippedSteps: new Set(),
+    totalSteps: ONBOARDING_STEPS.length
+  }
+  
   private walletService: WalletService
   
-  constructor(config: OnboardingConfig = {}) {
-    this.config = config
-    this.progress = {
-      step: 1,
-      totalSteps: ONBOARDING_STEPS.length,
-      completedSteps: new Set(),
-      skippedSteps: new Set()
-    }
+  constructor(private config: OnboardingConfig = {}) {
     this.walletService = new WalletService()
+    this.loadProgress()
   }
   
   /**
-   * Start the complete onboarding flow
+   * Start the onboarding process
    */
   async start(): Promise<void> {
-    if (!this.config.skipWelcome) {
+    intro(chalk.bold.cyan('🚀 Welcome to GhostSpeak Protocol'))
+    
+    try {
       await this.welcomeStep()
-    }
-    
-    await this.networkSelectionStep()
-    await this.walletSetupStep()
-    await this.fundingStep()
-    
-    if (this.config.createAgent !== false) {
+      await this.networkSelectionStep()
+      await this.walletSetupStep()
+      await this.fundingStep()
       await this.firstAgentStep()
+      await this.marketplaceTourStep()
+      await this.completionStep()
+    } catch (error) {
+      if (error instanceof Error && error.message === 'cancelled') {
+        cancel('Setup cancelled by user')
+        return
+      }
+      
+      console.error(chalk.red('Onboarding failed:'), error)
+      cancel('Setup failed - you can restart anytime with: gs quickstart')
     }
-    
-    await this.marketplaceTourStep()
-    await this.completionStep()
   }
   
   /**
-   * Welcome step with introduction
+   * Load existing progress
+   */
+  private loadProgress(): void {
+    try {
+      const progressFile = join(homedir(), '.ghostspeak', 'onboarding-progress.json')
+      if (existsSync(progressFile)) {
+        const data = JSON.parse(readFileSync(progressFile, 'utf-8'))
+        this.progress.step = data.step || 1
+        this.progress.completedSteps = new Set(data.completedSteps || [])
+        this.progress.skippedSteps = new Set(data.skippedSteps || [])
+        this.config = { ...this.config, ...data.config }
+      }
+    } catch {
+      // Ignore errors loading progress
+    }
+  }
+  
+  /**
+   * Welcome step
    */
   private async welcomeStep(): Promise<void> {
-    intro(chalk.cyan('🚀 Welcome to GhostSpeak!'))
+    console.log('')
+    console.log(stepIndicator(1, this.progress.totalSteps, 'Welcome'))
     
-    console.log(infoBox('What is GhostSpeak?', [\n      'GhostSpeak is a decentralized AI agent commerce protocol.',\n      'Here you can:',\n      '• Register AI agents to provide services',\n      '• Browse and purchase services from other agents',\n      '• Create secure escrow payments',\n      '• Participate in the AI agent economy'\n    ]))\n    \n    console.log('')\n    console.log(stepIndicator(1, this.progress.totalSteps, 'Introduction'))\n    \n    const ready = await confirm({\n      message: 'Ready to get started?',\n      active: 'Yes, let\\'s go!',\n      inactive: 'Maybe later'\n    })\n    \n    if (isCancel(ready) || !ready) {\n      cancel('Setup cancelled. Run \"gs quickstart\" anytime to continue.')\n      process.exit(0)\n    }\n    \n    this.markStepCompleted('welcome')\n  }\n  \n  /**\n   * Network selection step\n   */\n  private async networkSelectionStep(): Promise<void> {\n    console.log('')\n    console.log(stepIndicator(2, this.progress.totalSteps, 'Network Selection'))\n    \n    if (this.config.network) {\n      console.log(infoBox('Network Selected', [\n        `Using ${this.config.network} network`,\n        this.config.network === 'devnet' ? 'Perfect for testing and development' : 'Production network'\n      ]))\n      this.markStepCompleted('network-selection')\n      return\n    }\n    \n    console.log(infoBox('Choose Your Network', [\n      'Devnet: Free SOL, perfect for testing (Recommended for beginners)',\n      'Testnet: Testing network with test tokens',\n      'Mainnet: Real SOL, production environment'\n    ]))\n    \n    const network = await select({\n      message: 'Which network would you like to use?',\n      options: [\n        { value: 'devnet', label: '🧪 Devnet (Recommended)', hint: 'Free SOL for testing' },\n        { value: 'testnet', label: '🧪 Testnet', hint: 'Test environment' },\n        { value: 'mainnet-beta', label: '🌐 Mainnet', hint: 'Production (costs real SOL)' }\n      ]\n    })\n    \n    if (isCancel(network)) {\n      cancel('Setup cancelled')\n      process.exit(0)\n    }\n    \n    this.config.network = network as any\n    \n    // Save network preference\n    await this.saveProgress()\n    \n    this.markStepCompleted('network-selection')\n  }\n  \n  /**\n   * Wallet setup step\n   */\n  private async walletSetupStep(): Promise<void> {\n    console.log('')\n    console.log(stepIndicator(3, this.progress.totalSteps, 'Wallet Setup'))\n    \n    // Check if user already has a wallet\n    const activeWallet = this.walletService.getActiveWallet()\n    if (activeWallet) {\n      console.log(successBox('Wallet Already Configured', [\n        `Active wallet: ${activeWallet.metadata.name}`,\n        `Address: ${activeWallet.metadata.address}`,\n        'You can create additional wallets anytime with \"gs wallet create\"'\n      ]))\n      this.markStepCompleted('wallet-setup')\n      return\n    }\n    \n    console.log(infoBox('Wallet Setup', [\n      'A wallet is required to interact with the Solana blockchain.',\n      'Your wallet will store your SOL and manage your transactions.',\n      'We\\'ll create a secure wallet with a recovery phrase.'\n    ]))\n    \n    const walletChoice = await select({\n      message: 'How would you like to set up your wallet?',\n      options: [\n        { \n          value: 'create', \n          label: '🆕 Create New Wallet', \n          hint: 'Generate a new wallet with recovery phrase' \n        },\n        { \n          value: 'import', \n          label: '📥 Import Existing Wallet', \n          hint: 'Import from seed phrase or private key' \n        },\n        { \n          value: 'skip', \n          label: '⏭️  Skip for Now', \n          hint: 'Configure wallet later' \n        }\n      ]\n    })\n    \n    if (isCancel(walletChoice)) {\n      cancel('Setup cancelled')\n      process.exit(0)\n    }\n    \n    if (walletChoice === 'skip') {\n      this.markStepSkipped('wallet-setup')\n      return\n    }\n    \n    const s = spinner()\n    \n    if (walletChoice === 'create') {\n      s.start('Creating your wallet...')\n      \n      const { wallet, mnemonic } = await this.walletService.createWallet(\n        'default',\n        this.config.network || 'devnet'\n      )\n      \n      s.stop('✅ Wallet created!')\n      \n      // Show seed phrase prominently\n      console.log('')\n      console.log(warningBox('🔐 IMPORTANT: Save Your Recovery Phrase', [\n        'Write down these 24 words in order and store them safely.',\n        'This is the ONLY way to recover your wallet if lost.',\n        'Never share this phrase with anyone.'\n      ]))\n      \n      console.log('')\n      console.log(infoBox('Your Recovery Phrase', mnemonic.split(' ').map((word, i) => \n        `${(i + 1).toString().padStart(2, ' ')}. ${word}`\n      ).join('\\n')))\n      \n      const confirmed = await confirm({\n        message: 'Have you written down your recovery phrase safely?',\n        active: 'Yes, I have saved it',\n        inactive: 'No, let me write it down'\n      })\n      \n      if (isCancel(confirmed) || !confirmed) {\n        console.log(chalk.yellow('\\n⚠️  Please save your recovery phrase before continuing.'))\n        console.log('Your wallet has been created but not activated until you confirm.')\n        process.exit(0)\n      }\n      \n      console.log(successBox('Wallet Successfully Created', [\n        `Name: ${wallet.metadata.name}`,\n        `Address: ${wallet.metadata.address}`,\n        `Network: ${wallet.metadata.network}`\n      ]))\n      \n    } else if (walletChoice === 'import') {\n      const importType = await select({\n        message: 'What would you like to import?',\n        options: [\n          { value: 'mnemonic', label: '📝 Recovery Phrase (24 words)', hint: 'Most common' },\n          { value: 'private-key', label: '🔑 Private Key', hint: 'Array of numbers' }\n        ]\n      })\n      \n      if (isCancel(importType)) {\n        this.markStepSkipped('wallet-setup')\n        return\n      }\n      \n      if (importType === 'mnemonic') {\n        const mnemonic = await text({\n          message: 'Enter your 24-word recovery phrase:',\n          placeholder: 'word1 word2 word3 ...',\n          validate: (value) => {\n            if (!value) return 'Recovery phrase is required'\n            const words = value.trim().split(/\\s+/)\n            if (words.length !== 24) return 'Please enter exactly 24 words'\n            return\n          }\n        })\n        \n        if (isCancel(mnemonic)) {\n          this.markStepSkipped('wallet-setup')\n          return\n        }\n        \n        s.start('Importing wallet from recovery phrase...')\n        \n        try {\n          const wallet = await this.walletService.importWallet(\n            'imported',\n            mnemonic as string,\n            this.config.network || 'devnet'\n          )\n          \n          s.stop('✅ Wallet imported!')\n          \n          console.log(successBox('Wallet Successfully Imported', [\n            `Name: ${wallet.metadata.name}`,\n            `Address: ${wallet.metadata.address}`,\n            `Network: ${wallet.metadata.network}`\n          ]))\n          \n        } catch (error) {\n          s.stop('❌ Import failed')\n          console.log(chalk.red('Failed to import wallet: ' + (error instanceof Error ? error.message : 'Unknown error')))\n          this.markStepSkipped('wallet-setup')\n          return\n        }\n      }\n    }\n    \n    this.markStepCompleted('wallet-setup')\n  }\n  \n  /**\n   * Funding step\n   */\n  private async fundingStep(): Promise<void> {\n    console.log('')\n    console.log(stepIndicator(4, this.progress.totalSteps, 'Funding Your Wallet'))\n    \n    const activeWallet = this.walletService.getActiveWallet()\n    if (!activeWallet) {\n      console.log(warningBox('No Wallet Found', [\n        'Skipping funding step - wallet not configured'\n      ]))\n      this.markStepSkipped('funding')\n      return\n    }\n    \n    console.log(infoBox('Why Do You Need SOL?', [\n      'SOL is Solana\\'s native cryptocurrency needed for:',\n      '• Transaction fees (very small, ~$0.00025 each)',\n      '• Creating accounts and storing data',\n      '• Participating in the agent economy'\n    ]))\n    \n    // Check current balance\n    const s = spinner()\n    s.start('Checking your current balance...')\n    \n    try {\n      const { client, wallet } = await initializeClient(this.config.network)\n      const rpc = client.config.rpc\n      const balanceResponse = await rpc.getBalance(wallet.address).send()\n      const balance = balanceResponse.value\n      \n      s.stop('✅ Balance checked')\n      \n      if (balance > BigInt(10000000)) { // > 0.01 SOL\n        console.log(successBox('Wallet Funded', [\n          `Current balance: ${(Number(balance) / 1e9).toFixed(4)} SOL`,\n          'You have enough SOL to get started!'\n        ]))\n        this.markStepCompleted('funding')\n        return\n      }\n      \n      // Need funding\n      if (this.config.network === 'devnet') {\n        console.log(infoBox('Get Free SOL', [\n          'On devnet, you can get free SOL for testing.',\n          'We\\'ll request some SOL from the faucet for you.'\n        ]))\n        \n        const shouldFund = this.config.autoFaucet || await confirm({\n          message: 'Request free SOL from the faucet?',\n          active: 'Yes, get free SOL',\n          inactive: 'No, I\\'ll fund it myself'\n        })\n        \n        if (!isCancel(shouldFund) && shouldFund) {\n          const faucetSpinner = spinner()\n          faucetSpinner.start('Requesting SOL from faucet...')\n          \n          try {\n            // Import faucet functionality\n            const { requestAirdrop } = await import('../commands/faucet.js')\n            await requestAirdrop(wallet.address, 1000000000) // 1 SOL\n            \n            faucetSpinner.stop('✅ Received 1 SOL from faucet!')\n            \n            console.log(successBox('Wallet Funded', [\n              'Received 1 SOL from the devnet faucet',\n              'You\\'re ready to start using GhostSpeak!'\n            ]))\n            \n          } catch (error) {\n            faucetSpinner.stop('❌ Faucet request failed')\n            console.log(warningBox('Faucet Failed', [\n              'You can try again later with: gs faucet --save',\n              'Or fund your wallet manually'\n            ]))\n          }\n        }\n      } else {\n        console.log(warningBox('Wallet Needs Funding', [\n          `Current balance: ${(Number(balance) / 1e9).toFixed(4)} SOL`,\n          'You need SOL to interact with the blockchain.',\n          'Transfer SOL from an exchange or another wallet.'\n        ]))\n      }\n      \n    } catch (error) {\n      s.stop('❌ Balance check failed')\n      console.log(chalk.yellow('Unable to check balance. You may need to fund your wallet manually.'))\n    }\n    \n    this.markStepCompleted('funding')\n  }\n  \n  /**\n   * First agent creation step\n   */\n  private async firstAgentStep(): Promise<void> {\n    console.log('')\n    console.log(stepIndicator(5, this.progress.totalSteps, 'Create Your First Agent'))\n    \n    console.log(infoBox('AI Agents in GhostSpeak', [\n      'Agents are AI entities that can:',\n      '• Provide services in the marketplace',\n      '• Complete tasks and earn payments',\n      '• Communicate with other agents',\n      '• Participate in the decentralized economy'\n    ]))\n    \n    const createAgent = await confirm({\n      message: 'Would you like to create your first agent now?',\n      active: 'Yes, create an agent',\n      inactive: 'Skip for now'\n    })\n    \n    if (isCancel(createAgent) || !createAgent) {\n      console.log(infoBox('Agent Creation Skipped', [\n        'You can create an agent anytime with: gs agent register',\n        'Agents are required to provide services in the marketplace'\n      ]))\n      this.markStepSkipped('first-agent')\n      return\n    }\n    \n    // Check if we can afford agent creation\n    try {\n      const activeWallet = this.walletService.getActiveWallet()\n      if (activeWallet) {\n        const balanceInfo = await estimateAndDisplay(\n          'agent-register',\n          activeWallet.metadata.address as any,\n          undefined,\n          { showBreakdown: false }\n        )\n        \n        if (!balanceInfo.isAffordable) {\n          console.log(warningBox('Insufficient Funds', [\n            'You need more SOL to create an agent.',\n            'Fund your wallet first, then create an agent with: gs agent register'\n          ]))\n          this.markStepSkipped('first-agent')\n          return\n        }\n      }\n    } catch (error) {\n      // Continue anyway\n    }\n    \n    // Basic agent creation (simplified for onboarding)\n    console.log(chalk.bold('\\n🤖 Let\\'s create your first agent!'))\n    console.log(chalk.gray('This will be a simplified setup. You can customize more later.\\n'))\n    \n    const agentName = await text({\n      message: 'What should we call your agent?',\n      placeholder: 'My AI Assistant',\n      validate: (value) => {\n        if (!value) return 'Name is required'\n        if (value.length < 3) return 'Name must be at least 3 characters'\n        if (value.length > 50) return 'Name must be less than 50 characters'\n      }\n    })\n    \n    if (isCancel(agentName)) {\n      this.markStepSkipped('first-agent')\n      return\n    }\n    \n    const agentType = await select({\n      message: 'What type of services will your agent provide?',\n      options: [\n        { value: 'assistant', label: '🤖 General Assistant', hint: 'Help with various tasks' },\n        { value: 'analyst', label: '📊 Data Analyst', hint: 'Data processing and insights' },\n        { value: 'writer', label: '✍️  Content Writer', hint: 'Writing and content creation' },\n        { value: 'developer', label: '💻 Developer', hint: 'Code and technical tasks' },\n        { value: 'other', label: '🎯 Other', hint: 'Specialized services' }\n      ]\n    })\n    \n    if (isCancel(agentType)) {\n      this.markStepSkipped('first-agent')\n      return\n    }\n    \n    const agentSpinner = spinner()\n    agentSpinner.start('Creating your agent...')\n    \n    try {\n      // This would normally call the agent registration command\n      // For now, we'll simulate it\n      await new Promise(resolve => setTimeout(resolve, 2000))\n      \n      agentSpinner.stop('✅ Agent created successfully!')\n      \n      console.log(successBox('Your First Agent is Ready!', [\n        `Name: ${agentName}`,\n        `Type: ${agentType}`,\n        'Your agent can now provide services in the marketplace',\n        'Create service listings with: gs marketplace create'\n      ]))\n      \n    } catch (error) {\n      agentSpinner.stop('❌ Agent creation failed')\n      console.log(chalk.red('Failed to create agent: ' + (error instanceof Error ? error.message : 'Unknown error')))\n      console.log(chalk.gray('You can try again later with: gs agent register'))\n    }\n    \n    this.markStepCompleted('first-agent')\n  }\n  \n  /**\n   * Marketplace tour step\n   */\n  private async marketplaceTourStep(): Promise<void> {\n    console.log('')\n    console.log(stepIndicator(6, this.progress.totalSteps, 'Marketplace Overview'))\n    \n    console.log(infoBox('The GhostSpeak Marketplace', [\n      'This is where the magic happens:',\n      '• Browse services offered by AI agents',\n      '• Purchase services with secure escrow payments',\n      '• List your own agent\\'s services',\n      '• Post jobs for agents to apply to'\n    ]))\n    \n    const takeTour = await confirm({\n      message: 'Would you like a quick tour of available commands?',\n      active: 'Yes, show me around',\n      inactive: 'No, I\\'ll explore myself'\n    })\n    \n    if (!isCancel(takeTour) && takeTour) {\n      console.log('')\n      console.log(chalk.bold('🗺️  Quick Command Reference:'))\n      console.log('')\n      \n      const commands = [\n        { cmd: 'gs marketplace list', desc: 'Browse available services' },\n        { cmd: 'gs marketplace search', desc: 'Search for specific services' },\n        { cmd: 'gs marketplace create', desc: 'List your agent\\'s services' },\n        { cmd: 'gs escrow create', desc: 'Create secure payments' },\n        { cmd: 'gs wallet balance', desc: 'Check your SOL balance' },\n        { cmd: 'gs --interactive', desc: 'Interactive menu mode' }\n      ]\n      \n      commands.forEach(({ cmd, desc }) => {\n        console.log(`  ${chalk.cyan(cmd.padEnd(25))} ${chalk.gray(desc)}`)\n      })\n      \n      console.log('')\n      console.log(chalk.bold('💡 Pro Tips:'))\n      console.log(chalk.gray('  • Use shortcuts like \"gs m\" for marketplace'))\n      console.log(chalk.gray('  • Add --help to any command for more info'))\n      console.log(chalk.gray('  • Check transaction history with \"gs tx\"'))\n    }\n    \n    this.markStepCompleted('marketplace-tour')\n  }\n  \n  /**\n   * Completion step\n   */\n  private async completionStep(): Promise<void> {\n    console.log('')\n    console.log(stepIndicator(7, this.progress.totalSteps, 'Setup Complete'))\n    \n    const completedCount = this.progress.completedSteps.size\n    const skippedCount = this.progress.skippedSteps.size\n    \n    console.log(successBox('🎉 Welcome to GhostSpeak!', [\n      `Setup completed: ${completedCount}/${this.progress.totalSteps} steps`,\n      skippedCount > 0 ? `Skipped: ${skippedCount} steps (you can complete these anytime)` : 'All steps completed!',\n      'You\\'re ready to start using the AI agent economy'\n    ]))\n    \n    console.log('')\n    console.log(chalk.bold('🚀 What\\'s Next?'))\n    console.log('')\n    \n    const nextSteps = [\n      '1. Browse the marketplace: gs marketplace list',\n      '2. Create a service listing: gs marketplace create',\n      '3. Check your agent status: gs agent list',\n      '4. Join our community: https://discord.gg/ghostspeak'\n    ]\n    \n    nextSteps.forEach(step => {\n      console.log(chalk.gray('  ' + step))\n    })\n    \n    console.log('')\n    console.log(divider())\n    console.log('')\n    \n    // Save completion status\n    await this.saveProgress()\n    \n    outro(chalk.green('Setup complete! Happy agent building! 🤖'))\n  }\n  \n  /**\n   * Mark a step as completed\n   */\n  private markStepCompleted(step: OnboardingStep): void {\n    this.progress.completedSteps.add(step)\n    this.progress.step = Math.max(this.progress.step, ONBOARDING_STEPS.indexOf(step) + 2)\n  }\n  \n  /**\n   * Mark a step as skipped\n   */\n  private markStepSkipped(step: OnboardingStep): void {\n    this.progress.skippedSteps.add(step)\n    this.progress.step = Math.max(this.progress.step, ONBOARDING_STEPS.indexOf(step) + 2)\n  }\n  \n  /**\n   * Save progress to file\n   */\n  private async saveProgress(): Promise<void> {\n    try {\n      const dir = join(homedir(), '.ghostspeak')\n      if (!existsSync(dir)) {\n        mkdirSync(dir, { recursive: true })\n      }\n      \n      const progressFile = join(dir, 'onboarding-progress.json')\n      const data = {\n        ...this.progress,\n        completedSteps: Array.from(this.progress.completedSteps),\n        skippedSteps: Array.from(this.progress.skippedSteps),\n        config: this.config,\n        lastUpdated: Date.now()\n      }\n      \n      writeFileSync(progressFile, JSON.stringify(data, null, 2))\n    } catch (error) {\n      // Ignore errors saving progress\n    }\n  }\n}\n\n/**\n * Check if user has completed onboarding\n */\nexport function hasCompletedOnboarding(): boolean {\n  try {\n    const progressFile = join(homedir(), '.ghostspeak', 'onboarding-progress.json')\n    if (!existsSync(progressFile)) return false\n    \n    const data = JSON.parse(require('fs').readFileSync(progressFile, 'utf-8'))\n    return data.completedSteps.includes('completion')\n  } catch {\n    return false\n  }\n}\n\n/**\n * Start onboarding flow\n */\nexport async function startOnboarding(config?: OnboardingConfig): Promise<void> {\n  const onboarding = new OnboardingService(config)\n  await onboarding.start()\n}"
+    if (this.progress.completedSteps.has('welcome')) {
+      console.log(chalk.gray('Welcome step already completed'))
+      return
+    }
+    
+    console.log(infoBox('GhostSpeak Protocol', [
+      'The decentralized AI agent economy on Solana',
+      '',
+      '🤖 Create and deploy AI agents that earn SOL',
+      '🛒 Trade services in the decentralized marketplace',
+      '🔐 Secure escrow payments with built-in reputation',
+      '⚡ Ultra-fast transactions with minimal fees'
+    ]))
+    
+    console.log('')
+    console.log(chalk.bold('This quick setup will help you:'))
+    console.log(chalk.gray('• Configure your Solana network'))
+    console.log(chalk.gray('• Set up a secure wallet'))
+    console.log(chalk.gray('• Get some SOL for transactions'))
+    console.log(chalk.gray('• Create your first AI agent'))
+    console.log(chalk.gray('• Explore the marketplace'))
+    
+    const shouldContinue = await confirm({
+      message: 'Ready to get started?',
+      active: 'Yes, let\'s go!',
+      inactive: 'No, I\'ll do this later'
+    })
+    
+    if (isCancel(shouldContinue) || !shouldContinue) {
+      cancel('Setup cancelled - run "gs quickstart" anytime to continue')
+      process.exit(0)
+    }
+    
+    this.markStepCompleted('welcome')
+  }
+  
+  /**
+   * Network selection step
+   */
+  private async networkSelectionStep(): Promise<void> {
+    console.log('')
+    console.log(stepIndicator(2, this.progress.totalSteps, 'Network Selection'))
+    
+    if (this.config.network) {
+      console.log(infoBox('Network Selected', [
+        `Using ${this.config.network} network`,
+        this.config.network === 'devnet' ? 'Perfect for testing and development' : 'Production network'
+      ]))
+      this.markStepCompleted('network-selection')
+      return
+    }
+    
+    console.log(infoBox('Choose Your Network', [
+      'Devnet: Free SOL, perfect for testing (Recommended for beginners)',
+      'Testnet: Testing network with test tokens',
+      'Mainnet: Real SOL, production environment'
+    ]))
+    
+    const network = await select({
+      message: 'Which network would you like to use?',
+      options: [
+        { value: 'devnet', label: '🧪 Devnet (Recommended)', hint: 'Free SOL for testing' },
+        { value: 'testnet', label: '🧪 Testnet', hint: 'Test environment' },
+        { value: 'mainnet-beta', label: '🌐 Mainnet', hint: 'Production (costs real SOL)' }
+      ]
+    })
+    
+    if (isCancel(network)) {
+      cancel('Setup cancelled')
+      process.exit(0)
+    }
+    
+    this.config.network = network as any
+    
+    // Save network preference
+    await this.saveProgress()
+    
+    this.markStepCompleted('network-selection')
+  }
+  
+  /**
+   * Wallet setup step
+   */
+  private async walletSetupStep(): Promise<void> {
+    console.log('')
+    console.log(stepIndicator(3, this.progress.totalSteps, 'Wallet Setup'))
+    
+    // Check if user already has a wallet
+    const activeWallet = this.walletService.getActiveWallet()
+    if (activeWallet) {
+      console.log(successBox('Wallet Already Configured', [
+        `Active wallet: ${activeWallet.metadata.name}`,
+        `Address: ${activeWallet.metadata.address}`,
+        'You can create additional wallets anytime with "gs wallet create"'
+      ]))
+      this.markStepCompleted('wallet-setup')
+      return
+    }
+    
+    console.log(infoBox('Wallet Setup', [
+      'A wallet is required to interact with the Solana blockchain.',
+      'Your wallet will store your SOL and manage your transactions.',
+      'We\'ll create a secure wallet with a recovery phrase.'
+    ]))
+    
+    const walletChoice = await select({
+      message: 'How would you like to set up your wallet?',
+      options: [
+        { 
+          value: 'create', 
+          label: '🆕 Create New Wallet', 
+          hint: 'Generate a new wallet with recovery phrase' 
+        },
+        { 
+          value: 'import', 
+          label: '📥 Import Existing Wallet', 
+          hint: 'Import from seed phrase or private key' 
+        },
+        { 
+          value: 'skip', 
+          label: '⏭️  Skip for Now', 
+          hint: 'Configure wallet later' 
+        }
+      ]
+    })
+    
+    if (isCancel(walletChoice)) {
+      cancel('Setup cancelled')
+      process.exit(0)
+    }
+    
+    if (walletChoice === 'skip') {
+      this.markStepSkipped('wallet-setup')
+      return
+    }
+    
+    const s = spinner()
+    
+    if (walletChoice === 'create') {
+      s.start('Creating your wallet...')
+      
+      const { wallet, mnemonic } = await this.walletService.createWallet(
+        'default',
+        this.config.network || 'devnet'
+      )
+      
+      s.stop('✅ Wallet created!')
+      
+      // Show seed phrase prominently
+      console.log('')
+      console.log(warningBox('🔐 IMPORTANT: Save Your Recovery Phrase', [
+        'Write down these 24 words in order and store them safely.',
+        'This is the ONLY way to recover your wallet if lost.',
+        'Never share this phrase with anyone.'
+      ]))
+      
+      console.log('')
+      console.log(infoBox('Your Recovery Phrase', mnemonic.split(' ').map((word, i) => 
+        `${(i + 1).toString().padStart(2, ' ')}. ${word}`
+      ).join('\n')))
+      
+      const confirmed = await confirm({
+        message: 'Have you written down your recovery phrase safely?',
+        active: 'Yes, I have saved it',
+        inactive: 'No, let me write it down'
+      })
+      
+      if (isCancel(confirmed) || !confirmed) {
+        console.log(chalk.yellow('\n⚠️  Please save your recovery phrase before continuing.'))
+        console.log('Your wallet has been created but not activated until you confirm.')
+        process.exit(0)
+      }
+      
+      console.log(successBox('Wallet Successfully Created', [
+        `Name: ${wallet.metadata.name}`,
+        `Address: ${wallet.metadata.address}`,
+        `Network: ${wallet.metadata.network}`
+      ]))
+      
+    } else if (walletChoice === 'import') {
+      const importType = await select({
+        message: 'What would you like to import?',
+        options: [
+          { value: 'mnemonic', label: '📝 Recovery Phrase (24 words)', hint: 'Most common' },
+          { value: 'private-key', label: '🔑 Private Key', hint: 'Array of numbers' }
+        ]
+      })
+      
+      if (isCancel(importType)) {
+        this.markStepSkipped('wallet-setup')
+        return
+      }
+      
+      if (importType === 'mnemonic') {
+        const mnemonic = await text({
+          message: 'Enter your 24-word recovery phrase:',
+          placeholder: 'word1 word2 word3 ...',
+          validate: (value) => {
+            if (!value) return 'Recovery phrase is required'
+            const words = value.trim().split(/\s+/)
+            if (words.length !== 24) return 'Please enter exactly 24 words'
+            return
+          }
+        })
+        
+        if (isCancel(mnemonic)) {
+          this.markStepSkipped('wallet-setup')
+          return
+        }
+        
+        s.start('Importing wallet from recovery phrase...')
+        
+        try {
+          const wallet = await this.walletService.importWallet(
+            'imported',
+            mnemonic as string,
+            this.config.network || 'devnet'
+          )
+          
+          s.stop('✅ Wallet imported!')
+          
+          console.log(successBox('Wallet Successfully Imported', [
+            `Name: ${wallet.metadata.name}`,
+            `Address: ${wallet.metadata.address}`,
+            `Network: ${wallet.metadata.network}`
+          ]))
+          
+        } catch (error) {
+          s.stop('❌ Import failed')
+          console.log(chalk.red('Failed to import wallet: ' + (error instanceof Error ? error.message : 'Unknown error')))
+          this.markStepSkipped('wallet-setup')
+          return
+        }
+      }
+    }
+    
+    this.markStepCompleted('wallet-setup')
+  }
+  
+  /**
+   * Funding step
+   */
+  private async fundingStep(): Promise<void> {
+    console.log('')
+    console.log(stepIndicator(4, this.progress.totalSteps, 'Funding Your Wallet'))
+    
+    const activeWallet = this.walletService.getActiveWallet()
+    if (!activeWallet) {
+      console.log(warningBox('No Wallet Found', [
+        'Skipping funding step - wallet not configured'
+      ]))
+      this.markStepSkipped('funding')
+      return
+    }
+    
+    console.log(infoBox('Why Do You Need SOL?', [
+      'SOL is Solana\'s native cryptocurrency needed for:',
+      '• Transaction fees (very small, ~$0.00025 each)',
+      '• Creating accounts and storing data',
+      '• Participating in the agent economy'
+    ]))
+    
+    // Check current balance
+    const s = spinner()
+    s.start('Checking your current balance...')
+    
+    try {
+      const { client, wallet } = await initializeClient(this.config.network)
+      const rpc = client.config.rpc
+      const balanceResponse = await rpc.getBalance(wallet.address).send()
+      const balance = balanceResponse.value
+      
+      s.stop('✅ Balance checked')
+      
+      if (balance > BigInt(10000000)) { // > 0.01 SOL
+        console.log(successBox('Wallet Funded', [
+          `Current balance: ${(Number(balance) / 1e9).toFixed(4)} SOL`,
+          'You have enough SOL to get started!'
+        ]))
+        this.markStepCompleted('funding')
+        return
+      }
+      
+      // Need funding
+      if (this.config.network === 'devnet') {
+        console.log(infoBox('Get Free SOL', [
+          'On devnet, you can get free SOL for testing.',
+          'We\'ll request some SOL from the faucet for you.'
+        ]))
+        
+        const shouldFund = this.config.autoFaucet || await confirm({
+          message: 'Request free SOL from the faucet?',
+          active: 'Yes, get free SOL',
+          inactive: 'No, I\'ll fund it myself'
+        })
+        
+        if (!isCancel(shouldFund) && shouldFund) {
+          const faucetSpinner = spinner()
+          faucetSpinner.start('Requesting SOL from faucet...')
+          
+          try {
+            // Import faucet functionality
+            const { requestAirdrop } = await import('../commands/faucet.js')
+            await requestAirdrop(wallet.address, 1000000000) // 1 SOL
+            
+            faucetSpinner.stop('✅ Received 1 SOL from faucet!')
+            
+            console.log(successBox('Wallet Funded', [
+              'Received 1 SOL from the devnet faucet',
+              'You\'re ready to start using GhostSpeak!'
+            ]))
+            
+          } catch (error) {
+            faucetSpinner.stop('❌ Faucet request failed')
+            console.log(warningBox('Faucet Failed', [
+              'You can try again later with: gs faucet --save',
+              'Or fund your wallet manually'
+            ]))
+          }
+        }
+      } else {
+        console.log(warningBox('Wallet Needs Funding', [
+          `Current balance: ${(Number(balance) / 1e9).toFixed(4)} SOL`,
+          'You need SOL to interact with the blockchain.',
+          'Transfer SOL from an exchange or another wallet.'
+        ]))
+      }
+      
+    } catch (error) {
+      s.stop('❌ Balance check failed')
+      console.log(chalk.yellow('Unable to check balance. You may need to fund your wallet manually.'))
+    }
+    
+    this.markStepCompleted('funding')
+  }
+  
+  /**
+   * First agent creation step
+   */
+  private async firstAgentStep(): Promise<void> {
+    console.log('')
+    console.log(stepIndicator(5, this.progress.totalSteps, 'Create Your First Agent'))
+    
+    console.log(infoBox('AI Agents in GhostSpeak', [
+      'Agents are AI entities that can:',
+      '• Provide services in the marketplace',
+      '• Complete tasks and earn payments',
+      '• Communicate with other agents',
+      '• Participate in the decentralized economy'
+    ]))
+    
+    const createAgent = await confirm({
+      message: 'Would you like to create your first agent now?',
+      active: 'Yes, create an agent',
+      inactive: 'Skip for now'
+    })
+    
+    if (isCancel(createAgent) || !createAgent) {
+      console.log(infoBox('Agent Creation Skipped', [
+        'You can create an agent anytime with: gs agent register',
+        'Agents are required to provide services in the marketplace'
+      ]))
+      this.markStepSkipped('first-agent')
+      return
+    }
+    
+    // Check if we can afford agent creation
+    try {
+      const activeWallet = this.walletService.getActiveWallet()
+      if (activeWallet) {
+        const balanceInfo = await estimateAndDisplay(
+          'agent-register',
+          activeWallet.metadata.address as any,
+          undefined,
+          { showBreakdown: false }
+        )
+        
+        if (!balanceInfo.isAffordable) {
+          console.log(warningBox('Insufficient Funds', [
+            'You need more SOL to create an agent.',
+            'Fund your wallet first, then create an agent with: gs agent register'
+          ]))
+          this.markStepSkipped('first-agent')
+          return
+        }
+      }
+    } catch (error) {
+      // Continue anyway
+    }
+    
+    // Basic agent creation (simplified for onboarding)
+    console.log(chalk.bold('\n🤖 Let\'s create your first agent!'))
+    console.log(chalk.gray('This will be a simplified setup. You can customize more later.\n'))
+    
+    const agentName = await text({
+      message: 'What should we call your agent?',
+      placeholder: 'My AI Assistant',
+      validate: (value) => {
+        if (!value) return 'Name is required'
+        if (value.length < 3) return 'Name must be at least 3 characters'
+        if (value.length > 50) return 'Name must be less than 50 characters'
+      }
+    })
+    
+    if (isCancel(agentName)) {
+      this.markStepSkipped('first-agent')
+      return
+    }
+    
+    const agentType = await select({
+      message: 'What type of services will your agent provide?',
+      options: [
+        { value: 'assistant', label: '🤖 General Assistant', hint: 'Help with various tasks' },
+        { value: 'analyst', label: '📊 Data Analyst', hint: 'Data processing and insights' },
+        { value: 'writer', label: '✍️  Content Writer', hint: 'Writing and content creation' },
+        { value: 'developer', label: '💻 Developer', hint: 'Code and technical tasks' },
+        { value: 'other', label: '🎯 Other', hint: 'Specialized services' }
+      ]
+    })
+    
+    if (isCancel(agentType)) {
+      this.markStepSkipped('first-agent')
+      return
+    }
+    
+    const agentSpinner = spinner()
+    agentSpinner.start('Creating your agent...')
+    
+    try {
+      // This would normally call the agent registration command
+      // For now, we'll simulate it
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      agentSpinner.stop('✅ Agent created successfully!')
+      
+      console.log(successBox('Your First Agent is Ready!', [
+        `Name: ${agentName}`,
+        `Type: ${agentType}`,
+        'Your agent can now provide services in the marketplace',
+        'Create service listings with: gs marketplace create'
+      ]))
+      
+    } catch (error) {
+      agentSpinner.stop('❌ Agent creation failed')
+      console.log(chalk.red('Failed to create agent: ' + (error instanceof Error ? error.message : 'Unknown error')))
+      console.log(chalk.gray('You can try again later with: gs agent register'))
+    }
+    
+    this.markStepCompleted('first-agent')
+  }
+  
+  /**
+   * Marketplace tour step
+   */
+  private async marketplaceTourStep(): Promise<void> {
+    console.log('')
+    console.log(stepIndicator(6, this.progress.totalSteps, 'Marketplace Overview'))
+    
+    console.log(infoBox('The GhostSpeak Marketplace', [
+      'This is where the magic happens:',
+      '• Browse services offered by AI agents',
+      '• Purchase services with secure escrow payments',
+      '• List your own agent\'s services',
+      '• Post jobs for agents to apply to'
+    ]))
+    
+    const takeTour = await confirm({
+      message: 'Would you like a quick tour of available commands?',
+      active: 'Yes, show me around',
+      inactive: 'No, I\'ll explore myself'
+    })
+    
+    if (!isCancel(takeTour) && takeTour) {
+      console.log('')
+      console.log(chalk.bold('🗺️  Quick Command Reference:'))
+      console.log('')
+      
+      const commands = [
+        { cmd: 'gs marketplace list', desc: 'Browse available services' },
+        { cmd: 'gs marketplace search', desc: 'Search for specific services' },
+        { cmd: 'gs marketplace create', desc: 'List your agent\'s services' },
+        { cmd: 'gs escrow create', desc: 'Create secure payments' },
+        { cmd: 'gs wallet balance', desc: 'Check your SOL balance' },
+        { cmd: 'gs --interactive', desc: 'Interactive menu mode' }
+      ]
+      
+      commands.forEach(({ cmd, desc }) => {
+        console.log(`  ${chalk.cyan(cmd.padEnd(25))} ${chalk.gray(desc)}`)
+      })
+      
+      console.log('')
+      console.log(chalk.bold('💡 Pro Tips:'))
+      console.log(chalk.gray('  • Use shortcuts like "gs m" for marketplace'))
+      console.log(chalk.gray('  • Add --help to any command for more info'))
+      console.log(chalk.gray('  • Check transaction history with "gs tx"'))
+    }
+    
+    this.markStepCompleted('marketplace-tour')
+  }
+  
+  /**
+   * Completion step
+   */
+  private async completionStep(): Promise<void> {
+    console.log('')
+    console.log(stepIndicator(7, this.progress.totalSteps, 'Setup Complete'))
+    
+    const completedCount = this.progress.completedSteps.size
+    const skippedCount = this.progress.skippedSteps.size
+    
+    console.log(successBox('🎉 Welcome to GhostSpeak!', [
+      `Setup completed: ${completedCount}/${this.progress.totalSteps} steps`,
+      skippedCount > 0 ? `Skipped: ${skippedCount} steps (you can complete these anytime)` : 'All steps completed!',
+      'You\'re ready to start using the AI agent economy'
+    ]))
+    
+    console.log('')
+    console.log(chalk.bold('🚀 What\'s Next?'))
+    console.log('')
+    
+    const nextSteps = [
+      '1. Browse the marketplace: gs marketplace list',
+      '2. Create a service listing: gs marketplace create',
+      '3. Check your agent status: gs agent list',
+      '4. Join our community: https://discord.gg/ghostspeak'
+    ]
+    
+    nextSteps.forEach(step => {
+      console.log(chalk.gray('  ' + step))
+    })
+    
+    console.log('')
+    console.log(divider())
+    console.log('')
+    
+    // Save completion status
+    await this.saveProgress()
+    
+    outro(chalk.green('Setup complete! Happy agent building! 🤖'))
+  }
+  
+  /**
+   * Mark a step as completed
+   */
+  private markStepCompleted(step: OnboardingStep): void {
+    this.progress.completedSteps.add(step)
+    this.progress.step = Math.max(this.progress.step, ONBOARDING_STEPS.indexOf(step) + 2)
+  }
+  
+  /**
+   * Mark a step as skipped
+   */
+  private markStepSkipped(step: OnboardingStep): void {
+    this.progress.skippedSteps.add(step)
+    this.progress.step = Math.max(this.progress.step, ONBOARDING_STEPS.indexOf(step) + 2)
+  }
+  
+  /**
+   * Save progress to file
+   */
+  private async saveProgress(): Promise<void> {
+    try {
+      const dir = join(homedir(), '.ghostspeak')
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true })
+      }
+      
+      const progressFile = join(dir, 'onboarding-progress.json')
+      const data = {
+        ...this.progress,
+        completedSteps: Array.from(this.progress.completedSteps),
+        skippedSteps: Array.from(this.progress.skippedSteps),
+        config: this.config,
+        lastUpdated: Date.now()
+      }
+      
+      writeFileSync(progressFile, JSON.stringify(data, null, 2))
+    } catch (error) {
+      // Ignore errors saving progress
+    }
+  }
+}
+
+/**
+ * Check if user has completed onboarding
+ */
+export function hasCompletedOnboarding(): boolean {
+  try {
+    const progressFile = join(homedir(), '.ghostspeak', 'onboarding-progress.json')
+    if (!existsSync(progressFile)) return false
+    
+    const data = JSON.parse(require('fs').readFileSync(progressFile, 'utf-8'))
+    return data.completedSteps.includes('completion')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Start onboarding flow
+ */
+export async function startOnboarding(config?: OnboardingConfig): Promise<void> {
+  const onboarding = new OnboardingService(config)
+  await onboarding.start()
+}

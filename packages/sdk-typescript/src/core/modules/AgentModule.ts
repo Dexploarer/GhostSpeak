@@ -1,5 +1,5 @@
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
+import type { TransactionSigner, Base58EncodedBytes, Base64EncodedBytes } from '@solana/kit'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import type { IPFSConfig } from '../../types/ipfs-types.js'
 import { BaseModule } from '../BaseModule.js'
@@ -7,7 +7,7 @@ import { createIPFSUtils } from '../../utils/ipfs-utils.js'
 import {
   getRegisterAgentInstructionAsync,
   getUpdateAgentInstruction,
-  getVerifyAgentInstruction,
+  getVerifyAgentInstructionAsync,
   getDeactivateAgentInstruction,
   getActivateAgentInstruction,
   getRegisterAgentCompressedInstructionAsync,
@@ -38,8 +38,8 @@ export class AgentModule extends BaseModule {
     return this.execute(
       'registerAgent',
       () => getRegisterAgentInstructionAsync({
-        agentId: this.deriveAgentPda(params.agentId),
-        authority: signer.address,
+        agentAccount: this.deriveAgentPda(params.agentId),
+        signer,
         systemProgram: this.systemProgramId,
         agentType: params.agentType,
         metadataUri: params.metadataUri,
@@ -63,7 +63,8 @@ export class AgentModule extends BaseModule {
       'registerAgentCompressed',
       () => getRegisterAgentCompressedInstructionAsync({
         merkleTree: params.merkleTree,
-        treeConfig: params.treeConfig,
+        signer,
+        systemProgram: this.systemProgramId,
         compressionProgram: this.compressionProgramId,
         agentType: params.agentType,
         metadataUri: params.metadataUri,
@@ -79,13 +80,17 @@ export class AgentModule extends BaseModule {
   async update(signer: TransactionSigner, params: {
     agentAddress: Address
     metadataUri: string
+    agentType: number
+    agentId: string
   }): Promise<string> {
     return this.execute(
       'updateAgent',
       () => getUpdateAgentInstruction({
-        agentId: params.agentAddress,
-        authority: signer.address,
-        metadataUri: params.metadataUri
+        agentAccount: params.agentAddress,
+        signer,
+        metadataUri: params.metadataUri,
+        agentType: params.agentType,
+        agentId: params.agentId
       }),
       [signer]
     )
@@ -96,14 +101,20 @@ export class AgentModule extends BaseModule {
    */
   async verify(signer: TransactionSigner, params: {
     agentAddress: Address
-    verificationData: bigint
+    agentPubkey: Address
+    serviceEndpoint: string
+    supportedCapabilities: Array<number | bigint>
+    verifiedAt: number | bigint
   }): Promise<string> {
     return this.execute(
       'verifyAgent',
-      () => getVerifyAgentInstruction({
+      () => getVerifyAgentInstructionAsync({
         agent: params.agentAddress,
-        verifier: signer.address,
-        verificationData: params.verificationData
+        verifier: signer,
+        agentPubkey: params.agentPubkey,
+        serviceEndpoint: params.serviceEndpoint,
+        supportedCapabilities: params.supportedCapabilities,
+        verifiedAt: params.verifiedAt
       }),
       [signer]
     )
@@ -112,12 +123,16 @@ export class AgentModule extends BaseModule {
   /**
    * Deactivate an agent
    */
-  async deactivate(signer: TransactionSigner, agentAddress: Address): Promise<string> {
+  async deactivate(signer: TransactionSigner, params: {
+    agentAddress: Address
+    agentId: string
+  }): Promise<string> {
     return this.execute(
       'deactivateAgent',
       () => getDeactivateAgentInstruction({
-        agentId: agentAddress,
-        authority: signer.address
+        agentAccount: params.agentAddress,
+        signer,
+        agentId: params.agentId
       }),
       [signer]
     )
@@ -126,12 +141,16 @@ export class AgentModule extends BaseModule {
   /**
    * Activate an agent
    */
-  async activate(signer: TransactionSigner, agentAddress: Address): Promise<string> {
+  async activate(signer: TransactionSigner, params: {
+    agentAddress: Address
+    agentId: string
+  }): Promise<string> {
     return this.execute(
       'activateAgent',
       () => getActivateAgentInstruction({
-        agentId: agentAddress,
-        authority: signer.address
+        agentAccount: params.agentAddress,
+        signer,
+        agentId: params.agentId
       }),
       [signer]
     )
@@ -140,8 +159,8 @@ export class AgentModule extends BaseModule {
   /**
    * Get agent account
    */
-  async getAccount(address: Address): Promise<Agent | null> {
-    return this.getAccount<Agent>(address, 'getAgentDecoder')
+  async getAgentAccount(address: Address): Promise<Agent | null> {
+    return super.getAccount<Agent>(address, 'getAgentDecoder')
   }
 
   /**
@@ -160,8 +179,9 @@ export class AgentModule extends BaseModule {
     
     const filters = [{
       memcmp: {
-        offset: 8, // Skip discriminator
-        bytes: typeBytes.toString('base64')
+        offset: 8n, // Skip discriminator
+        bytes: typeBytes.toString('base64'),
+        encoding: 'base64' as const
       }
     }]
     
@@ -174,8 +194,9 @@ export class AgentModule extends BaseModule {
   async getUserAgents(authority: Address): Promise<{ address: Address; data: Agent }[]> {
     const filters = [{
       memcmp: {
-        offset: 9, // Skip discriminator + type
-        bytes: authority
+        offset: 9n, // Skip discriminator + type
+        bytes: authority,
+        encoding: 'base58' as const
       }
     }]
     

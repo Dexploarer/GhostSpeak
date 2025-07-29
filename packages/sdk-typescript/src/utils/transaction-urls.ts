@@ -10,7 +10,7 @@ export type SolanaCluster = 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
  * Transaction result with verification URLs
  */
 export interface TransactionResult {
-  signature: Signature
+  signature: string | Signature
   cluster: SolanaCluster
   urls: {
     solanaExplorer: string
@@ -36,7 +36,7 @@ export function detectClusterFromEndpoint(rpcUrl: string): SolanaCluster {
  * Generate Solana Explorer URL for transaction
  */
 export function getSolanaExplorerUrl(
-  signature: Signature, 
+  signature: string | Signature, 
   cluster: SolanaCluster = 'mainnet-beta'
 ): string {
   const baseUrl = 'https://explorer.solana.com/tx'
@@ -57,7 +57,7 @@ export function getSolanaExplorerUrl(
  * Generate Solscan URL for transaction
  */
 export function getSolscanUrl(
-  signature: Signature, 
+  signature: string | Signature, 
   cluster: SolanaCluster = 'mainnet-beta'
 ): string {
   const baseUrl = 'https://solscan.io/tx'
@@ -78,7 +78,7 @@ export function getSolscanUrl(
  * Generate SolanaFM URL for transaction
  */
 export function getSolanaFMUrl(
-  signature: Signature, 
+  signature: string | Signature, 
   cluster: SolanaCluster = 'mainnet-beta'
 ): string {
   const baseUrl = 'https://solana.fm/tx'
@@ -99,7 +99,7 @@ export function getSolanaFMUrl(
  * Generate XRAY URL for transaction (Helius explorer)
  */
 export function getXrayUrl(
-  signature: Signature, 
+  signature: string | Signature, 
   cluster: SolanaCluster = 'mainnet-beta'
 ): string {
   const baseUrl = 'https://xray.helius.xyz/tx'
@@ -120,7 +120,7 @@ export function getXrayUrl(
  * Generate all explorer URLs for a transaction
  */
 export function generateExplorerUrls(
-  signature: Signature,
+  signature: string | Signature,
   cluster: SolanaCluster = 'mainnet-beta'
 ): TransactionResult['urls'] {
   return {
@@ -135,7 +135,7 @@ export function generateExplorerUrls(
  * Create a complete transaction result with all verification URLs
  */
 export function createTransactionResult(
-  signature: Signature,
+  signature: string | Signature,
   cluster: SolanaCluster,
   commitment: Commitment = 'confirmed'
 ): TransactionResult {
@@ -190,7 +190,7 @@ export function logTransactionDetails(result: TransactionResult): void {
  * Create markdown link for transaction
  */
 export function createTransactionMarkdown(
-  signature: Signature,
+  signature: string | Signature,
   cluster: SolanaCluster = 'mainnet-beta',
   linkText?: string
 ): string {
@@ -203,7 +203,7 @@ export function createTransactionMarkdown(
  * Wait for transaction confirmation with progress updates
  */
 export async function waitForTransactionConfirmation(
-  signature: Signature,
+  signature: string | Signature,
   cluster: SolanaCluster,
   commitment: Commitment = 'confirmed',
   timeoutMs: number = 30000

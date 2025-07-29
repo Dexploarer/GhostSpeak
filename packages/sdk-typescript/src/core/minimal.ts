@@ -11,7 +11,6 @@ export { GhostSpeakClient as default } from './GhostSpeakClient.js'
 // Essential types only
 export type {
   GhostSpeak,
-  GhostSpeakConfig,
   Agent,
   AgentType,
   Escrow,
@@ -22,6 +21,8 @@ export type {
   ListingStatus,
   SDKError
 } from './types.js'
+
+export type { GhostSpeakConfig } from '../types/index.js'
 
 // Essential utilities
 export { sol } from '../utils/common.js'

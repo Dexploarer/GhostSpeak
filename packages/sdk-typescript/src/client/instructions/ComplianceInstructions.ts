@@ -161,7 +161,7 @@ export class ComplianceInstructions extends BaseInstructions {
     authority: TransactionSigner,
     reportPda: Address,
     params: GenerateReportParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📋 Generating compliance report...')
     console.log(`   Report ID: ${params.reportId}`)
     console.log(`   Type: ${params.reportType}`)
@@ -204,7 +204,7 @@ export class ComplianceInstructions extends BaseInstructions {
     auditor: TransactionSigner,
     auditTrailPda: Address,
     params: InitializeAuditParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📊 Initializing audit trail...')
     console.log(`   Audit ID: ${params.auditId}`)
     console.log(`   Entity ID: ${params.entityId}`)

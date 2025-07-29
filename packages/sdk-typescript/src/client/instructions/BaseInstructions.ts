@@ -138,14 +138,14 @@ export abstract class BaseInstructions {
   protected async sendTransaction(
     instructions: IInstruction[],
     signers: TransactionSigner[]
-  ): Promise<Signature> {
+  ): Promise<string> {
     // Check transaction size before sending
     const estimatedSize = this.estimateTransactionSize(instructions)
     if (estimatedSize > 1232) {
       console.warn(`⚠️ Transaction size (${estimatedSize} bytes) may exceed Solana limit (1232 bytes)`)
     }
     
-    return this.sendTransactionWithDetails(instructions, signers).then(result => result.signature)
+    return this.sendTransactionWithDetails(instructions, signers).then(result => result.signature as string)
   }
 
   /**
@@ -414,9 +414,9 @@ export abstract class BaseInstructions {
   protected async sendTransactionBatch(
     instructionBatches: IInstruction[][],
     signers: TransactionSigner[]
-  ): Promise<Signature[]> {
+  ): Promise<string[]> {
     console.log(`🔄 Sending REAL batch of ${instructionBatches.length} transactions`)
-    const signatures: Signature[] = []
+    const signatures: string[] = []
     
     for (let i = 0; i < instructionBatches.length; i++) {
       console.log(`📤 Processing REAL transaction ${i + 1}/${instructionBatches.length}`)
@@ -635,7 +635,7 @@ export abstract class BaseInstructions {
     instructionGetter: () => unknown,
     signer: TransactionSigner,
     context?: string
-  ): Promise<Signature> {
+  ): Promise<string> {
     try {
       const instruction = instructionGetter()
       return await this.sendTransaction(

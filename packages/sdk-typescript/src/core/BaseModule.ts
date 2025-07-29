@@ -1,6 +1,7 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import type { Signature } from '@solana/rpc-types'
+// Use string type for signature since @solana/rpc-types doesn't export Signature in v2
+type Signature = string
 import type { GhostSpeakConfig } from '../types/index.js'
 import { InstructionBuilder } from './InstructionBuilder.js'
 import type { TransactionResult } from '../utils/transaction-urls.js'
@@ -91,6 +92,17 @@ export abstract class BaseModule {
   }
 
   /**
+   * Simulate an instruction (public accessor)
+   */
+  public async simulateInstruction(
+    instructionName: string,
+    instructionGetter: () => Promise<unknown> | unknown,
+    signers: TransactionSigner[]
+  ): Promise<unknown> {
+    return this.simulate(instructionName, instructionGetter, signers)
+  }
+
+  /**
    * Estimate transaction cost
    */
   protected async estimateCost(
@@ -154,7 +166,7 @@ export abstract class BaseModule {
    */
   protected async getProgramAccounts<T>(
     decoderImportName: string,
-    filters?: unknown[]
+    filters?: ({ dataSize: bigint } | { memcmp: { offset: bigint; bytes: string; encoding?: 'base58' | 'base64' } })[]
   ): Promise<{ address: Address; data: T }[]> {
     return this.builder.getProgramAccounts<T>(decoderImportName, filters)
   }
@@ -167,9 +179,23 @@ export abstract class BaseModule {
   }
 
   /**
+   * Get program ID (public accessor)
+   */
+  public getProgramId(): Address {
+    return this.config.programId!
+  }
+
+  /**
    * Get commitment level
    */
   protected get commitment() {
+    return this.config.commitment ?? 'confirmed'
+  }
+
+  /**
+   * Get commitment level (public accessor)
+   */
+  public getCommitment() {
     return this.config.commitment ?? 'confirmed'
   }
 }

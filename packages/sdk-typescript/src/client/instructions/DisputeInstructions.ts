@@ -146,7 +146,7 @@ export class DisputeInstructions extends BaseInstructions {
     complainant: TransactionSigner,
     disputePda: Address,
     params: FileDisputeParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📋 Filing dispute...')
     console.log(`   Transaction: ${params.transaction}`)
     console.log(`   Respondent: ${params.respondent}`)
@@ -230,7 +230,7 @@ export class DisputeInstructions extends BaseInstructions {
   async submitEvidence(
     submitter: TransactionSigner,
     params: SubmitEvidenceParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📄 Submitting dispute evidence...')
     console.log(`   Dispute: ${params.dispute}`)
     console.log(`   Evidence Type: ${params.evidenceType}`)
@@ -323,7 +323,7 @@ export class DisputeInstructions extends BaseInstructions {
   async resolveDispute(
     moderator: TransactionSigner,
     params: ResolveDisputeParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('⚖️ Resolving dispute...')
     console.log(`   Dispute: ${params.dispute}`)
     console.log(`   Ruling: ${params.rulingInFavorOfComplainant ? 'Complainant' : 'Respondent'} favored`)
@@ -466,7 +466,7 @@ export class DisputeInstructions extends BaseInstructions {
       )
       
       // Convert to summaries and apply filters
-      let disputes = accounts
+      const disputes = accounts
         .map(({ address, data }) => this.disputeToSummary(address, data))
         .filter(summary => this.applyDisputeFilter(summary, filter))
         .slice(0, limit)
@@ -547,7 +547,7 @@ export class DisputeInstructions extends BaseInstructions {
     signer: TransactionSigner,
     disputeAddress: Address,
     escalationReason: string
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🚨 Escalating dispute to human review...')
     
     try {

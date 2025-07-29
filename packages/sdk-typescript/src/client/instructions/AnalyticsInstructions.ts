@@ -186,7 +186,7 @@ export class AnalyticsInstructions extends BaseInstructions {
     creator: TransactionSigner,
     dashboardPda: Address,
     params: CreateDashboardParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📊 Creating analytics dashboard...')
     console.log(`   Dashboard ID: ${params.dashboardId}`)
     console.log(`   Agent ID: ${params.agentId}`)
@@ -249,7 +249,7 @@ export class AnalyticsInstructions extends BaseInstructions {
   async updateDashboard(
     updater: TransactionSigner,
     params: UpdateDashboardParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📈 Updating analytics dashboard...')
     console.log(`   Dashboard: ${params.dashboard}`)
     console.log(`   Revenue: ${params.revenue} lamports`)
@@ -303,7 +303,7 @@ export class AnalyticsInstructions extends BaseInstructions {
     creator: TransactionSigner,
     marketAnalyticsPda: Address,
     params: CreateMarketAnalyticsParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🌐 Creating market analytics...')
     console.log(`   Tracking Period: ${params.trackingPeriod} seconds`)
     if (params.marketSegment) {
@@ -346,7 +346,7 @@ export class AnalyticsInstructions extends BaseInstructions {
   async updateMarketAnalytics(
     updater: TransactionSigner,
     params: UpdateMarketAnalyticsParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📊 Updating market analytics...')
     console.log(`   Market Analytics: ${params.marketAnalytics}`)
     console.log(`   Total Transactions: ${params.totalTransactions}`)
@@ -389,7 +389,7 @@ export class AnalyticsInstructions extends BaseInstructions {
   async addTopAgent(
     authority: TransactionSigner,
     params: AddTopAgentParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🏆 Adding top performing agent...')
     console.log(`   Agent: ${params.agent}`)
     console.log(`   Performance Score: ${params.performanceScore}`)

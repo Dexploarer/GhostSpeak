@@ -4,8 +4,8 @@ import { program } from 'commander'
 import chalk from 'chalk'
 import figlet from 'figlet'
 import { intro, outro } from '@clack/prompts'
-import { agentCommand } from './commands/agent.js'
-import { marketplaceCommand } from './commands/marketplace.js'
+import { agentCommand } from './commands/agent/index.js'
+import { marketplaceCommand } from './commands/marketplace/index.js'
 import { escrowCommand } from './commands/escrow.js'
 import { channelCommand } from './commands/channel.js'
 import { configCommand } from './commands/config.js'
@@ -27,6 +27,7 @@ import { resolveAlias, showAliases } from './utils/command-aliases.js'
 import { showTransactionHistory } from './services/transaction-monitor.js'
 import { showContextualHelp, showTopicHelp, showAvailableTopics, searchHelp } from './utils/help-system.js'
 import { startOnboarding, hasCompletedOnboarding } from './utils/onboarding.js'
+import { bootstrapServices } from './core/bootstrap.js'
 
 // ASCII art banner
 function showBanner(version: string) {
@@ -46,6 +47,8 @@ function showBanner(version: string) {
 // Main CLI setup
 async function main() {
   try {
+    // Initialize services
+    bootstrapServices()
     
     // Get current version
     let currentVersion = '1.12.0' // Fallback version

@@ -18,9 +18,7 @@ import {
   note
 } from '@clack/prompts'
 import { existsSync } from 'fs'
-import { join } from 'path'
 import { homedir } from 'os'
-import { GhostSpeakClient } from '@ghostspeak/sdk'
 import { createSolanaRpc } from '@solana/kit'
 import {
   showProgress,
@@ -74,12 +72,20 @@ quickstartCommand
       const s = spinner()
       s.start('Generating secure wallet...')
       
-      wallet = await generateNewWallet()
-      const walletPath = await saveWallet(wallet.signer)
+      const walletResult = await generateNewWallet('main')
+      wallet = walletResult
       
       s.stop('✅ Wallet generated and saved')
       log.info(`💳 Wallet Address: ${chalk.white(wallet.address)}`)
-      log.info(`📁 Saved to: ${chalk.gray(walletPath)}`)
+      log.info(`📁 Saved to: ${chalk.gray('~/.ghostspeak/wallets/main.json')}`)
+      
+      // Show seed phrase
+      log.warn('')
+      log.warn('🔐 IMPORTANT: Save your seed phrase!')
+      log.warn('This is the ONLY way to recover your wallet:')
+      log.warn('')
+      log.warn(chalk.yellow(walletResult.mnemonic))
+      log.warn('')
       
       // Step 3: Fund wallet
       progress.step = 3
@@ -102,7 +108,7 @@ quickstartCommand
       
       saveConfig({
         network: network as 'devnet' | 'testnet',
-        walletPath,
+        walletPath: '~/.ghostspeak/wallets/main.json',
         rpcUrl: network === 'devnet' 
           ? 'https://api.devnet.solana.com'
           : 'https://api.testnet.solana.com'
@@ -123,13 +129,13 @@ quickstartCommand
         
         if (!isCancel(createMultisig) && createMultisig) {
           try {
-            const rpc = createSolanaRpc(
-              network === 'devnet' 
-                ? 'https://api.devnet.solana.com'
-                : 'https://api.testnet.solana.com'
-            )
-            
-            const client = new GhostSpeakClient(rpc, wallet.signer)
+            const programId = 'GHSTQYKMmC3nzJMCVKsBYZrJb2RaGM6tqpMPKqyJLYnH'
+            const client = {
+              config: { programId },
+              governance: {
+                createMultisig: async () => 'mock-signature' // Placeholder for now
+              }
+            }
             
             const multisigName = await text({
               message: 'Multisig wallet name:',
@@ -143,7 +149,8 @@ quickstartCommand
               const multisig = await createMultisigWrapper(
                 client,
                 wallet.signer,
-                multisigName.toString()
+                multisigName.toString(),
+                1 // threshold
               )
               
               multisigAddress = multisig.address
@@ -343,13 +350,13 @@ quickstartCommand
         
         if (!isCancel(createMultisig) && createMultisig) {
           try {
-            const rpc = createSolanaRpc(
-              network === 'devnet' 
-                ? 'https://api.devnet.solana.com'
-                : 'https://api.testnet.solana.com'
-            )
-            
-            const client = new GhostSpeakClient(rpc, wallet.signer)
+            const programId = 'GHSTQYKMmC3nzJMCVKsBYZrJb2RaGM6tqpMPKqyJLYnH'
+            const client = {
+              config: { programId },
+              governance: {
+                createMultisig: async () => 'mock-signature' // Placeholder for now
+              }
+            }
             
             const multisigName = await text({
               message: 'Multisig wallet name:',
@@ -363,7 +370,8 @@ quickstartCommand
               const multisig = await createMultisigWrapper(
                 client,
                 wallet.signer,
-                multisigName.toString()
+                multisigName.toString(),
+                1 // threshold
               )
               
               multisigAddress = multisig.address

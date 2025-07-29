@@ -5,6 +5,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import { initializeClient } from './client.js'
+import { createSolanaRpc } from '@solana/kit'
+import { address } from '@solana/addresses'
 
 interface MenuOption {
   value: string
@@ -193,12 +195,16 @@ export class InteractiveMenu {
       const { client, wallet } = await initializeClient()
       status.wallet = true
       
-      // Check balance
-      const balance = await client.connection.getBalance(wallet.address)
-      status.balance = `${(balance / 1e9).toFixed(4)} SOL`
+      // Check balance - use the RPC from config
+      const { loadConfig } = await import('./config.js')
+      const cfg = loadConfig()
+      const rpcUrl = cfg.rpcUrl || 'https://api.devnet.solana.com'
+      const rpc = createSolanaRpc(rpcUrl)
+      const { value: balance } = await rpc.getBalance(address(wallet.address)).send()
+      status.balance = `${(Number(balance) / 1e9).toFixed(4)} SOL`
       
       // Could check for agents and multisigs here
-    } catch (error) {
+    } catch (_error) {
       // Wallet not configured
     }
     
@@ -305,12 +311,84 @@ export class InteractiveMenu {
     }
   }
 
+  private async showTransactionsMenu(): Promise<void> {
+    const subCategories = [
+      { value: 'escrow', label: 'Escrow Payments', icon: '🔒', hint: 'Secure payment handling' },
+      { value: 'auctions', label: 'Auctions', icon: '🔨', hint: 'Bid and monitor auctions' },
+      { value: 'channels', label: 'A2A Channels', icon: '📡', hint: 'Agent communication' },
+      { value: 'disputes', label: 'Disputes', icon: '⚖️', hint: 'Resolve conflicts' },
+      { value: 'balance', label: 'Check Balance', icon: '💳', hint: 'View wallet balance' },
+      { value: 'back', label: '← Back to Main Menu', icon: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('💰 Transactions & Payments - Select a category:'),
+      options: subCategories.map(cat => ({
+        value: cat.value,
+        label: cat.icon ? `${cat.icon} ${cat.label}` : cat.label,
+        hint: cat.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    switch (choice) {
+      case 'escrow':
+        await this.showPaymentMenu()
+        break
+      case 'auctions':
+        await this.showAuctionMenu()
+        break
+      case 'channels':
+        await this.showChannelMenu()
+        break
+      case 'disputes':
+        await this.showDisputeMenu()
+        break
+      case 'balance':
+        await this.executeCommand('wallet balance')
+        break
+    }
+  }
+
+  private async showChannelMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'list', label: 'List Channels', command: 'channel list', hint: 'View your A2A channels' },
+      { value: 'create', label: 'Create Channel', command: 'channel create', hint: 'New communication channel' },
+      { value: 'send', label: 'Send Message', command: 'channel send', hint: 'Send A2A message' },
+      { value: 'messages', label: 'View Messages', command: 'channel messages', hint: 'Read channel messages' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('📡 A2A Channels:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
   private async showDevelopmentMenu(): Promise<void> {
     const commands: CommandOption[] = [
+      { value: 'wallet-manage', label: '💳 Wallet Manager', command: '', hint: 'Manage your wallets' },
       { value: 'sdk-install', label: 'Install SDK', command: 'sdk install', hint: 'Install GhostSpeak SDK locally' },
       { value: 'sdk-info', label: 'SDK Information', command: 'sdk info', hint: 'Check SDK installation status' },
       { value: 'faucet', label: 'Get Development SOL', command: 'faucet', hint: 'Request SOL from faucet' },
-      { value: 'balance', label: 'Check Balance', command: 'faucet balance', hint: 'View wallet balance' },
+      { value: 'balance', label: 'Check Balance', command: 'wallet balance', hint: 'View wallet balance' },
       { value: 'update', label: 'Update CLI', command: 'update', hint: 'Update to latest version' },
       { value: 'example-agent', label: 'Generate Agent Example', command: '', hint: 'Create example agent code' },
       { value: 'example-sdk', label: 'Generate SDK Example', command: '', hint: 'Create example SDK usage' },
@@ -335,6 +413,8 @@ export class InteractiveMenu {
     if (selected?.command) {
       await this.executeCommand(selected.command)
       this.saveRecentCommand(selected.command, selected.label)
+    } else if (choice === 'wallet-manage') {
+      await this.showWalletMenu()
     } else if (choice === 'example-agent') {
       await this.generateAgentExample()
     } else if (choice === 'example-sdk') {
@@ -409,16 +489,16 @@ export class InteractiveMenu {
 
   private async showPaymentMenu(): Promise<void> {
     const commands: CommandOption[] = [
+      { value: 'create', label: 'Create Escrow', command: 'escrow create', hint: 'Set up secure payment' },
       { value: 'list', label: 'List Escrows', command: 'escrow list', hint: 'View your escrow payments' },
       { value: 'release', label: 'Release Escrow', command: 'escrow release', hint: 'Release funds from escrow' },
+      { value: 'refund', label: 'Refund Escrow', command: 'escrow refund', hint: 'Request refund' },
       { value: 'dispute', label: 'Dispute Escrow', command: 'escrow dispute', hint: 'Open a dispute' },
-      { value: 'channels', label: 'A2A Channels', command: 'channel list', hint: 'View communication channels' },
-      { value: 'send', label: 'Send Message', command: 'channel send', hint: 'Send A2A message' },
       { value: 'back', label: '← Back', command: '', hint: '' }
     ]
 
     const choice = await select({
-      message: chalk.cyan('💰 Payments & Communication:'),
+      message: chalk.cyan('🔒 Escrow Payments:'),
       options: commands.map(cmd => ({
         value: cmd.value,
         label: cmd.label,
@@ -525,6 +605,39 @@ export class InteractiveMenu {
     }
   }
 
+  private async showWalletMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'list', label: '📋 List Wallets', command: 'wallet list', hint: 'View all your wallets' },
+      { value: 'create', label: '🆕 Create Wallet', command: 'wallet create', hint: 'Create a new wallet' },
+      { value: 'import', label: '📥 Import Wallet', command: 'wallet import', hint: 'Import from seed phrase' },
+      { value: 'show', label: '💳 Show Active Wallet', command: 'wallet show', hint: 'View current wallet details' },
+      { value: 'use', label: '🔄 Switch Wallet', command: 'wallet use', hint: 'Change active wallet' },
+      { value: 'balance', label: '💰 Check Balance', command: 'wallet balance', hint: 'View wallet balance' },
+      { value: 'rename', label: '✏️  Rename Wallet', command: 'wallet rename', hint: 'Change wallet name' },
+      { value: 'delete', label: '🗑️  Delete Wallet', command: 'wallet delete', hint: 'Remove a wallet' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('💳 Wallet Manager - Select an action:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
   private async showAnalyticsMenu(): Promise<void> {
     const commands: CommandOption[] = [
       { value: 'agent', label: 'Agent Analytics', command: 'agent analytics', hint: 'Agent performance' },
@@ -612,14 +725,63 @@ export class InteractiveMenu {
   }
 
   private async executeCommand(command: string): Promise<void> {
-    outro(chalk.gray(`Executing: ${command}`))
+    console.log(chalk.gray(`\n└  Executing: ${command}\n`))
     
-    // Exit interactive mode and run the command
-    const args = command.split(' ')
-    process.argv = [process.argv[0], process.argv[1], ...args]
+    try {
+      // Parse and execute the command
+      const args = command.split(' ')
+      
+      // Create a new program instance to avoid conflicts
+      const { spawn } = await import('child_process')
+      
+      // Determine the correct way to invoke the CLI
+      let cliCommand: string
+      let cliArgs: string[]
+      
+      // Check if we're running via npx or direct node
+      if (process.argv[1] && process.argv[1].endsWith('.js')) {
+        // Running with node directly
+        cliCommand = process.argv[0]
+        cliArgs = [process.argv[1], ...args]
+      } else {
+        // Running via global install or npx - use 'gs' or 'ghostspeak'
+        cliCommand = 'gs'
+        cliArgs = args
+      }
+      
+      // Execute command in a child process to avoid exit issues
+      const child = spawn(cliCommand, cliArgs, {
+        stdio: 'inherit',
+        env: process.env,
+        shell: true // Use shell to handle command resolution
+      })
+      
+      // Wait for command to complete
+      await new Promise<void>((resolve) => {
+        child.on('close', (code) => {
+          if (code === 0) {
+            resolve()
+          } else {
+            // Don't reject on non-zero exit, just resolve
+            // This prevents the interactive mode from crashing
+            resolve()
+          }
+        })
+        
+        child.on('error', (err) => {
+          console.error(`Failed to execute command: ${err.message}`)
+          resolve() // Don't crash interactive mode
+        })
+      })
+      
+      // Add a small delay to ensure output is flushed
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+    } catch (error) {
+      console.error(chalk.red(`\n❌ Error executing command: ${error instanceof Error ? error.message : 'Unknown error'}`))
+    }
     
-    // Re-parse with the new arguments
-    await this.program.parseAsync(process.argv)
+    console.log('') // Add spacing after command execution
   }
 
   private saveRecentCommand(command: string, label: string): void {

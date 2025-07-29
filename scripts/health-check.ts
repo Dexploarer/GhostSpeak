@@ -1,4 +1,9 @@
 #!/usr/bin/env tsx
+/**
+ * @fileoverview GhostSpeak comprehensive health check system
+ * @author GhostSpeak Development Team
+ * @version 1.0.0
+ */
 
 import { createSolanaRpc } from '@solana/rpc';
 import { program } from 'commander';
@@ -6,19 +11,36 @@ import chalk from 'chalk';
 import { table } from 'table';
 import { execSync } from 'child_process';
 
+/**
+ * Health status information for a service or component
+ */
 interface HealthStatus {
+  /** Name of the service being checked */
   service: string;
+  /** Current health status */
   status: 'healthy' | 'degraded' | 'down';
+  /** Response time in milliseconds */
   responseTime?: number;
+  /** Additional details about the status */
   details?: string;
+  /** Timestamp when the check was performed */
   timestamp: string;
 }
 
+/**
+ * Comprehensive health checker for GhostSpeak deployment
+ * Monitors Solana clusters, program deployment, build system, and dependencies
+ */
 class HealthChecker {
   private results: HealthStatus[] = [];
 
   constructor() {}
 
+  /**
+   * Log a message with colored output
+   * @param message - The message to log
+   * @param level - The log level for coloring
+   */
   private log(message: string, level: 'info' | 'warn' | 'error' | 'success' = 'info'): void {
     const colors = {
       info: chalk.blue,
@@ -29,11 +51,17 @@ class HealthChecker {
     console.log(colors[level](`[${new Date().toISOString()}] ${message}`));
   }
 
+  /**
+   * Check the health of a Solana cluster
+   * @param rpcUrl - The RPC endpoint URL to check
+   * @param name - Display name for the cluster
+   * @returns Promise resolving to health status
+   */
   private async checkSolanaCluster(rpcUrl: string, name: string): Promise<HealthStatus> {
     const startTime = Date.now();
     try {
-      const connection = createConnection({ url: rpcUrl });
-      const version = await connection.getVersion().send();
+      const rpc = createSolanaRpc({ url: rpcUrl });
+      const version = await rpc.getVersion().send();
       const responseTime = Date.now() - startTime;
 
       return {
@@ -179,6 +207,10 @@ class HealthChecker {
     }
   }
 
+  /**
+   * Run all health checks concurrently
+   * @returns Promise resolving to array of health check results
+   */
   async runHealthChecks(): Promise<HealthStatus[]> {
     this.log('🏥 Starting GhostSpeak Health Check...', 'info');
 

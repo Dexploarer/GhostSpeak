@@ -229,3 +229,30 @@ export function getUSDCMintDevnet(): Address {
 export function calculateDeadline(days: number): bigint {
   return BigInt(Math.floor(Date.now() / 1000) + days * 24 * 60 * 60)
 }
+
+/**
+ * Derive multisig PDA
+ * Pattern: ['multisig', owner, multisigId] (little-endian bytes)
+ */
+export async function deriveMultisigPda(
+  programId: Address,
+  owner: Address | string,
+  multisigId: bigint
+): Promise<string> {
+  // Convert multisigId to little-endian bytes (8 bytes)
+  const multisigIdBytes = new Uint8Array(8)
+  const dataView = new DataView(multisigIdBytes.buffer)
+  dataView.setBigUint64(0, multisigId, true) // little-endian
+  
+  const [pda] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([
+        109, 117, 108, 116, 105, 115, 105, 103
+      ])), // 'multisig'
+      getAddressEncoder().encode(address(owner)),
+      multisigIdBytes
+    ]
+  })
+  return pda
+}

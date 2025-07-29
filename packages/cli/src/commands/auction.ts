@@ -842,8 +842,19 @@ auctionCommand
         topPerformers: []
       }
       
-      // TODO: Implement real analytics when SDK supports it
-      // const analytics = await client.auction.getAuctionAnalytics()
+      // Check if SDK supports auction analytics
+      try {
+        if (client.auction?.getAuctionAnalytics) {
+          const realAnalytics = await client.auction.getAuctionAnalytics()
+          // Merge real analytics with mock structure
+          Object.assign(analytics, realAnalytics)
+        } else {
+          console.log(chalk.gray('Note: Auction analytics are not yet available in the current SDK version'))
+          console.log(chalk.gray('Showing placeholder data - real analytics coming soon'))
+        }
+      } catch (error) {
+        console.log(chalk.gray('Unable to fetch real analytics, showing placeholder data'))
+      }
       
       s.stop('✅ Analytics generated')
 

@@ -207,12 +207,24 @@ channelCommand
       // Get channels for all user's agents
       const allChannels: ChannelWithAgentInfo[] = []
       for (const agent of agents) {
-        // TODO: Implement channel listing when SDK supports it
-        const channels: ChannelWithAgentInfo[] = []
-        /* const channels = await client.channel.listByParticipant({
-          participant: agent.address
-        }) */
-        allChannels.push(...channels.map((ch) => ({ ...ch, agentName: agent.data.name || 'Agent' })))
+        try {
+          // Check if SDK supports channel listing
+          let channels: ChannelWithAgentInfo[] = []
+          
+          if (client.channel?.listByParticipant) {
+            const rawChannels = await client.channel.listByParticipant({
+              participant: agent.address
+            })
+            channels = rawChannels.map((ch) => ({ ...ch, agentName: agent.data.name || 'Agent' }))
+          } else {
+            // SDK doesn't support channel listing yet
+            console.log(chalk.gray(`  No channels found for ${agent.data.name} (SDK limitation)`))
+          }
+          
+          allChannels.push(...channels)
+        } catch (error) {
+          console.log(chalk.gray(`  Unable to fetch channels for ${agent.data.name}: ${error instanceof Error ? error.message : 'Unknown error'}`))
+        }
       }
       
       s.stop('✅ Channels loaded')
@@ -293,20 +305,31 @@ channelCommand
         // Get channels for all user's agents
         const allChannels: ChannelWithAgentInfo[] = []
         for (const agent of agents) {
-          // TODO: Implement channel listing when SDK supports it
-          const channels: Channel[] = []
-          /* const channels = await client.channel.listByParticipant({
-            participant: agent.address
-          }) */
-          allChannels.push(...channels.map(ch => ({ 
-            ...ch, 
-            agentName: agent.data.name || 'Agent',
-            agentAddress: agent.address,
-            messageCount: 0,
-            createdAt: BigInt(0),
-            lastActivity: BigInt(0),
-            isActive: true
-          } as ChannelWithAgentInfo)))
+          try {
+            // Check if SDK supports channel listing
+            let channels: Channel[] = []
+            
+            if (client.channel?.listByParticipant) {
+              channels = await client.channel.listByParticipant({
+                participant: agent.address
+              })
+            } else {
+              // SDK doesn't support channel listing yet - show message
+              console.log(chalk.gray(`  No channels available for ${agent.data.name} (SDK feature pending)`))
+            }
+            
+            allChannels.push(...channels.map(ch => ({ 
+              ...ch, 
+              agentName: agent.data.name || 'Agent',
+              agentAddress: agent.address,
+              messageCount: ch.messageCount || 0,
+              createdAt: ch.createdAt || BigInt(0),
+              lastActivity: ch.lastActivity || BigInt(0),
+              isActive: ch.isActive ?? true
+            } as ChannelWithAgentInfo)))
+          } catch (error) {
+            console.log(chalk.gray(`  Unable to load channels for ${agent.data.name}: ${error instanceof Error ? error.message : 'Unknown error'}`))
+          }
         }
         
         s.stop('✅ Channels loaded')

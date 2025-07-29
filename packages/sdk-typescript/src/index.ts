@@ -1,10 +1,58 @@
 /**
- * GhostSpeak SDK - July 2025 Implementation
- * Using modern @solana/kit (Web3.js v2) patterns
+ * GhostSpeak SDK - Production-Ready AI Agent Commerce Protocol
+ * 
+ * Optimized for tree-shaking and minimal bundle size.
+ * Import only what you need for the best performance.
+ * 
+ * @packageDocumentation
  */
 
-// Export modern client implementation
-export { GhostSpeakClient } from './client/GhostSpeakClient.js'
+// =====================================================
+// MAIN CLIENT EXPORT (Tree-shakeable)
+// =====================================================
+
+// Default export for convenience
+export { default, sol, lamportsToSol } from './core/GhostSpeakClient.js'
+
+// Named export for explicit imports
+export { GhostSpeakClient } from './core/GhostSpeakClient.js'
+
+// =====================================================
+// CORE EXPORTS
+// =====================================================
+
+// Types
+export * from './core/types.js'
+
+// Errors
+export * from './core/errors.js'
+
+// Base classes (for advanced users)
+export { BaseModule } from './core/BaseModule.js'
+export { InstructionBuilder } from './core/InstructionBuilder.js'
+export { RpcClient } from './core/rpc-client.js'
+
+// =====================================================
+// MODULE EXPORTS
+// =====================================================
+
+// Agent module
+export { AgentModule } from './core/modules/AgentModule.js'
+
+// Escrow module
+export { EscrowModule } from './modules/escrow/EscrowModule.js'
+
+// Channel module
+export { ChannelModule } from './modules/channels/ChannelModule.js'
+
+// =====================================================
+// CRYPTO EXPORTS
+// =====================================================
+
+export * from './crypto/index.js'
+
+// Keep old exports for backward compatibility (will be deprecated)
+export { GhostSpeakClient as LegacyGhostSpeakClient } from './client/GhostSpeakClient.js'
 export { AgentInstructions } from './client/instructions/AgentInstructions.js'
 export { MarketplaceInstructions } from './client/instructions/MarketplaceInstructions.js'
 export { 

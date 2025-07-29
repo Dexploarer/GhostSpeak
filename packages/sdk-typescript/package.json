@@ -10,6 +10,30 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js", 
+      "types": "./dist/types.d.ts"
+    },
+    "./errors": {
+      "import": "./dist/errors.js",
+      "types": "./dist/errors.d.ts"
+    },
+    "./crypto": {
+      "import": "./dist/crypto.js",
+      "types": "./dist/crypto.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils.js",
+      "types": "./dist/utils.d.ts"
+    },
+    "./minimal": {
+      "import": "./dist/minimal/core-minimal.js",
+      "types": "./dist/minimal/core-minimal.d.ts"
     }
   },
   "files": [
@@ -19,6 +43,7 @@
     "build": "bun run build:wasm && tsup",
     "build:wasm": "bun run wasm:build",
     "build:dev": "tsup --watch",
+    "build:analyze": "NODE_ENV=production tsup && tsx scripts/analyze-bundle.ts",
     "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
     "test": "vitest",

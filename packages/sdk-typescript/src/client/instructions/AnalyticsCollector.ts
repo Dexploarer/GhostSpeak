@@ -7,11 +7,12 @@
  */
 
 import type { Address, Commitment } from '@solana/kit'
-import { Connection, PublicKey } from '@solana/web3.js'
+import type { Connection, PublicKey } from '@solana/web3.js'
 import { getAgentDecoder, getServiceListingDecoder, getJobPostingDecoder, getEscrowDecoder } from '../../generated/accounts/index.js'
 import { EscrowStatus } from '../../generated/types/index.js'
-import { 
-  AnalyticsStreamer,
+import type { 
+  AnalyticsStreamer } from '../../utils/analytics-streaming.js'
+import {
   createAnalyticsStreamer,
   type AnalyticsStreamOptions,
   type AgentAnalyticsEvent,

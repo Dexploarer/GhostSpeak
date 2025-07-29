@@ -49,7 +49,28 @@ export { ChannelModule } from './modules/channels/ChannelModule.js'
 // CRYPTO EXPORTS
 // =====================================================
 
-export * from './crypto/index.js'
+// Crypto exports with renamed TransferProof to avoid conflict
+export {
+  generateKeypair,
+  encrypt,
+  decrypt,
+  generateTransferProof,
+  generateWithdrawProof,
+  type ElGamalKeypair,
+  type ElGamalCiphertext,
+  type TransferProof as ElGamalTransferProof,
+  type WithdrawProof,
+  createVerifyRangeProofInstruction,
+  createVerifyTransferProofInstruction,
+  ZK_ELGAMAL_PROOF_PROGRAM_ID,
+  type ProofContext,
+  loadWasmModule,
+  isWasmAvailable,
+  type WasmModule,
+  elgamal,
+  zkProofs,
+  wasmBridge
+} from './crypto/index.js'
 
 // Keep old exports for backward compatibility (will be deprecated)
 export { GhostSpeakClient as LegacyGhostSpeakClient } from './client/GhostSpeakClient.js'
@@ -200,8 +221,33 @@ export {
   extractInstructionName
 } from './utils/enhanced-client-errors.js'
 
-// Export all generated types and instructions (these take precedence)
-export * from './generated/index.js'
+// Export generated instruction functions and types with selective exports to avoid conflicts
+export {
+  // Instruction builders - these are the primary exports users need
+  getRegisterAgentInstructionAsync,
+  getCreateEscrowInstructionAsync,
+  getCompleteEscrowInstruction,
+  getCancelEscrowInstruction,
+  getDisputeEscrowInstruction,
+  getProcessPartialRefundInstruction,
+  getCreateEnhancedChannelInstructionAsync,
+  getSendEnhancedMessageInstructionAsync,
+  getJoinChannelInstruction,
+  getLeaveChannelInstruction,
+  getUpdateChannelSettingsInstruction,
+  getAddMessageReactionInstruction,
+  // Account decoders
+  getAgentDecoder,
+  getEscrowDecoder,
+  getChannelDecoder,
+  getMessageDecoder,
+  // Types that don't conflict
+  type EscrowStatus as GeneratedEscrowStatus,
+  type ChannelType as GeneratedChannelType,
+  type MessageType as GeneratedMessageType,
+  // Other generated utilities
+  GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS
+} from './generated/index.js'
 
 // Export program constants
 export { GHOSTSPEAK_PROGRAM_ID } from './constants.js'

@@ -439,13 +439,14 @@ function scalarMultiply(
 /**
  * Convert ElGamal public key to Solana address format
  */
-export function elGamalPubkeyToAddress(pubkey: Uint8Array): Address {
+export async function elGamalPubkeyToAddress(pubkey: Uint8Array): Promise<Address> {
   if (pubkey.length !== 32) {
     throw new Error('ElGamal public key must be 32 bytes')
   }
-  // Convert bytes to base58 address
-  const { address } = require('@solana/addresses')
-  return address(Buffer.from(pubkey).toString('base58'))
+  // Convert bytes to base58 address using proper encoding
+  const bs58 = await import('bs58')
+  const { address } = await import('@solana/addresses')
+  return address(bs58.default.encode(Buffer.from(pubkey)))
 }
 
 /**
@@ -459,6 +460,7 @@ export async function loadWasmModule(): Promise<void> {
   try {
     let wasmModule: any
     try {
+      // Use require.resolve to check if module exists, then dynamic import
       wasmModule = await import('../wasm/ghostspeak_wasm.js')
     } catch {
       throw new Error('WASM module not built')

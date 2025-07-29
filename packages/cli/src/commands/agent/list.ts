@@ -14,6 +14,7 @@ import type { ListOptions } from '../../types/cli-types.js'
 import { formatAgentInfo } from '../agent/helpers.js'
 import { container, ServiceTokens } from '../../core/Container.js'
 import type { IAgentService } from '../../types/services.js'
+import { displayErrorAndCancel } from '../../utils/enhanced-error-handler.js'
 
 export function registerListCommand(parentCommand: Command): void {
   parentCommand
@@ -64,7 +65,7 @@ export function registerListCommand(parentCommand: Command): void {
 
       } catch (error) {
         s.stop('❌ Failed to fetch agents')
-        cancel(chalk.red('Error: ' + (error instanceof Error ? error.message : 'Unknown error')))
+        displayErrorAndCancel(error, 'Agent listing')
       }
     })
 }

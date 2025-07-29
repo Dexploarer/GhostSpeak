@@ -6,6 +6,8 @@ export class Container {
   private static instance: Container
   private services = new Map<string, unknown>()
   private factories = new Map<string, () => unknown>()
+  private singletonCache = new Map<string, unknown>()
+  private creationTime = new Map<string, number>()
 
   /**
    * Get singleton instance
@@ -32,20 +34,33 @@ export class Container {
   }
 
   /**
-   * Resolve a service by token
+   * Resolve a service by token with enhanced caching
    */
   resolve<T>(token: string): T {
+    // Check singleton cache first for best performance
+    if (this.singletonCache.has(token)) {
+      return this.singletonCache.get(token) as T
+    }
+
     // Check if singleton instance exists
     if (this.services.has(token)) {
-      return this.services.get(token) as T
+      const instance = this.services.get(token) as T
+      this.singletonCache.set(token, instance)
+      return instance
     }
 
     // Check if factory exists
     if (this.factories.has(token)) {
       const factory = this.factories.get(token)!
+      const startTime = Date.now()
       const instance = factory()
-      // Cache as singleton
+      const endTime = Date.now()
+      
+      // Cache as singleton with performance tracking
       this.services.set(token, instance)
+      this.singletonCache.set(token, instance)
+      this.creationTime.set(token, endTime - startTime)
+      
       return instance as T
     }
 
@@ -65,6 +80,32 @@ export class Container {
   clear(): void {
     this.services.clear()
     this.factories.clear()
+    this.singletonCache.clear()
+    this.creationTime.clear()
+  }
+
+  /**
+   * Get performance metrics for service creation
+   */
+  getPerformanceMetrics(): Record<string, number> {
+    const metrics: Record<string, number> = {}
+    this.creationTime.forEach((time, token) => {
+      metrics[token] = time
+    })
+    return metrics
+  }
+
+  /**
+   * Warm up services by pre-creating frequently used ones
+   */
+  warmUp(tokens: string[]): void {
+    tokens.forEach(token => {
+      try {
+        this.resolve(token)
+      } catch (error) {
+        // Ignore errors during warm-up
+      }
+    })
   }
 
   /**

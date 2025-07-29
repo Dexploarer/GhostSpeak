@@ -37,12 +37,25 @@ export class ChannelModule extends BaseModule {
         channel: channelAddress,
         reentrancyGuard: this.systemProgramId,
         creator: params.signer,
+        creatorAgent: params.signer.address,
         systemProgram: this.systemProgramId,
-        channelName: params.name,
-        description: params.description,
+        channelId: params.name,
+        participants: [params.signer.address],
         channelType: params.channelType,
-        isPrivate: params.isPrivate ?? false,
-        maxMembers: params.maxMembers ?? 1000
+        metadata: {
+          name: params.name,
+          description: params.description,
+          avatarUrl: null,
+          tags: [],
+          settings: {
+            allowFileSharing: true,
+            allowExternalInvites: !params.isPrivate,
+            messageRetentionDays: 30,
+            maxMessageSize: 4096,
+            requireEncryption: params.isPrivate ?? false,
+            autoArchiveAfterDays: 365
+          }
+        }
       }),
       [params.signer]
     )
@@ -69,10 +82,17 @@ export class ChannelModule extends BaseModule {
         reentrancyGuard: this.systemProgramId,
         sender: params.signer,
         systemProgram: this.systemProgramId,
+        messageId: `msg_${Date.now()}`,
         content: params.content,
-        messageType: params.messageType,
-        attachmentUri: params.attachmentUri,
-        replyTo: params.replyTo
+        messageType: params.messageType ?? 'text' as any,
+        metadata: {
+          replyTo: params.replyTo ? params.replyTo.toString() as any : null,
+          threadId: null,
+          attachments: params.attachmentUri ? [{ fileType: 'application/octet-stream', fileSize: 0, fileHash: '', storageUrl: params.attachmentUri }] : [],
+          mentions: [],
+          reactions: []
+        },
+        isEncrypted: false
       }),
       [params.signer]
     )
@@ -88,7 +108,7 @@ export class ChannelModule extends BaseModule {
         channel: channelAddress,
         reentrancyGuard: this.systemProgramId,
         user: signer,
-        systemProgram: this.systemProgramId
+        userAgent: signer.address
       }),
       [signer]
     )
@@ -103,8 +123,7 @@ export class ChannelModule extends BaseModule {
       () => getLeaveChannelInstruction({
         channel: channelAddress,
         reentrancyGuard: this.systemProgramId,
-        user: signer,
-        systemProgram: this.systemProgramId
+        user: signer
       }),
       [signer]
     )
@@ -129,7 +148,20 @@ export class ChannelModule extends BaseModule {
         channel: channelAddress,
         reentrancyGuard: this.systemProgramId,
         authority: signer,
-        systemProgram: this.systemProgramId
+        newMetadata: {
+          name: settings.name ?? null,
+          description: settings.description ?? null,
+          avatarUrl: null,
+          tags: [],
+          settings: {
+            allowFileSharing: true,
+            allowExternalInvites: !settings.isPrivate,
+            messageRetentionDays: 30,
+            maxMessageSize: settings.maxMembers ? Number(settings.maxMembers) : 4096,
+            requireEncryption: settings.isPrivate ?? false,
+            autoArchiveAfterDays: 365
+          }
+        }
       }),
       [signer]
     )
@@ -146,10 +178,11 @@ export class ChannelModule extends BaseModule {
     return this.execute(
       'addMessageReaction',
       () => getAddMessageReactionInstruction({
+        channel: this.deriveChannelFromMessage(messageAddress),
         message: messageAddress,
         reentrancyGuard: this.systemProgramId,
         user: signer,
-        reactionData: emoji
+        reaction: emoji
       }),
       [signer]
     )
@@ -190,8 +223,9 @@ export class ChannelModule extends BaseModule {
   async getChannelsByCreator(creator: Address): Promise<{ address: Address; data: Channel }[]> {
     const filters = [{
       memcmp: {
-        offset: 8, // Skip discriminator
-        bytes: creator
+        offset: 8n, // Skip discriminator
+        bytes: creator as string,
+        encoding: 'base58' as const
       }
     }]
     
@@ -204,8 +238,9 @@ export class ChannelModule extends BaseModule {
   async getChannelMessages(channelAddress: Address): Promise<{ address: Address; data: Message }[]> {
     const filters = [{
       memcmp: {
-        offset: 8, // Skip discriminator
-        bytes: channelAddress
+        offset: 8n, // Skip discriminator
+        bytes: channelAddress as string,
+        encoding: 'base58' as const
       }
     }]
     
@@ -222,6 +257,11 @@ export class ChannelModule extends BaseModule {
   private deriveMessagePda(channel: Address, nonce: number): Address {
     // Implementation would derive PDA
     return `message_${channel}_${nonce}` as Address
+  }
+
+  private deriveChannelFromMessage(messageAddress: Address): Address {
+    // Implementation would derive channel from message
+    return `channel_from_${messageAddress}` as Address
   }
 
   private get systemProgramId(): Address {

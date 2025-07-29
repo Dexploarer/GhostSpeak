@@ -118,9 +118,9 @@ async function main() {
       .option('--auto-faucet', 'Automatically request faucet funds')
       .action(async (options) => {
         await startOnboarding({
-          skipWelcome: options.skipWelcome,
           network: options.network,
-          autoFaucet: options.autoFaucet
+          autoFaucet: options.autoFaucet,
+          skipSteps: options.skipWelcome ? ['welcome'] : undefined
         })
       })
       

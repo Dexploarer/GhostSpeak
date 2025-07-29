@@ -36,7 +36,7 @@ export function registerUpdateCommand(parentCommand: Command): void {
         const agentService = container.resolve<IAgentService>(ServiceTokens.AGENT_SERVICE)
         
         // Get user's agents
-        const myAgents = await agentService.list()
+        const myAgents = await agentService.list({})
         
         s.stop('✅ Agents loaded')
         
@@ -78,10 +78,9 @@ export function registerUpdateCommand(parentCommand: Command): void {
         console.log('─'.repeat(40))
         console.log(chalk.cyan('Name:') + ` ${currentAgent.name}`)
         console.log(chalk.cyan('Description:') + ` ${currentAgent.description}`)
-        console.log(chalk.cyan('Service Endpoint:') + ` ${currentAgent.serviceEndpoint ?? 'Not set'}`)
         console.log(chalk.cyan('Capabilities:') + ` ${currentAgent.capabilities.join(', ')}`)
         console.log(chalk.cyan('Reputation:') + ` ${currentAgent.reputationScore}/100`)
-        console.log(chalk.cyan('Agent ID:') + ` ${agentId}`)
+        console.log(chalk.cyan('Agent ID:') + ` ${currentAgent.id}`)
 
         // Update options
         const updateChoice = await select({
@@ -154,8 +153,8 @@ export function registerUpdateCommand(parentCommand: Command): void {
         if (updateChoice === 'endpoint' || updateChoice === 'all') {
           const newEndpoint = await text({
             message: 'New service endpoint URL:',
-            placeholder: currentAgent.serviceEndpoint ?? 'https://api.example.com/agent',
-            initialValue: updateChoice === 'all' ? currentAgent.serviceEndpoint : undefined,
+            placeholder: 'https://api.example.com/agent',
+            initialValue: updateChoice === 'all' ? undefined : undefined,
             validate: (value) => {
               if (!value) return 'Endpoint is required'
               if (!isValidUrl(value)) {
@@ -198,13 +197,11 @@ export function registerUpdateCommand(parentCommand: Command): void {
           updates.capabilities = newCapabilities
         }
 
-        // Price update (using originalPrice from agent)
+        // Price update (pricing information in metadata)
         if (updateChoice === 'price' || updateChoice === 'all') {
-          const currentPrice = currentAgent.originalPrice ?? 0n
           const newPrice = await text({
             message: 'New price per task (in SOL):',
-            placeholder: `${Number(currentPrice) / 1_000_000}`,
-            initialValue: updateChoice === 'all' ? `${Number(currentPrice) / 1_000_000}` : undefined,
+            placeholder: '0.001',
             validate: (value) => {
               if (!value) return 'Price is required'
               const num = parseFloat(value)
@@ -217,7 +214,7 @@ export function registerUpdateCommand(parentCommand: Command): void {
             return
           }
 
-          updates.pricePerTask = newPrice
+          updates.pricing = { pricePerTask: parseFloat(newPrice) }
         }
 
         // Confirmation
@@ -242,39 +239,32 @@ export function registerUpdateCommand(parentCommand: Command): void {
         }
 
         const updateSpinner = spinner()
-        updateSpinner.start('Updating agent on the blockchain...')
+        updateSpinner.start('Updating agent...')
 
         try {
-          // Prepare update parameters
-          const updateParams = {
+          // Use service layer to update agent
+          const updatedAgent = await agentService.update(selectedAgentId, {
+            name: updates.name,
             description: updates.description,
-            metadataUri: undefined, // Let the SDK create it from the provided data
             capabilities: updates.capabilities,
-            serviceEndpoint: updates.endpoint
-          }
-
-          // Update agent using SDK (using the new updateAgent method that can auto-detect agent_id)
-          const result = await client.agent.updateAgent(
-            toSDKSigner(wallet),
-            agentAddress,
-            {
-              ...updateParams,
-              agentId: agentId // Include agentId in params for convenience method
+            metadata: {
+              endpoint: updates.endpoint,
+              pricing: updates.pricing
             }
-          )
+          })
 
           updateSpinner.stop('✅ Agent updated successfully!')
 
           console.log('\n' + chalk.green('🎉 Agent has been updated!'))
-          console.log(chalk.gray(`Agent Address: ${agentAddress.toString()}`))
-          console.log(chalk.gray('Changes will take effect immediately'))
-          console.log('')
-          console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
+          console.log(chalk.gray(`Agent ID: ${updatedAgent.id}`))
+          console.log(chalk.gray(`Name: ${updatedAgent.name}`))
+          console.log(chalk.gray(`Description: ${updatedAgent.description}`))
+          console.log(chalk.gray('Changes have been saved'))
 
           outro('Agent update completed')
         } catch (error) {
           updateSpinner.stop('❌ Update failed')
-          throw new Error(handleTransactionError(error))
+          throw error
         }
 
       } catch (error) {

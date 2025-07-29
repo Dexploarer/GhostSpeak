@@ -455,7 +455,7 @@ export class InstructionBuilder {
       const compiledMessage = compileTransactionMessage(transactionMessage)
       const encodedMessage = Buffer.from(compiledMessage as unknown as Uint8Array).toString('base64')
       
-      const fee = await this.rpcClient.getFeeForMessage(encodedMessage)
+      const fee = await this.rpcClient.getFeeForMessage(encodedMessage as import('@solana/kit').TransactionMessageBytesBase64)
       return BigInt(fee ?? 0)
     } catch {
       // Fallback estimate

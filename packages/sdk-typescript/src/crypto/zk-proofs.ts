@@ -5,7 +5,7 @@
  * including integration with Solana's ZK ElGamal Proof Program.
  */
 
-import type { IInstruction } from '@solana/kit'
+import type { IInstruction, AccountRole } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
 import type { 
@@ -53,7 +53,7 @@ export function createVerifyRangeProofInstruction(
   return {
     programAddress: ZK_ELGAMAL_PROOF_PROGRAM_ID,
     accounts: [
-      { address: proofAccount, role: 'readonly' }
+      { address: proofAccount, role: 'readonly' as AccountRole }
     ],
     data
   }
@@ -73,7 +73,7 @@ export function createVerifyValidityProofInstruction(
   return {
     programAddress: ZK_ELGAMAL_PROOF_PROGRAM_ID,
     accounts: [
-      { address: proofAccount, role: 'readonly' }
+      { address: proofAccount, role: 'readonly' as AccountRole }
     ],
     data
   }
@@ -93,7 +93,7 @@ export function createVerifyEqualityProofInstruction(
   return {
     programAddress: ZK_ELGAMAL_PROOF_PROGRAM_ID,
     accounts: [
-      { address: proofAccount, role: 'readonly' }
+      { address: proofAccount, role: 'readonly' as AccountRole }
     ],
     data
   }
@@ -113,7 +113,7 @@ export function createVerifyWithdrawProofInstruction(
   return {
     programAddress: ZK_ELGAMAL_PROOF_PROGRAM_ID,
     accounts: [
-      { address: proofAccount, role: 'readonly' }
+      { address: proofAccount, role: 'readonly' as AccountRole }
     ],
     data
   }
@@ -145,7 +145,7 @@ export function createVerifyTransferProofInstruction(
   return {
     programAddress: ZK_ELGAMAL_PROOF_PROGRAM_ID,
     accounts: [
-      { address: proofAccount, role: 'readonly' }
+      { address: proofAccount, role: 'readonly' as AccountRole }
     ],
     data
   }

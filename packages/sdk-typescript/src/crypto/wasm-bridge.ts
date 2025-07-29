@@ -84,9 +84,12 @@ export async function loadWasmModule(): Promise<void> {
 async function loadWasmModuleInternal(): Promise<void> {
   try {
     // Dynamic import of WASM module - check if it exists
-    const wasmImport = await import('../wasm/ghostspeak_wasm.js').catch(() => {
-      throw new Error('WASM module not built. Run `bun run build:wasm` first.')
-    })
+    let wasmImport: any
+    try {
+      wasmImport = await import('../wasm/ghostspeak_wasm.js')
+    } catch {
+      throw new Error('WASM module not built')
+    }
     const initWasm = wasmImport.default
     
     // Initialize WASM

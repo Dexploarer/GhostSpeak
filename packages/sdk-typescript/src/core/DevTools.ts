@@ -4,7 +4,7 @@
  * Provides debugging, inspection, and development utilities
  */
 
-import type { IInstruction } from '@solana/kit'
+import type { IInstruction, AccountRole } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 import type { GhostSpeakConfig } from '../types/index.js'
 import { RpcClient } from './rpc-client.js'
@@ -43,7 +43,7 @@ export interface AccountInfo {
   address: Address
   isWritable: boolean
   isSigner: boolean
-  role: string
+  role: AccountRole
 }
 
 /**
@@ -116,8 +116,10 @@ export class DevTools {
       totalSize += instr.data?.length ?? 0 // Instruction data
 
       const accounts: AccountInfo[] = (instr.accounts ?? []).map(acc => {
-        const isWritable = acc.role === 'writable' || acc.role === 'writable-signer'
-        const isSigner = acc.role === 'readonly-signer' || acc.role === 'writable-signer'
+        // Check if the role has 'writable' in its name or is specifically writable
+        const isWritable = acc.role?.toString().includes('writable') ?? false
+        // Check if the role has 'signer' in its name
+        const isSigner = acc.role?.toString().includes('signer') ?? false
         
         if (isWritable) {
           writableAccounts.add(acc.address)
@@ -133,7 +135,7 @@ export class DevTools {
           address: acc.address,
           isWritable,
           isSigner,
-          role: acc.role ?? 'unknown'
+          role: acc.role
         }
       })
 

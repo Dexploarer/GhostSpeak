@@ -14,7 +14,9 @@ import type {
   Slot,
   Epoch,
   Lamports,
-  TransactionVersion
+  TransactionVersion,
+  Base58EncodedBytes,
+  Base64EncodedBytes
 } from '@solana/kit'
 
 // Re-export common types
@@ -62,6 +64,9 @@ export interface TransactionStatus {
   err: TransactionError | null
   confirmationStatus?: Commitment
 }
+
+// Type alias for backwards compatibility
+export type SignatureStatus = TransactionStatus
 
 // Block production info
 export interface BlockProduction {
@@ -392,8 +397,23 @@ export interface GetProgramAccountsOptions {
     length: number
   }
   minContextSlot?: Slot
-  filters?: (| { dataSize: number }
-    | { memcmp: { offset: number; bytes: string } })[]
+  filters?: (
+    | { dataSize: bigint }
+    | { 
+        memcmp: { 
+          offset: bigint
+          bytes: Base58EncodedBytes
+          encoding: 'base58'
+        } 
+      }
+    | { 
+        memcmp: { 
+          offset: bigint
+          bytes: Base64EncodedBytes
+          encoding: 'base64'
+        } 
+      }
+  )[]
   withContext?: boolean
 }
 

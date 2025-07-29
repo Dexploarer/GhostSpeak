@@ -189,7 +189,7 @@ export class GovernanceInstructions extends BaseInstructions {
     creator: TransactionSigner,
     multisigPda: Address,
     params: CreateMultisigParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🏛️ Creating multi-signature wallet...')
     console.log(`   Multisig ID: ${params.multisigId}`)
     console.log(`   Threshold: ${params.threshold} of ${params.signers.length} signers`)
@@ -284,7 +284,7 @@ export class GovernanceInstructions extends BaseInstructions {
     proposer: TransactionSigner,
     proposalPda: Address,
     params: CreateProposalParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📜 Creating governance proposal...')
     console.log(`   Proposal ID: ${params.proposalId}`)
     console.log(`   Type: ${params.proposalType}`)
@@ -379,7 +379,7 @@ export class GovernanceInstructions extends BaseInstructions {
     admin: TransactionSigner,
     rbacPda: Address,
     params: InitializeRbacParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🔐 Initializing RBAC configuration...')
     console.log(`   Initial Roles: ${params.initialRoles.length} roles`)
 
@@ -453,7 +453,7 @@ export class GovernanceInstructions extends BaseInstructions {
     voterTokenAccount: Address,
     voteChoice: VoteChoice,
     reasoning?: string
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🗳️ Casting vote on proposal...')
     console.log(`   Proposal: ${proposal}`)
     console.log(`   Vote: ${voteChoice}`)
@@ -490,7 +490,7 @@ export class GovernanceInstructions extends BaseInstructions {
     proposalId: bigint,
     scope: DelegationScope,
     expiresAt?: bigint
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🤝 Delegating voting power...')
     console.log(`   Delegate: ${delegate}`)
     console.log(`   Scope: ${scope}`)
@@ -520,7 +520,7 @@ export class GovernanceInstructions extends BaseInstructions {
   async tallyVotes(
     authority: TransactionSigner,
     proposal: Address
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📊 Tallying votes for proposal...')
     console.log(`   Proposal: ${proposal}`)
 
@@ -556,7 +556,7 @@ export class GovernanceInstructions extends BaseInstructions {
     executor: TransactionSigner,
     proposal: Address,
     targetProgram: Address
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('⚡ Executing governance proposal...')
     console.log(`   Proposal: ${proposal}`)
     console.log(`   Target Program: ${targetProgram}`)
@@ -704,7 +704,7 @@ export class GovernanceInstructions extends BaseInstructions {
       )
       
       // Convert to summaries and apply filters
-      let multisigs = accounts
+      const multisigs = accounts
         .map(({ address, data }) => this.multisigToSummary(address, data))
         .filter(summary => this.applyMultisigFilter(summary, filter))
         .slice(0, limit)
@@ -735,7 +735,7 @@ export class GovernanceInstructions extends BaseInstructions {
       )
       
       // Convert to summaries and apply filters
-      let proposals = accounts
+      const proposals = accounts
         .map(({ address, data }) => this.proposalToSummary(address, data))
         .filter(summary => this.applyProposalFilter(summary, filter))
         .slice(0, limit)

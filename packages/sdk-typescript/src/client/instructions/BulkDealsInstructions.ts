@@ -45,7 +45,7 @@ export class BulkDealsInstructions extends BaseInstructions {
     creator: TransactionSigner,
     bulkDealPda: Address,
     params: CreateBulkDealParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('📦 Creating bulk deal...')
     console.log(`   Deal ID: ${params.dealId}`)
     console.log(`   Type: ${params.dealType}`)
@@ -81,7 +81,7 @@ export class BulkDealsInstructions extends BaseInstructions {
   async executeBatch(
     executor: TransactionSigner,
     params: ExecuteBatchParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('⚡ Executing bulk deal batch...')
     console.log(`   Bulk Deal: ${params.bulkDeal}`)
     console.log(`   Batch Size: ${params.batchSize}`)

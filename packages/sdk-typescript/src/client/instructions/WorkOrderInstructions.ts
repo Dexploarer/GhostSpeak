@@ -487,7 +487,7 @@ export class WorkOrderInstructions extends BaseInstructions {
     // Enhanced progress calculation with milestone support
     let progressPercentage = 0
     let completedMilestones = 0
-    let totalMilestones = milestones?.length ?? 0
+    const totalMilestones = milestones?.length ?? 0
 
     if (milestones && milestones.length > 0) {
       // Calculate milestone-based progress

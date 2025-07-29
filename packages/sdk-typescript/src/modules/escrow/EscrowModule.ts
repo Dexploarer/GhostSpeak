@@ -32,14 +32,14 @@ export class EscrowModule extends BaseModule {
       'createEscrow',
       () => getCreateEscrowInstructionAsync({
         escrow: escrowAddress,
-        buyer: params.buyer,
+        reentrancyGuard: this.systemProgramId,
+        payer: params.buyer,
         seller: params.seller,
-        mint: this.nativeMint,
-        buyerTokenAccount: this.deriveTokenAccount(params.buyer),
         escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
+        buyerTokenAccount: this.deriveTokenAccount(params.buyer),
+        sellerTokenAccount: this.deriveTokenAccount(params.seller),
         tokenProgram: this.tokenProgramId,
         systemProgram: this.systemProgramId,
-        signer: params.signer.address,
         amount: params.amount,
         description: params.description
       }),
@@ -55,7 +55,12 @@ export class EscrowModule extends BaseModule {
       'completeEscrow',
       () => getCompleteEscrowInstruction({
         escrow: escrowAddress,
-        signer: signer.address
+        reentrancyGuard: this.systemProgramId,
+        agent: signer.address,
+        escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
+        agentTokenAccount: this.deriveTokenAccount(signer.address),
+        completor: signer,
+        tokenProgram: this.tokenProgramId
       }),
       [signer]
     )
@@ -69,9 +74,9 @@ export class EscrowModule extends BaseModule {
       'cancelEscrow',
       () => getCancelEscrowInstruction({
         escrow: escrowAddress,
-        buyer: signer.address,
+        reentrancyGuard: this.systemProgramId,
+        authority: signer,
         escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
-        buyerTokenAccount: this.deriveTokenAccount(signer.address),
         tokenProgram: this.tokenProgramId
       }),
       [signer]
@@ -86,8 +91,8 @@ export class EscrowModule extends BaseModule {
       'disputeEscrow',
       () => getDisputeEscrowInstruction({
         escrow: escrowAddress,
-        disputer: signer.address,
-        reason
+        reentrancyGuard: this.systemProgramId,
+        disputer: signer
       }),
       [signer]
     )
@@ -105,10 +110,9 @@ export class EscrowModule extends BaseModule {
       'processPartialRefund',
       () => getProcessPartialRefundInstruction({
         escrow: escrowAddress,
-        arbitrator: signer.address,
+        reentrancyGuard: this.systemProgramId,
+        authority: signer,
         escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
-        buyerTokenAccount: this.deriveTokenAccount(signer.address),
-        sellerTokenAccount: this.deriveTokenAccount(signer.address),
         tokenProgram: this.tokenProgramId,
         refundAmount
       }),
@@ -119,8 +123,8 @@ export class EscrowModule extends BaseModule {
   /**
    * Get escrow account
    */
-  async getAccount(address: Address): Promise<Escrow | null> {
-    return this.getAccount<Escrow>(address, 'getEscrowDecoder')
+  async getEscrowAccount(address: Address): Promise<Escrow | null> {
+    return super.getAccount<Escrow>(address, 'getEscrowDecoder')
   }
 
   /**

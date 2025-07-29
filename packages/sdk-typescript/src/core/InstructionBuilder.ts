@@ -1,6 +1,5 @@
 import type { Address } from '@solana/addresses'
-import type { IInstruction, TransactionSigner, TransactionMessage } from '@solana/kit'
-import type { Signature } from '@solana/rpc-types'
+import type { IInstruction, TransactionSigner, TransactionMessage, Signature, Blockhash } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
 import { RpcClient } from './rpc-client.js'
 import { createTransactionResult, type TransactionResult } from '../utils/transaction-urls.js'
@@ -10,10 +9,12 @@ import {
   pipe,
   createTransactionMessage,
   setTransactionMessageFeePayerSigner,
+  setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
   appendTransactionMessageInstructions,
   signTransactionMessageWithSigners,
-  getBase64EncodedWireTransaction
+  getBase64EncodedWireTransaction,
+  compileTransactionMessage
 } from '@solana/kit'
 
 /**
@@ -50,11 +51,12 @@ export class InstructionBuilder {
       maxRetries?: number
     }
   ): Promise<T> {
-    const context = createErrorContext({
-      operation: instructionName,
-      programId: this.config.programId,
-      signers: signers.map(s => s.address)
-    })
+    const context = createErrorContext(
+      'execute',
+      instructionName,
+      signers.map(s => ({ address: s.address, name: 'signer' })),
+      { programId: this.config.programId }
+    )
 
     try {
       // Start timing if in dev mode
@@ -86,7 +88,11 @@ export class InstructionBuilder {
       }
 
       // Get latest blockhash
-      const latestBlockhash = await this.rpcClient.getLatestBlockhash()
+      const latestBlockhashResult = await this.rpcClient.getLatestBlockhash()
+      const latestBlockhash = {
+        blockhash: latestBlockhashResult.blockhash as Blockhash,
+        lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
+      }
 
       // Build transaction message
       const transactionMessage = await pipe(
@@ -104,7 +110,7 @@ export class InstructionBuilder {
         signedTransaction,
         options?.skipPreflight ?? false,
         options?.maxRetries ?? 30
-      )
+      ) as string
 
       // Return detailed result if requested
       if (options?.returnDetails) {
@@ -126,7 +132,7 @@ export class InstructionBuilder {
 
       return signature as T
     } catch (error) {
-      logEnhancedError(error, context)
+      logEnhancedError(error as Error, context)
       throw error
     }
   }
@@ -144,12 +150,12 @@ export class InstructionBuilder {
       skipPreflight?: boolean
     }
   ): Promise<T> {
-    const context = createErrorContext({
-      operation: `${batchName} (batch)`,
-      programId: this.config.programId,
-      signers: signers.map(s => s.address),
-      instructionCount: instructionGetters.length
-    })
+    const context = createErrorContext(
+      'executeBatch',
+      batchName,
+      signers.map(s => ({ address: s.address, name: 'signer' })),
+      { programId: this.config.programId, instructionCount: instructionGetters.length }
+    )
 
     try {
       // Get all instructions
@@ -179,7 +185,11 @@ export class InstructionBuilder {
       }
 
       // Get latest blockhash
-      const latestBlockhash = await this.rpcClient.getLatestBlockhash()
+      const latestBlockhashResult = await this.rpcClient.getLatestBlockhash()
+      const latestBlockhash = {
+        blockhash: latestBlockhashResult.blockhash as Blockhash,
+        lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
+      }
 
       // Build transaction message
       const transactionMessage = await pipe(
@@ -196,7 +206,7 @@ export class InstructionBuilder {
       const signature = await this.sendAndConfirm(
         signedTransaction,
         options?.skipPreflight ?? false
-      )
+      ) as string
 
       // Return detailed result if requested
       if (options?.returnDetails) {
@@ -205,7 +215,7 @@ export class InstructionBuilder {
         
         // End timing if in dev mode
         if (this.devTools.isDevMode()) {
-          this.devTools.endTiming(instructionName)
+          this.devTools.endTiming(batchName)
         }
         
         return result as T
@@ -213,12 +223,12 @@ export class InstructionBuilder {
 
       // End timing if in dev mode
       if (this.devTools.isDevMode()) {
-        this.devTools.endTiming(instructionName)
+        this.devTools.endTiming(batchName)
       }
 
       return signature as T
     } catch (error) {
-      logEnhancedError(error, context)
+      logEnhancedError(error as Error, context)
       throw error
     }
   }
@@ -297,12 +307,38 @@ export class InstructionBuilder {
    */
   async getProgramAccounts<T>(
     decoderImportName: string,
-    filters?: unknown[]
+    filters?: ({ dataSize: bigint } | { memcmp: { offset: bigint; bytes: string; encoding?: 'base58' | 'base64' } })[]
   ): Promise<{ address: Address; data: T }[]> {
     try {
+      // Convert filters to the proper branded types for RPC client
+      const convertedFilters = filters?.map(filter => {
+        if ('dataSize' in filter) {
+          return { dataSize: filter.dataSize }
+        } else {
+          const encoding = filter.memcmp.encoding ?? 'base58'
+          if (encoding === 'base64') {
+            return {
+              memcmp: {
+                offset: filter.memcmp.offset,
+                bytes: filter.memcmp.bytes as import('@solana/kit').Base64EncodedBytes,
+                encoding: 'base64' as const
+              }
+            }
+          } else {
+            return {
+              memcmp: {
+                offset: filter.memcmp.offset,
+                bytes: filter.memcmp.bytes as import('@solana/kit').Base58EncodedBytes,
+                encoding: 'base58' as const
+              }
+            }
+          }
+        }
+      })
+
       const accounts = await this.rpcClient.getProgramAccounts(this.config.programId!, {
         commitment: this.config.commitment,
-        filters: filters as { memcmp?: { offset: number; bytes: string } | { dataSize: number } }[]
+        filters: convertedFilters ?? []
       })
 
       // Dynamic import decoder
@@ -403,7 +439,11 @@ export class InstructionBuilder {
         instructionGetters.map(getter => Promise.resolve(getter()))
       )
 
-      const latestBlockhash = await this.rpcClient.getLatestBlockhash()
+      const latestBlockhashResult = await this.rpcClient.getLatestBlockhash()
+      const latestBlockhash = {
+        blockhash: latestBlockhashResult.blockhash as Blockhash,
+        lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
+      }
       
       const transactionMessage = await pipe(
         createTransactionMessage({ version: 0 }),
@@ -432,7 +472,7 @@ export class InstructionBuilder {
     skipPreflight: boolean,
     maxRetries = 30
   ): Promise<Signature> {
-    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction)
+    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as any)
     
     const signature = await this.rpcClient.sendTransaction(wireTransaction, {
       skipPreflight,
@@ -485,7 +525,11 @@ export class InstructionBuilder {
     instruction: IInstruction,
     signers: TransactionSigner[]
   ): Promise<unknown> {
-    const latestBlockhash = await this.rpcClient.getLatestBlockhash()
+    const latestBlockhashResult = await this.rpcClient.getLatestBlockhash()
+    const latestBlockhash = {
+      blockhash: latestBlockhashResult.blockhash as Blockhash,
+      lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
+    }
     
     const transactionMessage = await pipe(
       createTransactionMessage({ version: 0 }),
@@ -495,7 +539,7 @@ export class InstructionBuilder {
     )
 
     const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
-    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction)
+    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as any)
 
     return this.rpcClient.simulateTransaction(wireTransaction, {
       commitment: this.config.commitment,
@@ -507,7 +551,11 @@ export class InstructionBuilder {
     instructions: IInstruction[],
     signers: TransactionSigner[]
   ): Promise<unknown> {
-    const latestBlockhash = await this.rpcClient.getLatestBlockhash()
+    const latestBlockhashResult = await this.rpcClient.getLatestBlockhash()
+    const latestBlockhash = {
+      blockhash: latestBlockhashResult.blockhash as Blockhash,
+      lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
+    }
     
     const transactionMessage = await pipe(
       createTransactionMessage({ version: 0 }),
@@ -517,7 +565,7 @@ export class InstructionBuilder {
     )
 
     const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
-    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction)
+    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as any)
 
     return this.rpcClient.simulateTransaction(wireTransaction, {
       commitment: this.config.commitment,
@@ -551,15 +599,3 @@ export class InstructionBuilder {
   }
 }
 
-/**
- * Import guards for safely importing from Solana Kit
- */
-function setTransactionMessageFeePayer(feePayer: Address, tx: unknown): unknown {
-  const { setTransactionMessageFeePayer: setFeePayer } = require('@solana/kit')
-  return setFeePayer(feePayer, tx)
-}
-
-function compileTransactionMessage(tx: unknown): unknown {
-  const { compileTransactionMessage: compile } = require('@solana/kit')
-  return compile(tx)
-}

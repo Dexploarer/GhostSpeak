@@ -636,7 +636,7 @@ export class AuctionInstructions extends BaseInstructions {
     auctionPda: Address,
     userRegistry: Address,
     params: CreateAuctionParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('🏗️ Creating service auction...')
     console.log(`   Auction Type: ${params.auctionData.auctionType}`)
     console.log(`   Starting Price: ${params.auctionData.startingPrice} lamports`)
@@ -738,7 +738,7 @@ export class AuctionInstructions extends BaseInstructions {
   async placeAuctionBid(
     userRegistry: Address,
     params: PlaceBidParams
-  ): Promise<Signature> {
+  ): Promise<string> {
     console.log('💰 Placing auction bid...')
     console.log(`   Auction: ${params.auction}`)
     console.log(`   Bid Amount: ${params.bidAmount} lamports`)
@@ -1070,7 +1070,7 @@ export class AuctionInstructions extends BaseInstructions {
    * )
    * ```
    */
-  async finalizeAuction(params: FinalizeAuctionParams): Promise<Signature> {
+  async finalizeAuction(params: FinalizeAuctionParams): Promise<string> {
     console.log('🏁 Finalizing auction...')
     console.log(`   Auction: ${params.auction}`)
 
@@ -1137,7 +1137,7 @@ export class AuctionInstructions extends BaseInstructions {
   async extendAuctionForReserve(params: {
     auction: Address
     signer: TransactionSigner
-  }): Promise<Signature> {
+  }): Promise<string> {
     console.log('⏰ Extending auction for reserve price...')
     console.log(`   Auction: ${params.auction}`)
 

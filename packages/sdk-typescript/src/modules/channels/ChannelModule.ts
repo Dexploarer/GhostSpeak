@@ -35,9 +35,10 @@ export class ChannelModule extends BaseModule {
       'createEnhancedChannel',
       () => getCreateEnhancedChannelInstructionAsync({
         channel: channelAddress,
-        creator: params.signer.address,
+        reentrancyGuard: this.systemProgramId,
+        creator: params.signer,
         systemProgram: this.systemProgramId,
-        name: params.name,
+        channelName: params.name,
         description: params.description,
         channelType: params.channelType,
         isPrivate: params.isPrivate ?? false,
@@ -65,10 +66,11 @@ export class ChannelModule extends BaseModule {
       () => getSendEnhancedMessageInstructionAsync({
         channel: params.channelAddress,
         message: messageAddress,
-        sender: params.signer.address,
+        reentrancyGuard: this.systemProgramId,
+        sender: params.signer,
         systemProgram: this.systemProgramId,
         content: params.content,
-        messageType: params.messageType ?? { text: {} },
+        messageType: params.messageType,
         attachmentUri: params.attachmentUri,
         replyTo: params.replyTo
       }),
@@ -83,7 +85,10 @@ export class ChannelModule extends BaseModule {
     return this.execute(
       'joinChannel',
       () => getJoinChannelInstruction({
-        channel: channelAddress
+        channel: channelAddress,
+        reentrancyGuard: this.systemProgramId,
+        user: signer,
+        systemProgram: this.systemProgramId
       }),
       [signer]
     )
@@ -96,7 +101,10 @@ export class ChannelModule extends BaseModule {
     return this.execute(
       'leaveChannel',
       () => getLeaveChannelInstruction({
-        channel: channelAddress
+        channel: channelAddress,
+        reentrancyGuard: this.systemProgramId,
+        user: signer,
+        systemProgram: this.systemProgramId
       }),
       [signer]
     )
@@ -119,11 +127,9 @@ export class ChannelModule extends BaseModule {
       'updateChannelSettings',
       () => getUpdateChannelSettingsInstruction({
         channel: channelAddress,
-        admin: signer.address,
-        newName: settings.name,
-        newDescription: settings.description,
-        newIsPrivate: settings.isPrivate,
-        newMaxMembers: settings.maxMembers
+        reentrancyGuard: this.systemProgramId,
+        authority: signer,
+        systemProgram: this.systemProgramId
       }),
       [signer]
     )
@@ -141,8 +147,9 @@ export class ChannelModule extends BaseModule {
       'addMessageReaction',
       () => getAddMessageReactionInstruction({
         message: messageAddress,
-        reactor: signer.address,
-        emoji
+        reentrancyGuard: this.systemProgramId,
+        user: signer,
+        reactionData: emoji
       }),
       [signer]
     )
@@ -151,15 +158,15 @@ export class ChannelModule extends BaseModule {
   /**
    * Get channel account
    */
-  async getChannel(address: Address): Promise<Channel | null> {
-    return this.getAccount<Channel>(address, 'getChannelDecoder')
+  async getChannelAccount(address: Address): Promise<Channel | null> {
+    return super.getAccount<Channel>(address, 'getChannelDecoder')
   }
 
   /**
    * Get message account
    */
-  async getMessage(address: Address): Promise<Message | null> {
-    return this.getAccount<Message>(address, 'getMessageDecoder')
+  async getMessageAccount(address: Address): Promise<Message | null> {
+    return super.getAccount<Message>(address, 'getMessageDecoder')
   }
 
   /**

@@ -457,7 +457,12 @@ export async function loadWasmModule(): Promise<void> {
   }
   
   try {
-    const wasmModule = await import('../wasm/ghostspeak_wasm.js')
+    let wasmModule: any
+    try {
+      wasmModule = await import('../wasm/ghostspeak_wasm.js')
+    } catch {
+      throw new Error('WASM module not built')
+    }
     await wasmModule.default()
     console.log('✅ WASM module loaded for optimized ElGamal operations')
   } catch (error) {

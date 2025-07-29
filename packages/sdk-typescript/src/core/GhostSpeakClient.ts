@@ -225,12 +225,12 @@ class AgentBuilder {
   async simulate(): Promise<unknown> {
     const instruction = () => ({
       // Placeholder for actual instruction generation
-      programAddress: this.module.programId,
+      programAddress: this.module.getProgramId(),
       accounts: [],
       data: new Uint8Array()
     })
     this.validateParams()
-    return this.module.simulate('registerAgent', instruction, [this.params.signer!])
+    return this.module.simulateInstruction('registerAgent', instruction, [this.params.signer!])
   }
 
   async explain(): Promise<string> {
@@ -333,7 +333,7 @@ class EscrowBuilder {
   async getCost(): Promise<bigint> {
     return this.module.getCost('createEscrow', () => ({
       // Placeholder for actual instruction
-      programAddress: this.module.programId,
+      programAddress: this.module.getProgramId(),
       accounts: [],
       data: new Uint8Array()
     }))
@@ -342,7 +342,7 @@ class EscrowBuilder {
   async explain(): Promise<string> {
     return this.module.explain('createEscrow', () => ({
       // Placeholder for actual instruction
-      programAddress: this.module.programId,
+      programAddress: this.module.getProgramId(),
       accounts: [],
       data: new Uint8Array()
     }))
@@ -432,7 +432,7 @@ class ChannelBuilder {
   async getCost(): Promise<bigint> {
     return this.module.getCost('createChannel', () => ({
       // Placeholder for actual instruction
-      programAddress: this.module.programId,
+      programAddress: this.module.getProgramId(),
       accounts: [],
       data: new Uint8Array()
     }))
@@ -441,7 +441,7 @@ class ChannelBuilder {
   async explain(): Promise<string> {
     return this.module.explain('createChannel', () => ({
       // Placeholder for actual instruction
-      programAddress: this.module.programId,
+      programAddress: this.module.getProgramId(),
       accounts: [],
       data: new Uint8Array()
     }))

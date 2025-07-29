@@ -7,7 +7,8 @@
 
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import type { Signature } from '@solana/transactions'
+// Use string type for signature since @solana/rpc-types doesn't export Signature in v2
+type Signature = string
 
 /**
  * GhostSpeak namespace containing all SDK types
@@ -461,3 +462,18 @@ export type AddressOf<T> = T extends { address: Address } ? T['address'] : never
  * Entity with address
  */
 export type WithAddress<T> = T & { address: Address }
+
+// =====================================================
+// DIRECT TYPE EXPORTS (for minimal.ts compatibility)
+// =====================================================
+
+// Re-export namespace types as direct exports for tree-shaking
+export type Agent = GhostSpeak.Agent
+export type AgentType = GhostSpeak.AgentType
+export type Escrow = GhostSpeak.Escrow
+export type EscrowStatus = GhostSpeak.EscrowStatus
+export type Channel = GhostSpeak.Channel
+export type ChannelType = GhostSpeak.ChannelType
+export type Listing = GhostSpeak.Listing
+export type ListingStatus = GhostSpeak.ListingStatus
+export type SDKError = GhostSpeak.SDKError

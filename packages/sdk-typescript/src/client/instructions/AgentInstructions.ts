@@ -1927,7 +1927,7 @@ export class AgentInstructions extends BaseInstructions {
     try {
       const { REPLICATION_RECORD_DISCRIMINATOR } = await import('../../generated/index.js')
       
-      let filters = [{
+      const filters = [{
         memcmp: {
           offset: 0,
           bytes: bs58.encode(Buffer.from(REPLICATION_RECORD_DISCRIMINATOR))

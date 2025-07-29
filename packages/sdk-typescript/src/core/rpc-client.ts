@@ -1,6 +1,14 @@
 import type { Address } from '@solana/addresses'
-import type { Signature } from '@solana/transactions'
-import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit'
+import { 
+  createSolanaRpc, 
+  createSolanaRpcSubscriptions,
+  type Signature,
+  type Base64EncodedWireTransaction,
+  type Base58EncodedBytes,
+  type Base64EncodedBytes,
+  type TransactionError,
+  type TransactionMessageBytesBase64
+} from '@solana/kit'
 import type {
   Commitment,
   AccountInfo,
@@ -140,7 +148,7 @@ export class RpcClient {
    * Send transaction with enhanced error handling
    */
   async sendTransaction(
-    transaction: string,
+    transaction: Base64EncodedWireTransaction,
     options?: SendTransactionOptions
   ): Promise<Signature> {
     return this.withRetry(async () => {
@@ -148,7 +156,7 @@ export class RpcClient {
         encoding: 'base64',
         skipPreflight: options?.skipPreflight ?? false,
         preflightCommitment: options?.preflightCommitment ?? this.commitment,
-        maxRetries: options?.maxRetries
+        maxRetries: options?.maxRetries ? BigInt(options.maxRetries) : undefined
       }).send()
       
       return result as Signature
@@ -168,7 +176,7 @@ export class RpcClient {
         if (!status) return null
         
         const typedStatus = status as {
-          slot: number
+          slot: bigint
           confirmations: number | null
           err: unknown | null
           confirmationStatus: string | null
@@ -177,8 +185,8 @@ export class RpcClient {
         return {
           slot: typedStatus.slot,
           confirmations: typedStatus.confirmations,
-          err: typedStatus.err,
-          confirmationStatus: typedStatus.confirmationStatus as Commitment | null
+          err: typedStatus.err as TransactionError | null,
+          confirmationStatus: typedStatus.confirmationStatus as Commitment | undefined
         }
       })
     })
@@ -188,19 +196,17 @@ export class RpcClient {
    * Simulate transaction with detailed error info
    */
   async simulateTransaction(
-    transaction: string,
+    transaction: Base64EncodedWireTransaction,
     options?: {
       commitment?: Commitment
       replaceRecentBlockhash?: boolean
-      accounts?: { encoding: string; addresses: Address[] }
     }
   ): Promise<SimulatedTransactionResponse> {
     return this.withRetry(async () => {
       const result = await this.rpc.simulateTransaction(transaction, {
         encoding: 'base64',
         commitment: options?.commitment ?? this.commitment,
-        replaceRecentBlockhash: options?.replaceRecentBlockhash ?? false,
-        accounts: options?.accounts
+        replaceRecentBlockhash: options?.replaceRecentBlockhash ?? false
       }).send()
       
       return {
@@ -215,7 +221,7 @@ export class RpcClient {
   /**
    * Get fee for message
    */
-  async getFeeForMessage(encodedMessage: string): Promise<bigint | null> {
+  async getFeeForMessage(encodedMessage: TransactionMessageBytesBase64): Promise<bigint | null> {
     return this.withRetry(async () => {
       const result = await this.rpc.getFeeForMessage(encodedMessage, {
         commitment: this.commitment
@@ -256,20 +262,30 @@ export class RpcClient {
       throw new Error('WebSocket endpoint not configured')
     }
 
-    const subscription = await this.rpcSubscriptions.accountNotifications(
+    const subscription = this.rpcSubscriptions.accountNotifications(
       address,
       { commitment: this.commitment, encoding: 'base64' }
-    ).subscribe({
-      next: (notification) => {
-        const accountInfo = notification.value ? this.parseAccountInfo(notification.value) : null
-        callback(accountInfo)
-      },
-      error: (error) => {
+    )
+
+    // Handle the async iterable
+    let active = true
+    const processSubscription = async () => {
+      try {
+        for await (const notification of subscription) {
+          if (!active) break
+          const accountInfo = notification.value ? this.parseAccountInfo(notification.value) : null
+          callback(accountInfo)
+        }
+      } catch (error) {
         console.error('Account subscription error:', error)
       }
-    })
+    }
 
-    return () => subscription.unsubscribe()
+    processSubscription()
+
+    return () => {
+      active = false
+    }
   }
 
   // Private helper methods
@@ -309,11 +325,11 @@ export class RpcClient {
     
     return {
       executable: account.executable,
-      lamports: account.lamports,
+      lamports: typeof account.lamports === 'number' ? BigInt(account.lamports) : account.lamports,
       owner: account.owner as Address,
-      rentEpoch: account.rentEpoch,
+      rentEpoch: typeof account.rentEpoch === 'number' ? BigInt(account.rentEpoch) : account.rentEpoch,
       data: Buffer.from(base64Data, 'base64'),
-      space: account.space
+      space: account.space ? (typeof account.space === 'number' ? BigInt(account.space) : account.space) : undefined
     }
   }
 }

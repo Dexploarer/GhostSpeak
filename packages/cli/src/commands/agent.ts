@@ -17,6 +17,9 @@ import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner }
 import { AgentWalletManager, AgentCNFTManager, AgentBackupManager, type AgentCredentials } from '../utils/agentWallet.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { join } from 'path'
+import { homedir } from 'os'
 import type { KeyPairSigner } from '@solana/kit'
 import type { AgentWithAddress, Agent } from '@ghostspeak/sdk'
 import type {
@@ -978,20 +981,33 @@ agentCommand
           s.start('Sending information request...')
           
           try {
-            // TODO: Implement requestAdditionalInfo when available in SDK
-            // const signature = await client.agent.requestAdditionalInfo(
-            //   wallet,
-            //   address(selectedAgent),
-            //   { request: infoRequest }
-            // )
-            // const signature = 'mock-signature' // Temporary mock
-
-            s.stop('✅ Information request sent')
+            // Check if SDK supports requestAdditionalInfo
+            let signature: string
             
-            outro(
-              `${chalk.yellow('📝 Additional Information Requested')}\n\n` +
-              `${chalk.gray('Request:')} ${infoRequest}\n` +
-              `${chalk.gray('The agent owner has been notified')}`
+            if (client.agent.requestAdditionalInfo) {
+              signature = await client.agent.requestAdditionalInfo(
+                toSDKSigner(wallet),
+                address(selectedAgent as string),
+                { request: infoRequest }
+              )
+            } else {
+              // SDK doesn't support this feature yet - store request locally
+              await storePendingInfoRequest(selectedAgent as string, infoRequest as string, wallet.address)
+              signature = 'request-queued-locally'
+            }
+
+            s.stop('✅ Information request processed')
+            
+            const message = signature === 'request-queued-locally' 
+              ? `${chalk.yellow('📝 Information Request Queued')}\n\n` +
+                `${chalk.gray('Request:')} ${infoRequest}\n` +
+                `${chalk.gray('This request has been stored locally and will be sent when SDK supports this feature.')}`
+              : `${chalk.yellow('📝 Additional Information Requested')}\n\n` +
+                `${chalk.gray('Request:')} ${infoRequest}\n` +
+                `${chalk.gray('Transaction:')} ${signature}\n` +
+                `${chalk.gray('The agent owner has been notified')}`
+            
+            outro(message
             )
             
           } catch (error) {
@@ -1076,51 +1092,45 @@ agentCommand
       const s = spinner()
       s.start('Loading analytics data...')
       
-      const { client, wallet: _analyticsWallet } = await initializeClient('devnet')
-      // Acknowledge unused variables for analytics future implementation
-      void _analyticsWallet
-      void client
+      const { client, wallet } = await initializeClient('devnet')
       
-      // TODO: Implement analytics methods when available in SDK
-      const analytics: AgentAnalytics = {
-        totalEarnings: 0,
-        jobsCompleted: 0,
-        successRate: 95,
-        averageRating: 4.5,
-        totalTransactions: 0,
-        uniqueClients: 0,
-        totalVolume: 0n,
-        activeAgents: 0,
-        totalJobs: 0,
-        totalAgents: 0,
-        verifiedAgents: 0,
-        jobsByCategory: {},
-        earningsTrend: [],
-        topClients: [],
-        topCategories: [],
-        topPerformers: [],
-        growthMetrics: {
-          weeklyGrowth: 0,
-          monthlyGrowth: 0,
-          userGrowth: 0,
-          revenueGrowth: 0
-        },
-        insights: []
+      // Check if SDK has analytics support
+      let analytics: AgentAnalytics
+      
+      try {
+        // Try to get real analytics data from SDK
+        if (options.agent && client.agent.getAnalytics) {
+          analytics = await client.agent.getAnalytics(address(options.agent as string), {
+            period: options.period || '30d'
+          })
+        } else if (options.mine && client.agent.getAnalyticsForOwner) {
+          analytics = await client.agent.getAnalyticsForOwner(wallet.address, {
+            period: options.period || '30d'
+          })
+        } else if (client.agent.getMarketplaceAnalytics) {
+          analytics = await client.agent.getMarketplaceAnalytics({
+            period: options.period || '30d'
+          })
+        } else {
+          throw new Error('Analytics methods not available in SDK')
+        }
+      } catch (error) {
+        s.stop('❌ Analytics not available')
+        
+        console.log('')
+        console.log(chalk.yellow('📊 Agent Analytics'))
+        console.log(chalk.gray('Analytics are not yet available in the current SDK version.'))
+        console.log('')
+        console.log(chalk.bold('What you can do instead:'))
+        console.log(chalk.cyan('• gs agent status') + chalk.gray(' - View basic agent information'))
+        console.log(chalk.cyan('• gs agent list') + chalk.gray(' - See all registered agents'))
+        console.log(chalk.cyan('• gs marketplace list') + chalk.gray(' - Browse marketplace activity'))
+        console.log('')
+        console.log(chalk.gray('Analytics will be available in a future SDK update.'))
+        
+        outro('Analytics feature coming soon')
+        return
       }
-      
-      // if (options.agent) {
-      //   analytics = await client.agent.getAgentAnalytics(address(options.agent), {
-      //     period: options.period || '30d'
-      //   })
-      // } else if (options.mine) {
-      //   analytics = await client.agent.getAnalyticsForOwner(wallet.address, {
-      //     period: options.period || '30d'
-      //   })
-      // } else {
-      //   analytics = await client.agent.getMarketplaceAnalytics({
-      //     period: options.period || '30d'
-      //   })
-      // }
 
       s.stop('✅ Analytics loaded')
 
@@ -1571,5 +1581,32 @@ async function deleteCredentials(ownerAddress: Address) {
   } catch (error) {
     s.stop('❌ Deletion failed')
     console.log(chalk.red('Deletion failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+  }
+}
+
+/**
+ * Store pending info request for later processing
+ */
+async function storePendingInfoRequest(agentAddress: string, request: string, requesterAddress: Address): Promise<void> {
+  try {
+    const pendingRequestsDir = join(homedir(), '.ghostspeak', 'pending-requests')
+    if (!existsSync(pendingRequestsDir)) {
+      mkdirSync(pendingRequestsDir, { recursive: true })
+    }
+    
+    const requestData = {
+      agentAddress,
+      request,
+      requesterAddress: requesterAddress.toString(),
+      timestamp: Date.now(),
+      status: 'pending'
+    }
+    
+    const requestFile = join(pendingRequestsDir, `${agentAddress}-${Date.now()}.json`)
+    writeFileSync(requestFile, JSON.stringify(requestData, null, 2))
+    
+    console.log(chalk.gray(`Request stored locally: ${requestFile}`))
+  } catch (error) {
+    console.warn('Failed to store pending request:', error)
   }
 }

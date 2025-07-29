@@ -11,6 +11,7 @@ import { log } from '@clack/prompts'
 import { URL } from 'node:url'
 import chalk from 'chalk'
 import { loadConfig } from './config.js'
+import { WalletService } from '../services/wallet-service.js'
 
 // Node.js globals
 declare const crypto: typeof globalThis.crypto
@@ -19,13 +20,36 @@ declare const crypto: typeof globalThis.crypto
  * Get or create a wallet for CLI operations
  */
 export async function getWallet(): Promise<KeyPairSigner> {
+  const walletService = new WalletService()
+  
+  // First try to use the active wallet from the new wallet service
+  const activeSigner = walletService.getActiveSigner()
+  if (activeSigner) {
+    return activeSigner
+  }
+  
+  // Check if we need to migrate old wallet
+  await walletService.migrateOldWallet()
+  
+  // Try again after migration
+  const postMigrationSigner = walletService.getActiveSigner()
+  if (postMigrationSigner) {
+    return postMigrationSigner
+  }
+  
   const config = loadConfig()
   
-  // First try to use the configured wallet
+  // Try to load from configured wallet path (old style)
   if (config.walletPath && existsSync(config.walletPath)) {
     try {
       const walletData = JSON.parse(readFileSync(config.walletPath, 'utf-8')) as number[]
-      return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
+      const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
+      
+      // Import this wallet into the new system
+      await walletService.importWallet('migrated', new Uint8Array(walletData), config.network || 'devnet')
+      log.info('Migrated existing wallet to new wallet system')
+      
+      return signer
     } catch (error) {
       // Acknowledge error for future error handling
       void error
@@ -38,7 +62,12 @@ export async function getWallet(): Promise<KeyPairSigner> {
   if (existsSync(walletPath)) {
     try {
       const walletData = JSON.parse(readFileSync(walletPath, 'utf-8')) as number[]
-      return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
+      const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
+      
+      // Import this wallet
+      await walletService.importWallet('cli-wallet', new Uint8Array(walletData), config.network || 'devnet')
+      
+      return signer
     } catch (error) {
       // Acknowledge error for future error handling
       void error
@@ -51,7 +80,12 @@ export async function getWallet(): Promise<KeyPairSigner> {
   if (existsSync(defaultWalletPath)) {
     try {
       const walletData = JSON.parse(readFileSync(defaultWalletPath, 'utf-8')) as number[]
-      return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
+      const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
+      
+      // Import this wallet
+      await walletService.importWallet('solana-cli', new Uint8Array(walletData), config.network || 'devnet')
+      
+      return signer
     } catch (error) {
       // Acknowledge error for future error handling
       void error
@@ -60,14 +94,22 @@ export async function getWallet(): Promise<KeyPairSigner> {
   }
   
   // Create new wallet if none exists
-  const newWallet = crypto.getRandomValues(new Uint8Array(64))
-  const signer = await createKeyPairSignerFromBytes(newWallet)
+  log.info('No wallet found. Creating a new one...')
+  const { wallet, mnemonic } = await walletService.createWallet('default', config.network || 'devnet')
   
-  // Save the new wallet
-  writeFileSync(walletPath, JSON.stringify([...newWallet]))
-  log.info(`Created new wallet: ${signer.address}`)
-  log.warn(`Please configure your wallet using: gs config setup`)
-  log.warn(`Or request SOL from faucet using: gs faucet --save`)
+  log.success(`Created new wallet: ${wallet.metadata.address}`)
+  log.warn('⚠️  Save your seed phrase:')
+  log.warn(mnemonic)
+  log.info('')
+  log.info('Next steps:')
+  log.info(`  1. Save your seed phrase securely`)
+  log.info(`  2. Fund your wallet: ${chalk.cyan('gs faucet')}`)
+  log.info(`  3. Create an agent: ${chalk.cyan('gs agent register')}`)
+  
+  const signer = walletService.getActiveSigner()
+  if (!signer) {
+    throw new Error('Failed to create wallet')
+  }
   
   return signer
 }
@@ -231,6 +273,7 @@ export function getAddressExplorerUrl(address: string, network: string = 'devnet
 
 /**
  * Handle transaction errors with user-friendly messages
+ * @deprecated Use handleError from error-handler.ts instead
  */
 export function handleTransactionError(error: Error | unknown): string {
   const message = error instanceof Error ? error.message : String(error)

@@ -17,6 +17,8 @@ import type {
   CreateEscrowOptions,
   ReleaseEscrowOptions
 } from '../types/cli-types.js'
+import { trackTransaction, transactionSuccess, transactionFailed } from '../services/transaction-monitor.js'
+import { handleError, withRetry } from '../utils/error-handler.js'
 
 export const escrowCommand = new Command('escrow')
   .description('Manage escrow payments and transactions')
@@ -91,25 +93,26 @@ escrowCommand
         throw new Error('No wallet found. Please run: ghostspeak faucet --save')
       }
       
-      s.start('Creating escrow contract...')
-
+      s.stop('✅ Connected to network')
+      
+      // Generate a unique task ID
+      const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      
+      let txId: string | undefined
+      
       try {
-        // Generate a unique task ID as description
-        const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-        
-        // Create the escrow using the client's createEscrow method which internally calls create()
-        console.log('Creating escrow with params:', {
-          taskId,
-          provider: recipient,
-          amount: `${amount} SOL`,
-        })
-        
-        console.log('About to call client.createEscrow...')
-        
-        let signature: string
-        try {
-          // Use the escrow.create method directly which expects the correct params
-          signature = await client.escrow.create({
+        // Create the escrow with retry logic
+        const signature = await withRetry(
+          async () => {
+            // Start transaction monitoring
+            txId = await trackTransaction(
+              'pending...',
+              'Creating escrow payment',
+              'devnet',
+              `${amount} SOL`
+            )
+            
+            const sig = await client.escrow.create({
               signer: toSDKSigner(wallet),
               title: `Task ${taskId}`,
               description: `${workDescription} (${taskId})`,
@@ -118,19 +121,35 @@ escrowCommand
               deadline: BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60), // 7 days from now
               paymentToken: address('So11111111111111111111111111111111111111112'), // Native SOL
               requirements: []
+            })
+            
+            // Update with real signature
+            if (txId) {
+              await trackTransaction(
+                sig,
+                'Creating escrow payment',
+                'devnet',
+                `${amount} SOL`
+              )
             }
-          )
-          console.log('✅ Escrow creation successful, signature:', signature)
-        } catch (escrowError: unknown) {
-          console.error('❌ Escrow creation failed:', escrowError instanceof Error ? escrowError.message : escrowError)
-          console.error('Error details:', {
-            message: escrowError instanceof Error ? escrowError.message : 'Unknown error',
-            stack: escrowError instanceof Error ? escrowError.stack : 'No stack trace'
-          })
-          throw escrowError
+            
+            return sig
+          },
+          {
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              if (txId) {
+                transactionFailed(txId, error, true)
+              }
+              console.log(chalk.yellow(`\nRetrying escrow creation (attempt ${attempt + 1}/3)...`))
+            }
+          }
+        )
+        
+        // Mark transaction as successful
+        if (txId) {
+          transactionSuccess(txId, '✅ Escrow created successfully!')
         }
-
-        s.stop('✅ Escrow created successfully!')
 
         console.log('\n' + chalk.green('🎉 Escrow payment created!'))
         console.log(chalk.gray(`Task ID: ${taskId}`))
@@ -144,13 +163,22 @@ escrowCommand
 
         outro('Escrow creation completed')
       } catch (error: unknown) {
-        s.stop('❌ Creation failed')
-        await handleTransactionError(error as Error)
+        if (txId) {
+          transactionFailed(txId, error as Error)
+        }
+        handleError(error, {
+          operation: 'Create escrow payment',
+          details: {
+            amount: `${amount} SOL`,
+            recipient
+          }
+        })
         throw error
       }
 
     } catch (error) {
-      cancel(chalk.red('Escrow creation failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+      // Error already handled above
+      process.exit(1)
     }
   })
 

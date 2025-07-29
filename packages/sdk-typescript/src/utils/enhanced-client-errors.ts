@@ -159,6 +159,16 @@ export function logEnhancedError(error: Error, context?: {
 }
 
 /**
+ * Error context for operations
+ */
+export interface ErrorContext {
+  operation: string;
+  instructionName?: string;
+  accounts?: AccountContext[];
+  params?: Record<string, unknown>;
+}
+
+/**
  * Create a detailed error context for operations
  */
 export function createErrorContext(
@@ -166,12 +176,7 @@ export function createErrorContext(
   instructionName?: string,
   accounts?: AccountContext[],
   params?: Record<string, unknown>
-): {
-  operation: string;
-  instructionName?: string;
-  accounts?: AccountContext[];
-  params?: Record<string, unknown>;
-} {
+): ErrorContext {
   return {
     operation,
     instructionName,

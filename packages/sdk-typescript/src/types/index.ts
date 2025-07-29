@@ -104,6 +104,7 @@ export interface GhostSpeakConfig {
   retryConfig?: RetryConfig
   cluster?: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
   rpcEndpoint?: string
+  wsEndpoint?: string
   /** Token 2022 configuration options */
   token2022?: Token2022Config
   /** IPFS configuration for large content storage */

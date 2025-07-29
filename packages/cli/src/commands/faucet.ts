@@ -11,6 +11,8 @@ import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
 import { FaucetService } from '../services/faucet-service.js'
+import { WalletService } from '../services/wallet-service.js'
+import chalk from 'chalk'
 
 // Node.js globals
 declare const fetch: typeof globalThis.fetch
@@ -286,24 +288,26 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
     await faucetService.initialize()
 
     // Handle wallet
+    const walletService = new WalletService()
     let walletAddress: string
-    let privateKey: Uint8Array | undefined
+    let walletName: string
 
-    if (options.wallet) {
-      // Load existing wallet
-      walletAddress = await loadWallet(options.wallet)
+    // Try to use active wallet first
+    const activeWallet = walletService.getActiveWallet()
+    if (activeWallet) {
+      walletAddress = activeWallet.metadata.address
+      walletName = activeWallet.metadata.name
+      console.log(`👤 Using active wallet: ${chalk.cyan(walletName)}`)
+      console.log(`📍 Address: ${walletAddress}`)
     } else {
-      // Generate new wallet
-      console.log('🔐 Generating new wallet...')
-      const wallet = await generateWallet()
-      walletAddress = wallet.address
-      privateKey = wallet.privateKey
-      
-      console.log(`👤 Wallet Address: ${walletAddress}`)
-      
-      if (options.save && privateKey) {
-        await saveWallet(privateKey)
-      }
+      // No active wallet, check if user wants to create one
+      console.log(chalk.yellow('⚠️  No active wallet found.'))
+      console.log('')
+      console.log('Create a wallet first:')
+      console.log(`  ${chalk.cyan('gs wallet create')} - Create a new wallet`)
+      console.log(`  ${chalk.cyan('gs wallet import')} - Import existing wallet`)
+      console.log('')
+      process.exit(1)
     }
 
     // Check initial balance
@@ -457,55 +461,50 @@ export function setupFaucetCommand(program: Command): void {
   faucetCmd
     .command('balance')
     .description('Check wallet balance')
-    .option('-w, --wallet <path>', 'Path to wallet file (required)')
+    .option('-w, --wallet <name>', 'Wallet name to check')
     .option('-n, --network <network>', 'Network to check (devnet|testnet)', 'devnet')
     .action(async (_options: { wallet?: string; network?: 'devnet' | 'testnet' }) => {
-      if (!_options.wallet) {
-        console.error('❌ Wallet path required for balance check')
-        process.exit(1)
-      }
-      
       try {
-        const walletAddress = await loadWallet(_options.wallet)
+        const walletService = new WalletService()
+        
+        let walletAddress: string
+        let walletName: string
+        
+        if (_options.wallet) {
+          // Check specific wallet
+          const wallet = walletService.getWallet(_options.wallet)
+          if (!wallet) {
+            console.error(`❌ Wallet "${_options.wallet}" not found`)
+            process.exit(1)
+          }
+          walletAddress = wallet.metadata.address
+          walletName = wallet.metadata.name
+        } else {
+          // Use active wallet
+          const activeWallet = walletService.getActiveWallet()
+          if (!activeWallet) {
+            console.error('❌ No active wallet found. Create one with: gs wallet create')
+            process.exit(1)
+          }
+          walletAddress = activeWallet.metadata.address
+          walletName = activeWallet.metadata.name
+        }
+        
         const balance = await checkBalance(walletAddress, _options.network ?? 'devnet')
-        console.log(`💳 Balance: ${balance} SOL (${_options.network})`)
+        console.log(`💳 Wallet: ${chalk.cyan(walletName)}`)
+        console.log(`📍 Address: ${walletAddress}`)
+        console.log(`💰 Balance: ${chalk.green(`${balance} SOL`)} (${_options.network})`)
       } catch (error) {
         console.error('❌ Failed to check balance:', error)
         process.exit(1)
       }
     })
 
-  faucetCmd
-    .command('generate')
-    .description('Generate a new wallet')
-    .option('--save [path]', 'Save wallet to file')
-    .action(async (_options: { save?: string | boolean }) => {
-      try {
-        const wallet = await generateWallet()
-        console.log(`🔐 New Wallet Generated:`)
-        console.log(`   Address: ${wallet.address}`)
-        
-        // For generate command, default to saving the wallet
-        const shouldSave = _options.save !== undefined || true // Always save for generate command
-        
-        if (shouldSave) {
-          const savePath = typeof _options.save === 'string' ? _options.save : undefined
-          const savedPath = await saveWallet(wallet.privateKey, savePath)
-          console.log(`✅ Wallet saved to: ${savedPath}`)
-        } else {
-          console.log(`   Private Key: [Generated but not displayed for security]`)
-          console.log('\n💡 Use --save to store this wallet for reuse')
-        }
-      } catch (error) {
-        console.error('❌ Failed to generate wallet:', error)
-        process.exit(1)
-      }
-    })
 
   faucetCmd
     .command('status')
     .description('Check faucet status and rate limits')
-    .option('-w, --wallet <path>', 'Path to wallet file')
+    .option('-w, --wallet <name>', 'Wallet name to check')
     .option('-n, --network <network>', 'Network to check (devnet|testnet)', 'devnet')
     .option('-s, --source <source>', 'Specific source to check (solana|alchemy|rpc)')
     .action(async (_options: { wallet?: string; network?: 'devnet' | 'testnet'; source?: string }) => {
@@ -513,18 +512,40 @@ export function setupFaucetCommand(program: Command): void {
         const faucetService = new FaucetService()
         await faucetService.initialize()
 
+        const walletService = new WalletService()
+        
+        let walletAddress: string
+        let walletName: string
+        
         if (_options.wallet) {
-          const walletAddress = await loadWallet(_options.wallet)
-          const network = _options.network ?? 'devnet'
-          const sources = _options.source ? [_options.source] : ['solana', 'alchemy', 'rpc']
+          const wallet = walletService.getWallet(_options.wallet)
+          if (!wallet) {
+            console.error(`❌ Wallet "${_options.wallet}" not found`)
+            process.exit(1)
+          }
+          walletAddress = wallet.metadata.address
+          walletName = wallet.metadata.name
+        } else {
+          const activeWallet = walletService.getActiveWallet()
+          if (!activeWallet) {
+            console.error('❌ No active wallet found. Create one with: gs wallet create')
+            process.exit(1)
+          }
+          walletAddress = activeWallet.metadata.address
+          walletName = activeWallet.metadata.name
+        }
+        
+        const network = _options.network ?? 'devnet'
+        const sources = _options.source ? [_options.source] : ['solana', 'alchemy', 'rpc']
 
-          console.log('📊 FAUCET STATUS')
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-          console.log(`Wallet: ${walletAddress}`)
-          console.log(`Network: ${network}`)
-          console.log('')
+        console.log('📊 FAUCET STATUS')
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log(`Wallet: ${chalk.cyan(walletName)}`)
+        console.log(`Address: ${walletAddress}`)
+        console.log(`Network: ${network}`)
+        console.log('')
 
-          for (const source of sources) {
+        for (const source of sources) {
             const status = await faucetService.checkFaucetStatus(walletAddress, source, network)
             const statusIcon = status.canRequest ? '✅' : '❌'
             
@@ -546,7 +567,6 @@ export function setupFaucetCommand(program: Command): void {
             }
             console.log('')
           }
-        }
 
         // Show overall statistics
         const stats = await faucetService.getStatistics()

@@ -17,36 +17,75 @@ export const updateCommand = new Command('update')
       s.start('Checking current version...')
       
       // Get current version - foolproof approach
-      let currentVersion: string = '1.3.3' // Fallback version
+      let currentVersion: string = '1.12.0' // Fallback version
       
-      // Method 1: Try running the CLI with --version flag (most reliable)
+      // First, try to get version from the program itself
+      const programVersion = updateCommand.parent?.version()
+      if (programVersion && /^\d+\.\d+\.\d+/.test(programVersion)) {
+        currentVersion = programVersion
+      }
+      
+      // Method 1: Try reading from package.json first (most reliable)
       try {
-        // Try different command names that might be available
-        const commands = [
-          'ghostspeak --version',
-          'gs --version',
-          'npx --no-install @ghostspeak/cli --version',
-          'npx @ghostspeak/cli --version'
+        const { readFileSync } = await import('fs')
+        const { fileURLToPath } = await import('url')
+        const { dirname, join } = await import('path')
+        
+        const __filename = fileURLToPath(import.meta.url)
+        const __dirname = dirname(__filename)
+        
+        // Try multiple possible package.json locations
+        const possiblePaths = [
+          join(__dirname, '../../package.json'),
+          join(__dirname, '../../../package.json'),
+          join(__dirname, '../../../../cli/package.json'),
+          '/Users/michelleeidschun/.bun/install/global/node_modules/@ghostspeak/cli/package.json'
         ]
         
-        for (const cmd of commands) {
+        for (const path of possiblePaths) {
           try {
-            const { stdout } = await execAsync(cmd, { timeout: 5000 }) // 5 second timeout
-            const versionMatch = /(\d+\.\d+\.\d+)/.exec(stdout.trim())
-            if (versionMatch) {
-              currentVersion = versionMatch[1]
+            const pkg = JSON.parse(readFileSync(path, 'utf-8')) as { name?: string; version?: string }
+            if (pkg.name === '@ghostspeak/cli' && pkg.version) {
+              currentVersion = pkg.version
               break
             }
           } catch {
-            // Try next command
+            // Try next path
           }
         }
       } catch {
-        // If all methods fail, we'll use the fallback version
+        // If reading package.json fails, we'll try other methods
       }
       
-      // Method 2: If Method 1 failed, try npm list as a backup
-      if (currentVersion === '1.3.3') {
+      // Method 2: Try running the CLI with --version flag as backup
+      if (currentVersion === '1.12.0') {
+        try {
+          // Try different command names that might be available
+          const commands = [
+            'ghostspeak --version',
+            'gs --version'
+          ]
+          
+          for (const cmd of commands) {
+            try {
+              const { stdout } = await execAsync(cmd, { timeout: 5000 }) // 5 second timeout
+              // Look for version after "CLI v" pattern to avoid catching other versions
+              const versionMatch = /CLI v(\d+\.\d+\.\d+)/.exec(stdout)
+              if (versionMatch) {
+                currentVersion = versionMatch[1]
+                break
+              }
+            } catch {
+              // Try next command
+            }
+          }
+        } catch {
+          // If all methods fail, we'll use the fallback version
+        }
+      }
+      
+      // Method 3: If other methods failed, try npm list as a backup
+      if (currentVersion === '1.12.0') {
         try {
           const { stdout } = await execAsync('npm list -g @ghostspeak/cli --depth=0 2>/dev/null || npm list @ghostspeak/cli --depth=0 2>/dev/null')
           const match = /@ghostspeak\/cli@(\S+)/.exec(stdout)

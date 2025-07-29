@@ -29,7 +29,7 @@ async function main() {
 
     // 2. Load or create wallet (use funded wallet if exists, otherwise generate)
     let walletKeypair: Keypair;
-    const walletPath = './test-wallet-funded.json';
+    const walletPath = process.env.ANCHOR_WALLET || `${process.env.HOME}/.config/solana/id.json`;
     
     try {
       walletKeypair = Keypair.fromSecretKey(

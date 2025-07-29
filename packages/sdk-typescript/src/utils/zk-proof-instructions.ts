@@ -12,7 +12,7 @@
  * - 3: WritableSigner
  */
 
-import { type Address } from '@solana/addresses'
+import { type Address, address } from '@solana/addresses'
 import type { 
   IInstruction, 
   IAccountMeta, 
@@ -22,8 +22,13 @@ import {
   getStructEncoder,
   getU8Encoder,
   getBytesEncoder,
-  fixEncoderSize
+  fixEncoderSize,
+  getAddressEncoder,
+  getU32Encoder,
+  getU64Encoder
 } from '@solana/kit'
+import { sha256 } from '@noble/hashes/sha256'
+import bs58 from 'bs58'
 
 import {
   ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS,
@@ -34,6 +39,9 @@ import {
   PROOF_SIZES
 } from '../constants/zk-proof-program.js'
 
+// Re-export for convenience
+export { ProofInstruction, PROOF_SIZES }
+
 /**
  * Account structure for proof verification instructions
  */
@@ -43,6 +51,12 @@ export interface ProofVerificationAccounts {
   
   /** System program (for context account creation if needed) */
   systemProgram?: Address
+  
+  /** Authority that owns the proof context (optional) */
+  authority?: TransactionSigner
+  
+  /** Rent sysvar (for legacy compatibility) */
+  rentSysvar?: Address
 }
 
 /**
@@ -520,3 +534,190 @@ export function createBatchVerifyEqualityProofInstructions(
   
   return instructions
 }
+
+// =====================================================
+// CONTEXT MANAGEMENT HELPERS
+// =====================================================
+
+/**
+ * Options for creating a proof context account
+ */
+export interface ProofContextOptions {
+  /** Authority that will own the context */
+  authority: TransactionSigner
+  
+  /** Space required for the context (depends on proof type) */
+  space: number
+  
+  /** Optional seed for deterministic address */
+  seed?: string
+  
+  /** Optional payer (defaults to authority) */
+  payer?: TransactionSigner
+}
+
+/**
+ * Calculate the minimum space required for a proof context
+ * 
+ * @param proofType - Type of proof being verified
+ * @param batchSize - Number of proofs if batched
+ * @returns Required space in bytes
+ */
+export function calculateProofContextSpace(
+  proofType: ProofInstruction,
+  batchSize = 1
+): number {
+  const BASE_CONTEXT_SIZE = 32 + 8 + 1 // Authority + discriminator + state
+  
+  switch (proofType) {
+    case ProofInstruction.VerifyTransfer:
+      return BASE_CONTEXT_SIZE + PROOF_SIZES.CIPHERTEXT + PROOF_SIZES.COMMITMENT
+      
+    case ProofInstruction.VerifyWithdraw:
+      return BASE_CONTEXT_SIZE + PROOF_SIZES.CIPHERTEXT + PROOF_SIZES.COMMITMENT
+      
+    case ProofInstruction.VerifyRangeProof:
+      return BASE_CONTEXT_SIZE + PROOF_SIZES.COMMITMENT
+      
+    case ProofInstruction.VerifyValidityProof:
+      return BASE_CONTEXT_SIZE + PROOF_SIZES.CIPHERTEXT
+      
+    case ProofInstruction.VerifyEqualityProof:
+      return BASE_CONTEXT_SIZE + (PROOF_SIZES.CIPHERTEXT * 2)
+      
+    case ProofInstruction.VerifyBatchedRangeProof:
+      return BASE_CONTEXT_SIZE + (PROOF_SIZES.COMMITMENT * batchSize) + 4
+      
+    case ProofInstruction.VerifyBatchedValidityProof:
+      return BASE_CONTEXT_SIZE + (PROOF_SIZES.CIPHERTEXT * batchSize) + 4
+      
+    default:
+      return BASE_CONTEXT_SIZE + 256 // Conservative default
+  }
+}
+
+/**
+ * Create instruction to initialize a proof context account
+ * 
+ * This creates the account and prepares it for proof verification.
+ * The account must be closed after verification to recover rent.
+ * 
+ * @param context - The proof context account to create
+ * @param options - Context creation options
+ * @returns Instruction to create the context
+ */
+export function createInitializeProofContextInstruction(
+  context: TransactionSigner,
+  options: ProofContextOptions
+): IInstruction {
+  const payer = options.payer ?? options.authority
+  
+  // Calculate rent exemption
+  const lamports = 1_000_000 // Placeholder - should calculate actual rent
+  
+  // Create account instruction data
+  const encoder = getStructEncoder([
+    ['instruction', getU32Encoder()], // System program CreateAccount
+    ['lamports', getU64Encoder()],
+    ['space', getU64Encoder()],
+    ['owner', fixEncoderSize(getAddressEncoder(), 32)]
+  ])
+  
+  const data = encoder.encode({
+    instruction: 0, // CreateAccount
+    lamports: BigInt(lamports),
+    space: BigInt(options.space),
+    owner: ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS
+  })
+  
+  return {
+    programAddress: address('11111111111111111111111111111111'), // System program
+    accounts: [
+      { address: payer.address, role: 3 }, // WritableSigner
+      { address: context.address, role: 3 }, // WritableSigner
+    ],
+    data
+  }
+}
+
+/**
+ * Helper to create a complete proof verification transaction
+ * 
+ * This combines context creation, proof verification, and context closure
+ * into a single transaction for efficiency.
+ * 
+ * @param proofInstruction - The proof verification instruction
+ * @param context - Proof context account
+ * @param authority - Authority that owns the context
+ * @param payer - Transaction fee payer
+ * @returns Array of instructions for the complete flow
+ */
+export function createCompleteProofVerificationFlow(
+  proofInstruction: IInstruction,
+  context: TransactionSigner,
+  authority: TransactionSigner,
+  payer: TransactionSigner
+): IInstruction[] {
+  const instructions: IInstruction[] = []
+  
+  // 1. Create context account
+  const proofType = proofInstruction.data?.[0] as ProofInstruction ?? ProofInstruction.VerifyTransfer
+  const space = calculateProofContextSpace(proofType)
+  
+  instructions.push(
+    createInitializeProofContextInstruction(context, {
+      authority,
+      space,
+      payer
+    })
+  )
+  
+  // 2. Verify proof
+  instructions.push(proofInstruction)
+  
+  // 3. Close context account
+  instructions.push(
+    createCloseProofContextInstruction(
+      context.address,
+      authority,
+      payer.address
+    )
+  )
+  
+  return instructions
+}
+
+/**
+ * Create a deterministic proof context address
+ * 
+ * This allows reusing the same context address across multiple transactions
+ * for the same authority and proof type.
+ * 
+ * @param authority - Authority that owns the context
+ * @param proofType - Type of proof being verified
+ * @param nonce - Optional nonce for uniqueness
+ * @returns Deterministic context address
+ */
+export function deriveProofContextAddress(
+  authority: Address,
+  proofType: ProofInstruction,
+  nonce = 0
+): Address {
+  const seeds = [
+    Buffer.from('proof-context'),
+    Buffer.from([proofType]),
+    Buffer.from(new Uint8Array(4).fill(0).map((_, i) => (nonce >> (i * 8)) & 0xff))
+  ]
+  
+  // This is a placeholder - actual PDA derivation would use findProgramAddress
+  const hashInput = Buffer.concat([
+    ...seeds,
+    Buffer.from(authority),
+    Buffer.from(ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS)
+  ])
+  const hash = sha256(hashInput)
+  const encoded = bs58.encode(hash)
+  
+  return address(encoded.slice(0, 44))
+}
+

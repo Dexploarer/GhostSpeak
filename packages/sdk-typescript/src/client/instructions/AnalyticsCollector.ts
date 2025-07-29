@@ -13,7 +13,13 @@ import { EscrowStatus } from '../../generated/types/index.js'
 import { 
   AnalyticsStreamer,
   createAnalyticsStreamer,
-  type AnalyticsStreamOptions 
+  type AnalyticsStreamOptions,
+  type AgentAnalyticsEvent,
+  type TransactionAnalyticsEvent,
+  type MarketplaceActivityEvent,
+  type NetworkHealthEvent,
+  type ServicePerformanceEvent,
+  type EconomicMetricsEvent
 } from '../../utils/analytics-streaming.js'
 import { 
   AnalyticsAggregator,
@@ -508,6 +514,32 @@ export class AnalyticsCollector {
    */
   async startStreaming(options: AnalyticsStreamOptions): Promise<void> {
     this.streamer = createAnalyticsStreamer(this.connection, options)
+    
+    // Connect streamer events to aggregator
+    this.streamer.on('agent', (event: unknown) => {
+      this.aggregator.processAgentEvent(event as AgentAnalyticsEvent)
+    })
+    
+    this.streamer.on('transaction', (event: unknown) => {
+      this.aggregator.processTransactionEvent(event as TransactionAnalyticsEvent)
+    })
+    
+    this.streamer.on('marketplace', (event: unknown) => {
+      this.aggregator.processMarketplaceEvent(event as MarketplaceActivityEvent)
+    })
+    
+    this.streamer.on('network', (event: unknown) => {
+      this.aggregator.processNetworkHealthEvent(event as NetworkHealthEvent)
+    })
+    
+    this.streamer.on('service', (event: unknown) => {
+      this.aggregator.processServicePerformanceEvent(event as ServicePerformanceEvent)
+    })
+    
+    this.streamer.on('economic', (event: unknown) => {
+      this.aggregator.processEconomicMetricsEvent(event as EconomicMetricsEvent)
+    })
+    
     await this.streamer.start()
   }
 
@@ -517,6 +549,7 @@ export class AnalyticsCollector {
   async stopStreaming(): Promise<void> {
     if (this.streamer) {
       await this.streamer.stop()
+      this.streamer.removeAllListeners()
       this.streamer = undefined
     }
   }

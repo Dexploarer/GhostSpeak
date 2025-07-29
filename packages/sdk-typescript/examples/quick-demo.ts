@@ -12,6 +12,8 @@ import { generateKeypair, generateElGamalKeypair } from '../src/utils/keypair.js
 import { encryptAmount, decryptAmount } from '../src/utils/elgamal.js'
 import { generateBulletproof } from '../src/utils/elgamal-complete.js'
 import { createPedersenCommitmentFromAmount } from '../src/utils/elgamal-complete.js'
+import { ClientEncryptionService } from '../src/utils/client-encryption.js'
+import { getFeatureFlags } from '../src/utils/feature-flags.js'
 
 console.log('🌟 GhostSpeak Protocol Quick Demo 🌟\n')
 
@@ -41,19 +43,40 @@ const decrypted = decryptAmount(ciphertext, elGamalKeypair.secretKey, 10000n)
 console.log(`🔓 Decrypted amount: ${decrypted}`)
 console.log(`✅ Encryption/Decryption successful: ${decrypted === amount}`)
 
-// 3. Zero-Knowledge Proofs
-console.log('\n=== 3. ZERO-KNOWLEDGE PROOFS ===')
+// 3. Privacy Features (Hybrid Mode)
+console.log('\n=== 3. PRIVACY FEATURES (HYBRID MODE) ===')
+
+// Check privacy status
+const flags = getFeatureFlags()
+const privacyStatus = flags.getPrivacyStatus()
+console.log(`🔍 Current privacy mode: ${privacyStatus.mode}`)
+console.log(`   ${privacyStatus.message}`)
+
+// Client-side encryption (current beta feature)
+if (privacyStatus.mode === 'client-encryption') {
+  console.log('\n🔐 Using client-side encryption (Beta)')
+  const clientEncryption = new ClientEncryptionService()
+  const encryptedData = await clientEncryption.encryptAmountForRecipient(
+    amount,
+    elGamalKeypair.publicKey
+  )
+  console.log(`   ✅ Amount encrypted client-side`)
+  console.log(`   Commitment: ${Buffer.from(encryptedData.commitment).toString('hex').slice(0, 16)}...`)
+}
+
+// Zero-Knowledge Proofs (preparing for future)
+console.log('\n🎯 Zero-Knowledge Proofs (Ready for migration)')
 const commitment = createPedersenCommitmentFromAmount(amount)
-console.log(`📝 Created Pedersen commitment for amount ${amount}`)
+console.log(`   📝 Created Pedersen commitment for amount ${amount}`)
 
 const rangeProof = generateBulletproof(
   amount,
   { commitment: commitment.commitment },
   commitment.randomness
 )
-console.log(`✅ Generated bulletproof range proof`)
+console.log(`   ✅ Generated bulletproof range proof`)
 console.log(`   Proof size: ${rangeProof.proof.length} bytes`)
-console.log(`   Expected size: 674 bytes (Solana ZK Proof Program compatible)`)
+console.log(`   Note: ZK proofs will be verified on-chain when re-enabled`)
 
 // 4. Agent Capabilities
 console.log('\n=== 4. AGENT CAPABILITIES ===')
@@ -85,8 +108,9 @@ console.log('\n=== 6. PROTOCOL FEATURES ===')
 console.log('✨ GhostSpeak Protocol provides:')
 console.log('   • Autonomous AI agent registration')
 console.log('   • Secure escrow for agent transactions')
-console.log('   • Privacy-preserving payments (Token-2022)')
-console.log('   • Zero-knowledge proof verification')
+console.log('   • Privacy-preserving payments (Hybrid: Client + ZK ready)')
+console.log('   • Beta: Client-side encryption for immediate privacy')
+console.log('   • Future: Zero-knowledge proof verification on-chain')
 console.log('   • Reputation tracking and staking')
 console.log('   • Decentralized agent marketplace')
 console.log('   • Inter-agent communication channels')

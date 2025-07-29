@@ -23,16 +23,28 @@ import {
   generateTransferProofWithInstruction,
   isZkProgramAvailable,
   getZkProgramStatus,
-  ProofMode,
-  type ProofGenerationResult
+  ProofMode
 } from './zk-proof-builder.js'
+
+import {
+  ClientEncryptionService,
+  type EncryptedData
+} from './client-encryption.js'
+
+import {
+  PrivateMetadataStorage,
+  type StoredPrivateData
+} from './private-metadata.js'
+
+import { getFeatureFlags } from './feature-flags.js'
 
 import {
   TOKEN_2022_PROGRAM_ADDRESS,
   EXTENSION_INSTRUCTIONS
 } from './token-2022-spl-integration.js'
 
-import { randomBytes } from '@noble/curves/abstract/utils'
+import { randomBytes, bytesToHex } from '@noble/curves/abstract/utils'
+import { sha256 } from '@noble/hashes/sha256'
 
 // =====================================================
 // TYPES
@@ -143,23 +155,50 @@ export interface TransferParams {
 // =====================================================
 
 export class ConfidentialTransferManager {
+  private clientEncryption: ClientEncryptionService
+  private metadataStorage: PrivateMetadataStorage
+  private featureFlags = getFeatureFlags()
+  
   constructor(
     private connection: Connection,
     private defaultProofMode: ProofMode = ProofMode.ZK_PROGRAM_WITH_FALLBACK
-  ) {}
+  ) {
+    this.clientEncryption = new ClientEncryptionService()
+    this.metadataStorage = new PrivateMetadataStorage()
+  }
+
+  /**
+   * Get the current privacy mode status
+   */
+  async getPrivacyStatus(): Promise<{
+    mode: 'zk-proofs' | 'client-encryption' | 'disabled'
+    available: boolean
+    message: string
+  }> {
+    const privacyStatus = this.featureFlags.getPrivacyStatus()
+    const zkAvailable = await isZkProgramAvailable(this.connection)
+    
+    return {
+      mode: privacyStatus.mode,
+      available: privacyStatus.mode !== 'disabled',
+      message: zkAvailable 
+        ? 'ZK proofs available for enhanced privacy'
+        : privacyStatus.message
+    }
+  }
 
   /**
    * Get the current status of the ZK program
    */
-  getZkProgramStatus(): string {
-    return getZkProgramStatus()
+  async getZkProgramStatus(): Promise<string> {
+    return getZkProgramStatus(this.connection)
   }
 
   /**
    * Check if ZK program is available
    */
-  isZkProgramAvailable(): boolean {
-    return isZkProgramAvailable()
+  async isZkProgramAvailable(): Promise<boolean> {
+    return isZkProgramAvailable(this.connection)
   }
 
   /**
@@ -216,8 +255,8 @@ export class ConfidentialTransferManager {
       params.proofMode ?? this.defaultProofMode
     )
 
-    if (zeroProof.requiresZkProgram && !isZkProgramAvailable()) {
-      warnings.push(getZkProgramStatus())
+    if (zeroProof.requiresZkProgram && !await isZkProgramAvailable(this.connection)) {
+      warnings.push(await getZkProgramStatus(this.connection))
     }
 
     if (zeroProof.instruction) {
@@ -258,42 +297,80 @@ export class ConfidentialTransferManager {
   }
 
   /**
-   * Create deposit instructions
+   * Create deposit instructions with dual-mode support
    */
   async createDepositInstructions(params: DepositParams): Promise<{
     instructions: IInstruction[]
     proofInstructions: IInstruction[]
     encryptedAmount: ElGamalCiphertext
     warnings: string[]
+    metadata?: StoredPrivateData
   }> {
     const warnings: string[] = []
     const proofInstructions: IInstruction[] = []
     const instructions: IInstruction[] = []
+    let metadata: StoredPrivateData | undefined
 
+    // Check privacy mode
+    const privacyStatus = await this.getPrivacyStatus()
+    const zkAvailable = await isZkProgramAvailable(this.connection)
+    
     // Get account ElGamal pubkey (would be fetched from account in practice)
     const accountPubkey = await this.getAccountElGamalPubkey(params.account)
     
     // Encrypt the deposit amount
     const encryptedAmount = encryptAmount(params.amount, accountPubkey)
     
-    // Generate range proof
-    const randomness = randomBytes(32)
-    randomness[0] &= 248
-    randomness[31] &= 127
-    randomness[31] |= 64
-    
-    const rangeProof = generateRangeProofWithCommitment(
-      params.amount,
-      randomness,
-      params.proofMode ?? this.defaultProofMode
-    )
+    // Dual-mode logic
+    if (zkAvailable && privacyStatus.mode === 'zk-proofs') {
+      // ZK proof mode
+      const randomness = randomBytes(32)
+      randomness[0] &= 248
+      randomness[31] &= 127
+      randomness[31] |= 64
+      
+      const rangeProof = await generateRangeProofWithCommitment(
+        params.amount,
+        randomness,
+        { 
+          mode: params.proofMode ?? this.defaultProofMode,
+          connection: this.connection 
+        }
+      )
 
-    if (rangeProof.requiresZkProgram && !isZkProgramAvailable()) {
-      warnings.push(getZkProgramStatus())
-    }
+      if (rangeProof.requiresZkProgram && !await isZkProgramAvailable(this.connection)) {
+        warnings.push(await getZkProgramStatus(this.connection))
+      }
 
-    if (rangeProof.instruction) {
-      proofInstructions.push(rangeProof.instruction)
+      if (rangeProof.instruction) {
+        proofInstructions.push(rangeProof.instruction)
+      }
+    } else if (privacyStatus.mode === 'client-encryption') {
+      // Client encryption mode
+      warnings.push('Using client-side encryption (Beta). ZK proofs will be enabled when available.')
+      
+      // Store encrypted metadata off-chain
+      if (this.featureFlags.isEnabled('ENABLE_IPFS_STORAGE')) {
+        const privateData = {
+          amount: params.amount.toString(),
+          timestamp: Date.now(),
+          type: 'deposit'
+        }
+        
+        const publicData = {
+          account: params.account,
+          mint: params.mint,
+          decimals: params.decimals
+        }
+        
+        metadata = await this.metadataStorage.storePrivateData(
+          privateData,
+          publicData,
+          accountPubkey
+        )
+      }
+    } else {
+      warnings.push('Privacy features are disabled. Enable in feature flags for enhanced privacy.')
     }
 
     // Create deposit instruction
@@ -323,11 +400,11 @@ export class ConfidentialTransferManager {
       data
     })
 
-    return { instructions, proofInstructions, encryptedAmount, warnings }
+    return { instructions, proofInstructions, encryptedAmount, warnings, metadata }
   }
 
   /**
-   * Create transfer instructions
+   * Create transfer instructions with dual-mode support
    */
   async createTransferInstructions(params: TransferParams): Promise<{
     instructions: IInstruction[]
@@ -335,30 +412,94 @@ export class ConfidentialTransferManager {
     newSourceBalance: ElGamalCiphertext
     destCiphertext: ElGamalCiphertext
     warnings: string[]
+    metadata?: StoredPrivateData
   }> {
     const warnings: string[] = []
     const proofInstructions: IInstruction[] = []
     const instructions: IInstruction[] = []
+    let metadata: StoredPrivateData | undefined
 
+    // Check privacy mode
+    const privacyStatus = await this.getPrivacyStatus()
+    const zkAvailable = await isZkProgramAvailable(this.connection)
+    
     // Get current source balance (would be fetched in practice)
     const sourceBalance = await this.getEncryptedBalance(params.source)
     
-    // Generate transfer proof
-    const transferProof = generateTransferProofWithInstruction(
-      sourceBalance,
-      params.amount,
-      params.sourceKeypair.publicKey,
-      params.destElgamalPubkey,
-      params.sourceKeypair.secretKey,
-      params.proofMode ?? this.defaultProofMode
-    )
-
-    if (transferProof.requiresZkProgram && !isZkProgramAvailable()) {
-      warnings.push(getZkProgramStatus())
+    // Dual-mode logic
+    let transferProof: {
+      newSourceBalance: ElGamalCiphertext
+      destCiphertext: ElGamalCiphertext
+      requiresZkProgram: boolean
+      instruction?: IInstruction
     }
+    
+    if (zkAvailable && privacyStatus.mode === 'zk-proofs') {
+      // ZK proof mode
+      transferProof = await generateTransferProofWithInstruction(
+        sourceBalance,
+        params.amount,
+        params.sourceKeypair.publicKey,
+        params.destElgamalPubkey,
+        params.sourceKeypair.secretKey,
+        { 
+          mode: params.proofMode ?? this.defaultProofMode,
+          connection: this.connection 
+        }
+      )
 
-    if (transferProof.instruction) {
-      proofInstructions.push(transferProof.instruction)
+      if (transferProof.requiresZkProgram && !await isZkProgramAvailable(this.connection)) {
+        warnings.push(await getZkProgramStatus(this.connection))
+      }
+
+      if (transferProof.instruction) {
+        proofInstructions.push(transferProof.instruction)
+      }
+    } else if (privacyStatus.mode === 'client-encryption') {
+      // Client encryption mode
+      warnings.push('Using client-side encryption for transfer (Beta). ZK proofs will be enabled when available.')
+      
+      // Create client-side encrypted transfer data
+      // For now, we skip actual decryption and use mock values
+      // In production, this would decrypt the current balance
+      const newSourceCiphertext = encryptAmount(params.newSourceDecryptableBalance, params.sourceKeypair.publicKey)
+      const destCiphertext = encryptAmount(params.amount, params.destElgamalPubkey)
+      
+      transferProof = {
+        newSourceBalance: newSourceCiphertext,
+        destCiphertext: destCiphertext,
+        requiresZkProgram: false
+      }
+      
+      // Store transfer metadata off-chain
+      if (this.featureFlags.isEnabled('ENABLE_IPFS_STORAGE')) {
+        const privateData = {
+          amount: params.amount.toString(),
+          source: params.source,
+          destination: params.destination,
+          timestamp: Date.now(),
+          type: 'transfer'
+        }
+        
+        const publicData = {
+          mint: params.mint,
+          transferHash: this.createTransferHash(params)
+        }
+        
+        metadata = await this.metadataStorage.storePrivateData(
+          privateData,
+          publicData,
+          params.destElgamalPubkey
+        )
+      }
+    } else {
+      warnings.push('Privacy features are disabled. Enable in feature flags for enhanced privacy.')
+      // Create mock proof for non-private mode
+      transferProof = {
+        newSourceBalance: sourceBalance,
+        destCiphertext: encryptAmount(params.amount, params.destElgamalPubkey),
+        requiresZkProgram: false
+      }
     }
 
     // Create transfer instruction
@@ -395,9 +536,10 @@ export class ConfidentialTransferManager {
     return {
       instructions,
       proofInstructions,
-      newSourceBalance: transferProof.newSourceBalance,
-      destCiphertext: transferProof.destCiphertext,
-      warnings
+      newSourceBalance: transferProof.newSourceBalance as ElGamalCiphertext,
+      destCiphertext: transferProof.destCiphertext as ElGamalCiphertext,
+      warnings,
+      metadata
     }
   }
 
@@ -411,14 +553,22 @@ export class ConfidentialTransferManager {
   private async generateZeroBalanceProof(
     pubkey: ElGamalPubkey,
     mode: ProofMode
-  ): Promise<ProofGenerationResult> {
+  ): Promise<{
+    proof: Uint8Array
+    commitment?: Uint8Array
+    instruction?: IInstruction
+    requiresZkProgram: boolean
+  }> {
     const zeroAmount = 0n
     const randomness = randomBytes(32)
     randomness[0] &= 248
     randomness[31] &= 127
     randomness[31] |= 64
 
-    return generateRangeProofWithCommitment(zeroAmount, randomness, mode)
+    return generateRangeProofWithCommitment(zeroAmount, randomness, { 
+      mode,
+      connection: this.connection 
+    })
   }
 
   /**
@@ -440,6 +590,105 @@ export class ConfidentialTransferManager {
     return dummyBalance
   }
 
+  /**
+   * Create a transfer hash for metadata reference
+   */
+  private createTransferHash(params: TransferParams): Uint8Array {
+    const data = {
+      source: params.source,
+      destination: params.destination,
+      amount: params.amount.toString(),
+      timestamp: Date.now()
+    }
+    return sha256(new TextEncoder().encode(JSON.stringify(data)))
+  }
+  
+  /**
+   * Monitor ZK program status and switch modes when available
+   */
+  async monitorZkProgramAvailability(
+    callback: (status: { enabled: boolean; message: string }) => void
+  ): Promise<() => void> {
+    let monitoring = true
+    
+    const checkStatus = async () => {
+      while (monitoring) {
+        const zkAvailable = await isZkProgramAvailable(this.connection)
+        const status = await getZkProgramStatus(this.connection)
+        
+        callback({
+          enabled: zkAvailable,
+          message: status
+        })
+        
+        // Check every 30 seconds
+        await new Promise(resolve => setTimeout(resolve, 30000))
+      }
+    }
+    
+    // Start monitoring in background
+    checkStatus().catch(console.error)
+    
+    // Return stop function
+    return () => {
+      monitoring = false
+    }
+  }
+  
+  /**
+   * Create a privacy-preserving work order
+   */
+  async createPrivateWorkOrder(params: {
+    title: string
+    encryptedDetails: EncryptedData
+    publicMetadata: Record<string, unknown>
+    recipientPubkey: ElGamalPubkey
+  }): Promise<{
+    workOrderHash: Uint8Array
+    metadata: StoredPrivateData
+    warnings: string[]
+  }> {
+    const warnings: string[] = []
+    const privacyStatus = await this.getPrivacyStatus()
+    
+    if (!privacyStatus.available) {
+      warnings.push('Privacy features are not available. Work order details will be public.')
+    }
+    
+    // Store encrypted work order details
+    const privateData = {
+      title: params.title,
+      encryptedDetails: {
+        commitment: bytesToHex(params.encryptedDetails.commitment),
+        timestamp: params.encryptedDetails.timestamp
+      },
+      createdAt: Date.now()
+    }
+    
+    const metadata = await this.metadataStorage.storePrivateData(
+      privateData,
+      params.publicMetadata,
+      params.recipientPubkey
+    )
+    
+    // Create work order hash for on-chain reference
+    const workOrderHash = sha256(
+      new TextEncoder().encode(
+        JSON.stringify({
+          title: params.title,
+          metadataHash: bytesToHex(metadata.onChainHash),
+          recipient: bytesToHex(params.recipientPubkey)
+        })
+      )
+    )
+    
+    return {
+      workOrderHash,
+      metadata,
+      warnings
+    }
+  }
+  
   /**
    * Serialize ciphertext for instruction data
    */

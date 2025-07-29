@@ -67,6 +67,32 @@ const tx = await client.createEscrow({
 })
 ```
 
+### Governance
+```bash
+# Multi-signature wallets and proposals
+bun run examples/governance-workflows.ts
+
+# DAO voting patterns
+bun run examples/dao-voting.ts
+
+# Multi-sig management
+bun run examples/multisig-management.ts
+```
+
+### Analytics Dashboard
+```bash
+# Real-time analytics collection and monitoring
+bun run examples/analytics-dashboard.ts
+```
+
+These governance and analytics examples demonstrate:
+- Multi-signature wallet creation and management
+- Proposal creation, voting, and execution
+- Vote delegation patterns
+- Real-time analytics streaming
+- Performance monitoring and alerts
+- Dashboard export formats
+
 ## Running the Examples
 
 1. Install dependencies:

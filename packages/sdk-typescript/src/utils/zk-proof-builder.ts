@@ -13,6 +13,7 @@ import { ed25519 } from '@noble/curves/ed25519'
 import { sha256 } from '@noble/hashes/sha256'
 import { bytesToNumberLE, bytesToHex, randomBytes } from '@noble/curves/abstract/utils'
 import type { IInstruction } from '@solana/kit'
+import type { Connection } from '@solana/web3.js'
 
 import {
   ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS,
@@ -32,6 +33,11 @@ import type {
   ElGamalPubkey
 } from './elgamal.js'
 
+import {
+  isZkProgramEnabled,
+  getZkProgramStatusDescription
+} from './feature-gate-detector.js'
+
 // =====================================================
 // CONSTANTS
 // =====================================================
@@ -45,11 +51,14 @@ const H_BYTES = sha256(G.toRawBytes())
 const H_SCALAR = bytesToNumberLE(H_BYTES) % ed25519.CURVE.n
 const H = G.multiply(H_SCALAR)
 
-// ZK program status (as of July 2025)
-const ZK_PROGRAM_DISABLED = true
-const ZK_PROGRAM_DISABLED_MESSAGE = 
-  'Solana\'s ZK ElGamal Proof Program is currently disabled (July 2025) due to security vulnerabilities. ' +
-  'Using local verification as fallback. This is suitable for development but not production use.'
+// ZK program status cache
+let zkProgramStatusCache: {
+  enabled: boolean
+  lastChecked: number
+  message: string
+} | null = null
+
+const ZK_STATUS_CACHE_TTL = 60_000 // 1 minute
 
 // =====================================================
 // TYPES
@@ -76,7 +85,15 @@ export enum ProofMode {
   ZK_PROGRAM_WITH_FALLBACK = 'zk_program_with_fallback',
   
   /** Always use local verification (for testing) */
-  LOCAL_ONLY = 'local_only'
+  LOCAL_ONLY = 'local_only',
+  
+  /** Automatically detect based on network status */
+  AUTO_DETECT = 'auto_detect'
+}
+
+export interface ProofGenerationOptions {
+  mode?: ProofMode
+  connection?: Connection
 }
 
 // =====================================================
@@ -89,11 +106,13 @@ export enum ProofMode {
  * This creates a Pedersen commitment and bulletproof that can be
  * verified either by the ZK program or locally.
  */
-export function generateRangeProofWithCommitment(
+export async function generateRangeProofWithCommitment(
   amount: bigint,
   randomness: Uint8Array,
-  mode: ProofMode = ProofMode.ZK_PROGRAM_WITH_FALLBACK
-): ProofGenerationResult {
+  options: ProofGenerationOptions = {}
+): Promise<ProofGenerationResult> {
+  const mode = options.mode ?? ProofMode.AUTO_DETECT
+  const connection = options.connection
   if (amount < 0n || amount >= (1n << 64n)) {
     throw new Error('Amount must be in range [0, 2^64)')
   }
@@ -115,18 +134,25 @@ export function generateRangeProofWithCommitment(
 
   // Check if we should create ZK program instruction
   let instruction: IInstruction | undefined
-  if (mode !== ProofMode.LOCAL_ONLY && !ZK_PROGRAM_DISABLED) {
-    const accounts: ProofVerificationAccounts = {
-      proofContext: ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS // Placeholder
+  let zkProgramEnabled = false
+  
+  if (mode !== ProofMode.LOCAL_ONLY) {
+    // Check if ZK program is enabled
+    zkProgramEnabled = await checkZkProgramStatus(connection)
+    
+    if (zkProgramEnabled || mode === ProofMode.ZK_PROGRAM_ONLY) {
+      const accounts: ProofVerificationAccounts = {
+        proofContext: ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS // Placeholder
+      }
+      instruction = createVerifyRangeProofInstruction(accounts, commitmentBytes, proof)
     }
-    instruction = createVerifyRangeProofInstruction(accounts, commitmentBytes, proof)
   }
 
   return {
     proof,
     commitment: commitmentBytes,
     instruction,
-    requiresZkProgram: mode === ProofMode.ZK_PROGRAM_ONLY && !instruction
+    requiresZkProgram: mode === ProofMode.ZK_PROGRAM_ONLY && !zkProgramEnabled
   }
 }
 
@@ -260,13 +286,15 @@ export function verifyRangeProofLocal(
 /**
  * Generate a validity proof for a ciphertext
  */
-export function generateValidityProofWithInstruction(
+export async function generateValidityProofWithInstruction(
   ciphertext: ElGamalCiphertext,
   pubkey: ElGamalPubkey,
   amount: bigint,
   randomness: Uint8Array,
-  mode: ProofMode = ProofMode.ZK_PROGRAM_WITH_FALLBACK
-): ProofGenerationResult {
+  options: ProofGenerationOptions = {}
+): Promise<ProofGenerationResult> {
+  const mode = options.mode ?? ProofMode.AUTO_DETECT
+  const connection = options.connection
   // Convert randomness to scalar
   const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
   
@@ -304,22 +332,28 @@ export function generateValidityProofWithInstruction(
 
   // Create instruction if needed
   let instruction: IInstruction | undefined
-  if (mode !== ProofMode.LOCAL_ONLY && !ZK_PROGRAM_DISABLED) {
-    const accounts: ProofVerificationAccounts = {
-      proofContext: ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS
+  let zkProgramEnabled = false
+  
+  if (mode !== ProofMode.LOCAL_ONLY) {
+    zkProgramEnabled = await checkZkProgramStatus(connection)
+    
+    if (zkProgramEnabled || mode === ProofMode.ZK_PROGRAM_ONLY) {
+      const accounts: ProofVerificationAccounts = {
+        proofContext: ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS
+      }
+      instruction = createVerifyValidityProofInstruction(accounts, 
+        new Uint8Array([
+          ...ciphertext.commitment.commitment,
+          ...ciphertext.handle.handle
+        ]), 
+        proof)
     }
-    instruction = createVerifyValidityProofInstruction(accounts, 
-      new Uint8Array([
-        ...ciphertext.commitment.commitment,
-        ...ciphertext.handle.handle
-      ]), 
-      proof)
   }
 
   return {
     proof,
     instruction,
-    requiresZkProgram: mode === ProofMode.ZK_PROGRAM_ONLY && !instruction
+    requiresZkProgram: mode === ProofMode.ZK_PROGRAM_ONLY && !zkProgramEnabled
   }
 }
 
@@ -330,20 +364,22 @@ export function generateValidityProofWithInstruction(
 /**
  * Generate a complete transfer proof with all components
  */
-export function generateTransferProofWithInstruction(
+export async function generateTransferProofWithInstruction(
   sourceBalance: ElGamalCiphertext,
   transferAmount: bigint,
   sourcePubkey: ElGamalPubkey,
   destPubkey: ElGamalPubkey,
   sourceRandomness: Uint8Array,
-  mode: ProofMode = ProofMode.ZK_PROGRAM_WITH_FALLBACK
-): {
+  options: ProofGenerationOptions = {}
+): Promise<{
   transferProof: TransferProofData
   newSourceBalance: ElGamalCiphertext
   destCiphertext: ElGamalCiphertext
   instruction?: IInstruction
   requiresZkProgram: boolean
-} {
+}> {
+  const mode = options.mode ?? ProofMode.AUTO_DETECT
+  const connection = options.connection
   // Generate transfer randomness
   const transferRandomness = randomBytes(32)
   transferRandomness[0] &= 248
@@ -365,13 +401,17 @@ export function generateTransferProofWithInstruction(
   const newSourceBalance = sourceBalance // Placeholder
 
   // Generate proofs
-  const rangeProofResult = generateRangeProofWithCommitment(transferAmount, transferRandomness, ProofMode.LOCAL_ONLY)
-  const validityProofResult = generateValidityProofWithInstruction(
+  const rangeProofResult = await generateRangeProofWithCommitment(
+    transferAmount, 
+    transferRandomness, 
+    { mode: ProofMode.LOCAL_ONLY }
+  )
+  const validityProofResult = await generateValidityProofWithInstruction(
     destCiphertext,
     destPubkey,
     transferAmount,
     transferRandomness,
-    ProofMode.LOCAL_ONLY
+    { mode: ProofMode.LOCAL_ONLY }
   )
 
   // Generate equality proof (simplified)
@@ -392,11 +432,17 @@ export function generateTransferProofWithInstruction(
 
   // Create instruction if needed
   let instruction: IInstruction | undefined
-  if (mode !== ProofMode.LOCAL_ONLY && !ZK_PROGRAM_DISABLED) {
-    const accounts: ProofVerificationAccounts = {
-      proofContext: ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS
+  let zkProgramEnabled = false
+  
+  if (mode !== ProofMode.LOCAL_ONLY) {
+    zkProgramEnabled = await checkZkProgramStatus(connection)
+    
+    if (zkProgramEnabled || mode === ProofMode.ZK_PROGRAM_ONLY) {
+      const accounts: ProofVerificationAccounts = {
+        proofContext: ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS
+      }
+      instruction = createVerifyTransferProofInstruction(accounts, transferProof)
     }
-    instruction = createVerifyTransferProofInstruction(accounts, transferProof)
   }
 
   return {
@@ -404,7 +450,7 @@ export function generateTransferProofWithInstruction(
     newSourceBalance,
     destCiphertext,
     instruction,
-    requiresZkProgram: mode === ProofMode.ZK_PROGRAM_ONLY && !instruction
+    requiresZkProgram: mode === ProofMode.ZK_PROGRAM_ONLY && !zkProgramEnabled
   }
 }
 
@@ -424,15 +470,84 @@ function scalarToBytes(scalar: bigint): Uint8Array {
 }
 
 /**
+ * Check ZK program status with caching
+ */
+async function checkZkProgramStatus(connection?: Connection): Promise<boolean> {
+  // If no connection provided, assume disabled
+  if (!connection) {
+    return false
+  }
+  
+  // Check cache
+  if (zkProgramStatusCache && 
+      Date.now() - zkProgramStatusCache.lastChecked < ZK_STATUS_CACHE_TTL) {
+    return zkProgramStatusCache.enabled
+  }
+  
+  // Check feature gate
+  try {
+    const enabled = await isZkProgramEnabled(connection)
+    const message = await getZkProgramStatusDescription(connection)
+    
+    // Update cache
+    zkProgramStatusCache = {
+      enabled,
+      lastChecked: Date.now(),
+      message
+    }
+    
+    return enabled
+  } catch (error) {
+    console.warn('Failed to check ZK program status:', error)
+    // Cache the error state
+    zkProgramStatusCache = {
+      enabled: false,
+      lastChecked: Date.now(),
+      message: `ZK program status check failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    }
+    return false
+  }
+}
+
+/**
  * Check if ZK program is available
  */
-export function isZkProgramAvailable(): boolean {
-  return !ZK_PROGRAM_DISABLED
+export async function isZkProgramAvailable(connection?: Connection): Promise<boolean> {
+  if (!connection) {
+    return false
+  }
+  return checkZkProgramStatus(connection)
 }
 
 /**
  * Get ZK program status message
  */
-export function getZkProgramStatus(): string {
-  return ZK_PROGRAM_DISABLED ? ZK_PROGRAM_DISABLED_MESSAGE : 'ZK ElGamal Proof Program is available'
+export async function getZkProgramStatus(connection?: Connection): Promise<string> {
+  if (!connection) {
+    return 'No connection - ZK program status unknown'
+  }
+  
+  // Check cache first
+  if (zkProgramStatusCache && 
+      Date.now() - zkProgramStatusCache.lastChecked < ZK_STATUS_CACHE_TTL) {
+    return zkProgramStatusCache.message
+  }
+  
+  // Get fresh status
+  await checkZkProgramStatus(connection)
+  return zkProgramStatusCache?.message ?? 'ZK program status unknown'
+}
+
+/**
+ * Get ZK program address
+ */
+export function getZkProgramAddress() {
+  return ZK_ELGAMAL_PROOF_PROGRAM_ADDRESS
+}
+
+/**
+ * Clear ZK program status cache (for testing)
+ */
+export function clearZkProgramStatusCache(): void {
+  zkProgramStatusCache = null
 }

@@ -184,9 +184,17 @@ async function runDemo() {
 
   await waitForEnter('Payment completed! Ready to demo Token-2022 features?')
 
-  // 5. Token-2022 with Confidential Transfers
-  console.log('\n=== 5. TOKEN-2022 CONFIDENTIAL TRANSFERS ===')
-  console.log('Demonstrating privacy-preserving token transfers...\n')
+  // 5. Token-2022 with Confidential Transfers (Hybrid Privacy Mode)
+  console.log('\n=== 5. TOKEN-2022 CONFIDENTIAL TRANSFERS (HYBRID MODE) ===')
+  console.log('Demonstrating privacy-preserving token transfers with hybrid approach...\n')
+  
+  // Check current privacy status
+  console.log('🔍 Checking privacy feature status...')
+  const { ConfidentialTransferManager } = await import('../src/index.js')
+  const privacyManager = new ConfidentialTransferManager(connection)
+  const privacyStatus = await privacyManager.getPrivacyStatus()
+  console.log(`Privacy mode: ${privacyStatus.mode}`)
+  console.log(`Status: ${privacyStatus.message}`)
 
   // Create Token-2022 mint with confidential transfers enabled
   console.log('🪙 Creating Token-2022 mint with confidential transfers...')
@@ -351,9 +359,10 @@ async function runDemo() {
   console.log('✅ Agent registration and management')
   console.log('✅ Secure escrow workflow')
   console.log('✅ Work order submission and verification')
-  console.log('✅ Token-2022 with confidential transfers')
+  console.log('✅ Token-2022 with hybrid privacy (client encryption + ZK ready)')
   console.log('✅ Agent-to-agent communication channels')
   console.log('✅ Marketplace for agent services')
+  console.log('✅ Privacy features with automatic ZK proof migration')
   
   console.log('\n🚀 GhostSpeak Protocol is ready for building autonomous AI agent economies!')
   console.log('\nVisit https://github.com/Prompt-or-Die/ghostspeak for more information.')

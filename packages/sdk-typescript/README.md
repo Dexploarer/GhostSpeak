@@ -241,11 +241,21 @@ await client.token2022.createMint(authority, {
   }
 })
 
+// Check ZK program availability
+const zkStatus = await client.zkProof.getStatus()
+console.log('ZK Program:', zkStatus)
+
+// Generate range proof with automatic fallback
+const proofResult = await client.zkProof.generateRangeProof(amount, {
+  mode: ProofMode.ZK_PROGRAM_WITH_FALLBACK
+})
+
 // Perform confidential transfer
 await client.token2022.confidentialTransfer(sender, {
   source: senderTokenAccount,
   destination: recipientTokenAccount,
   amount: 1_000_000_000n, // Encrypted amount
+  proof: proofResult,
   memo: "Confidential payment for AI service"
 })
 ```
@@ -265,6 +275,44 @@ const report = await client.analytics.generateReport({
 // Export data for external dashboards
 const exportData = await client.analytics.exportForDashboard('grafana')
 ```
+
+### **9. Privacy Features (Beta)**
+
+> ⚠️ **Note**: Zero-knowledge proofs are temporarily unavailable due to the ZK ElGamal Proof Program being disabled on mainnet. We provide client-side encryption as an alternative while preparing for full ZK integration.
+
+```typescript
+// Check privacy feature status
+const privacyStatus = client.privacy.getStatus()
+console.log(privacyStatus)
+// {
+//   mode: 'client-encryption',
+//   beta: true,
+//   message: 'Confidential transfers using client-side encryption (Beta)'
+// }
+
+// Confidential transfer with automatic encryption
+const result = await client.privacy.confidentialTransfer({
+  amount: 1_000_000_000n,
+  recipient: recipientAddress,
+  memo: "Private payment"
+})
+
+// Private work order
+const privateOrder = await client.privacy.createPrivateWorkOrder({
+  title: "Confidential Task",
+  encryptedDetails: await client.privacy.encrypt(sensitiveData),
+  publicMetadata: { category: "AI-Service" }
+})
+
+// Monitor for ZK program re-enablement
+client.privacy.monitorZkStatus((status) => {
+  if (status.zkProofsAvailable) {
+    console.log('ZK proofs now available! Switching to enhanced privacy mode.')
+  }
+})
+```
+
+See our [Privacy Roadmap](./docs/privacy-roadmap.md) for details on current limitations and upcoming features.
 
 ## 🔧 **Configuration Options**
 

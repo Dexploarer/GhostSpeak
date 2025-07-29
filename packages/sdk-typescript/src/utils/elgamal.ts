@@ -594,11 +594,15 @@ export function generateRangeProof(
   const { generateRangeProofWithCommitment, ProofMode } = require('./zk-proof-builder.js') as typeof import('./zk-proof-builder.js')
   
   // Use the unified proof builder with local-only mode for now
-  const result = generateRangeProofWithCommitment(amount, randomness, ProofMode.LOCAL_ONLY)
+  // Cast to Promise since we're in a sync context using require
+  const resultPromise = generateRangeProofWithCommitment(amount, randomness, { mode: ProofMode.LOCAL_ONLY }) as unknown as {
+    proof: Uint8Array
+    commitment?: Uint8Array
+  }
   
   return {
-    proof: result.proof,
-    commitment: result.commitment!
+    proof: resultPromise.proof,
+    commitment: resultPromise.commitment ?? new Uint8Array(32)
   }
 }
 

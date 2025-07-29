@@ -299,4 +299,73 @@ export {
   type FundingResult
 } from './utils/wallet-funding.js'
 
+// Export privacy and encryption utilities
+export {
+  ClientEncryptionService,
+  generateLocalPrivacyProof,
+  verifyLocalPrivacyProof,
+  prepareForZkMigration,
+  type EncryptedData,
+  type PrivateMetadata,
+  type ClientEncryptionOptions,
+  type ZkMigrationData
+} from './utils/client-encryption.js'
+
+export {
+  PrivateMetadataStorage,
+  MockIPFSProvider,
+  LocalStorageProvider,
+  PrivateDataQuery,
+  estimateStorageCost,
+  createPrivacyManifest,
+  type StorageProvider,
+  type StoredPrivateData,
+  type PrivateDataReference,
+  type PrivacyManifest
+} from './utils/private-metadata.js'
+
+export {
+  ConfidentialTransferManager,
+  type ConfidentialAccount,
+  type ConfigureAccountParams,
+  type DepositParams,
+  type WithdrawParams,
+  type TransferParams
+} from './utils/confidential-transfer-manager.js'
+
+export {
+  getFeatureFlags,
+  isFeatureEnabled,
+  FeatureFlagManager,
+  type FeatureFlags
+} from './utils/feature-flags.js'
+
+export {
+  isZkProgramEnabled,
+  checkFeatureGate,
+  clearFeatureGateCache,
+  FEATURE_GATES,
+  type FeatureStatus
+} from './utils/feature-gate-detector.js'
+
+export {
+  generateRangeProofWithCommitment,
+  generateTransferProofWithInstruction,
+  isZkProgramAvailable,
+  getZkProgramStatus,
+  ProofMode,
+  type ProofGenerationOptions,
+  type ProofGenerationResult
+} from './utils/zk-proof-builder.js'
+
+export {
+  MigrationManager,
+  MigrationRollback,
+  estimateMigrationCost,
+  createMigrationReport as createPrivacyMigrationReport,
+  type MigrationBatch,
+  type MigrationItem,
+  type MigrationResult as PrivacyMigrationResult
+} from './utils/migration-utilities.js'
+
 // All necessary functionality is available through the modern client implementation above

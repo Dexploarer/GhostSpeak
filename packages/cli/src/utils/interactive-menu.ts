@@ -35,28 +35,46 @@ export class InteractiveMenu {
   async showMainMenu(): Promise<void> {
     intro(chalk.cyan('🚀 Welcome to GhostSpeak Interactive Mode'))
     
+    // Check if first run
+    const configPath = join(homedir(), '.ghostspeak', 'config.json')
+    const isFirstRun = !existsSync(configPath)
+    
     while (true) {
       const categories: CategoryOption[] = [
+        {
+          value: 'quickstart',
+          label: 'Quick Start',
+          icon: '🚀',
+          description: 'Get started with GhostSpeak - setup and first steps',
+          hint: isFirstRun ? '⭐ Start here!' : 'Guided setup'
+        },
         {
           value: 'creation',
           label: 'Creation',
           icon: '🎨',
           description: 'Create agents, listings, and configure settings',
-          hint: 'Start here if you\'re new'
+          hint: 'Build your agent ecosystem'
         },
         {
           value: 'management',
           label: 'Management',
           icon: '📊',
           description: 'Manage agents, view analytics, and handle operations',
-          hint: 'Admin and monitoring tools'
+          hint: 'Monitor and control'
+        },
+        {
+          value: 'transactions',
+          label: 'Transactions',
+          icon: '💰',
+          description: 'Payments, escrows, auctions, and financial operations',
+          hint: 'Handle money flows'
         },
         {
           value: 'development',
           label: 'Development',
           icon: '🛠️',
           description: 'SDK tools, testing utilities, and developer resources',
-          hint: 'For developers and testing'
+          hint: 'Advanced tools'
         },
         {
           value: 'recent',
@@ -67,17 +85,17 @@ export class InteractiveMenu {
         },
         {
           value: 'help',
-          label: 'Help & Documentation',
+          label: 'Help & Support',
           icon: '📚',
-          description: 'View help, examples, and documentation',
-          hint: 'Learn more about GhostSpeak'
+          description: 'Documentation, examples, and troubleshooting',
+          hint: 'Get assistance'
         },
         {
           value: 'exit',
           label: 'Exit',
           icon: '👋',
           description: 'Exit interactive mode',
-          hint: 'Use CLI commands directly next time'
+          hint: 'Return to terminal'
         }
       ]
 
@@ -96,11 +114,17 @@ export class InteractiveMenu {
       }
 
       switch (choice) {
+        case 'quickstart':
+          await this.showQuickStartMenu()
+          break
         case 'creation':
           await this.showCreationMenu()
           break
         case 'management':
           await this.showManagementMenu()
+          break
+        case 'transactions':
+          await this.showTransactionsMenu()
           break
         case 'development':
           await this.showDevelopmentMenu()
@@ -118,17 +142,96 @@ export class InteractiveMenu {
     }
   }
 
+  private async showQuickStartMenu(): Promise<void> {
+    const options: CommandOption[] = [
+      { value: 'one-click', label: '🚀 One-Click Setup', command: 'quickstart new', hint: '⭐ Complete automatic setup' },
+      { value: 'import', label: '💳 Import Existing Wallet', command: 'quickstart existing', hint: 'Use your Solana wallet' },
+      { value: 'guided', label: '📋 Guided Setup Wizard', command: 'quickstart', hint: 'Step-by-step assistance' },
+      { value: 'status', label: '📊 Check Setup Status', command: '', hint: 'See what\'s configured' },
+      { value: 'tutorial', label: '📖 View Tutorial', command: 'help quickstart', hint: 'Learn the basics' },
+      { value: 'back', label: '← Back to Main Menu', command: '', hint: '' }
+    ]
+    
+    const choice = await select({
+      message: chalk.cyan('🚀 Quick Start - Get up and running with GhostSpeak'),
+      options: options.map(opt => ({
+        value: opt.value,
+        label: opt.label,
+        hint: opt.hint
+      }))
+    })
+    
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+    
+    if (choice === 'status') {
+      await this.showSetupStatus()
+      return
+    }
+    
+    const selected = options.find(opt => opt.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+  
+  private async showSetupStatus(): Promise<void> {
+    const s = spinner()
+    s.start('Checking your setup status...')
+    
+    const status = {
+      config: existsSync(join(homedir(), '.ghostspeak', 'config.json')),
+      wallet: false,
+      balance: '0 SOL',
+      agents: 0,
+      multisig: false
+    }
+    
+    try {
+      const { client, wallet } = await initializeClient()
+      status.wallet = true
+      
+      // Check balance
+      const balance = await client.connection.getBalance(wallet.address)
+      status.balance = `${(balance / 1e9).toFixed(4)} SOL`
+      
+      // Could check for agents and multisigs here
+    } catch (error) {
+      // Wallet not configured
+    }
+    
+    s.stop('Setup status:')
+    
+    console.log('\n' + chalk.bold('📊 GhostSpeak Setup Status:\n'))
+    console.log(`  Configuration: ${status.config ? chalk.green('✅ Configured') : chalk.red('❌ Not configured')}`)
+    console.log(`  Wallet:        ${status.wallet ? chalk.green('✅ Created') : chalk.red('❌ Not created')}`)
+    console.log(`  Balance:       ${status.balance}`)
+    console.log(`  Agents:        ${status.agents} registered`)
+    console.log(`  Multisig:      ${status.multisig ? chalk.green('✅ Created') : chalk.gray('Not created')}`)
+    console.log('')
+    
+    if (!status.config || !status.wallet) {
+      console.log(chalk.yellow('💡 Run "One-Click Setup" to complete your configuration!\n'))
+    } else if (parseFloat(status.balance) === 0) {
+      console.log(chalk.yellow('💡 You need SOL to interact with the blockchain. Use the faucet command!\n'))
+    } else {
+      console.log(chalk.green('🎉 You\'re all set! Create your first agent or explore the marketplace.\n'))
+    }
+    
+    await confirm({ message: 'Press enter to continue...', initialValue: true })
+  }
+  
   private async showCreationMenu(): Promise<void> {
     const commands: CommandOption[] = [
-      { value: 'agent-register', label: 'Register AI Agent', command: 'agent register', hint: 'Create a new AI agent on-chain' },
-      { value: 'marketplace-create', label: 'Create Service Listing', command: 'marketplace create', hint: 'List a service in the marketplace' },
-      { value: 'job-create', label: 'Post a Job', command: 'marketplace jobs create', hint: 'Create a job posting' },
-      { value: 'escrow-create', label: 'Create Escrow Payment', command: 'escrow create', hint: 'Set up secure payment' },
-      { value: 'channel-create', label: 'Create A2A Channel', command: 'channel create', hint: 'Agent-to-agent communication' },
-      { value: 'auction-create', label: 'Create Auction', command: 'auction create', hint: 'Auction your services' },
-      { value: 'multisig-create', label: 'Create Multisig Wallet', command: 'governance multisig create', hint: 'Multi-signature wallet' },
-      { value: 'wallet-generate', label: 'Generate New Wallet', command: 'faucet generate --save', hint: 'Create development wallet' },
-      { value: 'config-setup', label: 'Initial Setup', command: 'config setup', hint: 'Configure CLI settings' },
+      { value: 'agent-register', label: '🤖 Register AI Agent', command: 'agent register', hint: 'Create your AI agent' },
+      { value: 'marketplace-create', label: '🛍️ Create Service Listing', command: 'marketplace create', hint: 'List agent services' },
+      { value: 'job-create', label: '💼 Post a Job', command: 'marketplace jobs create', hint: 'Create job posting' },
+      { value: 'escrow-create', label: '🔒 Create Escrow Payment', command: 'escrow create', hint: 'Secure payment setup' },
+      { value: 'channel-create', label: '📡 Create A2A Channel', command: 'channel create', hint: 'Agent communication' },
+      { value: 'auction-create', label: '🔨 Create Auction', command: 'auction create', hint: 'Auction services' },
+      { value: 'multisig-create', label: '🔐 Create Multisig Wallet', command: 'governance multisig create', hint: 'Multi-signature wallet' },
       { value: 'back', label: '← Back to Main Menu', command: '', hint: '' }
     ]
 

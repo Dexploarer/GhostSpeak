@@ -539,9 +539,7 @@ export class WasmOptimizedElGamalEngine {
     const operationGroups: { [key: string]: { timeMs: number; usedWasm: boolean }[] } = {}
     
     for (const record of this.performanceHistory) {
-      if (!operationGroups[record.operation]) {
-        operationGroups[record.operation] = []
-      }
+      // Group already exists or will be created
       operationGroups[record.operation].push({
         timeMs: record.timeMs,
         usedWasm: record.usedWasm

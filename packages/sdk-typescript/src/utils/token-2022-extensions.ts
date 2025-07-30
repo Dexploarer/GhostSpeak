@@ -484,7 +484,6 @@ export function validateTransferHookInstruction(
 ): boolean {
   // Basic validation - real implementation would be more comprehensive
   if (!instruction.programId) return false
-  if (!instruction.instructionData || instruction.instructionData.length === 0) return false
   if (!Array.isArray(instruction.additionalAccounts)) return false
   
   return true
@@ -626,8 +625,8 @@ export interface ImmutableOwnerConfig {
  */
 export function canTransfer(
   state: TokenAccountState,
-  isNonTransferable: boolean = false,
-  isFrozen: boolean = false
+  isNonTransferable = false,
+  isFrozen = false
 ): boolean {
   // Basic transfer eligibility checks
   if (state !== TokenAccountState.INITIALIZED) return false

@@ -260,7 +260,7 @@ export function encryptAmountWithRandomness(amount: bigint, pubkey: ElGamalPubke
 export function decryptAmount(
   ciphertext: ElGamalCiphertext,
   secretKey: ElGamalSecretKey,
-  maxValue: bigint = 65536n
+  maxValue = 65536n
 ): bigint | null {
   // Parse points
   const C = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.commitment.commitment))
@@ -590,8 +590,8 @@ export function generateRangeProof(
   randomness: Uint8Array
 ): RangeProof {
   // Import the unified proof builder
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-  const { generateRangeProofWithCommitment, ProofMode } = require('./zk-proof-builder.js') as typeof import('./zk-proof-builder.js')
+  const zkProofBuilder = await import('./zk-proof-builder.js')
+  const { generateRangeProofWithCommitment, ProofMode } = zkProofBuilder
   
   // Use the unified proof builder with local-only mode for now
   // Cast to Promise since we're in a sync context using require
@@ -622,8 +622,8 @@ export function verifyRangeProof(
   }
 
   // Import the unified proof builder
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-  const { verifyRangeProofLocal } = require('./zk-proof-builder.js') as typeof import('./zk-proof-builder.js')
+  const zkProofBuilder = await import('./zk-proof-builder.js')
+  const { verifyRangeProofLocal } = zkProofBuilder
   
   // Use the commitment from the proof itself for verification
   const result = verifyRangeProofLocal(proof.proof, proof.commitment)

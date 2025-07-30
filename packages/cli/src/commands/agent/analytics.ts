@@ -2,7 +2,7 @@
  * Agent analytics command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
@@ -14,7 +14,6 @@ import type { AnalyticsOptions } from '../../types/cli-types.js'
 import { formatAnalytics } from '../agent/helpers.js'
 import { container, ServiceTokens } from '../../core/Container.js'
 import type { IAgentService } from '../../types/services.js'
-import type { Address } from '@solana/addresses'
 
 // Analytics interface for type safety
 interface AgentAnalytics {
@@ -94,7 +93,7 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           } else {
             throw new Error('Analytics methods not fully implemented yet')
           }
-        } catch (error) {
+        } catch {
           s.stop('❌ Analytics not available')
           
           // Show fallback message with formatted helper output
@@ -133,24 +132,24 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
         log.info(`\n${chalk.bold('📈 Performance Overview:')}`)
         log.info('─'.repeat(30))
         
-        if ((options.agent as Address) || (options.mine as boolean)) {
+        if (options.agent || options.mine) {
           // Individual agent or user analytics
           log.info(
             `${chalk.gray('Active Agents:')} ${analytics.activeAgents}\n` +
             `${chalk.gray('Total Jobs Completed:')} ${analytics.totalJobs}\n` +
             `${chalk.gray('Success Rate:')} ${(analytics.successRate * 100).toFixed(1)}%\n` +
-            `${chalk.gray('Average Rating:')} ${analytics.averageRating?.toFixed(1) ?? 'No ratings'} ⭐\n` +
+            `${chalk.gray('Average Rating:')} ${analytics.averageRating.toFixed(1)} ⭐\n` +
             `${chalk.gray('Total Earnings:')} ${(Number(analytics.totalEarnings) / 1_000_000_000).toFixed(3)} SOL\n`
           )
 
-          if (analytics.jobsByCategory) {
+          if (Object.keys(analytics.jobsByCategory).length > 0) {
             log.info(`\n${chalk.bold('📋 Jobs by Category:')}`)
             Object.entries(analytics.jobsByCategory).forEach(([category, count]) => {
               log.info(`   ${chalk.gray(category + ':')} ${count}`)
             })
           }
 
-          if (analytics.earningsTrend) {
+          if (analytics.earningsTrend.length > 0) {
             log.info(`\n${chalk.bold('💰 Earnings Trend:')}`)
             analytics.earningsTrend.forEach((point) => {
               const date = new Date(Number(point.timestamp) * 1000).toLocaleDateString()
@@ -159,7 +158,7 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
             })
           }
 
-          if (analytics.topClients && analytics.topClients.length > 0) {
+          if (analytics.topClients.length > 0) {
             log.info(`\n${chalk.bold('👥 Top Clients:')}`)
             analytics.topClients.slice(0, 5).forEach((client: { address: string; jobCount: number; totalSpent: bigint }, index: number) => {
               log.info(
@@ -179,14 +178,14 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
             `${chalk.gray('Marketplace Volume:')} ${(Number(analytics.totalVolume) / 1_000_000_000).toFixed(3)} SOL\n`
           )
 
-          if (analytics.topCategories) {
+          if (analytics.topCategories.length > 0) {
             log.info(`\n${chalk.bold('🏆 Popular Categories:')}`)
             analytics.topCategories.slice(0, 5).forEach((category: { name: string; agentCount: number }, index: number) => {
               log.info(`   ${index + 1}. ${category.name} (${category.agentCount} agents)`)
             })
           }
 
-          if (analytics.topPerformers) {
+          if (analytics.topPerformers.length > 0) {
             log.info(`\n${chalk.bold('⭐ Top Performing Agents:')}`)
             analytics.topPerformers.slice(0, 5).forEach((agent: { name: string; address: string; successRate: number; totalEarnings: bigint }, index: number) => {
               log.info(
@@ -196,19 +195,18 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
             })
           }
 
-          if (analytics.growthMetrics) {
-            log.info(`\n${chalk.bold('📈 Growth Metrics:')}`)
-            log.info(
-              `   ${chalk.gray('Weekly Growth:')} ${analytics.growthMetrics.weeklyGrowth > 0 ? '+' : ''}${analytics.growthMetrics.weeklyGrowth}%\n` +
-              `   ${chalk.gray('Monthly Growth:')} ${analytics.growthMetrics.monthlyGrowth > 0 ? '+' : ''}${analytics.growthMetrics.monthlyGrowth}%\n` +
-              `   ${chalk.gray('User Growth:')} ${analytics.growthMetrics.userGrowth > 0 ? '+' : ''}${analytics.growthMetrics.userGrowth}%\n` +
-              `   ${chalk.gray('Revenue Growth:')} ${analytics.growthMetrics.revenueGrowth > 0 ? '+' : ''}${analytics.growthMetrics.revenueGrowth}%`
-            )
-          }
+          // Growth metrics always exist
+          log.info(`\n${chalk.bold('📈 Growth Metrics:')}`)
+          log.info(
+            `   ${chalk.gray('Weekly Growth:')} ${analytics.growthMetrics.weeklyGrowth > 0 ? '+' : ''}${analytics.growthMetrics.weeklyGrowth}%\n` +
+            `   ${chalk.gray('Monthly Growth:')} ${analytics.growthMetrics.monthlyGrowth > 0 ? '+' : ''}${analytics.growthMetrics.monthlyGrowth}%\n` +
+            `   ${chalk.gray('User Growth:')} ${analytics.growthMetrics.userGrowth > 0 ? '+' : ''}${analytics.growthMetrics.userGrowth}%\n` +
+            `   ${chalk.gray('Revenue Growth:')} ${analytics.growthMetrics.revenueGrowth > 0 ? '+' : ''}${analytics.growthMetrics.revenueGrowth}%`
+          )
         }
 
         // Performance insights
-        if (analytics.insights && analytics.insights.length > 0) {
+        if (analytics.insights.length > 0) {
           log.info(`\n${chalk.bold('💡 Performance Insights:')}`)
           analytics.insights.forEach((insight: string) => {
             log.info(`   💡 ${insight}`)

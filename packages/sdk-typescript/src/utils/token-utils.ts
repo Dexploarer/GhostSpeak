@@ -362,40 +362,40 @@ export async function checkToken2022Extensions(
       // Check if the extension exists in the mint data based on enum value
       switch (extension) {
         case TokenExtension.TRANSFER_FEE_CONFIG:
-          result[extension] = !!mintData.extensions.transferFeeConfig
+          result[extension] = Boolean(mintData.extensions.transferFeeConfig)
           break
         case TokenExtension.MINT_CLOSE_AUTHORITY:
-          result[extension] = !!mintData.extensions.mintCloseAuthority
+          result[extension] = Boolean(mintData.extensions.mintCloseAuthority)
           break
         case TokenExtension.CONFIDENTIAL_TRANSFER_MINT:
-          result[extension] = !!mintData.extensions.confidentialTransferMint
+          result[extension] = Boolean(mintData.extensions.confidentialTransferMint)
           break
         case TokenExtension.DEFAULT_ACCOUNT_STATE:
-          result[extension] = !!mintData.extensions.defaultAccountState
+          result[extension] = Boolean(mintData.extensions.defaultAccountState)
           break
         case TokenExtension.NON_TRANSFERABLE:
-          result[extension] = !!mintData.extensions.nonTransferable
+          result[extension] = Boolean(mintData.extensions.nonTransferable)
           break
         case TokenExtension.INTEREST_BEARING_MINT:
-          result[extension] = !!mintData.extensions.interestBearingConfig
+          result[extension] = Boolean(mintData.extensions.interestBearingConfig)
           break
         case TokenExtension.PERMANENT_DELEGATE:
-          result[extension] = !!mintData.extensions.permanentDelegate
+          result[extension] = Boolean(mintData.extensions.permanentDelegate)
           break
         case TokenExtension.TRANSFER_HOOK:
-          result[extension] = !!mintData.extensions.transferHook
+          result[extension] = Boolean(mintData.extensions.transferHook)
           break
         case TokenExtension.METADATA_POINTER:
-          result[extension] = !!mintData.extensions.metadataPointer
+          result[extension] = Boolean(mintData.extensions.metadataPointer)
           break
         case TokenExtension.TOKEN_METADATA:
-          result[extension] = !!mintData.extensions.tokenMetadata
+          result[extension] = Boolean(mintData.extensions.tokenMetadata)
           break
         case TokenExtension.GROUP_POINTER:
-          result[extension] = !!mintData.extensions.groupPointer
+          result[extension] = Boolean(mintData.extensions.groupPointer)
           break
         case TokenExtension.TOKEN_GROUP:
-          result[extension] = !!mintData.extensions.tokenGroup
+          result[extension] = Boolean(mintData.extensions.tokenGroup)
           break
         default:
           // Extensions that don't apply to mints or are account-specific
@@ -432,7 +432,7 @@ export async function hasTransferFeeExtension(
     [TokenExtension.TRANSFER_FEE_CONFIG],
     rpcEndpoint
   )
-  return result[TokenExtension.TRANSFER_FEE_CONFIG] ?? false
+  return result[TokenExtension.TRANSFER_FEE_CONFIG]
 }
 
 /**
@@ -451,7 +451,7 @@ export async function hasConfidentialTransferExtension(
     [TokenExtension.CONFIDENTIAL_TRANSFER_MINT],
     rpcEndpoint
   )
-  return result[TokenExtension.CONFIDENTIAL_TRANSFER_MINT] ?? false
+  return result[TokenExtension.CONFIDENTIAL_TRANSFER_MINT]
 }
 
 /**
@@ -470,7 +470,7 @@ export async function hasInterestBearingExtension(
     [TokenExtension.INTEREST_BEARING_MINT],
     rpcEndpoint
   )
-  return result[TokenExtension.INTEREST_BEARING_MINT] ?? false
+  return result[TokenExtension.INTEREST_BEARING_MINT]
 }
 
 /**
@@ -506,9 +506,9 @@ export async function getTransferFeeConfig(
       withdrawWithheldAuthority: config.withdrawWithheldAuthority,
       withheldAmount: BigInt(0),
       olderTransferFee: {
-        epoch: config.olderTransferFee?.epoch || BigInt(0),
-        transferFeeBasisPoints: config.olderTransferFee?.transferFeeBasisPoints || 0,
-        maximumFee: config.olderTransferFee?.maximumFee || BigInt(0)
+        epoch: config.olderTransferFee.epoch || BigInt(0),
+        transferFeeBasisPoints: config.olderTransferFee.transferFeeBasisPoints || 0,
+        maximumFee: config.olderTransferFee.maximumFee || BigInt(0)
       },
       newerTransferFee: {
         epoch: config.newerTransferFee.epoch,
@@ -916,7 +916,7 @@ export async function fetchTransferFeeConfig(
     // Fetch mint data with extensions
     const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
     
-    if (!mintData?.extensions?.transferFeeConfig) {
+    if (!mintData.extensions?.transferFeeConfig) {
       return null
     }
 

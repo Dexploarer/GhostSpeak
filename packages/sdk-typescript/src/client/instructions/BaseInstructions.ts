@@ -159,9 +159,7 @@ export abstract class BaseInstructions {
       // Validate instructions
       for (let i = 0; i < instructions.length; i++) {
         const instruction = instructions[i]
-        if (!instruction) {
-          throw new Error(`Instruction at index ${i} is undefined`)
-        }
+        // instruction is guaranteed to be defined based on loop condition
         if (!instruction.programAddress) {
           throw new Error(`Instruction at index ${i} has no programAddress`)
         }
@@ -178,7 +176,7 @@ export abstract class BaseInstructions {
       const latestBlockhash = await rpcClient.getLatestBlockhash()
 
       // Step 2: Build transaction message using pipe pattern (2025 standard)
-      const transactionMessage = await pipe(
+      const transactionMessage = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayerSigner(signers[0], tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
@@ -186,7 +184,7 @@ export abstract class BaseInstructions {
       )
 
       // Step 3: Sign transaction using 2025 pattern
-      const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
+      const signedTransaction = signTransactionMessageWithSigners(transactionMessage)
       
       // Debug: Log instruction data
       console.log('📝 Debug - Instruction data:')
@@ -289,7 +287,7 @@ export abstract class BaseInstructions {
         // Extract signature from the transaction or result safely
         if (result && typeof result === 'object' && 'signature' in result) {
           signature = result.signature as Signature
-        } else if (signedTransaction.signatures && typeof signedTransaction.signatures === 'object') {
+        } else if (signedTransaction) {
           const signatures = Object.values(signedTransaction.signatures)
           if (signatures.length > 0 && typeof signatures[0] === 'string') {
             signature = signatures[0] as Signature
@@ -337,7 +335,7 @@ export abstract class BaseInstructions {
       const latestBlockhash = await rpcClient.getLatestBlockhash()
       
       // Build transaction message for fee estimation
-      const transactionMessage = await pipe(
+      const transactionMessage = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayer(feePayer ?? this.config.defaultFeePayer!, tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
@@ -352,7 +350,7 @@ export abstract class BaseInstructions {
       const fee = await rpcClient.getFeeForMessage(encodedMessage)
       
       console.log(`💳 Real estimated fee: ${fee} lamports`)
-      return BigInt(fee ?? 0)
+      return BigInt(fee)
     } catch (error) {
       console.warn('⚠️ Real fee estimation failed, using fallback:', error)
       // Fallback to reasonable estimate if RPC fails
@@ -377,7 +375,7 @@ export abstract class BaseInstructions {
       const latestBlockhash = await rpcClient.getLatestBlockhash()
       
       // Build transaction message
-      const transactionMessage = await pipe(
+      const transactionMessage = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayerSigner(signers[0], tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
@@ -385,7 +383,7 @@ export abstract class BaseInstructions {
       )
 
       // Sign for simulation
-      const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
+      const signedTransaction = signTransactionMessageWithSigners(transactionMessage)
       
       // Convert to wire format for simulation
       const wireTransaction = getBase64EncodedWireTransaction(signedTransaction)
@@ -696,8 +694,8 @@ export abstract class BaseInstructions {
         address,
         data: new Uint8Array(data),
         owner: accountInfo.owner,
-        executable: accountInfo.executable ?? false,
-        lamports: BigInt(accountInfo.lamports ?? 0),
+executable: accountInfo.executable,
+lamports: BigInt(accountInfo.lamports),
         programAddress: accountInfo.owner,
         space: data.length
       } as unknown as EncodedAccount
@@ -726,8 +724,8 @@ export abstract class BaseInstructions {
           ? new Uint8Array(account.data)
           : new Uint8Array(Buffer.from((account.data as { data?: string }).data ?? account.data as unknown as string, 'base64')),
         owner: account.owner,
-        executable: account.executable ?? false,
-        lamports: BigInt(account.lamports ?? 0),
+executable: account.executable,
+lamports: BigInt(account.lamports),
         programAddress: account.owner,
         space: Buffer.isBuffer(account.data) || account.data instanceof Uint8Array
           ? account.data.length

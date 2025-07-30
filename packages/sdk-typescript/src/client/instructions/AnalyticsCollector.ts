@@ -611,17 +611,17 @@ export class AnalyticsCollector {
       const agentData = agentDecoder.decode(agentAccount.data)
 
       // Calculate performance metrics
-      const totalJobs = Number(agentData.totalJobsCompleted ?? 0)
+      const totalJobs = Number(agentData.totalJobsCompleted)
       const failedJobs = 0 // TODO: Add totalJobsFailed to Agent type when available
       const totalAttempted = totalJobs + failedJobs
       const completionRate = totalAttempted > 0 ? (totalJobs / totalAttempted) * 100 : 0
-      const averageRating = agentData.reputationScore ?? 50
+      const averageRating = agentData.reputationScore
       
       // Calculate average response time from recent work orders
       const responseTime = await this.calculateAverageResponseTime(agentId)
       
-      const earnings = agentData.totalEarnings ?? 0n
-      const reputationScore = agentData.reputationScore ?? 50
+const earnings = agentData.totalEarnings
+const reputationScore = agentData.reputationScore
 
       return {
         agentId,
@@ -812,8 +812,8 @@ export class AnalyticsCollector {
       }
       
       // Extract economic data from transaction
-      const preBalances = transaction.meta.preBalances || []
-      const postBalances = transaction.meta.postBalances || []
+      const preBalances = transaction.meta.preBalances
+      const postBalances = transaction.meta.postBalances
       
       // Calculate volume from balance changes
       let _transactionVolume = 0n
@@ -887,7 +887,7 @@ export class AnalyticsCollector {
               }
             }
           }
-        } catch (_error) {
+        } catch {
           // Skip invalid transactions
           continue
         }
@@ -961,12 +961,12 @@ export class AnalyticsCollector {
               uniqueAgents.add(agentMatch[1])
             }
           }
-        } catch (_error) {
+        } catch {
           continue
         }
       }
       
-      return uniqueAgents.size ?? 50 // Default to 50 if no data
+return uniqueAgents.size
     } catch (error) {
       console.error('Failed to count active agents:', error)
       return 50
@@ -1004,7 +1004,7 @@ export class AnalyticsCollector {
           if (hasWorkOrder) {
             activeCount++
           }
-        } catch (_error) {
+        } catch {
           continue
         }
       }
@@ -1073,7 +1073,7 @@ export class AnalyticsCollector {
           if (hasListing) {
             listingCount++
           }
-        } catch (_error) {
+        } catch {
           continue
         }
       }
@@ -1141,7 +1141,7 @@ export class AnalyticsCollector {
               }
             }
           }
-        } catch (_error) {
+        } catch {
           continue
         }
       }
@@ -1182,7 +1182,7 @@ export class AnalyticsCollector {
               categories.set(category, (categories.get(category) ?? 0) + 1)
             }
           }
-        } catch (_error) {
+        } catch {
           continue
         }
       }
@@ -1227,8 +1227,8 @@ export class AnalyticsCollector {
           if (!tx?.meta) continue
           
           // Calculate volume from balance changes
-          const preBalances = tx.meta.preBalances || []
-          const postBalances = tx.meta.postBalances || []
+          const preBalances = tx.meta.preBalances
+          const postBalances = tx.meta.postBalances
           
           for (let i = 0; i < preBalances.length && i < postBalances.length; i++) {
             const diff = BigInt(postBalances[i]) - BigInt(preBalances[i])
@@ -1236,12 +1236,12 @@ export class AnalyticsCollector {
               totalVolume += diff
             }
           }
-        } catch (_error) {
+        } catch {
           continue
         }
       }
       
-      return totalVolume ?? 100000000000n // Default 100 SOL
+return totalVolume
     } catch (error) {
       console.error('Failed to calculate 24h volume:', error)
       return 100000000000n

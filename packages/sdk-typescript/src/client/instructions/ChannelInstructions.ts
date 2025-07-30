@@ -122,7 +122,7 @@ export class ChannelInstructions extends BaseInstructions {
     const instruction = getCreateChannelInstruction({
       channel: channelAddress,
       creator: signer as unknown as TransactionSigner,
-      channelId: BigInt(channelId.replace(/[^0-9]/g, '') ?? Date.now()), // Extract numeric part for generated instruction
+channelId: BigInt(channelId.replace(/[^0-9]/g, '')), // Extract numeric part for generated instruction
       participants,
       channelType,
       isPrivate: visibility === 'private'
@@ -209,7 +209,7 @@ export class ChannelInstructions extends BaseInstructions {
     }
     
     // Use the current message count as the message ID (smart contract uses this for PDA)
-    const messageCount = Number(channel.messageCount ?? 0)
+const messageCount = Number(channel.messageCount)
     const messageCountBytes = new Uint8Array(8)
     const dataView = new DataView(messageCountBytes.buffer)
     dataView.setBigUint64(0, BigInt(messageCount), true) // little-endian as per smart contract
@@ -246,15 +246,14 @@ export class ChannelInstructions extends BaseInstructions {
     return accounts
       .filter(({ data }) => {
         // Check if the participant is in the channel's participants list
-        if (!data.participants) return false
         return data.participants.some((p: Address) => p.toString() === params.participant.toString())
       })
       .map(({ address, data }) => ({
         address,
         data,
-        participantCount: data.participants?.length ?? 0,
-        messageCount: Number(data.messageCount ?? 0),
-        lastActivity: BigInt(data.lastActivity ?? 0)
+        participantCount: data.participants.length,
+        messageCount: Number(data.messageCount),
+        lastActivity: BigInt(data.lastActivity)
       }))
   }
 
@@ -268,7 +267,7 @@ export class ChannelInstructions extends BaseInstructions {
   /**
    * List all public channels
    */
-  async listPublicChannels(limit: number = 50): Promise<ChannelWithMetadata[]> {
+  async listPublicChannels(limit = 50): Promise<ChannelWithMetadata[]> {
     const accounts = await this.getDecodedProgramAccounts<Channel>('getChannelDecoder')
     
     // Filter for public channels and apply limit
@@ -278,9 +277,9 @@ export class ChannelInstructions extends BaseInstructions {
       .map(({ address, data }) => ({
         address,
         data,
-        participantCount: data.participants?.length ?? 0,
-        messageCount: Number(data.messageCount ?? 0),
-        lastActivity: BigInt(data.lastActivity ?? 0)
+        participantCount: data.participants.length,
+        messageCount: Number(data.messageCount),
+        lastActivity: BigInt(data.lastActivity)
       }))
   }
 
@@ -405,7 +404,7 @@ export class ChannelInstructions extends BaseInstructions {
     const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/kit')
     
     // Convert string channel ID to u64 little-endian bytes
-    const channelIdNumber = BigInt(channelId.replace(/[^0-9]/g, '') ?? Date.now())
+const channelIdNumber = BigInt(channelId.replace(/[^0-9]/g, ''))
     const channelIdBytes = new Uint8Array(8)
     const dataView = new DataView(channelIdBytes.buffer)
     dataView.setBigUint64(0, channelIdNumber, true) // little-endian

@@ -5,7 +5,8 @@
  * including dashboard creation, market analytics, performance tracking, and reporting.
  */
 
-import type { Address, Signature, TransactionSigner } from '@solana/kit'
+import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import { 
@@ -205,8 +206,8 @@ export class AnalyticsInstructions extends BaseInstructions {
     }
 
     const instruction = getCreateAnalyticsDashboardInstruction({
-      dashboard: dashboardPda,
-      userRegistry: await this.deriveUserRegistry(creator),
+      dashboard: dashboardPda as Address,
+      userRegistry: await this.deriveUserRegistry(creator) as Address,
       owner: creator,
       systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       clock: SYSVAR_CLOCK_ADDRESS,
@@ -271,8 +272,8 @@ export class AnalyticsInstructions extends BaseInstructions {
     }
 
     const instruction = getUpdateAnalyticsDashboardInstruction({
-      dashboard: params.dashboard,
-      userRegistry: await this.deriveUserRegistry(updater),
+      dashboard: params.dashboard as Address,
+      userRegistry: await this.deriveUserRegistry(updater) as Address,
       owner: updater,
       clock: SYSVAR_CLOCK_ADDRESS,
       newMetrics: JSON.stringify(metricsData)
@@ -319,7 +320,7 @@ export class AnalyticsInstructions extends BaseInstructions {
     const periodEnd = now + params.trackingPeriod
 
     const instruction = getCreateMarketAnalyticsInstruction({
-      marketAnalytics: marketAnalyticsPda,
+      marketAnalytics: marketAnalyticsPda as Address,
       authority: creator,
       systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       clock: SYSVAR_CLOCK_ADDRESS,
@@ -359,7 +360,7 @@ export class AnalyticsInstructions extends BaseInstructions {
     // Build instruction - the generated instruction only expects volume and price
     // Use totalRevenue as volume and averageTransactionValue as price
     const instruction = getUpdateMarketAnalyticsInstruction({
-      marketAnalytics: params.marketAnalytics,
+      marketAnalytics: params.marketAnalytics as Address,
       authority: updater,
       clock: SYSVAR_CLOCK_ADDRESS,
       volume: params.totalRevenue,
@@ -402,10 +403,10 @@ export class AnalyticsInstructions extends BaseInstructions {
     // Build instruction - only expects marketAnalytics account and agent address
     // Performance data would be stored in the market analytics account
     const instruction = getAddTopAgentInstruction({
-      marketAnalytics: await this.deriveMarketAnalyticsPda(),
+      marketAnalytics: await this.deriveMarketAnalyticsPda() as Address,
       authority,
       clock: SYSVAR_CLOCK_ADDRESS,
-      agent: params.agent
+      agent: params.agent as Address
     })
 
     const signature = await this.sendTransaction([instruction], [authority])
@@ -463,13 +464,13 @@ export class AnalyticsInstructions extends BaseInstructions {
     }
 
     // Extract values from parsed metrics or use defaults
-    const revenue = BigInt((metricsData.revenue as string) ?? '0')
-    const transactionCount = (metricsData.transactionCount as number) ?? 0
-    const successRate = (metricsData.successRate as number) ?? 0
-    const averageResponseTime = (metricsData.averageResponseTime as number) ?? 0
-    const customerRating = (metricsData.customerRating as number) ?? 0
-    const utilizationRate = (metricsData.utilizationRate as number) ?? 0
-    const agentId = (metricsData.agentId as Address) ?? dashboard.owner // Use owner as fallback
+const revenue = BigInt((metricsData.revenue as string) ?? '0')
+const transactionCount = (metricsData.transactionCount as number) ?? 0
+const successRate = (metricsData.successRate as number) ?? 0
+const averageResponseTime = (metricsData.averageResponseTime as number) ?? 0
+const customerRating = (metricsData.customerRating as number) ?? 0
+const utilizationRate = (metricsData.utilizationRate as number) ?? 0
+const agentId = (metricsData.agentId as Address) ?? dashboard.owner
 
     // Calculate performance grade based on metrics
     const performanceGrade = this.calculatePerformanceGrade(
@@ -543,7 +544,7 @@ export class AnalyticsInstructions extends BaseInstructions {
   async generateReport(
     startDate: bigint,
     endDate: bigint,
-    includeAgentDetails: boolean = false
+    includeAgentDetails = false
   ): Promise<{
     period: { start: bigint; end: bigint }
     summary: PerformanceMetrics
@@ -666,9 +667,9 @@ export class AnalyticsInstructions extends BaseInstructions {
   private determineTrendDirection(metricsData: Record<string, unknown>): TrendDirection {
     // If we have historical data, compare current vs previous metrics
     if (metricsData.previousMetrics) {
-      const currentScore = (metricsData.successRate as number) ?? 0
+const currentScore = (metricsData.successRate as number)
       const previousMetrics = metricsData.previousMetrics as Record<string, unknown>
-      const previousScore = (previousMetrics.successRate as number) ?? 0
+const previousScore = (previousMetrics.successRate as number)
       
       if (currentScore > previousScore + 0.05) return TrendDirection.Increasing
       if (currentScore < previousScore - 0.05) return TrendDirection.Decreasing

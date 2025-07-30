@@ -348,7 +348,7 @@ export class KycAmlUtils {
   /**
    * Check if KYC needs refresh
    */
-  static needsRefresh(kycData: KycData, maxDays: number = 365): boolean {
+  static needsRefresh(kycData: KycData, maxDays = 365): boolean {
     return this.daysSinceLastUpdate(kycData) > maxDays
   }
 }

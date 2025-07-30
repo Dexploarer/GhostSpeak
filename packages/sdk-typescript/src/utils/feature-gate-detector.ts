@@ -8,7 +8,7 @@
  * and provides caching to minimize RPC calls.
  */
 
-import { Connection, PublicKey } from '@solana/web3.js'
+import type { Connection, PublicKey } from '@solana/web3.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/kit'
 
@@ -71,7 +71,7 @@ class FeatureGateCacheManager {
    */
   get(featureId: string): FeatureStatus | null {
     const cached = this.cache[featureId]
-    if (!cached) return null
+    // Cache found, continue
     
     // Check if cache is expired
     if (Date.now() - cached.lastChecked > CACHE_TTL_MS) {
@@ -87,9 +87,7 @@ class FeatureGateCacheManager {
    */
   set(featureId: string, status: FeatureStatus): void {
     // Remove if already exists to update order
-    if (this.cache[featureId]) {
-      this.remove(featureId)
-    }
+    this.remove(featureId)
     
     // Add to cache
     this.cache[featureId] = status
@@ -160,16 +158,14 @@ export async function checkFeatureGate(
     }
     
     // If activated, try to get activation slot from account data
-    if (activated && accountInfo && accountInfo.data.length >= 8) {
-      try {
-        // First 8 bytes of feature account data is the activation slot
-        const activationSlot = BigInt(
-          accountInfo.data.readBigUInt64LE(0)
-        )
-        status.activationSlot = activationSlot
-      } catch {
-        // Ignore parsing errors
-      }
+    try {
+      // First 8 bytes of feature account data is the activation slot
+      const activationSlot = BigInt(
+        accountInfo.data.readBigUInt64LE(0)
+      )
+      status.activationSlot = activationSlot
+    } catch {
+      // Ignore parsing errors
     }
     
     // Cache the result

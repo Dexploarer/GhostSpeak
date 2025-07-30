@@ -6,7 +6,7 @@
  */
 
 
-import {
+import type {
   GhostSpeakError,
   ErrorContext,
   ErrorCategory,

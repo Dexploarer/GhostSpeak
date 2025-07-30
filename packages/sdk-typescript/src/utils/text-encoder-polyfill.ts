@@ -10,9 +10,9 @@ declare const globalThis: any
 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 if (typeof globalThis.TextEncoder === 'undefined') {
   // In Node.js environment, import from util
-  if (typeof process !== 'undefined' && process.versions?.node) {
+  if (typeof process !== 'undefined' && process.versions.node) {
     // Use require for synchronous loading in Node.js
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment, no-undef
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
     const util = require('util')
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     globalThis.TextEncoder = util.TextEncoder

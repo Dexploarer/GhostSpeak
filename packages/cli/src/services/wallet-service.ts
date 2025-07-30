@@ -10,7 +10,7 @@ import {
   type KeyPairSigner 
 } from '@solana/kit'
 import type { Address } from '@solana/addresses'
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, renameSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import * as bip39 from 'bip39'
@@ -89,7 +89,7 @@ export class WalletService implements IWalletService {
   /**
    * Create keypair from mnemonic with proper BIP44 derivation
    */
-  async keypairFromMnemonic(mnemonic: string, index: number = 0): Promise<KeyPairSigner> {
+  async keypairFromMnemonic(mnemonic: string, index = 0): Promise<KeyPairSigner> {
     if (!bip39.validateMnemonic(mnemonic)) {
       throw new Error('Invalid mnemonic phrase')
     }
@@ -125,7 +125,7 @@ export class WalletService implements IWalletService {
     }
     
     // Generate or use provided mnemonic
-    const seedPhrase = mnemonic || this.generateMnemonic()
+    const seedPhrase = mnemonic ?? this.generateMnemonic()
     const signer = await this.keypairFromMnemonic(seedPhrase)
     
     // Get private key bytes
@@ -187,13 +187,13 @@ export class WalletService implements IWalletService {
         // Try to parse as JSON array or base58
         try {
           const bytes = JSON.parse(secretKeyOrMnemonic) as number[]
-          signer = createKeyPairSignerFromBytes(new Uint8Array(bytes))
+          signer = await createKeyPairSignerFromBytes(new Uint8Array(bytes))
         } catch {
           throw new Error('Invalid private key or mnemonic format')
         }
       }
     } else {
-      signer = createKeyPairSignerFromBytes(secretKeyOrMnemonic)
+      signer = await createKeyPairSignerFromBytes(secretKeyOrMnemonic)
     }
     
     const privateKeyBytes = 'privateKey' in signer && signer.privateKey instanceof Uint8Array
@@ -317,8 +317,7 @@ export class WalletService implements IWalletService {
       writeFileSync(newPath, JSON.stringify(walletData, null, 2))
       
       // Remove old file
-      const fs = require('fs')
-      fs.unlinkSync(oldPath)
+      unlinkSync(oldPath)
     }
     
     // Update registry
@@ -352,8 +351,7 @@ export class WalletService implements IWalletService {
     // Delete file
     const walletPath = join(this.walletsDir, `${name}.json`)
     if (existsSync(walletPath)) {
-      const fs = require('fs')
-      fs.unlinkSync(walletPath)
+      unlinkSync(walletPath)
     }
     
     // Update registry
@@ -393,7 +391,7 @@ export class WalletService implements IWalletService {
   /**
    * Get signer for a wallet
    */
-  getSigner(name: string): KeyPairSigner | null {
+  async getSigner(name: string): Promise<KeyPairSigner | null> {
     const wallet = this.getWallet(name)
     if (!wallet) {
       return null
@@ -405,7 +403,7 @@ export class WalletService implements IWalletService {
   /**
    * Get active signer
    */
-  getActiveSigner(): KeyPairSigner | null {
+  async getActiveSigner(): Promise<KeyPairSigner | null> {
     const wallet = this.getActiveWallet()
     if (!wallet) {
       return null
@@ -532,8 +530,7 @@ export class WalletService implements IWalletService {
       await this.importWallet('main', new Uint8Array(oldWalletData), 'devnet')
       
       // Optionally rename the old file
-      const fs = require('fs')
-      fs.renameSync(oldWalletPath, oldWalletPath + '.backup')
+      renameSync(oldWalletPath, oldWalletPath + '.backup')
       
     } catch (error) {
       console.warn('Failed to migrate old wallet:', error)

@@ -2,7 +2,7 @@
  * Marketplace jobs apply command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
@@ -97,7 +97,7 @@ export function registerApplyCommand(parentCommand: Command): void {
         if (agents.length > 1) {
           const selectedAgent = await select({
             message: 'Select agent to apply with:',
-            options: agents.map(agent => ({
+            options: agents.map((agent: any) => ({
               value: agent.address.toString(),
               label: agent.data.name || 'Agent'
             }))

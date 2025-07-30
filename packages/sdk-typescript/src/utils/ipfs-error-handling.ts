@@ -55,8 +55,8 @@ export class CircuitBreaker {
   private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED'
 
   constructor(
-    private readonly failureThreshold: number = 5,
-    private readonly recoveryTime: number = 30000
+    private readonly failureThreshold = 5,
+    private readonly recoveryTime = 30000
   ) {}
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
@@ -182,19 +182,19 @@ export class RetryHandler {
   private categorizeError(error: Error): IPFSError {
     const message = error.message.toLowerCase()
     
-    if (message.includes('timeout') ?? message.includes('aborted')) {
+if (message.includes('timeout')) {
       return 'TIMEOUT_ERROR'
     }
     
-    if (message.includes('network') ?? message.includes('fetch') ?? message.includes('connection')) {
+if (message.includes('network')) {
       return 'NETWORK_ERROR'
     }
     
-    if (message.includes('unauthorized') ?? message.includes('forbidden') ?? message.includes('authentication')) {
+if (message.includes('unauthorized')) {
       return 'AUTHENTICATION_FAILED'
     }
     
-    if (message.includes('quota') ?? message.includes('limit') ?? message.includes('exceeded')) {
+if (message.includes('quota')) {
       return 'QUOTA_EXCEEDED'
     }
     
@@ -202,7 +202,7 @@ export class RetryHandler {
       return 'INVALID_HASH'
     }
     
-    if (message.includes('too large') ?? message.includes('size')) {
+if (message.includes('too large')) {
       return 'CONTENT_TOO_LARGE'
     }
     

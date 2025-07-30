@@ -18,6 +18,17 @@ import { sha256 } from '@noble/hashes/sha256'
 import { randomBytes, bytesToNumberLE, numberToBytesBE } from '@noble/curves/abstract/utils'
 import type { Address } from '@solana/addresses'
 
+// Window extension for WASM module
+interface WindowWithWasm extends Window {
+  ghostspeak_wasm?: {
+    generate_range_proof: (value: string, commitment: Uint8Array, randomness: Uint8Array) => Promise<{
+      proof: Uint8Array
+      commitment: Uint8Array
+    }>
+    verify_range_proof: (proof: Uint8Array, commitment: Uint8Array) => Promise<boolean>
+  }
+}
+
 // =====================================================
 // TYPES AND INTERFACES
 // =====================================================
@@ -220,8 +231,8 @@ export async function generateRangeProof(
   randomness: Uint8Array
 ): Promise<RangeProof> {
   // Check if WASM module is available for performance
-  if (typeof window !== 'undefined' && (window as any).ghostspeak_wasm) {
-    const wasm = (window as any).ghostspeak_wasm
+  if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
+    const wasm = (window as WindowWithWasm).ghostspeak_wasm
     const proof = await wasm.generate_range_proof(
       value.toString(),
       commitment.commitment,
@@ -263,8 +274,8 @@ export async function generateValidityProof(
   randomness: Uint8Array
 ): Promise<ValidityProof> {
   // Check if WASM module is available
-  if (typeof window !== 'undefined' && (window as any).ghostspeak_wasm) {
-    const wasm = (window as any).ghostspeak_wasm
+  if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
+    const wasm = (window as WindowWithWasm).ghostspeak_wasm
     const proof = await wasm.generate_validity_proof(
       publicKey,
       ciphertext.commitment.commitment,
@@ -304,8 +315,8 @@ export async function generateEqualityProof(
   destRandomness: Uint8Array
 ): Promise<EqualityProof> {
   // Check if WASM module is available
-  if (typeof window !== 'undefined' && (window as any).ghostspeak_wasm) {
-    const wasm = (window as any).ghostspeak_wasm
+  if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
+    const wasm = (window as WindowWithWasm).ghostspeak_wasm
     const proof = await wasm.generate_equality_proof(
       sourceCiphertext.commitment.commitment,
       destCiphertext.commitment.commitment,
@@ -391,8 +402,8 @@ export async function generateWithdrawProof(
   ciphertext: ElGamalCiphertext
 ): Promise<WithdrawProof> {
   // Check if WASM module is available
-  if (typeof window !== 'undefined' && (window as any).ghostspeak_wasm) {
-    const wasm = (window as any).ghostspeak_wasm
+  if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
+    const wasm = (window as WindowWithWasm).ghostspeak_wasm
     const proof = await wasm.generate_withdraw_proof(
       balance.toString(),
       keypair.secretKey,

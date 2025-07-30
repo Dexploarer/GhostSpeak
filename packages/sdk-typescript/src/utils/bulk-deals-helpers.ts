@@ -230,8 +230,8 @@ export class BatchExecutionUtils {
    */
   static calculateOptimalBatchSize(
     totalItems: number,
-    maxBatchSize: number = 100,
-    maxTransactionSize: number = 1232 // Solana transaction size limit
+    maxBatchSize = 100,
+    maxTransactionSize = 1232 // Solana transaction size limit
   ): number {
     // Estimate bytes per item (rough estimate)
     const bytesPerItem = 100
@@ -262,7 +262,7 @@ export class BatchExecutionUtils {
   static calculateProgress(
     completedBatches: number,
     totalBatches: number,
-    currentBatchProgress: number = 0
+    currentBatchProgress = 0
   ): {
     percentage: number
     estimatedTimeRemaining: number

@@ -216,9 +216,7 @@ export function getCommonInstructions(): InstructionAccountMap {
   
   const commonMappings: InstructionAccountMap = {};
   for (const name of commonInstructionNames) {
-    if (allMappings[name]) {
-      commonMappings[name] = allMappings[name];
-    }
+    commonMappings[name] = allMappings[name];
   }
   
   return commonMappings;

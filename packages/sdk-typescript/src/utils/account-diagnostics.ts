@@ -5,7 +5,7 @@
  * account discriminator issues and data format problems.
  */
 
-import { 
+import type { 
   Address, 
   EncodedAccount, 
   MaybeEncodedAccount,

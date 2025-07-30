@@ -5,7 +5,7 @@ import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js'
 import { AgentModule } from './modules/AgentModule.js'
 import { EscrowModule } from '../modules/escrow/EscrowModule.js'
 import { ChannelModule } from '../modules/channels/ChannelModule.js'
-// ChannelType imported but not used in current implementation
+import { ChannelType } from '../generated/types/channelType.js'
 
 /**
  * Main GhostSpeak client with fluent API design
@@ -208,9 +208,7 @@ class AgentBuilder {
     if (!this.params.agentId) {
       throw new Error('Agent builder requires agent ID. Call create() first.')
     }
-    if (this.params.agentType === undefined) {
-      this.params.agentType = 0 // Default type
-    }
+    this.params.agentType ??= 0 // Default type
   }
 
   async getCost(): Promise<bigint> {
@@ -376,7 +374,7 @@ class EscrowBuilder {
 interface ChannelBuilderParams {
   name?: string
   description?: string
-  channelType?: any // This should match the generated ChannelType
+  channelType?: ChannelType
   isPrivate?: boolean
   maxMembers?: number
   signer?: TransactionSigner

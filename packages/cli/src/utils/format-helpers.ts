@@ -26,7 +26,7 @@ export function infoBox(title: string, content: string | string[], options?: {
   
   return boxen(text, {
     title,
-    borderColor: borderColor as any,
+    borderColor: borderColor as boxen.BorderColor,
     borderStyle: 'round',
     padding,
     width,
@@ -111,7 +111,18 @@ export function formatStatus(status: string): string {
   const normalized = status.toLowerCase().replace(/[-_]/g, '')
   const config = statusMap[normalized] || { icon: '❓', color: 'gray' }
   
-  return `${config.icon} ${chalk[config.color](status)}`
+  // Create a type-safe color mapping
+  const colorMap: Record<string, typeof chalk.green> = {
+    green: chalk.green,
+    yellow: chalk.yellow,
+    red: chalk.red,
+    gray: chalk.gray,
+    blue: chalk.blue,
+    cyan: chalk.cyan
+  }
+  
+  const colorFn = colorMap[config.color] || chalk.gray
+  return `${config.icon} ${colorFn(status)}`
 }
 
 /**
@@ -157,7 +168,7 @@ export function formatSignature(signature: string): string {
 /**
  * Format a timestamp
  */
-export function formatTimestamp(timestamp: number | bigint, relative: boolean = false): string {
+export function formatTimestamp(timestamp: number | bigint, relative = false): string {
   const ts = Number(timestamp)
   
   if (relative) {
@@ -170,7 +181,7 @@ export function formatTimestamp(timestamp: number | bigint, relative: boolean = 
 /**
  * Create a progress bar
  */
-export function progressBar(current: number, total: number, width: number = 30): string {
+export function progressBar(current: number, total: number, width = 30): string {
   const percentage = Math.round((current / total) * 100)
   const filled = Math.round((current / total) * width)
   const empty = width - filled
@@ -230,7 +241,7 @@ export function formatQRPlaceholder(data: string, label?: string): string {
 /**
  * Create a divider line
  */
-export function divider(length: number = 50, char: string = '─'): string {
+export function divider(length = 50, char = '─'): string {
   return chalk.gray(char.repeat(length))
 }
 
@@ -248,7 +259,23 @@ export function keyValue(key: string, value: string, options?: {
     separator = ':'
   } = options || {}
   
-  return `${chalk[keyColor](key)}${separator} ${chalk[valueColor](value)}`
+  // Create a type-safe color mapping
+  const colorMap: Record<string, typeof chalk.green> = {
+    green: chalk.green,
+    yellow: chalk.yellow,
+    red: chalk.red,
+    gray: chalk.gray,
+    blue: chalk.blue,
+    cyan: chalk.cyan,
+    white: chalk.white,
+    black: chalk.black,
+    magenta: chalk.magenta
+  }
+  
+  const keyColorFn = colorMap[keyColor] || chalk.gray
+  const valueColorFn = colorMap[valueColor] || chalk.white
+  
+  return `${keyColorFn(key)}${separator} ${valueColorFn(value)}`
 }
 
 /**

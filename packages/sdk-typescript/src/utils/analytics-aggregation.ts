@@ -395,7 +395,7 @@ export class AnalyticsAggregator {
   /**
    * Get current top agents by performance
    */
-  getTopAgents(limit: number = 10): {
+  getTopAgents(limit = 10): {
     agent: Address
     revenue: bigint
     transactions: number

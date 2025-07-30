@@ -625,7 +625,7 @@ export async function runCryptoBenchmarks(): Promise<{
     const { encryptAmount: jsEncryptAmount } = await import('./elgamal-complete')
     const jsStart = performance.now()
     for (let i = 0; i < iterations; i++) {
-      await jsEncryptAmount(testAmount, testPublicKey)
+      jsEncryptAmount(testAmount, testPublicKey)
     }
     const jsTime = performance.now() - jsStart
     
@@ -654,7 +654,7 @@ export async function runCryptoBenchmarks(): Promise<{
     const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete')
     const jsStart = performance.now()
     for (let i = 0; i < iterations; i++) {
-      await jsGenerateRangeProof(testAmount, testCommitment, testBlinding)
+      jsGenerateRangeProof(testAmount, testCommitment, testBlinding)
     }
     const jsTime = performance.now() - jsStart
     

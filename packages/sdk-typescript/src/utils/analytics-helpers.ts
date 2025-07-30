@@ -178,7 +178,7 @@ export class MetricsAggregator {
    */
   static aggregatePerformanceMetrics(
     metrics: PerformanceMetrics[],
-    periodSeconds: number = 3600 // Default 1 hour
+    periodSeconds = 3600 // Default 1 hour
   ): {
     periods: {
       startTime: bigint
@@ -288,7 +288,7 @@ export class MetricsAggregator {
    */
   static detectAnomalies(
     values: number[],
-    threshold: number = 2 // Number of standard deviations
+    threshold = 2 // Number of standard deviations
   ): {
     anomalies: { index: number; value: number; deviation: number }[]
     stats: { mean: number; stdDev: number }

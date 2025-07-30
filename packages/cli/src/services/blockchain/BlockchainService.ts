@@ -82,9 +82,18 @@ export class BlockchainService implements IBlockchainService {
    */
   async requestAirdrop(address: Address, amount: number): Promise<string> {
     try {
-      // Import airdrop functionality
-      const { requestAirdrop } = await import('../../commands/faucet.js')
-      const signature = await requestAirdrop(address, amount)
+      // Get the client for devnet (airdrop only works on devnet)
+      const { rpc } = await initializeClient('devnet')
+      
+      // Use the Solana RPC airdrop directly
+      const lamports = BigInt(amount * 1_000_000_000)
+      // @ts-expect-error Lamports type may differ between versions
+      const signature = await rpc.requestAirdrop(address, lamports).send()
+      
+      // Wait for confirmation
+      // @ts-expect-error Signature type may differ between versions
+      await rpc.confirmTransaction(signature, { commitment: 'confirmed' }).send()
+      
       return signature
     } catch (error) {
       throw new Error(`Failed to request airdrop: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -99,15 +108,11 @@ export class BlockchainService implements IBlockchainService {
     blockHeight: number
     transactionCount: number
   }> {
-    try {
-      // In real implementation, this would check network health
-      return {
-        healthy: true,
-        blockHeight: 0,
-        transactionCount: 0
-      }
-    } catch (error) {
-      throw new Error(`Failed to get network status: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    // In real implementation, this would check network health
+    return {
+      healthy: true,
+      blockHeight: 0,
+      transactionCount: 0
     }
   }
 

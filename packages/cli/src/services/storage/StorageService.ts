@@ -11,7 +11,7 @@ export class StorageService implements IStorageService {
   private readonly baseDir: string
 
   constructor(baseDir?: string) {
-    this.baseDir = baseDir || join(homedir(), '.ghostspeak', 'data')
+    this.baseDir = baseDir ?? join(homedir(), '.ghostspeak', 'data')
   }
 
   /**

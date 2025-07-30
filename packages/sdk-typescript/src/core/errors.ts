@@ -29,7 +29,8 @@ export class GhostSpeakError extends Error {
     this.code = code
     this.context = context
     this.solution = solution
-    ;(this as any).instruction = instruction
+    // @ts-expect-error Adding custom property to error object
+    this.instruction = instruction
   }
 
   /**

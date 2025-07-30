@@ -5,8 +5,8 @@ import {
   lamports,
   type Signature,
   type Base64EncodedWireTransaction,
-  type Base58EncodedBytes,
-  type Base64EncodedBytes,
+  type _Base58EncodedBytes,
+  type _Base64EncodedBytes,
   type TransactionError,
   type TransactionMessageBytesBase64
 } from '@solana/kit'
@@ -88,7 +88,7 @@ export class RpcClient {
         encoding: 'base64'
       }).send()
 
-      return (result.value ?? []).map((account: unknown) => 
+return result.value.map((account: unknown) => 
         account ? this.parseAccountInfo(account) : null
       )
     })
@@ -108,7 +108,7 @@ export class RpcClient {
         filters: options?.filters
       }).send()
 
-      return (result ?? []).map((item: unknown) => {
+return result.map((item: unknown) => {
         const typedItem = item as { pubkey: string; account: unknown }
         return {
           pubkey: typedItem.pubkey as Address,
@@ -173,7 +173,7 @@ export class RpcClient {
     return this.withRetry(async () => {
       const result = await this.rpc.getSignatureStatuses(signatures).send()
       
-      return (result.value ?? []).map((status: unknown) => {
+return result.value.map((status: unknown) => {
         if (!status) return null
         
         const typedStatus = status as {

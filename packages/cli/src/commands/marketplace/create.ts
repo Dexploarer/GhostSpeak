@@ -2,7 +2,7 @@
  * Marketplace create service listing command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
@@ -167,7 +167,7 @@ export function registerCreateCommand(parentCommand: Command): void {
         const ownershipVerified = await AgentCNFTManager.verifyOwnership(
           selectedCredentials.uuid,
           wallet.address,
-          client.config.rpcEndpoint ?? 'https://api.devnet.solana.com'
+          'https://api.devnet.solana.com'
         )
         
         if (!ownershipVerified) {

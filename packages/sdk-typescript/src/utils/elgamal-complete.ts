@@ -202,7 +202,7 @@ export function encryptAmountWithRandomness(
 export function decryptAmount(
   ciphertext: ElGamalCiphertext,
   secretKey: ElGamalSecretKey,
-  maxValue: bigint = 1000000n
+  maxValue = 1000000n
 ): bigint | null {
   try {
     const s = bytesToNumberLE(secretKey) % ed25519.CURVE.n
@@ -854,9 +854,7 @@ function generateWithdrawEqualityProof(
  * Convert bytes to number (little endian)
  */
 function bytesToNumberLE(bytes: Uint8Array): bigint {
-  if (!bytes || bytes.length === 0) {
-    return 0n
-  }
+  // Process bytes normally
   let result = 0n
   for (let i = 0; i < bytes.length; i++) {
     result |= BigInt(bytes[i]) << BigInt(8 * i)

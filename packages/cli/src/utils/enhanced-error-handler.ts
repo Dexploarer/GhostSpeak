@@ -61,7 +61,7 @@ export function handleServiceError(error: unknown): ErrorInfo {
 /**
  * Display error with formatted output and cancel the operation
  */
-export function displayErrorAndCancel(error: unknown, operation: string = 'Operation'): void {
+export function displayErrorAndCancel(error: unknown, operation = 'Operation'): void {
   const errorInfo = handleServiceError(error)
   
   console.log('')
@@ -94,7 +94,7 @@ export function displayErrorAndCancel(error: unknown, operation: string = 'Opera
  */
 export function withErrorHandling<T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
-  operation: string = 'Operation'
+  operation = 'Operation'
 ) {
   return async (...args: T): Promise<R> => {
     try {

@@ -381,7 +381,7 @@ export class SolanaRpcClient {
       ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
     }).send()
 
-    return (result.value ?? []).map((account) => 
+return result.value.map((account: unknown) => 
       account ? this.parseAccountInfo(account) : null
     )
   }

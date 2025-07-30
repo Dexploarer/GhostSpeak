@@ -2,7 +2,7 @@
  * Marketplace purchase service command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
@@ -52,14 +52,14 @@ export function registerPurchaseCommand(parentCommand: Command): void {
 
           console.log('\n' + chalk.bold('🏪 Available Services'))
           console.log('─'.repeat(60))
-          services.forEach((serviceWithAddr, index) => {
+          services.forEach((serviceWithAddr: any, index: number) => {
             console.log(chalk.magenta(`${index + 1}. ${serviceWithAddr.data.title}`))
             console.log(chalk.gray(`   ID: ${serviceWithAddr.address.toString()} | Price: ${Number(serviceWithAddr.data.price) / 1_000_000} SOL | By: ${serviceWithAddr.data.agent.toString().slice(0, 8)}...`))
           })
 
           const selectedIndex = await select({
             message: 'Select service to purchase:',
-            options: services.map((service, index) => ({
+            options: services.map((service: any, index: number) => ({
               value: index,
               label: `${service.data.title ?? 'Unknown'} - ${Number(service.data.price) / 1_000_000} SOL`
             }))

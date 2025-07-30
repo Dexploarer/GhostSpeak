@@ -2,7 +2,7 @@
  * Marketplace jobs list command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
@@ -62,7 +62,7 @@ export function registerListCommand(parentCommand: Command): void {
           isActive?: boolean
         }
         
-        jobs.forEach((job: FlexibleJob, index) => {
+        jobs.forEach((job: FlexibleJob, index: number) => {
           const posterStr = typeof job.poster === 'string' ? job.poster : job.poster?.toString()
           const isOwner = posterStr === wallet.address.toString()
           const deadlineDate = new Date(Number(job.deadline ?? 0) * 1000)
@@ -122,7 +122,7 @@ export function registerListCommand(parentCommand: Command): void {
 async function applyToJob(jobs: JobPosting[], client: any, wallet: KeyPairSigner) {
   console.log(chalk.yellow('Apply functionality will be available when apply command is extracted'))
   console.log(chalk.gray('Available jobs:'), jobs.length)
-  console.log(chalk.gray('Client:'), !!client)
+  console.log(chalk.gray('Client:'), Boolean(client))
   console.log(chalk.gray('Wallet:'), wallet.address.toString().slice(0, 8) + '...')
 }
 

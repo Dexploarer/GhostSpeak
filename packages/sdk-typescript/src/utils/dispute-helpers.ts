@@ -57,7 +57,7 @@ export class DisputeTimeUtils {
   /**
    * Check if dispute is overdue for resolution
    */
-  static isOverdue(createdAt: bigint, maxDays: number = 14): boolean {
+  static isOverdue(createdAt: bigint, maxDays = 14): boolean {
     const now = this.now()
     const maxDuration = this.daysToSeconds(maxDays)
     return (now - createdAt) > maxDuration
@@ -181,7 +181,7 @@ export class DisputeValidationUtils {
 
     // Authorization validation
     const authorizedSubmitters = [params.dispute.complainant, params.dispute.respondent]
-    if (params.dispute.moderator?.__option === 'Some') {
+    if (params.dispute.moderator.__option === 'Some') {
       authorizedSubmitters.push(params.dispute.moderator.value)
     }
     
@@ -230,7 +230,7 @@ export class DisputeValidationUtils {
     }
 
     // Moderator authorization (in production, check moderator registry)
-    if (params.dispute.moderator?.__option === 'Some' && 
+    if (params.dispute.moderator.__option === 'Some' && 
         params.dispute.moderator.value !== params.moderator) {
       errors.push('Only assigned moderator can resolve this dispute')
     }
@@ -496,7 +496,7 @@ export class DisputeAnalyticsUtils {
    */
   static getDisputeTrends<T extends { createdAt: bigint; status: DisputeStatus }>(
     disputes: T[],
-    periodDays: number = 30
+    periodDays = 30
   ): {
     date: string
     filed: number

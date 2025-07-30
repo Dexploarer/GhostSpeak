@@ -15,7 +15,13 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { address, type Address } from '@solana/addresses'
 import type { DisputeSummary } from '@ghostspeak/sdk'
-import { DisputeStatus } from '@ghostspeak/sdk'
+// Temporarily define enum locally until SDK exports are fixed
+export enum DisputeStatus {
+  Open,
+  Resolved,
+  Cancelled,
+  Escalated
+}
 
 // Define basic work order interface for type safety
 interface WorkOrder {
@@ -122,7 +128,7 @@ disputeCommand
         return
       }
 
-      let evidenceList = []
+      const evidenceList = []
       if (hasEvidence) {
         let addingEvidence = true
         while (addingEvidence) {
@@ -445,7 +451,7 @@ disputeCommand
           return
         }
 
-        selectedDispute = disputeChoice
+        selectedDispute = disputeChoice as string
       }
 
       const dispute = activeDisputes.find((d: DisputeSummary) => 
@@ -633,7 +639,7 @@ disputeCommand
           return
         }
 
-        selectedDispute = disputeChoice
+        selectedDispute = disputeChoice as string
       }
 
       const dispute = pendingDisputes.find((d: DisputeSummary) => 
@@ -661,7 +667,7 @@ disputeCommand
       // Load and display evidence
       if (dispute.evidenceCount > 0) {
         s.start('Loading evidence...')
-        const evidence = await client.dispute.getEvidenceHistory(address(selectedDispute))
+        const evidence = await client.dispute.getEvidenceHistory(address(selectedDispute!))
         s.stop(`✅ Loaded ${evidence.length} evidence items`)
 
         log.info(`\n${chalk.bold('📄 Evidence Review:')}\n`)
@@ -755,7 +761,7 @@ disputeCommand
         const signature = await client.dispute.resolveDispute(
           wallet,
           {
-            dispute: address(selectedDispute),
+            dispute: address(selectedDispute!),
             resolution: resolutionDetails,
             rulingInFavorOfComplainant: ruling === 'favor_claimant' || ruling === 'partial_claimant'
           }
@@ -844,7 +850,7 @@ disputeCommand
           return
         }
 
-        selectedDispute = disputeChoice
+        selectedDispute = disputeChoice as string
       }
 
       const dispute = escalatableDisputes.find((d: DisputeSummary) => 

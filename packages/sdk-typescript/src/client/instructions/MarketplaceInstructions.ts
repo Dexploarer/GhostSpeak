@@ -149,8 +149,8 @@ export class MarketplaceInstructions extends BaseInstructions {
     params: CreateJobPostingParams
   ): Promise<Required<CreateJobPostingParams>> {
     // Auto-calculate budget if min/max not provided
-    const budgetMin = params.budgetMin ?? params.amount ?? 0n
-    const budgetMax = params.budgetMax ?? params.amount ?? budgetMin * 2n
+const budgetMin = params.budgetMin
+const budgetMax = params.budgetMax
     
     // Get USDC token mint as default payment token
     const defaultPaymentToken = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address // USDC on mainnet
@@ -158,9 +158,9 @@ export class MarketplaceInstructions extends BaseInstructions {
     return {
       title: params.title,
       description: params.description,
-      amount: params.amount ?? budgetMax,
+amount: params.amount,
       requirements: params.requirements ?? [],
-      deadline: params.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60), // 30 days default
+deadline: params.deadline, // 30 days default
       skillsNeeded: params.skillsNeeded ?? [],
       budgetMin,
       budgetMax,
@@ -314,7 +314,7 @@ export class MarketplaceInstructions extends BaseInstructions {
       feeResult = await this.calculateTokenTransferFees(
         paymentAmount,
         params.paymentTokenMint,
-        !!params.expectedNetAmount // Use net calculation if expectedNetAmount provided
+        Boolean(params.expectedNetAmount) // Use net calculation if expectedNetAmount provided
       )
       
       console.log(`Service purchase with transfer fees:`, {
@@ -463,7 +463,7 @@ export class MarketplaceInstructions extends BaseInstructions {
   async calculateTokenTransferFees(
     paymentAmount: bigint, 
     tokenMint: Address,
-    useNetAmount: boolean = false
+    useNetAmount = false
   ): Promise<TokenTransferResult> {
     try {
       // Check if token has transfer fees using the new RPC-based function
@@ -667,8 +667,8 @@ export class MarketplaceInstructions extends BaseInstructions {
     // Filter by category/service type
     return allListings.filter(({ data }) => {
       const service = data as ServiceListing
-      return service.serviceType?.toLowerCase().includes(category.toLowerCase()) ||
-             service.tags?.some((tag: string) => tag.toLowerCase().includes(category.toLowerCase()))
+      return service.serviceType.toLowerCase().includes(category.toLowerCase()) ||
+             service.tags.some((tag: string) => tag.toLowerCase().includes(category.toLowerCase()))
     })
   }
 
@@ -683,7 +683,7 @@ export class MarketplaceInstructions extends BaseInstructions {
     
     // Filter by budget range
     return allPostings.filter(posting => {
-      const budget = posting.budget ?? 0n
+const budget = posting.budget
       return budget >= minBudget && budget <= maxBudget
     })
   }

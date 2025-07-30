@@ -1,5 +1,5 @@
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner, Base58EncodedBytes, Base64EncodedBytes } from '@solana/kit'
+import type { _TransactionSigner, Base58EncodedBytes, Base64EncodedBytes } from '@solana/kit'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import type { IPFSConfig } from '../../types/ipfs-types.js'
 import { BaseModule } from '../BaseModule.js'
@@ -205,7 +205,7 @@ export class AgentModule extends BaseModule {
 
   // Helper methods
 
-  private deriveAgentPda(agentId: string): Address {
+  private deriveAgentPda(agentId: _string): Address {
     // Implementation would derive PDA
     // This is a placeholder - actual implementation would use findProgramAddressSync
     return 'agent_pda_address' as Address

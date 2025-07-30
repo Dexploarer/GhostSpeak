@@ -210,7 +210,7 @@ export class FaucetService {
   /**
    * Clean old request history
    */
-  async cleanOldRequests(daysToKeep: number = 30): Promise<number> {
+  async cleanOldRequests(daysToKeep = 30): Promise<number> {
     const history = await this.loadRequestHistory()
     const cutoffTime = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000)
     
@@ -274,7 +274,7 @@ export class EnhancedSolanaFaucets {
   static async requestFromSolanaFaucetWithFallbacks(
     walletAddress: string,
     network: 'devnet' | 'testnet',
-    amount: number = 1
+    amount = 1
   ): Promise<{ success: boolean; signature?: string; error?: string }> {
     const endpoints = [
       // Primary endpoints

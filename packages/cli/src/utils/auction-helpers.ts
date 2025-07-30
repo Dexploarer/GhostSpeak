@@ -13,10 +13,8 @@ export function auctionTypeToString(type: AuctionType): string {
       return 'english'
     case AuctionType.Dutch:
       return 'dutch'
-    case AuctionType.SealedBid:
+    case AuctionType.Sealed:
       return 'sealed'
-    case AuctionType.Vickrey:
-      return 'vickrey'
     default:
       return 'unknown'
   }
@@ -32,9 +30,7 @@ export function stringToAuctionType(str: string): AuctionType {
     case 'dutch':
       return AuctionType.Dutch
     case 'sealed':
-      return AuctionType.SealedBid
-    case 'vickrey':
-      return AuctionType.Vickrey
+      return AuctionType.Sealed
     default:
       return AuctionType.English
   }

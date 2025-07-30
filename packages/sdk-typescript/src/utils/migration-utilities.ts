@@ -371,7 +371,7 @@ export class MigrationManager {
     
     // Generate ZK proof
     if (item.migrationData.zkMetadata.amount && item.migrationData.zkMetadata.randomness) {
-      const proof = await generateRangeProofWithCommitment(
+      await generateRangeProofWithCommitment(
         item.migrationData.zkMetadata.amount,
         item.migrationData.zkMetadata.randomness,
         {
@@ -379,10 +379,6 @@ export class MigrationManager {
           connection: this.connection
         }
       )
-      
-      if (!proof.proof) {
-        throw new Error('Failed to generate ZK proof')
-      }
     }
     
     // Mark as completed

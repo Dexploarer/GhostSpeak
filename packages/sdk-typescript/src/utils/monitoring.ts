@@ -180,7 +180,7 @@ export class MonitoringSystem {
    */
   recordCounter(
     name: string, 
-    value: number = 1, 
+    value = 1, 
     labels: Record<string, string> = {}
   ): void {
     const metric = this.getOrCreateMetric(name, 'counter', 'Count of events')
@@ -255,7 +255,7 @@ export class MonitoringSystem {
    */
   endOperation(
     id: string,
-    success: boolean = true,
+    success = true,
     error?: string
   ): number | null {
     const context = this.activeOperations.get(id)

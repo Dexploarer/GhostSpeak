@@ -2,7 +2,7 @@
  * Marketplace list services command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
@@ -41,8 +41,7 @@ export function registerListCommand(parentCommand: Command): void {
         // Filter by category if provided
         if (options.category) {
           services = services.filter(service => {
-            // @ts-expect-error metadataUri might not exist on ServiceListing
-            const metadata = service.data.metadataUri as string | undefined
+            const metadata = service.data.serviceType
             return metadata?.includes(options.category ?? '') ?? service.data.title?.toLowerCase().includes(options.category?.toLowerCase() ?? '') ?? false
           })
         }
@@ -58,7 +57,7 @@ export function registerListCommand(parentCommand: Command): void {
         console.log('\n' + chalk.bold(`🏪 Available Services (${services.length})`))
         console.log('═'.repeat(70))
 
-        services.forEach((service: ServiceListingWithAddress, index) => {
+        services.forEach((service: ServiceListingWithAddress, index: number) => {
           console.log(chalk.magenta(`${index + 1}. ${service.data.title}`))
           console.log(chalk.gray(`   ID: ${service.address.toString()}`))
           console.log(chalk.gray(`   Agent: ${service.data.agent.toString()}`))

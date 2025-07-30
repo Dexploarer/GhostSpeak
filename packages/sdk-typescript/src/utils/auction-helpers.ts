@@ -398,7 +398,7 @@ export class AuctionAnalyticsUtils {
   static findTopAppreciationAuctions<T extends { 
     startingPrice: bigint
     currentPrice: bigint 
-  }>(auctions: T[], limit: number = 10): (T & { appreciation: number })[] {
+  }>(auctions: T[], limit = 10): (T & { appreciation: number })[] {
     return auctions
       .map(auction => ({
         ...auction,
@@ -784,7 +784,7 @@ export class ReservePriceUtils {
     bidAmount: bigint,
     reservePrice: bigint,
     auctionType: AuctionType,
-    isReserveHidden: boolean = false
+    isReserveHidden = false
   ): boolean {
     void auctionType // Mark as intentionally unused
     void isReserveHidden // Mark as intentionally unused
@@ -870,10 +870,10 @@ export class ReservePriceUtils {
     currentPrice: bigint,
     reservePrice: bigint,
     _auctionType: AuctionType,
-    isReserveHidden: boolean = false,
+    isReserveHidden = false,
     reserveMet?: boolean,
     extensionCount?: number,
-    maxExtensions: number = 3
+    maxExtensions = 3
   ): {
     met: boolean
     message: string
@@ -1093,7 +1093,7 @@ export class ReserveExtensionUtils {
    */
   static calculateExtendedEndTime(
     currentEndTime: bigint,
-    extensionDuration: bigint = 3600n // 1 hour default
+    extensionDuration = 3600n // 1 hour default
   ): bigint {
     return currentEndTime + extensionDuration
   }
@@ -1177,7 +1177,7 @@ export class ReserveExtensionUtils {
    */
   static formatExtensionStatus(
     extensionCount: number,
-    maxExtensions: number = 3,
+    maxExtensions = 3,
     lastExtensionTime?: bigint
   ): string {
     const remaining = maxExtensions - extensionCount

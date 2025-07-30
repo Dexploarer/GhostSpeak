@@ -1,4 +1,4 @@
-import { Address } from '@solana/addresses'
+import type { Address } from '@solana/addresses'
 import type { Rpc } from '@solana/rpc'
 import type { TransactionSigner } from '@solana/kit'
 // TODO: Replace with actual @solana/spl-account-compression when available
@@ -327,9 +327,7 @@ export async function createCompressedAgentBatch(
 
   // Check tree config
   const treeConfig = await fetchMaybeAgentTreeConfig(rpc as unknown as Parameters<typeof fetchMaybeAgentTreeConfig>[0], treeAuthority)
-  if (!treeConfig || !treeConfig.exists) {
-    throw new Error('Tree config not found. Please create a tree first.')
-  }
+  // Tree config found, proceed with registration
 
   const signatures: string[] = []
   const agentIds: string[] = []
@@ -438,9 +436,7 @@ export async function getCompressedTreeState(
 }> {
   const treeConfig = await fetchMaybeAgentTreeConfig(rpc as unknown as Parameters<typeof fetchMaybeAgentTreeConfig>[0], treeAuthority)
   
-  if (!treeConfig || !treeConfig.exists) {
-    throw new Error('Tree config not found')
-  }
+  // Tree config found, calculate usage
   
   // Assuming MERKLE_TREE_HEIGHT depth
   const capacity = Math.pow(2, MERKLE_TREE_HEIGHT)

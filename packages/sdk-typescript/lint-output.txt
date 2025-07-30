@@ -1,0 +1,398 @@
+$ eslint src --no-error-on-unmatched-pattern --ignore-pattern 'src/generated/**' && eslint src/generated --no-error-on-unmatched-pattern --config .eslintrc.generated.js
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/AnalyticsCollector.ts
+   815:27  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+   816:28  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+   890:18  warning  '_error' is defined but never used               @typescript-eslint/no-unused-vars
+   964:18  warning  '_error' is defined but never used               @typescript-eslint/no-unused-vars
+  1007:18  warning  '_error' is defined but never used               @typescript-eslint/no-unused-vars
+  1076:18  warning  '_error' is defined but never used               @typescript-eslint/no-unused-vars
+  1144:18  warning  '_error' is defined but never used               @typescript-eslint/no-unused-vars
+  1185:18  warning  '_error' is defined but never used               @typescript-eslint/no-unused-vars
+  1230:31  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+  1231:32  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+  1239:18  warning  '_error' is defined but never used               @typescript-eslint/no-unused-vars
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/AnalyticsInstructions.ts
+    8:25  warning  'Signature' is defined but never used. Allowed unused vars must match /^_/u                                @typescript-eslint/no-unused-vars
+  201:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  208:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  209:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  274:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  275:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  322:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  362:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  405:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  408:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  429:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                              @typescript-eslint/no-unsafe-argument
+  442:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                              @typescript-eslint/no-unsafe-argument
+  472:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  472:50  warning  Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator  @typescript-eslint/prefer-nullish-coalescing
+  485:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+  487:7   warning  Unsafe assignment of an error typed value                                                                  @typescript-eslint/no-unsafe-assignment
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/AuctionInstructions.ts
+     8:25  warning  'Signature' is defined but never used. Allowed unused vars must match /^_/u                                                                                         @typescript-eslint/no-unused-vars
+   253:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   292:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   309:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   346:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   389:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   433:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   453:49  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   459:71  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   500:51  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   501:47  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   509:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   510:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   544:11  warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   591:11  warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   592:47  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+   595:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   651:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   652:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   653:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   687:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   688:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   689:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   756:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   757:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   786:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   787:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+   915:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  1043:5   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  1087:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  1111:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  1154:9   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  1235:72  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+  1248:11  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+  1258:13  warning  Unsafe argument of type error typed assigned to a parameter of type `string`                                                                                        @typescript-eslint/no-unsafe-argument
+  1287:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  1418:11  warning  Unnecessary conditional, value is always truthy                                                                                                                     @typescript-eslint/no-unnecessary-condition
+  1423:5   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  1623:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/BaseInstructions.ts
+  162:13  warning  Unnecessary conditional, value is always falsy              @typescript-eslint/no-unnecessary-condition
+  181:34  warning  Unexpected `await` of a non-Promise (non-"Thenable") value  @typescript-eslint/await-thenable
+  292:20  warning  Unnecessary conditional, value is always truthy             @typescript-eslint/no-unnecessary-condition
+  340:34  warning  Unexpected `await` of a non-Promise (non-"Thenable") value  @typescript-eslint/await-thenable
+  380:34  warning  Unexpected `await` of a non-Promise (non-"Thenable") value  @typescript-eslint/await-thenable
+  449:32  warning  Unexpected `await` of a non-Promise (non-"Thenable") value  @typescript-eslint/await-thenable
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/BulkDealsInstructions.ts
+   8:25  warning  'Signature' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  55:7   warning  Unsafe assignment of an error typed value                                    @typescript-eslint/no-unsafe-assignment
+  56:7   warning  Unsafe assignment of an error typed value                                    @typescript-eslint/no-unsafe-assignment
+  57:7   warning  Unsafe assignment of an error typed value                                    @typescript-eslint/no-unsafe-assignment
+  91:7   warning  Unsafe assignment of an error typed value                                    @typescript-eslint/no-unsafe-assignment
+  92:7   warning  Unsafe assignment of an error typed value                                    @typescript-eslint/no-unsafe-assignment
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/DisputeInstructions.ts
+    8:25  warning  'Signature' is defined but never used. Allowed unused vars must match /^_/u                                                                                         @typescript-eslint/no-unused-vars
+  160:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  161:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  162:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  164:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  189:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  190:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  191:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  193:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  252:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  253:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  255:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  285:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  286:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  288:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  345:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  346:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  348:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  378:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  379:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  381:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  401:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+  420:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  555:65  warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+  572:11  warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  626:5   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  699:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/GovernanceInstructions.ts
+    8:25  warning  'Signature' is defined but never used. Allowed unused vars must match /^_/u                                                                                         @typescript-eslint/no-unused-vars
+  203:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  208:7   warning  Unsafe assignment of type `Address[]` to a variable of type `Address[]`                                                                                             @typescript-eslint/no-unsafe-assignment
+  234:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  239:7   warning  Unsafe assignment of type `Address[]` to a variable of type `Address[]`                                                                                             @typescript-eslint/no-unsafe-assignment
+  240:9   warning  Unnecessary conditional, value is always truthy                                                                                                                     @typescript-eslint/no-unnecessary-condition
+  299:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  328:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  391:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  416:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  462:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  464:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  500:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  501:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  528:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  565:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  567:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  588:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+  601:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+  614:7   warning  Unsafe argument of type error typed assigned to a parameter of type `Address`                                                                                       @typescript-eslint/no-unsafe-argument
+  630:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  669:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  810:43  warning  Unsafe argument of type error typed assigned to a parameter of type `string`                                                                                        @typescript-eslint/no-unsafe-argument
+  811:27  warning  Unsafe argument of type error typed assigned to a parameter of type `string`                                                                                        @typescript-eslint/no-unsafe-argument
+  820:11  warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  896:5   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  949:9   warning  Unnecessary conditional, value is always falsy                                                                                                                      @typescript-eslint/no-unnecessary-condition
+  955:9   warning  Unnecessary conditional, value is always falsy                                                                                                                      @typescript-eslint/no-unnecessary-condition
+  966:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+  993:7   warning  Unsafe assignment of an error typed value                                                                                                                           @typescript-eslint/no-unsafe-assignment
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/ReputationInstructions.ts
+  712:7  warning  Unsafe call of a(n) `any` typed value  @typescript-eslint/no-unsafe-call
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/client/instructions/WorkOrderInstructions.ts
+  362:13  warning  Unnecessary conditional, value is always falsy     @typescript-eslint/no-unnecessary-condition
+  593:9   warning  Unnecessary conditional, value is always falsy     @typescript-eslint/no-unnecessary-condition
+  650:37  warning  Unnecessary optional chain on a non-nullish value  @typescript-eslint/no-unnecessary-condition
+  822:9   warning  Unnecessary conditional, value is always falsy     @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/core/DevTools.ts
+  189:64  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/core/GhostSpeakClient.ts
+  211:5   warning  Prefer using nullish coalescing operator (`??=`) instead of an assignment expression, as it is simpler to read  @typescript-eslint/prefer-nullish-coalescing
+  359:44  warning  Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator       @typescript-eslint/prefer-nullish-coalescing
+  379:17  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  456:44  warning  Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator       @typescript-eslint/prefer-nullish-coalescing
+  457:7   warning  Unsafe assignment of an `any` value                                                                             @typescript-eslint/no-unsafe-assignment
+  457:44  warning  Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator       @typescript-eslint/prefer-nullish-coalescing
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/core/InstructionBuilder.ts
+    2:65  warning  'TransactionMessage' is defined but never used. Allowed unused vars must match /^_/u                                                             @typescript-eslint/no-unused-vars
+    5:68  warning  'TransactionResult' is defined but never used. Allowed unused vars must match /^_/u                                                              @typescript-eslint/no-unused-vars
+   68:13  warning  Unsafe assignment of an error typed value                                                                                                        @typescript-eslint/no-unsafe-assignment
+   71:24  warning  Unsafe member access .programAddress on an `error` typed value                                                                                   @typescript-eslint/no-unsafe-member-access
+   74:24  warning  Unsafe member access .accounts on an `error` typed value                                                                                         @typescript-eslint/no-unsafe-member-access
+   74:63  warning  Unsafe member access .accounts on an `error` typed value                                                                                         @typescript-eslint/no-unsafe-member-access
+   80:59  warning  Unsafe argument of type `any[]` assigned to a parameter of type `IInstruction[]`                                                                 @typescript-eslint/no-unsafe-argument
+   98:34  warning  Unexpected `await` of a non-Promise (non-"Thenable") value                                                                                       @typescript-eslint/await-thenable
+  118:15  warning  Unsafe assignment of an error typed value                                                                                                        @typescript-eslint/no-unsafe-assignment
+  118:24  warning  Unsafe call of a(n) `error` type typed value                                                                                                     @typescript-eslint/no-unsafe-call
+  162:13  warning  Unsafe assignment of an error typed value                                                                                                        @typescript-eslint/no-unsafe-assignment
+  167:7   warning  Unsafe call of a(n) `error` type typed value                                                                                                     @typescript-eslint/no-unsafe-call
+  167:20  warning  Unsafe member access .forEach on an `error` typed value                                                                                          @typescript-eslint/no-unsafe-member-access
+  168:26  warning  Unsafe member access .programAddress on an `any` value                                                                                           @typescript-eslint/no-unsafe-member-access
+  171:26  warning  Unsafe member access .accounts on an `any` value                                                                                                 @typescript-eslint/no-unsafe-member-access
+  171:65  warning  Unsafe member access .accounts on an `any` value                                                                                                 @typescript-eslint/no-unsafe-member-access
+  177:58  warning  Unsafe argument of type error typed assigned to a parameter of type `IInstruction[]`                                                             @typescript-eslint/no-unsafe-argument
+  184:41  warning  Unsafe argument of type error typed assigned to a parameter of type `IInstruction[]`                                                             @typescript-eslint/no-unsafe-argument
+  195:34  warning  Unexpected `await` of a non-Promise (non-"Thenable") value                                                                                       @typescript-eslint/await-thenable
+  214:15  warning  Unsafe assignment of an error typed value                                                                                                        @typescript-eslint/no-unsafe-assignment
+  214:24  warning  Unsafe call of a(n) `error` type typed value                                                                                                     @typescript-eslint/no-unsafe-call
+  254:11  warning  Unnecessary conditional, value is always falsy                                                                                                   @typescript-eslint/no-unnecessary-condition
+  284:11  warning  Unnecessary conditional, value is always falsy                                                                                                   @typescript-eslint/no-unnecessary-condition
+  323:47  warning  `import()` type annotations are forbidden                                                                                                        @typescript-eslint/consistent-type-imports
+  331:47  warning  `import()` type annotations are forbidden                                                                                                        @typescript-eslint/consistent-type-imports
+  348:11  warning  Unnecessary conditional, value is always falsy                                                                                                   @typescript-eslint/no-unnecessary-condition
+  390:11  warning  Unsafe assignment of an error typed value                                                                                                        @typescript-eslint/no-unsafe-assignment
+  395:55  warning  Unsafe argument of type error typed assigned to a parameter of type `IInstruction[]`                                                             @typescript-eslint/no-unsafe-argument
+  438:13  warning  Unsafe assignment of an error typed value                                                                                                        @typescript-eslint/no-unsafe-assignment
+  448:34  warning  Unexpected `await` of a non-Promise (non-"Thenable") value                                                                                       @typescript-eslint/await-thenable
+  458:75  warning  `import()` type annotations are forbidden                                                                                                        @typescript-eslint/consistent-type-imports
+  475:61  warning  Unsafe argument of type `any` assigned to a parameter of type `Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>`  @typescript-eslint/no-unsafe-argument
+  475:82  warning  Unexpected any. Specify a different type                                                                                                         @typescript-eslint/no-explicit-any
+  534:32  warning  Unexpected `await` of a non-Promise (non-"Thenable") value                                                                                       @typescript-eslint/await-thenable
+  542:61  warning  Unsafe argument of type `any` assigned to a parameter of type `Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>`  @typescript-eslint/no-unsafe-argument
+  542:82  warning  Unexpected any. Specify a different type                                                                                                         @typescript-eslint/no-explicit-any
+  560:32  warning  Unexpected `await` of a non-Promise (non-"Thenable") value                                                                                       @typescript-eslint/await-thenable
+  568:61  warning  Unsafe argument of type `any` assigned to a parameter of type `Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>`  @typescript-eslint/no-unsafe-argument
+  568:82  warning  Unexpected any. Specify a different type                                                                                                         @typescript-eslint/no-explicit-any
+  581:33  warning  Unsafe member access .accounts on an `error` typed value                                                                                         @typescript-eslint/no-unsafe-member-access
+  582:32  warning  Unsafe member access .data on an `error` typed value                                                                                             @typescript-eslint/no-unsafe-member-access
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/core/errors.ts
+   32:15  warning  Unexpected any. Specify a different type                                                                   @typescript-eslint/no-explicit-any
+   32:20  warning  Unsafe member access .instruction on an `any` value                                                        @typescript-eslint/no-unsafe-member-access
+  155:43  warning  Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator  @typescript-eslint/prefer-nullish-coalescing
+  155:55  warning  Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator  @typescript-eslint/prefer-nullish-coalescing
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/core/modules/AgentModule.ts
+    2:35  warning  'Base58EncodedBytes' is defined but never used. Allowed unused vars must match /^_/u                 @typescript-eslint/no-unused-vars
+    2:55  warning  'Base64EncodedBytes' is defined but never used. Allowed unused vars must match /^_/u                 @typescript-eslint/no-unused-vars
+   42:9   warning  Unsafe assignment of an error typed value                                                            @typescript-eslint/no-unsafe-assignment
+   48:7   warning  Unsafe argument of type `TransactionSigner[]` assigned to a parameter of type `TransactionSigner[]`  @typescript-eslint/no-unsafe-argument
+   66:9   warning  Unsafe assignment of an error typed value                                                            @typescript-eslint/no-unsafe-assignment
+   73:7   warning  Unsafe argument of type `TransactionSigner[]` assigned to a parameter of type `TransactionSigner[]`  @typescript-eslint/no-unsafe-argument
+   90:9   warning  Unsafe assignment of an error typed value                                                            @typescript-eslint/no-unsafe-assignment
+   95:7   warning  Unsafe argument of type `TransactionSigner[]` assigned to a parameter of type `TransactionSigner[]`  @typescript-eslint/no-unsafe-argument
+  113:9   warning  Unsafe assignment of an error typed value                                                            @typescript-eslint/no-unsafe-assignment
+  119:7   warning  Unsafe argument of type `TransactionSigner[]` assigned to a parameter of type `TransactionSigner[]`  @typescript-eslint/no-unsafe-argument
+  134:9   warning  Unsafe assignment of an error typed value                                                            @typescript-eslint/no-unsafe-assignment
+  137:7   warning  Unsafe argument of type `TransactionSigner[]` assigned to a parameter of type `TransactionSigner[]`  @typescript-eslint/no-unsafe-argument
+  152:9   warning  Unsafe assignment of an error typed value                                                            @typescript-eslint/no-unsafe-assignment
+  155:7   warning  Unsafe argument of type `TransactionSigner[]` assigned to a parameter of type `TransactionSigner[]`  @typescript-eslint/no-unsafe-argument
+  208:26  warning  'agentId' is defined but never used. Allowed unused args must match /^_/u                            @typescript-eslint/no-unused-vars
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/core/rpc-client.ts
+  241:14  warning  Unnecessary conditional, comparison is always true, since `"ok" === "ok"` is true  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/core/types.ts
+  9:15  warning  'TransactionSigner' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/crypto/elgamal.ts
+  223:51  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  223:56  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  224:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  224:29  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  224:34  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  225:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  225:25  warning  Unsafe call of a(n) `any` typed value                                                            @typescript-eslint/no-unsafe-call
+  225:30  warning  Unsafe member access .generate_range_proof on an `any` value                                     @typescript-eslint/no-unsafe-member-access
+  231:7   warning  Unsafe assignment of type `Uint8Array<any>` to a variable of type `Uint8Array<ArrayBufferLike>`  @typescript-eslint/no-unsafe-assignment
+  266:51  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  266:56  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  267:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  267:29  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  267:34  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  268:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  268:25  warning  Unsafe call of a(n) `any` typed value                                                            @typescript-eslint/no-unsafe-call
+  268:30  warning  Unsafe member access .generate_validity_proof on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  274:14  warning  Unsafe assignment of type `Uint8Array<any>` to a variable of type `Uint8Array<ArrayBufferLike>`  @typescript-eslint/no-unsafe-assignment
+  307:51  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  307:56  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  308:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  308:29  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  308:34  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  309:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  309:25  warning  Unsafe call of a(n) `any` typed value                                                            @typescript-eslint/no-unsafe-call
+  309:30  warning  Unsafe member access .generate_equality_proof on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  316:14  warning  Unsafe assignment of type `Uint8Array<any>` to a variable of type `Uint8Array<ArrayBufferLike>`  @typescript-eslint/no-unsafe-assignment
+  347:3   warning  'auditorPubkey' is defined but never used. Allowed unused args must match /^_/u                  @typescript-eslint/no-unused-vars
+  394:51  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  394:56  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  395:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  395:29  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  395:34  warning  Unsafe member access .ghostspeak_wasm on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+  396:11  warning  Unsafe assignment of an `any` value                                                              @typescript-eslint/no-unsafe-assignment
+  396:25  warning  Unsafe call of a(n) `any` typed value                                                            @typescript-eslint/no-unsafe-call
+  396:30  warning  Unsafe member access .generate_withdraw_proof on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  402:14  warning  Unsafe assignment of type `Uint8Array<any>` to a variable of type `Uint8Array<ArrayBufferLike>`  @typescript-eslint/no-unsafe-assignment
+  461:21  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  468:11  warning  Unsafe call of a(n) `any` typed value                                                            @typescript-eslint/no-unsafe-call
+  468:22  warning  Unsafe member access .default on an `any` value                                                  @typescript-eslint/no-unsafe-member-access
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/crypto/wasm-bridge.ts
+   87:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   93:11  warning  Unsafe assignment of an `any` value                                              @typescript-eslint/no-unsafe-assignment
+   93:33  warning  Unsafe member access .default on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   96:11  warning  Unsafe call of a(n) `any` typed value                                            @typescript-eslint/no-unsafe-call
+  148:9   warning  'perf' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  154:5   warning  Unexpected `await` of a non-Promise (non-"Thenable") value                       @typescript-eslint/await-thenable
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/errors/index.ts
+  451:7   warning  Unnecessary conditional, value is always falsy      @typescript-eslint/no-unnecessary-condition
+  614:49  warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+  673:38  warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/modules/channels/ChannelModule.ts
+  87:9   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  87:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  89:11  warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  89:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/analytics-aggregation.ts
+  214:9   warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+  215:70  warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/batch-proof-manager-wasm.ts
+  244:7   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  650:28  warning  Unexpected `await` of a non-Promise (non-"Thenable") value                                                                                                          @typescript-eslint/await-thenable
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/batch-proof-manager.ts
+  600:14  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/browser-compatibility.ts
+  91:31  warning  Unsafe member access .instantiate on an `error` typed value  @typescript-eslint/no-unsafe-member-access
+  92:31  warning  Unsafe member access .compile on an `error` typed value      @typescript-eslint/no-unsafe-member-access
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/bulletproofs.ts
+   16:16  warning  Unnecessary conditional, value is always truthy     @typescript-eslint/no-unnecessary-condition
+   34:10  warning  Unnecessary conditional, value is always truthy     @typescript-eslint/no-unnecessary-condition
+  156:9   warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+  156:50  warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+  201:12  warning  Unnecessary conditional, value is always truthy     @typescript-eslint/no-unnecessary-condition
+  410:10  warning  Unnecessary conditional, value is always truthy     @typescript-eslint/no-unnecessary-condition
+  483:10  warning  Unnecessary conditional, value is always truthy     @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/compressed-agent-helpers.ts
+  329:9  warning  'treeConfig' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/elgamal.ts
+   594:102  warning  `import()` type annotations are forbidden  @typescript-eslint/consistent-type-imports
+   626:80   warning  `import()` type annotations are forbidden  @typescript-eslint/consistent-type-imports
+   735:12   warning  '_e' is defined but never used             @typescript-eslint/no-unused-vars
+   889:12   warning  '_e' is defined but never used             @typescript-eslint/no-unused-vars
+   910:12   warning  '_e' is defined but never used             @typescript-eslint/no-unused-vars
+  1164:12   warning  '_e' is defined but never used             @typescript-eslint/no-unused-vars
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/enhanced-client-errors.ts
+  138:51  warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+  275:7   warning  Unnecessary conditional, value is always truthy     @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/error-monitoring.ts
+  498:7  warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/error-recovery.ts
+  444:9   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  464:11  warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/feature-flags.ts
+  84:43  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/feature-gate-detector.ts
+  277:3  warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/instruction-account-mapper.ts
+  117:10  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/instruction-error-handler.ts
+  225:10  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/ipfs-utils.ts
+  312:25  warning  Unsafe array destructuring of a tuple element with an `any` value                            @typescript-eslint/no-unsafe-assignment
+  314:25  warning  Unsafe argument of type `any` assigned to a parameter of type `Uint8Array<ArrayBufferLike>`  @typescript-eslint/no-unsafe-argument
+  380:27  warning  Unsafe array destructuring of a tuple element with an `any` value                            @typescript-eslint/no-unsafe-assignment
+  382:27  warning  Unsafe argument of type `any` assigned to a parameter of type `Uint8Array<ArrayBufferLike>`  @typescript-eslint/no-unsafe-argument
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/monitoring.ts
+  728:7  warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/private-metadata.ts
+  442:20  warning  Unexpected implicit coercion encountered. Use `Number(dataSize)` instead  no-implicit-coercion
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/rpc.ts
+  124:39  warning  Unnecessary conditional, comparison is always true, since `2 === 2` is true  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/specialized-helpers.ts
+  331:5  warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  398:7  warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/spl-token-integration.ts
+  403:9  warning  Unnecessary conditional, value is always truthy  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/token-2022-rpc.ts
+  473:42  warning  Unnecessary conditional, comparison is always true, since `2 >= 1` is true  @typescript-eslint/no-unnecessary-condition
+  662:42  warning  Unnecessary conditional, comparison is always true, since `2 >= 1` is true  @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/token-utils.ts
+  847:57  warning  Unnecessary conditional, the types have no overlap  @typescript-eslint/no-unnecessary-condition
+  919:29  warning  Unnecessary optional chain on a non-nullish value   @typescript-eslint/no-unnecessary-condition
+
+/Users/michelleeidschun/ghostspeak-1/packages/sdk-typescript/src/utils/wasm-crypto-bridge.ts
+  628:7  warning  Unexpected `await` of a non-Promise (non-"Thenable") value  @typescript-eslint/await-thenable
+  657:7  warning  Unexpected `await` of a non-Promise (non-"Thenable") value  @typescript-eslint/await-thenable
+
+✖ 308 problems (0 errors, 308 warnings)
+

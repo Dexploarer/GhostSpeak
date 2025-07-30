@@ -5,7 +5,8 @@
  * including volume tiers, enterprise pricing, and batch execution with real Web3.js v2 execution.
  */
 
-import type { Address, Signature, TransactionSigner } from '@solana/kit'
+import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import { 

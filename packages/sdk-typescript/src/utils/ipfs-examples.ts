@@ -6,8 +6,8 @@ import './text-encoder-polyfill.js'
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import type { IPFSConfig } from '../types/ipfs-types.js'
-import { AgentInstructions } from '../client/instructions/AgentInstructions.js'
-import { ChannelInstructions } from '../client/instructions/ChannelInstructions.js'
+import type { AgentInstructions } from '../client/instructions/AgentInstructions.js'
+import type { ChannelInstructions } from '../client/instructions/ChannelInstructions.js'
 import { createIPFSUtils } from './ipfs-utils.js'
 
 /**

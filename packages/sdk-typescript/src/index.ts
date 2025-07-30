@@ -107,6 +107,16 @@ export { ReputationInstructions } from './client/instructions/ReputationInstruct
 // Export TransactionSigner type from Solana kit
 export type { TransactionSigner } from '@solana/kit'
 
+// =====================================================
+// GENERATED TYPES EXPORTS (for CLI)
+// =====================================================
+
+// Re-export essential enums and types for CLI usage
+export { AuctionStatus } from './generated/types/auctionStatus.js'
+export { AuctionType } from './generated/types/auctionType.js'
+export { DisputeStatus } from './generated/types/disputeStatus.js'
+export { ProposalStatus } from './generated/types/proposalStatus.js'
+
 // Export discriminator validation and account migration utilities
 export {
   safeDecodeAgent,

@@ -224,7 +224,7 @@ export class SecureStorage {
 /**
  * Prompt for password securely (masks input)
  */
-export async function promptPassword(message: string = 'Enter password: '): Promise<string> {
+export async function promptPassword(message = 'Enter password: '): Promise<string> {
   const { createInterface } = await import('node:readline');
   const rl = createInterface({
     input: process.stdin,

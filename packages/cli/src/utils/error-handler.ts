@@ -14,7 +14,7 @@ export interface ErrorContext {
 }
 
 export class ErrorHandler {
-  private static readonly ERROR_MAPPINGS: Map<RegExp, (error: string) => ErrorInfo> = new Map([
+  private static readonly ERROR_MAPPINGS = new Map<RegExp, (error: string) => ErrorInfo>([
     [
       /insufficient funds|insufficient lamports/i,
       (error) => ({
@@ -169,7 +169,7 @@ export class ErrorHandler {
     if (errorInfo.suggestion || context?.suggestion) {
       console.log('')
       console.log(chalk.yellow('💡 ') + chalk.yellow.bold('What happened:'))
-      console.log(chalk.gray(`   ${errorInfo.suggestion || context.suggestion}`))
+      console.log(chalk.gray(`   ${errorInfo.suggestion || context?.suggestion}`))
     }
     
     // Display actions

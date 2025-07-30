@@ -159,8 +159,8 @@ export class RpcBatchProcessor<T> {
   private results: Map<number, T> = new Map()
   
   constructor(
-    private readonly maxBatchSize: number = 100,
-    private readonly delayMs: number = 10
+    private readonly maxBatchSize = 100,
+    private readonly delayMs = 10
   ) {}
 
   /**
@@ -199,7 +199,7 @@ export class RpcBatchProcessor<T> {
     )
 
     results.forEach((result, index) => {
-      if (result && typeof result === 'object' && 'error' in result) {
+      if ('error' in (result as object)) {
         throw (result as { error: unknown }).error
       }
       this.results.set(index, result as T)
@@ -232,7 +232,7 @@ export class TransactionHelpers {
    */
   static estimateTransactionFee(
     numSignatures: number,
-    lamportsPerSignature: bigint = 5000n
+    lamportsPerSignature = 5000n
   ): bigint {
     return BigInt(numSignatures) * lamportsPerSignature
   }
@@ -324,8 +324,8 @@ export class CommitmentUtils {
   static async waitForCommitment(
     getCurrentCommitment: () => Promise<Commitment>,
     targetCommitment: Commitment,
-    timeoutMs: number = 30000,
-    intervalMs: number = 1000
+    timeoutMs = 30000,
+    intervalMs = 1000
   ): Promise<void> {
     const startTime = Date.now()
 
@@ -579,7 +579,7 @@ export class LamportsUtils {
   /**
    * Format lamports as readable string
    */
-  static formatLamports(lamports: bigint, decimals: number = 9): string {
+  static formatLamports(lamports: bigint, decimals = 9): string {
     const sol = this.lamportsToSol(lamports)
     return sol.toFixed(decimals)
   }

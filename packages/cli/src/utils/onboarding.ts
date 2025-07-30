@@ -18,14 +18,13 @@ import {
 } from '@clack/prompts'
 import { WalletService } from '../services/wallet-service.js'
 import { initializeClient } from './client.js'
+import { createSolanaRpc } from '@solana/kit'
 import { 
-  successBox, 
-  warningBox, 
-  infoBox, 
   divider, 
   stepIndicator 
 } from './ui-helpers.js'
-import { estimateAndDisplay } from './cost-estimation.js'
+import { warningBox, successBox, infoBox } from './format-helpers.js'
+import { estimateAndDisplay } from '../services/cost-estimator.js'
 
 export interface OnboardingConfig {
   network?: 'devnet' | 'testnet' | 'mainnet-beta'
@@ -199,7 +198,7 @@ export class OnboardingService {
       process.exit(0)
     }
     
-    this.config.network = network as any
+    this.config.network = network as 'devnet' | 'testnet' | 'mainnet-beta'
     
     // Save network preference
     await this.saveProgress()
@@ -428,9 +427,16 @@ export class OnboardingService {
           faucetSpinner.start('Requesting SOL from faucet...')
           
           try {
-            // Import faucet functionality
-            const { requestAirdrop } = await import('../commands/faucet.js')
-            await requestAirdrop(wallet.address, 1000000000) // 1 SOL
+            // Use RPC airdrop directly
+            const rpcUrl = this.config.network === 'devnet' 
+              ? 'https://api.devnet.solana.com' 
+              : this.config.network === 'testnet'
+              ? 'https://api.testnet.solana.com'
+              : 'https://api.mainnet-beta.solana.com'
+            const rpc = createSolanaRpc(rpcUrl)
+            const lamports = BigInt(1_000_000_000) // 1 SOL
+            // @ts-expect-error Lamports type may differ between versions
+            const signature = await rpc.requestAirdrop(address(activeWallet.metadata.address), lamports).send()
             
             faucetSpinner.stop('✅ Received 1 SOL from faucet!')
             
@@ -499,7 +505,7 @@ export class OnboardingService {
       if (activeWallet) {
         const balanceInfo = await estimateAndDisplay(
           'agent-register',
-          activeWallet.metadata.address as any,
+          address(activeWallet.metadata.address),
           undefined,
           { showBreakdown: false }
         )
@@ -718,7 +724,7 @@ export function hasCompletedOnboarding(): boolean {
     const progressFile = join(homedir(), '.ghostspeak', 'onboarding-progress.json')
     if (!existsSync(progressFile)) return false
     
-    const data = JSON.parse(require('fs').readFileSync(progressFile, 'utf-8'))
+    const data = JSON.parse(readFileSync(progressFile, 'utf-8'))
     return data.completedSteps.includes('completion')
   } catch {
     return false

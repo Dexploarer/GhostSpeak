@@ -87,7 +87,7 @@ export class SimpleRpcClient {
         encoding: 'base64'
       }).send()
 
-      return (result.value ?? []).map((account: unknown) => 
+return result.value.map((account: unknown) => 
         account ? this.parseAccountInfo(account) : null
       )
     } catch (error) {

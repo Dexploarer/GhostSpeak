@@ -1,4 +1,4 @@
-import { 
+import type { 
   GhostSpeakError, 
   ErrorContext, 
   ErrorCategory, 
@@ -228,9 +228,9 @@ export class CircuitBreaker {
   private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED'
 
   constructor(
-    private failureThreshold: number = 5,
-    private timeout: number = 60000, // 1 minute
-    private monitoringPeriod: number = 10000 // 10 seconds
+    private failureThreshold = 5,
+    private timeout = 60000, // 1 minute
+    private monitoringPeriod = 10000 // 10 seconds
   ) {}
 
   /**

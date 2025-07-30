@@ -22,7 +22,7 @@ import {
 } from '../../types/reputation-types'
 import { ReputationCalculator } from '../../utils/reputation-calculator'
 import { handleInstructionError } from '../../utils/instruction-error-handler'
-import { TypedRpcClient } from '../../types/rpc-client-types'
+import type { TypedRpcClient } from '../../types/rpc-client-types'
 
 /**
  * Client for managing agent reputation operations
@@ -975,7 +975,7 @@ export class ReputationInstructions {
       // Get agent account data
       const accountInfo = await this.typedRpc.getAccountInfo(agentAddress, { encoding: 'base64' })
       
-      if (!accountInfo?.value) {
+      if (!accountInfo.value) {
         return 0n
       }
 
@@ -984,7 +984,7 @@ export class ReputationInstructions {
       const agentDecoder = getAgentDecoder()
       const agentData = agentDecoder.decode(new Uint8Array(Buffer.from(accountInfo.value.data as string, 'base64')))
       
-      return agentData.totalEarnings ?? 0n
+return agentData.totalEarnings
     } catch (error) {
       console.warn('Failed to get agent earnings:', error)
       return 0n

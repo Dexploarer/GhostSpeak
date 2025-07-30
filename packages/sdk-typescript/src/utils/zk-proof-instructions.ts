@@ -661,7 +661,7 @@ export function createCompleteProofVerificationFlow(
   const instructions: IInstruction[] = []
   
   // 1. Create context account
-  const proofType = proofInstruction.data?.[0] as ProofInstruction ?? ProofInstruction.VerifyTransfer
+  const proofType = proofInstruction.data?.[0] as ProofInstruction
   const space = calculateProofContextSpace(proofType)
   
   instructions.push(

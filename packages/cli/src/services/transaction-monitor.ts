@@ -9,7 +9,7 @@ import type { Address } from '@solana/addresses'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { Spinner } from '@clack/prompts'
+type Spinner = any // Type for @clack/prompts spinner
 
 export interface Transaction {
   id: string
@@ -54,7 +54,7 @@ export class TransactionMonitor {
   async startTransaction(
     signature: string,
     description: string,
-    network: string = 'devnet',
+    network = 'devnet',
     amount?: string
   ): Promise<string> {
     const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
@@ -131,7 +131,7 @@ export class TransactionMonitor {
     
     transaction.status = 'confirmed'
     
-    const message = finalMessage || `✅ ${transaction.description} completed!`
+    const message = finalMessage ?? `✅ ${transaction.description} completed!`
     spinner.stop(message)
     
     this.activeSpinners.delete(id)
@@ -144,7 +144,7 @@ export class TransactionMonitor {
   /**
    * Mark transaction as failed with error details
    */
-  setFailed(id: string, error: Error | string, canRetry: boolean = true): void {
+  setFailed(id: string, error: Error | string, canRetry = true): void {
     const spinner = this.activeSpinners.get(id)
     const transaction = this.transactions.get(id)
     
@@ -170,7 +170,7 @@ export class TransactionMonitor {
     const transaction = this.transactions.get(id)
     if (!transaction || transaction.status !== 'failed') return
     
-    transaction.retries = (transaction.retries || 0) + 1
+    transaction.retries = (transaction.retries ?? 0) + 1
     transaction.status = 'pending'
     transaction.error = undefined
     
@@ -184,7 +184,7 @@ export class TransactionMonitor {
   /**
    * Get transaction history
    */
-  getHistory(limit: number = 10): Transaction[] {
+  getHistory(limit = 10): Transaction[] {
     const allTransactions = Array.from(this.transactions.values())
     return allTransactions
       .sort((a, b) => b.timestamp - a.timestamp)
@@ -214,7 +214,7 @@ export class TransactionMonitor {
     console.log('')
     console.log(chalk.red('Error Details:'))
     
-    const errorMessage = transaction.error || 'Unknown error'
+    const errorMessage = transaction.error ?? 'Unknown error'
     const suggestion = this.getErrorSuggestion(errorMessage)
     
     console.log(chalk.gray(`  ${errorMessage}`))
@@ -225,7 +225,7 @@ export class TransactionMonitor {
       console.log(chalk.gray(`  ${suggestion}`))
     }
     
-    if (canRetry && (!transaction.retries || transaction.retries < 3)) {
+    if (canRetry && (transaction.retries === undefined || transaction.retries < 3)) {
       console.log('')
       console.log(chalk.gray('  You can retry this transaction with the same parameters'))
     }
@@ -317,7 +317,7 @@ export class TransactionMonitor {
   /**
    * Show recent transaction history
    */
-  showRecentTransactions(limit: number = 5): void {
+  showRecentTransactions(limit = 5): void {
     const recent = this.getHistory(limit)
     
     if (recent.length === 0) {
@@ -352,7 +352,7 @@ export class TransactionMonitor {
 export async function trackTransaction(
   signature: string,
   description: string,
-  network: string = 'devnet',
+  network = 'devnet',
   amount?: string
 ): Promise<string> {
   const monitor = TransactionMonitor.getInstance()
@@ -384,7 +384,7 @@ export function transactionSuccess(id: string, message?: string): void {
 export function transactionFailed(
   id: string,
   error: Error | string,
-  canRetry: boolean = true
+  canRetry = true
 ): void {
   const monitor = TransactionMonitor.getInstance()
   monitor.setFailed(id, error, canRetry)
@@ -393,7 +393,7 @@ export function transactionFailed(
 /**
  * Show transaction history
  */
-export function showTransactionHistory(limit: number = 5): void {
+export function showTransactionHistory(limit = 5): void {
   const monitor = TransactionMonitor.getInstance()
   monitor.showRecentTransactions(limit)
 }

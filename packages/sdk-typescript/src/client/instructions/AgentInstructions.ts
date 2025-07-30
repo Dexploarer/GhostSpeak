@@ -139,7 +139,7 @@ export class AgentInstructions extends BaseInstructions {
     console.log(`   Signer address: ${signer.address}`)
     console.log(`   Agent ID: ${params.agentId}`)
     console.log(`   Agent type: ${agentType}`)
-    console.log(`   Metadata URI: ${params.metadataUri?.substring(0, 50)}...`)
+    console.log(`   Metadata URI: ${params.metadataUri.substring(0, 50)}...`)
 
     try {
       // Pre-calculate the agent PDA to ensure consistency
@@ -269,9 +269,9 @@ export class AgentInstructions extends BaseInstructions {
           const maxDescLength = Math.floor(80 * compressionRatio)
           const compressedMetadata = {
             n: params.name.substring(0, Math.min(30, params.name.length)), // name
-            d: params.description?.substring(0, maxDescLength), // description
-            c: params.capabilities?.slice(0, 3).join(','), // capabilities as string
-            e: params.serviceEndpoint?.substring(0, 50), // endpoint
+            d: params.description.substring(0, maxDescLength), // description
+            c: params.capabilities.slice(0, 3).join(','), // capabilities as string
+            e: params.serviceEndpoint.substring(0, 50), // endpoint
             t: Math.floor(Date.now() / 1000), // timestamp
             agentId // Still include agent_id for updates
           }
@@ -282,7 +282,7 @@ export class AgentInstructions extends BaseInstructions {
           
           // If still too large, trim description further
           if (metadataUri.length > maxMetadataSize) {
-            compressedMetadata.d = compressedMetadata.d?.substring(0, 20) + '...'
+            compressedMetadata.d = compressedMetadata.d.substring(0, 20) + '...'
             const recompressedJson = JSON.stringify(compressedMetadata)
             const recompressedBase64 = Buffer.from(recompressedJson).toString('base64')
             metadataUri = `data:application/json;base64,${recompressedBase64}`
@@ -333,7 +333,7 @@ export class AgentInstructions extends BaseInstructions {
       throw new Error('Agent not found')
     }
     
-    if (agent.owner?.toString() !== signer.address.toString()) {
+    if (agent.owner.toString() !== signer.address.toString()) {
       throw new Error('You are not the owner of this agent')
     }
     
@@ -345,7 +345,7 @@ export class AgentInstructions extends BaseInstructions {
     
     // Extract current metadata if needed
     let currentMetadata: Record<string, unknown> = {}
-    if (!params.metadataUri && agent.metadataUri?.startsWith('data:application/json')) {
+    if (!params.metadataUri && agent.metadataUri.startsWith('data:application/json')) {
       try {
         const base64Data = agent.metadataUri.split(',')[1] ?? ''
         const parsed = JSON.parse(Buffer.from(base64Data, 'base64').toString()) as Record<string, unknown>
@@ -535,7 +535,7 @@ export class AgentInstructions extends BaseInstructions {
       throw new Error('Agent not found')
     }
     
-    if (agent.owner?.toString() !== signer.address.toString()) {
+    if (agent.owner.toString() !== signer.address.toString()) {
       throw new Error('You are not the owner of this agent')
     }
     
@@ -602,7 +602,7 @@ export class AgentInstructions extends BaseInstructions {
       throw new Error('Agent not found')
     }
     
-    if (agent.owner?.toString() !== signer.address.toString()) {
+    if (agent.owner.toString() !== signer.address.toString()) {
       throw new Error('You are not the owner of this agent')
     }
     
@@ -701,8 +701,8 @@ export class AgentInstructions extends BaseInstructions {
    * Get all agents (with pagination) using centralized pattern with discriminator validation
    */
   async getAllAgents(
-    limit: number = 100,
-    offset: number = 0
+    limit = 100,
+    offset = 0
   ): Promise<Agent[]> {
     try {
       // Import the discriminator to use as a filter
@@ -753,7 +753,7 @@ export class AgentInstructions extends BaseInstructions {
     return accounts
       .filter(({ data }) => 
         capabilities.some(capability => 
-          data.capabilities?.includes(capability)
+          data.capabilities.includes(capability)
         )
       )
       .map(({ address, data }) => ({ address, data }))
@@ -955,7 +955,7 @@ export class AgentInstructions extends BaseInstructions {
     
     // Filter agents owned by the specified address
     return accounts
-      .filter(({ data }) => data.owner?.toString() === options.owner.toString())
+      .filter(({ data }) => data.owner.toString() === options.owner.toString())
       .map(({ address, data }) => ({ address, data }))
   }
 
@@ -1125,8 +1125,8 @@ export class AgentInstructions extends BaseInstructions {
       }
     } else {
       // Fallback to calculating from individual agents
-      const totalEarnings = allAgents.reduce((sum, a) => sum + Number(a.totalEarnings ?? 0), 0)
-      const totalJobs = allAgents.reduce((sum, a) => sum + (a.totalJobsCompleted ?? 0), 0)
+const totalEarnings = allAgents.reduce((sum, a) => sum + Number(a.totalEarnings), 0)
+const totalJobs = allAgents.reduce((sum, a) => sum + (a.totalJobsCompleted), 0)
       
       return {
         totalEarnings,
@@ -1145,9 +1145,9 @@ export class AgentInstructions extends BaseInstructions {
         topClients: [],
         topCategories: ['Development', 'Design', 'Marketing'],
         topPerformers: allAgents
-          .sort((a, b) => Number(b.totalEarnings ?? 0) - Number(a.totalEarnings ?? 0))
+          .sort((a, b) => Number(b.totalEarnings) - Number(a.totalEarnings))
           .slice(0, 5)
-          .map(a => ({ agent: a.owner?.toString() ?? '', earnings: Number(a.totalEarnings ?? 0) })),
+          .map(a => ({ agent: a.owner.toString(), earnings: Number(a.totalEarnings) })),
         growthMetrics: {
           weeklyGrowth: 15,
           monthlyGrowth: 45,
@@ -1181,9 +1181,9 @@ export class AgentInstructions extends BaseInstructions {
     }
     
     return {
-      jobsCompleted: agent.totalJobsCompleted ?? 0,
-      totalEarnings: agent.totalEarnings ?? 0n,
-      successRate: agent.reputationScore ?? 100, // Use reputation score as proxy for success rate
+jobsCompleted: agent.totalJobsCompleted,
+totalEarnings: agent.totalEarnings,
+successRate: agent.reputationScore, // Use reputation score as proxy for success rate
       lastActive: agent.isActive ? BigInt(Date.now()) : null,
       currentJob: null // Would need to fetch from work order accounts
     }
@@ -1980,7 +1980,7 @@ export class AgentInstructions extends BaseInstructions {
         // Check capabilities if specified
         if (options.capabilities && options.capabilities.length > 0) {
           const hasCapability = options.capabilities.some(cap => 
-            agentInfo.data.capabilities?.includes(cap)
+            agentInfo.data.capabilities.includes(cap)
           )
           if (!hasCapability) continue
         }

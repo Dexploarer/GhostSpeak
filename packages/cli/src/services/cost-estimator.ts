@@ -50,7 +50,7 @@ export class CostEstimator {
   private static instance: CostEstimator
   private rpcUrl: string
   
-  private constructor(rpcUrl: string = 'https://api.devnet.solana.com') {
+  private constructor(rpcUrl = 'https://api.devnet.solana.com') {
     this.rpcUrl = rpcUrl
   }
   
@@ -231,7 +231,7 @@ export class CostEstimator {
     estimate: CostEstimate,
     options?: { showBreakdown?: boolean; confirmRequired?: boolean }
   ): Promise<BalanceInfo> {
-    const { showBreakdown = true, confirmRequired = false } = options || {}
+    const { showBreakdown = true, confirmRequired = false } = options ?? {}
     
     // Check current balance
     const balanceInfo = await this.checkAffordability(address, estimate)
@@ -287,7 +287,7 @@ export class CostEstimator {
   /**
    * Estimate costs for batch operations
    */
-  estimateBatchOperation(operations: { type: string; params?: any }[]): CostEstimate {
+  estimateBatchOperation(operations: { type: string; params?: Record<string, unknown> }[]): CostEstimate {
     let totalCost = BigInt(0)
     const breakdown: CostEstimate['breakdown'] = []
     
@@ -299,7 +299,7 @@ export class CostEstimator {
           opEstimate = this.estimateAgentRegistration()
           break
         case 'escrow-create':
-          opEstimate = this.estimateEscrowCreation(op.params?.amount || BigInt(0))
+          opEstimate = this.estimateEscrowCreation(op.params?.amount ?? BigInt(0))
           break
         case 'marketplace-listing':
           opEstimate = this.estimateMarketplaceListing()
@@ -341,7 +341,7 @@ export class CostEstimator {
 export async function estimateAndDisplay(
   operation: string,
   address: Address,
-  params?: any,
+  params?: Record<string, unknown>,
   options?: { showBreakdown?: boolean; rpcUrl?: string }
 ): Promise<BalanceInfo> {
   const estimator = CostEstimator.getInstance(options?.rpcUrl)
@@ -353,7 +353,7 @@ export async function estimateAndDisplay(
       estimate = estimator.estimateAgentRegistration()
       break
     case 'escrow-create':
-      estimate = estimator.estimateEscrowCreation(params?.amount || BigInt(0))
+      estimate = estimator.estimateEscrowCreation(params?.amount ?? BigInt(0))
       break
     case 'marketplace-listing':
       estimate = estimator.estimateMarketplaceListing()

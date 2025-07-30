@@ -2,7 +2,7 @@
  * Marketplace search services command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
@@ -47,7 +47,7 @@ export function registerSearchCommand(parentCommand: Command): void {
         // Search services by matching title, description, or service type
         const allServices = await client.marketplace.getServiceListings()
         const queryLower = (query as string).toLowerCase()
-        const results = allServices.filter((serviceWithAddr) => {
+        const results = allServices.filter((serviceWithAddr: any) => {
           const service = 'data' in serviceWithAddr ? serviceWithAddr.data : serviceWithAddr
           return service.title?.toLowerCase().includes(queryLower) ||
                  service.description?.toLowerCase().includes(queryLower) ||
@@ -65,7 +65,7 @@ export function registerSearchCommand(parentCommand: Command): void {
         console.log('\n' + chalk.bold(`🔍 Found ${results.length} services matching "${query}"`))
         console.log('─'.repeat(50))
 
-        results.forEach((service, index) => {
+        results.forEach((service: any, index: number) => {
           console.log(chalk.magenta(`${index + 1}. ${service.data.title}`))
           console.log(chalk.gray(`   By: Unknown | ${Number(service.data.price) / 1_000_000} SOL`))
           console.log(chalk.gray(`   ${service.data.description.slice(0, 60)}...`))

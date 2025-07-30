@@ -5,7 +5,8 @@
  * including filing disputes, evidence submission, and resolution with real Web3.js v2 execution.
  */
 
-import type { Address, Signature, TransactionSigner } from '@solana/kit'
+import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import { 
@@ -157,11 +158,11 @@ export class DisputeInstructions extends BaseInstructions {
 
     // Build instruction
     const instruction = getFileDisputeInstruction({
-      dispute: disputePda,
-      transaction: params.transaction,
-      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(complainant),
+      dispute: disputePda as Address,
+      transaction: params.transaction as Address,
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(complainant) as Address,
       complainant,
-      respondent: params.respondent,
+      respondent: params.respondent as Address,
       systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       clock: SYSVAR_CLOCK_ADDRESS,
       reason: params.reason
@@ -186,11 +187,11 @@ export class DisputeInstructions extends BaseInstructions {
     this.validateFileDisputeParams(params)
 
     const instruction = getFileDisputeInstruction({
-      dispute: disputePda,
-      transaction: params.transaction,
-      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(complainant),
+      dispute: disputePda as Address,
+      transaction: params.transaction as Address,
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(complainant) as Address,
       complainant,
-      respondent: params.respondent,
+      respondent: params.respondent as Address,
       systemProgram: SYSTEM_PROGRAM_ADDRESS_32,
       clock: SYSVAR_CLOCK_ADDRESS,
       reason: params.reason
@@ -249,10 +250,10 @@ export class DisputeInstructions extends BaseInstructions {
 
     // Build instruction
     const instruction = getSubmitDisputeEvidenceInstruction({
-      dispute: params.dispute,
-      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(submitter),
+      dispute: params.dispute as Address,
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(submitter) as Address,
       submitter,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       evidenceType: params.evidenceType,
       evidenceData: params.evidenceData
     })
@@ -282,10 +283,10 @@ export class DisputeInstructions extends BaseInstructions {
     this.validateEvidenceSubmissionAllowed(disputeData)
 
     const instruction = getSubmitDisputeEvidenceInstruction({
-      dispute: params.dispute,
-      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(submitter),
+      dispute: params.dispute as Address,
+      userRegistry: params.userRegistry ?? await this.deriveUserRegistry(submitter) as Address,
       submitter,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       evidenceType: params.evidenceType,
       evidenceData: params.evidenceData
     })
@@ -342,10 +343,10 @@ export class DisputeInstructions extends BaseInstructions {
 
     // Build instruction
     const instruction = getResolveDisputeInstruction({
-      dispute: params.dispute,
-      arbitratorRegistry: params.userRegistry ?? await this.deriveUserRegistry(moderator),
+      dispute: params.dispute as Address,
+      arbitratorRegistry: params.userRegistry ?? await this.deriveUserRegistry(moderator) as Address,
       arbitrator: moderator,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       resolution: params.resolution,
       awardToComplainant: params.rulingInFavorOfComplainant
     })
@@ -375,10 +376,10 @@ export class DisputeInstructions extends BaseInstructions {
     this.validateDisputeCanBeResolved(disputeData)
 
     const instruction = getResolveDisputeInstruction({
-      dispute: params.dispute,
-      arbitratorRegistry: params.userRegistry ?? await this.deriveUserRegistry(moderator),
+      dispute: params.dispute as Address,
+      arbitratorRegistry: params.userRegistry ?? await this.deriveUserRegistry(moderator) as Address,
       arbitrator: moderator,
-      clock: 'SysvarC1ock11111111111111111111111111111111' as Address,
+      clock: SYSVAR_CLOCK_ADDRESS,
       resolution: params.resolution,
       awardToComplainant: params.rulingInFavorOfComplainant
     })
@@ -421,15 +422,15 @@ export class DisputeInstructions extends BaseInstructions {
       transaction: dispute.transaction,
       complainant: dispute.complainant,
       respondent: dispute.respondent,
-      moderator: dispute.moderator?.__option === 'Some' ? dispute.moderator.value : undefined,
+      moderator: dispute.moderator.__option === 'Some' ? dispute.moderator.value : undefined,
       reason: dispute.reason,
       status: dispute.status,
       evidence: dispute.evidence,
-      resolution: dispute.resolution?.__option === 'Some' ? dispute.resolution.value : undefined,
+      resolution: dispute.resolution.__option === 'Some' ? dispute.resolution.value : undefined,
       aiScore: dispute.aiScore,
       humanReview: dispute.humanReview,
       createdAt: dispute.createdAt,
-      resolvedAt: dispute.resolvedAt?.__option === 'Some' ? dispute.resolvedAt.value : undefined,
+      resolvedAt: dispute.resolvedAt.__option === 'Some' ? dispute.resolvedAt.value : undefined,
       daysSinceCreated,
       evidenceCount: dispute.evidence.length
     }
@@ -455,7 +456,7 @@ export class DisputeInstructions extends BaseInstructions {
    * @param limit - Maximum number of disputes to return
    * @returns Array of dispute summaries
    */
-  async listDisputes(filter?: DisputeFilter, limit: number = 50): Promise<DisputeSummary[]> {
+  async listDisputes(filter?: DisputeFilter, limit = 50): Promise<DisputeSummary[]> {
     console.log('📋 Listing disputes...')
     
     try {
@@ -618,12 +619,12 @@ export class DisputeInstructions extends BaseInstructions {
         console.warn('Error monitoring dispute:', error)
       }
       
-      if (isActive) {
+      if (isMonitoring) {
         setTimeout(poll, 10000) // Poll every 10 seconds
       }
     }
     
-    poll()
+    void poll()
     
     return () => {
       console.log(`🛑 Stopping dispute monitoring for ${disputeAddress}`)
@@ -700,15 +701,15 @@ export class DisputeInstructions extends BaseInstructions {
       transaction: dispute.transaction,
       complainant: dispute.complainant,
       respondent: dispute.respondent,
-      moderator: dispute.moderator?.__option === 'Some' ? dispute.moderator.value : undefined,
+      moderator: dispute.moderator.__option === 'Some' ? dispute.moderator.value : undefined,
       reason: dispute.reason,
       status: dispute.status,
       evidence: dispute.evidence,
-      resolution: dispute.resolution?.__option === 'Some' ? dispute.resolution.value : undefined,
+      resolution: dispute.resolution.__option === 'Some' ? dispute.resolution.value : undefined,
       aiScore: dispute.aiScore,
       humanReview: dispute.humanReview,
       createdAt: dispute.createdAt,
-      resolvedAt: dispute.resolvedAt?.__option === 'Some' ? dispute.resolvedAt.value : undefined,
+      resolvedAt: dispute.resolvedAt.__option === 'Some' ? dispute.resolvedAt.value : undefined,
       daysSinceCreated,
       evidenceCount: dispute.evidence.length
     }

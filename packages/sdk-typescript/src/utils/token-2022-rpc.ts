@@ -22,7 +22,7 @@ import {
 import {
   createTypedRpcClient
 } from '../types/rpc-client-types.js'
-import {
+import type {
   type MintWithExtensions,
   type TokenAccountWithExtensions,
   ExtensionType,
@@ -608,29 +608,29 @@ export async function mintHasExtension(
 
   switch (extensionType) {
     case ExtensionType.TransferFeeConfig:
-      return !!mintData.extensions.transferFeeConfig
+      return Boolean(mintData.extensions.transferFeeConfig)
     case ExtensionType.MintCloseAuthority:
-      return !!mintData.extensions.mintCloseAuthority
+      return Boolean(mintData.extensions.mintCloseAuthority)
     case ExtensionType.ConfidentialTransferMint:
-      return !!mintData.extensions.confidentialTransferMint
+      return Boolean(mintData.extensions.confidentialTransferMint)
     case ExtensionType.DefaultAccountState:
-      return !!mintData.extensions.defaultAccountState
+      return Boolean(mintData.extensions.defaultAccountState)
     case ExtensionType.NonTransferable:
-      return !!mintData.extensions.nonTransferable
+      return Boolean(mintData.extensions.nonTransferable)
     case ExtensionType.InterestBearingConfig:
-      return !!mintData.extensions.interestBearingConfig
+      return Boolean(mintData.extensions.interestBearingConfig)
     case ExtensionType.PermanentDelegate:
-      return !!mintData.extensions.permanentDelegate
+      return Boolean(mintData.extensions.permanentDelegate)
     case ExtensionType.TransferHook:
-      return !!mintData.extensions.transferHook
+      return Boolean(mintData.extensions.transferHook)
     case ExtensionType.MetadataPointer:
-      return !!mintData.extensions.metadataPointer
+      return Boolean(mintData.extensions.metadataPointer)
     case ExtensionType.TokenMetadata:
-      return !!mintData.extensions.tokenMetadata
+      return Boolean(mintData.extensions.tokenMetadata)
     case ExtensionType.GroupPointer:
-      return !!mintData.extensions.groupPointer
+      return Boolean(mintData.extensions.groupPointer)
     case ExtensionType.TokenGroup:
-      return !!mintData.extensions.tokenGroup
+      return Boolean(mintData.extensions.tokenGroup)
     default:
       return false
   }

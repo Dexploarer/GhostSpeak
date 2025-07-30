@@ -1,6 +1,6 @@
 import { select, intro, outro, confirm, cancel, isCancel, log, spinner } from '@clack/prompts'
 import chalk from 'chalk'
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'

@@ -105,28 +105,21 @@ export class LocalStorageProvider implements StorageProvider {
   
   async store(data: Uint8Array): Promise<string> {
     const hash = bytesToHex(sha256(data))
-    if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
-      globalThis.localStorage.setItem(this.prefix + hash, bytesToHex(data))
-    }
+    globalThis.localStorage.setItem(this.prefix + hash, bytesToHex(data))
     return hash
   }
   
   async retrieve(hash: string): Promise<Uint8Array> {
-    if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
-      const hex = globalThis.localStorage.getItem(this.prefix + hash)
-      if (hex) {
-        return hexToBytes(hex)
-      }
+    const hex = globalThis.localStorage.getItem(this.prefix + hash)
+    if (hex) {
+      return hexToBytes(hex)
     }
     throw new Error(`Data not found: ${hash}`)
   }
   
   async delete(hash: string): Promise<boolean> {
-    if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
-      globalThis.localStorage.removeItem(this.prefix + hash)
-      return true
-    }
-    return false
+    globalThis.localStorage.removeItem(this.prefix + hash)
+    return true
   }
 }
 
@@ -446,12 +439,12 @@ export function estimateStorageCost(
   // In production, this would query actual storage costs
   if (provider === 'ipfs') {
     return {
-      cost: BigInt(dataSize * 1), // 1 lamport per byte
+      cost: BigInt(Number(dataSize) * 1), // 1 lamport per byte
       currency: 'lamports'
     }
   } else {
     return {
-      cost: BigInt(dataSize * 10), // 10 lamports per byte
+      cost: BigInt(Number(dataSize) * 10), // 10 lamports per byte
       currency: 'lamports'
     }
   }

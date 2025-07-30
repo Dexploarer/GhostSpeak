@@ -58,7 +58,7 @@ export function infoBox(message: string): void {
 /**
  * Create a visual divider
  */
-export function divider(char: string = '─', length: number = 50): void {
+export function divider(char = '─', length = 50): void {
   console.log(chalk.gray(char.repeat(length)))
 }
 

@@ -58,7 +58,7 @@ function main() {
 }
 
 // Check if this script is being run directly
-// eslint-disable-next-line no-undef
+ 
 if (require.main === module) {
   main();
 }

@@ -2,11 +2,12 @@
  * Shared utilities for agent commands
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import type { Address } from '@solana/addresses'
-import type { AgentCredentials } from '../../utils/agentWallet.js'
+import type { AgentAnalytics } from '@ghostspeak/sdk'
+// AgentCredentials type imported but not used directly in current implementation
 
 /**
  * Store a pending information request for an agent
@@ -37,7 +38,15 @@ export async function storePendingInfoRequest(
 /**
  * Get pending information requests for an agent
  */
-export function getPendingInfoRequests(agentAddress: string): any[] {
+interface InfoRequest {
+  type: string
+  agentAddress: string
+  requestedBy: string
+  timestamp: number
+  status: string
+}
+
+export function getPendingInfoRequests(agentAddress: string): InfoRequest[] {
   const requestsDir = join(homedir(), '.ghostspeak', 'pending-requests')
   
   if (!existsSync(requestsDir)) {
@@ -45,13 +54,12 @@ export function getPendingInfoRequests(agentAddress: string): any[] {
   }
   
   try {
-    const fs = require('fs')
-    const files = fs.readdirSync(requestsDir)
+    const files = readdirSync(requestsDir)
     const requests = []
     
     for (const file of files) {
       if (file.startsWith(agentAddress)) {
-        const requestData = JSON.parse(readFileSync(join(requestsDir, file), 'utf-8'))
+        const requestData = JSON.parse(readFileSync(join(requestsDir, file), 'utf-8')) as InfoRequest
         requests.push(requestData)
       }
     }
@@ -65,14 +73,14 @@ export function getPendingInfoRequests(agentAddress: string): any[] {
 /**
  * Format agent analytics for display
  */
-export function formatAnalytics(analytics: any): string[] {
+export function formatAnalytics(analytics: AgentAnalytics): string[] {
   return [
-    `Total Earnings: ${analytics.totalEarnings || 0} SOL`,
-    `Jobs Completed: ${analytics.jobsCompleted || 0}`,
-    `Success Rate: ${((analytics.successRate || 0) * 100).toFixed(1)}%`,
-    `Average Rating: ${(analytics.averageRating || 0).toFixed(1)}/5.0`,
-    `Total Transactions: ${analytics.totalTransactions || 0}`,
-    `Unique Clients: ${analytics.uniqueClients || 0}`
+    `Total Earnings: ${analytics.totalEarnings ?? 0n} SOL`,
+    `Jobs Completed: ${analytics.completedJobs ?? 0}`,
+    `Success Rate: ${((analytics.successRate ?? 0) * 100).toFixed(1)}%`,
+    `Average Rating: ${(analytics.averageRating ?? 0).toFixed(1)}/5.0`,
+    `Total Transactions: ${analytics.totalJobs ?? 0}`,
+    `Active Jobs: ${analytics.activeJobs ?? 0}`
   ]
 }
 
@@ -84,7 +92,10 @@ export function validateAgentParams(params: {
   description?: string
   capabilities?: string[]
   category?: string
-  pricing?: any
+  pricing?: {
+    amount: number
+    currency?: string
+  }
 }): string | null {
   if (!params.name || params.name.length < 3) {
     return 'Agent name must be at least 3 characters long'
@@ -108,7 +119,16 @@ export function validateAgentParams(params: {
 /**
  * Format agent display information
  */
-export function formatAgentInfo(agent: any): {
+interface AgentData {
+  name?: string
+  address?: { toString(): string }
+  description?: string
+  capabilities?: string[]
+  isActive?: boolean
+  createdAt?: number | bigint
+}
+
+export function formatAgentInfo(agent: AgentData): {
   name: string
   address: string
   description: string
@@ -117,9 +137,9 @@ export function formatAgentInfo(agent: any): {
   created: string
 } {
   return {
-    name: agent.name || 'Unknown',
+    name: agent.name ?? 'Unknown',
     address: agent.address ? agent.address.toString().slice(0, 8) + '...' + agent.address.toString().slice(-8) : 'Unknown',
-    description: agent.description || 'No description',
+    description: agent.description ?? 'No description',
     capabilities: Array.isArray(agent.capabilities) ? agent.capabilities.join(', ') : 'None',
     status: agent.isActive ? 'Active' : 'Inactive',
     created: agent.createdAt ? new Date(Number(agent.createdAt)).toLocaleDateString() : 'Unknown'

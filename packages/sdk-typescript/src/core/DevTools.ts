@@ -117,9 +117,9 @@ export class DevTools {
 
       const accounts: AccountInfo[] = (instr.accounts ?? []).map(acc => {
         // Check if the role has 'writable' in its name or is specifically writable
-        const isWritable = acc.role?.toString().includes('writable') ?? false
+        const isWritable = acc.role.toString().includes('writable')
         // Check if the role has 'signer' in its name
-        const isSigner = acc.role?.toString().includes('signer') ?? false
+        const isSigner = acc.role.toString().includes('signer')
         
         if (isWritable) {
           writableAccounts.add(acc.address)
@@ -210,7 +210,7 @@ export class DevTools {
       return 'Token-2022 Program: Advanced Token Operation'
     }
     
-    return `Unknown Instruction ${index + 1}`
+    return `Unknown Instruction`
   }
 
   /**

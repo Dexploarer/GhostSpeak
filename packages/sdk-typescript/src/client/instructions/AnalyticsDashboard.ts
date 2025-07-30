@@ -6,9 +6,9 @@
  */
 
 import type { Address, Commitment } from '@solana/kit'
-import { Connection } from '@solana/web3.js'
+import type { Connection } from '@solana/web3.js'
 import { EventEmitter } from 'events'
-import { 
+import type { 
   AnalyticsStreamer,
   type AnalyticsStreamOptions,
   type StreamedMetrics,

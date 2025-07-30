@@ -2,8 +2,9 @@
  * Shared SDK client initialization for CLI commands - July 2025 Standards
  */
 
-import { createSolanaRpc, createSolanaRpcSubscriptions, KeyPairSigner, createKeyPairSignerFromBytes, address, type TransactionSigner } from '@solana/kit'
-import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
+import type { KeyPairSigner} from '@solana/kit';
+import { createSolanaRpc, createSolanaRpcSubscriptions, createKeyPairSignerFromBytes, address, type TransactionSigner } from '@solana/kit'
+import { LegacyGhostSpeakClient as GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, existsSync, writeFileSync } from 'fs'
@@ -23,7 +24,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
   const walletService = new WalletService()
   
   // First try to use the active wallet from the new wallet service
-  const activeSigner = walletService.getActiveSigner()
+  const activeSigner = await walletService.getActiveSigner()
   if (activeSigner) {
     return activeSigner
   }
@@ -32,7 +33,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
   await walletService.migrateOldWallet()
   
   // Try again after migration
-  const postMigrationSigner = walletService.getActiveSigner()
+  const postMigrationSigner = await walletService.getActiveSigner()
   if (postMigrationSigner) {
     return postMigrationSigner
   }
@@ -46,7 +47,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
       
       // Import this wallet into the new system
-      await walletService.importWallet('migrated', new Uint8Array(walletData), config.network || 'devnet')
+      await walletService.importWallet('migrated', new Uint8Array(walletData), (config.network || 'devnet') as 'devnet' | 'testnet' | 'mainnet-beta')
       log.info('Migrated existing wallet to new wallet system')
       
       return signer
@@ -65,7 +66,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
       
       // Import this wallet
-      await walletService.importWallet('cli-wallet', new Uint8Array(walletData), config.network || 'devnet')
+      await walletService.importWallet('cli-wallet', new Uint8Array(walletData), (config.network || 'devnet') as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
     } catch (error) {
@@ -83,7 +84,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
       
       // Import this wallet
-      await walletService.importWallet('solana-cli', new Uint8Array(walletData), config.network || 'devnet')
+      await walletService.importWallet('solana-cli', new Uint8Array(walletData), (config.network || 'devnet') as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
     } catch (error) {
@@ -95,7 +96,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
   
   // Create new wallet if none exists
   log.info('No wallet found. Creating a new one...')
-  const { wallet, mnemonic } = await walletService.createWallet('default', config.network || 'devnet')
+  const { wallet, mnemonic } = await walletService.createWallet('default', (config.network || 'devnet') as 'devnet' | 'testnet' | 'mainnet-beta')
   
   log.success(`Created new wallet: ${wallet.metadata.address}`)
   log.warn('⚠️  Save your seed phrase:')
@@ -106,7 +107,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
   log.info(`  2. Fund your wallet: ${chalk.cyan('gs faucet')}`)
   log.info(`  3. Create an agent: ${chalk.cyan('gs agent register')}`)
   
-  const signer = walletService.getActiveSigner()
+  const signer = await walletService.getActiveSigner()
   if (!signer) {
     throw new Error('Failed to create wallet')
   }
@@ -248,8 +249,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   }
 
   return { 
-    // @ts-expect-error Client type includes our cleanup method
-    client: enhancedClient as GhostSpeakClient, 
+    client: enhancedClient, 
     wallet, 
     rpc 
   }
@@ -258,7 +258,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
 /**
  * Format transaction signature into explorer URL
  */
-export function getExplorerUrl(signature: string, network: string = 'devnet'): string {
+export function getExplorerUrl(signature: string, network = 'devnet'): string {
   const cluster = network === 'mainnet-beta' ? '' : `?cluster=${network}`
   return `https://explorer.solana.com/tx/${signature}${cluster}`
 }
@@ -266,7 +266,7 @@ export function getExplorerUrl(signature: string, network: string = 'devnet'): s
 /**
  * Format address into explorer URL
  */
-export function getAddressExplorerUrl(address: string, network: string = 'devnet'): string {
+export function getAddressExplorerUrl(address: string, network = 'devnet'): string {
   const cluster = network === 'mainnet-beta' ? '' : `?cluster=${network}`
   return `https://explorer.solana.com/address/${address}${cluster}`
 }

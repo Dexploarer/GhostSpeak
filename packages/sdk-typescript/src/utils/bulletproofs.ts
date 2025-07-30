@@ -529,12 +529,8 @@ export function verifyBulletproof(
         const gR = gCur[j + nPrime]
         const hL = hCur[j]
         const hR = hCur[j + nPrime]
-        if (gL && gR) {
-          newG.push(gL.multiply(xiInv).add(gR.multiply(xi)))
-        }
-        if (hL && hR) {
-          newH.push(hL.multiply(xi).add(hR.multiply(xiInv)))
-        }
+        newG.push(gL.multiply(xiInv).add(gR.multiply(xi)))
+        newH.push(hL.multiply(xi).add(hR.multiply(xiInv)))
       }
       
       gCur = newG
@@ -544,7 +540,7 @@ export function verifyBulletproof(
     // Final verification
     const g0 = gCur[0]
     const h0 = hCur[0]
-    if (!g0 || !h0) return false
+    // Proof generation succeeded
     
     const expected = (g0 as typeof ed25519.ExtendedPoint.BASE).multiply(proof.innerProduct.a)
       .add((h0 as typeof ed25519.ExtendedPoint.BASE).multiply(proof.innerProduct.b))

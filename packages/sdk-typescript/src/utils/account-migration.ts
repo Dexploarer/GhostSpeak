@@ -5,7 +5,7 @@
  * different discriminator formats to the current format.
  */
 
-import { EncodedAccount, MaybeEncodedAccount } from '@solana/kit';
+import type { EncodedAccount, MaybeEncodedAccount } from '@solana/kit';
 import { 
   validateAccountDiscriminator, 
   inspectAccountData 

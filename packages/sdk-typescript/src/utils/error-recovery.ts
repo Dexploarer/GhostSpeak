@@ -9,7 +9,7 @@
  * - Error monitoring and analytics
  */
 
-import {
+import type {
   GhostSpeakError,
   ErrorContext,
   ErrorCategory,

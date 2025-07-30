@@ -17,7 +17,7 @@ export const updateCommand = new Command('update')
       s.start('Checking current version...')
       
       // Get current version - foolproof approach
-      let currentVersion: string = '1.12.0' // Fallback version
+      let currentVersion = '1.12.0' // Fallback version
       
       // First, try to get version from the program itself
       const programVersion = updateCommand.parent?.version()

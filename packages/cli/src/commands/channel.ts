@@ -24,6 +24,10 @@ interface Channel {
   channelType?: string
   visibility?: string
   isPrivate?: boolean
+  messageCount?: number
+  createdAt?: bigint
+  lastActivity?: bigint
+  isActive?: boolean
 }
 
 interface ChannelWithAgentInfo extends Channel {
@@ -215,7 +219,7 @@ channelCommand
             const rawChannels = await client.channel.listByParticipant({
               participant: agent.address
             })
-            channels = rawChannels.map((ch) => ({ ...ch, agentName: agent.data.name || 'Agent' }))
+            channels = rawChannels.map(ch => ({ ...ch, agentName: agent.data.name || 'Agent' }))
           } else {
             // SDK doesn't support channel listing yet
             console.log(chalk.gray(`  No channels found for ${agent.data.name} (SDK limitation)`))

@@ -127,7 +127,7 @@ export class GhostSpeakError extends Error {
  */
 export class NetworkError extends GhostSpeakError {
   constructor(
-    message: string = 'Network connection failed',
+    message = 'Network connection failed',
     options: {
       endpoint?: string
       context?: Partial<ErrorContext>
@@ -224,7 +224,7 @@ export class UnauthorizedError extends GhostSpeakError {
   public readonly requiredPermission?: string
   
   constructor(
-    message: string = 'Unauthorized access',
+    message = 'Unauthorized access',
     options: {
       requiredPermission?: string
       context?: Partial<ErrorContext>
@@ -290,7 +290,7 @@ export class InsufficientFundsError extends GhostSpeakError {
   public readonly availableAmount?: number
   
   constructor(
-    message: string = 'Insufficient funds for transaction',
+    message = 'Insufficient funds for transaction',
     options: {
       requiredAmount?: number
       availableAmount?: number
@@ -357,7 +357,7 @@ export class RateLimitError extends GhostSpeakError {
   public readonly retryAfter?: number
   
   constructor(
-    message: string = 'Rate limit exceeded',
+    message = 'Rate limit exceeded',
     options: {
       retryAfter?: number
       context?: Partial<ErrorContext>
@@ -388,7 +388,7 @@ export class TimeoutError extends GhostSpeakError {
   public readonly timeoutDuration?: number
   
   constructor(
-    message: string = 'Operation timed out',
+    message = 'Operation timed out',
     options: {
       timeoutDuration?: number
       context?: Partial<ErrorContext>
@@ -417,21 +417,21 @@ export class TimeoutError extends GhostSpeakError {
  * @deprecated Use the new error classes above
  */
 export class InvalidInstructionError extends ValidationError {
-  constructor(message: string = 'Invalid instruction data', logs?: string[]) {
+  constructor(message = 'Invalid instruction data', logs?: string[]) {
     super(message, { field: 'instruction', logs })
     this.name = 'InvalidInstructionError'
   }
 }
 
 export class StateChangeError extends TransactionError {
-  constructor(message: string = 'Account state has changed', logs?: string[]) {
+  constructor(message = 'Account state has changed', logs?: string[]) {
     super(message, { logs, retryable: true })
     this.name = 'StateChangeError'
   }
 }
 
 export class DeadlineError extends ValidationError {
-  constructor(message: string = 'Deadline must be in the future', logs?: string[]) {
+  constructor(message = 'Deadline must be in the future', logs?: string[]) {
     super(message, { field: 'deadline', logs })
     this.name = 'DeadlineError'
   }
@@ -460,17 +460,17 @@ export function parseErrorFromLogs(logs: string[], context?: Partial<ErrorContex
     }
     
     // Check for insufficient funds
-    if (log.includes('Error: Insufficient funds') ?? log.includes('InsufficientFunds')) {
+if (log.includes('Error: Insufficient funds')) {
       return new InsufficientFundsError(log, { logs, context })
     }
     
     // Check for invalid instruction data
-    if (log.includes('Error: Invalid instruction data') ?? log.includes('InvalidInstruction')) {
+if (log.includes('Error: Invalid instruction data')) {
       return new ValidationError(log, { field: 'instruction', logs, context })
     }
     
     // Check for account not found
-    if (log.includes('account not found') ?? log.includes('AccountNotFound')) {
+if (log.includes('account not found')) {
       const accountTypeMatch = /(\w+) account not found/.exec(log)
       const accountType = accountTypeMatch?.[1] ?? 'Account'
       const addressMatch = /([A-Za-z0-9]{32,44})/.exec(log)
@@ -479,29 +479,29 @@ export function parseErrorFromLogs(logs: string[], context?: Partial<ErrorContex
     }
     
     // Check for unauthorized access
-    if (log.includes('Unauthorized') ?? log.includes('not authorized') ?? log.includes('Access denied')) {
+if (log.includes('Unauthorized')) {
       return new UnauthorizedError(log, { logs, context })
     }
     
     // Check for deadline errors
-    if (log.includes('Deadline must be in the future') ?? log.includes('deadline')) {
+if (log.includes('Deadline must be in the future')) {
       return new ValidationError(log, { field: 'deadline', logs, context })
     }
     
     // Check for state change errors
-    if (log.includes('Account state has changed') ?? log.includes('state changed')) {
+if (log.includes('Account state has changed')) {
       return new TransactionError(log, { logs, context, retryable: true })
     }
     
     // Check for rate limiting
-    if (log.includes('Rate limit') ?? log.includes('Too Many Requests') ?? log.includes('429')) {
+if (log.includes('Rate limit')) {
       const retryAfterMatch = /retry after (\d+)/.exec(log)
       const retryAfter = retryAfterMatch ? parseInt(retryAfterMatch[1]) : undefined
       return new RateLimitError(log, { retryAfter, logs, context })
     }
     
     // Check for timeout errors
-    if (log.includes('timeout') ?? log.includes('Timeout')) {
+if (log.includes('timeout')) {
       return new TimeoutError(log, { logs, context })
     }
     
@@ -564,7 +564,7 @@ export function parseRpcError(error: ParseableError, context?: Partial<ErrorCont
     return new RateLimitError(message, { retryAfter, context, cause: error as Error })
   }
   
-  if (message.includes('Network Error') ?? message.includes('ENOTFOUND') ?? message.includes('ECONNRESET')) {
+if (message.includes('Network Error')) {
     return new NetworkError(message, { context, cause: error as Error })
   }
   
@@ -597,7 +597,7 @@ export function parseRpcError(error: ParseableError, context?: Partial<ErrorCont
     return new ValidationError(message, { context, cause: error as Error })
   }
   
-  if (message.includes('Failed to serialize') ?? message.includes('serialization error')) {
+if (message.includes('Failed to serialize')) {
     return new ValidationError('Invalid instruction data format', { 
       field: 'instruction', 
       context, 

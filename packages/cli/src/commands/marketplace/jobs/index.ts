@@ -2,7 +2,7 @@
  * Marketplace jobs command module
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 
 // Import and register job subcommands

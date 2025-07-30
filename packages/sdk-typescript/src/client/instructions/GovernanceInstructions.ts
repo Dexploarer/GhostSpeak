@@ -5,7 +5,8 @@
  * including multi-signature wallets, proposals, voting, and RBAC with real Web3.js v2 execution.
  */
 
-import type { Address, Signature, TransactionSigner } from '@solana/kit'
+import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
 import type { GhostSpeakConfig, EmergencyConfig } from '../../types/index.js'
 import { 
@@ -237,7 +238,7 @@ export class GovernanceInstructions extends BaseInstructions {
       multisigId: params.multisigId,
       threshold: params.threshold,
       signers: params.signers,
-      config: params.config ?? {
+config: params.config || {
         requireSequentialSigning: false,
         allowOwnerOffCurve: false
       }
@@ -670,8 +671,8 @@ export class GovernanceInstructions extends BaseInstructions {
       proposalId: proposal.proposalId,
       proposalType: proposal.proposalType,
       proposer: proposal.proposer,
-      title: proposal.title ?? 'Untitled Proposal',
-      description: proposal.description ?? 'No description',
+title: proposal.title,
+description: proposal.description,
       status: proposal.status,
       createdAt: proposal.createdAt,
       votingEndsAt,
@@ -693,7 +694,7 @@ export class GovernanceInstructions extends BaseInstructions {
    * @param limit - Maximum number of multisigs to return
    * @returns Array of multisig summaries
    */
-  async listMultisigs(filter?: MultisigFilter, limit: number = 50): Promise<MultisigSummary[]> {
+  async listMultisigs(filter?: MultisigFilter, limit = 50): Promise<MultisigSummary[]> {
     console.log('📋 Listing multisigs...')
     
     try {
@@ -724,7 +725,7 @@ export class GovernanceInstructions extends BaseInstructions {
    * @param limit - Maximum number of proposals to return
    * @returns Array of proposal summaries
    */
-  async listProposals(filter?: ProposalFilter, limit: number = 50): Promise<ProposalSummary[]> {
+  async listProposals(filter?: ProposalFilter, limit = 50): Promise<ProposalSummary[]> {
     console.log('📋 Listing proposals...')
     
     try {
@@ -888,12 +889,12 @@ export class GovernanceInstructions extends BaseInstructions {
         console.warn('Error monitoring proposal:', error)
       }
       
-      if (isActive) {
+      if (isMonitoring) {
         setTimeout(poll, 30000) // Poll every 30 seconds
       }
     }
     
-    poll()
+    void poll()
     
     return () => {
       console.log(`🛑 Stopping proposal monitoring for ${proposalAddress}`)
@@ -994,8 +995,8 @@ export class GovernanceInstructions extends BaseInstructions {
       proposalId: proposal.proposalId,
       proposalType: proposal.proposalType,
       proposer: proposal.proposer,
-      title: proposal.title ?? 'Untitled Proposal',
-      description: proposal.description ?? 'No description',
+title: proposal.title,
+description: proposal.description,
       status: proposal.status,
       createdAt: proposal.createdAt,
       votingEndsAt,

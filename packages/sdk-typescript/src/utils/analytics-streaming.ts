@@ -6,7 +6,7 @@
  */
 
 import type { Address, Commitment } from '@solana/kit'
-import { Connection, PublicKey } from '@solana/web3.js'
+import type { Connection, PublicKey } from '@solana/web3.js'
 import { EventEmitter } from 'events'
 import {
   getAgentAnalyticsEventDecoder,
@@ -359,7 +359,7 @@ export class AnalyticsStreamer extends EventEmitter {
     }
     
     // Aggregate agent events
-    const agentEvents = this.eventBuffer.get('AgentAnalyticsEvent') as AgentAnalyticsEvent[] ?? []
+const agentEvents = this.eventBuffer.get('AgentAnalyticsEvent') as AgentAnalyticsEvent[]
     if (agentEvents.length > 0) {
       const uniqueAgents = new Set(agentEvents.map(e => e.agent))
       metrics.agents.active = uniqueAgents.size
@@ -373,7 +373,7 @@ export class AnalyticsStreamer extends EventEmitter {
     }
     
     // Aggregate transaction events
-    const txEvents = this.eventBuffer.get('TransactionAnalyticsEvent') as TransactionAnalyticsEvent[] ?? []
+const txEvents = this.eventBuffer.get('TransactionAnalyticsEvent') as TransactionAnalyticsEvent[]
     if (txEvents.length > 0) {
       metrics.transactions.count = txEvents.length
       metrics.transactions.volume = txEvents.reduce((sum, e) => sum + e.amount, 0n)
@@ -384,7 +384,7 @@ export class AnalyticsStreamer extends EventEmitter {
     }
     
     // Aggregate economic events
-    const economicEvents = this.eventBuffer.get('EconomicMetricsEvent') as EconomicMetricsEvent[] ?? []
+const economicEvents = this.eventBuffer.get('EconomicMetricsEvent') as EconomicMetricsEvent[]
     if (economicEvents.length > 0) {
       const latestEconomic = economicEvents[economicEvents.length - 1]
       metrics.market.totalValueLocked = latestEconomic.totalValueLocked

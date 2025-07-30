@@ -64,7 +64,7 @@ export async function generateNewWallet(name?: string): Promise<WalletInfo & { m
   const walletName = name || 'quickstart-wallet'
   const { wallet, mnemonic } = await walletService.createWallet(walletName, 'devnet')
   
-  const signer = walletService.getSigner(walletName)
+  const signer = await walletService.getSigner(walletName)
   if (!signer) {
     throw new Error('Failed to create wallet')
   }
@@ -129,7 +129,7 @@ export async function checkWalletBalance(
 export async function fundWallet(
   walletAddress: string,
   network: 'devnet' | 'testnet',
-  targetAmount: number = 2
+  targetAmount = 2
 ): Promise<{ success: boolean; amount: number; errors: string[] }> {
   const s = spinner()
   s.start('Requesting SOL from faucets...')
@@ -167,7 +167,7 @@ export async function fundWallet(
         
         const data = await response.json() as { signature?: string; error?: string }
         result = {
-          success: !!data.signature,
+          success: Boolean(data.signature),
           signature: data.signature,
           amount: 1,
           error: data.error
@@ -185,7 +185,7 @@ export async function fundWallet(
         
         const data = await response.json() as { signature?: string; error?: string }
         result = {
-          success: !!data.signature,
+          success: Boolean(data.signature),
           signature: data.signature,
           amount: 1,
           error: data.error
@@ -289,7 +289,7 @@ export async function createMultisigWrapper(
   client: MinimalClient,
   signer: KeyPairSigner,
   name: string,
-  threshold: number = 1
+  threshold = 1
 ): Promise<{ address: string; signature: string }> {
   try {
     // Generate multisig ID

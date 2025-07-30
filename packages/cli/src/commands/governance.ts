@@ -15,7 +15,24 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { address } from '@solana/addresses'
-import { ProposalStatus, ProposalType, deriveMultisigPda, deriveProposalPda } from '@ghostspeak/sdk'
+import { deriveMultisigPda, deriveProposalPda } from '@ghostspeak/sdk'
+// Temporarily define enums locally until SDK exports are fixed
+export enum ProposalStatus {
+  Draft,
+  Active,
+  Succeeded,
+  Failed,
+  Executed,
+  Cancelled,
+  Passed
+}
+
+export enum ProposalType {
+  ConfigChange,
+  Upgrade,
+  Transfer,
+  Custom
+}
 import type {
   CreateMultisigOptions
 } from '../types/cli-types.js'
@@ -204,7 +221,7 @@ governanceCommand
             const multisigPda = await multisigDerive(
               client.config.programId!,
               wallet.address,
-              multisigId
+              multisigId.toString()
             )
             
             // Update multisig params with the ID
@@ -458,7 +475,7 @@ governanceCommand
             message: 'Do you have supporting documentation (links, research, specs)?'
           })
 
-          let documentation = []
+          const documentation = []
           if (!isCancel(hasDocumentation) && hasDocumentation) {
             let addingDocs = true
             while (addingDocs && documentation.length < 5) {
@@ -556,7 +573,7 @@ governanceCommand
             const proposalPda = await proposalDerive(
               client.config.programId!,
               address(multisigAddress),
-              proposalId
+              proposalId.toString()
             )
             
             // Update proposal params with the ID

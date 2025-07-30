@@ -2,21 +2,16 @@
  * Agent registration command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
   outro, 
-  text, 
   spinner,
   isCancel,
   cancel
 } from '@clack/prompts'
 import { registerAgentPrompts } from '../../prompts/agent.js'
-import { initializeClient, handleTransactionError, toSDKSigner } from '../../utils/client.js'
-import { AgentWalletManager, AgentCNFTManager, type AgentCredentials } from '../../utils/agentWallet.js'
-import { address } from '@solana/addresses'
-import type { KeyPairSigner } from '@solana/kit'
 import type { RegisterOptions } from '../../types/cli-types.js'
 import { validateAgentParams } from '../agent/helpers.js'
 import { container, ServiceTokens } from '../../core/Container.js'

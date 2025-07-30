@@ -59,7 +59,7 @@ import {
   fixEncoderSize,
   getAddressEncoder
 } from '@solana/kit'
-import { PublicKey, Connection } from '@solana/web3.js'
+import type { PublicKey, Connection } from '@solana/web3.js'
 
 // Re-export everything for convenience
 export * from '@solana/spl-token'
@@ -525,7 +525,7 @@ export async function calculateTransferAmountWithFee(
   connection: Connection,
   mint: Address,
   amount: bigint,
-  includesFee: boolean = false
+  includesFee = false
 ): Promise<{ amount: bigint; fee: bigint }> {
   const mintPubkey = new PublicKey(mint)
   

@@ -1,8 +1,8 @@
 import type { Address } from '@solana/addresses'
-import type { IInstruction, TransactionSigner, TransactionMessage, Signature, Blockhash } from '@solana/kit'
+import type { _IInstruction as IInstruction, TransactionSigner, Blockhash } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
 import { RpcClient } from './rpc-client.js'
-import { createTransactionResult, type TransactionResult } from '../utils/transaction-urls.js'
+import { _createTransactionResult as createTransactionResult } from '../utils/transaction-urls.js'
 import { logEnhancedError, createErrorContext } from '../utils/enhanced-client-errors.js'
 import { DevTools, type TransactionAnalysis } from './DevTools.js'
 import {
@@ -251,7 +251,7 @@ export class InstructionBuilder {
       const generated = await import('../generated/index.js')
       const decoderGetter = (generated as Record<string, unknown>)[decoderImportName] as (() => { decode: (data: Uint8Array | Buffer) => T })
       
-      if (!decoderGetter || typeof decoderGetter !== 'function') {
+      if (!decoderGetter) {
         throw new Error(`Decoder ${decoderImportName} not found`)
       }
 
@@ -281,7 +281,7 @@ export class InstructionBuilder {
       const generated = await import('../generated/index.js')
       const decoderGetter = (generated as Record<string, unknown>)[decoderImportName] as (() => { decode: (data: Uint8Array | Buffer) => T })
       
-      if (!decoderGetter || typeof decoderGetter !== 'function') {
+      if (!decoderGetter) {
         return addresses.map(() => null)
       }
 
@@ -345,7 +345,7 @@ export class InstructionBuilder {
       const generated = await import('../generated/index.js')
       const decoderGetter = (generated as Record<string, unknown>)[decoderImportName] as (() => { decode: (data: Uint8Array | Buffer) => T })
       
-      if (!decoderGetter || typeof decoderGetter !== 'function') {
+      if (!decoderGetter) {
         return []
       }
 

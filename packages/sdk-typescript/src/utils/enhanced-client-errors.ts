@@ -18,7 +18,7 @@ export class GhostSpeakSDKError extends Error {
 
   constructor(operation: string, originalError: Error, instructionName?: string) {
     const enhancedError = enhanceErrorMessage(originalError, instructionName ?? 'unknown');
-    super(enhancedError ?? 'Unknown error');
+    super(enhancedError);
     
     this.name = 'GhostSpeakSDKError';
     this.operation = operation;
@@ -197,7 +197,7 @@ export function validatePreconditions(checks: {
     if (!check.condition) {
       const error = new Error(check.message);
       const enhanced = enhanceErrorMessage(error, check.instructionName ?? 'unknown');
-      throw new Error(enhanced ?? 'Unknown error');
+      throw new Error(enhanced);
     }
   }
 }

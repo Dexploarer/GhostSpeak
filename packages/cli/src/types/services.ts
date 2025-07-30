@@ -11,7 +11,7 @@ export class ServiceError extends Error {
     message: string,
     public code: string,
     public suggestion?: string,
-    public canRetry: boolean = false
+    public canRetry = false
   ) {
     super(message)
     this.name = 'ServiceError'
@@ -40,7 +40,7 @@ export class NetworkError extends ServiceError {
 }
 
 export class UnauthorizedError extends ServiceError {
-  constructor(message: string = 'Unauthorized access') {
+  constructor(message = 'Unauthorized access') {
     super(message, 'UNAUTHORIZED', 'Make sure you have permission to perform this action', false)
     this.name = 'UnauthorizedError'
   }

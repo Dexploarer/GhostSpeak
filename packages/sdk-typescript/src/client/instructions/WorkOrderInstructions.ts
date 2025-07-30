@@ -647,7 +647,7 @@ export class WorkOrderInstructions extends BaseInstructions {
       [WorkOrderStatus.Cancelled]: [] // Terminal state
     }
 
-    return validTransitions[current]?.includes(target) ?? false
+    return validTransitions[current]?.includes(target)
   }
 
   /**

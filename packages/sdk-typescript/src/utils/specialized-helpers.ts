@@ -5,7 +5,7 @@
 
 import type { Address, Signature, Lamports } from '@solana/kit'
 import type { AccountInfo } from '../types/rpc-types.js'
-import { SimpleRpcClient } from './simple-rpc-client.js'
+import type { SimpleRpcClient } from './simple-rpc-client.js'
 import { SYSTEM_PROGRAM_ADDRESS } from '../constants/index.js'
 
 /**
@@ -322,7 +322,7 @@ export class GhostSpeakHelpers {
       }
 
       // Schedule next poll
-      if (isMonitoring && pollCount < maxPolls) {
+      if (isActive) {
         setTimeout(poll, currentInterval)
       }
     }
@@ -431,7 +431,7 @@ export class GhostSpeakHelpers {
       // Get pre and post account states
       const preBalances = transaction.meta?.preBalances ?? []
       const postBalances = transaction.meta?.postBalances ?? []
-      const accountKeys = transaction.transaction.message.accountKeys ?? []
+const accountKeys = transaction.transaction.message.accountKeys
 
       // Get current account states
       const currentAccounts = await this.rpcClient.getMultipleAccounts(accountsOfInterest)
@@ -519,8 +519,8 @@ export class GhostSpeakHelpers {
   async getAccountWithRetries<T>(
     address: Address,
     decoderName: string,
-    maxRetries: number = 3,
-    backoffMs: number = 1000
+    maxRetries = 3,
+    backoffMs = 1000
   ): Promise<T | null> {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {

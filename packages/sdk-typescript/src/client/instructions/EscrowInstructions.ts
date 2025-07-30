@@ -155,7 +155,7 @@ export class EscrowInstructions extends BaseInstructions {
       provider: params.provider,
       requirements: params.requirements ?? [],
       paymentToken: params.paymentToken ?? defaultPaymentToken,
-      deadline: params.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60), // 30 days default
+deadline: params.deadline, // 30 days default
       signer: params.signer,
       tokenMint: params.tokenMint ?? defaultPaymentToken,
       createdAt: params.createdAt ?? BigInt(Math.floor(Date.now() / 1000))

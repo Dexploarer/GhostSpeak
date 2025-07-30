@@ -2,13 +2,12 @@
  * Agent list command
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
   outro, 
-  spinner,
-  cancel
+  spinner
 } from '@clack/prompts'
 import type { ListOptions } from '../../types/cli-types.js'
 import { formatAgentInfo } from '../agent/helpers.js'

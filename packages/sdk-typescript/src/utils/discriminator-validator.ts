@@ -112,7 +112,7 @@ export async function safeDecodeAccount<T>(
   address: Address,
   decoder: (data: Uint8Array) => T,
   expectedDiscriminator: Uint8Array,
-  accountType: string = 'account'
+  accountType = 'account'
 ): Promise<{ account: T | null; validation: DiscriminatorValidationResult; needsAttention: boolean }> {
   try {
     // Fetch raw account data using compatible RPC interface

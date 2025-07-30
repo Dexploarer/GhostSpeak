@@ -194,7 +194,7 @@ export async function deriveJobContractPda(
 /**
  * Generate a unique ID for listings/jobs
  */
-export function generateUniqueId(prefix: string = ''): string {
+export function generateUniqueId(prefix = ''): string {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
   return prefix ? `${prefix}-${timestamp}-${random}` : `${timestamp}-${random}`

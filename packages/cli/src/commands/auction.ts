@@ -15,7 +15,35 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { auctionTypeToString, formatSOL, solToLamports } from '../utils/auction-helpers.js'
 import { address } from '@solana/addresses'
-import { AuctionStatus, AuctionType, NATIVE_MINT_ADDRESS } from '@ghostspeak/sdk'
+import { NATIVE_MINT_ADDRESS } from '@ghostspeak/sdk'
+// Temporarily define enums locally until SDK exports are fixed
+export enum AuctionStatus {
+  Active,
+  Ended,
+  Cancelled,
+  Settled,
+}
+
+export enum AuctionType {
+  English,
+  Dutch,
+  SealedBid,
+  Vickrey,
+}
+
+// Type for raw auction data from SDK
+interface RawAuctionData {
+  auction: { toString(): string }
+  auctionType: AuctionType
+  currentPrice: bigint
+  startingPrice: bigint
+  reservePrice: bigint
+  auctionEndTime: bigint
+  totalBids: number
+  minimumBidIncrement: bigint
+  currentWinner?: { toString(): string }
+  creator: { toString(): string }
+}
 import type {
   CreateAuctionOptions,
   BidAuctionOptions,
@@ -221,7 +249,7 @@ auctionCommand
         
       } catch (error) {
         s.stop('❌ Auction creation failed')
-        await handleTransactionError(error as Error)
+        handleTransactionError(error as Error)
       }
       
     } catch (error: unknown) {
@@ -265,7 +293,7 @@ auctionCommand
           const rawAuctions = await client.auction.listAuctions({
             creator: wallet.address
           })
-          auctions = rawAuctions.map(a => ({
+          auctions = (rawAuctions as RawAuctionData[]).map(a => ({
             address: a.auction.toString(),
             auctionType: auctionTypeToString(a.auctionType),
             currentBid: a.currentPrice,
@@ -284,7 +312,7 @@ auctionCommand
       } else if (options.status === 'ending') {
         try {
           const rawAuctions = await client.auction.getAuctionsEndingSoon(3600) // Next hour
-          auctions = rawAuctions.map(a => ({
+          auctions = (rawAuctions as RawAuctionData[]).map(a => ({
             address: a.auction.toString(),
             auctionType: auctionTypeToString(a.auctionType),
             currentBid: a.currentPrice,
@@ -311,7 +339,7 @@ auctionCommand
           const rawAuctions = await client.auction.listAuctions({
             auctionType: options.type ? typeMap[options.type] : undefined
           })
-          auctions = rawAuctions.map(a => ({
+          auctions = (rawAuctions as RawAuctionData[]).map(a => ({
             address: a.auction.toString(),
             auctionType: auctionTypeToString(a.auctionType),
             currentBid: a.currentPrice,
@@ -559,7 +587,7 @@ auctionCommand
         
       } catch (error) {
         s.stop('❌ Bid placement failed')
-        await handleTransactionError(error as Error)
+        handleTransactionError(error as Error)
       }
       
     } catch (error: unknown) {
@@ -615,7 +643,7 @@ auctionCommand
         // Start monitoring with SDK method
         const stopMonitoring = await client.auction.monitorAuction(
           auctionAddress,
-          (auction) => {
+          (auction: RawAuctionData) => {
             // Check for bid updates
             if (auction.currentPrice !== lastBidAmount) {
               const bidDiff = Number(auction.currentPrice - lastBidAmount) / 1_000_000_000
@@ -666,7 +694,7 @@ auctionCommand
 
         log.info(`\n${chalk.bold('Auctions Ending Soon:')}\n`)
         
-        auctions.forEach((auction) => {
+        auctions.forEach(auction => {
           const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
           const hoursLeft = Math.floor(timeLeft / 3600)
           const minutesLeft = Math.floor((timeLeft % 3600) / 60)
@@ -710,7 +738,7 @@ auctionCommand
       
       // Fetch completed/settled auctions
       const auctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
-      const myAuctions = auctions.filter((a) => a.creator === wallet.address)
+      const myAuctions = auctions.filter(a => a.creator === wallet.address)
       
       s.stop(`✅ Found ${myAuctions.length} completed auctions`)
 
@@ -743,10 +771,10 @@ auctionCommand
           return
         }
 
-        selectedAuction = auctionChoice
+        selectedAuction = auctionChoice as string
       }
 
-      const auction = myAuctions.find((a) => a.auction.toString() === selectedAuction)
+      const auction = myAuctions.find(a => a.address === selectedAuction)
       if (!auction) {
         log.error('Auction not found or not owned by you')
         return
@@ -800,7 +828,7 @@ auctionCommand
         
       } catch (error) {
         s.stop('❌ Auction finalization failed')
-        await handleTransactionError(error as Error)
+        handleTransactionError(error as Error)
       }
       
     } catch (error: unknown) {

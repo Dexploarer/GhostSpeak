@@ -5,7 +5,7 @@
  * Provides SOL from multiple faucet sources for development
  */
 
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import { generateKeyPairSigner, createSolanaRpc, address } from '@solana/kit'
 import fs from 'fs/promises'
 import path from 'path'
@@ -41,7 +41,7 @@ interface FaucetResult {
 async function requestFromSolanaFaucet(
   walletAddress: string, 
   network: 'devnet' | 'testnet',
-  amount: number = 1
+  amount = 1
 ): Promise<FaucetResult> {
   try {
     console.log(`💧 Requesting ${amount} SOL from Solana faucet...`)
@@ -152,7 +152,7 @@ async function requestFromAlchemyFaucet(
 async function requestFromRpcAirdrop(
   walletAddress: string,
   network: 'devnet' | 'testnet',
-  amount: number = 1
+  amount = 1
 ): Promise<FaucetResult> {
   try {
     console.log(`🌐 Requesting ${amount} SOL via RPC airdrop...`)
@@ -429,8 +429,8 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
     console.log(`   Network: ${network}`)
     console.log(`   Balance: ${await checkBalance(walletAddress, network)} SOL`)
 
-    if (options.save && privateKey) {
-      console.log('\n💡 TIP: Your wallet has been saved. Use --wallet flag to reuse it.')
+    if (activeWallet) {
+      console.log('\n💡 TIP: Your wallet is saved. Use gs wallet list to see all wallets.')
     }
 
   } catch (error) {

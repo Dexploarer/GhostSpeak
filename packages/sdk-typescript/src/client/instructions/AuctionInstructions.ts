@@ -5,7 +5,8 @@
  * including creation, bidding, monitoring, and settlement with real Web3.js v2 execution.
  */
 
-import type { Address, Signature, TransactionSigner } from '@solana/kit'
+import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 import { BaseInstructions } from './BaseInstructions.js'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import { 
@@ -1002,7 +1003,7 @@ export class AuctionInstructions extends BaseInstructions {
       timeRemaining: bigint
       hasReachedReserve: boolean
     }) => void,
-    intervalMs: number = 1000
+    intervalMs = 1000
   ): () => void {
     console.log(`👀 Starting Dutch auction price monitoring for ${auctionAddress}`)
     
@@ -1040,7 +1041,7 @@ export class AuctionInstructions extends BaseInstructions {
       }
     }
 
-    poll()
+    void poll()
     
     return () => {
       console.log(`🛑 Stopping Dutch auction price monitoring for ${auctionAddress}`)
@@ -1190,7 +1191,7 @@ export class AuctionInstructions extends BaseInstructions {
 
     // Check extension count
     const MAX_EXTENSIONS = 3 // Should match Rust constant
-    const extensionCount = (auction as unknown as { extensionCount: number }).extensionCount ?? 0
+const extensionCount = (auction as unknown as { extensionCount: number }).extensionCount
     if (extensionCount >= MAX_EXTENSIONS) {
       return { 
         eligible: false, 
@@ -1291,8 +1292,8 @@ export class AuctionInstructions extends BaseInstructions {
       startingPrice: auction.startingPrice,
       reservePrice: auction.reservePrice,
       currentPrice: auction.currentPrice,
-      currentWinner: auction.currentWinner?.__option === 'Some' ? auction.currentWinner.value : undefined,
-      winner: auction.winner?.__option === 'Some' ? auction.winner.value : undefined,
+      currentWinner: auction.currentWinner.__option === 'Some' ? auction.currentWinner.value : undefined,
+      winner: auction.winner.__option === 'Some' ? auction.winner.value : undefined,
       auctionEndTime: auction.auctionEndTime,
       minimumBidIncrement: auction.minimumBidIncrement,
       totalBids: auction.totalBids,
@@ -1327,7 +1328,7 @@ export class AuctionInstructions extends BaseInstructions {
    * @param limit - Maximum number of auctions to return
    * @returns Array of auction summaries
    */
-  async listAuctions(filter?: AuctionFilter, limit: number = 50): Promise<AuctionSummary[]> {
+  async listAuctions(filter?: AuctionFilter, limit = 50): Promise<AuctionSummary[]> {
     console.log('📋 Listing auctions...')
     
     const accounts = await this.getDecodedProgramAccounts<AuctionMarketplace>('getAuctionMarketplaceDecoder')
@@ -1348,7 +1349,7 @@ export class AuctionInstructions extends BaseInstructions {
    * @param timeframe - Time in seconds to look ahead
    * @returns Array of auctions ending within timeframe
    */
-  async getAuctionsEndingSoon(timeframe: number = 3600): Promise<AuctionSummary[]> {
+  async getAuctionsEndingSoon(timeframe = 3600): Promise<AuctionSummary[]> {
     console.log(`⏰ Finding auctions ending in next ${timeframe} seconds...`)
     
     // In production, this would filter by auction_end_time
@@ -1420,7 +1421,7 @@ export class AuctionInstructions extends BaseInstructions {
       }
     }
     
-    poll()
+    void poll()
     
     return () => {
       console.log(`🛑 Stopping auction monitoring for ${auctionAddress}`)
@@ -1598,7 +1599,7 @@ export class AuctionInstructions extends BaseInstructions {
     }
 
     const MAX_EXTENSIONS = 3 // Should match Rust constant
-    const extensionCount = (auction as unknown as { extensionCount: number }).extensionCount ?? 0
+const extensionCount = (auction as unknown as { extensionCount: number }).extensionCount
     if (extensionCount >= MAX_EXTENSIONS) {
       throw new Error(`Cannot extend auction - maximum extensions (${MAX_EXTENSIONS}) reached`)
     }
@@ -1627,8 +1628,8 @@ export class AuctionInstructions extends BaseInstructions {
       startingPrice: auction.startingPrice,
       reservePrice: auction.reservePrice,
       currentPrice: auction.currentPrice,
-      currentWinner: auction.currentWinner?.__option === 'Some' ? auction.currentWinner.value : undefined,
-      winner: auction.winner?.__option === 'Some' ? auction.winner.value : undefined,
+      currentWinner: auction.currentWinner.__option === 'Some' ? auction.currentWinner.value : undefined,
+      winner: auction.winner.__option === 'Some' ? auction.winner.value : undefined,
       auctionEndTime: auction.auctionEndTime,
       minimumBidIncrement: auction.minimumBidIncrement,
       totalBids: auction.totalBids,

@@ -20,7 +20,7 @@ import type {
 } from '@solana/kit'
 
 // Re-export common types
-export type { Address, Signature, Blockhash, Slot, Epoch, Lamports }
+export type { Address, Signature, Blockhash, Slot, Epoch, Lamports, Base58EncodedBytes, Base64EncodedBytes }
 
 // Commitment levels with proper typing
 export type Commitment = 'processed' | 'confirmed' | 'finalized'

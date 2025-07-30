@@ -27,7 +27,7 @@ export async function checkConnectionHealth(rpc: RpcApi): Promise<boolean> {
     const response = await rpc.getLatestBlockhash().send()
     
     // Check if we got a valid response with blockhash
-    if (response?.value?.blockhash) {
+    if (response.value.blockhash) {
       return true
     }
     

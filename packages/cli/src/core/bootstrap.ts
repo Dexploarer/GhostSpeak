@@ -8,7 +8,7 @@ import { MarketplaceService } from '../services/MarketplaceService.js'
 import { WalletService } from '../services/wallet-service.js'
 import { BlockchainService } from '../services/blockchain/BlockchainService.js'
 import { StorageService } from '../services/storage/StorageService.js'
-import type { IWalletService, IBlockchainService, IStorageService } from '../types/services.js'
+import type { IWalletService, IBlockchainService, IStorageService, IAgentService } from '../types/services.js'
 
 /**
  * Initialize all services in the dependency injection container
@@ -40,12 +40,12 @@ export function bootstrapServices(): void {
   container.register(ServiceTokens.MARKETPLACE_SERVICE, () => {
     const walletService = container.resolve<IWalletService>(ServiceTokens.WALLET_SERVICE)
     const blockchainService = container.resolve<IBlockchainService>(ServiceTokens.BLOCKCHAIN_SERVICE)
-    const storageService = container.resolve<IStorageService>(ServiceTokens.STORAGE_SERVICE)
+    const agentService = container.resolve<IAgentService>(ServiceTokens.AGENT_SERVICE)
     
     return new MarketplaceService({
       walletService,
       blockchainService,
-      storageService
+      agentService
     })
   })
   

@@ -1,6 +1,7 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
+import { NATIVE_MINT_ADDRESS } from '../../constants/system-addresses.js'
 import {
   getCreateEscrowInstructionAsync,
   getCompleteEscrowInstruction,
@@ -127,7 +128,7 @@ export class EscrowModule extends BaseModule {
         paymentToken: this.nativeMint,
         authority: signer,
         tokenProgram: this.tokenProgramId,
-        clientRefundPercentage: Math.min(100, Math.max(0, Number((refundAmount * 100n / totalAmount).toString())))
+        clientRefundPercentage: Math.min(100, Math.max(0, Number((refundAmount * BigInt(100) / totalAmount).toString())))
       }),
       [signer]
     )
@@ -153,7 +154,7 @@ export class EscrowModule extends BaseModule {
   async getEscrowsByBuyer(buyer: Address): Promise<{ address: Address; data: Escrow }[]> {
     const filters = [{
       memcmp: {
-        offset: 8n, // Skip discriminator
+        offset: BigInt(8), // Skip discriminator
         bytes: buyer as string,
         encoding: 'base58' as const
       }
@@ -168,7 +169,7 @@ export class EscrowModule extends BaseModule {
   async getEscrowsBySeller(seller: Address): Promise<{ address: Address; data: Escrow }[]> {
     const filters = [{
       memcmp: {
-        offset: 40n, // Skip discriminator + buyer
+        offset: BigInt(40), // Skip discriminator + buyer
         bytes: seller as string,
         encoding: 'base58' as const
       }
@@ -198,7 +199,7 @@ export class EscrowModule extends BaseModule {
   }
 
   private get nativeMint(): Address {
-    return 'So11111111111111111111111111111111111111112' as Address
+    return NATIVE_MINT_ADDRESS
   }
 
   private get tokenProgramId(): Address {

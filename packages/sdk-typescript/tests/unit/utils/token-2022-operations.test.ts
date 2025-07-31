@@ -14,7 +14,7 @@ import {
   type Rpc,
   type Blockhash
 } from '@solana/kit'
-import { Token2022Instructions as Token2022Operations } from '../../../src/client/instructions/Token2022Instructions.js'
+import { Token2022Module as Token2022Operations } from '../../../src/modules/token2022/Token2022Module.js'
 import type { GhostSpeakConfig } from '../../../src/types/index.js'
 import type { 
   Token2022ExtensionsEnabled,

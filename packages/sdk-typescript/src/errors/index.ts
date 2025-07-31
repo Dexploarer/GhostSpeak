@@ -448,7 +448,7 @@ export class CustomProgramError extends ProgramError {
  * Enhanced error parsing with better error detection and categorization
  */
 export function parseErrorFromLogs(logs: string[], context?: Partial<ErrorContext>): GhostSpeakError | null {
-  if (!logs || logs.length === 0) return null
+  if (logs.length === 0) return null
 
   for (const log of logs) {
     // Check for Anchor errors with program error codes
@@ -460,17 +460,17 @@ export function parseErrorFromLogs(logs: string[], context?: Partial<ErrorContex
     }
     
     // Check for insufficient funds
-if (log.includes('Error: Insufficient funds')) {
+    if (log.includes('Error: Insufficient funds')) {
       return new InsufficientFundsError(log, { logs, context })
     }
     
     // Check for invalid instruction data
-if (log.includes('Error: Invalid instruction data')) {
+    if (log.includes('Error: Invalid instruction data')) {
       return new ValidationError(log, { field: 'instruction', logs, context })
     }
     
     // Check for account not found
-if (log.includes('account not found')) {
+    if (log.includes('account not found')) {
       const accountTypeMatch = /(\w+) account not found/.exec(log)
       const accountType = accountTypeMatch?.[1] ?? 'Account'
       const addressMatch = /([A-Za-z0-9]{32,44})/.exec(log)
@@ -479,29 +479,29 @@ if (log.includes('account not found')) {
     }
     
     // Check for unauthorized access
-if (log.includes('Unauthorized')) {
+    if (log.includes('Unauthorized')) {
       return new UnauthorizedError(log, { logs, context })
     }
     
     // Check for deadline errors
-if (log.includes('Deadline must be in the future')) {
+    if (log.includes('Deadline must be in the future')) {
       return new ValidationError(log, { field: 'deadline', logs, context })
     }
     
     // Check for state change errors
-if (log.includes('Account state has changed')) {
+    if (log.includes('Account state has changed')) {
       return new TransactionError(log, { logs, context, retryable: true })
     }
     
     // Check for rate limiting
-if (log.includes('Rate limit')) {
+    if (log.includes('Rate limit')) {
       const retryAfterMatch = /retry after (\d+)/.exec(log)
       const retryAfter = retryAfterMatch ? parseInt(retryAfterMatch[1]) : undefined
       return new RateLimitError(log, { retryAfter, logs, context })
     }
     
     // Check for timeout errors
-if (log.includes('timeout')) {
+    if (log.includes('timeout')) {
       return new TimeoutError(log, { logs, context })
     }
     
@@ -564,7 +564,7 @@ export function parseRpcError(error: ParseableError, context?: Partial<ErrorCont
     return new RateLimitError(message, { retryAfter, context, cause: error as Error })
   }
   
-if (message.includes('Network Error')) {
+  if (message.includes('Network Error')) {
     return new NetworkError(message, { context, cause: error as Error })
   }
   
@@ -597,7 +597,7 @@ if (message.includes('Network Error')) {
     return new ValidationError(message, { context, cause: error as Error })
   }
   
-if (message.includes('Failed to serialize')) {
+  if (message.includes('Failed to serialize')) {
     return new ValidationError('Invalid instruction data format', { 
       field: 'instruction', 
       context, 
@@ -611,7 +611,7 @@ if (message.includes('Failed to serialize')) {
     const [instructionIndex, instructionErrorRaw] = instructionErrorArray
     const instructionError = instructionErrorRaw
     
-    if (typeof instructionError === 'object' && instructionError !== null && 'Custom' in instructionError && instructionError.Custom !== undefined) {
+    if (typeof instructionError === 'object' && 'Custom' in instructionError) {
       const errorCode = instructionError.Custom as GhostspeakMarketplaceError
       return new ProgramError(errorCode, { instructionIndex: instructionIndex as number, context, cause: error as Error })
     }
@@ -670,7 +670,7 @@ export function extractSimulationError(result: SimulationResult, context?: Parti
     const instructionErrorArray = errorObj.InstructionError as [number, InstructionErrorDetails | string]
     const [instructionIndex, error] = instructionErrorArray
     
-    if (typeof error === 'object' && error !== null && 'Custom' in error && error.Custom !== undefined) {
+    if (typeof error === 'object' && 'Custom' in error) {
       const errorCode = error.Custom as GhostspeakMarketplaceError
       return new ProgramError(errorCode, { instructionIndex, logs, context })
     }

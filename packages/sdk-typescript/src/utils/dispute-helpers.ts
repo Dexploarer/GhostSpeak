@@ -406,8 +406,8 @@ export class DisputeAnalyticsUtils {
     )
     
     const averageResolutionTime = resolvedWithTime.length > 0
-      ? resolvedWithTime.reduce((sum, d) => sum + (d.resolvedAt! - d.createdAt), 0n) / BigInt(resolvedWithTime.length)
-      : 0n
+      ? resolvedWithTime.reduce((sum, d) => sum + (d.resolvedAt! - d.createdAt), BigInt(0)) / BigInt(resolvedWithTime.length)
+      : BigInt(0)
 
     return {
       totalDisputes,

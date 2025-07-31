@@ -310,7 +310,7 @@ export async function initializeConfidentialAccount(
       params.account,
       params.mint,
       params.elgamalKeypair.publicKey,
-      params.maximumPendingBalanceCreditCounter ?? 65536n
+      params.maximumPendingBalanceCreditCounter ?? BigInt(65536)
     )
   )
 
@@ -766,28 +766,28 @@ export function parseConfidentialTransferAccount(
           BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
           (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
           (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
-          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << BigInt(32))
         offset += 8
         
         const maximumPendingBalanceCreditCounter = 
           BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
           (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
           (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
-          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << BigInt(32))
         offset += 8
         
         const expectedPendingBalanceCreditCounter = 
           BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
           (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
           (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
-          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << BigInt(32))
         offset += 8
         
         const actualPendingBalanceCreditCounter = 
           BigInt(accountData[offset] | (accountData[offset + 1] << 8) | 
           (accountData[offset + 2] << 16) | (accountData[offset + 3] << 24)) |
           (BigInt(accountData[offset + 4] | (accountData[offset + 5] << 8) | 
-          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << 32n)
+          (accountData[offset + 6] << 16) | (accountData[offset + 7] << 24)) << BigInt(32))
         
         return {
           address,
@@ -860,7 +860,7 @@ function numberToBytes(num: bigint, length: number): Uint8Array {
   let temp = num
   for (let i = 0; i < length; i++) {
     bytes[i] = Number(temp & 0xFFn)
-    temp = temp >> 8n
+    temp = temp >> BigInt(8)
   }
   return bytes
 }

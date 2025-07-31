@@ -81,7 +81,7 @@ export class FeatureFlagManager {
    */
   private loadOverridesFromEnv(): void {
     // Check for environment variable overrides
-    if (typeof process !== 'undefined' && process.env) {
+    if (typeof process !== 'undefined') {
       const envOverrides: Partial<FeatureFlags> = {}
       
       // Parse boolean environment variables

@@ -6,8 +6,27 @@
  */
 
 import type { Address, Commitment } from '@solana/kit'
-import type { Connection, PublicKey } from '@solana/web3.js'
 import { EventEmitter } from 'events'
+// Create compatibility types for WebSocket functionality
+// v2 WebSocket subscriptions are not yet available in @solana/kit
+type Connection = any
+
+// Create a simple PublicKey compatibility class
+class PublicKey {
+  private _address: string
+
+  constructor(value: string | Address) {
+    this._address = typeof value === 'string' ? value : value.address
+  }
+
+  toString(): string {
+    return this._address
+  }
+
+  toBase58(): string {
+    return this._address
+  }
+}
 import {
   getAgentAnalyticsEventDecoder,
   getTransactionAnalyticsEventDecoder,
@@ -342,12 +361,12 @@ export class AnalyticsStreamer extends EventEmitter {
       },
       transactions: {
         count: 0,
-        volume: 0n,
-        averageValue: 0n,
+        volume: BigInt(0),
+        averageValue: BigInt(0),
         successRate: 0
       },
       performance: {
-        avgResponseTime: 0n,
+        avgResponseTime: BigInt(0),
         throughput: 0,
         errorRate: 0
       },

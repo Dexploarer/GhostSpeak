@@ -87,9 +87,12 @@ export interface BrowserConfig {
  */
 function detectWebAssembly(): boolean {
   try {
-    return typeof WebAssembly === 'object' &&
-           typeof WebAssembly.instantiate === 'function' &&
-           typeof WebAssembly.compile === 'function'
+    if (typeof WebAssembly !== 'object' || WebAssembly === null) {
+      return false
+    }
+    const wasm = WebAssembly as unknown as { instantiate?: unknown; compile?: unknown }
+    return typeof wasm.instantiate === 'function' &&
+           typeof wasm.compile === 'function'
   } catch {
     return false
   }

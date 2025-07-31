@@ -50,6 +50,8 @@ describe('WASM Crypto Bridge', () => {
     vi.restoreAllMocks()
     // Clean up WASM mock
     delete (globalThis as any).__WASM_MOCK__
+    // Reset WASM state
+    __resetWasmCrypto()
   })
 
   describe('Module Initialization', () => {
@@ -80,30 +82,52 @@ describe('WASM Crypto Bridge', () => {
       expect(isWasmCryptoAvailable()).toBe(false)
     })
 
-    it.skip('should return cached initialization promise', async () => {
-      // SKIPPED: This test fails due to module loading issues in the test environment
-      // The promise caching works correctly in practice, but the test environment
-      // creates race conditions with module auto-initialization
+    it('should return cached initialization promise', async () => {
+      // Reset the module state to ensure clean test
+      __resetWasmCrypto()
       
-      // For this test, we don't care if initialization succeeds or fails
-      // We just want to verify that the same promise is returned
+      // Set up a simple mock that will track calls
+      let initCallCount = 0
+      ;(globalThis as any).__WASM_MOCK__ = {
+        default: vi.fn().mockImplementation(async () => {
+          initCallCount++
+          return undefined
+        }),
+        is_wasm_available: vi.fn().mockReturnValue(true),
+        get_wasm_info: vi.fn().mockReturnValue({ version: 'test' }),
+        WasmElGamalEngine: vi.fn().mockImplementation(() => ({
+          encrypt_amount: vi.fn(),
+          batch_encrypt_amounts: vi.fn(),
+          generate_range_proof: vi.fn(),
+          batch_generate_range_proofs: vi.fn(),
+          get_performance_info: vi.fn(),
+          generate_keypair: vi.fn(),
+          run_benchmarks: vi.fn()
+        }))
+      }
       
-      // Remove the mock to ensure initialization fails quickly
-      delete (globalThis as any).__WASM_MOCK__
-      
-      // First call
+      // First call - starts initialization
       const promise1 = initializeWasmCrypto()
       
-      // Second call should return same promise
+      // Second call should return cached promise
       const promise2 = initializeWasmCrypto()
       
-      // Use toStrictEqual instead of toBe to check if they're the same reference
-      expect(promise1 === promise2).toBe(true)
+      // Third call for good measure
+      const promise3 = initializeWasmCrypto()
       
-      // Both should resolve to false (since no WASM module exists)
-      const [result1, result2] = await Promise.all([promise1, promise2])
-      expect(result1).toBe(false)
-      expect(result2).toBe(false)
+      // All should resolve to the same value
+      const [result1, result2, result3] = await Promise.all([promise1, promise2, promise3])
+      expect(result1).toBe(true)
+      expect(result2).toBe(true)
+      expect(result3).toBe(true)
+      
+      // Most importantly: the init function should only be called ONCE
+      // This proves promise caching is working
+      expect(initCallCount).toBe(1)
+      expect((globalThis as any).__WASM_MOCK__.default).toHaveBeenCalledTimes(1)
+      
+      // Verify is_wasm_available was also only called once
+      expect((globalThis as any).__WASM_MOCK__.is_wasm_available).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -127,7 +151,7 @@ describe('WASM Crypto Bridge', () => {
 
   describe('Keypair Generation', () => {
     it('should generate keypair using WASM when available', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const keypair = await generateElGamalKeypair()
@@ -154,7 +178,7 @@ describe('WASM Crypto Bridge', () => {
         throw new Error('WASM error')
       })
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockModule)
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       
@@ -170,7 +194,7 @@ describe('WASM Crypto Bridge', () => {
     const testRandomness = new Uint8Array(32).fill(2)
 
     it('should encrypt amount using WASM', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const ciphertext = await encryptAmount(testAmount, testPublicKey, testRandomness)
@@ -180,7 +204,7 @@ describe('WASM Crypto Bridge', () => {
     })
 
     it('should handle large amounts by capping at MAX_SAFE_INTEGER', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const largeAmount = BigInt(Number.MAX_SAFE_INTEGER) * 2n
@@ -193,7 +217,7 @@ describe('WASM Crypto Bridge', () => {
       const perfMock = mockPerformanceAPI()
       global.performance = perfMock as any
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       await encryptAmount(testAmount, testPublicKey)
@@ -210,7 +234,7 @@ describe('WASM Crypto Bridge', () => {
       }
       
       mockModule.WasmElGamalEngine = vi.fn().mockReturnValue(mockEngine)
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockModule)
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       
@@ -225,7 +249,7 @@ describe('WASM Crypto Bridge', () => {
     const testPublicKey = new Uint8Array(32).fill(1)
 
     it('should batch encrypt using WASM for multiple amounts', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const ciphertexts = await batchEncryptAmounts(testAmounts, testPublicKey)
@@ -238,7 +262,7 @@ describe('WASM Crypto Bridge', () => {
     })
 
     it('should use sequential encryption for single amount', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const ciphertexts = await batchEncryptAmounts([BigInt(100)], testPublicKey)
@@ -257,7 +281,7 @@ describe('WASM Crypto Bridge', () => {
         batch_encrypt: batchEncryptSpy
       }))
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockModule)
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       await batchEncryptAmounts(testAmounts, testPublicKey)
@@ -277,7 +301,7 @@ describe('WASM Crypto Bridge', () => {
         })
       }))
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockModule)
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       
@@ -293,7 +317,7 @@ describe('WASM Crypto Bridge', () => {
     const testBlindingFactor = new Uint8Array(32).fill(4)
 
     it('should generate range proof using WASM', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const result = await generateRangeProof(testAmount, testCommitment, testBlindingFactor)
@@ -314,7 +338,7 @@ describe('WASM Crypto Bridge', () => {
       
       global.performance = perfMock as any
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       await generateRangeProof(testAmount, testCommitment, testBlindingFactor)
@@ -334,7 +358,7 @@ describe('WASM Crypto Bridge', () => {
       }
       
       mockModule.WasmElGamalEngine = vi.fn().mockReturnValue(mockEngine)
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockModule)
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       
@@ -359,7 +383,7 @@ describe('WASM Crypto Bridge', () => {
     ]
 
     it('should batch generate range proofs using WASM', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const proofs = await batchGenerateRangeProofs(proofRequests)
@@ -382,7 +406,7 @@ describe('WASM Crypto Bridge', () => {
         batch_generate_range_proofs: batchProofSpy
       }))
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockModule)
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       await batchGenerateRangeProofs(proofRequests)
@@ -401,7 +425,7 @@ describe('WASM Crypto Bridge', () => {
       
       global.performance = perfMock as any
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const proofs = await batchGenerateRangeProofs(proofRequests)
@@ -413,7 +437,7 @@ describe('WASM Crypto Bridge', () => {
 
   describe('Performance Information', () => {
     it('should return performance info when WASM is available', async () => {
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const perfInfo = await getCryptoPerformanceInfo()
@@ -449,7 +473,7 @@ describe('WASM Crypto Bridge', () => {
         })
       }
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockModule)
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       const perfInfo = await getCryptoPerformanceInfo()
@@ -472,7 +496,7 @@ describe('WASM Crypto Bridge', () => {
       
       global.performance = perfMock as any
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const benchmarks = await runCryptoBenchmarks()
@@ -504,7 +528,7 @@ describe('WASM Crypto Bridge', () => {
       
       global.performance = perfMock as any
       
-      vi.doMock('../../../dist/wasm/ghostspeak_crypto_wasm.js', () => mockWasmModule())
+      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
       
       await initializeWasmCrypto()
       const benchmarks = await runCryptoBenchmarks()

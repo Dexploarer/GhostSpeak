@@ -12,7 +12,7 @@ declare module '@ghostspeak/sdk' {
   export const NATIVE_MINT_ADDRESS: Address
   
   // Main client
-  export class LegacyGhostSpeakClient {
+  export class GhostSpeakClient {
     constructor(config: ClientConfig)
     config: {
       rpc: RpcClient
@@ -44,9 +44,9 @@ declare module '@ghostspeak/sdk' {
   export interface RpcClient {
     getBalance(address: Address): Promise<{ value: bigint }>
     getAccountInfo(address: Address): Promise<AccountInfo | null>
-    sendTransaction(transaction: any): Promise<string>
+    sendTransaction(transaction: unknown): Promise<string>
     confirmTransaction(signature: string, commitment?: string): Promise<void>
-    getProgramAccounts(programId: Address, options?: any): { send(): Promise<ProgramAccount[]> }
+    getProgramAccounts(programId: Address, options?: Record<string, unknown>): { send(): Promise<ProgramAccount[]> }
     requestAirdrop(address: Address, lamports: bigint): { send(): Promise<string> }
   }
   
@@ -638,7 +638,7 @@ declare module '@ghostspeak/sdk' {
   // Transaction result type
   export interface TransactionResult {
     signature: string
-    [key: string]: any
+    [key: string]: unknown
   }
   
   export type GhostSpeakError = Error

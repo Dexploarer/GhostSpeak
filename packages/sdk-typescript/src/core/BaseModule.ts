@@ -5,6 +5,7 @@ type Signature = string
 import type { GhostSpeakConfig } from '../types/index.js'
 import { InstructionBuilder } from './InstructionBuilder.js'
 import type { TransactionResult } from '../utils/transaction-urls.js'
+import type { IInstruction } from '@solana/instructions'
 
 /**
  * Base class for all instruction modules using the unified InstructionBuilder.
@@ -34,12 +35,12 @@ export abstract class BaseModule {
    */
   protected async execute(
     instructionName: string,
-    instructionGetter: () => Promise<unknown> | unknown,
+    instructionGetter: () => Promise<IInstruction> | IInstruction,
     signers: TransactionSigner[]
   ): Promise<string> {
     return this.builder.execute(
       instructionName,
-      instructionGetter as never,
+      instructionGetter,
       signers
     ) as Promise<string>
   }
@@ -49,12 +50,12 @@ export abstract class BaseModule {
    */
   protected async executeWithDetails(
     instructionName: string,
-    instructionGetter: () => Promise<unknown> | unknown,
+    instructionGetter: () => Promise<IInstruction> | IInstruction,
     signers: TransactionSigner[]
   ): Promise<TransactionResult> {
     return this.builder.execute(
       instructionName,
-      instructionGetter as never,
+      instructionGetter,
       signers,
       { returnDetails: true }
     )
@@ -65,12 +66,12 @@ export abstract class BaseModule {
    */
   protected async executeBatch(
     batchName: string,
-    instructionGetters: (() => Promise<unknown> | unknown)[],
+    instructionGetters: (() => Promise<IInstruction> | IInstruction)[],
     signers: TransactionSigner[]
   ): Promise<Signature> {
     return this.builder.executeBatch(
       batchName,
-      instructionGetters as never[],
+      instructionGetters.map(getter => () => Promise.resolve(getter())),
       signers
     )
   }
@@ -80,12 +81,12 @@ export abstract class BaseModule {
    */
   protected async simulate(
     instructionName: string,
-    instructionGetter: () => Promise<unknown> | unknown,
+    instructionGetter: () => Promise<IInstruction> | IInstruction,
     signers: TransactionSigner[]
   ): Promise<unknown> {
     return this.builder.execute(
       instructionName,
-      instructionGetter as never,
+      () => Promise.resolve(instructionGetter()),
       signers,
       { simulate: true }
     )
@@ -96,7 +97,7 @@ export abstract class BaseModule {
    */
   public async simulateInstruction(
     instructionName: string,
-    instructionGetter: () => Promise<unknown> | unknown,
+    instructionGetter: () => Promise<IInstruction> | IInstruction,
     signers: TransactionSigner[]
   ): Promise<unknown> {
     return this.simulate(instructionName, instructionGetter, signers)
@@ -106,9 +107,9 @@ export abstract class BaseModule {
    * Estimate transaction cost
    */
   protected async estimateCost(
-    instructionGetters: (() => Promise<unknown> | unknown)[]
+    instructionGetters: (() => Promise<IInstruction> | IInstruction)[]
   ): Promise<bigint> {
-    return this.builder.estimateCost(instructionGetters as never[])
+    return this.builder.estimateCost(instructionGetters)
   }
 
   /**
@@ -116,9 +117,9 @@ export abstract class BaseModule {
    */
   async getCost(
     instructionName: string,
-    instructionGetter: () => Promise<unknown> | unknown
+    instructionGetter: () => Promise<IInstruction> | IInstruction
   ): Promise<bigint> {
-    return this.builder.estimateCost([instructionGetter as never])
+    return this.builder.estimateCost([instructionGetter])
   }
 
   /**
@@ -126,9 +127,9 @@ export abstract class BaseModule {
    */
   async explain(
     instructionName: string,
-    instructionGetter: () => Promise<unknown> | unknown
+    instructionGetter: () => Promise<IInstruction> | IInstruction
   ): Promise<string> {
-    return this.builder.explain(instructionName, [instructionGetter as never])
+    return this.builder.explain(instructionName, [instructionGetter])
   }
 
   /**
@@ -136,9 +137,9 @@ export abstract class BaseModule {
    */
   async analyze(
     instructionName: string,
-    instructionGetter: () => Promise<unknown> | unknown
+    instructionGetter: () => Promise<IInstruction> | IInstruction
   ): Promise<unknown> {
-    return this.builder.debug(instructionName, [instructionGetter as never])
+    return this.builder.debug(instructionName, [instructionGetter])
   }
 
   /**

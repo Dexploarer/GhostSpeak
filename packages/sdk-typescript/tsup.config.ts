@@ -41,12 +41,21 @@ export default defineConfig([
       '@solana/codecs-data-structures',
       '@solana/codecs-numbers',
       '@solana/codecs-strings',
+      '@solana/codecs',
       '@solana/errors',
       '@solana-program/system',
       '@solana-program/token-2022',
       '@noble/curves',
       '@noble/hashes',
-      'bs58'
+      'bs58',
+      // Node.js built-ins
+      'util',
+      'fs',
+      'http',
+      'https',
+      // External packages
+      'rpc-websockets',
+      '@solana/web3.js'
     ],
     tsconfig: 'tsconfig.json',
     // Bundle analysis

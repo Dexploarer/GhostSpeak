@@ -42,7 +42,7 @@ export function handleServiceError(error: unknown): ErrorInfo {
     
     return {
       message: error.message,
-      suggestion: error.suggestion || 'Please try again',
+      suggestion: error.suggestion ?? 'Please try again',
       actions,
       canRetry: error.canRetry
     }

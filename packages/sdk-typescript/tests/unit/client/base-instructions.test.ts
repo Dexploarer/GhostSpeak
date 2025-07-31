@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
 import type { IInstruction, TransactionSigner, Signature } from '@solana/kit'
-import { BaseInstructions } from '../../../src/client/instructions/BaseInstructions'
+import { BaseModule } from '../../../src/core/BaseModule.js'
 import type { GhostSpeakConfig, TransactionResult } from '../../../src/types'
 import { SimpleRpcClient } from '../../../src/utils/simple-rpc-client'
 

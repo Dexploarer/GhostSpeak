@@ -18,7 +18,7 @@ export async function safeGetAccountInfo(
 ): Promise<AccountInfo | null> {
   const rpcOptions = {
     commitment: options?.commitment ?? 'confirmed',
-    encoding: options.forceBase64 !== false ? 'base64' : (options.encoding ?? 'base64'),
+    encoding: options?.forceBase64 !== false ? 'base64' : (options.encoding ?? 'base64'),
     ...(options?.dataSlice && { dataSlice: options.dataSlice }),
     ...(options?.minContextSlot && { minContextSlot: options.minContextSlot })
   } as const

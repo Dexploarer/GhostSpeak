@@ -5,8 +5,6 @@ import {
   lamports,
   type Signature,
   type Base64EncodedWireTransaction,
-  type _Base58EncodedBytes,
-  type _Base64EncodedBytes,
   type TransactionError,
   type TransactionMessageBytesBase64
 } from '@solana/kit'
@@ -237,8 +235,8 @@ return result.value.map((status: unknown) => {
    */
   async isHealthy(): Promise<boolean> {
     try {
-      const result = await this.rpc.getHealth().send()
-      return result === 'ok'
+      await this.rpc.getHealth().send()
+      return true
     } catch {
       return false
     }
@@ -321,7 +319,7 @@ return result.value.map((status: unknown) => {
       executable: account.executable,
       lamports: typeof account.lamports === 'number' ? lamports(BigInt(account.lamports)) : account.lamports,
       owner: account.owner as Address,
-      rentEpoch: account.rentEpoch !== undefined ? (typeof account.rentEpoch === 'number' ? BigInt(account.rentEpoch) : account.rentEpoch) : 0n,
+      rentEpoch: account.rentEpoch !== undefined ? (typeof account.rentEpoch === 'number' ? BigInt(account.rentEpoch) : account.rentEpoch) : BigInt(0),
       data: Buffer.from(base64Data, 'base64'),
       space: account.space ? (typeof account.space === 'number' ? BigInt(account.space) : account.space) : undefined
     }

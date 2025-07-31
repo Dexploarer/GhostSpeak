@@ -1,26 +1,105 @@
 import type { Address } from '@solana/addresses'
 import type { Rpc } from '@solana/rpc'
 import type { TransactionSigner } from '@solana/kit'
-// TODO: Replace with actual @solana/spl-account-compression when available
-// For now, using placeholder implementations
-interface MerkleProof {
-  proof: unknown
-  leaf: unknown
-  root: unknown
-}
-
-const createMerkleTreeFromLeaves = (_leaves: Uint8Array[]) => ({
-  getProof: (_index: number) => ({ proof: [], leftSibling: false }),
-  root: new Uint8Array(32)
-})
-
-const createHash = (_data: Uint8Array) => new Uint8Array(32)
+import { sha256 } from '@noble/hashes/sha256'
 import type { IInstruction } from '@solana/instructions'
 import { 
   getBytesEncoder
 } from '@solana/kit'
-// TODO: Add CompressedAgentMetadata to generated types when available
-interface CompressedAgentMetadata {
+import { SYSTEM_PROGRAM_ADDRESS } from '../constants/system-addresses.js'
+
+// SPL Account Compression types and constants
+export const SPL_ACCOUNT_COMPRESSION_PROGRAM_ID = 'cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK' as Address
+export const SPL_NOOP_PROGRAM_ID = 'noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV' as Address
+
+// Merkle tree proof types
+export interface MerkleProof {
+  proof: Uint8Array[]
+  leafIndex: number
+  root: Uint8Array
+}
+
+// Helper function to compute leaf hash
+function computeLeafHash(data: Uint8Array): Uint8Array {
+  return sha256(Buffer.concat([Buffer.from([0]), data]))
+}
+
+// Helper function to compute branch hash
+function computeBranchHash(left: Uint8Array, right: Uint8Array): Uint8Array {
+  return sha256(Buffer.concat([Buffer.from([1]), left, right]))
+}
+
+// Simple Merkle tree implementation for proof generation
+class SimpleMerkleTree {
+  private leaves: Uint8Array[]
+  private nodes: Map<string, Uint8Array> = new Map()
+  public root: Uint8Array
+  
+  constructor(leaves: Uint8Array[]) {
+    this.leaves = leaves
+    this.root = this.buildTree()
+  }
+  
+  private buildTree(): Uint8Array {
+    // Build tree from bottom up
+    let currentLevel = this.leaves.map(leaf => computeLeafHash(leaf))
+    let levelIndex = 0
+    
+    while (currentLevel.length > 1) {
+      const nextLevel: Uint8Array[] = []
+      
+      for (let i = 0; i < currentLevel.length; i += 2) {
+        const left = currentLevel[i]
+        const right = i + 1 < currentLevel.length ? currentLevel[i + 1] : left
+        
+        // Store nodes for proof generation
+        this.nodes.set(`${levelIndex}-${i}`, left)
+        this.nodes.set(`${levelIndex}-${i + 1}`, right)
+        
+        nextLevel.push(computeBranchHash(left, right))
+      }
+      
+      currentLevel = nextLevel
+      levelIndex++
+    }
+    
+    return currentLevel[0]
+  }
+  
+  getProof(leafIndex: number): MerkleProof {
+    if (leafIndex >= this.leaves.length) {
+      throw new Error('Leaf index out of bounds')
+    }
+    
+    const proof: Uint8Array[] = []
+    let currentIndex = leafIndex
+    let levelSize = this.leaves.length
+    let levelIndex = 0
+    
+    while (levelSize > 1) {
+      const siblingIndex = currentIndex % 2 === 0 ? currentIndex + 1 : currentIndex - 1
+      
+      if (siblingIndex < levelSize) {
+        const siblingKey = `${levelIndex}-${siblingIndex}`
+        const sibling = this.nodes.get(siblingKey) ?? computeLeafHash(this.leaves[siblingIndex])
+        proof.push(sibling)
+      }
+      
+      currentIndex = Math.floor(currentIndex / 2)
+      levelSize = Math.ceil(levelSize / 2)
+      levelIndex++
+    }
+    
+    return {
+      proof,
+      leafIndex,
+      root: this.root
+    }
+  }
+}
+
+// Compressed agent metadata interface
+export interface CompressedAgentMetadata {
   owner: string
   agentId: string
   agent_type: string
@@ -71,7 +150,7 @@ export interface CompressedAgentParams {
  */
 export interface CompressedAgentProof {
   /** Merkle proof path */
-  proof: MerkleProof
+  proof: Uint8Array[]
   /** Leaf index in the tree */
   leafIndex: number
   /** Root hash of the tree */
@@ -120,9 +199,9 @@ export async function createCompressedAgentTree(
   const canopySize = Math.ceil((Math.pow(2, canopyDepth + 1) - 1) * 32 / 8)
   void (headerSize + canopySize) // Space calculation for reference
 
-  // TODO: Replace with actual program imports when available
-  const SystemProgram = { programAddress: '11111111111111111111111111111112' as Address }
-  const compressionProgramId = { programAddress: 'cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK' as Address }
+  // System and compression program addresses
+  const SystemProgram = { programAddress: SYSTEM_PROGRAM_ADDRESS }
+  const compressionProgramId = { programAddress: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID }
   
   // Generate tree keypair
   const { generateKeyPairSigner } = await import('@solana/signers')
@@ -219,44 +298,30 @@ export async function generateCompressedAgentProof(
   allLeaves: Uint8Array[]
 ): Promise<CompressedAgentProof> {
   // Serialize agent data to create leaf
-  interface AgentDataInterface {
-    owner: string
-    agentId: string
-    agent_type: string
-    metadata_uri: string
-    name: string
-    capabilities: string[]
-    created_at: number
-  }
-  const agent = agentData as AgentDataInterface
   const leafData = new TextEncoder().encode(JSON.stringify({
-    owner: agent.owner,
-    agentId: agent.agentId,
-    agentType: agent.agent_type,
-    metadataUri: agent.metadata_uri,
-    name: agent.name,
-    capabilities: agent.capabilities.join(','),
-    createdAt: agent.created_at
+    owner: agentData.owner,
+    agentId: agentData.agentId,
+    agentType: agentData.agent_type,
+    metadataUri: agentData.metadata_uri,
+    name: agentData.name,
+    capabilities: agentData.capabilities.join(','),
+    createdAt: agentData.created_at
   }))
   
-  // Create leaf hash
-  interface MerkleTree {
-    getProof(index: number): unknown
-    root: unknown
-  }
-  const leafHash = (createHash as (data: Uint8Array) => unknown)(leafData)
-  
   // Build Merkle tree from all leaves
-  const tree = (createMerkleTreeFromLeaves as (leaves: Uint8Array[]) => MerkleTree)(allLeaves)
+  const tree = new SimpleMerkleTree(allLeaves)
   
   // Generate proof
   const proof = tree.getProof(leafIndex)
   
+  // Create leaf hash
+  const leafHash = computeLeafHash(leafData)
+  
   return {
-    proof: proof as unknown as MerkleProof,
+    proof: proof.proof,
     leafIndex,
-    root: tree.root as unknown as Uint8Array,
-    leafHash: leafHash as unknown as Uint8Array
+    root: tree.root,
+    leafHash
   }
 }
 
@@ -269,22 +334,21 @@ export function verifyCompressedAgentProof(
 ): boolean {
   // Reconstruct the root from the proof
   let computedHash = proof.leafHash
+  let currentIndex = proof.leafIndex
   
-  interface ProofData {
-    proof: Uint8Array[]
-    leftSibling: boolean
-  }
-  const proofData = proof.proof as unknown as ProofData
-  for (const proofElement of proofData.proof) {
-    if (proofData.leftSibling) {
-      computedHash = (createHash as (data: Uint8Array) => Uint8Array)(new Uint8Array([...(proofElement as Uint8Array), ...(computedHash as Uint8Array)]))
+  for (const proofElement of proof.proof) {
+    if (currentIndex % 2 === 0) {
+      // Current node is left, proof element is right
+      computedHash = computeBranchHash(computedHash, proofElement)
     } else {
-      computedHash = (createHash as (data: Uint8Array) => Uint8Array)(new Uint8Array([...(computedHash as Uint8Array), ...(proofElement as Uint8Array)]))
+      // Current node is right, proof element is left
+      computedHash = computeBranchHash(proofElement, computedHash)
     }
+    currentIndex = Math.floor(currentIndex / 2)
   }
   
   // Compare with expected root
-  return (computedHash as Uint8Array).every((byte, i) => byte === expectedRoot[i])
+  return computedHash.every((byte, i) => byte === expectedRoot[i])
 }
 
 /**
@@ -326,7 +390,7 @@ export async function createCompressedAgentBatch(
   })
 
   // Check tree config
-  const treeConfig = await fetchMaybeAgentTreeConfig(rpc as unknown as Parameters<typeof fetchMaybeAgentTreeConfig>[0], treeAuthority)
+  const _treeConfig = await fetchMaybeAgentTreeConfig(rpc as unknown as Parameters<typeof fetchMaybeAgentTreeConfig>[0], treeAuthority)
   // Tree config found, proceed with registration
 
   const signatures: string[] = []
@@ -435,6 +499,11 @@ export async function getCompressedTreeState(
   treeCreator: Address
 }> {
   const treeConfig = await fetchMaybeAgentTreeConfig(rpc as unknown as Parameters<typeof fetchMaybeAgentTreeConfig>[0], treeAuthority)
+  
+  // Check if tree config exists
+  if (!treeConfig.exists) {
+    throw new Error('Tree config not found')
+  }
   
   // Tree config found, calculate usage
   

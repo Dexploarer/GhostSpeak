@@ -5,7 +5,8 @@
  * environment-specific and never hardcoded in the smart contracts.
  */
 
-import { Address, address } from '@solana/addresses'
+import type { Address } from '@solana/addresses'
+import { address } from '@solana/addresses'
 
 export interface SecurityConfig {
   /** Protocol admin public key */

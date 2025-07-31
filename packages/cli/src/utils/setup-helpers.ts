@@ -4,7 +4,7 @@
 
 import chalk from 'chalk'
 import { spinner } from '@clack/prompts'
-import { generateKeyPairSigner, createSolanaRpc, address, createKeyPairSignerFromBytes } from '@solana/kit'
+import { createSolanaRpc, address, createKeyPairSignerFromBytes } from '@solana/kit'
 import { existsSync, readFileSync } from 'fs'
 import { homedir } from 'os'
 import { FaucetService } from '../services/faucet-service.js'
@@ -61,7 +61,7 @@ export function showProgress(progress: SetupProgress): void {
  */
 export async function generateNewWallet(name?: string): Promise<WalletInfo & { mnemonic: string }> {
   const walletService = new WalletService()
-  const walletName = name || 'quickstart-wallet'
+  const walletName = name ?? 'quickstart-wallet'
   const { wallet, mnemonic } = await walletService.createWallet(walletName, 'devnet')
   
   const signer = await walletService.getSigner(walletName)
@@ -289,7 +289,7 @@ export async function createMultisigWrapper(
   client: MinimalClient,
   signer: KeyPairSigner,
   name: string,
-  threshold = 1
+  _threshold = 1
 ): Promise<{ address: string; signature: string }> {
   try {
     // Generate multisig ID

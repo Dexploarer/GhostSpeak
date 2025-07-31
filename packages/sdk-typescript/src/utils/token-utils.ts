@@ -643,7 +643,7 @@ export function calculateTokenAccountRent(extensions: TokenExtension[] = []): bi
   
   // Rough calculation: ~6,960 lamports per 128 bytes (current Solana rates)
   // This is a simplified calculation - actual implementation should use RPC
-  const lamportsPerByte = 54n  // Approximate current rate
+  const lamportsPerByte = BigInt(54)  // Approximate current rate
   return BigInt(accountSize) * lamportsPerByte
 }
 
@@ -742,7 +742,7 @@ export function formatTokenAmount(amount: bigint, decimals: number): string {
   const quotient = amount / divisor
   const remainder = amount % divisor
   
-  if (remainder === 0n) {
+  if (remainder === BigInt(0)) {
     return quotient.toString()
   }
   
@@ -844,7 +844,7 @@ export function parseTransferFeeConfig(
     }
 
     // Type guard and validation for transfer fee config structure
-    if (parsedData && typeof parsedData === 'object' && parsedData !== null) {
+    if (parsedData && typeof parsedData === 'object') {
       const config = parsedData as {
         transferFeeBasisPoints?: number
         maximumFee?: bigint | string | number
@@ -916,7 +916,7 @@ export async function fetchTransferFeeConfig(
     // Fetch mint data with extensions
     const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
     
-    if (!mintData.extensions?.transferFeeConfig) {
+    if (!mintData?.extensions.transferFeeConfig) {
       return null
     }
 

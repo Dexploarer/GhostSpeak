@@ -9,9 +9,9 @@
  * - Error monitoring and analytics
  */
 
-import type {
+import {
   GhostSpeakError,
-  ErrorContext,
+  type ErrorContext,
   ErrorCategory,
   ErrorSeverity,
   NetworkError,
@@ -441,7 +441,7 @@ export class AdvancedRetryHandler {
         )
         
         // Success callback
-        finalConfig.onSuccess?.(result, attempt + 1)
+        void finalConfig.onSuccess?.(result, attempt + 1)
         
         // Update metrics
         const metrics = this.operationMetrics.get(operationId)!
@@ -461,7 +461,7 @@ export class AdvancedRetryHandler {
         
         // Don't retry if this is the last attempt
         if (attempt === finalConfig.maxRetries) {
-          finalConfig.onMaxRetriesReached?.(lastError, attempt + 1)
+          void finalConfig.onMaxRetriesReached?.(lastError, attempt + 1)
           break
         }
         

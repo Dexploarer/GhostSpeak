@@ -1,8 +1,8 @@
 import type { Address } from '@solana/addresses'
-import type { _IInstruction as IInstruction, TransactionSigner, Blockhash } from '@solana/kit'
+import type { IInstruction, TransactionSigner, Blockhash, Base64EncodedBytes, Base58EncodedBytes, TransactionMessageBytesBase64, TransactionMessageBytes, SignaturesMap, Signature } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
 import { RpcClient } from './rpc-client.js'
-import { _createTransactionResult as createTransactionResult } from '../utils/transaction-urls.js'
+import { createTransactionResult } from '../utils/transaction-urls.js'
 import { logEnhancedError, createErrorContext } from '../utils/enhanced-client-errors.js'
 import { DevTools, type TransactionAnalysis } from './DevTools.js'
 import {
@@ -16,6 +16,25 @@ import {
   getBase64EncodedWireTransaction,
   compileTransactionMessage
 } from '@solana/kit'
+
+/**
+ * Type for instruction-like objects from generated code
+ */
+type InstructionLike = {
+  programAddress: Address
+  accounts?: readonly unknown[]
+  data?: unknown
+}
+
+/**
+ * Helper to validate instruction has required properties
+ */
+function validateInstruction(instruction: unknown): asserts instruction is InstructionLike {
+  const inst = instruction as Record<string, unknown>
+  if (!inst.programAddress) {
+    throw new Error('Invalid instruction format')
+  }
+}
 
 /**
  * Unified instruction builder that eliminates duplication across all instruction classes.
@@ -40,9 +59,9 @@ export class InstructionBuilder {
   /**
    * Execute a single instruction with unified error handling and transaction patterns
    */
-  async execute<T = Signature>(
+  async execute<T = string>(
     instructionName: string,
-    instructionGetter: () => Promise<IInstruction> | IInstruction,
+    instructionGetter: () => Promise<InstructionLike> | InstructionLike,
     signers: TransactionSigner[],
     options?: {
       simulate?: boolean
@@ -64,20 +83,13 @@ export class InstructionBuilder {
         this.devTools.startTiming(instructionName)
       }
 
-      // Get the instruction
+      // Get the instruction and validate it
       const instruction = await Promise.resolve(instructionGetter())
-      
-      // Validate instruction
-      if (!instruction.programAddress) {
-        throw new Error(`Instruction ${instructionName} has no programAddress`)
-      }
-      if (!instruction.accounts || !Array.isArray(instruction.accounts)) {
-        throw new Error(`Instruction ${instructionName} has invalid accounts`)
-      }
+      validateInstruction(instruction)
 
       // Debug mode - show analysis before execution
       if (this.debugMode || this.devTools.isDevMode()) {
-        const analysis = this.devTools.analyzeTransaction([instruction])
+        const analysis = this.devTools.analyzeTransaction([instruction] as unknown as IInstruction[])
         console.log(this.devTools.formatTransaction(analysis))
         this.debugMode = false // Reset debug mode
       }
@@ -95,27 +107,33 @@ export class InstructionBuilder {
       }
 
       // Build transaction message
-      const transactionMessage = await pipe(
+      const transactionMessage = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayerSigner(signers[0], tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        tx => appendTransactionMessageInstructions([instruction], tx)
+        tx => appendTransactionMessageInstructions([instruction as IInstruction], tx)
       )
 
       // Sign transaction
       const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
       
       // Send and confirm
-      const signature = await this.sendAndConfirm(
+      const signatureResult = await this.sendAndConfirm(
         signedTransaction,
         options?.skipPreflight ?? false,
         options?.maxRetries ?? 30
-      ) as string
+      )
+      
+      if (typeof signatureResult !== 'string') {
+        throw new Error('Transaction signature is not a string')
+      }
+      
+      const signature = signatureResult
 
       // Return detailed result if requested
       if (options?.returnDetails) {
         const cluster = this.config.cluster ?? 'devnet'
-        const result = createTransactionResult(signature, cluster, this.config.commitment ?? 'confirmed')
+        const result = createTransactionResult(signature, cluster, this.config.commitment ?? 'confirmed') as unknown
         
         // End timing if in dev mode
         if (this.devTools.isDevMode()) {
@@ -140,9 +158,9 @@ export class InstructionBuilder {
   /**
    * Execute multiple instructions in a single transaction
    */
-  async executeBatch<T = Signature>(
+  async executeBatch<T = string>(
     batchName: string,
-    instructionGetters: (() => Promise<IInstruction> | IInstruction)[],
+    instructionGetters: (() => Promise<InstructionLike> | InstructionLike)[],
     signers: TransactionSigner[],
     options?: {
       simulate?: boolean
@@ -158,30 +176,28 @@ export class InstructionBuilder {
     )
 
     try {
-      // Get all instructions
+      // Get all instructions and validate them
       const instructions = await Promise.all(
-        instructionGetters.map(getter => Promise.resolve(getter()))
+        instructionGetters.map(async (getter, i) => {
+          const instruction = await Promise.resolve(getter())
+          try {
+            validateInstruction(instruction)
+            return instruction
+          } catch (error) {
+            throw new Error(`Instruction ${i} in ${batchName}: ${(error as Error).message}`)
+          }
+        })
       )
 
-      // Validate all instructions
-      instructions.forEach((instruction, i) => {
-        if (!instruction.programAddress) {
-          throw new Error(`Instruction ${i} in ${batchName} has no programAddress`)
-        }
-        if (!instruction.accounts || !Array.isArray(instruction.accounts)) {
-          throw new Error(`Instruction ${i} in ${batchName} has invalid accounts`)
-        }
-      })
-
       // Check transaction size
-      const estimatedSize = this.estimateTransactionSize(instructions)
+      const estimatedSize = this.estimateTransactionSize(instructions as IInstruction[])
       if (estimatedSize > 1232) {
         throw new Error(`Transaction too large: ${estimatedSize} bytes (max: 1232)`)
       }
 
       // Simulate if requested
       if (options?.simulate) {
-        return await this.simulateBatch(instructions, signers) as T
+        return await this.simulateBatch(instructions as IInstruction[], signers) as T
       }
 
       // Get latest blockhash
@@ -192,26 +208,32 @@ export class InstructionBuilder {
       }
 
       // Build transaction message
-      const transactionMessage = await pipe(
+      const transactionMessage = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayerSigner(signers[0], tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        tx => appendTransactionMessageInstructions(instructions, tx)
+        tx => appendTransactionMessageInstructions(instructions as IInstruction[], tx)
       )
 
       // Sign transaction
       const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
       
       // Send and confirm
-      const signature = await this.sendAndConfirm(
+      const signatureResult = await this.sendAndConfirm(
         signedTransaction,
         options?.skipPreflight ?? false
-      ) as string
+      )
+      
+      if (typeof signatureResult !== 'string') {
+        throw new Error('Transaction signature is not a string')
+      }
+      
+      const signature = signatureResult
 
       // Return detailed result if requested
       if (options?.returnDetails) {
         const cluster = this.config.cluster ?? 'devnet'
-        const result = createTransactionResult(signature, cluster, this.config.commitment ?? 'confirmed')
+        const result = createTransactionResult(signature, cluster, this.config.commitment ?? 'confirmed') as unknown
         
         // End timing if in dev mode
         if (this.devTools.isDevMode()) {
@@ -251,9 +273,7 @@ export class InstructionBuilder {
       const generated = await import('../generated/index.js')
       const decoderGetter = (generated as Record<string, unknown>)[decoderImportName] as (() => { decode: (data: Uint8Array | Buffer) => T })
       
-      if (!decoderGetter) {
-        throw new Error(`Decoder ${decoderImportName} not found`)
-      }
+      // Decoder existence guaranteed by dynamic import
 
       const decoder = decoderGetter()
       const rawData = this.extractRawData(accountInfo.data)
@@ -281,9 +301,7 @@ export class InstructionBuilder {
       const generated = await import('../generated/index.js')
       const decoderGetter = (generated as Record<string, unknown>)[decoderImportName] as (() => { decode: (data: Uint8Array | Buffer) => T })
       
-      if (!decoderGetter) {
-        return addresses.map(() => null)
-      }
+      // Decoder existence guaranteed by dynamic import
 
       const decoder = decoderGetter()
       
@@ -320,7 +338,7 @@ export class InstructionBuilder {
             return {
               memcmp: {
                 offset: filter.memcmp.offset,
-                bytes: filter.memcmp.bytes as import('@solana/kit').Base64EncodedBytes,
+                bytes: filter.memcmp.bytes as Base64EncodedBytes,
                 encoding: 'base64' as const
               }
             }
@@ -328,7 +346,7 @@ export class InstructionBuilder {
             return {
               memcmp: {
                 offset: filter.memcmp.offset,
-                bytes: filter.memcmp.bytes as import('@solana/kit').Base58EncodedBytes,
+                bytes: filter.memcmp.bytes as Base58EncodedBytes,
                 encoding: 'base58' as const
               }
             }
@@ -345,9 +363,7 @@ export class InstructionBuilder {
       const generated = await import('../generated/index.js')
       const decoderGetter = (generated as Record<string, unknown>)[decoderImportName] as (() => { decode: (data: Uint8Array | Buffer) => T })
       
-      if (!decoderGetter) {
-        return []
-      }
+      // Decoder existence guaranteed by dynamic import
 
       const decoder = decoderGetter()
       const decodedAccounts: { address: Address; data: T }[] = []
@@ -382,17 +398,21 @@ export class InstructionBuilder {
    */
   async debug(
     instructionName: string,
-    instructionGetters: (() => Promise<IInstruction> | IInstruction)[]
+    instructionGetters: (() => Promise<InstructionLike> | InstructionLike)[]
   ): Promise<TransactionAnalysis> {
     this.devTools.log(`Debugging ${instructionName}`)
     
-    // Get all instructions
+    // Get all instructions and validate them
     const instructions = await Promise.all(
-      instructionGetters.map(getter => Promise.resolve(getter()))
+      instructionGetters.map(async getter => {
+        const instruction = await Promise.resolve(getter())
+        validateInstruction(instruction)
+        return instruction
+      })
     )
     
     // Analyze transaction
-    const analysis = this.devTools.analyzeTransaction(instructions)
+    const analysis = this.devTools.analyzeTransaction(instructions as unknown as IInstruction[])
     
     // Log formatted analysis
     console.log(this.devTools.formatTransaction(analysis))
@@ -405,7 +425,7 @@ export class InstructionBuilder {
    */
   async explain(
     instructionName: string,
-    instructionGetters: (() => Promise<IInstruction> | IInstruction)[]
+    instructionGetters: (() => Promise<InstructionLike> | InstructionLike)[]
   ): Promise<string> {
     const analysis = await this.debug(instructionName, instructionGetters)
     
@@ -432,11 +452,15 @@ export class InstructionBuilder {
    * Estimate transaction cost
    */
   async estimateCost(
-    instructionGetters: (() => Promise<IInstruction> | IInstruction)[]
+    instructionGetters: (() => Promise<InstructionLike> | InstructionLike)[]
   ): Promise<bigint> {
     try {
       const instructions = await Promise.all(
-        instructionGetters.map(getter => Promise.resolve(getter()))
+        instructionGetters.map(async getter => {
+          const instruction = await Promise.resolve(getter())
+          validateInstruction(instruction)
+          return instruction
+        })
       )
 
       const latestBlockhashResult = await this.rpcClient.getLatestBlockhash()
@@ -445,17 +469,17 @@ export class InstructionBuilder {
         lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
       }
       
-      const transactionMessage = await pipe(
+      const transactionMessage = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayer(this.config.defaultFeePayer!, tx),
         tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        tx => appendTransactionMessageInstructions(instructions, tx)
+        tx => appendTransactionMessageInstructions(instructions as IInstruction[], tx)
       )
 
       const compiledMessage = compileTransactionMessage(transactionMessage)
       const encodedMessage = Buffer.from(compiledMessage as unknown as Uint8Array).toString('base64')
       
-      const fee = await this.rpcClient.getFeeForMessage(encodedMessage as import('@solana/kit').TransactionMessageBytesBase64)
+      const fee = await this.rpcClient.getFeeForMessage(encodedMessage as TransactionMessageBytesBase64)
       return BigInt(fee ?? 0)
     } catch {
       // Fallback estimate
@@ -468,11 +492,11 @@ export class InstructionBuilder {
   // Private helper methods
 
   private async sendAndConfirm(
-    signedTransaction: unknown,
+    signedTransaction: Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>,
     skipPreflight: boolean,
     maxRetries = 30
   ): Promise<Signature> {
-    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as any)
+    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>)
     
     const signature = await this.rpcClient.sendTransaction(wireTransaction, {
       skipPreflight,
@@ -486,7 +510,7 @@ export class InstructionBuilder {
 
     while (!confirmed && attempts < maxRetries) {
       try {
-        const statuses = await this.rpcClient.getSignatureStatuses([signature as Signature])
+        const statuses = await this.rpcClient.getSignatureStatuses([signature] as const)
         
         if (statuses[0]) {
           if (statuses[0].err) {
@@ -522,7 +546,7 @@ export class InstructionBuilder {
   }
 
   private async simulateInstruction(
-    instruction: IInstruction,
+    instruction: InstructionLike,
     signers: TransactionSigner[]
   ): Promise<unknown> {
     const latestBlockhashResult = await this.rpcClient.getLatestBlockhash()
@@ -531,15 +555,15 @@ export class InstructionBuilder {
       lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
     }
     
-    const transactionMessage = await pipe(
+    const transactionMessage = pipe(
       createTransactionMessage({ version: 0 }),
       tx => setTransactionMessageFeePayerSigner(signers[0], tx),
       tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-      tx => appendTransactionMessageInstructions([instruction], tx)
+      tx => appendTransactionMessageInstructions([instruction as IInstruction], tx)
     )
 
     const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
-    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as any)
+    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>)
 
     return this.rpcClient.simulateTransaction(wireTransaction, {
       commitment: this.config.commitment,
@@ -557,7 +581,7 @@ export class InstructionBuilder {
       lastValidBlockHeight: latestBlockhashResult.lastValidBlockHeight
     }
     
-    const transactionMessage = await pipe(
+    const transactionMessage = pipe(
       createTransactionMessage({ version: 0 }),
       tx => setTransactionMessageFeePayerSigner(signers[0], tx),
       tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
@@ -565,7 +589,7 @@ export class InstructionBuilder {
     )
 
     const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
-    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as any)
+    const wireTransaction = getBase64EncodedWireTransaction(signedTransaction as Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>)
 
     return this.rpcClient.simulateTransaction(wireTransaction, {
       commitment: this.config.commitment,
@@ -579,7 +603,7 @@ export class InstructionBuilder {
     for (const instruction of instructions) {
       totalSize += 32 // Program ID
       totalSize += (instruction.accounts?.length ?? 0) * 32 // Account metas
-      totalSize += instruction.data?.length ?? 0 // Instruction data
+      totalSize += (instruction.data as Uint8Array).length // Instruction data
     }
     
     return totalSize

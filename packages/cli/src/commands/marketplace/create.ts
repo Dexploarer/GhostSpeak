@@ -15,7 +15,7 @@ import {
   cancel
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
-import { AgentWalletManager, AgentCNFTManager } from '../../utils/agentWallet.js'
+import { AgentWalletManager, AgentCNFTManager } from '../../utils/agent-wallet.js'
 import type { CreateServiceOptions } from '../../types/cli-types.js'
 import { 
   deriveServiceListingPda, 
@@ -200,24 +200,20 @@ export function registerCreateCommand(parentCommand: Command): void {
             wallet.address,
             listingId
           )
-          const userRegistryAddress = await deriveUserRegistryPda(
+          const _userRegistryAddress = await deriveUserRegistryPda(
             client.config.programId!,
             wallet.address
           )
           
           const result = await client.marketplace.createServiceListing(
             toSDKSigner(wallet),
-            serviceListingAddress,
-            agentAddress,
-            userRegistryAddress,
             {
+              agentAddress,
               title: title as string,
               description: description as string,
-              amount: solToLamports(price as string),
-              signer: toSDKSigner(wallet),
+              price: solToLamports(price as string),
               serviceType: category as string,
-              paymentToken: getDefaultPaymentToken(),
-              listingId
+              paymentToken: getDefaultPaymentToken()
             }
           )
           
@@ -228,7 +224,7 @@ export function registerCreateCommand(parentCommand: Command): void {
           console.log(chalk.gray(`Agent: ${selectedCredentials.name}`))
           console.log(chalk.gray(`Agent UUID: ${selectedCredentials.uuid}`))
           console.log('')
-          console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
+          console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
           console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(serviceListingAddress.toString(), 'devnet'))
           console.log('')
           console.log(chalk.yellow('💡 Service linked to agent via UUID for ownership verification'))

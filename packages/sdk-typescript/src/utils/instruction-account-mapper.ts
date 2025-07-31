@@ -114,7 +114,7 @@ export function parseIdlInstructions(idlPath?: string): InstructionAccountMap {
  */
 export function getInstructionMapping(instructionName: string): InstructionMapping | null {
   const mappings = parseIdlInstructions();
-  return mappings[instructionName] || null;
+  return mappings[instructionName] ?? null;
 }
 
 /**

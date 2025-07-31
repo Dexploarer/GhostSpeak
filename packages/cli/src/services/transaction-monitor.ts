@@ -5,11 +5,16 @@
 
 import chalk from 'chalk'
 import { spinner as createSpinner, log } from '@clack/prompts'
-import type { Address } from '@solana/addresses'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-type Spinner = any // Type for @clack/prompts spinner
+
+// Define a proper type for the spinner
+interface Spinner {
+  start(message: string): void
+  stop(message: string): void
+  message(message: string): void
+}
 
 export interface Transaction {
   id: string
@@ -33,7 +38,7 @@ const TRANSACTION_HISTORY_FILE = join(homedir(), '.ghostspeak', 'transaction-his
 const MAX_HISTORY_ITEMS = 100
 
 export class TransactionMonitor {
-  private static instance: TransactionMonitor
+  private static instance: TransactionMonitor | undefined
   private transactions: Map<string, Transaction> = new Map()
   private activeSpinners: Map<string, Spinner> = new Map()
   
@@ -42,10 +47,7 @@ export class TransactionMonitor {
   }
   
   static getInstance(): TransactionMonitor {
-    if (!TransactionMonitor.instance) {
-      TransactionMonitor.instance = new TransactionMonitor()
-    }
-    return TransactionMonitor.instance
+    return (this.instance ??= new TransactionMonitor())
   }
   
   /**
@@ -73,7 +75,7 @@ export class TransactionMonitor {
     this.transactions.set(id, transaction)
     
     // Create spinner with descriptive message
-    const spinner = createSpinner()
+    const spinner = createSpinner() as Spinner
     const displayAmount = amount ? ` (${amount})` : ''
     spinner.start(`${description}${displayAmount}`)
     
@@ -175,7 +177,7 @@ export class TransactionMonitor {
     transaction.error = undefined
     
     // Create new spinner for retry
-    const spinner = createSpinner()
+    const spinner = createSpinner() as Spinner
     spinner.start(`🔄 Retrying ${transaction.description} (attempt ${transaction.retries})`)
     
     this.activeSpinners.set(id, spinner)
@@ -273,9 +275,8 @@ export class TransactionMonitor {
         const data = JSON.parse(readFileSync(TRANSACTION_HISTORY_FILE, 'utf-8')) as Transaction[]
         data.forEach(tx => this.transactions.set(tx.id, tx))
       }
-    } catch (error) {
+    } catch {
       // Ignore errors loading history
-      void error
     }
   }
   
@@ -292,9 +293,8 @@ export class TransactionMonitor {
       // Keep only recent transactions
       const recent = this.getHistory(MAX_HISTORY_ITEMS)
       writeFileSync(TRANSACTION_HISTORY_FILE, JSON.stringify(recent, null, 2))
-    } catch (error) {
+    } catch {
       // Ignore errors saving history
-      void error
     }
   }
   

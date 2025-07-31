@@ -392,7 +392,7 @@ export class BatchProofManager {
       case 'range': {
         const rangeData = task.data as ProofTaskData & { type: 'range' }
         const { amount, commitment, randomness } = rangeData
-        const rangeProof = generateRangeProof(amount, commitment, randomness)
+        const rangeProof = await generateRangeProof(amount, commitment, randomness)
         proof = rangeProof.proof
         break
       }
@@ -597,7 +597,7 @@ export class BatchProofManager {
         generationTime: Date.now() - startTime,
         size: proof.proof.length
       }))
-    } catch (_error) {
+    } catch {
       console.warn('WASM batch processing failed, falling back to sequential')
       return this.processTasksSequential(tasks)
     }

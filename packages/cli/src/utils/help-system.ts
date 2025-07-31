@@ -9,7 +9,7 @@ import { join } from 'path'
 import { homedir } from 'os'
 import { infoBox, divider, bulletList } from './format-helpers.js'
 import { WalletService } from '../services/wallet-service.js'
-import { COMMAND_ALIASES, getSuggestions } from './command-aliases.js'
+import { getSuggestions } from './command-aliases.js'
 import { hasCompletedOnboarding } from './onboarding.js'
 
 export interface HelpContext {
@@ -318,7 +318,7 @@ export class HelpSystem {
    */
   showTopicHelp(topic: string): void {
     const helpTopic = HELP_TOPICS[topic]
-    if (!helpTopic) {
+    if (!(topic in HELP_TOPICS)) {
       console.log(chalk.red(`Unknown help topic: ${topic}`))
       this.showAvailableTopics()
       return
@@ -572,8 +572,8 @@ export class HelpSystem {
     try {
       const historyFile = join(homedir(), '.ghostspeak', 'recent-commands.json')
       if (existsSync(historyFile)) {
-        const data = JSON.parse(readFileSync(historyFile, 'utf-8'))
-        return data.map((item: any) => item.command).slice(0, 5)
+        const data = JSON.parse(readFileSync(historyFile, 'utf-8')) as Array<{ command: string }>
+        return data.map((item) => item.command).slice(0, 5)
       }
     } catch {
       // Ignore errors

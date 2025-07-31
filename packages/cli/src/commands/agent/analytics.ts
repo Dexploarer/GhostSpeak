@@ -97,13 +97,30 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           s.stop('❌ Analytics not available')
           
           // Show fallback message with formatted helper output
-          const fallbackAnalytics = {
+          const fallbackAnalytics: AgentAnalytics = {
             totalEarnings: 0,
             jobsCompleted: 0,
             successRate: 0,
             averageRating: 0,
             totalTransactions: 0,
-            uniqueClients: 0
+            uniqueClients: 0,
+            totalVolume: BigInt(0),
+            activeAgents: 0,
+            totalJobs: 0,
+            totalAgents: 0,
+            verifiedAgents: 0,
+            jobsByCategory: {},
+            earningsTrend: [],
+            topClients: [],
+            topCategories: [],
+            topPerformers: [],
+            growthMetrics: {
+              weeklyGrowth: 0,
+              monthlyGrowth: 0,
+              userGrowth: 0,
+              revenueGrowth: 0
+            },
+            insights: []
           }
           
           console.log('')
@@ -111,7 +128,21 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           console.log(chalk.gray('Analytics are not yet available in the current SDK version.'))
           console.log('')
           console.log(chalk.bold('Sample Analytics Format:'))
-          formatAnalytics(fallbackAnalytics).forEach(line => {
+          // Convert to SDK format for formatting
+          const sdkFormatAnalytics = {
+            totalJobs: fallbackAnalytics.totalJobs,
+            completedJobs: fallbackAnalytics.jobsCompleted,
+            averageRating: fallbackAnalytics.averageRating,
+            totalEarnings: BigInt(fallbackAnalytics.totalEarnings),
+            responseTime: 0,
+            successRate: fallbackAnalytics.successRate,
+            activeJobs: 0,
+            failedJobs: 0,
+            disputes: 0,
+            disputesWon: 0
+          }
+          
+          formatAnalytics(sdkFormatAnalytics).forEach(line => {
             console.log(chalk.gray('  ' + line))
           })
           console.log('')

@@ -12,7 +12,7 @@ import {
   isCancel,
   cancel
 } from '@clack/prompts'
-import { AgentWalletManager } from '../../utils/agentWallet.js'
+import { AgentWalletManager } from '../../utils/agent-wallet.js'
 
 export function registerUuidCommand(parentCommand: Command): void {
   parentCommand

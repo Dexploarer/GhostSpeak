@@ -12,188 +12,183 @@ import {
   confirm,
   spinner,
   isCancel,
-  cancel
+  cancel,
+  log,
+  note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
-import { address } from '@solana/addresses'
-import type { ServiceListing } from '@ghostspeak/sdk'
-import { 
-  deriveServicePurchasePda, 
-  deriveWorkOrderPda,
-  calculateDeadline,
-  getDefaultPaymentToken
-} from '../../utils/pda.js'
+import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
+import { createSafeSDKClient } from '../../utils/sdk-helpers.js'
+import Table from 'cli-table3'
 
 export function registerPurchaseCommand(parentCommand: Command): void {
   parentCommand
     .command('purchase')
     .description('Purchase a service from the marketplace')
-    .argument('[listing-id]', 'Service listing ID')
-    .action(async (listingId: string) => {
+    .argument('[item-id]', 'Marketplace item ID')
+    .option('--skip-confirm', 'Skip confirmation prompt')
+    .action(async (itemId?: string, options?: { skipConfirm?: boolean }) => {
       intro(chalk.magenta('💳 Purchase Service'))
 
       try {
-        // If no listing ID provided, show available services first
-        if (!listingId) {
-          const s = spinner()
-          s.start('Loading available services...')
-          
-          const { client } = await initializeClient('devnet')
-          
-          // Fetch real services from blockchain
-          const services = await client.marketplace.getServiceListings()
-          s.stop('✅ Services loaded')
+        const s = spinner()
+        s.start('Connecting to network...')
+        
+        const { client, wallet } = await initializeClient('devnet')
+        const safeClient = createSafeSDKClient(client)
+        
+        s.stop('✅ Connected to devnet')
 
-          if (services.length === 0) {
-            console.log('\n' + chalk.yellow('No services available in the marketplace'))
-            outro('Create a service with: npx ghostspeak marketplace create')
+        // If no item ID provided, show available items first
+        if (!itemId) {
+          s.start('Loading marketplace items...')
+          
+          const items = await safeClient.marketplace.listItems()
+          const availableItems = items.filter(item => item.available)
+          
+          s.stop(`✅ Found ${availableItems.length} available items`)
+
+          if (availableItems.length === 0) {
+            outro(
+              `${chalk.yellow('No items available for purchase')}\n\n` +
+              `${chalk.gray('• Browse all items:')} ${chalk.cyan('gs marketplace list')}\n` +
+              `${chalk.gray('• Search for specific services:')} ${chalk.cyan('gs marketplace search')}`
+            )
             return
           }
 
-          console.log('\n' + chalk.bold('🏪 Available Services'))
-          console.log('─'.repeat(60))
-          services.forEach((serviceWithAddr: any, index: number) => {
-            console.log(chalk.magenta(`${index + 1}. ${serviceWithAddr.data.title}`))
-            console.log(chalk.gray(`   ID: ${serviceWithAddr.address.toString()} | Price: ${Number(serviceWithAddr.data.price) / 1_000_000} SOL | By: ${serviceWithAddr.data.agent.toString().slice(0, 8)}...`))
+          // Display available items
+          const table = new Table({
+            head: ['Title', 'Category', 'Price', 'Rating', 'Seller'],
+            style: { head: ['cyan'] }
           })
 
-          const selectedIndex = await select({
-            message: 'Select service to purchase:',
-            options: services.map((service: any, index: number) => ({
-              value: index,
-              label: `${service.data.title ?? 'Unknown'} - ${Number(service.data.price) / 1_000_000} SOL`
+          availableItems.forEach(item => {
+            table.push([
+              item.title.slice(0, 30) + (item.title.length > 30 ? '...' : ''),
+              item.category,
+              `${item.price.toFixed(4)} SOL`,
+              item.rating ? `⭐ ${item.rating.toFixed(1)}` : 'No ratings',
+              `${item.seller.slice(0, 6)}...${item.seller.slice(-4)}`
+            ])
+          })
+
+          console.log('\n' + chalk.bold('Available Services:'))
+          console.log(table.toString())
+
+          // Let user select an item
+          const selectedId = await select({
+            message: 'Select a service to purchase:',
+            options: availableItems.map(item => ({
+              value: item.id,
+              label: `${item.title} - ${item.price.toFixed(4)} SOL`,
+              hint: item.category
             }))
           })
 
-          if (isCancel(selectedIndex)) {
+          if (isCancel(selectedId)) {
             cancel('Purchase cancelled')
             return
           }
 
-          listingId = services[selectedIndex as number].address.toString()
+          itemId = selectedId.toString()
         }
 
-        // Initialize client if needed
-        const { client, wallet } = await initializeClient('devnet')
+        // Get the specific item details
+        s.start('Loading item details...')
         
-        // Get service details
-        const s = spinner()
-        s.start('Loading service details...')
+        const items = await safeClient.marketplace.listItems()
+        const item = items.find(i => i.id === itemId)
         
-        let service: ServiceListing | null = null
-        try {
-          const listing = await client.marketplace.getServiceListing(address(listingId))
-          service = listing
-        } catch {
-          service = null
-        }
-        
-        s.stop('✅ Service loaded')
-        
-        if (!service) {
-          cancel('Service not found')
+        if (!item) {
+          s.stop('❌ Item not found')
+          cancel(`Item with ID '${itemId}' not found`)
           return
         }
 
-        console.log('\n' + chalk.bold('📋 Service Details'))
-        console.log('─'.repeat(40))
-        console.log(chalk.magenta('Service:') + ` ${service.title}`)
-        console.log(chalk.magenta('Price:') + ` ${Number(service.price) / 1_000_000} SOL`)
-        // @ts-expect-error agentName might not exist on ServiceListing
-        console.log(chalk.magenta('Agent:') + ` ${service.agentName ?? service.agent?.toString() ?? 'Unknown'}`)
-        console.log(chalk.magenta('Description:') + ` ${service.description}`)
+        if (!item.available) {
+          s.stop('❌ Item unavailable')
+          cancel('This item is no longer available for purchase')
+          return
+        }
 
-        // Additional requirements
-        const requirements = await text({
-          message: 'Any special requirements? (optional)',
-          placeholder: 'e.g., Need visualization in Tableau format'
+        s.stop('✅ Item details loaded')
+
+        // Show purchase details
+        note(
+          `${chalk.bold('Purchase Details:')}\n` +
+          `${chalk.gray('Item:')} ${item.title}\n` +
+          `${chalk.gray('Description:')} ${item.description}\n` +
+          `${chalk.gray('Category:')} ${item.category}\n` +
+          `${chalk.gray('Price:')} ${item.price.toFixed(4)} SOL\n` +
+          `${chalk.gray('Seller:')} ${item.seller}\n` +
+          `${chalk.gray('Rating:')} ${item.rating ? `⭐ ${item.rating.toFixed(1)}/5` : 'No ratings'}\n` +
+          `${chalk.gray('Your Balance:')} ${wallet.address.slice(0, 8)}...`,
+          'Review Purchase'
+        )
+
+        // Add custom message or requirements
+        const message = await text({
+          message: 'Add a message for the seller (optional):',
+          placeholder: 'Any specific requirements or timeline...'
         })
 
-        if (isCancel(requirements)) {
+        if (isCancel(message)) {
           cancel('Purchase cancelled')
           return
         }
 
-        // Confirmation
-        console.log('\n' + chalk.bold('💳 Purchase Summary'))
-        console.log('─'.repeat(40))
-        console.log(chalk.magenta('Service:') + ` ${service.title}`)
-        console.log(chalk.magenta('Price:') + ` ${Number(service.price) / 1_000_000} SOL`)
-        if (requirements) {
-          console.log(chalk.magenta('Requirements:') + ` ${requirements}`)
+        // Confirm purchase
+        if (!options?.skipConfirm) {
+          const confirmed = await confirm({
+            message: `Purchase "${item.title}" for ${item.price.toFixed(4)} SOL?`
+          })
+
+          if (isCancel(confirmed) || !confirmed) {
+            cancel('Purchase cancelled')
+            return
+          }
         }
 
-        const confirmed = await confirm({
-          message: `Proceed with purchase for ${Number(service.price) / 1_000_000} SOL?`
-        })
-
-        if (isCancel(confirmed) || !confirmed) {
-          cancel('Purchase cancelled')
-          return
-        }
-
-        const purchaseSpinner = spinner()
-        purchaseSpinner.start('Processing payment and creating work order...')
+        s.start('Processing purchase...')
 
         try {
-          // Generate service purchase PDA
-          const servicePurchaseAddress = await deriveServicePurchasePda(
-            client.config.programId!,
-            address(listingId),
-            wallet.address
-          )
-          
-          // Generate work order ID and PDA for escrow
-          const orderId = BigInt(Date.now())
-          const workOrderAddress = await deriveWorkOrderPda(
-            client.config.programId!,
-            wallet.address,
-            orderId
-          )
-          
-          // First create the purchase
-          const purchaseResult = await client.marketplace.purchaseService(
-            servicePurchaseAddress,
+          // Execute purchase through SDK
+          const signature = await safeClient.marketplace.purchaseItem(
+            toSDKSigner(wallet),
             {
-              serviceListingAddress: address(listingId),
-              signer: toSDKSigner(wallet),
-              requirements: typeof requirements === 'string' ? [requirements] : requirements as string[] ?? [],
-              deadline: calculateDeadline(14) // 14 days default
+              listingId: itemId,
+              amount: BigInt(Math.floor(item.price * 1e9)) // Convert SOL to lamports
             }
           )
-          
-          // Then create the work order/escrow
-          const escrowResult = await client.escrow.create({
-            signer: toSDKSigner(wallet),
-            title: service.title,
-            description: service.description + (requirements ? `\n\nRequirements: ${requirements}` : ''),
-            provider: service.agent,
-            amount: BigInt(service.price),
-            deadline: calculateDeadline(14),
-            paymentToken: service.paymentToken || getDefaultPaymentToken(),
-            requirements: typeof requirements === 'string' ? [requirements] : requirements as string[] ?? []
-          })
-          
-          purchaseSpinner.stop('✅ Purchase completed!')
 
-          console.log('\n' + chalk.green('🎉 Service purchased successfully!'))
-          console.log(chalk.gray(`Purchase ID: ${servicePurchaseAddress.toString()}`))
-          console.log(chalk.gray(`Work Order: ${workOrderAddress.toString()}`))
-          console.log(chalk.gray('The agent will begin working on your request.'))
-          console.log('')
-          console.log(chalk.cyan('Purchase Transaction:'), getExplorerUrl(purchaseResult, 'devnet'))
-          console.log(chalk.cyan('Escrow Transaction:'), getExplorerUrl(escrowResult, 'devnet'))
-          console.log(chalk.cyan('Work Order Account:'), getAddressExplorerUrl(workOrderAddress.toString(), 'devnet'))
-          console.log('\n' + chalk.yellow('💡 Track your order with: npx ghostspeak escrow list'))
+          if (!signature) {
+            throw new Error('Failed to complete purchase')
+          }
+
+          s.stop('✅ Purchase completed!')
+
+          const explorerUrl = getExplorerUrl(signature, 'devnet')
           
-          outro('Purchase completed')
-        } catch (error: unknown) {
-          purchaseSpinner.stop('❌ Purchase failed')
-          throw new Error(handleTransactionError(error as Error))
+          outro(
+            `${chalk.green('🎉 Purchase Successful!')}\n\n` +
+            `${chalk.bold('Item:')} ${item.title}\n` +
+            `${chalk.bold('Price:')} ${item.price.toFixed(4)} SOL\n` +
+            `${chalk.bold('Seller:')} ${item.seller}\n\n` +
+            `${chalk.bold('Transaction:')} ${signature}\n` +
+            `${chalk.bold('Explorer:')} ${explorerUrl}\n\n` +
+            `${chalk.yellow('Next steps:')}\n` +
+            `• The seller will be notified of your purchase\n` +
+            `• Check your escrow status: ${chalk.cyan('gs escrow list')}\n` +
+            `• Contact seller if needed: ${chalk.cyan(`gs channel create --participant ${item.seller}`)}`
+          )
+
+        } catch (error) {
+          s.stop('❌ Purchase failed')
+          handleTransactionError(error as Error)
         }
 
       } catch (error) {
-        cancel(chalk.red('Purchase failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+        log.error(`Purchase failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })
 }

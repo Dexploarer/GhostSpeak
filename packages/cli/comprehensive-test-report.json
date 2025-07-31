@@ -1,0 +1,837 @@
+{
+  "timestamp": "2025-07-31T18:36:55.765Z",
+  "summary": {
+    "total": 70,
+    "passed": 70,
+    "failed": 0,
+    "successRate": 100,
+    "onChainVerified": 12,
+    "duration": 21706
+  },
+  "categoryStats": {
+    "wallet": {
+      "total": 9,
+      "passed": 9
+    },
+    "config": {
+      "total": 4,
+      "passed": 4
+    },
+    "faucet": {
+      "total": 5,
+      "passed": 5
+    },
+    "agent": {
+      "total": 10,
+      "passed": 10
+    },
+    "marketplace": {
+      "total": 5,
+      "passed": 5
+    },
+    "jobs": {
+      "total": 3,
+      "passed": 3
+    },
+    "escrow": {
+      "total": 4,
+      "passed": 4
+    },
+    "auction": {
+      "total": 5,
+      "passed": 5
+    },
+    "channel": {
+      "total": 3,
+      "passed": 3
+    },
+    "dispute": {
+      "total": 5,
+      "passed": 5
+    },
+    "governance": {
+      "total": 6,
+      "passed": 6
+    },
+    "system": {
+      "total": 9,
+      "passed": 9
+    },
+    "error": {
+      "total": 2,
+      "passed": 2
+    }
+  },
+  "results": [
+    {
+      "name": "Wallet List",
+      "command": "gs wallet list",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 251,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _        ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Wallet Info",
+      "command": "gs wallet info",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 785,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _        ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Wallet Balance",
+      "command": "gs wallet balance",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 965,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Wallet Show Help",
+      "command": "gs wallet show --help",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 267,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Wallet Backup Help",
+      "command": "gs wallet backup --help",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 251,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Wallet Import Help",
+      "command": "gs wallet import --help",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _     ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Wallet Create Help",
+      "command": "gs wallet create --help",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 243,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Wallet Rename Help",
+      "command": "gs wallet rename --help",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 243,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   __",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Wallet Delete Help",
+      "command": "gs wallet delete --help",
+      "category": "wallet",
+      "status": "pass",
+      "duration": 242,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Config Show",
+      "command": "gs config show",
+      "category": "config",
+      "status": "pass",
+      "duration": 601,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Config Setup Help",
+      "command": "gs config setup --help",
+      "category": "config",
+      "status": "pass",
+      "duration": 246,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Config Reset Help",
+      "command": "gs config reset --help",
+      "category": "config",
+      "status": "pass",
+      "duration": 241,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Config Help",
+      "command": "gs config help",
+      "category": "config",
+      "status": "pass",
+      "duration": 243,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Faucet Balance",
+      "command": "gs faucet balance",
+      "category": "faucet",
+      "status": "pass",
+      "duration": 919,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Faucet Status",
+      "command": "gs faucet status",
+      "category": "faucet",
+      "status": "pass",
+      "duration": 275,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Faucet Sources",
+      "command": "gs faucet sources",
+      "category": "faucet",
+      "status": "pass",
+      "duration": 243,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Faucet Clean Help",
+      "command": "gs faucet clean --help",
+      "category": "faucet",
+      "status": "pass",
+      "duration": 242,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Faucet Help",
+      "command": "gs faucet --help",
+      "category": "faucet",
+      "status": "pass",
+      "duration": 244,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent List",
+      "command": "gs agent list",
+      "category": "agent",
+      "status": "pass",
+      "duration": 260,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _        ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Agent Status Help",
+      "command": "gs agent status --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent Search Help",
+      "command": "gs agent search --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 247,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent Update Help",
+      "command": "gs agent update --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 243,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent Analytics Help",
+      "command": "gs agent analytics --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 241,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent Credentials Help",
+      "command": "gs agent credentials --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 244,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent UUID Help",
+      "command": "gs agent uuid --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 241,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent Verify Help",
+      "command": "gs agent verify --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 242,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent Register Help",
+      "command": "gs agent register --help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 241,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Agent Help",
+      "command": "gs agent help",
+      "category": "agent",
+      "status": "pass",
+      "duration": 242,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Marketplace List",
+      "command": "gs marketplace list",
+      "category": "marketplace",
+      "status": "pass",
+      "duration": 483,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _     ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Marketplace Search Help",
+      "command": "gs marketplace search --help",
+      "category": "marketplace",
+      "status": "pass",
+      "duration": 249,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Marketplace Create Help",
+      "command": "gs marketplace create --help",
+      "category": "marketplace",
+      "status": "pass",
+      "duration": 246,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Marketplace Purchase Help",
+      "command": "gs marketplace purchase --help",
+      "category": "marketplace",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Marketplace Help",
+      "command": "gs marketplace help",
+      "category": "marketplace",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Marketplace Jobs List",
+      "command": "gs marketplace jobs list",
+      "category": "jobs",
+      "status": "pass",
+      "duration": 469,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Marketplace Jobs Create Help",
+      "command": "gs marketplace jobs create --help",
+      "category": "jobs",
+      "status": "pass",
+      "duration": 249,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Marketplace Jobs Apply Help",
+      "command": "gs marketplace jobs apply --help",
+      "category": "jobs",
+      "status": "pass",
+      "duration": 247,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Escrow List",
+      "command": "gs escrow list",
+      "category": "escrow",
+      "status": "pass",
+      "duration": 505,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Escrow Create Help",
+      "command": "gs escrow create --help",
+      "category": "escrow",
+      "status": "pass",
+      "duration": 248,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Escrow Release Help",
+      "command": "gs escrow release --help",
+      "category": "escrow",
+      "status": "pass",
+      "duration": 244,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Escrow Dispute Help",
+      "command": "gs escrow dispute --help",
+      "category": "escrow",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Auction List",
+      "command": "gs auction list",
+      "category": "auction",
+      "status": "pass",
+      "duration": 501,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Auction Create Help",
+      "command": "gs auction create --help",
+      "category": "auction",
+      "status": "pass",
+      "duration": 252,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Auction Bid Help",
+      "command": "gs auction bid --help",
+      "category": "auction",
+      "status": "pass",
+      "duration": 260,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _        ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Auction Monitor Help",
+      "command": "gs auction monitor --help",
+      "category": "auction",
+      "status": "pass",
+      "duration": 247,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Auction Finalize Help",
+      "command": "gs auction finalize --help",
+      "category": "auction",
+      "status": "pass",
+      "duration": 252,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Channel List",
+      "command": "gs channel list",
+      "category": "channel",
+      "status": "pass",
+      "duration": 495,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Channel Create Help",
+      "command": "gs channel create --help",
+      "category": "channel",
+      "status": "pass",
+      "duration": 247,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Channel Send Help",
+      "command": "gs channel send --help",
+      "category": "channel",
+      "status": "pass",
+      "duration": 244,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Dispute List",
+      "command": "gs dispute list",
+      "category": "dispute",
+      "status": "pass",
+      "duration": 501,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Dispute File Help",
+      "command": "gs dispute file --help",
+      "category": "dispute",
+      "status": "pass",
+      "duration": 250,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Dispute Evidence Help",
+      "command": "gs dispute evidence --help",
+      "category": "dispute",
+      "status": "pass",
+      "duration": 285,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Dispute Resolve Help",
+      "command": "gs dispute resolve --help",
+      "category": "dispute",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Dispute Escalate Help",
+      "command": "gs dispute escalate --help",
+      "category": "dispute",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Governance Proposal List",
+      "command": "gs governance proposal list",
+      "category": "governance",
+      "status": "pass",
+      "duration": 486,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Governance Proposal Create Help",
+      "command": "gs governance proposal create --help",
+      "category": "governance",
+      "status": "pass",
+      "duration": 247,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Governance Vote Help",
+      "command": "gs governance vote --help",
+      "category": "governance",
+      "status": "pass",
+      "duration": 246,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Governance Multisig List",
+      "command": "gs governance multisig list",
+      "category": "governance",
+      "status": "pass",
+      "duration": 517,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _   __",
+      "error": "",
+      "details": "",
+      "onChainVerified": true
+    },
+    {
+      "name": "Governance Multisig Create Help",
+      "command": "gs governance multisig create --help",
+      "category": "governance",
+      "status": "pass",
+      "duration": 248,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Governance RBAC Help",
+      "command": "gs governance rbac --help",
+      "category": "governance",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Version Check",
+      "command": "gs --version",
+      "category": "system",
+      "status": "pass",
+      "duration": 250,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Main Help",
+      "command": "gs --help",
+      "category": "system",
+      "status": "pass",
+      "duration": 264,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Help Topics",
+      "command": "gs help",
+      "category": "system",
+      "status": "pass",
+      "duration": 251,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Help Agent Topic",
+      "command": "gs help agent",
+      "category": "system",
+      "status": "pass",
+      "duration": 249,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _       ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Aliases",
+      "command": "gs aliases",
+      "category": "system",
+      "status": "pass",
+      "duration": 245,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Onboard Help",
+      "command": "gs onboard --help",
+      "category": "system",
+      "status": "pass",
+      "duration": 257,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Quickstart Help",
+      "command": "gs quickstart --help",
+      "category": "system",
+      "status": "pass",
+      "duration": 265,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "SDK Help",
+      "command": "gs sdk --help",
+      "category": "system",
+      "status": "pass",
+      "duration": 262,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _           _  ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Update Help",
+      "command": "gs update --help",
+      "category": "system",
+      "status": "pass",
+      "duration": 258,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _        ",
+      "error": "",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Unknown Command",
+      "command": "gs unknown-command",
+      "category": "error",
+      "status": "pass",
+      "duration": 263,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _   ",
+      "error": "error: unknown command 'unknown-command'\n",
+      "details": "",
+      "onChainVerified": false
+    },
+    {
+      "name": "Invalid Option",
+      "command": "gs agent --invalid-option",
+      "category": "error",
+      "status": "pass",
+      "duration": 262,
+      "output": "[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }\nLoaded environment from: /Users/michelleeidschun/ghostspeak-1/packages/cli/.env\n   ___ _     ",
+      "error": "error: unknown option '--invalid-option'\n",
+      "details": "",
+      "onChainVerified": false
+    }
+  ]
+}

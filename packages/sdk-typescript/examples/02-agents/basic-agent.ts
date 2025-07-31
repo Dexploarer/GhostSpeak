@@ -4,37 +4,45 @@
  * Shows how to create, update, and manage AI agents
  */
 
-import GhostSpeak, { sol, type GhostSpeak as GS } from '@ghostspeak/sdk'
-import { Keypair } from '@solana/kit'
+import GhostSpeak, { sol } from '@ghostspeak/sdk'
+import type { GhostSpeak as GS } from '@ghostspeak/sdk'
+import { generateKeyPairSigner } from '@solana/kit'
+import type { Address } from '@solana/addresses'
 
 async function main() {
   console.log('🤖 Basic Agent Management Example')
   console.log('═══════════════════════════════════')
 
-  const ghostspeak = new GhostSpeak().enableDevMode()
-  const signer = await Keypair.generate()
+  const ghostspeak = new GhostSpeak()
+  const signer = await generateKeyPairSigner()
 
   // 1. Create a Basic Agent
   console.log('\n📤 Creating basic agent...')
   
-  const agent = await ghostspeak
-    .agent()
-    .create({
+  const agentModule = ghostspeak.agent()
+  
+  const signature = await agentModule.register(signer, {
+    agentType: 1, // Specialized agent type
+    metadataUri: JSON.stringify({
       name: "Code Assistant",
+      description: "AI coding assistant with specialized capabilities",
       capabilities: [
         "typescript",
         "react", 
         "solana",
         "debugging",
         "code-review"
-      ]
-    })
-    .withType(GS.AgentType.Specialized)
-    .execute()
+      ],
+      version: "1.0.0"
+    }),
+    agentId: "code-assistant"
+  })
 
   console.log('✅ Agent created:')
-  console.log(`   Address: ${agent.address}`)
-  console.log(`   Transaction: ${agent.signature}`)
+  console.log(`   Transaction: ${signature}`)
+  
+  const agentAddress = agentModule.deriveAgentPda("code-assistant")
+  console.log(`   Address: ${agentAddress}`)
 
   // 2. Retrieve Agent Details
   console.log('\n📊 Retrieving agent details...')

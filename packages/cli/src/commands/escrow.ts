@@ -8,706 +8,709 @@ import {
   confirm, 
   spinner,
   isCancel,
-  cancel
+  cancel,
+  log,
+  note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
-import { address, type Address } from '@solana/addresses'
-import { WorkOrderStatus } from '@ghostspeak/sdk'
-import type {
-  CreateEscrowOptions,
-  ReleaseEscrowOptions
-} from '../types/cli-types.js'
-import { trackTransaction, transactionSuccess, transactionFailed } from '../services/transaction-monitor.js'
-import { handleError, withRetry } from '../utils/error-handler.js'
+import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { createSafeSDKClient } from '../utils/sdk-helpers.js'
+import { address } from '@solana/addresses'
+
+// Clean type definitions
+interface CreateEscrowOptions {
+  client?: string
+  provider?: string
+  amount?: string
+  title?: string
+}
+
+interface ListEscrowOptions {
+  asClient?: boolean
+  asProvider?: boolean
+  status?: string
+}
+
+interface ReleaseOptions {
+  escrow?: string
+  amount?: string
+}
+
+interface DisputeEscrowOptions {
+  escrow?: string
+  reason?: string
+}
 
 export const escrowCommand = new Command('escrow')
-  .description('Manage escrow payments and transactions')
+  .description('Manage secure escrow payments for work orders')
 
+// Create escrow subcommand
 escrowCommand
   .command('create')
   .description('Create a new escrow payment')
-  .action(async (_options: CreateEscrowOptions) => {
-    intro(chalk.yellow('🔒 Create Escrow Payment'))
-    
-    // Acknowledge options for future create escrow implementation
-    void _options
+  .option('-c, --client <address>', 'Client address (defaults to your address)')
+  .option('-p, --provider <address>', 'Service provider address')
+  .option('-a, --amount <amount>', 'Escrow amount in SOL')
+  .option('-t, --title <title>', 'Work order title')
+  .action(async (options: CreateEscrowOptions) => {
+    intro(chalk.green('🔒 Create Escrow Payment'))
 
     try {
-      const amount = await text({
-        message: 'Escrow amount (in SOL):',
-        placeholder: '1.0',
-        validate: (value) => {
-          if (!value) return 'Amount is required'
-          const num = parseFloat(value)
-          if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
-        }
-      })
-
-      if (isCancel(amount)) {
-        cancel('Escrow creation cancelled')
-        return
-      }
-
-      const recipient = await text({
-        message: 'Recipient wallet address:',
-        placeholder: 'Enter Solana wallet address...',
-        validate: (value) => {
-          if (!value) return 'Recipient address is required'
-          try {
-            address(value)
-            return
-          } catch {
-            return 'Invalid Solana address format'
-          }
-        }
-      })
-
-      if (isCancel(recipient)) {
-        cancel('Escrow creation cancelled')
-        return
-      }
-
-      const workDescription = await text({
-        message: 'Work description:',
-        placeholder: 'Describe the work to be done...',
-        validate: (value) => {
-          if (!value) return 'Work description is required'
-          if (value.length < 10) return 'Description must be at least 10 characters'
-        }
-      })
-
-      if (isCancel(workDescription)) {
-        cancel('Escrow creation cancelled')
-        return
-      }
-
       const s = spinner()
-      s.start('Connecting to Solana network...')
+      s.start('Connecting to network...')
       
-      // Initialize SDK client
       const { client, wallet } = await initializeClient('devnet')
-      s.stop('✅ Connected')
+      const safeClient = createSafeSDKClient(client)
       
-      // Ensure wallet has an address
-      if (!wallet?.address) {
-        throw new Error('No wallet found. Please run: ghostspeak faucet --save')
-      }
-      
-      s.stop('✅ Connected to network')
-      
-      // Generate a unique task ID
-      const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-      
-      let txId: string | undefined
-      
-      try {
-        // Create the escrow with retry logic
-        const signature = await withRetry(
-          async () => {
-            // Start transaction monitoring
-            txId = await trackTransaction(
-              'pending...',
-              'Creating escrow payment',
-              'devnet',
-              `${amount} SOL`
-            )
-            
-            const sig = await client.escrow.create({
-              signer: toSDKSigner(wallet),
-              title: `Task ${taskId}`,
-              description: `${workDescription} (${taskId})`,
-              provider: address(recipient),
-              amount: BigInt(Math.floor(parseFloat(amount as string) * 1_000_000_000)), // Convert SOL to lamports
-              deadline: BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60), // 7 days from now
-              paymentToken: address('So11111111111111111111111111111111111111112'), // Native SOL
-              requirements: []
-            })
-            
-            // Update with real signature
-            if (txId) {
-              await trackTransaction(
-                sig,
-                'Creating escrow payment',
-                'devnet',
-                `${amount} SOL`
-              )
+      s.stop('✅ Connected to devnet')
+
+      // Get client address (default to user's wallet)
+      const clientAddress = options.client ?? wallet.address
+
+      // Get provider address
+      let providerAddress = options.provider
+      if (!providerAddress) {
+        const providerInput = await text({
+          message: 'Service provider address:',
+          placeholder: 'Enter the agent or user address providing the service',
+          validate: (value) => {
+            if (!value || value.trim().length === 0) {
+              return 'Provider address is required'
             }
-            
-            return sig
-          },
-          {
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              if (txId) {
-                transactionFailed(txId, error, true)
-              }
-              console.log(chalk.yellow(`\nRetrying escrow creation (attempt ${attempt + 1}/3)...`))
+            try {
+              address(value.trim())
+              return
+            } catch {
+              return 'Please enter a valid Solana address'
             }
           }
-        )
-        
-        // Mark transaction as successful
-        if (txId) {
-          transactionSuccess(txId, '✅ Escrow created successfully!')
+        })
+
+        if (isCancel(providerInput)) {
+          cancel('Escrow creation cancelled')
+          return
         }
 
-        console.log('\n' + chalk.green('🎉 Escrow payment created!'))
-        console.log(chalk.gray(`Task ID: ${taskId}`))
-        console.log(chalk.gray(`Amount: ${amount} SOL`))
-        console.log(chalk.gray(`Provider: ${recipient}`))
-        console.log(chalk.gray(`Description: ${workDescription}`))
-        console.log(chalk.gray(`Status: Active - Awaiting completion`))
-        console.log(chalk.gray(`Deadline: ${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleString()}`))
-        console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(signature, 'devnet'))
+        providerAddress = providerInput.toString().trim()
+      }
 
-        outro('Escrow creation completed')
-      } catch (error: unknown) {
-        if (txId) {
-          transactionFailed(txId, error as Error)
-        }
-        handleError(error, {
-          operation: 'Create escrow payment',
-          details: {
-            amount: `${amount} SOL`,
-            recipient
+      // Get work order title
+      let title = options.title
+      if (!title) {
+        const titleInput = await text({
+          message: 'Work order title:',
+          placeholder: 'AI Code Review and Optimization',
+          validate: (value) => {
+            if (!value || value.trim().length === 0) {
+              return 'Work order title is required'
+            }
+            if (value.length < 5) {
+              return 'Title must be at least 5 characters'
+            }
+            if (value.length > 100) {
+              return 'Title must be less than 100 characters'
+            }
           }
         })
-        throw error
-      }
 
-    } catch (error) {
-      // Error already handled above
-      process.exit(1)
-    }
-  })
-
-escrowCommand
-  .command('list')
-  .description('List your escrow payments')
-  .action(async (_options: { limit?: string }) => {
-    intro(chalk.yellow('📋 Your Escrow Payments'))
-    
-    // Acknowledge options for future limit implementation
-    void _options
-
-    const s = spinner()
-    s.start('Connecting to Solana network...')
-
-    try {
-      // Initialize SDK client
-      const { client, wallet } = await initializeClient('devnet')
-      s.stop('✅ Connected')
-      
-      s.start('Loading escrow payments...')
-      
-      // Fetch user's escrows (work orders)
-      const workOrders = await client.escrow.getEscrowsForUser(wallet.address)
-      
-      s.stop('✅ Escrows loaded')
-
-      if (workOrders.length === 0) {
-        console.log('\n' + chalk.yellow('No escrow payments found'))
-        outro('Create an escrow with: gs escrow create')
-        return
-      }
-
-      console.log('\n' + chalk.bold(`💰 Your Work Orders (${workOrders.length})`))
-      console.log('─'.repeat(70))
-      
-      // Import WorkOrderStatus enum
-      const { WorkOrderStatus } = await import('@ghostspeak/sdk')
-      
-      workOrders.forEach((workOrder, index) => {
-        const isClient = workOrder.client === wallet.address
-        const role = isClient ? 'Client' : 'Provider'
-        
-        let statusIcon = '⏳'
-        let statusText = 'Unknown'
-        
-        switch (workOrder.status) {
-          case WorkOrderStatus.Open:
-            statusIcon = '📋'
-            statusText = 'Open'
-            break
-          case WorkOrderStatus.InProgress:
-            statusIcon = '🔨'
-            statusText = 'In Progress'
-            break
-          case WorkOrderStatus.Submitted:
-            statusIcon = '📝'
-            statusText = 'Work Submitted'
-            break
-          case WorkOrderStatus.Completed:
-            statusIcon = '✅'
-            statusText = 'Completed'
-            break
-          case WorkOrderStatus.Cancelled:
-            statusIcon = '❌'
-            statusText = 'Cancelled'
-            break
-        }
-        
-        console.log(chalk.yellow(`${index + 1}. ${workOrder.title}`))
-        console.log(chalk.gray(`   Role: ${role}`))
-        console.log(chalk.gray(`   Created: ${new Date(Number(workOrder.createdAt) * 1000).toLocaleDateString()}`))
-        console.log(chalk.gray(`   Amount: ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`))
-        console.log(chalk.gray(`   Status: ${statusIcon} ${statusText}`))
-        console.log(chalk.gray(`   Client: ${workOrder.client.slice(0, 8)}...`))
-        console.log(chalk.gray(`   Provider: ${workOrder.provider.slice(0, 8)}...`))
-        console.log(chalk.gray(`   Created: ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`))
-        console.log(chalk.gray(`   Deadline: ${new Date(Number(workOrder.deadline) * 1000).toLocaleString()}`))
-        if (workOrder.description) {
-          console.log(chalk.gray(`   Description: ${workOrder.description.slice(0, 50)}...`))
-        }
-        console.log('')
-      })
-
-      outro('Escrow listing completed')
-
-    } catch (error) {
-      s.stop('❌ Failed to load escrows')
-      cancel(chalk.red('Error: ' + (error instanceof Error ? error.message : 'Unknown error')))
-    }
-  })
-
-// Release escrow payment
-escrowCommand
-  .command('release')
-  .description('Release funds from escrow')
-  .argument('<escrow-id>', 'Escrow ID to release')
-  .action(async (escrowId: string, _options: ReleaseEscrowOptions) => {
-    intro(chalk.yellow('💸 Release Escrow Payment'))
-    
-    // Acknowledge options for future release options implementation
-    void _options
-
-    try {
-      // Fetch escrow details
-      const s = spinner()
-      s.start('Connecting to Solana network...')
-      
-      // Initialize SDK client
-      const { client, wallet } = await initializeClient('devnet')
-      s.stop('✅ Connected')
-      
-      s.start(`Loading escrow ${escrowId}...`)
-
-      let escrowPubkey: Address
-      try {
-        escrowPubkey = address(escrowId)
-      } catch {
-        s.stop('❌ Invalid escrow ID')
-        cancel('Invalid escrow ID format')
-        return
-      }
-
-      const workOrder = await client.escrow.getAccount(escrowPubkey)
-
-      s.stop('✅ Work order loaded')
-
-      if (!workOrder) {
-        cancel('Work order not found')
-        return
-      }
-
-      // Check if user is the client
-      if (workOrder.client !== wallet.address) {
-        cancel('You are not the client of this work order')
-        return
-      }
-
-      // Check work order status
-      if (workOrder.status === WorkOrderStatus.Completed) {
-        cancel('This work order has already been completed')
-        return
-      }
-
-      if (workOrder.status.toString() === 'Disputed') {
-        cancel('This work order is currently disputed and cannot be released')
-        return
-      }
-
-      if (workOrder.status === WorkOrderStatus.Cancelled) {
-        cancel('This work order has been cancelled')
-        return
-      }
-
-      if (workOrder.status !== WorkOrderStatus.Submitted) {
-        console.log('\n' + chalk.yellow('⚠️  Work has not been submitted yet'))
-      }
-
-      console.log('\n' + chalk.bold('🔒 Work Order Details'))
-      console.log('─'.repeat(40))
-      console.log(chalk.yellow('Title:') + ` ${workOrder.title ?? 'Untitled'}`)
-      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
-      console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
-      console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
-      console.log(chalk.yellow('Provider:') + ` ${workOrder.provider.slice(0, 8)}...`)
-      console.log(chalk.yellow('Status:') + ` ${workOrder.status === WorkOrderStatus.Submitted ? 'Work Submitted' : 'Awaiting Work'}`)
-      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
-      console.log(chalk.yellow('Deadline:') + ` ${new Date(Number(workOrder.deadline) * 1000).toLocaleString()}`)
-
-      // Work verification
-      const verified = await confirm({
-        message: 'Have you verified the completed work?'
-      })
-
-      if (isCancel(verified)) {
-        cancel('Release cancelled')
-        return
-      }
-
-      if (!verified) {
-        console.log('\n' + chalk.yellow('⚠️  Please review the work before releasing payment'))
-        const proceed = await confirm({
-          message: 'Do you still want to proceed with release?'
-        })
-
-        if (isCancel(proceed) || !proceed) {
-          cancel('Release cancelled')
-          return
-        }
-      }
-
-      // Get work delivery proof
-      let workDeliveryUri = ''
-      if (workOrder.status === WorkOrderStatus.Submitted) {
-        console.log('\n' + chalk.yellow('ℹ️  Work has been submitted by the provider'))
-        const useSubmittedWork = await confirm({
-          message: 'Use the submitted work delivery for approval?'
-        })
-
-        if (isCancel(useSubmittedWork)) {
-          cancel('Release cancelled')
+        if (isCancel(titleInput)) {
+          cancel('Escrow creation cancelled')
           return
         }
 
-        if (!useSubmittedWork) {
-          const customUri = await text({
-            message: 'Enter work delivery proof/URI (optional):',
-            placeholder: 'ipfs://... or https://...'
-          })
+        title = titleInput.toString()
+      }
 
-          if (isCancel(customUri)) {
-            cancel('Release cancelled')
-            return
+      // Get escrow amount
+      let amount = options.amount
+      if (!amount) {
+        const amountInput = await text({
+          message: 'Escrow amount (SOL):',
+          placeholder: '0.5',
+          validate: (value) => {
+            const num = parseFloat(value)
+            if (isNaN(num) || num <= 0) {
+              return 'Please enter a valid positive number'
+            }
+            if (num > 100) {
+              return 'Escrow amount seems very high. Please confirm.'
+            }
           }
-
-          workDeliveryUri = customUri || ''
-        }
-      }
-
-      // Rating prompt
-      const rating = await select({
-        message: 'Rate the service (optional):',
-        options: [
-          { value: '5', label: '⭐⭐⭐⭐⭐ Excellent' },
-          { value: '4', label: '⭐⭐⭐⭐ Good' },
-          { value: '3', label: '⭐⭐⭐ Average' },
-          { value: '2', label: '⭐⭐ Below Average' },
-          { value: '1', label: '⭐ Poor' },
-          { value: 'skip', label: 'Skip rating' }
-        ]
-      })
-
-      if (isCancel(rating)) {
-        cancel('Release cancelled')
-        return
-      }
-
-      // Review prompt
-      let review = ''
-      if (rating !== 'skip') {
-        const reviewText = await text({
-          message: 'Leave a review (optional):',
-          placeholder: 'Share your experience with this service...'
         })
 
-        if (isCancel(reviewText)) {
-          cancel('Release cancelled')
+        if (isCancel(amountInput)) {
+          cancel('Escrow creation cancelled')
           return
         }
 
-        review = reviewText ?? ''
+        amount = amountInput.toString()
       }
 
-      // Final confirmation
-      console.log('\n' + chalk.bold('📋 Release Summary'))
-      console.log('─'.repeat(40))
-      console.log(chalk.yellow('Amount to release:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
-      console.log(chalk.yellow('To:') + ` ${workOrder.provider.slice(0, 8)}...`)
-      if (rating !== 'skip') {
-        console.log(chalk.yellow('Rating:') + ` ${rating} stars`)
-      }
-      if (review) {
-        console.log(chalk.yellow('Review:') + ` ${review}`)
-      }
-
-      const confirmed = await confirm({
-        message: 'Release payment from escrow?'
-      })
-
-      if (isCancel(confirmed) || !confirmed) {
-        cancel('Release cancelled')
-        return
-      }
-
-      const releaseSpinner = spinner()
-      releaseSpinner.start('Processing escrow release...')
-
-      try {
-        // Step 1: Complete the escrow (mark work as done)
-        console.log('\n' + chalk.gray('Step 1: Marking work as complete...'))
-        const completeResult = await client.escrow.completeEscrow({
-          escrowAddress: escrowPubkey,
-          resolutionNotes: workDeliveryUri || null,
-          signer: toSDKSigner(wallet)
-        })
-        console.log(chalk.green('✓ Work marked as complete'))
-
-        // Step 2: Process the payment release
-        console.log(chalk.gray('Step 2: Releasing payment to provider...'))
-        const paymentResult = await client.escrow.processEscrowPayment({
-          escrowAddress: escrowPubkey,
-          workOrder: escrowPubkey, // The escrow address is the work order
-          paymentToken: workOrder.paymentToken,
-          signer: toSDKSigner(wallet)
-        })
-
-        releaseSpinner.stop('✅ Funds released successfully!')
-
-        console.log('\n' + chalk.green('🎉 Payment released!'))
-        console.log(chalk.gray(`Amount: ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`))
-        console.log(chalk.gray(`To: ${workOrder.provider.slice(0, 8)}...`))
-        console.log(chalk.gray('Status: Completed'))
-        console.log('')
-        console.log(chalk.cyan('Complete Transaction:'), getExplorerUrl(completeResult, 'devnet'))
-        console.log(chalk.cyan('Payment Transaction:'), getExplorerUrl(paymentResult, 'devnet'))
-        
-        if (rating !== 'skip') {
-          console.log('\n' + chalk.green('⭐ Thank you for rating the service!'))
-        }
-
-        outro('Escrow release completed')
-      } catch (error) {
-        releaseSpinner.stop('❌ Release failed')
-        await handleTransactionError(error as Error)
-        throw error
-      }
-
-    } catch (error) {
-      cancel(chalk.red('Escrow release failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
-    }
-  })
-
-// Dispute escrow payment
-escrowCommand
-  .command('dispute')
-  .description('Open a dispute for an escrow payment')
-  .argument('<escrow-id>', 'Escrow ID to dispute')
-  .action(async (escrowId: string) => {
-    intro(chalk.red('⚠️  Open Escrow Dispute'))
-
-    try {
-      // Fetch escrow details
-      const s = spinner()
-      s.start('Connecting to Solana network...')
-      
-      // Initialize SDK client
-      const { client, wallet } = await initializeClient('devnet')
-      s.stop('✅ Connected')
-      
-      s.start(`Loading escrow ${escrowId}...`)
-
-      let escrowPubkey: Address
-      try {
-        escrowPubkey = address(escrowId)
-      } catch {
-        s.stop('❌ Invalid escrow ID')
-        cancel('Invalid escrow ID format')
-        return
-      }
-
-      const workOrder = await client.escrow.getAccount(escrowPubkey)
-
-      s.stop('✅ Work order loaded')
-
-      if (!workOrder) {
-        cancel('Work order not found')
-        return
-      }
-
-      // Check if user is the client
-      if (workOrder.client !== wallet.address) {
-        cancel('You are not the client of this work order')
-        return
-      }
-
-      // Check work order status
-      if (workOrder.status === WorkOrderStatus.Completed) {
-        cancel('This work order has already been completed')
-        return
-      }
-
-      if (workOrder.status.toString() === 'Disputed') {
-        cancel('This work order is already disputed')
-        return
-      }
-
-      if (workOrder.status === WorkOrderStatus.Cancelled) {
-        cancel('This work order has been cancelled')
-        return
-      }
-
-      console.log('\n' + chalk.bold('🔒 Work Order Details'))
-      console.log('─'.repeat(40))
-      console.log(chalk.yellow('Title:') + ` ${workOrder.title ?? 'Untitled'}`)
-      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
-      console.log(chalk.yellow('Description:') + ` ${workOrder.description}`)
-      console.log(chalk.yellow('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
-      console.log(chalk.yellow('Provider:') + ` ${workOrder.provider.slice(0, 8)}...`)
-      console.log(chalk.yellow('Status:') + ` ${workOrder.status === WorkOrderStatus.Submitted ? 'Work Submitted' : 'Awaiting Work'}`)
-      console.log(chalk.yellow('Created:') + ` ${new Date(Number(workOrder.createdAt) * 1000).toLocaleString()}`)
-      console.log(chalk.yellow('Deadline:') + ` ${new Date(Number(workOrder.deadline) * 1000).toLocaleString()}`)
-
-      // Dispute reason
-      const reason = await select({
-        message: 'Select dispute reason:',
-        options: [
-          { value: 'incomplete', label: '📝 Work not completed as agreed' },
-          { value: 'quality', label: '⚠️  Poor quality or incorrect work' },
-          { value: 'late', label: '⏰ Missed deadline' },
-          { value: 'unresponsive', label: '🔇 Provider unresponsive' },
-          { value: 'misrepresentation', label: '❌ Service misrepresentation' },
-          { value: 'other', label: '📋 Other reason' }
-        ]
-      })
-
-      if (isCancel(reason)) {
-        cancel('Dispute cancelled')
-        return
-      }
-
-      // Detailed description
+      // Get work description
       const description = await text({
-        message: 'Describe the issue in detail:',
-        placeholder: 'Explain what went wrong and what resolution you seek...',
+        message: 'Work description:',
+        placeholder: 'Detailed description of the work to be performed...',
         validate: (value) => {
-          if (!value) return 'Description is required'
-          if (value.length < 50) return 'Please provide at least 50 characters of detail'
+          if (!value || value.trim().length < 10) {
+            return 'Please provide at least 10 characters describing the work'
+          }
+          if (value.length > 500) {
+            return 'Description must be less than 500 characters'
+          }
         }
       })
 
       if (isCancel(description)) {
-        cancel('Dispute cancelled')
+        cancel('Escrow creation cancelled')
         return
       }
 
-      // Evidence upload prompt
-      const hasEvidence = await confirm({
-        message: 'Do you have evidence to support your dispute? (screenshots, chat logs, etc.)'
-      })
-
-      if (isCancel(hasEvidence)) {
-        cancel('Dispute cancelled')
-        return
-      }
-
-      let evidenceFiles: string[] = []
-      if (hasEvidence) {
-        const evidence = await text({
-          message: 'Evidence file paths (comma-separated):',
-          placeholder: 'e.g., screenshot1.png, chatlog.txt'
-        })
-
-        if (isCancel(evidence)) {
-          cancel('Dispute cancelled')
-          return
-        }
-
-        evidenceFiles = evidence ? evidence.split(',').map(f => f.trim()) : []
-      }
-
-      // Desired resolution
-      const resolution = await select({
-        message: 'What resolution are you seeking?',
+      // Get deadline
+      const deadlineChoice = await select({
+        message: 'Work deadline:',
         options: [
-          { value: 'full-refund', label: '💰 Full refund' },
-          { value: 'partial-refund', label: '💸 Partial refund' },
-          { value: 'redo-work', label: '🔄 Redo the work' },
-          { value: 'mediation', label: '🤝 Mediation with provider' }
+          { value: '24', label: '24 hours', hint: 'Rush job' },
+          { value: '72', label: '3 days', hint: 'Standard turnaround' },
+          { value: '168', label: '1 week', hint: 'Complex work' },
+          { value: '336', label: '2 weeks', hint: 'Major project' },
+          { value: 'custom', label: 'Custom deadline', hint: 'Specify custom timeframe' }
         ]
       })
 
-      if (isCancel(resolution)) {
-        cancel('Dispute cancelled')
+      if (isCancel(deadlineChoice)) {
+        cancel('Escrow creation cancelled')
         return
       }
 
-      // Confirmation
-      console.log('\n' + chalk.bold('📋 Dispute Summary'))
-      console.log('─'.repeat(40))
-      console.log(chalk.red('Escrow:') + ` ${escrowId}`)
-      console.log(chalk.red('Amount:') + ` ${Number(workOrder.paymentAmount) / 1_000_000_000} SOL`)
-      console.log(chalk.red('Reason:') + ` ${reason}`)
-      console.log(chalk.red('Resolution sought:') + ` ${resolution}`)
-      if (evidenceFiles.length > 0) {
-        console.log(chalk.red('Evidence files:') + ` ${evidenceFiles.length} files`)
-      }
-      console.log('\n' + chalk.gray('Description:'))
-      console.log(chalk.gray(description))
-
-      console.log('\n' + chalk.yellow('⚠️  Warning: Opening a dispute will freeze the escrow funds'))
-      console.log(chalk.yellow('   until the dispute is resolved.'))
-
-      const confirmed = await confirm({
-        message: 'Open this dispute?'
-      })
-
-      if (isCancel(confirmed) || !confirmed) {
-        cancel('Dispute cancelled')
-        return
-      }
-
-      const disputeSpinner = spinner()
-      disputeSpinner.start('Opening dispute...')
-
-      try {
-        // Combine reason and description into a single dispute reason string
-        const disputeReason = `${reason}: ${description}`
-        
-        // Use the escrow.disputeEscrow method
-        const result = await client.escrow.disputeEscrow({
-          escrowAddress: escrowPubkey,
-          disputeReason: disputeReason,
-          signer: toSDKSigner(wallet)
+      let deadlineHours = deadlineChoice.toString()
+      if (deadlineHours === 'custom') {
+        const customDeadline = await text({
+          message: 'Deadline (hours from now):',
+          placeholder: '48',
+          validate: (value) => {
+            const num = parseInt(value)
+            if (isNaN(num) || num <= 0) {
+              return 'Please enter a valid number of hours'
+            }
+            if (num > 8760) { // 1 year
+              return 'Deadline cannot be more than 1 year'
+            }
+          }
         })
 
-        disputeSpinner.stop('✅ Dispute opened successfully!')
+        if (isCancel(customDeadline)) {
+          cancel('Escrow creation cancelled')
+          return
+        }
 
-        console.log('\n' + chalk.red('⚠️  Dispute Opened'))
-        console.log(chalk.gray(`Escrow: ${escrowPubkey.toString()}`))
-        console.log(chalk.gray('Status: Under Review'))
-        console.log(chalk.gray('Escrow Status: Frozen'))
-        console.log('')
-        console.log(chalk.cyan('Transaction:'), getExplorerUrl(result, 'devnet'))
-        console.log(chalk.cyan('Escrow Account:'), getAddressExplorerUrl(escrowPubkey.toString(), 'devnet'))
+        deadlineHours = customDeadline.toString()
+      }
+
+      // Show escrow preview
+      const amountNum = parseFloat(amount)
+      const fees = amountNum * 0.025 // 2.5% platform fee
+      const totalCost = amountNum + fees
+
+      note(
+        `${chalk.bold('Escrow Details:')}\n` +
+        `${chalk.gray('Client:')} ${clientAddress}\n` +
+        `${chalk.gray('Provider:')} ${providerAddress}\n` +
+        `${chalk.gray('Title:')} ${title}\n` +
+        `${chalk.gray('Amount:')} ${amount} SOL\n` +
+        `${chalk.gray('Platform Fee:')} ${fees.toFixed(4)} SOL (2.5%)\n` +
+        `${chalk.gray('Total Cost:')} ${totalCost.toFixed(4)} SOL\n` +
+        `${chalk.gray('Deadline:')} ${deadlineHours} hours from now`,
+        'Escrow Preview'
+      )
+
+      const confirmCreate = await confirm({
+        message: `Create escrow for ${totalCost.toFixed(4)} SOL?`
+      })
+
+      if (isCancel(confirmCreate) || !confirmCreate) {
+        cancel('Escrow creation cancelled')
+        return
+      }
+
+      s.start('Creating escrow on blockchain...')
+
+      try {
+        // Convert SOL to lamports (1 SOL = 1,000,000,000 lamports)
+        const amountLamports = Math.floor(amountNum * 1_000_000_000)
+        // const _deadlineTimestamp = Math.floor(Date.now() / 1000) + (parseInt(deadlineHours) * 3600)
+
+        const signature = await safeClient.escrow.create(toSDKSigner(wallet), {
+          provider: address(providerAddress),
+          amount: BigInt(amountLamports),
+          description: description.toString()
+        })
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
+        }
+
+        s.stop('✅ Escrow created successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
         
-        console.log('\n' + chalk.yellow('💡 Next steps:'))
-        console.log(chalk.gray('1. The provider will be notified of the dispute'))
-        console.log(chalk.gray('2. Both parties can submit additional evidence'))
-        console.log(chalk.gray('3. A mediator will review the case within 48 hours'))
-        console.log(chalk.gray('4. You will be notified of the resolution'))
+        outro(
+          `${chalk.green('🔒 Escrow Created Successfully!')}\n\n` +
+          `${chalk.bold('Escrow Details:')}\n` +
+          `${chalk.gray('Title:')} ${title}\n` +
+          `${chalk.gray('Amount:')} ${amount} SOL\n` +
+          `${chalk.gray('Provider:')} ${providerAddress}\n` +
+          `${chalk.gray('Deadline:')} ${deadlineHours} hours\n\n` +
+          `${chalk.bold('Transaction:')}\n` +
+          `${chalk.gray('Signature:')} ${signature}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
+          `${chalk.yellow('Next Steps:')}\n` +
+          `• Provider can now begin work\n` +
+          `• Monitor progress: ${chalk.cyan('gs escrow list')}\n` +
+          `• Release funds when work is complete: ${chalk.cyan('gs escrow release')}`
+        )
 
-        outro('Dispute opened')
       } catch (error) {
-        disputeSpinner.stop('❌ Dispute creation failed')
-        await handleTransactionError(error as Error)
-        throw error
+        s.stop('❌ Failed to create escrow')
+        handleTransactionError(error as Error)
       }
 
     } catch (error) {
-      cancel(chalk.red('Dispute creation failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+      log.error(`Failed to create escrow: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
+  })
+
+// List escrows subcommand
+escrowCommand
+  .command('list')
+  .description('List escrow payments')
+  .option('--as-client', 'Show escrows where you are the client')
+  .option('--as-provider', 'Show escrows where you are the provider')
+  .option('-s, --status <status>', 'Filter by status (active, completed, disputed)')
+  .action(async (options: ListEscrowOptions) => {
+    intro(chalk.green('📋 Escrow Payments'))
+
+    try {
+      const s = spinner()
+      s.start('Loading escrows...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+
+      const escrows = await safeClient.escrow.getEscrowsForUser(wallet.address)
+
+      // Filter based on options
+      let filteredEscrows = escrows
+      if (options.asClient) {
+        filteredEscrows = escrows.filter(e => e.client === wallet.address)
+      } else if (options.asProvider) {
+        filteredEscrows = escrows.filter(e => e.provider === wallet.address)
+      }
+
+      if (options.status) {
+        filteredEscrows = filteredEscrows.filter(e => 
+          e.status.toLowerCase() === options.status?.toLowerCase()
+        )
+      }
+
+      s.stop(`✅ Found ${filteredEscrows.length} escrows`)
+
+      if (filteredEscrows.length === 0) {
+        outro(
+          `${chalk.yellow('No escrows found')}\n\n` +
+          `${chalk.gray('• Create an escrow:')} ${chalk.cyan('gs escrow create')}\n` +
+          `${chalk.gray('• Check all escrows:')} ${chalk.cyan('gs escrow list')}`
+        )
+        return
+      }
+
+      // Display escrows
+      log.info(`\n${chalk.bold('Your Escrows:')}\n`)
+      
+      filteredEscrows.forEach((escrow, index) => {
+        const amount = (Number(escrow.paymentAmount) / 1_000_000_000).toFixed(4)
+        const isClient = escrow.client === wallet.address
+        const role = isClient ? chalk.blue('CLIENT') : chalk.green('PROVIDER')
+        
+        const statusColor = escrow.status === 'active' ? chalk.yellow : 
+                           escrow.status === 'completed' ? chalk.green : 
+                           escrow.status === 'disputed' ? chalk.red : chalk.gray
+
+        log.info(
+          `${chalk.bold(`${index + 1}. ${escrow.title}`)}\n` +
+          `   ${chalk.gray('Address:')} ${escrow.address.slice(0, 8)}...${escrow.address.slice(-8)}\n` +
+          `   ${chalk.gray('Amount:')} ${amount} SOL\n` +
+          `   ${chalk.gray('Status:')} ${statusColor(escrow.status.toUpperCase())}\n` +
+          `   ${chalk.gray('Your Role:')} ${role}\n` +
+          `   ${chalk.gray('Other Party:')} ${isClient ? escrow.provider.slice(0, 8) + '...' : escrow.client.slice(0, 8) + '...'}\n`
+        )
+      })
+
+      outro(
+        `${chalk.yellow('💡 Commands:')}\n` +
+        `${chalk.cyan('gs escrow release')} - Release funds to provider\n` +
+        `${chalk.cyan('gs escrow dispute')} - File a dispute\n` +
+        `${chalk.cyan('gs escrow create')} - Create new escrow`
+      )
+
+    } catch (error) {
+      log.error(`Failed to load escrows: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+// Release escrow subcommand
+escrowCommand
+  .command('release')
+  .description('Release escrow funds to provider')
+  .option('-e, --escrow <address>', 'Escrow address')
+  .option('-a, --amount <amount>', 'Amount to release (optional for partial release)')
+  .action(async (options: ReleaseOptions) => {
+    intro(chalk.green('💰 Release Escrow Funds'))
+
+    try {
+      const s = spinner()
+      s.start('Loading your escrows...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+
+      // Get escrows where user is the client
+      const escrows = await safeClient.escrow.getEscrowsForUser(wallet.address)
+      const clientEscrows = escrows.filter(e => 
+        e.client === wallet.address && e.status.toLowerCase() === 'active'
+      )
+
+      s.stop(`✅ Found ${clientEscrows.length} active escrows`)
+
+      if (clientEscrows.length === 0) {
+        outro('No active escrows found where you are the client')
+        return
+      }
+
+      // Select escrow
+      let selectedEscrow = options.escrow
+      if (!selectedEscrow) {
+        const escrowChoice = await select({
+          message: 'Select escrow to release funds from:',
+          options: clientEscrows.map(escrow => {
+            const amount = (Number(escrow.paymentAmount) / 1_000_000_000).toFixed(4)
+            return {
+              value: escrow.address,
+              label: `${escrow.title} - ${amount} SOL`,
+              hint: `Provider: ${escrow.provider.slice(0, 8)}...`
+            }
+          })
+        })
+
+        if (isCancel(escrowChoice)) {
+          cancel('Fund release cancelled')
+          return
+        }
+
+        selectedEscrow = escrowChoice.toString()
+      }
+
+      const escrow = clientEscrows.find(e => e.address === selectedEscrow)
+      if (!escrow) {
+        log.error('Escrow not found or you are not the client')
+        return
+      }
+
+      const totalAmount = Number(escrow.paymentAmount) / 1_000_000_000
+
+      // Determine release type
+      const releaseType = await select({
+        message: 'Release type:',
+        options: [
+          { value: 'full', label: 'Full Release', hint: `Release all ${totalAmount.toFixed(4)} SOL` },
+          { value: 'partial', label: 'Partial Release', hint: 'Release a portion of the funds' }
+        ]
+      })
+
+      if (isCancel(releaseType)) {
+        cancel('Fund release cancelled')
+        return
+      }
+
+      let releaseAmount = totalAmount
+      if (releaseType === 'partial') {
+        const amountInput = await text({
+          message: `Amount to release (max ${totalAmount.toFixed(4)} SOL):`,
+          placeholder: (totalAmount * 0.5).toFixed(4),
+          validate: (value) => {
+            const num = parseFloat(value)
+            if (isNaN(num) || num <= 0) {
+              return 'Please enter a valid positive number'
+            }
+            if (num > totalAmount) {
+              return `Amount cannot exceed ${totalAmount.toFixed(4)} SOL`
+            }
+          }
+        })
+
+        if (isCancel(amountInput)) {
+          cancel('Fund release cancelled')
+          return
+        }
+
+        releaseAmount = parseFloat(amountInput.toString())
+      }
+
+      // Get release reason
+      const releaseReason = await select({
+        message: 'Reason for release:',
+        options: [
+          { value: 'work_completed', label: 'Work Completed', hint: 'All work has been completed satisfactorily' },
+          { value: 'milestone', label: 'Milestone Reached', hint: 'Important milestone has been achieved' },
+          { value: 'partial_delivery', label: 'Partial Delivery', hint: 'Part of the work has been delivered' },
+          { value: 'other', label: 'Other Reason', hint: 'Custom release reason' }
+        ]
+      })
+
+      if (isCancel(releaseReason)) {
+        cancel('Fund release cancelled')
+        return
+      }
+
+      let notes = ''
+      if (releaseReason === 'other') {
+        const notesInput = await text({
+          message: 'Release notes:',
+          placeholder: 'Explain why you are releasing the funds...'
+        })
+
+        if (isCancel(notesInput)) {
+          cancel('Fund release cancelled')
+          return
+        }
+
+        notes = notesInput.toString()
+      }
+
+      // Show release preview
+      note(
+        `${chalk.bold('Release Details:')}\n` +
+        `${chalk.gray('Escrow:')} ${escrow.title}\n` +
+        `${chalk.gray('Provider:')} ${escrow.provider}\n` +
+        `${chalk.gray('Release Amount:')} ${releaseAmount.toFixed(4)} SOL\n` +
+        `${chalk.gray('Remaining:')} ${(totalAmount - releaseAmount).toFixed(4)} SOL\n` +
+        `${chalk.gray('Reason:')} ${releaseReason.replace('_', ' ')}\n` +
+        `${notes ? chalk.gray('Notes: ') + notes : ''}`,
+        'Release Preview'
+      )
+
+      const confirmRelease = await confirm({
+        message: `Release ${releaseAmount.toFixed(4)} SOL to the provider?`
+      })
+
+      if (isCancel(confirmRelease) || !confirmRelease) {
+        cancel('Fund release cancelled')
+        return
+      }
+
+      s.start('Releasing funds on blockchain...')
+
+      try {
+        const signature = await safeClient.escrow.releaseFunds(toSDKSigner(wallet), selectedEscrow)
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
+        }
+
+        s.stop('✅ Funds released successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.green('💰 Funds Released!')}\n\n` +
+          `${chalk.bold('Release Details:')}\n` +
+          `${chalk.gray('Escrow:')} ${escrow.title}\n` +
+          `${chalk.gray('Amount Released:')} ${releaseAmount.toFixed(4)} SOL\n` +
+          `${chalk.gray('Provider:')} ${escrow.provider}\n\n` +
+          `${chalk.bold('Transaction:')}\n` +
+          `${chalk.gray('Signature:')} ${signature}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
+          `${chalk.yellow('✅ The provider will receive the funds shortly')}`
+        )
+
+      } catch (error) {
+        s.stop('❌ Failed to release funds')
+        handleTransactionError(error as Error)
+      }
+
+    } catch (error) {
+      log.error(`Failed to release funds: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+// Dispute escrow subcommand
+escrowCommand
+  .command('dispute')
+  .description('File a dispute for an escrow payment')
+  .option('-e, --escrow <address>', 'Escrow address')
+  .option('-r, --reason <reason>', 'Dispute reason')
+  .action(async (options: DisputeEscrowOptions) => {
+    intro(chalk.red('⚖️ File Escrow Dispute'))
+
+    try {
+      const s = spinner()
+      s.start('Loading your escrows...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+
+      // Get escrows where user is involved
+      const escrows = await safeClient.escrow.getEscrowsForUser(wallet.address)
+      const disputableEscrows = escrows.filter(e => 
+        e.status.toLowerCase() === 'active' && 
+        (e.client === wallet.address || e.provider === wallet.address)
+      )
+
+      s.stop(`✅ Found ${disputableEscrows.length} active escrows`)
+
+      if (disputableEscrows.length === 0) {
+        outro('No active escrows found that can be disputed')
+        return
+      }
+
+      // Select escrow
+      let selectedEscrow = options.escrow
+      if (!selectedEscrow) {
+        const escrowChoice = await select({
+          message: 'Select escrow to dispute:',
+          options: disputableEscrows.map(escrow => {
+            const amount = (Number(escrow.paymentAmount) / 1_000_000_000).toFixed(4)
+            const role = escrow.client === wallet.address ? 'CLIENT' : 'PROVIDER'
+            return {
+              value: escrow.address,
+              label: `${escrow.title} - ${amount} SOL`,
+              hint: `Your role: ${role}`
+            }
+          })
+        })
+
+        if (isCancel(escrowChoice)) {
+          cancel('Dispute filing cancelled')
+          return
+        }
+
+        selectedEscrow = escrowChoice.toString()
+      }
+
+      const escrow = disputableEscrows.find(e => e.address === selectedEscrow)
+      if (!escrow) {
+        log.error('Escrow not found or cannot be disputed')
+        return
+      }
+
+      // Get dispute reason
+      let reason = options.reason
+      if (!reason) {
+        const reasonChoice = await select({
+          message: 'Dispute reason:',
+          options: [
+            { value: 'work_not_delivered', label: 'Work Not Delivered', hint: 'Provider has not delivered the work' },
+            { value: 'poor_quality', label: 'Poor Quality Work', hint: 'Work quality is below expectations' },
+            { value: 'missed_deadline', label: 'Missed Deadline', hint: 'Work was not completed on time' },
+            { value: 'payment_issue', label: 'Payment Issue', hint: 'Problem with payment or terms' },
+            { value: 'scope_disagreement', label: 'Scope Disagreement', hint: 'Disagreement about work scope' },
+            { value: 'other', label: 'Other Issue', hint: 'Custom dispute reason' }
+          ]
+        })
+
+        if (isCancel(reasonChoice)) {
+          cancel('Dispute filing cancelled')
+          return
+        }
+
+        reason = reasonChoice.toString()
+      }
+
+      // Get detailed explanation
+      const explanation = await text({
+        message: 'Explain the dispute in detail:',
+        placeholder: 'Provide specific details about the issue...',
+        validate: (value) => {
+          if (!value || value.trim().length < 20) {
+            return 'Please provide at least 20 characters explaining the dispute'
+          }
+          if (value.length > 1000) {
+            return 'Explanation must be less than 1000 characters'
+          }
+        }
+      })
+
+      if (isCancel(explanation)) {
+        cancel('Dispute filing cancelled')
+        return
+      }
+
+      // Show dispute preview
+      note(
+        `${chalk.bold('Dispute Details:')}\n` +
+        `${chalk.gray('Escrow:')} ${escrow.title}\n` +
+        `${chalk.gray('Amount:')} ${(Number(escrow.paymentAmount) / 1_000_000_000).toFixed(4)} SOL\n` +
+        `${chalk.gray('Reason:')} ${reason.replace('_', ' ')}\n` +
+        `${chalk.gray('Explanation:')} ${explanation.toString().slice(0, 100)}...\n` +
+        `${chalk.gray('Filing Fee:')} 0.01 SOL (refunded if dispute is upheld)`,
+        'Dispute Preview'
+      )
+
+      const confirmDispute = await confirm({
+        message: 'File this dispute? (This will freeze the escrow until resolved)'
+      })
+
+      if (isCancel(confirmDispute) || !confirmDispute) {
+        cancel('Dispute filing cancelled')
+        return
+      }
+
+      s.start('Filing dispute on blockchain...')
+
+      try {
+        const signature = await safeClient.escrow.fileDispute({
+          escrow: address(selectedEscrow),
+          reason,
+          explanation: explanation.toString(),
+          evidence: [],
+          signer: toSDKSigner(wallet)
+        })
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
+        }
+
+        s.stop('✅ Dispute filed successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.red('⚖️ Dispute Filed!')}\n\n` +
+          `${chalk.bold('Dispute Details:')}\n` +
+          `${chalk.gray('Escrow:')} ${escrow.title}\n` +
+          `${chalk.gray('Reason:')} ${reason.replace('_', ' ')}\n` +
+          `${chalk.gray('Status:')} Under Review\n\n` +
+          `${chalk.bold('Transaction:')}\n` +
+          `${chalk.gray('Signature:')} ${signature}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
+          `${chalk.yellow('Next Steps:')}\n` +
+          `• The escrow is now frozen until resolution\n` +
+          `• An arbitrator will review the dispute\n` +
+          `• You can submit additional evidence if needed\n` +
+          `• Check status: ${chalk.cyan('gs dispute list --mine')}`
+        )
+
+      } catch (error) {
+        s.stop('❌ Failed to file dispute')
+        handleTransactionError(error as Error)
+      }
+
+    } catch (error) {
+      log.error(`Failed to file dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+// Default action - show escrow list
+escrowCommand
+  .action(async () => {
+    // Redirect to list command
+    await escrowCommand.commands.find(cmd => cmd.name() === 'list')?.parseAsync(process.argv)
   })

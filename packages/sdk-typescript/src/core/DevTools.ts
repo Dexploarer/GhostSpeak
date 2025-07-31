@@ -117,9 +117,17 @@ export class DevTools {
 
       const accounts: AccountInfo[] = (instr.accounts ?? []).map(acc => {
         // Check if the role has 'writable' in its name or is specifically writable
-        const isWritable = acc.role.toString().includes('writable')
-        // Check if the role has 'signer' in its name
-        const isSigner = acc.role.toString().includes('signer')
+        const isWritable = acc.role.toString().includes('writable') || 
+                          acc.role.toString().includes('WRITABLE') ||
+                          acc.role === 1 || // AccountRole.WRITABLE = 1
+                          acc.role === 3    // AccountRole.WRITABLE_SIGNER = 3
+        // Check if the role has 'signer' in its name or contains signer property
+        const isSigner = acc.role.toString().includes('signer') || 
+                         acc.role.toString().includes('SIGNER') ||
+                         (typeof acc === 'object' && 'signer' in acc) ||
+                         acc.role === 3 // AccountRole.WRITABLE_SIGNER = 3
+        
+        // Account analysis complete
         
         if (isWritable) {
           writableAccounts.add(acc.address)
@@ -166,7 +174,7 @@ export class DevTools {
       warnings.push('No signers found in transaction')
     }
     
-    if (estimatedComputeUnits > 1_400_000n) {
+    if (estimatedComputeUnits > BigInt(1_400_000)) {
       warnings.push(`High compute usage: ${estimatedComputeUnits} units`)
     }
 
@@ -186,7 +194,7 @@ export class DevTools {
   /**
    * Get human-readable instruction description
    */
-  private getInstructionDescription(instruction: IInstruction, index: number): string {
+  private getInstructionDescription(instruction: IInstruction, _index: number): string {
     // Try to decode based on program ID
     const programId = instruction.programAddress
     
@@ -242,11 +250,11 @@ export class DevTools {
    * Estimate compute units for instructions
    */
   private estimateComputeUnits(instructions: IInstruction[]): bigint {
-    let totalUnits = 0n
+    let totalUnits = BigInt(0)
     
     for (const instr of instructions) {
       // Base cost per instruction
-      totalUnits += 200n
+      totalUnits += BigInt(200)
       
       // Account access costs
       totalUnits += BigInt((instr.accounts?.length ?? 0) * 150)
@@ -257,7 +265,7 @@ export class DevTools {
       // Program-specific costs
       if (instr.programAddress === this.config.programId) {
         // GhostSpeak operations are more complex
-        totalUnits += 5000n
+        totalUnits += BigInt(5000)
       }
     }
     
@@ -269,10 +277,10 @@ export class DevTools {
    */
   private estimateFee(computeUnits: bigint, instructionCount: number): bigint {
     // Base fee: 5000 lamports per signature
-    const baseFee = 5000n
+    const baseFee = BigInt(5000)
     
     // Compute unit fee: ~0.000005 SOL per 1M units
-    const computeFee = (computeUnits * 5n) / 1_000_000n
+    const computeFee = (computeUnits * BigInt(5)) / BigInt(1_000_000)
     
     // Priority fee estimate
     const priorityFee = BigInt(instructionCount * 1000)

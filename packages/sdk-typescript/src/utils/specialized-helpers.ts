@@ -322,13 +322,14 @@ export class GhostSpeakHelpers {
       }
 
       // Schedule next poll
-      if (isActive) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (isMonitoring) {
         setTimeout(poll, currentInterval)
       }
     }
 
     // Start monitoring
-    poll()
+    void poll()
 
     // Set overall timeout
     setTimeout(() => {
@@ -395,7 +396,7 @@ export class GhostSpeakHelpers {
         }
       }
 
-      checkCondition()
+      void checkCondition()
     })
   }
 

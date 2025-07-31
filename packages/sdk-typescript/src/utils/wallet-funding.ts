@@ -26,6 +26,7 @@ import {
 import { getTransferSolInstruction } from '@solana-program/system'
 import { promises as fs } from 'fs'
 import chalk from 'chalk'
+import bs58 from 'bs58'
 
 /**
  * Funding strategy options
@@ -322,7 +323,7 @@ export class WalletFundingService {
         console.log(chalk.gray(`[WalletFunding] Treasury balance: ${this.formatSol(treasuryBalance)} SOL`))
       }
 
-      if (treasuryBalance < amount + 5000n) { // Keep 5000 lamports for fees
+      if (treasuryBalance < amount + BigInt(5000)) { // Keep 5000 lamports for fees
         return {
           success: false,
           error: 'Insufficient treasury balance'
@@ -365,7 +366,7 @@ export class WalletFundingService {
         console.log(chalk.gray(`[WalletFunding] Funded wallet balance: ${this.formatSol(balance)} SOL`))
       }
 
-      if (balance < amount + 5000n) { // Keep 5000 lamports for fees
+      if (balance < amount + BigInt(5000)) { // Keep 5000 lamports for fees
         return {
           success: false,
           error: 'Insufficient wallet balance'
@@ -422,7 +423,7 @@ export class WalletFundingService {
       .sendTransaction(base64Transaction, { 
         skipPreflight: false,
         preflightCommitment: this.commitment,
-        maxRetries: 5n
+        maxRetries: BigInt(5)
       })
       .send()
       
@@ -474,13 +475,41 @@ export class WalletFundingService {
         return await createKeyPairSignerFromBytes(new Uint8Array(walletData))
       } catch {
         // Try as base58 private key
-        throw new Error('Base58 private key loading not implemented')
+        try {
+          const privateKeyBytes = bs58.decode(envValue)
+          // Solana private keys can be 32 bytes (seed) or 64 bytes (full keypair)
+          if (privateKeyBytes.length === 32 || privateKeyBytes.length === 64) {
+            return await createKeyPairSignerFromBytes(privateKeyBytes)
+          }
+          throw new Error('Invalid base58 private key length')
+        } catch (error) {
+          throw new Error(`Failed to load wallet from base58 key: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
       }
     }
 
     // Load from file
     const walletData = JSON.parse(await fs.readFile(walletSource, 'utf-8')) as number[]
     return createKeyPairSignerFromBytes(new Uint8Array(walletData))
+  }
+
+  /**
+   * Load wallet from base58 private key
+   */
+  static async loadWalletFromBase58(base58PrivateKey: string): Promise<KeyPairSigner> {
+    try {
+      const privateKeyBytes = bs58.decode(base58PrivateKey)
+      // Solana private keys can be 32 bytes (seed) or 64 bytes (full keypair)
+      if (privateKeyBytes.length === 32 || privateKeyBytes.length === 64) {
+        return await createKeyPairSignerFromBytes(privateKeyBytes)
+      }
+      throw new Error(`Invalid private key length: ${privateKeyBytes.length} bytes. Expected 32 or 64 bytes.`)
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Invalid private key length')) {
+        throw error
+      }
+      throw new Error(`Failed to decode base58 private key: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   /**

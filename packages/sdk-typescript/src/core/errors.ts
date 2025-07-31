@@ -29,7 +29,6 @@ export class GhostSpeakError extends Error {
     this.code = code
     this.context = context
     this.solution = solution
-    // @ts-expect-error Adding custom property to error object
     this.instruction = instruction
   }
 
@@ -153,7 +152,7 @@ export class TransactionFailedError extends GhostSpeakError {
     
     super(
       ErrorCode.TRANSACTION_FAILED,
-      `Transaction failed: ${programError || errorLog || 'Unknown error'}`,
+      `Transaction failed: ${programError ?? errorLog ?? 'Unknown error'}`,
       { signature, logs, programError },
       TransactionFailedError.getSolution(logs, programError),
       `https://explorer.solana.com/tx/${signature}?cluster=devnet`

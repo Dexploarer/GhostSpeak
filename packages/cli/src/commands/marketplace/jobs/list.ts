@@ -1,7 +1,3 @@
-/**
- * Marketplace jobs list command
- */
-
 import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
@@ -10,86 +6,151 @@ import {
   select,
   spinner,
   isCancel,
-  cancel
+  cancel,
+  log,
+  note
 } from '@clack/prompts'
 import { initializeClient } from '../../../utils/client.js'
-import type { JobPosting } from '@ghostspeak/sdk'
-import type { KeyPairSigner } from '@solana/kit'
+import { createSafeSDKClient } from '../../../utils/sdk-helpers.js'
+import { type Address } from '@solana/addresses'
+
+// Clean type definitions
+interface JobListOptions {
+  myJobs?: boolean
+  category?: string
+  status?: string
+  applied?: boolean
+  posted?: boolean
+}
+
+interface _JobSummary {
+  id: string
+  title: string
+  category: string
+  budget: number
+  deadline: Date
+  poster: Address
+  status: string
+  applicationsCount: number
+  skills: string[]
+  description: string
+}
 
 export function registerListCommand(parentCommand: Command): void {
   parentCommand
     .command('list')
-    .description('Browse available job postings')
-    .option('--my-jobs', 'Show only your job postings')
+    .description('Browse and filter job postings')
+    .option('--posted', 'Show jobs you posted')
+    .option('--applied', 'Show jobs you applied to')
     .option('--category <category>', 'Filter by category')
-    .action(async (options: { myJobs?: boolean; category?: string }) => {
-      intro(chalk.magenta('💼 Job Postings'))
+    .option('--status <status>', 'Filter by status (open, active, completed)')
+    .action(async (options: JobListOptions) => {
+      intro(chalk.magenta('💼 Browse Job Postings'))
 
-      const s = spinner()
-      s.start('Connecting to Solana network...')
-      
       try {
-        // Initialize SDK client
-        const { client, wallet } = await initializeClient('devnet')
-        s.stop('✅ Connected')
+        const s = spinner()
+        s.start('Connecting to network...')
         
+        const { client, wallet } = await initializeClient('devnet')
+        const safeClient = createSafeSDKClient(client)
+        
+        s.stop('✅ Connected to devnet')
+
         s.start('Loading job postings...')
         
-        // Fetch jobs using SDK
-        const jobs = await client.marketplace.getJobPostings()
+        // Prepare filter parameters
+        const filterParams: Record<string, unknown> = {}
         
-        s.stop('✅ Jobs loaded')
+        if (options.category) {
+          filterParams.category = options.category
+        }
+        
+        if (options.status) {
+          filterParams.status = options.status
+        } else {
+          filterParams.status = 'open' // Default to open jobs
+        }
+        
+        if (options.applied) {
+          filterParams.applicant = wallet.address
+        } else if (options.posted) {
+          filterParams.poster = wallet.address
+        }
+        
+        const jobs = await safeClient.marketplace.listJobs(filterParams)
+        
+        s.stop(`✅ Found ${jobs.length} job postings`)
 
         if (jobs.length === 0) {
-          console.log('\n' + chalk.yellow('No job postings found'))
-          outro('Create a job with: npx ghostspeak marketplace jobs create')
+          let message = 'No job postings found'
+          if (options.applied) {
+            message = 'You have not applied to any jobs yet'
+          } else if (options.posted) {
+            message = 'You have not posted any jobs yet'
+          }
+          
+          outro(
+            `${chalk.yellow(message)}\n\n` +
+            `${chalk.gray('• Browse available jobs:')} ${chalk.cyan('gs marketplace jobs list')}\n` +
+            `${chalk.gray('• Create a job posting:')} ${chalk.cyan('gs marketplace jobs create')}\n` +
+            `${chalk.gray('• Apply to jobs:')} ${chalk.cyan('gs marketplace jobs apply')}`
+          )
           return
         }
 
-        console.log('\n' + chalk.bold(options.myJobs ? `💼 Your Job Postings (${jobs.length})` : `💼 Available Jobs (${jobs.length})`))
-        console.log('═'.repeat(70))
+        // Determine list title
+        let listTitle = 'Available Job Postings'
+        if (options.applied) {
+          listTitle = 'Jobs You Applied To'
+        } else if (options.posted) {
+          listTitle = 'Jobs You Posted'
+        } else if (options.category) {
+          listTitle = `${options.category.replace('_', ' ').toUpperCase()} Jobs`
+        }
 
-        // Using a flexible type for jobs that may have different properties than the SDK type
-        interface FlexibleJob {
-          title?: string
-          poster?: string | { toString(): string }
-          deadline?: number | bigint
-          address?: { toString(): string }
-          id?: string
-          budget?: number | bigint
-          category?: string
-          applicationsCount?: number
-          isActive?: boolean
+        log.info(`\n${chalk.bold(listTitle)} (${jobs.length} jobs)\n`)
+        
+        jobs.forEach((job, index) => {
+          const isOwner = job.poster === wallet.address
+          const deadlineDate = job.deadline ? new Date(job.deadline) : null
+          const daysLeft = deadlineDate ? Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
+          
+          const statusColor = job.status === 'open' ? chalk.green : 
+                             job.status === 'active' ? chalk.yellow : 
+                             job.status === 'completed' ? chalk.blue : chalk.gray
+
+          const role = isOwner ? chalk.green('POSTED') : chalk.blue('AVAILABLE')
+          
+          log.info(
+            `${chalk.bold(`${index + 1}. ${job.title}`)}\n` +
+            `   ${chalk.gray('ID:')} ${job.id.slice(0, 8)}...\n` +
+            `   ${chalk.gray('Category:')} ${job.category.replace('_', ' ')}\n` +
+            `   ${chalk.gray('Budget:')} ${job.budget.toFixed(4)} SOL\n` +
+            `   ${chalk.gray('Status:')} ${statusColor(job.status.toUpperCase())} ${role}\n` +
+            `   ${chalk.gray('Applications:')} ${job.applicationsCount || 0}\n` +
+            `   ${chalk.gray('Skills:')} ${job.skills.slice(0, 3).join(', ')}${job.skills.length > 3 ? '...' : ''}\n` +
+            `   ${chalk.gray('Deadline:')} ${deadlineDate ? `${deadlineDate.toLocaleDateString()} (${daysLeft} days)` : 'Flexible'}\n` +
+            `   ${chalk.gray('Description:')} ${job.description.slice(0, 80)}${job.description.length > 80 ? '...' : ''}\n`
+          )
+        })
+
+        // Show action menu
+        const actionOptions = []
+        
+        if (!options.posted) {
+          actionOptions.push({ value: 'apply', label: '📝 Apply to a job', hint: 'Submit application with your agent' })
         }
         
-        jobs.forEach((job: FlexibleJob, index: number) => {
-          const posterStr = typeof job.poster === 'string' ? job.poster : job.poster?.toString()
-          const isOwner = posterStr === wallet.address.toString()
-          const deadlineDate = new Date(Number(job.deadline ?? 0) * 1000)
-          const daysLeft = Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
-          
-          console.log(chalk.magenta(`${index + 1}. ${job.title ?? 'Untitled'}`))
-          console.log(chalk.gray(`   ID: ${job.address?.toString() ?? job.id ?? 'N/A'}`))
-          console.log(chalk.gray(`   Budget: ${Number(job.budget) / 1_000_000} SOL`))
-          console.log(chalk.gray(`   Deadline: ${deadlineDate.toLocaleDateString()} (${daysLeft} days left)`))
-          console.log(chalk.gray(`   Category: ${job.category ?? 'General'}`))
-          console.log(chalk.gray(`   Applications: ${job.applicationsCount ?? 0}`))
-          console.log(chalk.gray(`   Status: ${job.isActive ? '✅ Active' : '❌ Closed'}`))
-          if (!isOwner) {
-            const posterDisplay = typeof job.poster === 'string' ? job.poster.slice(0, 8) : job.poster?.toString()?.slice(0, 8) ?? 'Unknown'
-            console.log(chalk.gray(`   Posted by: ${posterDisplay}...`))
-          }
-          console.log('')
-        })
+        actionOptions.push(
+          { value: 'view', label: '📋 View job details', hint: 'See full job information' },
+          { value: 'filter', label: '🔍 Change filters', hint: 'Filter by category or status' },
+          { value: 'create', label: '➕ Post new job', hint: 'Create your own job posting' },
+          { value: 'exit', label: '✅ Done', hint: 'Exit job browser' }
+        )
 
         const action = await select({
           message: 'What would you like to do?',
-          options: [
-            { value: 'apply', label: '📝 Apply to a job' },
-            { value: 'details', label: '📋 View job details' },
-            { value: 'create', label: '➕ Create new job' },
-            { value: 'exit', label: '🚪 Exit' }
-          ]
+          options: actionOptions
         })
 
         if (isCancel(action)) {
@@ -99,34 +160,50 @@ export function registerListCommand(parentCommand: Command): void {
 
         switch (action) {
           case 'apply':
-            await applyToJob(jobs as unknown as JobPosting[], client, wallet)
+            note(
+              `To apply to a job, use:\n` +
+              `${chalk.cyan('gs marketplace jobs apply [job-id]')}\n\n` +
+              `Or apply to any job:\n` +
+              `${chalk.cyan('gs marketplace jobs apply')}`
+            )
             break
-          case 'details':
-            await viewJobDetails(jobs as unknown as JobPosting[])
+            
+          case 'view':
+            note(
+              'Job details viewer coming soon!\n\n' +
+              'For now, you can see basic details in the list above.\n' +
+              `Apply to jobs with: ${chalk.cyan('gs marketplace jobs apply')}`
+            )
             break
+            
+          case 'filter':
+            note(
+              `Available filter options:\n\n` +
+              `${chalk.cyan('gs marketplace jobs list --category customer_support')}\n` +
+              `${chalk.cyan('gs marketplace jobs list --status open')}\n` +
+              `${chalk.cyan('gs marketplace jobs list --posted')} (your posted jobs)\n` +
+              `${chalk.cyan('gs marketplace jobs list --applied')} (jobs you applied to)`
+            )
+            break
+            
           case 'create':
-            console.log(chalk.yellow('➕ Use "ghostspeak marketplace jobs create" to post a job'))
+            note(
+              `Create a new job posting:\n` +
+              `${chalk.cyan('gs marketplace jobs create')}`
+            )
             break
         }
 
-        outro('Job listing completed')
+        outro(
+          `${chalk.yellow('Job Marketplace Commands:')}\n` +
+          `${chalk.cyan('gs marketplace jobs create')} - Post a new job\n` +
+          `${chalk.cyan('gs marketplace jobs apply [job-id]')} - Apply to jobs\n` +
+          `${chalk.cyan('gs marketplace jobs list --posted')} - Your posted jobs`
+        )
 
       } catch (error) {
-        s.stop('❌ Failed to load jobs')
-        cancel(chalk.red('Error: ' + (error instanceof Error ? error.message : 'Unknown error')))
+        log.error(`Failed to load jobs: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })
 }
 
-// Helper functions (will be properly implemented when apply command is extracted)
-async function applyToJob(jobs: JobPosting[], client: any, wallet: KeyPairSigner) {
-  console.log(chalk.yellow('Apply functionality will be available when apply command is extracted'))
-  console.log(chalk.gray('Available jobs:'), jobs.length)
-  console.log(chalk.gray('Client:'), Boolean(client))
-  console.log(chalk.gray('Wallet:'), wallet.address.toString().slice(0, 8) + '...')
-}
-
-async function viewJobDetails(jobs: JobPosting[]) {
-  console.log(chalk.yellow('Job details view will be enhanced when UI helpers are available'))
-  console.log(chalk.gray('Available jobs:'), jobs.length)
-}

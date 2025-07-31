@@ -4,8 +4,9 @@
  * This example shows the basics of using the GhostSpeak SDK
  */
 
-import GhostSpeak, { sol, type GhostSpeak as GS } from '@ghostspeak/sdk'
-import { Keypair } from '@solana/kit'
+import GhostSpeak, { sol } from '@ghostspeak/sdk'
+import type { GhostSpeak as GS } from '@ghostspeak/sdk'
+import { generateKeyPairSigner } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 
 async function main() {
@@ -15,96 +16,56 @@ async function main() {
   // 1. Create client with zero-config
   const ghostspeak = new GhostSpeak()
   
-  // Enable development mode for extra logging
-  ghostspeak.enableDevMode()
-
   // 2. Create a test keypair (in production, use wallet adapter)
-  const signer = await Keypair.generate()
+  const signer = await generateKeyPairSigner()
   console.log('📝 Test wallet:', signer.address)
 
   // 3. Create an AI Agent
   console.log('\n📤 Creating AI Agent...')
   
-  // First, let's see what this will cost
-  const agentCost = await ghostspeak
-    .agent()
-    .create({ 
-      name: "Quick Start Assistant",
-      capabilities: ["coding", "debugging", "documentation"]
-    })
-    .getCost()
-  
-  console.log(`💰 Agent creation will cost: ${(Number(agentCost) / 1e9).toFixed(6)} SOL`)
-
-  // Get a human-readable explanation
-  const explanation = await ghostspeak
-    .agent()
-    .create({
-      name: "Quick Start Assistant",
-      capabilities: ["coding", "debugging", "documentation"]
-    })
-    .explain()
-  
-  console.log('\n📋 Transaction Explanation:')
-  console.log(explanation)
-
-  // Now create the agent with debug mode
   try {
-    const agent = await ghostspeak
-      .agent()
-      .create({
+    // Use the agent module directly for now
+    const agentModule = ghostspeak.agent()
+    
+    // Register a new agent
+    const signature = await agentModule.register(signer, {
+      agentType: 1, // Specialized agent
+      metadataUri: JSON.stringify({
         name: "Quick Start Assistant",
-        capabilities: ["coding", "debugging", "documentation"]
-      })
-      .compressed() // Use state compression (5000x cheaper!)
-      .debug()      // Show transaction details
-      .execute()
+        description: "AI assistant for quick start demo",
+        capabilities: ["coding", "debugging", "documentation"],
+        version: "1.0.0"
+      }),
+      agentId: "quick-start-assistant"
+    })
 
-    console.log('\n✅ Agent created successfully!')
-    console.log(`   Address: ${agent.address}`)
-    console.log(`   Transaction: ${agent.signature}`)
+    console.log('✅ Agent created successfully!')
+    console.log(`   Transaction: ${signature}`)
     
   } catch (error) {
     handleError(error)
   }
 
-  // 4. Create an Escrow
-  console.log('\n📤 Creating Escrow...')
-  
-  const buyer = 'BuyerAddressHere' as Address
-  const seller = 'SellerAddressHere' as Address
-
-  // Check escrow cost
-  const escrowCost = await ghostspeak
-    .escrow()
-    .between(buyer, seller)
-    .amount(sol(10))
-    .description("Quick Start Demo")
-    .getCost()
-  
-  console.log(`💰 Escrow creation will cost: ${(Number(escrowCost) / 1e9).toFixed(6)} SOL`)
-
-  // 5. Create a Channel
-  console.log('\n📤 Creating Channel...')
+  // 4. Query the created agent
+  console.log('\n📊 Querying agent details...')
   
   try {
-    const channel = await ghostspeak
-      .channel()
-      .create("quick-start-chat")
-      .description("Demo channel for quick start")
-      .private()
-      .maxMembers(5)
-      .debug()
-      .execute()
-
-    console.log('\n✅ Channel created successfully!')
-    console.log(`   Address: ${channel.address}`)
+    const agentAddress = agentModule.deriveAgentPda("quick-start-assistant")
+    const agentData = await agentModule.getAccount(agentAddress)
     
+    if (agentData) {
+      console.log('📋 Agent Details:')
+      console.log(`   Type: ${agentData.agentType}`)
+      console.log(`   Active: ${agentData.isActive}`)
+      console.log(`   Created: ${agentData.createdAt}`)
+    } else {
+      console.log('⚠️ Agent data not found (may need to wait for confirmation)')
+    }
   } catch (error) {
-    handleError(error)
+    console.log('⚠️ Could not fetch agent data:', error instanceof Error ? error.message : String(error))
   }
 
-  // 6. Demonstrate Type Safety
+  // 5. Demonstrate Type Safety
   demonstrateTypes()
 
   console.log('\n✨ Quick start complete!')
@@ -116,50 +77,28 @@ async function main() {
 function demonstrateTypes() {
   console.log('\n📝 Type System Demo:')
 
-  // All types under GhostSpeak namespace
-  const agent: GS.Agent = {
-    address: 'AgentAddress123' as Address,
-    type: GS.AgentType.Specialized,
-    owner: 'OwnerAddress456' as Address,
-    metadata: {
-      name: "Demo Agent",
-      description: "Example agent for type demo",
-      capabilities: ["example", "demo"]
-    },
-    reputation: {
-      score: 95,
-      jobsCompleted: 5,
-      successRate: 1.0,
-      totalEarnings: sol(100),
-      ratings: []
-    },
-    isActive: true,
-    isVerified: false,
-    createdAt: new Date()
-  }
+  // Demonstrate basic type usage
+  const amount = sol(10) // bigint
+  console.log(`   💰 Amount: ${amount} lamports`)
+  
+  // Show address type safety
+  const testAddress: Address = 'GhostSpeakAddress123' as Address
+  console.log(`   📍 Address: ${testAddress}`)
 
-  console.log('   ✅ Full type safety and IntelliSense')
-  console.log('   ✅ All types under GhostSpeak namespace')
-  console.log('   ✅ Comprehensive error types with solutions')
+  console.log('   ✅ Full type safety with TypeScript')
+  console.log('   ✅ Proper Address and amount handling')
+  console.log('   ✅ Import types for better performance')
 }
 
 /**
- * Handle errors with GhostSpeak's smart error system
+ * Handle errors with proper error handling
  */
 function handleError(error: unknown) {
-  if (error instanceof Error && 'code' in error) {
-    const gsError = error as GS.SDKError
-    console.error('\n❌ Error:', gsError.message)
-    
-    if (gsError.solution) {
-      console.log('💡 Solution:', gsError.solution)
-    }
-    
-    if (gsError.context) {
-      console.log('📊 Context:', gsError.context)
-    }
-  } else {
-    console.error('\n❌ Error:', error)
+  console.error('\n❌ Error:', error instanceof Error ? error.message : String(error))
+  
+  // In production, you might want more sophisticated error handling
+  if (error instanceof Error) {
+    console.error('Stack trace:', error.stack)
   }
 }
 

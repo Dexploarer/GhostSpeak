@@ -135,7 +135,7 @@ export function logEnhancedError(error: Error, context?: {
       context.accounts.forEach((account, index) => {
         if (typeof account === 'string') {
           console.error(`  ${index + 1}. ${account}`);
-        } else if (typeof account === 'object' && account !== null) {
+        } else if (typeof account === 'object') {
           const addr = 'address' in account ? account.address : account;
           const name = 'name' in account ? account.name : undefined;
           console.error(`  ${index + 1}. ${addr}${name ? ` (${name})` : ''}`);
@@ -272,6 +272,7 @@ export function getWorkOrderErrorMessage(instructionName: string, accountCount: 
   };
 
   const getErrorMessage = errorMessages[instructionName];
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (getErrorMessage) {
     return getErrorMessage(accountCount);
   }

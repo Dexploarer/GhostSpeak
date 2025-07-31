@@ -20,7 +20,7 @@ export interface EstimationOptions {
  * Estimate costs for common GhostSpeak operations
  */
 export function estimateCosts(operations: string[], options: EstimationOptions = {}): CostEstimate[] {
-  const network = options.network || 'devnet'
+  const network = options.network ?? 'devnet'
   const baseTransactionCost = network === 'mainnet-beta' ? 0.000005 : 0.0001 // SOL
   
   const estimates: CostEstimate[] = []
@@ -90,7 +90,7 @@ export function estimateCosts(operations: string[], options: EstimationOptions =
  */
 export function estimateAndDisplay(operations: string[], options: EstimationOptions = {}): void {
   const estimates = estimateCosts(operations, options)
-  const network = options.network || 'devnet'
+  const network = options.network ?? 'devnet'
   
   console.log('')
   console.log(chalk.cyan('💰 Cost Estimation'))

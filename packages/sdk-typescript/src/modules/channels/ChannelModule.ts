@@ -8,10 +8,10 @@ import {
   getLeaveChannelInstruction,
   getUpdateChannelSettingsInstruction,
   getAddMessageReactionInstruction,
+  MessageType,
   type Channel,
   type Message,
-  type ChannelType,
-  type MessageType
+  type ChannelType
 } from '../../generated/index.js'
 
 /**
@@ -70,7 +70,7 @@ export class ChannelModule extends BaseModule {
     content: string
     messageType?: MessageType
     attachmentUri?: string
-    replyTo?: bigint
+    replyTo?: Address
   }): Promise<string> {
     const messageAddress = this.deriveMessagePda(params.channelAddress, Date.now())
     
@@ -84,9 +84,9 @@ export class ChannelModule extends BaseModule {
         systemProgram: this.systemProgramId,
         messageId: `msg_${Date.now()}`,
         content: params.content,
-        messageType: params.messageType ?? 'text' as any,
+        messageType: params.messageType ?? MessageType.Text,
         metadata: {
-          replyTo: params.replyTo ? params.replyTo.toString() as any : null,
+          replyTo: params.replyTo ?? null,
           threadId: null,
           attachments: params.attachmentUri ? [{ fileType: 'application/octet-stream', fileSize: 0, fileHash: '', storageUrl: params.attachmentUri }] : [],
           mentions: [],
@@ -223,7 +223,7 @@ export class ChannelModule extends BaseModule {
   async getChannelsByCreator(creator: Address): Promise<{ address: Address; data: Channel }[]> {
     const filters = [{
       memcmp: {
-        offset: 8n, // Skip discriminator
+        offset: BigInt(8), // Skip discriminator
         bytes: creator as string,
         encoding: 'base58' as const
       }
@@ -238,7 +238,7 @@ export class ChannelModule extends BaseModule {
   async getChannelMessages(channelAddress: Address): Promise<{ address: Address; data: Message }[]> {
     const filters = [{
       memcmp: {
-        offset: 8n, // Skip discriminator
+        offset: BigInt(8), // Skip discriminator
         bytes: channelAddress as string,
         encoding: 'base58' as const
       }

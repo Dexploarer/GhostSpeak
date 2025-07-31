@@ -10,10 +10,7 @@ import type {
   ListAgentsParams, 
   UpdateAgentParams,
   AgentAnalytics,
-  AgentServiceDependencies,
-  IBlockchainService,
-  IWalletService,
-  IStorageService
+  AgentServiceDependencies
 } from '../types/services.js'
 import { 
   ValidationError, 
@@ -22,6 +19,7 @@ import {
   UnauthorizedError 
 } from '../types/services.js'
 import { randomUUID } from 'crypto'
+import { getWallet, toSDKSigner } from '../utils/client.js'
 
 export class AgentService implements IAgentService {
   private agentCache = new Map<string, { data: Agent; timestamp: number }>()
@@ -37,23 +35,21 @@ export class AgentService implements IAgentService {
     // Validate parameters
     await this.validateRegisterParams(params)
 
-    // Get current wallet for owner
-    const wallet = this.deps.walletService.getActiveWalletInterface()
-    if (!wallet) {
-      throw new ValidationError(
-        'No active wallet found',
-        'Create or select a wallet first using the wallet command'
-      )
-    }
+    // Get current wallet using robust resolution (same as SDK client)
+    console.log('🔍 Getting wallet using robust resolution...')
+    const walletSigner = await getWallet()
+    console.log('🔍 Wallet signer obtained:', walletSigner.address.toString())
 
     // Create agent data
+    // Remove dashes from UUID to fit within 32 byte limit for PDA seeds
+    const agentId = randomUUID().replace(/-/g, '')
     const agent: Agent = {
-      id: randomUUID(),
-      address: wallet.address,
+      id: agentId,
+      address: walletSigner.address,
       name: params.name,
       description: params.description,
       capabilities: params.capabilities,
-      owner: wallet.address,
+      owner: walletSigner.address,
       isActive: true,
       reputationScore: 0,
       createdAt: BigInt(Date.now()),
@@ -65,18 +61,97 @@ export class AgentService implements IAgentService {
       }
     }
 
-    // Register on blockchain
+    // Register on blockchain using real SDK
     try {
-      const client = await this.deps.blockchainService.getClient(wallet.network)
-      // In real implementation, this would call the Solana program
-      // For now, we'll simulate the blockchain registration
-      const signature = await this.simulateBlockchainRegistration(agent)
+      const client = await this.deps.blockchainService.getClient('devnet')
       
-      // Store agent data
+      // Use the wallet signer we already obtained
+      const signer = walletSigner
+      console.log('🔍 Using signer:', signer.address.toString())
+      
+      // Create metadata URI for the agent (in real implementation this would go to IPFS)
+      const metadataJson = JSON.stringify({
+        name: agent.name,
+        description: agent.description,
+        capabilities: agent.capabilities,
+        category: params.category,
+        image: "",
+        external_url: "",
+        attributes: [
+          { trait_type: "Agent Type", value: "AI Agent" },
+          { trait_type: "Category", value: params.category || agent.capabilities[0] },
+          { trait_type: "Capabilities", value: agent.capabilities.join(", ") }
+        ]
+      })
+      
+      // For now, use a data URI (real implementation would use IPFS)
+      const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
+      
+      // Log client structure first
+      console.log('🔍 SDK client structure:', {
+        hasClient: !!client,
+        clientType: typeof client,
+        clientKeys: client ? Object.keys(client) : [],
+        clientPrototype: client && client.constructor ? client.constructor.name : 'unknown'
+      })
+      
+      // Cast client to check if it has agent property
+      const typedClient = client as any
+      console.log('🔍 Checking client properties:', {
+        hasAgent: 'agent' in typedClient,
+        agentType: typedClient.agent ? typeof typedClient.agent : 'N/A',
+        clientConfig: typedClient.config ? Object.keys(typedClient.config) : []
+      })
+      
+      // Try to use agent directly from client first
+      let signature: string
+      if (typedClient.agent && typeof typedClient.agent.register === 'function') {
+        console.log('🔍 Using client.agent.register method')
+        const result = await typedClient.agent.register(signer, {
+          agentType: 0,
+          metadataUri,
+          agentId: agent.id
+        })
+        signature = result.signature || result
+      } else {
+        // Fall back to importing AgentModule
+        console.log('🔍 Client does not have agent.register, importing AgentModule...')
+        const sdk = await import('@ghostspeak/sdk')
+        console.log('🔍 SDK imported, exports:', Object.keys(sdk).filter(k => k.includes('Agent')))
+        
+        const AgentModuleClass = (sdk as any).AgentModule
+        if (!AgentModuleClass) {
+          throw new Error('AgentModule not found in SDK exports. Available exports: ' + Object.keys(sdk).join(', '))
+        }
+        
+        console.log('🔍 Creating AgentModule instance...')
+        const agentModule = new AgentModuleClass({
+          programId: typedClient.config.programId,
+          rpc: typedClient.config.rpc,
+          commitment: 'confirmed'
+        })
+        
+        console.log('🔍 Calling AgentModule.register...')
+        signature = await agentModule.register(signer, {
+          agentType: 0,
+          metadataUri,
+          agentId: agent.id
+        })
+      }
+      
+      console.log('🔍 Transaction signature:', signature)
+      
+      if (!signature || typeof signature !== 'string') {
+        throw new Error(`No transaction signature returned from agent registration`)
+      }
+      
+      // Store agent data locally for caching
       await this.deps.storageService.save(`agent:${agent.id}`, agent)
-      await this.deps.storageService.save(`agent:owner:${wallet.address}:${agent.id}`, agent.id)
+      await this.deps.storageService.save(`agent:owner:${walletSigner.address}:${agent.id}`, agent.id)
       
-      console.log(`Agent registered with signature: ${signature}`)
+      console.log(`✅ Agent registered successfully!`)
+      console.log(`Transaction signature: ${signature}`)
+      console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       return agent
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NetworkError) {
@@ -118,8 +193,8 @@ export class AgentService implements IAgentService {
       }
 
       // Apply pagination
-      const offset = params.offset || 0
-      const limit = params.limit || 50
+      const offset = params.offset ?? 0
+      const limit = params.limit ?? 50
       return filteredAgents.slice(offset, offset + limit)
     } catch (error) {
       throw new NetworkError(
@@ -172,15 +247,72 @@ export class AgentService implements IAgentService {
       throw new UnauthorizedError('You can only update your own agents')
     }
 
-    // Apply updates
-    const updatedAgent: Agent = {
-      ...agent,
-      ...updates,
-      updatedAt: BigInt(Date.now())
-    }
-
-    // Update on blockchain and storage
+    // Update on blockchain
     try {
+      console.log('🔍 Updating agent on blockchain...')
+      const client = await this.deps.blockchainService.getClient('devnet')
+      const walletSigner = await this.deps.walletService.getActiveSigner()
+      
+      if (!walletSigner) {
+        throw new UnauthorizedError('No active wallet signer available')
+      }
+
+      // Import AgentModule dynamically to avoid build issues
+      const sdk = await import('@ghostspeak/sdk')
+      console.log('🔍 SDK imported, checking for AgentModule...')
+      
+      const AgentModuleClass = (sdk as any).AgentModule
+      if (!AgentModuleClass) {
+        throw new Error('AgentModule not found in SDK exports')
+      }
+      
+      const typedClient = client as any
+      const agentModule = new AgentModuleClass({
+        programId: typedClient.config.programId,
+        rpc: typedClient.config.rpc,
+        commitment: 'confirmed'
+      })
+      
+      console.log('🔍 Calling AgentModule.update...')
+      
+      // Prepare update metadata
+      const metadataJson = JSON.stringify({
+        ...agent.metadata,
+        ...updates.metadata,
+        name: updates.name || agent.name,
+        description: updates.description || agent.description,
+        capabilities: updates.capabilities || agent.capabilities
+      })
+      const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
+      
+      // Call SDK to update agent on blockchain
+      const signature = await agentModule.update(toSDKSigner(walletSigner), {
+        agentId: agent.id,
+        name: updates.name,
+        description: updates.description,
+        capabilities: updates.capabilities,
+        isActive: updates.isActive,
+        metadataUri
+      })
+      
+      console.log('🔍 Transaction signature:', signature)
+      
+      if (!signature || typeof signature !== 'string') {
+        throw new Error('No transaction signature returned from agent update')
+      }
+      
+      console.log(`✅ Agent updated on blockchain!`)
+      console.log(`Transaction signature: ${signature}`)
+      console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
+
+      // Apply updates to local object
+      const updatedAgent: Agent = {
+        ...agent,
+        ...updates,
+        updatedAt: BigInt(Date.now())
+      }
+
+      // Update storage
       await this.deps.storageService.save(`agent:${agentId}`, updatedAgent)
       
       // Update cache
@@ -248,7 +380,7 @@ export class AgentService implements IAgentService {
         'Add more details about what your agent can do'
       )
     }
-    if (!params.capabilities || params.capabilities.length === 0) {
+    if (params.capabilities.length === 0) {
       throw new ValidationError(
         'Agent must have at least one capability',
         'Select at least one capability from the available options'
@@ -276,13 +408,6 @@ export class AgentService implements IAgentService {
     return []
   }
 
-  private async simulateBlockchainRegistration(agent: Agent): Promise<string> {
-    // Simulate blockchain registration delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Return simulated transaction signature
-    return `${agent.id.substring(0, 8)}...${Date.now().toString(36)}`
-  }
 }
 
 // Factory function for dependency injection

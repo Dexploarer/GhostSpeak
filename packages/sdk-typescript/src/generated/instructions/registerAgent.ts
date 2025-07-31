@@ -120,8 +120,8 @@ export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentI
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['agentType', getU8Encoder()],
-      ['metadataUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ['agentId', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['metadataUri', getUtf8Encoder()],
+      ['agentId', getUtf8Encoder()],
     ]),
     (value) => ({ ...value, discriminator: REGISTER_AGENT_DISCRIMINATOR })
   );
@@ -131,8 +131,8 @@ export function getRegisterAgentInstructionDataDecoder(): Decoder<RegisterAgentI
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['agentType', getU8Decoder()],
-    ['metadataUri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ['agentId', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['metadataUri', getUtf8Decoder()],
+    ['agentId', getUtf8Decoder()],
   ]);
 }
 
@@ -203,7 +203,7 @@ export async function getRegisterAgentInstructionAsync<
   const originalAccounts = {
     agentAccount: { value: input.agentAccount ?? null, isWritable: true },
     userRegistry: { value: input.userRegistry ?? null, isWritable: true },
-    signer: { value: input.signer ?? null, isWritable: true },
+    signer: { value: input.signer ?? null, isWritable: true, isSigner: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     clock: { value: input.clock ?? null, isWritable: false },
   };
@@ -222,9 +222,7 @@ export async function getRegisterAgentInstructionAsync<
       seeds: [
         getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])),
         getAddressEncoder().encode(expectAddress(accounts.signer.value)),
-        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()).encode(
-          expectSome(args.agentId)
-        ),
+        getUtf8Encoder().encode(expectSome(args.agentId)),
       ],
     });
   }
@@ -330,7 +328,7 @@ export function getRegisterAgentInstruction<
   const originalAccounts = {
     agentAccount: { value: input.agentAccount ?? null, isWritable: true },
     userRegistry: { value: input.userRegistry ?? null, isWritable: true },
-    signer: { value: input.signer ?? null, isWritable: true },
+    signer: { value: input.signer ?? null, isWritable: true, isSigner: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     clock: { value: input.clock ?? null, isWritable: false },
   };

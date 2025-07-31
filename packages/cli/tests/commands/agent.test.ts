@@ -35,7 +35,7 @@ vi.mock('../../src/utils/client.js', () => ({
   toSDKSigner: vi.fn()
 }))
 
-vi.mock('../../src/utils/agentWallet.js', () => ({
+vi.mock('../../src/utils/agent-wallet.js', () => ({
   AgentWalletManager: vi.fn(),
   AgentCNFTManager: vi.fn(),
   AgentBackupManager: vi.fn()
@@ -59,7 +59,7 @@ import {
   log
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../../src/utils/client.js'
-import { AgentWalletManager, AgentCNFTManager, AgentBackupManager } from '../../src/utils/agentWallet.js'
+import { AgentWalletManager, AgentCNFTManager, AgentBackupManager } from '../../src/utils/agent-wallet.js'
 import { registerAgentPrompts } from '../../src/prompts/agent.js'
 
 describe('CLI Agent Commands', () => {

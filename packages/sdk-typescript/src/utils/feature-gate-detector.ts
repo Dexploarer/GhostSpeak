@@ -8,9 +8,9 @@
  * and provides caching to minimize RPC calls.
  */
 
-import type { Connection, PublicKey } from '@solana/web3.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/kit'
+import type { Rpc, GetAccountInfoApi } from '@solana/rpc'
 
 // =====================================================
 // CONSTANTS
@@ -21,13 +21,13 @@ import type { Address } from '@solana/kit'
  */
 export const FEATURE_GATES = {
   /** ZK ElGamal Proof Program re-enablement */
-  ZK_ELGAMAL_PROOF_REENABLED: new PublicKey('zkemPXcuM3G4wpMDZ36Cpw34EjUpvm1nuioiSGbGZPR'),
+  ZK_ELGAMAL_PROOF_REENABLED: address('zkemPXcuM3G4wpMDZ36Cpw34EjUpvm1nuioiSGbGZPR'),
   
   /** Confidential transfers feature (placeholder) */
-  CONFIDENTIAL_TRANSFERS: new PublicKey('11111111111111111111111111111111'),
+  CONFIDENTIAL_TRANSFERS: address('11111111111111111111111111111111'),
   
   /** Token-2022 program (placeholder) */
-  TOKEN_2022: new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+  TOKEN_2022: address('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
 } as const
 
 /**
@@ -134,10 +134,10 @@ const featureCache = new FeatureGateCacheManager()
  * @returns Feature activation status
  */
 export async function checkFeatureGate(
-  connection: Connection,
-  featureGate: PublicKey
+  rpc: Rpc<GetAccountInfoApi>,
+  featureGate: Address
 ): Promise<FeatureStatus> {
-  const featureId = featureGate.toBase58()
+  const featureId = featureGate
   
   // Check cache first
   const cached = featureCache.get(featureId)
@@ -147,9 +147,10 @@ export async function checkFeatureGate(
   
   try {
     // Check if the feature account exists
-    const accountInfo = await connection.getAccountInfo(featureGate)
+    const response = await rpc.getAccountInfo(featureGate, { encoding: 'base64' }).send()
     
     // Feature gates are special accounts - if they exist, the feature is active
+    const accountInfo = response.value
     const activated = accountInfo !== null
     
     const status: FeatureStatus = {
@@ -158,14 +159,20 @@ export async function checkFeatureGate(
     }
     
     // If activated, try to get activation slot from account data
-    try {
-      // First 8 bytes of feature account data is the activation slot
-      const activationSlot = BigInt(
-        accountInfo.data.readBigUInt64LE(0)
-      )
-      status.activationSlot = activationSlot
-    } catch {
-      // Ignore parsing errors
+    if (accountInfo?.data) {
+      try {
+        // Decode base64 data
+        const dataString = typeof accountInfo.data === 'string' ? accountInfo.data : accountInfo.data[0]
+        const dataBuffer = Buffer.from(dataString, 'base64')
+        
+        // First 8 bytes of feature account data is the activation slot
+        const activationSlot = BigInt(
+          dataBuffer.readBigUInt64LE(0)
+        )
+        status.activationSlot = activationSlot
+      } catch {
+        // Ignore parsing errors
+      }
     }
     
     // Cache the result
@@ -193,10 +200,10 @@ export async function checkFeatureGate(
  * @returns Whether the ZK program is available
  */
 export async function isZkProgramEnabled(
-  connection: Connection
+  rpc: Rpc<GetAccountInfoApi>
 ): Promise<boolean> {
   const status = await checkFeatureGate(
-    connection,
+    rpc,
     FEATURE_GATES.ZK_ELGAMAL_PROOF_REENABLED
   )
   
@@ -210,10 +217,10 @@ export async function isZkProgramEnabled(
  * @returns Detailed feature status
  */
 export async function getZkProgramFeatureStatus(
-  connection: Connection
+  rpc: Rpc<GetAccountInfoApi>
 ): Promise<FeatureStatus> {
   return checkFeatureGate(
-    connection,
+    rpc,
     FEATURE_GATES.ZK_ELGAMAL_PROOF_REENABLED
   )
 }
@@ -226,16 +233,16 @@ export async function getZkProgramFeatureStatus(
  * @returns Map of feature gate to status
  */
 export async function checkMultipleFeatureGates(
-  connection: Connection,
-  featureGates: PublicKey[]
+  rpc: Rpc<GetAccountInfoApi>,
+  featureGates: Address[]
 ): Promise<Map<string, FeatureStatus>> {
   const results = await Promise.all(
-    featureGates.map(gate => checkFeatureGate(connection, gate))
+    featureGates.map(gate => checkFeatureGate(rpc, gate))
   )
   
   const statusMap = new Map<string, FeatureStatus>()
   featureGates.forEach((gate, index) => {
-    statusMap.set(gate.toBase58(), results[index])
+    statusMap.set(gate, results[index])
   })
   
   return statusMap
@@ -251,8 +258,8 @@ export async function checkMultipleFeatureGates(
  * @returns Function to stop monitoring
  */
 export function monitorFeatureGate(
-  connection: Connection,
-  featureGate: PublicKey,
+  rpc: Rpc<GetAccountInfoApi>,
+  featureGate: Address,
   callback: (status: FeatureStatus) => void,
   intervalMs = 30_000
 ): () => void {
@@ -261,7 +268,7 @@ export function monitorFeatureGate(
   
   const check = async () => {
     try {
-      const status = await checkFeatureGate(connection, featureGate)
+      const status = await checkFeatureGate(rpc, featureGate)
       
       // Check if status changed
       if (!lastStatus || lastStatus.activated !== status.activated) {
@@ -274,7 +281,7 @@ export function monitorFeatureGate(
   }
   
   // Initial check
-  check()
+  void check()
   
   // Set up interval
   intervalId = setInterval(check, intervalMs)
@@ -307,9 +314,9 @@ export function clearFeatureGateCache(): void {
  * @returns Status description
  */
 export async function getZkProgramStatusDescription(
-  connection: Connection
+  rpc: Rpc<GetAccountInfoApi>
 ): Promise<string> {
-  const status = await getZkProgramFeatureStatus(connection)
+  const status = await getZkProgramFeatureStatus(rpc)
   
   if (status.error) {
     return `ZK ElGamal Proof Program status unknown: ${status.error}`
@@ -328,8 +335,8 @@ export async function getZkProgramStatusDescription(
 /**
  * Convert feature gate public key to Address type
  */
-export function featureGateToAddress(featureGate: PublicKey): Address {
-  return address(featureGate.toBase58())
+export function featureGateToAddress(featureGate: Address): Address {
+  return featureGate
 }
 
 // =====================================================

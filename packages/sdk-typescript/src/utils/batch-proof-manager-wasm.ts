@@ -241,7 +241,7 @@ export class WasmBatchProofManager {
     
     // Initialize WASM if enabled
     if (this.config.wasmSettings.enableWasm) {
-      this.initializeWasm()
+      void this.initializeWasm()
     }
   }
 
@@ -647,7 +647,7 @@ export class WasmBatchProofManager {
         switch (task.type) {
           case 'range': {
             const data = task.data as WasmProofTaskData & { type: 'range' }
-            const result = await generateRangeProof(data.amount, data.commitment, data.blindingFactor)
+            const result = generateRangeProof(data.amount, data.commitment, data.blindingFactor)
             proof = result.proof
             break
           }

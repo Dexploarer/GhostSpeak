@@ -8,7 +8,10 @@
 import type { 
   Address, 
   EncodedAccount, 
-  MaybeEncodedAccount,
+  MaybeEncodedAccount
+} from '@solana/kit';
+
+import { 
   fetchEncodedAccount
 } from '@solana/kit';
 import { 

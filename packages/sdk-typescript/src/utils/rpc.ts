@@ -121,7 +121,7 @@ export class AccountDecoder<T> {
       } catch {
         bytes = new Uint8Array(Buffer.from(data, 'base64'))
       }
-    } else if (Array.isArray(data) && data.length === 2) {
+    } else if (Array.isArray(data)) {
       // [data, encoding] format
       const [encoded, encoding] = data
       if (encoding === 'base64') {

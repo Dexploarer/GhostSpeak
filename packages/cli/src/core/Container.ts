@@ -3,7 +3,7 @@
  */
 
 export class Container {
-  private static instance: Container
+  private static instance: Container | undefined
   private services = new Map<string, unknown>()
   private factories = new Map<string, () => unknown>()
   private singletonCache = new Map<string, unknown>()
@@ -13,10 +13,7 @@ export class Container {
    * Get singleton instance
    */
   static getInstance(): Container {
-    if (!Container.instance) {
-      Container.instance = new Container()
-    }
-    return Container.instance
+    return (Container.instance ??= new Container())
   }
 
   /**
@@ -102,7 +99,7 @@ export class Container {
     tokens.forEach(token => {
       try {
         this.resolve(token)
-      } catch (error) {
+      } catch {
         // Ignore errors during warm-up
       }
     })

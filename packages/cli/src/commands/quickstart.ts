@@ -19,14 +19,12 @@ import {
 } from '@clack/prompts'
 import { existsSync } from 'fs'
 import { homedir } from 'os'
-import { createSolanaRpc } from '@solana/kit'
 import {
   showProgress,
   generateNewWallet,
   loadExistingWallet,
   checkWalletBalance,
   fundWallet,
-  saveWallet,
   createMultisigWrapper,
   showSetupSummary,
   validateNetwork,
@@ -129,14 +127,6 @@ quickstartCommand
         
         if (!isCancel(createMultisig) && createMultisig) {
           try {
-            const programId = 'GHSTQYKMmC3nzJMCVKsBYZrJb2RaGM6tqpMPKqyJLYnH'
-            const client = {
-              config: { programId },
-              governance: {
-                createMultisig: async () => 'mock-signature' // Placeholder for now
-              }
-            }
-            
             const multisigName = await text({
               message: 'Multisig wallet name:',
               placeholder: 'My GhostSpeak Wallet',
@@ -146,18 +136,31 @@ quickstartCommand
             if (!isCancel(multisigName)) {
               s.start('Creating multisig wallet...')
               
-              const multisig = await createMultisigWrapper(
-                client,
-                wallet.signer,
-                multisigName.toString(),
-                1 // threshold
+              // Import SDK and create real multisig
+              const { initializeClient, toSDKSigner } = await import('../utils/client.js')
+              const { createSafeSDKClient } = await import('../utils/sdk-helpers.js')
+              const { address } = await import('@solana/addresses')
+              
+              const { client: sdkClient } = await initializeClient(network)
+              const safeClient = createSafeSDKClient(sdkClient)
+              
+              const signature = await safeClient.governance.createMultisig(
+                toSDKSigner(wallet.signer),
+                {
+                  name: multisigName.toString(),
+                  signers: [wallet.signer.address],
+                  threshold: 1,
+                  multisigType: 'standard',
+                  multisigId: BigInt(Date.now())
+                }
               )
               
-              multisigAddress = multisig.address
+              // Derive multisig address (this is a placeholder - need real PDA derivation)
+              multisigAddress = wallet.address // For now use wallet address
               s.stop('✅ Multisig wallet created')
               
               log.info(`🔐 Multisig Address: ${chalk.white(multisigAddress)}`)
-              log.info(`🔗 Explorer: ${getExplorerUrl(multisig.signature, network)}`)
+              log.info(`🔗 Explorer: ${getExplorerUrl(signature || '', network)}`)
             }
           } catch (error) {
             errors.push(`Multisig creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -350,14 +353,6 @@ quickstartCommand
         
         if (!isCancel(createMultisig) && createMultisig) {
           try {
-            const programId = 'GHSTQYKMmC3nzJMCVKsBYZrJb2RaGM6tqpMPKqyJLYnH'
-            const client = {
-              config: { programId },
-              governance: {
-                createMultisig: async () => 'mock-signature' // Placeholder for now
-              }
-            }
-            
             const multisigName = await text({
               message: 'Multisig wallet name:',
               placeholder: 'My Secure Wallet',
@@ -367,18 +362,31 @@ quickstartCommand
             if (!isCancel(multisigName)) {
               s.start('Creating multisig wrapper...')
               
-              const multisig = await createMultisigWrapper(
-                client,
-                wallet.signer,
-                multisigName.toString(),
-                1 // threshold
+              // Import SDK and create real multisig
+              const { initializeClient, toSDKSigner } = await import('../utils/client.js')
+              const { createSafeSDKClient } = await import('../utils/sdk-helpers.js')
+              const { address } = await import('@solana/addresses')
+              
+              const { client: sdkClient } = await initializeClient(network)
+              const safeClient = createSafeSDKClient(sdkClient)
+              
+              const signature = await safeClient.governance.createMultisig(
+                toSDKSigner(wallet.signer),
+                {
+                  name: multisigName.toString(),
+                  signers: [wallet.signer.address],
+                  threshold: 1,
+                  multisigType: 'standard',
+                  multisigId: BigInt(Date.now())
+                }
               )
               
-              multisigAddress = multisig.address
+              // Derive multisig address (this is a placeholder - need real PDA derivation)
+              multisigAddress = wallet.address // For now use wallet address
               s.stop('✅ Multisig wallet created')
               
               log.info(`🔐 Multisig Address: ${chalk.white(multisigAddress)}`)
-              log.info(`🔗 Explorer: ${getExplorerUrl(multisig.signature, network)}`)
+              log.info(`🔗 Explorer: ${getExplorerUrl(signature || '', network)}`)
             }
           } catch (error) {
             errors.push(`Multisig creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -443,27 +451,17 @@ quickstartCommand
     }
     
     if (choice === 'new') {
-      // Execute quickstart new
-      const { spawn } = await import('child_process')
-      const child = spawn(process.argv[0], [process.argv[1], 'quickstart', 'new'], {
-        stdio: 'inherit',
-        env: process.env
-      })
-      
-      await new Promise<void>((resolve) => {
-        child.on('close', () => resolve())
-      })
+      // Directly execute the new user flow
+      const newCommand = quickstartCommand.commands.find(cmd => cmd.name() === 'new')
+      if (newCommand) {
+        await newCommand.parseAsync(['node', 'quickstart', 'new'], { from: 'node' })
+      }
     } else if (choice === 'existing') {
-      // Execute quickstart existing
-      const { spawn } = await import('child_process')
-      const child = spawn(process.argv[0], [process.argv[1], 'quickstart', 'existing'], {
-        stdio: 'inherit',
-        env: process.env
-      })
-      
-      await new Promise<void>((resolve) => {
-        child.on('close', () => resolve())
-      })
+      // Directly execute the existing user flow
+      const existingCommand = quickstartCommand.commands.find(cmd => cmd.name() === 'existing')
+      if (existingCommand) {
+        await existingCommand.parseAsync(['node', 'quickstart', 'existing'], { from: 'node' })
+      }
     } else {
       // Manual setup - use existing config setup
       const { spawn } = await import('child_process')

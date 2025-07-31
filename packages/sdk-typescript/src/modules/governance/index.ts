@@ -1,0 +1,1 @@
+export { GovernanceModule } from './GovernanceModule.js'

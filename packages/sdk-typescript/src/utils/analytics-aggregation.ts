@@ -119,10 +119,10 @@ export class AnalyticsAggregator {
   processAgentEvent(event: AgentAnalyticsEvent): void {
     // Update agent metrics
     const current = this.agentMetrics.get(event.agent) ?? {
-      revenue: 0n,
+      revenue: BigInt(0),
       transactions: 0,
       successRate: 0,
-      lastActive: 0n
+      lastActive: BigInt(0)
     }
     
     this.agentMetrics.set(event.agent, {
@@ -211,8 +211,10 @@ export class AnalyticsAggregator {
       this.updateTimeSeries('successful_services', Number(event.timestamp), 1)
     }
     
+    // Check if qualityScore Option type has a value
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (event.qualityScore !== undefined) {
-      const qualityValue = typeof event.qualityScore === 'object' && event.qualityScore !== null && 'value' in event.qualityScore ? (event.qualityScore as { value: number }).value : 0
+      const qualityValue = typeof event.qualityScore === 'number' ? event.qualityScore : 0
       this.updateTimeSeries('service_quality', Number(event.timestamp), qualityValue)
     }
   }
@@ -247,8 +249,8 @@ export class AnalyticsAggregator {
     const newRegistrations = agentEvents.filter(e => e.operation === 'register').length
     
     // Calculate average revenue
-    const totalRevenue = agentEvents.reduce((sum, e) => sum + e.revenue, 0n)
-    const averageRevenue = activeAgents.size > 0 ? totalRevenue / BigInt(activeAgents.size) : 0n
+    const totalRevenue = agentEvents.reduce((sum, e) => sum + e.revenue, BigInt(0))
+    const averageRevenue = activeAgents.size > 0 ? totalRevenue / BigInt(activeAgents.size) : BigInt(0)
     
     // Get top performers
     const agentScores = new Map<Address, number>()
@@ -265,15 +267,15 @@ export class AnalyticsAggregator {
     // Calculate transaction metrics
     const txEvents = (windowEvents.get('transaction') ?? []) as TransactionAnalyticsEvent[]
     const totalTxCount = txEvents.length
-    const totalTxVolume = txEvents.reduce((sum, e) => sum + e.amount, 0n)
-    const avgTxValue = totalTxCount > 0 ? totalTxVolume / BigInt(totalTxCount) : 0n
+    const totalTxVolume = txEvents.reduce((sum, e) => sum + e.amount, BigInt(0))
+    const avgTxValue = totalTxCount > 0 ? totalTxVolume / BigInt(totalTxCount) : BigInt(0)
     const successfulTxs = txEvents.filter(e => e.status === 'completed').length
     const txSuccessRate = totalTxCount > 0 ? (successfulTxs / totalTxCount) * 100 : 0
     
     // Group volume by type
     const volumeByType = new Map<string, bigint>()
     for (const tx of txEvents) {
-      const current = volumeByType.get(tx.transactionType) ?? 0n
+      const current = volumeByType.get(tx.transactionType) ?? BigInt(0)
       volumeByType.set(tx.transactionType, current + tx.amount)
     }
     
@@ -301,8 +303,8 @@ export class AnalyticsAggregator {
     const listingsCreated = marketEvents.filter(e => e.activityType === 'service_listed').length
     const salesCompleted = marketEvents.filter(e => e.activityType === 'service_purchased').length
     const salesEvents = marketEvents.filter(e => e.activityType === 'service_purchased')
-    const totalSalesVolume = salesEvents.reduce((sum, e) => sum + e.value, 0n)
-    const averagePrice = salesCompleted > 0 ? totalSalesVolume / BigInt(salesCompleted) : 0n
+    const totalSalesVolume = salesEvents.reduce((sum, e) => sum + e.value, BigInt(0))
+    const averagePrice = salesCompleted > 0 ? totalSalesVolume / BigInt(salesCompleted) : BigInt(0)
     
     // Calculate network metrics
     const networkEvents = (windowEvents.get('network') ?? []) as NetworkHealthEvent[]
@@ -310,7 +312,7 @@ export class AnalyticsAggregator {
     const avgActiveAgents = networkEvents.length > 0
       ? networkEvents.reduce((sum, e) => sum + e.activeAgents, 0) / networkEvents.length
       : 0
-    const totalThroughput = networkEvents.reduce((sum, e) => sum + e.transactionThroughput, 0n)
+    const totalThroughput = networkEvents.reduce((sum, e) => sum + e.transactionThroughput, BigInt(0))
     const avgLatency = networkEvents.length > 0
       ? networkEvents.reduce((sum, e) => sum + Number(e.averageLatency), 0) / networkEvents.length
       : 0

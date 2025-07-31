@@ -84,19 +84,30 @@ export async function loadWasmModule(): Promise<void> {
 async function loadWasmModuleInternal(): Promise<void> {
   try {
     // Dynamic import of WASM module - check if it exists
-    let wasmImport: any
+    let wasmImport: unknown
     try {
       wasmImport = await import('../wasm/ghostspeak_wasm.js')
     } catch {
       throw new Error('WASM module not built')
     }
-    const initWasm = wasmImport.default
+    
+    // Type guard for WASM import
+    if (!wasmImport || typeof wasmImport !== 'object') {
+      throw new Error('Invalid WASM module import')
+    }
+    
+    const wasmImportTyped = wasmImport as { default: () => Promise<void> }
+    const initWasm = wasmImportTyped.default
     
     // Initialize WASM
-    await initWasm()
+    if (typeof initWasm === 'function') {
+      await initWasm()
+    } else {
+      throw new Error('WASM init function not found')
+    }
     
     // Store module reference
-    wasmModule = wasmImport as unknown as WasmModule
+    wasmModule = wasmImportTyped as unknown as WasmModule
     
     // Store in global for ElGamal module access
     if (typeof window !== 'undefined') {
@@ -145,13 +156,12 @@ export async function benchmarkWasm(): Promise<{
   const testData = new Uint8Array(32).fill(1)
   
   // Get performance API
-  const perf = typeof performance !== 'undefined' ? performance : Date
   const now = () => typeof performance !== 'undefined' ? performance.now() : Date.now()
   
   // Benchmark WASM
   const wasmStart = now()
   for (let i = 0; i < iterations; i++) {
-    await wasmModule!.scalar_multiply(testData, testData)
+    wasmModule!.scalar_multiply(testData, testData)
   }
   const wasmTime = now() - wasmStart
   

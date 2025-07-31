@@ -222,7 +222,7 @@ export function handleInstructionError(
  * Get instruction mapping (exported for external use)
  */
 export function getInstructionMapping(instructionName: string): InstructionMapping | null {
-  return instructionAccountMappings[instructionName as keyof typeof instructionAccountMappings] || null;
+  return instructionAccountMappings[instructionName as keyof typeof instructionAccountMappings] ?? null;
 }
 
 /**

@@ -17,7 +17,7 @@ export class ErrorHandler {
   private static readonly ERROR_MAPPINGS = new Map<RegExp, (error: string) => ErrorInfo>([
     [
       /insufficient funds|insufficient lamports/i,
-      (error) => ({
+      () => ({
         message: 'Insufficient SOL balance',
         suggestion: 'You need more SOL to complete this transaction.',
         actions: [
@@ -43,7 +43,7 @@ export class ErrorHandler {
     ],
     [
       /account.*does not exist|account.*not found/i,
-      (error) => ({
+      () => ({
         message: 'Account not found',
         suggestion: 'The account you\'re trying to interact with doesn\'t exist.',
         actions: [

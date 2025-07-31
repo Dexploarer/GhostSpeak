@@ -99,7 +99,7 @@ async function main() {
     }
     
     // Check for updates in background
-    checkForUpdates(currentVersion)
+    void checkForUpdates(currentVersion)
     
     program
       .name('ghostspeak')
@@ -116,9 +116,9 @@ async function main() {
       .option('--skip-welcome', 'Skip welcome message')
       .option('--network <network>', 'Target network (devnet, testnet, mainnet)')
       .option('--auto-faucet', 'Automatically request faucet funds')
-      .action(async (options) => {
+      .action(async (options: { network?: string; autoFaucet?: boolean; skipWelcome?: boolean }) => {
         await startOnboarding({
-          network: options.network,
+          network: options.network as 'devnet' | 'testnet' | 'mainnet-beta' | undefined,
           autoFaucet: options.autoFaucet,
           skipSteps: options.skipWelcome ? ['welcome'] : undefined
         })
@@ -128,7 +128,7 @@ async function main() {
       .command('help [topic]')
       .description('Show contextual help or help for a specific topic')
       .option('-s, --search <query>', 'Search help content')
-      .action(async (topic, options) => {
+      .action(async (topic: string | undefined, options: { search?: string }) => {
         if (options.search) {
           searchHelp(options.search)
         } else if (topic) {
@@ -150,8 +150,8 @@ async function main() {
       .alias('transactions')
       .description('Show recent transaction history')
       .option('-l, --limit <number>', 'Number of transactions to show', '10')
-      .action((options) => {
-        showTransactionHistory(parseInt(options.limit))
+      .action((options: { limit?: string }) => {
+        showTransactionHistory(parseInt(options.limit ?? '10'))
       })
     
     // Add command modules - ordered for best first-time UX

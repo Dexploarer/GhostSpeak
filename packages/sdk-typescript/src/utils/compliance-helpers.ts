@@ -7,6 +7,8 @@
 
 import type { Address, Option } from '@solana/kit'
 import { getAddressEncoder, getProgramDerivedAddress, getBytesEncoder, getUtf8Encoder, getU32Encoder, addEncoderSizePrefix } from '@solana/kit'
+import { ed25519 } from '@noble/curves/ed25519'
+import { sha256 } from '@noble/hashes/sha256'
 import {
   RiskLevel,
   ReportType,
@@ -515,16 +517,30 @@ export class ComplianceReporting {
         sanctionsCleared: boolean
         dataGovernanceReady: boolean
       }
-    }
+    },
+    signingKey?: Uint8Array // Optional signing key for generating signatures
   ): ComplianceReport {
+    const reportData = this.formatReportData(reportType, data)
+    
+    // Generate report signature if signing key provided
+    let signature = new Uint8Array(64)
+    if (signingKey && signingKey.length === 32) {
+      signature = this.generateReportSignature(
+        reportType,
+        period,
+        reportData,
+        signingKey
+      )
+    }
+    
     const report: ComplianceReport = {
       reportId: BigInt(Date.now()),
       reportType,
       generatedAt: BigInt(Math.floor(Date.now() / 1000)),
       periodStart: period.start,
       periodEnd: period.end,
-      reportData: this.formatReportData(reportType, data),
-      signature: new Uint8Array(64), // Placeholder signature
+      reportData,
+      signature,
       status: ReportStatus.Generated,
       discriminator: new Uint8Array(8), // Placeholder discriminator
       submissionDetails: { __option: 'None' } as Option<SubmissionDetails>, // No submission details yet
@@ -532,6 +548,32 @@ export class ComplianceReporting {
     }
 
     return report
+  }
+  
+  /**
+   * Generate signature for compliance report
+   */
+  private static generateReportSignature(
+    reportType: ReportType,
+    period: { start: bigint; end: bigint },
+    reportData: ReportData,
+    signingKey: Uint8Array
+  ): Uint8Array {
+    // Create message to sign by hashing report contents
+    const encoder = new TextEncoder()
+    const messageData = new Uint8Array([
+      ...encoder.encode(reportType.toString()),
+      ...new Uint8Array(new BigUint64Array([period.start]).buffer),
+      ...new Uint8Array(new BigUint64Array([period.end]).buffer),
+      ...encoder.encode(JSON.stringify(reportData))
+    ])
+    
+    const messageHash = sha256(messageData)
+    
+    // Sign the message hash
+    const signature = ed25519.sign(messageHash, signingKey)
+    
+    return signature
   }
 
   /**

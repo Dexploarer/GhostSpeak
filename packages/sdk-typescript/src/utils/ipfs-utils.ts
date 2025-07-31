@@ -309,9 +309,10 @@ export class IPFSUtils {
         
         // Read compressed chunks
         const readCompressed = async (): Promise<void> => {
-          const { done, value } = await reader.read()
+          const result: { done: boolean; value?: Uint8Array } = await reader.read()
+          const { done, value } = result
           if (!done && value) {
-            chunks.push(value)
+            chunks.push(value as Uint8Array)
             await readCompressed()
           }
         }
@@ -377,9 +378,10 @@ export class IPFSUtils {
           
           // Read decompressed chunks
           const readDecompressed = async (): Promise<void> => {
-            const { done, value } = await reader.read()
+            const result: { done: boolean; value?: Uint8Array } = await reader.read()
+          const { done, value } = result
             if (!done && value) {
-              chunks.push(value)
+              chunks.push(value as Uint8Array)
               await readDecompressed()
             }
           }

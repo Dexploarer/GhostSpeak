@@ -204,7 +204,7 @@ export const NATURAL_LANGUAGE_PATTERNS: Array<{
       /look.*for.*(.+)/i
     ],
     command: 'marketplace search',
-    extractor: (match) => ({ query: match[1]?.trim() || '' })
+    extractor: (match) => ({ query: match[1].trim() || '' })
   },
   {
     patterns: [
@@ -268,14 +268,25 @@ export const NATURAL_LANGUAGE_PATTERNS: Array<{
 export function resolveAlias(input: string): string | null {
   const normalized = input.toLowerCase().trim()
   
-  // Check exact aliases
+  // Check exact aliases first
   for (const alias of COMMAND_ALIASES) {
     if (alias.aliases.includes(normalized)) {
       return alias.command
     }
   }
   
-  // Check natural language patterns
+  // Don't resolve aliases when the input already contains proper commands
+  // This prevents "agent register --help" from being resolved to "--help"
+  const firstWord = normalized.split(' ')[0]
+  const knownCommands = ['agent', 'marketplace', 'escrow', 'channel', 'auction', 
+                         'dispute', 'governance', 'wallet', 'config', 'faucet', 
+                         'sdk', 'update', 'quickstart', 'onboard', 'help', 'aliases', 'tx']
+  
+  if (knownCommands.includes(firstWord)) {
+    return null // Let commander handle it normally
+  }
+  
+  // Check natural language patterns only for non-command inputs
   for (const pattern of NATURAL_LANGUAGE_PATTERNS) {
     for (const regex of pattern.patterns) {
       const match = normalized.match(regex)

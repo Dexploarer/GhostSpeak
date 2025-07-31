@@ -16,7 +16,7 @@ export interface AgentData {
   serviceEndpoint: string
 }
 
-export async function registerAgentPrompts(options: { name?: string; description?: string; category?: string; endpoint?: string }): Promise<AgentData> {
+export async function registerAgentPrompts(options: { name?: string; description?: string; capabilities?: string; category?: string; endpoint?: string; metadata?: boolean; yes?: boolean }): Promise<AgentData> {
   // Agent name
   const name = options.name ?? await text({
     message: 'What is your agent\'s name?',
@@ -50,26 +50,33 @@ export async function registerAgentPrompts(options: { name?: string; description
   }
 
   // Agent capabilities
-  const capabilities = await multiselect({
-    message: 'Select your agent\'s capabilities:',
-    options: [
-      { value: 'data-analysis', label: '📊 Data Analysis & Insights' },
-      { value: 'writing', label: '✍️  Content Writing & Editing' },
-      { value: 'coding', label: '💻 Programming & Development' },
-      { value: 'translation', label: '🌐 Language Translation' },
-      { value: 'image-processing', label: '🖼️  Image Processing & AI Vision' },
-      { value: 'automation', label: '🤖 Task Automation & Workflows' },
-      { value: 'research', label: '🔍 Research & Information Gathering' },
-      { value: 'customer-service', label: '🎧 Customer Service & Support' },
-      { value: 'financial-analysis', label: '💰 Financial Analysis & Trading' },
-      { value: 'content-moderation', label: '🛡️  Content Moderation' }
-    ],
-    required: true
-  })
+  let capabilities: string[]
+  if (options.capabilities) {
+    capabilities = options.capabilities.split(',').map(c => c.trim())
+  } else {
+    const result = await multiselect({
+      message: 'Select your agent\'s capabilities:',
+      options: [
+        { value: 'data-analysis', label: '📊 Data Analysis & Insights' },
+        { value: 'writing', label: '✍️  Content Writing & Editing' },
+        { value: 'coding', label: '💻 Programming & Development' },
+        { value: 'translation', label: '🌐 Language Translation' },
+        { value: 'image-processing', label: '🖼️  Image Processing & AI Vision' },
+        { value: 'automation', label: '🤖 Task Automation & Workflows' },
+        { value: 'research', label: '🔍 Research & Information Gathering' },
+        { value: 'customer-service', label: '🎧 Customer Service & Support' },
+        { value: 'financial-analysis', label: '💰 Financial Analysis & Trading' },
+        { value: 'content-moderation', label: '🛡️  Content Moderation' }
+      ],
+      required: true
+    })
 
-  if (isCancel(capabilities)) {
-    cancel('Agent registration cancelled')
-    process.exit(0)
+    if (isCancel(result)) {
+      cancel('Agent registration cancelled')
+      process.exit(0)
+    }
+    
+    capabilities = result as string[]
   }
 
   // Service endpoint
@@ -93,11 +100,13 @@ export async function registerAgentPrompts(options: { name?: string; description
   }
 
   // Metadata URI (optional)
-  const hasMetadata = await confirm({
-    message: 'Do you have additional metadata to link? (JSON file with detailed specs)'
-  })
+  const hasMetadata = options.metadata === false ? false : 
+    options.metadata === true ? true :
+    await confirm({
+      message: 'Do you have additional metadata to link? (JSON file with detailed specs)'
+    })
 
-  if (isCancel(hasMetadata)) {
+  if (typeof hasMetadata !== 'boolean' && isCancel(hasMetadata)) {
     cancel('Agent registration cancelled')
     process.exit(0)
   }
@@ -137,11 +146,11 @@ export async function registerAgentPrompts(options: { name?: string; description
     console.log(chalk.cyan('Metadata:') + ` ${metadataUri}`)
   }
 
-  const confirmed = await confirm({
+  const confirmed = options.yes ? true : await confirm({
     message: 'Register this agent on the blockchain?'
   })
 
-  if (isCancel(confirmed) || !confirmed) {
+  if (!options.yes && (isCancel(confirmed) || !confirmed)) {
     cancel('Agent registration cancelled')
     process.exit(0)
   }

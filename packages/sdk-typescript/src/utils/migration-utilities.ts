@@ -5,8 +5,8 @@
  * to ZK proofs when they become available.
  */
 
-import type { Connection } from '@solana/web3.js'
 import type { Address } from '@solana/kit'
+import type { Rpc, GetAccountInfoApi } from '@solana/rpc'
 
 import {
   type ElGamalCiphertext
@@ -106,7 +106,7 @@ export class MigrationManager {
   private batches: Map<string, MigrationBatch> = new Map()
   
   constructor(
-    private connection: Connection,
+    private rpc: Rpc<GetAccountInfoApi>,
     storage?: PrivateMetadataStorage
   ) {
     this.storage = storage ?? new PrivateMetadataStorage()
@@ -173,7 +173,7 @@ export class MigrationManager {
     
     try {
       // Check if ZK program is available
-      const zkAvailable = await isZkProgramAvailable(this.connection)
+      const zkAvailable = await isZkProgramAvailable(this.rpc)
       if (!zkAvailable) {
         throw new Error('ZK program is not available for migration')
       }
@@ -214,7 +214,7 @@ export class MigrationManager {
     const warnings: string[] = []
     
     // Check ZK program
-    const zkAvailable = await isZkProgramAvailable(this.connection)
+    const zkAvailable = await isZkProgramAvailable(this.rpc)
     if (!zkAvailable) {
       warnings.push('ZK ElGamal Proof Program is not available')
     }
@@ -376,7 +376,7 @@ export class MigrationManager {
         item.migrationData.zkMetadata.randomness,
         {
           mode: ProofMode.ZK_PROGRAM_ONLY,
-          connection: this.connection
+          connection: this.rpc
         }
       )
     }

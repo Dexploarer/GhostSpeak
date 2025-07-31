@@ -41,7 +41,8 @@ export class InteractiveMenu {
     const configPath = join(homedir(), '.ghostspeak', 'config.json')
     const isFirstRun = !existsSync(configPath)
     
-    while (true) {
+    // Interactive menu loop
+    for (;;) {
       const categories: CategoryOption[] = [
         {
           value: 'quickstart',
@@ -192,19 +193,19 @@ export class InteractiveMenu {
     }
     
     try {
-      const { client, wallet } = await initializeClient()
+      const { wallet } = await initializeClient()
       status.wallet = true
       
       // Check balance - use the RPC from config
       const { loadConfig } = await import('./config.js')
       const cfg = loadConfig()
-      const rpcUrl = cfg.rpcUrl || 'https://api.devnet.solana.com'
+      const rpcUrl = cfg.rpcUrl ?? 'https://api.devnet.solana.com'
       const rpc = createSolanaRpc(rpcUrl)
       const { value: balance } = await rpc.getBalance(address(wallet.address)).send()
       status.balance = `${(Number(balance) / 1e9).toFixed(4)} SOL`
       
       // Could check for agents and multisigs here
-    } catch (_error) {
+    } catch {
       // Wallet not configured
     }
     
@@ -739,7 +740,7 @@ export class InteractiveMenu {
       let cliArgs: string[]
       
       // Check if we're running via npx or direct node
-      if (process.argv[1] && process.argv[1].endsWith('.js')) {
+      if (process.argv[1]?.endsWith('.js')) {
         // Running with node directly
         cliCommand = process.argv[0]
         cliArgs = [process.argv[1], ...args]

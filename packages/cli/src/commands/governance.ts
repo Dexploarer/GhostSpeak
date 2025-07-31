@@ -13,746 +13,564 @@ import {
   note
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
-import type { Address } from '@solana/addresses'
+import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
-import { deriveMultisigPda, deriveProposalPda } from '@ghostspeak/sdk'
-// Temporarily define enums locally until SDK exports are fixed
-export enum ProposalStatus {
-  Draft,
-  Active,
-  Succeeded,
-  Failed,
-  Executed,
-  Cancelled,
-  Passed
+
+// Clean type definitions
+interface CreateMultisigOptions {
+  name?: string
+  members?: string
+  threshold?: string
 }
 
-export enum ProposalType {
-  ConfigChange,
-  Upgrade,
-  Transfer,
-  Custom
+interface CreateProposalOptions {
+  title?: string
+  description?: string
+  type?: string
 }
-import type {
-  CreateMultisigOptions
-} from '../types/cli-types.js'
+
+interface VoteOptions {
+  proposal?: string
+  choice?: 'yes' | 'no' | 'abstain'
+}
+
+interface RBACOptions {
+  action?: 'grant' | 'revoke'
+  user?: string
+  role?: string
+}
 
 export const governanceCommand = new Command('governance')
   .description('Participate in protocol governance')
 
 // Multisig subcommand
-governanceCommand
-  .command('multisig')
+const multisigCommand = new Command('multisig')
   .description('Manage multi-signature wallets')
-  .addCommand(
-    new Command('create')
-      .description('Create a new multisig wallet')
-      .option('-n, --name <name>', 'Multisig name')
-      .option('-t, --threshold <number>', 'Required signatures')
-      .action(async (_options: CreateMultisigOptions) => {
-        intro(chalk.cyan('🔐 Create Multisig Wallet'))
 
-        try {
-          const multisigName = _options.name ?? await text({
-            message: 'Multisig wallet name:',
-            placeholder: 'GhostSpeak Treasury',
-            validate: (value) => {
-              if (!value || value.trim().length < 3) return 'Name must be at least 3 characters'
-              if (value.length > 50) return 'Name must be less than 50 characters'
+multisigCommand
+  .command('create')
+  .description('Create a new multisig wallet')
+  .option('-n, --name <name>', 'Multisig name')
+  .option('-m, --members <members>', 'Comma-separated list of member addresses')
+  .option('-t, --threshold <threshold>', 'Number of signatures required')
+  .action(async (options: CreateMultisigOptions) => {
+    intro(chalk.blue('🔐 Create Multisig Wallet'))
+
+    try {
+      const s = spinner()
+      s.start('Connecting to network...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+      
+      s.stop('✅ Connected to devnet')
+
+      // Get multisig name
+      let name = options.name
+      if (!name) {
+        const nameInput = await text({
+          message: 'Multisig wallet name:',
+          placeholder: 'Treasury Multisig',
+          validate: (value) => {
+            if (!value || value.trim().length === 0) {
+              return 'Multisig name is required'
             }
-          })
-
-          if (isCancel(multisigName)) {
-            cancel('Multisig creation cancelled')
-            return
-          }
-
-          const description = await text({
-            message: 'Multisig description:',
-            placeholder: 'Treasury for managing protocol funds and major decisions',
-            validate: (value) => {
-              if (!value || value.trim().length < 10) return 'Description must be at least 10 characters'
-              if (value.length > 200) return 'Description must be less than 200 characters'
-            }
-          })
-
-          if (isCancel(description)) {
-            cancel('Multisig creation cancelled')
-            return
-          }
-
-          // Collect signers
-          log.info('\n📝 Add signers to the multisig wallet:')
-          const signers: Address[] = []
-          let addingSigners = true
-
-          while (addingSigners) {
-            const signerAddress = await text({
-              message: `Signer ${signers.length + 1} address:`,
-              placeholder: 'FfGhMd5nwQB5dL1kMfKKo1vdpme83JMHChgSNvhiYBZ7',
-              validate: (value) => {
-                if (!value || value.trim().length === 0) return 'Signer address is required'
-                if (value.length < 32 || value.length > 88) return 'Invalid Solana address format'
-                if (signers.includes(address(value))) return 'This signer is already added'
-              }
-            })
-
-            if (isCancel(signerAddress)) {
-              break
-            }
-
-            signers.push(address(signerAddress))
-            log.success(`✅ Added signer ${signers.length}: ${signerAddress}`)
-
-            if (signers.length >= 10) {
-              log.warn('Maximum 10 signers reached')
-              addingSigners = false
-            } else {
-              const addMore = await confirm({
-                message: 'Add another signer?'
-              })
-
-              if (isCancel(addMore) || !addMore) {
-                addingSigners = false
-              }
+            if (value.length > 50) {
+              return 'Name must be less than 50 characters'
             }
           }
+        })
 
-          if (signers.length < 2) {
-            log.error('At least 2 signers are required for a multisig wallet')
-            return
-          }
-
-          const threshold = _options.threshold ?? await select({
-            message: 'Required signatures (threshold):',
-            options: Array.from({ length: signers.length }, (_, i) => ({
-              value: (i + 1).toString(),
-              label: `${i + 1} of ${signers.length}`,
-              hint: i + 1 === 1 ? 'Any signer can execute' : 
-                    i + 1 === signers.length ? 'All signers required' :
-                    `Majority of ${Math.ceil(signers.length / 2)}${i + 1 === Math.ceil(signers.length / 2) ? ' (recommended)' : ''}`
-            }))
-          })
-
-          if (isCancel(threshold)) {
-            cancel('Multisig creation cancelled')
-            return
-          }
-
-          const thresholdNum = parseInt(threshold)
-
-          // Multisig configuration
-          const multisigType = await select({
-            message: 'Multisig type:',
-            options: [
-              { value: 'standard', label: '🏛️ Standard Multisig', hint: 'General purpose multisig wallet' },
-              { value: 'treasury', label: '💰 Treasury Multisig', hint: 'For managing protocol funds' },
-              { value: 'governance', label: '⚖️ Governance Multisig', hint: 'For protocol decision making' },
-              { value: 'emergency', label: '🚨 Emergency Multisig', hint: 'For emergency protocol actions' }
-            ]
-          })
-
-          if (isCancel(multisigType)) {
-            cancel('Multisig creation cancelled')
-            return
-          }
-
-          // Time lock configuration
-          const hasTimelock = await confirm({
-            message: 'Enable time lock for transactions?'
-          })
-
-          let timelockDuration = 0
-          if (!isCancel(hasTimelock) && hasTimelock) {
-            const timelockChoice = await select({
-              message: 'Time lock duration:',
-              options: [
-                { value: '3600', label: '1 hour', hint: 'Short delay for routine operations' },
-                { value: '86400', label: '1 day', hint: 'Standard delay for most actions' },
-                { value: '259200', label: '3 days', hint: 'Extended delay for major changes' },
-                { value: '604800', label: '1 week', hint: 'Maximum security for critical operations' }
-              ]
-            })
-
-            if (!isCancel(timelockChoice)) {
-              timelockDuration = parseInt(timelockChoice)
-            }
-          }
-
-          // Preview multisig configuration
-          note(
-            `${chalk.bold('Multisig Configuration:')}\n` +
-            `${chalk.gray('Name:')} ${multisigName}\n` +
-            `${chalk.gray('Type:')} ${multisigType}\n` +
-            `${chalk.gray('Signers:')} ${signers.length}\n` +
-            `${chalk.gray('Threshold:')} ${thresholdNum} of ${signers.length}\n` +
-            `${chalk.gray('Time Lock:')} ${timelockDuration > 0 ? `${timelockDuration / 3600}h` : 'None'}\n` +
-            `${chalk.gray('Description:')} ${description.substring(0, 50)}${description.length > 50 ? '...' : ''}`,
-            'Multisig Preview'
-          )
-
-          const confirmCreate = await confirm({
-            message: 'Create this multisig wallet?'
-          })
-
-          if (isCancel(confirmCreate) || !confirmCreate) {
-            cancel('Multisig creation cancelled')
-            return
-          }
-
-          const s = spinner()
-          s.start('Creating multisig wallet...')
-          
-          const { client, wallet } = await initializeClient('devnet')
-          
-          try {
-            const multisigParams = {
-              name: multisigName,
-              description,
-              signers,
-              threshold: thresholdNum,
-              multisigType,
-              timelockDuration: BigInt(timelockDuration)
-            }
-
-            // Generate proper multisig PDA
-            const multisigId = BigInt(Math.floor(Math.random() * 1000000))
-            const multisigDerive = deriveMultisigPda
-            const multisigPda = await multisigDerive(
-              client.config.programId!,
-              wallet.address,
-              multisigId.toString()
-            )
-            
-            // Update multisig params with the ID
-            const multisigParamsWithId = {
-              ...multisigParams,
-              multisigId
-            }
-            
-            const signature = await client.governance.createMultisig(
-              toSDKSigner(wallet),
-              multisigPda,
-              {
-                ...multisigParamsWithId,
-                config: {
-                  requireSequentialSigning: false,
-                  allowOwnerOffCurve: false
-                }
-              }
-            )
-
-            s.stop('✅ Multisig wallet created successfully!')
-
-            const explorerUrl = getExplorerUrl(signature, 'devnet')
-            
-            outro(
-              `${chalk.green('🔐 Multisig Wallet Created!')}\n\n` +
-              `${chalk.bold('Wallet Details:')}\n` +
-              `${chalk.gray('Name:')} ${multisigName}\n` +
-              `${chalk.gray('Type:')} ${multisigType}\n` +
-              `${chalk.gray('Threshold:')} ${thresholdNum} of ${signers.length} signatures\n` +
-              `${chalk.gray('Time Lock:')} ${timelockDuration > 0 ? `${timelockDuration / 3600} hours` : 'None'}\n\n` +
-              `${chalk.bold('Transaction:')}\n` +
-              `${chalk.gray('Signature:')} ${signature}\n` +
-              `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
-              `${chalk.yellow('💡 Use')} ${chalk.cyan('npx ghostspeak governance multisig list')} ${chalk.yellow('to view your multisig wallets')}`
-            )
-            
-          } catch (error) {
-            s.stop('❌ Multisig creation failed')
-            await handleTransactionError(error as Error)
-          }
-          
-        } catch (error) {
-          log.error(`Failed to create multisig: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        if (isCancel(nameInput)) {
+          cancel('Multisig creation cancelled')
+          return
         }
-      })
-  )
-  .addCommand(
-    new Command('list')
-      .description('List multisig wallets')
-      .option('--mine', 'Show only multisigs where I am a signer')
-      .action(async (_options: { mine?: boolean }) => {
-        intro(chalk.cyan('📋 Multisig Wallets'))
 
-        try {
-          const s = spinner()
-          s.start('Loading multisig wallets...')
-          
-          const { client, wallet } = await initializeClient('devnet')
-          
-          const multisigs = _options.mine ? 
-            // Filter multisigs where user is a signer (client-side filtering)
-            (await client.governance.listMultisigs()).filter(m => 
-              m.signers.includes(wallet.address)
-            ) :
-            await client.governance.listMultisigs()
+        name = nameInput.toString()
+      }
 
-          s.stop(`✅ Found ${multisigs.length} multisig wallets`)
-
-          if (multisigs.length === 0) {
-            outro(
-              `${chalk.yellow('No multisig wallets found')}\n\n` +
-              `${chalk.gray('Use')} ${chalk.cyan('npx ghostspeak governance multisig create')} ${chalk.gray('to create one')}`
-            )
-            return
+      // Get member addresses
+      let members = options.members
+      if (!members) {
+        const membersInput = await text({
+          message: 'Member addresses (comma-separated):',
+          placeholder: 'addr1,addr2,addr3',
+          validate: (value) => {
+            if (!value || value.trim().length === 0) {
+              return 'At least one member address is required'
+            }
+            const addresses = value.split(',').map(a => a.trim())
+            if (addresses.length < 2) {
+              return 'Multisig requires at least 2 members'
+            }
+            if (addresses.length > 10) {
+              return 'Maximum 10 members allowed'
+            }
+            // Validate each address format
+            for (const addr of addresses) {
+              try {
+                address(addr)
+              } catch {
+                return `Invalid address format: ${addr}`
+              }
+            }
           }
+        })
 
-          log.info(`\n${chalk.bold('Multisig Wallets:')}\n`)
-          
-          multisigs.forEach((multisig, index) => {
-            const balanceSOL = (Number(multisig.balance ?? 0) / 1_000_000_000).toFixed(3)
-            const isSigner = multisig.signers.includes(wallet.address)
-            
-            log.info(
-              `${chalk.bold(`${index + 1}. ${multisig.name}`)} ${isSigner ? '👤' : ''}\n` +
-              `   ${chalk.gray('Type:')} ${multisig.multisigType}\n` +
-              `   ${chalk.gray('Threshold:')} ${multisig.threshold} of ${multisig.signers.length}\n` +
-              `   ${chalk.gray('Balance:')} ${balanceSOL} SOL\n` +
-              `   ${chalk.gray('Pending Transactions:')} ${multisig.pendingTransactions ?? 0}\n` +
-              `   ${chalk.gray('Time Lock:')} ${multisig.timelockDuration && Number(multisig.timelockDuration) > 0 ? `${Number(multisig.timelockDuration) / 3600}h` : 'None'}\n`
-            )
-          })
-
-          outro(
-            `${chalk.yellow('💡 Commands:')}\n` +
-            `${chalk.cyan('npx ghostspeak governance proposal create')} - Create governance proposal\n` +
-            `${chalk.cyan('npx ghostspeak governance vote')} - Vote on proposals`
-          )
-          
-        } catch (error) {
-          log.error(`Failed to load multisig wallets: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        if (isCancel(membersInput)) {
+          cancel('Multisig creation cancelled')
+          return
         }
+
+        members = membersInput.toString()
+      }
+
+      const memberAddresses = members.split(',').map(a => a.trim())
+
+      // Get threshold
+      let threshold = options.threshold
+      if (!threshold) {
+        const thresholdInput = await select({
+          message: 'Signature threshold:',
+          options: [
+            { value: '1', label: '1 signature', hint: 'Any member can execute' },
+            { value: '2', label: '2 signatures', hint: 'Requires 2 members' },
+            { value: Math.ceil(memberAddresses.length / 2).toString(), label: `${Math.ceil(memberAddresses.length / 2)} signatures`, hint: 'Simple majority' },
+            { value: memberAddresses.length.toString(), label: `${memberAddresses.length} signatures`, hint: 'Unanimous (all members)' }
+          ]
+        })
+
+        if (isCancel(thresholdInput)) {
+          cancel('Multisig creation cancelled')
+          return
+        }
+
+        threshold = thresholdInput.toString()
+      }
+
+      const thresholdNum = parseInt(threshold)
+
+      // Show multisig preview
+      note(
+        `${chalk.bold('Multisig Details:')}\n` +
+        `${chalk.gray('Name:')} ${name}\n` +
+        `${chalk.gray('Members:')} ${memberAddresses.length}\n` +
+        `${chalk.gray('Threshold:')} ${thresholdNum} of ${memberAddresses.length}\n` +
+        `${chalk.gray('Creator:')} ${wallet.address.slice(0, 8)}...${wallet.address.slice(-8)}\n` +
+        `${chalk.gray('Security:')} ${thresholdNum === memberAddresses.length ? 'Maximum' : thresholdNum === 1 ? 'Minimal' : 'Balanced'}`,
+        'Multisig Preview'
+      )
+
+      const confirmCreate = await confirm({
+        message: 'Create this multisig wallet?'
       })
-  )
+
+      if (isCancel(confirmCreate) || !confirmCreate) {
+        cancel('Multisig creation cancelled')
+        return
+      }
+
+      s.start('Creating multisig on blockchain...')
+
+      try {
+        const signature = await safeClient.governance.createMultisig(toSDKSigner(wallet), {
+          name,
+          signers: memberAddresses.map(addr => address(addr)),
+          threshold: thresholdNum,
+          multisigType: 'standard',
+          multisigId: BigInt(Date.now())
+        })
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
+        }
+
+        s.stop('✅ Multisig created successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.green('🔐 Multisig Created Successfully!')}\n\n` +
+          `${chalk.bold('Multisig Details:')}\n` +
+          `${chalk.gray('Name:')} ${name}\n` +
+          `${chalk.gray('Members:')} ${memberAddresses.length}\n` +
+          `${chalk.gray('Threshold:')} ${thresholdNum} signatures required\n\n` +
+          `${chalk.bold('Transaction:')}\n` +
+          `${chalk.gray('Signature:')} ${signature}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
+          `${chalk.yellow('Next Steps:')}\n` +
+          `• Share multisig address with members\n` +
+          `• Create proposals: ${chalk.cyan('gs governance proposal create')}\n` +
+          `• Manage transactions through multisig approval process`
+        )
+
+      } catch (error) {
+        s.stop('❌ Failed to create multisig')
+        handleTransactionError(error as Error)
+      }
+
+    } catch (error) {
+      log.error(`Failed to create multisig: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+multisigCommand
+  .command('list')
+  .description('List your multisig wallets')
+  .action(async () => {
+    intro(chalk.blue('📋 Your Multisig Wallets'))
+
+    try {
+      const s = spinner()
+      s.start('Loading multisig wallets...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+
+      const multisigs = await safeClient.governance.listMultisigs({ creator: wallet.address })
+
+      s.stop(`✅ Found ${multisigs.length} multisig wallets`)
+
+      if (multisigs.length === 0) {
+        outro(
+          `${chalk.yellow('No multisig wallets found')}\n\n` +
+          `${chalk.gray('• Create a multisig:')} ${chalk.cyan('gs governance multisig create')}\n` +
+          `${chalk.gray('Get invited to existing multisigs by other members')}`
+        )
+        return
+      }
+
+      // Display multisigs
+      log.info(`\n${chalk.bold('Your Multisig Wallets:')}\n`)
+      
+      multisigs.forEach((multisig, index) => {
+        const isCreator = multisig.creator === wallet.address
+        const role = isCreator ? chalk.green('CREATOR') : chalk.blue('MEMBER')
+        
+        log.info(
+          `${chalk.bold(`${index + 1}. ${multisig.name}`)}\n` +
+          `   ${chalk.gray('Address:')} ${multisig.address.slice(0, 8)}...${multisig.address.slice(-8)}\n` +
+          `   ${chalk.gray('Members:')} ${multisig.members.length}\n` +
+          `   ${chalk.gray('Threshold:')} ${multisig.threshold} of ${multisig.members.length}\n` +
+          `   ${chalk.gray('Your Role:')} ${role}\n` +
+          `   ${chalk.gray('Pending Proposals:')} ${multisig.pendingProposals ?? 0}\n`
+        )
+      })
+
+      outro(
+        `${chalk.yellow('💡 Commands:')}\n` +
+        `${chalk.cyan('gs governance proposal create')} - Create proposal\n` +
+        `${chalk.cyan('gs governance proposal list')} - View proposals\n` +
+        `${chalk.cyan('gs governance vote')} - Vote on proposals`
+      )
+
+    } catch (error) {
+      log.error(`Failed to load multisigs: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+governanceCommand.addCommand(multisigCommand)
 
 // Proposal subcommand
-governanceCommand
-  .command('proposal')
+const proposalCommand = new Command('proposal')
   .description('Manage governance proposals')
-  .addCommand(
-    new Command('create')
-      .description('Create a governance proposal')
-      .option('-t, --title <title>', 'Proposal title')
-      .option('-c, --category <category>', 'Proposal category')
-      .action(async (_options: { title?: string; category?: string }) => {
-        intro(chalk.cyan('📝 Create Governance Proposal'))
 
-        try {
-          const proposalTitle = _options.title ?? await text({
-            message: 'Proposal title:',
-            placeholder: 'Increase marketplace fee to 2.5%',
-            validate: (value) => {
-              if (!value || value.trim().length < 10) return 'Title must be at least 10 characters'
-              if (value.length > 100) return 'Title must be less than 100 characters'
-            }
-          })
+proposalCommand
+  .command('create')
+  .description('Create a new governance proposal')
+  .option('-t, --title <title>', 'Proposal title')
+  .option('-d, --description <description>', 'Proposal description')
+  .option('--type <type>', 'Proposal type (config, upgrade, transfer, custom)')
+  .action(async (options: CreateProposalOptions) => {
+    intro(chalk.yellow('📝 Create Governance Proposal'))
 
-          if (isCancel(proposalTitle)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
+    try {
+      const s = spinner()
+      s.start('Loading your multisigs...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
 
-          const proposalCategory = _options.category ?? await select({
-            message: 'Proposal category:',
-            options: [
-              { value: 'parameter', label: '⚙️ Parameter Change', hint: 'Modify protocol parameters' },
-              { value: 'feature', label: '✨ New Feature', hint: 'Add new protocol functionality' },
-              { value: 'treasury', label: '💰 Treasury Management', hint: 'Manage protocol funds' },
-              { value: 'emergency', label: '🚨 Emergency Action', hint: 'Urgent protocol fix' },
-              { value: 'upgrade', label: '🔄 Protocol Upgrade', hint: 'Smart contract upgrades' },
-              { value: 'policy', label: '📋 Policy Change', hint: 'Governance policy updates' }
-            ]
-          })
+      // Get user's multisigs
+      const multisigs = await safeClient.governance.listMultisigs({ creator: wallet.address })
+      
+      s.stop(`✅ Found ${multisigs.length} multisig wallets`)
 
-          if (isCancel(proposalCategory)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
+      if (multisigs.length === 0) {
+        outro('No multisig wallets found. Create one first with: gs governance multisig create')
+        return
+      }
 
-          const proposalDescription = await text({
-            message: 'Detailed proposal description:',
-            placeholder: 'This proposal aims to increase the marketplace fee from 2% to 2.5% to better fund protocol development...',
-            validate: (value) => {
-              if (!value || value.trim().length < 50) return 'Description must be at least 50 characters'
-              if (value.length > 2000) return 'Description must be less than 2000 characters'
-            }
-          })
-
-          if (isCancel(proposalDescription)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
-
-          // Rationale
-          const proposalRationale = await text({
-            message: 'Rationale (why is this change needed?):',
-            placeholder: 'Current fees are insufficient to cover development costs and infrastructure...',
-            validate: (value) => {
-              if (!value || value.trim().length < 30) return 'Rationale must be at least 30 characters'
-              if (value.length > 1000) return 'Rationale must be less than 1000 characters'
-            }
-          })
-
-          if (isCancel(proposalRationale)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
-
-          // Voting duration
-          const votingDuration = await select({
-            message: 'Voting duration:',
-            options: [
-              { value: '259200', label: '3 days', hint: 'Quick decisions' },
-              { value: '604800', label: '1 week', hint: 'Standard voting period' },
-              { value: '1209600', label: '2 weeks', hint: 'Extended discussion time' },
-              { value: '2592000', label: '1 month', hint: 'Major protocol changes' }
-            ]
-          })
-
-          if (isCancel(votingDuration)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
-
-          // Execution parameters
-          const requiresExecution = await confirm({
-            message: 'Does this proposal require automatic execution after passing?'
-          })
-
-          let executionDelay = 0
-          if (!isCancel(requiresExecution) && requiresExecution) {
-            const delayChoice = await select({
-              message: 'Execution delay after voting ends:',
-              options: [
-                { value: '0', label: 'Immediate', hint: 'Execute immediately after voting' },
-                { value: '86400', label: '1 day', hint: 'Allow time for final review' },
-                { value: '259200', label: '3 days', hint: 'Extended delay for major changes' },
-                { value: '604800', label: '1 week', hint: 'Maximum security delay' }
-              ]
-            })
-
-            if (!isCancel(delayChoice)) {
-              executionDelay = parseInt(delayChoice)
-            }
-          }
-
-          // Quorum requirement
-          const quorumThreshold = await select({
-            message: 'Minimum participation (quorum):',
-            options: [
-              { value: '10', label: '10%', hint: 'Low participation requirement' },
-              { value: '25', label: '25%', hint: 'Standard quorum' },
-              { value: '50', label: '50%', hint: 'High participation requirement' },
-              { value: '67', label: '67%', hint: 'Supermajority quorum' }
-            ]
-          })
-
-          if (isCancel(quorumThreshold)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
-
-          // Approval threshold
-          const approvalThreshold = await select({
-            message: 'Approval threshold:',
-            options: [
-              { value: '50', label: 'Simple Majority (>50%)', hint: 'Standard democratic vote' },
-              { value: '60', label: 'Qualified Majority (60%)', hint: 'Enhanced consensus' },
-              { value: '67', label: 'Supermajority (67%)', hint: 'Strong consensus required' },
-              { value: '75', label: 'Three-quarters (75%)', hint: 'Very high consensus' }
-            ]
-          })
-
-          if (isCancel(approvalThreshold)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
-
-          // Supporting documentation
-          const hasDocumentation = await confirm({
-            message: 'Do you have supporting documentation (links, research, specs)?'
-          })
-
-          const documentation = []
-          if (!isCancel(hasDocumentation) && hasDocumentation) {
-            let addingDocs = true
-            while (addingDocs && documentation.length < 5) {
-              const docItem = await text({
-                message: `Documentation ${documentation.length + 1} (URL or description):`,
-                placeholder: 'https://research.ghostspeak.com/fee-analysis.pdf',
-                validate: (value) => {
-                  if (!value || value.trim().length < 10) return 'Please provide at least 10 characters'
-                  if (value.length > 200) return 'Documentation link must be less than 200 characters'
-                }
-              })
-
-              if (isCancel(docItem)) {
-                break
-              }
-
-              documentation.push(docItem)
-
-              const addMore = await confirm({
-                message: 'Add more documentation?'
-              })
-
-              if (isCancel(addMore) || !addMore) {
-                addingDocs = false
-              }
-            }
-          }
-
-          // Preview proposal
-          note(
-            `${chalk.bold('Proposal Preview:')}\n` +
-            `${chalk.gray('Title:')} ${proposalTitle}\n` +
-            `${chalk.gray('Category:')} ${proposalCategory}\n` +
-            `${chalk.gray('Voting Duration:')} ${parseInt(votingDuration) / 86400} days\n` +
-            `${chalk.gray('Quorum:')} ${quorumThreshold}%\n` +
-            `${chalk.gray('Approval:')} ${approvalThreshold}%\n` +
-            `${chalk.gray('Auto-execute:')} ${requiresExecution ? 'Yes' : 'No'}\n` +
-            `${chalk.gray('Documentation:')} ${documentation.length} items\n` +
-            `${chalk.gray('Description:')} ${proposalDescription.substring(0, 100)}${proposalDescription.length > 100 ? '...' : ''}`,
-            'Proposal Details'
-          )
-
-          const confirmCreate = await confirm({
-            message: 'Submit this proposal for voting?'
-          })
-
-          if (isCancel(confirmCreate) || !confirmCreate) {
-            cancel('Proposal creation cancelled')
-            return
-          }
-
-          // Get multisig address for the proposal
-          const multisigAddressPrompt = await text({
-            message: 'Enter the multisig address for this proposal:',
-            placeholder: 'e.g., 7JxH8YK...',
-            validate: (value) => {
-              if (!value || value.length < 30) return 'Please enter a valid multisig address'
-              return
-            }
-          })
-
-          if (isCancel(multisigAddressPrompt)) {
-            cancel('Proposal creation cancelled')
-            return
-          }
-
-          const s = spinner()
-          s.start('Creating governance proposal...')
-          
-          const { client, wallet } = await initializeClient('devnet')
-          
-          try {
-            const proposalParams = {
-              title: proposalTitle,
-              description: proposalDescription,
-              category: proposalCategory,
-              rationale: proposalRationale,
-              votingDuration: BigInt(parseInt(votingDuration)),
-              executionDelay: BigInt(executionDelay),
-              quorumThreshold: parseInt(quorumThreshold),
-              approvalThreshold: parseInt(approvalThreshold),
-              requiresExecution,
-              documentation
-            }
-
-            // Get multisig address from prompt
-            const multisigAddress = multisigAddressPrompt as string
-            if (!multisigAddress || multisigAddress === '11111111111111111111111111111111') {
-              throw new Error('Valid multisig address required for proposal creation')
-            }
-            
-            // Generate proper proposal PDA
-            const proposalId = BigInt(Math.floor(Math.random() * 1000000))
-            const proposalDerive = deriveProposalPda
-            const proposalPda = await proposalDerive(
-              client.config.programId!,
-              address(multisigAddress),
-              proposalId.toString()
-            )
-            
-            // Update proposal params with the ID
-            const proposalParamsWithId = {
-              ...proposalParams,
-              proposalId,
-              multisig: address(multisigAddress)
-            }
-            
-            const signature = await client.governance.createProposal(
-              toSDKSigner(wallet),
-              proposalPda,
-              {
-                ...proposalParamsWithId,
-                proposalType: ProposalType.Custom,
-                executionParams: {
-                  instructions: [],
-                  executionDelay: BigInt(86400),
-                  executionConditions: [],
-                  cancellable: true,
-                  autoExecute: false,
-                  executionAuthority: address('11111111111111111111111111111111')
-                }
-              }
-            )
-
-            s.stop('✅ Proposal created successfully!')
-
-            const explorerUrl = getExplorerUrl(signature, 'devnet')
-            
-            outro(
-              `${chalk.green('📝 Governance Proposal Created!')}\n\n` +
-              `${chalk.bold('Proposal Details:')}\n` +
-              `${chalk.gray('Title:')} ${proposalTitle}\n` +
-              `${chalk.gray('Category:')} ${proposalCategory}\n` +
-              `${chalk.gray('Voting Period:')} ${parseInt(votingDuration) / 86400} days\n` +
-              `${chalk.gray('Status:')} ${chalk.yellow('Active Voting')}\n\n` +
-              `${chalk.bold('Transaction:')}\n` +
-              `${chalk.gray('Signature:')} ${signature}\n` +
-              `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
-              `${chalk.yellow('💡 Share your proposal with the community!')}\n` +
-              `${chalk.cyan('npx ghostspeak governance proposal list')} - View all proposals\n` +
-              `${chalk.cyan('npx ghostspeak governance vote')} - Cast your vote`
-            )
-            
-          } catch (error) {
-            s.stop('❌ Proposal creation failed')
-            await handleTransactionError(error as Error)
-          }
-          
-        } catch (error) {
-          log.error(`Failed to create proposal: ${error instanceof Error ? error.message : 'Unknown error'}`)
-        }
+      // Select multisig
+      const multisigChoice = await select({
+        message: 'Select multisig for proposal:',
+        options: multisigs.map(ms => ({
+          value: ms.address,
+          label: ms.name,
+          hint: `${ms.threshold} of ${ms.members.length} signatures required`
+        }))
       })
-  )
-  .addCommand(
-    new Command('list')
-      .description('List governance proposals')
-      .option('-s, --status <status>', 'Filter by status (active, passed, failed, executed)')
-      .option('-c, --category <category>', 'Filter by category')
-      .action(async (options: { status?: string; category?: string }) => {
-        intro(chalk.cyan('📋 Governance Proposals'))
 
-        try {
-          const s = spinner()
-          s.start('Loading proposals...')
-          
-          const { client, wallet } = await initializeClient('devnet')
-          // Acknowledge unused wallet for future implementation  
-          void wallet
-          
-          const statusMap: Record<string, ProposalStatus> = {
-            'active': ProposalStatus.Active,
-            'passed': ProposalStatus.Passed,
-            'failed': ProposalStatus.Failed,
-            'executed': ProposalStatus.Executed
+      if (isCancel(multisigChoice)) {
+        cancel('Proposal creation cancelled')
+        return
+      }
+
+      const selectedMultisig = multisigs.find(ms => ms.address === multisigChoice.toString())!
+
+      // Get proposal title
+      let title = options.title
+      if (!title) {
+        const titleInput = await text({
+          message: 'Proposal title:',
+          placeholder: 'Increase transaction fee threshold',
+          validate: (value) => {
+            if (!value || value.trim().length === 0) {
+              return 'Proposal title is required'
+            }
+            if (value.length > 100) {
+              return 'Title must be less than 100 characters'
+            }
           }
-          
-          const proposals = await client.governance.listProposals({
-            status: options.status ? statusMap[options.status] : undefined,
-            category: options.category
-          })
+        })
 
-          s.stop(`✅ Found ${proposals.length} proposals`)
-
-          if (proposals.length === 0) {
-            outro(
-              `${chalk.yellow('No proposals found')}\n\n` +
-              `${chalk.gray('Use')} ${chalk.cyan('npx ghostspeak governance proposal create')} ${chalk.gray('to create one')}`
-            )
-            return
-          }
-
-          log.info(`\n${chalk.bold('Governance Proposals:')}\n`)
-          
-          proposals.forEach((proposal, index) => {
-            const statusColor = 
-              proposal.status.toString() === 'passed' ? chalk.green :
-              proposal.status.toString() === 'failed' ? chalk.red :
-              proposal.status.toString() === 'executed' ? chalk.blue :
-              chalk.yellow
-
-            const timeLeft = Number(proposal.votingEndsAt ?? 0) - Math.floor(Date.now() / 1000)
-            const daysLeft = Math.max(0, Math.floor(timeLeft / 86400))
-            const hoursLeft = Math.max(0, Math.floor((timeLeft % 86400) / 3600))
-
-            const participation = proposal.totalVotes > 0 ? 
-              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters ?? 1)) * 100).toFixed(1) : '0'
-
-            const approval = proposal.totalVotes > 0 ? 
-              ((Number(proposal.yesVotes ?? 0) / Number(proposal.totalVotes)) * 100).toFixed(1) : '0'
-
-            log.info(
-              `${chalk.bold(`${index + 1}. ${proposal.title}`)} [${proposal.proposalType.toString().toUpperCase()}]\n` +
-              `   ${chalk.gray('Status:')} ${statusColor(proposal.status.toString().toUpperCase())}\n` +
-              `   ${chalk.gray('Participation:')} ${participation}% (${proposal.totalVotes} votes)\n` +
-              `   ${chalk.gray('Approval:')} ${approval}% yes votes\n` +
-              `   ${chalk.gray('Time Left:')} ${timeLeft > 0 ? `${daysLeft}d ${hoursLeft}h` : 'Voting ended'}\n` +
-              `   ${chalk.gray('Proposer:')} ${proposal.proposer}\n`
-            )
-          })
-
-          outro(
-            `${chalk.yellow('💡 Commands:')}\n` +
-            `${chalk.cyan('npx ghostspeak governance vote')} - Vote on proposals\n` +
-            `${chalk.cyan('npx ghostspeak governance proposal create')} - Create new proposal`
-          )
-          
-        } catch (error) {
-          log.error(`Failed to load proposals: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        if (isCancel(titleInput)) {
+          cancel('Proposal creation cancelled')
+          return
         }
+
+        title = titleInput.toString()
+      }
+
+      // Get proposal type
+      let type = options.type
+      if (!type) {
+        const typeChoice = await select({
+          message: 'Proposal type:',
+          options: [
+            { value: 'config', label: '⚙️ Configuration Change', hint: 'Modify protocol parameters' },
+            { value: 'upgrade', label: '⬆️ Protocol Upgrade', hint: 'Upgrade smart contracts' },
+            { value: 'transfer', label: '💸 Treasury Transfer', hint: 'Transfer funds from treasury' },
+            { value: 'custom', label: '🔧 Custom Action', hint: 'Custom governance action' }
+          ]
+        })
+
+        if (isCancel(typeChoice)) {
+          cancel('Proposal creation cancelled')
+          return
+        }
+
+        type = typeChoice.toString()
+      }
+
+      // Get proposal description
+      let description = options.description
+      if (!description) {
+        const descriptionInput = await text({
+          message: 'Proposal description:',
+          placeholder: 'Detailed explanation of what this proposal does and why...',
+          validate: (value) => {
+            if (!value || value.trim().length < 20) {
+              return 'Please provide at least 20 characters describing the proposal'
+            }
+            if (value.length > 1000) {
+              return 'Description must be less than 1000 characters'
+            }
+          }
+        })
+
+        if (isCancel(descriptionInput)) {
+          cancel('Proposal creation cancelled')
+          return
+        }
+
+        description = descriptionInput.toString()
+      }
+
+      // Get voting duration
+      const duration = await select({
+        message: 'Voting period:',
+        options: [
+          { value: '1', label: '1 day', hint: 'Quick decision' },
+          { value: '3', label: '3 days', hint: 'Standard period' },
+          { value: '7', label: '1 week', hint: 'Extended discussion' },
+          { value: '14', label: '2 weeks', hint: 'Complex proposals' }
+        ]
       })
-  )
+
+      if (isCancel(duration)) {
+        cancel('Proposal creation cancelled')
+        return
+      }
+
+      // Show proposal preview
+      note(
+        `${chalk.bold('Proposal Details:')}\n` +
+        `${chalk.gray('Multisig:')} ${selectedMultisig.name}\n` +
+        `${chalk.gray('Title:')} ${title}\n` +
+        `${chalk.gray('Type:')} ${type.toUpperCase()}\n` +
+        `${chalk.gray('Description:')} ${description.slice(0, 100)}${description.length > 100 ? '...' : ''}\n` +
+        `${chalk.gray('Voting Period:')} ${duration} days\n` +
+        `${chalk.gray('Required Votes:')} ${selectedMultisig.threshold} of ${selectedMultisig.members.length}`,
+        'Proposal Preview'
+      )
+
+      const confirmCreate = await confirm({
+        message: 'Create this proposal?'
+      })
+
+      if (isCancel(confirmCreate) || !confirmCreate) {
+        cancel('Proposal creation cancelled')
+        return
+      }
+
+      s.start('Creating proposal on blockchain...')
+
+      try {
+        const signature = await safeClient.governance.createProposal(toSDKSigner(wallet), {
+          multisig: address(selectedMultisig.address),
+          title,
+          description,
+          proposalType: type,
+          votingDuration: parseInt(duration) * 24 * 3600, // Convert days to seconds
+          proposalId: BigInt(Date.now())
+        })
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
+        }
+
+        s.stop('✅ Proposal created successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.green('📝 Proposal Created Successfully!')}\n\n` +
+          `${chalk.bold('Proposal Details:')}\n` +
+          `${chalk.gray('Title:')} ${title}\n` +
+          `${chalk.gray('Type:')} ${type.toUpperCase()}\n` +
+          `${chalk.gray('Multisig:')} ${selectedMultisig.name}\n` +
+          `${chalk.gray('Voting Period:')} ${duration} days\n\n` +
+          `${chalk.bold('Transaction:')}\n` +
+          `${chalk.gray('Signature:')} ${signature}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
+          `${chalk.yellow('Next Steps:')}\n` +
+          `• Notify multisig members about the proposal\n` +
+          `• Members can vote: ${chalk.cyan('gs governance vote')}\n` +
+          `• Monitor voting progress: ${chalk.cyan('gs governance proposal list')}`
+        )
+
+      } catch (error) {
+        s.stop('❌ Failed to create proposal')
+        handleTransactionError(error as Error)
+      }
+
+    } catch (error) {
+      log.error(`Failed to create proposal: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+proposalCommand
+  .command('list')
+  .description('List governance proposals')
+  .option('--active', 'Show only active proposals')
+  .action(async (_options: { active?: boolean }) => {
+    intro(chalk.yellow('📋 Governance Proposals'))
+
+    try {
+      const s = spinner()
+      s.start('Loading proposals...')
+      
+      const { client, wallet: _wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+
+      // Get all proposals (SDK doesn't support filtering by participant)
+      const proposals = await safeClient.governance.listProposals()
+
+      s.stop(`✅ Found ${proposals.length} proposals`)
+
+      if (proposals.length === 0) {
+        outro(
+          `${chalk.yellow('No proposals found')}\n\n` +
+          `${chalk.gray('• Create a proposal:')} ${chalk.cyan('gs governance proposal create')}\n` +
+          `${chalk.gray('• Join a multisig to participate in governance')}`
+        )
+        return
+      }
+
+      // Display proposals
+      log.info(`\n${chalk.bold('Governance Proposals:')}\n`)
+      
+      proposals.forEach((proposal, index) => {
+        const status = proposal.status.toLowerCase()
+        const statusColor = status === 'active' ? chalk.yellow : 
+                           status === 'passed' ? chalk.green : 
+                           status === 'failed' ? chalk.red : chalk.gray
+
+        const votesFor = proposal.votesFor ?? 0
+        const votesAgainst = proposal.votesAgainst ?? 0
+        const totalVotes = votesFor + votesAgainst
+        const threshold = proposal.threshold
+        
+        log.info(
+          `${chalk.bold(`${index + 1}. ${proposal.title}`)}\n` +
+          `   ${chalk.gray('Type:')} ${proposal.type.toUpperCase()}\n` +
+          `   ${chalk.gray('Status:')} ${statusColor(status.toUpperCase())}\n` +
+          `   ${chalk.gray('Votes:')} ${votesFor} yes, ${votesAgainst} no (${totalVotes}/${threshold} required)\n` +
+          `   ${chalk.gray('Creator:')} ${proposal.creator.slice(0, 8)}...${proposal.creator.slice(-8)}\n` +
+          `   ${chalk.gray('Deadline:')} ${proposal.deadline ? new Date(Number(proposal.deadline) * 1000).toLocaleDateString() : 'N/A'}\n`
+        )
+      })
+
+      outro(
+        `${chalk.yellow('💡 Commands:')}\n` +
+        `${chalk.cyan('gs governance vote')} - Vote on active proposals\n` +
+        `${chalk.cyan('gs governance proposal create')} - Create new proposal`
+      )
+
+    } catch (error) {
+      log.error(`Failed to load proposals: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+governanceCommand.addCommand(proposalCommand)
 
 // Vote subcommand
 governanceCommand
   .command('vote')
   .description('Vote on governance proposals')
-  .option('-p, --proposal <id>', 'Proposal ID to vote on')
-  .action(async (options: { proposal?: string }) => {
-    intro(chalk.cyan('🗳️ Cast Vote'))
+  .option('-p, --proposal <address>', 'Proposal address')
+  .option('-c, --choice <choice>', 'Vote choice (yes, no, abstain)')
+  .action(async (options: VoteOptions) => {
+    intro(chalk.yellow('🗳️ Vote on Proposal'))
 
     try {
       const s = spinner()
       s.start('Loading active proposals...')
       
       const { client, wallet } = await initializeClient('devnet')
-      // Acknowledge unused wallet for future implementation
-      void wallet
-      
-      const proposals = await client.governance.listProposals({ status: ProposalStatus.Active })
+      const safeClient = createSafeSDKClient(client)
+
+      // Get all proposals (SDK doesn't support filtering by participant)
+      const proposals = await safeClient.governance.listProposals()
+
       s.stop(`✅ Found ${proposals.length} active proposals`)
 
       if (proposals.length === 0) {
-        outro(
-          `${chalk.yellow('No active proposals to vote on')}\n\n` +
-          `${chalk.gray('Check back later or create a proposal with')}\n` +
-          `${chalk.cyan('npx ghostspeak governance proposal create')}`
-        )
+        outro('No active proposals found to vote on')
         return
       }
 
-      // Select proposal if not provided
+      // Select proposal
       let selectedProposal = options.proposal
       if (!selectedProposal) {
-        const proposalChoice = await select<string>({
+        const proposalChoice = await select({
           message: 'Select proposal to vote on:',
-          options: proposals.map(proposal => {
-            const timeLeft = Number(proposal.votingEndsAt ?? 0) - Math.floor(Date.now() / 1000)
-            const daysLeft = Math.floor(timeLeft / 86400)
-            const participation = proposal.totalVotes > 0 ? 
-              ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters ?? 1)) * 100).toFixed(1) : '0'
-            
-            return {
-              value: proposal.proposal.toString(),
-              label: `${proposal.title}`,
-              hint: `${daysLeft}d left, ${participation}% participation`
-            }
-          })
+          options: proposals.map(proposal => ({
+            value: proposal.address,
+            label: proposal.title,
+            hint: `${proposal.type} • ${proposal.votesFor ?? 0} yes, ${proposal.votesAgainst ?? 0} no`
+          }))
         })
 
         if (isCancel(proposalChoice)) {
@@ -760,107 +578,48 @@ governanceCommand
           return
         }
 
-        selectedProposal = proposalChoice as string
+        selectedProposal = proposalChoice.toString()
       }
 
-      const proposal = proposals.find(p => p.proposal.toString() === selectedProposal)
+      const proposal = proposals.find(p => p.address === selectedProposal)
       if (!proposal) {
         log.error('Proposal not found or not active')
         return
       }
 
-      // Note: Voting status check not implemented in SDK yet
-      // In production, this would check if user has already voted
-
-      // Display proposal details
-      log.info(`\n${chalk.bold('📋 Proposal Details:')}\n`)
-      log.info(
-        `${chalk.gray('Title:')} ${proposal.title}\n` +
-        `${chalk.gray('Type:')} ${proposal.proposalType}\n` +
-        `${chalk.gray('Proposer:')} ${proposal.proposer}\n` +
-        `${chalk.gray('Description:')} ${proposal.description}\n`
-      )
-
-      // Current voting statistics
-      const participation = proposal.totalVotes > 0 ? 
-        ((Number(proposal.totalVotes) / Number(proposal.eligibleVoters ?? 1)) * 100).toFixed(1) : '0'
-      const approval = proposal.totalVotes > 0 ? 
-        ((Number(proposal.yesVotes ?? 0) / Number(proposal.totalVotes)) * 100).toFixed(1) : '0'
-
-      log.info(`\n${chalk.bold('📊 Current Results:')}\n`)
-      log.info(
-        `${chalk.gray('Yes Votes:')} ${proposal.yesVotes} (${approval}%)\n` +
-        `${chalk.gray('No Votes:')} ${proposal.noVotes}\n` +
-        `${chalk.gray('Abstain:')} ${proposal.abstainVotes}\n` +
-        `${chalk.gray('Participation:')} ${participation}% (${proposal.totalVotes}/${proposal.eligibleVoters})\n` +
-        `${chalk.gray('Quorum Required:')} ${proposal.quorumThreshold}%\n` +
-        `${chalk.gray('Approval Required:')} ${proposal.approvalThreshold}%\n`
-      )
-
-      // Voting power information (simplified for now)
-      const votingPower = {
-        tokenBalance: 1000000000n, // 1 SOL equivalent for demo
-        delegated: 0n,
-        total: 1000000000n
-      }
-      log.info(`\n${chalk.bold('🗳️ Your Voting Power:')}\n`)
-      log.info(
-        `${chalk.gray('Token Balance:')} ${(Number(votingPower.tokenBalance) / 1_000_000_000).toFixed(3)}\n` +
-        `${chalk.gray('Delegated to You:')} ${(Number(votingPower.delegated) / 1_000_000_000).toFixed(3)}\n` +
-        `${chalk.gray('Total Voting Power:')} ${(Number(votingPower.total) / 1_000_000_000).toFixed(3)}\n`
-      )
-
-      // Cast vote
-      const vote = await select({
-        message: 'How do you vote on this proposal?',
-        options: [
-          { value: 'yes', label: '✅ YES', hint: 'Vote in favor of the proposal' },
-          { value: 'no', label: '❌ NO', hint: 'Vote against the proposal' },
-          { value: 'abstain', label: '🤷 ABSTAIN', hint: 'Participate without taking a position' }
-        ]
-      })
-
-      if (isCancel(vote)) {
-        cancel('Voting cancelled')
-        return
-      }
-
-      // Optional voting comment
-      const addComment = await confirm({
-        message: 'Would you like to add a comment explaining your vote?'
-      })
-
-      let voteComment = ''
-      if (!isCancel(addComment) && addComment) {
-        const comment = await text({
-          message: 'Vote comment (optional):',
-          placeholder: 'I support this proposal because...',
-          validate: (value) => {
-            if (value && value.length > 300) return 'Comment must be less than 300 characters'
-          }
+      // Get vote choice
+      let choice = options.choice
+      if (!choice) {
+        const voteChoice = await select({
+          message: 'How do you vote?',
+          options: [
+            { value: 'yes', label: '✅ Yes (Approve)', hint: 'Vote in favor of the proposal' },
+            { value: 'no', label: '❌ No (Reject)', hint: 'Vote against the proposal' },
+            { value: 'abstain', label: '⚪ Abstain', hint: 'Do not vote either way' }
+          ]
         })
 
-        if (isCancel(comment)) {
-          voteComment = ''
-        } else {
-          voteComment = comment as string
+        if (isCancel(voteChoice)) {
+          cancel('Voting cancelled')
+          return
         }
+
+        choice = voteChoice as 'yes' | 'no' | 'abstain'
       }
 
-      // Confirm vote
-      const voteColor = vote === 'yes' ? chalk.green : vote === 'no' ? chalk.red : chalk.yellow
-      
+      // Show voting preview
       note(
-        `${chalk.bold('Vote Confirmation:')}\n` +
+        `${chalk.bold('Vote Details:')}\n` +
         `${chalk.gray('Proposal:')} ${proposal.title}\n` +
-        `${chalk.gray('Your Vote:')} ${voteColor(vote.toUpperCase())}\n` +
-        `${chalk.gray('Voting Power:')} ${(Number(votingPower.total) / 1_000_000_000).toFixed(3)}\n` +
-        `${chalk.gray('Comment:')} ${voteComment ?? 'None'}`,
-        'Confirm Vote'
+        `${chalk.gray('Type:')} ${proposal.type.toUpperCase()}\n` +
+        `${chalk.gray('Your Vote:')} ${choice.toUpperCase()}\n` +
+        `${chalk.gray('Current Votes:')} ${proposal.votesFor ?? 0} yes, ${proposal.votesAgainst ?? 0} no\n` +
+        `${chalk.gray('Required:')} ${proposal.threshold} votes to pass`,
+        'Vote Confirmation'
       )
 
       const confirmVote = await confirm({
-        message: `Cast ${vote.toUpperCase()} vote?`
+        message: `Cast your vote as "${choice.toUpperCase()}"?`
       })
 
       if (isCancel(confirmVote) || !confirmVote) {
@@ -868,23 +627,18 @@ governanceCommand
         return
       }
 
-      s.start('Submitting vote to blockchain...')
-      
+      s.start('Casting vote on blockchain...')
+
       try {
-        const voteParams = {
-          vote,
-          comment: voteComment,
-          votingPower: votingPower.total
+        const signature = await safeClient.governance.vote(toSDKSigner(wallet), {
+          proposal: address(selectedProposal!),
+          vote: choice as 'yes' | 'no' | 'abstain'
+        })
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
         }
-        // Acknowledge voteParams for future implementation
-        void voteParams
 
-        // Note: Voting functionality not implemented in SDK yet
-        // This would call the vote instruction on the governance program
-        throw new Error('Voting functionality is not yet implemented in the SDK. This will be available in a future release.')
-
-        /* Future implementation:
-        const signature = await client.governance.vote(proposal.id, voteParams)
         s.stop('✅ Vote cast successfully!')
 
         const explorerUrl = getExplorerUrl(signature, 'devnet')
@@ -893,63 +647,244 @@ governanceCommand
           `${chalk.green('🗳️ Vote Cast Successfully!')}\n\n` +
           `${chalk.bold('Vote Details:')}\n` +
           `${chalk.gray('Proposal:')} ${proposal.title}\n` +
-          `${chalk.gray('Your Vote:')} ${voteColor(vote.toUpperCase())}\n` +
-          `${chalk.gray('Voting Power:')} ${(Number(votingPower.total) / 1_000_000_000).toFixed(3)}\n\n` +
+          `${chalk.gray('Your Vote:')} ${choice.toUpperCase()}\n` +
+          `${chalk.gray('Status:')} Recorded on blockchain\n\n` +
           `${chalk.bold('Transaction:')}\n` +
           `${chalk.gray('Signature:')} ${signature}\n` +
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
-          `${chalk.yellow('💡 Thank you for participating in governance!')}\n` +
-          `${chalk.cyan('npx ghostspeak governance proposal list')} - View voting results`
+          `${chalk.yellow('💡 Your vote is now part of the governance process!')}`
         )
-        */
-        
+
       } catch (error) {
-        s.stop('❌ Vote submission failed')
-        await handleTransactionError(error as Error)
+        s.stop('❌ Failed to cast vote')
+        handleTransactionError(error as Error)
       }
-      
+
     } catch (error) {
-      log.error(`Failed to cast vote: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to vote: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
 // RBAC subcommand
-governanceCommand
-  .command('rbac')
+const rbacCommand = new Command('rbac')
   .description('Manage role-based access control')
-  .addCommand(
-    new Command('init')
-      .description('Initialize RBAC system')
-      .action(async () => {
-        intro(chalk.cyan('🔐 Initialize RBAC'))
 
-        try {
-          const s = spinner()
-          s.start('Initializing role-based access control...')
-          
-          const { client, wallet } = await initializeClient('devnet')
-          
-          const rbacPda = address('11111111111111111111111111111111') // Mock address
-          const signature = await client.governance.initializeRbac(
-            toSDKSigner(wallet),
-            rbacPda,
-            { initialRoles: [] }
-          )
+rbacCommand
+  .command('grant')
+  .description('Grant role to user')
+  .option('-u, --user <address>', 'User address')
+  .option('-r, --role <role>', 'Role to grant')
+  .action(async (options: RBACOptions) => {
+    intro(chalk.green('🛡️ Grant Role'))
 
-          s.stop('✅ RBAC initialized successfully!')
+    try {
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
 
-          const explorerUrl = getExplorerUrl(signature, 'devnet')
-          
-          outro(
-            `${chalk.green('🔐 RBAC System Initialized!')}\n\n` +
-            `${chalk.bold('Transaction:')}\n` +
-            `${chalk.gray('Signature:')} ${signature}\n` +
-            `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
-            `${chalk.yellow('💡 You can now assign roles and permissions')}`
-          )
-          
-        } catch (error) {
-          log.error(`Failed to initialize RBAC: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      // Get user address
+      let userAddress = options.user
+      if (!userAddress) {
+        const userInput = await text({
+          message: 'User address to grant role to:',
+          validate: (value) => {
+            if (!value) return 'User address is required'
+            try {
+              address(value.trim())
+              return
+            } catch {
+              return 'Please enter a valid Solana address'
+            }
+          }
+        })
+
+        if (isCancel(userInput)) {
+          cancel('Role grant cancelled')
+          return
         }
+
+        userAddress = userInput.toString().trim()
+      }
+
+      // Get role
+      let role = options.role
+      if (!role) {
+        const roleChoice = await select({
+          message: 'Select role to grant:',
+          options: [
+            { value: 'admin', label: 'Admin', hint: 'Full system access' },
+            { value: 'moderator', label: 'Moderator', hint: 'Moderation privileges' },
+            { value: 'arbitrator', label: 'Arbitrator', hint: 'Dispute resolution' },
+            { value: 'operator', label: 'Operator', hint: 'System operations' }
+          ]
+        })
+
+        if (isCancel(roleChoice)) {
+          cancel('Role grant cancelled')
+          return
+        }
+
+        role = roleChoice.toString()
+      }
+
+      const confirmGrant = await confirm({
+        message: `Grant ${role} role to ${userAddress}?`
       })
-  )
+
+      if (isCancel(confirmGrant) || !confirmGrant) {
+        cancel('Role grant cancelled')
+        return
+      }
+
+      const s = spinner()
+      s.start('Granting role on blockchain...')
+
+      try {
+        const signature = await safeClient.governance.grantRole({
+          user: address(userAddress),
+          role,
+          granter: wallet.address,
+          signer: toSDKSigner(wallet)
+        })
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
+        }
+
+        s.stop('✅ Role granted successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.green('🛡️ Role Granted!')}\n\n` +
+          `${chalk.gray('User:')} ${userAddress}\n` +
+          `${chalk.gray('Role:')} ${role.toUpperCase()}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}`
+        )
+
+      } catch (error) {
+        s.stop('❌ Failed to grant role')
+        handleTransactionError(error as Error)
+      }
+
+    } catch (error) {
+      log.error(`Failed to grant role: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+rbacCommand
+  .command('revoke')
+  .description('Revoke role from user')
+  .option('-u, --user <address>', 'User address')
+  .option('-r, --role <role>', 'Role to revoke')
+  .action(async (options: RBACOptions) => {
+    intro(chalk.red('🚫 Revoke Role'))
+
+    try {
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+
+      // Get user address
+      let userAddress = options.user
+      if (!userAddress) {
+        const userInput = await text({
+          message: 'User address to revoke role from:',
+          validate: (value) => {
+            if (!value) return 'User address is required'
+            try {
+              address(value.trim())
+              return
+            } catch {
+              return 'Please enter a valid Solana address'
+            }
+          }
+        })
+
+        if (isCancel(userInput)) {
+          cancel('Role revoke cancelled')
+          return
+        }
+
+        userAddress = userInput.toString().trim()
+      }
+
+      // Get role
+      let role = options.role
+      if (!role) {
+        const roleChoice = await select({
+          message: 'Select role to revoke:',
+          options: [
+            { value: 'admin', label: 'Admin', hint: 'Remove admin access' },
+            { value: 'moderator', label: 'Moderator', hint: 'Remove moderation privileges' },
+            { value: 'arbitrator', label: 'Arbitrator', hint: 'Remove arbitration rights' },
+            { value: 'operator', label: 'Operator', hint: 'Remove operation access' }
+          ]
+        })
+
+        if (isCancel(roleChoice)) {
+          cancel('Role revoke cancelled')
+          return
+        }
+
+        role = roleChoice.toString()
+      }
+
+      const confirmRevoke = await confirm({
+        message: `Revoke ${role} role from ${userAddress}?`
+      })
+
+      if (isCancel(confirmRevoke) || !confirmRevoke) {
+        cancel('Role revoke cancelled')
+        return
+      }
+
+      const s = spinner()
+      s.start('Revoking role on blockchain...')
+
+      try {
+        const signature = await safeClient.governance.revokeRole({
+          user: address(userAddress),
+          role,
+          revoker: wallet.address,
+          signer: toSDKSigner(wallet)
+        })
+
+        if (!signature) {
+          throw new Error('Failed to get transaction signature')
+        }
+
+        s.stop('✅ Role revoked successfully!')
+
+        const explorerUrl = getExplorerUrl(signature, 'devnet')
+        
+        outro(
+          `${chalk.red('🚫 Role Revoked!')}\n\n` +
+          `${chalk.gray('User:')} ${userAddress}\n` +
+          `${chalk.gray('Role:')} ${role.toUpperCase()}\n` +
+          `${chalk.gray('Explorer:')} ${explorerUrl}`
+        )
+
+      } catch (error) {
+        s.stop('❌ Failed to revoke role')
+        handleTransactionError(error as Error)
+      }
+
+    } catch (error) {
+      log.error(`Failed to revoke role: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+governanceCommand.addCommand(rbacCommand)
+
+// Default action - show available commands
+governanceCommand
+  .action(async () => {
+    intro(chalk.blue('🏛️ GhostSpeak Governance'))
+    
+    log.info(`\n${chalk.bold('Available Commands:')}\n`)
+    log.info(`${chalk.cyan('gs governance multisig')} - Manage multisig wallets`)
+    log.info(`${chalk.cyan('gs governance proposal')} - Create and manage proposals`)
+    log.info(`${chalk.cyan('gs governance vote')} - Vote on active proposals`)
+    log.info(`${chalk.cyan('gs governance rbac')} - Manage roles and permissions`)
+    
+    outro('Use --help with any command for more details')
+  })

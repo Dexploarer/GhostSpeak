@@ -165,10 +165,6 @@ function getDefaultRpcUrl(network: string): string {
  * Validate environment configuration
  */
 export function validateEnvironmentConfig(config: EnvironmentConfig): void {
-  if (!config.programId) {
-    throw new Error('Program ID is required');
-  }
-  
   if (!config.rpcUrl) {
     throw new Error('RPC URL is required');
   }

@@ -13,44 +13,63 @@ import {
   note
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
-import { auctionTypeToString, formatSOL, solToLamports } from '../utils/auction-helpers.js'
-import { address } from '@solana/addresses'
-import { NATIVE_MINT_ADDRESS } from '@ghostspeak/sdk'
-// Temporarily define enums locally until SDK exports are fixed
-export enum AuctionStatus {
-  Active,
-  Ended,
-  Cancelled,
-  Settled,
+import { createSafeSDKClient, type ValidatedAuctionData } from '../utils/sdk-helpers.js'
+import { AuctionType } from '@ghostspeak/sdk'
+import Table from 'cli-table3'
+import type { Address } from '@solana/addresses'
+
+
+// Command option types
+interface CreateAuctionOptions {
+  type?: string
+  startingPrice?: string
+  reservePrice?: string
+  duration?: string
 }
 
-export enum AuctionType {
-  English,
-  Dutch,
-  SealedBid,
-  Vickrey,
+interface BidAuctionOptions {
+  amount?: string
 }
 
-// Type for raw auction data from SDK
-interface RawAuctionData {
-  auction: { toString(): string }
-  auctionType: AuctionType
-  currentPrice: bigint
-  startingPrice: bigint
-  reservePrice: bigint
-  auctionEndTime: bigint
-  totalBids: number
-  minimumBidIncrement: bigint
-  currentWinner?: { toString(): string }
-  creator: { toString(): string }
+interface ListAuctionsOptions {
+  active?: boolean
+  ending?: boolean
+  myAuctions?: boolean
 }
-import type {
-  CreateAuctionOptions,
-  BidAuctionOptions,
-  ListAuctionsOptions,
-  AuctionData
-} from '../types/cli-types.js'
-import { isValidAuctionData } from '../types/cli-types.js'
+
+// Helper functions
+function formatSOL(lamports: bigint): string {
+  return (Number(lamports) / 1e9).toFixed(4)
+}
+
+function solToLamports(sol: number): bigint {
+  return BigInt(Math.floor(sol * 1e9))
+}
+
+function formatTimeRemaining(endTime: bigint): string {
+  const now = BigInt(Date.now())
+  const remaining = Number(endTime) - Number(now)
+  
+  if (remaining <= 0) return 'Ended'
+  
+  const hours = Math.floor(remaining / 3600000)
+  const minutes = Math.floor((remaining % 3600000) / 60000)
+  
+  if (hours > 24) {
+    const days = Math.floor(hours / 24)
+    return `${days}d ${hours % 24}h`
+  }
+  return `${hours}h ${minutes}m`
+}
+
+function getAuctionTypeString(type: string): string {
+  switch (type.toLowerCase()) {
+    case 'english': return '📈 English'
+    case 'dutch': return '📉 Dutch' 
+    case 'sealed': return '🔒 Sealed'
+    default: return type
+  }
+}
 
 export const auctionCommand = new Command('auction')
   .description('Manage auctions on the GhostSpeak marketplace')
@@ -63,12 +82,20 @@ auctionCommand
   .option('-s, --starting-price <price>', 'Starting price in SOL')
   .option('-r, --reserve-price <price>', 'Reserve price in SOL')
   .option('-d, --duration <hours>', 'Auction duration in hours')
-  .action(async (_options: CreateAuctionOptions) => {
+  .action(async (options: CreateAuctionOptions) => {
     intro(chalk.cyan('🎯 Create Service Auction'))
 
     try {
+      const s = spinner()
+      s.start('Connecting to network...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+      
+      s.stop('✅ Connected to devnet')
+
       // Collect auction parameters
-      const auctionType = _options.type ?? await select({
+      const auctionTypeStr = options.type ?? await select({
         message: 'Select auction type:',
         options: [
           { value: 'english', label: '📈 English Auction (ascending bids)', hint: 'Traditional highest bidder wins' },
@@ -77,7 +104,7 @@ auctionCommand
         ]
       })
 
-      if (isCancel(auctionType)) {
+      if (isCancel(auctionTypeStr)) {
         cancel('Auction creation cancelled')
         return
       }
@@ -97,97 +124,106 @@ auctionCommand
         return
       }
 
-      const serviceDescription = await text({
+      const description = await text({
         message: 'Service description:',
-        placeholder: 'Automated code review with AI-powered suggestions...',
+        placeholder: 'Professional code review with AI-powered insights...',
         validate: (value) => {
-          if (!value) return 'Service description is required'
+          if (!value) return 'Description is required'
           if (value.length < 10) return 'Description must be at least 10 characters'
           if (value.length > 500) return 'Description must be less than 500 characters'
         }
       })
 
-      if (isCancel(serviceDescription)) {
+      if (isCancel(description)) {
         cancel('Auction creation cancelled')
         return
       }
 
-      const startingPrice = _options.startingPrice ?? await text({
+      // Starting price
+      const startingPriceStr = options.startingPrice ?? await text({
         message: 'Starting price (SOL):',
-        placeholder: '0.1',
+        placeholder: '0.5',
         validate: (value) => {
           const num = parseFloat(value)
           if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
-          if (num > 1000) return 'Starting price seems too high (max 1000 SOL)'
-          return
+          if (num < 0.001) return 'Minimum price is 0.001 SOL'
+          if (num > 1000) return 'Maximum price is 1000 SOL'
         }
       })
 
-      if (isCancel(startingPrice)) {
+      if (isCancel(startingPriceStr)) {
         cancel('Auction creation cancelled')
         return
       }
 
-      const reservePrice = _options.reservePrice ?? await text({
-        message: 'Reserve price (SOL):',
-        placeholder: startingPrice,
+      const startingPrice = parseFloat(startingPriceStr.toString())
+
+      // Reserve price (optional)
+      let reservePrice = 0
+      if (!options.reservePrice) {
+        const hasReserve = await confirm({
+          message: 'Set a reserve price?',
+          active: 'Yes',
+          inactive: 'No'
+        })
+
+        if (isCancel(hasReserve)) {
+          cancel('Auction creation cancelled')
+          return
+        }
+
+        if (hasReserve) {
+          const reservePriceStr = await text({
+            message: 'Reserve price (SOL):',
+            placeholder: (startingPrice * 1.5).toFixed(2),
+            validate: (value) => {
+              const num = parseFloat(value)
+              if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
+              if (num < startingPrice) return 'Reserve price must be at least the starting price'
+              if (num > 1000) return 'Maximum price is 1000 SOL'
+            }
+          })
+
+          if (isCancel(reservePriceStr)) {
+            cancel('Auction creation cancelled')
+            return
+          }
+
+          reservePrice = parseFloat(reservePriceStr.toString())
+        }
+      } else {
+        reservePrice = parseFloat(options.reservePrice)
+      }
+
+      // Duration
+      const durationStr = options.duration ?? await text({
+        message: 'Auction duration (hours):',
+        placeholder: '24',
         validate: (value) => {
-          const num = parseFloat(value)
-          const startNum = parseFloat(startingPrice)
+          const num = parseInt(value)
           if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
-          if (auctionType === 'english' && num < startNum) return 'Reserve price must be >= starting price for English auctions'
-          if (auctionType === 'dutch' && num > startNum) return 'Reserve price must be <= starting price for Dutch auctions'
-          return
+          if (num < 1) return 'Minimum duration is 1 hour'
+          if (num > 168) return 'Maximum duration is 7 days (168 hours)'
         }
       })
 
-      if (isCancel(reservePrice)) {
+      if (isCancel(durationStr)) {
         cancel('Auction creation cancelled')
         return
       }
 
-      const duration = _options.duration ?? await select({
-        message: 'Auction duration:',
-        options: [
-          { value: '1', label: '1 hour', hint: 'Quick turnaround' },
-          { value: '6', label: '6 hours', hint: 'Half day auction' },
-          { value: '24', label: '1 day', hint: 'Standard duration' },
-          { value: '72', label: '3 days', hint: 'Extended auction' },
-          { value: '168', label: '1 week', hint: 'Maximum duration' }
-        ]
-      })
+      const duration = parseInt(durationStr.toString())
 
-      if (isCancel(duration)) {
-        cancel('Auction creation cancelled')
-        return
-      }
-
-      const minBidIncrement = await text({
-        message: 'Minimum bid increment (SOL):',
-        placeholder: (parseFloat(startingPrice) * 0.05).toFixed(3),
-        validate: (value) => {
-          const num = parseFloat(value)
-          if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
-          if (num > parseFloat(startingPrice) * 0.5) return 'Increment seems too high'
-          return
-        }
-      })
-
-      if (isCancel(minBidIncrement)) {
-        cancel('Auction creation cancelled')
-        return
-      }
-
-      // Preview auction details
+      // Show summary
       note(
-        `${chalk.bold('Auction Preview:')}\n` +
-        `${chalk.gray('Type:')} ${auctionType.charAt(0).toUpperCase() + auctionType.slice(1)} Auction\n` +
+        `${chalk.bold('Auction Summary:')}\n` +
+        `${chalk.gray('Type:')} ${getAuctionTypeString(auctionTypeStr.toString())}\n` +
         `${chalk.gray('Service:')} ${serviceTitle}\n` +
         `${chalk.gray('Starting Price:')} ${startingPrice} SOL\n` +
-        `${chalk.gray('Reserve Price:')} ${reservePrice} SOL\n` +
+        (reservePrice > 0 ? `${chalk.gray('Reserve Price:')} ${reservePrice} SOL\n` : '') +
         `${chalk.gray('Duration:')} ${duration} hours\n` +
-        `${chalk.gray('Min Increment:')} ${minBidIncrement} SOL`,
-        'Auction Details'
+        `${chalk.gray('Posted by:')} ${wallet.address.slice(0, 8)}...`,
+        'Review your auction'
       )
 
       const confirmCreate = await confirm({
@@ -199,603 +235,379 @@ auctionCommand
         return
       }
 
-      const s = spinner()
-      s.start('Connecting to Solana network...')
-      
-      // Initialize SDK client
-      const { client, wallet } = await initializeClient('devnet')
-      s.stop('✅ Connected to Solana devnet')
-      
-      s.start('Creating auction on the blockchain...')
-      
-      try {
-        // Convert to proper types for SDK
-        // Convert duration for use in auction creation (currently stored for future enhancement)
-        
-        // Create auction params matching SDK expectations
-        const auctionParams = {
-          title: serviceTitle,
-          description: serviceDescription,
-          category: auctionType as string, // Use auction type as category
-          requirements: ['Complete the service as described'], // Default requirement
-          startPrice: solToLamports(startingPrice),
-          minIncrement: solToLamports(minBidIncrement),
-          duration: BigInt(duration), // duration in hours
-          paymentToken: NATIVE_MINT_ADDRESS, // SOL
-          agentAddress: wallet.address // Using wallet as agent for now
-        }
+      s.start('Creating auction on blockchain...')
 
-        const signature = await client.auction.create(
-          toSDKSigner(wallet),
-          auctionParams
-        )
+      // Map auction type string to enum
+      const auctionTypeEnum = auctionTypeStr.toString().toLowerCase() === 'english' ? AuctionType.English :
+                             auctionTypeStr.toString().toLowerCase() === 'dutch' ? AuctionType.Dutch :
+                             AuctionType.Sealed
 
-        s.stop('✅ Auction created successfully!')
-
-        const explorerUrl = getExplorerUrl(signature, 'devnet')
-        
-        outro(
-          `${chalk.green('🎯 Auction Created Successfully!')}\n\n` +
-          `${chalk.bold('Auction Details:')}\n` +
-          `${chalk.gray('Type:')} ${auctionType.charAt(0).toUpperCase() + auctionType.slice(1)}\n` +
-          `${chalk.gray('Service:')} ${serviceTitle}\n` +
-          `${chalk.gray('Duration:')} ${duration} hours\n` +
-          `${chalk.gray('Starting Price:')} ${startingPrice} SOL\n\n` +
-          `${chalk.bold('Transaction:')}\n` +
-          `${chalk.gray('Signature:')} ${signature}\n` +
-          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
-          `${chalk.yellow('💡 Use')} ${chalk.cyan('npx ghostspeak auction list')} ${chalk.yellow('to view your auction')}`
-        )
-        
-      } catch (error) {
-        s.stop('❌ Auction creation failed')
-        handleTransactionError(error as Error)
-      }
-      
-    } catch (error: unknown) {
-      log.error(`Failed to create auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-  })
-
-// List auctions subcommand
-auctionCommand
-  .command('list')
-  .description('List active auctions')
-  .option('-t, --type <type>', 'Filter by auction type')
-  .option('-s, --status <status>', 'Filter by status (active, ending, completed)')
-  .option('--mine', 'Show only my auctions')
-  .action(async (options: ListAuctionsOptions) => {
-    intro(chalk.cyan('📋 Active Auctions'))
-
-    try {
-      const s = spinner()
-      s.start('Loading auctions...')
-      
-      const { client, wallet } = await initializeClient('devnet')
-      
-      // Get auctions based on filters
-
-      let auctions: {
-        address?: string
-        auctionType: string
-        currentBid?: bigint
-        startingPrice: bigint
-        reservePrice: bigint
-        auctionEndTime: bigint
-        totalBids: number
-        minimumBidIncrement: bigint
-        currentBidder?: string
-        creator?: string
-      }[] = []
-      if (options.mine) {
-        // Use listAuctions with creator filter
-        try {
-          const rawAuctions = await client.auction.listAuctions({
-            creator: wallet.address
-          })
-          auctions = (rawAuctions as RawAuctionData[]).map(a => ({
-            address: a.auction.toString(),
-            auctionType: auctionTypeToString(a.auctionType),
-            currentBid: a.currentPrice,
-            startingPrice: a.startingPrice,
-            reservePrice: a.reservePrice,
-            auctionEndTime: a.auctionEndTime,
-            totalBids: a.totalBids,
-            minimumBidIncrement: a.minimumBidIncrement,
-            currentBidder: a.currentWinner?.toString(),
-            creator: a.creator.toString()
-          }))
-        } catch (error) {
-          console.error('Failed to fetch auctions:', error)
-          auctions = []
-        }
-      } else if (options.status === 'ending') {
-        try {
-          const rawAuctions = await client.auction.getAuctionsEndingSoon(3600) // Next hour
-          auctions = (rawAuctions as RawAuctionData[]).map(a => ({
-            address: a.auction.toString(),
-            auctionType: auctionTypeToString(a.auctionType),
-            currentBid: a.currentPrice,
-            startingPrice: a.startingPrice,
-            reservePrice: a.reservePrice,
-            auctionEndTime: a.auctionEndTime,
-            totalBids: a.totalBids,
-            minimumBidIncrement: a.minimumBidIncrement,
-            currentBidder: a.currentWinner?.toString(),
-            creator: a.creator.toString()
-          }))
-        } catch (error) {
-          console.error('Failed to fetch auctions:', error)
-          auctions = []
-        }
-      } else {
-        try {
-          const typeMap: Record<string, AuctionType> = {
-            'english': AuctionType.English,
-            'dutch': AuctionType.Dutch,
-            'sealed': AuctionType.SealedBid,
-            'vickrey': AuctionType.Vickrey
-          }
-          const rawAuctions = await client.auction.listAuctions({
-            auctionType: options.type ? typeMap[options.type] : undefined
-          })
-          auctions = (rawAuctions as RawAuctionData[]).map(a => ({
-            address: a.auction.toString(),
-            auctionType: auctionTypeToString(a.auctionType),
-            currentBid: a.currentPrice,
-            startingPrice: a.startingPrice,
-            reservePrice: a.reservePrice,
-            auctionEndTime: a.auctionEndTime,
-            totalBids: a.totalBids,
-            minimumBidIncrement: a.minimumBidIncrement,
-            currentBidder: a.currentWinner?.toString(),
-            creator: a.creator.toString()
-          }))
-        } catch (error) {
-          console.error('Failed to fetch auctions:', error)
-          auctions = []
-        }
-      }
-
-      s.stop(`✅ Found ${auctions.length} auctions`)
-
-      if (auctions.length === 0) {
-        outro(
-          `${chalk.yellow('No auctions found')}\n\n` +
-          `${chalk.gray('Try:')} ${chalk.cyan('npx ghostspeak auction create')} ${chalk.gray('to create one')}`
-        )
-        return
-      }
-
-      // Display auctions in a formatted table
-      log.info(`\n${chalk.bold('Active Auctions:')}\n`)
-      
-      auctions.forEach((auction, index) => {
-        const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
-        const hoursLeft = Math.max(0, Math.floor(timeLeft / 3600))
-        const minutesLeft = Math.max(0, Math.floor((timeLeft % 3600) / 60))
-        
-        const currentPriceSOL = formatSOL(auction.currentBid ?? auction.startingPrice)
-        const reservePriceSOL = formatSOL(auction.reservePrice)
-        
-        log.info(
-          `${chalk.bold(`${index + 1}. ${(auction.auctionType as string).toUpperCase()} AUCTION`)}\n` +
-          `   ${chalk.gray('Current Price:')} ${currentPriceSOL} SOL\n` +
-          `   ${chalk.gray('Reserve Price:')} ${reservePriceSOL} SOL\n` +
-          `   ${chalk.gray('Time Left:')} ${hoursLeft}h ${minutesLeft}m\n` +
-          `   ${chalk.gray('Bids:')} ${auction.totalBids}\n` +
-          `   ${chalk.gray('Status:')} ${timeLeft > 0 ? chalk.green('Active') : chalk.red('Ended')}\n`
-        )
+      const signature = await safeClient.auction.create(toSDKSigner(wallet), {
+        item: serviceTitle.toString(),
+        description: description.toString(),
+        startingPrice: solToLamports(startingPrice),
+        reservePrice: reservePrice > 0 ? solToLamports(reservePrice) : undefined,
+        auctionType: auctionTypeEnum,
+        duration: duration * 3600 // Convert hours to seconds
       })
 
-      outro(
-        `${chalk.yellow('💡 Commands:')}\n` +
-        `${chalk.cyan('npx ghostspeak auction bid')} - Place a bid\n` +
-        `${chalk.cyan('npx ghostspeak auction monitor')} - Monitor auctions\n` +
-        `${chalk.cyan('npx ghostspeak auction finalize')} - Complete ended auctions`
-      )
+      if (!signature) {
+        throw new Error('Failed to create auction')
+      }
+
+      s.stop('✅ Auction created successfully!')
+
+      const explorerUrl = getExplorerUrl(signature, 'devnet')
       
-    } catch (error: unknown) {
-      log.error(`Failed to load auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      outro(
+        `${chalk.green('🎉 Auction Created!')}\n\n` +
+        `${chalk.bold('Transaction:')} ${signature}\n` +
+        `${chalk.bold('Explorer:')} ${explorerUrl}\n\n` +
+        `${chalk.yellow('Next steps:')}\n` +
+        `• Share your auction: ${chalk.cyan('gs auction list --active')}\n` +
+        `• Monitor bids: ${chalk.cyan('gs auction monitor')}\n` +
+        `• View details: ${chalk.cyan('gs auction info <auction-id>')}`
+      )
+
+    } catch (error) {
+      handleTransactionError(error as Error)
     }
   })
 
 // Bid on auction subcommand
 auctionCommand
-  .command('bid')
+  .command('bid <auction-id>')
   .description('Place a bid on an auction')
-  .option('-a, --auction <address>', 'Auction address')
-  .option('-b, --bid <amount>', 'Bid amount in SOL')
-  .action(async (_options: BidAuctionOptions) => {
+  .option('-a, --amount <amount>', 'Bid amount in SOL')
+  .action(async (auctionId: string, options: BidAuctionOptions) => {
     intro(chalk.cyan('💰 Place Auction Bid'))
 
     try {
       const s = spinner()
-      s.start('Loading active auctions...')
+      s.start('Connecting to network...')
       
       const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
       
-      let auctions: AuctionData[] = []
+      s.stop('✅ Connected to devnet')
+
+      // Get auction details
+      s.start('Loading auction details...')
+      
+      let auctionAddress: Address
       try {
-        const rawAuctions = await client.auction.listAuctions({ status: AuctionStatus.Active })
-        auctions = (rawAuctions as unknown[]).filter(isValidAuctionData)
+        auctionAddress = auctionId as Address
       } catch {
-        // Fetch all auctions without specific filters
-        const allAuctions = await client.auction.listAuctions()
-        auctions = (allAuctions as unknown[]).filter(isValidAuctionData)
-      }
-      s.stop(`✅ Found ${auctions.length} active auctions`)
-
-      if (auctions.length === 0) {
-        outro(
-          `${chalk.yellow('No active auctions found')}\n\n` +
-          `${chalk.gray('Try:')} ${chalk.cyan('npx ghostspeak auction create')} ${chalk.gray('to create one')}`
-        )
+        cancel('Invalid auction ID format')
         return
       }
 
-      // Select auction if not provided
-      let selectedAuction = _options.auction
-      if (!selectedAuction) {
-        const auctionChoice = await select({
-          message: 'Select auction to bid on:',
-          options: auctions.map((auction) => {
-            const currentPrice = typeof auction.currentPrice === 'bigint' ? auction.currentPrice : 
-                               typeof auction.currentPrice === 'string' ? BigInt(auction.currentPrice) : 
-                               BigInt(auction.currentPrice)
-            const startingPrice = typeof auction.startingPrice === 'bigint' ? auction.startingPrice : 
-                                 typeof auction.startingPrice === 'string' ? BigInt(auction.startingPrice) : 
-                                 BigInt(auction.startingPrice)
-            const currentPriceSOL = formatSOL(currentPrice ?? startingPrice)
-            const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
-            const hoursLeft = Math.floor(timeLeft / 3600)
-            
-            const auctionTypeStr = typeof auction.auctionType === 'string' ? 
-                                  auction.auctionType : 
-                                  auction.auctionType.toString()
-            
-            return {
-              value: auction.auction,
-              label: `${auctionTypeStr.toUpperCase()} - ${currentPriceSOL} SOL`,
-              hint: `${hoursLeft}h left, ${auction.totalBids} bids`
-            }
-          })
-        })
-
-        if (isCancel(auctionChoice)) {
-          cancel('Bidding cancelled')
-          return
-        }
-
-        selectedAuction = auctionChoice
-      }
-
-      const auction = auctions.find((a) => a.auction === selectedAuction)
+      const auction = await safeClient.auction.getAuctionSummary(auctionAddress)
+      
       if (!auction) {
-        log.error('Auction not found')
+        cancel('Auction not found')
         return
       }
 
-      // Calculate suggested bid with proper typing
-      const startingPrice = typeof auction.startingPrice === 'bigint' ? auction.startingPrice : 
-                           typeof auction.startingPrice === 'string' ? BigInt(auction.startingPrice) : 
-                           BigInt(auction.startingPrice)
-      
-      const currentPriceSOL = Number(auction.currentBid ? 
-        (typeof auction.currentBid === 'bigint' ? auction.currentBid : BigInt(auction.currentBid)) : 
-        startingPrice) / 1_000_000_000
-      
-      // Use a default minimum increment of 1% if not available
-      const minIncrementSOL = currentPriceSOL * 0.01 // 1% minimum increment
-      const suggestedBid = currentPriceSOL + minIncrementSOL
+      s.stop('✅ Auction loaded')
+
+      // Show auction details
+      note(
+        `${chalk.bold('Auction Details:')}\n` +
+        `${chalk.gray('Type:')} ${getAuctionTypeString(auction.auctionType)}\n` +
+        `${chalk.gray('Current Price:')} ${formatSOL(auction.currentPrice)} SOL\n` +
+        `${chalk.gray('Minimum Increment:')} ${formatSOL(auction.minimumBidIncrement)} SOL\n` +
+        `${chalk.gray('Total Bids:')} ${auction.totalBids}\n` +
+        `${chalk.gray('Time Remaining:')} ${formatTimeRemaining(auction.auctionEndTime)}\n` +
+        (auction.currentWinner ? `${chalk.gray('Current Winner:')} ${auction.currentWinner.slice(0, 8)}...` : ''),
+        'Current Auction Status'
+      )
+
+      // Check if auction has ended
+      if (Date.now() > Number(auction.auctionEndTime)) {
+        cancel('This auction has already ended')
+        return
+      }
 
       // Get bid amount
-      let bidAmount: string = _options.bid ?? ''
-      if (!bidAmount) {
-        const bidInput = await text({
-          message: `Enter bid amount (SOL):`,
-          placeholder: suggestedBid.toFixed(3),
-          validate: (value) => {
-            const num = parseFloat(value)
-            if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
-            if (num <= currentPriceSOL) return `Bid must be higher than current price (${currentPriceSOL} SOL)`
-            if (num < suggestedBid) return `Bid must be at least ${suggestedBid.toFixed(3)} SOL (current + minimum increment)`
-            return
-          }
-        })
+      const minBid = Number(auction.currentPrice) + Number(auction.minimumBidIncrement)
+      const minBidSOL = minBid / 1e9
 
-        if (isCancel(bidInput)) {
-          cancel('Bidding cancelled')
-          return
+      const bidAmountStr = options.amount ?? await text({
+        message: 'Bid amount (SOL):',
+        placeholder: minBidSOL.toFixed(4),
+        validate: (value) => {
+          const num = parseFloat(value)
+          if (isNaN(num) || num <= 0) return 'Please enter a valid positive number'
+          if (num < minBidSOL) return `Minimum bid is ${minBidSOL.toFixed(4)} SOL`
+          if (num > 1000) return 'Maximum bid is 1000 SOL'
         }
-        bidAmount = bidInput
+      })
+
+      if (isCancel(bidAmountStr)) {
+        cancel('Bid cancelled')
+        return
       }
 
-      // Show bid strategy suggestion
-      const bidAmountNum = parseFloat(bidAmount)
-      let strategy = ''
-      if (bidAmountNum > suggestedBid * 1.5) {
-        strategy = chalk.yellow('⚠️  High bid - consider starting lower')
-      } else if (bidAmountNum === suggestedBid) {
-        strategy = chalk.blue('💡 Minimum competitive bid')
-      } else {
-        strategy = chalk.green('✅ Strategic bid amount')
-      }
-
-      const auctionTypeStr = typeof auction.auctionType === 'string' ? 
-                            auction.auctionType : 
-                            auction.auctionType.toString()
-      
-      note(
-        `${chalk.bold('Bid Details:')}\n` +
-        `${chalk.gray('Auction:')} ${auctionTypeStr.toUpperCase()}\n` +
-        `${chalk.gray('Current Price:')} ${currentPriceSOL.toFixed(3)} SOL\n` +
-        `${chalk.gray('Your Bid:')} ${bidAmount} SOL\n` +
-        `${chalk.gray('Strategy:')} ${strategy}`,
-        'Bid Preview'
-      )
+      const bidAmount = parseFloat(bidAmountStr.toString())
 
       const confirmBid = await confirm({
         message: `Place bid of ${bidAmount} SOL?`
       })
 
       if (isCancel(confirmBid) || !confirmBid) {
-        cancel('Bidding cancelled')
+        cancel('Bid cancelled')
         return
       }
 
       s.start('Placing bid on blockchain...')
-      
-      try {
-        // Derive user registry PDA for the bidder
-        const { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder } = await import('@solana/kit')
-        const [userRegistryPda] = await getProgramDerivedAddress({
-          programAddress: client.config.programId!,
-          seeds: [
-            getBytesEncoder().encode(new Uint8Array([117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121])), // 'user_registry'
-            getAddressEncoder().encode(wallet.address)
-          ]
-        })
-        
-        const bidParams = {
-          auction: address(selectedAuction!),
-          bidAmount: solToLamports(bidAmount) // SOL to lamports
+
+      const signature = await safeClient.auction.placeAuctionBid(
+        toSDKSigner(wallet),
+        {
+          auctionId: auctionId,
+          amount: solToLamports(bidAmount)
         }
+      )
 
-        const signature = await client.auction.placeAuctionBid(
-          userRegistryPda,
-          {
-            ...bidParams,
-            signer: toSDKSigner(wallet)
-          }
-        )
-
-        s.stop('✅ Bid placed successfully!')
-
-        const explorerUrl = getExplorerUrl(signature, 'devnet')
-        
-        outro(
-          `${chalk.green('💰 Bid Placed Successfully!')}\n\n` +
-          `${chalk.bold('Bid Details:')}\n` +
-          `${chalk.gray('Amount:')} ${bidAmount} SOL\n` +
-          `${chalk.gray('Auction:')} ${auctionTypeStr.toUpperCase()}\n\n` +
-          `${chalk.bold('Transaction:')}\n` +
-          `${chalk.gray('Signature:')} ${signature}\n` +
-          `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
-          `${chalk.yellow('💡 Use')} ${chalk.cyan('npx ghostspeak auction monitor')} ${chalk.yellow('to track auction progress')}`
-        )
-        
-      } catch (error) {
-        s.stop('❌ Bid placement failed')
-        handleTransactionError(error as Error)
+      if (!signature) {
+        throw new Error('Failed to place bid')
       }
+
+      s.stop('✅ Bid placed successfully!')
+
+      const explorerUrl = getExplorerUrl(signature, 'devnet')
       
-    } catch (error: unknown) {
-      log.error(`Failed to place bid: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      outro(
+        `${chalk.green('🎉 Bid Placed!')}\n\n` +
+        `${chalk.bold('Amount:')} ${bidAmount} SOL\n` +
+        `${chalk.bold('Transaction:')} ${signature}\n` +
+        `${chalk.bold('Explorer:')} ${explorerUrl}\n\n` +
+        `${chalk.yellow('Next steps:')}\n` +
+        `• Monitor auction: ${chalk.cyan(`gs auction monitor ${auctionId}`)}\n` +
+        `• Check your bids: ${chalk.cyan('gs auction list --my-bids')}`
+      )
+
+    } catch (error) {
+      handleTransactionError(error as Error)
     }
   })
 
-// Monitor auction subcommand
+// List auctions subcommand
 auctionCommand
-  .command('monitor')
-  .description('Monitor auction progress in real-time')
-  .option('-a, --auction <address>', 'Specific auction to monitor')
-  .action(async (_options: { auction?: string }) => {
-    intro(chalk.cyan('📡 Auction Monitor'))
+  .command('list')
+  .description('List auctions')
+  .option('--active', 'Show only active auctions')
+  .option('--ending', 'Show auctions ending soon')
+  .option('--my-auctions', 'Show your auctions')
+  .action(async (options: ListAuctionsOptions) => {
+    intro(chalk.cyan('📋 Auction Listings'))
+
+    try {
+      const s = spinner()
+      s.start('Loading auctions...')
+      
+      const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
+      
+      // Get auctions using safe client (returns ValidatedAuctionData[])
+      let auctions: ValidatedAuctionData[]
+      
+      if (options.ending) {
+        // Get auctions ending within 24 hours
+        auctions = await safeClient.auction.getAuctionsEndingSoon(24 * 3600 * 1000)
+      } else {
+        // Get all auctions
+        auctions = await safeClient.auction.listAuctions()
+      }
+      
+      // Apply filters if needed  
+      // First cast to ensure proper typing throughout
+      let validatedAuctions = auctions as ValidatedAuctionData[]
+      
+      if (options.active) {
+        const now = BigInt(Date.now())
+        validatedAuctions = validatedAuctions.filter((auction) => auction.auctionEndTime > now)
+      }
+      
+      if (options.myAuctions) {
+        validatedAuctions = validatedAuctions.filter((auction) => auction.creator === wallet.address)
+      }
+      
+      auctions = validatedAuctions
+
+      s.stop(`✅ Found ${auctions.length} auctions`)
+
+      if (auctions.length === 0) {
+        outro(
+          `${chalk.yellow('No auctions found')}\n\n` +
+          `${chalk.gray('• Create your first auction:')} ${chalk.cyan('gs auction create')}\n` +
+          `${chalk.gray('• Check all auctions:')} ${chalk.cyan('gs auction list')}`
+        )
+        return
+      }
+
+      // Create table
+      const table = new Table({
+        head: ['Type', 'Current Price', 'Bids', 'Time Left', 'Status'],
+        style: { head: ['cyan'] }
+      })
+
+      // Explicit type cast for the entire auctions array
+      const validAuctions = auctions as ValidatedAuctionData[]
+      for (const auction of validAuctions) {
+        const timeLeft = formatTimeRemaining(auction.auctionEndTime)
+        const isActive = Date.now() < Number(auction.auctionEndTime)
+        
+        table.push([
+          getAuctionTypeString(auction.auctionType),
+          `${formatSOL(auction.currentPrice)} SOL`,
+          auction.totalBids.toString(),
+          timeLeft,
+          isActive ? chalk.green('Active') : chalk.red('Ended')
+        ])
+      }
+
+      console.log('\n' + table.toString())
+
+      // Interactive selection
+      if (auctions.length > 0) {
+        const selectedAuction = await select({
+          message: 'Select an auction to view details:',
+          options: (auctions as ValidatedAuctionData[]).map((auction) => ({
+            value: auction.auction,
+            label: `${getAuctionTypeString(auction.auctionType)} - ${formatSOL(auction.currentPrice)} SOL`,
+            hint: `${auction.totalBids} bids • ${formatTimeRemaining(auction.auctionEndTime)}`
+          }))
+        })
+
+        if (!isCancel(selectedAuction)) {
+          log.info(`To bid on this auction: ${chalk.cyan(`gs auction bid ${selectedAuction}`)}`)
+          log.info(`To view details: ${chalk.cyan(`gs auction info ${selectedAuction}`)}`)
+        }
+      }
+
+      outro(chalk.green('✅ Auction listing complete'))
+
+    } catch (error) {
+      log.error(`Failed to list auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  })
+
+// Monitor auction
+auctionCommand
+  .command('monitor [auction-id]')
+  .description('Monitor auction activity in real-time')
+  .action(async (auctionId?: string) => {
+    intro(chalk.cyan('📊 Auction Monitor'))
 
     try {
       const { client, wallet } = await initializeClient('devnet')
-      // Acknowledge unused variables for future development
-      void client
-      void wallet
+      const safeClient = createSafeSDKClient(client)
 
-      if (_options.auction) {
-        // Monitor specific auction
-        log.info(`Monitoring auction: ${_options.auction}`)
-        
-        let lastBidAmount = 0n
-        let lastStatus = ''
-        // Acknowledge unused variables for future monitoring implementation
-        void lastBidAmount
-        void lastStatus
-        
-        // Implement real-time monitoring using SDK
-        const auctionAddress = address(_options.auction)
-        
-        // Get initial auction state
-        const initialAuction = await client.auction.getAuctionSummary(auctionAddress)
-        if (!initialAuction) {
-          cancel('Auction not found')
-          return
-        }
-        
-        lastBidAmount = initialAuction.currentPrice
-        lastStatus = initialAuction.status.toString()
-        
-        log.info(`Monitoring auction: ${_options.auction}`)
-        log.info(`Initial status: ${lastStatus}`)
-        log.info(`Starting price: ${formatSOL(initialAuction.startingPrice)} SOL`)
-        log.info(`Current price: ${formatSOL(initialAuction.currentPrice)} SOL`)
-        log.info(`Time remaining: ${Number(initialAuction.timeRemaining ?? 0)} seconds`)
-        log.info('')
-        log.info(chalk.yellow('🔄 Monitoring for updates... (Press Ctrl+C to stop)'))
-        
-        // Start monitoring with SDK method
-        const stopMonitoring = await client.auction.monitorAuction(
-          auctionAddress,
-          (auction: RawAuctionData) => {
-            // Check for bid updates
-            if (auction.currentPrice !== lastBidAmount) {
-              const bidDiff = Number(auction.currentPrice - lastBidAmount) / 1_000_000_000
-              log.info(`${chalk.green('💰 New bid!')} ${formatSOL(auction.currentPrice)} SOL (+${bidDiff.toFixed(3)} SOL)`)
-              if (auction.currentWinner) {
-                log.info(`   Bidder: ${auction.currentWinner.toString().slice(0, 8)}...`)
-              }
-              lastBidAmount = auction.currentPrice
-            }
-            
-            // Check for status updates
-            if (auction.status.toString() !== lastStatus) {
-              log.info(`${chalk.yellow('🔄 Status change:')} ${lastStatus} → ${auction.status.toString()}`)
-              lastStatus = auction.status.toString()
-              
-              if (auction.status === AuctionStatus.Settled && auction.winner) {
-                log.info(`${chalk.green('🏆 Auction won by:')} ${auction.winner.toString()}`)
-                log.info(`${chalk.green('💵 Final price:')} ${formatSOL(auction.currentPrice)} SOL`)
-                stopMonitoring()
-              }
-            }
-            
-            // Update time remaining
-            if (auction.timeRemaining && auction.timeRemaining > 0n) {
-              const hours = Math.floor(Number(auction.timeRemaining) / 3600)
-              const minutes = Math.floor((Number(auction.timeRemaining) % 3600) / 60)
-              const seconds = Number(auction.timeRemaining) % 60
-              process.stdout.write(`\r${chalk.gray('Time remaining:')} ${hours}h ${minutes}m ${seconds}s  `)
-            }
+      if (!auctionId) {
+        // Show user's active auctions to choose from
+        const auctions = await safeClient.auction.listAuctions()
+        const myAuctions: ValidatedAuctionData[] = []
+        const validAuctions = auctions as ValidatedAuctionData[]
+        for (const auction of validAuctions) {
+          if (auction.creator === wallet.address) {
+            myAuctions.push(auction)
           }
-        )
+        }
         
-        // Handle Ctrl+C gracefully
-        process.on('SIGINT', () => {
-          console.log('\n')
-          stopMonitoring()
-          outro('Monitoring stopped')
-          process.exit(0)
-        })
-      } else {
-        // Monitor all active auctions
-        const auctions = await client.auction.getAuctionsEndingSoon(24 * 3600) // Next 24 hours
-        
-        if (auctions.length === 0) {
-          outro('No auctions ending soon')
+        if (myAuctions.length === 0) {
+          cancel('No auctions to monitor')
           return
         }
 
-        log.info(`\n${chalk.bold('Auctions Ending Soon:')}\n`)
-        
-        auctions.forEach(auction => {
-          const timeLeft = Number(auction.auctionEndTime) - Math.floor(Date.now() / 1000)
-          const hoursLeft = Math.floor(timeLeft / 3600)
-          const minutesLeft = Math.floor((timeLeft % 3600) / 60)
-          const currentPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
-          
-          const urgency = timeLeft < 3600 ? chalk.red('🔥 URGENT') : 
-                         timeLeft < 6 * 3600 ? chalk.yellow('⚠️  SOON') : 
-                         chalk.blue('📅 SCHEDULED')
-          
-          log.info(
-            `${urgency} ${chalk.bold(auction.auctionType.toString().toUpperCase())}\n` +
-            `   ${chalk.gray('Current Price:')} ${currentPriceSOL} SOL\n` +
-            `   ${chalk.gray('Time Left:')} ${hoursLeft}h ${minutesLeft}m\n` +
-            `   ${chalk.gray('Bids:')} ${auction.totalBids}\n`
-          )
+        const selected = await select({
+          message: 'Select auction to monitor:',
+          options: myAuctions.map((auction) => ({
+            value: auction.auction,
+            label: `${getAuctionTypeString(auction.auctionType)} - ${formatSOL(auction.currentPrice)} SOL`,
+            hint: `${auction.totalBids} bids`
+          }))
         })
 
-        outro(
-          `${chalk.yellow('💡 Use')} ${chalk.cyan('npx ghostspeak auction monitor --auction <address>')} ${chalk.yellow('for real-time monitoring')}`
-        )
+        if (isCancel(selected)) {
+          cancel('Monitor cancelled')
+          return
+        }
+
+        auctionId = selected.toString()
       }
+
+      log.info(`Monitoring auction ${auctionId}...`)
+      log.info('Press Ctrl+C to stop monitoring')
+
+      // Note: Real-time monitoring would require WebSocket or polling
+      // For now, just show current status
+      const auction = await safeClient.auction.getAuctionSummary(auctionId as Address)
       
-    } catch (error: unknown) {
-      log.error(`Failed to monitor auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      if (!auction) {
+        cancel('Auction not found')
+        return
+      }
+
+      note(
+        `${chalk.bold('Current Status:')}\n` +
+        `${chalk.gray('Type:')} ${getAuctionTypeString(auction.auctionType)}\n` +
+        `${chalk.gray('Current Price:')} ${formatSOL(auction.currentPrice)} SOL\n` +
+        `${chalk.gray('Total Bids:')} ${auction.totalBids}\n` +
+        `${chalk.gray('Time Remaining:')} ${formatTimeRemaining(auction.auctionEndTime)}`,
+        'Auction Status'
+      )
+
+      outro('Monitor mode not yet implemented - check back for updates!')
+
+    } catch (error) {
+      log.error(`Failed to monitor auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
-// Finalize auction subcommand
+// Finalize auction
 auctionCommand
-  .command('finalize')
-  .description('Finalize completed auctions')
-  .option('-a, --auction <address>', 'Auction address to finalize')
-  .action(async (_options: { auction?: string }) => {
+  .command('finalize <auction-id>')
+  .description('Finalize an ended auction')
+  .action(async (auctionId: string) => {
     intro(chalk.cyan('🏁 Finalize Auction'))
 
     try {
       const s = spinner()
-      s.start('Loading completed auctions...')
+      s.start('Connecting to network...')
       
       const { client, wallet } = await initializeClient('devnet')
+      const safeClient = createSafeSDKClient(client)
       
-      // Fetch completed/settled auctions
-      const auctions = await client.auction.listAuctions({ status: AuctionStatus.Settled })
-      const myAuctions = auctions.filter(a => a.creator === wallet.address)
+      s.stop('✅ Connected to devnet')
+
+      // Check auction status
+      s.start('Checking auction status...')
       
-      s.stop(`✅ Found ${myAuctions.length} completed auctions`)
-
-      if (myAuctions.length === 0) {
-        outro(
-          `${chalk.yellow('No completed auctions to finalize')}\n\n` +
-          `${chalk.gray('Completed auctions will appear here when they end')}`
-        )
-        return
-      }
-
-      // Select auction if not provided
-      let selectedAuction = _options.auction
-      if (!selectedAuction) {
-        const auctionChoice = await select({
-          message: 'Select auction to finalize:',
-          options: myAuctions.map(auction => {
-            const finalPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
-            
-            return {
-              value: auction.auction.toString(),
-              label: `${auction.auctionType.toString().toUpperCase()} - ${finalPriceSOL} SOL`,
-              hint: `${auction.totalBids} bids, winner: ${auction.currentWinner?.toString() ?? 'No bids'}`
-            }
-          })
-        })
-
-        if (isCancel(auctionChoice)) {
-          cancel('Finalization cancelled')
-          return
-        }
-
-        selectedAuction = auctionChoice as string
-      }
-
-      const auction = myAuctions.find(a => a.address === selectedAuction)
+      const auction = await safeClient.auction.getAuctionSummary(auctionId as Address)
+      
       if (!auction) {
-        log.error('Auction not found or not owned by you')
+        cancel('Auction not found')
         return
       }
 
-      // Show finalization details
-      const finalPriceSOL = formatSOL(auction.currentPrice ?? auction.startingPrice)
-      const hasWinner = auction.currentWinner && auction.currentPrice
-      
-      note(
-        `${chalk.bold('Auction Results:')}\n` +
-        `${chalk.gray('Type:')} ${auction.auctionType.toString().toUpperCase()}\n` +
-        `${chalk.gray('Final Price:')} ${finalPriceSOL} SOL\n` +
-        `${chalk.gray('Total Bids:')} ${auction.totalBids}\n` +
-        `${chalk.gray('Winner:')} ${hasWinner ? auction.currentWinner?.toString() : 'No winner (reserve not met)'}\n` +
-        `${chalk.gray('Status:')} ${hasWinner ? chalk.green('Successful') : chalk.yellow('Unsuccessful')}`,
-        'Finalization Details'
-      )
+      s.stop('✅ Auction found')
+
+      // Verify auction has ended
+      if (Date.now() < Number(auction.auctionEndTime)) {
+        cancel('Auction has not ended yet')
+        return
+      }
+
+      // Verify user is the creator
+      if (auction.creator !== wallet.address) {
+        cancel('Only the auction creator can finalize')
+        return
+      }
 
       const confirmFinalize = await confirm({
-        message: hasWinner ? 'Finalize auction and transfer service?' : 'Finalize unsuccessful auction?'
+        message: 'Finalize this auction and transfer funds?'
       })
 
       if (isCancel(confirmFinalize) || !confirmFinalize) {
@@ -803,141 +615,30 @@ auctionCommand
         return
       }
 
-      s.start('Finalizing auction on blockchain...')
-      
-      try {
-        const signature = await client.auction.finalizeAuction({
-          auction: address(selectedAuction),
-          signer: toSDKSigner(wallet)
-        })
+      s.start('Finalizing auction...')
 
-        s.stop('✅ Auction finalized successfully!')
-
-        const explorerUrl = getExplorerUrl(signature, 'devnet')
-        
-        outro(
-          `${chalk.green('🏁 Auction Finalized!')}\n\n` +
-          `${chalk.bold('Results:')}\n` +
-          `${chalk.gray('Final Price:')} ${finalPriceSOL} SOL\n` +
-          `${chalk.gray('Winner:')} ${hasWinner ? auction.currentWinner ?? 'Unknown' : 'No winner'}\n` +
-          `${chalk.gray('Status:')} ${hasWinner ? chalk.green('Service transferred') : chalk.yellow('Auction closed')}\n\n` +
-          `${chalk.bold('Transaction:')}\n` +
-          `${chalk.gray('Signature:')} ${signature}\n` +
-          `${chalk.gray('Explorer:')} ${explorerUrl}`
-        )
-        
-      } catch (error) {
-        s.stop('❌ Auction finalization failed')
-        handleTransactionError(error as Error)
-      }
-      
-    } catch (error: unknown) {
-      log.error(`Failed to finalize auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-  })
-
-// Analytics subcommand
-auctionCommand
-  .command('analytics')
-  .description('View auction analytics and insights')
-  .option('--mine', 'Show only my auction analytics')
-  .action(async (_options: { mine?: boolean }) => {
-    intro(chalk.cyan('📊 Auction Analytics'))
-    
-    // Acknowledge options for future analytics filtering implementation
-    void _options
-
-    try {
-      const s = spinner()
-      s.start('Generating analytics...')
-      
-      const { client, wallet: _wallet } = await initializeClient('devnet')
-      // Acknowledge unused variables for future analytics implementation
-      void client
-      void _wallet
-      
-      // Get analytics (currently mocked until SDK implementation is complete)
-      const analytics = {
-        totalAuctions: 0,
-        activeAuctions: 0,
-        completedAuctions: 0,
-        successRate: 0,
-        totalVolume: 0n,
-        averagePrice: 0n,
-        highestSale: 0n,
-        totalFees: 0n,
-        auctionTypeStats: {},
-        topPerformers: []
-      }
-      
-      // Check if SDK supports auction analytics
-      try {
-        if (client.auction?.getAuctionAnalytics) {
-          const realAnalytics = await client.auction.getAuctionAnalytics()
-          // Merge real analytics with mock structure
-          Object.assign(analytics, realAnalytics)
-        } else {
-          console.log(chalk.gray('Note: Auction analytics are not yet available in the current SDK version'))
-          console.log(chalk.gray('Showing placeholder data - real analytics coming soon'))
-        }
-      } catch (error) {
-        console.log(chalk.gray('Unable to fetch real analytics, showing placeholder data'))
-      }
-      
-      s.stop('✅ Analytics generated')
-
-      // Display comprehensive analytics
-      log.info(`\n${chalk.bold('📈 Auction Performance Overview:')}\n`)
-      
-      log.info(
-        `${chalk.gray('Total Auctions:')} ${analytics.totalAuctions ?? 0}\n` +
-        `${chalk.gray('Active Auctions:')} ${analytics.activeAuctions ?? 0}\n` +
-        `${chalk.gray('Completed Auctions:')} ${analytics.completedAuctions ?? 0}\n` +
-        `${chalk.gray('Success Rate:')} ${((analytics.successRate ?? 0) * 100).toFixed(1)}%\n`
+      const signature = await safeClient.auction.finalizeAuction(
+        toSDKSigner(wallet),
+        auctionId
       )
 
-      log.info(`\n${chalk.bold('💰 Financial Metrics:')}\n`)
-      
-      log.info(
-        `${chalk.gray('Total Volume:')} ${formatSOL(analytics.totalVolume ?? 0)} SOL\n` +
-        `${chalk.gray('Average Price:')} ${formatSOL(analytics.averagePrice ?? 0)} SOL\n` +
-        `${chalk.gray('Highest Sale:')} ${formatSOL(analytics.highestSale ?? 0)} SOL\n` +
-        `${chalk.gray('Total Fees Collected:')} ${formatSOL(analytics.totalFees ?? 0)} SOL\n`
-      )
-
-      log.info(`\n${chalk.bold('🎯 Auction Type Breakdown:')}\n`)
-      
-      if (analytics.auctionTypeStats) {
-        Object.entries(analytics.auctionTypeStats).forEach(([type, stats]) => {
-          log.info(
-            `${chalk.bold(type.toUpperCase())}:\n` +
-            `   ${chalk.gray('Count:')} ${stats && typeof stats === 'object' && 'count' in stats ? stats.count : 0}\n` +
-            `   ${chalk.gray('Success Rate:')} ${stats && typeof stats === 'object' && 'successRate' in stats ? ((stats.successRate as number) * 100).toFixed(1) : '0.0'}%\n` +
-            `   ${chalk.gray('Avg Price:')} ${stats && typeof stats === 'object' && 'averagePrice' in stats ? formatSOL(Number(stats.averagePrice)) : '0.000'} SOL\n`
-          )
-        })
+      if (!signature) {
+        throw new Error('Failed to finalize auction')
       }
 
-      if (analytics.topPerformers?.length > 0) {
-        log.info(`\n${chalk.bold('🏆 Top Performers:')}\n`)
-        
-        analytics.topPerformers.slice(0, 5).forEach((performer: { creator?: string; auctionCount?: number; totalVolume?: bigint; successRate?: number }, index: number) => {
-          log.info(
-            `${index + 1}. ${performer?.creator ?? 'Unknown'}\n` +
-            `   ${chalk.gray('Auctions:')} ${performer?.auctionCount ?? 0}\n` +
-            `   ${chalk.gray('Total Volume:')} ${formatSOL(performer?.totalVolume ?? 0)} SOL\n` +
-            `   ${chalk.gray('Success Rate:')} ${((performer?.successRate ?? 0) * 100).toFixed(1)}%\n`
-          )
-        })
-      }
+      s.stop('✅ Auction finalized!')
 
+      const explorerUrl = getExplorerUrl(signature, 'devnet')
+      
       outro(
-        `${chalk.yellow('💡 Insights:')}\n` +
-        `${chalk.cyan('npx ghostspeak auction create')} - Start a new auction\n` +
-        `${chalk.cyan('npx ghostspeak auction list')} - Browse active auctions`
+        `${chalk.green('🎉 Auction Finalized!')}\n\n` +
+        `${chalk.bold('Final Price:')} ${formatSOL(auction.currentPrice)} SOL\n` +
+        (auction.currentWinner ? `${chalk.bold('Winner:')} ${auction.currentWinner}\n\n` : 'No winner\n\n') +
+        `${chalk.bold('Transaction:')} ${signature}\n` +
+        `${chalk.bold('Explorer:')} ${explorerUrl}`
       )
-      
-    } catch (error: unknown) {
-      log.error(`Failed to load analytics: ${error instanceof Error ? error.message : 'Unknown error'}`)
+
+    } catch (error) {
+      handleTransactionError(error as Error)
     }
   })

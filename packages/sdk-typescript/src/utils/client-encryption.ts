@@ -268,7 +268,7 @@ function bigIntToBytes(value: bigint): Uint8Array {
   let temp = value
   for (let i = 0; i < 32; i++) {
     bytes[i] = Number(temp & 0xffn)
-    temp >>= 8n
+    temp >>= BigInt(8)
   }
   return bytes
 }
@@ -277,9 +277,9 @@ function bigIntToBytes(value: bigint): Uint8Array {
  * Convert byte array to bigint
  */
 function bytesToBigInt(bytes: Uint8Array): bigint {
-  let result = 0n
+  let result = BigInt(0)
   for (let i = bytes.length - 1; i >= 0; i--) {
-    result = (result << 8n) | BigInt(bytes[i])
+    result = (result << BigInt(8)) | BigInt(bytes[i])
   }
   return result
 }

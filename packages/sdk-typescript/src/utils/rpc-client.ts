@@ -382,7 +382,7 @@ export class SolanaRpcClient {
     }).send()
 
 return result.value.map((account: unknown) => 
-      account ? this.parseAccountInfo(account) : null
+      account && this.isValidAccountData(account) ? this.parseAccountInfo(account as RawAccountData) : null
     )
   }
 
@@ -677,6 +677,16 @@ return result.value.map((account: unknown) =>
   }
 
   /**
+   * Helper to validate if an object is valid account data
+   */
+  private isValidAccountData(account: unknown): account is RawAccountData {
+    const acc = account as Record<string, unknown>
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    return acc !== null && typeof acc === 'object' && 
+           'executable' in acc && 'lamports' in acc && 'owner' in acc && 'rentEpoch' in acc && 'data' in acc
+  }
+
+  /**
    * Helper method to parse account info from RPC response
    */
   private parseAccountInfo(account: RawAccountData): AccountInfo {
@@ -784,7 +794,7 @@ return result.value.map((account: unknown) =>
    * 
    * @example
    * ```typescript
-   * await client.waitForBalance('11111111111111111111111111111111', 1000000000n)
+   * await client.waitForBalance('11111111111111111111111111111111', BigInt(1000000000))
    * console.log('Account has at least 1 SOL')
    * ```
    */

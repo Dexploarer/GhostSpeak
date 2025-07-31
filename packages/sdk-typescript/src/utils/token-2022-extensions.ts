@@ -299,7 +299,7 @@ export async function verifyConfidentialTransferProof(
     const encryptedAmountCiphertext = deserializeCiphertext(proof.encryptedAmount)
     
     // 1. Verify the range proof using bulletproofs
-    const rangeProofValid = verifyRangeProof(
+    const rangeProofValid = await verifyRangeProof(
       { proof: proof.rangeProof, commitment: encryptedAmountCiphertext.commitment.commitment },
       encryptedAmountCiphertext.commitment.commitment
     )

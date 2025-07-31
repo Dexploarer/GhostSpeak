@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
-import { existsSync, symlinkSync, unlinkSync } from 'fs'
+import { dirname } from 'path'
 import { execSync } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -36,7 +35,7 @@ function setupGlobalCommands() {
     console.log('💡 You can now use:')
     console.log('   $ ghostspeak <command>')
     console.log('   $ gs <command>')
-  } catch (error) {
+  } catch (_error) {
     console.error('⚠️  Warning: Could not verify command installation')
     console.error('   You may need to add npm global bin to your PATH')
   }

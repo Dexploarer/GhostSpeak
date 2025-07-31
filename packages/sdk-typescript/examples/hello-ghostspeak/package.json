@@ -10,7 +10,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@ghostspeak/sdk": "^1.6.3",
+    "@ghostspeak/sdk": "^2.0.0",
     "@solana/kit": "^2.3.0",
     "dotenv": "^16.0.3"
   },

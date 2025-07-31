@@ -6,17 +6,13 @@
  */
 
 import type { Command } from 'commander'
-import { generateKeyPairSigner, createSolanaRpc, address } from '@solana/kit'
-import fs from 'fs/promises'
-import path from 'path'
-import os from 'os'
+import { createSolanaRpc, address } from '@solana/kit'
 import { FaucetService } from '../services/faucet-service.js'
 import { WalletService } from '../services/wallet-service.js'
 import chalk from 'chalk'
 
 // Node.js globals
 declare const fetch: typeof globalThis.fetch
-declare const crypto: typeof globalThis.crypto
 
 interface FaucetOptions {
   network?: 'devnet' | 'testnet'
@@ -190,62 +186,6 @@ async function requestFromRpcAirdrop(
   }
 }
 
-/**
- * Generate a new wallet keypair
- */
-async function generateWallet(): Promise<{ address: string; privateKey: Uint8Array }> {
-  const signer = await generateKeyPairSigner()
-  
-  // Extract private key as Uint8Array (Web3.js v2 might store it differently)
-  const privateKeyBytes = 'privateKey' in signer && signer.privateKey instanceof Uint8Array 
-    ? signer.privateKey 
-    : 'secretKey' in signer && signer.secretKey instanceof Uint8Array
-    ? signer.secretKey
-    : crypto.getRandomValues(new Uint8Array(32)) // Fallback - generate random bytes
-  
-  return {
-    address: signer.address,
-    privateKey: privateKeyBytes
-  }
-}
-
-/**
- * Save wallet to file
- */
-async function saveWallet(privateKey: Uint8Array, walletPath?: string): Promise<string> {
-  const keyArray = Array.from(privateKey)
-  const walletData = JSON.stringify(keyArray, null, 2)
-  
-  if (!walletPath) {
-    const ghostspeakDir = path.join(os.homedir(), '.ghostspeak')
-    await fs.mkdir(ghostspeakDir, { recursive: true })
-    walletPath = path.join(ghostspeakDir, `wallet-${Date.now()}.json`)
-  }
-  
-  await fs.writeFile(walletPath, walletData, 'utf8')
-  return walletPath
-}
-
-/**
- * Load wallet from file
- */
-async function loadWallet(walletPath: string): Promise<string> {
-  try {
-    const walletData = await fs.readFile(walletPath, 'utf8')
-    const keyArray = JSON.parse(walletData) as number[]
-    const privateKey = new Uint8Array(keyArray)
-    // Note: privateKey loaded but not used in this simplified implementation
-    void privateKey
-    
-    // Generate signer to get address
-    const signer = await generateKeyPairSigner()
-    // Note: This is a simplified approach. In production, you'd derive the public key from private key
-    console.log(`📂 Loaded wallet from: ${walletPath}`)
-    return signer.address // This should be derived from the private key
-  } catch (error) {
-    throw new Error(`Failed to load wallet: ${error instanceof Error ? error.message : 'Unknown error'}`)
-  }
-}
 
 /**
  * Check wallet balance
@@ -429,9 +369,7 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
     console.log(`   Network: ${network}`)
     console.log(`   Balance: ${await checkBalance(walletAddress, network)} SOL`)
 
-    if (activeWallet) {
-      console.log('\n💡 TIP: Your wallet is saved. Use gs wallet list to see all wallets.')
-    }
+    console.log('\n💡 TIP: Your wallet is saved. Use gs wallet list to see all wallets.')
 
   } catch (error) {
     console.error('❌ Faucet command failed:', error)

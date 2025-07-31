@@ -59,7 +59,59 @@ import {
   fixEncoderSize,
   getAddressEncoder
 } from '@solana/kit'
-import type { PublicKey, Connection } from '@solana/web3.js'
+// Note: @solana/spl-token still uses some v1 types internally
+// This is a compatibility layer until SPL Token fully migrates to v2
+
+// Import types for SPL Token compatibility
+// These are only used internally for SPL Token calls
+
+// Create a PublicKey compatibility class for SPL Token
+class PublicKey {
+  private _address: string
+
+  constructor(value: string | Address | Uint8Array | number[]) {
+    if (typeof value === 'string') {
+      this._address = value
+    } else if (typeof value === 'object' && 'address' in value) {
+      this._address = value.address
+    } else if (value instanceof Uint8Array) {
+      // Convert Uint8Array to base58
+      const bs58 = require('bs58')
+      this._address = bs58.encode(value)
+    } else if (Array.isArray(value)) {
+      // Convert number array to base58
+      const bs58 = require('bs58')
+      this._address = bs58.encode(new Uint8Array(value))
+    } else {
+      throw new Error('Invalid public key input')
+    }
+  }
+
+  toString(): string {
+    return this._address
+  }
+
+  toBase58(): string {
+    return this._address
+  }
+
+  toBuffer(): Buffer {
+    const bs58 = require('bs58')
+    return Buffer.from(bs58.decode(this._address))
+  }
+
+  toBytes(): Uint8Array {
+    const bs58 = require('bs58')
+    return bs58.decode(this._address)
+  }
+
+  equals(pubkey: PublicKey): boolean {
+    return this._address === pubkey._address
+  }
+}
+
+// Create a mock Connection type for SPL Token compatibility
+type Connection = any
 
 // Re-export everything for convenience
 export * from '@solana/spl-token'
@@ -394,15 +446,14 @@ export async function getOrCreateAssociatedTokenAccount(
   // Determine if this is a Token-2022 mint
   let programId = TOKEN_PROGRAM_ID
   try {
-    const mintInfo = await getMint(
+    await getMint(
       connection,
       mintPubkey,
       commitment,
       TOKEN_2022_PROGRAM_ID
     )
-    if (mintInfo) {
-      programId = TOKEN_2022_PROGRAM_ID
-    }
+    // mintInfo exists, use Token 2022
+    programId = TOKEN_2022_PROGRAM_ID
   } catch {
     // Try regular token program
     try {
@@ -571,7 +622,7 @@ export async function calculateTransferAmountWithFee(
  */
 
 /**
- * Configure account for confidential transfers (placeholder)
+ * Configure account for confidential transfers
  */
 export async function configureConfidentialAccount(
   account: Address,
@@ -582,29 +633,44 @@ export async function configureConfidentialAccount(
   proofInstructionOffset: number,
   authority: TransactionSigner
 ): Promise<IInstruction> {
-  // Import the confidential transfer manager
-  const { ConfidentialTransferManager } = await import('./confidential-transfer-manager.js')
-  const { Connection } = await import('@solana/web3.js')
+  // Create the SPL Token instruction directly
+  const instructionType = 30 // ConfigureAccountWithFee instruction for Token-2022
+  const extensionType = 4 // ConfidentialTransfer extension
   
-  // Create manager instance
-  const connection = new Connection('https://api.mainnet-beta.solana.com')
-  const manager = new ConfidentialTransferManager(connection)
+  // Instruction data layout:
+  // - instruction type: u8
+  // - extension type: u8  
+  // - elgamal pubkey: [u8; 32]
+  // - decryptable zero balance: [u8; 64]
+  // - maximum pending balance credit counter: u64
+  // - proof instruction offset: i8
+  const encoder = getStructEncoder([
+    ['instruction', getU8Encoder()],
+    ['extensionType', getU8Encoder()],
+    ['elgamalPubkey', fixEncoderSize(getBytesEncoder(), 32)],
+    ['decryptableZeroBalance', fixEncoderSize(getBytesEncoder(), 64)],
+    ['maximumPendingBalanceCredits', getU64Encoder()],
+    ['proofInstructionOffset', getU8Encoder()]
+  ])
   
-  // Use the manager to create the instruction
-  const result = await manager.createConfigureAccountInstructions({
-    account,
-    mint,
-    elgamalKeypair: { publicKey: elgamalPubkey, secretKey: new Uint8Array(32) }, // Only pubkey needed
-    decryptableZeroBalance: 0n,
-    maxPendingBalanceCredits: maximumPendingBalanceCredits,
-    authority
+  const data = encoder.encode({
+    instruction: instructionType,
+    extensionType,
+    elgamalPubkey,
+    decryptableZeroBalance,
+    maximumPendingBalanceCredits,
+    proofInstructionOffset
   })
   
-  if (result.warnings.length > 0) {
-    result.warnings.forEach(w => console.warn(w))
+  return {
+    programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+    accounts: [
+      { address: account, role: 2 }, // Writable
+      { address: mint, role: 0 }, // Readonly
+      { address: authority.address, role: 3 } // WritableSigner
+    ],
+    data
   }
-  
-  return result.instructions[0]
 }
 
 /**
@@ -618,30 +684,37 @@ export async function depositConfidential(
   proofInstructionOffset: number,
   authority: TransactionSigner
 ): Promise<IInstruction> {
-  // Import the confidential transfer manager
-  const { ConfidentialTransferManager } = await import('./confidential-transfer-manager.js')
-  const { Connection } = await import('@solana/web3.js')
+  // SPL Token-2022 deposit instruction
+  const instructionType = 31 // Deposit instruction for confidential transfers
   
-  // Create manager instance
-  const connection = new Connection('https://api.mainnet-beta.solana.com')
-  const manager = new ConfidentialTransferManager(connection)
+  // Instruction data layout:
+  // - instruction type: u8
+  // - amount: u64
+  // - decimals: u8
+  // - proof instruction offset: i8
+  const encoder = getStructEncoder([
+    ['instruction', getU8Encoder()],
+    ['amount', getU64Encoder()],
+    ['decimals', getU8Encoder()],
+    ['proofInstructionOffset', getU8Encoder()]
+  ])
   
-  // Use the manager to create deposit instructions
-  const result = await manager.createDepositInstructions({
-    account,
-    mint,
+  const data = encoder.encode({
+    instruction: instructionType,
     amount,
     decimals,
-    authority
+    proofInstructionOffset
   })
   
-  if (result.warnings.length > 0) {
-    result.warnings.forEach(w => console.warn(w))
+  return {
+    programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+    accounts: [
+      { address: account, role: 2 }, // Writable source account
+      { address: mint, role: 0 }, // Readonly mint
+      { address: authority.address, role: 3 } // WritableSigner
+    ],
+    data
   }
-  
-  // Return the primary deposit instruction
-  // The proof instructions would be included separately in the transaction
-  return result.instructions[0]
 }
 
 /**
@@ -656,21 +729,15 @@ export async function withdrawConfidential(
   proofInstructionOffset: number,
   authority: TransactionSigner
 ): Promise<IInstruction> {
-  // Import required modules
-  const { ConfidentialTransferManager } = await import('./confidential-transfer-manager.js')
-  const { Connection } = await import('@solana/web3.js')
-  const { bytesToNumberLE } = await import('@noble/curves/abstract/utils')
+  // SPL Token-2022 withdraw instruction
+  const instructionType = 32 // Withdraw instruction for confidential transfers
   
-  // Create manager instance
-  const _connection = new Connection('https://api.mainnet-beta.solana.com')
-  const _manager = new ConfidentialTransferManager(_connection)
-  
-  // Convert decryptable balance bytes to bigint
-  const _newBalance = bytesToNumberLE(newDecryptableAvailableBalance.slice(0, 8))
-  
-  // Create withdrawal instruction
-  const instructionType = EXTENSION_INSTRUCTIONS.ConfidentialTransfer.Withdraw
-  
+  // Instruction data layout:
+  // - instruction type: u8
+  // - amount: u64
+  // - decimals: u8
+  // - new decryptable available balance: [u8; 64]
+  // - proof instruction offset: i8
   const encoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['amount', getU64Encoder()],
@@ -692,7 +759,7 @@ export async function withdrawConfidential(
     accounts: [
       { address: account, role: 2 }, // Writable
       { address: mint, role: 0 }, // Readonly
-      { address: authority.address, role: 3 } // Signer
+      { address: authority.address, role: 3 } // WritableSigner
     ],
     data
   }
@@ -709,17 +776,13 @@ export async function transferConfidential(
   proofInstructionOffset: number,
   authority: TransactionSigner
 ): Promise<IInstruction> {
-  // Import required modules
-  const { ConfidentialTransferManager } = await import('./confidential-transfer-manager.js')
-  const { Connection } = await import('@solana/web3.js')
+  // SPL Token-2022 confidential transfer instruction
+  const instructionType = 33 // Transfer instruction for confidential transfers
   
-  // Create manager instance
-  const _connection = new Connection('https://api.mainnet-beta.solana.com')
-  const _manager = new ConfidentialTransferManager(_connection)
-  
-  // Create transfer instruction
-  const instructionType = EXTENSION_INSTRUCTIONS.ConfidentialTransfer.Transfer
-  
+  // Instruction data layout:
+  // - instruction type: u8
+  // - new source decryptable balance: [u8; 64]
+  // - proof instruction offset: i8
   const encoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['newSourceDecryptableBalance', fixEncoderSize(getBytesEncoder(), 64)],
@@ -738,7 +801,7 @@ export async function transferConfidential(
       { address: source, role: 2 }, // Writable source
       { address: destination, role: 2 }, // Writable destination
       { address: mint, role: 0 }, // Readonly
-      { address: authority.address, role: 3 } // Signer
+      { address: authority.address, role: 3 } // WritableSigner
     ],
     data
   }

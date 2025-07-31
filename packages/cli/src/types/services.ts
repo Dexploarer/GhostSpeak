@@ -34,7 +34,7 @@ export class NotFoundError extends ServiceError {
 
 export class NetworkError extends ServiceError {
   constructor(message: string, suggestion?: string) {
-    super(message, 'NETWORK_ERROR', suggestion || 'Check your network connection and try again', true)
+    super(message, 'NETWORK_ERROR', suggestion ?? 'Check your network connection and try again', true)
     this.name = 'NetworkError'
   }
 }
@@ -117,6 +117,7 @@ export interface IWalletService {
   getActiveWalletInterface(): WalletInfo | null
   setActiveWalletInterface(name: string): Promise<void>
   getBalanceInterface(address: Address): Promise<bigint>
+  getActiveSigner(): Promise<KeyPairSigner | null>
   signTransaction(signer: KeyPairSigner, transaction: unknown): Promise<string>
 }
 

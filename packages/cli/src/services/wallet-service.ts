@@ -3,14 +3,13 @@
  */
 
 import { 
-  generateKeyPairSigner, 
   createKeyPairSignerFromBytes,
   address,
   createSolanaRpc,
   type KeyPairSigner 
 } from '@solana/kit'
 import type { Address } from '@solana/addresses'
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, renameSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, renameSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import * as bip39 from 'bip39'
@@ -103,7 +102,7 @@ export class WalletService implements IWalletService {
       const { key } = derivePath(derivationPath, seed.toString('hex'))
       
       // Create keypair from derived private key
-      return createKeyPairSignerFromBytes(new Uint8Array(key))
+      return await createKeyPairSignerFromBytes(new Uint8Array(key))
     } catch (error) {
       throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -120,7 +119,7 @@ export class WalletService implements IWalletService {
     const registry = this.getRegistry()
     
     // Check if name already exists
-    if (registry.wallets[name]) {
+    if (name in registry.wallets) {
       throw new Error(`Wallet with name "${name}" already exists`)
     }
     
@@ -171,36 +170,43 @@ export class WalletService implements IWalletService {
   ): Promise<WalletData> {
     const registry = this.getRegistry()
     
-    if (registry.wallets[name]) {
+    if (name in registry.wallets) {
       throw new Error(`Wallet with name "${name}" already exists`)
     }
     
     let signer: KeyPairSigner
-    let mnemonic: string | undefined
+    let privateKeyBytes: Uint8Array
     
     if (typeof secretKeyOrMnemonic === 'string') {
       // Check if it's a mnemonic
       if (bip39.validateMnemonic(secretKeyOrMnemonic)) {
-        mnemonic = secretKeyOrMnemonic
         signer = await this.keypairFromMnemonic(secretKeyOrMnemonic)
+        // For mnemonic-derived keys, we need to extract the private key differently
+        const privateKey = 'privateKey' in signer && signer.privateKey instanceof Uint8Array
+          ? signer.privateKey
+          : 'secretKey' in signer && signer.secretKey instanceof Uint8Array
+          ? signer.secretKey
+          : null
+        
+        if (!privateKey) {
+          throw new Error('Failed to extract private key from mnemonic-derived signer')
+        }
+        privateKeyBytes = privateKey
       } else {
         // Try to parse as JSON array or base58
         try {
           const bytes = JSON.parse(secretKeyOrMnemonic) as number[]
-          signer = await createKeyPairSignerFromBytes(new Uint8Array(bytes))
+          privateKeyBytes = new Uint8Array(bytes)
+          signer = await createKeyPairSignerFromBytes(privateKeyBytes)
         } catch {
           throw new Error('Invalid private key or mnemonic format')
         }
       }
     } else {
+      // Use the raw bytes directly - this is the most reliable approach
+      privateKeyBytes = secretKeyOrMnemonic
       signer = await createKeyPairSignerFromBytes(secretKeyOrMnemonic)
     }
-    
-    const privateKeyBytes = 'privateKey' in signer && signer.privateKey instanceof Uint8Array
-      ? signer.privateKey
-      : 'secretKey' in signer && signer.secretKey instanceof Uint8Array
-      ? signer.secretKey
-      : new Uint8Array(64)
     
     const walletData: WalletData = {
       metadata: {
@@ -253,7 +259,7 @@ export class WalletService implements IWalletService {
    */
   getWallet(name: string): WalletData | null {
     const registry = this.getRegistry()
-    if (!registry.wallets[name]) {
+    if (!(name in registry.wallets)) {
       return null
     }
     
@@ -280,7 +286,7 @@ export class WalletService implements IWalletService {
    */
   setActiveWallet(name: string): void {
     const registry = this.getRegistry()
-    if (!registry.wallets[name]) {
+    if (!(name in registry.wallets)) {
       throw new Error(`Wallet "${name}" not found`)
     }
     
@@ -299,11 +305,11 @@ export class WalletService implements IWalletService {
   renameWallet(oldName: string, newName: string): void {
     const registry = this.getRegistry()
     
-    if (!registry.wallets[oldName]) {
+    if (!(oldName in registry.wallets)) {
       throw new Error(`Wallet "${oldName}" not found`)
     }
     
-    if (registry.wallets[newName]) {
+    if (newName in registry.wallets) {
       throw new Error(`Wallet "${newName}" already exists`)
     }
     
@@ -339,7 +345,7 @@ export class WalletService implements IWalletService {
   deleteWallet(name: string): void {
     const registry = this.getRegistry()
     
-    if (!registry.wallets[name]) {
+    if (!(name in registry.wallets)) {
       throw new Error(`Wallet "${name}" not found`)
     }
     
@@ -505,7 +511,7 @@ export class WalletService implements IWalletService {
   /**
    * Interface-compatible method: Sign transaction
    */
-  async signTransaction(signer: KeyPairSigner, transaction: unknown): Promise<string> {
+  async signTransaction(signer: KeyPairSigner, _transaction: unknown): Promise<string> {
     // In real implementation, this would sign the actual transaction
     // For now, return a mock signature
     const signature = `${signer.address.toString().substring(0, 8)}...signed`
@@ -524,7 +530,6 @@ export class WalletService implements IWalletService {
     
     try {
       const oldWalletData = JSON.parse(readFileSync(oldWalletPath, 'utf-8')) as number[]
-      const signer = createKeyPairSignerFromBytes(new Uint8Array(oldWalletData))
       
       // Import as "main" wallet
       await this.importWallet('main', new Uint8Array(oldWalletData), 'devnet')

@@ -9,7 +9,8 @@
 
 import type { Address, IInstruction, TransactionSigner } from '@solana/kit'
 import { getU8Encoder, getU16Encoder, getU64Encoder, getStructEncoder, getBytesEncoder, fixEncoderSize, address } from '@solana/kit'
-import { Connection } from '@solana/web3.js'
+import type { Rpc } from '@solana/rpc'
+import type { Connection } from '@solana/web3.js'
 
 // Import from the new official SPL Token integration
 import {
@@ -186,15 +187,12 @@ export {
  * Now uses the official @solana/spl-token implementation
  */
 export async function createMintWithExtensions(
+  rpc: Rpc<unknown>,
   params: CreateMintWithExtensionsParams
 ): Promise<IInstruction[]> {
-  // Note: We need a Connection object for the official implementation
-  // This is a limitation of maintaining backward compatibility
-  // In production, pass the connection from the client
-  const connection = new Connection('https://api.devnet.solana.com', 'confirmed')
-  
-  // Convert params to official format
-  return createMintWithExtensionsOfficial(connection, params)
+  // SPL Token still uses Connection v1, so we delegate to spl-token-integration.ts
+  // which handles the compatibility layer
+  return createMintWithExtensionsOfficial(rpc as unknown as Connection, params)
 }
 
 // =====================================================
@@ -206,7 +204,7 @@ export async function createMintWithExtensions(
  * Delegates to the official SPL Token implementation
  */
 export async function transferWithFee(
-  connection: Connection,
+  rpc: Rpc<unknown>,
   params: {
     source: Address
     destination: Address
@@ -217,7 +215,7 @@ export async function transferWithFee(
     multiSigners?: TransactionSigner[]
   }
 ): Promise<IInstruction> {
-  return transferWithFeeOfficial(connection, params)
+  return transferWithFeeOfficial(rpc as unknown as Connection, params)
 }
 
 // These functions are now delegated to the official implementation

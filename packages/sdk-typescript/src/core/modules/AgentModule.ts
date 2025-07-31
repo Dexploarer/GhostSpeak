@@ -1,9 +1,11 @@
 import type { Address } from '@solana/addresses'
-import type { _TransactionSigner, Base58EncodedBytes, Base64EncodedBytes } from '@solana/kit'
+import type { TransactionSigner } from '@solana/kit'
+import { getProgramDerivedAddress } from '@solana/addresses'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import type { IPFSConfig } from '../../types/ipfs-types.js'
 import { BaseModule } from '../BaseModule.js'
 import { createIPFSUtils } from '../../utils/ipfs-utils.js'
+import { SYSTEM_PROGRAM_ADDRESS } from '../../constants/system-addresses.js'
 import {
   getRegisterAgentInstructionAsync,
   getUpdateAgentInstruction,
@@ -35,17 +37,28 @@ export class AgentModule extends BaseModule {
     metadataUri: string
     agentId: string
   }): Promise<string> {
-    return this.execute(
-      'registerAgent',
-      () => getRegisterAgentInstructionAsync({
-        agentAccount: this.deriveAgentPda(params.agentId),
+    const instructionGetter = async () => {
+      const agentAccount = await this.deriveAgentPda(params.agentId, signer.address)
+      const userRegistry = await this.deriveUserRegistryPda(signer.address)
+      const result = getRegisterAgentInstructionAsync({
+        agentAccount,
+        userRegistry,
         signer,
         systemProgram: this.systemProgramId,
         agentType: params.agentType,
         metadataUri: params.metadataUri,
         agentId: params.agentId
-      }),
-      [signer]
+      })
+      return result
+    }
+    
+    // Enable debug mode to get detailed transaction information
+    this.debug()
+    
+    return this.execute(
+      'registerAgent',
+      instructionGetter,
+      [signer] as unknown as TransactionSigner[]
     )
   }
 
@@ -59,9 +72,8 @@ export class AgentModule extends BaseModule {
     merkleTree: Address
     treeConfig: Address
   }): Promise<string> {
-    return this.execute(
-      'registerAgentCompressed',
-      () => getRegisterAgentCompressedInstructionAsync({
+    const instructionGetter = () => {
+      const result = getRegisterAgentCompressedInstructionAsync({
         merkleTree: params.merkleTree,
         signer,
         systemProgram: this.systemProgramId,
@@ -69,8 +81,14 @@ export class AgentModule extends BaseModule {
         agentType: params.agentType,
         metadataUri: params.metadataUri,
         agentId: params.agentId
-      }),
-      [signer]
+      })
+      return result
+    }
+    
+    return this.execute(
+      'registerAgentCompressed',
+      instructionGetter,
+      [signer] as unknown as TransactionSigner[]
     )
   }
 
@@ -83,16 +101,21 @@ export class AgentModule extends BaseModule {
     agentType: number
     agentId: string
   }): Promise<string> {
-    return this.execute(
-      'updateAgent',
-      () => getUpdateAgentInstruction({
+    const instructionGetter = () => {
+      const result = getUpdateAgentInstruction({
         agentAccount: params.agentAddress,
         signer,
         metadataUri: params.metadataUri,
         agentType: params.agentType,
         agentId: params.agentId
-      }),
-      [signer]
+      })
+      return result
+    }
+    
+    return this.execute(
+      'updateAgent',
+      instructionGetter,
+      [signer] as unknown as TransactionSigner[]
     )
   }
 
@@ -106,17 +129,22 @@ export class AgentModule extends BaseModule {
     supportedCapabilities: Array<number | bigint>
     verifiedAt: number | bigint
   }): Promise<string> {
-    return this.execute(
-      'verifyAgent',
-      () => getVerifyAgentInstructionAsync({
+    const instructionGetter = () => {
+      const result = getVerifyAgentInstructionAsync({
         agent: params.agentAddress,
         verifier: signer,
         agentPubkey: params.agentPubkey,
         serviceEndpoint: params.serviceEndpoint,
         supportedCapabilities: params.supportedCapabilities,
         verifiedAt: params.verifiedAt
-      }),
-      [signer]
+      })
+      return result
+    }
+    
+    return this.execute(
+      'verifyAgent',
+      instructionGetter,
+      [signer] as unknown as TransactionSigner[]
     )
   }
 
@@ -127,14 +155,19 @@ export class AgentModule extends BaseModule {
     agentAddress: Address
     agentId: string
   }): Promise<string> {
-    return this.execute(
-      'deactivateAgent',
-      () => getDeactivateAgentInstruction({
+    const instructionGetter = () => {
+      const result = getDeactivateAgentInstruction({
         agentAccount: params.agentAddress,
         signer,
         agentId: params.agentId
-      }),
-      [signer]
+      })
+      return result
+    }
+    
+    return this.execute(
+      'deactivateAgent',
+      instructionGetter,
+      [signer] as unknown as TransactionSigner[]
     )
   }
 
@@ -145,14 +178,19 @@ export class AgentModule extends BaseModule {
     agentAddress: Address
     agentId: string
   }): Promise<string> {
-    return this.execute(
-      'activateAgent',
-      () => getActivateAgentInstruction({
+    const instructionGetter = () => {
+      const result = getActivateAgentInstruction({
         agentAccount: params.agentAddress,
         signer,
         agentId: params.agentId
-      }),
-      [signer]
+      })
+      return result
+    }
+    
+    return this.execute(
+      'activateAgent',
+      instructionGetter,
+      [signer] as unknown as TransactionSigner[]
     )
   }
 
@@ -179,7 +217,7 @@ export class AgentModule extends BaseModule {
     
     const filters = [{
       memcmp: {
-        offset: 8n, // Skip discriminator
+        offset: BigInt(8), // Skip discriminator
         bytes: typeBytes.toString('base64'),
         encoding: 'base64' as const
       }
@@ -194,7 +232,7 @@ export class AgentModule extends BaseModule {
   async getUserAgents(authority: Address): Promise<{ address: Address; data: Agent }[]> {
     const filters = [{
       memcmp: {
-        offset: 9n, // Skip discriminator + type
+        offset: BigInt(9), // Skip discriminator + type
         bytes: authority,
         encoding: 'base58' as const
       }
@@ -205,14 +243,20 @@ export class AgentModule extends BaseModule {
 
   // Helper methods
 
-  private deriveAgentPda(agentId: _string): Address {
-    // Implementation would derive PDA
-    // This is a placeholder - actual implementation would use findProgramAddressSync
-    return 'agent_pda_address' as Address
+  private async deriveAgentPda(agentId: string, owner: Address): Promise<Address> {
+    // Use the standard PDA utility function that matches Rust implementation
+    const { deriveAgentPda } = await import('../../utils/pda.js')
+    return deriveAgentPda(this.programId, owner, agentId)
+  }
+
+  private async deriveUserRegistryPda(owner: Address): Promise<Address> {
+    // Use the standard PDA utility function that matches Rust implementation
+    const { deriveUserRegistryPda } = await import('../../utils/pda.js')
+    return deriveUserRegistryPda(this.programId, owner)
   }
 
   private get systemProgramId(): Address {
-    return '11111111111111111111111111111111' as Address
+    return SYSTEM_PROGRAM_ADDRESS
   }
 
   private get compressionProgramId(): Address {

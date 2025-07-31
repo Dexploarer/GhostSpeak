@@ -8,7 +8,7 @@
 
 import type { Address, IInstruction, TransactionSigner } from '@solana/kit'
 import { getStructEncoder, getU8Encoder, getU64Encoder, getBytesEncoder, fixEncoderSize } from '@solana/kit'
-import type { Connection } from '@solana/web3.js'
+import type { Rpc, GetAccountInfoApi } from '@solana/rpc'
 
 import {
   generateElGamalKeypair,
@@ -160,7 +160,7 @@ export class ConfidentialTransferManager {
   private featureFlags = getFeatureFlags()
   
   constructor(
-    private connection: Connection,
+    private rpc: Rpc<GetAccountInfoApi>,
     private defaultProofMode: ProofMode = ProofMode.ZK_PROGRAM_WITH_FALLBACK
   ) {
     this.clientEncryption = new ClientEncryptionService()
@@ -176,7 +176,7 @@ export class ConfidentialTransferManager {
     message: string
   }> {
     const privacyStatus = this.featureFlags.getPrivacyStatus()
-    const zkAvailable = await isZkProgramAvailable(this.connection)
+    const zkAvailable = await isZkProgramAvailable(this.rpc)
     
     return {
       mode: privacyStatus.mode,
@@ -191,14 +191,14 @@ export class ConfidentialTransferManager {
    * Get the current status of the ZK program
    */
   async getZkProgramStatus(): Promise<string> {
-    return getZkProgramStatus(this.connection)
+    return getZkProgramStatus(this.rpc)
   }
 
   /**
    * Check if ZK program is available
    */
   async isZkProgramAvailable(): Promise<boolean> {
-    return isZkProgramAvailable(this.connection)
+    return isZkProgramAvailable(this.rpc)
   }
 
   /**
@@ -255,8 +255,8 @@ export class ConfidentialTransferManager {
       params.proofMode ?? this.defaultProofMode
     )
 
-    if (zeroProof.requiresZkProgram && !await isZkProgramAvailable(this.connection)) {
-      warnings.push(await getZkProgramStatus(this.connection))
+    if (zeroProof.requiresZkProgram && !await isZkProgramAvailable(this.rpc)) {
+      warnings.push(await getZkProgramStatus(this.rpc))
     }
 
     if (zeroProof.instruction) {
@@ -313,7 +313,7 @@ export class ConfidentialTransferManager {
 
     // Check privacy mode
     const privacyStatus = await this.getPrivacyStatus()
-    const zkAvailable = await isZkProgramAvailable(this.connection)
+    const zkAvailable = await isZkProgramAvailable(this.rpc)
     
     // Get account ElGamal pubkey (would be fetched from account in practice)
     const accountPubkey = await this.getAccountElGamalPubkey(params.account)
@@ -334,12 +334,12 @@ export class ConfidentialTransferManager {
         randomness,
         { 
           mode: params.proofMode ?? this.defaultProofMode,
-          connection: this.connection 
+          connection: this.rpc 
         }
       )
 
-      if (rangeProof.requiresZkProgram && !await isZkProgramAvailable(this.connection)) {
-        warnings.push(await getZkProgramStatus(this.connection))
+      if (rangeProof.requiresZkProgram && !await isZkProgramAvailable(this.rpc)) {
+        warnings.push(await getZkProgramStatus(this.rpc))
       }
 
       if (rangeProof.instruction) {
@@ -421,7 +421,7 @@ export class ConfidentialTransferManager {
 
     // Check privacy mode
     const privacyStatus = await this.getPrivacyStatus()
-    const zkAvailable = await isZkProgramAvailable(this.connection)
+    const zkAvailable = await isZkProgramAvailable(this.rpc)
     
     // Get current source balance (would be fetched in practice)
     const sourceBalance = await this.getEncryptedBalance(params.source)
@@ -444,12 +444,12 @@ export class ConfidentialTransferManager {
         params.sourceKeypair.secretKey,
         { 
           mode: params.proofMode ?? this.defaultProofMode,
-          connection: this.connection 
+          connection: this.rpc 
         }
       )
 
-      if (transferProof.requiresZkProgram && !await isZkProgramAvailable(this.connection)) {
-        warnings.push(await getZkProgramStatus(this.connection))
+      if (transferProof.requiresZkProgram && !await isZkProgramAvailable(this.rpc)) {
+        warnings.push(await getZkProgramStatus(this.rpc))
       }
 
       if (transferProof.instruction) {
@@ -459,10 +459,21 @@ export class ConfidentialTransferManager {
       // Client encryption mode
       warnings.push('Using client-side encryption for transfer (Beta). ZK proofs will be enabled when available.')
       
-      // Create client-side encrypted transfer data
-      // For now, we skip actual decryption and use mock values
-      // In production, this would decrypt the current balance
-      const newSourceCiphertext = encryptAmount(params.newSourceDecryptableBalance, params.sourceKeypair.publicKey)
+      // Decrypt current source balance to calculate new balance
+      const { decryptAmount: elgamalDecrypt } = await import('./elgamal.js')
+      const currentBalance = elgamalDecrypt(sourceBalance, params.sourceKeypair.secretKey)
+      
+      if (currentBalance === null) {
+        throw new Error('Failed to decrypt source balance')
+      }
+      
+      if (currentBalance < params.amount) {
+        throw new Error('Insufficient balance for transfer')
+      }
+      
+      // Calculate new balance and encrypt
+      const newBalance = currentBalance - params.amount
+      const newSourceCiphertext = encryptAmount(newBalance, params.sourceKeypair.publicKey)
       const destCiphertext = encryptAmount(params.amount, params.destElgamalPubkey)
       
       transferProof = {
@@ -494,10 +505,19 @@ export class ConfidentialTransferManager {
       }
     } else {
       warnings.push('Privacy features are disabled. Enable in feature flags for enhanced privacy.')
-      // Create mock proof for non-private mode
+      // Non-private mode - still perform real encryption but without proofs
+      const { subtractCiphertexts } = await import('./elgamal.js')
+      
+      // Encrypt transfer amount
+      const transferCiphertext = encryptAmount(params.amount, params.sourceKeypair.publicKey)
+      
+      // Calculate new source balance using homomorphic subtraction
+      const newSourceBalance = subtractCiphertexts(sourceBalance, transferCiphertext)
+      const destCiphertext = encryptAmount(params.amount, params.destElgamalPubkey)
+      
       transferProof = {
-        newSourceBalance: sourceBalance,
-        destCiphertext: encryptAmount(params.amount, params.destElgamalPubkey),
+        newSourceBalance,
+        destCiphertext,
         requiresZkProgram: false
       }
     }
@@ -567,27 +587,130 @@ export class ConfidentialTransferManager {
 
     return generateRangeProofWithCommitment(zeroAmount, randomness, { 
       mode,
-      connection: this.connection 
+      connection: this.rpc 
     })
   }
 
   /**
-   * Get account's ElGamal public key (placeholder)
+   * Get account's ElGamal public key from account data
    */
-  private async getAccountElGamalPubkey(_account: Address): Promise<ElGamalPubkey> {
-    // In practice, this would fetch from the account data
-    // For now, return a dummy key
-    return new Uint8Array(32)
+  private async getAccountElGamalPubkey(account: Address): Promise<ElGamalPubkey> {
+    // Fetch the token account data
+    const accountInfo = await this.rpc.getAccountInfo(account, { encoding: 'base64' }).send()
+    
+    if (!accountInfo.value?.data) {
+      throw new Error(`Account ${account} not found or has no data`)
+    }
+    
+    // Decode account data
+    const data = Buffer.from(accountInfo.value.data[0], 'base64')
+    
+    // Token-2022 account structure with confidential transfer extension
+    // Skip to the extension data section
+    const ACCOUNT_TYPE_SIZE = 165 // Base token account size
+    const EXTENSION_TYPE_SIZE = 2
+    
+    // Check if account has extensions
+    if (data.length <= ACCOUNT_TYPE_SIZE) {
+      throw new Error('Account does not have confidential transfer extension')
+    }
+    
+    // Find confidential transfer extension
+    let offset = ACCOUNT_TYPE_SIZE
+    while (offset < data.length) {
+      const extensionType = data.readUInt16LE(offset)
+      offset += EXTENSION_TYPE_SIZE
+      
+      const extensionLength = data.readUInt16LE(offset)
+      offset += 2
+      
+      // Confidential transfer extension type = 4
+      if (extensionType === 4) {
+        // Extension structure:
+        // - approved (bool): 1 byte
+        // - elgamal_pubkey: 32 bytes
+        // - pending_balance_lo: 64 bytes
+        // - pending_balance_hi: 64 bytes
+        // - available_balance: 64 bytes
+        // - decryptable_available_balance: 64 bytes
+        // - allow_confidential_credits: 1 byte
+        // - allow_non_confidential_credits: 1 byte
+        // - pending_balance_credit_counter: 8 bytes
+        // - maximum_pending_balance_credit_counter: 8 bytes
+        // - expected_pending_balance_credit_counter: 8 bytes
+        // - actual_pending_balance_credit_counter: 8 bytes
+        
+        // Skip approved byte and read ElGamal pubkey
+        const pubkeyOffset = offset + 1
+        const pubkey = data.slice(pubkeyOffset, pubkeyOffset + 32)
+        
+        return new Uint8Array(pubkey)
+      }
+      
+      offset += extensionLength
+    }
+    
+    throw new Error('Account does not have confidential transfer extension')
   }
 
   /**
-   * Get encrypted balance (placeholder)
+   * Get encrypted balance from account data
    */
-  private async getEncryptedBalance(_account: Address): Promise<ElGamalCiphertext> {
-    // In practice, this would fetch from the account data
-    // For now, return a dummy ciphertext
-    const dummyBalance = encryptAmount(1000n, new Uint8Array(32))
-    return dummyBalance
+  private async getEncryptedBalance(account: Address): Promise<ElGamalCiphertext> {
+    // Fetch the token account data
+    const accountInfo = await this.rpc.getAccountInfo(account, { encoding: 'base64' }).send()
+    
+    if (!accountInfo.value?.data) {
+      throw new Error(`Account ${account} not found or has no data`)
+    }
+    
+    // Decode account data
+    const data = Buffer.from(accountInfo.value.data[0], 'base64')
+    
+    // Token-2022 account structure with confidential transfer extension
+    const ACCOUNT_TYPE_SIZE = 165 // Base token account size
+    const EXTENSION_TYPE_SIZE = 2
+    
+    // Check if account has extensions
+    if (data.length <= ACCOUNT_TYPE_SIZE) {
+      throw new Error('Account does not have confidential transfer extension')
+    }
+    
+    // Find confidential transfer extension
+    let offset = ACCOUNT_TYPE_SIZE
+    while (offset < data.length) {
+      const extensionType = data.readUInt16LE(offset)
+      offset += EXTENSION_TYPE_SIZE
+      
+      const extensionLength = data.readUInt16LE(offset)
+      offset += 2
+      
+      // Confidential transfer extension type = 4
+      if (extensionType === 4) {
+        // Extension structure offsets:
+        // - approved: 0 (1 byte)
+        // - elgamal_pubkey: 1 (32 bytes)
+        // - pending_balance_lo: 33 (64 bytes)
+        // - pending_balance_hi: 97 (64 bytes)
+        // - available_balance: 161 (64 bytes) <-- This is what we need
+        
+        const availableBalanceOffset = offset + 161
+        const ciphertextData = data.slice(availableBalanceOffset, availableBalanceOffset + 64)
+        
+        // ElGamal ciphertext is stored as commitment (32 bytes) + handle (32 bytes)
+        const commitment = ciphertextData.slice(0, 32)
+        const handle = ciphertextData.slice(32, 64)
+        
+        return {
+          commitment: { commitment: new Uint8Array(commitment) },
+          handle: { handle: new Uint8Array(handle) }
+        }
+      }
+      
+      offset += extensionLength
+    }
+    
+    throw new Error('Account does not have confidential transfer extension')
   }
 
   /**
@@ -613,8 +736,8 @@ export class ConfidentialTransferManager {
     
     const checkStatus = async () => {
       while (monitoring) {
-        const zkAvailable = await isZkProgramAvailable(this.connection)
-        const status = await getZkProgramStatus(this.connection)
+        const zkAvailable = await isZkProgramAvailable(this.rpc)
+        const status = await getZkProgramStatus(this.rpc)
         
         callback({
           enabled: zkAvailable,

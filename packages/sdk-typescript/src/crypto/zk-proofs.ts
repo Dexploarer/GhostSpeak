@@ -20,7 +20,7 @@ import type {
 // =====================================================
 
 // Solana's ZK ElGamal Proof Program ID
-export const ZK_ELGAMAL_PROOF_PROGRAM_ID = address('ZkE1Gama1ProgramTBVWqQBMpkm38DM5J43XbJDhPVuPGF')
+export const ZK_ELGAMAL_PROOF_PROGRAM_ID = address('ZkE1Gama1Proof11111111111111111111111111111')
 
 // Instruction discriminators for the proof program
 export const ProofInstructions = {
@@ -215,11 +215,11 @@ export function createBatchVerifyProofInstructions(
 export function calculateProofVerificationCost(proofType: keyof typeof ProofInstructions): bigint {
   // Approximate compute units for each proof type
   const costs: Record<keyof typeof ProofInstructions, bigint> = {
-    VERIFY_RANGE_PROOF: 100_000n,
-    VERIFY_VALIDITY_PROOF: 50_000n,
-    VERIFY_EQUALITY_PROOF: 75_000n,
-    VERIFY_WITHDRAW_PROOF: 40_000n,
-    VERIFY_ZERO_BALANCE_PROOF: 30_000n,
+    VERIFY_RANGE_PROOF: BigInt(100_000),
+    VERIFY_VALIDITY_PROOF: BigInt(50_000),
+    VERIFY_EQUALITY_PROOF: BigInt(75_000),
+    VERIFY_WITHDRAW_PROOF: BigInt(40_000),
+    VERIFY_ZERO_BALANCE_PROOF: BigInt(30_000),
     VERIFY_FEE_SIGMA_PROOF: 80_000n,
     VERIFY_PUBKEY_VALIDITY_PROOF: 25_000n,
     VERIFY_TRANSFER_PROOF: 200_000n,

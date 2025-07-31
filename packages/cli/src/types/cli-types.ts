@@ -18,7 +18,10 @@ export function assertValidAddress(value: unknown): Address {
 export interface RegisterOptions {
   name?: string
   description?: string
+  capabilities?: string
   endpoint?: string
+  metadata?: boolean
+  yes?: boolean
 }
 
 export interface ListOptions {

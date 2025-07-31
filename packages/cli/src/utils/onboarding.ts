@@ -18,13 +18,14 @@ import {
 } from '@clack/prompts'
 import { WalletService } from '../services/wallet-service.js'
 import { initializeClient } from './client.js'
-import { createSolanaRpc } from '@solana/kit'
+import { createSolanaRpc, type Lamports } from '@solana/kit'
 import { 
   divider, 
   stepIndicator 
 } from './ui-helpers.js'
 import { warningBox, successBox, infoBox } from './format-helpers.js'
 import { estimateAndDisplay } from '../services/cost-estimator.js'
+import type { Address } from '@solana/addresses'
 
 export interface OnboardingConfig {
   network?: 'devnet' | 'testnet' | 'mainnet-beta'
@@ -108,11 +109,16 @@ export class OnboardingService {
     try {
       const progressFile = join(homedir(), '.ghostspeak', 'onboarding-progress.json')
       if (existsSync(progressFile)) {
-        const data = JSON.parse(readFileSync(progressFile, 'utf-8'))
-        this.progress.step = data.step || 1
-        this.progress.completedSteps = new Set(data.completedSteps || [])
-        this.progress.skippedSteps = new Set(data.skippedSteps || [])
-        this.config = { ...this.config, ...data.config }
+        const data = JSON.parse(readFileSync(progressFile, 'utf-8')) as {
+          step?: number
+          completedSteps?: string[]
+          skippedSteps?: string[]
+          config?: OnboardingConfig
+        }
+        this.progress.step = data.step ?? 1
+        this.progress.completedSteps = new Set(data.completedSteps as OnboardingStep[])
+        this.progress.skippedSteps = new Set(data.skippedSteps as OnboardingStep[])
+        this.config = { ...this.config, ...(data.config ?? {}) }
       }
     } catch {
       // Ignore errors loading progress
@@ -269,7 +275,7 @@ export class OnboardingService {
       
       const { wallet, mnemonic } = await this.walletService.createWallet(
         'default',
-        this.config.network || 'devnet'
+        this.config.network ?? 'devnet'
       )
       
       s.stop('✅ Wallet created!')
@@ -305,7 +311,7 @@ export class OnboardingService {
         `Network: ${wallet.metadata.network}`
       ]))
       
-    } else if (walletChoice === 'import') {
+    } else {
       const importType = await select({
         message: 'What would you like to import?',
         options: [
@@ -342,7 +348,7 @@ export class OnboardingService {
           const wallet = await this.walletService.importWallet(
             'imported',
             mnemonic as string,
-            this.config.network || 'devnet'
+            this.config.network ?? 'devnet'
           )
           
           s.stop('✅ Wallet imported!')
@@ -393,8 +399,7 @@ export class OnboardingService {
     s.start('Checking your current balance...')
     
     try {
-      const { client, wallet } = await initializeClient(this.config.network)
-      const rpc = client.config.rpc
+      const { wallet, rpc } = await initializeClient(this.config.network)
       const balanceResponse = await rpc.getBalance(wallet.address).send()
       const balance = balanceResponse.value
       
@@ -416,7 +421,7 @@ export class OnboardingService {
           'We\'ll request some SOL from the faucet for you.'
         ]))
         
-        const shouldFund = this.config.autoFaucet || await confirm({
+        const shouldFund = this.config.autoFaucet ?? await confirm({
           message: 'Request free SOL from the faucet?',
           active: 'Yes, get free SOL',
           inactive: 'No, I\'ll fund it myself'
@@ -428,15 +433,11 @@ export class OnboardingService {
           
           try {
             // Use RPC airdrop directly
-            const rpcUrl = this.config.network === 'devnet' 
-              ? 'https://api.devnet.solana.com' 
-              : this.config.network === 'testnet'
-              ? 'https://api.testnet.solana.com'
-              : 'https://api.mainnet-beta.solana.com'
+            const rpcUrl = 'https://api.devnet.solana.com'
             const rpc = createSolanaRpc(rpcUrl)
             const lamports = BigInt(1_000_000_000) // 1 SOL
-            // @ts-expect-error Lamports type may differ between versions
-            const signature = await rpc.requestAirdrop(address(activeWallet.metadata.address), lamports).send()
+            // Request airdrop
+            await rpc.requestAirdrop(activeWallet.metadata.address as Address, lamports as Lamports).send()
             
             faucetSpinner.stop('✅ Received 1 SOL from faucet!')
             
@@ -445,7 +446,7 @@ export class OnboardingService {
               'You\'re ready to start using GhostSpeak!'
             ]))
             
-          } catch (error) {
+          } catch {
             faucetSpinner.stop('❌ Faucet request failed')
             console.log(warningBox('Faucet Failed', [
               'You can try again later with: gs faucet --save',
@@ -461,7 +462,7 @@ export class OnboardingService {
         ]))
       }
       
-    } catch (error) {
+    } catch {
       s.stop('❌ Balance check failed')
       console.log(chalk.yellow('Unable to check balance. You may need to fund your wallet manually.'))
     }
@@ -505,7 +506,7 @@ export class OnboardingService {
       if (activeWallet) {
         const balanceInfo = await estimateAndDisplay(
           'agent-register',
-          address(activeWallet.metadata.address),
+          activeWallet.metadata.address as Address,
           undefined,
           { showBreakdown: false }
         )
@@ -519,7 +520,7 @@ export class OnboardingService {
           return
         }
       }
-    } catch (error) {
+    } catch {
       // Continue anyway
     }
     
@@ -575,9 +576,9 @@ export class OnboardingService {
         'Create service listings with: gs marketplace create'
       ]))
       
-    } catch (error) {
+    } catch {
       agentSpinner.stop('❌ Agent creation failed')
-      console.log(chalk.red('Failed to create agent: ' + (error instanceof Error ? error.message : 'Unknown error')))
+      console.log(chalk.red('Failed to create agent'))
       console.log(chalk.gray('You can try again later with: gs agent register'))
     }
     
@@ -710,7 +711,7 @@ export class OnboardingService {
       }
       
       writeFileSync(progressFile, JSON.stringify(data, null, 2))
-    } catch (error) {
+    } catch {
       // Ignore errors saving progress
     }
   }
@@ -724,8 +725,10 @@ export function hasCompletedOnboarding(): boolean {
     const progressFile = join(homedir(), '.ghostspeak', 'onboarding-progress.json')
     if (!existsSync(progressFile)) return false
     
-    const data = JSON.parse(readFileSync(progressFile, 'utf-8'))
-    return data.completedSteps.includes('completion')
+    const data = JSON.parse(readFileSync(progressFile, 'utf-8')) as {
+      completedSteps?: string[]
+    }
+    return data.completedSteps?.includes('completion') ?? false
   } catch {
     return false
   }

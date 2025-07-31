@@ -173,7 +173,7 @@ export async function prepareConfidentialTransfer(
   }
 
   // Generate transfer proof
-  const { transferProof, newSourceBalance, destCiphertext } = generateTransferProof(
+  const { transferProof, newSourceBalance, destCiphertext } = await generateTransferProof(
     sourceBalance,
     amount,
     sourceKeypair,
@@ -327,7 +327,7 @@ async function processBatchTransfers(
 
   for (const recipient of recipients) {
     // Generate transfer proof
-    const { transferProof, newSourceBalance, destCiphertext } = generateTransferProof(
+    const { transferProof, newSourceBalance, destCiphertext } = await generateTransferProof(
       currentBalance,
       recipient.amount,
       sourceKeypair,
@@ -445,7 +445,7 @@ export async function prepareConfidentialWithdrawal(
     }
     const rangeProofRandomness = new Uint8Array(32)
     crypto.getRandomValues(rangeProofRandomness)
-    const rangeProof = generateRangeProof(newBalance, newBalanceCommitment, rangeProofRandomness)
+    const rangeProof = await generateRangeProof(newBalance, newBalanceCommitment, rangeProofRandomness)
     
     // Generate equality proof (simplified - in production this would need proper generation)
     const equalityProof = new Uint8Array(192)

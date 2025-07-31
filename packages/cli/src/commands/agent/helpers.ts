@@ -75,12 +75,12 @@ export function getPendingInfoRequests(agentAddress: string): InfoRequest[] {
  */
 export function formatAnalytics(analytics: AgentAnalytics): string[] {
   return [
-    `Total Earnings: ${analytics.totalEarnings ?? 0n} SOL`,
-    `Jobs Completed: ${analytics.completedJobs ?? 0}`,
-    `Success Rate: ${((analytics.successRate ?? 0) * 100).toFixed(1)}%`,
-    `Average Rating: ${(analytics.averageRating ?? 0).toFixed(1)}/5.0`,
-    `Total Transactions: ${analytics.totalJobs ?? 0}`,
-    `Active Jobs: ${analytics.activeJobs ?? 0}`
+    `Total Earnings: ${analytics.totalEarnings} SOL`,
+    `Jobs Completed: ${analytics.completedJobs}`,
+    `Success Rate: ${(analytics.successRate * 100).toFixed(1)}%`,
+    `Average Rating: ${analytics.averageRating.toFixed(1)}/5.0`,
+    `Total Transactions: ${analytics.totalJobs}`,
+    `Active Jobs: ${analytics.activeJobs}`
   ]
 }
 

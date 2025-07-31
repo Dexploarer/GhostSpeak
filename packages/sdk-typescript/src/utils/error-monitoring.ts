@@ -6,12 +6,15 @@
  */
 
 
-import type {
-  GhostSpeakError,
-  ErrorContext,
+import {
   ErrorCategory,
   ErrorSeverity,
   logError
+} from '../errors/index.js'
+
+import type {
+  GhostSpeakError,
+  ErrorContext
 } from '../errors/index.js'
 import type { OperationMetrics } from './error-recovery.js'
 
@@ -495,7 +498,7 @@ export class ErrorMonitor {
 
   private startReportingFlush(): void {
     this.flushTimer = setInterval(() => {
-      this.flushReportingBuffer()
+      void this.flushReportingBuffer()
     }, this.config.reporting.flushInterval)
   }
 

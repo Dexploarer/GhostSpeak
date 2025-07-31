@@ -138,7 +138,7 @@ walletCommand
       }
       
       // Validate network
-      const network = options.network as 'devnet' | 'testnet' | 'mainnet-beta' || 'devnet'
+      const network = (options.network as 'devnet' | 'testnet' | 'mainnet-beta' | undefined) ?? 'devnet'
       if (!['devnet', 'testnet', 'mainnet-beta'].includes(network)) {
         throw new Error('Invalid network. Use devnet, testnet, or mainnet-beta')
       }
@@ -489,7 +489,7 @@ walletCommand
         return
       }
       
-      const network = options.network as 'devnet' | 'testnet' | 'mainnet-beta' || 'devnet'
+      const network = (options.network as 'devnet' | 'testnet' | 'mainnet-beta' | undefined) ?? 'devnet'
       
       const s = spinner()
       s.start('Importing wallet...')
@@ -534,7 +534,7 @@ walletCommand
   .command('backup')
   .description('Show seed phrase for wallet backup')
   .option('-n, --name <name>', 'Wallet to backup')
-  .action(async (options: { name?: string }) => {
+  .action(async (_options: { name?: string }) => {
     intro(chalk.cyan('🔐 Wallet Backup'))
     
     log.warn('⚠️  This feature shows your seed phrase.')

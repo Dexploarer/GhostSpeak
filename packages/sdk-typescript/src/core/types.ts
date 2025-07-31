@@ -6,7 +6,7 @@
  */
 
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
+import type { TransactionSigner as _TransactionSigner } from '@solana/kit'
 // Use string type for signature since @solana/rpc-types doesn't export Signature in v2
 type Signature = string
 

@@ -139,12 +139,15 @@ export function getAccountMetaFactory(
     const writableRole = account.isWritable
       ? AccountRole.WRITABLE
       : AccountRole.READONLY;
+      
+    const isSignerResult = isTransactionSigner(account.value)
+    
     return Object.freeze({
       address: expectAddress(account.value),
-      role: isTransactionSigner(account.value)
+      role: isSignerResult
         ? upgradeRoleToSigner(writableRole)
         : writableRole,
-      ...(isTransactionSigner(account.value) ? { signer: account.value } : {}),
+      ...(isSignerResult ? { signer: account.value } : {}),
     });
   };
 }

@@ -76,7 +76,7 @@ export const ASSOCIATED_TOKEN_PROGRAM_ADDRESS = address('ATokenGPvbdGVxr1b2hvZbs
  * Native SOL Mint Address
  * The mint address for wrapped SOL (native token)
  */
-export const NATIVE_MINT_ADDRESS = address('So11111111111111111111111111111111111111112')
+export const NATIVE_MINT_ADDRESS = address('So11111111111111111111111111111111111111111')
 
 /**
  * Metaplex Token Metadata Program

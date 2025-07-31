@@ -27,7 +27,7 @@ export function lazyLoad<T>(
  * Pre-load critical modules for better perceived performance
  */
 export async function preloadCriticalModules(): Promise<void> {
-  const criticalModules: Array<() => Promise<any>> = [
+  const criticalModules: Array<() => Promise<unknown>> = [
     () => import('../services/wallet-service.js'),
     () => import('../services/AgentService.js'),
     () => import('../utils/client.js')

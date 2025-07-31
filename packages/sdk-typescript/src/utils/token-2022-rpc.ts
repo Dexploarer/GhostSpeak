@@ -22,7 +22,7 @@ import {
 import {
   createTypedRpcClient
 } from '../types/rpc-client-types.js'
-import type {
+import {
   type MintWithExtensions,
   type TokenAccountWithExtensions,
   ExtensionType,
@@ -48,7 +48,7 @@ import type {
   type TokenMetadata,
   type TokenGroup,
   type TokenGroupMember,
-  AccountState
+  type AccountState
 } from '../types/token-2022-types.js'
 
 // =====================================================
@@ -470,7 +470,7 @@ export async function getMintWithExtensions(
 
   // Decode account data
   let data: Uint8Array
-  if (Array.isArray(accountInfo.data) && accountInfo.data.length >= 1) {
+  if (Array.isArray(accountInfo.data)) {
     data = new Uint8Array(Buffer.from(accountInfo.data[0], 'base64'))
   } else if (typeof accountInfo.data === 'string') {
     data = new Uint8Array(Buffer.from(accountInfo.data, 'base64'))
@@ -659,7 +659,7 @@ export async function getTokenAccountWithExtensions(
 
   // Decode account data
   let data: Uint8Array
-  if (Array.isArray(accountInfo.data) && accountInfo.data.length >= 1) {
+  if (Array.isArray(accountInfo.data)) {
     data = new Uint8Array(Buffer.from(accountInfo.data[0], 'base64'))
   } else if (typeof accountInfo.data === 'string') {
     data = new Uint8Array(Buffer.from(accountInfo.data, 'base64'))

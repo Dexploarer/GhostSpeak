@@ -2,7 +2,6 @@
  * Marketplace service for managing service listings and purchases
  */
 
-import type { Address } from '@solana/addresses'
 import type {
   IMarketplaceService,
   ServiceListing,
@@ -12,12 +11,11 @@ import type {
   SearchCriteria,
   PurchaseParams,
   UpdateListingParams,
-  MarketplaceServiceDependencies,
-  IBlockchainService,
-  IWalletService,
-  IAgentService
+  MarketplaceServiceDependencies
 } from '../types/services.js'
 import { randomUUID } from 'crypto'
+import { getWallet } from '../utils/client.js'
+import type { Address } from '@solana/addresses'
 
 export class MarketplaceService implements IMarketplaceService {
   constructor(private deps: MarketplaceServiceDependencies) {}
@@ -54,8 +52,70 @@ export class MarketplaceService implements IMarketplaceService {
     }
 
     try {
-      // Store listing (in real implementation, this would also update blockchain)
-      await this.storeListing(listing)
+      // Get wallet signer
+      const walletSigner = await getWallet()
+      console.log('🔍 Using wallet signer:', walletSigner.address.toString())
+      
+      // Get blockchain client
+      const client = await this.deps.blockchainService.getClient('devnet')
+      
+      // Create MarketplaceModule instance
+      console.log('🔍 Creating MarketplaceModule from SDK...')
+      const sdk = await import('@ghostspeak/sdk')
+      console.log('🔍 SDK imported, checking for MarketplaceModule...')
+      
+      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
+      if (!MarketplaceModuleClass) {
+        throw new Error('MarketplaceModule not found in SDK exports')
+      }
+      
+      const typedClient = client as any
+      const marketplaceModule = new MarketplaceModuleClass({
+        programId: typedClient.config.programId,
+        rpc: typedClient.config.rpc,
+        commitment: 'confirmed'
+      })
+      
+      console.log('🔍 Calling MarketplaceModule.createServiceListing...')
+      
+      // Convert SOL to lamports
+      const priceLamports = BigInt(Math.floor(listing.priceInSol * 1_000_000_000))
+      
+      // Create metadata JSON
+      const metadataJson = JSON.stringify({
+        title: listing.title,
+        description: listing.description,
+        category: listing.category,
+        ...listing.metadata
+      })
+      const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
+      
+      // Call SDK to create listing on blockchain
+      const signature = await marketplaceModule.createServiceListing({
+        signer: walletSigner,
+        agentAddress: agent.address,
+        title: listing.title,
+        description: listing.description,
+        pricePerHour: priceLamports,
+        category: listing.category,
+        capabilities: agent.capabilities
+      })
+      
+      console.log('🔍 Transaction signature:', signature)
+      
+      if (!signature || typeof signature !== 'string') {
+        throw new Error('No transaction signature returned from marketplace listing creation')
+      }
+      
+      // Store listing data locally for caching
+      // Store listing data locally for caching
+      // Note: In a real implementation, we would use a proper storage service
+      console.log(`Listing created with ID: ${listing.id}`)
+      
+      console.log(`✅ Service listing created successfully!`)
+      console.log(`Transaction signature: ${signature}`)
+      console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
+      
       return listing
     } catch (error) {
       throw new Error(`Failed to create listing: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -87,8 +147,8 @@ export class MarketplaceService implements IMarketplaceService {
       }
 
       // Apply pagination
-      const offset = params.offset || 0
-      const limit = params.limit || 20
+      const offset = params.offset ?? 0
+      const limit = params.limit ?? 20
       return listings.slice(offset, offset + limit)
     } catch (error) {
       throw new Error(`Failed to get listings: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -226,7 +286,59 @@ export class MarketplaceService implements IMarketplaceService {
     }
 
     try {
+      // Get wallet signer
+      const walletSigner = await getWallet()
+      
+      // Get blockchain client
+      const client = await this.deps.blockchainService.getClient('devnet')
+      
+      // Create MarketplaceModule instance
+      const sdk = await import('@ghostspeak/sdk')
+      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
+      
+      if (!MarketplaceModuleClass) {
+        throw new Error('MarketplaceModule not found in SDK exports')
+      }
+      
+      const typedClient = client as any
+      const marketplaceModule = new MarketplaceModuleClass({
+        programId: typedClient.config.programId,
+        rpc: typedClient.config.rpc,
+        commitment: 'confirmed'
+      })
+      
+      console.log('🔍 Calling MarketplaceModule.updateServiceListing...')
+      
+      // Prepare update parameters
+      const updateParams: any = {
+        listingId,
+        title: updates.title,
+        description: updates.description,
+        price: updates.priceInSol ? BigInt(Math.floor(updates.priceInSol * 1_000_000_000)) : undefined,
+        isActive: updates.isActive
+      }
+      
+      // Remove undefined values
+      Object.keys(updateParams).forEach(key => 
+        updateParams[key] === undefined && delete updateParams[key]
+      )
+      
+      // Execute update on blockchain
+      const signature = await marketplaceModule.updateServiceListing(walletSigner, updateParams)
+      
+      console.log('🔍 Transaction signature:', signature)
+      
+      if (!signature || typeof signature !== 'string') {
+        throw new Error('No transaction signature returned from marketplace update')
+      }
+      
+      // Update local cache
       await this.storeListing(updatedListing)
+      
+      console.log(`✅ Service listing updated successfully!`)
+      console.log(`Transaction signature: ${signature}`)
+      console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
+      
       return updatedListing
     } catch (error) {
       throw new Error(`Failed to update listing: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -259,26 +371,145 @@ export class MarketplaceService implements IMarketplaceService {
   }
 
   private async storeListing(listing: ServiceListing): Promise<void> {
-    // In real implementation, this would use proper storage service
-    // For now, we'll simulate storage
+    // Store listing data locally for caching
+    // Note: In a real implementation, we would use a proper storage service
     console.log(`Storing listing: ${listing.id}`)
   }
 
   private async getAllListings(): Promise<ServiceListing[]> {
-    // In real implementation, this would query blockchain or database
-    // For now, return empty array
-    return []
+    try {
+      // Get blockchain client
+      const client = await this.deps.blockchainService.getClient('devnet')
+      
+      // Create MarketplaceModule instance
+      const sdk = await import('@ghostspeak/sdk')
+      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
+      if (!MarketplaceModuleClass) {
+        throw new Error('MarketplaceModule not found in SDK exports')
+      }
+      
+      const typedClient = client as any
+      const marketplaceModule = new MarketplaceModuleClass({
+        programId: typedClient.config.programId,
+        rpc: typedClient.config.rpc,
+        commitment: 'confirmed'
+      })
+      
+      // Get all service listings from blockchain
+      const listings = await marketplaceModule.getAllServiceListings()
+      
+      // Convert to our ServiceListing format
+      return listings.map((listing: any) => ({
+        id: listing.data.id || listing.address,
+        agentId: listing.data.agent,
+        title: listing.data.title,
+        description: listing.data.description,
+        category: listing.data.serviceType || 'general',
+        priceInSol: Number(listing.data.price) / 1_000_000_000,
+        isActive: listing.data.isActive ?? true,
+        createdAt: BigInt(listing.data.createdAt || Date.now()),
+        metadata: {}
+      }))
+    } catch (error) {
+      console.error('Failed to get listings from blockchain:', error)
+      return []
+    }
   }
 
   private async getListingById(listingId: string): Promise<ServiceListing | null> {
-    // In real implementation, this would query storage
-    // For now, return null
-    return null
+    try {
+      // Note: In a real implementation, we would check local cache first
+      
+      // If not in cache, query blockchain
+      const client = await this.deps.blockchainService.getClient('devnet')
+      const sdk = await import('@ghostspeak/sdk')
+      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
+      
+      if (!MarketplaceModuleClass) {
+        throw new Error('MarketplaceModule not found in SDK exports')
+      }
+      
+      const typedClient = client as any
+      const marketplaceModule = new MarketplaceModuleClass({
+        programId: typedClient.config.programId,
+        rpc: typedClient.config.rpc,
+        commitment: 'confirmed'
+      })
+      
+      // Get listing by ID from blockchain
+      const listing = await marketplaceModule.getServiceById(listingId)
+      if (!listing) {
+        return null
+      }
+      
+      // Convert to our format
+      const serviceListing: ServiceListing = {
+        id: listing.id || listingId,
+        agentId: listing.agent,
+        title: listing.title,
+        description: listing.description,
+        category: listing.serviceType || 'general',
+        priceInSol: Number(listing.price) / 1_000_000_000,
+        isActive: listing.isActive ?? true,
+        createdAt: BigInt(listing.createdAt || Date.now()),
+        metadata: {}
+      }
+      
+      // Note: In a real implementation, we would cache for future use
+      
+      return serviceListing
+    } catch (error) {
+      console.error('Failed to get listing by ID:', error)
+      return null
+    }
   }
 
   private async createPurchaseTransaction(purchase: Purchase): Promise<void> {
-    // In real implementation, this would create blockchain transaction
-    console.log(`Creating purchase transaction: ${purchase.id}`)
+    try {
+      // Get wallet signer
+      const walletSigner = await getWallet()
+      console.log('🔍 Creating purchase transaction for:', purchase.id)
+      
+      // Get blockchain client
+      const client = await this.deps.blockchainService.getClient('devnet')
+      
+      // Create MarketplaceModule instance
+      const sdk = await import('@ghostspeak/sdk')
+      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
+      
+      if (!MarketplaceModuleClass) {
+        throw new Error('MarketplaceModule not found in SDK exports')
+      }
+      
+      const typedClient = client as any
+      const marketplaceModule = new MarketplaceModuleClass({
+        programId: typedClient.config.programId,
+        rpc: typedClient.config.rpc,
+        commitment: 'confirmed'
+      })
+      
+      console.log('🔍 Calling MarketplaceModule.purchase...')
+      
+      // Execute purchase on blockchain
+      const signature = await marketplaceModule.purchase(walletSigner, {
+        listingId: purchase.listingId,
+        amount: purchase.amount
+      })
+      
+      console.log('🔍 Transaction signature:', signature)
+      
+      if (!signature || typeof signature !== 'string') {
+        throw new Error('No transaction signature returned from marketplace purchase')
+      }
+      
+      // Note: In a real implementation, we would store purchase record locally
+      
+      console.log(`✅ Purchase transaction created successfully!`)
+      console.log(`Transaction signature: ${signature}`)
+      console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
+    } catch (error) {
+      throw new Error(`Failed to create purchase transaction: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 }
 

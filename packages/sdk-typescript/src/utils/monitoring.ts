@@ -725,7 +725,7 @@ export class MonitoringSystem {
 
     // Health checks
     this.healthCheckTimer = setInterval(() => {
-      this.runHealthChecks()
+      void this.runHealthChecks()
     }, this.config.healthCheckInterval)
 
     // Alert evaluation

@@ -3,21 +3,31 @@
  * Node.js has TextEncoder in the util module, but not in global scope
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const globalThis: any
+interface GlobalWithTextEncoder {
+  TextEncoder?: typeof TextEncoder
+  TextDecoder?: typeof TextDecoder
+}
+
+interface NodeUtil {
+  TextEncoder: typeof TextEncoder
+  TextDecoder: typeof TextDecoder
+}
 
 // Check if TextEncoder is already available globally
-// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-if (typeof globalThis.TextEncoder === 'undefined') {
-  // In Node.js environment, import from util
-  if (typeof process !== 'undefined' && process.versions.node) {
-    // Use require for synchronous loading in Node.js
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-    const util = require('util')
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    globalThis.TextEncoder = util.TextEncoder
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    globalThis.TextDecoder = util.TextDecoder
+const globalScope = globalThis as GlobalWithTextEncoder
+if (typeof globalScope.TextEncoder === 'undefined') {
+  // In Node.js environment, try to use util module  
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (typeof process !== 'undefined' && process.versions?.node) {
+    try {
+      // Dynamic import for Node.js util module using typed interface
+      const requireFn = eval('require') as (module: string) => NodeUtil
+      const util = requireFn('util')
+      globalScope.TextEncoder = util.TextEncoder
+      globalScope.TextDecoder = util.TextDecoder
+    } catch {
+      // Ignore errors - TextEncoder might not be needed or available elsewhere
+    }
   }
 }
 

@@ -6,8 +6,7 @@ import type { Command } from 'commander'
 import chalk from 'chalk'
 import { 
   intro, 
-  outro, 
-  cancel
+  outro
 } from '@clack/prompts'
 import type { VerifyOptions } from '../../types/cli-types.js'
 import { container, ServiceTokens } from '../../core/Container.js'

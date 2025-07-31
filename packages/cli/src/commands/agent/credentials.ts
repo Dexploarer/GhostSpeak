@@ -14,7 +14,7 @@ import {
   isCancel,
   cancel
 } from '@clack/prompts'
-import { AgentWalletManager, AgentBackupManager } from '../../utils/agentWallet.js'
+import { AgentWalletManager, AgentBackupManager } from '../../utils/agent-wallet.js'
 import { container, ServiceTokens } from '../../core/Container.js'
 import type { IWalletService } from '../../types/services.js'
 import type { Address } from '@solana/addresses'

@@ -1,0 +1,50 @@
+# Source files - users only need dist/
+src/
+tests/
+benchmarks/
+
+# Development configuration
+.eslintrc.*
+tsconfig*.json
+vitest.config.ts
+tsup.config.ts
+codama.config.ts
+
+# Development scripts
+scripts/
+
+# Development documentation (keep user-valuable docs)
+docs/AUDIT_CHECKLIST.md
+refactoring-guide.md
+BUNDLE-OPTIMIZATION.md
+
+# Development artifacts
+*.tsbuildinfo
+coverage/
+.nyc_output
+lint-output*.txt
+
+# WASM build source (dist/wasm is included)
+src/wasm/crypto-wasm/
+
+# Test files
+*.test.ts
+*.spec.ts
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Environment and cache
+.env*
+.cache/
+.eslintcache
+node_modules/
+
+# Examples are useful for users
+!examples/
+!README.md
+!CHANGELOG.md

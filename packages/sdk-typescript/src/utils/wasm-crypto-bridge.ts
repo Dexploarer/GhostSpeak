@@ -139,7 +139,7 @@ export async function initializeWasmCrypto(): Promise<boolean> {
   }
 
   // Store the promise immediately to prevent race conditions
-  const promise = (async () => {
+  initializationPromise = (async () => {
     try {
       console.log('🚀 Initializing WebAssembly crypto module...')
 
@@ -332,9 +332,6 @@ export async function initializeWasmCrypto(): Promise<boolean> {
       return false
     }
   })()
-  
-  // Assign the promise immediately after creation
-  initializationPromise = promise
 
   return initializationPromise
 }

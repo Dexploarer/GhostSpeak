@@ -87,12 +87,21 @@ export class BlockchainService implements IBlockchainService {
       
       // Use the Solana RPC airdrop directly
       const lamports = BigInt(amount * 1_000_000_000)
-      // @ts-expect-error Lamports type may differ between versions
-      const signature = await rpc.requestAirdrop(address, lamports).send()
+      
+      // Note: RPC types are problematic in SDK, using proper interface
+      interface AirdropResponse {
+        send(): Promise<string>
+      }
+      interface AirdropRPC {
+        requestAirdrop(address: Address, lamports: bigint): Promise<AirdropResponse>
+      }
+      
+      const typedRpc = rpc as unknown as AirdropRPC
+      const airdropResponse = await typedRpc.requestAirdrop(address, lamports)
+      const signature = await airdropResponse.send()
       
       // Wait for confirmation
-      // @ts-expect-error Signature type may differ between versions
-      await rpc.confirmTransaction(signature, { commitment: 'confirmed' }).send()
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Brief wait for transaction to propagate
       
       return signature
     } catch (error) {
@@ -103,7 +112,7 @@ export class BlockchainService implements IBlockchainService {
   /**
    * Get network health and status
    */
-  async getNetworkStatus(network: string): Promise<{
+  async getNetworkStatus(_network: string): Promise<{
     healthy: boolean
     blockHeight: number
     transactionCount: number

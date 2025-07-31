@@ -4,6 +4,27 @@ import { toast } from 'sonner'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import type { Address } from '@solana/addresses'
 
+// Helper function to calculate comprehensive reputation
+async function calculateAgentReputation(agentAddress: string, agentAccount: any) {
+  // Calculate basic reputation metrics from blockchain data
+  const totalJobs = agentAccount.totalJobsCompleted || 0
+  const reputationScore = agentAccount.reputationScore || 0
+  
+  // Convert reputation score from basis points to 0-100 scale
+  const score = Math.round(reputationScore / 100)
+  
+  // Calculate success rate based on score and job count
+  const successRate = totalJobs > 0 
+    ? Math.min(100, Math.round((reputationScore / totalJobs) / 100))
+    : 0
+  
+  return {
+    score,
+    totalJobs,
+    successRate,
+  }
+}
+
 interface MockSigner {
   address: Address
   signTransaction: (transaction: unknown) => Promise<unknown>
@@ -68,21 +89,18 @@ export function useAgent(agentAddress: string | undefined) {
       // Transform the SDK data to match our Agent interface
       return {
         address: agentAddress,
-        name: agentAccount.agentId || 'Unknown Agent',
+        name: agentAccount.name || 'Unknown Agent',
         metadata: {
-          description: agentAccount.metadataUri ? 'Agent metadata available' : undefined,
-          category: 'General',
+          description: agentAccount.description || undefined,
+          avatar: agentAccount.metadataUri ? `https://arweave.net/${agentAccount.metadataUri}` : undefined,
+          category: agentAccount.frameworkOrigin || 'General',
         },
-        owner: agentAddress, // TODO: Get actual owner from SDK
-        reputation: {
-          score: 0, // TODO: Calculate from SDK data
-          totalJobs: 0,
-          successRate: 0,
-        },
-        pricing: BigInt(100_000_000), // TODO: Get from SDK
-        capabilities: [], // TODO: Parse from metadata
-        isActive: true, // TODO: Get from SDK status
-        createdAt: new Date(), // TODO: Get from SDK
+        owner: agentAccount.owner.toString(),
+        reputation: await calculateAgentReputation(agentAddress, agentAccount),
+        pricing: agentAccount.originalPrice || BigInt(0),
+        capabilities: agentAccount.capabilities || [],
+        isActive: agentAccount.isActive || false,
+        createdAt: new Date(Number(agentAccount.createdAt) * 1000), // Convert from Unix timestamp
       }
     },
     enabled: !!agentAddress,
@@ -102,25 +120,28 @@ export function useAgents(filters?: AgentFilters) {
       const agentAccounts = await agentModule['module']['getAllAgents']()
 
       // Transform SDK data to match our Agent interface and apply filters
-      let agents = agentAccounts.map((account: { address: Address; data: unknown }) => {
-        const data = account.data as { agentId?: string; metadataUri?: string }
+      let agents = agentAccounts.map((account: { address: Address; data: any }) => {
+        const agentData = account.data
         return {
-          address: account.address,
-          name: data.agentId || 'Unknown Agent',
+          address: account.address.toString(),
+          name: agentData.name || 'Unknown Agent',
           metadata: {
-            description: data.metadataUri ? 'Agent metadata available' : undefined,
-            category: 'General',
+            description: agentData.description || undefined,
+            avatar: agentData.metadataUri ? `https://arweave.net/${agentData.metadataUri}` : undefined,
+            category: agentData.frameworkOrigin || 'General',
           },
-          owner: account.address, // TODO: Get actual owner from SDK data
+          owner: agentData.owner.toString(),
           reputation: {
-            score: 0, // TODO: Calculate from SDK data
-            totalJobs: 0,
-            successRate: 0,
+            score: agentData.reputationScore || 0,
+            totalJobs: agentData.totalJobsCompleted || 0,
+            successRate: agentData.totalJobsCompleted > 0 
+              ? Math.round((agentData.reputationScore / agentData.totalJobsCompleted) * 100) 
+              : 0,
           },
-          pricing: BigInt(100_000_000), // TODO: Get from SDK
-          capabilities: [], // TODO: Parse from metadata
-          isActive: true, // TODO: Get from SDK status
-          createdAt: new Date(), // TODO: Get from SDK
+          pricing: agentData.originalPrice || BigInt(0),
+          capabilities: agentData.capabilities || [],
+          isActive: agentData.isActive || false,
+          createdAt: new Date(Number(agentData.createdAt) * 1000), // Convert from Unix timestamp
         }
       })
 

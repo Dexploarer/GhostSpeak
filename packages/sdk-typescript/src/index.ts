@@ -395,7 +395,7 @@ export {
 
 export {
   PrivateMetadataStorage,
-  MockIPFSProvider,
+  IPFSProvider,
   LocalStorageProvider,
   PrivateDataQuery,
   estimateStorageCost,

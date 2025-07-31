@@ -9,22 +9,22 @@ import { address } from '@solana/addresses'
  * Program ID for GhostSpeak Marketplace on Solana
  * Deployed on devnet and ready for production use
  */
-export const GHOSTSPEAK_PROGRAM_ID = address('3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot')
+export const GHOSTSPEAK_PROGRAM_ID = address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX')
 
 /**
  * Network-specific configurations
  */
 export const NETWORK_CONFIG = {
   devnet: {
-    programId: '3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot',
+    programId: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX',
     rpcUrl: 'https://api.devnet.solana.com'
   },
   testnet: {
-    programId: '3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot',
+    programId: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX',
     rpcUrl: 'https://api.testnet.solana.com'
   },
   mainnet: {
-    programId: '3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot', // Will be updated for mainnet
+    programId: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX', // Same as devnet for now
     rpcUrl: 'https://api.mainnet-beta.solana.com'
   }
 } as const

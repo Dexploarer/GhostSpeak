@@ -33,51 +33,8 @@ import { cn } from '@/lib/utils'
 import { useCreateEscrow, type CreateEscrowData } from '@/lib/queries/escrow'
 import { toast } from 'sonner'
 
-// Mock tokens for now - in production these would come from the blockchain
-const mockTokens = [
-  {
-    address: 'So11111111111111111111111111111111111111112',
-    symbol: 'SOL',
-    name: 'Solana',
-    decimals: 9,
-    logoUri: '/tokens/sol.svg',
-    extensions: [],
-    transferFeeConfig: undefined,
-    confidentialTransferConfig: undefined,
-  },
-  {
-    address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    symbol: 'USDC',
-    name: 'USD Coin',
-    decimals: 6,
-    logoUri: '/tokens/usdc.svg',
-    extensions: [{ type: 'TransferFee', enabled: true }],
-    transferFeeConfig: {
-      transferFeeBasisPoints: 50, // 0.5%
-      maximumFee: BigInt(5000), // 0.005 USDC max
-      feeAuthority: 'TransferFeeAuthority',
-      withdrawWithheldAuthority: 'WithheldAuthority',
-    },
-    confidentialTransferConfig: undefined,
-  },
-  {
-    address: 'GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL',
-    symbol: 'GHOST',
-    name: 'GhostSpeak Token',
-    decimals: 9,
-    logoUri: '/tokens/ghost.svg',
-    extensions: [
-      { type: 'ConfidentialTransfer', enabled: true },
-      { type: 'InterestBearing', enabled: true },
-    ],
-    transferFeeConfig: undefined,
-    confidentialTransferConfig: {
-      authority: 'ConfidentialAuthority',
-      autoApproveNewAccounts: false,
-      auditorElgamalPubkey: 'AuditorPubkey',
-    },
-  },
-]
+// Real token data fetched from blockchain
+import { useAvailableTokens } from '@/lib/queries/tokens'
 
 const milestoneSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
@@ -133,6 +90,7 @@ export function CreateEscrowForm({
   className,
 }: CreateEscrowFormProps): React.JSX.Element {
   const createEscrow = useCreateEscrow()
+  const { data: availableTokens = [], isLoading: tokensLoading } = useAvailableTokens()
 
   const form = useForm<CreateEscrowFormData>({
     resolver: zodResolver(createEscrowSchema),
@@ -156,13 +114,9 @@ export function CreateEscrowForm({
     name: 'milestones',
   })
 
-  const selectedToken =
-    mockTokens.find(
-      (token) =>
-        (token.symbol === 'SOL' && form.watch('paymentToken').includes('So11111')) ||
-        (token.symbol === 'USDC' && form.watch('paymentToken').includes('EPjFWdd')) ||
-        (token.symbol === 'GHOST' && form.watch('paymentToken').includes('GHOST'))
-    ) || mockTokens[0]
+  const selectedToken = availableTokens.find(
+    (token) => token.address === form.watch('paymentToken')
+  ) || availableTokens[0]
 
   const totalMilestoneAmount = fields.reduce((sum, _, index) => {
     const amount = form.watch(`milestones.${index}.amount`)
@@ -296,16 +250,10 @@ export function CreateEscrowForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {mockTokens.map((token) => (
+                {availableTokens.map((token) => (
                   <SelectItem
-                    key={token.symbol}
-                    value={
-                      token.symbol === 'SOL'
-                        ? 'So11111111111111111111111111111111111111112'
-                        : token.symbol === 'USDC'
-                          ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-                          : 'GHOSTmintAddressHere123456789'
-                    }
+                    key={token.address}
+                    value={token.address}
                   >
                     <div className="flex items-center gap-2">
                       <span>

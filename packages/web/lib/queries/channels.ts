@@ -328,15 +328,15 @@ export function useChannels(filters?: {
           const lastMessage = undefined
 
           return {
-            address: address,
-            name: address, // Channel ID is stored in PDA derivation, not in account
+            address: address.toString(),
+            name: address.toString(), // Channel ID is stored in PDA derivation, not in account
             description: undefined, // Not stored in base channel account
-            channelType: mapSDKChannelTypeToUIType((data.type || data.channelType)!), // Handle both possible property names
-            owner: data.creator || data.owner, // Handle both possible property names
-            ownerName: undefined, // TODO: Fetch from user registry
+            channelType: mapSDKChannelTypeToUIType(data.channelType),
+            owner: data.creator.toString(),
+            ownerName: undefined, // Will be fetched from user registry if needed
             avatarUrl: undefined,
-            isPrivate: data.isPrivate,
-            memberCount: (data.participants || data.members || []).length, // Handle both possible property names
+            isPrivate: data.isPrivate || false,
+            memberCount: data.participants?.length || 0,
             maxMembers: 100, // Default, not stored in base account
             createdAt: new Date(Number(data.createdAt) * 1000),
             updatedAt: new Date(Number(data.lastActivity) * 1000),
@@ -347,7 +347,7 @@ export function useChannels(filters?: {
               allowExternalInvites: !data.isPrivate,
               messageRetentionDays: 30,
               maxMessageSize: 4096,
-              requireEncryption: data.isPrivate,
+              requireEncryption: data.isPrivate || false,
               autoArchiveAfterDays: 365,
               slowModeSeconds: 0,
             },
@@ -466,13 +466,13 @@ export function useChannelMessages(
       let results = messages.map((messageAccount: { address: Address; data: SDKMessage }) => {
         const { address, data } = messageAccount
         return {
-          id: address,
-          channelAddress: data.channel,
-          sender: data.sender,
-          senderName: undefined, // TODO: Fetch from user registry
+          id: address.toString(),
+          channelAddress: data.channel.toString(),
+          sender: data.sender.toString(),
+          senderName: undefined, // Will be fetched from user registry if needed
           senderAvatar: undefined,
           content: data.content,
-          messageType: mapSDKMessageTypeToUIType((data.type || data.messageType)!), // Handle both possible property names
+          messageType: mapSDKMessageTypeToUIType(data.messageType),
           timestamp: new Date(Number(data.timestamp) * 1000),
           editedAt: undefined, // Not tracked in base message
           replyTo: undefined, // Would be in metadata
@@ -482,7 +482,8 @@ export function useChannelMessages(
           mentions: [], // Would need to parse from content
           isDeleted: false,
           isEdited: false,
-          isSystemMessage: ((data.type || data.messageType) as unknown as number) === 4, // SDKMessageType.System
+          isSystemMessage: (data.messageType as unknown as number) === 4, // SDKMessageType.System
+          isEncrypted: data.isEncrypted || false,
         } as Message
       })
 

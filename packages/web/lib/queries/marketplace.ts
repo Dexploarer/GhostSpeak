@@ -69,30 +69,31 @@ export function useMarketplaceListings(filters?: MarketplaceFilters) {
 
       // Transform SDK data to match our MarketplaceListing interface
       let results = serviceListings.map(
-        (listing: { address: Address; data: Record<string, unknown> }) => ({
-          address: listing.address,
-          name: listing.data.title || 'Untitled Service',
-          description: listing.data.description || '',
-          category: listing.data.serviceType || 'Other',
-          price: BigInt((listing.data.price as number) || 0),
-          currency: 'SOL' as const, // Default to SOL
-          seller: listing.data.provider || listing.address,
-          sellerName: undefined, // TODO: Fetch from agent data
-          sellerReputation: 0, // TODO: Calculate from agent reputation
-          images: [], // TODO: Parse from metadata
-          tags: listing.data.tags || [],
-          isActive: true, // TODO: Check actual status
-          createdAt: new Date(), // TODO: Get from blockchain timestamp
-          updatedAt: new Date(), // TODO: Get from blockchain timestamp
-          totalPurchases: 0, // TODO: Calculate from purchase history
-          averageRating: 0, // TODO: Calculate from ratings
-          totalRatings: 0, // TODO: Calculate from ratings
-          deliveryTime: `${(listing.data.estimatedDelivery as number) || 7} days`,
-          requirements: Array.isArray(listing.data.requirements)
-            ? (listing.data.requirements as string[]).join(', ')
-            : '',
-          additionalInfo: '', // TODO: Parse from metadata
-        })
+        (listing: { address: Address; data: any }) => {
+          const listingData = listing.data
+          return {
+            address: listing.address.toString(),
+            name: listingData.title || 'Untitled Service',
+            description: listingData.description || '',
+            category: listingData.serviceType || 'Other',
+            price: listingData.price || BigInt(0),
+            currency: 'SOL' as const, // paymentToken could be used for token mint
+            seller: listingData.agent.toString(),
+            sellerName: undefined, // Will be fetched separately if needed
+            sellerReputation: 0, // Will be fetched from agent data if needed
+            images: [], // Could be parsed from metadata URI if available
+            tags: listingData.tags || [],
+            isActive: listingData.isActive || false,
+            createdAt: new Date(Number(listingData.createdAt) * 1000),
+            updatedAt: new Date(Number(listingData.updatedAt) * 1000),
+            totalPurchases: listingData.totalOrders || 0,
+            averageRating: listingData.rating || 0,
+            totalRatings: listingData.totalOrders || 0, // Could track separately
+            deliveryTime: `${Number(listingData.estimatedDelivery) || 7} days`,
+            requirements: '', // Not in the SDK data structure
+            additionalInfo: '', // Could be fetched from metadata URI
+          }
+        }
       )
 
       // Apply client-side filters
@@ -178,22 +179,22 @@ export function useMarketplaceListing(address: string) {
         name: serviceListing.title || 'Untitled Service',
         description: serviceListing.description || '',
         category: serviceListing.serviceType || 'Other',
-        price: BigInt(serviceListing.price || 0),
+        price: serviceListing.price || BigInt(0),
         currency: 'SOL' as const,
-        seller: serviceListing.provider || address,
-        sellerName: undefined, // TODO: Fetch from agent data
-        sellerReputation: 0, // TODO: Calculate from agent reputation
-        images: [], // TODO: Parse from metadata
+        seller: serviceListing.agent.toString(),
+        sellerName: undefined, // Will be fetched separately if needed
+        sellerReputation: 0, // Will be fetched from agent data if needed
+        images: [], // Could be parsed from metadata URI if available
         tags: serviceListing.tags || [],
-        isActive: true, // TODO: Check actual status
-        createdAt: new Date(), // TODO: Get from blockchain timestamp
-        updatedAt: new Date(), // TODO: Get from blockchain timestamp
-        totalPurchases: 0, // TODO: Calculate from purchase history
-        averageRating: 0, // TODO: Calculate from ratings
-        totalRatings: 0, // TODO: Calculate from ratings
-        deliveryTime: `${serviceListing.estimatedDelivery || 7} days`,
-        requirements: serviceListing.requirements?.join(', ') || '',
-        additionalInfo: '', // TODO: Parse from metadata
+        isActive: serviceListing.isActive || false,
+        createdAt: new Date(Number(serviceListing.createdAt) * 1000),
+        updatedAt: new Date(Number(serviceListing.updatedAt) * 1000),
+        totalPurchases: serviceListing.totalOrders || 0,
+        averageRating: serviceListing.rating || 0,
+        totalRatings: serviceListing.totalOrders || 0,
+        deliveryTime: `${Number(serviceListing.estimatedDelivery) || 7} days`,
+        requirements: '', // Not in the SDK data structure
+        additionalInfo: '', // Could be fetched from metadata URI
       }
     },
     enabled: !!address,
@@ -381,18 +382,27 @@ export function useJobPostings() {
 
       const jobPostings = await marketplaceModule['module']['getAllJobPostings']()
 
-      return jobPostings.map((job: { address: Address; data: Record<string, unknown> }) => ({
-        address: job.address,
-        title: job.data.title || 'Untitled Job',
-        description: job.data.description || '',
-        budget: BigInt((job.data.budget as number) || 0),
-        employer: job.data.employer || job.address,
-        requiredSkills: job.data.skillsNeeded || [],
-        deadline: new Date(Number(job.data.deadline) * 1000),
-        category: job.data.jobType || 'Other',
-        applications: 0, // TODO: Get application count
-        createdAt: new Date(), // TODO: Get from blockchain
-      }))
+      return jobPostings.map((job: { address: Address; data: any }) => {
+        const jobData = job.data
+        return {
+          address: job.address.toString(),
+          title: jobData.title || 'Untitled Job',
+          description: jobData.description || '',
+          budget: jobData.budget || BigInt(0),
+          budgetMin: jobData.budgetMin || BigInt(0),
+          budgetMax: jobData.budgetMax || BigInt(0),
+          employer: jobData.employer.toString(),
+          requiredSkills: jobData.skillsNeeded || [],
+          requirements: jobData.requirements || [],
+          deadline: new Date(Number(jobData.deadline) * 1000),
+          category: jobData.jobType || 'Other',
+          experienceLevel: jobData.experienceLevel || 'Entry',
+          applications: jobData.applicationsCount || 0,
+          isActive: jobData.isActive || false,
+          createdAt: new Date(Number(jobData.createdAt) * 1000),
+          updatedAt: new Date(Number(jobData.updatedAt) * 1000),
+        }
+      })
     },
     staleTime: 30000, // 30 seconds
   })

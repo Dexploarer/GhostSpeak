@@ -229,7 +229,7 @@ async function main() {
   console.log('  5. Use fee estimation to help users choose payment tokens')
 }
 
-// Helper function to create Token-2022 with transfer fee
+// Helper function to create Token-2022 with transfer fee using real SDK
 async function createToken2022WithTransferFee(
   rpc: Rpc<unknown>,
   payer: TransactionSigner,
@@ -242,48 +242,54 @@ async function createToken2022WithTransferFee(
   }
 ): Promise<Address> {
   try {
-    // Generate new mint address
-    const mintAddress = await generateKeyPairSigner()
+    // Import the real Token2022Module
+    const { Token2022Module } = await import('../src/modules/token2022/Token2022Module.js')
+    const { createSolanaRpc } = await import('@solana/kit')
     
-    // Create initialization instruction with Token-2022 extension
-    const instruction = await createInitializeMintInstruction({
-      mint: mintAddress.address,
-      mintAuthority: mintAuthority.address,
-      freezeAuthority: mintAuthority.address,
-      decimals: 6, // Standard token decimals
-      payer
+    // Create SDK client with real RPC
+    const realRpc = createSolanaRpc('https://api.devnet.solana.com')
+    const token2022Module = new Token2022Module(realRpc, { programId: 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address })
+    
+    // Create mint keypair to get the address before transaction
+    const { generateKeyPairSigner } = await import('@solana/kit')
+    const mintKeypair = await generateKeyPairSigner()
+    
+    // Create mint instructions manually to have control over the mint address
+    const mintInstruction = await token2022Module.getCreateToken2022MintInstruction({
+      authority: payer,
+      agent: mintAuthority.address,
+      mint: mintKeypair,
+      decimals: 6,
+      freezeAuthority: null,
+      enableTransferFee: true,
+      enableConfidentialTransfers: false,
+      enableInterestBearing: false
     })
-
-    // Get latest blockhash
-    const latestBlockhashResponse = await (rpc as unknown as {
-      getLatestBlockhash: () => { send: () => Promise<{ value: { blockhash: string; lastValidBlockHeight: bigint } }> }
-    }).getLatestBlockhash().send()
-    const latestBlockhash = latestBlockhashResponse.value
-
-    // Create and send transaction
-    const transactionMessage = pipe(
-      createTransactionMessage({ version: 0 }),
-      (tx) => appendTransactionMessageInstructions([instruction], tx),
-      (tx) => setTransactionMessageFeePayerSigner(payer, tx),
-      (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash as unknown as { blockhash: string; lastValidBlockHeight: bigint }, tx)
-    )
-
-    // Sign and send transaction
-    const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
     
-    await (rpc as unknown as {
-      sendTransaction: (tx: unknown, options: unknown) => { send: () => Promise<string> }
-    }).sendTransaction(signedTransaction, {
-      encoding: 'base64',
-      commitment: 'confirmed'
-    }).send()
+    const feeInstruction = await token2022Module.getInitializeTransferFeeConfigInstruction({
+      authority: payer,
+      mint: mintKeypair.address,
+      transferFeeBasisPoints: config.feeBasisPoints,
+      maximumFee: BigInt(config.maxFee),
+      transferFeeAuthority: config.transferFeeAuthority,
+      withdrawWithheldAuthority: config.withdrawWithheldAuthority
+    })
+    
+    // Execute the transaction with known mint address
+    const mintSignature = await token2022Module.executeMultiple('createToken2022WithFees', [
+      async () => mintInstruction,
+      async () => feeInstruction
+    ], [payer, mintKeypair])
 
     console.log('  ✅ Token-2022 mint created successfully')
-    return mintAddress.address
+    console.log(`  Transaction signature: ${mintSignature}`)
+    console.log(`  Mint address: ${mintKeypair.address}`)
+    
+    return mintKeypair.address
+    
   } catch (error) {
-    console.warn('  ⚠️  Mock Token-2022 creation (real implementation would succeed)')
-    // Return a mock address for demo purposes
-    return 'FeeToken11111111111111111111111111111111111' as Address
+    console.error('  ❌ Failed to create Token-2022 mint:', error.message)
+    throw error // Don't fall back to mock - fail properly
   }
 }
 

@@ -34,7 +34,7 @@ Welcome to the GhostSpeak documentation. GhostSpeak is an AI agent commerce prot
 - **Network**: Devnet
 - **SDK Version**: 1.6.2
 - **CLI Version**: 1.9.2
-- **Program ID**: `GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN`
+- **Program ID**: `GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX`
 
 ## Technology Stack
 

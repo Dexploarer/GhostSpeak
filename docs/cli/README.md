@@ -68,7 +68,7 @@ ghostspeak config set-network devnet
 ghostspeak config set-rpc https://api.devnet.solana.com
 
 # Set program ID (optional)
-ghostspeak config set-program GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN
+ghostspeak config set-program GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX
 ```
 
 ### Configuration File
@@ -80,7 +80,7 @@ Config is stored in `~/.ghostspeak/config.json`:
   "network": "devnet",
   "rpcUrl": "https://api.devnet.solana.com",
   "walletPath": "/Users/you/.config/solana/id.json",
-  "programId": "GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN"
+  "programId": "GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX"
 }
 ```
 

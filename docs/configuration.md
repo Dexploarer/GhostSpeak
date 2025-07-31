@@ -13,7 +13,7 @@ The CLI stores configuration in `~/.ghostspeak/config.json`:
   "network": "devnet",
   "rpcUrl": "https://api.devnet.solana.com",
   "walletPath": "~/.config/solana/id.json",
-  "programId": "GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN",
+  "programId": "GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX",
   "commitment": "confirmed"
 }
 ```
@@ -60,7 +60,7 @@ const client = new GhostSpeakClient({
   // Optional
   rpcSubscriptions: createSolanaRpcSubscriptions('wss://api.devnet.solana.com'),
   cluster: 'devnet',
-  programId: address('GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN'),
+  programId: address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX'),
   commitment: 'confirmed',
   skipPreflight: false,
   maxRetries: 3,

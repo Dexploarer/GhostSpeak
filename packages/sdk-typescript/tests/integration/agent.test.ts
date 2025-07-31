@@ -16,7 +16,7 @@ describe('Agent Integration Tests', () => {
     client = new GhostSpeakClient({
       rpc,
       rpcSubscriptions,
-      programId: address('GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN'),
+      programId: address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX'),
       cluster: 'devnet'
     })
     

@@ -12,10 +12,9 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
-import { Connection, Keypair, LAMPORTS_PER_SOL, sendAndConfirmTransaction, Transaction, SystemProgram } from '@solana/web3.js'
+import { createSolanaRpc, generateKeyPairSigner, createKeyPairSignerFromBytes, address } from '@solana/kit'
+import { LAMPORTS_PER_SOL } from '@solana/rpc-types'
 import type { Address, TransactionSigner } from '@solana/kit'
-import { address } from '@solana/addresses'
-import { generateKeyPairSigner } from '@solana/signers'
 import {
   TOKEN_2022_PROGRAM_ID,
   ExtensionType,

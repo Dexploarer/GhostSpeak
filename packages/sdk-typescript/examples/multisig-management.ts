@@ -5,10 +5,8 @@
  * including creation, updates, transaction signing, and management.
  */
 
-import type { Connection } from '@solana/web3.js'
-import { generateKeyPairSigner } from '@solana/signers'
-import type { Address, TransactionSigner } from '@solana/kit'
-import { address } from '@solana/addresses'
+import { generateKeyPairSigner, createSolanaRpc, address } from '@solana/kit'
+import type { Address, TransactionSigner, Rpc } from '@solana/kit'
 
 import { GhostSpeakClient } from '../src/index.js'
 import { deriveMultisigPda } from '../src/utils/governance-helpers.js'

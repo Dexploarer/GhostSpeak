@@ -6,10 +6,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { generateKeyPairSigner } from '@solana/signers'
+import { generateKeyPairSigner, createSolanaRpc, address } from '@solana/kit'
 import type { Address, TransactionSigner } from '@solana/kit'
-import { address } from '@solana/addresses'
-import { Connection, PublicKey } from '@solana/web3.js'
 
 import { GhostSpeakClient } from '../../src/client/GhostSpeakClient'
 import { GovernanceInstructions } from '../../src/client/instructions/GovernanceInstructions'

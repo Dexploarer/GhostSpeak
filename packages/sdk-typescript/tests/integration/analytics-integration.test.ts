@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { Connection, PublicKey } from '@solana/web3.js'
-import { generateKeyPairSigner } from '@solana/signers'
-import { address } from '@solana/addresses'
+import { createSolanaRpc, address, generateKeyPairSigner } from '@solana/kit'
 
 import { GhostSpeakClient } from '../../src/index.js'
 import { 

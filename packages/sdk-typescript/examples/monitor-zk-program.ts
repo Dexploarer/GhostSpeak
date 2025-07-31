@@ -5,7 +5,7 @@
  * feature gate and adapt proof generation based on its availability.
  */
 
-import { Connection, clusterApiUrl } from '@solana/web3.js'
+import { createSolanaRpc } from '@solana/kit'
 import {
   isZkProgramEnabled,
   getZkProgramStatus,

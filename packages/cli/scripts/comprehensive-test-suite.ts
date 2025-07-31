@@ -654,9 +654,7 @@ async function runComprehensiveTests() {
 
   // Initialize category stats
   for (const test of comprehensiveTestCommands) {
-    if (!categoryStats[test.category]) {
-      categoryStats[test.category] = { total: 0, passed: 0 }
-    }
+    categoryStats[test.category] ??= { total: 0, passed: 0 }
     categoryStats[test.category].total++
   }
 
@@ -677,15 +675,15 @@ async function runComprehensiveTests() {
       let details = ''
       let onChainVerified = false
       
-      // Check exit code
-      if (test.expectError) {
-        if (result.exitCode === 0) {
-          status = 'fail'
+      // Standardized error handling pattern - check exit code expectations
+      const expectedSuccess = !test.expectError
+      const actualSuccess = result.exitCode === 0
+      
+      if (expectedSuccess !== actualSuccess) {
+        status = 'fail'
+        if (test.expectError) {
           details = 'Expected error but command succeeded'
-        }
-      } else {
-        if (result.exitCode !== 0) {
-          status = 'fail'
+        } else {
           details = `Exit code: ${result.exitCode}`
         }
       }

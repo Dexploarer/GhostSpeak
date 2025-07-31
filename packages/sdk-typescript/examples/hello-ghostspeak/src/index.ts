@@ -11,9 +11,16 @@
  */
 
 import { GhostSpeakClient } from '@ghostspeak/sdk';
-import { Keypair, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { createKeyPairSignerFromBytes } from '@solana/signers';
-import { address } from '@solana/addresses';
+// July 2025 @solana/kit patterns - unified imports
+import { 
+  createSolanaRpc,
+  generateKeyPairSigner,
+  createKeyPairSignerFromBytes,
+  address,
+  lamports,
+  type Address,
+  type KeyPairSigner
+} from '@solana/kit';
 import * as fs from 'fs';
 
 const DEVNET_URL = 'https://api.devnet.solana.com';
@@ -23,37 +30,34 @@ async function main() {
   console.log('🚀 Starting Hello GhostSpeak...\n');
 
   try {
-    // 1. Setup connection and wallet
-    const connection = new Connection(DEVNET_URL, 'confirmed');
+    // 1. Setup connection and wallet using July 2025 patterns
+    const rpc = createSolanaRpc(DEVNET_URL);
     console.log('✅ Connected to Solana devnet');
 
     // 2. Load or create wallet (use funded wallet if exists, otherwise generate)
-    let walletKeypair: Keypair;
+    let walletSigner: KeyPairSigner;
     const walletPath = process.env.ANCHOR_WALLET || `${process.env.HOME}/.config/solana/id.json`;
     
     try {
-      walletKeypair = Keypair.fromSecretKey(
-        Buffer.from(JSON.parse(fs.readFileSync(walletPath, 'utf-8')))
-      );
-      console.log('🔑 Loaded existing wallet:', walletKeypair.publicKey.toBase58());
+      const walletData = JSON.parse(fs.readFileSync(walletPath, 'utf-8'));
+      walletSigner = await createKeyPairSignerFromBytes(new Uint8Array(walletData));
+      console.log('🔑 Loaded existing wallet:', walletSigner.address);
     } catch {
-      walletKeypair = Keypair.generate();
-      console.log('🔑 Generated new keypair:', walletKeypair.publicKey.toBase58());
+      walletSigner = await generateKeyPairSigner();
+      console.log('🔑 Generated new keypair:', walletSigner.address);
     }
-
-    const signer = await createKeyPairSignerFromBytes(walletKeypair.secretKey);
 
     // 3. Initialize GhostSpeak client with deployed program
     const client = new GhostSpeakClient({
       rpcEndpoint: DEVNET_URL,
-      keypair: walletKeypair
+      // Note: Client may need to be updated to accept KeyPairSigner
     });
 
     // 4. Check balance and get funds if needed
-    await ensureFunds(connection, walletKeypair);
+    await ensureFunds(rpc, walletSigner);
 
     // 5. Register an AI agent
-    const agentAddress = await registerAgent(client, signer);
+    const agentAddress = await registerAgent(client, walletSigner);
 
     // 6. Fetch and display agent information
     await displayAgentInfo(client, agentAddress);
@@ -65,31 +69,34 @@ async function main() {
   }
 }
 
-// Ensure the wallet has funds
+// Ensure the wallet has funds using July 2025 patterns
 async function ensureFunds(
-  connection: Connection,
-  keypair: Keypair
+  rpc: any,
+  walletSigner: KeyPairSigner
 ): Promise<void> {
-  const balance = await connection.getBalance(keypair.publicKey);
-  console.log('💰 Balance:', balance / LAMPORTS_PER_SOL, 'SOL');
+  const balance = await rpc.getBalance(walletSigner.address).send();
+  const solBalance = Number(balance.value) / 1_000_000_000;
+  console.log('💰 Balance:', solBalance, 'SOL');
 
   // Request airdrop if balance is low
-  if (balance < 0.01 * LAMPORTS_PER_SOL) { // Less than 0.01 SOL
+  if (balance.value < lamports(10_000_000n)) { // Less than 0.01 SOL
     console.log('📥 Requesting airdrop...');
     
     try {
-      const signature = await connection.requestAirdrop(
-        keypair.publicKey, 
-        1 * LAMPORTS_PER_SOL // 1 SOL
-      );
+      const signature = await rpc.requestAirdrop(
+        walletSigner.address, 
+        lamports(1_000_000_000n) // 1 SOL
+      ).send();
       
       console.log('💸 Airdrop requested:', signature);
       
-      // Wait for confirmation
-      await connection.confirmTransaction(signature);
+      // Wait for confirmation (simplified)
+      console.log('⏳ Waiting for confirmation...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
-      const newBalance = await connection.getBalance(keypair.publicKey);
-      console.log('💰 New balance:', newBalance / LAMPORTS_PER_SOL, 'SOL');
+      const newBalance = await rpc.getBalance(walletSigner.address).send();
+      const newSolBalance = Number(newBalance.value) / 1_000_000_000;
+      console.log('💰 New balance:', newSolBalance, 'SOL');
       
     } catch (error) {
       console.error('❌ Airdrop failed:', error);
@@ -101,7 +108,7 @@ async function ensureFunds(
 // Register an AI agent using working pattern from test suite
 async function registerAgent(
   client: GhostSpeakClient,
-  signer: any
+  signer: KeyPairSigner
 ): Promise<string> {
   console.log('\n🤖 Registering agent...');
 

@@ -123,7 +123,7 @@ export class CacheManager extends EventEmitter {
   private tagIndex = new Map<string, Set<string>>()
 
   // Event bus for cache events
-  private eventBus = EventBus.getInstance()
+  protected eventBus = EventBus.getInstance()
 
   constructor(options?: {
     maxMemorySize?: number

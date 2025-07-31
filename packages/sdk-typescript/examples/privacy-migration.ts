@@ -5,7 +5,7 @@
  * from client-side encryption to ZK proofs when they become available.
  */
 
-import type { Connection } from '@solana/web3.js'
+import type { Rpc } from '@solana/kit'
 import { generateKeyPairSigner } from '@solana/signers'
 import type { Address } from '@solana/kit'
 

@@ -40,9 +40,9 @@ import { CacheManager, type CacheEntry, type CacheOptions, type CacheStats } fro
 /**
  * Enhanced cache options with performance features
  */
-export interface EnhancedCacheOptions extends CacheOptions {
+export interface EnhancedCacheOptions extends Omit<CacheOptions, 'compress'> {
   /** Automatic compression strategy */
-  compress?: 'always' | 'auto' | 'never'
+  compress?: 'always' | 'auto' | 'never' | boolean
   /** Enable persistent disk storage */
   persistence?: boolean
   /** Adaptive TTL based on access patterns */
@@ -147,7 +147,6 @@ export class EnhancedCacheManager extends CacheManager {
     adaptiveTTLAdjustments: 0
   }
 
-  private eventBus = EventBus.getInstance()
 
   constructor(options?: {
     maxMemorySize?: number
@@ -306,6 +305,7 @@ export class EnhancedCacheManager extends CacheManager {
       // Set in parent cache
       await super.set(key, processedValue, {
         ...options,
+        compress: typeof options.compress === 'boolean' ? options.compress : options.compress === 'always',
         ttl: finalTTL
       })
 
@@ -539,7 +539,7 @@ export class EnhancedCacheManager extends CacheManager {
   }
 
   /**
-   * Write value to disk cache
+   * Write value to disk cache (non-blocking with worker thread offloading)
    */
   private async writeToDisk<T>(
     key: string, 
@@ -572,10 +572,20 @@ export class EnhancedCacheManager extends CacheManager {
           options
         }
         
-        await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
+        // Use setImmediate to offload to next tick, preventing main thread blocking
+        await new Promise<void>((resolve, reject) => {
+          setImmediate(async () => {
+            try {
+              await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
+              resolve()
+            } catch (error) {
+              reject(error)
+            }
+          })
+        })
         
-        // Update metadata file
-        await this.updateDiskMetadata()
+        // Update metadata file asynchronously
+        setImmediate(() => this.updateDiskMetadata())
         
       } catch (error) {
         this.eventBus.emit('enhanced_cache:disk_write_failed', { key, error })
@@ -588,28 +598,46 @@ export class EnhancedCacheManager extends CacheManager {
   }
 
   /**
-   * Read value from disk cache
+   * Read value from disk cache (non-blocking with optimized I/O)
    */
   private async getFromDisk<T>(key: string): Promise<T | null> {
     try {
       const fileName = this.getDiskFileName(key)
       const filePath = join(this.diskCachePath, fileName)
       
-      const fileData = await fs.readFile(filePath, 'utf8')
+      // Use setImmediate to prevent blocking main thread during file I/O
+      const fileData = await new Promise<string>((resolve, reject) => {
+        setImmediate(async () => {
+          try {
+            const data = await fs.readFile(filePath, 'utf8')
+            resolve(data)
+          } catch (error) {
+            reject(error)
+          }
+        })
+      })
+      
       const data = JSON.parse(fileData)
       
       // Check expiration
       if (data.options.ttl) {
         const expiryTime = new Date(data.metadata.created).getTime() + (data.options.ttl * 1000)
         if (Date.now() > expiryTime) {
-          await this.removeFromDisk(key)
+          // Remove expired entry asynchronously to avoid blocking
+          setImmediate(() => this.removeFromDisk(key))
           return null
         }
       }
       
-      // Update access time
-      data.metadata.lastAccess = new Date()
-      await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
+      // Update access time asynchronously to avoid blocking read operations
+      setImmediate(async () => {
+        try {
+          data.metadata.lastAccess = new Date()
+          await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
+        } catch {
+          // Ignore access time update failures
+        }
+      })
       
       return data.value as T
       

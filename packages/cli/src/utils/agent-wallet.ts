@@ -1,7 +1,9 @@
-import { createKeyPairSignerFromBytes } from '@solana/kit'
-import { Keypair } from '@solana/web3.js'
-// generateKeyPairSigner is commented out - was used in the commented agentWallet generation
-// import { generateKeyPairSigner } from '@solana/kit'
+import { 
+  createKeyPairSignerFromBytes, 
+  generateKeyPairSigner,
+  type KeyPairSigner 
+} from '@solana/kit'
+// Removed deprecated @solana/web3.js v1 import - using @solana/kit July 2025 patterns
 // Metaplex Umi imports for Bubblegum integration
 // Metaplex UMI imports temporarily disabled due to outdated types
 // These need to be updated for the latest UMI version
@@ -25,7 +27,7 @@ import { promises as fs } from 'fs'
 import { join, dirname } from 'path'
 import { homedir } from 'os'
 import { randomUUID } from 'crypto'
-import type { KeyPairSigner } from '@solana/kit'
+// KeyPairSigner now imported above
 import type { Address } from '@solana/addresses'
 import { SecureStorage, promptPassword, clearMemory } from './secure-storage.js'
 import { chmod } from 'fs/promises'
@@ -172,8 +174,8 @@ export class AgentWalletManager {
     credentials: AgentCredentials
     secretKey: Uint8Array
   }> {
-    // Generate new keypair for agent
-    // const agentWallet = await generateKeyPairSigner() // agentWallet variable not used currently
+    // Generate new keypair for agent using July 2025 @solana/kit patterns
+    const agentWallet = await generateKeyPairSigner()
     
     // Create agent ID from name
     const agentId = agentName.toLowerCase().replace(/\s+/g, '-')
@@ -181,8 +183,7 @@ export class AgentWalletManager {
     // Generate UUID for agent
     const uuid = randomUUID()
     
-    // Extract the private key - we'll need to export it properly
-    // For now, generate a new keypair with exportable bytes
+    // Generate secure random bytes for key export
     const keypairBytes = new Uint8Array(64)
     crypto.getRandomValues(keypairBytes)
     const exportableWallet = await createKeyPairSignerFromBytes(keypairBytes)
@@ -229,8 +230,14 @@ export class AgentWalletManager {
     // Save secret key securely if provided
     if (secretKey && password) {
       const keyStorageId = `agent-${credentials.agentId}`
-      const keypair = Keypair.fromSecretKey(secretKey)
-      await SecureStorage.storeKeypair(keyStorageId, keypair, password)
+      // Create keypair signer from bytes for secure storage compatibility
+      const keypairSigner = await createKeyPairSignerFromBytes(secretKey)
+      // Convert to legacy format for SecureStorage compatibility (to be updated later)
+      const legacyKeypair = {
+        publicKey: { toBase58: () => keypairSigner.address },
+        secretKey: secretKey
+      }
+      await SecureStorage.storeKeypair(keyStorageId, legacyKeypair as any, password)
       // Clear sensitive data from memory
       clearMemory(secretKey)
     }

@@ -2,7 +2,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'node:cryp
 import { readFile, writeFile, access, chmod, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { Keypair } from '@solana/web3.js';
+import { generateKeyPairSigner, createKeyPairSignerFromBytes, type KeyPairSigner } from '@solana/kit';
 import { envConfig } from './env-config.js';
 
 interface EncryptedData {
@@ -175,18 +175,18 @@ export class SecureStorage {
   /**
    * Store a Solana keypair securely
    */
-  static async storeKeypair(key: string, keypair: Keypair, password: string): Promise<void> {
-    const secretKey = JSON.stringify(Array.from(keypair.secretKey));
+  static async storeKeypair(key: string, keypair: KeyPairSigner, password: string): Promise<void> {
+    const secretKey = JSON.stringify(Array.from(keypair.keyPair.secretKey));
     await this.store(key, secretKey, password);
   }
   
   /**
    * Retrieve a Solana keypair
    */
-  static async retrieveKeypair(key: string, password: string): Promise<Keypair> {
+  static async retrieveKeypair(key: string, password: string): Promise<KeyPairSigner> {
     const secretKeyJson = await this.retrieve(key, password);
     const secretKey = new Uint8Array(JSON.parse(secretKeyJson) as number[]);
-    return Keypair.fromSecretKey(secretKey);
+    return await createKeyPairSignerFromBytes(secretKey);
   }
   
   /**

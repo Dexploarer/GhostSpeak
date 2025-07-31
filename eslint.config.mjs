@@ -15,6 +15,7 @@ export default tseslint.config(
       '**/.next/**',
       '**/.vercel/**',
       '**/generated/**',
+      '.cursor/**',
     ],
   },
   // Base ESLint recommended rules

@@ -35,7 +35,7 @@ function setupGlobalCommands() {
     console.log('💡 You can now use:')
     console.log('   $ ghostspeak <command>')
     console.log('   $ gs <command>')
-  } catch (_error) {
+  } catch {
     console.error('⚠️  Warning: Could not verify command installation')
     console.error('   You may need to add npm global bin to your PATH')
   }

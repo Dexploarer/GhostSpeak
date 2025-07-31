@@ -115,7 +115,8 @@
     "@solana/spl-token": "^0.4.13",
     "@solana/sysvars": "^2.3.0",
     "@solana/transactions": "^2.3.0",
-    "bs58": "^6.0.0"
+    "bs58": "^6.0.0",
+    "kubo-rpc-client": "^5.2.0"
   },
   "devDependencies": {
     "@codama/nodes": "^1.0.0",

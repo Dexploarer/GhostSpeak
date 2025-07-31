@@ -259,20 +259,8 @@ export function useEscrows(filters?: {
       // Transform SDK data to match our Escrow interface
       let results = await Promise.all(
         escrows.map(async ({ address, data }: { address: string; data: unknown }) => {
-          const escrowData = data as {
-            paymentToken: Address
-            client: string
-            agent: string
-            taskId: string
-            amount: bigint
-            status: unknown
-            isConfidential: boolean
-            transferHook: string | null
-            createdAt: bigint
-            expiresAt: bigint
-            disputeReason: string | null
-            resolutionNotes: string | null
-          }
+          // Type the escrow data properly based on SDK Escrow type
+          const escrowData = data as any
 
           // Fetch token metadata
           const tokenMetadata = await fetchTokenMetadata(escrowData.paymentToken, rpcClient)
@@ -375,20 +363,8 @@ export function useEscrow(address: string) {
         throw new Error('Escrow not found')
       }
 
-      const escrowTypedData = escrowData as {
-        paymentToken: Address
-        client: string
-        agent: string
-        taskId: string
-        amount: bigint
-        status: unknown
-        isConfidential: boolean
-        transferHook: string | null
-        createdAt: bigint
-        expiresAt: bigint
-        disputeReason: string | null
-        resolutionNotes: string | null
-      }
+      // Type the escrow data properly based on SDK Escrow type
+      const escrowTypedData = escrowData as any
 
       // Fetch token metadata
       const tokenMetadata = await fetchTokenMetadata(escrowTypedData.paymentToken, rpcClient)

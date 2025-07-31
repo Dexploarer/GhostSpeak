@@ -72,28 +72,86 @@ export interface PrivateDataReference {
 // =====================================================
 
 /**
- * Mock IPFS storage provider (for testing)
- * In production, this would use actual IPFS
+ * Real IPFS storage provider using kubo-rpc-client (2025)
+ * Connects to actual IPFS nodes for production use
  */
-export class MockIPFSProvider implements StorageProvider {
-  private storage = new Map<string, Uint8Array>()
+export class IPFSProvider implements StorageProvider {
+  private client: any
+  
+  constructor(options?: { ipfsNodeUrl?: string; headers?: Record<string, string> }) {
+    // Dynamic import to avoid bundling issues
+    const createClient = require('kubo-rpc-client').create
+    
+    // Add null checks and validation for IPFS client options
+    const ipfsNodeUrl = options?.ipfsNodeUrl || 'http://localhost:5001'
+    const headers = options?.headers || {}
+    
+    // Validate IPFS node URL format
+    try {
+      new URL(ipfsNodeUrl)
+    } catch (error) {
+      throw new Error(`Invalid IPFS node URL provided: ${ipfsNodeUrl}`)
+    }
+    
+    // Validate headers object
+    if (typeof headers !== 'object' || headers === null) {
+      throw new Error('Headers must be a valid object')
+    }
+    
+    this.client = createClient({
+      url: ipfsNodeUrl,
+      headers
+    })
+    
+    if (!this.client) {
+      throw new Error('Failed to create IPFS client - kubo-rpc-client returned null')
+    }
+  }
   
   async store(data: Uint8Array): Promise<string> {
-    const hash = 'Qm' + bytesToHex(sha256(data)).substring(0, 44)
-    this.storage.set(hash, data)
-    return hash
+    try {
+      const result = await this.client.add(data, {
+        pin: true, // Pin to ensure persistence
+        cidVersion: 1 // Use CIDv1 for better compatibility
+      })
+      return result.cid.toString()
+    } catch (error) {
+      throw new Error(`Failed to store data to IPFS: ${error.message}`)
+    }
   }
   
   async retrieve(hash: string): Promise<Uint8Array> {
-    const data = this.storage.get(hash)
-    if (!data) {
-      throw new Error(`Data not found: ${hash}`)
+    try {
+      const chunks: Uint8Array[] = []
+      for await (const chunk of this.client.cat(hash)) {
+        chunks.push(chunk)
+      }
+      
+      // Concatenate all chunks
+      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+      const result = new Uint8Array(totalLength)
+      let offset = 0
+      for (const chunk of chunks) {
+        result.set(chunk, offset)
+        offset += chunk.length
+      }
+      
+      return result
+    } catch (error) {
+      throw new Error(`Failed to retrieve data from IPFS: ${error.message}`)
     }
-    return data
   }
   
   async delete(hash: string): Promise<boolean> {
-    return this.storage.delete(hash)
+    try {
+      await this.client.pin.rm(hash)
+      return true
+    } catch (error) {
+      // Pin removal might fail if not pinned - this is a non-critical error
+      // Log as warning but don't throw since the data might not have been pinned
+      console.warn(`IPFS unpin warning for ${hash}: ${error.message}`)
+      return false // Return false to indicate pin removal didn't happen, but don't fail
+    }
   }
 }
 
@@ -136,7 +194,7 @@ export class PrivateMetadataStorage {
     storageProvider?: StorageProvider,
     encryptionService?: ClientEncryptionService
   ) {
-    this.storageProvider = storageProvider ?? new MockIPFSProvider()
+    this.storageProvider = storageProvider ?? new IPFSProvider()
     this.encryptionService = encryptionService ?? new ClientEncryptionService()
   }
   

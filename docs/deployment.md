@@ -107,7 +107,7 @@ Update `config/program-ids.ts`:
 
 ```typescript
 export const PROGRAM_IDS = {
-  devnet: 'GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN',
+  devnet: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX',
   testnet: 'YOUR_TESTNET_PROGRAM_ID',
   mainnet: 'YOUR_MAINNET_PROGRAM_ID'
 };
@@ -121,7 +121,7 @@ Create `.env` files for each environment:
 # .env.devnet
 ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
 ANCHOR_WALLET=~/.config/solana/ghostspeak-deploy.json
-PROGRAM_ID=GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN
+PROGRAM_ID=GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX
 
 # .env.mainnet
 ANCHOR_PROVIDER_URL=https://api.mainnet-beta.solana.com
@@ -171,7 +171,7 @@ npm publish --access public
 const devnetConfig = {
   cluster: 'devnet',
   rpcUrl: 'https://api.devnet.solana.com',
-  programId: 'GHOSTuTpw1dsLYRYDEM9dHsFvPw6cGfKxe6UtXyPVRHN',
+  programId: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX',
   commitment: 'confirmed'
 };
 ```

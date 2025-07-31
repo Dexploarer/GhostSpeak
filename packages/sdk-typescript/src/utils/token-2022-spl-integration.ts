@@ -9,8 +9,7 @@
 
 import type { Address, IInstruction, TransactionSigner } from '@solana/kit'
 import { getU8Encoder, getU16Encoder, getU64Encoder, getStructEncoder, getBytesEncoder, fixEncoderSize, address } from '@solana/kit'
-import type { Rpc } from '@solana/rpc'
-import type { Connection } from '@solana/web3.js'
+import type { Rpc } from '@solana/kit'
 
 // Import from the new official SPL Token integration
 import {

@@ -45,8 +45,8 @@ class PinataProvider implements IPFSProvider {
     const endpoint = this.config.endpoint ?? 'https://api.pinata.cloud'
     const formData = new FormData()
     
-    // Convert content to blob
-    const blob = new Blob([content], { 
+    // Convert content to blob with proper type casting
+    const blob = new Blob([content as BlobPart], { 
       type: options?.contentType ?? 'application/octet-stream' 
     })
     formData.append('file', blob, options?.filename ?? 'content')
@@ -166,7 +166,7 @@ class HttpClientProvider implements IPFSProvider {
     const endpoint = this.config.endpoint ?? 'http://localhost:5001'
     const formData = new FormData()
     
-    const blob = new Blob([content], { 
+    const blob = new Blob([content as BlobPart], { 
       type: options?.contentType ?? 'application/octet-stream' 
     })
     formData.append('file', blob, options?.filename ?? 'content')

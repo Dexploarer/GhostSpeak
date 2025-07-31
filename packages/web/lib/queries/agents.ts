@@ -108,7 +108,7 @@ export function useAgent(agentAddress: string | undefined) {
   })
 }
 
-// Fetch all agents with filtering
+// Fetch all agents with efficient server-side filtering (Kluster MCP optimization)
 export function useAgents(filters?: AgentFilters) {
   return useQuery({
     queryKey: agentKeys.list(JSON.stringify(filters || {})),
@@ -116,11 +116,33 @@ export function useAgents(filters?: AgentFilters) {
       const client = getGhostSpeakClient()
       const agentModule = client.agent()
 
-      // Get all agents from the SDK
-      const agentAccounts = await agentModule['module']['getAllAgents']()
+      // Try to use server-side filtering if SDK supports it, otherwise fallback to client-side
+      let agentAccounts: { address: Address; data: any }[]
+      
+      try {
+        // Check if SDK has filtering capabilities
+        if (agentModule['module']['getFilteredAgents']) {
+          // Use server-side filtering for better performance
+          agentAccounts = await agentModule['module']['getFilteredAgents']({
+            search: filters?.search,
+            category: filters?.category,
+            isActive: filters?.isActive,
+            minReputation: filters?.minReputation,
+            // Add pagination for large datasets
+            limit: 50, // Reasonable limit to prevent overwhelming the client
+            offset: 0
+          })
+        } else {
+          // Fallback to getting all agents (current implementation)
+          agentAccounts = await agentModule['module']['getAllAgents']()
+        }
+      } catch (error) {
+        console.warn('Server-side filtering not available, using client-side filtering:', error)
+        agentAccounts = await agentModule['module']['getAllAgents']()
+      }
 
-      // Transform SDK data to match our Agent interface and apply filters
-      let agents = agentAccounts.map((account: { address: Address; data: any }) => {
+      // Transform SDK data to match our Agent interface
+      let agents = await Promise.all(agentAccounts.map(async (account: { address: Address; data: any }) => {
         const agentData = account.data
         return {
           address: account.address.toString(),
@@ -131,22 +153,16 @@ export function useAgents(filters?: AgentFilters) {
             category: agentData.frameworkOrigin || 'General',
           },
           owner: agentData.owner.toString(),
-          reputation: {
-            score: agentData.reputationScore || 0,
-            totalJobs: agentData.totalJobsCompleted || 0,
-            successRate: agentData.totalJobsCompleted > 0 
-              ? Math.round((agentData.reputationScore / agentData.totalJobsCompleted) * 100) 
-              : 0,
-          },
+          reputation: await calculateAgentReputation(account.address.toString(), agentData),
           pricing: agentData.originalPrice || BigInt(0),
           capabilities: agentData.capabilities || [],
           isActive: agentData.isActive || false,
           createdAt: new Date(Number(agentData.createdAt) * 1000), // Convert from Unix timestamp
         }
-      })
+      }))
 
-      // Apply client-side filtering since SDK doesn't support it yet
-      if (filters) {
+      // Apply client-side filtering only if server-side filtering wasn't available
+      if (filters && !agentModule['module']['getFilteredAgents']) {
         if (filters.search) {
           const searchLower = filters.search.toLowerCase()
           agents = agents.filter(

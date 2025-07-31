@@ -53,20 +53,20 @@ export function useAvailableTokens() {
           }
         }
         
-        // Fetch token metadata for each unique token
-        const tokens: Token[] = []
-        
-        for (const address of tokenAddresses) {
+        // Fetch token metadata in parallel for better performance (Kluster MCP optimization)
+        const tokenPromises = Array.from(tokenAddresses).map(async (address) => {
           try {
             // Use the SDK's token utilities to get real token info
             const tokenInfo = await fetchTokenInfo(address)
-            tokens.push(tokenInfo)
+            return tokenInfo
           } catch (error) {
             console.warn(`Failed to fetch token info for ${address}:`, error)
             // Add basic info for failed tokens
-            tokens.push(createFallbackToken(address))
+            return createFallbackToken(address)
           }
-        }
+        })
+        
+        const tokens = await Promise.all(tokenPromises)
         
         return tokens.sort((a, b) => a.symbol.localeCompare(b.symbol))
         

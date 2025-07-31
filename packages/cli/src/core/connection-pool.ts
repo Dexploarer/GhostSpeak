@@ -19,7 +19,7 @@
  */
 
 import { EventEmitter } from 'events'
-import { createSolanaRpc, type SolanaRpc } from '@solana/kit'
+import { createSolanaRpc, type SolanaRpcApi } from '@solana/kit'
 import { EventBus } from './event-system'
 
 /**
@@ -86,7 +86,7 @@ export interface PoolStats {
  * Connection wrapper with enhanced functionality
  */
 export class PooledConnection extends EventEmitter {
-  private rpc: SolanaRpc
+  private rpc: SolanaRpcApi
   private endpoint: RpcEndpoint
   private createdAt: Date
   private lastUsed: Date
@@ -94,7 +94,7 @@ export class PooledConnection extends EventEmitter {
   private isActive = false
   private pool: ConnectionPool
 
-  constructor(rpc: SolanaRpc, endpoint: RpcEndpoint, pool: ConnectionPool) {
+  constructor(rpc: SolanaRpcApi, endpoint: RpcEndpoint, pool: ConnectionPool) {
     super()
     this.rpc = rpc
     this.endpoint = endpoint

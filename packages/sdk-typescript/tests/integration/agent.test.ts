@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { GhostSpeakClient } from '../../src'
-import { createSolanaRpc, generateKeyPair, createSolanaRpcSubscriptions } from '@solana/web3.js'
-import { address } from '@solana/addresses'
-import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { createSolanaRpc, generateKeyPairSigner, createSolanaRpcSubscriptions, address } from '@solana/kit'
 
 describe('Agent Integration Tests', () => {
   let client: GhostSpeakClient
-  let signer: Awaited<ReturnType<typeof createKeyPairSignerFromBytes>>
+  let signer: Awaited<ReturnType<typeof generateKeyPairSigner>>
   
   beforeAll(async () => {
     // Setup test client
@@ -21,8 +19,7 @@ describe('Agent Integration Tests', () => {
     })
     
     // Generate a test keypair
-    const keyPair = await generateKeyPair()
-    signer = await createKeyPairSignerFromBytes(keyPair.privateKey)
+    signer = await generateKeyPairSigner()
   })
   
   it('should register a new agent', async () => {

@@ -5,7 +5,7 @@
  * for optimal RPC performance and reliability.
  */
 
-import type { SolanaRpc } from '@solana/kit'
+import type { SolanaRpcApi } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 import { ConnectionPoolManager, type NetworkType, type PooledConnection } from '../../core/connection-pool'
 import { EventBus } from '../../core/event-system'

@@ -19,6 +19,7 @@ const colors = {
   red: '\x1b[31m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
+  cyan: '\x1b[36m',
   reset: '\x1b[0m',
   bold: '\x1b[1m'
 }
@@ -583,15 +584,18 @@ async function testAllCommands() {
       let status: 'pass' | 'fail' = 'pass'
       let details = ''
       
-      // Check exit code if specified
+      // Standardized error handling pattern - check exit code expectations
       if (test.expectedExitCode !== undefined) {
+        const expectedSuccess = test.expectedExitCode === 0
+        const actualSuccess = result.exitCode === 0
+        
         if (result.exitCode !== test.expectedExitCode) {
           status = 'fail'
           details = `Expected exit code ${test.expectedExitCode}, got ${result.exitCode}`
         }
       }
       
-      // Check patterns
+      // Check patterns with standardized approach
       if (status === 'pass' && test.expectedPatterns) {
         const combinedOutput = (result.stdout + result.stderr).toLowerCase()
         for (const pattern of test.expectedPatterns) {
@@ -603,9 +607,10 @@ async function testAllCommands() {
         }
       }
       
-      // If no specific checks, just verify it didn't crash
+      // Standardized crash detection - consistent with other test scripts
       if (status === 'pass' && !test.expectedExitCode && !test.expectedPatterns) {
-        if (result.exitCode === null || result.exitCode < 0) {
+        const commandCrashed = result.exitCode === null || result.exitCode < 0
+        if (commandCrashed) {
           status = 'fail'
           details = 'Command crashed or timed out'
         }
@@ -668,7 +673,7 @@ async function testAllCommands() {
       if (result.details) {
         console.log(`  Details: ${result.details}`)
       }
-      if (result.error && result.error.trim()) {
+      if (result.error?.trim()) {
         console.log(`  Error: ${result.error.trim().split('\n')[0]}`)
       }
       console.log()

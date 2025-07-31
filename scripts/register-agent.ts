@@ -24,14 +24,21 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getDefaults, getCurrentNetwork, getProgram } from './config.js';
 
-// SDK method imports
-import { Keypair, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { createKeyPairSignerFromBytes } from '@solana/signers';
+// SDK method imports - July 2025 @solana/kit patterns
+import { 
+  createSolanaRpc, 
+  generateKeyPairSigner, 
+  createKeyPairSignerFromBytes,
+  address,
+  lamports,
+  type Address,
+  type KeyPairSigner
+} from '@solana/kit';
 
 // Anchor method imports  
 import * as anchor from '@coral-xyz/anchor';
 import { Program, AnchorProvider, BN } from '@coral-xyz/anchor';
-import { SystemProgram, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
+// Note: Some Anchor operations still require legacy patterns for compatibility
 
 /**
  * Configuration options for agent registration
@@ -73,26 +80,27 @@ class UnifiedAgentRegistration {
     console.log(colors[level](`[${new Date().toISOString()}] ${message}`));
   }
 
-  private loadWallet(): Keypair {
+  private async loadWallet(): Promise<KeyPairSigner> {
     const walletPath = this.config.walletPath || 
                       process.env.ANCHOR_WALLET || 
                       path.join(process.env.HOME!, '.config/solana/id.json');
     
     try {
       const walletData = JSON.parse(fs.readFileSync(walletPath, 'utf-8'));
-      return Keypair.fromSecretKey(Buffer.from(walletData));
+      const secretKey = new Uint8Array(walletData);
+      return await createKeyPairSignerFromBytes(secretKey);
     } catch (error) {
       throw new Error(`Failed to load wallet from ${walletPath}: ${error}`);
     }
   }
 
-  private async checkBalance(connection: Connection, publicKey: any): Promise<void> {
-    const balance = await connection.getBalance(publicKey);
-    const solBalance = balance / LAMPORTS_PER_SOL;
+  private async checkBalance(rpc: any, walletAddress: Address): Promise<void> {
+    const balance = await rpc.getBalance(walletAddress).send();
+    const solBalance = Number(balance.value) / 1_000_000_000; // Convert lamports to SOL
     
     this.log(`Balance: ${solBalance} SOL`, 'info');
     
-    if (balance < 0.1 * LAMPORTS_PER_SOL) {
+    if (balance.value < lamports(100_000_000n)) { // 0.1 SOL minimum
       throw new Error(`Insufficient balance: ${solBalance} SOL (minimum 0.1 SOL required)`);
     }
   }
@@ -121,15 +129,13 @@ class UnifiedAgentRegistration {
       const { GhostSpeakClient } = await import('../packages/sdk-typescript/dist/index.js');
       
       const network = getCurrentNetwork();
-      const connection = new Connection(this.config.rpcUrl || network.rpcUrl, 'confirmed');
-      const walletKeypair = this.loadWallet();
+      const rpc = createSolanaRpc(this.config.rpcUrl || network.rpcUrl);
+      const walletSigner = await this.loadWallet();
       
-      this.log(`Wallet: ${walletKeypair.publicKey.toBase58()}`, 'info');
-      await this.checkBalance(connection, walletKeypair.publicKey);
+      this.log(`Wallet: ${walletSigner.address}`, 'info');
+      await this.checkBalance(rpc, walletSigner.address);
       
-      // Convert Keypair to TransactionSigner
-      const signer = await createKeyPairSignerFromBytes(walletKeypair.secretKey);
-      this.log(`Signer address: ${signer.address}`, 'info');
+      this.log(`Signer address: ${walletSigner.address}`, 'info');
       
       // Create GhostSpeak client
       const client = new GhostSpeakClient({
@@ -141,7 +147,7 @@ class UnifiedAgentRegistration {
       
       // Register agent with SDK
       const result = await client.registerAgent({
-        signer,
+        signer: walletSigner,
         name: agentData.name,
         description: agentData.description,
         capabilities: agentData.capabilities,
@@ -178,11 +184,19 @@ class UnifiedAgentRegistration {
         'confirmed'
       );
       
-      const walletKeypair = this.loadWallet();
-      const wallet = new anchor.Wallet(walletKeypair);
+      // Load wallet using new pattern, but convert for Anchor compatibility
+      const walletSigner = await this.loadWallet();
+      const walletPath = this.config.walletPath || 
+                        process.env.ANCHOR_WALLET || 
+                        path.join(process.env.HOME!, '.config/solana/id.json');
+      const walletData = JSON.parse(fs.readFileSync(walletPath, 'utf-8'));
+      const legacyKeypair = anchor.web3.Keypair.fromSecretKey(new Uint8Array(walletData));
+      const wallet = new anchor.Wallet(legacyKeypair);
       
-      this.log(`Wallet: ${wallet.publicKey.toBase58()}`, 'info');
-      await this.checkBalance(connection, wallet.publicKey);
+      this.log(`Wallet: ${walletSigner.address}`, 'info');
+      // Create RPC client for balance check
+      const rpc = createSolanaRpc(this.config.rpcUrl || network.rpcUrl);
+      await this.checkBalance(rpc, walletSigner.address);
       
       const provider = new AnchorProvider(connection, wallet, {
         commitment: 'confirmed',
@@ -195,8 +209,8 @@ class UnifiedAgentRegistration {
       const agentData = this.generateAgentData();
       this.log(`Registering agent: ${agentData.name}`, 'info');
       
-      // Generate agent keypair
-      const agentKeypair = Keypair.generate();
+      // Generate agent keypair using legacy pattern for Anchor compatibility
+      const agentKeypair = anchor.web3.Keypair.generate();
       
       // Derive PDAs
       const [agentPda] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -216,8 +230,8 @@ class UnifiedAgentRegistration {
         .accounts({
           agent: agentPda,
           authority: wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-          clock: SYSVAR_CLOCK_PUBKEY,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
         })
         .signers([agentKeypair])
         .rpc();

@@ -6,8 +6,8 @@
  * GhostSpeak Protocol monitoring.
  */
 
-import type { Connection } from '@solana/web3.js'
-import { address } from '@solana/addresses'
+import { createSolanaRpc, address } from '@solana/kit'
+import type { Rpc } from '@solana/kit'
 
 import { GhostSpeakClient } from '../src/index.js'
 import { 

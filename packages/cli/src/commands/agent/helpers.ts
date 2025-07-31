@@ -2,7 +2,7 @@
  * Shared utilities for agent commands
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs'
+import { promises as fs } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import type { Address } from '@solana/addresses'
@@ -10,7 +10,7 @@ import type { AgentAnalytics } from '@ghostspeak/sdk'
 // AgentCredentials type imported but not used directly in current implementation
 
 /**
- * Store a pending information request for an agent
+ * Store a pending information request for an agent (non-blocking async)
  */
 export async function storePendingInfoRequest(
   agentAddress: string, 
@@ -19,8 +19,10 @@ export async function storePendingInfoRequest(
 ): Promise<void> {
   const requestsDir = join(homedir(), '.ghostspeak', 'pending-requests')
   
-  if (!existsSync(requestsDir)) {
-    mkdirSync(requestsDir, { recursive: true })
+  try {
+    await fs.access(requestsDir)
+  } catch {
+    await fs.mkdir(requestsDir, { recursive: true })
   }
   
   const requestData = {
@@ -32,7 +34,18 @@ export async function storePendingInfoRequest(
   }
   
   const requestFile = join(requestsDir, `${agentAddress}-${Date.now()}.json`)
-  writeFileSync(requestFile, JSON.stringify(requestData, null, 2))
+  
+  // Use setImmediate to prevent blocking main thread
+  await new Promise<void>((resolve, reject) => {
+    setImmediate(async () => {
+      try {
+        await fs.writeFile(requestFile, JSON.stringify(requestData, null, 2))
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+  })
 }
 
 /**

@@ -31,6 +31,7 @@
     "**/target",
     "**/coverage",
     "**/generated/**",
-    "packages/sdk-typescript/src/generated/**"
+    "packages/sdk-typescript/src/generated/**",
+    ".cursor/**"
   ]
 }

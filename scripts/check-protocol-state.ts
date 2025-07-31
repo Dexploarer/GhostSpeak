@@ -3,38 +3,39 @@
  * Check if GhostSpeak protocol is initialized on devnet
  */
 
-import { Connection, PublicKey } from '@solana/web3.js';
+import { createSolanaRpc, address, getAddressFromPublicKey } from '@solana/kit';
+import { findProgramDerivedAddress } from '@solana/addresses';
 import chalk from 'chalk';
 
-const PROGRAM_ID = new PublicKey('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
+const PROGRAM_ID = address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
 const RPC_URL = 'https://api.devnet.solana.com';
 
 async function checkProtocolState() {
   console.log(chalk.cyan('=== CHECKING PROTOCOL STATE ===\n'));
   
-  const connection = new Connection(RPC_URL, 'confirmed');
+  const rpc = createSolanaRpc(RPC_URL);
   
   // Find protocol state PDA
-  const [protocolStatePDA] = await PublicKey.findProgramAddress(
-    [Buffer.from('protocol-state')],
-    PROGRAM_ID
-  );
+  const [protocolStatePDA] = await findProgramDerivedAddress({
+    programAddress: PROGRAM_ID,
+    seeds: [new TextEncoder().encode('protocol-state')]
+  });
   
-  console.log(`Protocol State PDA: ${protocolStatePDA.toBase58()}`);
+  console.log(`Protocol State PDA: ${protocolStatePDA}`);
   
   try {
-    const accountInfo = await connection.getAccountInfo(protocolStatePDA);
+    const accountInfo = await rpc.getAccountInfo(protocolStatePDA).send();
     
-    if (accountInfo) {
+    if (accountInfo.value) {
       console.log(chalk.green('✅ Protocol State Account exists!'));
-      console.log(`   Owner: ${accountInfo.owner.toBase58()}`);
-      console.log(`   Data length: ${accountInfo.data.length} bytes`);
-      console.log(`   Lamports: ${accountInfo.lamports}`);
-      console.log(`   Executable: ${accountInfo.executable}`);
+      console.log(`   Owner: ${accountInfo.value.owner}`);
+      console.log(`   Data length: ${accountInfo.value.data.length} bytes`);
+      console.log(`   Lamports: ${accountInfo.value.lamports}`);
+      console.log(`   Executable: ${accountInfo.value.executable}`);
       
       // Try to decode first few bytes
-      const data = accountInfo.data;
-      console.log(`   First 32 bytes (hex): ${data.slice(0, 32).toString('hex')}`);
+      const data = new Uint8Array(accountInfo.value.data);
+      console.log(`   First 32 bytes (hex): ${Array.from(data.slice(0, 32)).map(b => b.toString(16).padStart(2, '0')).join('')}`);
       
       // Check if it looks initialized (non-zero data)
       const hasData = data.some(byte => byte !== 0);
@@ -52,18 +53,18 @@ async function checkProtocolState() {
     // Also check for any agents
     console.log(chalk.cyan('\n=== CHECKING FOR AGENTS ===\n'));
     
-    const accounts = await connection.getProgramAccounts(PROGRAM_ID, {
+    const accounts = await rpc.getProgramAccounts(PROGRAM_ID, {
       filters: [
         { dataSize: 500 } // Approximate size for agent accounts
       ]
-    });
+    }).send();
     
     console.log(`Found ${accounts.length} program accounts`);
     
     if (accounts.length > 0) {
       console.log('First few accounts:');
       accounts.slice(0, 3).forEach((acc, i) => {
-        console.log(`  ${i + 1}. ${acc.pubkey.toBase58()}`);
+        console.log(`  ${i + 1}. ${acc.pubkey}`);
         console.log(`     Size: ${acc.account.data.length} bytes`);
       });
     }

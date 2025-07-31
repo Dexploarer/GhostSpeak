@@ -57,7 +57,7 @@ export function registerRegisterCommand(parentCommand: Command): void {
         // Get AgentService from container
         console.log('🔍 Resolving AgentService from container...')
         const agentService = container.resolve<IAgentService>(ServiceTokens.AGENT_SERVICE)
-        console.log('🔍 AgentService resolved:', !!agentService)
+        console.log('🔍 AgentService resolved:', Boolean(agentService))
 
         const s = spinner()
         s.start('Registering agent...')

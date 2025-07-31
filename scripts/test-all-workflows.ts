@@ -4,7 +4,8 @@
  * Tests all major functionality of the protocol
  */
 
-import { Keypair, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { createSolanaRpc, generateKeyPairSigner, createKeyPairSignerFromBytes, address } from '@solana/kit';
+import { LAMPORTS_PER_SOL } from '@solana/rpc-types';
 import { 
   GhostSpeakClient,
   deriveServiceListingPda,
@@ -13,8 +14,6 @@ import {
   deriveJobPostingPda,
   deriveA2ASessionPda
 } from '../packages/sdk-typescript/dist/index.js';
-import { createKeyPairSignerFromBytes } from '@solana/signers';
-import { address } from '@solana/addresses';
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';

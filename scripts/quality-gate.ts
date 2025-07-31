@@ -722,4 +722,5 @@ if (require.main === module) {
   });
 }
 
-export { QualityGate, QualityGateConfig, QualityGateResult, QualityMetrics };
+export type { QualityGateConfig, QualityGateResult, QualityMetrics };
+export { QualityGate };

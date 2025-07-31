@@ -3,29 +3,31 @@
  * Initialize GhostSpeak Protocol on Devnet
  */
 
-import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { createSolanaRpc, address, generateKeyPairSigner, createKeyPairSignerFromBytes } from '@solana/kit';
+import { LAMPORTS_PER_SOL } from '@solana/rpc-types';
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 
-const PROGRAM_ID = new PublicKey('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
+const PROGRAM_ID = address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
 const RPC_URL = 'https://api.devnet.solana.com';
 
 async function initializeProtocol() {
   console.log(chalk.cyan('=== INITIALIZING GHOSTSPEAK PROTOCOL ===\n'));
   
-  const connection = new Connection(RPC_URL, 'confirmed');
+  const rpc = createSolanaRpc(RPC_URL);
   
   // Load wallet
   const walletPath = process.env.ANCHOR_WALLET || path.join(process.env.HOME!, '.config/solana/id.json');
-  const walletKeypair = Keypair.fromSecretKey(
-    Buffer.from(JSON.parse(fs.readFileSync(walletPath, 'utf-8')))
+  const walletKeypair = await createKeyPairSignerFromBytes(
+    new Uint8Array(JSON.parse(fs.readFileSync(walletPath, 'utf-8')))
   );
   
-  console.log(`Admin wallet: ${walletKeypair.publicKey.toBase58()}`);
+  console.log(`Admin wallet: ${walletKeypair.address}`);
   
   // Check balance
-  const balance = await connection.getBalance(walletKeypair.publicKey);
+  const balanceResponse = await rpc.getBalance(walletKeypair.address).send();
+  const balance = balanceResponse.value;
   console.log(`Balance: ${balance / LAMPORTS_PER_SOL} SOL`);
   
   if (balance < 0.1 * LAMPORTS_PER_SOL) {
@@ -34,8 +36,8 @@ async function initializeProtocol() {
   }
   
   // Generate treasury keypair
-  const treasuryKeypair = Keypair.generate();
-  console.log(`Treasury: ${treasuryKeypair.publicKey.toBase58()}`);
+  const treasuryKeypair = await generateKeyPairSigner();
+  console.log(`Treasury: ${treasuryKeypair.address}`);
   
   // Protocol parameters
   const protocolFee = 200; // 2% in basis points

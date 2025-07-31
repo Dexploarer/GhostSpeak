@@ -678,4 +678,5 @@ if (require.main === module) {
   });
 }
 
-export { SecurityAuditor, SecurityIssue, SecurityAuditReport };
+export type { SecurityIssue, SecurityAuditReport };
+export { SecurityAuditor };

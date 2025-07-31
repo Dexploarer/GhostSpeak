@@ -5,7 +5,7 @@
  * multi-sig management, proposal creation, voting, and execution.
  */
 
-import type { Connection } from '@solana/web3.js'
+import type { Rpc } from '@solana/kit'
 import { generateKeyPairSigner } from '@solana/signers'
 import type { Address, TransactionSigner } from '@solana/kit'
 import { address } from '@solana/addresses'

@@ -142,9 +142,9 @@ export interface PerformanceAnalytics {
   /** Performance trends */
   trends: {
     memoryUsage: 'increasing' | 'decreasing' | 'stable'
-    responseTime: 'improving' | 'degrading' | 'stable'
+    responseTime: 'increasing' | 'decreasing' | 'stable'
     errorRate: 'increasing' | 'decreasing' | 'stable'
-    cacheHitRate: 'improving' | 'degrading' | 'stable'
+    cacheHitRate: 'increasing' | 'decreasing' | 'stable'
   }
   /** Top performing operations */
   topOperations: Array<{
@@ -743,7 +743,7 @@ export class PerformanceMonitor extends EventEmitter {
     first: number, 
     last: number, 
     reverseGood = false
-  ): 'improving' | 'degrading' | 'stable' {
+  ): 'increasing' | 'decreasing' | 'stable' {
     const threshold = 5 // 5% change threshold
     const change = ((last - first) / first) * 100
 
@@ -751,8 +751,7 @@ export class PerformanceMonitor extends EventEmitter {
       return 'stable'
     }
 
-    const improving = reverseGood ? change < 0 : change > 0
-    return improving ? 'improving' : 'degrading'
+    return change > 0 ? 'increasing' : 'decreasing'
   }
 
   /**
@@ -852,7 +851,7 @@ export class PerformanceMonitor extends EventEmitter {
     const optimizations: PerformanceAnalytics['optimizations'] = []
 
     // Memory optimization
-    if (summary.memoryEfficiency < 70 || trends.memoryUsage === 'degrading') {
+    if (summary.memoryEfficiency < 70 || trends.memoryUsage === 'increasing') {
       optimizations.push({
         type: 'memory',
         priority: 'high',
@@ -874,7 +873,7 @@ export class PerformanceMonitor extends EventEmitter {
     }
 
     // Network optimization
-    if (summary.networkOptimization < 90 || trends.responseTime === 'degrading') {
+    if (summary.networkOptimization < 90 || trends.responseTime === 'increasing') {
       optimizations.push({
         type: 'network',
         priority: 'high',

@@ -2,7 +2,8 @@ import { config } from 'dotenv';
 import { resolve, dirname } from 'path';
 import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { PublicKey } from '@solana/web3.js';
+// July 2025 @solana/kit patterns
+import { address, type Address } from '@solana/kit';
 
 // Load environment variables from multiple possible locations
 function loadEnvFiles() {
@@ -47,9 +48,9 @@ loadEnvFiles();
 export interface EnvironmentConfig {
   network: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet';
   rpcUrl: string;
-  programId: PublicKey;
+  programId: Address;
   walletPath: string;
-  usdcMint: PublicKey;
+  usdcMint: Address;
   debug: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   encryptionSalt?: string;
@@ -68,9 +69,9 @@ function getCurrentNetwork(): 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
 }
 
 /**
- * Get program ID for the current network
+ * Get program ID for the current network using July 2025 patterns
  */
-function getProgramId(): PublicKey {
+function getProgramId(): Address {
   const network = getCurrentNetwork();
   let programIdStr: string | undefined;
   
@@ -94,16 +95,16 @@ function getProgramId(): PublicKey {
   }
   
   try {
-    return new PublicKey(programIdStr);
+    return address(programIdStr);
   } catch {
     throw new Error(`Invalid program ID for ${network}: ${programIdStr}`);
   }
 }
 
 /**
- * Get USDC mint for the current network
+ * Get USDC mint for the current network using July 2025 patterns
  */
-function getUsdcMint(): PublicKey {
+function getUsdcMint(): Address {
   const network = getCurrentNetwork();
   let mintStr: string | undefined;
   
@@ -121,7 +122,7 @@ function getUsdcMint(): PublicKey {
       break;
   }
   
-  return new PublicKey(mintStr);
+  return address(mintStr);
 }
 
 /**

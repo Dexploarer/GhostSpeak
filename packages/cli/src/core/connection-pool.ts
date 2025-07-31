@@ -320,7 +320,7 @@ export class ConnectionPool extends EventEmitter {
     const endpoint = this.selectEndpoint()
     
     try {
-      const rpc = createSolanaRpc(endpoint.url)
+      const rpc = createSolanaRpc(endpoint.url) as unknown as SolanaRpcApi as unknown as SolanaRpcApi
       const connection = new PooledConnection(rpc, endpoint, this)
       
       // Setup connection event handlers
@@ -439,7 +439,7 @@ export class ConnectionPool extends EventEmitter {
     
     try {
       // Simple health check - get latest blockhash
-      const rpc = createSolanaRpc(endpoint.url)
+      const rpc = createSolanaRpc(endpoint.url) as unknown as SolanaRpcApi
       await (rpc as any).getLatestBlockhash?.()
       
       const responseTime = Date.now() - startTime

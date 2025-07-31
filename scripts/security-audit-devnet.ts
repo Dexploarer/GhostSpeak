@@ -141,14 +141,16 @@ class DevnetSecurityAuditor {
   }
 
   private async deriveProgramDataAddress(programId: string): Promise<[string, number]> {
-    // Import PublicKey from Solana web3.js for PDA derivation
-    const { PublicKey } = await import('@solana/web3.js')
-    const BPF_LOADER_UPGRADEABLE_PROGRAM_ID = new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111')
+    // Import address functions from @solana/kit for PDA derivation
+    const { address, findProgramDerivedAddress } = await import('@solana/kit')
+    const BPF_LOADER_UPGRADEABLE_PROGRAM_ID = address('BPFLoaderUpgradeab1e11111111111111111111111')
     
-    return PublicKey.findProgramAddressSync(
-      [new PublicKey(programId).toBuffer()],
-      BPF_LOADER_UPGRADEABLE_PROGRAM_ID
-    ).map(v => v.toString()) as [string, number]
+    const [derivedAddress, bump] = await findProgramDerivedAddress({
+      programAddress: BPF_LOADER_UPGRADEABLE_PROGRAM_ID,
+      seeds: [address(programId)]
+    })
+    
+    return [derivedAddress, bump]
   }
 
   private async checkAccountValidation() {

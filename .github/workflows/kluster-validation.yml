@@ -1,0 +1,135 @@
+name: Kluster MCP Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  kluster-validation:
+    name: Kluster MCP Code Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2  # Need at least 2 commits for git diff
+    
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'bun'
+    
+    - name: Install dependencies
+      run: bun install
+    
+    - name: Install tsx globally
+      run: bun add -g tsx
+    
+    - name: Create reports directory
+      run: mkdir -p .cursor/reports
+    
+    - name: Run Kluster MCP validation on changed files
+      run: |
+        echo "🔍 Running Kluster MCP validation on changed files..."
+        npm run qa:kluster
+      env:
+        NODE_ENV: ci
+        KLUSTER_CI_MODE: true
+    
+    - name: Run full Kluster validation on critical files
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        echo "🔍 Running full Kluster MCP validation for main branch..."
+        npm run qa:kluster:all --no-fail
+      continue-on-error: true
+    
+    - name: Upload Kluster validation report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: kluster-validation-report
+        path: .cursor/reports/
+        retention-days: 30
+    
+    - name: Comment PR with validation results
+      if: github.event_name == 'pull_request' && failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = '.cursor/reports/kluster-validation-report.json';
+          
+          if (fs.existsSync(path)) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const comment = `## 🔍 Kluster MCP Validation Results
+            
+            ❌ **Validation Failed**
+            
+            **Summary:**
+            - Files validated: ${report.totalFiles || 0}
+            - Issues found: ${report.totalIssues || 0}
+            - Critical issues: ${report.criticalIssues || 0}
+            
+            **Next Steps:**
+            1. Review the validation report in the CI artifacts
+            2. Fix the identified issues
+            3. Run \`npm run qa:kluster\` locally to verify fixes
+            4. Push the fixes to update this PR
+            
+            **Local Validation:**
+            \`\`\`bash
+            npm run qa:kluster:files -- --files="changed-file1.ts,changed-file2.ts"
+            \`\`\`
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
+
+  kluster-security-audit:
+    name: Kluster Security Audit
+    runs-on: ubuntu-latest
+    needs: kluster-validation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+    
+    - name: Install dependencies
+      run: bun install
+    
+    - name: Run Kluster security-focused validation
+      run: |
+        echo "🔒 Running Kluster MCP security audit..."
+        # Focus on security-critical files
+        find . -name "*.ts" -path "*/security/*" -o -name "*.ts" -path "*/auth/*" -o -name "*.ts" -path "*/crypto/*" | \
+        head -20 | tr '\n' ',' | sed 's/,$//' | \
+        xargs -I {} npm run qa:kluster:files -- --files="{}"
+      continue-on-error: true
+    
+    - name: Upload security audit results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: kluster-security-audit
+        path: .cursor/reports/
+        retention-days: 90

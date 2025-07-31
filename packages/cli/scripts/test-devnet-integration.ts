@@ -321,10 +321,10 @@ async function runDevnetTests() {
   console.log(`${colors.bold}📊 Test Results Summary${colors.reset}`)
   console.log('━'.repeat(60))
   
-  let totalTests = testResults.length
-  let passedTests = testResults.filter(r => r.success).length
-  let failedTests = totalTests - passedTests
-  let onChainTransactions = testResults.filter(r => r.transactionSignature).length
+  const totalTests = testResults.length
+  const passedTests = testResults.filter(r => r.success).length
+  const failedTests = totalTests - passedTests
+  const onChainTransactions = testResults.filter(r => r.transactionSignature).length
   
   console.log(`\n${colors.bold}Overall Results:${colors.reset}`)
   console.log(`Total Tests: ${colors.bold}${totalTests}${colors.reset}`)

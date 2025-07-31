@@ -772,7 +772,7 @@ async function runComprehensiveTests() {
   for (const [category, stats] of Object.entries(categoryStats)) {
     const percentage = Math.round((stats.passed / stats.total) * 100)
     const status = percentage === 100 ? colors.green : percentage >= 80 ? colors.yellow : colors.red
-    console.log(`${category.padRight(15)}: ${status}${stats.passed}/${stats.total} (${percentage}%)${colors.reset}`)
+    console.log(`${category.padEnd(15)}: ${status}${stats.passed}/${stats.total} (${percentage}%)${colors.reset}`)
   }
   
   // Show failed tests
@@ -821,10 +821,7 @@ async function runComprehensiveTests() {
   }
 }
 
-// Helper to pad strings
-String.prototype.padRight = function(length: number) {
-  return this + ' '.repeat(Math.max(0, length - this.length))
-}
+// Helper function removed - using standard padEnd() instead
 
 // Create test directory if needed
 const testDir = join(process.cwd(), '.ghostspeak-test')

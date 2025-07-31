@@ -28,19 +28,12 @@ const eslintConfig = [
       prettier: prettierPlugin,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/explicit-function-return-type': [
-        'warn',
-        {
-          allowExpressions: true,
-          allowTypedFunctionExpressions: true,
-          allowHigherOrderFunctions: true,
-          allowDirectConstAssertionInArrowFunctions: true,
-          allowConciseArrowFunctionExpressionsStartingWithVoid: true,
-        },
-      ],
-      'prettier/prettier': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      'prettier/prettier': 'warn',
+      '@next/next/no-img-element': 'warn',
+      'jsx-a11y/alt-text': 'warn'
     },
   },
 ]

@@ -143,7 +143,7 @@ export class IPFSProvider implements StorageProvider {
       })
       return result.cid.toString()
     } catch (error) {
-      throw new Error(`Failed to store data to IPFS: ${error.message}`)
+      throw new Error(`Failed to store data to IPFS: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
   
@@ -176,7 +176,7 @@ export class IPFSProvider implements StorageProvider {
       
       return result
     } catch (error) {
-      throw new Error(`Failed to retrieve data from IPFS: ${error.message}`)
+      throw new Error(`Failed to retrieve data from IPFS: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
   
@@ -187,7 +187,7 @@ export class IPFSProvider implements StorageProvider {
     } catch (error) {
       // Pin removal might fail if not pinned - this is a non-critical error
       // Log as warning but don't throw since the data might not have been pinned
-      console.warn(`IPFS unpin warning for ${hash}: ${error.message}`)
+      console.warn(`IPFS unpin warning for ${hash}: ${error instanceof Error ? error.message : String(error)}`)
       return false // Return false to indicate pin removal didn't happen, but don't fail
     }
   }

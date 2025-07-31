@@ -101,8 +101,16 @@ export class WalletService implements IWalletService {
       const derivationPath = `m/44'/501'/${index}'/0'`
       const { key } = derivePath(derivationPath, seed.toString('hex'))
       
-      // Create keypair from derived private key
-      return await createKeyPairSignerFromBytes(new Uint8Array(key))
+      // The key from derivePath is 32 bytes, but we need to use it as a private key
+      // For Solana v2, we should use the 32-byte private key directly with createKeyPairFromPrivateKeyBytes
+      const { createKeyPairFromPrivateKeyBytes } = await import('@solana/keys')
+      const { createSignerFromKeyPair } = await import('@solana/signers')
+      
+      // Create keypair from 32-byte private key
+      const keyPair = await createKeyPairFromPrivateKeyBytes(new Uint8Array(key))
+      
+      // Create signer from keypair
+      return await createSignerFromKeyPair(keyPair)
     } catch (error) {
       throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }

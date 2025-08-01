@@ -227,11 +227,11 @@ pub fn register_agent(
         user_registry.increment_agents()?;
         user_registry.check_rate_limit(clock.unix_timestamp)?;
 
-        // Initialize agent account with memory-optimized defaults
+        // Initialize agent account with proper memory allocation
         agent.owner = ctx.accounts.signer.key();
-        agent.name = String::with_capacity(0); // Optimize for empty initial state
-        agent.description = String::with_capacity(0);
-        agent.capabilities = Vec::with_capacity(0); // Memory-efficient vector
+        agent.name = String::new(); // Use String::new() instead of with_capacity(0)
+        agent.description = String::new();
+        agent.capabilities = Vec::new(); // Use Vec::new() instead of with_capacity(0)
         agent.pricing_model = crate::PricingModel::Fixed;
         agent.reputation_score = 0;
         agent.total_jobs_completed = 0;
@@ -240,13 +240,21 @@ pub fn register_agent(
         agent.created_at = clock.unix_timestamp;
         agent.updated_at = clock.unix_timestamp;
         agent.original_price = 0;
-        agent.genome_hash = String::with_capacity(0);
+        agent.genome_hash = String::new();
         agent.is_replicable = false;
         agent.replication_fee = 0;
-        agent.service_endpoint = String::with_capacity(0);
+        agent.service_endpoint = String::new();
         agent.is_verified = false;
         agent.verification_timestamp = 0;
         agent.metadata_uri = metadata_uri;
+        agent.framework_origin = String::new(); // Initialize missing field
+        agent.supported_tokens = Vec::new(); // Initialize missing field
+        agent.cnft_mint = None; // Initialize missing field
+        agent.merkle_tree = None; // Initialize missing field
+        agent.supports_a2a = false; // Initialize missing field
+        agent.transfer_hook = None; // Initialize missing field
+        agent.parent_agent = None; // Initialize missing field
+        agent.generation = 0; // Initialize missing field
         agent.bump = ctx.bumps.agent_account;
 
         // Emit optimized event with essential data

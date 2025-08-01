@@ -84,7 +84,6 @@ pub struct Agent {
 }
 
 impl Agent {
-    
     pub const LEN: usize = 8 + // discriminator
         32 + // owner
         4 + MAX_NAME_LENGTH + // name

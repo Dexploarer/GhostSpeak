@@ -7,8 +7,8 @@
 
 // Removed dependency on hardcoded PROTOCOL_ADMIN constant
 // All admin validation is now done at runtime with proper account verification
-use anchor_lang::prelude::*;
 use crate::PROTOCOL_ADMIN;
+use anchor_lang::prelude::*;
 
 /// Known system program addresses that should never be used as admin
 const SYSTEM_PROGRAM_IDS: &[&str] = &[
@@ -34,14 +34,14 @@ pub enum NetworkType {
 
 impl NetworkType {
     /// Detect network type from various indicators
-    /// 
+    ///
     /// This function detects the current network based on build-time feature flags.
     /// In production deployments, this provides compile-time guarantees about
     /// which network the program is configured for.
     pub fn detect() -> Self {
         // Check feature flags in order of preference
         // Each cfg attribute creates a separate compilation path
-        
+
         #[cfg(feature = "devnet")]
         {
             NetworkType::Devnet
@@ -110,18 +110,18 @@ pub fn validate_admin_configuration() -> AdminValidationResult {
 }
 
 /// Check if a public key is a known system address
-/// 
+///
 /// This function prevents the use of Solana system program addresses as admin keys,
 /// which would be a critical security vulnerability. System programs should never
 /// be granted administrative privileges over user protocols.
-/// 
+///
 /// # Arguments
 /// * `key` - The public key to validate against known system addresses
-/// 
+///
 /// # Returns
 /// * `true` if the key matches any known system program address
 /// * `false` if the key is safe to use (not a system program)
-/// 
+///
 /// # Security
 /// This is a critical security check that prevents privilege escalation attacks
 /// where system programs could be used to bypass authentication.
@@ -131,18 +131,18 @@ pub fn is_system_address(key: &Pubkey) -> bool {
 }
 
 /// Check if a public key is a test/development address
-/// 
+///
 /// This function identifies addresses that are intended only for development
 /// and testing environments. Using these addresses in production would be
 /// a security risk as they may have known private keys or be otherwise compromised.
-/// 
+///
 /// # Arguments
 /// * `key` - The public key to validate against known test addresses
-/// 
+///
 /// # Returns
 /// * `true` if the key is a known test/development address
 /// * `false` if the key appears to be a production-ready address
-/// 
+///
 /// # Security
 /// Prevents the accidental use of test keys in production deployments,
 /// which could lead to unauthorized access if test private keys are exposed.
@@ -152,23 +152,23 @@ pub fn is_test_address(key: &Pubkey) -> bool {
 }
 
 /// Runtime admin validation that can be called from instructions
-/// 
+///
 /// This function performs comprehensive validation of admin keys at runtime,
 /// ensuring that only legitimate, secure keys can be used for administrative
 /// operations. It should be called before any admin-privileged operations.
-/// 
+///
 /// # Arguments
 /// * `admin` - The admin public key to validate
-/// 
+///
 /// # Returns
 /// * `Ok(())` if the admin key passes all security checks
 /// * `Err(AdminValidationError)` if any validation fails
-/// 
+///
 /// # Validation Checks
 /// 1. Ensures the key is not a system program address
 /// 2. Ensures the key is not the default/null public key
 /// 3. Additional runtime checks for key legitimacy
-/// 
+///
 /// # Security
 /// This function is critical for maintaining protocol security and should
 /// be used consistently across all admin-privileged instructions.
@@ -213,7 +213,7 @@ pub enum AdminValidationError {
     #[msg("Test address cannot be used on mainnet")]
     TestAddressOnMainnet,
 
-    #[msg("Admin validation failed")]
+    #[msg("Admin validation failed - key failed security checks or is not properly configured")]
     ValidationFailed,
 }
 

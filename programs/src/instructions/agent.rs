@@ -21,13 +21,7 @@ fn validate_agent_registration_inputs(
     agent_id: &str,
 ) -> Result<()> {
     // Use centralized validation to eliminate code duplication
-    crate::utils::validate_agent_inputs(
-        agent_type,
-        name,
-        description,
-        metadata_uri,
-        agent_id,
-    )
+    crate::utils::validate_agent_inputs(agent_type, name, description, metadata_uri, agent_id)
 }
 
 /// Enhanced agent registration with 2025 security patterns
@@ -218,7 +212,13 @@ pub fn register_agent(
         let clock = Clock::get()?;
 
         // SECURITY: Comprehensive input validation using centralized helpers
-        validate_agent_registration_inputs(agent_type, &name, &description, &metadata_uri, &_agent_id)?;
+        validate_agent_registration_inputs(
+            agent_type,
+            &name,
+            &description,
+            &metadata_uri,
+            &_agent_id,
+        )?;
 
         // Initialize user registry if needed
         if user_registry.user == Pubkey::default() {
@@ -300,7 +300,7 @@ pub fn update_agent(
     ctx: Context<UpdateAgent>,
     _agent_type: u8,
     name: Option<String>,
-    description: Option<String>, 
+    description: Option<String>,
     metadata_uri: String,
     _agent_id: String,
 ) -> Result<()> {
@@ -311,13 +311,19 @@ pub fn update_agent(
 
         // SECURITY: Enhanced input validation using centralized helpers
         crate::utils::validate_url(&metadata_uri)?;
-        
+
         if let Some(ref name_val) = name {
             crate::utils::validate_string_input(name_val, "name", MAX_NAME_LENGTH, false, false)?;
         }
-        
+
         if let Some(ref desc_val) = description {
-            crate::utils::validate_string_input(desc_val, "description", MAX_DESCRIPTION_LENGTH, false, true)?;
+            crate::utils::validate_string_input(
+                desc_val,
+                "description",
+                MAX_DESCRIPTION_LENGTH,
+                false,
+                true,
+            )?;
         }
 
         // SECURITY: Prevent too frequent updates (rate limiting)
@@ -329,16 +335,16 @@ pub fn update_agent(
 
         // Update agent metadata and optional fields
         agent.metadata_uri = metadata_uri;
-        
+
         // Update optional fields if provided
         if let Some(name_val) = name {
             agent.name = name_val;
         }
-        
+
         if let Some(desc_val) = description {
             agent.description = desc_val;
         }
-        
+
         agent.updated_at = clock.unix_timestamp;
 
         // Emit update event
@@ -369,13 +375,13 @@ pub fn verify_agent(
 
     // SECURITY: Enhanced input validation using centralized helpers
     crate::utils::validate_url(&service_endpoint)?;
-    
+
     crate::utils::validate_collection_size(
         supported_capabilities.len(),
         MAX_CAPABILITIES_COUNT,
-        "capabilities"
+        "capabilities",
     )?;
-    
+
     // Validate timestamp is not too far in the future (max 1 day ahead)
     crate::utils::validate_timestamp(verified_at, 0, 86400)?;
 
@@ -425,13 +431,8 @@ pub fn update_agent_reputation(
     let agent = &mut ctx.accounts.agent_account;
 
     // SECURITY: Use centralized validation for reputation score (0-100 scale)
-    crate::utils::validate_numeric_range(
-        reputation_score,
-        0u64,
-        100u64, 
-        "reputation"
-    )?;
-    
+    crate::utils::validate_numeric_range(reputation_score, 0u64, 100u64, "reputation")?;
+
     // Additional validation to ensure it fits in u32
     require!(
         reputation_score <= u32::MAX as u64,

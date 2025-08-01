@@ -159,9 +159,13 @@ impl DynamicPricing {
         let adjustment = match self.pricing_data.algorithm {
             PricingAlgorithm::Linear => {
                 // Linear pricing: simple average of demand and supply adjustments
-                let demand_adjustment_bps = (demand_factor * self.pricing_data.demand_multiplier as u64) / crate::BASIS_POINTS_MAX as u64;
-                let supply_adjustment_bps = (supply_factor * self.pricing_data.supply_multiplier as u64) / crate::BASIS_POINTS_MAX as u64;
-                
+                let demand_adjustment_bps = (demand_factor
+                    * self.pricing_data.demand_multiplier as u64)
+                    / crate::BASIS_POINTS_MAX as u64;
+                let supply_adjustment_bps = (supply_factor
+                    * self.pricing_data.supply_multiplier as u64)
+                    / crate::BASIS_POINTS_MAX as u64;
+
                 // Return the average of both factors for balanced pricing
                 (demand_adjustment_bps + supply_adjustment_bps) / 2
             }
@@ -174,11 +178,12 @@ impl DynamicPricing {
                     // Avoid division by zero - high demand with no supply
                     demand_factor
                 };
-                
+
                 // Average the configured multipliers for balanced weighting
                 let combined_multiplier = (self.pricing_data.demand_multiplier as u64
-                    + self.pricing_data.supply_multiplier as u64) / 2;
-                    
+                    + self.pricing_data.supply_multiplier as u64)
+                    / 2;
+
                 // Apply the combined multiplier to the market ratio
                 (demand_to_supply_ratio * combined_multiplier) / crate::BASIS_POINTS_MAX as u64
             }

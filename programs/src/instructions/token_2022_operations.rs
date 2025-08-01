@@ -9,16 +9,13 @@
  */
 
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::token_2022::{self, Token2022};
 use anchor_spl::token_interface::Mint;
-use anchor_lang::solana_program::program_option::COption;
-use spl_token_2022::{
-    extension::ExtensionType,
-    state::Mint as SplMint,
-};
+use spl_token_2022::{extension::ExtensionType, state::Mint as SplMint};
 
-use crate::state::{Agent, GhostSpeakError};
 use crate::security::validate_agent_authority;
+use crate::state::{Agent, GhostSpeakError};
 
 // Constants for Token-2022 extensions
 pub const MAX_TRANSFER_FEE_BASIS_POINTS: u16 = 1000; // 10% max fee
@@ -45,10 +42,7 @@ pub struct CreateToken2022Mint<'info> {
 
     /// The mint to be created with Token-2022 extensions
     /// CHECK: This is initialized by the Token-2022 program
-    #[account(
-        mut,
-        signer,
-    )]
+    #[account(mut, signer)]
     pub mint: AccountInfo<'info>,
 
     /// Token-2022 program
@@ -89,7 +83,7 @@ pub fn create_token_2022_mint(
 
     // Calculate required space for extensions
     let mut extensions = vec![];
-    
+
     if params.enable_transfer_fee {
         extensions.push(ExtensionType::TransferFeeConfig);
     }
@@ -110,7 +104,7 @@ pub fn create_token_2022_mint(
 
     // Create the account for the mint
     let rent = ctx.accounts.rent.minimum_balance(space);
-    
+
     anchor_lang::system_program::create_account(
         CpiContext::new(
             ctx.accounts.system_program.to_account_info(),
@@ -126,63 +120,77 @@ pub fn create_token_2022_mint(
 
     // Initialize extensions BEFORE initializing the mint
     // Extensions must be initialized before the mint initialization in Token-2022
-    
+
     let mint_account = ctx.accounts.mint.to_account_info();
     let authority_account = ctx.accounts.authority.to_account_info();
     let token_program = ctx.accounts.token_program.to_account_info();
 
     // IMPORTANT: Token-2022 extensions must be initialized during mint creation
     // This is a current limitation of the SPL Token-2022 program architecture
-    
+
     // Check if any extensions are requested and return appropriate error
-    if params.enable_transfer_fee || params.enable_confidential_transfers || params.enable_interest_bearing 
-        || params.close_authority.is_some() || params.default_account_state.is_some() {
-        
+    if params.enable_transfer_fee
+        || params.enable_confidential_transfers
+        || params.enable_interest_bearing
+        || params.close_authority.is_some()
+        || params.default_account_state.is_some()
+    {
         // Log what extensions were requested for debugging
         msg!("Token-2022 extension initialization requested but not yet implemented:");
-        
+
         if params.enable_transfer_fee {
-            let transfer_fee_basis_points = params.transfer_fee_basis_points
+            let transfer_fee_basis_points = params
+                .transfer_fee_basis_points
                 .ok_or(GhostSpeakError::InvalidParameter)?;
-            let maximum_fee = params.maximum_fee
+            let maximum_fee = params
+                .maximum_fee
                 .ok_or(GhostSpeakError::InvalidParameter)?;
-            
+
             // Validate fee parameters
             require!(
                 transfer_fee_basis_points <= MAX_TRANSFER_FEE_BASIS_POINTS,
                 GhostSpeakError::InvalidParameter
             );
-            
-            msg!("- Transfer fee: {} basis points, max fee: {}", 
-                 transfer_fee_basis_points, maximum_fee);
+
+            msg!(
+                "- Transfer fee: {} basis points, max fee: {}",
+                transfer_fee_basis_points,
+                maximum_fee
+            );
         }
-        
+
         if params.enable_confidential_transfers {
-            msg!("- Confidential transfers: auto_approve={:?}", 
-                 params.auto_approve_new_accounts.unwrap_or(false));
+            msg!(
+                "- Confidential transfers: auto_approve={:?}",
+                params.auto_approve_new_accounts.unwrap_or(false)
+            );
         }
-        
+
         if params.enable_interest_bearing {
-            let rate = params.interest_rate
+            let rate = params
+                .interest_rate
                 .ok_or(GhostSpeakError::InvalidParameter)?;
-            
+
             // Validate interest rate
             require!(
                 rate.abs() <= MAX_INTEREST_RATE_BASIS_POINTS,
                 GhostSpeakError::InvalidParameter
             );
-            
+
             msg!("- Interest bearing: {} basis points", rate);
         }
-        
+
         if params.close_authority.is_some() {
             msg!("- Close authority: {:?}", params.close_authority);
         }
-        
+
         if params.default_account_state.is_some() {
-            msg!("- Default account state: {:?}", params.default_account_state);
+            msg!(
+                "- Default account state: {:?}",
+                params.default_account_state
+            );
         }
-        
+
         // Return error indicating extensions are not yet supported in this implementation
         return Err(GhostSpeakError::ExtensionNotSupported.into());
     }
@@ -191,7 +199,7 @@ pub fn create_token_2022_mint(
     let cpi_accounts = token_2022::InitializeMint2 {
         mint: mint_account.clone(),
     };
-    
+
     let cpi_ctx = CpiContext::new(token_program, cpi_accounts);
 
     token_2022::initialize_mint2(
@@ -266,7 +274,7 @@ pub fn update_transfer_fee_config(
 
     // This instruction requires the mint to have transfer fee extension enabled
     // and the authority to be the transfer fee authority
-    
+
     // For Token-2022, we would use set_transfer_fee instruction
     // This is a placeholder since the actual update requires additional authority validation
     Err(GhostSpeakError::ExtensionNotSupported.into())
@@ -312,7 +320,7 @@ pub fn initialize_confidential_transfer_mint(
 ) -> Result<()> {
     // This instruction requires the mint to have confidential transfer extension enabled
     // and proper authority validation
-    
+
     // For Token-2022, we would use update_confidential_transfer_mint instruction
     // This is a placeholder since the actual update requires additional authority validation
     Err(GhostSpeakError::ExtensionNotSupported.into())
@@ -367,7 +375,7 @@ pub fn initialize_interest_bearing_config(
 
     // This instruction requires the mint to have interest bearing extension enabled
     // and the authority to be the rate authority
-    
+
     // For Token-2022, we would use update_rate_interest_bearing_mint instruction
     // This is a placeholder since the actual update requires additional authority validation
     Err(GhostSpeakError::ExtensionNotSupported.into())
@@ -405,12 +413,10 @@ pub struct InitializeMintCloseAuthority<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-pub fn initialize_mint_close_authority(
-    _ctx: Context<InitializeMintCloseAuthority>,
-) -> Result<()> {
+pub fn initialize_mint_close_authority(_ctx: Context<InitializeMintCloseAuthority>) -> Result<()> {
     // This instruction is for documentation purposes only
     // Close authority must be set during mint creation with extension
-    
+
     Err(GhostSpeakError::ExtensionNotSupported.into())
 }
 
@@ -451,7 +457,7 @@ pub fn initialize_default_account_state(
 ) -> Result<()> {
     // This instruction is for documentation purposes only
     // Default account state must be set during mint creation with extension
-    
+
     Err(GhostSpeakError::ExtensionNotSupported.into())
 }
 

@@ -24,9 +24,9 @@ use crate::*;
 
 // Import constants explicitly to avoid ambiguity
 use crate::state::{
-    MAX_AUCTION_DURATION, MAX_BIDS_PER_AUCTION_PER_USER, MAX_PAYMENT_AMOUNT, MIN_AUCTION_DURATION,
-    MIN_BID_INCREMENT, MIN_PAYMENT_AMOUNT, MAX_RESERVE_EXTENSIONS, RESERVE_EXTENSION_DURATION,
-    RESERVE_SHORTFALL_THRESHOLD,
+    MAX_AUCTION_DURATION, MAX_BIDS_PER_AUCTION_PER_USER, MAX_PAYMENT_AMOUNT,
+    MAX_RESERVE_EXTENSIONS, MIN_AUCTION_DURATION, MIN_BID_INCREMENT, MIN_PAYMENT_AMOUNT,
+    RESERVE_EXTENSION_DURATION, RESERVE_SHORTFALL_THRESHOLD,
 };
 
 // Enhanced 2025 security constants
@@ -159,7 +159,7 @@ pub fn create_service_auction(
     auction.created_at = clock.unix_timestamp;
     auction.ended_at = None;
     auction.metadata_uri = String::new();
-    
+
     // Set Dutch auction configuration if applicable
     if auction_data.auction_type == AuctionType::Dutch {
         // Validate Dutch auction specific requirements
@@ -167,17 +167,18 @@ pub fn create_service_auction(
             auction_data.starting_price > auction_data.reserve_price,
             GhostSpeakError::InvalidStartingPrice
         );
-        
+
         // Set Dutch config from auction_data or use defaults
-        auction.dutch_config = auction_data.dutch_config.or(
-            Some(crate::state::auction::DutchAuctionConfig {
-                decay_type: crate::state::auction::DutchAuctionDecayType::Linear,
-                price_step_count: 100, // Default 100 price steps
-                step_duration: auction_duration / 100, // Even distribution over auction time
-                decay_rate_basis_points: 10000, // 100% decay rate (full range)
-            })
-        );
-        
+        auction.dutch_config =
+            auction_data
+                .dutch_config
+                .or(Some(crate::state::auction::DutchAuctionConfig {
+                    decay_type: crate::state::auction::DutchAuctionDecayType::Linear,
+                    price_step_count: 100, // Default 100 price steps
+                    step_duration: auction_duration / 100, // Even distribution over auction time
+                    decay_rate_basis_points: 10000, // 100% decay rate (full range)
+                }));
+
         // Validate Dutch config parameters
         if let Some(ref config) = auction.dutch_config {
             // Validate step count for stepped decay
@@ -191,7 +192,7 @@ pub fn create_service_auction(
                     GhostSpeakError::InvalidConfiguration
                 );
             }
-            
+
             // Validate decay rate
             require!(
                 config.decay_rate_basis_points > 0 && config.decay_rate_basis_points <= 10000,
@@ -201,7 +202,7 @@ pub fn create_service_auction(
     } else {
         auction.dutch_config = None;
     }
-    
+
     auction.bump = ctx.bumps.auction;
 
     // SECURITY: Log auction creation for audit trail
@@ -290,13 +291,13 @@ pub fn place_auction_bid(ctx: Context<PlaceAuctionBid>, bid_amount: u64) -> Resu
         clock.unix_timestamp < auction.auction_end_time,
         GhostSpeakError::InvalidDeadline
     );
-    
+
     // SECURITY: Prevent using wrong instruction for Dutch auctions
     require!(
         auction.auction_type != AuctionType::Dutch,
         GhostSpeakError::InvalidAuctionType
     );
-    
+
     require!(
         bid_amount > auction.current_price,
         GhostSpeakError::InvalidBid
@@ -466,10 +467,10 @@ pub fn place_dutch_auction_bid(ctx: Context<PlaceDutchAuctionBid>) -> Result<()>
 
     // Calculate current Dutch auction price using the sophisticated calculation method
     let final_price = auction.calculate_dutch_price(clock.unix_timestamp)?;
-    
+
     // Calculate elapsed time for logging
     let elapsed_time = clock.unix_timestamp.saturating_sub(auction.created_at);
-    
+
     // SECURITY: Validate final price
     require!(
         final_price >= MIN_PAYMENT_AMOUNT && final_price <= MAX_PAYMENT_AMOUNT,
@@ -577,14 +578,14 @@ pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
             });
         } else {
             // Reserve not met - check if extension is possible
-            let can_extend = auction.extension_count < MAX_RESERVE_EXTENSIONS 
+            let can_extend = auction.extension_count < MAX_RESERVE_EXTENSIONS
                 && auction.total_bids > 0
                 && !auction.reserve_shortfall_notified;
-            
+
             if can_extend {
                 // Suggest extension instead of immediate cancellation
                 auction.status = AuctionStatus::Cancelled;
-                
+
                 SecurityLogger::log_security_event(
                     "AUCTION_FAILED_RESERVE_EXTENSION_AVAILABLE",
                     auction.creator,
@@ -599,8 +600,10 @@ pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
 
                 emit!(AuctionFailedEvent {
                     auction: auction.key(),
-                    reason: format!("Reserve price not met - extension possible ({} remaining)", 
-                        MAX_RESERVE_EXTENSIONS - auction.extension_count),
+                    reason: format!(
+                        "Reserve price not met - extension possible ({} remaining)",
+                        MAX_RESERVE_EXTENSIONS - auction.extension_count
+                    ),
                 });
             } else {
                 // Final cancellation
@@ -701,7 +704,7 @@ pub fn update_auction_reserve_price(
         auction.status == AuctionStatus::Active,
         GhostSpeakError::AuctionNotActive
     );
-    
+
     // Cannot update after auction end time
     require!(
         clock.unix_timestamp < auction.auction_end_time,
@@ -745,7 +748,7 @@ pub fn update_auction_reserve_price(
     // Handle hidden reserve reveal
     if reveal_hidden && auction.is_reserve_hidden {
         auction.is_reserve_hidden = false;
-        
+
         SecurityLogger::log_security_event(
             "AUCTION_RESERVE_REVEALED",
             ctx.accounts.authority.key(),
@@ -835,13 +838,12 @@ pub fn extend_auction_for_reserve(ctx: Context<ExtendAuctionForReserve>) -> Resu
     );
 
     // Check if there are bids to justify extension
-    require!(
-        auction.total_bids > 0,
-        GhostSpeakError::NoValidBids
-    );
+    require!(auction.total_bids > 0, GhostSpeakError::NoValidBids);
 
     // Extend the auction
-    auction.auction_end_time = auction.auction_end_time.saturating_add(RESERVE_EXTENSION_DURATION);
+    auction.auction_end_time = auction
+        .auction_end_time
+        .saturating_add(RESERVE_EXTENSION_DURATION);
     auction.extension_count = auction.extension_count.saturating_add(1);
     auction.reserve_shortfall_notified = true;
 

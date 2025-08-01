@@ -1,6 +1,6 @@
 /*!
  * Analytics Events Module
- * 
+ *
  * Provides comprehensive event emission for real-time analytics tracking.
  * Emits detailed events for all critical operations to enable real-time
  * analytics, monitoring, and data aggregation.
@@ -20,7 +20,7 @@ pub fn emit_agent_analytics_event(
     metrics: AgentMetrics,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     emit!(AgentAnalyticsEvent {
         agent,
         operation: operation.to_string(),
@@ -31,7 +31,7 @@ pub fn emit_agent_analytics_event(
         response_time: metrics.response_time,
         timestamp: clock.unix_timestamp,
     });
-    
+
     // Also emit performance update for dashboard tracking
     emit!(AgentPerformanceUpdatedEvent {
         agent,
@@ -40,7 +40,7 @@ pub fn emit_agent_analytics_event(
         response_time: metrics.response_time,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -52,7 +52,7 @@ pub fn emit_transaction_analytics_event(
     status: TransactionStatus,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     emit!(TransactionAnalyticsEvent {
         transaction_type: transaction_type.to_string(),
         amount,
@@ -62,14 +62,14 @@ pub fn emit_transaction_analytics_event(
         timestamp: clock.unix_timestamp,
         block_height: clock.slot,
     });
-    
+
     // Also emit volume update for market analytics
     emit!(MarketVolumeUpdatedEvent {
         volume: amount,
         transaction_type: transaction_type.to_string(),
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -81,7 +81,7 @@ pub fn emit_marketplace_activity_event(
     value: u64,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     emit!(MarketplaceActivityEvent {
         activity_type: activity_type.to_string(),
         agent,
@@ -89,7 +89,7 @@ pub fn emit_marketplace_activity_event(
         value,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -101,7 +101,7 @@ pub fn emit_network_health_event(
     error_rate: u32,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     emit!(NetworkHealthEvent {
         active_agents,
         transaction_throughput,
@@ -109,7 +109,7 @@ pub fn emit_network_health_event(
         error_rate,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -121,7 +121,7 @@ pub fn emit_user_engagement_event(
     interaction_count: u32,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     emit!(UserEngagementEvent {
         user,
         action: action.to_string(),
@@ -129,7 +129,7 @@ pub fn emit_user_engagement_event(
         interaction_count,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -142,7 +142,7 @@ pub fn emit_service_performance_event(
     quality_score: Option<u32>,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     emit!(ServicePerformanceEvent {
         service,
         provider,
@@ -151,7 +151,7 @@ pub fn emit_service_performance_event(
         quality_score,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 
@@ -163,7 +163,7 @@ pub fn emit_economic_metrics_event(
     unique_users: u32,
 ) -> Result<()> {
     let clock = Clock::get()?;
-    
+
     emit!(EconomicMetricsEvent {
         total_value_locked,
         daily_volume,
@@ -171,7 +171,7 @@ pub fn emit_economic_metrics_event(
         unique_users,
         timestamp: clock.unix_timestamp,
     });
-    
+
     Ok(())
 }
 

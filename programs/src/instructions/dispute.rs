@@ -501,10 +501,7 @@ pub fn resolve_dispute(
 /// - Cannot be involved in the dispute
 /// - Must have completed arbitrator training
 /// - Subject to performance monitoring
-pub fn assign_arbitrator(
-    ctx: Context<AssignArbitrator>,
-    arbitrator: Pubkey,
-) -> Result<()> {
+pub fn assign_arbitrator(ctx: Context<AssignArbitrator>, arbitrator: Pubkey) -> Result<()> {
     let clock = Clock::get()?;
 
     // SECURITY: Enhanced authority verification
@@ -521,7 +518,9 @@ pub fn assign_arbitrator(
 
     // SECURITY: Verify arbitrator is in registry
     require!(
-        ctx.accounts.arbitrator_registry.is_authorized_arbitrator(arbitrator),
+        ctx.accounts
+            .arbitrator_registry
+            .is_authorized_arbitrator(arbitrator),
         GhostSpeakError::UnauthorizedArbitrator
     );
 

@@ -10,7 +10,9 @@ use anchor_lang::solana_program::program_pack::Pack;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, TokenAccount};
 use anchor_spl::token_2022::{spl_token_2022, Token2022};
-use spl_token_2022::extension::transfer_fee::{TransferFeeConfig, instruction::transfer_checked_with_fee};
+use spl_token_2022::extension::transfer_fee::{
+    instruction::transfer_checked_with_fee, TransferFeeConfig,
+};
 use spl_token_2022::extension::{BaseStateWithExtensions, StateWithExtensions};
 
 use crate::security::ReentrancyGuard;
@@ -333,15 +335,15 @@ pub struct ProcessPartialRefund<'info> {
 // =====================================================
 
 /// Calculates the total amount needed for transfer, accounting for transfer fees
-/// 
+///
 /// For Token-2022 mints with transfer fees:
 /// - Calculates the fee based on current epoch and desired transfer amount
 /// - Returns the TOTAL amount to transfer (transfer_amount + fee) to ensure
 ///   the recipient receives exactly 'transfer_amount' after fees are deducted
-/// 
+///
 /// For regular SPL tokens or Token-2022 without fees:
 /// - Returns the original transfer amount with zero fee
-/// 
+///
 /// Returns (total_amount_needed, calculated_fee)
 fn calculate_transfer_amount_with_fee(
     mint_account: &AccountInfo,
@@ -349,23 +351,25 @@ fn calculate_transfer_amount_with_fee(
 ) -> Result<(u64, u64)> {
     // SECURITY: Validate transfer amount to prevent overflow attacks
     crate::utils::validate_payment_amount(transfer_amount, "transfer")?;
-    
+
     // Try to read the mint as Token-2022 with extensions
     let mint_data = mint_account.try_borrow_data()?;
-    
+
     // Check if this is a Token-2022 mint with transfer fee extension
     if let Ok(mint) = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&mint_data) {
         if let Ok(transfer_fee_config) = mint.get_extension::<TransferFeeConfig>() {
             let epoch = Clock::get()?.epoch;
-            let fee = transfer_fee_config.calculate_epoch_fee(epoch, transfer_amount).unwrap_or(0);
-            
+            let fee = transfer_fee_config
+                .calculate_epoch_fee(epoch, transfer_amount)
+                .unwrap_or(0);
+
             // Calculate total amount needed: base amount + fee using safe arithmetic
             let total_amount = crate::utils::safe_arithmetic(transfer_amount, fee, "add")?;
-            
+
             return Ok((total_amount, fee));
         }
     }
-    
+
     // No transfer fee - return original amount
     Ok((transfer_amount, 0))
 }
@@ -381,12 +385,12 @@ fn validate_token_accounts(
         escrow_token_account_mint == expected_payment_token,
         GhostSpeakError::InvalidConfiguration
     );
-    
+
     require!(
         client_token_account_mint == expected_payment_token,
         GhostSpeakError::InvalidConfiguration
     );
-    
+
     Ok(())
 }
 
@@ -401,18 +405,19 @@ fn transfer_with_fee_support<'info>(
     signers_seeds: &[&[&[u8]]],
 ) -> Result<()> {
     let (_transfer_amount, fee) = calculate_transfer_amount_with_fee(&mint, amount)?;
-    
+
     if fee > 0 {
         msg!("Transfer fee detected: {} tokens", fee);
-        
+
         // Use the proper transfer_checked_with_fee instruction for Token-2022
         // This ensures fees are calculated and handled correctly by the SPL program
         let decimals = {
             let mint_data = mint.try_borrow_data()?;
-            let mint_state = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&mint_data)?;
+            let mint_state =
+                StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&mint_data)?;
             mint_state.base.decimals
         };
-        
+
         let ix = transfer_checked_with_fee(
             &spl_token_2022::id(),
             &from.key(),
@@ -424,12 +429,9 @@ fn transfer_with_fee_support<'info>(
             decimals,
             fee,
         )?;
-        
+
         if signers_seeds.is_empty() {
-            anchor_lang::solana_program::program::invoke(
-                &ix,
-                &[from, mint, to, authority],
-            )?;
+            anchor_lang::solana_program::program::invoke(&ix, &[from, mint, to, authority])?;
         } else {
             anchor_lang::solana_program::program::invoke_signed(
                 &ix,
@@ -444,7 +446,7 @@ fn transfer_with_fee_support<'info>(
             to,
             authority,
         };
-        
+
         if signers_seeds.is_empty() {
             let cpi_ctx = CpiContext::new(token_program, cpi_accounts);
             anchor_spl::token_2022::transfer(cpi_ctx, amount)?;
@@ -453,7 +455,7 @@ fn transfer_with_fee_support<'info>(
             anchor_spl::token_2022::transfer(cpi_ctx, amount)?;
         }
     }
-    
+
     Ok(())
 }
 
@@ -507,7 +509,7 @@ pub fn create_escrow(
     // SECURITY: Use centralized validation to eliminate code duplication
     crate::utils::validate_string_input(&task_id, "task_id", 64, false, false)?;
     crate::utils::validate_payment_amount(amount, "escrow")?;
-    
+
     let clock = Clock::get()?;
     crate::utils::validate_timestamp(expires_at, 3600, 2592000)?; // 1 hour min, 30 days max
 
@@ -813,13 +815,19 @@ pub fn cancel_escrow(ctx: Context<CancelEscrow>, cancellation_reason: String) ->
     let clock = Clock::get()?;
 
     // SECURITY: Use centralized validation for cancellation reason
-    crate::utils::validate_string_input(&cancellation_reason, "cancellation_reason", 256, false, true)?;
+    crate::utils::validate_string_input(
+        &cancellation_reason,
+        "cancellation_reason",
+        256,
+        false,
+        true,
+    )?;
 
     // SECURITY: Use helper function to validate token accounts (reduces code duplication)
     validate_token_accounts(
         &ctx.accounts.escrow_token_account.mint,
         &ctx.accounts.client_refund_account.mint,
-        &escrow.payment_token
+        &escrow.payment_token,
     )?;
 
     // Store values we need
@@ -900,7 +908,7 @@ pub fn refund_expired_escrow(ctx: Context<RefundExpiredEscrow>) -> Result<()> {
     validate_token_accounts(
         &ctx.accounts.escrow_token_account.mint,
         &ctx.accounts.client_refund_account.mint,
-        &escrow.payment_token
+        &escrow.payment_token,
     )?;
 
     // Store values we need
@@ -983,14 +991,14 @@ pub fn process_partial_refund(
 
     // SECURITY: Use centralized validation for percentage
     crate::utils::validate_percentage(client_refund_percentage as u32 * 100, "refund")?; // Convert to basis points
-    
+
     // SECURITY: Use helper function to validate token accounts (reduces code duplication)
     validate_token_accounts(
         &ctx.accounts.escrow_token_account.mint,
         &ctx.accounts.client_refund_account.mint,
-        &escrow.payment_token
+        &escrow.payment_token,
     )?;
-    
+
     require!(
         ctx.accounts.agent_payment_account.mint == escrow.payment_token,
         GhostSpeakError::InvalidConfiguration
@@ -1003,11 +1011,8 @@ pub fn process_partial_refund(
 
     // SECURITY: Calculate refund amounts using safe arithmetic to prevent overflow
     let client_refund = {
-        let percentage_amount = crate::utils::safe_arithmetic(
-            escrow.amount, 
-            client_refund_percentage as u64, 
-            "mul"
-        )?;
+        let percentage_amount =
+            crate::utils::safe_arithmetic(escrow.amount, client_refund_percentage as u64, "mul")?;
         crate::utils::safe_arithmetic(percentage_amount, 100, "div")?
     };
     let agent_payment = crate::utils::safe_arithmetic(escrow.amount, client_refund, "sub")?;

@@ -35,6 +35,6 @@ pub use admin_validation::{
 };
 
 pub use agent_validation::{
-    validate_agent_authority, require_verified_agent, validate_agent_supports_token,
-    require_a2a_support, validate_agent_reputation,
+    require_a2a_support, require_verified_agent, validate_agent_authority,
+    validate_agent_reputation, validate_agent_supports_token,
 };

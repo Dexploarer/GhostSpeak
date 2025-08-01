@@ -39,7 +39,6 @@ pub struct ResaleMarket {
 }
 
 impl RoyaltyStream {
-    
     pub const LEN: usize = 8 + // discriminator
         32 + // agent
         32 + // original_creator

@@ -29,7 +29,7 @@ import { createKeyPairSignerFromBytes } from '@solana/signers'
 // Configuration
 const DEMO_CONFIG = {
   rpcEndpoint: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-  programId: address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX'), // Devnet program ID
+  programId: address('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG'), // Devnet program ID
   skipPreflight: false,
   commitment: 'confirmed' as const
 }

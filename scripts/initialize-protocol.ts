@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 
-const PROGRAM_ID = address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
+const PROGRAM_ID = address('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG');
 const RPC_URL = 'https://api.devnet.solana.com';
 
 async function initializeProtocol() {

@@ -220,7 +220,7 @@ class HealthChecker {
       this.checkPackageDependencies(),
       this.checkSolanaCluster('https://api.devnet.solana.com', 'Devnet'),
       this.checkSolanaCluster('https://api.testnet.solana.com', 'Testnet'),
-      this.checkProgramDeployment('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX')
+      this.checkProgramDeployment('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG')
     ];
 
     this.results = await Promise.all(checks);

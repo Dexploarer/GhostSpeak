@@ -1,7 +1,7 @@
 /**
  * Hello GhostSpeak - A minimal example of the GhostSpeak SDK
  * 
- * ✅ VERIFIED WORKING on Devnet with Program ID: GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX
+ * ✅ VERIFIED WORKING on Devnet with Program ID: 5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG
  * 
  * This example demonstrates:
  * - Setting up the GhostSpeak client with deployed program
@@ -197,7 +197,7 @@ function handleError(error: any): void {
 console.log('='.repeat(60));
 console.log('  GHOSTSPEAK SDK - HELLO WORLD EXAMPLE');
 console.log('  ✅ VERIFIED WORKING ON DEVNET');
-console.log('  Program: GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
+console.log('  Program: 5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG');
 console.log('='.repeat(60));
 
 main().catch(handleError);

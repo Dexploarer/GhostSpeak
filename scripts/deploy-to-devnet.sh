@@ -22,12 +22,12 @@ anchor build --skip-lint
 # Deploy to devnet
 echo ""
 echo "Deploying to devnet..."
-echo "Program ID: GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX"
+echo "Program ID: 5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG"
 echo ""
 
 # Since the program is already deployed, we need to upgrade it
 anchor upgrade target/deploy/ghostspeak_marketplace.so \
-  --program-id GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX \
+  --program-id 5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG \
   --provider.cluster devnet
 
 echo ""

@@ -19,7 +19,7 @@ import * as path from 'path';
 import chalk from 'chalk';
 
 const DEVNET_URL = 'https://api.devnet.solana.com';
-const PROGRAM_ID = address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
+const PROGRAM_ID = address('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG');
 
 // Test result tracking
 interface TestResult {

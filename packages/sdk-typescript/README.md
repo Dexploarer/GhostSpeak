@@ -341,7 +341,7 @@ interface GhostSpeakConfig {
 const devnetConfig = {
   rpc: createSolanaRpc('https://api.devnet.solana.com'),
   cluster: 'devnet' as const,
-  programId: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX' as Address
+  programId: '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG' as Address
 }
 
 // Mainnet (coming Q4 2025)

@@ -6,7 +6,7 @@
 import { createSolanaRpc, address, getBase58Encoder } from '@solana/kit'
 import chalk from 'chalk'
 
-const PROGRAM_ID = 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX'
+const PROGRAM_ID = '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG'
 const RPC_URL = 'https://api.devnet.solana.com'
 
 interface SecurityCheckResult {

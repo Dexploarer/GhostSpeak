@@ -90,7 +90,7 @@ const DEFAULT_CONFIG: GhostSpeakConfig = {
   },
   programs: {
     ghostspeak: {
-      programId: process.env.GHOSTSPEAK_PROGRAM_ID || 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX',
+      programId: process.env.GHOSTSPEAK_PROGRAM_ID || '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG',
       idlPath: 'target/idl/ghostspeak_marketplace.json'
     }
   },

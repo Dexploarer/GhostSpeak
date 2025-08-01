@@ -20,6 +20,7 @@ import {
 } from '../types/services.js'
 import { randomUUID } from 'crypto'
 import { getWallet, toSDKSigner } from '../utils/client.js'
+import { getCurrentProgramId } from '../../../../config/program-ids.js'
 
 export class AgentService implements IAgentService {
   private agentCache = new Map<string, { data: Agent; timestamp: number }>()
@@ -32,6 +33,8 @@ export class AgentService implements IAgentService {
    * Register a new AI agent
    */
   async register(params: RegisterAgentParams): Promise<Agent> {
+    console.log('🚀 AgentService.register called with params:', params)
+    
     // Validate parameters
     await this.validateRegisterParams(params)
 
@@ -61,11 +64,9 @@ export class AgentService implements IAgentService {
       }
     }
 
-    // Register on blockchain using real SDK
+    // Register on blockchain using AgentModule directly
     try {
-      const client = await this.deps.blockchainService.getClient('devnet')
-      
-      // Use the wallet signer we already obtained
+      // Use the wallet signer we already obtained  
       const signer = walletSigner
       console.log('🔍 Using signer:', signer.address.toString())
       
@@ -87,59 +88,41 @@ export class AgentService implements IAgentService {
       // TEMPORARY: Use empty metadata URI to test memory allocation issue
       const metadataUri = ""
       
-      // Log client structure first
-      console.log('🔍 SDK client structure:', {
-        hasClient: !!client,
-        clientType: typeof client,
-        clientKeys: client ? Object.keys(client) : [],
-        clientPrototype: client && client.constructor ? client.constructor.name : 'unknown'
+      // Import AgentModule and create instance
+      console.log('🔍 Importing AgentModule from SDK...')
+      const { AgentModule, createSolanaRpc } = await import('@ghostspeak/sdk')
+      console.log('🔍 AgentModule imported successfully')
+      
+      // Create RPC client
+      const rpc = createSolanaRpc('https://api.devnet.solana.com')
+      
+      // Create AgentModule instance with proper config
+      console.log('🔍 Creating AgentModule instance...')
+      const agentModule = new AgentModule({
+        programId: getCurrentProgramId(),
+        rpc: rpc,
+        commitment: 'confirmed',
+        cluster: 'devnet',
+        rpcEndpoint: 'https://api.devnet.solana.com'
       })
       
-      // Cast client to check if it has agent property
-      const typedClient = client as any
-      console.log('🔍 Checking client properties:', {
-        hasAgent: 'agent' in typedClient,
-        agentType: typedClient.agent ? typeof typedClient.agent : 'N/A',
-        clientConfig: typedClient.config ? Object.keys(typedClient.config) : []
+      console.log('🔍 Calling AgentModule.register...')
+      console.log('🔍 Registration params:', {
+        agentType: 0,
+        metadataUri,
+        agentId: agent.id,
+        skipSimulation: true
       })
       
-      // Try to use agent directly from client first
-      let signature: string
-      if (typedClient.agent && typeof typedClient.agent.register === 'function') {
-        console.log('🔍 Using client.agent.register method')
-        const result = await typedClient.agent.register(signer, {
-          agentType: 0,
-          metadataUri,
-          agentId: agent.id,
-          skipSimulation: true // Skip simulation to avoid simulation-only failures
-        })
-        signature = result.signature || result
-      } else {
-        // Fall back to importing AgentModule
-        console.log('🔍 Client does not have agent.register, importing AgentModule...')
-        const sdk = await import('@ghostspeak/sdk')
-        console.log('🔍 SDK imported, exports:', Object.keys(sdk).filter(k => k.includes('Agent')))
-        
-        const AgentModuleClass = (sdk as any).AgentModule
-        if (!AgentModuleClass) {
-          throw new Error('AgentModule not found in SDK exports. Available exports: ' + Object.keys(sdk).join(', '))
-        }
-        
-        console.log('🔍 Creating AgentModule instance...')
-        const agentModule = new AgentModuleClass({
-          programId: typedClient.config.programId,
-          rpc: typedClient.config.rpc,
-          commitment: 'confirmed'
-        })
-        
-        console.log('🔍 Calling AgentModule.register...')
-        signature = await agentModule.register(signer, {
-          agentType: 0,
-          metadataUri,
-          agentId: agent.id,
-          skipSimulation: true // Skip simulation to avoid simulation-only failures
-        })
-      }
+      const signature = await agentModule.register(signer, {
+        agentType: 0,
+        metadataUri,
+        agentId: agent.id,
+        skipSimulation: true // Skip simulation to avoid simulation-only failures
+      })
+      
+      console.log('🔍 Raw signature result:', signature)
+      console.log('🔍 Signature type:', typeof signature)
       
       console.log('🔍 Transaction signature:', signature)
       
@@ -405,9 +388,47 @@ export class AgentService implements IAgentService {
   }
 
   private async getAllAgents(): Promise<Agent[]> {
-    // In real implementation, this would query blockchain program accounts
-    // For now, return empty array as we'd need proper indexing
-    return []
+    try {
+      // Import AgentModule and create instance for querying
+      console.log('🔍 Querying all agents from blockchain...')
+      const { AgentModule, createSolanaRpc } = await import('@ghostspeak/sdk')
+      
+      // Create RPC client
+      const rpc = createSolanaRpc('https://api.devnet.solana.com')
+      
+      // Create AgentModule instance
+      const agentModule = new AgentModule({
+        programId: getCurrentProgramId(),
+        rpc: rpc,
+        commitment: 'confirmed',
+        cluster: 'devnet',
+        rpcEndpoint: 'https://api.devnet.solana.com'
+      })
+      
+      // Query program accounts for agents using RPC
+      const programAccounts = await rpc.getProgramAccounts(getCurrentProgramId(), { commitment: 'confirmed', encoding: 'base64' }).send()
+      console.log('🔍 Found', programAccounts.length, 'program accounts on blockchain')
+      
+      // For now, return simple placeholder agents based on found accounts
+      // This confirms we can see program accounts exist on-chain
+      return Array.from({ length: Math.min(programAccounts.length, 10) }, (_, i) => ({
+        id: `account-${i}`,
+        address: getCurrentProgramId(),
+        name: `Agent from Account ${i}`,
+        description: 'Agent found on blockchain (account parsing not yet implemented)',
+        capabilities: ['blockchain', 'discovery'],
+        owner: getCurrentProgramId(),
+        isActive: true,
+        reputationScore: 0,
+        createdAt: BigInt(Date.now()),
+        updatedAt: BigInt(Date.now()),
+        metadata: { source: 'blockchain-discovery' }
+      }))
+    } catch (error) {
+      console.error('Error getting all agents from blockchain:', error)
+      // Fallback to empty array if blockchain query fails
+      return []
+    }
   }
 
 }

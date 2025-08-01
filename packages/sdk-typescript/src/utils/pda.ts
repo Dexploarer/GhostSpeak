@@ -13,11 +13,11 @@ import {
  */
 
 /**
- * Derive agent PDA
+ * Derive agent PDA (original function)
  * Pattern: ['agent', owner, agentId]
  * NOTE: Uses raw UTF-8 bytes to match smart contract's agent_id.as_bytes()
  */
-export async function deriveAgentPda(
+export async function deriveAgentPdaOriginal(
   programId: Address,
   owner: Address,
   agentId: string
@@ -32,6 +32,26 @@ export async function deriveAgentPda(
     ]
   })
   return address
+}
+
+/**
+ * Derive agent PDA (SDK compatible version)
+ * Pattern: ['agent', owner, agentId]
+ */
+export async function deriveAgentPda(params: {
+  owner: Address
+  agentId: string
+  programAddress: Address
+}): Promise<[Address, number]> {
+  const result = await getProgramDerivedAddress({
+    programAddress: params.programAddress,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([97, 103, 101, 110, 116])), // 'agent'
+      getAddressEncoder().encode(params.owner),
+      getUtf8Encoder().encode(params.agentId)
+    ]
+  })
+  return [result[0], result[1]]
 }
 
 /**
@@ -173,10 +193,10 @@ export async function derivePaymentPda(
 }
 
 /**
- * Derive A2A session PDA
+ * Derive A2A session PDA (original function)
  * Pattern: ['a2a_session', creator]
  */
-export async function deriveA2ASessionPda(
+export async function deriveA2ASessionPdaOriginal(
   programId: Address,
   creator: Address
 ): Promise<Address> {
@@ -187,6 +207,39 @@ export async function deriveA2ASessionPda(
         97, 50, 97, 95, 115, 101, 115, 115, 105, 111, 110
       ])), // 'a2a_session'
       getAddressEncoder().encode(creator)
+    ]
+  })
+  return address
+}
+
+/**
+ * Derive A2A session PDA (wrapper for SDK compatibility)
+ * This function wraps deriveChannelPda to match the expected signature
+ */
+export async function deriveA2ASessionPda(params: {
+  channelId: string
+  programAddress: Address
+}): Promise<[Address, number]> {
+  // For enhanced channels, we use the channel PDA derivation
+  const address = await deriveChannelPda(params.programAddress, params.channelId)
+  return [address, 0] // Return bump as 0 since we don't calculate it here
+}
+
+/**
+ * Derive channel PDA (for enhanced channels)
+ * Pattern: ['channel', channelId]
+ */
+export async function deriveChannelPda(
+  programId: Address,
+  channelId: string
+): Promise<Address> {
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([
+        99, 104, 97, 110, 110, 101, 108
+      ])), // 'channel'
+      getUtf8Encoder().encode(channelId)
     ]
   })
   return address
@@ -421,10 +474,10 @@ export async function deriveWorkDeliveryPDA(
 }
 
 /**
- * Derive escrow PDA
+ * Derive escrow PDA (original function - deprecated)
  * Pattern: ['escrow', workOrder]
  */
-export async function deriveEscrowPDA(
+export async function deriveEscrowPDAOriginal(
   workOrder: Address,
   programId: Address
 ): Promise<[Address, number]> {
@@ -435,6 +488,32 @@ export async function deriveEscrowPDA(
   
   const result = await getProgramDerivedAddress({
     programAddress: programId,
+    seeds
+  })
+  
+  // getProgramDerivedAddress returns a tuple
+  return [result[0], result[1]]
+}
+
+/**
+ * Derive escrow PDA (SDK compatible version)
+ * Pattern: ['escrow', escrowId/taskId]
+ */
+export async function deriveEscrowPDA(params: {
+  client: Address
+  provider: Address
+  escrowId: string
+  programAddress: Address
+}): Promise<[Address, number]> {
+  // The Rust program uses ['escrow', task_id.as_bytes()]
+  // The escrowId parameter is used as the task_id
+  const seeds = [
+    getBytesEncoder().encode(new Uint8Array([101, 115, 99, 114, 111, 119])), // 'escrow'
+    getUtf8Encoder().encode(params.escrowId)
+  ]
+  
+  const result = await getProgramDerivedAddress({
+    programAddress: params.programAddress,
     seeds
   })
   

@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-08-01T05:38:58.759Z",
+  "summary": {
+    "totalTests": 2,
+    "passed": 1,
+    "failed": 1,
+    "criticalIssues": 1
+  },
+  "results": [
+    {
+      "file": "programs/src/",
+      "testType": "compilation",
+      "success": true,
+      "issues": [],
+      "performance": {
+        "buildTime": 1540
+      },
+      "timestamp": "2025-08-01T05:38:53.628Z"
+    },
+    {
+      "file": "packages/sdk-typescript/src/",
+      "testType": "compilation",
+      "success": false,
+      "issues": [
+        "TypeScript compilation failed: Command failed: bun run build 2>&1"
+      ],
+      "performance": {
+        "buildTime": 5130
+      },
+      "timestamp": "2025-08-01T05:38:58.758Z"
+    }
+  ],
+  "recommendations": [
+    "🚨 CRITICAL: Fix compilation issues before proceeding",
+    "Define missing constants and imports"
+  ]
+}

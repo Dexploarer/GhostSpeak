@@ -91,9 +91,25 @@ impl AnalyticsCollector {
     ) -> Result<()> {
         let clock = Clock::get()?;
         
-        // Parse existing metrics
-        let mut metrics_data: serde_json::Value = serde_json::from_str(&dashboard.metrics)
-            .unwrap_or(serde_json::json!({}));
+        // Parse existing metrics with proper error handling and size limits
+        if dashboard.metrics.len() > 10_000 {
+            return Err(error!(crate::GhostSpeakError::MetricsTooLong));
+        }
+        
+        let mut metrics_data: serde_json::Value = match serde_json::from_str(&dashboard.metrics) {
+            Ok(data) => {
+                // Validate JSON structure and size
+                if data.as_object().map_or(0, |obj| obj.len()) > 100 {
+                    return Err(error!(crate::GhostSpeakError::InvalidMetricsData));
+                }
+                data
+            },
+            Err(_) => {
+                // Initialize with empty object on parse failure
+                msg!("Failed to parse metrics JSON, initializing with empty object");
+                serde_json::json!({})
+            }
+        };
         
         // Update specific metric
         match metric_type {

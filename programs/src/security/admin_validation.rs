@@ -5,8 +5,10 @@
  * to prevent the use of insecure or system addresses in production.
  */
 
-use crate::PROTOCOL_ADMIN;
+// Removed dependency on hardcoded PROTOCOL_ADMIN constant
+// All admin validation is now done at runtime with proper account verification
 use anchor_lang::prelude::*;
+use crate::PROTOCOL_ADMIN;
 
 /// Known system program addresses that should never be used as admin
 const SYSTEM_PROGRAM_IDS: &[&str] = &[

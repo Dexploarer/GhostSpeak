@@ -17,6 +17,9 @@ export { default, sol, lamportsToSol } from './core/GhostSpeakClient.js'
 // Named export for explicit imports
 export { GhostSpeakClient } from './core/GhostSpeakClient.js'
 
+// Re-export Solana kit functions for CLI
+export { createSolanaRpc, createKeyPairSignerFromBytes, generateKeyPairSigner, address } from '@solana/kit'
+
 // =====================================================
 // CORE EXPORTS
 // =====================================================
@@ -53,6 +56,9 @@ export { GovernanceModule } from './modules/governance/GovernanceModule.js'
 
 // Token2022 module
 export { Token2022Module } from './modules/token2022/Token2022Module.js'
+
+// H2A Communication module
+export { H2AModule } from './modules/h2a/H2AModule.js'
 
 // =====================================================
 // CRYPTO EXPORTS
@@ -167,6 +173,7 @@ export type {
 export { 
   deriveA2AMessagePda, 
   deriveA2ASessionPda,
+  deriveChannelPda,
   deriveAgentPda,
   deriveServiceListingPda,
   deriveUserRegistryPda,

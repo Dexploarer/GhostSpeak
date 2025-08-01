@@ -394,39 +394,23 @@ pub fn is_instruction_locked<'info>(
         return Ok(false);
     }
 
-    // Parse the lock data manually to check is_locked and expiration
-    // Skip discriminator (8 bytes) and instruction_hash (8 bytes)
-    // locked_by: 32 bytes (offset 16)
-    // locked_at: 8 bytes (offset 48)
-    // max_duration: 8 bytes (offset 56)
-    // is_locked: 1 byte (offset 64)
+    // Use safe Anchor deserialization instead of manual parsing
+    // This prevents buffer overflow vulnerabilities and ensures type safety
+    let lock_state = match InstructionLock::try_deserialize(&mut &lock_data[..]) {
+        Ok(lock) => lock,
+        Err(_) => {
+            // If deserialization fails, assume not locked to fail safe
+            return Ok(false);
+        }
+    };
 
-    let is_locked_offset = 64;
-    if lock_data.len() <= is_locked_offset {
+    if !lock_state.is_locked {
         return Ok(false);
     }
 
-    let is_locked = lock_data[is_locked_offset] != 0;
-
-    if !is_locked {
-        return Ok(false);
-    }
-
-    // Check if lock has expired
-    let locked_at_offset = 48;
-    let max_duration_offset = 56;
-
-    let locked_at = i64::from_le_bytes(
-        lock_data[locked_at_offset..locked_at_offset + 8]
-            .try_into()
-            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?,
-    );
-
-    let max_duration = i64::from_le_bytes(
-        lock_data[max_duration_offset..max_duration_offset + 8]
-            .try_into()
-            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?,
-    );
+    // Check if lock has expired using safe field access
+    let locked_at = lock_state.locked_at;
+    let max_duration = lock_state.max_duration;
 
     let clock = Clock::get()?;
     let is_expired = clock.unix_timestamp > locked_at + max_duration;

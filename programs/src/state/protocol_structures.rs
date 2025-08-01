@@ -117,6 +117,74 @@ pub struct AgentIncentives {
 
 // Royalty stubs - moved to royalty.rs to avoid ambiguity
 
+// H2A Protocol Data Structures (Human-to-Agent Communication)
+
+/// Participant type enum for distinguishing between humans and agents
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
+pub enum ParticipantType {
+    Human,
+    Agent,
+}
+
+/// Unified communication session supporting H2A, A2A, and future H2H
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CommunicationSessionData {
+    pub session_id: u64,
+    pub initiator: Pubkey,
+    pub initiator_type: ParticipantType,
+    pub responder: Pubkey,
+    pub responder_type: ParticipantType,
+    pub session_type: String,
+    pub metadata: String,
+    pub expires_at: i64,
+}
+
+/// Message data for unified communication sessions
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CommunicationMessageData {
+    pub message_id: u64,
+    pub sender_type: ParticipantType,
+    pub content: String,
+    pub message_type: String,
+    pub attachments: Vec<String>, // IPFS hashes or other file references
+}
+
+/// Account structure for unified communication sessions
+#[account]
+pub struct CommunicationSession {
+    pub session_id: u64,
+    pub initiator: Pubkey,
+    pub initiator_type: ParticipantType,
+    pub responder: Pubkey,
+    pub responder_type: ParticipantType,
+    pub session_type: String,
+    pub metadata: String,
+    pub is_active: bool,
+    pub created_at: i64,
+    pub expires_at: i64,
+    pub bump: u8,
+}
+
+/// Account structure for unified communication messages
+#[account]
+pub struct CommunicationMessage {
+    pub message_id: u64,
+    pub session: Pubkey,
+    pub sender: Pubkey,
+    pub sender_type: ParticipantType,
+    pub content: String,
+    pub message_type: String,
+    pub attachments: Vec<String>,
+    pub sent_at: i64,
+    pub bump: u8,
+}
+
+// Legacy H2A structures for backward compatibility
+pub type H2ASession = CommunicationSession;
+pub type H2ASessionData = CommunicationSessionData;
+pub type H2AMessage = CommunicationMessage;
+pub type H2AMessageData = CommunicationMessageData;
+
 // Note: ReplicationTemplate and ReplicationRecord are defined in replication.rs
 // Note: Pricing structures (PricingAlgorithm, DynamicPricingConfig, DemandMetrics, DynamicPricingEngine) are defined in pricing.rs
 
@@ -178,6 +246,34 @@ impl AgentIncentives {
         8 + // total_earned
         4 + // transactions_completed
         8 + // last_claim_at
+        1; // bump
+}
+
+impl CommunicationSession {
+    pub const LEN: usize = 8 + // discriminator
+        8 + // session_id
+        32 + // initiator
+        1 + // initiator_type
+        32 + // responder
+        1 + // responder_type
+        4 + MAX_GENERAL_STRING_LENGTH + // session_type
+        4 + MAX_GENERAL_STRING_LENGTH + // metadata
+        1 + // is_active
+        8 + // created_at
+        8 + // expires_at
+        1; // bump
+}
+
+impl CommunicationMessage {
+    pub const LEN: usize = 8 + // discriminator
+        8 + // message_id
+        32 + // session
+        32 + // sender
+        1 + // sender_type
+        4 + (MAX_GENERAL_STRING_LENGTH * 2) + // content (larger for human messages)
+        4 + MAX_GENERAL_STRING_LENGTH + // message_type
+        4 + (10 * (4 + 256)) + // attachments (max 10 IPFS hashes, 256 chars each)
+        8 + // sent_at
         1; // bump
 }
 

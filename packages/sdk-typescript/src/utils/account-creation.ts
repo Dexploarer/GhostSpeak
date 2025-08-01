@@ -19,7 +19,11 @@ export class AccountCreationHelper {
   ): Promise<{ agentAddress: Address; userRegistryAddress: Address; agentType: number; metadataUri: string }> {
     const { deriveAgentPda, deriveUserRegistryPda } = await import('./pda.js')
     
-    const agentAddress = await deriveAgentPda(this.config.programId!, signer.address, agentId)
+    const [agentAddress] = await deriveAgentPda({
+      programAddress: this.config.programId!,
+      owner: signer.address,
+      agentId
+    })
     const userRegistryAddress = await deriveUserRegistryPda(this.config.programId!, signer.address)
     
     // Validate agent type
@@ -118,7 +122,7 @@ export class AccountCreationHelper {
   ): Promise<Address> {
     const { deriveWorkOrderPda } = await import('./pda.js')
     
-    return deriveWorkOrderPda(this.config.programId!, employer.address, orderId)
+    return await deriveWorkOrderPda(this.config.programId!, employer.address, orderId)
   }
 
   /**
@@ -127,9 +131,9 @@ export class AccountCreationHelper {
   async createA2ASessionAccount(
     creator: TransactionSigner
   ): Promise<Address> {
-    const { deriveA2ASessionPda } = await import('./pda.js')
+    const { deriveA2ASessionPdaOriginal } = await import('./pda.js')
     
-    return deriveA2ASessionPda(this.config.programId!, creator.address)
+    return await deriveA2ASessionPdaOriginal(this.config.programId!, creator.address)
   }
 
   /**

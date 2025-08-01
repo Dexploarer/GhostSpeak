@@ -257,8 +257,8 @@ export class AgentModule extends BaseModule {
 
   private async deriveAgentPda(agentId: string, owner: Address): Promise<Address> {
     // Use the standard PDA utility function that matches Rust implementation
-    const { deriveAgentPda } = await import('../../utils/pda.js')
-    return deriveAgentPda(this.programId, owner, agentId)
+    const { deriveAgentPdaOriginal } = await import('../../utils/pda.js')
+    return deriveAgentPdaOriginal(this.programId, owner, agentId)
   }
 
   private async deriveUserRegistryPda(owner: Address): Promise<Address> {

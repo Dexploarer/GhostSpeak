@@ -11,6 +11,7 @@ import chalk from 'chalk'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { config } from 'dotenv'
+import { GHOSTSPEAK_PROGRAM_ID } from '../config/program-ids.js'
 
 // Load environment variables
 config()
@@ -18,7 +19,7 @@ config()
 // Get network configuration from environment
 const NETWORK = process.env.GHOSTSPEAK_NETWORK ?? 'devnet'
 const RPC_URL = process.env.GHOSTSPEAK_RPC_URL ?? 'https://api.devnet.solana.com'
-const PROGRAM_ID = process.env[`GHOSTSPEAK_PROGRAM_ID_${NETWORK.toUpperCase()}`] ?? '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG'
+const PROGRAM_ID = process.env[`GHOSTSPEAK_PROGRAM_ID_${NETWORK.toUpperCase()}`] ?? GHOSTSPEAK_PROGRAM_ID.toString()
 
 console.log(`🌐 Network: ${NETWORK}`)
 console.log(`🔗 RPC URL: ${RPC_URL}`)

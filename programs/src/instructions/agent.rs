@@ -11,6 +11,60 @@ use crate::GhostSpeakError;
 use crate::*;
 // Enhanced optimization utilities with 2025 performance patterns
 
+/// Comprehensive input validation for agent registration
+/// Prevents injection attacks, enforces length limits, and validates formats
+fn validate_agent_registration_inputs(
+    agent_type: u8,
+    metadata_uri: &str,
+    agent_id: &str,
+) -> Result<()> {
+    // Validate agent type range
+    require!(
+        agent_type <= 10,
+        GhostSpeakError::InvalidConfiguration
+    );
+    
+    // Validate agent_id
+    require!(
+        !agent_id.is_empty(),
+        GhostSpeakError::InvalidInput
+    );
+    require!(
+        agent_id.len() <= 64,
+        GhostSpeakError::InputTooLong
+    );
+    // Alphanumeric and underscore only
+    require!(
+        agent_id.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-'),
+        GhostSpeakError::InvalidInputFormat
+    );
+    
+    // Validate metadata_uri
+    require!(
+        !metadata_uri.is_empty(),
+        GhostSpeakError::InvalidMetadataUri
+    );
+    require!(
+        metadata_uri.len() <= MAX_URL_LENGTH,
+        GhostSpeakError::MetadataUriTooLong
+    );
+    // Basic URL format validation
+    require!(
+        metadata_uri.starts_with("https://") || metadata_uri.starts_with("ipfs://"),
+        GhostSpeakError::InvalidServiceEndpoint
+    );
+    // Prevent malicious URLs
+    require!(
+        !metadata_uri.contains("..") && 
+        !metadata_uri.contains("<") && 
+        !metadata_uri.contains(">") &&
+        !metadata_uri.contains("javascript:"),
+        GhostSpeakError::InvalidInputFormat
+    );
+    
+    Ok(())
+}
+
 /// Enhanced agent registration with 2025 security patterns
 ///
 /// Implements canonical PDA validation, anti-collision measures,
@@ -196,17 +250,8 @@ pub fn register_agent(
         let user_registry = &mut ctx.accounts.user_registry;
         let clock = Clock::get()?;
 
-        // SECURITY: Enhanced input validation with context
-        require!(
-            metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
-            GhostSpeakError::InputTooLong
-        );
-
-        // SECURITY: Validate agent type is within acceptable range
-        require!(
-            agent_type <= 10, // Assuming max 10 agent types
-            GhostSpeakError::InvalidConfiguration
-        );
+        // SECURITY: Comprehensive input validation
+        validate_agent_registration_inputs(agent_type, &metadata_uri, &_agent_id)?;
 
         // Initialize user registry if needed
         if user_registry.user == Pubkey::default() {
@@ -227,11 +272,11 @@ pub fn register_agent(
         user_registry.increment_agents()?;
         user_registry.check_rate_limit(clock.unix_timestamp)?;
 
-        // Initialize agent account with proper memory allocation
+        // Initialize agent account with minimal heap allocation
         agent.owner = ctx.accounts.signer.key();
-        agent.name = String::new(); // Use String::new() instead of with_capacity(0)
-        agent.description = String::new();
-        agent.capabilities = Vec::new(); // Use Vec::new() instead of with_capacity(0)
+        agent.name = "Agent".to_string(); // Use small fixed string instead of empty
+        agent.description = "Registered agent".to_string();
+        agent.capabilities = vec!["general".to_string()]; // Single capability to avoid empty vec
         agent.pricing_model = crate::PricingModel::Fixed;
         agent.reputation_score = 0;
         agent.total_jobs_completed = 0;
@@ -240,28 +285,28 @@ pub fn register_agent(
         agent.created_at = clock.unix_timestamp;
         agent.updated_at = clock.unix_timestamp;
         agent.original_price = 0;
-        agent.genome_hash = String::new();
+        agent.genome_hash = "".to_string();
         agent.is_replicable = false;
         agent.replication_fee = 0;
-        agent.service_endpoint = String::new();
+        agent.service_endpoint = "".to_string();
         agent.is_verified = false;
         agent.verification_timestamp = 0;
         agent.metadata_uri = metadata_uri;
-        agent.framework_origin = String::new(); // Initialize missing field
-        agent.supported_tokens = Vec::new(); // Initialize missing field
-        agent.cnft_mint = None; // Initialize missing field
-        agent.merkle_tree = None; // Initialize missing field
-        agent.supports_a2a = false; // Initialize missing field
-        agent.transfer_hook = None; // Initialize missing field
-        agent.parent_agent = None; // Initialize missing field
-        agent.generation = 0; // Initialize missing field
+        agent.framework_origin = "ghostspeak".to_string(); // Use default value
+        agent.supported_tokens = Vec::with_capacity(0); // Pre-allocate empty Vec
+        agent.cnft_mint = None;
+        agent.merkle_tree = None;
+        agent.supports_a2a = false;
+        agent.transfer_hook = None;
+        agent.parent_agent = None;
+        agent.generation = 0;
         agent.bump = ctx.bumps.agent_account;
 
-        // Emit optimized event with essential data
+        // Emit optimized event with essential data (avoid clone)
         emit!(crate::AgentRegisteredEvent {
             agent: agent.key(),
             owner: agent.owner,
-            name: agent.name.clone(),
+            name: "Agent".to_string(), // Use fixed string instead of clone
             timestamp: clock.unix_timestamp,
         });
 

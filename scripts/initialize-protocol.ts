@@ -8,8 +8,9 @@ import { LAMPORTS_PER_SOL } from '@solana/rpc-types';
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { GHOSTSPEAK_PROGRAM_ID } from '../config/program-ids.js';
 
-const PROGRAM_ID = address('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG');
+const PROGRAM_ID = GHOSTSPEAK_PROGRAM_ID;
 const RPC_URL = 'https://api.devnet.solana.com';
 
 async function initializeProtocol() {

@@ -10,7 +10,7 @@ use anchor_lang::solana_program::program_pack::Pack;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, TokenAccount};
 use anchor_spl::token_2022::{spl_token_2022, Token2022};
-use spl_token_2022::extension::transfer_fee::TransferFeeConfig;
+use spl_token_2022::extension::transfer_fee::{TransferFeeConfig, instruction::transfer_checked_with_fee};
 use spl_token_2022::extension::{BaseStateWithExtensions, StateWithExtensions};
 
 use crate::security::ReentrancyGuard;
@@ -361,12 +361,15 @@ fn transfer_with_fee_support<'info>(
     if fee > 0 {
         msg!("Transfer fee detected: {} tokens", fee);
         
-        // For tokens with transfer fees, we need to handle the fee appropriately
-        // Note: The actual transfer_checked_with_fee instruction is not available in the current version
-        // Instead, we'll use regular transfer_checked and log the fee
-        msg!("Transfer with fee: amount={}, fee={}", amount, fee);
+        // Use the proper transfer_checked_with_fee instruction for Token-2022
+        // This ensures fees are calculated and handled correctly by the SPL program
+        let decimals = {
+            let mint_data = mint.try_borrow_data()?;
+            let mint_state = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&mint_data)?;
+            mint_state.base.decimals
+        };
         
-        let ix = spl_token_2022::instruction::transfer_checked(
+        let ix = transfer_checked_with_fee(
             &spl_token_2022::id(),
             &from.key(),
             &mint.key(),
@@ -374,7 +377,8 @@ fn transfer_with_fee_support<'info>(
             &authority.key(),
             &[],
             amount,
-            6, // TODO: Get decimals from mint
+            decimals,
+            fee,
         )?;
         
         if signers_seeds.is_empty() {

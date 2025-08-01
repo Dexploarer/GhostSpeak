@@ -8,6 +8,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import path from 'path';
+import { GHOSTSPEAK_PROGRAM_ID } from '../config/program-ids.js';
 
 /**
  * GhostSpeak script configuration
@@ -90,7 +91,7 @@ const DEFAULT_CONFIG: GhostSpeakConfig = {
   },
   programs: {
     ghostspeak: {
-      programId: process.env.GHOSTSPEAK_PROGRAM_ID || '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG',
+      programId: process.env.GHOSTSPEAK_PROGRAM_ID || GHOSTSPEAK_PROGRAM_ID.toString(),
       idlPath: 'target/idl/ghostspeak_marketplace.json'
     }
   },

@@ -34,7 +34,6 @@ pub mod state;
 pub mod utils;
 
 #[cfg(test)]
-
 // Re-export types from state module
 pub use state::*;
 
@@ -186,6 +185,24 @@ pub const MAX_PARTICIPANTS_COUNT: usize = 50;
 pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
 pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
 
+// Basis Points Constants (for percentage calculations)
+// Basis points are used throughout the protocol for precise percentage calculations
+// 1 basis point = 0.01%, 10,000 basis points = 100%
+pub const BASIS_POINTS_MAX: u32 = 10000; // 100% in basis points
+pub const BASIS_POINTS_50_PERCENT: u32 = 5000; // 50% in basis points
+pub const BASIS_POINTS_10_PERCENT: u32 = 1000; // 10% in basis points
+pub const BASIS_POINTS_1_PERCENT: u32 = 100; // 1% in basis points
+
+// Common numeric constants
+pub const MAX_COLLECTION_SIZE: usize = 10000; // Maximum size for collections/arrays
+pub const DEFAULT_PAGE_SIZE: usize = 100; // Default pagination size
+pub const MAX_TREND_RANGE: i32 = 10000; // Maximum range for trend calculations (±100%)
+
+// Memory and storage constants
+pub const STANDARD_ACCOUNT_SIZE: usize = 1024; // Standard account size in bytes
+pub const LARGE_ACCOUNT_SIZE: usize = 4096; // Large account size in bytes
+pub const RESERVED_SPACE: usize = 128; // Reserved space for future extensions
+
 // Protocol admin configuration - environment-based with secure fallbacks
 // This addresses the security audit finding about hardcoded admin keys
 //
@@ -210,7 +227,6 @@ pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
 /// 3. Proper key rotation mechanisms
 /// 
 /// These fallback keys are ONLY for development/testing and should NEVER be used in production
-
 // Temporary development admin keys - REPLACE FOR PRODUCTION
 #[cfg(feature = "devnet")]
 pub const PROTOCOL_ADMIN: Pubkey = 
@@ -494,21 +510,21 @@ pub struct JobApplicationAcceptedEvent {
 #[error_code]
 pub enum GhostSpeakError {
     // Agent-related errors (1000-1099)
-    #[msg("Agent is not active")]
+    #[msg("Agent is not active - check agent status or reactivate the agent")]
     AgentNotActive = 1000,
-    #[msg("Agent not found")]
+    #[msg("Agent not found - verify the agent ID and ensure the agent is registered")]
     AgentNotFound = 1001,
 
     // Pricing and payment errors (1100-1199)
-    #[msg("Invalid price range")]
+    #[msg("Invalid price range - price must be between minimum and maximum allowed values")]
     InvalidPriceRange = 1100,
-    #[msg("Invalid payment amount")]
+    #[msg("Invalid payment amount - amount must be between minimum and maximum payment limits")]
     InvalidPaymentAmount = 1101,
-    #[msg("Insufficient balance")]
+    #[msg("Insufficient balance - account balance is too low for this transaction")]
     InsufficientBalance = 1102,
-    #[msg("Payment already processed")]
+    #[msg("Payment already processed - duplicate payment attempt detected")]
     PaymentAlreadyProcessed = 1103,
-    #[msg("Invalid token account")]
+    #[msg("Invalid token account - token account does not match expected mint or authority")]
     InvalidTokenAccount = 1104,
 
     // Access control errors (1200-1299)

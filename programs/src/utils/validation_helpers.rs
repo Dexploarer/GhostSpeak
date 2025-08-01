@@ -421,10 +421,10 @@ pub fn safe_arithmetic(a: u64, b: u64, operation: &str) -> Result<u64> {
     }
 }
 
-/// Validates percentage values (0-10000 basis points = 0-100%)
+/// Validates percentage values (0-BASIS_POINTS_MAX basis points = 0-100%)
 /// 
 /// # Arguments
-/// * `percentage` - Percentage in basis points (0-10000)
+/// * `percentage` - Percentage in basis points (0-BASIS_POINTS_MAX)
 /// * `field_name` - Name of the field for error context
 /// 
 /// # Returns
@@ -432,7 +432,7 @@ pub fn safe_arithmetic(a: u64, b: u64, operation: &str) -> Result<u64> {
 /// * `Err(GhostSpeakError)` if percentage is invalid
 pub fn validate_percentage(percentage: u32, field_name: &str) -> Result<()> {
     require!(
-        percentage <= 10000,
+        percentage <= crate::BASIS_POINTS_MAX,
         match field_name {
             "discount" => GhostSpeakError::InvalidDiscountPercentage,
             "royalty" => GhostSpeakError::InvalidRoyaltyPercentage,

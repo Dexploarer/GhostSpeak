@@ -158,22 +158,29 @@ impl DynamicPricing {
         // Simple linear adjustment using basis points
         let adjustment = match self.pricing_data.algorithm {
             PricingAlgorithm::Linear => {
-                let demand_adj =
-                    (demand_factor * self.pricing_data.demand_multiplier as u64) / 10000;
-                let supply_adj =
-                    (supply_factor * self.pricing_data.supply_multiplier as u64) / 10000;
-                (demand_adj + supply_adj) / 2
+                // Linear pricing: simple average of demand and supply adjustments
+                let demand_adjustment_bps = (demand_factor * self.pricing_data.demand_multiplier as u64) / crate::BASIS_POINTS_MAX as u64;
+                let supply_adjustment_bps = (supply_factor * self.pricing_data.supply_multiplier as u64) / crate::BASIS_POINTS_MAX as u64;
+                
+                // Return the average of both factors for balanced pricing
+                (demand_adjustment_bps + supply_adjustment_bps) / 2
             }
             PricingAlgorithm::MarketBased => {
-                let market_ratio = if supply_factor > 0 {
-                    (demand_factor * 10000) / supply_factor
+                // Market-based pricing: emphasizes demand/supply ratio
+                let demand_to_supply_ratio = if supply_factor > 0 {
+                    // Calculate ratio in basis points for precision
+                    (demand_factor * crate::BASIS_POINTS_MAX as u64) / supply_factor
                 } else {
+                    // Avoid division by zero - high demand with no supply
                     demand_factor
                 };
-                let multiplier = (self.pricing_data.demand_multiplier as u64
-                    + self.pricing_data.supply_multiplier as u64)
-                    / 2;
-                (market_ratio * multiplier) / 10000
+                
+                // Average the configured multipliers for balanced weighting
+                let combined_multiplier = (self.pricing_data.demand_multiplier as u64
+                    + self.pricing_data.supply_multiplier as u64) / 2;
+                    
+                // Apply the combined multiplier to the market ratio
+                (demand_to_supply_ratio * combined_multiplier) / crate::BASIS_POINTS_MAX as u64
             }
             _ => {
                 // Default simple adjustment

@@ -507,9 +507,15 @@ mod tests {
 
     #[test]
     fn test_account_sizes() {
-        // Ensure our size calculations are correct
-        assert!(ReentrancyGuard::LEN > 8); // Has discriminator
-        assert!(InstructionLock::LEN > 8);
-        assert!(AccountLock::LEN > 8);
+        // Verify that our reentrancy protection structures have expected sizes
+        // All should include the 8-byte discriminator plus their data fields
+        let guard_size = ReentrancyGuard::LEN;
+        let instruction_lock_size = InstructionLock::LEN;
+        let account_lock_size = AccountLock::LEN;
+        
+        // Test expected structure sizes (discriminator + data fields)
+        assert_eq!(guard_size, 8 + 1 + 8); // discriminator + state + slot
+        assert_eq!(instruction_lock_size, 8 + 32 + 8 + 1); // discriminator + pubkey + slot + state  
+        assert_eq!(account_lock_size, 8 + 32 + 8 + 1); // discriminator + account + slot + state
     }
 }

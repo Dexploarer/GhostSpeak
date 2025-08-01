@@ -272,7 +272,7 @@ pub fn register_agent(
         emit!(crate::AgentRegisteredEvent {
             agent: agent.key(),
             owner: agent.owner,
-            name: name, // Use actual validated name
+            name, // Use actual validated name
             timestamp: clock.unix_timestamp,
         });
 

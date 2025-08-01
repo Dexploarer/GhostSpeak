@@ -53,9 +53,16 @@ export async function getWallet(): Promise<KeyPairSigner> {
       
       return signer
     } catch (error) {
-      // Acknowledge error for future error handling
-      void error
-      log.warn(`Failed to load wallet from config: ${config.walletPath}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      log.error(`Failed to load wallet from config: ${config.walletPath}`)
+      log.error(`Error details: ${errorMessage}`)
+      if (errorMessage.includes('ENOENT')) {
+        log.info(`💡 Wallet file not found. Create a new wallet or check the path.`)
+      } else if (errorMessage.includes('permission')) {
+        log.info(`💡 Permission denied. Check file permissions for ${config.walletPath}`)
+      } else if (errorMessage.includes('JSON')) {
+        log.info(`💡 Wallet file appears to be corrupted. Try restoring from backup.`)
+      }
     }
   }
   
@@ -71,9 +78,16 @@ export async function getWallet(): Promise<KeyPairSigner> {
       
       return signer
     } catch (error) {
-      // Acknowledge error for future error handling
-      void error
-      log.warn('Failed to load GhostSpeak CLI wallet')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      log.error('Failed to load GhostSpeak CLI wallet')
+      log.error(`Error details: ${errorMessage}`)
+      if (errorMessage.includes('ENOENT')) {
+        log.info(`💡 GhostSpeak CLI wallet not found at ${walletPath}`)
+      } else if (errorMessage.includes('JSON')) {
+        log.info(`💡 GhostSpeak CLI wallet file appears corrupted. Delete ${walletPath} to create a new one.`)
+      } else if (errorMessage.includes('Invalid')) {
+        log.info(`💡 GhostSpeak CLI wallet contains invalid key data. Try recreating the wallet.`)
+      }
     }
   }
   
@@ -89,31 +103,52 @@ export async function getWallet(): Promise<KeyPairSigner> {
       
       return signer
     } catch (error) {
-      // Acknowledge error for future error handling
-      void error
-      log.warn('Failed to load default Solana wallet')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      log.error('Failed to load default Solana CLI wallet')
+      log.error(`Error details: ${errorMessage}`)
+      if (errorMessage.includes('ENOENT')) {
+        log.info(`💡 Solana CLI wallet not found. Run 'solana-keygen new' to create one.`)
+      } else if (errorMessage.includes('JSON')) {
+        log.info(`💡 Solana CLI wallet file corrupted. Run 'solana-keygen recover' to restore.`)
+      } else if (errorMessage.includes('Invalid')) {
+        log.info(`💡 Invalid Solana wallet format. Generate a new keypair with 'solana-keygen new'.`)
+      }
     }
   }
   
   // Create new wallet if none exists
-  log.info('No wallet found. Creating a new one...')
-  const { wallet, mnemonic } = await walletService.createWallet('default', config.network as 'devnet' | 'testnet' | 'mainnet-beta')
-  
-  log.success(`Created new wallet: ${wallet.metadata.address}`)
-  log.warn('⚠️  Save your seed phrase:')
-  log.warn(mnemonic)
-  log.info('')
-  log.info('Next steps:')
-  log.info(`  1. Save your seed phrase securely`)
-  log.info(`  2. Fund your wallet: ${chalk.cyan('gs faucet')}`)
-  log.info(`  3. Create an agent: ${chalk.cyan('gs agent register')}`)
-  
-  const signer = await walletService.getActiveSigner()
-  if (!signer) {
-    throw new Error('Failed to create wallet')
+  try {
+    log.info('No wallet found. Creating a new one...')
+    const { wallet, mnemonic } = await walletService.createWallet('default', config.network as 'devnet' | 'testnet' | 'mainnet-beta')
+    
+    log.success(`Created new wallet: ${wallet.metadata.address}`)
+    log.warn('⚠️  Save your seed phrase:')
+    log.warn(mnemonic)
+    log.info('')
+    log.info('Next steps:')
+    log.info(`  1. Save your seed phrase securely`)
+    log.info(`  2. Fund your wallet: ${chalk.cyan('gs faucet')}`)
+    log.info(`  3. Create an agent: ${chalk.cyan('gs agent register')}`)
+    
+    const signer = await walletService.getActiveSigner()
+    if (!signer) {
+      throw new Error('Failed to retrieve newly created wallet')
+    }
+    
+    return signer
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    log.error('Failed to create new wallet')
+    log.error(`Error details: ${errorMessage}`)
+    if (errorMessage.includes('permission')) {
+      log.info(`💡 Permission denied. Check write permissions in ~/.config/solana/`)
+    } else if (errorMessage.includes('ENOSPC')) {
+      log.info(`💡 No space left on device. Free up some disk space and try again.`)
+    } else {
+      log.info(`💡 Try running with elevated permissions or check your file system.`)
+    }
+    throw new Error(`Wallet creation failed: ${errorMessage}`)
   }
-  
-  return signer
 }
 
 /**

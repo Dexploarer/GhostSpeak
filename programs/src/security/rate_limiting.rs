@@ -373,8 +373,13 @@ mod tests {
 
     #[test]
     fn test_rate_limit_tracking() {
-        // Test rate limit calculations
-        assert!(RateLimiter::LEN > 0);
-        assert!(UserRateLimit::LEN > 0);
+        // Test rate limit calculations and struct sizes
+        // Verify that our account structures have reasonable sizes
+        let rate_limiter_size = RateLimiter::LEN;
+        let user_rate_limit_size = UserRateLimit::LEN;
+        
+        // These are compile-time constants, so we test their expected values
+        assert_eq!(rate_limiter_size, 8 + 8 + 8 + 32 + 8); // discriminator + fields
+        assert_eq!(user_rate_limit_size, 8 + 32 + 8 + 8 + 8 + 8); // discriminator + fields
     }
 }

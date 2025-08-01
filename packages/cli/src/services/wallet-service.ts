@@ -539,7 +539,7 @@ export class WalletService implements IWalletService {
       } else {
         throw new Error('No signature found in signed transaction')
       }
-    } catch (error) {
+    } catch {
       console.error('Failed to sign transaction:', error)
       throw new Error(`Transaction signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -563,7 +563,7 @@ export class WalletService implements IWalletService {
       // Optionally rename the old file
       renameSync(oldWalletPath, oldWalletPath + '.backup')
       
-    } catch (error) {
+    } catch {
       console.warn('Failed to migrate old wallet:', error)
     }
   }

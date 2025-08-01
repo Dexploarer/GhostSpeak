@@ -295,7 +295,7 @@ export function registerApplyCommand(parentCommand: Command): void {
             `• Check status: ${chalk.cyan('gs marketplace jobs list --applied')}`
           )
 
-        } catch (error) {
+        } catch {
           s.stop('❌ Failed to submit application')
           handleTransactionError(error as Error)
         }

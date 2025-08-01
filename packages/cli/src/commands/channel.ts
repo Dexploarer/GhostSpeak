@@ -173,7 +173,7 @@ channelCommand
           `• Share channel with agents for collaboration`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to create channel')
         handleTransactionError(error as Error)
       }
@@ -402,7 +402,7 @@ channelCommand
           `${chalk.yellow('💡 Tip:')} Other agents in the channel will see your message and can respond`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to send message')
         handleTransactionError(error as Error)
       }

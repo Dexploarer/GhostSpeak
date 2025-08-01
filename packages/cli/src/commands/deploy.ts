@@ -3,12 +3,12 @@
  */
 
 import { Command } from 'commander'
-import { select, text, confirm, spinner } from '@clack/prompts'
+import { confirm, spinner } from '@clack/prompts'
 import chalk from 'chalk'
 import { readFileSync, existsSync } from 'fs'
-import { join } from 'path'
 import { createKeyPairSignerFromBytes, address, type KeyPairSigner } from '@solana/kit'
 import type { Address } from '@solana/addresses'
+import type { DeployCommandOptions, WalletService, BlockchainService } from '../types/sdk-types.js'
 
 export const deployCommand = new Command('deploy')
   .description('Deploy or upgrade GhostSpeak program on Solana')
@@ -18,10 +18,8 @@ export const deployCommand = new Command('deploy')
   .option('-u, --upgrade', 'Upgrade existing program instead of new deployment')
   .option('--program-id <id>', 'Program ID for upgrade (required with --upgrade)')
   .option('--skip-verification', 'Skip deployment verification')
-  .action(async (options) => {
+  .action(async (options: DeployCommandOptions) => {
     const { default: Container } = await import('../core/Container.js')
-    const { WalletService } = await import('../services/wallet-service.js')
-    const { BlockchainService } = await import('../services/blockchain/BlockchainService.js')
     
     try {
       console.log(chalk.blue('\n🚀 GhostSpeak Program Deployment\n'))
@@ -42,7 +40,7 @@ export const deployCommand = new Command('deploy')
       
       if (options.keypair && existsSync(options.keypair)) {
         // Use specified keypair file
-        const keypairData = JSON.parse(readFileSync(options.keypair, 'utf8'))
+        const keypairData = JSON.parse(readFileSync(options.keypair, 'utf8')) as number[]
         deployerSigner = createKeyPairSignerFromBytes(new Uint8Array(keypairData))
         console.log(chalk.gray(`Using keypair from: ${options.keypair}`))
       } else {

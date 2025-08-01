@@ -95,7 +95,9 @@
   },
   "dependencies": {
     "@ghostspeak/sdk": "^1.6.3",
+    "@solana/addresses": "^2.3.0",
     "@solana/functional": "^2.3.0",
+    "@solana/keys": "^2.3.0",
     "@solana/kit": "^2.3.0",
     "@solana/rpc": "^2.3.0",
     "@solana/signers": "^2.3.0",

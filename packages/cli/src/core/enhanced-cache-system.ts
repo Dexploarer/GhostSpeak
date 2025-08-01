@@ -254,7 +254,7 @@ export class EnhancedCacheManager extends CacheManager {
       return result
 
     } catch (error) {
-      this.eventBus.emit('enhanced_cache:error', { key, error, operation: 'get' })
+      this.eventBus.emit('enhanced_cache:error', { key, error: error as Error, operation: 'get' })
       return null
     }
   }
@@ -346,7 +346,7 @@ export class EnhancedCacheManager extends CacheManager {
       })
 
     } catch (error) {
-      this.eventBus.emit('enhanced_cache:error', { key, error, operation: 'set' })
+      this.eventBus.emit('enhanced_cache:error', { key, error: error as Error, operation: 'set' })
       throw error
     }
   }
@@ -395,7 +395,7 @@ export class EnhancedCacheManager extends CacheManager {
           } catch (error) {
             this.eventBus.emit('enhanced_cache:predictive_failed', {
               key: prediction.key,
-              error
+              error: error as Error
             })
           } finally {
             this.warmingQueue.delete(prediction.key)
@@ -588,7 +588,7 @@ export class EnhancedCacheManager extends CacheManager {
         setImmediate(() => this.updateDiskMetadata())
         
       } catch (error) {
-        this.eventBus.emit('enhanced_cache:disk_write_failed', { key, error })
+        this.eventBus.emit('enhanced_cache:disk_write_failed', { key, error: error as Error })
       } finally {
         this.diskWriteQueue.delete(key)
       }

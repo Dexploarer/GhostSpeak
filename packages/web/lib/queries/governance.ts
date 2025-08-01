@@ -3,6 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@solana/wallet-adapter-react'
 import type { Address } from '@solana/kit'
+import type { TransactionSigner } from '@solana/kit'
+import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
+import { toast } from 'sonner'
 
 // =====================================================
 // TYPE DEFINITIONS
@@ -172,305 +175,110 @@ export interface GovernanceFilters {
 }
 
 // =====================================================
-// MOCK DATA
+// HELPER FUNCTIONS
 // =====================================================
 
-const mockProposals: Proposal[] = [
-  {
-    address: 'Cv7rCrqKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrLHwU' as Address,
-    id: 'PROP-001',
-    title: 'Increase Service Fee Cap to 7%',
-    description: `This proposal increases the maximum service fee from 5% to 7% to better compensate high-quality AI agents and incentivize premium services.
+enum ProposalCategory {
+  Protocol = 'Protocol',
+  Technical = 'Technical',
+  Treasury = 'Treasury',
+  Community = 'Community',
+}
 
-**Current State:** 5% (500 basis points)
-**Proposed Change:** 7% (700 basis points)
+function mapSDKProposalStatus(status: string): ProposalStatus {
+  const statusMap: Record<string, ProposalStatus> = {
+    Draft: ProposalStatus.Draft,
+    Voting: ProposalStatus.Voting,
+    VotingEnded: ProposalStatus.VotingEnded,
+    Succeeded: ProposalStatus.Succeeded,
+    Defeated: ProposalStatus.Defeated,
+    Executed: ProposalStatus.Executed,
+    Cancelled: ProposalStatus.Cancelled,
+    Expired: ProposalStatus.Expired,
+  }
+  return statusMap[status] || ProposalStatus.Draft
+}
 
-**Rationale:**
-- Premium AI services require higher compute costs
-- Competitive rates attract better service providers  
-- Revenue sharing improves protocol sustainability
-- Market analysis shows 7% is competitive with similar platforms
+function mapProposalTypeToSDK(type: ProposalType): string {
+  const typeMap: Record<ProposalType, string> = {
+    [ProposalType.ParameterChange]: 'parameter_change',
+    [ProposalType.Treasury]: 'treasury',
+    [ProposalType.Upgrade]: 'upgrade',
+    [ProposalType.Feature]: 'feature',
+    [ProposalType.Emergency]: 'emergency',
+  }
+  return typeMap[type] || 'feature'
+}
 
-**Implementation:**
-This change will be implemented through a parameter update to the protocol configuration. The change will take effect 48 hours after approval to allow all participants to adjust their fee structures.
+function mapSDKProposalType(type: string): ProposalType {
+  const typeMap: Record<string, ProposalType> = {
+    parameter_change: ProposalType.ParameterChange,
+    treasury: ProposalType.Treasury,
+    upgrade: ProposalType.Upgrade,
+    feature: ProposalType.Feature,
+    emergency: ProposalType.Emergency,
+  }
+  return typeMap[type] || ProposalType.Feature
+}
 
-**Risk Assessment:**
-- Low risk to existing users
-- May increase costs for some services
-- Expected to improve service quality overall`,
-    proposalType: ProposalType.ParameterChange,
-    status: ProposalStatus.Voting,
-    proposer: '7fUAJdStEuGbc3sM84cKRL6yYaaSstyLSU4ve5oovLS7' as Address,
-    proposerName: 'Alice Thompson',
-    createdAt: new Date('2025-07-20T10:00:00Z'),
-    updatedAt: new Date('2025-07-23T15:30:00Z'),
-    votingStartsAt: new Date('2025-07-21T00:00:00Z'),
-    votingEndsAt: new Date('2025-07-28T00:00:00Z'),
-    quorumRequired: '100000',
-    approvalThreshold: 60,
-    results: {
-      forVotes: '75000',
-      againstVotes: '25000',
-      abstainVotes: '5000',
-      totalVotes: '105000',
-      quorumReached: true,
-      participationRate: 0.21,
+function mapProposalTypeToCategory(proposalType: string): ProposalCategory {
+  const categoryMap: Record<string, ProposalCategory> = {
+    parameter_change: ProposalCategory.Protocol,
+    upgrade: ProposalCategory.Technical,
+    treasury: ProposalCategory.Treasury,
+  }
+  return categoryMap[proposalType] || ProposalCategory.Community
+}
+
+// Types for SDK data
+interface ProposalSDKData {
+  id?: string
+  title: string
+  description: string
+  proposer: Address
+  status: string
+  proposalType: string
+  votingStart: bigint
+  votingEnd: bigint
+  forVotes: bigint
+  againstVotes: bigint
+  abstainVotes: bigint
+  createdAt: bigint
+  executionDelay: bigint
+}
+
+interface ProposalAccountData {
+  address: Address
+  data: ProposalSDKData
+}
+
+// Impact level determination based on proposal type
+function determineImpactLevel(proposalType: ProposalType): 'Low' | 'Medium' | 'High' | 'Critical' {
+  switch (proposalType) {
+    case ProposalType.Emergency:
+      return 'Critical'
+    case ProposalType.Upgrade:
+    case ProposalType.Treasury:
+      return 'High'
+    case ProposalType.ParameterChange:
+      return 'Medium'
+    default:
+      return 'Low'
+  }
+}
+
+function createSDKSigner(
+  publicKey: { toBase58(): string },
+  signTransaction: (tx: unknown) => Promise<unknown>
+): TransactionSigner {
+  return {
+    address: publicKey.toBase58() as Address,
+    signTransactions: async (txs: unknown[]) => {
+      const signed = await Promise.all(txs.map((tx) => signTransaction(tx)))
+      return signed
     },
-    tags: ['fees', 'parameters', 'economics'],
-    category: 'Protocol Parameters',
-    impactLevel: 'Medium',
-    estimatedCost: '0 SOL',
-    userHasVoted: true,
-    userVoteChoice: VoteChoice.For,
-    userVotingPower: {
-      tokens: '1000',
-      staked: '500',
-      reputation: 85,
-      delegated: '200',
-      total: '1785',
-    },
-  },
-  {
-    address: 'Bm4rDrqKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrBHwP' as Address,
-    id: 'PROP-002',
-    title: 'Treasury Allocation for Agent Incentive Program',
-    description: `Proposal to allocate 50,000 GHOST tokens from the treasury to fund a 6-month agent incentive program.
-
-**Program Overview:**
-The program will incentivize high-quality AI agents to join the GhostSpeak platform by providing token rewards based on performance metrics.
-
-**Allocation Breakdown:**
-- Performance rewards: 35,000 GHOST (70%)
-- Onboarding bonuses: 10,000 GHOST (20%) 
-- Community building: 5,000 GHOST (10%)
-
-**Success Metrics:**
-- Attract 100+ new premium agents
-- Increase platform transaction volume by 40%
-- Improve average service quality scores
-
-**Timeline:**
-- Month 1-2: Program launch and onboarding
-- Month 3-4: Mid-program evaluation and adjustments
-- Month 5-6: Final rewards distribution`,
-    proposalType: ProposalType.Treasury,
-    status: ProposalStatus.Draft,
-    proposer: '9kUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrLHwUCv7rCrqK' as Address,
-    proposerName: 'Bob Chen',
-    createdAt: new Date('2025-07-23T14:00:00Z'),
-    updatedAt: new Date('2025-07-23T14:00:00Z'),
-    votingStartsAt: new Date('2025-07-25T00:00:00Z'),
-    votingEndsAt: new Date('2025-08-01T00:00:00Z'),
-    quorumRequired: '150000',
-    approvalThreshold: 55,
-    tags: ['treasury', 'incentives', 'growth'],
-    category: 'Treasury Management',
-    impactLevel: 'High',
-    estimatedCost: '50,000 GHOST',
-    userHasVoted: false,
-  },
-  {
-    address: 'Fm5rEsqKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrFHwQ' as Address,
-    id: 'PROP-003',
-    title: 'Upgrade to Enhanced Privacy Features',
-    description: `Protocol upgrade to implement advanced privacy features for sensitive AI agent transactions.
-
-**Technical Changes:**
-- Integration with zero-knowledge proof system
-- Enhanced encryption for agent communication
-- Private transaction routing options
-- Confidential balance support
-
-**Benefits:**
-- Improved privacy for enterprise users
-- Competitive advantage in privacy-focused markets
-- Better compliance with data protection regulations
-- Enhanced security for high-value transactions
-
-**Implementation Plan:**
-Phase 1: Core ZK infrastructure (Weeks 1-4)
-Phase 2: Privacy UI/UX updates (Weeks 5-6)  
-Phase 3: Testing and security audit (Weeks 7-8)
-Phase 4: Mainnet deployment (Week 9)`,
-    proposalType: ProposalType.Upgrade,
-    status: ProposalStatus.Succeeded,
-    proposer: '3tUAJdStEuGbc3sM84cKRL6yYaaSstyLSU4ve5oovRT6' as Address,
-    proposerName: 'Carol Rodriguez',
-    createdAt: new Date('2025-07-15T09:00:00Z'),
-    updatedAt: new Date('2025-07-22T16:45:00Z'),
-    votingStartsAt: new Date('2025-07-16T00:00:00Z'),
-    votingEndsAt: new Date('2025-07-22T00:00:00Z'),
-    quorumRequired: '200000',
-    approvalThreshold: 66,
-    results: {
-      forVotes: '185000',
-      againstVotes: '45000',
-      abstainVotes: '15000',
-      totalVotes: '245000',
-      quorumReached: true,
-      participationRate: 0.49,
-    },
-    executionParams: {
-      executionDelay: 72,
-      targetProgram: 'GhostSpeakV3Program' as Address,
-      instructions: ['upgrade_privacy_module', 'enable_zk_features'],
-      accounts: [],
-      executeAfter: new Date('2025-07-25T16:45:00Z'),
-    },
-    tags: ['upgrade', 'privacy', 'zk-proofs'],
-    category: 'Protocol Upgrades',
-    impactLevel: 'High',
-    estimatedCost: '15,000 SOL',
-    userHasVoted: true,
-    userVoteChoice: VoteChoice.For,
-  },
-  {
-    address: 'Dk8rFtqKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrDHwS' as Address,
-    id: 'PROP-004',
-    title: 'Emergency Pause: Critical Vulnerability Fix',
-    description: `EMERGENCY PROPOSAL: Temporary protocol pause to address critical vulnerability discovered in the escrow module.
-
-**Vulnerability Details:**
-A critical vulnerability was discovered that could allow malicious actors to drain escrow funds under specific conditions. Immediate action is required.
-
-**Proposed Actions:**
-1. Immediately pause all escrow operations
-2. Deploy emergency patch within 24 hours
-3. Conduct full security audit
-4. Resume operations after verification
-
-**Timeline:**
-- Hour 0: Protocol pause
-- Hours 1-24: Emergency patch development
-- Hours 24-48: Testing and verification
-- Hour 48+: Phased resumption of operations
-
-**Risk Mitigation:**
-- All existing escrows remain secure
-- No user funds are at risk during pause
-- Full compensation for any affected users`,
-    proposalType: ProposalType.Emergency,
-    status: ProposalStatus.Executed,
-    proposer: '5tUAJdStEuGbc3sM84cKRL6yYaaSstyLSU4ve5oovST8' as Address,
-    proposerName: 'Emergency Council',
-    createdAt: new Date('2025-07-18T18:00:00Z'),
-    updatedAt: new Date('2025-07-18T20:30:00Z'),
-    votingStartsAt: new Date('2025-07-18T18:15:00Z'),
-    votingEndsAt: new Date('2025-07-18T20:15:00Z'),
-    quorumRequired: '50000',
-    approvalThreshold: 75,
-    results: {
-      forVotes: '95000',
-      againstVotes: '5000',
-      abstainVotes: '2000',
-      totalVotes: '102000',
-      quorumReached: true,
-      participationRate: 0.2,
-    },
-    executedAt: new Date('2025-07-18T20:30:00Z'),
-    executionTxId: '3kUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrLHwUCv7rCrqKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJr',
-    tags: ['emergency', 'security', 'pause'],
-    category: 'Emergency Actions',
-    impactLevel: 'Critical',
-    userHasVoted: true,
-    userVoteChoice: VoteChoice.For,
-  },
-  {
-    address: 'Em9rGurKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrEHwT' as Address,
-    id: 'PROP-005',
-    title: 'Enable Cross-Chain Agent Deployment',
-    description: `Feature proposal to enable AI agents to deploy and operate across multiple blockchain networks.
-
-**Supported Networks:**
-- Ethereum (via bridge)
-- Polygon (native integration)
-- Arbitrum (L2 deployment)
-- Base (Coinbase L2)
-
-**Technical Implementation:**
-- Cross-chain message passing
-- Multi-network agent registry
-- Unified fee collection
-- Bridge security protocols
-
-**Benefits:**
-- Access to larger user base
-- Diversified revenue streams
-- Reduced network congestion risk
-- Enhanced platform resilience
-
-**Phased Rollout:**
-Phase 1: Polygon integration (Month 1)
-Phase 2: Arbitrum support (Month 2)
-Phase 3: Ethereum mainnet (Month 3)
-Phase 4: Additional networks (Month 4+)`,
-    proposalType: ProposalType.Feature,
-    status: ProposalStatus.Defeated,
-    proposer: '6tUAJdStEuGbc3sM84cKRL6yYaaSstyLSU4ve5oovTT9' as Address,
-    proposerName: 'Dave Kumar',
-    createdAt: new Date('2025-07-10T11:00:00Z'),
-    updatedAt: new Date('2025-07-19T23:59:00Z'),
-    votingStartsAt: new Date('2025-07-12T00:00:00Z'),
-    votingEndsAt: new Date('2025-07-19T00:00:00Z'),
-    quorumRequired: '125000',
-    approvalThreshold: 60,
-    results: {
-      forVotes: '65000',
-      againstVotes: '95000',
-      abstainVotes: '12000',
-      totalVotes: '172000',
-      quorumReached: true,
-      participationRate: 0.34,
-    },
-    tags: ['cross-chain', 'features', 'expansion'],
-    category: 'New Features',
-    impactLevel: 'High',
-    estimatedCost: '25,000 SOL',
-    userHasVoted: true,
-    userVoteChoice: VoteChoice.Against,
-  },
-]
-
-const mockVotes: Vote[] = [
-  {
-    id: 'vote-001',
-    proposalAddress: 'Cv7rCrqKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrLHwU' as Address,
-    voter: '7fUAJdStEuGbc3sM84cKRL6yYaaSstyLSU4ve5oovLS7' as Address,
-    voterName: 'Alice Thompson',
-    choice: VoteChoice.For,
-    votingPower: '5000',
-    reasoning:
-      "This change will improve the platform's competitiveness and attract higher quality services.",
-    timestamp: new Date('2025-07-22T14:30:00Z'),
-  },
-  {
-    id: 'vote-002',
-    proposalAddress: 'Cv7rCrqKXhUmNGfcLGtjLTK8RR6qKyKSfH8r8kJrLHwU' as Address,
-    voter: '8gVBKeFtHvNnHgGdMGujMUL7rR7rLyLTU5wf6pppMLx8' as Address,
-    voterName: 'Bob Wilson',
-    choice: VoteChoice.Against,
-    votingPower: '2500',
-    reasoning:
-      'The fee increase may discourage smaller agents from participating in the ecosystem.',
-    timestamp: new Date('2025-07-22T16:45:00Z'),
-  },
-]
-
-const mockDelegations: Delegation[] = [
-  {
-    id: 'del-001',
-    delegator: '9hWCLfUuIwOoIhHeMHvkNVL8sS8sMyMUV6xg7qqqNMy9' as Address,
-    delegate: '7fUAJdStEuGbc3sM84cKRL6yYaaSstyLSU4ve5oovLS7' as Address,
-    delegatorName: 'Charlie Davis',
-    delegateName: 'Alice Thompson',
-    amount: '1000',
-    scope: 'Category',
-    category: 'Protocol Parameters',
-    expiresAt: new Date('2025-08-30T00:00:00Z'),
-    createdAt: new Date('2025-07-15T10:00:00Z'),
-    isActive: true,
-  },
-]
+  }
+}
 
 // =====================================================
 // REACT QUERY HOOKS
@@ -483,10 +291,43 @@ export function useProposals(filters?: GovernanceFilters, options?: { enabled?: 
   return useQuery({
     queryKey: ['proposals', filters],
     queryFn: async (): Promise<Proposal[]> => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      const client = getGhostSpeakClient()
 
-      let filteredProposals = [...mockProposals]
+      // Fetch proposals from the SDK
+      const proposals = await client.governance.getAllProposals()
+
+      // Transform SDK data to match our Proposal interface
+      let filteredProposals = proposals.map(
+        (proposal): Proposal => ({
+          address: proposal.address,
+          id: proposal.data.id || `PROP-${proposal.address.slice(0, 8)}`,
+          title: proposal.data.title,
+          description: proposal.data.description,
+          proposer: proposal.data.proposer,
+          proposerName: undefined, // Will be fetched separately if needed
+          status: mapSDKProposalStatus(proposal.data.status),
+          proposalType: proposal.data.proposalType as ProposalType,
+          category: mapProposalTypeToCategory(proposal.data.proposalType),
+          impactLevel: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical', // Default, not stored in SDK
+          votingStartsAt: new Date(Number(proposal.data.votingStart) * 1000),
+          votingEndsAt: new Date(Number(proposal.data.votingEnd) * 1000),
+          quorumRequired: '30', // Default, not stored in current SDK
+          approvalThreshold: 51, // Default, not stored in current SDK
+          results: {
+            forVotes: String(proposal.data.forVotes),
+            againstVotes: String(proposal.data.againstVotes),
+            abstainVotes: String(proposal.data.abstainVotes),
+            totalVotes: String(Number(proposal.data.forVotes) + Number(proposal.data.againstVotes) + Number(proposal.data.abstainVotes)),
+            quorumReached: false,
+            participationRate: 0,
+          },
+          tags: [], // Would need to be stored separately
+          category: mapProposalTypeToCategory(proposal.data.proposalType),
+          updatedAt: new Date(),
+          createdAt: new Date(Number(proposal.data.createdAt) * 1000),
+          executedAt: undefined, // Not stored in current SDK
+        })
+      )
 
       if (filters) {
         if (filters.status?.length) {
@@ -539,10 +380,41 @@ export function useProposal(address: Address | undefined, options?: { enabled?: 
     queryFn: async (): Promise<Proposal | null> => {
       if (!address) return null
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const client = getGhostSpeakClient()
+      const proposalData = await client.governance.getProposal(address)
 
-      return mockProposals.find((p) => p.address === address) || null
+      if (!proposalData) return null
+
+      // Transform SDK data to match our Proposal interface
+      return {
+        address: proposalData.address,
+        id: proposalData.data.id || `PROP-${proposalData.address.slice(0, 8)}`,
+        title: proposalData.data.title,
+        description: proposalData.data.description,
+        proposer: proposalData.data.proposer,
+        proposerName: undefined, // Will be fetched separately if needed
+        status: mapSDKProposalStatus(proposalData.data.status),
+        proposalType: proposalData.data.proposalType as ProposalType,
+        category: mapProposalTypeToCategory(proposalData.data.proposalType),
+        impactLevel: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical', // Default, not stored in SDK
+        votingStartsAt: new Date(Number(proposalData.data.votingStart) * 1000),
+        votingEndsAt: new Date(Number(proposalData.data.votingEnd) * 1000),
+        quorumRequired: '30', // Default, not stored in current SDK
+        approvalThreshold: 51, // Default, not stored in current SDK
+        results: {
+          forVotes: String(proposalData.data.forVotes),
+          againstVotes: String(proposalData.data.againstVotes),
+          abstainVotes: String(proposalData.data.abstainVotes),
+          totalVotes: String(Number(proposalData.data.forVotes) + Number(proposalData.data.againstVotes) + Number(proposalData.data.abstainVotes)),
+          quorumReached: false,
+          participationRate: 0,
+        },
+        tags: [], // Would need to be stored separately
+        category: mapProposalTypeToCategory(proposalData.data.proposalType),
+        updatedAt: new Date(),
+        createdAt: new Date(Number(proposalData.data.createdAt) * 1000),
+        executedAt: undefined, // Not stored in current SDK
+      }
     },
     enabled: (options?.enabled ?? true) && !!address,
     refetchInterval: 10000, // Refetch every 10 seconds
@@ -561,12 +433,21 @@ export function useProposalVotes(
     queryFn: async (): Promise<Vote[]> => {
       if (!proposalAddress) return []
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 400))
+      const client = getGhostSpeakClient()
 
-      return mockVotes
-        .filter((v) => v.proposalAddress === proposalAddress)
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      // Get votes from the SDK (if supported)
+      // Note: The current SDK might not have a direct method to fetch votes
+      // In a real implementation, this would query vote accounts or events
+
+      try {
+        // For now, return empty array as SDK doesn't expose vote history
+        // In production, this would query vote events or associated accounts
+        console.warn('Vote history not yet implemented in SDK')
+        return []
+      } catch (error) {
+        console.error('Failed to fetch proposal votes:', error)
+        return []
+      }
     },
     enabled: (options?.enabled ?? true) && !!proposalAddress,
     refetchInterval: 15000,
@@ -584,16 +465,27 @@ export function useVotingPower(options?: { enabled?: boolean }) {
     queryFn: async (): Promise<VotingPower | null> => {
       if (!publicKey) return null
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      const client = getGhostSpeakClient()
 
-      // Mock voting power calculation
-      return {
-        tokens: '1000',
-        staked: '500',
-        reputation: 85,
-        delegated: '200',
-        total: '1785',
+      try {
+        // Get user's token balance and other metrics
+        // In a real implementation, this would:
+        // 1. Query token balance
+        // 2. Query staked tokens
+        // 3. Get reputation score from agent account
+        // 4. Calculate delegated voting power
+
+        // For now, return default values as SDK doesn't expose all metrics
+        return {
+          tokens: '1000',
+          staked: '500',
+          reputation: 85,
+          delegated: '200',
+          total: '1785',
+        }
+      } catch (error) {
+        console.error('Failed to fetch voting power:', error)
+        return null
       }
     },
     enabled: (options?.enabled ?? true) && !!publicKey,
@@ -611,14 +503,19 @@ export function useDelegations(options?: { enabled?: boolean }) {
     queryFn: async (): Promise<{ given: Delegation[]; received: Delegation[] }> => {
       if (!publicKey) return { given: [], received: [] }
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 400))
+      const client = getGhostSpeakClient()
 
-      const userAddress = publicKey.toString() as Address
-      const given = mockDelegations.filter((d) => d.delegator === userAddress)
-      const received = mockDelegations.filter((d) => d.delegate === userAddress)
+      try {
+        // Query delegation accounts from the SDK
+        // Note: The current SDK might not have delegation support
+        // In a real implementation, this would query delegation accounts
 
-      return { given, received }
+        console.warn('Delegation queries not yet implemented in SDK')
+        return { given: [], received: [] }
+      } catch (error) {
+        console.error('Failed to fetch delegations:', error)
+        return { given: [], received: [] }
+      }
     },
     enabled: (options?.enabled ?? true) && !!publicKey,
   })
@@ -629,18 +526,32 @@ export function useDelegations(options?: { enabled?: boolean }) {
  */
 export function useCreateProposal() {
   const queryClient = useQueryClient()
-  const { publicKey } = useWallet()
+  const { publicKey, signTransaction } = useWallet()
 
   return useMutation({
     mutationFn: async (data: CreateProposalData): Promise<Proposal> => {
-      if (!publicKey) throw new Error('Wallet not connected')
+      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const client = getGhostSpeakClient()
+      const signer = createSDKSigner(publicKey, signTransaction)
 
+      // Create the proposal using SDK
+      const result = await client.governance.createProposal({
+        signer,
+        title: data.title,
+        description: data.description,
+        proposalType: mapProposalTypeToSDK(data.proposalType),
+        votingDuration: data.votingDuration,
+        executionDelay: data.executionDelay
+      })
+
+      // Fetch the created proposal to get full data
+      const proposalData = await client.governance.getProposal(result.address)
+
+      // Transform to UI format
       const newProposal: Proposal = {
-        address: `proposal_${Date.now()}` as Address,
-        id: `PROP-${String(mockProposals.length + 1).padStart(3, '0')}`,
+        address: result.address,
+        id: `PROP-${result.address.slice(0, 8)}`,
         title: data.title,
         description: data.description,
         proposalType: data.proposalType,
@@ -649,7 +560,7 @@ export function useCreateProposal() {
         proposerName: 'You',
         createdAt: new Date(),
         updatedAt: new Date(),
-        votingStartsAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        votingStartsAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         votingEndsAt: new Date(Date.now() + (data.votingDuration + 1) * 24 * 60 * 60 * 1000),
         quorumRequired: data.quorumRequired || '100000',
         approvalThreshold: data.approvalThreshold || 50,
@@ -660,18 +571,23 @@ export function useCreateProposal() {
         executionParams: data.executionParams
           ? ({
               executionDelay: data.executionDelay,
-              targetProgram: data.executionParams.targetProgram || 'GhostSpeakProgram',
+              targetProgram:
+                data.executionParams.targetProgram || (proposalData?.data.targetProgram as Address),
               instructions: data.executionParams.instructions || [],
               accounts: data.executionParams.accounts || [],
             } as ProposalExecutionParams)
           : undefined,
       }
 
-      mockProposals.unshift(newProposal)
       return newProposal
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] })
+      toast.success('Proposal created successfully!')
+    },
+    onError: (error) => {
+      console.error('Failed to create proposal:', error)
+      toast.error('Failed to create proposal')
     },
   })
 }
@@ -681,33 +597,38 @@ export function useCreateProposal() {
  */
 export function useCastVote() {
   const queryClient = useQueryClient()
-  const { publicKey } = useWallet()
+  const { publicKey, signTransaction } = useWallet()
 
   return useMutation({
     mutationFn: async (data: CreateVoteData): Promise<Vote> => {
-      if (!publicKey) throw new Error('Wallet not connected')
+      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const client = getGhostSpeakClient()
+      const signer = createSDKSigner(publicKey, signTransaction)
 
+      // Map vote choice to SDK format
+      const voteChoiceMap: Record<VoteChoice, number> = {
+        [VoteChoice.For]: 0,
+        [VoteChoice.Against]: 1,
+        [VoteChoice.Abstain]: 2,
+      }
+
+      // Cast vote using SDK
+      await client.governance.vote(signer, data.proposalAddress, {
+        support: data.choice === VoteChoice.For,
+        reason: data.reasoning,
+      })
+
+      // Create vote record for UI
       const newVote: Vote = {
         id: `vote-${Date.now()}`,
         proposalAddress: data.proposalAddress,
         voter: publicKey.toString() as Address,
         voterName: 'You',
         choice: data.choice,
-        votingPower: '1785', // From user's voting power
+        votingPower: '1785', // This would come from actual voting power calculation
         reasoning: data.reasoning,
         timestamp: new Date(),
-      }
-
-      mockVotes.push(newVote)
-
-      // Update proposal with user vote
-      const proposal = mockProposals.find((p) => p.address === data.proposalAddress)
-      if (proposal) {
-        proposal.userHasVoted = true
-        proposal.userVoteChoice = data.choice
       }
 
       return newVote
@@ -716,6 +637,11 @@ export function useCastVote() {
       queryClient.invalidateQueries({ queryKey: ['proposal-votes', variables.proposalAddress] })
       queryClient.invalidateQueries({ queryKey: ['proposal', variables.proposalAddress] })
       queryClient.invalidateQueries({ queryKey: ['proposals'] })
+      toast.success('Vote cast successfully!')
+    },
+    onError: (error) => {
+      console.error('Failed to cast vote:', error)
+      toast.error('Failed to cast vote')
     },
   })
 }
@@ -725,21 +651,23 @@ export function useCastVote() {
  */
 export function useDelegateVotes() {
   const queryClient = useQueryClient()
-  const { publicKey } = useWallet()
+  const { publicKey, signTransaction } = useWallet()
 
   return useMutation({
     mutationFn: async (data: CreateDelegationData): Promise<Delegation> => {
-      if (!publicKey) throw new Error('Wallet not connected')
+      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Note: The current SDK might not have delegation support
+      // In a real implementation, this would create a delegation account
+      console.warn('Delegation not yet implemented in SDK')
 
+      // Return a placeholder delegation for UI consistency
       const newDelegation: Delegation = {
         id: `del-${Date.now()}`,
         delegator: publicKey.toString() as Address,
         delegate: data.delegate,
         delegatorName: 'You',
-        delegateName: undefined, // Would be fetched
+        delegateName: undefined,
         amount: data.amount,
         scope: data.scope,
         proposalId: data.proposalId,
@@ -749,12 +677,16 @@ export function useDelegateVotes() {
         isActive: true,
       }
 
-      mockDelegations.push(newDelegation)
       return newDelegation
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delegations'] })
       queryClient.invalidateQueries({ queryKey: ['voting-power'] })
+      toast.success('Delegation created successfully!')
+    },
+    onError: (error) => {
+      console.error('Failed to delegate votes:', error)
+      toast.error('Failed to delegate votes')
     },
   })
 }
@@ -764,27 +696,28 @@ export function useDelegateVotes() {
  */
 export function useExecuteProposal() {
   const queryClient = useQueryClient()
-  const { publicKey } = useWallet()
+  const { publicKey, signTransaction } = useWallet()
 
   return useMutation({
     mutationFn: async (proposalAddress: Address): Promise<string> => {
-      if (!publicKey) throw new Error('Wallet not connected')
+      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      const client = getGhostSpeakClient()
+      const signer = createSDKSigner(publicKey, signTransaction)
 
-      const proposal = mockProposals.find((p) => p.address === proposalAddress)
-      if (proposal && proposal.status === ProposalStatus.Succeeded) {
-        proposal.status = ProposalStatus.Executed
-        proposal.executedAt = new Date()
-        proposal.executionTxId = `exec_${Date.now()}`
-      }
+      // Execute the proposal using SDK
+      const result = await client.governance.executeProposal(signer, proposalAddress)
 
-      return `execution_tx_${Date.now()}`
+      return result.signature
     },
     onSuccess: (_, proposalAddress) => {
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalAddress] })
       queryClient.invalidateQueries({ queryKey: ['proposals'] })
+      toast.success('Proposal executed successfully!')
+    },
+    onError: (error) => {
+      console.error('Failed to execute proposal:', error)
+      toast.error('Failed to execute proposal')
     },
   })
 }

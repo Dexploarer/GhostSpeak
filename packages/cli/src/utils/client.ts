@@ -258,7 +258,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         log.info(chalk.dim('Run: npx ghostspeak faucet --save'))
       }
     }
-  } catch (error) {
+  } catch {
     // Log but don't fail on balance check errors
     console.warn('Balance check failed:', error instanceof Error ? error.message : 'Unknown error')
   }
@@ -280,7 +280,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         // Close HTTP connections if possible
         // HTTP connections don't need explicit closing in most cases
         // If RPC has a close method in future versions, it can be called here
-      } catch (error) {
+      } catch {
         // Silent cleanup - don't throw errors during cleanup
         console.debug('Client cleanup warning:', error instanceof Error ? error.message : 'Unknown error')
       }

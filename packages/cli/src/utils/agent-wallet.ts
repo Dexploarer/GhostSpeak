@@ -98,7 +98,7 @@ class AtomicFileManager {
         // Backup cleanup failed, not critical
       }
       
-    } catch (error) {
+    } catch {
       // Cleanup temp file on error
       try {
         await fs.unlink(tempPath)
@@ -269,7 +269,7 @@ export class AgentWalletManager {
       const credentialsPath = join(AGENT_CREDENTIALS_DIR, agentId, 'credentials.json')
       const credentialsData = await fs.readFile(credentialsPath, 'utf-8')
       return JSON.parse(credentialsData) as AgentCredentials
-    } catch (error) {
+    } catch {
       // Only return null for expected errors (file not found)
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null
@@ -294,7 +294,7 @@ export class AgentWalletManager {
       if (!agentId) return null
       
       return await this.loadCredentials(agentId)
-    } catch (error) {
+    } catch {
       // Only return null for expected errors (file not found)
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null
@@ -323,7 +323,7 @@ export class AgentWalletManager {
       }
       
       return agents.sort((a, b) => b.createdAt - a.createdAt)
-    } catch (error) {
+    } catch {
       // Only return empty array for expected errors (directory not found)
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return []
@@ -412,7 +412,7 @@ export class AgentWalletManager {
     try {
       const agentDirs = await fs.readdir(AGENT_CREDENTIALS_DIR)
       return agentDirs.filter(dir => dir !== 'uuid-mapping.json')
-    } catch (error) {
+    } catch {
       // Only return empty array for expected errors (directory not found)
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return []
@@ -509,7 +509,7 @@ export class AgentCNFTManager {
         cnftMint,
         merkleTree: merkleTreeStr
       }
-    } catch (error) {
+    } catch {
       console.warn('⚠️  CNFT minting failed, using credential-based ownership:', error)
       
       // Fallback to deterministic IDs if Metaplex operations fail
@@ -664,7 +664,7 @@ export class AgentCNFTManager {
       console.warn(`Ownership verification failed. Current owner: ${currentOwner}`)
       return false
       
-    } catch (error) {
+    } catch {
       console.error('Failed to verify CNFT ownership:', error)
       // Do NOT fallback to true on error - this is a security risk
       return false

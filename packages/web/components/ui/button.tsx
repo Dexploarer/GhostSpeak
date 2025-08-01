@@ -20,7 +20,8 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-50',
         link: 'text-gray-900 underline-offset-4 hover:underline dark:text-gray-50',
-        gradient: 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:opacity-90',
+        gradient:
+          'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200',
       },
       size: {
         default: 'h-10 px-4 py-2',

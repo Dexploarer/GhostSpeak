@@ -410,7 +410,7 @@ export class MarketplaceService implements IMarketplaceService {
         createdAt: BigInt(listing.data.createdAt || Date.now()),
         metadata: {}
       }))
-    } catch (error) {
+    } catch {
       console.error('Failed to get listings from blockchain:', error)
       return []
     }
@@ -458,7 +458,7 @@ export class MarketplaceService implements IMarketplaceService {
       // Note: In a real implementation, we would cache for future use
       
       return serviceListing
-    } catch (error) {
+    } catch {
       console.error('Failed to get listing by ID:', error)
       return null
     }

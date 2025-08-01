@@ -55,7 +55,7 @@ export class FaucetService {
   async initialize(): Promise<void> {
     try {
       await fs.mkdir(this.config.cacheDir, { recursive: true })
-    } catch (error) {
+    } catch {
       console.warn('Warning: Failed to create faucet cache directory:', error)
     }
   }
@@ -84,7 +84,7 @@ export class FaucetService {
       const recentHistory = history.slice(-100)
       
       await fs.writeFile(this.cacheFile, JSON.stringify(recentHistory, null, 2))
-    } catch (error) {
+    } catch {
       console.warn('Warning: Failed to save request history:', error)
     }
   }
@@ -303,7 +303,7 @@ export class EnhancedSolanaFaucets {
             return { success: true, signature: data.signature }
           }
         }
-      } catch (error) {
+      } catch {
         console.warn(`Faucet endpoint ${endpoint} failed:`, error)
         continue
       }
@@ -346,7 +346,7 @@ export class EnhancedSolanaFaucets {
             return { success: true, signature }
           }
         }
-      } catch (error) {
+      } catch {
         console.warn(`Alchemy endpoint ${endpoint} failed:`, error)
         continue
       }

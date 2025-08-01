@@ -297,13 +297,7 @@ export enum ErrorCode {
   PROGRAM_ERROR = 'PROGRAM_ERROR',
   INSTRUCTION_ERROR = 'INSTRUCTION_ERROR',
   
-  // H2A (Human-to-Agent) errors
-  H2A_SESSION_CREATE_FAILED = 'H2A_SESSION_CREATE_FAILED',
-  H2A_MESSAGE_SEND_FAILED = 'H2A_MESSAGE_SEND_FAILED',
-  H2A_STATUS_UPDATE_FAILED = 'H2A_STATUS_UPDATE_FAILED',
-  H2A_SESSIONS_QUERY_FAILED = 'H2A_SESSIONS_QUERY_FAILED',
-  H2A_MESSAGES_QUERY_FAILED = 'H2A_MESSAGES_QUERY_FAILED',
-  H2A_PROVIDERS_QUERY_FAILED = 'H2A_PROVIDERS_QUERY_FAILED',
+  // H2A errors removed - use A2A communication instead
   
   // Other
   UNKNOWN_ERROR = 'UNKNOWN_ERROR'
@@ -529,17 +523,8 @@ export interface UpdateParticipantStatusParams {
   reputationScore: number
 }
 
-/**
- * H2A Protocol events
- */
-export type H2AEvent =
-  | Event<{ session: CommunicationSession }> & { type: 'h2a.session.created' }
-  | Event<{ session: CommunicationSession; message: CommunicationMessage }> & { type: 'h2a.message.sent' }
-  | Event<{ participant: ParticipantStatus }> & { type: 'h2a.status.updated' }
-
-// Legacy type aliases for backward compatibility
-export type H2ASession = CommunicationSession
-export type H2AMessage = CommunicationMessage
+// H2A Protocol types have been removed - use A2A (Agent-to-Agent) communication instead  
+// Legacy H2A types are deprecated and will be removed in future versions
 
 // =====================================================
 // TYPE GUARDS

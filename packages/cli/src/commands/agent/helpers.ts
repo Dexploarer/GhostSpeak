@@ -67,11 +67,11 @@ export function getPendingInfoRequests(agentAddress: string): InfoRequest[] {
   }
   
   try {
-    const files = readdirSync(requestsDir)
-    const requests = []
+    const files = readdirSync(requestsDir) as string[]
+    const requests: InfoRequest[] = []
     
     for (const file of files) {
-      if (file.startsWith(agentAddress)) {
+      if (typeof file === 'string' && file.startsWith(agentAddress)) {
         const requestData = JSON.parse(readFileSync(join(requestsDir, file), 'utf-8')) as InfoRequest
         requests.push(requestData)
       }
@@ -166,7 +166,7 @@ export function isValidUrl(string: string): boolean {
   try {
     new URL(string)
     return true
-  } catch {
+  } catch (error: unknown) {
     return false
   }
 }

@@ -21,24 +21,15 @@ import {
   type JobPosting,
   type JobApplication,
   type AuctionMarketplace,
-  type ServicePurchase
+  type ServicePurchase,
+  AuctionType,
+  type DutchAuctionConfig
 } from '../../generated/index.js'
 
 // =====================================================
 // TYPE DEFINITIONS
 // =====================================================
 
-export interface AuctionType {
-  kind: 'English' | 'Dutch' | 'Sealed'
-  configuration?: Record<string, unknown>
-}
-
-export interface DutchAuctionConfig {
-  startPrice: bigint
-  endPrice: bigint
-  duration: bigint
-  decrementInterval: bigint
-}
 
 /**
  * Marketplace management module
@@ -153,7 +144,7 @@ export class MarketplaceModule extends BaseModule {
     creator: TransactionSigner
     systemProgram?: Address
     clock?: Address
-    auctionType: any // eslint-disable-line @typescript-eslint/no-explicit-any
+    auctionType: AuctionType
     startingPrice: bigint
     reservePrice: bigint
     isReserveHidden: boolean
@@ -162,7 +153,7 @@ export class MarketplaceModule extends BaseModule {
     auctionEndTime: bigint
     minimumBidIncrement: bigint
     totalBids: number
-    dutchConfig: any // eslint-disable-line @typescript-eslint/no-explicit-any
+    dutchConfig: DutchAuctionConfig | null
   }) {
     return getCreateServiceAuctionInstructionAsync(params)
   }
@@ -294,7 +285,7 @@ export class MarketplaceModule extends BaseModule {
       agent: params.serviceListingAddress, // Placeholder mapping
       userRegistry: auctionAddress, // Placeholder mapping  
       creator: params.signer,
-      auctionType: { kind: params.auctionType === 'english' ? 'English' : 'Dutch', configuration: {} },
+      auctionType: params.auctionType === 'english' ? AuctionType.English : AuctionType.Dutch,
       startingPrice: params.startingPrice,
       reservePrice: params.reservePrice,
       isReserveHidden: false,

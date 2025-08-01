@@ -268,7 +268,7 @@ escrowCommand
           `• Release funds when work is complete: ${chalk.cyan('gs escrow release')}`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to create escrow')
         handleTransactionError(error as Error)
       }
@@ -531,7 +531,7 @@ escrowCommand
           `${chalk.yellow('✅ The provider will receive the funds shortly')}`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to release funds')
         handleTransactionError(error as Error)
       }
@@ -698,7 +698,7 @@ escrowCommand
           `• Check status: ${chalk.cyan('gs dispute list --mine')}`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to file dispute')
         handleTransactionError(error as Error)
       }

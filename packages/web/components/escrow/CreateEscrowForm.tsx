@@ -90,7 +90,7 @@ export function CreateEscrowForm({
   className,
 }: CreateEscrowFormProps): React.JSX.Element {
   const createEscrow = useCreateEscrow()
-  const { data: availableTokens = [], isLoading: tokensLoading } = useAvailableTokens()
+  const { data: availableTokens = [] } = useAvailableTokens()
 
   const form = useForm<CreateEscrowFormData>({
     resolver: zodResolver(createEscrowSchema),
@@ -114,9 +114,9 @@ export function CreateEscrowForm({
     name: 'milestones',
   })
 
-  const selectedToken = availableTokens.find(
-    (token) => token.address === form.watch('paymentToken')
-  ) || availableTokens[0]
+  const selectedToken =
+    availableTokens.find((token) => token.address === form.watch('paymentToken')) ||
+    availableTokens[0]
 
   const totalMilestoneAmount = fields.reduce((sum, _, index) => {
     const amount = form.watch(`milestones.${index}.amount`)
@@ -251,10 +251,7 @@ export function CreateEscrowForm({
               </SelectTrigger>
               <SelectContent>
                 {availableTokens.map((token) => (
-                  <SelectItem
-                    key={token.address}
-                    value={token.address}
-                  >
+                  <SelectItem key={token.address} value={token.address}>
                     <div className="flex items-center gap-2">
                       <span>
                         {token.name} ({token.symbol})

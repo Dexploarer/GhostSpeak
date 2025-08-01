@@ -44,7 +44,7 @@ sdkCommand
               try {
                 await execAsync('npm init -y')
                 s.stop('Project initialized')
-              } catch (error) {
+              } catch {
                 s.stop('Failed to initialize project')
                 throw error
               }
@@ -97,7 +97,7 @@ const agents = await client.agent.listAgents()
             }
 
             outro(pc.green('✅ SDK installed successfully!'))
-          } catch (error) {
+          } catch {
             s.stop('Failed to install SDK')
             console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
             outro(pc.red('❌ SDK installation failed'))

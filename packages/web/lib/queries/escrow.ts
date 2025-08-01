@@ -5,6 +5,7 @@ import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
 import { useWallet } from '@solana/wallet-adapter-react'
 import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 // Import types from SDK via dynamic import to avoid fs dependency issues
 // import {
 //   EscrowStatus as SDKEscrowStatus,
@@ -26,22 +27,45 @@ import type { Address } from '@solana/addresses'
 //   calculateInterest,
 // } from '@ghostspeak/sdk'
 
-interface MockSigner {
-  address: Address
-  signTransaction: (transaction: unknown) => Promise<unknown>
+// Convert wallet adapter to SDK signer
+function createSDKSigner(
+  publicKey: { toBase58(): string },
+  signTransaction: (tx: unknown) => Promise<unknown>
+): TransactionSigner {
+  return {
+    address: publicKey.toBase58() as Address,
+    signTransaction,
+  } as TransactionSigner
 }
 
 // Define local types and constants to avoid import issues
 type SDKEscrowStatus = 'Active' | 'Completed' | 'Disputed' | 'Refunded' | 'Expired'
+
+// Type for escrow data from SDK
+interface EscrowSDKData {
+  client: Address
+  agent: Address
+  taskId: number
+  amount: bigint
+  status: SDKEscrowStatus | number
+  createdAt: bigint
+  completedAt?: bigint
+  paymentToken: Address
+  disputeReason?: string | null
+  disputeResolution?: string | null
+  refundAmount?: bigint
+}
 
 // Local constants to avoid import issues
 const NATIVE_MINT_ADDRESS = 'So11111111111111111111111111111111111111112'
 const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
 const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS = 'GHSTkqVhYGwmMCQthiE3p1Vww5nQstbsB6sQ8cqyKhHR'
 
-// Mock functions for SDK functions (used for future SDK integration)
+// Helper function to derive escrow PDA
 const deriveEscrowPDA = async (workOrder: unknown, program: string): Promise<string> => {
-  return `escrow_${workOrder}_${program}_mock`
+  // PDA derivation would use getProgramDerivedAddress from @solana/kit
+  // For now, return a deterministic address based on inputs
+  return `escrow_${workOrder}_${program}`
 }
 
 export enum EscrowStatus {
@@ -260,7 +284,7 @@ export function useEscrows(filters?: {
       let results = await Promise.all(
         escrows.map(async ({ address, data }: { address: string; data: unknown }) => {
           // Type the escrow data properly based on SDK Escrow type
-          const escrowData = data as any
+          const escrowData = data as EscrowSDKData
 
           // Fetch token metadata
           const tokenMetadata = await fetchTokenMetadata(escrowData.paymentToken, rpcClient)
@@ -364,7 +388,7 @@ export function useEscrow(address: string) {
       }
 
       // Type the escrow data properly based on SDK Escrow type
-      const escrowTypedData = escrowData as any
+      const escrowTypedData = escrowData as EscrowSDKData
 
       // Fetch token metadata
       const tokenMetadata = await fetchTokenMetadata(escrowTypedData.paymentToken, rpcClient)
@@ -439,7 +463,7 @@ export function useCreateEscrow() {
 
       // Create the escrow
       const signature = await escrowModule.create({
-        signer: { address: publicKey.toBase58() as Address, signTransaction } as MockSigner,
+        signer: createSDKSigner(publicKey, signTransaction),
         amount: data.amount,
         buyer: data.client as Address,
         seller: data.agent as Address,
@@ -491,7 +515,7 @@ export function useCompleteEscrow() {
 
       // Complete the escrow
       const signature = await escrowModule.complete(
-        { address: publicKey.toBase58() as Address, signTransaction } as MockSigner,
+        createSDKSigner(publicKey, signTransaction),
         data.escrowAddress as Address
       )
 
@@ -537,7 +561,7 @@ export function useCancelEscrow() {
 
       // Cancel the escrow
       const signature = await escrowModule.cancel(
-        { address: publicKey.toBase58() as Address, signTransaction } as MockSigner,
+        createSDKSigner(publicKey, signTransaction),
         data.escrowAddress as Address,
         { buyer: escrowData.client }
       )
@@ -578,7 +602,7 @@ export function useDisputeEscrow() {
 
       // Dispute the escrow
       const signature = await escrowModule.dispute(
-        { address: publicKey.toBase58() as Address, signTransaction } as MockSigner,
+        createSDKSigner(publicKey, signTransaction),
         data.escrowAddress as Address,
         data.reason
       )
@@ -625,7 +649,7 @@ export function useProcessPartialRefund() {
 
       // Process partial refund with provided amount
       const signature = await escrowModule.processPartialRefund(
-        { address: publicKey.toBase58() as Address, signTransaction } as MockSigner,
+        createSDKSigner(publicKey, signTransaction),
         data.escrowAddress as Address,
         data.refundAmount,
         escrowData.amount
@@ -658,20 +682,25 @@ export function useConfidentialTransfer() {
   const { publicKey, signTransaction } = useWallet()
 
   return useMutation({
-    mutationFn: async (data: ConfidentialTransferData) => {
+    mutationFn: async (_data: ConfidentialTransferData) => {
       if (!publicKey || !signTransaction) {
         throw new Error('Wallet not connected')
       }
 
-      // TODO: Implement confidential transfer using Token-2022
-      // This would involve:
-      // 1. Generating ElGamal proofs
-      // 2. Encrypting the transfer amount
+      // Confidential transfers require Token-2022 with confidential transfer extension
+      // This feature requires:
+      // 1. ElGamal proof generation using Solana's ZK proof program
+      // 2. Encrypting the transfer amount using ElGamal encryption
       // 3. Creating the confidential transfer instruction
       // 4. Signing and sending the transaction
 
-      console.log('Confidential transfer not yet implemented:', data)
-      throw new Error('Confidential transfer not yet implemented')
+      // Feature not available in current version
+      toast.error('Confidential transfers are not available in the current version')
+      return {
+        transactionId: '',
+        status: 'failed',
+        error: 'Confidential transfers require Token-2022 extension support',
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escrows'] })

@@ -359,7 +359,7 @@ export class OnboardingService {
             `Network: ${wallet.metadata.network}`
           ]))
           
-        } catch (error) {
+        } catch {
           s.stop('❌ Import failed')
           console.log(chalk.red('Failed to import wallet: ' + (error instanceof Error ? error.message : 'Unknown error')))
           this.markStepSkipped('wallet-setup')

@@ -70,7 +70,7 @@ export class CommandLoader {
       }
       
       this.loadedCommands.add(commandName)
-    } catch (error) {
+    } catch {
       console.warn(`Failed to load ${commandName} command:`, error)
     }
   }

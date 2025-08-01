@@ -193,7 +193,7 @@ export function validateAndConvertAuction(value: unknown): ValidatedAuctionData 
       creator: obj.seller as Address,
       status: obj.status ?? 'active'
     }
-  } catch (error) {
+  } catch {
     console.warn('Failed to convert auction data:', error)
     return null
   }

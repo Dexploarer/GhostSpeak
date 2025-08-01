@@ -201,7 +201,7 @@ async function backupCredentials(ownerAddress: Address) {
       await AgentBackupManager.backupAgent(selectedAgentId as string, backupPath as string)
       s.stop('✅ Backup created')
       console.log(chalk.green(`\n✅ Agent backup saved to: ${backupPath}`))
-    } catch (error) {
+    } catch {
       s.stop('❌ Backup failed')
       console.log(chalk.red('Backup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
@@ -225,7 +225,7 @@ async function backupCredentials(ownerAddress: Address) {
       await AgentBackupManager.backupAllAgents(ownerAddress, backupDir as string)
       s.stop('✅ Backups created')
       console.log(chalk.green(`\n✅ All agent backups saved to: ${backupDir}`))
-    } catch (error) {
+    } catch {
       s.stop('❌ Backup failed')
       console.log(chalk.red('Backup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
@@ -252,7 +252,7 @@ async function restoreCredentials() {
     const agentId = await AgentBackupManager.restoreAgent(backupPath as string)
     s.stop('✅ Agent restored')
     console.log(chalk.green(`\n✅ Agent restored: ${agentId}`))
-  } catch (error) {
+  } catch {
     s.stop('❌ Restore failed')
     console.log(chalk.red('Restore failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
   }
@@ -306,7 +306,7 @@ async function deleteCredentials(ownerAddress: Address) {
     await AgentWalletManager.deleteCredentials(selectedCredentials.agentId)
     s.stop('✅ Credentials deleted')
     console.log(chalk.green(`\n✅ Agent credentials deleted: ${selectedCredentials.name}`))
-  } catch (error) {
+  } catch {
     s.stop('❌ Deletion failed')
     console.log(chalk.red('Deletion failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
   }

@@ -155,7 +155,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       console.log(`✅ Connected to Ledger ${this.device.model}`)
 
-    } catch (error) {
+    } catch {
       this.status = 'error'
       this.emit('status_changed', this.status)
       this.emit('error', error)
@@ -183,7 +183,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       console.log('✅ Disconnected from Ledger')
 
-    } catch (error) {
+    } catch {
       this.emit('error', error)
       throw error
     }
@@ -210,7 +210,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       return publicKey
 
-    } catch (error) {
+    } catch {
       this.emit('error', error)
       throw new Error(`Failed to get public key: ${error}`)
     }
@@ -240,7 +240,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
       console.log('✅ Transaction signed successfully')
       return signature
 
-    } catch (error) {
+    } catch {
       this.emit('error', error)
       
       if (error instanceof Error) {
@@ -280,7 +280,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
       console.log('✅ Message signed successfully')
       return signature
 
-    } catch (error) {
+    } catch {
       this.emit('error', error)
       throw new Error(`Failed to sign message: ${error}`)
     }
@@ -450,7 +450,7 @@ export class HardwareWalletManager extends EventEmitter {
 
       return devices
 
-    } catch (error) {
+    } catch {
       console.warn('Failed to detect hardware wallet devices:', error)
       return []
     }
@@ -493,12 +493,12 @@ export class HardwareWalletManager extends EventEmitter {
       })
 
       wallet.on('error', (error) => {
-        this.emit('wallet_error', { wallet, error })
+        this.emit('walleterror', { wallet, error })
       })
 
       return wallet
 
-    } catch (error) {
+    } catch {
       this.eventBus.emit('hardware_wallet:connection_failed', {
         type,
         error: error instanceof Error ? error.message : String(error)
@@ -601,7 +601,7 @@ export class HardwareWalletUtils {
       // For now, just check that signature exists and has correct length
       return signature.signature.length === 64 && 
              signature.publicKey.length === 32
-    } catch (error) {
+    } catch {
       return false
     }
   }

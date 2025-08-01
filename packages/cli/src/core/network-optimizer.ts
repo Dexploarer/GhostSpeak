@@ -138,7 +138,7 @@ class CircuitBreaker extends EventEmitter {
       const result = await operation()
       this.onSuccess()
       return result
-    } catch (error) {
+    } catch {
       this.onFailure()
       throw error
     }
@@ -361,7 +361,7 @@ export class NetworkOptimizer extends EventEmitter {
       
       return result
 
-    } catch (error) {
+    } catch {
       // Track failed request
       this.recordRequestMetrics(startTime, false, options.tags)
       
@@ -515,7 +515,7 @@ export class NetworkOptimizer extends EventEmitter {
         try {
           const result = await this.executeWithCircuitBreaker(operation, options, requestId)
           resolve(result)
-        } catch (error) {
+        } catch {
           reject(error)
         }
       }

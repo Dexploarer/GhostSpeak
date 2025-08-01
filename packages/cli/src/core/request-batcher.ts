@@ -476,7 +476,7 @@ export class RequestBatcher extends EventEmitter {
         }
       }
       
-    } catch (error) {
+    } catch {
       // Handle batch execution error
       for (const request of requests) {
         request.reject(error as Error)
@@ -564,7 +564,7 @@ export class RequestBatcher extends EventEmitter {
           throw new Error(`Unsupported batch type: ${type}`)
       }
       
-    } catch (error) {
+    } catch {
       // Fail all requests in this batch
       for (const request of requests) {
         request.reject(error as Error)
@@ -603,7 +603,7 @@ export class RequestBatcher extends EventEmitter {
         for (let i = 0; i < requests.length; i++) {
           requests[i].resolve(results[i])
         }
-      } catch (error) {
+      } catch {
         // Fail all requests
         for (const request of requests) {
           request.reject(error as Error)

@@ -5,7 +5,7 @@ import { vi } from 'vitest'
 // Use environment variable to control test mode: REAL_BLOCKCHAIN_TESTS=true for integration tests
 
 // Set up test environment variables
-process.env.NODE_ENV = 'test'
+// NODE_ENV is already set by the test runner
 const useRealBlockchain = process.env.REAL_BLOCKCHAIN_TESTS === 'true'
 
 if (useRealBlockchain) {
@@ -19,7 +19,7 @@ if (useRealBlockchain) {
 // Only mock browser-specific APIs that don't exist in test environment
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -39,12 +39,12 @@ const localStorageMock = {
   clear: vi.fn(),
 }
 Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
+  value: localStorageMock,
 })
 
 // Mock sessionStorage for browser compatibility
 Object.defineProperty(window, 'sessionStorage', {
-  value: localStorageMock
+  value: localStorageMock,
 })
 
 // Mock ResizeObserver

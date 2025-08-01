@@ -77,7 +77,7 @@ async function requestFromSolanaFaucet(
     } else {
       throw new Error(data.error ?? 'Unknown error from Solana faucet')
     }
-  } catch (error) {
+  } catch {
     return {
       source: 'Solana Official',
       success: false,
@@ -133,7 +133,7 @@ async function requestFromAlchemyFaucet(
     } else {
       throw new Error(data.error ?? (data.message as string | undefined) ?? 'Unknown error from Alchemy faucet')
     }
-  } catch (error) {
+  } catch {
     return {
       source: 'Alchemy',
       success: false,
@@ -177,7 +177,7 @@ async function requestFromRpcAirdrop(
       amount,
       explorerUrl
     }
-  } catch (error) {
+  } catch {
     return {
       source: 'RPC Airdrop',
       success: false,
@@ -200,7 +200,7 @@ async function checkBalance(walletAddress: string, network: 'devnet' | 'testnet'
 
     const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
     return Number(balance) / 1_000_000_000 // Convert lamports to SOL
-  } catch (error) {
+  } catch {
     console.warn('⚠️ Failed to check balance:', error)
     return 0
   }
@@ -371,7 +371,7 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
 
     console.log('\n💡 TIP: Your wallet is saved. Use gs wallet list to see all wallets.')
 
-  } catch (error) {
+  } catch {
     console.error('❌ Faucet command failed:', error)
     process.exit(1)
   }
@@ -432,7 +432,7 @@ export function setupFaucetCommand(program: Command): void {
         console.log(`💳 Wallet: ${chalk.cyan(walletName)}`)
         console.log(`📍 Address: ${walletAddress}`)
         console.log(`💰 Balance: ${chalk.green(`${balance} SOL`)} (${_options.network})`)
-      } catch (error) {
+      } catch {
         console.error('❌ Failed to check balance:', error)
         process.exit(1)
       }
@@ -526,7 +526,7 @@ export function setupFaucetCommand(program: Command): void {
           console.log(`   ${network}: ${count} requests`)
         })
 
-      } catch (error) {
+      } catch {
         console.error('❌ Failed to check faucet status:', error)
         process.exit(1)
       }
@@ -566,7 +566,7 @@ export function setupFaucetCommand(program: Command): void {
         
         console.log(`🧹 Cleaned ${removedCount} old request records`)
         console.log(`📅 Kept ${daysToKeep} days of history`)
-      } catch (error) {
+      } catch {
         console.error('❌ Failed to clean request history:', error)
         process.exit(1)
       }

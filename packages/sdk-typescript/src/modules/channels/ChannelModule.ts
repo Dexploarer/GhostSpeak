@@ -180,10 +180,12 @@ export class ChannelModule extends BaseModule {
     messageAddress: Address,
     emoji: string
   ): Promise<string> {
+    const channelAddress = await this.deriveChannelFromMessage(messageAddress)
+    
     return this.execute(
       'addMessageReaction',
       () => getAddMessageReactionInstruction({
-        channel: this.deriveChannelFromMessage(messageAddress),
+        channel: channelAddress,
         message: messageAddress,
         reentrancyGuard: this.systemProgramId,
         user: signer,

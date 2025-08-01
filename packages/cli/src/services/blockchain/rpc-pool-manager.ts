@@ -268,7 +268,7 @@ export class PooledRpcClient {
       
       return result
 
-    } catch (error) {
+    } catch {
       // Track failed operation
       rpcOperation.endTime = Date.now()
       rpcOperation.success = false
@@ -428,7 +428,7 @@ export class RpcPoolManager {
       try {
         await client.getLatestBlockhash()
         results[network] = true
-      } catch (error) {
+      } catch {
         results[network] = false
         this.eventBus.emit('rpc_pool:health_check_failed', { network, error })
       }

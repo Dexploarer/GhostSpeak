@@ -11,6 +11,7 @@ pub mod agent_management;
 
 // Additional modules
 pub mod a2a_protocol;
+pub mod h2a_protocol;
 pub mod analytics;
 pub mod analytics_events;
 pub mod auction;
@@ -34,6 +35,7 @@ pub mod work_orders;
 
 // Re-export all instruction handlers (2025 Anchor best practice)
 pub use a2a_protocol::*;
+pub use h2a_protocol::*;
 pub use agent::*;
 pub use agent_compressed::*;
 pub use agent_management::*;

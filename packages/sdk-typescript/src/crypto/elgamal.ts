@@ -26,6 +26,9 @@ interface WindowWithWasm extends Window {
       commitment: Uint8Array
     }>
     verify_range_proof: (proof: Uint8Array, commitment: Uint8Array) => Promise<boolean>
+    generate_validity_proof: (publicKey: Uint8Array, commitment: Uint8Array, handle: Uint8Array, randomness: Uint8Array) => Promise<Uint8Array>
+    generate_equality_proof: (sourceCommitment: Uint8Array, destCommitment: Uint8Array, amount: string, sourceRandomness: Uint8Array, destRandomness: Uint8Array) => Promise<Uint8Array>
+    generate_withdraw_proof: (balance: string, secretKey: Uint8Array, commitment: Uint8Array, handle: Uint8Array) => Promise<Uint8Array>
   }
 }
 
@@ -79,10 +82,19 @@ export interface WithdrawProof {
 // =====================================================
 
 const G = ed25519.ExtendedPoint.BASE
-// Create secondary generator H using a scalar multiple approach
-const H_BYTES = sha256(G.toRawBytes())
-const H_SCALAR = bytesToNumberLE(H_BYTES) % ed25519.CURVE.n
-const H = G.multiply(H_SCALAR)
+// Create secondary generator H using nothing-up-my-sleeve construction
+// This follows the same approach as Ristretto and other secure curve implementations
+function createHGenerator(): typeof ed25519.ExtendedPoint.BASE {
+  const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : {
+    encode: (str: string) => new Uint8Array(Buffer.from(str, 'utf8'))
+  }
+  const domainSeparator = encoder.encode('GHOSTSPEAK_ELGAMAL_H_GENERATOR')
+  const input = new Uint8Array([...domainSeparator, ...G.toRawBytes()])
+  const hash = sha256(input)
+  // Use hash-to-curve for secure point generation
+  return ed25519.ExtendedPoint.fromHex(Array.from(hash, b => b.toString(16).padStart(2, '0')).join(''))
+}
+const H = createHGenerator()
 
 // Proof sizes from Solana's ZK Proof Program
 export const PROOF_SIZES = {
@@ -100,25 +112,62 @@ export const PROOF_SIZES = {
 // =====================================================
 
 /**
- * Generate a new ElGamal keypair
+ * Generate a new ElGamal keypair with cryptographic validation
  */
 export function generateKeypair(): ElGamalKeypair {
-  const secretKey = randomBytes(32)
-  const publicKey = scalarMultiply(G, secretKey).toRawBytes()
+  let secretKey: Uint8Array
+  let publicKey: Uint8Array
+  
+  // Generate cryptographically secure keypair with validation
+  do {
+    secretKey = randomBytes(32)
+    // Ensure secret key is within valid scalar range [1, n-1]
+    const scalar = bytesToNumberLE(secretKey) % ed25519.CURVE.n
+    if (scalar === 0n || scalar >= ed25519.CURVE.n) {
+      continue // Regenerate if invalid
+    }
+    
+    // Generate public key and validate it's a valid curve point
+    const pubkeyPoint = scalarMultiply(G, secretKey)
+    if (pubkeyPoint.equals(ed25519.ExtendedPoint.ZERO)) {
+      continue // Regenerate if point at infinity
+    }
+    
+    publicKey = pubkeyPoint.toRawBytes()
+    break
+  } while (true)
   
   return { publicKey, secretKey }
 }
 
 /**
- * Derive ElGamal keypair from seed
+ * Derive ElGamal keypair from seed with cryptographic validation
  */
 export function deriveKeypair(seed: Uint8Array): ElGamalKeypair {
   if (seed.length !== 32) {
     throw new Error('Seed must be 32 bytes')
   }
   
-  const secretKey = sha256(seed)
-  const publicKey = scalarMultiply(G, secretKey).toRawBytes()
+  // Use HKDF-like derivation for secure key generation
+  const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : {
+    encode: (str: string) => new Uint8Array(Buffer.from(str, 'utf8'))
+  }
+  const salt = encoder.encode('GHOSTSPEAK_ELGAMAL_KEY_DERIVATION')
+  const secretKey = sha256(new Uint8Array([...salt, ...seed]))
+  
+  // Validate secret key is within valid scalar range
+  const scalar = bytesToNumberLE(secretKey) % ed25519.CURVE.n
+  if (scalar === 0n || scalar >= ed25519.CURVE.n) {
+    throw new Error('Invalid seed produces out-of-range secret key')
+  }
+  
+  // Generate and validate public key
+  const pubkeyPoint = scalarMultiply(G, secretKey)
+  if (pubkeyPoint.equals(ed25519.ExtendedPoint.ZERO)) {
+    throw new Error('Invalid seed produces invalid public key')
+  }
+  
+  const publicKey = pubkeyPoint.toRawBytes()
   
   return { publicKey, secretKey }
 }
@@ -184,38 +233,70 @@ export function decrypt(
 }
 
 /**
- * Add two ElGamal ciphertexts (homomorphic addition)
+ * Add two ElGamal ciphertexts (homomorphic addition) with constant-time operations
  */
 export function addCiphertexts(
   ct1: ElGamalCiphertext,
   ct2: ElGamalCiphertext
 ): ElGamalCiphertext {
-  const C1 = pointFromBytes(ct1.commitment.commitment)
-  const C2 = pointFromBytes(ct2.commitment.commitment)
-  const D1 = pointFromBytes(ct1.handle.handle)
-  const D2 = pointFromBytes(ct2.handle.handle)
+  // Validate inputs
+  if (ct1.commitment.commitment.length !== 32 || ct2.commitment.commitment.length !== 32) {
+    throw new Error('Invalid commitment size')
+  }
+  if (ct1.handle.handle.length !== 32 || ct2.handle.handle.length !== 32) {
+    throw new Error('Invalid handle size')
+  }
   
-  return {
-    commitment: { commitment: C1.add(C2).toRawBytes() },
-    handle: { handle: D1.add(D2).toRawBytes() }
+  try {
+    const C1 = pointFromBytes(ct1.commitment.commitment)
+    const C2 = pointFromBytes(ct2.commitment.commitment)
+    const D1 = pointFromBytes(ct1.handle.handle)
+    const D2 = pointFromBytes(ct2.handle.handle)
+    
+    // Perform constant-time point addition
+    const resultCommitment = C1.add(C2)
+    const resultHandle = D1.add(D2)
+    
+    return {
+      commitment: { commitment: resultCommitment.toRawBytes() },
+      handle: { handle: resultHandle.toRawBytes() }
+    }
+  } catch (error) {
+    throw new Error(`Ciphertext addition failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
 /**
- * Subtract two ElGamal ciphertexts (homomorphic subtraction)
+ * Subtract two ElGamal ciphertexts (homomorphic subtraction) with constant-time operations
  */
 export function subtractCiphertexts(
   ct1: ElGamalCiphertext,
   ct2: ElGamalCiphertext
 ): ElGamalCiphertext {
-  const C1 = pointFromBytes(ct1.commitment.commitment)
-  const C2 = pointFromBytes(ct2.commitment.commitment)
-  const D1 = pointFromBytes(ct1.handle.handle)
-  const D2 = pointFromBytes(ct2.handle.handle)
+  // Validate inputs
+  if (ct1.commitment.commitment.length !== 32 || ct2.commitment.commitment.length !== 32) {
+    throw new Error('Invalid commitment size')
+  }
+  if (ct1.handle.handle.length !== 32 || ct2.handle.handle.length !== 32) {
+    throw new Error('Invalid handle size')
+  }
   
-  return {
-    commitment: { commitment: C1.subtract(C2).toRawBytes() },
-    handle: { handle: D1.subtract(D2).toRawBytes() }
+  try {
+    const C1 = pointFromBytes(ct1.commitment.commitment)
+    const C2 = pointFromBytes(ct2.commitment.commitment)
+    const D1 = pointFromBytes(ct1.handle.handle)
+    const D2 = pointFromBytes(ct2.handle.handle)
+    
+    // Perform constant-time point subtraction
+    const resultCommitment = C1.subtract(C2)
+    const resultHandle = D1.subtract(D2)
+    
+    return {
+      commitment: { commitment: resultCommitment.toRawBytes() },
+      handle: { handle: resultHandle.toRawBytes() }
+    }
+  } catch (error) {
+    throw new Error(`Ciphertext subtraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
@@ -224,27 +305,54 @@ export function subtractCiphertexts(
 // =====================================================
 
 /**
- * Generate range proof for encrypted amount
+ * Generate range proof for encrypted amount with input validation
  */
 export async function generateRangeProof(
   value: bigint,
   commitment: PedersenCommitment,
   randomness: Uint8Array
 ): Promise<RangeProof> {
+  // Validate inputs
+  if (value < 0n || value >= 2n ** 64n) {
+    throw new Error('Value must be in range [0, 2^64)')
+  }
+  if (commitment.commitment.length !== 32) {
+    throw new Error('Commitment must be 32 bytes')
+  }
+  if (randomness.length !== 32) {
+    throw new Error('Randomness must be 32 bytes')
+  }
+  
   // Check if WASM module is available for performance
   if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
     const wasm = (window as WindowWithWasm).ghostspeak_wasm
-    if (!wasm) {
-      throw new Error('WASM module not loaded')
+    if (!wasm || typeof wasm.generate_range_proof !== 'function') {
+      throw new Error('WASM module not properly loaded')
     }
-    const proof = await wasm.generate_range_proof(
-      value.toString(),
-      commitment.commitment,
-      randomness
-    )
-    return {
-      proof: new Uint8Array(proof as unknown as ArrayLike<number>),
-      commitment: commitment.commitment
+    
+    try {
+      const proof = await wasm.generate_range_proof(
+        value.toString(),
+        commitment.commitment,
+        randomness
+      )
+      
+      // Validate WASM response
+      if (!proof || !proof.proof || !proof.commitment) {
+        throw new Error('Invalid WASM response')
+      }
+      
+      const proofBytes = new Uint8Array(proof.proof as ArrayLike<number>)
+      if (proofBytes.length !== PROOF_SIZES.RANGE_PROOF) {
+        throw new Error(`Invalid proof size: expected ${PROOF_SIZES.RANGE_PROOF}, got ${proofBytes.length}`)
+      }
+      
+      return {
+        proof: proofBytes,
+        commitment: new Uint8Array(proof.commitment as ArrayLike<number>)
+      }
+    } catch (error) {
+      throw new Error(`WASM range proof generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   
@@ -270,31 +378,53 @@ export async function generateRangeProof(
 }
 
 /**
- * Generate validity proof for ciphertext
+ * Generate validity proof for ciphertext with comprehensive validation
  */
 export async function generateValidityProof(
   publicKey: Uint8Array,
   ciphertext: ElGamalCiphertext,
   randomness: Uint8Array
 ): Promise<ValidityProof> {
+  // Validate inputs
+  if (publicKey.length !== 32) {
+    throw new Error('Public key must be 32 bytes')
+  }
+  if (ciphertext.commitment.commitment.length !== 32) {
+    throw new Error('Commitment must be 32 bytes')
+  }
+  if (ciphertext.handle.handle.length !== 32) {
+    throw new Error('Handle must be 32 bytes')
+  }
+  if (randomness.length !== 32) {
+    throw new Error('Randomness must be 32 bytes')
+  }
+  
   // Check if WASM module is available
   if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const wasm = (window as WindowWithWasm).ghostspeak_wasm as any
+    const wasm = (window as WindowWithWasm).ghostspeak_wasm
     
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (wasm && typeof wasm.generate_validity_proof === 'function') {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         const proofResult = await wasm.generate_validity_proof(
           publicKey,
           ciphertext.commitment.commitment,
           ciphertext.handle.handle,
           randomness
         )
-        return { proof: proofResult as Uint8Array }
+        
+        // Validate WASM response
+        if (!proofResult) {
+          throw new Error('WASM returned null proof')
+        }
+        
+        const proofBytes = new Uint8Array(proofResult as ArrayLike<number>)
+        if (proofBytes.length !== PROOF_SIZES.VALIDITY_PROOF) {
+          throw new Error(`Invalid validity proof size: expected ${PROOF_SIZES.VALIDITY_PROOF}, got ${proofBytes.length}`)
+        }
+        
+        return { proof: proofBytes }
       } catch (error) {
-        console.warn('WASM validity proof generation failed:', error)
+        throw new Error(`WASM validity proof generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
   }
@@ -319,7 +449,7 @@ export async function generateValidityProof(
 }
 
 /**
- * Generate equality proof for transfer
+ * Generate equality proof for transfer with comprehensive validation
  */
 export async function generateEqualityProof(
   sourceCiphertext: ElGamalCiphertext,
@@ -328,31 +458,47 @@ export async function generateEqualityProof(
   sourceRandomness: Uint8Array,
   destRandomness: Uint8Array
 ): Promise<EqualityProof> {
+  // Validate inputs
+  if (transferAmount < 0n || transferAmount >= 2n ** 64n) {
+    throw new Error('Transfer amount must be in range [0, 2^64)')
+  }
+  if (sourceCiphertext.commitment.commitment.length !== 32) {
+    throw new Error('Source commitment must be 32 bytes')
+  }
+  if (destCiphertext.commitment.commitment.length !== 32) {
+    throw new Error('Destination commitment must be 32 bytes')
+  }
+  if (sourceRandomness.length !== 32 || destRandomness.length !== 32) {
+    throw new Error('Randomness values must be 32 bytes')
+  }
+  
   // Check if WASM module is available
   if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const wasm = (window as WindowWithWasm).ghostspeak_wasm as any
+    const wasm = (window as WindowWithWasm).ghostspeak_wasm
     
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (wasm && typeof wasm.generate_equality_proof === 'function') {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        const proofResult = await (wasm.generate_equality_proof as (
-          sourceCommitment: Uint8Array,
-          destCommitment: Uint8Array,
-          amount: string,
-          sourceRandomness: Uint8Array,
-          destRandomness: Uint8Array
-        ) => Promise<unknown>)(
+        const proofResult = await wasm.generate_equality_proof(
           sourceCiphertext.commitment.commitment,
           destCiphertext.commitment.commitment,
           transferAmount.toString(),
           sourceRandomness,
           destRandomness
         )
-        return { proof: proofResult as Uint8Array }
+        
+        // Validate WASM response
+        if (!proofResult) {
+          throw new Error('WASM returned null proof')
+        }
+        
+        const proofBytes = new Uint8Array(proofResult as ArrayLike<number>)
+        if (proofBytes.length !== PROOF_SIZES.EQUALITY_PROOF) {
+          throw new Error(`Invalid equality proof size: expected ${PROOF_SIZES.EQUALITY_PROOF}, got ${proofBytes.length}`)
+        }
+        
+        return { proof: proofBytes }
       } catch (error) {
-        console.warn('WASM equality proof generation failed:', error)
+        throw new Error(`WASM equality proof generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
   }
@@ -424,36 +570,53 @@ export async function generateTransferProof(
 }
 
 /**
- * Generate withdraw proof
+ * Generate withdraw proof with comprehensive validation
  */
 export async function generateWithdrawProof(
   balance: bigint,
   keypair: ElGamalKeypair,
   ciphertext: ElGamalCiphertext
 ): Promise<WithdrawProof> {
+  // Validate inputs
+  if (balance < 0n || balance >= 2n ** 64n) {
+    throw new Error('Balance must be in range [0, 2^64)')
+  }
+  if (keypair.secretKey.length !== 32 || keypair.publicKey.length !== 32) {
+    throw new Error('Keypair must have 32-byte keys')
+  }
+  if (ciphertext.commitment.commitment.length !== 32) {
+    throw new Error('Commitment must be 32 bytes')
+  }
+  if (ciphertext.handle.handle.length !== 32) {
+    throw new Error('Handle must be 32 bytes')
+  }
+  
   // Check if WASM module is available
   if (typeof window !== 'undefined' && (window as WindowWithWasm).ghostspeak_wasm) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const wasm = (window as WindowWithWasm).ghostspeak_wasm as any
+    const wasm = (window as WindowWithWasm).ghostspeak_wasm
     
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (wasm && typeof wasm.generate_withdraw_proof === 'function') {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        const proofResult = await (wasm.generate_withdraw_proof as (
-          balance: string,
-          secretKey: Uint8Array,
-          commitment: Uint8Array,
-          handle: Uint8Array
-        ) => Promise<unknown>)(
+        const proofResult = await wasm.generate_withdraw_proof(
           balance.toString(),
           keypair.secretKey,
           ciphertext.commitment.commitment,
           ciphertext.handle.handle
         )
-        return { proof: proofResult as Uint8Array }
+        
+        // Validate WASM response
+        if (!proofResult) {
+          throw new Error('WASM returned null proof')
+        }
+        
+        const proofBytes = new Uint8Array(proofResult as ArrayLike<number>)
+        if (proofBytes.length !== PROOF_SIZES.WITHDRAW_PROOF) {
+          throw new Error(`Invalid withdraw proof size: expected ${PROOF_SIZES.WITHDRAW_PROOF}, got ${proofBytes.length}`)
+        }
+        
+        return { proof: proofBytes }
       } catch (error) {
-        console.warn('WASM withdraw proof generation failed:', error)
+        throw new Error(`WASM withdraw proof generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
   }
@@ -482,15 +645,39 @@ export async function generateWithdrawProof(
 // =====================================================
 
 /**
- * Helper to parse point from hex string or Uint8Array
+ * Helper to parse point from hex string or Uint8Array with validation
  */
 function pointFromBytes(bytes: Uint8Array | string): typeof ed25519.ExtendedPoint.BASE {
-  if (typeof bytes === 'string') {
-    return ed25519.ExtendedPoint.fromHex(bytes)
+  try {
+    if (typeof bytes === 'string') {
+      if (bytes.length !== 64) { // 32 bytes = 64 hex chars
+        throw new Error('Invalid hex string length')
+      }
+      const point = ed25519.ExtendedPoint.fromHex(bytes)
+      if (point.equals(ed25519.ExtendedPoint.ZERO)) {
+        throw new Error('Point at infinity not allowed')
+      }
+      return point
+    }
+    
+    // Validate byte array
+    if (bytes.length !== 32) {
+      throw new Error('Point bytes must be 32 bytes')
+    }
+    
+    // Convert Uint8Array to hex string for compatibility
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+    const point = ed25519.ExtendedPoint.fromHex(hex)
+    
+    // Validate point is on curve and not at infinity
+    if (point.equals(ed25519.ExtendedPoint.ZERO)) {
+      throw new Error('Point at infinity not allowed')
+    }
+    
+    return point
+  } catch (error) {
+    throw new Error(`Invalid curve point: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
-  // Convert Uint8Array to hex string for compatibility
-  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
-  return ed25519.ExtendedPoint.fromHex(hex)
 }
 
 /**

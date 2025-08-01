@@ -21,6 +21,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - This project uses **@solana/kit** (formerly @solana/web3.js v2) - do NOT use old @solana/web3.js v1 patterns
 - Always use Anchor 0.31.1+ compatible patterns with Solana 2.1.0 (Agave)
 
+## 🔍 Mandatory kluster.ai MCP Verification Protocol
+
+**CRITICAL REQUIREMENT**: Every code generation, file modification, and implementation MUST be verified using kluster.ai MCP tools.
+
+### Verification Workflow (July 2025 Standards)
+1. **After ANY code generation** → Immediately run kluster.ai verification
+2. **Before completing tasks** → Verify all changes meet production standards
+3. **For every file modification** → Use `mcp__kluster-verify-mcp__verify` tool
+4. **For document-based code** → Use `mcp__kluster-verify-mcp__verify_document` tool
+
+### Mandatory Verification Steps
+```
+EVERY code generation must follow this sequence:
+1. Generate/modify code
+2. Run: kluster.ai MCP verification
+3. Address P0-P3 issues immediately
+4. Re-verify until clean
+5. Update memories with findings
+6. Only then mark task complete
+```
+
+### Priority Response Requirements
+- **P0-P1 (Intent Issues)**: STOP everything, fix immediately
+  - Example: Code doesn't match user requirements, incorrect algorithm implementation
+- **P2-P3 (Critical/High)**: Fix before proceeding to next task  
+  - Example: Security vulnerabilities, mixed import patterns, runtime failures
+- **P4-P5 (Medium/Low)**: Document for future improvement
+  - Example: Code style issues, minor optimizations, missing comments
+
+### Verification Timeout/Retry Behavior
+- **Timeout**: 300 seconds per file verification
+- **Retry**: Up to 3 attempts for network/temporary failures
+- **Failure**: If verification fails after retries, document and proceed with manual review
+
+### Integration Commands
+- Manual verification: `bun run qa:kluster:files -- --files="path/to/file"`
+- Full validation: `bun run qa:kluster:all`
+- Git diff validation: `bun run qa:kluster`
+
 ## 🎯 MVP Development Goal (July 24, 2025)
 
 **CRITICAL**: This is our **FINAL IMPLEMENTATION TARGET** for GhostSpeak Protocol MVP beta testing readiness.

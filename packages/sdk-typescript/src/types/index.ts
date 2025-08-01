@@ -72,6 +72,52 @@ export {
 // Export reputation types
 export * from './reputation-types.js'
 
+// Export core types (selective export to avoid conflicts with generated types)
+export {
+  // Core types
+  type Result,
+  type Transaction,
+  type SimulationResult,
+  
+  // H2A Protocol types (needed for GhostSpeakClient)
+  ParticipantType,
+  type CommunicationSession,
+  type CommunicationMessage,
+  type ParticipantStatus,
+  type CreateCommunicationSessionParams,
+  type SendCommunicationMessageParams,
+  type UpdateParticipantStatusParams,
+  type H2AEvent,
+  type H2ASession,
+  type H2AMessage,
+  
+  // Error types
+  type SDKError,
+  ErrorCode,
+  
+  // Builder types
+  type AgentCreationParams,
+  type EscrowCreationParams,
+  type ChannelCreationParams,
+  
+  // Utility types
+  type PaginationOptions,
+  type FilterOptions,
+  type QueryResult,
+  type Event,
+  type AgentEvent,
+  type EscrowEvent,
+  type ChannelEvent,
+  
+  // Type guards and utilities
+  isSuccess,
+  isError,
+  unwrap,
+  type DeepPartial,
+  type AddressOf,
+  type WithAddress
+} from '../core/types.js'
+
 // Modern RPC API types using 2025 Web3.js v2 patterns
 export type RpcApi = Rpc<
   GetLatestBlockhashApi &

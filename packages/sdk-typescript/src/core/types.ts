@@ -6,9 +6,7 @@
  */
 
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner as _TransactionSigner } from '@solana/kit'
-// Use string type for signature since @solana/rpc-types doesn't export Signature in v2
-type Signature = string
+import type { TransactionSigner as _TransactionSigner, Signature } from '@solana/kit'
 
 // =====================================================
 // CORE TYPES
@@ -408,6 +406,132 @@ export type ChannelEvent =
   | Event<{ channel: Channel; message: Message }> & { type: 'channel.message' }
   | Event<{ channel: Channel; member: Address }> & { type: 'channel.member.joined' }
   | Event<{ channel: Channel; member: Address }> & { type: 'channel.member.left' }
+
+// =====================================================
+// H2A PROTOCOL TYPES (Human-to-Agent Communication)
+// =====================================================
+
+/**
+ * Participant type enum for distinguishing between humans and agents
+ */
+export enum ParticipantType {
+  Human = 'Human',
+  Agent = 'Agent',
+}
+
+/**
+ * Unified communication session supporting H2A, A2A, and future H2H
+ */
+export interface CommunicationSession {
+  /** Session identifier */
+  sessionId: bigint
+  /** Address of session initiator */
+  initiator: Address
+  /** Type of initiator (human or agent) */
+  initiatorType: ParticipantType
+  /** Address of session responder */
+  responder: Address
+  /** Type of responder (human or agent) */
+  responderType: ParticipantType
+  /** Type of communication session */
+  sessionType: string
+  /** Additional session metadata */
+  metadata: string
+  /** Whether session is currently active */
+  isActive: boolean
+  /** Session creation timestamp */
+  createdAt: bigint
+  /** Session expiration timestamp */
+  expiresAt: bigint
+}
+
+/**
+ * Communication message in unified sessions
+ */
+export interface CommunicationMessage {
+  /** Message identifier */
+  messageId: bigint
+  /** Session this message belongs to */
+  session: Address
+  /** Address of message sender */
+  sender: Address
+  /** Type of sender (human or agent) */
+  senderType: ParticipantType
+  /** Message content */
+  content: string
+  /** Type of message */
+  messageType: string
+  /** File attachments (IPFS hashes) */
+  attachments: string[]
+  /** Message timestamp */
+  sentAt: bigint
+}
+
+/**
+ * Participant status for service discovery
+ */
+export interface ParticipantStatus {
+  /** Participant address */
+  participant: Address
+  /** Type of participant (human or agent) */
+  participantType: ParticipantType
+  /** Services offered by this participant */
+  servicesOffered: string[]
+  /** Current availability status */
+  availability: boolean
+  /** Reputation score (0-100) */
+  reputationScore: number
+  /** Last status update timestamp */
+  lastUpdated: bigint
+}
+
+/**
+ * Data for creating communication sessions
+ */
+export interface CreateCommunicationSessionParams {
+  sessionId: bigint
+  initiator: Address
+  initiatorType: ParticipantType
+  responder: Address
+  responderType: ParticipantType
+  sessionType: string
+  metadata: string
+  expiresAt: bigint
+}
+
+/**
+ * Data for sending communication messages
+ */
+export interface SendCommunicationMessageParams {
+  messageId: bigint
+  senderType: ParticipantType
+  content: string
+  messageType: string
+  attachments?: string[]
+}
+
+/**
+ * Data for updating participant status
+ */
+export interface UpdateParticipantStatusParams {
+  participant: Address
+  participantType: ParticipantType
+  servicesOffered: string[]
+  availability: boolean
+  reputationScore: number
+}
+
+/**
+ * H2A Protocol events
+ */
+export type H2AEvent =
+  | Event<{ session: CommunicationSession }> & { type: 'h2a.session.created' }
+  | Event<{ session: CommunicationSession; message: CommunicationMessage }> & { type: 'h2a.message.sent' }
+  | Event<{ participant: ParticipantStatus }> & { type: 'h2a.status.updated' }
+
+// Legacy type aliases for backward compatibility
+export type H2ASession = CommunicationSession
+export type H2AMessage = CommunicationMessage
 
 // =====================================================
 // TYPE GUARDS

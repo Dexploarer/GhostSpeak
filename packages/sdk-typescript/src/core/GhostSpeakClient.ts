@@ -1,13 +1,14 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
-import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js'
+import { GHOSTSPEAK_PROGRAM_ID, ParticipantType } from '../types/index.js'
 import { AgentModule } from './modules/AgentModule.js'
 import { EscrowModule } from '../modules/escrow/EscrowModule.js'
 import { ChannelModule } from '../modules/channels/ChannelModule.js'
 import { MarketplaceModule } from '../modules/marketplace/MarketplaceModule.js'
 import { GovernanceModule } from '../modules/governance/GovernanceModule.js'
 import { Token2022Module } from '../modules/token2022/Token2022Module.js'
+import { H2AModule } from '../modules/h2a/H2AModule.js'
 import { ChannelType } from '../generated/types/channelType.js'
 import type { AccountState } from '../generated/types/accountState.js'
 
@@ -89,6 +90,13 @@ export class GhostSpeak {
    */
   token2022(): Token2022Builder {
     return new Token2022Builder(this.config)
+  }
+
+  /**
+   * Human-to-Agent communication operations
+   */
+  h2a(): H2ABuilder {
+    return new H2ABuilder(this.config)
   }
 
   /**
@@ -1072,6 +1080,321 @@ class Token2022Query {
 
   async mintsByAuthority(authority: Address) {
     return this.module.getMintsByAuthority(authority)
+  }
+}
+
+// =====================================================
+// H2A COMMUNICATION BUILDERS
+// =====================================================
+
+/**
+ * H2A Communication builder for fluent API
+ */
+class H2ABuilder {
+  private module: H2AModule
+  private params: H2ABuilderParams = {}
+
+  constructor(config: GhostSpeakConfig) {
+    this.module = new H2AModule(config)
+  }
+
+  /**
+   * Create a new communication session
+   */
+  session(): SessionBuilder {
+    return new SessionBuilder(this.module, this.params)
+  }
+
+  /**
+   * Send a message in an existing session
+   */
+  message(sessionAddress: Address): MessageBuilder {
+    return new MessageBuilder(this.module, this.params, sessionAddress)
+  }
+
+  /**
+   * Update participant status
+   */
+  status(): StatusBuilder {
+    return new StatusBuilder(this.module, this.params)
+  }
+
+  /**
+   * Convenience method for humans hiring agents
+   */
+  hireAgent(agentAddress: Address): HireAgentBuilder {
+    return new HireAgentBuilder(this.module, this.params, agentAddress)
+  }
+
+  /**
+   * Get H2A queries
+   */
+  query(): H2AQuery {
+    return new H2AQuery(this.module)
+  }
+
+  debug(): this {
+    this.module.debug()
+    return this
+  }
+}
+
+/**
+ * H2A builder parameters interface
+ */
+interface H2ABuilderParams {
+  signer?: TransactionSigner
+}
+
+/**
+ * Session builder for creating communication sessions
+ */
+class SessionBuilder {
+  private params: {
+    sessionId?: bigint
+    initiator?: Address
+    initiatorType?: ParticipantType
+    responder?: Address
+    responderType?: ParticipantType
+    sessionType?: string
+    metadata?: string
+    expiresAt?: bigint
+    signer?: TransactionSigner
+  } = {}
+
+  constructor(private module: H2AModule, private builderParams: H2ABuilderParams) {
+    this.params.signer = builderParams.signer
+  }
+
+  between(initiator: Address, responder: Address): this {
+    this.params.initiator = initiator
+    this.params.responder = responder
+    return this
+  }
+
+  participantTypes(initiatorType: ParticipantType, responderType: ParticipantType): this {
+    this.params.initiatorType = initiatorType
+    this.params.responderType = responderType
+    return this
+  }
+
+  type(sessionType: string): this {
+    this.params.sessionType = sessionType
+    return this
+  }
+
+  metadata(metadata: string): this {
+    this.params.metadata = metadata
+    return this
+  }
+
+  expiresIn(hours: number): this {
+    this.params.expiresAt = BigInt(Date.now() + hours * 60 * 60 * 1000)
+    return this
+  }
+
+  async execute() {
+    if (!this.params.initiator || !this.params.responder) {
+      throw new Error('Initiator and responder required')
+    }
+    if (!this.params.initiatorType || !this.params.responderType) {
+      throw new Error('Participant types required')
+    }
+
+    const sessionId = BigInt(Date.now())
+    
+    return this.module.createSession({
+      sessionId,
+      initiator: this.params.initiator,
+      initiatorType: this.params.initiatorType,
+      responder: this.params.responder,
+      responderType: this.params.responderType,
+      sessionType: this.params.sessionType || 'general',
+      metadata: this.params.metadata || '',
+      expiresAt: this.params.expiresAt || BigInt(Date.now() + 24 * 60 * 60 * 1000), // 24 hours default
+    })
+  }
+}
+
+/**
+ * Message builder for sending messages in sessions
+ */
+class MessageBuilder {
+  private params: {
+    messageId?: bigint
+    senderType?: ParticipantType
+    content?: string
+    messageType?: string
+    attachments?: string[]
+    signer?: TransactionSigner
+  } = {}
+
+  constructor(
+    private module: H2AModule, 
+    private builderParams: H2ABuilderParams,
+    private sessionAddress: Address
+  ) {
+    this.params.signer = builderParams.signer
+  }
+
+  from(senderType: ParticipantType): this {
+    this.params.senderType = senderType
+    return this
+  }
+
+  content(content: string): this {
+    this.params.content = content
+    return this
+  }
+
+  type(messageType: string): this {
+    this.params.messageType = messageType
+    return this
+  }
+
+  attachments(attachments: string[]): this {
+    this.params.attachments = attachments
+    return this
+  }
+
+  async execute() {
+    if (!this.params.senderType || !this.params.content) {
+      throw new Error('Sender type and content required')
+    }
+
+    const messageId = BigInt(Date.now())
+    
+    return this.module.sendMessage(this.sessionAddress, {
+      messageId,
+      senderType: this.params.senderType,
+      content: this.params.content,
+      messageType: this.params.messageType || 'message',
+      attachments: this.params.attachments,
+    })
+  }
+}
+
+/**
+ * Status builder for updating participant status
+ */
+class StatusBuilder {
+  private params: {
+    participant?: Address
+    participantType?: ParticipantType
+    servicesOffered?: string[]
+    availability?: boolean
+    reputationScore?: number
+    signer?: TransactionSigner
+  } = {}
+
+  constructor(private module: H2AModule, private builderParams: H2ABuilderParams) {
+    this.params.signer = builderParams.signer
+  }
+
+  for(participant: Address): this {
+    this.params.participant = participant
+    return this
+  }
+
+  type(participantType: ParticipantType): this {
+    this.params.participantType = participantType
+    return this
+  }
+
+  services(services: string[]): this {
+    this.params.servicesOffered = services
+    return this
+  }
+
+  available(available = true): this {
+    this.params.availability = available
+    return this
+  }
+
+  reputation(score: number): this {
+    this.params.reputationScore = score
+    return this
+  }
+
+  async execute() {
+    if (!this.params.participant || !this.params.participantType) {
+      throw new Error('Participant and participant type required')
+    }
+
+    return this.module.updateStatus({
+      participant: this.params.participant,
+      participantType: this.params.participantType,
+      servicesOffered: this.params.servicesOffered || [],
+      availability: this.params.availability ?? true,
+      reputationScore: this.params.reputationScore || 50,
+    })
+  }
+}
+
+/**
+ * Hire agent builder for convenience
+ */
+class HireAgentBuilder {
+  private params: {
+    serviceType?: string
+    requirements?: string
+    budget?: bigint
+    signer?: TransactionSigner
+  } = {}
+
+  constructor(
+    private module: H2AModule, 
+    private builderParams: H2ABuilderParams,
+    private agentAddress: Address
+  ) {
+    this.params.signer = builderParams.signer
+  }
+
+  for(serviceType: string): this {
+    this.params.serviceType = serviceType
+    return this
+  }
+
+  withRequirements(requirements: string): this {
+    this.params.requirements = requirements
+    return this
+  }
+
+  budget(budget: bigint): this {
+    this.params.budget = budget
+    return this
+  }
+
+  async execute() {
+    if (!this.params.serviceType || !this.params.requirements) {
+      throw new Error('Service type and requirements required')
+    }
+
+    return this.module.humanHireAgent(
+      this.agentAddress,
+      this.params.serviceType,
+      this.params.requirements,
+      this.params.budget
+    )
+  }
+}
+
+/**
+ * H2A query helper
+ */
+class H2AQuery {
+  constructor(private module: H2AModule) {}
+
+  async sessions(participant: Address) {
+    return this.module.getSessions(participant)
+  }
+
+  async messages(sessionAddress: Address) {
+    return this.module.getMessages(sessionAddress)
+  }
+
+  async providers(serviceType: string, participantType?: ParticipantType) {
+    return this.module.findProviders(serviceType, participantType)
   }
 }
 

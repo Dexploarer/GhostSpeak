@@ -1708,7 +1708,7 @@ export function identifyGhostspeakMarketplaceInstruction(
 }
 
 export type ParsedGhostspeakMarketplaceInstruction<
-  TProgram extends string = 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX',
+  TProgram extends string = '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG',
 > =
   | ({
       instructionType: GhostspeakMarketplaceInstruction.ExportAction;

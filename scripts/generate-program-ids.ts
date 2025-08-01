@@ -16,7 +16,7 @@ async function generateProgramIds() {
   for (const network of networks) {
     if (network === 'devnet') {
       // Keep existing devnet program ID
-      programIds[network] = 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX';
+      programIds[network] = '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG';
     } else {
       // Generate new program ID
       const keypair = await generateKeyPairSigner();

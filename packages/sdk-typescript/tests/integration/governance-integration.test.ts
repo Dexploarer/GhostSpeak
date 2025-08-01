@@ -25,7 +25,7 @@ import { deriveMultisigPda, deriveProposalPda } from '../../src/utils/governance
 // Test configuration
 const TEST_CONFIG = {
   rpc: 'http://localhost:8899',
-  programId: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX' as Address,
+  programId: '5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG' as Address,
   commitment: 'confirmed' as const
 }
 

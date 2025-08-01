@@ -7,7 +7,7 @@ import { createSolanaRpc, address, getAddressFromPublicKey } from '@solana/kit';
 import { findProgramDerivedAddress } from '@solana/addresses';
 import chalk from 'chalk';
 
-const PROGRAM_ID = address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX');
+const PROGRAM_ID = address('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG');
 const RPC_URL = 'https://api.devnet.solana.com';
 
 async function checkProtocolState() {

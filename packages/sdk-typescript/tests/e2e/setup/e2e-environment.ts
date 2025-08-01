@@ -21,7 +21,7 @@ export const E2E_CONFIG = {
   WS_ENDPOINT: process.env.SOLANA_WS_URL || 'wss://api.devnet.solana.com',
   
   // Program deployment
-  PROGRAM_ID: address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX'),
+  PROGRAM_ID: address('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG'),
   
   // Extended timeouts for complex E2E scenarios
   TRANSACTION_TIMEOUT: 120000, // 2 minutes

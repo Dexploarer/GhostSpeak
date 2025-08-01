@@ -21,7 +21,7 @@ export const TEST_CONFIG = {
   WS_ENDPOINT: process.env.SOLANA_WS_URL || 'wss://api.devnet.solana.com',
   
   // Deployed program ID on devnet
-  PROGRAM_ID: address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX'),
+  PROGRAM_ID: address('5PVu8KEhTJEJnA4rNUgY6qHZXuhMakRitnXWtFJnxBAG'),
   
   // Test timeouts
   TRANSACTION_TIMEOUT: 60000, // 60 seconds

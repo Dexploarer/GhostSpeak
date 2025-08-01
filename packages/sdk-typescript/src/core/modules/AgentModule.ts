@@ -36,11 +36,12 @@ export class AgentModule extends BaseModule {
     agentType: number
     metadataUri: string
     agentId: string
+    skipSimulation?: boolean
   }): Promise<string> {
     const instructionGetter = async () => {
       const agentAccount = await this.deriveAgentPda(params.agentId, signer.address)
       const userRegistry = await this.deriveUserRegistryPda(signer.address)
-      const result = getRegisterAgentInstructionAsync({
+      const result = await getRegisterAgentInstructionAsync({
         agentAccount,
         userRegistry,
         signer,
@@ -54,6 +55,17 @@ export class AgentModule extends BaseModule {
     
     // Enable debug mode to get detailed transaction information
     this.debug()
+    
+    // If skipSimulation is true, call builder directly to bypass simulation
+    if (params.skipSimulation) {
+      console.log('🚀 SKIPPING SIMULATION - Sending transaction directly')
+      return this.builder.execute(
+        'registerAgent',
+        instructionGetter,
+        [signer] as unknown as TransactionSigner[],
+        { simulate: false, skipPreflight: true }
+      ) as Promise<string>
+    }
     
     return this.execute(
       'registerAgent',
@@ -72,8 +84,8 @@ export class AgentModule extends BaseModule {
     merkleTree: Address
     treeConfig: Address
   }): Promise<string> {
-    const instructionGetter = () => {
-      const result = getRegisterAgentCompressedInstructionAsync({
+    const instructionGetter = async () => {
+      const result = await getRegisterAgentCompressedInstructionAsync({
         merkleTree: params.merkleTree,
         signer,
         systemProgram: this.systemProgramId,
@@ -129,8 +141,8 @@ export class AgentModule extends BaseModule {
     supportedCapabilities: Array<number | bigint>
     verifiedAt: number | bigint
   }): Promise<string> {
-    const instructionGetter = () => {
-      const result = getVerifyAgentInstructionAsync({
+    const instructionGetter = async () => {
+      const result = await getVerifyAgentInstructionAsync({
         agent: params.agentAddress,
         verifier: signer,
         agentPubkey: params.agentPubkey,

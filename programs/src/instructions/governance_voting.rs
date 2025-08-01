@@ -6,8 +6,8 @@
  */
 
 use crate::state::governance::{
-    DelegationInfo, DelegationScope, GovernanceProposal, ProposalStatus, Vote, VoteChoice,
-    Multisig, ExecutionQueue,
+    DelegationInfo, DelegationScope, ExecutionQueue, GovernanceProposal, Multisig, ProposalStatus,
+    Vote, VoteChoice,
 };
 use crate::*;
 use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
@@ -137,7 +137,7 @@ pub fn cast_vote(
 ) -> Result<()> {
     let clock = Clock::get()?;
     let proposal_key = ctx.accounts.proposal.key();
-    
+
     let proposal = &mut ctx.accounts.proposal;
 
     // Validate proposal is active and within voting period
@@ -215,7 +215,8 @@ pub fn cast_vote(
         ((proposal.voting_results.total_voting_power as u128 * 100) / total_eligible_power) as u8;
 
     // Check if quorum is reached
-    if proposal.voting_results.participation_rate >= proposal.quorum_requirements.minimum_participation
+    if proposal.voting_results.participation_rate
+        >= proposal.quorum_requirements.minimum_participation
     {
         proposal.voting_results.quorum_reached = true;
     }
@@ -224,15 +225,15 @@ pub fn cast_vote(
     let total_decisive_votes =
         proposal.voting_results.votes_for + proposal.voting_results.votes_against;
     if total_decisive_votes > 0 {
-        let approval_percentage =
-            ((proposal.voting_results.votes_for as u128 * 100) / total_decisive_votes as u128) as u8;
+        let approval_percentage = ((proposal.voting_results.votes_for as u128 * 100)
+            / total_decisive_votes as u128) as u8;
         if approval_percentage >= proposal.quorum_requirements.approval_threshold {
             proposal.voting_results.approval_threshold_met = true;
         }
     }
 
     let proposal_id = proposal.proposal_id;
-    
+
     emit!(VoteCastEvent {
         proposal: proposal_key,
         voter: voter_key,
@@ -298,7 +299,7 @@ pub fn delegate_vote(
 pub fn tally_votes(ctx: Context<TallyVotes>) -> Result<()> {
     let clock = Clock::get()?;
     let proposal_key = ctx.accounts.proposal.key();
-    
+
     let proposal = &mut ctx.accounts.proposal;
 
     // Ensure voting period has ended
@@ -319,7 +320,10 @@ pub fn tally_votes(ctx: Context<TallyVotes>) -> Result<()> {
     // Determine final status based on results
     if !voting_results.quorum_reached {
         proposal.status = ProposalStatus::Failed;
-        msg!("Proposal {} failed: Quorum not reached", proposal.proposal_id);
+        msg!(
+            "Proposal {} failed: Quorum not reached",
+            proposal.proposal_id
+        );
     } else if !voting_results.approval_threshold_met {
         proposal.status = ProposalStatus::Failed;
         msg!(
@@ -346,7 +350,7 @@ pub fn tally_votes(ctx: Context<TallyVotes>) -> Result<()> {
 
     let proposal_id = proposal.proposal_id;
     let final_status = proposal.status;
-    
+
     emit!(VotesTalliedEvent {
         proposal: proposal_key,
         proposal_id,
@@ -365,7 +369,7 @@ pub fn tally_votes(ctx: Context<TallyVotes>) -> Result<()> {
 pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
     let clock = Clock::get()?;
     let proposal_key = ctx.accounts.proposal.key();
-    
+
     let proposal = &mut ctx.accounts.proposal;
 
     // Validate proposal status
@@ -389,7 +393,7 @@ pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
     // Check if there's a grace period for cancellation (e.g., 24 hours after execution time)
     let grace_period = 86400; // 24 hours
     let grace_period_end = execution_timestamp + grace_period;
-    
+
     // Ensure we're not in a cancellable grace period if cancellation is allowed
     if proposal.execution_params.cancellable {
         require!(
@@ -400,22 +404,22 @@ pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
 
     // Validate executor has authority
     require!(
-        ctx.accounts.executor.key() == proposal.execution_params.execution_authority ||
-        ctx.accounts.executor.key() == proposal.proposer,
+        ctx.accounts.executor.key() == proposal.execution_params.execution_authority
+            || ctx.accounts.executor.key() == proposal.proposer,
         GhostSpeakError::UnauthorizedExecutor
     );
 
     // Execute the proposal instructions
     let instructions_len = proposal.execution_params.instructions.len();
     let proposal_id = proposal.proposal_id;
-    
+
     // In a real implementation, we would process the instructions
     // For now, we'll validate that we have the target program
     require!(
         instructions_len > 0,
         GhostSpeakError::NoInstructionsToExecute
     );
-    
+
     // Validate target program matches first instruction
     if let Some(first_instruction) = proposal.execution_params.instructions.first() {
         require!(
@@ -423,7 +427,7 @@ pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
             GhostSpeakError::InvalidTargetProgram
         );
     }
-    
+
     // Execute all instructions via Cross-Program Invocation (CPI)
     for (i, instruction) in proposal.execution_params.instructions.iter().enumerate() {
         msg!(
@@ -488,7 +492,7 @@ pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         // 2. Map proposal.instructions[i].accounts to actual AccountInfos
         // 3. Execute the CPI with invoke() or invoke_signed() as needed
         // 4. Handle any errors and potentially rollback the entire proposal
-        
+
         msg!("Instruction {} validation successful", i + 1);
     }
 

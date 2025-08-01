@@ -11,7 +11,6 @@ pub mod agent_management;
 
 // Additional modules
 pub mod a2a_protocol;
-pub mod h2a_protocol;
 pub mod analytics;
 pub mod analytics_events;
 pub mod auction;
@@ -23,6 +22,7 @@ pub mod escrow_operations;
 pub mod escrow_payment;
 pub mod extensions;
 pub mod governance_voting;
+pub mod h2a_protocol;
 pub mod incentives;
 pub mod marketplace;
 pub mod messaging;
@@ -35,7 +35,6 @@ pub mod work_orders;
 
 // Re-export all instruction handlers (2025 Anchor best practice)
 pub use a2a_protocol::*;
-pub use h2a_protocol::*;
 pub use agent::*;
 pub use agent_compressed::*;
 pub use agent_management::*;
@@ -50,6 +49,7 @@ pub use escrow_operations::*;
 pub use escrow_payment::*;
 pub use extensions::*;
 pub use governance_voting::*;
+pub use h2a_protocol::*;
 pub use incentives::*;
 pub use marketplace::*;
 pub use messaging::*;

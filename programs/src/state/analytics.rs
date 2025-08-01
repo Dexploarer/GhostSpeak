@@ -162,7 +162,7 @@ impl AnalyticsDashboard {
         self.authority = owner; // Set authority to owner by default
         self.program_id = crate::ID;
         self.metrics = metrics;
-        
+
         // Initialize with empty metrics
         self.network_metrics = NetworkHealthMetrics {
             active_agents: 0,
@@ -173,7 +173,7 @@ impl AnalyticsDashboard {
             success_rate: 10000, // 100% baseline
             last_updated: clock.unix_timestamp,
         };
-        
+
         self.marketplace_metrics = MarketplaceMetrics {
             total_listings: 0,
             active_listings: 0,
@@ -183,7 +183,7 @@ impl AnalyticsDashboard {
             top_categories: Vec::new(),
             last_updated: clock.unix_timestamp,
         };
-        
+
         self.economic_metrics = EconomicMetrics {
             total_value_locked: 0,
             daily_volume: 0,
@@ -193,7 +193,7 @@ impl AnalyticsDashboard {
             token_circulation: 0,
             last_updated: clock.unix_timestamp,
         };
-        
+
         self.metric_samples = Vec::new();
         self.agent_performance = Vec::new();
         self.created_at = clock.unix_timestamp;
@@ -271,12 +271,12 @@ impl AnalyticsDashboard {
         self.economic_metrics.daily_volume = daily_volume;
         self.economic_metrics.total_fee_revenue = fee_revenue;
         self.economic_metrics.unique_active_users = unique_users;
-        
+
         if self.network_metrics.total_transactions > 0 {
-            self.economic_metrics.average_transaction_size = 
+            self.economic_metrics.average_transaction_size =
                 daily_volume / self.network_metrics.total_transactions;
         }
-        
+
         self.economic_metrics.last_updated = clock.unix_timestamp;
 
         self.add_metric_sample("total_value_locked", total_value_locked)?;
@@ -354,8 +354,10 @@ impl AnalyticsDashboard {
         let clock = Clock::get()?;
         let cutoff_time = clock.unix_timestamp - retention_seconds;
 
-        self.metric_samples.retain(|sample| sample.timestamp > cutoff_time);
-        self.agent_performance.retain(|entry| entry.last_updated > cutoff_time);
+        self.metric_samples
+            .retain(|sample| sample.timestamp > cutoff_time);
+        self.agent_performance
+            .retain(|entry| entry.last_updated > cutoff_time);
 
         Ok(())
     }

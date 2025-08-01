@@ -5,8 +5,8 @@
  * This module manages agent template creation and replication functionality.
  */
 
+use crate::state::{RoyaltyConfig, RoyaltyStream};
 use crate::*;
-use crate::state::{RoyaltyStream, RoyaltyConfig};
 
 /// Data structure for creating a replication template
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -249,7 +249,7 @@ pub fn replicate_agent(
     royalty_stream.original_creator = template.creator;
     royalty_stream.config = RoyaltyConfig {
         percentage: royalty_percentage,
-        min_amount: 100_000, // 0.0001 SOL minimum
+        min_amount: 100_000,       // 0.0001 SOL minimum
         max_amount: 1_000_000_000, // 1 SOL maximum per payment
     };
     royalty_stream.total_paid = 0;
@@ -316,8 +316,8 @@ pub fn batch_replicate_agents(
     // SECURITY: Batch size validation
     const MAX_BATCH_SIZE: usize = 10;
     require!(
-        batch_request.customizations.len() > 0 && 
-        batch_request.customizations.len() <= MAX_BATCH_SIZE,
+        batch_request.customizations.len() > 0
+            && batch_request.customizations.len() <= MAX_BATCH_SIZE,
         GhostSpeakError::InvalidBatchSize
     );
 
@@ -333,7 +333,7 @@ pub fn batch_replicate_agents(
 
     // Verify template is active and has capacity
     require!(template.is_active, GhostSpeakError::AgentNotActive);
-    
+
     let batch_size = batch_request.customizations.len() as u32;
     require!(
         template.current_replications + batch_size <= template.max_replications,
@@ -341,20 +341,21 @@ pub fn batch_replicate_agents(
     );
 
     // Calculate total cost
-    let _total_cost = template.replication_fee
+    let _total_cost = template
+        .replication_fee
         .checked_mul(batch_size as u64)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
     // NOTE: Batch replication with dynamic account creation is complex in Anchor
     // For the MVP, we'll validate the batch request but require the client
     // to call the single replicate_agent instruction multiple times
-    
+
     // Validate all customizations upfront
     for customization in batch_request.customizations.iter() {
         // SECURITY: Input validation for each customization
         const MAX_NAME_LENGTH: usize = 64;
         const MAX_CUSTOM_CONFIG_LENGTH: usize = 1024;
-        
+
         require!(
             !customization.name.is_empty() && customization.name.len() <= MAX_NAME_LENGTH,
             GhostSpeakError::NameTooLong
@@ -367,13 +368,14 @@ pub fn batch_replicate_agents(
             GhostSpeakError::InputTooLong
         );
     }
-    
+
     // For MVP: Return success but inform client to use single replication
     // In production, this would process all replications atomically
     msg!("Batch replication validated. Please use single replicate_agent instruction for each agent.");
 
     // Update template replication count
-    template.current_replications = template.current_replications
+    template.current_replications = template
+        .current_replications
         .checked_add(batch_size)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
@@ -454,7 +456,7 @@ pub struct BatchReplicateAgents<'info> {
     pub buyer: Signer<'info>,
 
     pub system_program: Program<'info, System>,
-    
+
     /// CHECK: This is for Token program CPI
     pub token_program: AccountInfo<'info>,
 }

@@ -512,10 +512,10 @@ mod tests {
         let guard_size = ReentrancyGuard::LEN;
         let instruction_lock_size = InstructionLock::LEN;
         let account_lock_size = AccountLock::LEN;
-        
+
         // Test expected structure sizes (discriminator + data fields)
         assert_eq!(guard_size, 8 + 1 + 8); // discriminator + state + slot
-        assert_eq!(instruction_lock_size, 8 + 32 + 8 + 1); // discriminator + pubkey + slot + state  
+        assert_eq!(instruction_lock_size, 8 + 32 + 8 + 1); // discriminator + pubkey + slot + state
         assert_eq!(account_lock_size, 8 + 32 + 8 + 1); // discriminator + account + slot + state
     }
 }

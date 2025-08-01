@@ -51,47 +51,47 @@ pub use instructions::*;
 
 // Additional specific type re-exports for instruction compatibility
 // These types are used frequently in instruction files and need to be available at crate root
+pub use state::A2AMessageData;
+pub use state::A2ASessionData;
+pub use state::A2AStatusData;
 pub use state::Agent;
-pub use state::WorkOrder;
-pub use state::WorkOrderStatus;
-pub use state::Payment;
-pub use state::NegotiationStatus;
-pub use state::ApplicationStatus;
-pub use state::ContractStatus;
-pub use state::UserRegistry;
 pub use state::AgentVerification;
 pub use state::AnalyticsDashboard;
-pub use state::MarketAnalytics;
-pub use state::BulkDeal;
-pub use state::DealType;
-pub use state::VolumeTier;
+pub use state::ApplicationStatus;
 pub use state::ArbitratorRegistry;
+pub use state::AuctionData;
+pub use state::BulkDeal;
 pub use state::Channel;
+pub use state::CommunicationMessageData;
+pub use state::CommunicationSessionData;
+pub use state::ContractStatus;
+pub use state::DealType;
+pub use state::MarketAnalytics;
 pub use state::Message;
+pub use state::NegotiationStatus;
+pub use state::Payment;
 pub use state::ReplicationRecord;
+pub use state::ResaleMarket;
 pub use state::RoyaltyConfig;
 pub use state::RoyaltyStream;
-pub use state::ResaleMarket;
-pub use state::AuctionData;
-pub use state::A2ASessionData;
-pub use state::A2AMessageData;
-pub use state::A2AStatusData;
-pub use state::CommunicationSessionData;
-pub use state::CommunicationMessageData;
+pub use state::UserRegistry;
+pub use state::VolumeTier;
+pub use state::WorkOrder;
+pub use state::WorkOrderStatus;
 // ParticipantStatusData appears to be defined elsewhere, removing this invalid import
-pub use state::VotingResults;
 pub use state::AuditConfig;
-pub use state::ProposalType;
+pub use state::ChannelType;
+pub use state::DelegationScope;
+pub use state::DemandMetrics;
 pub use state::ExecutionParams;
-pub use state::Role;
-pub use state::ReportType;
 pub use state::ExtensionMetadata;
 pub use state::IncentiveConfig;
-pub use state::DemandMetrics;
-pub use state::ChannelType;
 pub use state::MessageType;
+pub use state::ProposalType;
+pub use state::ReportType;
+pub use state::Role;
 pub use state::VoteChoice;
-pub use state::DelegationScope;
+pub use state::VotingResults;
 
 // =====================================================
 // DATA STRUCTURES
@@ -211,38 +211,38 @@ pub const RESERVED_SPACE: usize = 128; // Reserved space for future extensions
 //
 // IMPORTANT: All admin operations use:
 // - Network-specific admin validation
-// - Multi-signature support where required  
+// - Multi-signature support where required
 // - Proper authorization checks in each instruction
 //
 // See security/admin_validation.rs for implementation details
 
 /// SECURE Admin Key Configuration - Environment-Based Approach
-/// 
+///
 /// SECURITY: This implementation allows runtime admin key validation instead of
 /// hardcoded keys, addressing the critical security audit finding.
-/// 
+///
 /// Production keys should be configured via:
 /// 1. Environment variables (PROTOCOL_ADMIN_KEY)
 /// 2. Multisig wallets for mainnet
 /// 3. Proper key rotation mechanisms
-/// 
+///
 /// These fallback keys are ONLY for development/testing and should NEVER be used in production
 // Temporary development admin keys - REPLACE FOR PRODUCTION
 #[cfg(feature = "devnet")]
-pub const PROTOCOL_ADMIN: Pubkey = 
+pub const PROTOCOL_ADMIN: Pubkey =
     anchor_lang::solana_program::pubkey!("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
 
 #[cfg(feature = "testnet")]
-pub const PROTOCOL_ADMIN: Pubkey = 
+pub const PROTOCOL_ADMIN: Pubkey =
     anchor_lang::solana_program::pubkey!("8WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
 
 #[cfg(feature = "mainnet")]
-pub const PROTOCOL_ADMIN: Pubkey = 
+pub const PROTOCOL_ADMIN: Pubkey =
     anchor_lang::solana_program::pubkey!("7WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
 
 // Default fallback for localnet and other environments
 #[cfg(not(any(feature = "devnet", feature = "testnet", feature = "mainnet")))]
-pub const PROTOCOL_ADMIN: Pubkey = 
+pub const PROTOCOL_ADMIN: Pubkey =
     anchor_lang::solana_program::pubkey!("6WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
 
 /// Enhanced admin validation with runtime configuration support
@@ -253,20 +253,20 @@ pub fn validate_admin_authority(provided_authority: &Pubkey) -> Result<()> {
         *provided_authority == PROTOCOL_ADMIN,
         GhostSpeakError::UnauthorizedAccess
     );
-    
+
     // Additional security checks
     require!(
         *provided_authority != Pubkey::default(),
         GhostSpeakError::InvalidAccountData
     );
-    
+
     // Warn if using development keys in production context
     #[cfg(feature = "mainnet")]
     {
         // In production, log admin operations for audit trails
         msg!("Admin operation authorized for: {}", provided_authority);
     }
-    
+
     Ok(())
 }
 
@@ -528,19 +528,21 @@ pub enum GhostSpeakError {
     InvalidTokenAccount = 1104,
 
     // Access control errors (1200-1299)
-    #[msg("Unauthorized access")]
+    #[msg("Unauthorized access - caller does not have permission for this operation")]
     UnauthorizedAccess = 1200,
-    #[msg("Invalid agent owner")]
+    #[msg("Invalid agent owner - only the agent owner can perform this action")]
     InvalidAgentOwner = 1201,
 
     // State transition errors (1300-1399)
-    #[msg("Invalid status transition")]
+    #[msg("Invalid status transition - cannot change from current status to requested status")]
     InvalidStatusTransition = 1300,
-    #[msg("Work order not found")]
+    #[msg("Work order not found - verify work order ID and ensure it exists")]
     WorkOrderNotFound = 1301,
-    #[msg("Service not found")]
+    #[msg("Service not found - verify service ID and ensure it is registered")]
     ServiceNotFound = 1302,
-    #[msg("Invalid work order status")]
+    #[msg(
+        "Invalid work order status - work order is not in the correct status for this operation"
+    )]
     InvalidWorkOrderStatus = 1303,
     #[msg("Invalid task status")]
     InvalidTaskStatus = 1304,
@@ -1020,10 +1022,10 @@ pub enum GhostSpeakError {
 
     #[msg("Invalid extension status")]
     InvalidExtensionStatus = 2195,
-    
+
     #[msg("Arbitrator already assigned")]
     ArbitratorAlreadyAssigned = 2196,
-    
+
     #[msg("Conflict of interest")]
     ConflictOfInterest = 2202,
 
@@ -1052,7 +1054,7 @@ pub enum GhostSpeakError {
     InvalidWorkDelivery = 2310,
     #[msg("Invalid rejection reason")]
     InvalidRejectionReason = 2311,
-    
+
     // Token-2022 and agent validation errors (2312-2330)
     #[msg("Agent is inactive")]
     InactiveAgent = 2312,
@@ -1123,7 +1125,14 @@ pub mod ghostspeak_marketplace {
         metadata_uri: String,
         _agent_id: String,
     ) -> Result<()> {
-        instructions::agent::register_agent(ctx, agent_type, name, description, metadata_uri, _agent_id)
+        instructions::agent::register_agent(
+            ctx,
+            agent_type,
+            name,
+            description,
+            metadata_uri,
+            _agent_id,
+        )
     }
 
     /// Register Agent using ZK compression (solves error 2006 with 5000x cost reduction)
@@ -1149,7 +1158,14 @@ pub mod ghostspeak_marketplace {
         metadata_uri: String,
         _agent_id: String,
     ) -> Result<()> {
-        instructions::agent::update_agent(ctx, _agent_type, name, description, metadata_uri, _agent_id)
+        instructions::agent::update_agent(
+            ctx,
+            _agent_type,
+            name,
+            description,
+            metadata_uri,
+            _agent_id,
+        )
     }
 
     pub fn verify_agent(
@@ -1406,7 +1422,7 @@ pub mod ghostspeak_marketplace {
     pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
         instructions::auction::finalize_auction(ctx)
     }
-    
+
     pub fn update_auction_reserve_price(
         ctx: Context<UpdateAuctionReservePrice>,
         new_reserve_price: u64,
@@ -1414,7 +1430,7 @@ pub mod ghostspeak_marketplace {
     ) -> Result<()> {
         instructions::auction::update_auction_reserve_price(ctx, new_reserve_price, reveal_hidden)
     }
-    
+
     pub fn extend_auction_for_reserve(ctx: Context<ExtendAuctionForReserve>) -> Result<()> {
         instructions::auction::extend_auction_for_reserve(ctx)
     }
@@ -1531,10 +1547,7 @@ pub mod ghostspeak_marketplace {
         instructions::dispute::submit_evidence_batch(ctx, evidence_batch)
     }
 
-    pub fn assign_arbitrator(
-        ctx: Context<AssignArbitrator>,
-        arbitrator: Pubkey,
-    ) -> Result<()> {
+    pub fn assign_arbitrator(ctx: Context<AssignArbitrator>, arbitrator: Pubkey) -> Result<()> {
         instructions::dispute::assign_arbitrator(ctx, arbitrator)
     }
 
@@ -1637,7 +1650,7 @@ pub mod ghostspeak_marketplace {
     ) -> Result<()> {
         instructions::replication::replicate_agent(ctx, customization, royalty_percentage)
     }
-    
+
     pub fn batch_replicate_agents(
         ctx: Context<BatchReplicateAgents>,
         batch_request: instructions::replication::BatchReplicationRequest,
@@ -1826,7 +1839,7 @@ pub mod ghostspeak_marketplace {
     // =====================================================
     // GOVERNANCE VOTING INSTRUCTIONS
     // =====================================================
-    
+
     /// Cast a vote on a governance proposal
     pub fn cast_vote(
         ctx: Context<CastVote>,

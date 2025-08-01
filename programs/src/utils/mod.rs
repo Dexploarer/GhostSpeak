@@ -1,6 +1,6 @@
 /*!
  * Utilities Module for GhostSpeak Protocol
- * 
+ *
  * Contains helper functions and common utilities used across the protocol.
  */
 

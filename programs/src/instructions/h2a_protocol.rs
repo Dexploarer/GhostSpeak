@@ -6,8 +6,8 @@
  */
 
 use crate::state::protocol_structures::{
-    ParticipantType, CommunicationSession, CommunicationMessage,
-    CommunicationSessionData, CommunicationMessageData
+    CommunicationMessage, CommunicationMessageData, CommunicationSession, CommunicationSessionData,
+    ParticipantType,
 };
 use crate::GhostSpeakError;
 use anchor_lang::prelude::*;
@@ -91,7 +91,7 @@ pub fn create_communication_session(
 
     // Validate session_id is non-zero
     require!(session_data.session_id > 0, GhostSpeakError::InputTooLong);
-    
+
     // Validate session has both initiator and responder
     require!(
         session_data.initiator != Pubkey::default() && session_data.responder != Pubkey::default(),
@@ -106,11 +106,17 @@ pub fn create_communication_session(
 
     // Validate participant types are valid
     require!(
-        matches!(session_data.initiator_type, ParticipantType::Human | ParticipantType::Agent),
+        matches!(
+            session_data.initiator_type,
+            ParticipantType::Human | ParticipantType::Agent
+        ),
         GhostSpeakError::InvalidConfiguration
     );
     require!(
-        matches!(session_data.responder_type, ParticipantType::Human | ParticipantType::Agent),
+        matches!(
+            session_data.responder_type,
+            ParticipantType::Human | ParticipantType::Agent
+        ),
         GhostSpeakError::InvalidConfiguration
     );
 
@@ -198,8 +204,8 @@ pub fn create_communication_session(
 /// - Structured data (JSON payloads)
 /// - Media content (images, documents)
 pub fn send_communication_message(
-    ctx: Context<SendCommunicationMessage>, 
-    message_data: CommunicationMessageData
+    ctx: Context<SendCommunicationMessage>,
+    message_data: CommunicationMessageData,
 ) -> Result<()> {
     // SECURITY: Verify signer authorization
     require!(

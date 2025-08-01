@@ -357,7 +357,12 @@ pub fn collect_network_metrics(
     let dashboard = &mut ctx.accounts.dashboard;
 
     // Update network metrics using enhanced analytics state methods
-    dashboard.update_network_metrics(active_agents, transaction_throughput, average_latency, error_rate)?;
+    dashboard.update_network_metrics(
+        active_agents,
+        transaction_throughput,
+        average_latency,
+        error_rate,
+    )?;
 
     // Emit analytics event for real-time streaming
     crate::instructions::analytics_events::emit_network_health_event(
@@ -427,7 +432,12 @@ pub fn collect_marketplace_metrics(
     let dashboard = &mut ctx.accounts.dashboard;
 
     // Update marketplace metrics
-    dashboard.update_marketplace_metrics(total_listings, active_listings, daily_volume, average_price)?;
+    dashboard.update_marketplace_metrics(
+        total_listings,
+        active_listings,
+        daily_volume,
+        average_price,
+    )?;
 
     // Emit analytics event for real-time streaming
     crate::instructions::analytics_events::emit_marketplace_activity_event(
@@ -497,7 +507,12 @@ pub fn collect_economic_metrics(
     let dashboard = &mut ctx.accounts.dashboard;
 
     // Update economic metrics
-    dashboard.update_economic_metrics(total_value_locked, daily_volume, fee_revenue, unique_users)?;
+    dashboard.update_economic_metrics(
+        total_value_locked,
+        daily_volume,
+        fee_revenue,
+        unique_users,
+    )?;
 
     // Emit analytics event for real-time streaming
     crate::instructions::analytics_events::emit_economic_metrics_event(
@@ -640,10 +655,7 @@ pub fn update_agent_performance(
 /// # Returns
 ///
 /// Returns `Ok(())` on successful data pruning
-pub fn prune_analytics_data(
-    ctx: Context<PruneAnalyticsData>,
-    retention_days: u16,
-) -> Result<()> {
+pub fn prune_analytics_data(ctx: Context<PruneAnalyticsData>, retention_days: u16) -> Result<()> {
     let clock = Clock::get()?;
 
     // SECURITY: Enhanced signer authorization (only protocol admin)
@@ -653,7 +665,10 @@ pub fn prune_analytics_data(
     );
 
     // SECURITY: Validate retention period
-    require!(retention_days > 0 && retention_days <= 365, GhostSpeakError::InvalidParameter);
+    require!(
+        retention_days > 0 && retention_days <= 365,
+        GhostSpeakError::InvalidParameter
+    );
 
     let dashboard = &mut ctx.accounts.dashboard;
     let retention_seconds = retention_days as i64 * 86400; // Convert days to seconds
@@ -700,8 +715,8 @@ pub struct CollectNetworkMetrics<'info> {
 
     /// Metrics collector (authorized agent or protocol admin)
     #[account(
-        constraint = collector.key() == crate::PROTOCOL_ADMIN 
-            || collector.key() == dashboard.authority 
+        constraint = collector.key() == crate::PROTOCOL_ADMIN
+            || collector.key() == dashboard.authority
             @ GhostSpeakError::UnauthorizedAccess
     )]
     pub collector: Signer<'info>,
@@ -727,8 +742,8 @@ pub struct CollectMarketplaceMetrics<'info> {
 
     /// Metrics collector
     #[account(
-        constraint = collector.key() == crate::PROTOCOL_ADMIN 
-            || collector.key() == dashboard.authority 
+        constraint = collector.key() == crate::PROTOCOL_ADMIN
+            || collector.key() == dashboard.authority
             @ GhostSpeakError::UnauthorizedAccess
     )]
     pub collector: Signer<'info>,
@@ -779,8 +794,8 @@ pub struct UpdateAgentPerformance<'info> {
 
     /// Performance data collector
     #[account(
-        constraint = collector.key() == crate::PROTOCOL_ADMIN 
-            || collector.key() == dashboard.authority 
+        constraint = collector.key() == crate::PROTOCOL_ADMIN
+            || collector.key() == dashboard.authority
             @ GhostSpeakError::UnauthorizedAccess
     )]
     pub collector: Signer<'info>,

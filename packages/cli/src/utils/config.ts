@@ -2,11 +2,11 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'fs'
 import { envConfig } from './env-config.js'
-// Define Cluster type locally since it's not exported from @solana/kit
-type Cluster = 'devnet' | 'testnet' | 'mainnet-beta' | 'localnet'
+// Use the standard cluster type with localnet for development
+type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta' | 'localnet'
 
 export interface GhostSpeakConfig {
-  network: Cluster
+  network: SolanaCluster
   walletPath: string
   rpcUrl?: string
   programId: string

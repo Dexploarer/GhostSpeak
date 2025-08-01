@@ -31,6 +31,7 @@ mod instructions;
 pub mod security;
 mod simple_optimization;
 pub mod state;
+pub mod utils;
 
 #[cfg(test)]
 
@@ -42,6 +43,9 @@ pub use security::*;
 
 // Re-export optimization utilities
 pub use simple_optimization::*;
+
+// Re-export utility functions
+pub use utils::*;
 
 // Re-export all instruction types and context structures for Anchor
 pub use instructions::*;
@@ -870,6 +874,18 @@ pub enum GhostSpeakError {
     #[msg("Insufficient voting power")]
     InsufficientVotingPower = 2155,
 
+    #[msg("JSON parsing failed")]
+    JsonParseError = 2328,
+
+    #[msg("JSON structure too deeply nested")]
+    JsonDepthExceeded = 2329,
+
+    #[msg("JSON structure too complex")]
+    JsonComplexityExceeded = 2330,
+
+    #[msg("JSON must be an object")]
+    JsonInvalidStructure = 2331,
+
     #[msg("Replication not allowed")]
     ReplicationNotAllowed = 2156,
 
@@ -1065,6 +1081,10 @@ pub enum GhostSpeakError {
 
     #[msg("No instructions to execute")]
     NoInstructionsToExecute = 2327,
+
+    // Token-2022 extension errors (2332-2339)
+    #[msg("Extension not supported")]
+    ExtensionNotSupported = 2332,
 }
 
 // =====================================================
@@ -1082,10 +1102,12 @@ pub mod ghostspeak_marketplace {
     pub fn register_agent(
         ctx: Context<RegisterAgent>,
         agent_type: u8,
+        name: String,
+        description: String,
         metadata_uri: String,
         _agent_id: String,
     ) -> Result<()> {
-        instructions::agent::register_agent(ctx, agent_type, metadata_uri, _agent_id)
+        instructions::agent::register_agent(ctx, agent_type, name, description, metadata_uri, _agent_id)
     }
 
     /// Register Agent using ZK compression (solves error 2006 with 5000x cost reduction)
@@ -1106,10 +1128,12 @@ pub mod ghostspeak_marketplace {
     pub fn update_agent(
         ctx: Context<UpdateAgent>,
         _agent_type: u8,
+        name: Option<String>,
+        description: Option<String>,
         metadata_uri: String,
         _agent_id: String,
     ) -> Result<()> {
-        instructions::agent::update_agent(ctx, _agent_type, metadata_uri, _agent_id)
+        instructions::agent::update_agent(ctx, _agent_type, name, description, metadata_uri, _agent_id)
     }
 
     pub fn verify_agent(

@@ -458,31 +458,24 @@ pub fn is_account_locked<'info>(
         return Ok(false);
     }
 
-    // Parse the lock data manually to check is_active and expiration
-    // Structure: discriminator(8) + protected_account(32) + operation_type(4+64) +
-    // lock_signature(4+88) + locked_by(32) + locked_at(8) + expires_at(8) + is_active(1)
-    let is_active_offset = 8 + 32 + 4 + 64 + 4 + 88 + 32 + 8 + 8;
+    // Use safe Anchor deserialization instead of manual memory parsing
+    // This prevents buffer overflow vulnerabilities and ensures type safety
+    let lock_state = match AccountLock::try_deserialize(&mut &lock_data[..]) {
+        Ok(lock) => lock,
+        Err(_) => {
+            // If deserialization fails, assume not locked to fail safe
+            return Ok(false);
+        }
+    };
 
-    if lock_data.len() <= is_active_offset {
+    // Use safe field access instead of manual memory offset calculations
+    if !lock_state.is_active {
         return Ok(false);
     }
 
-    let is_active = lock_data[is_active_offset] != 0;
-
-    if !is_active {
-        return Ok(false);
-    }
-
-    // Check expiration
-    let expires_at_offset = is_active_offset - 8;
-    let expires_at = i64::from_le_bytes(
-        lock_data[expires_at_offset..expires_at_offset + 8]
-            .try_into()
-            .map_err(|_| error!(crate::GhostSpeakError::InvalidState))?,
-    );
-
+    // Check expiration using safe field access
     let clock = Clock::get()?;
-    let is_valid = clock.unix_timestamp <= expires_at;
+    let is_valid = clock.unix_timestamp <= lock_state.expires_at;
 
     Ok(is_valid)
 }

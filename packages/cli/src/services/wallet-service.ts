@@ -519,12 +519,30 @@ export class WalletService implements IWalletService {
   /**
    * Interface-compatible method: Sign transaction
    */
-  async signTransaction(signer: KeyPairSigner, _transaction: unknown): Promise<string> {
-    // In real implementation, this would sign the actual transaction
-    // For now, return a mock signature
-    const signature = `${signer.address.toString().substring(0, 8)}...signed`
-    console.log(`Transaction signed: ${signature}`)
-    return signature
+  async signTransaction(signer: KeyPairSigner, transaction: unknown): Promise<string> {
+    try {
+      // Import necessary types and functions
+      const { signTransaction: signTransactionKit } = await import('@solana/kit')
+      
+      // Use the transaction directly - types will be checked at import time
+      const tx = transaction
+      
+      // Sign the transaction using @solana/kit
+      const signedTransaction = await signTransactionKit([signer], tx)
+      
+      // Extract the signature from the signed transaction
+      // The first signature is from our signer
+      if (signedTransaction.signatures && signedTransaction.signatures.length > 0) {
+        const signature = signedTransaction.signatures[0]
+        console.log(`✅ Transaction signed by ${signer.address.toString()}`)
+        return signature.toString()
+      } else {
+        throw new Error('No signature found in signed transaction')
+      }
+    } catch (error) {
+      console.error('Failed to sign transaction:', error)
+      throw new Error(`Transaction signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   /**

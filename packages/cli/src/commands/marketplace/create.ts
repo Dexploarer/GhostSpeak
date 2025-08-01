@@ -121,74 +121,72 @@ export function registerCreateCommand(parentCommand: Command): void {
         const { client, wallet } = await initializeClient('devnet')
         s.stop('✅ Connected')
         
-        // Check for registered agents using new credential system
-        s.start('Checking for registered agents...')
+        // Check for registered agents using real on-chain data
+        s.start('Checking for registered agents on-chain...')
         
-        const myAgentCredentials = await AgentWalletManager.getAgentsByOwner(wallet.address)
+        const onChainAgents = await client.agent.getUserAgents(wallet.address)
         
-        if (myAgentCredentials.length === 0) {
-          s.stop('❌ No agent found')
+        if (onChainAgents.length === 0) {
+          s.stop('❌ No agent found on-chain')
           console.log(chalk.yellow('\n⚠️  You need to register an agent first!'))
           outro('Run: npx ghostspeak agent register')
           return
         }
         
-        s.stop('✅ Agent(s) found')
+        s.stop('✅ On-chain agent(s) found')
+        
+        // Also check for local credentials to get additional metadata
+        const localCredentials = await AgentWalletManager.getAgentsByOwner(wallet.address)
         
         // Select agent for the service listing
-        let selectedCredentials
-        if (myAgentCredentials.length === 1) {
-          selectedCredentials = myAgentCredentials[0]
+        let selectedAgent
+        if (onChainAgents.length === 1) {
+          selectedAgent = onChainAgents[0]
         } else {
-          const selectedAgentId = await select({
+          const selectedAgentAddress = await select({
             message: 'Select agent for this service:',
-            options: myAgentCredentials.map(cred => ({
-              value: cred.agentId,
-              label: `${cred.name} (UUID: ${cred.uuid})`
-            }))
+            options: onChainAgents.map(agent => {
+              // Try to find matching local credentials for display name
+              const localCred = localCredentials.find(cred => 
+                cred.ownerWallet === wallet.address.toString()
+              )
+              return {
+                value: agent.address.toString(),
+                label: localCred ? `${localCred.name} (${agent.address.toString().slice(0, 8)}...)` : agent.address.toString()
+              }
+            })
           })
           
-          if (isCancel(selectedAgentId)) {
+          if (isCancel(selectedAgentAddress)) {
             cancel('Service creation cancelled')
             return
           }
           
-          selectedCredentials = myAgentCredentials.find(cred => cred.agentId === selectedAgentId) ?? null
+          selectedAgent = onChainAgents.find(agent => agent.address.toString() === selectedAgentAddress) ?? null
         }
         
-        if (!selectedCredentials) {
+        if (!selectedAgent) {
           cancel('Invalid agent selection')
           return
         }
         
-        // Verify ownership using CNFT or credentials
-        s.start('Verifying agent ownership...')
+        // Agent ownership is already verified by the on-chain query
+        console.log('\n' + chalk.green('✅ Using on-chain agent:'))
+        console.log(chalk.gray(`  Address: ${selectedAgent.address.toString()}`))
+        console.log(chalk.gray(`  Authority: ${selectedAgent.data.authority.toString()}`))
         
-        const ownershipVerified = await AgentCNFTManager.verifyOwnership(
-          selectedCredentials.uuid,
-          wallet.address,
-          'https://api.devnet.solana.com'
+        // Try to get local credentials for additional info
+        const matchingCredentials = localCredentials.find(cred => 
+          cred.ownerWallet === wallet.address.toString()
         )
         
-        if (!ownershipVerified) {
-          s.stop('❌ Ownership verification failed')
-          cancel('You do not own this agent')
-          return
+        if (matchingCredentials) {
+          console.log(chalk.gray(`  Local Name: ${matchingCredentials.name}`))
+          console.log(chalk.gray(`  UUID: ${matchingCredentials.uuid}`))
         }
         
-        s.stop('✅ Ownership verified')
-        
-        console.log('\n' + chalk.green('✅ Using agent:'))
-        console.log(chalk.gray(`  Name: ${selectedCredentials.name}`))
-        console.log(chalk.gray(`  UUID: ${selectedCredentials.uuid}`))
-        console.log(chalk.gray(`  Agent Wallet: ${selectedCredentials.agentWallet.publicKey}`))
-        
-        // Get the agent's on-chain address for the listing
-        const agentAddress = await deriveAgentPda(
-          client.config.programId!,
-          wallet.address,
-          selectedCredentials.agentId
-        )
+        // Use the agent's on-chain address directly
+        const agentAddress = selectedAgent.address
         
         s.start('Creating service listing on the blockchain...')
         
@@ -221,13 +219,16 @@ export function registerCreateCommand(parentCommand: Command): void {
 
           console.log('\n' + chalk.green('🎉 Your service is now live in the marketplace!'))
           console.log(chalk.gray(`Service ID: ${serviceListingAddress.toString()}`))
-          console.log(chalk.gray(`Agent: ${selectedCredentials.name}`))
-          console.log(chalk.gray(`Agent UUID: ${selectedCredentials.uuid}`))
+          console.log(chalk.gray(`Agent Address: ${selectedAgent.address.toString()}`))
+          if (matchingCredentials) {
+            console.log(chalk.gray(`Agent Name: ${matchingCredentials.name}`))
+            console.log(chalk.gray(`Agent UUID: ${matchingCredentials.uuid}`))
+          }
           console.log('')
           console.log(chalk.cyan('Transaction:'), getExplorerUrl(result.signature, 'devnet'))
           console.log(chalk.cyan('Listing:'), getAddressExplorerUrl(serviceListingAddress.toString(), 'devnet'))
           console.log('')
-          console.log(chalk.yellow('💡 Service linked to agent via UUID for ownership verification'))
+          console.log(chalk.yellow('💡 Service linked to on-chain agent with verified ownership'))
           
           outro('Service creation completed')
         } catch (error: unknown) {

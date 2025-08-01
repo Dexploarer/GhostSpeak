@@ -12,57 +12,22 @@ use crate::*;
 // Enhanced optimization utilities with 2025 performance patterns
 
 /// Comprehensive input validation for agent registration
-/// Prevents injection attacks, enforces length limits, and validates formats
+/// Uses centralized validation helpers for consistency
 fn validate_agent_registration_inputs(
     agent_type: u8,
+    name: &str,
+    description: &str,
     metadata_uri: &str,
     agent_id: &str,
 ) -> Result<()> {
-    // Validate agent type range
-    require!(
-        agent_type <= 10,
-        GhostSpeakError::InvalidConfiguration
-    );
-    
-    // Validate agent_id
-    require!(
-        !agent_id.is_empty(),
-        GhostSpeakError::InvalidInput
-    );
-    require!(
-        agent_id.len() <= 64,
-        GhostSpeakError::InputTooLong
-    );
-    // Alphanumeric and underscore only
-    require!(
-        agent_id.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-'),
-        GhostSpeakError::InvalidInputFormat
-    );
-    
-    // Validate metadata_uri
-    require!(
-        !metadata_uri.is_empty(),
-        GhostSpeakError::InvalidMetadataUri
-    );
-    require!(
-        metadata_uri.len() <= MAX_URL_LENGTH,
-        GhostSpeakError::MetadataUriTooLong
-    );
-    // Basic URL format validation
-    require!(
-        metadata_uri.starts_with("https://") || metadata_uri.starts_with("ipfs://"),
-        GhostSpeakError::InvalidServiceEndpoint
-    );
-    // Prevent malicious URLs
-    require!(
-        !metadata_uri.contains("..") && 
-        !metadata_uri.contains("<") && 
-        !metadata_uri.contains(">") &&
-        !metadata_uri.contains("javascript:"),
-        GhostSpeakError::InvalidInputFormat
-    );
-    
-    Ok(())
+    // Use centralized validation to eliminate code duplication
+    crate::utils::validate_agent_inputs(
+        agent_type,
+        name,
+        description,
+        metadata_uri,
+        agent_id,
+    )
 }
 
 /// Enhanced agent registration with 2025 security patterns
@@ -241,6 +206,8 @@ pub struct VerifyAgent<'info> {
 pub fn register_agent(
     ctx: Context<RegisterAgent>,
     agent_type: u8,
+    name: String,
+    description: String,
     metadata_uri: String,
     _agent_id: String,
 ) -> Result<()> {
@@ -250,8 +217,8 @@ pub fn register_agent(
         let user_registry = &mut ctx.accounts.user_registry;
         let clock = Clock::get()?;
 
-        // SECURITY: Comprehensive input validation
-        validate_agent_registration_inputs(agent_type, &metadata_uri, &_agent_id)?;
+        // SECURITY: Comprehensive input validation using centralized helpers
+        validate_agent_registration_inputs(agent_type, &name, &description, &metadata_uri, &_agent_id)?;
 
         // Initialize user registry if needed
         if user_registry.user == Pubkey::default() {
@@ -268,14 +235,13 @@ pub fn register_agent(
             user_registry.bump = ctx.bumps.user_registry;
         }
 
-        // SECURITY FIX: Check resource limits
-        user_registry.increment_agents()?;
-        user_registry.check_rate_limit(clock.unix_timestamp)?;
+        // SECURITY FIX: Atomic rate limit check and agent increment to prevent race conditions
+        user_registry.increment_agents_with_rate_limit_check(clock.unix_timestamp)?;
 
-        // Initialize agent account with minimal heap allocation
+        // Initialize agent account with validated inputs
         agent.owner = ctx.accounts.signer.key();
-        agent.name = "Agent".to_string(); // Use small fixed string instead of empty
-        agent.description = "Registered agent".to_string();
+        agent.name = name.clone();
+        agent.description = description.clone();
         agent.capabilities = vec!["general".to_string()]; // Single capability to avoid empty vec
         agent.pricing_model = crate::PricingModel::Fixed;
         agent.reputation_score = 0;
@@ -302,11 +268,11 @@ pub fn register_agent(
         agent.generation = 0;
         agent.bump = ctx.bumps.agent_account;
 
-        // Emit optimized event with essential data (avoid clone)
+        // Emit optimized event with essential data
         emit!(crate::AgentRegisteredEvent {
             agent: agent.key(),
             owner: agent.owner,
-            name: "Agent".to_string(), // Use fixed string instead of clone
+            name: name, // Use actual validated name
             timestamp: clock.unix_timestamp,
         });
 
@@ -333,6 +299,8 @@ pub fn register_agent(
 pub fn update_agent(
     ctx: Context<UpdateAgent>,
     _agent_type: u8,
+    name: Option<String>,
+    description: Option<String>, 
     metadata_uri: String,
     _agent_id: String,
 ) -> Result<()> {
@@ -341,25 +309,36 @@ pub fn update_agent(
         let agent = &mut ctx.accounts.agent_account;
         let clock = Clock::get()?;
 
-        // SECURITY: Enhanced input validation
-        require!(
-            metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
-            GhostSpeakError::InputTooLong
-        );
+        // SECURITY: Enhanced input validation using centralized helpers
+        crate::utils::validate_url(&metadata_uri)?;
+        
+        if let Some(ref name_val) = name {
+            crate::utils::validate_string_input(name_val, "name", MAX_NAME_LENGTH, false, false)?;
+        }
+        
+        if let Some(ref desc_val) = description {
+            crate::utils::validate_string_input(desc_val, "description", MAX_DESCRIPTION_LENGTH, false, true)?;
+        }
 
         // SECURITY: Prevent too frequent updates (rate limiting)
-        let time_since_last_update = clock
-            .unix_timestamp
-            .checked_sub(agent.updated_at)
-            .ok_or(GhostSpeakError::ArithmeticUnderflow)?;
+        crate::utils::validate_rate_limit(
+            clock.unix_timestamp,
+            agent.updated_at,
+            300, // 5 minutes minimum between updates
+        )?;
 
-        require!(
-            time_since_last_update >= 300, // 5 minutes minimum between updates
-            GhostSpeakError::UpdateFrequencyTooHigh
-        );
-
-        // Update agent metadata with memory optimization
+        // Update agent metadata and optional fields
         agent.metadata_uri = metadata_uri;
+        
+        // Update optional fields if provided
+        if let Some(name_val) = name {
+            agent.name = name_val;
+        }
+        
+        if let Some(desc_val) = description {
+            agent.description = desc_val;
+        }
+        
         agent.updated_at = clock.unix_timestamp;
 
         // Emit update event
@@ -388,15 +367,17 @@ pub fn verify_agent(
     let agent_verification = &mut ctx.accounts.agent_verification;
     let clock = Clock::get()?;
 
-    // Validate input
-    require!(
-        service_endpoint.len() <= 256,
-        GhostSpeakError::MessageTooLong
-    );
-    require!(
-        supported_capabilities.len() <= MAX_CAPABILITIES_COUNT,
-        GhostSpeakError::InvalidServiceConfiguration
-    );
+    // SECURITY: Enhanced input validation using centralized helpers
+    crate::utils::validate_url(&service_endpoint)?;
+    
+    crate::utils::validate_collection_size(
+        supported_capabilities.len(),
+        MAX_CAPABILITIES_COUNT,
+        "capabilities"
+    )?;
+    
+    // Validate timestamp is not too far in the future (max 1 day ahead)
+    crate::utils::validate_timestamp(verified_at, 0, 86400)?;
 
     // Initialize verification account
     agent_verification.agent = agent_pubkey;
@@ -443,11 +424,15 @@ pub fn update_agent_reputation(
 ) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
 
-    // SECURITY: Ensure reputation score fits in u32 and is within valid range
-    require!(
-        reputation_score <= 100,
-        GhostSpeakError::InvalidReputationScore
-    );
+    // SECURITY: Use centralized validation for reputation score (0-100 scale)
+    crate::utils::validate_numeric_range(
+        reputation_score,
+        0u64,
+        100u64, 
+        "reputation"
+    )?;
+    
+    // Additional validation to ensure it fits in u32
     require!(
         reputation_score <= u32::MAX as u64,
         GhostSpeakError::ValueExceedsMaximum

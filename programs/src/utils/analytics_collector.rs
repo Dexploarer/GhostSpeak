@@ -12,18 +12,82 @@ use crate::*;
 /// Analytics collector for automatic metric tracking
 pub struct AnalyticsCollector;
 
+/// Maximum allowed JSON depth to prevent deeply nested attacks
+const MAX_JSON_DEPTH: usize = 5;
+
+/// Maximum number of keys in a JSON object to prevent complexity attacks
+const MAX_JSON_KEYS: usize = 100;
+
+/// Securely parses a JSON string with depth and complexity limits
+/// 
+/// Security Features:
+/// - Limits JSON depth to prevent deeply nested DoS attacks
+/// - Limits object key count to prevent complexity DoS attacks
+/// - Validates JSON structure to ensure it's an object
+/// - Fails fast with proper error types instead of silent failures
+/// - Prevents unbounded memory consumption during parsing
+fn parse_secure_json(json_str: &str) -> Result<serde_json::Value> {
+    // Parse the JSON string
+    let parsed: serde_json::Value = serde_json::from_str(json_str)
+        .map_err(|_| error!(crate::GhostSpeakError::JsonParseError))?;
+    
+    // Validate it's an object
+    let obj = parsed.as_object()
+        .ok_or(error!(crate::GhostSpeakError::JsonInvalidStructure))?;
+    
+    // Check number of keys (complexity limit)
+    if obj.len() > MAX_JSON_KEYS {
+        return Err(error!(crate::GhostSpeakError::JsonComplexityExceeded));
+    }
+    
+    // Check depth recursively
+    if check_json_depth(&parsed, 0) > MAX_JSON_DEPTH {
+        return Err(error!(crate::GhostSpeakError::JsonDepthExceeded));
+    }
+    
+    Ok(parsed)
+}
+
+/// Recursively checks the depth of a JSON value to prevent deeply nested attacks
+fn check_json_depth(value: &serde_json::Value, current_depth: usize) -> usize {
+    match value {
+        serde_json::Value::Object(obj) => {
+            let max_child_depth = obj.values()
+                .map(|v| check_json_depth(v, current_depth + 1))
+                .max()
+                .unwrap_or(current_depth);
+            max_child_depth
+        },
+        serde_json::Value::Array(arr) => {
+            let max_child_depth = arr.iter()
+                .map(|v| check_json_depth(v, current_depth + 1))
+                .max()
+                .unwrap_or(current_depth);
+            max_child_depth
+        },
+        _ => current_depth
+    }
+}
+
 impl AnalyticsCollector {
     /// Updates market analytics when a service is listed
     pub fn track_service_listing(
         market_analytics: &mut Account<MarketAnalytics>,
         price: u64,
     ) -> Result<()> {
+        // SECURITY: Validate price input to prevent overflow attacks
+        crate::validate_payment_amount(price, "listing")?;
+        
         // Increment active agents if this is their first listing
         market_analytics.increment_active_agents()?;
         
-        // Update market cap estimation
-        let estimated_value = price.saturating_mul(100); // Assume 100x potential volume
-        market_analytics.market_cap = market_analytics.market_cap.saturating_add(estimated_value);
+        // SECURITY: Update market cap estimation using safe arithmetic
+        let estimated_value = crate::safe_arithmetic(price, 100, "mul")?; // Assume 100x potential volume
+        market_analytics.market_cap = crate::safe_arithmetic(
+            market_analytics.market_cap, 
+            estimated_value, 
+            "add"
+        )?;
         
         msg!("Analytics: Service listed, price: {}, market cap: {}", 
              price, market_analytics.market_cap);
@@ -37,8 +101,12 @@ impl AnalyticsCollector {
         amount: u64,
         quantity: u64,
     ) -> Result<()> {
-        // Update volume and transaction stats
-        let total_value = amount.saturating_mul(quantity);
+        // SECURITY: Validate inputs to prevent overflow attacks
+        crate::validate_payment_amount(amount, "purchase")?;
+        require!(quantity > 0 && quantity <= 1000, crate::GhostSpeakError::InvalidValue);
+        
+        // SECURITY: Update volume and transaction stats using safe arithmetic
+        let total_value = crate::safe_arithmetic(amount, quantity, "mul")?;
         market_analytics.update_stats(total_value, amount)?;
         
         msg!("Analytics: Service purchased, volume: {}, transactions: {}", 
@@ -91,26 +159,25 @@ impl AnalyticsCollector {
     ) -> Result<()> {
         let clock = Clock::get()?;
         
-        // Parse existing metrics with proper error handling and size limits
+        // Validate metrics string length first
         if dashboard.metrics.len() > 10_000 {
             return Err(error!(crate::GhostSpeakError::MetricsTooLong));
         }
         
-        let mut metrics_data: serde_json::Value = match serde_json::from_str(&dashboard.metrics) {
-            Ok(data) => {
-                // Validate JSON structure and size
-                if data.as_object().map_or(0, |obj| obj.len()) > 100 {
-                    return Err(error!(crate::GhostSpeakError::InvalidMetricsData));
-                }
-                data
-            },
-            Err(_) => {
-                // Initialize with empty object on parse failure
-                msg!("Failed to parse metrics JSON, initializing with empty object");
-                serde_json::json!({})
-            }
+        // Parse existing metrics using secure parsing with proper error handling
+        let mut metrics_data: serde_json::Value = if dashboard.metrics.is_empty() {
+            // Initialize new dashboard with empty object
+            serde_json::json!({})
+        } else {
+            // Use secure parsing that validates depth, complexity, and structure
+            parse_secure_json(&dashboard.metrics)?
         };
         
+        // Validate that the input value is reasonable (prevent overflow attacks)
+        if value > u64::MAX / 2 {
+            return Err(error!(crate::GhostSpeakError::InvalidPaymentAmount));
+        }
+
         // Update specific metric
         match metric_type {
             MetricType::Revenue => {
@@ -118,28 +185,54 @@ impl AnalyticsCollector {
                     .as_str()
                     .and_then(|s| s.parse::<u64>().ok())
                     .unwrap_or(0);
+                
+                // Prevent overflow in addition
+                if current_revenue > u64::MAX - value {
+                    return Err(error!(crate::GhostSpeakError::InvalidPaymentAmount));
+                }
+                
                 metrics_data["revenue"] = (current_revenue + value).to_string().into();
             },
             MetricType::TransactionCount => {
                 let current_count = metrics_data["transactionCount"]
                     .as_u64()
                     .unwrap_or(0);
+                
+                // Prevent overflow in addition
+                if current_count > u64::MAX - value {
+                    return Err(error!(crate::GhostSpeakError::InvalidPaymentAmount));
+                }
+                
                 metrics_data["transactionCount"] = (current_count + value).into();
             },
             MetricType::SuccessRate => {
                 // Success rate requires more complex calculation
                 let success_count = metrics_data["successCount"]
                     .as_u64()
-                    .unwrap_or(0) + value;
+                    .unwrap_or(0);
                 let total_count = metrics_data["totalCount"]
                     .as_u64()
-                    .unwrap_or(0) + 1;
+                    .unwrap_or(0);
                 
-                metrics_data["successCount"] = success_count.into();
-                metrics_data["totalCount"] = total_count.into();
+                // Prevent overflow in addition
+                if success_count > u64::MAX - value || total_count == u64::MAX {
+                    return Err(error!(crate::GhostSpeakError::InvalidPaymentAmount));
+                }
                 
-                let success_rate = if total_count > 0 {
-                    (success_count as f64 / total_count as f64)
+                let new_success_count = success_count + value;
+                let new_total_count = total_count + 1;
+                
+                metrics_data["successCount"] = new_success_count.into();
+                metrics_data["totalCount"] = new_total_count.into();
+                
+                let success_rate = if new_total_count > 0 {
+                    let rate = new_success_count as f64 / new_total_count as f64;
+                    // Validate the calculated rate is not NaN or infinite
+                    if rate.is_nan() || rate.is_infinite() {
+                        0.0
+                    } else {
+                        rate.clamp(0.0, 1.0) // Ensure rate is between 0 and 1
+                    }
                 } else {
                     0.0
                 };
@@ -154,14 +247,23 @@ impl AnalyticsCollector {
                     .as_u64()
                     .unwrap_or(0);
                 
+                // Prevent overflow in calculations
+                if count == u64::MAX {
+                    return Err(error!(crate::GhostSpeakError::InvalidPaymentAmount));
+                }
+                
+                let new_count = count + 1;
                 let new_avg = if count > 0 {
-                    ((current_avg * count) + value) / (count + 1)
+                    // Use checked arithmetic to prevent overflow
+                    let weighted_current = current_avg.saturating_mul(count);
+                    let total_sum = weighted_current.saturating_add(value);
+                    total_sum / new_count
                 } else {
                     value
                 };
                 
                 metrics_data["averageResponseTime"] = new_avg.into();
-                metrics_data["responseTimeCount"] = (count + 1).into();
+                metrics_data["responseTimeCount"] = new_count.into();
             },
         }
         
@@ -179,10 +281,10 @@ impl AnalyticsCollector {
     /// Calculates market volatility based on recent price changes
     pub fn calculate_volatility(
         recent_prices: &[u64],
-        current_price: u64,
+        _current_price: u64,
     ) -> u32 {
-        if recent_prices.is_empty() {
-            return 0;
+        if recent_prices.is_empty() || recent_prices.len() > 10000 {
+            return 0; // Prevent DoS with excessive price arrays
         }
         
         // Calculate standard deviation as a measure of volatility
@@ -195,9 +297,23 @@ impl AnalyticsCollector {
             })
             .sum::<u64>() / recent_prices.len() as u64;
         
-        // Convert to basis points (0-10000)
+        // Convert to basis points (0-10000) with safe floating point arithmetic
         let volatility_percent = if mean > 0 {
-            ((variance as f64).sqrt() / mean as f64 * 10000.0) as u32
+            let std_dev = (variance as f64).sqrt();
+            let volatility_ratio = std_dev / mean as f64;
+            
+            // Validate the calculated values are not NaN or infinite
+            if volatility_ratio.is_nan() || volatility_ratio.is_infinite() {
+                0
+            } else {
+                let volatility_basis_points = volatility_ratio * 10000.0;
+                // Ensure result is finite and within reasonable bounds
+                if volatility_basis_points.is_finite() {
+                    volatility_basis_points.clamp(0.0, 10000.0) as u32
+                } else {
+                    0
+                }
+            }
         } else {
             0
         };

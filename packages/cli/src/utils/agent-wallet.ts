@@ -562,32 +562,51 @@ export class AgentCNFTManager {
   }
   
   /**
-   * Verify ownership of agent via CNFT
+   * Verify ownership of agent via CNFT with proper error handling
    */
   static async verifyOwnership(
     agentUuid: string,
     ownerWallet: Address,
-    _rpcUrl: string
+    rpcUrl: string
   ): Promise<boolean> {
-    // rpcUrl parameter will be used in future implementation
     const credentials = await AgentWalletManager.loadCredentialsByUuid(agentUuid)
-    if (!credentials) return false
-    
-    // Check if owner wallet matches
-    if (credentials.ownerWallet !== ownerWallet.toString()) return false
-    
-    // If no CNFT minted yet, verify via credentials only
-    if (!credentials.cnftMint) {
-      return true
+    if (!credentials) {
+      console.warn(`No credentials found for agent UUID: ${agentUuid}`)
+      return false
     }
     
-    // Implement CNFT ownership verification using DAS API
+    // Check if owner wallet matches credentials
+    if (credentials.ownerWallet !== ownerWallet.toString()) {
+      console.warn(`Owner wallet mismatch for agent ${agentUuid}`)
+      return false
+    }
+    
+    // If no CNFT minted yet, credential verification is sufficient for development
+    // In production, all agents should have CNFTs
+    if (!credentials.cnftMint) {
+      console.warn(`Agent ${agentUuid} has no CNFT - using credential-only verification`)
+      // Only allow this in development environments
+      const isDevelopment = rpcUrl.includes('devnet') || rpcUrl.includes('localhost')
+      return isDevelopment
+    }
+    
+    // Implement real CNFT ownership verification using DAS API
     try {
       const cnftAssetId = credentials.cnftMint
       
-      // Use a DAS API endpoint (e.g., Helius) to verify ownership
-      // Note: In production, use environment variable for API key
-      const dasApiUrl = process.env.DAS_API_URL ?? 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY'
+      // Get DAS API URL from environment or use default devnet endpoint
+      let dasApiUrl = process.env.DAS_API_URL
+      
+      if (!dasApiUrl || dasApiUrl.includes('YOUR_API_KEY')) {
+        // Use free public endpoint for devnet testing
+        if (rpcUrl.includes('devnet') || rpcUrl.includes('localhost')) {
+          dasApiUrl = 'https://api.devnet.solana.com'
+        } else {
+          throw new Error('DAS_API_URL environment variable must be set for mainnet')
+        }
+      }
+      
+      console.log(`Verifying CNFT ownership for asset: ${cnftAssetId}`)
       
       // Get asset details using DAS API getAsset method
       const response = await fetch(dasApiUrl, {
@@ -605,6 +624,10 @@ export class AgentCNFTManager {
         }),
       })
       
+      if (!response.ok) {
+        throw new Error(`DAS API request failed: ${response.status} ${response.statusText}`)
+      }
+      
       const data = await response.json() as DASApiResponse
       
       if (data.error) {
@@ -614,8 +637,9 @@ export class AgentCNFTManager {
       
       const asset = data.result
       
-      // Verify ownership
+      // Verify ownership structure exists
       if (!asset?.ownership) {
+        console.error('Asset has no ownership information')
         return false
       }
       
@@ -623,14 +647,27 @@ export class AgentCNFTManager {
       const currentOwner = asset.ownership.owner
       const expectedOwner = ownerWallet.toString()
       
-      // Also check for delegated authority if needed
-      const delegate = asset.ownership.delegate
+      console.log(`Asset owner: ${currentOwner}, Expected: ${expectedOwner}`)
       
-      return currentOwner === expectedOwner || (delegate !== undefined && delegate === expectedOwner)
+      // Check direct ownership
+      if (currentOwner === expectedOwner) {
+        return true
+      }
+      
+      // Check for delegated authority if needed
+      const delegate = asset.ownership.delegate
+      if (delegate && delegate === expectedOwner) {
+        console.log('Ownership verified via delegation')
+        return true
+      }
+      
+      console.warn(`Ownership verification failed. Current owner: ${currentOwner}`)
+      return false
+      
     } catch (error) {
       console.error('Failed to verify CNFT ownership:', error)
-      // Fallback to credential-based verification on error
-      return true
+      // Do NOT fallback to true on error - this is a security risk
+      return false
     }
   }
 }

@@ -204,11 +204,10 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   console.log('🔍 [DEBUG] GHOSTSPEAK_PROGRAM_ID fallback:', GHOSTSPEAK_PROGRAM_ID)
   
   // Cast to ExtendedRpcApi - the Solana RPC does support all these methods  
-  // Use unknown and cast for the RPC client since we know the Solana RPC supports all required methods
-  const extendedRpc = rpc as unknown
+  // Use the proper typed casting function instead of unsafe 'any' casting
+  const extendedRpc = rpc as import('@ghostspeak/sdk').ExtendedRpcApi
   const client = new GhostSpeakClient({
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    rpc: extendedRpc as any,
+    rpc: extendedRpc,
     programId: address(programId),
     commitment: 'confirmed'
   })

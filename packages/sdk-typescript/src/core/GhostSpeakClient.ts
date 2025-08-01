@@ -8,7 +8,43 @@ import { ChannelModule } from '../modules/channels/ChannelModule.js'
 import { MarketplaceModule } from '../modules/marketplace/MarketplaceModule.js'
 import { GovernanceModule } from '../modules/governance/GovernanceModule.js'
 import { Token2022Module } from '../modules/token2022/Token2022Module.js'
-import { H2AModule } from '../modules/h2a/H2AModule.js'
+// H2A Module removed - stub for compatibility
+class H2AModule {
+  constructor(config: any) {}
+  debug() { return this }
+  async createSession(params: any) { 
+    console.warn('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.')
+    return null 
+  }
+  async sendMessage(session: any, params: any) { 
+    console.warn('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.')
+    return null 
+  }
+  async updateStatus(params: any) { 
+    console.warn('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.')
+    return null 
+  }
+  async humanHireAgent(...args: any[]) { 
+    console.warn('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.')
+    return null 
+  }
+  async getSessions(participant: any) { 
+    console.warn('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.')
+    return [] 
+  }
+  async getMessages(session: any) { 
+    console.warn('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.')
+    return [] 
+  }
+  async findProviders(...args: any[]) { 
+    console.warn('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.')
+    return [] 
+  }
+  getProgramId() { return 'F3qAjuzkNTbDL6wtZv4wGyHUi66j7uM2uRCDXWJ3Bg87' as Address }
+  getCost() { return Promise.resolve(BigInt(0)) }
+  explain() { return Promise.resolve('H2A module has been deprecated. Use A2A (Agent-to-Agent) instructions instead.') }
+  simulateInstruction() { return Promise.resolve({}) }
+}
 import { ChannelType } from '../generated/types/channelType.js'
 import type { AccountState } from '../generated/types/accountState.js'
 
@@ -265,14 +301,19 @@ class AgentBuilder {
       metadataUri: this.params.metadataUri!,
       agentId: this.params.agentId!
     })
-    const address = this.deriveAgentAddress(this.params.agentId!)
+    const address = await this.deriveAgentAddress(this.params.agentId!, this.params.signer!)
     
     return { address, signature }
   }
 
-  private deriveAgentAddress(agentId: string): Address {
-    // Placeholder - would use real PDA derivation
-    return `agent_${agentId}` as Address
+  private async deriveAgentAddress(agentId: string, signer: TransactionSigner): Promise<Address> {
+    const { deriveAgentPda } = await import('../utils/pda.js')
+    const [address] = await deriveAgentPda({ 
+      programAddress: this.module.getProgramId(), 
+      owner: signer.address, 
+      agentId 
+    })
+    return address
   }
 }
 
@@ -369,14 +410,22 @@ class EscrowBuilder {
       description: this.params.description ?? '',
       milestones: this.params.milestones
     })
-    const address = this.deriveEscrowAddress()
+    // Generate a unique escrow ID
+    const escrowId = `${Date.now()}_${Math.random().toString(36).substring(7)}`
+    const address = await this.deriveEscrowAddress(escrowId)
     
     return { address, signature }
   }
 
-  private deriveEscrowAddress(): Address {
-    // Placeholder - would use real PDA derivation
-    return `escrow_${this.params.buyer}_${this.params.seller}` as Address
+  private async deriveEscrowAddress(escrowId: string): Promise<Address> {
+    const { deriveEscrowPDA } = await import('../utils/pda.js')
+    const [address] = await deriveEscrowPDA({
+      client: this.params.buyer!,
+      provider: this.params.seller!,
+      escrowId,
+      programAddress: this.module.getProgramId()
+    })
+    return address
   }
 }
 
@@ -468,14 +517,20 @@ class ChannelBuilder {
       isPrivate: this.params.isPrivate,
       maxMembers: this.params.maxMembers
     })
-    const address = this.deriveChannelAddress()
+    // Generate a unique channel ID
+    const channelId = `${this.params.name}_${Date.now()}`
+    const address = await this.deriveChannelAddress(channelId)
     
     return { address, signature }
   }
 
-  private deriveChannelAddress(): Address {
-    // Placeholder - would use real PDA derivation
-    return `channel_${this.params.name}` as Address
+  private async deriveChannelAddress(channelId: string): Promise<Address> {
+    const { deriveChannelPda } = await import('../utils/pda.js')
+    const address = await deriveChannelPda(
+      this.module.getProgramId(),
+      channelId
+    )
+    return address
   }
 }
 

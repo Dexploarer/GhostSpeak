@@ -16,7 +16,7 @@ use spl_token_2022::extension::{BaseStateWithExtensions, StateWithExtensions};
 use crate::security::ReentrancyGuard;
 use crate::state::{
     escrow::{Escrow, EscrowStatus, Payment},
-    Agent, MAX_PAYMENT_AMOUNT, MIN_PAYMENT_AMOUNT,
+    Agent,
 };
 use crate::{GhostSpeakError, PaymentProcessedEvent};
 
@@ -151,8 +151,16 @@ pub struct ProcessEscrowPayment<'info> {
     #[account(
         mut,
         constraint = escrow.status == EscrowStatus::Completed @ GhostSpeakError::InvalidEscrowStatus,
+        constraint = escrow.client == authority.key() @ GhostSpeakError::UnauthorizedAccess,
     )]
     pub escrow: Account<'info, Escrow>,
+
+    #[account(
+        constraint = agent.owner == recipient.key() @ GhostSpeakError::UnauthorizedAccess,
+        constraint = agent.is_active @ GhostSpeakError::AgentNotActive,
+        constraint = agent.key() == escrow.agent @ GhostSpeakError::AgentNotFound,
+    )]
+    pub agent: Account<'info, Agent>,
 
     #[account(
         mut,
@@ -175,8 +183,10 @@ pub struct ProcessEscrowPayment<'info> {
     )]
     pub recipient_token_account: Account<'info, TokenAccount>,
 
-    /// CHECK: Recipient will be verified against escrow.agent
-    pub recipient: UncheckedAccount<'info>,
+    #[account(
+        constraint = recipient.key() == escrow.agent @ GhostSpeakError::UnauthorizedAccess,
+    )]
+    pub recipient: Signer<'info>,
 
     pub payment_token: Account<'info, Mint>,
     #[account(mut)]
@@ -322,12 +332,24 @@ pub struct ProcessPartialRefund<'info> {
 // HELPER FUNCTIONS
 // =====================================================
 
-/// Calculates the actual amount to transfer, accounting for transfer fees
-/// Returns (amount_to_transfer, expected_fee)
+/// Calculates the total amount needed for transfer, accounting for transfer fees
+/// 
+/// For Token-2022 mints with transfer fees:
+/// - Calculates the fee based on current epoch and desired transfer amount
+/// - Returns the TOTAL amount to transfer (transfer_amount + fee) to ensure
+///   the recipient receives exactly 'transfer_amount' after fees are deducted
+/// 
+/// For regular SPL tokens or Token-2022 without fees:
+/// - Returns the original transfer amount with zero fee
+/// 
+/// Returns (total_amount_needed, calculated_fee)
 fn calculate_transfer_amount_with_fee(
     mint_account: &AccountInfo,
     transfer_amount: u64,
 ) -> Result<(u64, u64)> {
+    // SECURITY: Validate transfer amount to prevent overflow attacks
+    crate::utils::validate_payment_amount(transfer_amount, "transfer")?;
+    
     // Try to read the mint as Token-2022 with extensions
     let mint_data = mint_account.try_borrow_data()?;
     
@@ -337,13 +359,35 @@ fn calculate_transfer_amount_with_fee(
             let epoch = Clock::get()?.epoch;
             let fee = transfer_fee_config.calculate_epoch_fee(epoch, transfer_amount).unwrap_or(0);
             
-            // For transfers, we need to send amount + fee to ensure recipient gets exact amount
-            return Ok((transfer_amount, fee));
+            // Calculate total amount needed: base amount + fee using safe arithmetic
+            let total_amount = crate::utils::safe_arithmetic(transfer_amount, fee, "add")?;
+            
+            return Ok((total_amount, fee));
         }
     }
     
-    // No transfer fee
+    // No transfer fee - return original amount
     Ok((transfer_amount, 0))
+}
+
+/// Validates token account relationships for escrow operations
+/// Reduces code duplication across multiple escrow functions
+fn validate_token_accounts(
+    escrow_token_account_mint: &Pubkey,
+    client_token_account_mint: &Pubkey,
+    expected_payment_token: &Pubkey,
+) -> Result<()> {
+    require!(
+        escrow_token_account_mint == expected_payment_token,
+        GhostSpeakError::InvalidConfiguration
+    );
+    
+    require!(
+        client_token_account_mint == expected_payment_token,
+        GhostSpeakError::InvalidConfiguration
+    );
+    
+    Ok(())
 }
 
 /// Performs a transfer with proper fee handling for Token-2022
@@ -460,22 +504,12 @@ pub fn create_escrow(
     // SECURITY: Apply reentrancy protection
     ctx.accounts.reentrancy_guard.lock()?;
 
-    // SECURITY: Validate input parameters
-    require!(
-        task_id.len() <= 64 && !task_id.is_empty(),
-        GhostSpeakError::InvalidTaskId
-    );
-
-    require!(
-        amount >= MIN_PAYMENT_AMOUNT && amount <= MAX_PAYMENT_AMOUNT,
-        GhostSpeakError::InvalidAmount
-    );
-
+    // SECURITY: Use centralized validation to eliminate code duplication
+    crate::utils::validate_string_input(&task_id, "task_id", 64, false, false)?;
+    crate::utils::validate_payment_amount(amount, "escrow")?;
+    
     let clock = Clock::get()?;
-    require!(
-        expires_at > clock.unix_timestamp + 3600, // At least 1 hour in future
-        GhostSpeakError::InvalidExpiration
-    );
+    crate::utils::validate_timestamp(expires_at, 3600, 2592000)?; // 1 hour min, 30 days max
 
     // Initialize escrow account
     let escrow = &mut ctx.accounts.escrow;
@@ -601,11 +635,8 @@ pub fn dispute_escrow(ctx: Context<DisputeEscrow>, dispute_reason: String) -> Re
     // SECURITY: Apply reentrancy protection
     ctx.accounts.reentrancy_guard.lock()?;
 
-    // Validate dispute reason length
-    require!(
-        !dispute_reason.is_empty() && dispute_reason.len() <= 256,
-        GhostSpeakError::InvalidInput
-    );
+    // SECURITY: Use centralized validation for dispute reason
+    crate::utils::validate_string_input(&dispute_reason, "dispute_reason", 256, false, true)?;
 
     // Dispute the escrow
     let escrow = &mut ctx.accounts.escrow;
@@ -647,13 +678,7 @@ pub fn process_escrow_payment(
 
     let escrow = &ctx.accounts.escrow;
 
-    // SECURITY: Verify recipient is the agent from escrow
-    require!(
-        ctx.accounts.recipient.key() == escrow.agent,
-        GhostSpeakError::UnauthorizedAccess
-    );
-
-    // SECURITY: Verify token accounts match escrow payment token
+    // SECURITY: Token account validation (recipient and escrow validation now handled by Anchor constraints)
     require!(
         ctx.accounts.escrow_token_account.mint == escrow.payment_token,
         GhostSpeakError::InvalidConfiguration
@@ -787,22 +812,15 @@ pub fn cancel_escrow(ctx: Context<CancelEscrow>, cancellation_reason: String) ->
     let escrow = &mut ctx.accounts.escrow;
     let clock = Clock::get()?;
 
-    // Validate cancellation reason length
-    require!(
-        !cancellation_reason.is_empty() && cancellation_reason.len() <= 256,
-        GhostSpeakError::InvalidInput
-    );
+    // SECURITY: Use centralized validation for cancellation reason
+    crate::utils::validate_string_input(&cancellation_reason, "cancellation_reason", 256, false, true)?;
 
-    // Verify token accounts match escrow payment token
-    require!(
-        ctx.accounts.escrow_token_account.mint == escrow.payment_token,
-        GhostSpeakError::InvalidConfiguration
-    );
-
-    require!(
-        ctx.accounts.client_refund_account.mint == escrow.payment_token,
-        GhostSpeakError::InvalidConfiguration
-    );
+    // SECURITY: Use helper function to validate token accounts (reduces code duplication)
+    validate_token_accounts(
+        &ctx.accounts.escrow_token_account.mint,
+        &ctx.accounts.client_refund_account.mint,
+        &escrow.payment_token
+    )?;
 
     // Store values we need
     let escrow_amount = escrow.amount;
@@ -878,16 +896,12 @@ pub fn refund_expired_escrow(ctx: Context<RefundExpiredEscrow>) -> Result<()> {
     let escrow = &mut ctx.accounts.escrow;
     let clock = Clock::get()?;
 
-    // Verify token accounts match escrow payment token
-    require!(
-        ctx.accounts.escrow_token_account.mint == escrow.payment_token,
-        GhostSpeakError::InvalidConfiguration
-    );
-
-    require!(
-        ctx.accounts.client_refund_account.mint == escrow.payment_token,
-        GhostSpeakError::InvalidConfiguration
-    );
+    // SECURITY: Use helper function to validate token accounts (reduces code duplication)
+    validate_token_accounts(
+        &ctx.accounts.escrow_token_account.mint,
+        &ctx.accounts.client_refund_account.mint,
+        &escrow.payment_token
+    )?;
 
     // Store values we need
     let escrow_amount = escrow.amount;
@@ -967,23 +981,16 @@ pub fn process_partial_refund(
     let escrow = &mut ctx.accounts.escrow;
     let clock = Clock::get()?;
 
-    // Validate percentage
-    require!(
-        client_refund_percentage <= 100,
-        GhostSpeakError::InvalidInput
-    );
-
-    // Verify token accounts match escrow payment token
-    require!(
-        ctx.accounts.escrow_token_account.mint == escrow.payment_token,
-        GhostSpeakError::InvalidConfiguration
-    );
-
-    require!(
-        ctx.accounts.client_refund_account.mint == escrow.payment_token,
-        GhostSpeakError::InvalidConfiguration
-    );
-
+    // SECURITY: Use centralized validation for percentage
+    crate::utils::validate_percentage(client_refund_percentage as u32 * 100, "refund")?; // Convert to basis points
+    
+    // SECURITY: Use helper function to validate token accounts (reduces code duplication)
+    validate_token_accounts(
+        &ctx.accounts.escrow_token_account.mint,
+        &ctx.accounts.client_refund_account.mint,
+        &escrow.payment_token
+    )?;
+    
     require!(
         ctx.accounts.agent_payment_account.mint == escrow.payment_token,
         GhostSpeakError::InvalidConfiguration
@@ -994,9 +1001,16 @@ pub fn process_partial_refund(
     let client_key = escrow.client;
     let agent_key = escrow.agent;
 
-    // Calculate refund amounts
-    let client_refund = (escrow.amount as u128 * client_refund_percentage as u128 / 100) as u64;
-    let agent_payment = escrow.amount - client_refund;
+    // SECURITY: Calculate refund amounts using safe arithmetic to prevent overflow
+    let client_refund = {
+        let percentage_amount = crate::utils::safe_arithmetic(
+            escrow.amount, 
+            client_refund_percentage as u64, 
+            "mul"
+        )?;
+        crate::utils::safe_arithmetic(percentage_amount, 100, "div")?
+    };
+    let agent_payment = crate::utils::safe_arithmetic(escrow.amount, client_refund, "sub")?;
 
     // Set up signer for escrow account
     let signer_seeds = &[b"escrow", escrow.task_id.as_bytes(), &[escrow.bump]];

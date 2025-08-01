@@ -17,6 +17,7 @@ import { disputeCommand } from './commands/dispute.js'
 import { governanceCommand } from './commands/governance.js'
 import { quickstartCommand } from './commands/quickstart.js'
 import { walletCommand } from './commands/wallet.js'
+import { deployCommand } from './commands/deploy.js'
 import { checkForUpdates } from './utils/update-check.js'
 import { InteractiveMenu, shouldRunInteractive } from './utils/interactive-menu.js'
 import { readFileSync, existsSync } from 'fs'
@@ -175,6 +176,7 @@ async function main() {
     program.addCommand(governanceCommand)  // Protocol governance
     
     // 5. Developer and maintenance tools
+    program.addCommand(deployCommand)       // Deploy program
     program.addCommand(sdkCommand)         // SDK management
     program.addCommand(updateCommand)      // CLI updates
 

@@ -123,6 +123,34 @@ impl UserRegistry {
         Ok(())
     }
 
+    /// Atomic operation that checks rate limit BEFORE incrementing agent count
+    /// This prevents race conditions where multiple transactions could bypass rate limits
+    /// by all incrementing before any check occurs.
+    pub fn increment_agents_with_rate_limit_check(&mut self, current_time: i64) -> Result<()> {
+        // SECURITY FIX: Check rate limit FIRST before making any state changes
+        if self.is_rate_limited && current_time < self.rate_limit_expiry {
+            return Err(crate::GhostSpeakError::RateLimitExceeded.into());
+        }
+
+        // Only proceed with increment if rate limit check passes
+        self.agent_count = self
+            .agent_count
+            .checked_add(1)
+            .ok_or(crate::GhostSpeakError::ArithmeticOverflow)?;
+
+        // Check max agents limit after increment to ensure consistency with original behavior
+        if self.agent_count > MAX_AGENTS_PER_USER {
+            // Rollback the increment if limit exceeded
+            self.agent_count = self.agent_count.saturating_sub(1);
+            return Err(crate::GhostSpeakError::TooManyCapabilities.into());
+        }
+
+        // Update last activity timestamp to complete the atomic operation
+        self.last_activity = current_time;
+
+        Ok(())
+    }
+
     pub fn apply_rate_limit(&mut self, current_time: i64, duration: i64) {
         self.is_rate_limited = true;
         self.rate_limit_expiry = current_time + duration;

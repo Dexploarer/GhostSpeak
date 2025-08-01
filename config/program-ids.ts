@@ -7,10 +7,10 @@ import type { Address } from '@solana/addresses';
 export type NetworkEnvironment = 'mainnet' | 'devnet' | 'testnet' | 'localnet';
 
 export const PROGRAM_IDS = {
-  mainnet: 'CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4' as Address,
-  devnet: 'CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4' as Address,
-  testnet: 'CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4' as Address,
-  localnet: 'CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4' as Address,
+  mainnet: 'F3qAjuzkNTbDL6wtZv4wGyHUi66j7uM2uRCDXWJ3Bg87' as Address,
+  devnet: 'F3qAjuzkNTbDL6wtZv4wGyHUi66j7uM2uRCDXWJ3Bg87' as Address,
+  testnet: 'F3qAjuzkNTbDL6wtZv4wGyHUi66j7uM2uRCDXWJ3Bg87' as Address,
+  localnet: 'F3qAjuzkNTbDL6wtZv4wGyHUi66j7uM2uRCDXWJ3Bg87' as Address,
 };
 
 export function getCurrentProgramId(network: NetworkEnvironment = 'devnet'): Address {

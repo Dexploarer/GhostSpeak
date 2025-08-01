@@ -175,10 +175,9 @@ multisigCommand
       try {
         const signature = await safeClient.governance.createMultisig(toSDKSigner(wallet), {
           name,
-          signers: memberAddresses.map(addr => address(addr)),
+          members: memberAddresses.map(addr => address(addr)),
           threshold: thresholdNum,
-          multisigType: 'standard',
-          multisigId: BigInt(Date.now())
+          multisigId: Date.now().toString()
         })
 
         if (!signature) {
@@ -428,12 +427,12 @@ proposalCommand
 
       try {
         const signature = await safeClient.governance.createProposal(toSDKSigner(wallet), {
-          multisig: address(selectedMultisig.address),
+          multisigAddress: address(selectedMultisig.address),
           title,
           description,
           proposalType: type,
-          votingDuration: parseInt(duration) * 24 * 3600, // Convert days to seconds
-          proposalId: BigInt(Date.now())
+          votingPeriod: parseInt(duration) * 24 * 3600, // Convert days to seconds
+          proposalId: Date.now().toString()
         })
 
         if (!signature) {

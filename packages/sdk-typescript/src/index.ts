@@ -57,8 +57,7 @@ export { GovernanceModule } from './modules/governance/GovernanceModule.js'
 // Token2022 module
 export { Token2022Module } from './modules/token2022/Token2022Module.js'
 
-// H2A Communication module
-export { H2AModule } from './modules/h2a/H2AModule.js'
+// H2A Communication module - removed (use A2A instructions for agent communication)
 
 // =====================================================
 // CRYPTO EXPORTS

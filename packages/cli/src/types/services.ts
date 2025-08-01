@@ -123,9 +123,16 @@ export interface IWalletService {
 
 export interface IBlockchainService {
   getClient(network: string): Promise<unknown>
-  sendTransaction(signature: string): Promise<string>
+  sendTransaction(serializedTransaction: string): Promise<string>
   confirmTransaction(signature: string): Promise<boolean>
-  getAccountInfo(address: Address): Promise<unknown>
+  getAccountInfo(address: Address): Promise<{
+    address: string;
+    balance: bigint;
+    owner: string;
+    executable: boolean;
+    rentEpoch: bigint;
+    data?: Uint8Array;
+  } | null>
   requestAirdrop(address: Address, amount: number): Promise<string>
 }
 

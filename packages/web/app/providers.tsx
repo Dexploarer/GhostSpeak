@@ -15,9 +15,28 @@ function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // With SSR, we usually want to set some default staleTime
-        // above 0 to avoid refetching immediately on the client
-        staleTime: 60 * 1000,
+        // Reduce stale time for more real-time feel
+        staleTime: 5 * 1000, // 5 seconds
+        // Add retry configuration
+        retry: (failureCount, error) => {
+          // Don't retry on 4xx errors
+          if (error instanceof Error && error.message.includes('4')) {
+            return false
+          }
+          return failureCount < 3
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        // Cleanup configuration
+        gcTime: 5 * 60 * 1000, // 5 minutes (was cacheTime)
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+      },
+      mutations: {
+        // Global mutation configuration
+        retry: 1,
+        onError: (error) => {
+          console.error('Mutation error:', error)
+        },
       },
       dehydrate: {
         // include pending queries in dehydration
@@ -52,17 +71,19 @@ export function Providers(props: { children: React.ReactNode }) {
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient()
 
+  // Cleanup subscriptions on unmount
+  React.useEffect(() => {
+    return () => {
+      // Cancel all queries and clear cache on unmount
+      queryClient.cancelQueries()
+      queryClient.clear()
+    }
+  }, [queryClient])
+
   return (
     <QueryClientProvider client={queryClient}>
       <ReactQueryStreamedHydration>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {props.children}
-        </ThemeProvider>
+        <ThemeProvider>{props.children}</ThemeProvider>
       </ReactQueryStreamedHydration>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

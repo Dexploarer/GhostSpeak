@@ -182,7 +182,7 @@ export function registerPurchaseCommand(parentCommand: Command): void {
             `• Contact seller if needed: ${chalk.cyan(`gs channel create --participant ${item.seller}`)}`
           )
 
-        } catch (error) {
+        } catch {
           s.stop('❌ Purchase failed')
           handleTransactionError(error as Error)
         }

@@ -128,7 +128,7 @@ export class PooledConnection extends EventEmitter {
 
       return result as T
 
-    } catch (error) {
+    } catch {
       const responseTime = Date.now() - startTime
       this.updateResponseTime(responseTime)
 
@@ -309,7 +309,7 @@ export class ConnectionPool extends EventEmitter {
       this.connections.push(...connections)
       this.updateStats()
     } catch (error) {
-      this.emit('pool_initialization_error', error)
+      this.emit('pool_initializationerror', error)
     }
   }
 
@@ -337,7 +337,7 @@ export class ConnectionPool extends EventEmitter {
       this.emit('connection_created', connection)
       return connection
 
-    } catch (error) {
+    } catch {
       this.updateEndpointHealth(endpoint, 'unhealthy')
       throw new Error(`Failed to create connection to ${endpoint.url}: ${error}`)
     }
@@ -455,7 +455,7 @@ export class ConnectionPool extends EventEmitter {
         this.updateEndpointHealth(endpoint, 'unhealthy')
       }
 
-    } catch (error) {
+    } catch {
       this.updateEndpointHealth(endpoint, 'unhealthy')
       endpoint.lastHealthCheck = new Date()
     }

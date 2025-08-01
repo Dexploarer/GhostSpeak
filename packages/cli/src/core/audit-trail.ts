@@ -490,7 +490,7 @@ export class AuditTrail extends EventEmitter {
     
     try {
       await fs.unlink(this.logPath)
-    } catch (error) {
+    } catch {
       // File may not exist, ignore
     }
 
@@ -575,7 +575,7 @@ export class AuditTrail extends EventEmitter {
       this.eventBuffer = []
       this.emit('buffer_flushed')
 
-    } catch (error) {
+    } catch {
       this.emit('error', error)
     }
   }
@@ -620,7 +620,7 @@ export class AuditTrail extends EventEmitter {
         }
       }
 
-    } catch (error) {
+    } catch {
       // Log file may not exist yet
     }
 
@@ -902,7 +902,7 @@ export function AuditLog(options: {
 
         return result
 
-      } catch (error) {
+      } catch {
         await auditTrail.logEvent({
           type: options.type,
           severity: 'medium',

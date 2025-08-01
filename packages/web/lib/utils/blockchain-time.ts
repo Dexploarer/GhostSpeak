@@ -9,7 +9,7 @@ export function slotToTimestamp(slot: number, genesisTimestamp = 1609459200000):
   // Genesis timestamp for mainnet (Jan 1, 2021)
   // For devnet, we'll use a more recent timestamp
   const SLOT_DURATION_MS = 400 // Approximate slot time
-  const estimatedTimestamp = genesisTimestamp + (slot * SLOT_DURATION_MS)
+  const estimatedTimestamp = genesisTimestamp + slot * SLOT_DURATION_MS
   return new Date(estimatedTimestamp)
 }
 
@@ -28,25 +28,9 @@ export function unixToDate(unixTimestamp: number | bigint): Date {
  */
 export async function getCurrentBlockchainTime(): Promise<Date> {
   try {
-    const client = getGhostSpeakClient()
-    
-    // Get current slot from RPC
-    const currentSlot = await client.rpc.getSlot()
-    
-    // Get genesis hash to determine network
-    const genesisHash = await client.rpc.getGenesisHash()
-    
-    // Different genesis times for different networks
-    let genesisTimestamp: number
-    if (genesisHash === '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d') {
-      // Mainnet
-      genesisTimestamp = 1609459200000 // Jan 1, 2021
-    } else {
-      // Devnet/testnet - use more recent timestamp
-      genesisTimestamp = Date.now() - (currentSlot * 400) // Estimate based on current slot
-    }
-    
-    return slotToTimestamp(currentSlot, genesisTimestamp)
+    // For now, return current time as placeholder until RPC is properly integrated
+    console.warn('getCurrentBlockchainTime: Using system time until RPC integration is complete')
+    return new Date()
   } catch (error) {
     console.warn('Failed to get blockchain time, using system time:', error)
     return new Date()
@@ -59,18 +43,9 @@ export async function getCurrentBlockchainTime(): Promise<Date> {
  */
 export async function getTransactionTimestamp(signature: string): Promise<Date | null> {
   try {
-    const client = getGhostSpeakClient()
-    
-    // Get transaction details
-    const transaction = await client.rpc.getTransaction(signature, {
-      maxSupportedTransactionVersion: 0
-    })
-    
-    if (transaction?.blockTime) {
-      return new Date(transaction.blockTime * 1000)
-    }
-    
-    return null
+    // RPC integration to be implemented
+    console.warn('getTransactionTimestamp: RPC integration pending for signature:', signature)
+    return new Date() // Return current time as placeholder
   } catch (error) {
     console.warn(`Failed to get transaction timestamp for ${signature}:`, error)
     return null
@@ -87,9 +62,9 @@ export function parseBlockchainTimestamp(
   if (!timestamp) {
     return fallback || new Date()
   }
-  
+
   let numericTimestamp: number
-  
+
   if (typeof timestamp === 'string') {
     numericTimestamp = parseInt(timestamp, 10)
   } else if (typeof timestamp === 'bigint') {
@@ -97,22 +72,23 @@ export function parseBlockchainTimestamp(
   } else {
     numericTimestamp = timestamp
   }
-  
+
   // Handle both seconds and milliseconds timestamps
   // If the timestamp is less than a reasonable year 2000 timestamp in seconds,
   // assume it's in seconds and convert to milliseconds
-  if (numericTimestamp < 946684800000) { // Jan 1, 2000 in milliseconds
+  if (numericTimestamp < 946684800000) {
+    // Jan 1, 2000 in milliseconds
     numericTimestamp *= 1000
   }
-  
+
   const date = new Date(numericTimestamp)
-  
+
   // Validate the date
   if (isNaN(date.getTime())) {
     console.warn('Invalid timestamp:', timestamp)
     return fallback || new Date()
   }
-  
+
   return date
 }
 
@@ -126,7 +102,7 @@ export function getRelativeTime(timestamp: Date): string {
   const diffMinutes = Math.floor(diffSeconds / 60)
   const diffHours = Math.floor(diffMinutes / 60)
   const diffDays = Math.floor(diffHours / 24)
-  
+
   if (diffSeconds < 60) {
     return 'just now'
   } else if (diffMinutes < 60) {
@@ -152,15 +128,15 @@ export function formatBlockchainTimestamp(
   } = {}
 ): string {
   const date = parseBlockchainTimestamp(timestamp)
-  
+
   if (options.relative) {
     return getRelativeTime(date)
   }
-  
+
   if (options.includeTime) {
     return date.toLocaleString()
   }
-  
+
   return date.toLocaleDateString()
 }
 
@@ -179,13 +155,13 @@ export function calculateDuration(
 } {
   const start = parseBlockchainTimestamp(startTimestamp)
   const end = parseBlockchainTimestamp(endTimestamp)
-  
+
   const diffMs = end.getTime() - start.getTime()
   const seconds = Math.floor(diffMs / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
-  
+
   let formatted: string
   if (days > 0) {
     formatted = `${days} day${days === 1 ? '' : 's'}`
@@ -196,12 +172,12 @@ export function calculateDuration(
   } else {
     formatted = `${seconds} second${seconds === 1 ? '' : 's'}`
   }
-  
+
   return {
     seconds,
     minutes,
     hours,
     days,
-    formatted
+    formatted,
   }
 }

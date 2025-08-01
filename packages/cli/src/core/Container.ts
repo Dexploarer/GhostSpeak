@@ -65,6 +65,13 @@ export class Container {
   }
 
   /**
+   * Get a service by token (alias for resolve)
+   */
+  get<T>(token: string): T {
+    return this.resolve<T>(token)
+  }
+
+  /**
    * Check if a service is registered
    */
   has(token: string): boolean {

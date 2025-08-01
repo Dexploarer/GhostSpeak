@@ -21,8 +21,8 @@ import {
 } from '../constants/zk-proof-program.js'
 import {
   generateRangeProof,
-  generateTransferValidityProof,
-  generateTransferEqualityProof,
+  generateNativeValidityProof,
+  generateNativeEqualityProof,
   type PedersenCommitment,
   type ElGamalCiphertext
 } from './elgamal.js'
@@ -55,7 +55,7 @@ export interface ProofTask {
  */
 export type ProofTaskData = 
   | { type: 'range'; amount: bigint; commitment: PedersenCommitment; randomness: Uint8Array }
-  | { type: 'validity'; ciphertext: ElGamalCiphertext; amount: bigint; randomness: Uint8Array }
+  | { type: 'validity'; ciphertext: ElGamalCiphertext; amount: bigint; randomness: Uint8Array; pubkey: Uint8Array }
   | { type: 'equality'; sourceOld: ElGamalCiphertext; sourceNew: ElGamalCiphertext; destCiphertext: ElGamalCiphertext; amount: bigint; randomness: Uint8Array }
 
 /**
@@ -399,8 +399,8 @@ export class BatchProofManager {
       
       case 'validity': {
         const validityData = task.data as ProofTaskData & { type: 'validity' }
-        const { ciphertext, amount, randomness } = validityData
-        const validityProof = generateTransferValidityProof(ciphertext, amount, randomness)
+        const { ciphertext, amount, randomness, pubkey } = validityData
+        const validityProof = generateNativeValidityProof(ciphertext, amount, randomness, pubkey)
         proof = validityProof.proof
         break
       }
@@ -408,7 +408,7 @@ export class BatchProofManager {
       case 'equality': {
         const equalityData = task.data as ProofTaskData & { type: 'equality' }
         const { sourceOld, sourceNew, destCiphertext, amount, randomness } = equalityData
-        const equalityProof = generateTransferEqualityProof(
+        const equalityProof = generateNativeEqualityProof(
           sourceOld,
           sourceNew,
           destCiphertext,

@@ -34,7 +34,7 @@ import { useProposal, ProposalType, ProposalStatus } from '@/lib/queries/governa
 import { VotingInterface } from '@/components/governance/VotingInterface'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow, format } from 'date-fns'
-import type { Address } from '@solana/web3.js'
+import type { Address } from '@solana/addresses'
 
 const proposalTypeConfig = {
   [ProposalType.ParameterChange]: {
@@ -125,7 +125,11 @@ export default function ProposalDetailPage(): React.JSX.Element {
   const { publicKey } = useWallet()
   const [copied, setCopied] = React.useState(false)
 
-  const { data: proposal, isLoading, error } = useProposal(proposalId as Address)
+  const {
+    data: proposal,
+    isLoading,
+    error,
+  } = useProposal(proposalId ? (proposalId as Address) : undefined)
 
   const userAddress = publicKey?.toString()
   const isProposer = proposal?.proposer === userAddress

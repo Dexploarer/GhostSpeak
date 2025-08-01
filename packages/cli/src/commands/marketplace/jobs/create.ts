@@ -294,7 +294,7 @@ export function registerCreateCommand(parentCommand: Command): void {
             `• Select the best agent for your needs`
           )
 
-        } catch (error) {
+        } catch {
           s.stop('❌ Failed to create job posting')
           handleTransactionError(error as Error)
         }

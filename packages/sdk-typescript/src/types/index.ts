@@ -79,7 +79,7 @@ export {
   type Transaction,
   type SimulationResult,
   
-  // H2A Protocol types (needed for GhostSpeakClient)
+  // Communication types (A2A only - H2A deprecated)
   ParticipantType,
   type CommunicationSession,
   type CommunicationMessage,
@@ -87,9 +87,6 @@ export {
   type CreateCommunicationSessionParams,
   type SendCommunicationMessageParams,
   type UpdateParticipantStatusParams,
-  type H2AEvent,
-  type H2ASession,
-  type H2AMessage,
   
   // Error types
   type SDKError,

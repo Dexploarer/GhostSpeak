@@ -42,11 +42,7 @@ export default defineConfig({
           statements: 85,
         },
       },
-      include: [
-        'lib/**/*.{js,ts,tsx}',
-        'components/**/*.{js,ts,tsx}',
-        'app/**/*.{js,ts,tsx}',
-      ],
+      include: ['lib/**/*.{js,ts,tsx}', 'components/**/*.{js,ts,tsx}', 'app/**/*.{js,ts,tsx}'],
     },
   },
   resolve: {

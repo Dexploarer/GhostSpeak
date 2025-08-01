@@ -30,7 +30,7 @@ export class ErrorHandler {
     ],
     [
       /blockhash not found|blockhash expired/i,
-      (_error) => ({
+      (error) => ({
         message: 'Transaction expired',
         suggestion: 'The transaction took too long and expired.',
         actions: [
@@ -56,7 +56,7 @@ export class ErrorHandler {
     ],
     [
       /already in use|already exists/i,
-      (_error) => ({
+      (error) => ({
         message: 'Resource already exists',
         suggestion: 'You\'re trying to create something that already exists.',
         actions: [
@@ -69,7 +69,7 @@ export class ErrorHandler {
     ],
     [
       /simulation failed/i,
-      (_error) => ({
+      (error) => ({
         message: 'Transaction simulation failed',
         suggestion: 'The transaction would fail if submitted to the blockchain.',
         actions: [
@@ -82,7 +82,7 @@ export class ErrorHandler {
     ],
     [
       /rate limit/i,
-      (_error) => ({
+      (error) => ({
         message: 'Rate limit exceeded',
         suggestion: 'You\'ve made too many requests too quickly.',
         actions: [
@@ -96,7 +96,7 @@ export class ErrorHandler {
     ],
     [
       /network|connection|timeout/i,
-      (_error) => ({
+      (error) => ({
         message: 'Network connection issue',
         suggestion: 'Unable to connect to the Solana network.',
         actions: [
@@ -110,7 +110,7 @@ export class ErrorHandler {
     ],
     [
       /unauthorized|permission denied|access denied/i,
-      (_error) => ({
+      (error) => ({
         message: 'Permission denied',
         suggestion: 'You don\'t have permission to perform this action.',
         actions: [
@@ -123,7 +123,7 @@ export class ErrorHandler {
     ],
     [
       /invalid.*address|malformed.*address/i,
-      (_error) => ({
+      (error) => ({
         message: 'Invalid address format',
         suggestion: 'The provided address is not a valid Solana address.',
         actions: [
@@ -136,7 +136,7 @@ export class ErrorHandler {
     ],
     [
       /signature.*failed|signing.*failed/i,
-      (_error) => ({
+      (error) => ({
         message: 'Transaction signing failed',
         suggestion: 'Unable to sign the transaction with your wallet.',
         actions: [

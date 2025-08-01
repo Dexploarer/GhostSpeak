@@ -213,7 +213,7 @@ disputeCommand
           `• Check status: ${chalk.cyan('gs dispute list --mine')}`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to file dispute')
         handleTransactionError(error as Error)
       }
@@ -466,7 +466,7 @@ disputeCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to submit evidence')
         handleTransactionError(error as Error)
       }
@@ -631,7 +631,7 @@ disputeCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to resolve dispute')
         handleTransactionError(error as Error)
       }
@@ -782,7 +782,7 @@ disputeCommand
           `• Check status: ${chalk.cyan('gs dispute list --mine')}`
         )
 
-      } catch (error) {
+      } catch {
         s.stop('❌ Failed to escalate dispute')
         handleTransactionError(error as Error)
       }

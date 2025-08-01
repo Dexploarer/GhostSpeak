@@ -815,7 +815,7 @@ export class InteractiveMenu {
       if (existsSync(RECENT_COMMANDS_FILE)) {
         return JSON.parse(readFileSync(RECENT_COMMANDS_FILE, 'utf-8')) as { command: string; label: string; timestamp: number }[]
       }
-    } catch (error) {
+    } catch {
       // Ignore errors reading recent commands
       void error
     }
@@ -900,7 +900,7 @@ console.log('Payment status:', escrow.status)
       const response = await rpc.getSlot().send()
       const slot = response
       s.stop(`✅ Connected to Solana devnet (slot: ${slot})`)
-    } catch (error) {
+    } catch {
       s.stop('❌ Connection failed')
       log.error(error instanceof Error ? error.message : 'Unknown error')
     }

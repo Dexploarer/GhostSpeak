@@ -175,7 +175,7 @@ export function MessageComposer({
 
   const getFileIcon = (file: File): React.ReactNode => {
     if (file.type.startsWith('image/')) {
-      return <Image className="w-4 h-4" />
+      return <Image className="w-4 h-4" alt="Image file" />
     }
     return <FileText className="w-4 h-4" />
   }

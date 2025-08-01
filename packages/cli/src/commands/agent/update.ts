@@ -262,7 +262,7 @@ export function registerUpdateCommand(parentCommand: Command): void {
           console.log(chalk.gray('Changes have been saved'))
 
           outro('Agent update completed')
-        } catch (error) {
+        } catch {
           updateSpinner.stop('❌ Update failed')
           throw error
         }

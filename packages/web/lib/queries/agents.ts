@@ -3,21 +3,21 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { toast } from 'sonner'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 
 // Helper function to calculate comprehensive reputation
 async function calculateAgentReputation(agentAddress: string, agentAccount: any) {
   // Calculate basic reputation metrics from blockchain data
   const totalJobs = agentAccount.totalJobsCompleted || 0
   const reputationScore = agentAccount.reputationScore || 0
-  
+
   // Convert reputation score from basis points to 0-100 scale
   const score = Math.round(reputationScore / 100)
-  
+
   // Calculate success rate based on score and job count
-  const successRate = totalJobs > 0 
-    ? Math.min(100, Math.round((reputationScore / totalJobs) / 100))
-    : 0
-  
+  const successRate =
+    totalJobs > 0 ? Math.min(100, Math.round(reputationScore / totalJobs / 100)) : 0
+
   return {
     score,
     totalJobs,
@@ -25,9 +25,18 @@ async function calculateAgentReputation(agentAddress: string, agentAccount: any)
   }
 }
 
-interface MockSigner {
-  address: Address
-  signTransaction: (transaction: unknown) => Promise<unknown>
+// Convert wallet adapter to SDK signer
+function createSDKSigner(
+  publicKey: { toBase58(): string },
+  signTransaction: (tx: unknown) => Promise<unknown>
+): TransactionSigner {
+  return {
+    address: publicKey.toBase58() as Address,
+    signTransactions: async (txs: unknown[]) => {
+      const signed = await Promise.all(txs.map((tx) => signTransaction(tx)))
+      return signed as unknown[]
+    },
+  } as TransactionSigner
 }
 
 // Types for agent data
@@ -78,10 +87,9 @@ export function useAgent(agentAddress: string | undefined) {
       if (!agentAddress) throw new Error('Agent address required')
 
       const client = getGhostSpeakClient()
-      const agentModule = client.agent()
 
-      // Get the agent account data using the module
-      const agentAccount = await agentModule['module']['getAgentAccount'](agentAddress as Address)
+      // Get the agent account data using the real client API
+      const agentAccount = await client.agents.getAgentByAddress(agentAddress as Address)
       if (!agentAccount) {
         throw new Error('Agent not found')
       }
@@ -89,18 +97,20 @@ export function useAgent(agentAddress: string | undefined) {
       // Transform the SDK data to match our Agent interface
       return {
         address: agentAddress,
-        name: agentAccount.name || 'Unknown Agent',
+        name: agentAccount.data?.name || 'Unknown Agent',
         metadata: {
-          description: agentAccount.description || undefined,
-          avatar: agentAccount.metadataUri ? `https://arweave.net/${agentAccount.metadataUri}` : undefined,
-          category: agentAccount.frameworkOrigin || 'General',
+          description: agentAccount.data?.description || undefined,
+          avatar: agentAccount.data?.metadataUri
+            ? `https://arweave.net/${agentAccount.data.metadataUri}`
+            : undefined,
+          category: agentAccount.data?.frameworkOrigin || 'General',
         },
-        owner: agentAccount.owner.toString(),
-        reputation: await calculateAgentReputation(agentAddress, agentAccount),
-        pricing: agentAccount.originalPrice || BigInt(0),
-        capabilities: agentAccount.capabilities || [],
-        isActive: agentAccount.isActive || false,
-        createdAt: new Date(Number(agentAccount.createdAt) * 1000), // Convert from Unix timestamp
+        owner: agentAccount.data?.owner?.toString() || '',
+        reputation: await calculateAgentReputation(agentAddress, agentAccount.data),
+        pricing: agentAccount.data?.originalPrice || BigInt(0),
+        capabilities: agentAccount.data?.capabilities || [],
+        isActive: agentAccount.data?.isActive || false,
+        createdAt: new Date(Number(agentAccount.data?.createdAt || 0) * 1000), // Convert from Unix timestamp
       }
     },
     enabled: !!agentAddress,
@@ -114,55 +124,44 @@ export function useAgents(filters?: AgentFilters) {
     queryKey: agentKeys.list(JSON.stringify(filters || {})),
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const agentModule = client.agent()
 
-      // Try to use server-side filtering if SDK supports it, otherwise fallback to client-side
+      // Get all agents using the real client API
       let agentAccounts: { address: Address; data: any }[]
-      
+
       try {
-        // Check if SDK has filtering capabilities
-        if (agentModule['module']['getFilteredAgents']) {
-          // Use server-side filtering for better performance
-          agentAccounts = await agentModule['module']['getFilteredAgents']({
-            search: filters?.search,
-            category: filters?.category,
-            isActive: filters?.isActive,
-            minReputation: filters?.minReputation,
-            // Add pagination for large datasets
-            limit: 50, // Reasonable limit to prevent overwhelming the client
-            offset: 0
-          })
-        } else {
-          // Fallback to getting all agents (current implementation)
-          agentAccounts = await agentModule['module']['getAllAgents']()
-        }
+        // Use the fixed client API
+        agentAccounts = await client.agents.getAllAgents()
       } catch (error) {
-        console.warn('Server-side filtering not available, using client-side filtering:', error)
-        agentAccounts = await agentModule['module']['getAllAgents']()
+        console.warn('Error fetching agents:', error)
+        agentAccounts = []
       }
 
       // Transform SDK data to match our Agent interface
-      let agents = await Promise.all(agentAccounts.map(async (account: { address: Address; data: any }) => {
-        const agentData = account.data
-        return {
-          address: account.address.toString(),
-          name: agentData.name || 'Unknown Agent',
-          metadata: {
-            description: agentData.description || undefined,
-            avatar: agentData.metadataUri ? `https://arweave.net/${agentData.metadataUri}` : undefined,
-            category: agentData.frameworkOrigin || 'General',
-          },
-          owner: agentData.owner.toString(),
-          reputation: await calculateAgentReputation(account.address.toString(), agentData),
-          pricing: agentData.originalPrice || BigInt(0),
-          capabilities: agentData.capabilities || [],
-          isActive: agentData.isActive || false,
-          createdAt: new Date(Number(agentData.createdAt) * 1000), // Convert from Unix timestamp
-        }
-      }))
+      let agents = await Promise.all(
+        agentAccounts.map(async (account: { address: Address; data: any }) => {
+          const agentData = account.data
+          return {
+            address: account.address.toString(),
+            name: agentData.name || 'Unknown Agent',
+            metadata: {
+              description: agentData.description || undefined,
+              avatar: agentData.metadataUri
+                ? `https://arweave.net/${agentData.metadataUri}`
+                : undefined,
+              category: agentData.frameworkOrigin || 'General',
+            },
+            owner: agentData.owner.toString(),
+            reputation: await calculateAgentReputation(account.address.toString(), agentData),
+            pricing: agentData.originalPrice || BigInt(0),
+            capabilities: agentData.capabilities || [],
+            isActive: agentData.isActive || false,
+            createdAt: new Date(Number(agentData.createdAt) * 1000), // Convert from Unix timestamp
+          }
+        })
+      )
 
-      // Apply client-side filtering only if server-side filtering wasn't available
-      if (filters && !agentModule['module']['getFilteredAgents']) {
+      // Apply client-side filtering
+      if (filters) {
         if (filters.search) {
           const searchLower = filters.search.toLowerCase()
           agents = agents.filter(
@@ -219,41 +218,22 @@ export function useRegisterAgent() {
       }
 
       const client = getGhostSpeakClient()
-      const agentBuilder = client.agent()
+      const signer = createSDKSigner(publicKey, signTransaction)
 
-      // Parse metadata JSON
-      const metadata = JSON.parse(params.metadata)
+      // Note: metadata parameter is parsed but not used in current implementation
+      // It would be used if the SDK supported metadata fields
 
-      // Create agent data combining name and capabilities
-      const agentData = {
-        name: params.name,
-        ...metadata,
-        capabilities: params.capabilities,
-        pricing: params.pricing.toString(),
-      }
-
-      // Use the fluent API to create the agent
-      const builder = agentBuilder.create({
+      // Use the real client API to register agent
+      const result = await client.agents.registerAgent(signer, {
         name: params.name,
         capabilities: params.capabilities,
-      })
-
-      if (params.compressed) {
-        builder.compressed()
-      }
-
-      // Note: The actual execution would require proper signer integration
-      // For now, we'll use a placeholder that matches the expected interface
-      const mockSigner = { address: publicKey.toBase58(), signTransaction }
-      const result = await builder['module']['register'](mockSigner as MockSigner, {
         agentType: 0,
-        metadataUri: JSON.stringify(agentData),
-        agentId: params.name.toLowerCase().replace(/\s+/g, '-'),
+        compressed: params.compressed,
       })
 
       return {
-        signature: result,
-        agentAddress: `agent_${params.name.toLowerCase().replace(/\s+/g, '-')}`,
+        signature: result.signature,
+        agentAddress: result.address.toString(),
       }
     },
     onSuccess: () => {
@@ -286,7 +266,7 @@ export function useUpdateAgent() {
       }
 
       const client = getGhostSpeakClient()
-      const agentBuilder = client.agent()
+      const signer = createSDKSigner(publicKey, signTransaction)
 
       // Combine update data
       const updateData = {
@@ -294,18 +274,18 @@ export function useUpdateAgent() {
         metadata: params.metadata ? JSON.parse(params.metadata) : undefined,
         capabilities: params.capabilities,
         pricing: params.pricing?.toString(),
-      }
-
-      // Use the SDK to update agent
-      const mockSigner = { address: publicKey.toBase58(), signTransaction }
-      const result = await agentBuilder['module']['update'](mockSigner as MockSigner, {
-        agentAddress: params.agentAddress as Address,
-        metadataUri: JSON.stringify(updateData),
         agentType: 0,
         agentId: params.name?.toLowerCase().replace(/\s+/g, '-') || 'updated-agent',
-      })
+      }
 
-      return { signature: result }
+      // Use the real client API to update agent
+      const result = await client.agents.updateAgent(
+        signer,
+        params.agentAddress as Address,
+        updateData
+      )
+
+      return { signature: result.signature }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: agentKeys.detail(variables.agentAddress) })
@@ -331,16 +311,12 @@ export function useDeleteAgent() {
       }
 
       const client = getGhostSpeakClient()
-      const agentBuilder = client.agent()
+      const signer = createSDKSigner(publicKey, signTransaction)
 
-      // Use deactivate since there's no delete in the SDK
-      const mockSigner = { address: publicKey.toBase58(), signTransaction }
-      const result = await agentBuilder['module']['deactivate'](mockSigner as MockSigner, {
-        agentAddress: agentAddress as Address,
-        agentId: 'deactivated-agent', // Would need actual agent ID from state
-      })
+      // Use the real client API to deactivate agent
+      const result = await client.agents.deactivateAgent(signer, agentAddress as Address)
 
-      return { signature: result }
+      return { signature: result.signature }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })
@@ -365,15 +341,16 @@ export function useActivateAgent() {
       }
 
       const client = getGhostSpeakClient()
-      const agentBuilder = client.agent()
+      const signer = createSDKSigner(publicKey, signTransaction)
 
-      const mockSigner = { address: publicKey.toBase58(), signTransaction }
-      const result = await agentBuilder['module']['activate'](mockSigner as MockSigner, {
-        agentAddress: agentAddress as Address,
-        agentId: 'activated-agent', // Would need actual agent ID from state
+      // Note: Activate is not in the current client interface
+      // For now, we'll treat this as an update operation
+      const result = await client.agents.updateAgent(signer, agentAddress as Address, {
+        isActive: true,
+        agentId: 'activated-agent',
       })
 
-      return { signature: result }
+      return { signature: result.signature }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })

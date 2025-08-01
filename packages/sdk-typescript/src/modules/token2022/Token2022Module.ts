@@ -1,5 +1,5 @@
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner, ReadonlyUint8Array } from '@solana/kit'
+import type { TransactionSigner, ReadonlyUint8Array, IInstruction } from '@solana/kit'
 import { generateKeyPairSigner } from '@solana/signers'
 import { BaseModule } from '../../core/BaseModule.js'
 import {
@@ -35,8 +35,6 @@ export interface MintAccountResult {
   address: Address
   data: Token2022MintData
 }
-
-import type { IInstruction } from '@solana/kit'
 
 export type InstructionFactory = () => Promise<IInstruction>
 
@@ -172,7 +170,7 @@ export class Token2022Module extends BaseModule {
       enableInterestBearing: false
     })
 
-    return this.execute('createany', () => instruction, [params.signer, mintKeypair])
+    return this.execute('createToken2022Mint', () => instruction, [params.signer, mintKeypair])
   }
 
   /**
@@ -360,21 +358,21 @@ export class Token2022Module extends BaseModule {
   /**
    * Get Token-2022 mint account
    */
-  async getMint(address: Address): Promise<any | null> { // eslint-disable-line @typescript-eslint/no-explicit-any
-    return super.getAccount<any>(address, 'getanyDecoder') // eslint-disable-line @typescript-eslint/no-explicit-any
+  async getMint(address: Address): Promise<Token2022MintData | null> {
+    return super.getAccount<Token2022MintData>(address, 'getMintDecoder')
   }
 
   /**
    * Get all Token-2022 mints created by this program
    */
-  async getAllMints(): Promise<{ address: Address; data: any }[]> { // eslint-disable-line @typescript-eslint/no-explicit-any
-    return this.getProgramAccounts<any>('getanyDecoder') // eslint-disable-line @typescript-eslint/no-explicit-any
+  async getAllMints(): Promise<{ address: Address; data: Token2022MintData }[]> {
+    return this.getProgramAccounts<Token2022MintData>('getMintDecoder')
   }
 
   /**
    * Get mints by authority
    */
-  async getMintsByAuthority(authority: Address): Promise<{ address: Address; data: any }[]> { // eslint-disable-line @typescript-eslint/no-explicit-any
+  async getMintsByAuthority(authority: Address): Promise<{ address: Address; data: Token2022MintData }[]> {
     const filters = [{
       memcmp: {
         offset: BigInt(8), // Skip discriminator
@@ -383,7 +381,7 @@ export class Token2022Module extends BaseModule {
       }
     }]
     
-    return this.getProgramAccounts<any>('getanyDecoder', filters) // eslint-disable-line @typescript-eslint/no-explicit-any
+    return this.getProgramAccounts<Token2022MintData>('getMintDecoder', filters)
   }
 
   // =====================================================
@@ -397,7 +395,7 @@ export class Token2022Module extends BaseModule {
 
   private async executeMultiple(
     operation: string,
-    instructionFactories: Array<() => Promise<any>>, // eslint-disable-line @typescript-eslint/no-explicit-any
+    instructionFactories: Array<() => Promise<IInstruction>>,
     signers: TransactionSigner[]
   ): Promise<string> {
     // This is a simplified implementation

@@ -219,7 +219,7 @@ export const updateCommand = new Command('update')
         console.log(chalk.yellow('💡 Tip: Run "ghostspeak --help" or "gs --help" to see all available commands'))
         
         outro('Update completed successfully')
-      } catch (error) {
+      } catch {
         updateSpinner.stop('❌ Update failed')
         
         console.error('')

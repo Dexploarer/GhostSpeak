@@ -34,25 +34,25 @@ export function useAvailableTokens() {
     queryFn: async (): Promise<Token[]> => {
       try {
         const client = getGhostSpeakClient()
-        
+
         // Get all token mints from the marketplace module
         const marketplace = client.marketplace()
         const serviceListings = await marketplace.module.getAllServiceListings()
-        
+
         // Extract unique payment tokens from listings
         const tokenAddresses = new Set<string>()
-        
+
         // Add common Solana tokens
         tokenAddresses.add('So11111111111111111111111111111111111111112') // SOL
         tokenAddresses.add('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') // USDC
-        
+
         // Add tokens from service listings
         for (const listing of serviceListings) {
           if (listing.data?.paymentToken) {
             tokenAddresses.add(listing.data.paymentToken.toString())
           }
         }
-        
+
         // Fetch token metadata in parallel for better performance (Kluster MCP optimization)
         const tokenPromises = Array.from(tokenAddresses).map(async (address) => {
           try {
@@ -65,11 +65,10 @@ export function useAvailableTokens() {
             return createFallbackToken(address)
           }
         })
-        
+
         const tokens = await Promise.all(tokenPromises)
-        
+
         return tokens.sort((a, b) => a.symbol.localeCompare(b.symbol))
-        
       } catch (error) {
         console.error('Failed to fetch available tokens:', error)
         // Return default tokens on error
@@ -86,15 +85,15 @@ export function useAvailableTokens() {
  */
 async function fetchTokenInfo(address: string): Promise<Token> {
   const client = getGhostSpeakClient()
-  
+
   // Use SDK utilities to get token mint info
   // This would integrate with the real Token-2022 utilities
   const mintInfo = await client.rpc.getAccountInfo(address, { encoding: 'base64' })
-  
+
   if (!mintInfo?.value) {
     throw new Error(`Token mint not found: ${address}`)
   }
-  
+
   // Parse mint data (simplified - would use proper SPL Token parsing)
   const token: Token = {
     address,
@@ -106,36 +105,38 @@ async function fetchTokenInfo(address: string): Promise<Token> {
     isInitialized: true,
     supply: BigInt(0), // Would parse from mint data
   }
-  
+
   // Check for Token-2022 extensions
   token.extensions = await parseTokenExtensions(address)
-  
+
   // Get transfer fee config if applicable
-  if (token.extensions.some(ext => ext.type === 'TransferFee' && ext.enabled)) {
+  if (token.extensions.some((ext) => ext.type === 'TransferFee' && ext.enabled)) {
     token.transferFeeConfig = await parseTransferFeeConfig(address)
   }
-  
+
   // Get confidential transfer config if applicable
-  if (token.extensions.some(ext => ext.type === 'ConfidentialTransfer' && ext.enabled)) {
+  if (token.extensions.some((ext) => ext.type === 'ConfidentialTransfer' && ext.enabled)) {
     token.confidentialTransferConfig = await parseConfidentialTransferConfig(address)
   }
-  
+
   return token
 }
 
 /**
  * Parse Token-2022 extensions from mint account
  */
-async function parseTokenExtensions(address: string): Promise<Array<{ type: string; enabled: boolean }>> {
+async function parseTokenExtensions(
+  address: string
+): Promise<Array<{ type: string; enabled: boolean }>> {
   // This would use the real SDK utilities to parse extensions
   // For now, return based on known token addresses
   const extensions: Array<{ type: string; enabled: boolean }> = []
-  
+
   if (address === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
     // USDC has transfer fees
     extensions.push({ type: 'TransferFee', enabled: true })
   }
-  
+
   return extensions
 }
 
@@ -159,7 +160,7 @@ async function parseTransferFeeConfig(address: string) {
 /**
  * Parse confidential transfer configuration
  */
-async function parseConfidentialTransferConfig(address: string) {
+async function parseConfidentialTransferConfig(_address: string) {
   // This would use real SDK utilities to parse confidential transfer config
   return undefined // Not implemented for current tokens
 }
@@ -169,9 +170,9 @@ async function parseConfidentialTransferConfig(address: string) {
  */
 function getTokenSymbol(address: string): string {
   const symbols: Record<string, string> = {
-    'So11111111111111111111111111111111111111112': 'SOL',
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
-    'GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL': 'GHOST',
+    So11111111111111111111111111111111111111112: 'SOL',
+    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
+    GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL: 'GHOST',
   }
   return symbols[address] || 'UNKNOWN'
 }
@@ -181,9 +182,9 @@ function getTokenSymbol(address: string): string {
  */
 function getTokenName(address: string): string {
   const names: Record<string, string> = {
-    'So11111111111111111111111111111111111111112': 'Solana',
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USD Coin',
-    'GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL': 'GhostSpeak Token',
+    So11111111111111111111111111111111111111112: 'Solana',
+    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USD Coin',
+    GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL: 'GhostSpeak Token',
   }
   return names[address] || 'Unknown Token'
 }
@@ -193,9 +194,9 @@ function getTokenName(address: string): string {
  */
 function getTokenDecimals(address: string): number {
   const decimals: Record<string, number> = {
-    'So11111111111111111111111111111111111111112': 9,
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 6,
-    'GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL': 9,
+    So11111111111111111111111111111111111111112: 9,
+    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 6,
+    GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL: 9,
   }
   return decimals[address] || 9
 }
@@ -205,9 +206,9 @@ function getTokenDecimals(address: string): number {
  */
 function getTokenLogoUri(address: string): string | undefined {
   const logos: Record<string, string> = {
-    'So11111111111111111111111111111111111111112': '/tokens/sol.svg',
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': '/tokens/usdc.svg',
-    'GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL': '/tokens/ghost.svg',
+    So11111111111111111111111111111111111111112: '/tokens/sol.svg',
+    EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: '/tokens/usdc.svg',
+    GHOSTsBXTsVdJdNmeLWwJq9NdtLWGxQ1oPKL2SEvkAQL: '/tokens/ghost.svg',
   }
   return logos[address]
 }
@@ -264,5 +265,5 @@ function getDefaultTokens(): Token[] {
  */
 export function useToken(address: string) {
   const { data: tokens } = useAvailableTokens()
-  return tokens?.find(token => token.address === address)
+  return tokens?.find((token) => token.address === address)
 }

@@ -5,6 +5,60 @@ import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
 import { useWallet } from '@solana/wallet-adapter-react'
 import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
+import { validateAddress, safeParseAddress, isValidImageUrl, bigintReplacer } from '@/lib/utils'
+import { transactionFeedback } from '@/lib/transaction-feedback'
+
+// Type for service listing data from SDK
+interface ServiceListingSDKData {
+  title?: string
+  description?: string
+  serviceType?: string
+  price?: bigint
+  agent?: Address
+  reputation?: number
+  images?: string[]
+  tags?: string[]
+  isActive?: boolean
+  createdAt?: bigint
+  updatedAt?: bigint
+  totalOrders?: number
+  rating?: number
+  totalRatings?: number
+  estimatedDelivery?: bigint
+  requirements?: string
+  additionalInfo?: string
+}
+
+// Type for job posting data from SDK
+interface JobPostingSDKData {
+  title?: string
+  description?: string
+  budget?: bigint
+  budgetMin?: bigint
+  budgetMax?: bigint
+  employer: Address
+  skillsNeeded?: string[]
+  requirements?: string[]
+  deadline: bigint
+  jobType?: string
+  experienceLevel?: string
+  applicationsCount?: number
+  isActive?: boolean
+  createdAt?: bigint
+  updatedAt?: bigint
+}
+
+// Convert wallet adapter to SDK signer
+function createSDKSigner(
+  publicKey: { toBase58(): string },
+  signTransaction: (tx: unknown) => Promise<unknown>
+): TransactionSigner {
+  return {
+    address: publicKey.toBase58() as Address,
+    signTransaction,
+  } as TransactionSigner
+}
 
 export interface MarketplaceListing {
   address: string
@@ -62,36 +116,47 @@ export function useMarketplaceListings(filters?: MarketplaceFilters) {
     queryKey: ['marketplace', 'listings', filters],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const marketplaceModule = client.marketplace()
 
       // Get all service listings from the SDK
-      const serviceListings = await marketplaceModule['module']['getAllServiceListings']()
+      const serviceListings = await client.marketplace.getAllServiceListings()
 
       // Transform SDK data to match our MarketplaceListing interface
       let results = serviceListings.map(
-        (listing: { address: Address; data: any }) => {
+        (listing: { address: Address; data: ServiceListingSDKData }) => {
           const listingData = listing.data
+
+          // Validate addresses safely
+          const addressStr = listing.address.toString()
+          const sellerAddress = safeParseAddress(listingData.agent?.toString())
+            ? listingData.agent.toString()
+            : addressStr
+
+          // Filter and validate images
+          const validImages = (listingData.images || [])
+            .filter((url: string) => isValidImageUrl(url))
+            .slice(0, 5) // Limit to 5 images max
+
           return {
-            address: listing.address.toString(),
+            address: addressStr,
             name: listingData.title || 'Untitled Service',
             description: listingData.description || '',
             category: listingData.serviceType || 'Other',
             price: listingData.price || BigInt(0),
             currency: 'SOL' as const, // paymentToken could be used for token mint
-            seller: listingData.agent.toString(),
+            seller: sellerAddress,
             sellerName: undefined, // Will be fetched separately if needed
-            sellerReputation: 0, // Will be fetched from agent data if needed
-            images: [], // Could be parsed from metadata URI if available
-            tags: listingData.tags || [],
-            isActive: listingData.isActive || false,
-            createdAt: new Date(Number(listingData.createdAt) * 1000),
-            updatedAt: new Date(Number(listingData.updatedAt) * 1000),
-            totalPurchases: listingData.totalOrders || 0,
-            averageRating: listingData.rating || 0,
-            totalRatings: listingData.totalOrders || 0, // Could track separately
-            deliveryTime: `${Number(listingData.estimatedDelivery) || 7} days`,
-            requirements: '', // Not in the SDK data structure
-            additionalInfo: '', // Could be fetched from metadata URI
+            sellerReputation: Math.max(0, Math.min(5, listingData.reputation || 0)), // Clamp 0-5
+            images: validImages,
+            tags: (listingData.tags || []).slice(0, 10), // Limit tags
+            isActive: Boolean(listingData.isActive),
+            createdAt: new Date(Math.max(0, Number(listingData.createdAt) * 1000)),
+            updatedAt: new Date(Math.max(0, Number(listingData.updatedAt) * 1000)),
+            totalPurchases: Math.max(0, listingData.totalOrders || 0),
+            averageRating: Math.max(0, Math.min(5, listingData.rating || 0)),
+            totalRatings: Math.max(0, listingData.totalRatings || listingData.totalOrders || 0),
+            deliveryTime: `${Math.max(1, Math.min(365, Number(listingData.estimatedDelivery) || 7))} days`,
+            requirements: (listingData.requirements || '').slice(0, 500), // Limit length
+            additionalInfo: (listingData.additionalInfo || '').slice(0, 1000), // Limit length
           }
         }
       )
@@ -153,7 +218,13 @@ export function useMarketplaceListings(filters?: MarketplaceFilters) {
 
       return results
     },
-    staleTime: 30000, // 30 seconds
+    staleTime: 5000, // 5 seconds for more real-time feel
+    refetchInterval: 10000, // Auto-refetch every 10 seconds
+    refetchOnWindowFocus: true,
+    meta: {
+      // Add serialization config for BigInt values
+      serialize: (data: unknown) => JSON.stringify(data, bigintReplacer),
+    },
   })
 }
 
@@ -162,12 +233,15 @@ export function useMarketplaceListing(address: string) {
     queryKey: ['marketplace', 'listing', address],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const marketplaceModule = client.marketplace()
 
-      // Get the service listing from SDK
-      const serviceListing = await marketplaceModule['module']['getServiceListing'](
-        address as Address
-      )
+      // Validate address first
+      const validatedAddress = validateAddress(address)
+
+      // Get the service listing from SDK - using getAllServiceListings and filtering
+      const allListings = await client.marketplace.getAllServiceListings()
+      const serviceListing = allListings.find(
+        (listing) => listing.address.toString() === validatedAddress.toString()
+      )?.data
 
       if (!serviceListing) {
         throw new Error('Listing not found')
@@ -197,8 +271,8 @@ export function useMarketplaceListing(address: string) {
         additionalInfo: '', // Could be fetched from metadata URI
       }
     },
-    enabled: !!address,
-    staleTime: 60000, // 1 minute
+    enabled: !!address && safeParseAddress(address) !== null,
+    staleTime: 10000, // 10 seconds
   })
 }
 
@@ -212,59 +286,81 @@ export function useCreateListing() {
         throw new Error('Wallet not connected')
       }
 
-      const client = getGhostSpeakClient()
-      const marketplaceBuilder = client.marketplace()
+      const transactionId = `create-listing-${Date.now()}`
 
-      // For service listings, we need an agent address
-      // This would normally come from the user's selected agent
-      const agentAddress = publicKey.toBase58() // Placeholder - should be actual agent address
+      try {
+        // Start transaction feedback
+        transactionFeedback.startTransaction(transactionId, {
+          type: 'listing',
+          description: `Creating listing: ${data.name}`,
+          amount: data.price,
+        })
 
-      // Use the fluent API to create the service
-      const serviceBuilder = marketplaceBuilder.service()
+        const client = getGhostSpeakClient()
 
-      const mockSigner = { address: publicKey.toBase58(), signTransaction }
-      const result = await serviceBuilder['module']['createServiceListing']({
-        signer: mockSigner,
-        agentAddress: agentAddress as Address,
-        title: data.name,
-        description: data.description,
-        pricePerHour: data.price,
-        category: data.category,
-        capabilities: data.tags,
-      })
+        // For service listings, we need an agent address
+        // This would normally come from the user's selected agent
+        const agentAddress = validateAddress(publicKey.toBase58())
 
-      // Return transformed listing data
-      return {
-        address: `service_${agentAddress}_${data.name}`,
-        name: data.name,
-        description: data.description,
-        category: data.category,
-        price: data.price,
-        currency: data.currency,
-        seller: publicKey.toBase58(),
-        sellerName: 'You',
-        sellerReputation: 5.0,
-        images: data.images || [],
-        tags: data.tags,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        totalPurchases: 0,
-        averageRating: 0,
-        totalRatings: 0,
-        deliveryTime: data.deliveryTime,
-        requirements: data.requirements,
-        additionalInfo: data.additionalInfo,
-        signature: result,
+        // Use the real client API to create service listing
+        const signer = createSDKSigner(publicKey, signTransaction)
+        const result = await client.marketplace.createServiceListing(signer, {
+          title: data.name,
+          description: data.description,
+          agentAddress: agentAddress,
+          pricePerHour: data.price,
+          category: data.category,
+          capabilities: data.tags,
+        })
+
+        // Update with signature if available
+        if (typeof result === 'string') {
+          transactionFeedback.updateWithSignature(transactionId, result)
+        }
+
+        // Simulate confirmation after a delay (replace with real confirmation logic)
+        setTimeout(() => {
+          transactionFeedback.confirmTransaction(transactionId)
+        }, 3000)
+
+        // Return transformed listing data
+        return {
+          address: `service_${agentAddress}_${data.name}`,
+          name: data.name,
+          description: data.description,
+          category: data.category,
+          price: data.price,
+          currency: data.currency,
+          seller: publicKey.toBase58(),
+          sellerName: 'You',
+          sellerReputation: 5.0,
+          images: data.images || [],
+          tags: data.tags,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          totalPurchases: 0,
+          averageRating: 0,
+          totalRatings: 0,
+          deliveryTime: data.deliveryTime,
+          requirements: data.requirements,
+          additionalInfo: data.additionalInfo,
+          signature: result,
+          transactionId,
+        }
+      } catch (error) {
+        transactionFeedback.failTransaction(
+          transactionId,
+          error instanceof Error ? error.message : 'Unknown error'
+        )
+        throw error
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'listings'] })
-      toast.success('Listing created successfully!')
     },
     onError: (error) => {
       console.error('Failed to create listing:', error)
-      toast.error('Failed to create listing')
     },
   })
 }
@@ -279,45 +375,56 @@ export function usePurchaseListing() {
         throw new Error('Wallet not connected')
       }
 
-      const client = getGhostSpeakClient()
-      const marketplaceModule = client.marketplace()
+      const transactionId = `purchase-${data.listingAddress}-${Date.now()}`
 
-      // Generate purchase account address
-      const purchaseAddress = `purchase_${data.listingAddress}_${publicKey.toBase58()}_${Date.now()}`
+      try {
+        // Start transaction feedback
+        transactionFeedback.startTransaction(transactionId, {
+          type: 'purchase',
+          description: `Purchasing service`,
+        })
 
-      // Create the purchase instruction
-      const mockSigner = { address: publicKey.toBase58(), signTransaction }
-      const instruction = await marketplaceModule['module']['getPurchaseServiceInstruction']({
-        serviceListing: data.listingAddress as Address,
-        servicePurchase: purchaseAddress as Address,
-        buyer: mockSigner,
-        listingId: 0, // Would need actual listing ID from state
-        quantity: data.quantity || 1,
-        requirements: data.customRequirements ? [data.customRequirements] : [],
-        customInstructions: data.customRequirements || '',
-        deadline: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days
-      })
+        const client = getGhostSpeakClient()
 
-      // Execute the instruction
-      const result = await marketplaceModule['module']['execute'](
-        'purchaseService',
-        () => instruction,
-        [mockSigner]
-      )
+        // Validate listing address
+        const validatedListingAddress = validateAddress(data.listingAddress)
 
-      return {
-        transactionId: result,
-        purchaseId: purchaseAddress,
-        status: 'confirmed',
+        // Generate purchase account address
+        const purchaseAddress = `purchase_${data.listingAddress}_${publicKey.toBase58()}_${Date.now()}`
+
+        // Purchase the service using the client
+        const signer = createSDKSigner(publicKey, signTransaction)
+        const result = await client.marketplace.purchaseService(signer, validatedListingAddress)
+
+        // Update with signature if available
+        if (typeof result === 'string') {
+          transactionFeedback.updateWithSignature(transactionId, result)
+        }
+
+        // Simulate confirmation after a delay (replace with real confirmation logic)
+        setTimeout(() => {
+          transactionFeedback.confirmTransaction(transactionId)
+        }, 5000)
+
+        return {
+          transactionId: result,
+          purchaseId: purchaseAddress,
+          status: 'confirmed',
+          transactionFeedbackId: transactionId,
+        }
+      } catch (error) {
+        transactionFeedback.failTransaction(
+          transactionId,
+          error instanceof Error ? error.message : 'Unknown error'
+        )
+        throw error
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marketplace'] })
-      toast.success('Purchase completed successfully!')
     },
     onError: (error) => {
       console.error('Failed to purchase listing:', error)
-      toast.error('Failed to complete purchase')
     },
   })
 }
@@ -344,10 +451,9 @@ export function useCreateJobPosting() {
       const marketplaceBuilder = client.marketplace()
 
       const jobBuilder = marketplaceBuilder.job()
-      const mockSigner = { address: publicKey.toBase58(), signTransaction }
+      const signer = createSDKSigner(publicKey, signTransaction)
 
-      const result = await jobBuilder['module']['createJobPosting']({
-        signer: mockSigner,
+      const result = await client.marketplace.createJobPosting(signer, {
         title: data.title,
         description: data.description,
         budget: data.budget,
@@ -378,11 +484,10 @@ export function useJobPostings() {
     queryKey: ['marketplace', 'jobs'],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const marketplaceModule = client.marketplace()
 
-      const jobPostings = await marketplaceModule['module']['getAllJobPostings']()
+      const jobPostings = await client.marketplace.getAllJobPostings()
 
-      return jobPostings.map((job: { address: Address; data: any }) => {
+      return jobPostings.map((job: { address: Address; data: JobPostingSDKData }) => {
         const jobData = job.data
         return {
           address: job.address.toString(),

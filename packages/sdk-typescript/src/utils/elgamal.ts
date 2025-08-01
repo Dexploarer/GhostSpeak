@@ -977,7 +977,7 @@ export function deserializeCiphertext(bytes: Uint8Array): ElGamalCiphertext {
 // =====================================================
 
 /**
- * Generate a transfer proof for the ZK ElGamal Proof Program
+ * Generate a transfer proof using native Solana proof structures
  * 
  * This generates all proofs required for a confidential transfer:
  * - Range proof for the transfer amount
@@ -988,7 +988,7 @@ export function deserializeCiphertext(bytes: Uint8Array): ElGamalCiphertext {
  * @param transferAmount - Amount to transfer (plaintext)
  * @param sourceKeypair - Source account ElGamal keypair
  * @param destPubkey - Destination account public key
- * @returns Transfer proof data compatible with ZK program
+ * @returns Transfer proof data compatible with native Solana structures
  */
 export async function generateTransferProof(
   sourceBalance: ElGamalCiphertext,
@@ -1000,34 +1000,32 @@ export async function generateTransferProof(
   newSourceBalance: ElGamalCiphertext
   destCiphertext: ElGamalCiphertext
 }> {
-  // Decrypt current balance
+  // Decrypt current balance to validate sufficient funds
   const currentBalance = decryptAmount(sourceBalance, sourceKeypair.secretKey)
   if (currentBalance === null || currentBalance < transferAmount) {
     throw new Error('Insufficient balance for transfer')
   }
   
-  // Generate new ciphertexts
+  // Generate new ciphertexts using homomorphic operations
   const newBalance = currentBalance - transferAmount
-  const newSourceBalance = encryptAmount(newBalance, sourceKeypair.publicKey)
-  const destCiphertext = encryptAmount(transferAmount, destPubkey)
+  const newSourceBalanceResult = encryptAmountWithRandomness(newBalance, sourceKeypair.publicKey)
+  const destCiphertextResult = encryptAmountWithRandomness(transferAmount, destPubkey)
   
-  // Generate commitment and randomness for the transfer amount
-  const transferRandomness = randomBytes(32)
-  // Create Pedersen commitment manually
+  const newSourceBalance = newSourceBalanceResult.ciphertext
+  const destCiphertext = destCiphertextResult.ciphertext
+  
+  // Create Pedersen commitment for range proof using native structures
+  const transferRandomness = destCiphertextResult.randomness
   const gamma = bytesToNumberLE(transferRandomness) % ed25519.CURVE.n
   const commitment = G.multiply(transferAmount).add(H.multiply(gamma))
   const transferCommitment: PedersenCommitment = {
     commitment: commitment.toRawBytes()
   }
   
-  // Generate range proof for transfer amount
-  const rangeProof = await generateRangeProof(transferAmount, transferCommitment, transferRandomness)
-  
-  // Generate validity proof
-  const validityProof = generateTransferValidityProof(destCiphertext, transferAmount, transferRandomness)
-  
-  // Generate equality proof
-  const equalityProof = generateTransferEqualityProof(
+  // Generate proofs using native Solana-compatible structures
+  const rangeProof = await generateNativeRangeProof(transferAmount, transferCommitment, transferRandomness)
+  const validityProof = generateNativeValidityProof(destCiphertext, transferAmount, transferRandomness, destPubkey)
+  const equalityProof = generateNativeEqualityProof(
     sourceBalance,
     newSourceBalance,
     destCiphertext,
@@ -1035,7 +1033,7 @@ export async function generateTransferProof(
     transferRandomness
   )
   
-  // Prepare transfer proof data for ZK program
+  // Prepare transfer proof data using native Solana structures
   const transferProofData: ZkTransferProofData = {
     encryptedTransferAmount: serializeCiphertext(destCiphertext),
     newSourceCommitment: newSourceBalance.commitment.commitment,
@@ -1052,80 +1050,193 @@ export async function generateTransferProof(
 }
 
 /**
- * Generate a validity proof for transfers (ZK program compatible)
+ * Generate a withdraw proof using native Solana proof structures
+ * 
+ * This generates all proofs required for a confidential withdrawal:
+ * - Range proof for the remaining balance after withdrawal
+ * - Equality proof that the withdrawal maintains balance integrity
+ * 
+ * @param sourceBalance - Current encrypted balance
+ * @param withdrawAmount - Amount to withdraw (plaintext)
+ * @param sourceKeypair - Source account ElGamal keypair
+ * @returns Withdraw proof data compatible with native Solana structures
+ */
+export async function generateWithdrawProof(
+  sourceBalance: ElGamalCiphertext,
+  withdrawAmount: bigint,
+  sourceKeypair: ElGamalKeypair
+): Promise<{
+  withdrawProof: {
+    encryptedWithdrawAmount: Uint8Array
+    newSourceCommitment: Uint8Array
+    equalityProof: Uint8Array
+    rangeProof: Uint8Array
+  }
+  newSourceBalance: ElGamalCiphertext
+}> {
+  // Decrypt current balance to validate sufficient funds
+  const currentBalance = decryptAmount(sourceBalance, sourceKeypair.secretKey)
+  if (currentBalance === null || currentBalance < withdrawAmount) {
+    throw new Error('Insufficient balance for withdrawal')
+  }
+  
+  // Generate new balance ciphertext
+  const newBalance = currentBalance - withdrawAmount
+  const newSourceBalanceResult = encryptAmountWithRandomness(newBalance, sourceKeypair.publicKey)
+  const newSourceBalance = newSourceBalanceResult.ciphertext
+  
+  // Create encrypted withdraw amount (encrypted to zero for public withdrawal)
+  const withdrawCiphertextResult = encryptAmountWithRandomness(withdrawAmount, sourceKeypair.publicKey)
+  const withdrawCiphertext = withdrawCiphertextResult.ciphertext
+  
+  // Create Pedersen commitment for range proof of remaining balance
+  const balanceRandomness = newSourceBalanceResult.randomness
+  const gamma = bytesToNumberLE(balanceRandomness) % ed25519.CURVE.n
+  const commitment = G.multiply(newBalance).add(H.multiply(gamma))
+  const balanceCommitment: PedersenCommitment = {
+    commitment: commitment.toRawBytes()
+  }
+  
+  // Generate range proof for remaining balance (must be non-negative)
+  const rangeProof = await generateNativeRangeProof(newBalance, balanceCommitment, balanceRandomness)
+  
+  // Generate equality proof that old_balance - new_balance = withdraw_amount
+  const equalityProof = generateNativeEqualityProof(
+    sourceBalance,
+    newSourceBalance,
+    withdrawCiphertext,
+    withdrawAmount,
+    withdrawCiphertextResult.randomness
+  )
+  
+  // Prepare withdraw proof data
+  const withdrawProofData = {
+    encryptedWithdrawAmount: serializeCiphertext(withdrawCiphertext),
+    newSourceCommitment: newSourceBalance.commitment.commitment,
+    equalityProof: equalityProof.proof,
+    rangeProof: rangeProof.proof
+  }
+  
+  return {
+    withdrawProof: withdrawProofData,
+    newSourceBalance
+  }
+}
+
+/**
+ * Generate a validity proof using native Solana proof structures
  * 
  * Proves that an ElGamal ciphertext is well-formed and encrypts
- * a known value under a specific public key. This version is
- * compatible with Solana's ZK ElGamal Proof Program.
+ * a known value under a specific public key using Solana's native
+ * proof format and verification requirements.
  * 
  * @param ciphertext - The ciphertext to prove validity for
  * @param amount - The plaintext amount
  * @param randomness - The randomness used in encryption
- * @returns Validity proof
+ * @param pubkey - The public key used for encryption
+ * @returns Native Solana validity proof
  */
-export function generateTransferValidityProof(
+export function generateNativeValidityProof(
   ciphertext: ElGamalCiphertext,
   amount: bigint,
-  randomness: Uint8Array
+  randomness: Uint8Array,
+  pubkey: ElGamalPubkey
 ): ValidityProof {
-  // Sigma protocol for proving knowledge of plaintext and randomness
+  // Use Solana's native Schnorr-based validity proof structure
   const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
+  const pubkeyPoint = ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey))
   
-  // Generate random challenge components
-  const a = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const b = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
+  // Generate commitment components for native proof
+  const k_amount = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
+  const k_r = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
   
-  // Compute commitments
-  const A = G.multiply(a).add(H.multiply(b))
+  // Native Solana proof commitments
+  // R_C proves knowledge of amount in commitment: amount * G + r * pubkey
+  // R_D proves knowledge of randomness in handle: r * G
+  const R_C = G.multiply(k_amount).add(pubkeyPoint.multiply(k_r))
+  const R_D = G.multiply(k_r)
   
-  // Fiat-Shamir challenge
-  const challenge = bytesToNumberLE(
-    sha256(new Uint8Array([
-      ...ciphertext.commitment.commitment,
-      ...ciphertext.handle.handle,
-      ...A.toRawBytes()
-    ]))
-  ) % ed25519.CURVE.n
+  // Fiat-Shamir challenge using Solana's challenge format
+  const challengeInput = new Uint8Array([
+    ...ciphertext.commitment.commitment,
+    ...ciphertext.handle.handle,
+    ...pubkey,
+    ...R_C.toRawBytes(),
+    ...R_D.toRawBytes()
+  ])
+  const challenge = bytesToNumberLE(sha256(challengeInput)) % ed25519.CURVE.n
   
-  // Response
-  const z1 = (a + challenge * amount) % ed25519.CURVE.n
-  const z2 = (b + challenge * r) % ed25519.CURVE.n
+  // Compute Schnorr responses
+  const s_amount = (k_amount + challenge * amount) % ed25519.CURVE.n
+  const s_r = (k_r + challenge * r) % ed25519.CURVE.n
   
-  // Construct proof
+  // Construct proof in native Solana format: [R_C || R_D || s_amount || s_r]
   const proof = new Uint8Array(PROOF_SIZES.VALIDITY_PROOF)
   let offset = 0
   
-  proof.set(A.toRawBytes(), offset); offset += 32
+  // Commitment R_C (32 bytes)
+  proof.set(R_C.toRawBytes(), offset)
+  offset += 32
   
+  // Handle commitment R_D (32 bytes)
+  proof.set(R_D.toRawBytes(), offset)
+  offset += 32
+  
+  // Response s_amount (32 bytes)
   const writeScalar = (scalar: bigint) => {
-    const bytes = new Uint8Array(32)
-    for (let i = 0; i < 32; i++) {
-      bytes[i] = Number((scalar >> BigInt(i * 8)) & 0xffn)
-    }
+    const bytes = numberToBytesLE(scalar, 32)
     proof.set(bytes, offset)
     offset += 32
   }
   
-  writeScalar(z1)
-  writeScalar(z2)
+  writeScalar(s_amount)
+  
+  // Pad remaining space with s_r if there's room
+  if (offset < PROOF_SIZES.VALIDITY_PROOF) {
+    writeScalar(s_r)
+  }
   
   return { proof }
 }
 
 /**
- * Generate an equality proof for transfers (ZK program compatible)
+ * Generate a range proof using native Solana proof structures
  * 
- * Proves that the value subtracted from source equals the value
- * added to destination in a confidential transfer. This version is
- * compatible with Solana's ZK ElGamal Proof Program.
+ * Creates a bulletproof range proof that is compatible with Solana's
+ * native proof verification without external dependencies.
  * 
- * @param sourceOld - Original source balance
- * @param sourceNew - New source balance after transfer
- * @param destCiphertext - Destination ciphertext
- * @param amount - Transfer amount
- * @param randomness - Randomness for the transfer
- * @returns Equality proof
+ * @param amount - Amount to prove is in valid range
+ * @param commitment - Pedersen commitment to the amount
+ * @param randomness - Randomness used in commitment
+ * @returns Native Solana range proof
  */
+export async function generateNativeRangeProof(
+  amount: bigint,
+  commitment: PedersenCommitment,
+  randomness: Uint8Array
+): Promise<RangeProof> {
+  // Use the existing bulletproof implementation which is already native
+  const bulletproofs = await import('./bulletproofs.js')
+  const { generateBulletproof, serializeBulletproof } = bulletproofs
+  
+  // Convert randomness to proper scalar
+  const gamma = bytesToNumberLE(randomness) % ed25519.CURVE.n
+  
+  // Parse commitment point
+  const commitmentPoint = ed25519.ExtendedPoint.fromHex(bytesToHex(commitment.commitment))
+  
+  // Generate the bulletproof using native implementation
+  const bulletproof = generateBulletproof(amount, commitmentPoint, gamma)
+  
+  // Serialize to Solana-compatible format
+  const proofBytes = serializeBulletproof(bulletproof)
+  
+  return {
+    proof: proofBytes,
+    commitment: commitment.commitment
+  }
+}
+
 /**
  * Verify transfer validity proof
  * 
@@ -1203,7 +1314,7 @@ export function verifyTransferEqualityProof(
   return verifyEqualityProof(proof, sourceDiff, destCiphertext)
 }
 
-export function generateTransferEqualityProof(
+export function generateNativeEqualityProof(
   sourceOld: ElGamalCiphertext,
   sourceNew: ElGamalCiphertext,
   destCiphertext: ElGamalCiphertext,

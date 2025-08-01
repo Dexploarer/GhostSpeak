@@ -2,6 +2,11 @@ import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
 import { NATIVE_MINT_ADDRESS } from '../../constants/system-addresses.js'
+import { GHOSTSPEAK_PROGRAM_ID } from '../../constants/ghostspeak.js'
+import { 
+  deriveEscrowPda, 
+  deriveTokenAccountPda 
+} from '../../utils/pda.js'
 import {
   getCreateEscrowInstructionAsync,
   getCompleteEscrowInstruction,
@@ -27,7 +32,9 @@ export class EscrowModule extends BaseModule {
     description: string
     milestones?: { amount: bigint; description: string }[]
   }): Promise<string> {
-    const escrowAddress = this.deriveEscrowPda(params.buyer, params.seller, Date.now())
+    const escrowAddress = await this.deriveEscrowPda(params.buyer, params.seller, Date.now())
+    const clientTokenAccount = await this.deriveTokenAccount(params.buyer)
+    const escrowTokenAccount = await this.deriveTokenAccount(escrowAddress)
     
     return this.execute(
       'createEscrow',
@@ -37,8 +44,8 @@ export class EscrowModule extends BaseModule {
         client: params.signer,
         agent: params.seller,
         paymentToken: this.nativeMint,
-        clientTokenAccount: this.deriveTokenAccount(params.buyer),
-        escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
+        clientTokenAccount,
+        escrowTokenAccount,
         tokenProgram: this.tokenProgramId,
         associatedTokenProgram: this.associatedTokenProgramId,
         systemProgram: this.systemProgramId,
@@ -56,14 +63,17 @@ export class EscrowModule extends BaseModule {
    * Complete an escrow
    */
   async complete(signer: TransactionSigner, escrowAddress: Address): Promise<string> {
+    const escrowTokenAccount = await this.deriveTokenAccount(escrowAddress)
+    const agentTokenAccount = await this.deriveTokenAccount(signer.address)
+    
     return this.execute(
       'completeEscrow',
       () => getCompleteEscrowInstruction({
         escrow: escrowAddress,
         reentrancyGuard: this.systemProgramId,
         agent: signer.address,
-        escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
-        agentTokenAccount: this.deriveTokenAccount(signer.address),
+        escrowTokenAccount,
+        agentTokenAccount,
         authority: signer,
         tokenProgram: this.tokenProgramId,
         resolutionNotes: 'Work completed successfully'
@@ -76,16 +86,19 @@ export class EscrowModule extends BaseModule {
    * Cancel an escrow
    */
   async cancel(signer: TransactionSigner, escrowAddress: Address, params: { buyer: Address }): Promise<string> {
+    const clientRefundAccount = await this.deriveTokenAccount(params.buyer)
+    const escrowTokenAccount = await this.deriveTokenAccount(escrowAddress)
+    
     return this.execute(
       'cancelEscrow',
       () => getCancelEscrowInstruction({
         escrow: escrowAddress,
         reentrancyGuard: this.systemProgramId,
         authority: signer,
-        clientRefundAccount: this.deriveTokenAccount(params.buyer),
+        clientRefundAccount,
         paymentToken: this.nativeMint,
         cancellationReason: 'User cancelled',
-        escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
+        escrowTokenAccount,
         tokenProgram: this.tokenProgramId
       }),
       [signer]
@@ -117,14 +130,18 @@ export class EscrowModule extends BaseModule {
     refundAmount: bigint,
     totalAmount: bigint
   ): Promise<string> {
+    const escrowTokenAccount = await this.deriveTokenAccount(escrowAddress)
+    const clientRefundAccount = await this.deriveTokenAccount(escrowAddress)
+    const agentPaymentAccount = await this.deriveTokenAccount(signer.address)
+    
     return this.execute(
       'processPartialRefund',
       () => getProcessPartialRefundInstruction({
         escrow: escrowAddress,
         reentrancyGuard: this.systemProgramId,
-        escrowTokenAccount: this.deriveTokenAccount(escrowAddress),
-        clientRefundAccount: this.deriveTokenAccount(escrowAddress),
-        agentPaymentAccount: this.deriveTokenAccount(signer.address),
+        escrowTokenAccount,
+        clientRefundAccount,
+        agentPaymentAccount,
         paymentToken: this.nativeMint,
         authority: signer,
         tokenProgram: this.tokenProgramId,
@@ -188,14 +205,12 @@ export class EscrowModule extends BaseModule {
 
   // Helper methods
 
-  private deriveEscrowPda(buyer: Address, seller: Address, nonce: number): Address {
-    // Implementation would derive PDA
-    return `escrow_${buyer}_${seller}_${nonce}` as Address
+  private async deriveEscrowPda(buyer: Address, seller: Address, nonce: number): Promise<Address> {
+    return await deriveEscrowPda(GHOSTSPEAK_PROGRAM_ID, buyer, seller, nonce)
   }
 
-  private deriveTokenAccount(owner: Address): Address {
-    // Implementation would derive associated token account
-    return `token_${owner}` as Address
+  private async deriveTokenAccount(owner: Address): Promise<Address> {
+    return await deriveTokenAccountPda(owner, this.nativeMint)
   }
 
   private get nativeMint(): Address {

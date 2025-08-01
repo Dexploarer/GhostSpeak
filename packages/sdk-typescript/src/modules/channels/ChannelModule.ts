@@ -1,6 +1,11 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
+import { GHOSTSPEAK_PROGRAM_ID } from '../../constants/ghostspeak.js'
+import {
+  deriveChannelPda,
+  deriveMessagePda
+} from '../../utils/pda.js'
 import {
   getCreateEnhancedChannelInstructionAsync,
   getSendEnhancedMessageInstructionAsync,
@@ -29,7 +34,7 @@ export class ChannelModule extends BaseModule {
     isPrivate?: boolean
     maxMembers?: number
   }): Promise<string> {
-    const channelAddress = this.deriveChannelPda(params.name)
+    const channelAddress = await this.deriveChannelPda(params.name)
     
     return this.execute(
       'createEnhancedChannel',
@@ -72,7 +77,7 @@ export class ChannelModule extends BaseModule {
     attachmentUri?: string
     replyTo?: Address
   }): Promise<string> {
-    const messageAddress = this.deriveMessagePda(params.channelAddress, Date.now())
+    const messageAddress = await this.deriveMessagePda(params.channelAddress, Date.now())
     
     return this.execute(
       'sendEnhancedMessage',
@@ -249,19 +254,19 @@ export class ChannelModule extends BaseModule {
 
   // Helper methods
 
-  private deriveChannelPda(name: string): Address {
-    // Implementation would derive PDA
-    return `channel_${name}` as Address
+  private async deriveChannelPda(name: string): Promise<Address> {
+    return await deriveChannelPda(GHOSTSPEAK_PROGRAM_ID, name)
   }
 
-  private deriveMessagePda(channel: Address, nonce: number): Address {
-    // Implementation would derive PDA
-    return `message_${channel}_${nonce}` as Address
+  private async deriveMessagePda(channel: Address, nonce: number): Promise<Address> {
+    return await deriveMessagePda(GHOSTSPEAK_PROGRAM_ID, channel, nonce)
   }
 
-  private deriveChannelFromMessage(messageAddress: Address): Address {
-    // Implementation would derive channel from message
-    return `channel_from_${messageAddress}` as Address
+  private async deriveChannelFromMessage(messageAddress: Address): Promise<Address> {
+    // This would require reverse lookup or storing channel reference in message
+    // For now, we'll return a placeholder that matches the expected pattern
+    // In a real implementation, this would query the message account and get the channel field
+    return messageAddress // Placeholder - would need actual implementation
   }
 
   private get systemProgramId(): Address {

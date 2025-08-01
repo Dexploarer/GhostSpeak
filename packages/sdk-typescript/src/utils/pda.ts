@@ -520,3 +520,101 @@ export async function deriveEscrowPDA(params: {
   // getProgramDerivedAddress returns a tuple
   return [result[0], result[1]]
 }
+
+/**
+ * Derive escrow PDA (simple version for EscrowModule)
+ * Pattern: ['escrow', buyer, seller, nonce]
+ */
+export async function deriveEscrowPda(
+  programId: Address,
+  buyer: Address,
+  seller: Address,
+  nonce: number
+): Promise<Address> {
+  // Convert nonce to little-endian bytes (8 bytes)
+  const nonceBytes = new Uint8Array(8)
+  const dataView = new DataView(nonceBytes.buffer)
+  dataView.setUint32(0, nonce, true) // little-endian, use 4 bytes for number
+  
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([101, 115, 99, 114, 111, 119])), // 'escrow'
+      getAddressEncoder().encode(buyer),
+      getAddressEncoder().encode(seller),
+      nonceBytes.slice(0, 4) // Only use 4 bytes for the nonce
+    ]
+  })
+  return address
+}
+
+/**
+ * Derive associated token account PDA
+ * Pattern: [wallet, TOKEN_PROGRAM_ID, mint]
+ */
+export async function deriveTokenAccountPda(
+  wallet: Address,
+  mint: Address
+): Promise<Address> {
+  // Associated Token Account program ID
+  const ASSOCIATED_TOKEN_PROGRAM_ID = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address
+  // Token program ID  
+  const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address
+  
+  const [address] = await getProgramDerivedAddress({
+    programAddress: ASSOCIATED_TOKEN_PROGRAM_ID,
+    seeds: [
+      getAddressEncoder().encode(wallet),
+      getAddressEncoder().encode(TOKEN_PROGRAM_ID),
+      getAddressEncoder().encode(mint)
+    ]
+  })
+  return address
+}
+
+/**
+ * Derive auction PDA
+ * Pattern: ['auction', serviceListing]
+ */
+export async function deriveAuctionPda(
+  programId: Address,
+  serviceListing: Address
+): Promise<Address> {
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([
+        97, 117, 99, 116, 105, 111, 110 // 'auction'
+      ])),
+      getAddressEncoder().encode(serviceListing)
+    ]
+  })
+  return address
+}
+
+/**
+ * Derive message PDA
+ * Pattern: ['message', channel, nonce]
+ */
+export async function deriveMessagePda(
+  programId: Address,
+  channel: Address,
+  nonce: number
+): Promise<Address> {
+  // Convert nonce to little-endian bytes (4 bytes)
+  const nonceBytes = new Uint8Array(4)
+  const dataView = new DataView(nonceBytes.buffer)
+  dataView.setUint32(0, nonce, true) // little-endian
+  
+  const [address] = await getProgramDerivedAddress({
+    programAddress: programId,
+    seeds: [
+      getBytesEncoder().encode(new Uint8Array([
+        109, 101, 115, 115, 97, 103, 101 // 'message'
+      ])),
+      getAddressEncoder().encode(channel),
+      nonceBytes
+    ]
+  })
+  return address
+}

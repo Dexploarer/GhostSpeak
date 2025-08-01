@@ -2,6 +2,11 @@ import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
 import { NATIVE_MINT_ADDRESS } from '../../constants/system-addresses.js'
+import { GHOSTSPEAK_PROGRAM_ID } from '../../constants/ghostspeak.js'
+import {
+  deriveJobPostingPda,
+  deriveAuctionPda
+} from '../../utils/pda.js'
 import {
   getCreateServiceListingInstructionAsync,
   getPurchaseServiceInstruction,
@@ -250,7 +255,7 @@ export class MarketplaceModule extends BaseModule {
     requiredSkills: string[]
     category: string
   }): Promise<string> {
-    const jobPostingAddress = this.deriveJobPostingPda(params.signer.address, params.title)
+    const jobPostingAddress = await this.deriveJobPostingPda(params.signer.address, params.title)
     
     const instruction = await this.getCreateJobPostingInstruction({
       jobPosting: jobPostingAddress,
@@ -282,7 +287,7 @@ export class MarketplaceModule extends BaseModule {
     duration: number
     auctionType: 'english' | 'dutch'
   }): Promise<string> {
-    const auctionAddress = this.deriveAuctionPda(params.serviceListingAddress)
+    const auctionAddress = await this.deriveAuctionPda(params.serviceListingAddress)
     
     const instruction = await this.getCreateServiceAuctionInstruction({
       auction: auctionAddress,
@@ -413,14 +418,12 @@ export class MarketplaceModule extends BaseModule {
   // HELPER METHODS
   // =====================================================
 
-  private deriveJobPostingPda(client: Address, title: string): Address {
-    // Implementation would derive PDA using findProgramAddressSync
-    return `job_${client}_${title}` as Address
+  private async deriveJobPostingPda(client: Address, title: string): Promise<Address> {
+    return await deriveJobPostingPda(GHOSTSPEAK_PROGRAM_ID, client, title)
   }
 
-  private deriveAuctionPda(serviceListing: Address): Address {
-    // Implementation would derive PDA using findProgramAddressSync
-    return `auction_${serviceListing}` as Address
+  private async deriveAuctionPda(serviceListing: Address): Promise<Address> {
+    return await deriveAuctionPda(GHOSTSPEAK_PROGRAM_ID, serviceListing)
   }
 
   private get nativeMint(): Address {

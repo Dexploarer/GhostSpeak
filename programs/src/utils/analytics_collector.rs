@@ -283,7 +283,7 @@ impl AnalyticsCollector {
         recent_prices: &[u64],
         _current_price: u64,
     ) -> u32 {
-        if recent_prices.is_empty() || recent_prices.len() > 10000 {
+        if recent_prices.is_empty() || recent_prices.len() > crate::MAX_COLLECTION_SIZE {
             return 0; // Prevent DoS with excessive price arrays
         }
         
@@ -292,12 +292,12 @@ impl AnalyticsCollector {
         
         let variance = recent_prices.iter()
             .map(|&price| {
-                let diff = if price > mean { price - mean } else { mean - price };
+                let diff = price.abs_diff(mean);
                 diff.saturating_pow(2)
             })
             .sum::<u64>() / recent_prices.len() as u64;
         
-        // Convert to basis points (0-10000) with safe floating point arithmetic
+        // Convert to basis points (0-BASIS_POINTS_MAX) with safe floating point arithmetic
         let volatility_percent = if mean > 0 {
             let std_dev = (variance as f64).sqrt();
             let volatility_ratio = std_dev / mean as f64;
@@ -306,10 +306,10 @@ impl AnalyticsCollector {
             if volatility_ratio.is_nan() || volatility_ratio.is_infinite() {
                 0
             } else {
-                let volatility_basis_points = volatility_ratio * 10000.0;
+                let volatility_basis_points = volatility_ratio * crate::BASIS_POINTS_MAX as f64;
                 // Ensure result is finite and within reasonable bounds
                 if volatility_basis_points.is_finite() {
-                    volatility_basis_points.clamp(0.0, 10000.0) as u32
+                    volatility_basis_points.clamp(0.0, crate::BASIS_POINTS_MAX as f64) as u32
                 } else {
                     0
                 }
@@ -318,8 +318,8 @@ impl AnalyticsCollector {
             0
         };
         
-        // Cap at 10000 basis points (100%)
-        volatility_percent.min(10000)
+        // Cap at BASIS_POINTS_MAX (100%)
+        volatility_percent.min(crate::BASIS_POINTS_MAX)
     }
     
     /// Updates market trends based on supply and demand
@@ -328,20 +328,27 @@ impl AnalyticsCollector {
         new_listings: u32,
         new_purchases: u32,
     ) -> Result<()> {
-        // Supply trend based on new listings
-        let supply_change = (new_listings as i32 * 100) / market_analytics.active_agents.max(1) as i32;
-        market_analytics.supply_trend = market_analytics.supply_trend
-            .saturating_add(supply_change)
-            .max(-10000)
-            .min(10000); // Cap at ±100%
+        // Supply trend: measure how many new listings per active agent
+        let min_active_agents = market_analytics.active_agents.max(1); // Prevent division by zero
+        let listings_per_agent_percent = (new_listings as i32 * 100) / min_active_agents as i32;
         
-        // Demand trend based on purchases vs listings ratio
+        // Update supply trend with saturation protection and clamping to valid range
+        market_analytics.supply_trend = market_analytics.supply_trend
+            .saturating_add(listings_per_agent_percent)
+            .clamp(-crate::MAX_TREND_RANGE, crate::MAX_TREND_RANGE); // Cap at ±100%
+        
+        // Demand trend: measure purchase-to-listing ratio (market health indicator)
         if new_listings > 0 {
-            let demand_ratio = (new_purchases as i32 * 100) / new_listings as i32;
+            // Calculate purchase ratio as percentage (100 = equilibrium)
+            let purchase_to_listing_ratio = (new_purchases as i32 * 100) / new_listings as i32;
+            
+            // Adjust relative to equilibrium point (100% = balanced market)
+            let demand_delta = purchase_to_listing_ratio - 100;
+            
+            // Update demand trend with the calculated delta
             market_analytics.demand_trend = market_analytics.demand_trend
-                .saturating_add(demand_ratio - 100) // Adjust relative to equilibrium
-                .max(-10000)
-                .min(10000);
+                .saturating_add(demand_delta)
+                .clamp(-crate::MAX_TREND_RANGE, crate::MAX_TREND_RANGE);
         }
         
         msg!("Analytics: Market trends updated, supply: {}, demand: {}", 

@@ -66,7 +66,7 @@ fn test_input_validation_patterns() {
     ];
     
     for agent_id in valid_agent_ids {
-        assert!(validate_agent_id(agent_id), "Agent ID '{}' should be valid", agent_id);
+        assert!(validate_agent_id(agent_id), "Agent ID '{agent_id}' should be valid");
     }
     
     // Test invalid agent IDs
@@ -81,7 +81,7 @@ fn test_input_validation_patterns() {
     ];
     
     for agent_id in invalid_agent_ids {
-        assert!(!validate_agent_id(agent_id), "Agent ID '{}' should be invalid", agent_id);
+        assert!(!validate_agent_id(agent_id), "Agent ID '{agent_id}' should be invalid");
     }
     
     // Test metadata URI validation patterns
@@ -102,7 +102,7 @@ fn test_input_validation_patterns() {
     ];
     
     for uri in valid_uris {
-        assert!(validate_metadata_uri(uri), "URI '{}' should be valid", uri);
+        assert!(validate_metadata_uri(uri), "URI '{uri}' should be valid");
     }
     
     let long_uri = "x".repeat(max_url_length + 1);
@@ -116,7 +116,7 @@ fn test_input_validation_patterns() {
     ];
     
     for uri in invalid_uris {
-        assert!(!validate_metadata_uri(uri), "URI '{}' should be invalid", uri);
+        assert!(!validate_metadata_uri(uri), "URI '{uri}' should be invalid");
     }
     
     println!("    ✅ Input validation pattern tests passed");
@@ -184,12 +184,12 @@ fn test_parameter_bounds_validation() {
     
     let valid_fees = vec![0, 100, 500, max_transfer_fee];
     for fee in valid_fees {
-        assert!(validate_transfer_fee(fee), "Fee {} should be valid", fee);
+        assert!(validate_transfer_fee(fee), "Fee {fee} should be valid");
     }
     
     let invalid_fees = vec![max_transfer_fee + 1, 15000, 20000];
     for fee in invalid_fees {
-        assert!(!validate_transfer_fee(fee), "Fee {} should be invalid", fee);
+        assert!(!validate_transfer_fee(fee), "Fee {fee} should be invalid");
     }
     
     // Test interest rate bounds validation
@@ -201,12 +201,12 @@ fn test_parameter_bounds_validation() {
     
     let valid_rates = vec![-max_interest_rate, -1000, 0, 1000, max_interest_rate];
     for rate in valid_rates {
-        assert!(validate_interest_rate(rate), "Rate {} should be valid", rate);
+        assert!(validate_interest_rate(rate), "Rate {rate} should be valid");
     }
     
     let invalid_rates = vec![max_interest_rate + 1, -max_interest_rate - 1, 10000, -10000];
     for rate in invalid_rates {
-        assert!(!validate_interest_rate(rate), "Rate {} should be invalid", rate);
+        assert!(!validate_interest_rate(rate), "Rate {rate} should be invalid");
     }
     
     println!("    ✅ Parameter bounds validation tests passed");
@@ -268,12 +268,13 @@ fn test_performance_benchmarks() {
     let start = std::time::Instant::now();
     
     for _ in 0..1000 {
-        let _valid = test_admin_key != Pubkey::default() && test_admin_key == test_admin_key;
+        // Perform realistic admin validation checks
+        let _valid = test_admin_key != Pubkey::default() && !test_admin_key.to_bytes().iter().all(|&b| b == 0);
     }
     
     let duration = start.elapsed();
     assert!(duration.as_millis() < 100, 
-           "1000 admin validations should complete in under 100ms, took: {:?}", duration);
+           "1000 admin validations should complete in under 100ms, took: {duration:?}");
     
     // Benchmark input validation
     let test_inputs = vec![
@@ -298,7 +299,7 @@ fn test_performance_benchmarks() {
     
     let duration = start.elapsed();
     assert!(duration.as_millis() < 500, 
-           "Input validation stress test should complete in under 500ms, took: {:?}", duration);
+           "Input validation stress test should complete in under 500ms, took: {duration:?}");
     
     // Benchmark PDA generation
     let program_id = Pubkey::from_str("CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4").unwrap();
@@ -307,7 +308,7 @@ fn test_performance_benchmarks() {
     let start = std::time::Instant::now();
     
     for i in 0..100 {
-        let agent_id = format!("agent_{}", i);
+        let agent_id = format!("agent_{i}");
         let (_pda, _bump) = Pubkey::find_program_address(
             &[b"agent", owner.as_ref(), agent_id.as_bytes()],
             &program_id
@@ -316,7 +317,7 @@ fn test_performance_benchmarks() {
     
     let duration = start.elapsed();
     assert!(duration.as_millis() < 1000, 
-           "100 PDA generations should complete in under 1000ms, took: {:?}", duration);
+           "100 PDA generations should complete in under 1000ms, took: {duration:?}");
     
     println!("    ✅ Performance benchmarks passed!");
 }

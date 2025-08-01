@@ -34,23 +34,34 @@ pub enum NetworkType {
 
 impl NetworkType {
     /// Detect network type from various indicators
+    /// 
+    /// This function detects the current network based on build-time feature flags.
+    /// In production deployments, this provides compile-time guarantees about
+    /// which network the program is configured for.
     pub fn detect() -> Self {
-        // In a real implementation, this could check:
-        // - Cluster URL from context
-        // - Build features
-        // - Environment variables
-
+        // Check feature flags in order of preference
+        // Each cfg attribute creates a separate compilation path
+        
         #[cfg(feature = "devnet")]
-        return NetworkType::Devnet;
+        {
+            NetworkType::Devnet
+        }
 
         #[cfg(feature = "testnet")]
-        return NetworkType::Testnet;
+        {
+            NetworkType::Testnet
+        }
 
         #[cfg(feature = "localnet")]
-        return NetworkType::Localnet;
+        {
+            NetworkType::Localnet
+        }
 
-        // Default to mainnet if no feature flags
-        NetworkType::Mainnet
+        // Default to mainnet if no specific network feature is enabled
+        #[cfg(not(any(feature = "devnet", feature = "testnet", feature = "localnet")))]
+        {
+            NetworkType::Mainnet
+        }
     }
 }
 
@@ -99,18 +110,68 @@ pub fn validate_admin_configuration() -> AdminValidationResult {
 }
 
 /// Check if a public key is a known system address
+/// 
+/// This function prevents the use of Solana system program addresses as admin keys,
+/// which would be a critical security vulnerability. System programs should never
+/// be granted administrative privileges over user protocols.
+/// 
+/// # Arguments
+/// * `key` - The public key to validate against known system addresses
+/// 
+/// # Returns
+/// * `true` if the key matches any known system program address
+/// * `false` if the key is safe to use (not a system program)
+/// 
+/// # Security
+/// This is a critical security check that prevents privilege escalation attacks
+/// where system programs could be used to bypass authentication.
 pub fn is_system_address(key: &Pubkey) -> bool {
     let key_str = key.to_string();
     SYSTEM_PROGRAM_IDS.iter().any(|&sys_key| sys_key == key_str)
 }
 
 /// Check if a public key is a test/development address
+/// 
+/// This function identifies addresses that are intended only for development
+/// and testing environments. Using these addresses in production would be
+/// a security risk as they may have known private keys or be otherwise compromised.
+/// 
+/// # Arguments
+/// * `key` - The public key to validate against known test addresses
+/// 
+/// # Returns
+/// * `true` if the key is a known test/development address
+/// * `false` if the key appears to be a production-ready address
+/// 
+/// # Security
+/// Prevents the accidental use of test keys in production deployments,
+/// which could lead to unauthorized access if test private keys are exposed.
 pub fn is_test_address(key: &Pubkey) -> bool {
     let key_str = key.to_string();
     TEST_ADDRESSES.iter().any(|&test_key| test_key == key_str)
 }
 
 /// Runtime admin validation that can be called from instructions
+/// 
+/// This function performs comprehensive validation of admin keys at runtime,
+/// ensuring that only legitimate, secure keys can be used for administrative
+/// operations. It should be called before any admin-privileged operations.
+/// 
+/// # Arguments
+/// * `admin` - The admin public key to validate
+/// 
+/// # Returns
+/// * `Ok(())` if the admin key passes all security checks
+/// * `Err(AdminValidationError)` if any validation fails
+/// 
+/// # Validation Checks
+/// 1. Ensures the key is not a system program address
+/// 2. Ensures the key is not the default/null public key
+/// 3. Additional runtime checks for key legitimacy
+/// 
+/// # Security
+/// This function is critical for maintaining protocol security and should
+/// be used consistently across all admin-privileged instructions.
 pub fn require_valid_admin(admin: &Pubkey) -> Result<()> {
     if is_system_address(admin) {
         return err!(AdminValidationError::SystemProgramAsAdmin);

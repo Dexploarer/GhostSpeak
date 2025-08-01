@@ -15,14 +15,14 @@ pub const MAX_REPUTATION_CATEGORIES: usize = 10;
 pub const REPUTATION_DECAY_RATE_BPS: u64 = 10; // 0.1% per day
 
 /// Maximum reputation score (basis points)
-pub const MAX_REPUTATION_SCORE: u64 = 10000; // 100.00%
+pub const MAX_REPUTATION_SCORE: u64 = crate::BASIS_POINTS_MAX as u64; // 100.00%
 
 /// Minimum reputation score for slashing
-pub const MIN_REPUTATION_FOR_SLASH: u64 = 1000; // 10.00%
+pub const MIN_REPUTATION_FOR_SLASH: u64 = crate::BASIS_POINTS_10_PERCENT as u64; // 10.00%
 
 /// Reputation tier thresholds (basis points)
 pub const BRONZE_TIER_THRESHOLD: u64 = 2000; // 20%
-pub const SILVER_TIER_THRESHOLD: u64 = 5000; // 50%
+pub const SILVER_TIER_THRESHOLD: u64 = crate::BASIS_POINTS_50_PERCENT as u64; // 50%
 pub const GOLD_TIER_THRESHOLD: u64 = 7500; // 75%
 pub const PLATINUM_TIER_THRESHOLD: u64 = 9000; // 90%
 
@@ -169,17 +169,17 @@ impl ReputationData {
         
         if days_inactive > 0 {
             let decay_factor = REPUTATION_DECAY_RATE_BPS * days_inactive as u64;
-            let decay_multiplier = 10000u64.saturating_sub(decay_factor);
+            let decay_multiplier = (crate::BASIS_POINTS_MAX as u64).saturating_sub(decay_factor);
             
             // Apply decay to overall score
-            self.overall_score = (self.overall_score * decay_multiplier) / 10000;
+            self.overall_score = (self.overall_score * decay_multiplier) / (crate::BASIS_POINTS_MAX as u64);
             
             // Apply decay to category scores
             for category in &mut self.category_reputations {
                 let category_days_inactive = (current_time - category.last_activity) / 86400;
                 let category_decay = REPUTATION_DECAY_RATE_BPS * category_days_inactive as u64;
-                let category_multiplier = 10000u64.saturating_sub(category_decay);
-                category.score = (category.score * category_multiplier) / 10000;
+                let category_multiplier = (crate::BASIS_POINTS_MAX as u64).saturating_sub(category_decay);
+                category.score = (category.score * category_multiplier) / (crate::BASIS_POINTS_MAX as u64);
             }
         }
         
@@ -650,7 +650,7 @@ pub fn slash_reputation(
     );
     
     let previous_score = reputation_data.overall_score;
-    let slash_amount = (reputation_data.overall_score * slash_percentage) / 10000;
+    let slash_amount = (reputation_data.overall_score * slash_percentage) / (crate::BASIS_POINTS_MAX as u64);
     
     reputation_data.overall_score = reputation_data.overall_score.saturating_sub(slash_amount);
     reputation_data.update_tier();
@@ -660,7 +660,7 @@ pub fn slash_reputation(
     
     // Also slash staked amount proportionally
     if reputation_data.staked_amount > 0 {
-        let staked_slash = (reputation_data.staked_amount * slash_percentage) / 10000;
+        let staked_slash = (reputation_data.staked_amount * slash_percentage) / (crate::BASIS_POINTS_MAX as u64);
         reputation_data.staked_amount = reputation_data.staked_amount.saturating_sub(staked_slash);
     }
     

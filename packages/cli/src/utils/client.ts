@@ -14,7 +14,7 @@ import { URL } from 'node:url'
 import chalk from 'chalk'
 import { loadConfig } from './config.js'
 import { WalletService } from '../services/wallet-service.js'
-import { connectionPoolManager, type NetworkType } from '../core/connection-pool.js'
+import { connectionPoolManager as _connectionPoolManager, type NetworkType } from '../core/connection-pool.js'
 import { rpcPoolManager } from '../services/blockchain/rpc-pool-manager.js'
 
 

@@ -124,6 +124,71 @@ export interface AuthenticationAuditLog {
 }
 
 /**
+ * Transaction confirmation event data
+ */
+interface TransactionConfirmationEventData {
+  details?: {
+    type?: string
+    addresses?: {
+      from?: string
+      to?: string
+    }
+    estimatedCost?: {
+      sol?: number
+      fees?: {
+        totalFee?: number
+      }
+    }
+    data?: Record<string, unknown>
+  }
+  result?: {
+    confirmed?: boolean
+  }
+}
+
+/**
+ * Hardware wallet event data
+ */
+interface HardwareWalletEventData {
+  derivationPath?: string
+  signatureLength?: number
+}
+
+/**
+ * Agent registration event data
+ */
+interface AgentRegistrationEventData {
+  agentId?: string
+  success?: boolean
+}
+
+/**
+ * Agent update event data
+ */
+interface AgentUpdateEventData {
+  agentId?: string
+  fields?: string[]
+  success?: boolean
+}
+
+/**
+ * Cache event data
+ */
+interface CacheEventData {
+  key?: string
+  level?: string
+}
+
+/**
+ * Error event data
+ */
+interface ErrorEventData {
+  message?: string
+  stack?: string
+  code?: string
+}
+
+/**
  * Audit report options
  */
 export interface AuditReportOptions {
@@ -503,7 +568,7 @@ export class AuditTrail extends EventEmitter {
   private setupEventHandlers(): void {
     // Listen to transaction confirmation events
     this.eventBus.on('transaction:confirmation_completed', async (event) => {
-      const eventData = event.data as any // Type assertion for event data
+      const eventData = event.data as TransactionConfirmationEventData
       await this.logTransaction({
         type: eventData.details?.type ?? 'unknown',
         user: eventData.details?.addresses?.from ?? 'unknown',
@@ -518,7 +583,7 @@ export class AuditTrail extends EventEmitter {
 
     // Listen to hardware wallet events
     this.eventBus.on('hardware_wallet:transaction_signed', async (event) => {
-      const eventData = event.data as any // Type assertion for event data
+      const eventData = event.data as HardwareWalletEventData
       await this.logSecurity({
         description: 'Hardware wallet transaction signed',
         details: {
@@ -532,7 +597,7 @@ export class AuditTrail extends EventEmitter {
 
     // Listen to cache events for data access logging
     this.eventBus.on('cache:hit', async (event) => {
-      const eventData = event.data as any // Type assertion for event data
+      const eventData = event.data as CacheEventData
       await this.logEvent({
         type: 'data_access',
         severity: 'low',
@@ -548,7 +613,7 @@ export class AuditTrail extends EventEmitter {
 
     // Listen to error events
     this.eventBus.on('error', async (event) => {
-      const eventData = event.data as any // Type assertion for event data
+      const eventData = event.data as ErrorEventData
       await this.logError({
         message: eventData.message ?? 'Unknown error',
         stack: eventData.stack,
@@ -614,7 +679,7 @@ export class AuditTrail extends EventEmitter {
 
           events.push(event)
 
-        } catch (parseError) {
+        } catch (_parseError) {
           // Skip malformed lines
           continue
         }
@@ -877,10 +942,10 @@ export function AuditLog(options: {
   description?: string
   action?: string
 }) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (target: object, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (this: unknown, ...args: unknown[]) {
       const auditTrail = AuditTrail.getInstance()
       const startTime = Date.now()
 

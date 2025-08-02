@@ -30,8 +30,8 @@
 
 import { EventEmitter } from 'events'
 import { EventBus } from './event-system'
-import { connectionPoolManager, type NetworkType } from './connection-pool'
-import { rpcPoolManager } from '../services/blockchain/rpc-pool-manager'
+import { connectionPoolManager as _connectionPoolManager, type NetworkType as _NetworkType } from './connection-pool'
+import { rpcPoolManager as _rpcPoolManager } from '../services/blockchain/rpc-pool-manager'
 
 /**
  * Network configuration options
@@ -449,7 +449,7 @@ export class NetworkOptimizer extends EventEmitter {
     expectedImprovement: string
   }> {
     const changes: string[] = []
-    const recommendations = this.getOptimizationRecommendations()
+    const _recommendations = this.getOptimizationRecommendations()
 
     // Auto-adjust circuit breaker thresholds based on success rates
     if (this.metrics.successRate < 80) {
@@ -754,7 +754,7 @@ export class NetworkOptimizer extends EventEmitter {
       const windowSize = 60000 // 1 minute window
       
       // Clean old bandwidth entries
-      for (const [timestamp, usage] of this.bandwidthTracker.entries()) {
+      for (const [timestamp, _usage] of this.bandwidthTracker.entries()) {
         if (currentTime - parseInt(timestamp) > windowSize) {
           this.bandwidthTracker.delete(timestamp)
         }

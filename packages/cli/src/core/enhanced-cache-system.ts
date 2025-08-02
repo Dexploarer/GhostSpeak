@@ -27,15 +27,15 @@
  * ```
  */
 
-import { EventEmitter } from 'events'
-import { LRUCache } from 'lru-cache'
+import { EventEmitter as _EventEmitter } from 'events'
+import { LRUCache as _LRUCache } from 'lru-cache'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import { createHash } from 'crypto'
 import { gzipSync, gunzipSync } from 'zlib'
-import { EventBus } from './event-system'
-import { CacheManager, type CacheEntry, type CacheOptions, type CacheStats } from './cache-system'
+import { EventBus as _EventBus } from './event-system'
+import { CacheManager, type CacheEntry as _CacheEntry, type CacheOptions, type CacheStats } from './cache-system'
 
 /**
  * Enhanced cache options with performance features
@@ -490,7 +490,7 @@ export class EnhancedCacheManager extends CacheManager {
             const value = await loader()
             await this.set(prediction.key, value, { tags: ['optimized'] })
             results.warmed++
-          } catch {
+          } catch (error) {
             // Ignore warming failures during optimization
           }
         }
@@ -498,7 +498,7 @@ export class EnhancedCacheManager extends CacheManager {
     }
 
     // Adjust TTLs based on patterns
-    for (const [key, pattern] of this.usagePatterns) {
+    for (const [key, _pattern] of this.usagePatterns) {
       const newTTL = this.calculateAdaptiveTTL(key)
       if (newTTL && await this.has(key)) {
         const current = await this.get(key)
@@ -526,7 +526,7 @@ export class EnhancedCacheManager extends CacheManager {
         const metadata = await fs.readFile(metadataPath, 'utf8')
         const data = JSON.parse(metadata)
         this.persistentKeys = new Set(data.keys || [])
-      } catch {
+      } catch (error) {
         // No existing metadata, start fresh
       }
       
@@ -634,14 +634,14 @@ export class EnhancedCacheManager extends CacheManager {
         try {
           data.metadata.lastAccess = new Date()
           await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
-        } catch {
+        } catch (error) {
           // Ignore access time update failures
         }
       })
       
       return data.value as T
       
-    } catch {
+    } catch (error) {
       return null
     }
   }
@@ -656,7 +656,7 @@ export class EnhancedCacheManager extends CacheManager {
       await fs.unlink(filePath)
       this.persistentKeys.delete(key)
       await this.updateDiskMetadata()
-    } catch {
+    } catch (error) {
       // Ignore removal errors
     }
   }
@@ -679,7 +679,7 @@ export class EnhancedCacheManager extends CacheManager {
         lastUpdate: new Date()
       }
       await fs.writeFile(metadataPath, JSON.stringify(metadata), 'utf8')
-    } catch {
+    } catch (error) {
       // Ignore metadata update errors
     }
   }
@@ -718,7 +718,7 @@ export class EnhancedCacheManager extends CacheManager {
     try {
       const buffer = Buffer.from(value, 'base64')
       return buffer.length > 0 && buffer[0] === 0x1f && buffer[1] === 0x8b
-    } catch {
+    } catch (error) {
       return false
     }
   }
@@ -726,7 +726,7 @@ export class EnhancedCacheManager extends CacheManager {
   /**
    * Update usage pattern for key
    */
-  private updateUsagePattern(key: string, hit: boolean): void {
+  private updateUsagePattern(key: string, _hit: boolean): void {
     const now = new Date()
     let pattern = this.usagePatterns.get(key)
     
@@ -803,7 +803,7 @@ export class EnhancedCacheManager extends CacheManager {
       const value = await loader()
       await this.set(key, value, { tags: ['predictive_load'] })
       return value as T
-    } catch {
+    } catch (error) {
       return null
     }
   }

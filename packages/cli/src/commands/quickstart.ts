@@ -25,7 +25,7 @@ import {
   loadExistingWallet,
   checkWalletBalance,
   fundWallet,
-  createMultisigWrapper,
+  createMultisigWrapper as _createMultisigWrapper,
   showSetupSummary,
   validateNetwork,
   type SetupResult,
@@ -139,7 +139,7 @@ quickstartCommand
               // Import SDK and create real multisig
               const { initializeClient, toSDKSigner } = await import('../utils/client.js')
               const { createSafeSDKClient } = await import('../utils/sdk-helpers.js')
-              const { address } = await import('@solana/addresses')
+              const { address: _address } = await import('@solana/addresses')
               
               const { client: sdkClient } = await initializeClient(network)
               const safeClient = createSafeSDKClient(sdkClient)
@@ -365,7 +365,7 @@ quickstartCommand
               // Import SDK and create real multisig
               const { initializeClient, toSDKSigner } = await import('../utils/client.js')
               const { createSafeSDKClient } = await import('../utils/sdk-helpers.js')
-              const { address } = await import('@solana/addresses')
+              const { address: _address } = await import('@solana/addresses')
               
               const { client: sdkClient } = await initializeClient(network)
               const safeClient = createSafeSDKClient(sdkClient)

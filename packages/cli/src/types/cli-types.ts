@@ -314,7 +314,7 @@ export type RequireAtLeastOne<T> = {
 export function isValidUrl(value: string): boolean {
   try {
      
-    new globalThis.URL(value)
+    new URL(value)
     return true
   } catch {
     return false

@@ -134,8 +134,8 @@ export class CacheManager extends EventEmitter {
 
     const {
       maxMemorySize = 100 * 1024 * 1024, // 100MB
-      maxDiskSize = 1024 * 1024 * 1024,   // 1GB
-      defaultTTL = 3600                    // 1 hour
+      maxDiskSize: _maxDiskSize = 1024 * 1024 * 1024,   // 1GB
+      defaultTTL: _defaultTTL = 3600                    // 1 hour
     } = options || {}
 
     // Initialize memory cache with LRU
@@ -241,7 +241,7 @@ export class CacheManager extends EventEmitter {
         tags = [],
         level = 'memory',
         compress = false,
-        serializer = 'json'
+        serializer: _serializer = 'json'
       } = options
 
       // Create cache entry

@@ -329,7 +329,7 @@ export class ConnectionPool extends EventEmitter {
         this.updateAverageResponseTime(data.responseTime)
       })
 
-      connection.on('request_failed', (data) => {
+      connection.on('request_failed', (_data) => {
         this.stats.failures++
         this.updateEndpointHealth(endpoint, 'degraded')
       })

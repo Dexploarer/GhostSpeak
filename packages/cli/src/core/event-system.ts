@@ -168,7 +168,7 @@ export class EventBus extends EventEmitter {
   subscribe(
     pattern: EventPattern,
     handler: EventHandler,
-    options?: {
+    _options?: {
       once?: boolean
       priority?: number
     }

@@ -17,6 +17,7 @@ import {
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager as _AgentCNFTManager } from '../../utils/agent-wallet.js'
 import type { CreateServiceOptions } from '../../types/cli-types.js'
+import type { GhostSpeakClient } from '@ghostspeak/sdk'
 import { 
   deriveServiceListingPda, 
   deriveUserRegistryPda, 

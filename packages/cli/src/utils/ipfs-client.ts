@@ -16,7 +16,7 @@ export class IPFSClientImpl implements IPFSClient {
   constructor(url = 'https://ipfs.infura.io:5001') {
     try {
       this.client = create({ url })
-    } catch {
+    } catch (error) {
       console.warn('IPFS client not available, using fallback storage')
       this.client = null
     }
@@ -65,7 +65,7 @@ export class IPFSClientImpl implements IPFSClient {
         chunks.push(chunk)
       }
       return Buffer.concat(chunks).toString()
-    } catch {
+    } catch (error) {
       throw new Error(`Failed to retrieve IPFS content: ${error}`)
     }
   }

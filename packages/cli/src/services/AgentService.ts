@@ -21,6 +21,8 @@ import {
 import { randomUUID } from 'crypto'
 import { toSDKSigner } from '../utils/client.js'
 import { getCurrentProgramId } from '../../../../config/program-ids.js'
+import { createSolanaRpc } from '@solana/kit'
+import { AgentModule } from '@ghostspeak/sdk'
 
 export class AgentService implements IAgentService {
   private agentCache = new Map<string, { data: Agent; timestamp: number }>()
@@ -141,7 +143,7 @@ export class AgentService implements IAgentService {
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       return agent
-    } catch {
+    } catch (error) {
       if (error instanceof ValidationError || error instanceof NetworkError) {
         throw error // Re-throw service errors as-is
       }
@@ -184,7 +186,7 @@ export class AgentService implements IAgentService {
       const offset = params.offset ?? 0
       const limit = params.limit ?? 50
       return filteredAgents.slice(offset, offset + limit)
-    } catch {
+    } catch (error) {
       throw new NetworkError(
         `Failed to list agents: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'Check your network connection and try again'
@@ -214,7 +216,7 @@ export class AgentService implements IAgentService {
       }
       
       return agent
-    } catch {
+    } catch (error) {
       console.error(`Error getting agent ${agentId}:`, error)
       return null
     }
@@ -249,7 +251,7 @@ export class AgentService implements IAgentService {
       const sdk = await import('@ghostspeak/sdk')
       console.log('🔍 SDK imported, checking for AgentModule...')
       
-      const AgentModuleClass = (sdk as any).AgentModule
+      const AgentModuleClass = sdk.AgentModule
       if (!AgentModuleClass) {
         throw new Error('AgentModule not found in SDK exports')
       }
@@ -313,7 +315,7 @@ export class AgentService implements IAgentService {
       this.listCache.clear()
       
       return updatedAgent
-    } catch {
+    } catch (error) {
       if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
         throw error // Re-throw service errors as-is
       }
@@ -424,7 +426,7 @@ export class AgentService implements IAgentService {
         categories: agent.capabilities
       }
       
-    } catch {
+    } catch (error) {
       console.error('Error fetching agent analytics:', error)
       // Return default values on error but log the issue
       return {
@@ -471,7 +473,7 @@ export class AgentService implements IAgentService {
       // This is a simplified approach - real implementation would use proper indexing
       const allAgents = await this.getAllAgents()
       return allAgents.filter(agent => agent.owner === owner)
-    } catch {
+    } catch (error) {
       console.error('Error getting agents by owner:', error)
       return agents
     }
@@ -648,7 +650,7 @@ export class AgentService implements IAgentService {
       const end = start + limit
       
       return agents.slice(start, end)
-    } catch {
+    } catch (error) {
       console.error('Error getting all agents from blockchain:', error)
       // Fallback to empty array if blockchain query fails
       return []

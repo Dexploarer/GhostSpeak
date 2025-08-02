@@ -134,7 +134,7 @@ program
           } else {
             unhealthy++;
           }
-        } catch (_error) {
+        } catch {
           unhealthy++;
         }
       }

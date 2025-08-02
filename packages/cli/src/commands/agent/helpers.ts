@@ -2,7 +2,7 @@
  * Shared utilities for agent commands
  */
 
-import { promises as fs } from 'fs'
+import { promises as fs, existsSync, readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import type { Address } from '@solana/addresses'
@@ -166,7 +166,7 @@ export function isValidUrl(string: string): boolean {
   try {
     new URL(string)
     return true
-  } catch (error: unknown) {
+  } catch {
     return false
   }
 }

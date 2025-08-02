@@ -594,14 +594,14 @@ export class HardwareWalletUtils {
    */
   static async validateSignature(
     signature: HardwareSignature,
-    originalData: Uint8Array
+    _originalData: Uint8Array
   ): Promise<boolean> {
     try {
       // In real implementation, would use crypto libraries to verify
       // For now, just check that signature exists and has correct length
       return signature.signature.length === 64 && 
              signature.publicKey.length === 32
-    } catch (_error) {
+    } catch {
       return false
     }
   }

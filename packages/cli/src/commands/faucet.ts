@@ -77,11 +77,11 @@ async function requestFromSolanaFaucet(
     } else {
       throw new Error(data.error ?? 'Unknown error from Solana faucet')
     }
-  } catch {
+  } catch (_error) {
     return {
       source: 'Solana Official',
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: _error instanceof Error ? _error.message : 'Unknown error'
     }
   }
 }
@@ -133,11 +133,11 @@ async function requestFromAlchemyFaucet(
     } else {
       throw new Error(data.error ?? (data.message as string | undefined) ?? 'Unknown error from Alchemy faucet')
     }
-  } catch {
+  } catch (_error) {
     return {
       source: 'Alchemy',
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: _error instanceof Error ? _error.message : 'Unknown error'
     }
   }
 }
@@ -177,11 +177,11 @@ async function requestFromRpcAirdrop(
       amount,
       explorerUrl
     }
-  } catch {
+  } catch (_error) {
     return {
       source: 'RPC Airdrop',
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: _error instanceof Error ? _error.message : 'Unknown error'
     }
   }
 }
@@ -200,8 +200,8 @@ async function checkBalance(walletAddress: string, network: 'devnet' | 'testnet'
 
     const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
     return Number(balance) / 1_000_000_000 // Convert lamports to SOL
-  } catch {
-    console.warn('⚠️ Failed to check balance:', error)
+  } catch (_error) {
+    console.warn('⚠️ Failed to check balance:', _error)
     return 0
   }
 }
@@ -371,8 +371,8 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
 
     console.log('\n💡 TIP: Your wallet is saved. Use gs wallet list to see all wallets.')
 
-  } catch {
-    console.error('❌ Faucet command failed:', error)
+  } catch (_error) {
+    console.error('❌ Faucet command failed:', _error)
     process.exit(1)
   }
 }
@@ -432,8 +432,8 @@ export function setupFaucetCommand(program: Command): void {
         console.log(`💳 Wallet: ${chalk.cyan(walletName)}`)
         console.log(`📍 Address: ${walletAddress}`)
         console.log(`💰 Balance: ${chalk.green(`${balance} SOL`)} (${_options.network})`)
-      } catch {
-        console.error('❌ Failed to check balance:', error)
+      } catch (_error) {
+        console.error('❌ Failed to check balance:', _error)
         process.exit(1)
       }
     })
@@ -526,8 +526,8 @@ export function setupFaucetCommand(program: Command): void {
           console.log(`   ${network}: ${count} requests`)
         })
 
-      } catch {
-        console.error('❌ Failed to check faucet status:', error)
+      } catch (_error) {
+        console.error('❌ Failed to check faucet status:', _error)
         process.exit(1)
       }
     })
@@ -566,8 +566,8 @@ export function setupFaucetCommand(program: Command): void {
         
         console.log(`🧹 Cleaned ${removedCount} old request records`)
         console.log(`📅 Kept ${daysToKeep} days of history`)
-      } catch {
-        console.error('❌ Failed to clean request history:', error)
+      } catch (_error) {
+        console.error('❌ Failed to clean request history:', _error)
         process.exit(1)
       }
     })

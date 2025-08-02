@@ -117,8 +117,8 @@ export async function checkWalletBalance(
     const rpc = createSolanaRpc(rpcUrl)
     const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
     return Number(balance) / 1_000_000_000 // Convert lamports to SOL
-  } catch {
-    console.warn('Failed to check balance:', error)
+  } catch (_error) {
+    console.warn('Failed to check balance:', _error)
     return 0
   }
 }
@@ -209,10 +209,10 @@ export async function fundWallet(
             signature,
             amount: 1
           }
-        } catch {
+        } catch (_error) {
           result = {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: _error instanceof Error ? _error.message : 'Unknown error'
           }
         }
       }

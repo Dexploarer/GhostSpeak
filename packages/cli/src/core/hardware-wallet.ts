@@ -155,11 +155,11 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       console.log(`✅ Connected to Ledger ${this.device.model}`)
 
-    } catch {
+    } catch (_error) {
       this.status = 'error'
       this.emit('status_changed', this.status)
-      this.emit('error', error)
-      throw new Error(`Failed to connect to Ledger: ${error}`)
+      this.emit('error', _error)
+      throw new Error(`Failed to connect to Ledger: ${_error}`)
     }
   }
 
@@ -183,9 +183,9 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       console.log('✅ Disconnected from Ledger')
 
-    } catch {
-      this.emit('error', error)
-      throw error
+    } catch (_error) {
+      this.emit('error', _error)
+      throw _error
     }
   }
 
@@ -210,9 +210,9 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       return publicKey
 
-    } catch {
-      this.emit('error', error)
-      throw new Error(`Failed to get public key: ${error}`)
+    } catch (_error) {
+      this.emit('error', _error)
+      throw new Error(`Failed to get public key: ${_error}`)
     }
   }
 
@@ -240,19 +240,19 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
       console.log('✅ Transaction signed successfully')
       return signature
 
-    } catch {
-      this.emit('error', error)
+    } catch (_error) {
+      this.emit('error', _error)
       
-      if (error instanceof Error) {
-        if (error.message.includes('denied')) {
+      if (_error instanceof Error) {
+        if (_error.message.includes('denied')) {
           throw new Error('Transaction was rejected on device')
         }
-        if (error.message.includes('timeout')) {
+        if (_error.message.includes('timeout')) {
           throw new Error('Transaction signing timed out - please confirm on device')
         }
       }
 
-      throw new Error(`Failed to sign transaction: ${error}`)
+      throw new Error(`Failed to sign transaction: ${_error}`)
     }
   }
 
@@ -280,9 +280,9 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
       console.log('✅ Message signed successfully')
       return signature
 
-    } catch {
-      this.emit('error', error)
-      throw new Error(`Failed to sign message: ${error}`)
+    } catch (_error) {
+      this.emit('error', _error)
+      throw new Error(`Failed to sign message: ${_error}`)
     }
   }
 
@@ -450,8 +450,8 @@ export class HardwareWalletManager extends EventEmitter {
 
       return devices
 
-    } catch {
-      console.warn('Failed to detect hardware wallet devices:', error)
+    } catch (_error) {
+      console.warn('Failed to detect hardware wallet devices:', _error)
       return []
     }
   }
@@ -498,12 +498,12 @@ export class HardwareWalletManager extends EventEmitter {
 
       return wallet
 
-    } catch {
+    } catch (_error) {
       this.eventBus.emit('hardware_wallet:connection_failed', {
         type,
-        error: error instanceof Error ? error.message : String(error)
+        error: _error instanceof Error ? _error.message : String(_error)
       })
-      throw error
+      throw _error
     }
   }
 
@@ -601,7 +601,7 @@ export class HardwareWalletUtils {
       // For now, just check that signature exists and has correct length
       return signature.signature.length === 64 && 
              signature.publicKey.length === 32
-    } catch {
+    } catch (_error) {
       return false
     }
   }

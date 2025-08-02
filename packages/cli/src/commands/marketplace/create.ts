@@ -15,12 +15,12 @@ import {
   cancel
 } from '@clack/prompts'
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
-import { AgentWalletManager, AgentCNFTManager } from '../../utils/agent-wallet.js'
+import { AgentWalletManager, AgentCNFTManager as _AgentCNFTManager } from '../../utils/agent-wallet.js'
 import type { CreateServiceOptions } from '../../types/cli-types.js'
 import { 
   deriveServiceListingPda, 
   deriveUserRegistryPda, 
-  deriveAgentPda,
+  deriveAgentPda as _deriveAgentPda,
   generateUniqueId,
   solToLamports,
   getDefaultPaymentToken

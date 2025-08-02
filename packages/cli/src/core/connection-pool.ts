@@ -114,7 +114,7 @@ export class PooledConnection extends EventEmitter {
 
     try {
       // Execute the RPC call using the rpc instance
-      const result = await (this.rpc as any)[method]?.(...(params || []))
+      const result = await (this.rpc as any)[method]?.(...(params ?? []))
       
       // Track response time
       const responseTime = Date.now() - startTime
@@ -395,7 +395,7 @@ export class ConnectionPool extends EventEmitter {
 
     // Weighted selection based on performance and weight
     const totalWeight = healthyEndpoints.reduce((sum, ep) => {
-      const performanceWeight = Math.max(1, 1000 / (ep.responseTime.average || 1000))
+      const performanceWeight = Math.max(1, 1000 / (ep.responseTime.average ?? 1000))
       return sum + ep.weight * performanceWeight
     }, 0)
 
@@ -403,7 +403,7 @@ export class ConnectionPool extends EventEmitter {
     let currentWeight = 0
 
     for (const endpoint of healthyEndpoints) {
-      const performanceWeight = Math.max(1, 1000 / (endpoint.responseTime.average || 1000))
+      const performanceWeight = Math.max(1, 1000 / (endpoint.responseTime.average ?? 1000))
       currentWeight += endpoint.weight * performanceWeight
       if (random <= currentWeight) {
         return endpoint
@@ -666,7 +666,7 @@ export class ConnectionPoolManager extends EventEmitter {
    * Create pool for network
    */
   private async createPool(network: NetworkType): Promise<ConnectionPool> {
-    const endpoints = this.defaultEndpoints[network] || []
+    const endpoints = this.defaultEndpoints[network] ?? []
     
     if (endpoints.length === 0) {
       throw new Error(`No RPC endpoints configured for network: ${network}`)

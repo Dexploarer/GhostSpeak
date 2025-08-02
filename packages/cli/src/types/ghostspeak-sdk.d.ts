@@ -81,6 +81,7 @@ declare module '@ghostspeak/sdk' {
     register(signer: TransactionSigner, params: RegisterAgentParams): Promise<TransactionResult>
     update(signer: TransactionSigner, params: UpdateAgentParams): Promise<TransactionResult>
     listByOwner(params: { owner: Address }): Promise<AgentWithAddress[]>
+    getUserAgents(ownerAddress: Address): Promise<AgentWithAddress[]>
     getById(agentId: string): Promise<Agent | null>
     getAnalytics(agentAddress: Address): Promise<AgentAnalytics>
     verifyOwnership(agentId: string, owner: Address): Promise<boolean>

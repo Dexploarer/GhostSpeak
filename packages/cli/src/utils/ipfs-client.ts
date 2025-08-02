@@ -2,7 +2,7 @@
  * IPFS client utilities for metadata storage
  */
 
-import { create } from 'kubo-rpc-client'
+import { create, type IPFSHTTPClient } from 'kubo-rpc-client'
 
 export interface IPFSClient {
   add(content: string): Promise<string>
@@ -11,7 +11,7 @@ export interface IPFSClient {
 }
 
 export class IPFSClientImpl implements IPFSClient {
-  private client: any
+  private client: IPFSHTTPClient | null
 
   constructor(url = 'https://ipfs.infura.io:5001') {
     try {
@@ -27,7 +27,7 @@ export class IPFSClientImpl implements IPFSClient {
       // Fallback: Use data URI for local testing
       return `data:application/json;base64,${Buffer.from(content).toString('base64')}`
     }
-
+    
     try {
       const result = await this.client.add(content)
       const hash = result.cid.toString()
@@ -37,7 +37,7 @@ export class IPFSClientImpl implements IPFSClient {
       
       return `https://ipfs.io/ipfs/${hash}`
     } catch (error) {
-      console.warn(`Failed to load plugin from ${file}:`, error)
+      console.warn('Failed to add content to IPFS:', error)
       // Fallback to data URI
       return `data:application/json;base64,${Buffer.from(content).toString('base64')}`
     }
@@ -49,7 +49,7 @@ export class IPFSClientImpl implements IPFSClient {
     try {
       await this.client.pin.add(hash)
     } catch (error) {
-      console.warn(`Failed to load plugin from ${file}:`, error)
+      console.warn(`Failed to pin IPFS content:`, error)
       // Non-fatal error - content may still be accessible
     }
   }

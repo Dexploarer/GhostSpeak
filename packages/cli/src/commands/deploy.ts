@@ -9,7 +9,7 @@ import { readFileSync, existsSync } from 'fs'
 import { createKeyPairSignerFromBytes, address, type KeyPairSigner } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 import type { DeployCommandOptions, WalletService, BlockchainService } from '../types/sdk-types.js'
-import { container as Container, ServiceTokens } from '../core/Container.js'
+import { container, ServiceTokens } from '../core/Container.js'
 
 export const deployCommand = new Command('deploy')
   .description('Deploy or upgrade GhostSpeak program on Solana')
@@ -20,8 +20,6 @@ export const deployCommand = new Command('deploy')
   .option('--program-id <id>', 'Program ID for upgrade (required with --upgrade)')
   .option('--skip-verification', 'Skip deployment verification')
   .action(async (options: DeployCommandOptions) => {
-    const { default: Container } = await import('../core/Container.js')
-    
     try {
       console.log(chalk.blue('\n🚀 GhostSpeak Program Deployment\n'))
       
@@ -34,8 +32,8 @@ export const deployCommand = new Command('deploy')
       console.log(chalk.gray(`Program size: ${(programData.length / 1024 / 1024).toFixed(2)} MB`))
       
       // Get deployer wallet
-      const walletService = Container.get<WalletService>(ServiceTokens.WalletService)
-      const blockchainService = Container.get<BlockchainService>(ServiceTokens.BlockchainService)
+      const walletService = container.get<WalletService>(ServiceTokens.WalletService)
+      const blockchainService = container.get<BlockchainService>(ServiceTokens.BlockchainService)
       
       let deployerSigner: KeyPairSigner
       

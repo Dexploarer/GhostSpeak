@@ -50,6 +50,14 @@ target/
 cli-demo.ts
 demo-integration.ts
 
+# === Next.js build artifacts ===
+packages/web/.next/
+packages/web/out/
+packages/web/coverage/
+packages/web/dev.log
+packages/web/.turbo/
+packages/web/.swc/
+
 # === Windows/OS-specific ===
 vs_buildtools.exe
 *.exe

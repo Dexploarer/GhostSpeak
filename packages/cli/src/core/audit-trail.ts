@@ -553,7 +553,7 @@ export class AuditTrail extends EventEmitter {
     
     try {
       await fs.unlink(this.logPath)
-    } catch {
+    } catch (_) {
       // File may not exist, ignore
     }
 
@@ -638,8 +638,8 @@ export class AuditTrail extends EventEmitter {
       this.eventBuffer = []
       this.emit('buffer_flushed')
 
-    } catch {
-      this.emit('error', error)
+    } catch (_) {
+      this.emit('error', _error)
     }
   }
 
@@ -683,7 +683,7 @@ export class AuditTrail extends EventEmitter {
         }
       }
 
-    } catch {
+    } catch (_) {
       // Log file may not exist yet
     }
 
@@ -925,7 +925,7 @@ export class AuditTrail extends EventEmitter {
   private async ensureDirectoryExists(dirPath: string): Promise<void> {
     try {
       await fs.access(dirPath)
-    } catch {
+    } catch (_) {
       await fs.mkdir(dirPath, { recursive: true })
     }
   }
@@ -965,7 +965,7 @@ export function AuditLog(options: {
 
         return result
 
-      } catch {
+      } catch (_) {
         await auditTrail.logEvent({
           type: options.type,
           severity: 'medium',

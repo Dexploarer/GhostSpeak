@@ -93,7 +93,7 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           } else {
             throw new Error('Analytics methods not fully implemented yet')
           }
-        } catch {
+        } catch (_) {
           s.stop('❌ Analytics not available')
           
           // Show fallback message with formatted helper output
@@ -252,8 +252,8 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           `${chalk.cyan('npx ghostspeak agent analytics --mine')} - View your agent analytics`
         )
         
-      } catch (_error) {
-        log.error(`Failed to load analytics: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      } catch (_) {
+        log.error(`Failed to load analytics: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
       }
     })
 }

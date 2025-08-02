@@ -213,12 +213,12 @@ disputeCommand
           `• Check status: ${chalk.cyan('gs dispute list --mine')}`
         )
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to file dispute')
         handleTransactionError(_error as Error)
       }
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to file dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
@@ -289,7 +289,7 @@ disputeCommand
         `${chalk.cyan('gs dispute escalate')} - Escalate dispute`
       )
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to load disputes: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
@@ -466,12 +466,12 @@ disputeCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to submit evidence')
         handleTransactionError(_error as Error)
       }
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to submit evidence: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
@@ -631,12 +631,12 @@ disputeCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to resolve dispute')
         handleTransactionError(_error as Error)
       }
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to resolve dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
@@ -782,12 +782,12 @@ disputeCommand
           `• Check status: ${chalk.cyan('gs dispute list --mine')}`
         )
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to escalate dispute')
         handleTransactionError(_error as Error)
       }
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to escalate dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })

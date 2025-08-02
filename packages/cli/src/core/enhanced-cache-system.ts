@@ -490,7 +490,7 @@ export class EnhancedCacheManager extends CacheManager {
             const value = await loader()
             await this.set(prediction.key, value, { tags: ['optimized'] })
             results.warmed++
-          } catch (_error) {
+          } catch {
             // Ignore warming failures during optimization
           }
         }
@@ -526,14 +526,14 @@ export class EnhancedCacheManager extends CacheManager {
         const metadata = await fs.readFile(metadataPath, 'utf8')
         const data = JSON.parse(metadata)
         this.persistentKeys = new Set(data.keys || [])
-      } catch (_error) {
+      } catch {
         // No existing metadata, start fresh
       }
       
-    } catch (_error) {
+    } catch {
       // In test environment or when disk access fails, continue without disk cache
       if (process.env.NODE_ENV !== 'test') {
-        console.warn('Failed to initialize disk cache:', error)
+        console.warn('Failed to initialize disk cache:')
       }
     }
   }
@@ -579,7 +579,7 @@ export class EnhancedCacheManager extends CacheManager {
               await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
               resolve()
             } catch (_error) {
-              reject(error)
+              reject(_error)
             }
           })
         })
@@ -612,7 +612,7 @@ export class EnhancedCacheManager extends CacheManager {
             const data = await fs.readFile(filePath, 'utf8')
             resolve(data)
           } catch (_error) {
-            reject(error)
+            reject(_error)
           }
         })
       })
@@ -634,14 +634,14 @@ export class EnhancedCacheManager extends CacheManager {
         try {
           data.metadata.lastAccess = new Date()
           await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
-        } catch (_error) {
+        } catch {
           // Ignore access time update failures
         }
       })
       
       return data.value as T
       
-    } catch (_error) {
+    } catch {
       return null
     }
   }
@@ -656,7 +656,7 @@ export class EnhancedCacheManager extends CacheManager {
       await fs.unlink(filePath)
       this.persistentKeys.delete(key)
       await this.updateDiskMetadata()
-    } catch (_error) {
+    } catch {
       // Ignore removal errors
     }
   }
@@ -679,7 +679,7 @@ export class EnhancedCacheManager extends CacheManager {
         lastUpdate: new Date()
       }
       await fs.writeFile(metadataPath, JSON.stringify(metadata), 'utf8')
-    } catch (_error) {
+    } catch {
       // Ignore metadata update errors
     }
   }
@@ -718,7 +718,7 @@ export class EnhancedCacheManager extends CacheManager {
     try {
       const buffer = Buffer.from(value, 'base64')
       return buffer.length > 0 && buffer[0] === 0x1f && buffer[1] === 0x8b
-    } catch (_error) {
+    } catch {
       return false
     }
   }
@@ -803,7 +803,7 @@ export class EnhancedCacheManager extends CacheManager {
       const value = await loader()
       await this.set(key, value, { tags: ['predictive_load'] })
       return value as T
-    } catch (_error) {
+    } catch {
       return null
     }
   }

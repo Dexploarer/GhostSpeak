@@ -102,7 +102,7 @@ export function registerRegisterCommand(parentCommand: Command): void {
           throw _error
         }
 
-      } catch {
+      } catch (_) {
         displayErrorAndCancel(error, 'Agent registration')
       }
     })

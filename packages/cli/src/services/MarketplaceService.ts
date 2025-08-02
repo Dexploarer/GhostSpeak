@@ -17,6 +17,7 @@ import { randomUUID } from 'crypto'
 import { getWallet } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
 import { MarketplaceModule, type GhostSpeakClient } from '@ghostspeak/sdk'
+import { getErrorMessage } from '../utils/type-guards.js'
 
 export class MarketplaceService implements IMarketplaceService {
   constructor(private deps: MarketplaceServiceDependencies) {}
@@ -111,8 +112,9 @@ export class MarketplaceService implements IMarketplaceService {
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       
       return listing
-    } catch (_error) {
-      throw new Error(`Failed to create listing: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+      throw new Error(`Failed to create listing: ${getErrorMessage(error)}`)
     }
   }
 
@@ -144,8 +146,9 @@ export class MarketplaceService implements IMarketplaceService {
       const offset = params.offset ?? 0
       const limit = params.limit ?? 20
       return listings.slice(offset, offset + limit)
-    } catch (_error) {
-      throw new Error(`Failed to get listings: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+      throw new Error(`Failed to get listings: ${getErrorMessage(error)}`)
     }
   }
 
@@ -197,8 +200,9 @@ export class MarketplaceService implements IMarketplaceService {
       }
 
       return listings
-    } catch (_error) {
-      throw new Error(`Failed to search listings: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+      throw new Error(`Failed to search listings: ${getErrorMessage(error)}`)
     }
   }
 
@@ -248,8 +252,9 @@ export class MarketplaceService implements IMarketplaceService {
       // In real implementation, this would create escrow transaction
       await this.createPurchaseTransaction(purchase)
       return purchase
-    } catch (_error) {
-      throw new Error(`Failed to purchase service: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+      throw new Error(`Failed to purchase service: ${getErrorMessage(error)}`)
     }
   }
 
@@ -327,8 +332,9 @@ export class MarketplaceService implements IMarketplaceService {
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       
       return updatedListing
-    } catch (_error) {
-      throw new Error(`Failed to update listing: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+      throw new Error(`Failed to update listing: ${getErrorMessage(error)}`)
     }
   }
 
@@ -391,8 +397,9 @@ export class MarketplaceService implements IMarketplaceService {
         createdAt: BigInt(listing.data.createdAt || Date.now()),
         metadata: {}
       }))
-    } catch (_error) {
-      console.error('Failed to get listings from blockchain:', error)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error passed to console.error
+      console.error('Failed to get listings from blockchain:', getErrorMessage(error))
       return []
     }
   }
@@ -433,8 +440,9 @@ export class MarketplaceService implements IMarketplaceService {
       // Note: In a real implementation, we would cache for future use
       
       return serviceListing
-    } catch (_error) {
-      console.error('Failed to get listing by ID:', error)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error passed to console.error
+      console.error('Failed to get listing by ID:', getErrorMessage(error))
       return null
     }
   }
@@ -475,8 +483,9 @@ export class MarketplaceService implements IMarketplaceService {
       console.log(`✅ Purchase transaction created successfully!`)
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
-    } catch (_error) {
-      throw new Error(`Failed to create purchase transaction: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+      throw new Error(`Failed to create purchase transaction: ${getErrorMessage(error)}`)
     }
   }
 }

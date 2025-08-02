@@ -60,7 +60,7 @@ export class WalletService implements IWalletService {
     if (existsSync(this.registryPath)) {
       try {
         return JSON.parse(readFileSync(this.registryPath, 'utf-8')) as WalletsRegistry
-      } catch {
+      } catch (_) {
         // If corrupted, start fresh
       }
     }
@@ -111,7 +111,7 @@ export class WalletService implements IWalletService {
       
       // Create signer from keypair
       return await createSignerFromKeyPair(keyPair)
-    } catch (_error) {
+    } catch (_) {
       throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
@@ -206,7 +206,7 @@ export class WalletService implements IWalletService {
           const bytes = JSON.parse(secretKeyOrMnemonic) as number[]
           privateKeyBytes = new Uint8Array(bytes)
           signer = await createKeyPairSignerFromBytes(privateKeyBytes)
-        } catch {
+        } catch (_) {
           throw new Error('Invalid private key or mnemonic format')
         }
       }
@@ -284,7 +284,7 @@ export class WalletService implements IWalletService {
       this.saveRegistry(registry)
       
       return walletData
-    } catch {
+    } catch (_) {
       return null
     }
   }
@@ -397,7 +397,7 @@ export class WalletService implements IWalletService {
       const rpc = createSolanaRpc(rpcUrl)
       const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
       return Number(balance) / 1_000_000_000 // Convert lamports to SOL
-    } catch {
+    } catch (_) {
       return 0
     }
   }
@@ -539,7 +539,7 @@ export class WalletService implements IWalletService {
       } else {
         throw new Error('No signature found in signed transaction')
       }
-    } catch {
+    } catch (_) {
       console.error('Failed to sign transaction:', error)
       throw new Error(`Transaction signing failed: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
@@ -563,7 +563,7 @@ export class WalletService implements IWalletService {
       // Optionally rename the old file
       renameSync(oldWalletPath, oldWalletPath + '.backup')
       
-    } catch {
+    } catch (_) {
       console.warn('Failed to migrate old wallet:', error)
     }
   }

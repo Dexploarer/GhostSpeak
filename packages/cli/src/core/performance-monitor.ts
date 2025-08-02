@@ -360,7 +360,7 @@ export class PerformanceMonitor extends EventEmitter {
 
       return result
 
-    } catch {
+    } catch (_) {
       metrics.endTime = new Date()
       metrics.duration = metrics.endTime.getTime() - startTime.getTime()
       metrics.success = false

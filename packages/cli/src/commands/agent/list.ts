@@ -62,9 +62,9 @@ export function registerListCommand(parentCommand: Command): void {
 
         outro('Agent listing completed')
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to fetch agents')
-        displayErrorAndCancel(error, 'Agent listing')
+        displayErrorAndCancel(_, 'Agent listing')
       }
     })
 }

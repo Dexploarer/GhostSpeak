@@ -49,7 +49,8 @@ export function handleServiceError(error: unknown): ErrorInfo {
   }
   
   // Handle unknown errors
-  const message = error instanceof Error ? _error.message : 'Unknown error occurred'
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+  const message = error instanceof Error ? error.message : 'Unknown error occurred'
   return {
     message,
     suggestion: 'This is an unexpected error. Please try again or contact support',
@@ -99,7 +100,7 @@ export function withErrorHandling<T extends unknown[], R>(
   return async (...args: T): Promise<R> => {
     try {
       return await fn(...args)
-    } catch {
+    } catch (_) {
       displayErrorAndCancel(error, operation)
       throw _error // This will never be reached due to process.exit in cancel()
     }

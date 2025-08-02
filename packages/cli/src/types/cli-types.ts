@@ -316,7 +316,7 @@ export function isValidUrl(value: string): boolean {
      
     new URL(value)
     return true
-  } catch {
+  } catch (_) {
     return false
   }
 }

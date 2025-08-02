@@ -193,7 +193,7 @@ export class CostEstimator {
       const rpc = createSolanaRpc(this.rpcUrl)
       const response = await rpc.getBalance(address).send()
       return response.value
-    } catch {
+    } catch (_) {
       console.warn('Failed to fetch balance:', error)
       return BigInt(0)
     }

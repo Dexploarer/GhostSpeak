@@ -175,11 +175,11 @@ channelCommand
 
       } catch {
         s.stop('❌ Failed to create channel')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to create channel: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to create channel: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -248,7 +248,7 @@ channelCommand
       )
 
     } catch (_error) {
-      log.error(`Failed to load channels: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to load channels: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -404,11 +404,11 @@ channelCommand
 
       } catch {
         s.stop('❌ Failed to send message')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to send message: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 

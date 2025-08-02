@@ -26,7 +26,7 @@ export class BlockchainService implements IBlockchainService {
       this.clients.set(network, client)
       return client
     } catch (_error) {
-      throw new Error(`Failed to initialize client for network "${network}": ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to initialize client for network "${network}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -139,7 +139,7 @@ export class BlockchainService implements IBlockchainService {
       return false
       
     } catch (_error) {
-      console.error(`Failed to confirm transaction ${signature}:`, error instanceof Error ? error.message : 'Unknown error')
+      console.error(`Failed to confirm transaction ${signature}:`, error instanceof Error ? _error.message : 'Unknown error')
       return false
     }
   }
@@ -206,7 +206,7 @@ export class BlockchainService implements IBlockchainService {
       }
       
       throw new NetworkError(
-        `Failed to get account info for ${address}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to get account info for ${address}: ${error instanceof Error ? _error.message : 'Unknown error'}`,
         'Check network connectivity and address format'
       )
     }
@@ -240,7 +240,7 @@ export class BlockchainService implements IBlockchainService {
       
       return signature
     } catch (_error) {
-      throw new Error(`Failed to request airdrop: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to request airdrop: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 

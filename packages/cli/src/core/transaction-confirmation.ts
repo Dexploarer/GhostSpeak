@@ -218,7 +218,7 @@ export class TransactionConfirmationSystem extends EventEmitter {
 
     } catch (_error) {
       this.eventBus.emit('transaction:confirmationerror', { details, error })
-      throw error
+      throw _error
     }
   }
 

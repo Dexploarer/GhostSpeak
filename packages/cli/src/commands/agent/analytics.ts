@@ -253,7 +253,7 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
         )
         
       } catch (_error) {
-        log.error(`Failed to load analytics: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        log.error(`Failed to load analytics: ${error instanceof Error ? _error.message : 'Unknown error'}`)
       }
     })
 }

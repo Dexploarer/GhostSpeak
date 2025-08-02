@@ -156,7 +156,7 @@ export class SecureStorage {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         throw new Error(`No data found for key: ${key}`);
       }
-      throw error;
+      throw _error;
     }
   }
   
@@ -199,7 +199,7 @@ export class SecureStorage {
       await unlink(path);
     } catch (_error) {
       if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
-        throw error;
+        throw _error;
       }
     }
   }

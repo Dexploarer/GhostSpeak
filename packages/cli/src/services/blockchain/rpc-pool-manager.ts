@@ -272,7 +272,7 @@ export class PooledRpcClient {
       // Track failed operation
       rpcOperation.endTime = Date.now()
       rpcOperation.success = false
-      rpcOperation.error = error as Error
+      rpcOperation.error = _error as Error
       
       this.recordOperation(rpcOperation)
       
@@ -282,7 +282,7 @@ export class PooledRpcClient {
         error
       })
       
-      throw error
+      throw _error
     }
   }
 

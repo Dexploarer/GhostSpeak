@@ -140,10 +140,10 @@ export class AgentService implements IAgentService {
       return agent
     } catch (_error) {
       if (error instanceof ValidationError || error instanceof NetworkError) {
-        throw error // Re-throw service errors as-is
+        throw _error // Re-throw service errors as-is
       }
       throw new NetworkError(
-        `Failed to register agent: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to register agent: ${error instanceof Error ? _error.message : 'Unknown error'}`,
         'Check your network connection and try again'
       )
     }
@@ -183,7 +183,7 @@ export class AgentService implements IAgentService {
       return filteredAgents.slice(offset, offset + limit)
     } catch (_error) {
       throw new NetworkError(
-        `Failed to list agents: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to list agents: ${error instanceof Error ? _error.message : 'Unknown error'}`,
         'Check your network connection and try again'
       )
     }
@@ -303,10 +303,10 @@ export class AgentService implements IAgentService {
       return updatedAgent
     } catch (_error) {
       if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
-        throw error // Re-throw service errors as-is
+        throw _error // Re-throw service errors as-is
       }
       throw new NetworkError(
-        `Failed to update agent: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to update agent: ${error instanceof Error ? _error.message : 'Unknown error'}`,
         'Check your network connection and try again'
       )
     }

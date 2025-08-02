@@ -223,7 +223,7 @@ export const updateCommand = new Command('update')
         updateSpinner.stop('❌ Update failed')
         
         console.error('')
-        console.error(chalk.red('Failed to update CLI:'), error instanceof Error ? error.message : 'Unknown error')
+        console.error(chalk.red('Failed to update CLI:'), error instanceof Error ? _error.message : 'Unknown error')
         console.error('')
         console.error(chalk.yellow('Try updating manually with one of these commands:'))
         console.error(chalk.gray('  npm install -g @ghostspeak/cli@latest'))
@@ -237,7 +237,7 @@ export const updateCommand = new Command('update')
       }
       
     } catch (_error) {
-      console.error(chalk.red('Error:'), error instanceof Error ? error.message : 'Unknown error')
+      console.error(chalk.red('Error:'), error instanceof Error ? _error.message : 'Unknown error')
       outro('Update check failed')
       process.exit(1)
     }

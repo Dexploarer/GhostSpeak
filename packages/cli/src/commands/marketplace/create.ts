@@ -239,7 +239,7 @@ export function registerCreateCommand(parentCommand: Command): void {
         }
 
       } catch (_error) {
-        cancel(chalk.red('Failed to create service: ' + (error instanceof Error ? error.message : 'Unknown error')))
+        cancel(chalk.red('Failed to create service: ' + (error instanceof Error ? _error.message : 'Unknown error')))
       }
     })
 }

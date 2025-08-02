@@ -24,7 +24,7 @@ export class StorageService implements IStorageService {
       const jsonData = JSON.stringify(data, null, 2)
       await fs.writeFile(filePath, jsonData, 'utf-8')
     } catch (_error) {
-      throw new Error(`Failed to save data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to save data for key "${key}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -40,7 +40,7 @@ export class StorageService implements IStorageService {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null // File doesn't exist
       }
-      throw new Error(`Failed to load data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to load data for key "${key}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -55,7 +55,7 @@ export class StorageService implements IStorageService {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return // File doesn't exist, nothing to delete
       }
-      throw new Error(`Failed to delete data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to delete data for key "${key}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -90,7 +90,7 @@ export class StorageService implements IStorageService {
       
       return keys
     } catch (_error) {
-      throw new Error(`Failed to list keys: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to list keys: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -104,7 +104,7 @@ export class StorageService implements IStorageService {
         await fs.rm(this.baseDir, { recursive: true, force: true })
       }
     } catch (_error) {
-      throw new Error(`Failed to clear storage: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to clear storage: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -121,7 +121,7 @@ export class StorageService implements IStorageService {
     try {
       await fs.mkdir(this.baseDir, { recursive: true })
     } catch (_error) {
-      throw new Error(`Failed to create storage directory: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to create storage directory: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 

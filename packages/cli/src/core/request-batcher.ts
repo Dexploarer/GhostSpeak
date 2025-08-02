@@ -479,7 +479,7 @@ export class RequestBatcher extends EventEmitter {
     } catch {
       // Handle batch execution error
       for (const request of requests) {
-        request.reject(error as Error)
+        request.reject(_error as Error)
       }
       failed = requests.length
     }
@@ -567,7 +567,7 @@ export class RequestBatcher extends EventEmitter {
     } catch {
       // Fail all requests in this batch
       for (const request of requests) {
-        request.reject(error as Error)
+        request.reject(_error as Error)
       }
       failed = requests.length
     }
@@ -589,7 +589,7 @@ export class RequestBatcher extends EventEmitter {
         const result = await rpcClient.getAccountInfo(request.address, request.options)
         request.resolve(result)
       } catch (_error) {
-        request.reject(error as Error)
+        request.reject(_error as Error)
       }
     } else {
       // Multiple requests - use getMultipleAccounts for efficiency
@@ -606,7 +606,7 @@ export class RequestBatcher extends EventEmitter {
       } catch {
         // Fail all requests
         for (const request of requests) {
-          request.reject(error as Error)
+          request.reject(_error as Error)
         }
       }
     }
@@ -630,7 +630,7 @@ export class RequestBatcher extends EventEmitter {
           const result = await rpcClient.getBalance(request.address, request.commitment)
           request.resolve(result)
         } catch (_error) {
-          request.reject(error as Error)
+          request.reject(_error as Error)
         }
       })
       
@@ -651,7 +651,7 @@ export class RequestBatcher extends EventEmitter {
         const result = await rpcClient.getMultipleAccounts(request.addresses, request.options)
         request.resolve(result)
       } catch (_error) {
-        request.reject(error as Error)
+        request.reject(_error as Error)
       }
     })
     
@@ -671,7 +671,7 @@ export class RequestBatcher extends EventEmitter {
         const result = await rpcClient.getProgramAccounts(request.programId, request.options)
         request.resolve(result)
       } catch (_error) {
-        request.reject(error as Error)
+        request.reject(_error as Error)
       }
     }
   }
@@ -694,7 +694,7 @@ export class RequestBatcher extends EventEmitter {
           const result = await rpcClient.getTransactionHistory(request.address, request.options)
           request.resolve(result)
         } catch (_error) {
-          request.reject(error as Error)
+          request.reject(_error as Error)
         }
       })
       
@@ -720,7 +720,7 @@ export class RequestBatcher extends EventEmitter {
           const result = await rpcClient.getTransaction(request.signature, request.options)
           request.resolve(result)
         } catch (_error) {
-          request.reject(error as Error)
+          request.reject(_error as Error)
         }
       })
       

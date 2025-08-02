@@ -232,7 +232,7 @@ export async function fundWallet(
       }
       
     } catch (_error) {
-      errors.push(`${source}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      errors.push(`${source}: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
   
@@ -315,7 +315,7 @@ export async function createMultisigWrapper(
       signature
     }
   } catch (_error) {
-    throw new Error(`Failed to create multisig: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    throw new Error(`Failed to create multisig: ${error instanceof Error ? _error.message : 'Unknown error'}`)
   }
 }
 

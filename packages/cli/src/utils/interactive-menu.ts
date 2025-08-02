@@ -779,7 +779,7 @@ export class InteractiveMenu {
       await new Promise(resolve => setTimeout(resolve, 100))
       
     } catch (_error) {
-      console.error(chalk.red(`\n❌ Error executing command: ${error instanceof Error ? error.message : 'Unknown error'}`))
+      console.error(chalk.red(`\n❌ Error executing command: ${error instanceof Error ? _error.message : 'Unknown error'}`))
     }
     
     console.log('') // Add spacing after command execution
@@ -902,7 +902,7 @@ console.log('Payment status:', escrow.status)
       s.stop(`✅ Connected to Solana devnet (slot: ${slot})`)
     } catch {
       s.stop('❌ Connection failed')
-      log.error(error instanceof Error ? error.message : 'Unknown error')
+      log.error(error instanceof Error ? _error.message : 'Unknown error')
     }
     
     await this.waitForKeyPress()

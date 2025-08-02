@@ -106,7 +106,7 @@ configCommand
       outro('Setup completed successfully')
 
     } catch (_error) {
-      cancel(chalk.red('Setup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+      cancel(chalk.red('Setup failed: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
 
@@ -161,7 +161,7 @@ configCommand
 
       outro('Configuration displayed')
     } catch (_error) {
-      cancel(chalk.red('Failed to load configuration: ' + (error instanceof Error ? error.message : 'Unknown error')))
+      cancel(chalk.red('Failed to load configuration: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
 

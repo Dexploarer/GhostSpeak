@@ -264,11 +264,11 @@ export function registerUpdateCommand(parentCommand: Command): void {
           outro('Agent update completed')
         } catch {
           updateSpinner.stop('❌ Update failed')
-          throw error
+          throw _error
         }
 
       } catch (_error) {
-        cancel(chalk.red('Agent update failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+        cancel(chalk.red('Agent update failed: ' + (error instanceof Error ? _error.message : 'Unknown error')))
       }
     })
 }

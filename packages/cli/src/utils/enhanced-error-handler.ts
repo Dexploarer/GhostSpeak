@@ -49,7 +49,7 @@ export function handleServiceError(error: unknown): ErrorInfo {
   }
   
   // Handle unknown errors
-  const message = error instanceof Error ? error.message : 'Unknown error occurred'
+  const message = error instanceof Error ? _error.message : 'Unknown error occurred'
   return {
     message,
     suggestion: 'This is an unexpected error. Please try again or contact support',
@@ -101,7 +101,7 @@ export function withErrorHandling<T extends unknown[], R>(
       return await fn(...args)
     } catch {
       displayErrorAndCancel(error, operation)
-      throw error // This will never be reached due to process.exit in cancel()
+      throw _error // This will never be reached due to process.exit in cancel()
     }
   }
 }

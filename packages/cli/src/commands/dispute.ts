@@ -215,11 +215,11 @@ disputeCommand
 
       } catch {
         s.stop('❌ Failed to file dispute')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to file dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to file dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -290,7 +290,7 @@ disputeCommand
       )
 
     } catch (_error) {
-      log.error(`Failed to load disputes: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to load disputes: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -468,11 +468,11 @@ disputeCommand
 
       } catch {
         s.stop('❌ Failed to submit evidence')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to submit evidence: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to submit evidence: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -633,11 +633,11 @@ disputeCommand
 
       } catch {
         s.stop('❌ Failed to resolve dispute')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to resolve dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to resolve dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -784,10 +784,10 @@ disputeCommand
 
       } catch {
         s.stop('❌ Failed to escalate dispute')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to escalate dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to escalate dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })

@@ -297,11 +297,11 @@ export function registerApplyCommand(parentCommand: Command): void {
 
         } catch {
           s.stop('❌ Failed to submit application')
-          handleTransactionError(error as Error)
+          handleTransactionError(_error as Error)
         }
 
       } catch (_error) {
-        log.error(`Failed to apply to job: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        log.error(`Failed to apply to job: ${error instanceof Error ? _error.message : 'Unknown error'}`)
       }
     })
 }

@@ -22,7 +22,7 @@ import { randomUUID } from 'crypto'
 import { toSDKSigner } from '../utils/client.js'
 import { getCurrentProgramId } from '../../../../config/program-ids.js'
 import { createSolanaRpc } from '@solana/kit'
-import { AgentModule } from '@ghostspeak/sdk'
+import { AgentModule, type GhostSpeakClient } from '@ghostspeak/sdk'
 
 export class AgentService implements IAgentService {
   private agentCache = new Map<string, { data: Agent; timestamp: number }>()
@@ -92,11 +92,6 @@ export class AgentService implements IAgentService {
       
       // TEMPORARY: Use empty metadata URI to test memory allocation issue
       const metadataUri = ""
-      
-      // Import AgentModule and create instance
-      console.log('🔍 Importing AgentModule from SDK...')
-      const { AgentModule, createSolanaRpc } = await import('@ghostspeak/sdk')
-      console.log('🔍 AgentModule imported successfully')
       
       // Create RPC client
       const rpc = createSolanaRpc('https://api.devnet.solana.com')
@@ -247,17 +242,8 @@ export class AgentService implements IAgentService {
         throw new UnauthorizedError('No active wallet signer available')
       }
 
-      // Import AgentModule dynamically to avoid build issues
-      const sdk = await import('@ghostspeak/sdk')
-      console.log('🔍 SDK imported, checking for AgentModule...')
-      
-      const AgentModuleClass = sdk.AgentModule
-      if (!AgentModuleClass) {
-        throw new Error('AgentModule not found in SDK exports')
-      }
-      
-      const typedClient = client as any
-      const agentModule = new AgentModuleClass({
+      const typedClient = client as GhostSpeakClient
+      const agentModule = new AgentModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
@@ -357,7 +343,7 @@ export class AgentService implements IAgentService {
       ]
       
       // Use blockchain service to get client and fetch work orders
-      const client = await this.deps.blockchainService.getClient('devnet') as any
+      const client = await this.deps.blockchainService.getClient('devnet') as GhostSpeakClient
       const workOrders = await client.rpc.getProgramAccounts(
         programId,
         {
@@ -481,11 +467,10 @@ export class AgentService implements IAgentService {
 
   private async getAllAgents(): Promise<Agent[]> {
     try {
-      // Import AgentModule and create instance for querying
+      // Create instance for querying
       console.log('🔍 Querying all agents from blockchain...')
-      const { AgentModule, createSolanaRpc } = await import('@ghostspeak/sdk')
       
-      // Create RPC client
+      // Create RPC client  
       const rpc = createSolanaRpc('https://api.devnet.solana.com')
       
       // Create AgentModule instance

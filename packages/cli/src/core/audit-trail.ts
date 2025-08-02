@@ -290,9 +290,7 @@ export class AuditTrail extends EventEmitter {
    * Get singleton instance
    */
   static getInstance(config?: Partial<AuditConfig>): AuditTrail {
-    if (!AuditTrail.instance) {
-      AuditTrail.instance = new AuditTrail(config)
-    }
+    AuditTrail.instance ??= new AuditTrail(config)
     return AuditTrail.instance
   }
 
@@ -398,7 +396,7 @@ export class AuditTrail extends EventEmitter {
   }): Promise<void> {
     await this.logEvent({
       type: 'security_event',
-      severity: event.severity || 'high',
+      severity: event.severity ?? 'high',
       userId: event.userId,
       description: event.description,
       details: event.details,
@@ -428,7 +426,7 @@ export class AuditTrail extends EventEmitter {
         stack: error.stack,
         code: error.code
       },
-      action: error.action || 'unknown',
+      action: error.action ?? 'unknown',
       result: 'error',
       error: error.message,
       correlationId: error.correlationId
@@ -525,8 +523,8 @@ export class AuditTrail extends EventEmitter {
     await this.flushBuffer()
     
     const options: AuditReportOptions = {
-      startDate: query.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      endDate: query.endDate || new Date(),
+      startDate: query.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      endDate: query.endDate ?? new Date(),
       eventTypes: query.type ? [query.type] : undefined,
       userIds: query.userId ? [query.userId] : undefined,
       severities: query.severity ? [query.severity] : undefined
@@ -789,12 +787,12 @@ export class AuditTrail extends EventEmitter {
       event.type,
       event.severity,
       event.timestamp.toISOString(),
-      event.userId || '',
+      event.userId ?? '',
       event.description,
       event.action,
       event.result,
-      event.resource || '',
-      event.error || ''
+      event.resource ?? '',
+      event.error ?? ''
     ])
 
     return [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
@@ -865,7 +863,7 @@ export class AuditTrail extends EventEmitter {
                         <td>${new Date(event.timestamp).toLocaleString()}</td>
                         <td>${event.type}</td>
                         <td>${event.severity}</td>
-                        <td>${event.userId || 'N/A'}</td>
+                        <td>${event.userId ?? 'N/A'}</td>
                         <td>${event.description}</td>
                         <td>${event.result}</td>
                     </tr>

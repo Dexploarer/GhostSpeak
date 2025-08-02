@@ -16,6 +16,7 @@ import type {
 import { randomUUID } from 'crypto'
 import { getWallet } from '../utils/client.js'
 import type { Address } from '@solana/addresses'
+import { MarketplaceModule, type GhostSpeakClient } from '@ghostspeak/sdk'
 
 export class MarketplaceService implements IMarketplaceService {
   constructor(private deps: MarketplaceServiceDependencies) {}
@@ -61,16 +62,9 @@ export class MarketplaceService implements IMarketplaceService {
       
       // Create MarketplaceModule instance
       console.log('🔍 Creating MarketplaceModule from SDK...')
-      const sdk = await import('@ghostspeak/sdk')
-      console.log('🔍 SDK imported, checking for MarketplaceModule...')
       
-      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
-      if (!MarketplaceModuleClass) {
-        throw new Error('MarketplaceModule not found in SDK exports')
-      }
-      
-      const typedClient = client as any
-      const marketplaceModule = new MarketplaceModuleClass({
+      const typedClient = client as GhostSpeakClient
+      const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
@@ -293,15 +287,8 @@ export class MarketplaceService implements IMarketplaceService {
       const client = await this.deps.blockchainService.getClient('devnet')
       
       // Create MarketplaceModule instance
-      const sdk = await import('@ghostspeak/sdk')
-      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
-      
-      if (!MarketplaceModuleClass) {
-        throw new Error('MarketplaceModule not found in SDK exports')
-      }
-      
-      const typedClient = client as any
-      const marketplaceModule = new MarketplaceModuleClass({
+      const typedClient = client as GhostSpeakClient
+      const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
@@ -382,14 +369,8 @@ export class MarketplaceService implements IMarketplaceService {
       const client = await this.deps.blockchainService.getClient('devnet')
       
       // Create MarketplaceModule instance
-      const sdk = await import('@ghostspeak/sdk')
-      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
-      if (!MarketplaceModuleClass) {
-        throw new Error('MarketplaceModule not found in SDK exports')
-      }
-      
-      const typedClient = client as any
-      const marketplaceModule = new MarketplaceModuleClass({
+      const typedClient = client as GhostSpeakClient
+      const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
@@ -410,7 +391,7 @@ export class MarketplaceService implements IMarketplaceService {
         createdAt: BigInt(listing.data.createdAt || Date.now()),
         metadata: {}
       }))
-    } catch {
+    } catch (error) {
       console.error('Failed to get listings from blockchain:', error)
       return []
     }
@@ -422,15 +403,9 @@ export class MarketplaceService implements IMarketplaceService {
       
       // If not in cache, query blockchain
       const client = await this.deps.blockchainService.getClient('devnet')
-      const sdk = await import('@ghostspeak/sdk')
-      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
       
-      if (!MarketplaceModuleClass) {
-        throw new Error('MarketplaceModule not found in SDK exports')
-      }
-      
-      const typedClient = client as any
-      const marketplaceModule = new MarketplaceModuleClass({
+      const typedClient = client as GhostSpeakClient
+      const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
@@ -458,7 +433,7 @@ export class MarketplaceService implements IMarketplaceService {
       // Note: In a real implementation, we would cache for future use
       
       return serviceListing
-    } catch {
+    } catch (error) {
       console.error('Failed to get listing by ID:', error)
       return null
     }
@@ -474,15 +449,8 @@ export class MarketplaceService implements IMarketplaceService {
       const client = await this.deps.blockchainService.getClient('devnet')
       
       // Create MarketplaceModule instance
-      const sdk = await import('@ghostspeak/sdk')
-      const MarketplaceModuleClass = (sdk as any).MarketplaceModule
-      
-      if (!MarketplaceModuleClass) {
-        throw new Error('MarketplaceModule not found in SDK exports')
-      }
-      
-      const typedClient = client as any
-      const marketplaceModule = new MarketplaceModuleClass({
+      const typedClient = client as GhostSpeakClient
+      const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'

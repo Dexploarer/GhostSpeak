@@ -136,7 +136,7 @@ export class CacheManager extends EventEmitter {
       maxMemorySize = 100 * 1024 * 1024, // 100MB
       maxDiskSize: _maxDiskSize = 1024 * 1024 * 1024,   // 1GB
       defaultTTL: _defaultTTL = 3600                    // 1 hour
-    } = options || {}
+    } = options ?? {}
 
     // Initialize memory cache with LRU
     this.memoryCache = new LRUCache({

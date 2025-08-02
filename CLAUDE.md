@@ -189,3 +189,19 @@ When implementing features, always check these libraries for latest patterns:
 - **Web Search**: Use for latest Solana/Anchor documentation (July 2025)
 - **Context7**: Use for up-to-date library patterns and examples
 - **IPFS**: Use for large content storage implementation patterns
+
+### Development Memories & Guidelines
+
+- never use "any" types unless unavoidable
+- make sure when generating new code or making edits your always mindful of (prefer-nullish-coalescing)
+- When generating code or making edits, always strive to pass the strictest type checks and eslint checks
+- Treat warnings the same as errors
+- Approach code generation with OCD-like precision to prevent even warnings from appearing when running checks
+
+### OCD-Level TypeScript Coding Standards
+- All future code must follow these OCD-level standards:
+  1. ?? not || - Always use nullish coalescing for null/undefined checks
+  2. ??= not if (!x) x = - Use assignment expressions for singletons
+  3. No any types - Unless hardware/external APIs with ESLint suppressions
+  4. Type everything - Proper interfaces and type safety
+  5. Zero warnings - ESLint warnings treated as errors

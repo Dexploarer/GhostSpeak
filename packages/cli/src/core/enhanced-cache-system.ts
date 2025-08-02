@@ -158,7 +158,7 @@ export class EnhancedCacheManager extends CacheManager {
 
     const {
       diskCachePath = join(homedir(), '.ghostspeak', 'cache')
-    } = options || {}
+    } = options ?? {}
 
     this.diskCachePath = diskCachePath
     
@@ -195,7 +195,7 @@ export class EnhancedCacheManager extends CacheManager {
     bypassPredictive?: boolean 
   }): Promise<T | null> {
     const startTime = Date.now()
-    const { updatePattern = true, bypassPredictive = false } = options || {}
+    const { updatePattern = true, bypassPredictive = false } = options ?? {}
 
     try {
       // Try parent implementation first
@@ -322,7 +322,7 @@ export class EnhancedCacheManager extends CacheManager {
       // Setup predictive warming
       if (predictive?.enabled) {
         // Store predictive configuration for this key
-        const pattern = this.usagePatterns.get(key) || {
+        const pattern = this.usagePatterns.get(key) ?? {
           key,
           accessCount: 0,
           lastAccess: new Date(),
@@ -363,7 +363,7 @@ export class EnhancedCacheManager extends CacheManager {
       confidence = 0.7,
       maxWarmingOps = 10,
       interval = 30000 // 30 seconds
-    } = options || {}
+    } = options ?? {}
 
     this.predictiveWarming = true
 

@@ -160,7 +160,7 @@ quickstartCommand
               s.stop('✅ Multisig wallet created')
               
               log.info(`🔐 Multisig Address: ${chalk.white(multisigAddress)}`)
-              log.info(`🔗 Explorer: ${getExplorerUrl(signature || '', network)}`)
+              log.info(`🔗 Explorer: ${getExplorerUrl(signature ?? '', network)}`)
             }
           } catch (error) {
             errors.push(`Multisig creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -386,7 +386,7 @@ quickstartCommand
               s.stop('✅ Multisig wallet created')
               
               log.info(`🔐 Multisig Address: ${chalk.white(multisigAddress)}`)
-              log.info(`🔗 Explorer: ${getExplorerUrl(signature || '', network)}`)
+              log.info(`🔗 Explorer: ${getExplorerUrl(signature ?? '', network)}`)
             }
           } catch (error) {
             errors.push(`Multisig creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)

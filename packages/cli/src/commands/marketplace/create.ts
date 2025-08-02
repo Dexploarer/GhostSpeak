@@ -17,7 +17,7 @@ import {
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager as _AgentCNFTManager } from '../../utils/agent-wallet.js'
 import type { CreateServiceOptions } from '../../types/cli-types.js'
-import type { GhostSpeakClient } from '@ghostspeak/sdk'
+import type { AgentWithAddress } from '../../types/ghostspeak-sdk.js'
 import { 
   deriveServiceListingPda, 
   deriveUserRegistryPda, 
@@ -125,6 +125,7 @@ export function registerCreateCommand(parentCommand: Command): void {
         // Check for registered agents using real on-chain data
         s.start('Checking for registered agents on-chain...')
         
+        // Get on-chain agents using properly typed SDK client
         const onChainAgents = await client.agent.getUserAgents(wallet.address)
         
         if (onChainAgents.length === 0) {
@@ -140,13 +141,13 @@ export function registerCreateCommand(parentCommand: Command): void {
         const localCredentials = await AgentWalletManager.getAgentsByOwner(wallet.address)
         
         // Select agent for the service listing
-        let selectedAgent
+        let selectedAgent: AgentWithAddress | null
         if (onChainAgents.length === 1) {
           selectedAgent = onChainAgents[0]
         } else {
           const selectedAgentAddress = await select({
             message: 'Select agent for this service:',
-            options: onChainAgents.map(agent => {
+            options: onChainAgents.map((agent: AgentWithAddress) => {
               // Try to find matching local credentials for display name
               const localCred = localCredentials.find(cred => 
                 cred.ownerWallet === wallet.address.toString()
@@ -163,7 +164,7 @@ export function registerCreateCommand(parentCommand: Command): void {
             return
           }
           
-          selectedAgent = onChainAgents.find(agent => agent.address.toString() === selectedAgentAddress) ?? null
+          selectedAgent = onChainAgents.find((agent: AgentWithAddress) => agent.address.toString() === selectedAgentAddress) ?? null
         }
         
         if (!selectedAgent) {

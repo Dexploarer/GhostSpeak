@@ -76,9 +76,7 @@ export class EventBus extends EventEmitter {
    * Get singleton instance
    */
   static getInstance(): EventBus {
-    if (!EventBus.instance) {
-      EventBus.instance = new EventBus()
-    }
+    EventBus.instance ??= new EventBus()
     return EventBus.instance
   }
 
@@ -96,7 +94,7 @@ export class EventBus extends EventEmitter {
       timestamp: new Date(),
       source: options?.source,
       metadata: options?.metadata,
-      correlationId: options?.correlationId || this.generateCorrelationId()
+      correlationId: options?.correlationId ?? this.generateCorrelationId()
     }
 
     // Add to history

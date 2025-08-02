@@ -125,7 +125,9 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
   status: ConnectionStatus = 'disconnected'
   device!: HardwareWalletDevice
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Hardware wallet transport APIs are untyped
   private transport: any = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Solana hardware wallet app interface is untyped
   private solanaApp: any = null
   private eventBus = EventBus.getInstance()
 

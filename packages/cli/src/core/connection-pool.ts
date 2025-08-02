@@ -308,7 +308,7 @@ export class ConnectionPool extends EventEmitter {
       const connections = await Promise.all(promises)
       this.connections.push(...connections)
       this.updateStats()
-    } catch (error) {
+    } catch (_error) {
       this.emit('pool_initializationerror', error)
     }
   }

@@ -267,7 +267,7 @@ export function registerUpdateCommand(parentCommand: Command): void {
           throw error
         }
 
-      } catch (error) {
+      } catch (_error) {
         cancel(chalk.red('Agent update failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
       }
     })

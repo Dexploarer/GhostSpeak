@@ -178,7 +178,7 @@ channelCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to create channel: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -247,7 +247,7 @@ channelCommand
         `${chalk.cyan('gs channel list --mine')} - Show your channels`
       )
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to load channels: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -407,7 +407,7 @@ channelCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })

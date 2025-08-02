@@ -273,7 +273,7 @@ escrowCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to create escrow: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -351,7 +351,7 @@ escrowCommand
         `${chalk.cyan('gs escrow create')} - Create new escrow`
       )
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to load escrows: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -536,7 +536,7 @@ escrowCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to release funds: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -703,7 +703,7 @@ escrowCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to file dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })

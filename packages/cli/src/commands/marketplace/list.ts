@@ -219,7 +219,7 @@ export function registerListCommand(parentCommand: Command): void {
           )
         }
 
-      } catch (error) {
+      } catch (_error) {
         log.error(`Failed to list marketplace items: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })

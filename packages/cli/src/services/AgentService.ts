@@ -138,7 +138,7 @@ export class AgentService implements IAgentService {
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       return agent
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof ValidationError || error instanceof NetworkError) {
         throw error // Re-throw service errors as-is
       }
@@ -181,7 +181,7 @@ export class AgentService implements IAgentService {
       const offset = params.offset ?? 0
       const limit = params.limit ?? 50
       return filteredAgents.slice(offset, offset + limit)
-    } catch (error) {
+    } catch (_error) {
       throw new NetworkError(
         `Failed to list agents: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'Check your network connection and try again'
@@ -211,7 +211,7 @@ export class AgentService implements IAgentService {
       }
       
       return agent
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error getting agent ${agentId}:`, error)
       return null
     }
@@ -301,7 +301,7 @@ export class AgentService implements IAgentService {
       this.listCache.clear()
       
       return updatedAgent
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
         throw error // Re-throw service errors as-is
       }
@@ -412,7 +412,7 @@ export class AgentService implements IAgentService {
         categories: agent.capabilities
       }
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error fetching agent analytics:', error)
       // Return default values on error but log the issue
       return {
@@ -459,7 +459,7 @@ export class AgentService implements IAgentService {
       // This is a simplified approach - real implementation would use proper indexing
       const allAgents = await this.getAllAgents()
       return allAgents.filter(agent => agent.owner === owner)
-    } catch (error) {
+    } catch (_error) {
       console.error('Error getting agents by owner:', error)
       return agents
     }
@@ -635,7 +635,7 @@ export class AgentService implements IAgentService {
       const end = start + limit
       
       return agents.slice(start, end)
-    } catch (error) {
+    } catch (_error) {
       console.error('Error getting all agents from blockchain:', error)
       // Fallback to empty array if blockchain query fails
       return []

@@ -90,7 +90,7 @@ export class SafeAuctionClient {
       const validated = validateAuctionArray(result)
       // Explicit type assertion to ensure TypeScript recognizes the correct type
       return validated as ValidatedAuctionData[]
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list auctions:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -112,7 +112,7 @@ export class SafeAuctionClient {
       
       // Explicit type assertion to ensure TypeScript recognizes the correct type
       return filtered as ValidatedAuctionData[]
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to get ending auctions:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -126,7 +126,7 @@ export class SafeAuctionClient {
       const validated = validateAndConvertAuction(result)
       // Explicit type assertion to ensure TypeScript recognizes the correct type
       return validated as ValidatedAuctionData | null
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to get auction summary:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -137,7 +137,7 @@ export class SafeAuctionClient {
       if (!this.auctionClient) return null
       const result = await this.auctionClient.bid(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to place bid:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -148,7 +148,7 @@ export class SafeAuctionClient {
       if (!this.auctionClient) return null
       const result = await this.auctionClient.finalize(signer, auctionId)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to finalize auction:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -159,7 +159,7 @@ export class SafeAuctionClient {
       if (!this.auctionClient) return null
       const result = await this.auctionClient.create(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to create auction:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -194,7 +194,7 @@ export class SafeAgentClient {
       if (!this.agentClient) return []
       const result = await this.agentClient.listByOwner(params)
       return validateAgentArray(result)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list agents:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -216,7 +216,7 @@ export class SafeChannelClient {
       if (!this.channelClient) return null
       const result = await this.channelClient.create(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to create channel:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -227,7 +227,7 @@ export class SafeChannelClient {
       if (!this.channelClient) return []
       const result = await this.channelClient.listByParticipant(params)
       return validateChannelArray(result)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list channels:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -238,7 +238,7 @@ export class SafeChannelClient {
       if (!this.channelClient) return null
       const result = await this.channelClient.sendMessage(signer, channelId, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to send message:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -260,7 +260,7 @@ export class SafeDisputeClient {
       if (!this.disputeClient) return []
       const result = await this.disputeClient.listDisputes(params)
       return validateDisputeArray(result)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list disputes:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -271,7 +271,7 @@ export class SafeDisputeClient {
       if (!this.disputeClient) return []
       const result = await this.disputeClient.getActiveDisputes(userAddress)
       return validateDisputeArray(result)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to get active disputes:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -282,7 +282,7 @@ export class SafeDisputeClient {
       if (!this.disputeClient) return null
       const result = await this.disputeClient.file(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to file dispute:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -293,7 +293,7 @@ export class SafeDisputeClient {
       if (!this.disputeClient) return null
       const result = await this.disputeClient.submitEvidence(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to submit evidence:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -304,7 +304,7 @@ export class SafeDisputeClient {
       if (!this.disputeClient) return null
       const result = await this.disputeClient.resolveDispute(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to resolve dispute:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -320,7 +320,7 @@ export class SafeDisputeClient {
       if (!this.disputeClient) return []
       const result = await this.disputeClient.getEvidenceHistory(disputeAddress)
       return Array.isArray(result) ? result : []
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to get evidence history:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -342,7 +342,7 @@ export class SafeEscrowClient {
       if (!this.escrowClient) return []
       const result = await this.escrowClient.listByUser(userAddress)
       return validateWorkOrderArray(result)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to get escrows:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -353,7 +353,7 @@ export class SafeEscrowClient {
       if (!this.escrowClient) return null
       const result = await this.escrowClient.create(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to create escrow:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -364,7 +364,7 @@ export class SafeEscrowClient {
       if (!this.escrowClient) return null
       const result = await this.escrowClient.release(signer, escrowId)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to release funds:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -391,7 +391,7 @@ export class SafeMarketplaceClient {
       if (!this.marketplaceClient) return []
       const result = await this.marketplaceClient.listJobs(params)
       return validateJobPostingArray(result)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list jobs:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -402,7 +402,7 @@ export class SafeMarketplaceClient {
       if (!this.marketplaceClient) return null
       const result = await this.marketplaceClient.applyToJob(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to apply to job:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -413,7 +413,7 @@ export class SafeMarketplaceClient {
       if (!this.marketplaceClient) return null
       const result = await this.marketplaceClient.createJob(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to create job:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -441,7 +441,7 @@ export class SafeMarketplaceClient {
         tags: []
       }))
       return validateMarketplaceItemArray(items)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list marketplace items:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -452,7 +452,7 @@ export class SafeMarketplaceClient {
       if (!this.marketplaceClient) return null
       const result = await this.marketplaceClient.purchase(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to purchase item:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -462,7 +462,7 @@ export class SafeMarketplaceClient {
     try {
       // Use listJobs with params for searching
       return await this.listJobs(params)
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to search jobs:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -484,7 +484,7 @@ export class SafeGovernanceClient {
       if (!this.governanceClient) return null
       const result = await this.governanceClient.createMultisig(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to create multisig:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -508,7 +508,7 @@ export class SafeGovernanceClient {
         threshold: item.threshold,
         creator: item.signers[0] // Use first signer as creator
       }))
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list multisigs:', error instanceof Error ? error.message : String(error))
       return []
     }
@@ -519,7 +519,7 @@ export class SafeGovernanceClient {
       if (!this.governanceClient) return null
       const result = await this.governanceClient.createProposal(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to create proposal:', error instanceof Error ? error.message : String(error))
       return null
     }
@@ -543,7 +543,7 @@ export class SafeGovernanceClient {
         threshold: Math.ceil((item.eligibleVoters ?? 1) / 2), // Simple majority
         deadline: BigInt(item.votingEndsAt)
       }))
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to list proposals:', error instanceof Error ? error.message : String(error))
       return [] 
     }
@@ -554,7 +554,7 @@ export class SafeGovernanceClient {
       if (!this.governanceClient) return null
       const result = await this.governanceClient.vote(signer, params)
       return result.signature
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to vote:', error instanceof Error ? error.message : String(error))
       return null
     }

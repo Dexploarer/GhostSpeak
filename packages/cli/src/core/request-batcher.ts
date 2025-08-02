@@ -588,7 +588,7 @@ export class RequestBatcher extends EventEmitter {
       try {
         const result = await rpcClient.getAccountInfo(request.address, request.options)
         request.resolve(result)
-      } catch (error) {
+      } catch (_error) {
         request.reject(error as Error)
       }
     } else {
@@ -629,7 +629,7 @@ export class RequestBatcher extends EventEmitter {
         try {
           const result = await rpcClient.getBalance(request.address, request.commitment)
           request.resolve(result)
-        } catch (error) {
+        } catch (_error) {
           request.reject(error as Error)
         }
       })
@@ -650,7 +650,7 @@ export class RequestBatcher extends EventEmitter {
       try {
         const result = await rpcClient.getMultipleAccounts(request.addresses, request.options)
         request.resolve(result)
-      } catch (error) {
+      } catch (_error) {
         request.reject(error as Error)
       }
     })
@@ -670,7 +670,7 @@ export class RequestBatcher extends EventEmitter {
       try {
         const result = await rpcClient.getProgramAccounts(request.programId, request.options)
         request.resolve(result)
-      } catch (error) {
+      } catch (_error) {
         request.reject(error as Error)
       }
     }
@@ -693,7 +693,7 @@ export class RequestBatcher extends EventEmitter {
         try {
           const result = await rpcClient.getTransactionHistory(request.address, request.options)
           request.resolve(result)
-        } catch (error) {
+        } catch (_error) {
           request.reject(error as Error)
         }
       })
@@ -719,7 +719,7 @@ export class RequestBatcher extends EventEmitter {
         try {
           const result = await rpcClient.getTransaction(request.signature, request.options)
           request.resolve(result)
-        } catch (error) {
+        } catch (_error) {
           request.reject(error as Error)
         }
       })

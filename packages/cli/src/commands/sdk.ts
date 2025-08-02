@@ -103,7 +103,7 @@ const agents = await client.agent.listAgents()
             outro(pc.red('❌ SDK installation failed'))
             process.exit(1)
           }
-        } catch (error) {
+        } catch (_error) {
           console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
           outro(pc.red('❌ SDK installation failed'))
           process.exit(1)
@@ -160,7 +160,7 @@ sdkCommand
           }
 
           outro(pc.green('✅ SDK info complete'))
-        } catch (error) {
+        } catch (_error) {
           console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
           outro(pc.red('❌ Failed to get SDK info'))
           process.exit(1)

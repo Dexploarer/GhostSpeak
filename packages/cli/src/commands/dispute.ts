@@ -218,7 +218,7 @@ disputeCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to file dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -289,7 +289,7 @@ disputeCommand
         `${chalk.cyan('gs dispute escalate')} - Escalate dispute`
       )
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to load disputes: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -471,7 +471,7 @@ disputeCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to submit evidence: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -636,7 +636,7 @@ disputeCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to resolve dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -787,7 +787,7 @@ disputeCommand
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to escalate dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })

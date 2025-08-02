@@ -130,7 +130,7 @@ class AtomicFileManager {
     try {
       const data = await fs.readFile(filePath, 'utf-8')
       return JSON.parse(data) as T
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null
       }
@@ -254,7 +254,7 @@ export class AgentWalletManager {
       // Atomic write to prevent corruption
       await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
       
-    } catch (error) {
+    } catch (_error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       console.error('Error updating UUID mapping:', message)
       throw new Error(`Failed to update UUID mapping: ${message}`)
@@ -387,7 +387,7 @@ export class AgentWalletManager {
       // Atomic write to prevent corruption
       await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
       
-    } catch (error) {
+    } catch (_error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       console.error('Error updating UUID mapping during deletion:', message)
       // Don't throw here, continue with deletion as this is cleanup

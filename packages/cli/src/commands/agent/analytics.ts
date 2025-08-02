@@ -252,7 +252,7 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           `${chalk.cyan('npx ghostspeak agent analytics --mine')} - View your agent analytics`
         )
         
-      } catch (error) {
+      } catch (_error) {
         log.error(`Failed to load analytics: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })

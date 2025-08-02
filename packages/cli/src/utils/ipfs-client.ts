@@ -16,7 +16,7 @@ export class IPFSClientImpl implements IPFSClient {
   constructor(url = 'https://ipfs.infura.io:5001') {
     try {
       this.client = create({ url })
-    } catch (error) {
+    } catch (_error) {
       console.warn('IPFS client not available, using fallback storage')
       this.client = null
     }
@@ -36,7 +36,7 @@ export class IPFSClientImpl implements IPFSClient {
       await this.pin(hash)
       
       return `https://ipfs.io/ipfs/${hash}`
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to add content to IPFS:', error)
       // Fallback to data URI
       return `data:application/json;base64,${Buffer.from(content).toString('base64')}`
@@ -48,7 +48,7 @@ export class IPFSClientImpl implements IPFSClient {
 
     try {
       await this.client.pin.add(hash)
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Failed to pin IPFS content:`, error)
       // Non-fatal error - content may still be accessible
     }
@@ -65,7 +65,7 @@ export class IPFSClientImpl implements IPFSClient {
         chunks.push(chunk)
       }
       return Buffer.concat(chunks).toString()
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to retrieve IPFS content: ${error}`)
     }
   }

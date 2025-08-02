@@ -299,7 +299,7 @@ export function registerCreateCommand(parentCommand: Command): void {
           handleTransactionError(error as Error)
         }
 
-      } catch (error) {
+      } catch (_error) {
         log.error(`Failed to create job: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })

@@ -157,7 +157,7 @@ interface HardwareWalletEventData {
 /**
  * Agent registration event data
  */
-interface AgentRegistrationEventData {
+interface _AgentRegistrationEventData {
   agentId?: string
   success?: boolean
 }
@@ -165,7 +165,7 @@ interface AgentRegistrationEventData {
 /**
  * Agent update event data
  */
-interface AgentUpdateEventData {
+interface _AgentUpdateEventData {
   agentId?: string
   fields?: string[]
   success?: boolean

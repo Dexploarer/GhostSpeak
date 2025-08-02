@@ -977,10 +977,10 @@ export function AuditLog(options: {
           },
           action: options.action || propertyName,
           result: 'error',
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? _error.message : String(error)
         })
 
-        throw error
+        throw _error
       }
     }
   }

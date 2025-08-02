@@ -115,7 +115,7 @@ class AtomicFileManager {
         // Backup restoration failed
       }
       
-      throw error
+      throw _error
     }
   }
   
@@ -134,7 +134,7 @@ class AtomicFileManager {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null
       }
-      throw error
+      throw _error
     }
   }
 }
@@ -255,7 +255,7 @@ export class AgentWalletManager {
       await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
       
     } catch (_error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
+      const message = error instanceof Error ? _error.message : 'Unknown error'
       console.error('Error updating UUID mapping:', message)
       throw new Error(`Failed to update UUID mapping: ${message}`)
     }
@@ -274,7 +274,7 @@ export class AgentWalletManager {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null
       }
-      const message = error instanceof Error ? error.message : 'Unknown error'
+      const message = error instanceof Error ? _error.message : 'Unknown error'
       console.error(`Error reading agent credentials for ${agentId}:`, message)
       throw new Error(`Failed to read agent credentials for ${agentId}: ${message}`)
     }
@@ -299,7 +299,7 @@ export class AgentWalletManager {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null
       }
-      const message = error instanceof Error ? error.message : 'Unknown error'
+      const message = error instanceof Error ? _error.message : 'Unknown error'
       console.error(`Error loading credentials by UUID ${uuid}:`, message)
       throw new Error(`Failed to load credentials by UUID: ${message}`)
     }
@@ -328,7 +328,7 @@ export class AgentWalletManager {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return []
       }
-      const message = error instanceof Error ? error.message : 'Unknown error'
+      const message = error instanceof Error ? _error.message : 'Unknown error'
       console.error(`Error getting agents by owner ${ownerAddress}:`, message)
       throw new Error(`Failed to get agents by owner: ${message}`)
     }
@@ -388,7 +388,7 @@ export class AgentWalletManager {
       await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
       
     } catch (_error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
+      const message = error instanceof Error ? _error.message : 'Unknown error'
       console.error('Error updating UUID mapping during deletion:', message)
       // Don't throw here, continue with deletion as this is cleanup
     }
@@ -417,7 +417,7 @@ export class AgentWalletManager {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return []
       }
-      const message = error instanceof Error ? error.message : 'Unknown error'
+      const message = error instanceof Error ? _error.message : 'Unknown error'
       console.error('Error listing agent IDs:', message)
       throw new Error(`Failed to list agent IDs: ${message}`)
     }

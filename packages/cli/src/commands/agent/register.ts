@@ -99,7 +99,7 @@ export function registerRegisterCommand(parentCommand: Command): void {
           outro('Agent registration completed')
         } catch (error: unknown) {
           s.stop('❌ Registration failed')
-          throw error
+          throw _error
         }
 
       } catch {

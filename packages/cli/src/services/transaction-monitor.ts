@@ -153,7 +153,7 @@ export class TransactionMonitor {
     if (!spinner || !transaction) return
     
     transaction.status = 'failed'
-    transaction.error = error instanceof Error ? error.message : error
+    transaction.error = error instanceof Error ? _error.message : error
     
     // Stop spinner with error
     spinner.stop(`❌ ${transaction.description} failed`)

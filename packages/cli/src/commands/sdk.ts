@@ -46,7 +46,7 @@ sdkCommand
                 s.stop('Project initialized')
               } catch {
                 s.stop('Failed to initialize project')
-                throw error
+                throw _error
               }
             } else {
               outro(pc.yellow('⚠️  Cancelled SDK installation'))
@@ -99,12 +99,12 @@ const agents = await client.agent.listAgents()
             outro(pc.green('✅ SDK installed successfully!'))
           } catch {
             s.stop('Failed to install SDK')
-            console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
+            console.error(pc.red(`\nError: ${error instanceof Error ? _error.message : 'Unknown error'}`))
             outro(pc.red('❌ SDK installation failed'))
             process.exit(1)
           }
         } catch (_error) {
-          console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
+          console.error(pc.red(`\nError: ${error instanceof Error ? _error.message : 'Unknown error'}`))
           outro(pc.red('❌ SDK installation failed'))
           process.exit(1)
         }
@@ -161,7 +161,7 @@ sdkCommand
 
           outro(pc.green('✅ SDK info complete'))
         } catch (_error) {
-          console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
+          console.error(pc.red(`\nError: ${error instanceof Error ? _error.message : 'Unknown error'}`))
           outro(pc.red('❌ Failed to get SDK info'))
           process.exit(1)
         }

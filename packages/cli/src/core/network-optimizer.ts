@@ -140,7 +140,7 @@ class CircuitBreaker extends EventEmitter {
       return result
     } catch {
       this.onFailure()
-      throw error
+      throw _error
     }
   }
 
@@ -368,10 +368,10 @@ export class NetworkOptimizer extends EventEmitter {
       // Attempt retry if configured
       if (options.retries && options.retries > 0) {
         const retryOptions = { ...options, retries: options.retries - 1 }
-        return this.retryRequest(operation, retryOptions, error as Error)
+        return this.retryRequest(operation, retryOptions, _error as Error)
       }
       
-      throw error
+      throw _error
     }
   }
 

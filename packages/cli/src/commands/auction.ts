@@ -270,7 +270,7 @@ auctionCommand
       )
 
     } catch (_error) {
-      handleTransactionError(error as Error)
+      handleTransactionError(_error as Error)
     }
   })
 
@@ -389,7 +389,7 @@ auctionCommand
       )
 
     } catch (_error) {
-      handleTransactionError(error as Error)
+      handleTransactionError(_error as Error)
     }
   })
 
@@ -490,7 +490,7 @@ auctionCommand
       outro(chalk.green('✅ Auction listing complete'))
 
     } catch (_error) {
-      log.error(`Failed to list auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to list auctions: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -562,7 +562,7 @@ auctionCommand
       outro('Monitor mode not yet implemented - check back for updates!')
 
     } catch (_error) {
-      log.error(`Failed to monitor auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to monitor auction: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -639,6 +639,6 @@ auctionCommand
       )
 
     } catch (_error) {
-      handleTransactionError(error as Error)
+      handleTransactionError(_error as Error)
     }
   })

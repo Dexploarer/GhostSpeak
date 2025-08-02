@@ -53,7 +53,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       
       return signer
     } catch (_error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
       log.error(`Failed to load wallet from config: ${config.walletPath}`)
       log.error(`Error details: ${errorMessage}`)
       if (errorMessage.includes('ENOENT')) {
@@ -78,7 +78,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       
       return signer
     } catch (_error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
       log.error('Failed to load GhostSpeak CLI wallet')
       log.error(`Error details: ${errorMessage}`)
       if (errorMessage.includes('ENOENT')) {
@@ -103,7 +103,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       
       return signer
     } catch (_error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
       log.error('Failed to load default Solana CLI wallet')
       log.error(`Error details: ${errorMessage}`)
       if (errorMessage.includes('ENOENT')) {
@@ -137,7 +137,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
     
     return signer
   } catch (_error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
     log.error('Failed to create new wallet')
     log.error(`Error details: ${errorMessage}`)
     if (errorMessage.includes('permission')) {
@@ -260,7 +260,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     }
   } catch {
     // Log but don't fail on balance check errors
-    console.warn('Balance check failed:', error instanceof Error ? error.message : 'Unknown error')
+    console.warn('Balance check failed:', error instanceof Error ? _error.message : 'Unknown error')
   }
   
   // Add cleanup method to client
@@ -281,8 +281,8 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         // HTTP connections don't need explicit closing in most cases
         // If RPC has a close method in future versions, it can be called here
       } catch {
-        // Silent cleanup - don't throw errors during cleanup
-        console.debug('Client cleanup warning:', error instanceof Error ? error.message : 'Unknown error')
+        // Silent cleanup - don't throw _errors during cleanup
+        console.debug('Client cleanup warning:', error instanceof Error ? _error.message : 'Unknown error')
       }
     }
   }
@@ -316,7 +316,7 @@ export function getAddressExplorerUrl(address: string, network = 'devnet'): stri
  * @deprecated Use handleError from error-handler.ts instead
  */
 export function handleTransactionError(error: Error | unknown): string {
-  const message = error instanceof Error ? error.message : String(error)
+  const message = error instanceof Error ? _error.message : String(error)
   
   if (message.includes('insufficient funds')) {
     return 'Insufficient SOL balance. Run: npx ghostspeak faucet --save'

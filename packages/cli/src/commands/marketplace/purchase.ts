@@ -184,11 +184,11 @@ export function registerPurchaseCommand(parentCommand: Command): void {
 
         } catch {
           s.stop('❌ Purchase failed')
-          handleTransactionError(error as Error)
+          handleTransactionError(_error as Error)
         }
 
       } catch (_error) {
-        log.error(`Purchase failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        log.error(`Purchase failed: ${error instanceof Error ? _error.message : 'Unknown error'}`)
       }
     })
 }

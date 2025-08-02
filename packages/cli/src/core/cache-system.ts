@@ -218,7 +218,7 @@ export class CacheManager extends EventEmitter {
       return null
 
     } catch {
-      this.eventBus.emit('cache:error', { key, error })
+      this.eventBus.emit('cache:error', { key, error: _error })
       this.recordMiss(startTime)
       return null
     }
@@ -286,8 +286,8 @@ export class CacheManager extends EventEmitter {
       this.eventBus.emit('cache:set', { key, level, size: entry.size })
 
     } catch {
-      this.eventBus.emit('cache:error', { key, error })
-      throw error
+      this.eventBus.emit('cache:error', { key, error: _error })
+      throw _error
     }
   }
 
@@ -333,7 +333,7 @@ export class CacheManager extends EventEmitter {
       return deleted
 
     } catch {
-      this.eventBus.emit('cache:error', { key, error })
+      this.eventBus.emit('cache:error', { key, error: _error })
       return false
     }
   }

@@ -364,11 +364,11 @@ export class PerformanceMonitor extends EventEmitter {
       metrics.endTime = new Date()
       metrics.duration = metrics.endTime.getTime() - startTime.getTime()
       metrics.success = false
-      metrics.error = error as Error
+      metrics.error = _error as Error
 
       this.recordOperationMetrics(metrics)
 
-      throw error
+      throw _error
     }
   }
 

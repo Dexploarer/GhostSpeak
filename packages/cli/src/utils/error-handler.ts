@@ -153,7 +153,7 @@ export class ErrorHandler {
    * Handle an error with user-friendly output
    */
   static handle(error: Error | unknown, context?: ErrorContext): void {
-    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorMessage = error instanceof Error ? _error.message : String(error)
     const errorInfo = this.parseError(errorMessage)
     
     // Display error header
@@ -332,6 +332,6 @@ export async function withRetry<T>(
  * Format error for display without handling
  */
 export function formatError(error: Error | unknown): string {
-  const errorMessage = error instanceof Error ? error.message : String(error)
+  const errorMessage = error instanceof Error ? _error.message : String(error)
   return ErrorHandler['cleanErrorMessage'](errorMessage)
 }

@@ -112,7 +112,7 @@ export class MarketplaceService implements IMarketplaceService {
       
       return listing
     } catch (_error) {
-      throw new Error(`Failed to create listing: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to create listing: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -145,7 +145,7 @@ export class MarketplaceService implements IMarketplaceService {
       const limit = params.limit ?? 20
       return listings.slice(offset, offset + limit)
     } catch (_error) {
-      throw new Error(`Failed to get listings: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to get listings: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -198,7 +198,7 @@ export class MarketplaceService implements IMarketplaceService {
 
       return listings
     } catch (_error) {
-      throw new Error(`Failed to search listings: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to search listings: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -249,7 +249,7 @@ export class MarketplaceService implements IMarketplaceService {
       await this.createPurchaseTransaction(purchase)
       return purchase
     } catch (_error) {
-      throw new Error(`Failed to purchase service: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to purchase service: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -328,7 +328,7 @@ export class MarketplaceService implements IMarketplaceService {
       
       return updatedListing
     } catch (_error) {
-      throw new Error(`Failed to update listing: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to update listing: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 
@@ -476,7 +476,7 @@ export class MarketplaceService implements IMarketplaceService {
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
     } catch (_error) {
-      throw new Error(`Failed to create purchase transaction: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to create purchase transaction: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 }

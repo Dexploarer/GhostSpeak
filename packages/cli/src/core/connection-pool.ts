@@ -138,7 +138,7 @@ export class PooledConnection extends EventEmitter {
         error
       })
 
-      throw error
+      throw _error
     } finally {
       this.isActive = false
       // Return connection to pool

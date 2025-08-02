@@ -161,7 +161,7 @@ export class PluginManager extends EventEmitter {
       console.log(`✅ Plugin loaded: ${plugin.name} v${plugin.version}`)
 
     } catch (_error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
       this.pluginMetadata.set(plugin.name, {
         name: plugin.name,
         version: plugin.version,
@@ -171,7 +171,7 @@ export class PluginManager extends EventEmitter {
 
       this.emit('plugin:error', plugin.name, error)
       console.error(`❌ Failed to load plugin ${plugin.name}: ${errorMessage}`)
-      throw error
+      throw _error
     }
   }
 
@@ -202,7 +202,7 @@ export class PluginManager extends EventEmitter {
 
     } catch (_error) {
       this.emit('plugin:error', name, error)
-      throw error
+      throw _error
     }
   }
 

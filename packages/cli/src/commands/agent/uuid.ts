@@ -76,7 +76,7 @@ export function registerUuidCommand(parentCommand: Command): void {
 
         outro('Agent lookup completed')
       } catch (_error) {
-        cancel(chalk.red('Lookup failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+        cancel(chalk.red('Lookup failed: ' + (error instanceof Error ? _error.message : 'Unknown error')))
       }
     })
 }

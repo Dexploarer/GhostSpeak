@@ -112,7 +112,7 @@ export class WalletService implements IWalletService {
       // Create signer from keypair
       return await createSignerFromKeyPair(keyPair)
     } catch (_error) {
-      throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
   
@@ -541,7 +541,7 @@ export class WalletService implements IWalletService {
       }
     } catch {
       console.error('Failed to sign transaction:', error)
-      throw new Error(`Transaction signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(`Transaction signing failed: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
 

@@ -270,11 +270,11 @@ escrowCommand
 
       } catch {
         s.stop('❌ Failed to create escrow')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to create escrow: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to create escrow: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -352,7 +352,7 @@ escrowCommand
       )
 
     } catch (_error) {
-      log.error(`Failed to load escrows: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to load escrows: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -533,11 +533,11 @@ escrowCommand
 
       } catch {
         s.stop('❌ Failed to release funds')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to release funds: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to release funds: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -700,11 +700,11 @@ escrowCommand
 
       } catch {
         s.stop('❌ Failed to file dispute')
-        handleTransactionError(error as Error)
+        handleTransactionError(_error as Error)
       }
 
     } catch (_error) {
-      log.error(`Failed to file dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      log.error(`Failed to file dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 

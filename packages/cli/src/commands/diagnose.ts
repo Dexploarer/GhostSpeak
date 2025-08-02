@@ -57,7 +57,7 @@ program
       }
 
     } catch (_error) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });
@@ -95,7 +95,7 @@ program
       }
 
     } catch (_error) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });
@@ -145,7 +145,7 @@ program
       console.log(chalk.blue(`📊 Health rate: ${((healthy / accounts.length) * 100).toFixed(1)}%`));
       
     } catch (_error) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });
@@ -191,7 +191,7 @@ program
       }
       
     } catch (_error) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });

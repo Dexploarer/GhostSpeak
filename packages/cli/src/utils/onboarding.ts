@@ -361,7 +361,7 @@ export class OnboardingService {
           
         } catch {
           s.stop('❌ Import failed')
-          console.log(chalk.red('Failed to import wallet: ' + (error instanceof Error ? error.message : 'Unknown error')))
+          console.log(chalk.red('Failed to import wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
           this.markStepSkipped('wallet-setup')
           return
         }

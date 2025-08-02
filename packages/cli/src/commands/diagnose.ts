@@ -56,7 +56,7 @@ program
         console.log(chalk.green(`✅ Report exported to ${options.export}`));
       }
 
-    } catch (_error) {
+    } catch (_) {
       console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }
@@ -94,7 +94,7 @@ program
         console.log(chalk.green(`✅ Report exported to: ${options.export}`));
       }
 
-    } catch (_error) {
+    } catch (_) {
       console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }
@@ -134,7 +134,7 @@ program
           } else {
             unhealthy++;
           }
-        } catch {
+        } catch (_) {
           unhealthy++;
         }
       }
@@ -144,7 +144,7 @@ program
       console.log(chalk.red(`❌ Unhealthy accounts: ${unhealthy}`));
       console.log(chalk.blue(`📊 Health rate: ${((healthy / accounts.length) * 100).toFixed(1)}%`));
       
-    } catch (_error) {
+    } catch (_) {
       console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }
@@ -190,7 +190,7 @@ program
         console.log(chalk.gray('Use --dry-run to see migration plan'));
       }
       
-    } catch (_error) {
+    } catch (_) {
       console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
       process.exit(1);
     }

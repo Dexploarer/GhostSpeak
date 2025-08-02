@@ -205,7 +205,7 @@ export class InteractiveMenu {
       status.balance = `${(Number(balance) / 1e9).toFixed(4)} SOL`
       
       // Could check for agents and multisigs here
-    } catch {
+    } catch (_) {
       // Wallet not configured
     }
     
@@ -778,7 +778,7 @@ export class InteractiveMenu {
       // Add a small delay to ensure output is flushed
       await new Promise(resolve => setTimeout(resolve, 100))
       
-    } catch (_error) {
+    } catch (_) {
       console.error(chalk.red(`\n❌ Error executing command: ${error instanceof Error ? _error.message : 'Unknown error'}`))
     }
     
@@ -805,7 +805,7 @@ export class InteractiveMenu {
       }
       
       writeFileSync(RECENT_COMMANDS_FILE, JSON.stringify(toSave, null, 2))
-    } catch {
+    } catch (_) {
       // Silently ignore errors saving recent commands
     }
   }
@@ -815,7 +815,7 @@ export class InteractiveMenu {
       if (existsSync(RECENT_COMMANDS_FILE)) {
         return JSON.parse(readFileSync(RECENT_COMMANDS_FILE, 'utf-8')) as { command: string; label: string; timestamp: number }[]
       }
-    } catch {
+    } catch (_) {
       // Ignore errors reading recent commands
       void error
     }
@@ -900,7 +900,7 @@ console.log('Payment status:', escrow.status)
       const response = await rpc.getSlot().send()
       const slot = response
       s.stop(`✅ Connected to Solana devnet (slot: ${slot})`)
-    } catch {
+    } catch (_) {
       s.stop('❌ Connection failed')
       log.error(error instanceof Error ? _error.message : 'Unknown error')
     }

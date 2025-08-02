@@ -294,12 +294,12 @@ export function registerCreateCommand(parentCommand: Command): void {
             `• Select the best agent for your needs`
           )
 
-        } catch {
+        } catch (_) {
           s.stop('❌ Failed to create job posting')
           handleTransactionError(_error as Error)
         }
 
-      } catch (_error) {
+      } catch (_) {
         log.error(`Failed to create job: ${error instanceof Error ? _error.message : 'Unknown error'}`)
       }
     })

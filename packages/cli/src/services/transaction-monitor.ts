@@ -275,7 +275,7 @@ export class TransactionMonitor {
         const data = JSON.parse(readFileSync(TRANSACTION_HISTORY_FILE, 'utf-8')) as Transaction[]
         data.forEach(tx => this.transactions.set(tx.id, tx))
       }
-    } catch {
+    } catch (_) {
       // Ignore errors loading history
     }
   }
@@ -293,7 +293,7 @@ export class TransactionMonitor {
       // Keep only recent transactions
       const recent = this.getHistory(MAX_HISTORY_ITEMS)
       writeFileSync(TRANSACTION_HISTORY_FILE, JSON.stringify(recent, null, 2))
-    } catch {
+    } catch (_) {
       // Ignore errors saving history
     }
   }

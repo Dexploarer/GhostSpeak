@@ -225,7 +225,7 @@ export class BatchedRpcClient {
           executionTime: Date.now() - opStartTime
         } as BatchOperationResult<T>
         
-      } catch {
+      } catch (_) {
         return {
           success: false,
           error: _error as Error,

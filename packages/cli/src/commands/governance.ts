@@ -209,7 +209,7 @@ multisigCommand
       }
 
     } catch (_error) {
-      log.error(`Failed to create multisig: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      log.error(`Failed to create multisig: ${__error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -264,7 +264,7 @@ multisigCommand
       )
 
     } catch (_error) {
-      log.error(`Failed to load multisigs: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      log.error(`Failed to load multisigs: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -465,7 +465,7 @@ proposalCommand
       }
 
     } catch (_error) {
-      log.error(`Failed to create proposal: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      log.error(`Failed to create proposal: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -528,7 +528,7 @@ proposalCommand
       )
 
     } catch (_error) {
-      log.error(`Failed to load proposals: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      log.error(`Failed to load proposals: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -660,7 +660,7 @@ governanceCommand
       }
 
     } catch (_error) {
-      log.error(`Failed to vote: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      log.error(`Failed to vote: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -766,7 +766,7 @@ rbacCommand
       }
 
     } catch (_error) {
-      log.error(`Failed to grant role: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      log.error(`Failed to grant role: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 
@@ -868,7 +868,7 @@ rbacCommand
       }
 
     } catch (_error) {
-      log.error(`Failed to revoke role: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      log.error(`Failed to revoke role: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
 

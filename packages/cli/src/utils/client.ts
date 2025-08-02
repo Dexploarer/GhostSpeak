@@ -52,7 +52,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       log.info('Migrated existing wallet to new wallet system')
       
       return signer
-    } catch (_error) {
+    } catch (_) {
       const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
       log.error(`Failed to load wallet from config: ${config.walletPath}`)
       log.error(`Error details: ${errorMessage}`)
@@ -77,7 +77,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       await walletService.importWallet('cli-wallet', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
-    } catch (_error) {
+    } catch (_) {
       const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
       log.error('Failed to load GhostSpeak CLI wallet')
       log.error(`Error details: ${errorMessage}`)
@@ -102,7 +102,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       await walletService.importWallet('solana-cli', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
-    } catch (_error) {
+    } catch (_) {
       const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
       log.error('Failed to load default Solana CLI wallet')
       log.error(`Error details: ${errorMessage}`)
@@ -136,7 +136,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
     }
     
     return signer
-  } catch (_error) {
+  } catch (_) {
     const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
     log.error('Failed to create new wallet')
     log.error(`Error details: ${errorMessage}`)
@@ -203,7 +203,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   
   try {
     new URL(rpcUrl) // Validate URL format
-  } catch {
+  } catch (_) {
     throw new Error(`Invalid RPC endpoint URL: ${rpcUrl}`)
   }
   
@@ -225,7 +225,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
       .replace('api.mainnet-beta', 'api.mainnet-beta')
     
     rpcSubscriptions = createSolanaRpcSubscriptions(wsUrl)
-  } catch {
+  } catch (_) {
     console.warn('Warning: Could not create RPC subscriptions, transaction confirmations may be slower')
   }
   
@@ -258,7 +258,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         log.info(chalk.dim('Run: npx ghostspeak faucet --save'))
       }
     }
-  } catch {
+  } catch (_) {
     // Log but don't fail on balance check errors
     console.warn('Balance check failed:', error instanceof Error ? _error.message : 'Unknown error')
   }
@@ -280,7 +280,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         // Close HTTP connections if possible
         // HTTP connections don't need explicit closing in most cases
         // If RPC has a close method in future versions, it can be called here
-      } catch {
+      } catch (_) {
         // Silent cleanup - don't throw _errors during cleanup
         console.debug('Client cleanup warning:', error instanceof Error ? _error.message : 'Unknown error')
       }

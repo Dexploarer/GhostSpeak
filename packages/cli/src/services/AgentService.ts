@@ -23,6 +23,7 @@ import { toSDKSigner } from '../utils/client.js'
 import { getCurrentProgramId } from '../../../../config/program-ids.js'
 import { createSolanaRpc } from '@solana/kit'
 import { AgentModule, type GhostSpeakClient } from '@ghostspeak/sdk'
+import { getErrorMessage } from '../utils/type-guards.js'
 
 export class AgentService implements IAgentService {
   private agentCache = new Map<string, { data: Agent; timestamp: number }>()
@@ -138,12 +139,12 @@ export class AgentService implements IAgentService {
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       return agent
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof ValidationError || error instanceof NetworkError) {
-        throw _error // Re-throw service errors as-is
+        throw error // Re-throw service errors as-is
       }
       throw new NetworkError(
-        `Failed to register agent: ${error instanceof Error ? _error.message : 'Unknown error'}`,
+        `Failed to register agent: ${getErrorMessage(error)}`,
         'Check your network connection and try again'
       )
     }
@@ -162,7 +163,10 @@ export class AgentService implements IAgentService {
         agents.push(...ownerAgents)
       } else {
         // Get all agents (in real implementation, this would query the blockchain)
-        const allAgents = await this.getAllAgents()
+        const allAgents = await this.getAllAgents({
+          category: params.category,
+          includeInactive: params.isActive === undefined ? true : params.isActive
+        })
         agents.push(...allAgents)
       }
 
@@ -181,9 +185,9 @@ export class AgentService implements IAgentService {
       const offset = params.offset ?? 0
       const limit = params.limit ?? 50
       return filteredAgents.slice(offset, offset + limit)
-    } catch (_error) {
+    } catch (error) {
       throw new NetworkError(
-        `Failed to list agents: ${error instanceof Error ? _error.message : 'Unknown error'}`,
+        `Failed to list agents: ${getErrorMessage(error)}`,
         'Check your network connection and try again'
       )
     }
@@ -211,8 +215,8 @@ export class AgentService implements IAgentService {
       }
       
       return agent
-    } catch (_error) {
-      console.error(`Error getting agent ${agentId}:`, error)
+    } catch (error) {
+      console.error(`Error getting agent ${agentId}:`, getErrorMessage(error))
       return null
     }
   }
@@ -301,12 +305,12 @@ export class AgentService implements IAgentService {
       this.listCache.clear()
       
       return updatedAgent
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
-        throw _error // Re-throw service errors as-is
+        throw error // Re-throw service errors as-is
       }
       throw new NetworkError(
-        `Failed to update agent: ${error instanceof Error ? _error.message : 'Unknown error'}`,
+        `Failed to update agent: ${getErrorMessage(error)}`,
         'Check your network connection and try again'
       )
     }
@@ -412,8 +416,8 @@ export class AgentService implements IAgentService {
         categories: agent.capabilities
       }
       
-    } catch (_error) {
-      console.error('Error fetching agent analytics:', error)
+    } catch (error) {
+      console.error('Error fetching agent analytics:', getErrorMessage(error))
       // Return default values on error but log the issue
       return {
         totalJobs: 0,
@@ -459,13 +463,20 @@ export class AgentService implements IAgentService {
       // This is a simplified approach - real implementation would use proper indexing
       const allAgents = await this.getAllAgents()
       return allAgents.filter(agent => agent.owner === owner)
-    } catch (_error) {
-      console.error('Error getting agents by owner:', error)
+    } catch (error) {
+      console.error('Error getting agents by owner:', getErrorMessage(error))
       return agents
     }
   }
 
-  private async getAllAgents(): Promise<Agent[]> {
+  private async getAllAgents(params?: {
+    category?: string
+    search?: string
+    includeInactive?: boolean
+    sortBy?: 'reputation' | 'created' | 'name'
+    page?: number
+    limit?: number
+  }): Promise<Agent[]> {
     try {
       // Create instance for querying
       console.log('🔍 Querying all agents from blockchain...')
@@ -529,7 +540,7 @@ export class AgentService implements IAgentService {
           
           // Parse capabilities count (4 bytes)
           const capCountBytes = data.slice(offset, offset + 4)
-          const capCount = capCountBytes.readUInt32LE(0)
+          const capCount = Buffer.from(capCountBytes).readUInt32LE(0)
           offset += 4
           
           // Parse capabilities
@@ -549,16 +560,16 @@ export class AgentService implements IAgentService {
           
           // Parse reputation score (8 bytes)
           const repBytes = data.slice(offset, offset + 8)
-          const reputationScore = repBytes.readBigUInt64LE(0)
+          const reputationScore = Buffer.from(repBytes).readBigUInt64LE(0)
           offset += 8
           
           // Parse timestamps (8 bytes each)
           const createdBytes = data.slice(offset, offset + 8)
-          const createdAt = createdBytes.readBigUInt64LE(0)
+          const createdAt = Buffer.from(createdBytes).readBigUInt64LE(0)
           offset += 8
           
           const updatedBytes = data.slice(offset, offset + 8)
-          const updatedAt = updatedBytes.readBigUInt64LE(0)
+          const updatedAt = Buffer.from(updatedBytes).readBigUInt64LE(0)
           
           // Skip invalid or empty agents
           if (!agentId || !name || name === '') {
@@ -635,8 +646,8 @@ export class AgentService implements IAgentService {
       const end = start + limit
       
       return agents.slice(start, end)
-    } catch (_error) {
-      console.error('Error getting all agents from blockchain:', error)
+    } catch (error) {
+      console.error('Error getting all agents from blockchain:', getErrorMessage(error))
       // Fallback to empty array if blockchain query fails
       return []
     }

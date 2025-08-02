@@ -157,7 +157,7 @@ export const deployCommand = new Command('deploy')
       console.log(chalk.gray('2. Update program ID in configuration'))
       console.log(chalk.gray('3. Test with: ghostspeak agent list'))
       
-    } catch (_error) {
+    } catch (_) {
       console.error(chalk.red(`\n❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`))
       process.exit(1)
     }

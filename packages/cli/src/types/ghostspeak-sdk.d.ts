@@ -46,7 +46,7 @@ declare module '@ghostspeak/sdk' {
     getAccountInfo(address: Address): Promise<AccountInfo | null>
     sendTransaction(transaction: unknown): Promise<string>
     confirmTransaction(signature: string, commitment?: string): Promise<void>
-    getProgramAccounts(programId: Address, options?: Record<string, unknown>): { send(): Promise<ProgramAccount[]> }
+    getProgramAccounts(programId: Address, options?: Record<string, unknown>): Promise<ProgramAccount[]>
     requestAirdrop(address: Address, lamports: bigint): { send(): Promise<string> }
   }
   
@@ -643,4 +643,57 @@ declare module '@ghostspeak/sdk' {
   }
   
   export type GhostSpeakError = Error
+  
+  // AgentModule - standalone agent operations
+  export class AgentModule {
+    constructor(config: {
+      programId: Address
+      rpc: RpcClient
+      commitment?: string
+      cluster?: string
+      rpcEndpoint?: string
+    })
+    
+    register(signer: TransactionSigner, params: {
+      agentType: number
+      metadataUri: string
+      agentId: string
+      skipSimulation?: boolean
+    }): Promise<string>
+    
+    update(signer: TransactionSigner, params: {
+      agentId: string
+      name?: string
+      description?: string
+      capabilities?: string[]
+      isActive?: boolean
+      metadataUri?: string
+    }): Promise<string>
+  }
+  
+  // MarketplaceModule - standalone marketplace operations
+  export class MarketplaceModule {
+    constructor(config: {
+      programId: Address
+      rpc: RpcClient
+      commitment?: string
+    })
+    
+    createServiceListing(signer: TransactionSigner, params: {
+      agentAddress: Address
+      title: string
+      description: string
+      price: bigint
+      serviceType?: string
+      paymentToken?: Address
+    }): Promise<string>
+    
+    updateServiceListing(signer: TransactionSigner, params: {
+      listingId: string
+      title?: string
+      description?: string
+      price?: bigint
+      isActive?: boolean
+    }): Promise<string>
+  }
 }

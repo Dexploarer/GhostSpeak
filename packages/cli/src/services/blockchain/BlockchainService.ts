@@ -7,6 +7,7 @@ import type { Signature, Base64EncodedWireTransaction } from '@solana/kit'
 import type { IBlockchainService } from '../../types/services.js'
 import { initializeClient } from '../../utils/client.js'
 import { NetworkError, ServiceError } from '../../types/services.js'
+import { getErrorMessage } from '../../utils/type-guards.js'
 
 export class BlockchainService implements IBlockchainService {
   private clients = new Map<string, unknown>()
@@ -25,7 +26,7 @@ export class BlockchainService implements IBlockchainService {
       const { client } = await initializeClient(network as 'devnet' | 'testnet' | 'mainnet-beta')
       this.clients.set(network, client)
       return client
-    } catch (_error) {
+    } catch (_) {
       throw new Error(`Failed to initialize client for network "${network}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }
@@ -51,7 +52,7 @@ export class BlockchainService implements IBlockchainService {
       ).send()
       
       return response
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof Error) {
         // Handle specific Solana transaction errors
         if (error.message.includes('insufficient funds')) {
@@ -138,7 +139,7 @@ export class BlockchainService implements IBlockchainService {
       console.log(`Transaction still processing: ${signature} (${status.confirmationStatus || 'processed'})`)
       return false
       
-    } catch (_error) {
+    } catch (_) {
       console.error(`Failed to confirm transaction ${signature}:`, error instanceof Error ? _error.message : 'Unknown error')
       return false
     }
@@ -195,7 +196,7 @@ export class BlockchainService implements IBlockchainService {
         data: accountData
       }
       
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof Error && error.message.includes('Invalid param')) {
         throw new ServiceError(
           `Invalid address format: ${address}`,
@@ -239,7 +240,7 @@ export class BlockchainService implements IBlockchainService {
       await new Promise(resolve => setTimeout(resolve, 1000)) // Brief wait for transaction to propagate
       
       return signature
-    } catch (_error) {
+    } catch (_) {
       throw new Error(`Failed to request airdrop: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   }

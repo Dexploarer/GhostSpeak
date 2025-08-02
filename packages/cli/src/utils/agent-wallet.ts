@@ -98,7 +98,7 @@ class AtomicFileManager {
         // Backup cleanup failed, not critical
       }
       
-    } catch {
+    } catch (_error) {
       // Cleanup temp file on error
       try {
         await fs.unlink(tempPath)
@@ -131,7 +131,7 @@ class AtomicFileManager {
       const data = await fs.readFile(filePath, 'utf-8')
       return JSON.parse(data) as T
     } catch (_error) {
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      if (_error instanceof Error && 'code' in _error && _error.code === 'ENOENT') {
         return null
       }
       throw _error
@@ -175,7 +175,7 @@ export class AgentWalletManager {
     secretKey: Uint8Array
   }> {
     // Generate new keypair for agent using July 2025 @solana/kit patterns
-    const agentWallet = await generateKeyPairSigner()
+    const _agentWallet = await generateKeyPairSigner()
     
     // Create agent ID from name
     const agentId = agentName.toLowerCase().replace(/\s+/g, '-')
@@ -255,7 +255,7 @@ export class AgentWalletManager {
       await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
       
     } catch (_error) {
-      const message = error instanceof Error ? _error.message : 'Unknown error'
+      const message = _error instanceof Error ? _error.message : 'Unknown error'
       console.error('Error updating UUID mapping:', message)
       throw new Error(`Failed to update UUID mapping: ${message}`)
     }
@@ -269,12 +269,12 @@ export class AgentWalletManager {
       const credentialsPath = join(AGENT_CREDENTIALS_DIR, agentId, 'credentials.json')
       const credentialsData = await fs.readFile(credentialsPath, 'utf-8')
       return JSON.parse(credentialsData) as AgentCredentials
-    } catch {
+    } catch (_error) {
       // Only return null for expected errors (file not found)
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      if (_error instanceof Error && 'code' in _error && _error.code === 'ENOENT') {
         return null
       }
-      const message = error instanceof Error ? _error.message : 'Unknown error'
+      const message = _error instanceof Error ? _error.message : 'Unknown error'
       console.error(`Error reading agent credentials for ${agentId}:`, message)
       throw new Error(`Failed to read agent credentials for ${agentId}: ${message}`)
     }
@@ -294,12 +294,12 @@ export class AgentWalletManager {
       if (!agentId) return null
       
       return await this.loadCredentials(agentId)
-    } catch {
+    } catch (_error) {
       // Only return null for expected errors (file not found)
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      if (_error instanceof Error && 'code' in _error && _error.code === 'ENOENT') {
         return null
       }
-      const message = error instanceof Error ? _error.message : 'Unknown error'
+      const message = _error instanceof Error ? _error.message : 'Unknown error'
       console.error(`Error loading credentials by UUID ${uuid}:`, message)
       throw new Error(`Failed to load credentials by UUID: ${message}`)
     }
@@ -323,12 +323,12 @@ export class AgentWalletManager {
       }
       
       return agents.sort((a, b) => b.createdAt - a.createdAt)
-    } catch {
+    } catch (_error) {
       // Only return empty array for expected errors (directory not found)
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      if (_error instanceof Error && 'code' in _error && _error.code === 'ENOENT') {
         return []
       }
-      const message = error instanceof Error ? _error.message : 'Unknown error'
+      const message = _error instanceof Error ? _error.message : 'Unknown error'
       console.error(`Error getting agents by owner ${ownerAddress}:`, message)
       throw new Error(`Failed to get agents by owner: ${message}`)
     }
@@ -388,7 +388,7 @@ export class AgentWalletManager {
       await AtomicFileManager.writeJSON(uuidMappingPath, uuidMapping)
       
     } catch (_error) {
-      const message = error instanceof Error ? _error.message : 'Unknown error'
+      const message = _error instanceof Error ? _error.message : 'Unknown error'
       console.error('Error updating UUID mapping during deletion:', message)
       // Don't throw here, continue with deletion as this is cleanup
     }
@@ -412,12 +412,12 @@ export class AgentWalletManager {
     try {
       const agentDirs = await fs.readdir(AGENT_CREDENTIALS_DIR)
       return agentDirs.filter(dir => dir !== 'uuid-mapping.json')
-    } catch {
+    } catch (_error) {
       // Only return empty array for expected errors (directory not found)
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      if (_error instanceof Error && 'code' in _error && _error.code === 'ENOENT') {
         return []
       }
-      const message = error instanceof Error ? _error.message : 'Unknown error'
+      const message = _error instanceof Error ? _error.message : 'Unknown error'
       console.error('Error listing agent IDs:', message)
       throw new Error(`Failed to list agent IDs: ${message}`)
     }
@@ -509,8 +509,8 @@ export class AgentCNFTManager {
         cnftMint,
         merkleTree: merkleTreeStr
       }
-    } catch {
-      console.warn('⚠️  CNFT minting failed, using credential-based ownership:', error)
+    } catch (_error) {
+      console.warn('⚠️  CNFT minting failed, using credential-based ownership:', _error)
       
       // Fallback to deterministic IDs if Metaplex operations fail
       const agentHash = `${credentials.agentId}_${ownerWallet.address}_${Date.now()}`
@@ -664,8 +664,8 @@ export class AgentCNFTManager {
       console.warn(`Ownership verification failed. Current owner: ${currentOwner}`)
       return false
       
-    } catch {
-      console.error('Failed to verify CNFT ownership:', error)
+    } catch (_error) {
+      console.error('Failed to verify CNFT ownership:', _error)
       // Do NOT fallback to true on error - this is a security risk
       return false
     }

@@ -88,7 +88,7 @@ export async function registerAgentPrompts(options: { name?: string; description
       try {
         new URL(value)
         return undefined
-      } catch {
+      } catch (_) {
         return 'Please enter a valid URL'
       }
     }
@@ -121,7 +121,7 @@ export async function registerAgentPrompts(options: { name?: string; description
         try {
           new URL(value)
           return undefined
-        } catch {
+        } catch (_) {
           return 'Please enter a valid URL'
         }
       }

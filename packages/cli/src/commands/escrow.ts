@@ -79,7 +79,7 @@ escrowCommand
             try {
               address(value.trim())
               return
-            } catch {
+            } catch (_) {
               return 'Please enter a valid Solana address'
             }
           }
@@ -268,12 +268,12 @@ escrowCommand
           `• Release funds when work is complete: ${chalk.cyan('gs escrow release')}`
         )
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to create escrow')
         handleTransactionError(_error as Error)
       }
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to create escrow: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
@@ -351,7 +351,7 @@ escrowCommand
         `${chalk.cyan('gs escrow create')} - Create new escrow`
       )
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to load escrows: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
@@ -531,12 +531,12 @@ escrowCommand
           `${chalk.yellow('✅ The provider will receive the funds shortly')}`
         )
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to release funds')
         handleTransactionError(_error as Error)
       }
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to release funds: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })
@@ -698,12 +698,12 @@ escrowCommand
           `• Check status: ${chalk.cyan('gs dispute list --mine')}`
         )
 
-      } catch {
+      } catch (_) {
         s.stop('❌ Failed to file dispute')
         handleTransactionError(_error as Error)
       }
 
-    } catch (_error) {
+    } catch (_) {
       log.error(`Failed to file dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
     }
   })

@@ -162,8 +162,8 @@ quickstartCommand
               log.info(`🔐 Multisig Address: ${chalk.white(multisigAddress)}`)
               log.info(`🔗 Explorer: ${getExplorerUrl(signature ?? '', network)}`)
             }
-          } catch (_error) {
-            errors.push(`Multisig creation failed: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+          } catch (_) {
+            errors.push(`Multisig creation failed: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
             log.warn('⚠️  Could not create multisig wallet')
           }
         }
@@ -221,8 +221,8 @@ quickstartCommand
       showSetupSummary(result)
       outro(chalk.green('🎉 Quick start setup completed!'))
       
-    } catch (_error) {
-      cancel(chalk.red('Setup failed: ' + (error instanceof Error ? _error.message : 'Unknown error')))
+    } catch (_) {
+      cancel(chalk.red('Setup failed: ' + (_error instanceof Error ? _error.message : 'Unknown error')))
       process.exit(1)
     }
   })
@@ -388,8 +388,8 @@ quickstartCommand
               log.info(`🔐 Multisig Address: ${chalk.white(multisigAddress)}`)
               log.info(`🔗 Explorer: ${getExplorerUrl(signature ?? '', network)}`)
             }
-          } catch (_error) {
-            errors.push(`Multisig creation failed: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+          } catch (_) {
+            errors.push(`Multisig creation failed: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
             log.warn('⚠️  Could not create multisig wallet')
           }
         }
@@ -413,8 +413,8 @@ quickstartCommand
       showSetupSummary(result)
       outro(chalk.green('🎉 Quick start setup completed!'))
       
-    } catch (_error) {
-      cancel(chalk.red('Setup failed: ' + (error instanceof Error ? _error.message : 'Unknown error')))
+    } catch (_) {
+      cancel(chalk.red('Setup failed: ' + (_error instanceof Error ? _error.message : 'Unknown error')))
       process.exit(1)
     }
   })

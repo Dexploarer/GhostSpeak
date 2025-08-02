@@ -105,7 +105,7 @@ configCommand
 
       outro('Setup completed successfully')
 
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Setup failed: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -149,7 +149,7 @@ configCommand
           console.log('')
           console.log(chalk.gray('💰 Wallet Address:') + ` ${signer.address}`)
           console.log(chalk.gray('💰 Wallet Balance:') + ` ${lamportsToSol(balance)} SOL`)
-        } catch {
+        } catch (_) {
           s.stop('')
           console.log('')
           console.log(chalk.yellow('⚠️  Could not fetch wallet balance'))
@@ -160,7 +160,7 @@ configCommand
       }
 
       outro('Configuration displayed')
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to load configuration: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })

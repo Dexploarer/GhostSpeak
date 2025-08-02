@@ -68,7 +68,7 @@ walletCommand
           try {
             const bal = await walletService.getBalance(wallet.address, wallet.network)
             balance = `${bal.toFixed(4)} SOL`
-          } catch {
+          } catch (_) {
             balance = 'Error'
           }
         }
@@ -97,7 +97,7 @@ walletCommand
       
       outro('Wallet list complete')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to list wallets: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -206,7 +206,7 @@ walletCommand
       
       outro('Wallet created successfully')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to create wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -269,7 +269,7 @@ walletCommand
       
       outro('Wallet details complete')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to show wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -330,7 +330,7 @@ walletCommand
       
       outro('Active wallet updated')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to switch wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -370,7 +370,7 @@ walletCommand
               balance,
               network: wallet.network
             })
-          } catch {
+          } catch (_) {
             balances.push({
               name: wallet.name,
               address: wallet.address,
@@ -426,7 +426,7 @@ walletCommand
       
       outro('Balance check complete')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to check balance: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -524,7 +524,7 @@ walletCommand
       
       outro('Wallet imported successfully')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to import wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -627,7 +627,7 @@ walletCommand
       
       outro('Wallet renamed successfully')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to rename wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })
@@ -698,7 +698,7 @@ walletCommand
       
       outro('Wallet deleted')
       
-    } catch (_error) {
+    } catch (_) {
       cancel(chalk.red('Failed to delete wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
     }
   })

@@ -157,11 +157,12 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       console.log(`✅ Connected to Ledger ${this.device.model}`)
 
-    } catch (_error) {
+    } catch (error) {
       this.status = 'error'
       this.emit('status_changed', this.status)
-      this.emit('error', _error)
-      throw new Error(`Failed to connect to Ledger: ${_error}`)
+      this.emit('error', error)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+      throw new Error(`Failed to connect to Ledger: ${error}`)
     }
   }
 
@@ -171,6 +172,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
   async disconnect(): Promise<void> {
     try {
       if (this.transport) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- External hardware wallet library method
         await this.transport.close()
         this.transport = null
         this.solanaApp = null
@@ -185,9 +187,9 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       console.log('✅ Disconnected from Ledger')
 
-    } catch (_error) {
-      this.emit('error', _error)
-      throw _error
+    } catch (error) {
+      this.emit('error', error)
+      throw error
     }
   }
 
@@ -212,9 +214,10 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
       return publicKey
 
-    } catch (_error) {
-      this.emit('error', _error)
-      throw new Error(`Failed to get public key: ${_error}`)
+    } catch (error) {
+      this.emit('error', error)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+      throw new Error(`Failed to get public key: ${error}`)
     }
   }
 
@@ -242,19 +245,20 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
       console.log('✅ Transaction signed successfully')
       return signature
 
-    } catch (_error) {
-      this.emit('error', _error)
+    } catch (error) {
+      this.emit('error', error)
       
-      if (_error instanceof Error) {
-        if (_error.message.includes('denied')) {
+      if (error instanceof Error) {
+        if (error.message.includes('denied')) {
           throw new Error('Transaction was rejected on device')
         }
-        if (_error.message.includes('timeout')) {
+        if (error.message.includes('timeout')) {
           throw new Error('Transaction signing timed out - please confirm on device')
         }
       }
 
-      throw new Error(`Failed to sign transaction: ${_error}`)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+      throw new Error(`Failed to sign transaction: ${error}`)
     }
   }
 
@@ -282,9 +286,10 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
       console.log('✅ Message signed successfully')
       return signature
 
-    } catch (_error) {
-      this.emit('error', _error)
-      throw new Error(`Failed to sign message: ${_error}`)
+    } catch (error) {
+      this.emit('error', error)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+      throw new Error(`Failed to sign message: ${error}`)
     }
   }
 
@@ -452,8 +457,9 @@ export class HardwareWalletManager extends EventEmitter {
 
       return devices
 
-    } catch (_error) {
-      console.warn('Failed to detect hardware wallet devices:', _error)
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error passed to console.warn
+      console.warn('Failed to detect hardware wallet devices:', error)
       return []
     }
   }
@@ -500,12 +506,13 @@ export class HardwareWalletManager extends EventEmitter {
 
       return wallet
 
-    } catch (_error) {
+    } catch (error) {
       this.eventBus.emit('hardware_wallet:connection_failed', {
         type,
-        error: _error instanceof Error ? _error.message : String(_error)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument -- Error handling for unknown error type
+        error: error instanceof Error ? error.message : String(error)
       })
-      throw _error
+      throw error
     }
   }
 
@@ -603,7 +610,7 @@ export class HardwareWalletUtils {
       // For now, just check that signature exists and has correct length
       return signature.signature.length === 64 && 
              signature.publicKey.length === 32
-    } catch {
+    } catch (error) {
       return false
     }
   }

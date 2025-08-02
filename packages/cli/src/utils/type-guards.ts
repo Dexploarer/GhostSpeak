@@ -193,7 +193,7 @@ export function validateAndConvertAuction(value: unknown): ValidatedAuctionData 
       creator: obj.seller as Address,
       status: obj.status ?? 'active'
     }
-  } catch {
+  } catch (error) {
     console.warn('Failed to convert auction data:', error)
     return null
   }
@@ -289,4 +289,34 @@ export function validateMarketplaceItemArray(value: unknown): ValidatedMarketpla
   if (!Array.isArray(value)) return []
   
   return value.filter(isValidMarketplaceItem)
+}
+
+// Error type guards for safe error handling
+export function isError(value: unknown): value is Error {
+  return value instanceof Error
+}
+
+export function isErrorWithMessage(value: unknown): value is Error & { message: string } {
+  return isError(value) && typeof value.message === 'string'
+}
+
+export function isErrorWithCode(value: unknown): value is Error & { code: string | number } {
+  return isError(value) && ('code' in value) && (typeof value.code === 'string' || typeof value.code === 'number')
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (isErrorWithMessage(error)) {
+    return error.message
+  }
+  if (typeof error === 'string') {
+    return error
+  }
+  return 'Unknown error'
+}
+
+export function getErrorCode(error: unknown): string | number | undefined {
+  if (isErrorWithCode(error)) {
+    return error.code
+  }
+  return undefined
 }

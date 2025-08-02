@@ -59,7 +59,7 @@ export class SecureStorage {
     const dir = this.getStorageDir();
     try {
       await access(dir);
-    } catch {
+    } catch (_) {
       await mkdir(dir, { recursive: true, mode: 0o700 });
     }
     // Ensure directory has proper permissions
@@ -122,7 +122,7 @@ export class SecureStorage {
       ]);
       
       return decrypted.toString('utf8');
-    } catch {
+    } catch (_) {
       throw new Error('Failed to decrypt: Invalid password or corrupted data');
     }
   }
@@ -152,7 +152,7 @@ export class SecureStorage {
       const content = await readFile(path, 'utf8');
       const encrypted = JSON.parse(content) as EncryptedData;
       return await this.decrypt(encrypted, password);
-    } catch (_error) {
+    } catch (_) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         throw new Error(`No data found for key: ${key}`);
       }
@@ -167,7 +167,7 @@ export class SecureStorage {
     try {
       await access(this.getStoragePath(key));
       return true;
-    } catch {
+    } catch (_) {
       return false;
     }
   }
@@ -197,7 +197,7 @@ export class SecureStorage {
     const { unlink } = await import('node:fs/promises');
     try {
       await unlink(path);
-    } catch (_error) {
+    } catch (_) {
       if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
         throw _error;
       }
@@ -215,7 +215,7 @@ export class SecureStorage {
       return files
         .filter(f => f.endsWith('.enc'))
         .map(f => f.replace('.enc', ''));
-    } catch {
+    } catch (_) {
       return [];
     }
   }

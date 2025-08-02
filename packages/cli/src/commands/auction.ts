@@ -269,7 +269,7 @@ auctionCommand
         `• View details: ${chalk.cyan('gs auction info <auction-id>')}`
       )
 
-    } catch (error) {
+    } catch (_error) {
       handleTransactionError(error as Error)
     }
   })
@@ -388,7 +388,7 @@ auctionCommand
         `• Check your bids: ${chalk.cyan('gs auction list --my-bids')}`
       )
 
-    } catch (error) {
+    } catch (_error) {
       handleTransactionError(error as Error)
     }
   })
@@ -489,7 +489,7 @@ auctionCommand
 
       outro(chalk.green('✅ Auction listing complete'))
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to list auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -561,7 +561,7 @@ auctionCommand
 
       outro('Monitor mode not yet implemented - check back for updates!')
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to monitor auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -638,7 +638,7 @@ auctionCommand
         `${chalk.bold('Explorer:')} ${explorerUrl}`
       )
 
-    } catch (error) {
+    } catch (_error) {
       handleTransactionError(error as Error)
     }
   })

@@ -203,12 +203,12 @@ multisigCommand
           `• Manage transactions through multisig approval process`
         )
 
-      } catch (error) {
+      } catch (_error) {
         s.stop('❌ Failed to create multisig')
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to create multisig: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -263,7 +263,7 @@ multisigCommand
         `${chalk.cyan('gs governance vote')} - Vote on proposals`
       )
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to load multisigs: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -459,12 +459,12 @@ proposalCommand
           `• Monitor voting progress: ${chalk.cyan('gs governance proposal list')}`
         )
 
-      } catch (error) {
+      } catch (_error) {
         s.stop('❌ Failed to create proposal')
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to create proposal: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -527,7 +527,7 @@ proposalCommand
         `${chalk.cyan('gs governance proposal create')} - Create new proposal`
       )
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to load proposals: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -654,12 +654,12 @@ governanceCommand
           `${chalk.yellow('💡 Your vote is now part of the governance process!')}`
         )
 
-      } catch (error) {
+      } catch (_error) {
         s.stop('❌ Failed to cast vote')
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to vote: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -760,12 +760,12 @@ rbacCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch (error) {
+      } catch (_error) {
         s.stop('❌ Failed to grant role')
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to grant role: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
@@ -862,12 +862,12 @@ rbacCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch (error) {
+      } catch (_error) {
         s.stop('❌ Failed to revoke role')
         handleTransactionError(error as Error)
       }
 
-    } catch (error) {
+    } catch (_error) {
       log.error(`Failed to revoke role: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })

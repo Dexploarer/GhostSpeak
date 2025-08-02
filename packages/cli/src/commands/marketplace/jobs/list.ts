@@ -201,7 +201,7 @@ export function registerListCommand(parentCommand: Command): void {
           `${chalk.cyan('gs marketplace jobs list --posted')} - Your posted jobs`
         )
 
-      } catch (error) {
+      } catch (_error) {
         log.error(`Failed to load jobs: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })

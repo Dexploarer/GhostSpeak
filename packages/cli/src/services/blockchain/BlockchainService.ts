@@ -25,7 +25,7 @@ export class BlockchainService implements IBlockchainService {
       const { client } = await initializeClient(network as 'devnet' | 'testnet' | 'mainnet-beta')
       this.clients.set(network, client)
       return client
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to initialize client for network "${network}": ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -51,7 +51,7 @@ export class BlockchainService implements IBlockchainService {
       ).send()
       
       return response
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error) {
         // Handle specific Solana transaction errors
         if (error.message.includes('insufficient funds')) {
@@ -138,7 +138,7 @@ export class BlockchainService implements IBlockchainService {
       console.log(`Transaction still processing: ${signature} (${status.confirmationStatus || 'processed'})`)
       return false
       
-    } catch (error) {
+    } catch (_error) {
       console.error(`Failed to confirm transaction ${signature}:`, error instanceof Error ? error.message : 'Unknown error')
       return false
     }
@@ -195,7 +195,7 @@ export class BlockchainService implements IBlockchainService {
         data: accountData
       }
       
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && error.message.includes('Invalid param')) {
         throw new ServiceError(
           `Invalid address format: ${address}`,
@@ -239,7 +239,7 @@ export class BlockchainService implements IBlockchainService {
       await new Promise(resolve => setTimeout(resolve, 1000)) // Brief wait for transaction to propagate
       
       return signature
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to request airdrop: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }

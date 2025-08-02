@@ -91,7 +91,7 @@ export class OnboardingService {
       await this.firstAgentStep()
       await this.marketplaceTourStep()
       await this.completionStep()
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && error.message === 'cancelled') {
         cancel('Setup cancelled by user')
         return

@@ -67,7 +67,7 @@ export function registerStatusCommand(parentCommand: Command): void {
 
         outro('Status check completed')
 
-      } catch (error) {
+      } catch (_error) {
         cancel(chalk.red('Status check failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
       }
     })

@@ -778,7 +778,7 @@ export class InteractiveMenu {
       // Add a small delay to ensure output is flushed
       await new Promise(resolve => setTimeout(resolve, 100))
       
-    } catch (error) {
+    } catch (_error) {
       console.error(chalk.red(`\n❌ Error executing command: ${error instanceof Error ? error.message : 'Unknown error'}`))
     }
     

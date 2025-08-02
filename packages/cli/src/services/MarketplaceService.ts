@@ -111,7 +111,7 @@ export class MarketplaceService implements IMarketplaceService {
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       
       return listing
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to create listing: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -144,7 +144,7 @@ export class MarketplaceService implements IMarketplaceService {
       const offset = params.offset ?? 0
       const limit = params.limit ?? 20
       return listings.slice(offset, offset + limit)
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to get listings: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -197,7 +197,7 @@ export class MarketplaceService implements IMarketplaceService {
       }
 
       return listings
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to search listings: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -248,7 +248,7 @@ export class MarketplaceService implements IMarketplaceService {
       // In real implementation, this would create escrow transaction
       await this.createPurchaseTransaction(purchase)
       return purchase
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to purchase service: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -327,7 +327,7 @@ export class MarketplaceService implements IMarketplaceService {
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
       
       return updatedListing
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to update listing: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -391,7 +391,7 @@ export class MarketplaceService implements IMarketplaceService {
         createdAt: BigInt(listing.data.createdAt || Date.now()),
         metadata: {}
       }))
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to get listings from blockchain:', error)
       return []
     }
@@ -433,7 +433,7 @@ export class MarketplaceService implements IMarketplaceService {
       // Note: In a real implementation, we would cache for future use
       
       return serviceListing
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to get listing by ID:', error)
       return null
     }
@@ -475,7 +475,7 @@ export class MarketplaceService implements IMarketplaceService {
       console.log(`✅ Purchase transaction created successfully!`)
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to create purchase transaction: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }

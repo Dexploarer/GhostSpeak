@@ -23,7 +23,7 @@ export class StorageService implements IStorageService {
       const filePath = this.getFilePath(key)
       const jsonData = JSON.stringify(data, null, 2)
       await fs.writeFile(filePath, jsonData, 'utf-8')
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to save data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -36,7 +36,7 @@ export class StorageService implements IStorageService {
       const filePath = this.getFilePath(key)
       const jsonData = await fs.readFile(filePath, 'utf-8')
       return JSON.parse(jsonData) as T
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null // File doesn't exist
       }
@@ -51,7 +51,7 @@ export class StorageService implements IStorageService {
     try {
       const filePath = this.getFilePath(key)
       await fs.unlink(filePath)
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return // File doesn't exist, nothing to delete
       }
@@ -89,7 +89,7 @@ export class StorageService implements IStorageService {
       }
       
       return keys
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to list keys: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -103,7 +103,7 @@ export class StorageService implements IStorageService {
       if (exists) {
         await fs.rm(this.baseDir, { recursive: true, force: true })
       }
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to clear storage: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -120,7 +120,7 @@ export class StorageService implements IStorageService {
   private async ensureDirectoryExists(): Promise<void> {
     try {
       await fs.mkdir(this.baseDir, { recursive: true })
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to create storage directory: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }

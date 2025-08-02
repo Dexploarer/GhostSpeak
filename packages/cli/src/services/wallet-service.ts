@@ -111,7 +111,7 @@ export class WalletService implements IWalletService {
       
       // Create signer from keypair
       return await createSignerFromKeyPair(keyPair)
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }

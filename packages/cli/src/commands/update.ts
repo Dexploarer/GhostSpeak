@@ -236,7 +236,7 @@ export const updateCommand = new Command('update')
         process.exit(1)
       }
       
-    } catch (error) {
+    } catch (_error) {
       console.error(chalk.red('Error:'), error instanceof Error ? error.message : 'Unknown error')
       outro('Update check failed')
       process.exit(1)

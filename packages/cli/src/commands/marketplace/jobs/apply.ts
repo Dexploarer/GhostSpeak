@@ -300,7 +300,7 @@ export function registerApplyCommand(parentCommand: Command): void {
           handleTransactionError(error as Error)
         }
 
-      } catch (error) {
+      } catch (_error) {
         log.error(`Failed to apply to job: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })

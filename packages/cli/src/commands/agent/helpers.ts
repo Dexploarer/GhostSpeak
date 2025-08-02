@@ -41,7 +41,7 @@ export async function storePendingInfoRequest(
       try {
         await fs.writeFile(requestFile, JSON.stringify(requestData, null, 2))
         resolve()
-      } catch (error) {
+      } catch (_error) {
         reject(error)
       }
     })

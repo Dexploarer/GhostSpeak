@@ -71,7 +71,7 @@ export function registerCredentialsCommand(parentCommand: Command): void {
         }
 
         outro('Credential management completed')
-      } catch (error) {
+      } catch (_error) {
         cancel(chalk.red('Error: ' + (error instanceof Error ? error.message : 'Unknown error')))
       }
     })

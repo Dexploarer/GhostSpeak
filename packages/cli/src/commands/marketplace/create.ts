@@ -238,7 +238,7 @@ export function registerCreateCommand(parentCommand: Command): void {
           throw new Error(handleTransactionError(error as Error))
         }
 
-      } catch (error) {
+      } catch (_error) {
         cancel(chalk.red('Failed to create service: ' + (error instanceof Error ? error.message : 'Unknown error')))
       }
     })

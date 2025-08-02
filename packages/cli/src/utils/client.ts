@@ -52,7 +52,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       log.info('Migrated existing wallet to new wallet system')
       
       return signer
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       log.error(`Failed to load wallet from config: ${config.walletPath}`)
       log.error(`Error details: ${errorMessage}`)
@@ -77,7 +77,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       await walletService.importWallet('cli-wallet', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       log.error('Failed to load GhostSpeak CLI wallet')
       log.error(`Error details: ${errorMessage}`)
@@ -102,7 +102,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
       await walletService.importWallet('solana-cli', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       log.error('Failed to load default Solana CLI wallet')
       log.error(`Error details: ${errorMessage}`)
@@ -136,7 +136,7 @@ export async function getWallet(): Promise<KeyPairSigner> {
     }
     
     return signer
-  } catch (error) {
+  } catch (_error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     log.error('Failed to create new wallet')
     log.error(`Error details: ${errorMessage}`)

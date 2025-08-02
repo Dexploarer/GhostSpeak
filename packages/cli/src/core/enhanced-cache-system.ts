@@ -253,7 +253,7 @@ export class EnhancedCacheManager extends CacheManager {
 
       return result
 
-    } catch (error) {
+    } catch (_error) {
       this.eventBus.emit('enhanced_cache:error', { key, error: error as Error, operation: 'get' })
       return null
     }
@@ -345,7 +345,7 @@ export class EnhancedCacheManager extends CacheManager {
         responseTime: Date.now() - startTime
       })
 
-    } catch (error) {
+    } catch (_error) {
       this.eventBus.emit('enhanced_cache:error', { key, error: error as Error, operation: 'set' })
       throw error
     }
@@ -392,7 +392,7 @@ export class EnhancedCacheManager extends CacheManager {
               confidence: prediction.confidence
             })
             
-          } catch (error) {
+          } catch (_error) {
             this.eventBus.emit('enhanced_cache:predictive_failed', {
               key: prediction.key,
               error: error as Error
@@ -490,7 +490,7 @@ export class EnhancedCacheManager extends CacheManager {
             const value = await loader()
             await this.set(prediction.key, value, { tags: ['optimized'] })
             results.warmed++
-          } catch (error) {
+          } catch (_error) {
             // Ignore warming failures during optimization
           }
         }
@@ -526,11 +526,11 @@ export class EnhancedCacheManager extends CacheManager {
         const metadata = await fs.readFile(metadataPath, 'utf8')
         const data = JSON.parse(metadata)
         this.persistentKeys = new Set(data.keys || [])
-      } catch (error) {
+      } catch (_error) {
         // No existing metadata, start fresh
       }
       
-    } catch (error) {
+    } catch (_error) {
       // In test environment or when disk access fails, continue without disk cache
       if (process.env.NODE_ENV !== 'test') {
         console.warn('Failed to initialize disk cache:', error)
@@ -578,7 +578,7 @@ export class EnhancedCacheManager extends CacheManager {
             try {
               await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
               resolve()
-            } catch (error) {
+            } catch (_error) {
               reject(error)
             }
           })
@@ -587,7 +587,7 @@ export class EnhancedCacheManager extends CacheManager {
         // Update metadata file asynchronously
         setImmediate(() => this.updateDiskMetadata())
         
-      } catch (error) {
+      } catch (_error) {
         this.eventBus.emit('enhanced_cache:disk_write_failed', { key, error: error as Error })
       } finally {
         this.diskWriteQueue.delete(key)
@@ -611,7 +611,7 @@ export class EnhancedCacheManager extends CacheManager {
           try {
             const data = await fs.readFile(filePath, 'utf8')
             resolve(data)
-          } catch (error) {
+          } catch (_error) {
             reject(error)
           }
         })
@@ -634,14 +634,14 @@ export class EnhancedCacheManager extends CacheManager {
         try {
           data.metadata.lastAccess = new Date()
           await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
-        } catch (error) {
+        } catch (_error) {
           // Ignore access time update failures
         }
       })
       
       return data.value as T
       
-    } catch (error) {
+    } catch (_error) {
       return null
     }
   }
@@ -656,7 +656,7 @@ export class EnhancedCacheManager extends CacheManager {
       await fs.unlink(filePath)
       this.persistentKeys.delete(key)
       await this.updateDiskMetadata()
-    } catch (error) {
+    } catch (_error) {
       // Ignore removal errors
     }
   }
@@ -679,7 +679,7 @@ export class EnhancedCacheManager extends CacheManager {
         lastUpdate: new Date()
       }
       await fs.writeFile(metadataPath, JSON.stringify(metadata), 'utf8')
-    } catch (error) {
+    } catch (_error) {
       // Ignore metadata update errors
     }
   }
@@ -718,7 +718,7 @@ export class EnhancedCacheManager extends CacheManager {
     try {
       const buffer = Buffer.from(value, 'base64')
       return buffer.length > 0 && buffer[0] === 0x1f && buffer[1] === 0x8b
-    } catch (error) {
+    } catch (_error) {
       return false
     }
   }
@@ -803,7 +803,7 @@ export class EnhancedCacheManager extends CacheManager {
       const value = await loader()
       await this.set(key, value, { tags: ['predictive_load'] })
       return value as T
-    } catch (error) {
+    } catch (_error) {
       return null
     }
   }

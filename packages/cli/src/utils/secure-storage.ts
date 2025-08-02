@@ -152,7 +152,7 @@ export class SecureStorage {
       const content = await readFile(path, 'utf8');
       const encrypted = JSON.parse(content) as EncryptedData;
       return await this.decrypt(encrypted, password);
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         throw new Error(`No data found for key: ${key}`);
       }
@@ -197,7 +197,7 @@ export class SecureStorage {
     const { unlink } = await import('node:fs/promises');
     try {
       await unlink(path);
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
         throw error;
       }

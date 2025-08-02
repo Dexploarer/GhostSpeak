@@ -160,7 +160,7 @@ export class PluginManager extends EventEmitter {
       this.emit('plugin:loaded', plugin.name)
       console.log(`✅ Plugin loaded: ${plugin.name} v${plugin.version}`)
 
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       this.pluginMetadata.set(plugin.name, {
         name: plugin.name,
@@ -200,7 +200,7 @@ export class PluginManager extends EventEmitter {
       this.emit('plugin:unloaded', name)
       console.log(`✅ Plugin unloaded: ${name}`)
 
-    } catch (error) {
+    } catch (_error) {
       this.emit('plugin:error', name, error)
       throw error
     }
@@ -346,12 +346,12 @@ export class PluginManager extends EventEmitter {
             if (plugin && typeof plugin.initialize === 'function') {
               await this.loadPlugin(plugin)
             }
-          } catch (error) {
+          } catch (_error) {
             console.warn(`Failed to load plugin from ${file}:`, error)
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Failed to read plugin directory ${directory}:`, error)
     }
   }

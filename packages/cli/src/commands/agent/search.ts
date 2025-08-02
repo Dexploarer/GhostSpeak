@@ -85,7 +85,7 @@ export function registerSearchCommand(parentCommand: Command): void {
         
         outro('Search completed')
 
-      } catch (error) {
+      } catch (_error) {
         cancel(chalk.red('Search failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
       }
     })

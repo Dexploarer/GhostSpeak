@@ -18,7 +18,7 @@ jobs:
         fetch-depth: 2  # Need at least 2 commits for git diff
     
     - name: Setup Bun
-      uses: oven-sh/setup-bun@v1
+      uses: oven-sh/setup-bun@v2
       with:
         bun-version: latest
     
@@ -110,7 +110,7 @@ jobs:
       uses: actions/checkout@v5
     
     - name: Setup Bun
-      uses: oven-sh/setup-bun@v1
+      uses: oven-sh/setup-bun@v2
       with:
         bun-version: latest
     

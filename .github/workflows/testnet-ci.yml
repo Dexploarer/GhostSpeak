@@ -36,7 +36,7 @@ jobs:
       test-type: ${{ steps.test-type.outputs.type }}
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 2
 
@@ -69,7 +69,7 @@ jobs:
     if: needs.setup.outputs.test-type == 'full' || needs.setup.outputs.test-type == 'deployment-only'
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 🦀 Setup Rust
         uses: actions-rs/toolchain@v1
@@ -140,7 +140,7 @@ jobs:
     if: needs.setup.outputs.test-type == 'full'
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 🦀 Setup Rust
         uses: actions-rs/toolchain@v1
@@ -180,7 +180,7 @@ jobs:
     environment: testnet
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
@@ -252,7 +252,7 @@ jobs:
             condition: 'full,error-recovery-only'
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
@@ -305,7 +305,7 @@ jobs:
     if: needs.setup.outputs.test-type == 'monitoring-only' || github.event_name == 'schedule'
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
@@ -352,7 +352,7 @@ jobs:
     if: needs.setup.outputs.test-type == 'full' && github.event_name != 'schedule'
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4

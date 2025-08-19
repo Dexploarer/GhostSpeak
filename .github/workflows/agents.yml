@@ -52,7 +52,7 @@ jobs:
       program-changed: ${{ steps.changes.outputs.program }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 2
 
@@ -95,7 +95,7 @@ jobs:
     if: needs.detect-changes.outputs.agents-changed == 'true' || needs.detect-changes.outputs.sdk-agent-changed == 'true' || needs.detect-changes.outputs.cli-agent-changed == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -198,7 +198,7 @@ jobs:
     if: needs.detect-changes.outputs.program-changed == 'true' || github.event.inputs.test_type == 'integration' || github.event.inputs.test_type == 'all'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -358,7 +358,7 @@ jobs:
     if: github.event.inputs.test_type == 'e2e' || github.event.inputs.test_type == 'all'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -415,7 +415,7 @@ jobs:
     if: needs.detect-changes.outputs.agents-changed == 'true' || needs.detect-changes.outputs.program-changed == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

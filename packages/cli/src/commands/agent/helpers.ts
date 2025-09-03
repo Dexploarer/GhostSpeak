@@ -7,6 +7,7 @@ import { join } from 'path'
 import { homedir } from 'os'
 import type { Address } from '@solana/addresses'
 import type { AgentAnalytics } from '@ghostspeak/sdk'
+import chalk from 'chalk'
 // AgentCredentials type imported but not used directly in current implementation
 
 /**
@@ -169,4 +170,34 @@ export function isValidUrl(string: string): boolean {
   } catch (_) {
     return false
   }
+}
+
+/**
+ * Type for a newly registered agent's data.
+ */
+export interface RegisteredAgent {
+  name: string;
+  description: string;
+  capabilities: string[];
+  id: string;
+  address: {
+    toString(): string;
+  };
+}
+
+/**
+ * Displays the information for a newly registered agent.
+ * @param agent The agent data to display.
+ */
+export function displayRegisteredAgentInfo(agent: RegisteredAgent): void {
+  console.log('\n' + chalk.green('🎉 Your agent has been registered!'))
+  console.log(chalk.gray(`Name: ${agent.name}`))
+  console.log(chalk.gray(`Description: ${agent.description}`))
+  console.log(chalk.gray(`Capabilities: ${agent.capabilities.join(', ')}`))
+  console.log(chalk.gray(`Agent ID: ${agent.id}`))
+  console.log(chalk.gray(`Agent Address: ${agent.address.toString()}`))
+  console.log('')
+  console.log(chalk.yellow('💡 Agent data stored locally'))
+  console.log(chalk.yellow('💡 Use your agent ID for future operations:'))
+  console.log(chalk.gray(`   ${agent.id}`))
 }

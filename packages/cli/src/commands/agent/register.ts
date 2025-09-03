@@ -16,7 +16,7 @@ import type { RegisterOptions } from '../../types/cli-types.js'
 import { validateAgentParams, displayRegisteredAgentInfo } from '../agent/helpers.js'
 import { container, ServiceTokens } from '../../core/Container.js'
 import type { IAgentService } from '../../types/services.js'
-import { displayErrorAndCancel } from '../../utils/enhanced-error-handler.js'
+import { LoggerService } from '../../core/logger.js'
 
 export function registerRegisterCommand(parentCommand: Command): void {
   parentCommand
@@ -29,15 +29,20 @@ export function registerRegisterCommand(parentCommand: Command): void {
     .option('--no-metadata', 'Skip metadata URI prompt')
     .option('-y, --yes', 'Skip confirmation prompt')
     .action(async (_options: RegisterOptions) => {
+      const logger = container.resolve<LoggerService>(ServiceTokens.LOGGER_SERVICE)
+      logger.info('Starting agent registration command')
       intro(chalk.cyan('🤖 Register New AI Agent'))
 
       try {
         const agentData = await registerAgentPrompts(_options)
         
         if (isCancel(agentData)) {
+          logger.warn('Agent registration cancelled by user during prompts.')
           cancel('Agent registration cancelled')
           return
         }
+
+        logger.info('User prompts completed', { agentData: { ...agentData, capabilities: agentData.capabilities.join(',') } })
 
         // Validate agent parameters
         const validationError = validateAgentParams({
@@ -47,12 +52,14 @@ export function registerRegisterCommand(parentCommand: Command): void {
         })
         
         if (validationError) {
+          logger.error('Agent parameter validation failed', new Error(validationError))
           cancel(chalk.red(validationError))
           return
         }
 
         // Get AgentService from container
         const agentService = container.resolve<IAgentService>(ServiceTokens.AGENT_SERVICE)
+        logger.info('AgentService resolved from container')
 
         const s = spinner()
         s.start('Registering agent...')
@@ -70,17 +77,19 @@ export function registerRegisterCommand(parentCommand: Command): void {
           })
           
           s.stop('✅ Agent registered successfully!')
+          logger.info('Agent registered successfully', { agentId: agent.id })
           
           displayRegisteredAgentInfo(agent)
           
           outro('Agent registration completed')
         } catch (error) {
           s.stop('❌ Registration failed')
-          throw error
+          throw error // Rethrow to be caught by outer catch
         }
 
       } catch (error) {
-        displayErrorAndCancel(error, 'Agent registration')
+        logger.handleError(error, 'Agent registration failed')
+        outro(chalk.red('Operation failed'))
       }
     })
 }

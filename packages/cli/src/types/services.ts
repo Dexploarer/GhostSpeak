@@ -4,6 +4,7 @@
 
 import type { Address } from '@solana/addresses'
 import type { KeyPairSigner } from '@solana/kit'
+import type { LoggerService as Logger } from '../core/logger'
 
 // Standardized Error Types
 export class ServiceError extends Error {
@@ -220,12 +221,14 @@ export interface AgentAnalytics {
 
 // Service dependencies
 export interface AgentServiceDependencies {
+  logger: Logger
   blockchainService: IBlockchainService
   walletService: IWalletService
   storageService: IStorageService
 }
 
 export interface MarketplaceServiceDependencies {
+  logger: Logger
   blockchainService: IBlockchainService
   walletService: IWalletService
   agentService: IAgentService

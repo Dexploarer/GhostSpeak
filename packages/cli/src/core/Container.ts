@@ -128,6 +128,7 @@ export const container = new Container()
 
 // Service tokens for type safety
 export const ServiceTokens = {
+  LOGGER_SERVICE: 'LoggerService',
   AGENT_SERVICE: 'AgentService',
   MARKETPLACE_SERVICE: 'MarketplaceService', 
   WALLET_SERVICE: 'WalletService',

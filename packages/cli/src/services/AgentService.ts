@@ -36,21 +36,22 @@ export class AgentService implements IAgentService {
    * Register a new AI agent
    */
   async register(params: RegisterAgentParams): Promise<Agent> {
-    console.log('🚀 AgentService.register called with params:', params)
-    
+    this.deps.logger.info('AgentService.register called', { params })
+
     // Validate parameters
     await this.validateRegisterParams(params)
+    this.deps.logger.info('Parameters validated')
 
     // Get current wallet using injected wallet service
-    console.log('🔍 Getting wallet using injected service...')
+    this.deps.logger.info('Getting wallet using injected service...')
     const walletSigner = await this.deps.walletService.getActiveSigner()
     if (!walletSigner) {
+      this.deps.logger.error('No active wallet found.')
       throw new UnauthorizedError('No active wallet found. Please set up a wallet first.')
     }
-    console.log('🔍 Wallet signer obtained:', walletSigner.address.toString())
+    this.deps.logger.info('Wallet signer obtained', { address: walletSigner.address.toString() })
 
     // Create agent data
-    // Remove dashes from UUID to fit within 32 byte limit for PDA seeds
     const agentId = randomUUID().replace(/-/g, '')
     const agent: Agent = {
       id: agentId,
@@ -66,80 +67,68 @@ export class AgentService implements IAgentService {
       metadata: {
         ...params.metadata,
         category: params.category,
-        pricing: params.pricing
-      }
+        pricing: params.pricing,
+      },
     }
+    this.deps.logger.info('Agent data created', { agentId })
 
     // Register on blockchain using AgentModule directly
     try {
-      // Use the wallet signer we already obtained  
       const signer = walletSigner
-      console.log('🔍 Using signer:', signer.address.toString())
-      
-      // Create metadata URI for the agent (in real implementation this would go to IPFS)
+      this.deps.logger.info('Using signer', { address: signer.address.toString() })
+
       const metadataJson = JSON.stringify({
         name: agent.name,
         description: agent.description,
         capabilities: agent.capabilities,
         category: params.category,
-        image: "",
-        external_url: "",
+        image: '',
+        external_url: '',
         attributes: [
-          { trait_type: "Agent Type", value: "AI Agent" },
-          { trait_type: "Category", value: params.category || agent.capabilities[0] },
-          { trait_type: "Capabilities", value: agent.capabilities.join(", ") }
-        ]
+          { trait_type: 'Agent Type', value: 'AI Agent' },
+          { trait_type: 'Category', value: params.category || agent.capabilities[0] },
+          { trait_type: 'Capabilities', value: agent.capabilities.join(', ') },
+        ],
       })
-      
-      // TEMPORARY: Use empty metadata URI to test memory allocation issue
-      const metadataUri = ""
-      
-      // Create RPC client
+      const metadataUri = ''
+
       const rpc = createSolanaRpc('https://api.devnet.solana.com')
-      
-      // Create AgentModule instance with proper config
-      console.log('🔍 Creating AgentModule instance...')
+      this.deps.logger.info('Creating AgentModule instance...')
       const agentModule = new AgentModule({
         programId: getCurrentProgramId(),
         rpc: rpc,
         commitment: 'confirmed',
         cluster: 'devnet',
-        rpcEndpoint: 'https://api.devnet.solana.com'
+        rpcEndpoint: 'https://api.devnet.solana.com',
       })
-      
-      console.log('🔍 Calling AgentModule.register...')
-      console.log('🔍 Registration params:', {
+
+      const registrationParams = {
         agentType: 0,
         metadataUri,
         agentId: agent.id,
-        skipSimulation: true
-      })
-      
-      const signature = await agentModule.register(signer, {
-        agentType: 0,
-        metadataUri,
-        agentId: agent.id,
-        skipSimulation: true // Skip simulation to avoid simulation-only failures
-      })
-      
-      console.log('🔍 Raw signature result:', signature)
-      console.log('🔍 Signature type:', typeof signature)
-      
-      console.log('🔍 Transaction signature:', signature)
-      
-      if (!signature || typeof signature !== 'string') {
-        throw new Error(`No transaction signature returned from agent registration`)
+        skipSimulation: true,
       }
-      
+      this.deps.logger.info('Calling AgentModule.register', { registrationParams })
+
+      const signature = await agentModule.register(signer, registrationParams)
+      this.deps.logger.info('Agent registration transaction sent', { signature })
+
+      if (!signature || typeof signature !== 'string') {
+        throw new Error('No transaction signature returned from agent registration')
+      }
+
       // Store agent data locally for caching
       await this.deps.storageService.save(`agent:${agent.id}`, agent)
       await this.deps.storageService.save(`agent:owner:${walletSigner.address}:${agent.id}`, agent.id)
-      
-      console.log(`✅ Agent registered successfully!`)
-      console.log(`Transaction signature: ${signature}`)
-      console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
+      this.deps.logger.info('Agent data saved to local storage')
+
+      this.deps.logger.info('Agent registered successfully!', {
+        agentId: agent.id,
+        signature,
+      })
       return agent
     } catch (error) {
+      this.deps.logger.error('Failed to register agent on-chain', error)
       if (error instanceof ValidationError || error instanceof NetworkError) {
         throw error // Re-throw service errors as-is
       }

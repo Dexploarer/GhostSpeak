@@ -27,6 +27,7 @@
     "test:e2e": "vitest run tests/user-acceptance",
     "test:perf": "vitest run tests/performance",
     "test:security": "vitest run tests/security",
+    "test:cli": "vitest --root packages/cli",
     "test:workspace": "cd packages/cli && bun run test && cd ../sdk-typescript && bun run test",
     "test:workflows": "./scripts/test-all-workflows.sh",
     "test:workflows:ts": "tsx ./scripts/test-all-workflows.ts",

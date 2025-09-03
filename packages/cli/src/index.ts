@@ -217,8 +217,8 @@ async function main() {
 
     await program.parseAsync(process.argv)
 
-  } catch (_) {
-    console.error(chalk.red('❌ Error:'), error instanceof Error ? _error.message : 'Unknown error')
+  } catch (error) {
+    console.error(chalk.red('❌ Error:'), error instanceof Error ? error.message : 'Unknown error')
     outro(chalk.red('Operation failed'))
     process.exit(1)
   }

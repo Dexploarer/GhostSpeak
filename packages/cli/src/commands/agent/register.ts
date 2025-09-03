@@ -13,10 +13,10 @@ import {
 } from '@clack/prompts'
 import { registerAgentPrompts } from '../../prompts/agent.js'
 import type { RegisterOptions } from '../../types/cli-types.js'
-import { validateAgentParams } from '../agent/helpers.js'
+import { validateAgentParams, displayRegisteredAgentInfo } from '../agent/helpers.js'
 import { container, ServiceTokens } from '../../core/Container.js'
 import type { IAgentService } from '../../types/services.js'
-import { displayErrorAndCancel } from '../../utils/enhanced-error-handler.js'
+import { LoggerService } from '../../core/logger.js'
 
 export function registerRegisterCommand(parentCommand: Command): void {
   parentCommand
@@ -29,18 +29,20 @@ export function registerRegisterCommand(parentCommand: Command): void {
     .option('--no-metadata', 'Skip metadata URI prompt')
     .option('-y, --yes', 'Skip confirmation prompt')
     .action(async (_options: RegisterOptions) => {
-      console.log('🔍 [DEBUG] Agent register command started')
+      const logger = container.resolve<LoggerService>(ServiceTokens.LOGGER_SERVICE)
+      logger.info('Starting agent registration command')
       intro(chalk.cyan('🤖 Register New AI Agent'))
 
       try {
-        console.log('🔍 [DEBUG] Getting agent data from prompts...')
         const agentData = await registerAgentPrompts(_options)
-        console.log('🔍 [DEBUG] Agent data received:', agentData)
         
         if (isCancel(agentData)) {
+          logger.warn('Agent registration cancelled by user during prompts.')
           cancel('Agent registration cancelled')
           return
         }
+
+        logger.info('User prompts completed', { agentData: { ...agentData, capabilities: agentData.capabilities.join(',') } })
 
         // Validate agent parameters
         const validationError = validateAgentParams({
@@ -50,26 +52,19 @@ export function registerRegisterCommand(parentCommand: Command): void {
         })
         
         if (validationError) {
+          logger.error('Agent parameter validation failed', new Error(validationError))
           cancel(chalk.red(validationError))
           return
         }
 
         // Get AgentService from container
-        console.log('🔍 Resolving AgentService from container...')
         const agentService = container.resolve<IAgentService>(ServiceTokens.AGENT_SERVICE)
-        console.log('🔍 AgentService resolved:', Boolean(agentService))
+        logger.info('AgentService resolved from container')
 
         const s = spinner()
         s.start('Registering agent...')
         
         try {
-          console.log('🔍 Calling agentService.register with data:', {
-            name: agentData.name,
-            description: agentData.description,
-            capabilities: agentData.capabilities,
-            category: agentData.capabilities[0] || 'automation'
-          })
-          
           // Use service layer to register agent
           const agent = await agentService.register({
             name: agentData.name,
@@ -81,29 +76,20 @@ export function registerRegisterCommand(parentCommand: Command): void {
             }
           })
           
-          console.log('🔍 Agent registration completed, result:', agent)
-          
           s.stop('✅ Agent registered successfully!')
+          logger.info('Agent registered successfully', { agentId: agent.id })
           
-          console.log('\n' + chalk.green('🎉 Your agent has been registered!'))
-          console.log(chalk.gray(`Name: ${agent.name}`))
-          console.log(chalk.gray(`Description: ${agent.description}`))
-          console.log(chalk.gray(`Capabilities: ${agent.capabilities.join(', ')}`))
-          console.log(chalk.gray(`Agent ID: ${agent.id}`))
-          console.log(chalk.gray(`Agent Address: ${agent.address.toString()}`))
-          console.log('')
-          console.log(chalk.yellow('💡 Agent data stored locally'))
-          console.log(chalk.yellow('💡 Use your agent ID for future operations:'))
-          console.log(chalk.gray(`   ${agent.id}`))
+          displayRegisteredAgentInfo(agent)
           
           outro('Agent registration completed')
-        } catch (error: unknown) {
+        } catch (error) {
           s.stop('❌ Registration failed')
-          throw _error
+          throw error // Rethrow to be caught by outer catch
         }
 
-      } catch (_) {
-        displayErrorAndCancel(error, 'Agent registration')
+      } catch (error) {
+        logger.handleError(error, 'Agent registration failed')
+        outro(chalk.red('Operation failed'))
       }
     })
 }

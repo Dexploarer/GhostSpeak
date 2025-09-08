@@ -92,7 +92,7 @@
   },
   "dependencies": {
     "@noble/curves": "^1.9.4",
-    "@noble/hashes": "^1.8.0",
+    "@noble/hashes": "^2.0.0",
     "@solana-program/system": "^0.7.0",
     "@solana-program/token-2022": "^0.4.2",
     "@solana/accounts": "^2.3.0",

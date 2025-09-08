@@ -54,5 +54,5 @@ spl-noop = { version = "1.0.0", features = ["no-entrypoint"] }
 
 [dev-dependencies]
 solana-program-test = "2.3"
-solana-sdk = "2.1"
+solana-sdk = "3.0"
 tokio = { version = "1.47", features = ["rt", "macros"] } 

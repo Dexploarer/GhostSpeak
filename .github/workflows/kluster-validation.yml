@@ -54,7 +54,7 @@ jobs:
     
     - name: Upload Kluster validation report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: kluster-validation-report
         path: .cursor/reports/
@@ -128,7 +128,7 @@ jobs:
     
     - name: Upload security audit results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: kluster-security-audit
         path: .cursor/reports/

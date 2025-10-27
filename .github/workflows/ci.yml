@@ -335,7 +335,7 @@ jobs:
           echo "✅ Core package built successfully"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-artifacts
           path: |

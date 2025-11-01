@@ -4,22 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**GhostSpeak** is a production-ready AI agent commerce protocol built on Solana blockchain. It enables autonomous AI agents to securely trade services, complete tasks, and exchange value with each other and humans through a decentralized protocol.
+**GhostSpeak** is the Solana-native AI agent commerce marketplace powered by the **x402 payment protocol**. It enables autonomous AI agents to securely trade services, complete tasks, and exchange value with instant micropayments.
 
 ### Key Characteristics
 
-- **Pure Protocol**: Not a platform - a decentralized blockchain protocol with smart contracts and SDKs
+- **x402 Payment Protocol**: Native support for HTTP 402 "Payment Required" instant micropayments
+- **Pure Protocol**: Decentralized blockchain protocol with smart contracts and SDKs
 - **Multi-Language**: Rust smart contracts + TypeScript SDK + CLI tools
 - **Web3.js v2**: Modern Solana integration with latest Web3.js v2 patterns
-- **SPL Token 2022**: Advanced token features including confidential transfers
+- **SPL Token**: Standard SPL token support with focus on USDC and stablecoins
 - **Compressed NFTs**: 5000x cost reduction for agent creation using ZK compression
+- **Trust Layer**: Built-in reputation, escrow, and dispute resolution for agent commerce
 
 ## Critical Awareness Directives
 
-- Remember we are working with new technologies (July 2025) so you can't revert back to old methods that you have been trained on, constantly search context7 mcp server and the web
-- When generating the IDL make sure to use the 2025 methods especially for the SPL-2022 and new Solana features
+- **x402 Protocol Focus**: GhostSpeak implements the x402 payment standard for AI agent commerce
+- Remember we are working with new technologies (November 2025) - x402 is the latest payment protocol for autonomous agents
 - This project uses **@solana/kit** (formerly @solana/web3.js v2) - do NOT use old @solana/web3.js v1 patterns
 - Always use Anchor 0.31.1+ compatible patterns with Solana 2.1.0 (Agave)
+- **NO ZK Proofs**: We removed ZK proof infrastructure in favor of x402 micropayments
 
 ## 🔍 Mandatory kluster.ai MCP Verification Protocol
 
@@ -60,24 +63,27 @@ EVERY code generation must follow this sequence:
 - Full validation: `bun run qa:kluster:all`
 - Git diff validation: `bun run qa:kluster`
 
-## 🎯 MVP Development Goal (July 24, 2025)
+## 🎯 MVP Development Goal (November 2025)
 
-**CRITICAL**: This is our **FINAL IMPLEMENTATION TARGET** for GhostSpeak Protocol MVP beta testing readiness.
+**CRITICAL**: GhostSpeak is pivoting to become the **Solana-native x402 Agent Marketplace**
 
-### Phase 1: Core Stability (80% Complete)
-- [x] ElGamal encryption structure with full bulletproofs (COMPLETE)
-- [x] Token-2022 RPC infrastructure  
-- [x] ESLint/TypeScript compliance (0 errors)
-- [x] Multisig support in Rust (COMPLETE)
-- [x] Multisig SDK support (COMPLETE)
-- [ ] **NEEDS**: ElGamal ZK proof integration with Solana's proof program
+### Phase 1: x402 Integration (IN PROGRESS)
+- [x] **COMPLETE**: Remove ZK proof infrastructure (archived)
+- [x] **COMPLETE**: x402 payment client implementation
+- [x] **COMPLETE**: HTTP 402 middleware for agent services
+- [x] **COMPLETE**: Agent registration updated with x402 pricing
+- [ ] **IN PROGRESS**: x402 payment verification system
+- [ ] **NEEDS**: Agent discovery module for x402-enabled agents
+- [ ] **NEEDS**: Real-time analytics for x402 transactions
+
+### Phase 2: Core Commerce Features (85% Complete)
+- [x] **COMPLETE**: Escrow system (creation, completion, disputes)
+- [x] **COMPLETE**: Multisig support in Rust
+- [x] **COMPLETE**: Multisig SDK support
+- [x] **COMPLETE**: Work order system with milestone payments
+- [x] **COMPLETE**: Reputation system (structure ready)
+- [ ] **NEEDS**: Real-time reputation updates from x402 transactions
 - [ ] **NEEDS**: Unit tests for all modules
-
-### Phase 2: Token-2022 Integration (60% Complete)
-- [x] **COMPLETE**: Token-2022 mint creation with atomic extension initialization
-- [x] **COMPLETE**: Transfer fee handling in escrow operations
-- [ ] **NEEDS**: Complete confidential transfer helpers (replace mock signatures)
-- [ ] **NEEDS**: Real ElGamal proof generation integration
 
 ### Phase 3: Enhanced User Experience (COMPLETE ✅)
 - [x] Advanced escrow features (partial refunds COMPLETE, disputes COMPLETE)
@@ -85,45 +91,51 @@ EVERY code generation must follow this sequence:
 - [x] **COMPLETE**: Work order verification system with payment integration
 - [x] **COMPLETE**: Milestone-based escrow payments with progressive release
 
-### Phase 4: Market Features (Partially Complete)
-- [x] Basic auction system (bid placement, finalization)
-- [x] **COMPLETE**: Dutch auction mechanism with time-based price decay
-- [x] **COMPLETE**: Reserve price implementation with automatic extension
-- [ ] **NEEDS**: Real-time analytics collection
-- [ ] **NEEDS**: Governance voting mechanism
-- [ ] **NEEDS**: Proposal execution system
+### Phase 4: x402 Marketplace Features (NEW PRIORITY)
+- [ ] **NEEDS**: x402 agent discovery API (search by capability, price, reputation)
+- [ ] **NEEDS**: x402 payment streaming for long-running tasks
+- [ ] **NEEDS**: x402 analytics dashboard (volume, popular agents, trends)
+- [x] **COMPLETE**: Auction system for agent services
+- [x] **COMPLETE**: Dutch auction mechanism
+- [ ] **NEEDS**: Governance for marketplace parameters
 
-### Phase 5: Advanced Agent Economy (Structure Ready)
-- [x] Basic agent replication (template system exists)
-- [x] Compressed agent registration (instruction exists)
-- [ ] **NEEDS**: Full replication workflow
-- [ ] **NEEDS**: Advanced reputation calculation
-- [ ] **NEEDS**: Performance-based reputation updates
+### Phase 5: Advanced Agent Economy (40% Complete)
+- [x] **COMPLETE**: Agent replication structure
+- [x] **COMPLETE**: Compressed agent registration
+- [ ] **NEEDS**: Full replication workflow with x402 fees
+- [ ] **NEEDS**: x402-based reputation calculation
+- [ ] **NEEDS**: Real-time performance metrics from x402 transactions
 
-**NO ADDITIONAL FEATURES** beyond this scope. This is our complete MVP.
+**FOCUS**: x402 marketplace features are now TOP PRIORITY for MVP.
 
 ## Development Memories & Context
 
-### Current Status (July 24, 2025)
-- **Rust Program**: ✅ Production-ready with 200+ error types, full validation, security
-- **TypeScript SDK**: 🟡 All instruction builders complete, but has placeholder code
-- **ElGamal**: ✅ Full bulletproof implementation, 🟡 needs ZK proof program integration
-- **Token-2022**: ✅ Mint creation with extensions, ✅ Transfer fee support
+### Current Status (November 2025) - x402 Pivot
+
+**Strategic Pivot**: Removed ZK proof infrastructure, focusing on x402 payment protocol
+
+- **Rust Program**: ✅ Production-ready with 200+ error types, x402 fields added to Agent struct
+- **TypeScript SDK**: ✅ x402 payment client complete, HTTP 402 middleware ready
+- **x402 Integration**: ✅ Basic client, ✅ Middleware, 🟡 Discovery layer in progress
+- **SPL Token**: ✅ Standard token support, USDC focus for x402 payments
 - **ESLint/TypeScript**: ✅ 0 errors maintained
 - **Package Manager**: ✅ Using bun for fast installs and modern workspace support
-- **Next Priority**: Replace mock implementations with real SPL calls, complete testing
+- **Next Priority**: Build x402 agent discovery, complete analytics, deploy beta marketplace
 
 ### Technology Stack Specifics
-- **Anchor Framework**: v0.31.1+ (July 2025 features)
+- **Anchor Framework**: v0.31.1+ (November 2025 features)
 - **Solana**: v2.1.0 (Agave client)
 - **Web3.js**: v2+ (@solana/kit patterns only)
-- **SPL Token 2022**: Latest with confidential transfers
-- **Cryptography**: @noble/curves for ElGamal/ed25519
-- **ZK Proofs**: Solana's ZK ElGamal Proof Program integration
+- **x402 Protocol**: Native implementation for AI agent micropayments
+- **SPL Token**: Standard SPL token support (USDC, PYUSD primary)
+- **Payment Protocol**: HTTP 402 "Payment Required" with instant settlement
 
 ### Architecture Patterns
 - **Pure Protocol Design**: Smart contracts + SDKs, not a platform
-- **Compressed NFTs**: 5000x cost reduction using ZK compression  
+- **x402 Payment Layer**: HTTP 402 middleware for pay-per-call agent services
+- **Trust Layer**: Reputation + Escrow + Dispute resolution for agent commerce
+- **Agent Discovery**: On-chain registry with x402 pricing and capabilities
+- **Compressed NFTs**: 5000x cost reduction using ZK compression
 - **IPFS Integration**: Large content storage with automatic detection
 - **Rate Limiting**: Built-in anti-spam protection
 - **Error Enhancement**: Detailed instruction-specific error messages
@@ -139,11 +151,12 @@ EVERY code generation must follow this sequence:
 
 ### GhostSpeak-Specific Standards
 - **Instruction Naming**: Use snake_case for Rust, camelCase for TypeScript
-- **Account Validation**: Always use instruction-account-mapper for detailed errors  
+- **x402 Integration**: All agent services MUST support HTTP 402 payment headers
+- **Account Validation**: Always use instruction-account-mapper for detailed errors
 - **RPC Calls**: Use TypedRpcClient interface, never raw `any` types
-- **Token Operations**: Support both legacy Token and Token-2022 programs
+- **Token Operations**: Focus on SPL Token with USDC/stablecoins for x402 payments
 - **Error Handling**: Use enhanced-client-errors for user-friendly messages
-- **Crypto Operations**: Use @noble/curves, never custom implementations
+- **Payment Verification**: Always verify x402 payments before providing service
 
 ### Testing Philosophy
 - **Unit Tests**: Required for all crypto operations (ElGamal, proofs)

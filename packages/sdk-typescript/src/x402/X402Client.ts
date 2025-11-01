@@ -136,53 +136,112 @@ export class X402Client {
       throw new Error('Wallet required to make payment')
     }
 
-    // Create SPL token transfer instruction
-    const transferIx = await this.createTransferInstruction(
-      request.recipient,
-      request.amount,
-      request.token
-    )
+    // Validate payment request
+    if (request.amount <= 0n) {
+      throw new Error('Payment amount must be greater than zero')
+    }
 
-    // Add memo with x402 metadata
-    const memoIx = this.createMemoInstruction(
-      `x402:${request.description}:${JSON.stringify(request.metadata ?? {})}`
-    )
+    if (!request.recipient) {
+      throw new Error('Payment recipient address is required')
+    }
 
-    // Build transaction
-    const { value: latestBlockhash } = await this.rpc
-      .getLatestBlockhash()
-      .send()
+    if (!request.token) {
+      throw new Error('Payment token address is required')
+    }
 
-    let message = createTransactionMessage({ version: 0 })
-    message = setTransactionMessageFeePayer(this.wallet.address, message)
-    message = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message)
-    message = appendTransactionMessageInstruction(transferIx, message)
-    message = appendTransactionMessageInstruction(memoIx, message)
+    try {
+      // Create SPL token transfer instruction
+      const transferIx = await this.createTransferInstruction(
+        request.recipient,
+        request.amount,
+        request.token
+      ).catch((error) => {
+        throw new Error(
+          `Failed to create transfer instruction: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      })
 
-    // Sign transaction
-    const signedTransaction = await signTransactionMessageWithSigners(message)
+      // Add memo with x402 metadata
+      const memoIx = this.createMemoInstruction(
+        `x402:${request.description}:${JSON.stringify(request.metadata ?? {})}`
+      )
 
-    // Send transaction
-    const sendAndConfirm = sendAndConfirmTransactionFactory({ rpc: this.rpc })
-    const signature = await sendAndConfirm(signedTransaction, {
-      commitment: 'confirmed'
-    })
+      // Build transaction
+      const { value: latestBlockhash } = await this.rpc
+        .getLatestBlockhash()
+        .send()
+        .catch((error) => {
+          throw new Error(
+            `Failed to fetch latest blockhash: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
+        })
 
-    // Get transaction details
-    const tx = await this.rpc.getTransaction(signature, {
-      encoding: 'jsonParsed',
-      maxSupportedTransactionVersion: 0
-    }).send()
+      let message = createTransactionMessage({ version: 0 })
+      message = setTransactionMessageFeePayer(this.wallet.address, message)
+      message = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message)
+      message = appendTransactionMessageInstruction(transferIx, message)
+      message = appendTransactionMessageInstruction(memoIx, message)
 
-    return {
-      signature,
-      recipient: request.recipient,
-      amount: request.amount,
-      token: request.token,
-      timestamp: Date.now(),
-      metadata: request.metadata,
-      blockTime: tx?.blockTime ?? undefined,
-      slot: tx?.slot ?? undefined
+      // Sign transaction
+      const signedTransaction = await signTransactionMessageWithSigners(message).catch((error) => {
+        throw new Error(
+          `Failed to sign transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      })
+
+      // Send transaction
+      const sendAndConfirm = sendAndConfirmTransactionFactory({ rpc: this.rpc })
+      const signature = await sendAndConfirm(signedTransaction, {
+        commitment: 'confirmed'
+      }).catch((error) => {
+        // Parse common Solana transaction errors
+        const errorMessage = error instanceof Error ? error.message : String(error)
+
+        if (errorMessage.includes('insufficient funds')) {
+          throw new Error('Insufficient funds to complete payment')
+        }
+        if (errorMessage.includes('Blockhash not found')) {
+          throw new Error('Transaction expired. Please retry the payment.')
+        }
+        if (errorMessage.includes('InvalidAccountOwner')) {
+          throw new Error(
+            'Associated Token Account not found or invalid. ' +
+            'Please ensure the token account exists for both sender and recipient.'
+          )
+        }
+
+        throw new Error(
+          `Transaction failed: ${errorMessage}`
+        )
+      })
+
+      // Get transaction details
+      const tx = await this.rpc.getTransaction(signature, {
+        encoding: 'jsonParsed',
+        maxSupportedTransactionVersion: 0
+      }).send().catch((error) => {
+        // Transaction was sent but we couldn't fetch details
+        // Return receipt with basic info
+        console.warn('Payment succeeded but failed to fetch transaction details:', error)
+        return null
+      })
+
+      return {
+        signature,
+        recipient: request.recipient,
+        amount: request.amount,
+        token: request.token,
+        timestamp: Date.now(),
+        metadata: request.metadata,
+        blockTime: tx?.blockTime ?? undefined,
+        slot: tx?.slot ?? undefined
+      }
+    } catch (error) {
+      // Wrap and rethrow with context
+      if (error instanceof Error) {
+        throw error // Already has good error message
+      }
+      throw new Error(`Payment failed: ${String(error)}`)
     }
   }
 
@@ -365,55 +424,100 @@ export class X402Client {
     owner: Address,
     token: Address
   ): Promise<Address> {
-    const ASSOCIATED_TOKEN_PROGRAM_ID = address(
-      'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
-    )
-    const TOKEN_PROGRAM_ID = address('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+    // Query for token accounts owned by the owner address for this specific mint
+    try {
+      const response = await this.rpc.getTokenAccountsByOwner(
+        owner,
+        { mint: token },
+        { encoding: 'jsonParsed' }
+      ).send()
 
-    // Derive associated token account address
-    // This is a simplified version - in production use proper PDA derivation
-    const seeds = [
-      Buffer.from(owner),
-      Buffer.from(TOKEN_PROGRAM_ID),
-      Buffer.from(token)
-    ]
+      if (response.value.length > 0) {
+        // Return the first ATA found (there should only be one per mint)
+        return response.value[0].pubkey
+      }
 
-    // Return derived address (placeholder - implement proper derivation)
-    return owner // Replace with actual PDA derivation
+      // If no ATA exists, it needs to be created first
+      throw new Error(
+        `Associated Token Account not found for owner ${owner} and mint ${token}. ` +
+        `Please ensure the ATA is initialized before making payments. ` +
+        `Use createAssociatedTokenAccountInstruction to create it.`
+      )
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Associated Token Account not found')) {
+        throw error
+      }
+      throw new Error(
+        `Failed to get Associated Token Account: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
   }
 
   private parseTransactionReceipt(
     tx: any,
     signature: Signature
   ): X402PaymentReceipt {
-    // Parse transaction to extract payment details
-    // This is simplified - implement full parsing logic
-
+    // Parse transaction to extract payment details from SPL token transfer
     const instructions = tx.transaction?.message?.instructions ?? []
+
+    // Find the SPL token transfer instruction
+    const transferInstruction = instructions.find((ix: any) =>
+      ix.program === 'spl-token' && ix.parsed?.type === 'transfer'
+    )
+
+    if (!transferInstruction) {
+      throw new Error('No SPL token transfer found in transaction')
+    }
+
+    const transferInfo = transferInstruction.parsed?.info
+    if (!transferInfo) {
+      throw new Error('Failed to parse SPL token transfer instruction')
+    }
+
+    // Extract recipient, amount, and token from the transfer instruction
+    const recipient = address(transferInfo.destination ?? transferInfo.account)
+    const amount = BigInt(transferInfo.amount ?? transferInfo.tokenAmount?.amount ?? '0')
+
+    // Get token mint from pre or post token balances
+    let tokenMint: Address
+    const tokenBalances = tx.meta?.preTokenBalances ?? []
+    if (tokenBalances.length > 0) {
+      tokenMint = address(tokenBalances[0].mint)
+    } else {
+      throw new Error('Failed to extract token mint from transaction')
+    }
+
+    // Parse memo instruction for metadata
     const memoInstruction = instructions.find((ix: any) =>
-      ix.program === 'spl-memo'
+      ix.program === 'spl-memo' || ix.programId?.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
     )
 
     let metadata: Record<string, string> | undefined
-    if (memoInstruction?.parsed) {
-      const memo = memoInstruction.parsed
-      if (memo.startsWith('x402:')) {
-        const parts = memo.split(':')
-        if (parts.length >= 3) {
-          try {
-            metadata = JSON.parse(parts[2])
-          } catch {
-            // Ignore parse errors
+    if (memoInstruction) {
+      try {
+        const memoText = memoInstruction.parsed ??
+                        (memoInstruction.data ? new TextDecoder().decode(Buffer.from(memoInstruction.data, 'base64')) : '')
+
+        if (typeof memoText === 'string' && memoText.startsWith('x402:')) {
+          const parts = memoText.split(':')
+          if (parts.length >= 3) {
+            try {
+              metadata = JSON.parse(parts[2])
+            } catch {
+              // Ignore JSON parse errors for metadata
+            }
           }
         }
+      } catch {
+        // Ignore memo parsing errors
       }
     }
 
     return {
       signature,
-      recipient: address('11111111111111111111111111111111'), // Parse from tx
-      amount: 0n, // Parse from tx
-      token: address('11111111111111111111111111111111'), // Parse from tx
+      recipient,
+      amount,
+      token: tokenMint,
       timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
       metadata,
       blockTime: tx.blockTime,

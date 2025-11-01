@@ -8,6 +8,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express'
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import type { Address } from '@solana/addresses'
 import type { X402Client } from './X402Client.js'
 
@@ -27,6 +28,15 @@ export interface X402MiddlewareOptions {
 }
 
 export interface X402RequestWithPayment extends Request {
+  x402Payment?: {
+    signature: string
+    verified: boolean
+    amount: bigint
+    token: Address
+  }
+}
+
+export interface X402FastifyRequest extends FastifyRequest {
   x402Payment?: {
     signature: string
     verified: boolean
@@ -77,14 +87,15 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
       return next()
     }
 
+    // Create payment request (needed for both 402 response and verification)
+    const paymentRequest = options.x402Client.createPaymentRequest({
+      amount: options.requiredPayment,
+      token: options.token,
+      description: options.description
+    })
+
     // No payment provided - return HTTP 402
     if (!paymentSignature) {
-      const paymentRequest = options.x402Client.createPaymentRequest({
-        amount: options.requiredPayment,
-        token: options.token,
-        description: options.description
-      })
-
       const headers = options.x402Client.createPaymentHeaders(paymentRequest)
 
       res.status(402).set(headers).json({
@@ -181,7 +192,7 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
  * ```
  */
 export function x402FastifyPlugin(
-  fastify: any,
+  fastify: FastifyInstance,
   options: {
     x402Client: X402Client
     routes: Record<string, {
@@ -191,7 +202,7 @@ export function x402FastifyPlugin(
     }>
   }
 ) {
-  fastify.addHook('preHandler', async (request: any, reply: any) => {
+  fastify.addHook('preHandler', async (request: X402FastifyRequest, reply: FastifyReply) => {
     const route = options.routes[request.url]
 
     if (!route) {
@@ -199,15 +210,16 @@ export function x402FastifyPlugin(
       return
     }
 
-    const paymentSignature = request.headers['x-payment-signature']
+    const paymentSignature = request.headers['x-payment-signature'] as string | undefined
+
+    // Create payment request (needed for both 402 response and verification)
+    const paymentRequest = options.x402Client.createPaymentRequest({
+      amount: route.payment,
+      token: route.token,
+      description: route.description
+    })
 
     if (!paymentSignature) {
-      const paymentRequest = options.x402Client.createPaymentRequest({
-        amount: route.payment,
-        token: route.token,
-        description: route.description
-      })
-
       const headers = options.x402Client.createPaymentHeaders(paymentRequest)
 
       reply.code(402).headers(headers).send({
@@ -289,7 +301,10 @@ export function withX402RateLimit(options: {
       const req = args[0] as X402RequestWithPayment
       const res = args[1] as Response
 
-      const clientId = req.x402Payment?.signature ?? req.ip ?? 'unknown'
+      // Get client IP, checking X-Forwarded-For for proxies
+      const forwardedFor = req.headers['x-forwarded-for'] as string | undefined
+      const clientIp = forwardedFor?.split(',')[0]?.trim() ?? req.ip ?? 'unknown'
+      const clientId = req.x402Payment?.signature ?? clientIp
       const now = Date.now()
 
       // Clean old requests

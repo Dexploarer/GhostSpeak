@@ -66,6 +66,7 @@ function calculatePaymentSuccessRate(agent: Agent): number {
   const totalPayments = agent.x402_total_calls
   const successfulPayments = totalPayments - agent.failed_payments
 
+  // Prevent division by zero
   if (totalPayments === 0) return 0
 
   return (successfulPayments / totalPayments) * 100
@@ -82,9 +83,18 @@ function calculatePaymentSuccessRate(agent: Agent): number {
 
 ```typescript
 function calculateServiceQualityScore(agent: Agent): number {
-  const disputeRate = agent.total_disputes / agent.x402_total_calls
-  const resolutionRate = agent.disputes_resolved / agent.total_disputes
-  const averageRating = agent.total_rating / agent.total_ratings_count
+  // Prevent division by zero
+  const disputeRate = agent.x402_total_calls > 0
+    ? agent.total_disputes / agent.x402_total_calls
+    : 0
+
+  const resolutionRate = agent.total_disputes > 0
+    ? agent.disputes_resolved / agent.total_disputes
+    : 1.0 // Assume 100% resolution if no disputes
+
+  const averageRating = agent.total_ratings_count > 0
+    ? agent.total_rating / agent.total_ratings_count
+    : 3.0 // Neutral rating for new agents
 
   // Base quality from ratings (0-100)
   const ratingScore = (averageRating / 5) * 100
@@ -112,6 +122,11 @@ function calculateServiceQualityScore(agent: Agent): number {
 
 ```typescript
 function calculateResponseTimeScore(agent: Agent): number {
+  // Prevent division by zero
+  if (agent.x402_total_calls === 0) {
+    return 100 // Assume perfect score for new agents
+  }
+
   const avgResponseTime = agent.total_response_time / agent.x402_total_calls
   const slaTarget = 1000 // 1 second target
 

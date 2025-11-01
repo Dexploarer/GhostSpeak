@@ -80,6 +80,14 @@ pub struct Agent {
     pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook
     pub parent_agent: Option<Pubkey>, // Parent agent for lineage tracking
     pub generation: u32,          // Generation number (0 for original, 1+ for replicas)
+    // x402 Payment Protocol Support
+    pub x402_enabled: bool,       // Whether agent accepts x402 payments
+    pub x402_payment_address: Pubkey, // Address for receiving x402 payments
+    pub x402_accepted_tokens: Vec<Pubkey>, // Tokens accepted (USDC, PYUSD, etc.)
+    pub x402_price_per_call: u64, // Price per API call in token's smallest unit
+    pub x402_service_endpoint: String, // HTTP endpoint for x402 payments
+    pub x402_total_payments: u64, // Total x402 payments received
+    pub x402_total_calls: u64,    // Total x402 API calls serviced
     pub bump: u8,
 }
 
@@ -112,6 +120,14 @@ impl Agent {
         1 + 32 + // transfer_hook Option
         1 + 32 + // parent_agent Option<Pubkey>
         4 + // generation u32
+        // x402 fields
+        1 + // x402_enabled bool
+        32 + // x402_payment_address Pubkey
+        4 + (10 * 32) + // x402_accepted_tokens (max 10)
+        8 + // x402_price_per_call u64
+        4 + MAX_GENERAL_STRING_LENGTH + // x402_service_endpoint
+        8 + // x402_total_payments u64
+        8 + // x402_total_calls u64
         1; // bump
 
     /// Deactivate the agent

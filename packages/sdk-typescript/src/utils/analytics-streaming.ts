@@ -6,7 +6,7 @@
  */
 
 import type { Address, Commitment } from '@solana/kit'
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 // Create compatibility types for WebSocket functionality
 // v2 WebSocket subscriptions are not yet available in @solana/kit
 type Connection = any

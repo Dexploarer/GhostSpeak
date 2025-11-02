@@ -1,0 +1,597 @@
+/**
+ * x402 Agent Discovery Client
+ *
+ * Enables search and discovery of x402-enabled AI agents based on
+ * capabilities, pricing, reputation, and accepted payment tokens.
+ *
+ * @module x402/AgentDiscoveryClient
+ */
+
+import type { Address, Commitment } from '@solana/kit'
+import { createSolanaRpc, type Rpc } from '@solana/kit'
+
+// Create compatibility types for connection
+type Connection = Rpc<any>
+
+/**
+ * Agent search parameters
+ */
+export interface AgentSearchParams {
+  // Filter parameters
+  capability?: string
+  x402_enabled?: boolean
+  accepted_tokens?: string[]
+  min_reputation?: number
+  max_price?: bigint
+  framework_origin?: string
+  is_verified?: boolean
+
+  // Pagination
+  page?: number
+  limit?: number
+
+  // Sorting
+  sort_by?: 'reputation' | 'price' | 'total_jobs' | 'created_at'
+  sort_order?: 'asc' | 'desc'
+
+  // Search
+  query?: string
+}
+
+/**
+ * Agent data structure
+ */
+export interface Agent {
+  // On-chain data
+  address: Address
+  owner: Address
+  name: string
+  description: string
+  capabilities: string[]
+
+  // x402 payment data
+  x402_enabled: boolean
+  x402_payment_address: Address
+  x402_accepted_tokens: Address[]
+  x402_price_per_call: bigint
+  x402_service_endpoint: string
+  x402_total_payments: bigint
+  x402_total_calls: bigint
+
+  // Reputation & stats
+  reputation_score: number
+  total_jobs: bigint
+  successful_jobs: bigint
+  total_earnings: bigint
+  average_rating: number
+  created_at: bigint
+
+  // Metadata
+  metadata_uri: string
+  framework_origin: string
+  is_verified: boolean
+}
+
+/**
+ * Agent pricing information
+ */
+export interface AgentPricing {
+  price_per_call: bigint
+  accepted_tokens: Array<{
+    token: Address
+    decimals: number
+    symbol: string
+  }>
+  payment_address: Address
+  service_endpoint: string
+}
+
+/**
+ * Agent search response
+ */
+export interface AgentSearchResponse {
+  agents: Agent[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+  filters: AgentSearchParams
+}
+
+/**
+ * Discovery client options
+ */
+export interface AgentDiscoveryOptions {
+  rpcEndpoint: string
+  programId: Address
+  commitment?: Commitment
+  cacheEnabled?: boolean
+  cacheTTL?: number // seconds
+}
+
+/**
+ * Agent Discovery Client
+ *
+ * Provides methods to search, filter, and discover x402-enabled agents
+ * on the GhostSpeak marketplace.
+ */
+export class AgentDiscoveryClient {
+  private rpc: Connection
+  private programId: Address
+  private commitment: Commitment
+  private cache: Map<string, { data: unknown; expiry: number }> = new Map()
+  private cacheEnabled: boolean
+  private cacheTTL: number
+
+  constructor(options: AgentDiscoveryOptions) {
+    this.rpc = createSolanaRpc(options.rpcEndpoint) as Connection
+    this.programId = options.programId
+    this.commitment = options.commitment ?? 'confirmed'
+    this.cacheEnabled = options.cacheEnabled ?? true
+    this.cacheTTL = options.cacheTTL ?? 300 // 5 minutes default
+  }
+
+  /**
+   * Search for agents with filters
+   */
+  async searchAgents(params: AgentSearchParams = {}): Promise<AgentSearchResponse> {
+    const cacheKey = this.getCacheKey('search', params)
+
+    // Check cache
+    if (this.cacheEnabled) {
+      const cached = this.getFromCache<AgentSearchResponse>(cacheKey)
+      if (cached) return cached
+    }
+
+    // Set defaults
+    const page = params.page ?? 1
+    const limit = Math.min(params.limit ?? 20, 100)
+    const sortBy = params.sort_by ?? 'reputation'
+    const sortOrder = params.sort_order ?? 'desc'
+
+    // Fetch agents from on-chain
+    const allAgents = await this.fetchAgentsFromChain(params)
+
+    // Apply filters
+    let filteredAgents = this.applyFilters(allAgents, params)
+
+    // Sort results
+    filteredAgents = this.sortAgents(filteredAgents, sortBy, sortOrder)
+
+    // Paginate
+    const total = filteredAgents.length
+    const totalPages = Math.ceil(total / limit)
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    const paginatedAgents = filteredAgents.slice(startIndex, endIndex)
+
+    const response: AgentSearchResponse = {
+      agents: paginatedAgents,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      },
+      filters: params
+    }
+
+    // Cache results
+    if (this.cacheEnabled) {
+      this.setCache(cacheKey, response)
+    }
+
+    return response
+  }
+
+  /**
+   * Get agent by address
+   */
+  async getAgent(address: Address): Promise<Agent | null> {
+    const cacheKey = this.getCacheKey('agent', { address })
+
+    // Check cache
+    if (this.cacheEnabled) {
+      const cached = this.getFromCache<Agent>(cacheKey)
+      if (cached) return cached
+    }
+
+    try {
+      const accountInfo = await this.rpc.getAccountInfo(address, {
+        commitment: this.commitment,
+        encoding: 'base64'
+      }).send()
+
+      if (!accountInfo.value) return null
+
+      const agent = this.parseAgentAccount(address, accountInfo.value.data)
+
+      // Cache result
+      if (this.cacheEnabled && agent) {
+        this.setCache(cacheKey, agent)
+      }
+
+      return agent
+    } catch (error) {
+      console.error(`Failed to fetch agent ${address}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Get agent pricing information
+   */
+  async getAgentPricing(address: Address): Promise<AgentPricing | null> {
+    const agent = await this.getAgent(address)
+    if (!agent?.x402_enabled) return null
+
+    return {
+      price_per_call: agent.x402_price_per_call,
+      accepted_tokens: await this.getTokenInfo(agent.x402_accepted_tokens),
+      payment_address: agent.x402_payment_address,
+      service_endpoint: agent.x402_service_endpoint
+    }
+  }
+
+  /**
+   * Get recommended agents based on criteria
+   */
+  async getRecommendedAgents(
+    capability?: string,
+    limit = 10
+  ): Promise<Agent[]> {
+    const params: AgentSearchParams = {
+      capability,
+      x402_enabled: true,
+      sort_by: 'reputation',
+      sort_order: 'desc',
+      limit,
+      min_reputation: 7000 // Only recommend highly rated agents (7.0+)
+    }
+
+    const response = await this.searchAgents(params)
+    return response.agents
+  }
+
+  /**
+   * Get agents by capability
+   */
+  async getAgentsByCapability(capability: string): Promise<Agent[]> {
+    const response = await this.searchAgents({
+      capability,
+      x402_enabled: true
+    })
+    return response.agents
+  }
+
+  /**
+   * Get agents accepting specific token
+   */
+  async getAgentsByToken(tokenAddress: Address): Promise<Agent[]> {
+    const response = await this.searchAgents({
+      accepted_tokens: [tokenAddress],
+      x402_enabled: true
+    })
+    return response.agents
+  }
+
+  /**
+   * Get agents within price range
+   */
+  async getAgentsByPriceRange(
+    maxPrice: bigint,
+    capability?: string
+  ): Promise<Agent[]> {
+    const response = await this.searchAgents({
+      max_price: maxPrice,
+      capability,
+      x402_enabled: true,
+      sort_by: 'price',
+      sort_order: 'asc'
+    })
+    return response.agents
+  }
+
+  /**
+   * Search agents by text query
+   */
+  async searchByQuery(query: string): Promise<Agent[]> {
+    const response = await this.searchAgents({
+      query,
+      x402_enabled: true
+    })
+    return response.agents
+  }
+
+  // Private helper methods
+
+  private async fetchAgentsFromChain(params: AgentSearchParams): Promise<Agent[]> {
+    try {
+      // Build filters for getProgramAccounts
+      const filters: Array<{ memcmp: { offset: number; bytes: string } } | { dataSize: number }> = []
+
+      // Add data size filter for Agent account
+      filters.push({ dataSize: 359 }) // Agent account size from CLAUDE.md
+
+      // If x402_enabled filter is true, we need to filter for accounts where x402_enabled = true
+      // This would require knowing the exact offset of the x402_enabled field in the account
+      // For now, we'll fetch all and filter in memory
+
+      const accounts = await this.rpc.getProgramAccounts(this.programId, {
+        commitment: this.commitment,
+        encoding: 'base64',
+        filters
+      }).send()
+
+      const agents: Agent[] = []
+      for (const { pubkey, account } of accounts) {
+        const agent = this.parseAgentAccount(pubkey, account.data)
+        if (agent) {
+          agents.push(agent)
+        }
+      }
+
+      return agents
+    } catch (error) {
+      console.error('Failed to fetch agents from chain:', error)
+      return []
+    }
+  }
+
+  private parseAgentAccount(address: Address, data: unknown): Agent | null {
+    try {
+      // In a real implementation, this would use borsh deserialization
+      // based on the Agent struct from the Rust program
+      // For now, this is a placeholder that shows the structure
+
+      // This would use the generated agent account decoder from codama
+      // import { getAgentDecoder } from '../generated/accounts/agent.js'
+      // const decoder = getAgentDecoder()
+      // const agentData = decoder.decode(Buffer.from(data as string, 'base64'))
+
+      // Placeholder - would be replaced with actual decoder
+      const agentData = this.mockParseAgent(data)
+
+      return {
+        address,
+        owner: agentData.owner,
+        name: agentData.name,
+        description: agentData.description,
+        capabilities: agentData.capabilities,
+        x402_enabled: agentData.x402Enabled,
+        x402_payment_address: agentData.x402PaymentAddress,
+        x402_accepted_tokens: agentData.x402AcceptedTokens,
+        x402_price_per_call: agentData.x402PricePerCall,
+        x402_service_endpoint: agentData.x402ServiceEndpoint,
+        x402_total_payments: agentData.x402TotalPayments,
+        x402_total_calls: agentData.x402TotalCalls,
+        reputation_score: agentData.reputationScore,
+        total_jobs: agentData.totalJobs,
+        successful_jobs: agentData.successfulJobs,
+        total_earnings: agentData.totalEarnings,
+        average_rating: agentData.averageRating,
+        created_at: agentData.createdAt,
+        metadata_uri: agentData.metadataUri,
+        framework_origin: agentData.frameworkOrigin,
+        is_verified: agentData.isVerified
+      }
+    } catch (error) {
+      console.error('Failed to parse agent account:', error)
+      return null
+    }
+  }
+
+  // Temporary mock parser - would be replaced with actual borsh decoder
+  private mockParseAgent(data: unknown): any {
+    void data // Mark as intentionally unused
+
+    // This is a placeholder. In production, this would use the actual
+    // generated decoder from codama based on the Rust Agent struct
+    return {
+      owner: '11111111111111111111111111111111' as Address,
+      name: 'Mock Agent',
+      description: 'Mock description',
+      capabilities: ['chat'],
+      x402Enabled: true,
+      x402PaymentAddress: '11111111111111111111111111111111' as Address,
+      x402AcceptedTokens: [] as Address[],
+      x402PricePerCall: 1000n,
+      x402ServiceEndpoint: 'https://api.example.com',
+      x402TotalPayments: 0n,
+      x402TotalCalls: 0n,
+      reputationScore: 8500,
+      totalJobs: 0n,
+      successfulJobs: 0n,
+      totalEarnings: 0n,
+      averageRating: 4.5,
+      createdAt: 0n,
+      metadataUri: '',
+      frameworkOrigin: 'eliza',
+      isVerified: false
+    }
+  }
+
+  private applyFilters(agents: Agent[], params: AgentSearchParams): Agent[] {
+    let filtered = agents
+
+    // Filter by x402_enabled
+    if (params.x402_enabled !== undefined) {
+      filtered = filtered.filter(a => a.x402_enabled === params.x402_enabled)
+    }
+
+    // Filter by capability
+    if (params.capability) {
+      filtered = filtered.filter(a =>
+        a.capabilities.some(c =>
+          c.toLowerCase().includes(params.capability!.toLowerCase())
+        )
+      )
+    }
+
+    // Filter by accepted tokens
+    if (params.accepted_tokens?.length) {
+      filtered = filtered.filter(a =>
+        params.accepted_tokens!.some(token =>
+          a.x402_accepted_tokens.includes(token as Address)
+        )
+      )
+    }
+
+    // Filter by minimum reputation
+    if (params.min_reputation !== undefined) {
+      filtered = filtered.filter(a => a.reputation_score >= params.min_reputation!)
+    }
+
+    // Filter by maximum price
+    if (params.max_price !== undefined) {
+      filtered = filtered.filter(a => a.x402_price_per_call <= params.max_price!)
+    }
+
+    // Filter by framework origin
+    if (params.framework_origin) {
+      filtered = filtered.filter(a =>
+        a.framework_origin.toLowerCase() === params.framework_origin!.toLowerCase()
+      )
+    }
+
+    // Filter by verified status
+    if (params.is_verified !== undefined) {
+      filtered = filtered.filter(a => a.is_verified === params.is_verified)
+    }
+
+    // Filter by text query
+    if (params.query) {
+      const query = params.query.toLowerCase()
+      filtered = filtered.filter(a =>
+        a.name.toLowerCase().includes(query) ||
+        a.description.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }
+
+  private sortAgents(
+    agents: Agent[],
+    sortBy: string,
+    sortOrder: string
+  ): Agent[] {
+    const sorted = [...agents]
+    const order = sortOrder === 'asc' ? 1 : -1
+
+    sorted.sort((a, b) => {
+      let comparison = 0
+
+      switch (sortBy) {
+        case 'reputation':
+          comparison = a.reputation_score - b.reputation_score
+          break
+        case 'price':
+          comparison = Number(a.x402_price_per_call - b.x402_price_per_call)
+          break
+        case 'total_jobs':
+          comparison = Number(a.total_jobs - b.total_jobs)
+          break
+        case 'created_at':
+          comparison = Number(a.created_at - b.created_at)
+          break
+      }
+
+      return comparison * order
+    })
+
+    return sorted
+  }
+
+  private async getTokenInfo(tokens: Address[]): Promise<Array<{
+    token: Address
+    decimals: number
+    symbol: string
+  }>> {
+    const tokenInfo: Array<{ token: Address; decimals: number; symbol: string }> = []
+
+    for (const token of tokens) {
+      try {
+        // Fetch token mint info
+        const mintInfo = await this.rpc.getAccountInfo(token, {
+          commitment: this.commitment,
+          encoding: 'base64'
+        }).send()
+
+        if (mintInfo.value) {
+          // Parse mint account to get decimals
+          // This would use proper SPL token decoder in production
+          tokenInfo.push({
+            token,
+            decimals: 6, // Placeholder - would parse from mint account
+            symbol: 'USDC' // Placeholder - would look up from token registry
+          })
+        }
+      } catch (error) {
+        console.error(`Failed to fetch token info for ${token}:`, error)
+      }
+    }
+
+    return tokenInfo
+  }
+
+  private getCacheKey(prefix: string, params: unknown): string {
+    return `${prefix}:${JSON.stringify(params)}`
+  }
+
+  private getFromCache<T>(key: string): T | null {
+    const cached = this.cache.get(key)
+    if (!cached) return null
+
+    if (Date.now() > cached.expiry) {
+      this.cache.delete(key)
+      return null
+    }
+
+    return cached.data as T
+  }
+
+  private setCache(key: string, data: unknown): void {
+    const expiry = Date.now() + (this.cacheTTL * 1000)
+    this.cache.set(key, { data, expiry })
+
+    // Limit cache size
+    if (this.cache.size > 1000) {
+      // Remove oldest entries
+      const entries = Array.from(this.cache.entries())
+      entries.sort((a, b) => a[1].expiry - b[1].expiry)
+      for (let i = 0; i < 100; i++) {
+        this.cache.delete(entries[i][0])
+      }
+    }
+  }
+
+  /**
+   * Clear all cached data
+   */
+  clearCache(): void {
+    this.cache.clear()
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { size: number; enabled: boolean; ttl: number } {
+    return {
+      size: this.cache.size,
+      enabled: this.cacheEnabled,
+      ttl: this.cacheTTL
+    }
+  }
+}
+
+/**
+ * Create an Agent Discovery Client instance
+ */
+export function createAgentDiscoveryClient(
+  options: AgentDiscoveryOptions
+): AgentDiscoveryClient {
+  return new AgentDiscoveryClient(options)
+}

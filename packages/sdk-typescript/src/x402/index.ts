@@ -16,7 +16,8 @@ export type {
   X402PaymentRequest,
   X402PaymentReceipt,
   X402PaymentHeaders,
-  X402VerificationResult
+  X402VerificationResult,
+  X402PaymentEvent
 } from './X402Client.js'
 
 export {
@@ -28,6 +29,28 @@ export type {
   X402MiddlewareOptions,
   X402RequestWithPayment
 } from './middleware.js'
+
+export {
+  AgentDiscoveryClient,
+  createAgentDiscoveryClient
+} from './AgentDiscoveryClient.js'
+export type {
+  Agent,
+  AgentSearchParams,
+  AgentSearchResponse,
+  AgentPricing,
+  AgentDiscoveryOptions
+} from './AgentDiscoveryClient.js'
+
+export {
+  X402AnalyticsTracker,
+  createX402AnalyticsTracker
+} from './analytics.js'
+export type {
+  X402TransactionMetrics,
+  X402AnalyticsOptions,
+  X402AnalyticsEventHandlers
+} from './analytics.js'
 
 // Re-export for convenience
 export { default } from './X402Client.js'

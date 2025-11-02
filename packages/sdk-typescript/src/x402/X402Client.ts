@@ -27,6 +27,7 @@ import {
   sendAndConfirmTransactionFactory
 } from '@solana/kit'
 import type { IInstruction } from '@solana/kit'
+import { EventEmitter } from 'node:events'
 
 // =====================================================
 // TYPES
@@ -72,11 +73,25 @@ export interface X402VerificationResult {
 // X402 CLIENT
 // =====================================================
 
-export class X402Client {
+/**
+ * x402 Payment Events
+ */
+export interface X402PaymentEvent {
+  type: 'payment_created' | 'payment_sent' | 'payment_confirmed' | 'payment_failed'
+  signature?: Signature
+  request: X402PaymentRequest
+  receipt?: X402PaymentReceipt
+  error?: string
+  timestamp: number
+}
+
+export class X402Client extends EventEmitter {
   constructor(
     private rpc: Rpc<SolanaRpcApi & GetTransactionApi>,
     private wallet?: TransactionSigner
-  ) {}
+  ) {
+    super()
+  }
 
   /**
    * Create an x402 payment request
@@ -149,6 +164,13 @@ export class X402Client {
       throw new Error('Payment token address is required')
     }
 
+    // Emit payment creation event
+    this.emit('payment_created', {
+      type: 'payment_created',
+      request,
+      timestamp: Date.now()
+    })
+
     try {
       // Create SPL token transfer instruction
       const transferIx = await this.createTransferInstruction(
@@ -215,6 +237,14 @@ export class X402Client {
         )
       })
 
+      // Emit payment sent event
+      this.emit('payment_sent', {
+        type: 'payment_sent',
+        signature,
+        request,
+        timestamp: Date.now()
+      })
+
       // Get transaction details
       const tx = await this.rpc.getTransaction(signature, {
         encoding: 'jsonParsed',
@@ -226,7 +256,7 @@ export class X402Client {
         return null
       })
 
-      return {
+      const receipt: X402PaymentReceipt = {
         signature,
         recipient: request.recipient,
         amount: request.amount,
@@ -236,7 +266,27 @@ export class X402Client {
         blockTime: tx?.blockTime ?? undefined,
         slot: tx?.slot ?? undefined
       }
+
+      // Emit payment confirmed event
+      this.emit('payment_confirmed', {
+        type: 'payment_confirmed',
+        signature,
+        request,
+        receipt,
+        timestamp: Date.now()
+      })
+
+      return receipt
     } catch (error) {
+      // Emit payment failed event
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      this.emit('payment_failed', {
+        type: 'payment_failed',
+        request,
+        error: errorMessage,
+        timestamp: Date.now()
+      })
+
       // Wrap and rethrow with context
       if (error instanceof Error) {
         throw error // Already has good error message

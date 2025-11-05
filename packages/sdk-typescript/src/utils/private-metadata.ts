@@ -440,12 +440,14 @@ export class PrivateMetadataStorage {
   }
   
   private async decryptPrivateData(
-    _encrypted: EncryptedData,
-    _secretKey: Uint8Array
+    encrypted: EncryptedData,
+    secretKey: Uint8Array
   ): Promise<Uint8Array> {
-    // For now, return mock decrypted data
-    // In production, this would use proper decryption
-    return new TextEncoder().encode('{"decrypted": "data"}')
+    // TODO(encryption): Implement full decryption when encryption service supports generic data
+    // For now, decrypt the amount and serialize it
+    // This is a limitation of current ElGamal implementation which only supports amounts
+    const decryptedAmount = await this.encryptionService.decryptAmount(encrypted, secretKey)
+    return new TextEncoder().encode(JSON.stringify({ amount: decryptedAmount.toString() }))
   }
 }
 

@@ -19,10 +19,6 @@ import {
   isToken2022 as isToken2022Official,
   getMintExtensions as getMintExtensionsOfficial,
   calculateTransferAmountWithFee as calculateTransferAmountWithFeeOfficial,
-  configureConfidentialAccount as configureConfidentialAccountOfficial,
-  depositConfidential as depositConfidentialOfficial,
-  withdrawConfidential as withdrawConfidentialOfficial,
-  transferConfidential as transferConfidentialOfficial,
   TOKEN_2022_PROGRAM_ID,
   ExtensionType
 } from './spl-token-integration.js'
@@ -174,11 +170,7 @@ export {
   getOrCreateAssociatedTokenAccountOfficial as getOrCreateAssociatedTokenAccount,
   isToken2022Official as isToken2022,
   getMintExtensionsOfficial as getMintExtensions,
-  calculateTransferAmountWithFeeOfficial as calculateTransferAmountWithFee,
-  configureConfidentialAccountOfficial as configureConfidentialAccount,
-  depositConfidentialOfficial as depositConfidential,
-  withdrawConfidentialOfficial as withdrawConfidential,
-  transferConfidentialOfficial as transferConfidential
+  calculateTransferAmountWithFeeOfficial as calculateTransferAmountWithFee
 }
 
 /**

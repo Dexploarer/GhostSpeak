@@ -21,10 +21,13 @@ export interface X402MiddlewareOptions {
   requiredPayment: bigint
   token: Address
   description: string
+  agentId?: string // Agent ID for on-chain payment recording
+  recordPaymentOnChain?: boolean // Whether to call record_x402_payment instruction
   allowBypass?: boolean
   bypassAddresses?: Address[]
   onPaymentVerified?: (signature: string, req: Request) => Promise<void>
   onPaymentFailed?: (error: string, req: Request) => Promise<void>
+  onReputationUpdateFailed?: (error: Error) => void // Graceful error handling for reputation updates
 }
 
 export interface X402RequestWithPayment extends Request {
@@ -33,6 +36,8 @@ export interface X402RequestWithPayment extends Request {
     verified: boolean
     amount: bigint
     token: Address
+    responseTimeMs?: number // Response time for analytics
+    timestamp: number // Payment timestamp
   }
 }
 
@@ -80,6 +85,9 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
     res: Response,
     next: NextFunction
   ) => {
+    // Start response time tracking
+    const requestStartTime = Date.now()
+
     const paymentSignature = req.headers['x-payment-signature'] as string | undefined
 
     // Check bypass conditions
@@ -138,12 +146,45 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
         return
       }
 
+      // Calculate response time (from start to payment verification)
+      const responseTimeMs = Date.now() - requestStartTime
+
       // Payment verified successfully
       req.x402Payment = {
         signature: paymentSignature,
         verified: true,
         amount: verification.receipt!.amount,
-        token: verification.receipt!.token
+        token: verification.receipt!.token,
+        responseTimeMs,
+        timestamp: Date.now()
+      }
+
+      // Optionally record payment on-chain via record_x402_payment instruction
+      if (options.recordPaymentOnChain && options.agentId) {
+        try {
+          // This would call the record_x402_payment Solana instruction
+          // Implementation depends on having a GhostSpeak SDK client with the instruction
+          // Example:
+          // await options.x402Client.recordPaymentOnChain({
+          //   agentId: options.agentId,
+          //   amount: verification.receipt!.amount,
+          //   tokenMint: verification.receipt!.token,
+          //   transactionSignature: paymentSignature,
+          //   responseTimeMs
+          // })
+
+          // For now, we'll just log that this would happen
+          console.log(`[x402] Would record payment on-chain for agent ${options.agentId}`)
+        } catch (reputationError) {
+          // Gracefully handle reputation/on-chain update failures
+          // Don't block the request if reputation update fails
+          if (options.onReputationUpdateFailed && reputationError instanceof Error) {
+            options.onReputationUpdateFailed(reputationError)
+          } else {
+            console.error('[x402] Failed to record payment on-chain:', reputationError)
+          }
+          // Continue processing the request despite reputation update failure
+        }
       }
 
       if (options.onPaymentVerified) {

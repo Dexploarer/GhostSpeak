@@ -32,6 +32,7 @@ pub mod replication;
 pub mod royalty;
 pub mod token_2022_operations;
 pub mod work_orders;
+pub mod x402_operations;
 
 // Re-export all instruction handlers (2025 Anchor best practice)
 pub use a2a_protocol::*;
@@ -59,6 +60,7 @@ pub use replication::*;
 pub use royalty::*;
 pub use token_2022_operations::*;
 pub use work_orders::*;
+pub use x402_operations::*;
 
 use anchor_lang::prelude::*;
 

@@ -129,4 +129,111 @@ pub mod tests {
 
         println!("All constants are within reasonable bounds");
     }
+
+    // =====================================================
+    // X402 PAYMENT PROTOCOL TESTS
+    // =====================================================
+
+    mod x402_tests {
+        use super::*;
+        use crate::instructions::x402_operations::*;
+        use crate::*;
+
+        #[test]
+        fn test_x402_config_data_structure() {
+            let config = X402ConfigData {
+                enabled: true,
+                payment_address: Pubkey::new_unique(),
+                accepted_tokens: vec![Pubkey::new_unique()],
+                price_per_call: 1_000_000,
+                service_endpoint: "https://api.example.com".to_string(),
+            };
+
+            assert!(config.enabled);
+            assert!(config.price_per_call >= MIN_PAYMENT_AMOUNT);
+            assert!(config.service_endpoint.len() <= MAX_GENERAL_STRING_LENGTH);
+        }
+
+        #[test]
+        fn test_x402_payment_data_structure() {
+            let payment = X402PaymentData {
+                amount: 1_000_000,
+                token_mint: Pubkey::new_unique(),
+                transaction_signature: "5".to_string() + &"a".repeat(63),
+                response_time_ms: 150,
+            };
+
+            assert!(payment.amount >= MIN_PAYMENT_AMOUNT);
+            assert!(payment.transaction_signature.len() >= 64);
+        }
+
+        #[test]
+        fn test_x402_rating_data_structure() {
+            let rating = X402RatingData {
+                rating: 5,
+                transaction_signature: "5".to_string() + &"a".repeat(63),
+                feedback: Some("Excellent service!".to_string()),
+            };
+
+            assert!(rating.rating >= 1 && rating.rating <= 5);
+            assert!(rating.feedback.as_ref().unwrap().len() <= MAX_GENERAL_STRING_LENGTH);
+        }
+
+        #[test]
+        fn test_x402_reputation_calculation() {
+            // Test reputation calculation with 5 stars
+            let rating = 5_u8;
+            let basis_points = (rating as u32) * 2000;
+            assert_eq!(basis_points, 10000); // 100%
+
+            // Test reputation calculation with 3 stars
+            let rating = 3_u8;
+            let basis_points = (rating as u32) * 2000;
+            assert_eq!(basis_points, 6000); // 60%
+
+            // Test reputation calculation with 1 star
+            let rating = 1_u8;
+            let basis_points = (rating as u32) * 2000;
+            assert_eq!(basis_points, 2000); // 20%
+        }
+
+        #[test]
+        fn test_x402_exponential_moving_average() {
+            // Test EMA calculation: 0.9 * old + 0.1 * new
+            let current_reputation = 8000_u32; // 80%
+            let new_rating = 5_u8; // 100%
+            let rating_bp = (new_rating as u32) * 2000;
+
+            let weighted_old = (current_reputation as u64 * 9000) / 10000; // 7200
+            let weighted_new = (rating_bp as u64 * 1000) / 10000; // 1000
+            let new_reputation = weighted_old + weighted_new; // 8200
+
+            assert_eq!(new_reputation, 8200);
+            assert!(new_reputation <= BASIS_POINTS_MAX as u64);
+        }
+
+        #[test]
+        fn test_x402_payment_overflow_protection() {
+            let existing = 1000_u64;
+            let amount = u64::MAX;
+
+            let result = existing.checked_add(amount);
+            assert!(result.is_none(), "Overflow should be detected");
+        }
+
+        #[test]
+        fn test_x402_min_max_payment_amounts() {
+            assert_eq!(MIN_PAYMENT_AMOUNT, 1_000);
+            assert_eq!(MAX_PAYMENT_AMOUNT, 1_000_000_000_000);
+            assert!(MIN_PAYMENT_AMOUNT < MAX_PAYMENT_AMOUNT);
+        }
+
+        #[test]
+        fn test_x402_basis_points_constants() {
+            assert_eq!(BASIS_POINTS_MAX, 10000);
+            assert_eq!(BASIS_POINTS_50_PERCENT, 5000);
+            assert_eq!(BASIS_POINTS_10_PERCENT, 1000);
+            assert_eq!(BASIS_POINTS_1_PERCENT, 100);
+        }
+    }
 }

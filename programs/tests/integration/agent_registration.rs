@@ -31,7 +31,7 @@ async fn test_register_agent_success() {
     );
 
     // Create register agent instruction
-    // TODO: Replace with actual instruction builder from SDK
+// TODO: Replace with actual instruction builder from the program's `instruction` module
     // let ix = ghostspeak_marketplace::instruction::register_agent(
     //     agent_pda,
     //     fixture.owner.pubkey(),

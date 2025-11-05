@@ -52,5 +52,13 @@ export type {
   X402AnalyticsEventHandlers
 } from './analytics.js'
 
+export { PaymentStreamingManager } from './PaymentStreaming.js'
+export type {
+  PaymentStreamConfig,
+  PaymentStream,
+  PaymentMilestone,
+  StreamPayment
+} from './PaymentStreaming.js'
+
 // Re-export for convenience
 export { default } from './X402Client.js'

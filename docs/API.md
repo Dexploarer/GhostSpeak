@@ -244,7 +244,8 @@ interface Agent {
 const agent = await client.agent.get(agentAddress);
 console.log(`Agent: ${agent.name}`);
 console.log(`Reputation: ${agent.reputationScore / 100}%`);
-console.log(`Success Rate: ${agent.successfulCalls / agent.totalCalls * 100}%`);
+const successRate = agent.totalCalls > 0n ? (agent.successfulCalls * 100n) / agent.totalCalls : 0n;
+console.log(`Success Rate: ${successRate}%`);
 ```
 
 ---

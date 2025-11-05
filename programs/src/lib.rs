@@ -1870,6 +1870,37 @@ pub mod ghostspeak_marketplace {
     }
 
     // =====================================================
+    // X402 PAYMENT PROTOCOL INSTRUCTIONS
+    // =====================================================
+
+    /// Configure x402 payment settings for an agent
+    pub fn configure_x402(
+        ctx: Context<ConfigureX402>,
+        agent_id: String,
+        config: instructions::x402_operations::X402ConfigData,
+    ) -> Result<()> {
+        instructions::x402_operations::configure_x402(ctx, agent_id, config)
+    }
+
+    /// Record an x402 payment transaction on-chain
+    pub fn record_x402_payment(
+        ctx: Context<RecordX402Payment>,
+        agent_id: String,
+        payment_data: instructions::x402_operations::X402PaymentData,
+    ) -> Result<()> {
+        instructions::x402_operations::record_x402_payment(ctx, agent_id, payment_data)
+    }
+
+    /// Submit a reputation rating from an x402 transaction
+    pub fn submit_x402_rating(
+        ctx: Context<SubmitX402Rating>,
+        agent_id: String,
+        rating_data: instructions::x402_operations::X402RatingData,
+    ) -> Result<()> {
+        instructions::x402_operations::submit_x402_rating(ctx, agent_id, rating_data)
+    }
+
+    // =====================================================
     // TYPE EXPORT INSTRUCTIONS FOR IDL GENERATION
     // =====================================================
     // These dummy instructions force Anchor to include nested types in the IDL

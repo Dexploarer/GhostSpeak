@@ -87,8 +87,14 @@ class SignatureCache {
   }
 }
 
-// Global signature cache (shared across middleware instances)
-const globalSignatureCache = new SignatureCache()
+    // Global signature cache (shared across middleware instances)
+    let globalSignatureCache: SignatureCache | null = null;
+    const getGlobalSignatureCache = (): SignatureCache => {
+      if (!globalSignatureCache) {
+        globalSignatureCache = new SignatureCache();
+      }
+      return globalSignatureCache;
+    }
 
 export interface X402RequestWithPayment extends Request {
   x402Payment?: {

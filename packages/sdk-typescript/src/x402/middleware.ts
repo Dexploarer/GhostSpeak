@@ -50,7 +50,7 @@ class SignatureCache {
     this.ttl = ttl * 1000 // Convert to milliseconds
 
     // Cleanup expired entries every 5 minutes
-    setInterval(() => this.cleanup(), 300000)
+    setInterval(() => this.cleanup(), 300000).unref()
   }
 
   has(signature: string): boolean {

@@ -45,12 +45,18 @@ interface SignatureCacheEntry {
 class SignatureCache {
   private cache: Map<string, SignatureCacheEntry> = new Map()
   private readonly ttl: number
+  private cleanupInterval: NodeJS.Timeout | null = null
 
   constructor(ttl: number = 3600) {
     this.ttl = ttl * 1000 // Convert to milliseconds
 
     // Cleanup expired entries every 5 minutes
-    setInterval(() => this.cleanup(), 300000).unref()
+    this.cleanupInterval = setInterval(() => this.cleanup(), 300000)
+
+    // Unref the interval to allow Node.js to exit if this is the only remaining timer
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref()
+    }
   }
 
   has(signature: string): boolean {
@@ -84,6 +90,18 @@ class SignatureCache {
 
   getSize(): number {
     return this.cache.size
+  }
+
+  /**
+   * Destroy the cache and clear the cleanup interval
+   * Call this when shutting down to prevent memory leaks
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
+    }
+    this.cache.clear()
   }
 }
 
@@ -165,13 +183,14 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
     const requestStartTime = Date.now()
 
     const paymentSignature = req.headers['x-payment-signature'] as string | undefined
+    const paymentExpiresAt = req.headers['x-payment-expires-at'] as string | undefined
 
     // Check bypass conditions
     if (options.allowBypass && shouldBypass(req, options)) {
       return next()
     }
 
-    // Create payment request (needed for both 402 response and verification)
+    // Create payment request (needed for 402 response)
     const paymentRequest = options.x402Client.createPaymentRequest({
       amount: options.requiredPayment,
       token: options.token,
@@ -213,10 +232,25 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
       return
     }
 
-    // Check payment expiration
-    if (enforceExpiration && paymentRequest.expiresAt) {
+    // Check payment expiration (from client-provided header)
+    if (enforceExpiration && paymentExpiresAt) {
       const now = Date.now()
-      if (now > paymentRequest.expiresAt) {
+      const expiresAtTimestamp = parseInt(paymentExpiresAt, 10)
+
+      if (isNaN(expiresAtTimestamp)) {
+        if (options.onPaymentFailed) {
+          await options.onPaymentFailed('Invalid expiration timestamp', req)
+        }
+
+        res.status(402).json({
+          error: 'Invalid Payment Expiration',
+          message: 'The x-payment-expires-at header contains an invalid timestamp.',
+          code: 'PAYMENT_INVALID_EXPIRY'
+        })
+        return
+      }
+
+      if (now > expiresAtTimestamp) {
         if (options.onPaymentFailed) {
           await options.onPaymentFailed('Payment request expired', req)
         }
@@ -225,7 +259,7 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
           error: 'Payment Expired',
           message: 'This payment request has expired. Please create a new payment.',
           code: 'PAYMENT_EXPIRED',
-          expiresAt: paymentRequest.expiresAt,
+          expiresAt: expiresAtTimestamp,
           currentTime: now
         })
         return

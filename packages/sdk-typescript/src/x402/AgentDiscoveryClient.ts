@@ -14,6 +14,10 @@ import { getAgentDecoder } from '../generated/accounts/agent.js'
 // Create compatibility types for connection
 type Connection = Rpc<any>
 
+// Constants
+const SOLANA_SYSTEM_PROGRAM_ID = '11111111111111111111111111111111' as Address
+const REPUTATION_BASIS_POINTS_PER_STAR = 2000 // 1 star = 2000 basis points (20%)
+
 /**
  * Agent search parameters
  */
@@ -348,7 +352,18 @@ export class AgentDiscoveryClient {
       if (typeof data === 'string') {
         dataBytes = Uint8Array.from(Buffer.from(data, 'base64'))
       } else if (Array.isArray(data)) {
-        dataBytes = Uint8Array.from(data)
+        // Check if it's an RPC tuple: [base64String, 'base64']
+        if (
+          data.length === 2 &&
+          typeof data[0] === 'string' &&
+          typeof data[1] === 'string' &&
+          data[1] === 'base64'
+        ) {
+          dataBytes = Uint8Array.from(Buffer.from(data[0], 'base64'))
+        } else {
+          // Assume it's a number array
+          dataBytes = Uint8Array.from(data as number[])
+        }
       } else if (data instanceof Uint8Array) {
         dataBytes = data
       } else {
@@ -375,7 +390,7 @@ export class AgentDiscoveryClient {
         x402_payment_address:
           agentWithX402.x402PaymentAddress ??
           agentWithX402.x402_payment_address ??
-          ('11111111111111111111111111111111' as Address),
+          SOLANA_SYSTEM_PROGRAM_ID,
         x402_accepted_tokens:
           agentWithX402.x402AcceptedTokens ??
           agentWithX402.x402_accepted_tokens ??
@@ -401,7 +416,7 @@ export class AgentDiscoveryClient {
         total_jobs: BigInt(decodedAgent.totalJobsCompleted),
         successful_jobs: BigInt(decodedAgent.totalJobsCompleted), // Assuming successful = completed
         total_earnings: decodedAgent.totalEarnings,
-        average_rating: decodedAgent.reputationScore / 2000, // Convert from basis points to 1-5 scale
+        average_rating: decodedAgent.reputationScore / REPUTATION_BASIS_POINTS_PER_STAR, // Convert from basis points to 1-5 scale
         created_at: decodedAgent.createdAt,
         metadata_uri: decodedAgent.metadataUri,
         framework_origin: decodedAgent.frameworkOrigin,

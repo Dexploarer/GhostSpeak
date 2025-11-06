@@ -1,0 +1,38 @@
+[package]
+name = "ghostspeak-fuzz"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+ghostspeak-marketplace = { path = ".." }
+anchor-lang = "0.31.1"
+solana-program = "2.1.0"
+
+[[bin]]
+name = "fuzz_register_agent"
+path = "fuzz_targets/fuzz_register_agent.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_create_escrow"
+path = "fuzz_targets/fuzz_create_escrow.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_x402_config"
+path = "fuzz_targets/fuzz_x402_config.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_reputation_calc"
+path = "fuzz_targets/fuzz_reputation_calc.rs"
+test = false
+doc = false
+
+[metadata]
+cargo-fuzz = true

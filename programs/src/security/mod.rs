@@ -8,6 +8,7 @@
 
 pub mod admin_validation;
 pub mod agent_validation;
+pub mod circuit_breaker;
 pub mod commit_reveal;
 pub mod rate_limiting;
 pub mod reentrancy;
@@ -37,4 +38,10 @@ pub use admin_validation::{
 pub use agent_validation::{
     require_a2a_support, require_verified_agent, validate_agent_authority,
     validate_agent_reputation, validate_agent_supports_token,
+};
+
+pub use circuit_breaker::{
+    initialize_circuit_breaker, pause_instruction, pause_protocol, unpause_instruction,
+    unpause_protocol, CircuitBreaker, InitializeCircuitBreaker, InstructionType,
+    PauseProtocol, PausedInstructions, UnpauseProtocol, check_not_paused,
 };

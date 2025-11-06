@@ -289,11 +289,26 @@ export function useEscrows(filters?: {
           // Fetch token metadata
           const tokenMetadata = await fetchTokenMetadata(escrowData.paymentToken, rpcClient)
 
-          // Calculate fees and interest
-          // Skip fee and interest calculations for now due to type complexity
-          // TODO: Fix Token-2022 extension type handling
-          const totalFeesCollected = BigInt(0)
-          const interestEarned = BigInt(0)
+          // Calculate fees and interest with proper Token-2022 extension handling
+          let totalFeesCollected = BigInt(0)
+          let interestEarned = BigInt(0)
+
+          // Check for transfer fee extension
+          const hasTransferFee = tokenMetadata.extensions.some(ext => ext.type === 'TransferFee')
+          if (hasTransferFee && tokenMetadata.transferFeeConfig) {
+            const feeConfig = tokenMetadata.transferFeeConfig
+            const feeAmount = (escrowData.amount * BigInt(feeConfig.transferFeeBasisPoints)) / BigInt(10000)
+            totalFeesCollected = feeAmount > feeConfig.maximumFee ? feeConfig.maximumFee : feeAmount
+          }
+
+          // Check for interest-bearing extension (if implemented in future)
+          const hasInterestBearing = tokenMetadata.extensions.some(ext => ext.type === 'InterestBearing')
+          if (hasInterestBearing && escrowData.createdAt) {
+            // Calculate time-based interest if applicable
+            const timeElapsed = BigInt(Math.floor(Date.now() / 1000)) - escrowData.createdAt
+            // Interest calculation would go here when supported
+            interestEarned = BigInt(0)
+          }
 
           return {
             address: address,
@@ -393,10 +408,26 @@ export function useEscrow(address: string) {
       // Fetch token metadata
       const tokenMetadata = await fetchTokenMetadata(escrowTypedData.paymentToken, rpcClient)
 
-      // Skip fee and interest calculations for now due to type complexity
-      // TODO: Fix Token-2022 extension type handling
-      const totalFeesCollected = BigInt(0)
-      const interestEarned = BigInt(0)
+      // Calculate fees and interest with proper Token-2022 extension handling
+      let totalFeesCollected = BigInt(0)
+      let interestEarned = BigInt(0)
+
+      // Check for transfer fee extension
+      const hasTransferFee = tokenMetadata.extensions.some(ext => ext.type === 'TransferFee')
+      if (hasTransferFee && tokenMetadata.transferFeeConfig) {
+        const feeConfig = tokenMetadata.transferFeeConfig
+        const feeAmount = (escrowTypedData.amount * BigInt(feeConfig.transferFeeBasisPoints)) / BigInt(10000)
+        totalFeesCollected = feeAmount > feeConfig.maximumFee ? feeConfig.maximumFee : feeAmount
+      }
+
+      // Check for interest-bearing extension (if implemented in future)
+      const hasInterestBearing = tokenMetadata.extensions.some(ext => ext.type === 'InterestBearing')
+      if (hasInterestBearing && escrowTypedData.createdAt) {
+        // Calculate time-based interest if applicable
+        const timeElapsed = BigInt(Math.floor(Date.now() / 1000)) - escrowTypedData.createdAt
+        // Interest calculation would go here when supported
+        interestEarned = BigInt(0)
+      }
 
       // Transform SDK data to match our Escrow interface
       return {

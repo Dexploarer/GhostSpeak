@@ -9,6 +9,7 @@
 
 import type { Address, Commitment } from '@solana/kit'
 import { createSolanaRpc, type Rpc } from '@solana/kit'
+import { decodeAgent } from '../generated/accounts/agent.js'
 
 // Create compatibility types for connection
 type Connection = Rpc<any>
@@ -342,74 +343,43 @@ export class AgentDiscoveryClient {
 
   private parseAgentAccount(address: Address, data: unknown): Agent | null {
     try {
-      // In a real implementation, this would use borsh deserialization
-      // based on the Agent struct from the Rust program
-      // For now, this is a placeholder that shows the structure
+      // Use the generated agent account decoder from codama
+      const dataBuffer = typeof data === 'string'
+        ? Buffer.from(data, 'base64')
+        : data instanceof Uint8Array
+        ? Buffer.from(data)
+        : Buffer.from(data as ArrayBuffer)
 
-      // This would use the generated agent account decoder from codama
-      // import { getAgentDecoder } from '../generated/accounts/agent.js'
-      // const decoder = getAgentDecoder()
-      // const agentData = decoder.decode(Buffer.from(data as string, 'base64'))
-
-      // Placeholder - would be replaced with actual decoder
-      const agentData = this.mockParseAgent(data)
+      // Decode the agent account using the generated decoder
+      const decodedAgent = decodeAgent(dataBuffer as any)
+      const agentData = decodedAgent.data
 
       return {
         address,
-        owner: agentData.owner,
+        owner: agentData.authority,
         name: agentData.name,
-        description: agentData.description,
-        capabilities: agentData.capabilities,
-        x402_enabled: agentData.x402Enabled,
-        x402_payment_address: agentData.x402PaymentAddress,
-        x402_accepted_tokens: agentData.x402AcceptedTokens,
-        x402_price_per_call: agentData.x402PricePerCall,
-        x402_service_endpoint: agentData.x402ServiceEndpoint,
-        x402_total_payments: agentData.x402TotalPayments,
-        x402_total_calls: agentData.x402TotalCalls,
-        reputation_score: agentData.reputationScore,
-        total_jobs: agentData.totalJobs,
-        successful_jobs: agentData.successfulJobs,
-        total_earnings: agentData.totalEarnings,
-        average_rating: agentData.averageRating,
-        created_at: agentData.createdAt,
-        metadata_uri: agentData.metadataUri,
-        framework_origin: agentData.frameworkOrigin,
-        is_verified: agentData.isVerified
+        description: agentData.description ?? '',
+        capabilities: agentData.capabilities ?? [],
+        x402_enabled: agentData.x402Enabled ?? false,
+        x402_payment_address: agentData.x402PaymentAddress ?? ('11111111111111111111111111111111' as Address),
+        x402_accepted_tokens: agentData.x402AcceptedTokens ?? [],
+        x402_price_per_call: agentData.x402PricePerCall ?? BigInt(0),
+        x402_service_endpoint: agentData.x402ServiceEndpoint ?? '',
+        x402_total_payments: agentData.x402TotalPayments ?? BigInt(0),
+        x402_total_calls: agentData.x402TotalCalls ?? BigInt(0),
+        reputation_score: Number(agentData.reputationScore ?? 0),
+        total_jobs: agentData.totalJobs ?? BigInt(0),
+        successful_jobs: agentData.successfulJobs ?? BigInt(0),
+        total_earnings: agentData.totalEarnings ?? BigInt(0),
+        average_rating: agentData.averageRating ?? 0,
+        created_at: agentData.createdAt ?? BigInt(0),
+        metadata_uri: agentData.metadataUri ?? '',
+        framework_origin: agentData.frameworkOrigin ?? '',
+        is_verified: agentData.isVerified ?? false
       }
     } catch (error) {
       console.error('Failed to parse agent account:', error)
       return null
-    }
-  }
-
-  // Temporary mock parser - would be replaced with actual borsh decoder
-  private mockParseAgent(data: unknown): any {
-    void data // Mark as intentionally unused
-
-    // This is a placeholder. In production, this would use the actual
-    // generated decoder from codama based on the Rust Agent struct
-    return {
-      owner: '11111111111111111111111111111111' as Address,
-      name: 'Mock Agent',
-      description: 'Mock description',
-      capabilities: ['chat'],
-      x402Enabled: true,
-      x402PaymentAddress: '11111111111111111111111111111111' as Address,
-      x402AcceptedTokens: [] as Address[],
-      x402PricePerCall: 1000n,
-      x402ServiceEndpoint: 'https://api.example.com',
-      x402TotalPayments: 0n,
-      x402TotalCalls: 0n,
-      reputationScore: 8500,
-      totalJobs: 0n,
-      successfulJobs: 0n,
-      totalEarnings: 0n,
-      averageRating: 4.5,
-      createdAt: 0n,
-      metadataUri: '',
-      frameworkOrigin: 'eliza',
-      isVerified: false
     }
   }
 

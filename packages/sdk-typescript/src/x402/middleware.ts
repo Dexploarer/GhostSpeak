@@ -25,10 +25,94 @@ export interface X402MiddlewareOptions {
   recordPaymentOnChain?: boolean // Whether to call record_x402_payment instruction
   allowBypass?: boolean
   bypassAddresses?: Address[]
+  preventDuplicatePayments?: boolean // Default: true - prevent signature replay attacks
+  signatureCacheTTL?: number // Default: 3600 seconds (1 hour) - how long to remember used signatures
+  enforceExpiration?: boolean // Default: true - reject expired payment requests
   onPaymentVerified?: (signature: string, req: Request) => Promise<void>
   onPaymentFailed?: (error: string, req: Request) => Promise<void>
   onReputationUpdateFailed?: (error: Error) => void // Graceful error handling for reputation updates
 }
+
+// =====================================================
+// SIGNATURE CACHE (for duplicate payment prevention)
+// =====================================================
+
+interface SignatureCacheEntry {
+  timestamp: number
+  expiresAt: number
+}
+
+class SignatureCache {
+  private cache: Map<string, SignatureCacheEntry> = new Map()
+  private readonly ttl: number
+  private cleanupInterval: NodeJS.Timeout | null = null
+
+  constructor(ttl: number = 3600) {
+    this.ttl = ttl * 1000 // Convert to milliseconds
+
+    // Cleanup expired entries every 5 minutes
+    this.cleanupInterval = setInterval(() => this.cleanup(), 300000)
+
+    // Unref the interval to allow Node.js to exit if this is the only remaining timer
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref()
+    }
+  }
+
+  has(signature: string): boolean {
+    const entry = this.cache.get(signature)
+    if (!entry) return false
+
+    // Check if entry has expired
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(signature)
+      return false
+    }
+
+    return true
+  }
+
+  add(signature: string): void {
+    this.cache.set(signature, {
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.ttl
+    })
+  }
+
+  private cleanup(): void {
+    const now = Date.now()
+    for (const [signature, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(signature)
+      }
+    }
+  }
+
+  getSize(): number {
+    return this.cache.size
+  }
+
+  /**
+   * Destroy the cache and clear the cleanup interval
+   * Call this when shutting down to prevent memory leaks
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
+    }
+    this.cache.clear()
+  }
+}
+
+    // Global signature cache (shared across middleware instances)
+    let globalSignatureCache: SignatureCache | null = null;
+    const getGlobalSignatureCache = (): SignatureCache => {
+      if (!globalSignatureCache) {
+        globalSignatureCache = new SignatureCache();
+      }
+      return globalSignatureCache;
+    }
 
 export interface X402RequestWithPayment extends Request {
   x402Payment?: {
@@ -80,6 +164,16 @@ export interface X402FastifyRequest extends FastifyRequest {
  * ```
  */
 export function createX402Middleware(options: X402MiddlewareOptions) {
+  // Set defaults for security options
+  const preventDuplicates = options.preventDuplicatePayments ?? true
+  const enforceExpiration = options.enforceExpiration ?? true
+  const cacheTTL = options.signatureCacheTTL ?? 3600
+
+  // Create instance-specific signature cache if needed
+  const signatureCache = preventDuplicates ?
+    (options.signatureCacheTTL ? new SignatureCache(cacheTTL) : globalSignatureCache) :
+    null
+
   return async (
     req: X402RequestWithPayment,
     res: Response,
@@ -89,13 +183,14 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
     const requestStartTime = Date.now()
 
     const paymentSignature = req.headers['x-payment-signature'] as string | undefined
+    const paymentExpiresAt = req.headers['x-payment-expires-at'] as string | undefined
 
     // Check bypass conditions
     if (options.allowBypass && shouldBypass(req, options)) {
       return next()
     }
 
-    // Create payment request (needed for both 402 response and verification)
+    // Create payment request (needed for 402 response)
     const paymentRequest = options.x402Client.createPaymentRequest({
       amount: options.requiredPayment,
       token: options.token,
@@ -121,6 +216,54 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
         documentation: 'https://docs.ghostspeak.ai/x402'
       })
       return
+    }
+
+    // Check for duplicate payment (replay attack prevention)
+    if (preventDuplicates && signatureCache?.has(paymentSignature)) {
+      if (options.onPaymentFailed) {
+        await options.onPaymentFailed('Payment signature already used', req)
+      }
+
+      res.status(402).json({
+        error: 'Payment Already Used',
+        message: 'This payment signature has already been used. Please create a new payment.',
+        code: 'PAYMENT_DUPLICATE'
+      })
+      return
+    }
+
+    // Check payment expiration (from client-provided header)
+    if (enforceExpiration && paymentExpiresAt) {
+      const now = Date.now()
+      const expiresAtTimestamp = parseInt(paymentExpiresAt, 10)
+
+      if (isNaN(expiresAtTimestamp)) {
+        if (options.onPaymentFailed) {
+          await options.onPaymentFailed('Invalid expiration timestamp', req)
+        }
+
+        res.status(402).json({
+          error: 'Invalid Payment Expiration',
+          message: 'The x-payment-expires-at header contains an invalid timestamp.',
+          code: 'PAYMENT_INVALID_EXPIRY'
+        })
+        return
+      }
+
+      if (now > expiresAtTimestamp) {
+        if (options.onPaymentFailed) {
+          await options.onPaymentFailed('Payment request expired', req)
+        }
+
+        res.status(402).json({
+          error: 'Payment Expired',
+          message: 'This payment request has expired. Please create a new payment.',
+          code: 'PAYMENT_EXPIRED',
+          expiresAt: expiresAtTimestamp,
+          currentTime: now
+        })
+        return
+      }
     }
 
     try {
@@ -157,6 +300,11 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
         token: verification.receipt!.token,
         responseTimeMs,
         timestamp: Date.now()
+      }
+
+      // Add signature to cache to prevent replay attacks
+      if (preventDuplicates && signatureCache) {
+        signatureCache.add(paymentSignature)
       }
 
       // Optionally record payment on-chain via record_x402_payment instruction

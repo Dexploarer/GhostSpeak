@@ -9,9 +9,14 @@
 
 import type { Address, Commitment } from '@solana/kit'
 import { createSolanaRpc, type Rpc } from '@solana/kit'
+import { getAgentDecoder } from '../generated/accounts/agent.js'
 
 // Create compatibility types for connection
 type Connection = Rpc<any>
+
+// Constants
+const SOLANA_SYSTEM_PROGRAM_ID = '11111111111111111111111111111111' as Address
+const REPUTATION_BASIS_POINTS_PER_STAR = 2000 // 1 star = 2000 basis points (20%)
 
 /**
  * Agent search parameters
@@ -342,74 +347,84 @@ export class AgentDiscoveryClient {
 
   private parseAgentAccount(address: Address, data: unknown): Agent | null {
     try {
-      // In a real implementation, this would use borsh deserialization
-      // based on the Agent struct from the Rust program
-      // For now, this is a placeholder that shows the structure
+      // Convert data to Uint8Array if it's a string (base64)
+      let dataBytes: Uint8Array
+      if (typeof data === 'string') {
+        dataBytes = Uint8Array.from(Buffer.from(data, 'base64'))
+      } else if (Array.isArray(data)) {
+        // Check if it's an RPC tuple: [base64String, 'base64']
+        if (
+          data.length === 2 &&
+          typeof data[0] === 'string' &&
+          typeof data[1] === 'string' &&
+          data[1] === 'base64'
+        ) {
+          dataBytes = Uint8Array.from(Buffer.from(data[0], 'base64'))
+        } else {
+          // Assume it's a number array
+          dataBytes = Uint8Array.from(data as number[])
+        }
+      } else if (data instanceof Uint8Array) {
+        dataBytes = data
+      } else {
+        throw new Error('Invalid data format')
+      }
 
-      // This would use the generated agent account decoder from codama
-      // import { getAgentDecoder } from '../generated/accounts/agent.js'
-      // const decoder = getAgentDecoder()
-      // const agentData = decoder.decode(Buffer.from(data as string, 'base64'))
+      // Decode using generated Codama decoder
+      const decoder = getAgentDecoder()
+      const [decodedAgent] = decoder.decode(dataBytes)
 
-      // Placeholder - would be replaced with actual decoder
-      const agentData = this.mockParseAgent(data)
+      // Access x402 fields with type assertion since they may not be in generated types yet
+      // TODO: Remove type assertion once IDL is regenerated with x402 fields
+      const agentWithX402 = decodedAgent as any
 
+      // Transform to our Agent interface format
       return {
         address,
-        owner: agentData.owner,
-        name: agentData.name,
-        description: agentData.description,
-        capabilities: agentData.capabilities,
-        x402_enabled: agentData.x402Enabled,
-        x402_payment_address: agentData.x402PaymentAddress,
-        x402_accepted_tokens: agentData.x402AcceptedTokens,
-        x402_price_per_call: agentData.x402PricePerCall,
-        x402_service_endpoint: agentData.x402ServiceEndpoint,
-        x402_total_payments: agentData.x402TotalPayments,
-        x402_total_calls: agentData.x402TotalCalls,
-        reputation_score: agentData.reputationScore,
-        total_jobs: agentData.totalJobs,
-        successful_jobs: agentData.successfulJobs,
-        total_earnings: agentData.totalEarnings,
-        average_rating: agentData.averageRating,
-        created_at: agentData.createdAt,
-        metadata_uri: agentData.metadataUri,
-        framework_origin: agentData.frameworkOrigin,
-        is_verified: agentData.isVerified
+        owner: decodedAgent.owner,
+        name: decodedAgent.name,
+        description: decodedAgent.description,
+        capabilities: decodedAgent.capabilities,
+        // x402 fields (use defaults if not present in generated types)
+        x402_enabled: agentWithX402.x402Enabled ?? agentWithX402.x402_enabled ?? false,
+        x402_payment_address:
+          agentWithX402.x402PaymentAddress ??
+          agentWithX402.x402_payment_address ??
+          SOLANA_SYSTEM_PROGRAM_ID,
+        x402_accepted_tokens:
+          agentWithX402.x402AcceptedTokens ??
+          agentWithX402.x402_accepted_tokens ??
+          [],
+        x402_price_per_call:
+          agentWithX402.x402PricePerCall ??
+          agentWithX402.x402_price_per_call ??
+          0n,
+        x402_service_endpoint:
+          agentWithX402.x402ServiceEndpoint ??
+          agentWithX402.x402_service_endpoint ??
+          '',
+        x402_total_payments:
+          agentWithX402.x402TotalPayments ??
+          agentWithX402.x402_total_payments ??
+          0n,
+        x402_total_calls:
+          agentWithX402.x402TotalCalls ??
+          agentWithX402.x402_total_calls ??
+          0n,
+        // Standard fields
+        reputation_score: decodedAgent.reputationScore,
+        total_jobs: BigInt(decodedAgent.totalJobsCompleted),
+        successful_jobs: BigInt(decodedAgent.totalJobsCompleted), // Assuming successful = completed
+        total_earnings: decodedAgent.totalEarnings,
+        average_rating: decodedAgent.reputationScore / REPUTATION_BASIS_POINTS_PER_STAR, // Convert from basis points to 1-5 scale
+        created_at: decodedAgent.createdAt,
+        metadata_uri: decodedAgent.metadataUri,
+        framework_origin: decodedAgent.frameworkOrigin,
+        is_verified: decodedAgent.isVerified
       }
     } catch (error) {
       console.error('Failed to parse agent account:', error)
       return null
-    }
-  }
-
-  // Temporary mock parser - would be replaced with actual borsh decoder
-  private mockParseAgent(data: unknown): any {
-    void data // Mark as intentionally unused
-
-    // This is a placeholder. In production, this would use the actual
-    // generated decoder from codama based on the Rust Agent struct
-    return {
-      owner: '11111111111111111111111111111111' as Address,
-      name: 'Mock Agent',
-      description: 'Mock description',
-      capabilities: ['chat'],
-      x402Enabled: true,
-      x402PaymentAddress: '11111111111111111111111111111111' as Address,
-      x402AcceptedTokens: [] as Address[],
-      x402PricePerCall: 1000n,
-      x402ServiceEndpoint: 'https://api.example.com',
-      x402TotalPayments: 0n,
-      x402TotalCalls: 0n,
-      reputationScore: 8500,
-      totalJobs: 0n,
-      successfulJobs: 0n,
-      totalEarnings: 0n,
-      averageRating: 4.5,
-      createdAt: 0n,
-      metadataUri: '',
-      frameworkOrigin: 'eliza',
-      isVerified: false
     }
   }
 

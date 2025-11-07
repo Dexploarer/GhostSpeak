@@ -361,6 +361,22 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Solana CLI
+        run: |
+          echo "⚙️ Installing Solana CLI..."
+          set -e
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.15/install)" || {
+            echo "❌ Failed to install Solana CLI"
+            exit 1
+          }
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          solana --version || {
+            echo "❌ Failed to verify Solana CLI installation"
+            exit 1
+          }
+          echo "✅ Solana CLI installed and verified successfully"
+
       - name: Install system dependencies
         run: |
           echo "📦 Installing system dependencies for testing..."

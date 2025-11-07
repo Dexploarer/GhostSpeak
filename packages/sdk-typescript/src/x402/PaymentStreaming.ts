@@ -377,24 +377,28 @@ export class PaymentStreamingManager extends EventEmitter {
     amount: bigint,
     milestoneId?: string
   ): Promise<Signature> {
-    // Use x402Client to make payment
-    const signature = await this.x402Client.pay(
-      stream.config.agentAddress,
-      stream.config.tokenMint,
+    // Create x402 payment request
+    const paymentRequest = this.x402Client.createPaymentRequest({
       amount,
-      {
-        metadata: {
-          streamId: stream.id,
-          milestoneId,
-        },
-      }
-    );
+      recipient: stream.config.agentAddress,
+      token: stream.config.tokenMint,
+      description: milestoneId
+        ? `Stream ${stream.id} - Milestone ${milestoneId}`
+        : `Stream ${stream.id} - Interval payment`,
+      metadata: {
+        streamId: stream.id,
+        ...(milestoneId && { milestoneId }),
+      },
+    });
+
+    // Execute payment using x402Client
+    const receipt = await this.x402Client.pay(paymentRequest);
 
     // Record payment
     const payment: StreamPayment = {
       timestamp: Date.now(),
       amount,
-      signature,
+      signature: receipt.signature,
       milestoneId,
       success: true,
     };
@@ -402,7 +406,7 @@ export class PaymentStreamingManager extends EventEmitter {
     stream.payments.push(payment);
     stream.amountPaid += amount;
 
-    return signature;
+    return receipt.signature;
   }
 
   private completeStream(stream: PaymentStream): void {

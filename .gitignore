@@ -69,6 +69,7 @@ vs_buildtools.exe
 *.swp
 *.swo
 *~
+.DS_Store
 
 # === DO NOT IGNORE .cursor/ or .claude/ directories (project transparency) ===
 # .cursor/

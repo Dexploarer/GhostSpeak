@@ -6,7 +6,7 @@
  */
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::keccak;
+use sha3::{Digest, Keccak256};
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, TokenAccount};
 use anchor_spl::token_2022::Token2022;

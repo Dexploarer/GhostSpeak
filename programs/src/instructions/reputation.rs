@@ -41,9 +41,9 @@ pub struct InitializeReputationMetrics<'info> {
     pub clock: Sysvar<'info, Clock>,
 }
 
-/// Context for recording an x402 payment
+/// Context for recording an x402 payment (legacy reputation module)
 #[derive(Accounts)]
-pub struct RecordX402Payment<'info> {
+pub struct RecordX402PaymentReputation<'info> {
     /// Reputation metrics account
     #[account(
         mut,
@@ -67,9 +67,9 @@ pub struct RecordX402Payment<'info> {
     pub clock: Sysvar<'info, Clock>,
 }
 
-/// Context for submitting a rating for an x402 service
+/// Context for submitting a rating for an x402 service (legacy reputation module)
 #[derive(Accounts)]
-pub struct SubmitX402Rating<'info> {
+pub struct SubmitX402RatingReputation<'info> {
     /// Reputation metrics account
     #[account(
         mut,
@@ -123,7 +123,7 @@ pub fn initialize_reputation_metrics(
 
 /// Record an x402 payment and update reputation metrics
 pub fn record_x402_payment(
-    ctx: Context<RecordX402Payment>,
+    ctx: Context<RecordX402PaymentReputation>,
     payment_signature: String,
     amount: u64,
     response_time_ms: u64,
@@ -184,7 +184,7 @@ pub fn record_x402_payment(
 
 /// Submit a rating for an x402 service call
 pub fn submit_x402_rating(
-    ctx: Context<SubmitX402Rating>,
+    ctx: Context<SubmitX402RatingReputation>,
     rating: u8,
     _payment_signature: String,
 ) -> Result<()> {

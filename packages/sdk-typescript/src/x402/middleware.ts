@@ -9,9 +9,11 @@
 
 // Type imports with fallback for optional dependencies
 import type { Address } from '@solana/addresses'
-import type { Signature } from '@solana/kit'
+import type { Signature, Rpc, SolanaRpcApi } from '@solana/kit'
 import type { X402Client } from './X402Client.js'
 import { toSignature } from '../utils/format.js'
+import { fetchMaybeAgent, type Agent } from '../generated/accounts/agent.js'
+import { createSolanaRpc } from '@solana/kit'
 
 // Express types (optional dependency)
 type Request = {
@@ -74,6 +76,9 @@ export interface X402MiddlewareOptions {
   preventDuplicatePayments?: boolean // Default: true - prevent signature replay attacks
   signatureCacheTTL?: number // Default: 3600 seconds (1 hour) - how long to remember used signatures
   enforceExpiration?: boolean // Default: true - reject expired payment requests
+  lookupCallerIdentity?: boolean // Default: false - lookup agent identity from payment source
+  rpcEndpoint?: string // Required if lookupCallerIdentity is true
+  programId?: Address // Optional program ID for agent lookups
   onPaymentVerified?: (signature: string, req: Request) => Promise<void>
   onPaymentFailed?: (error: string, req: Request) => Promise<void>
   onReputationUpdateFailed?: (error: Error) => void // Graceful error handling for reputation updates
@@ -160,6 +165,23 @@ class SignatureCache {
       return globalSignatureCache;
     }
 
+/**
+ * Caller identity information for authenticated agents
+ */
+export interface X402CallerIdentity {
+  type: 'agent' | 'unknown'
+  address: Address
+  agent?: {
+    name: string
+    owner: Address
+    reputation_score: number
+    is_verified: boolean
+    capabilities: string[]
+    framework_origin: string
+    x402_enabled: boolean
+  }
+}
+
 export interface X402RequestWithPayment extends Request {
   x402Payment?: {
     signature: string
@@ -168,6 +190,7 @@ export interface X402RequestWithPayment extends Request {
     token: Address
     responseTimeMs?: number // Response time for analytics
     timestamp: number // Payment timestamp
+    caller?: X402CallerIdentity // Optional caller identity (if lookupCallerIdentity enabled)
   }
 }
 
@@ -338,6 +361,23 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
       // Calculate response time (from start to payment verification)
       const responseTimeMs = Date.now() - requestStartTime
 
+      // Lookup caller identity (if enabled)
+      let callerIdentity: X402CallerIdentity | undefined
+
+      if (options.lookupCallerIdentity) {
+        try {
+          callerIdentity = await lookupCallerIdentity(
+            verification.receipt!.recipient,
+            options.rpcEndpoint,
+            options.programId
+          )
+        } catch (identityError) {
+          // Gracefully handle identity lookup failures
+          // Don't block the request if identity lookup fails
+          console.warn('[x402] Failed to lookup caller identity:', identityError)
+        }
+      }
+
       // Payment verified successfully
       req.x402Payment = {
         signature: paymentSignature,
@@ -345,7 +385,8 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
         amount: verification.receipt!.amount,
         token: verification.receipt!.token,
         responseTimeMs,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        caller: callerIdentity
       }
 
       // Add signature to cache to prevent replay attacks
@@ -510,6 +551,67 @@ function shouldBypass(
   }
 
   return false
+}
+
+/**
+ * Lookup caller identity from payment source address
+ *
+ * Checks if the payment source is a registered GhostSpeak agent and
+ * returns agent identity information for authentication and rate limiting.
+ *
+ * @param sourceAddress - Payment source address
+ * @param rpcEndpoint - Solana RPC endpoint
+ * @param programId - Optional GhostSpeak program ID
+ * @returns Caller identity information
+ */
+async function lookupCallerIdentity(
+  sourceAddress: Address,
+  rpcEndpoint?: string,
+  programId?: Address
+): Promise<X402CallerIdentity> {
+  if (!rpcEndpoint) {
+    return {
+      type: 'unknown',
+      address: sourceAddress
+    }
+  }
+
+  try {
+    const rpc = createSolanaRpc(rpcEndpoint) as Rpc<SolanaRpcApi>
+
+    // Try to fetch agent account at this address
+    const maybeAgent = await fetchMaybeAgent(rpc, sourceAddress)
+
+    if (!maybeAgent.exists) {
+      return {
+        type: 'unknown',
+        address: sourceAddress
+      }
+    }
+
+    const agent = maybeAgent.data
+
+    return {
+      type: 'agent',
+      address: sourceAddress,
+      agent: {
+        name: agent.name,
+        owner: agent.owner,
+        reputation_score: agent.reputationScore,
+        is_verified: agent.isVerified,
+        capabilities: agent.capabilities,
+        framework_origin: agent.frameworkOrigin,
+        x402_enabled: agent.x402Enabled ?? false
+      }
+    }
+  } catch (error) {
+    // Agent lookup failed, return unknown identity
+    console.warn('[x402] Agent lookup failed:', error)
+    return {
+      type: 'unknown',
+      address: sourceAddress
+    }
+  }
 }
 
 // =====================================================

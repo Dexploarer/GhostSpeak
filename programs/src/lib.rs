@@ -1227,50 +1227,6 @@ pub mod ghostspeak_marketplace {
         instructions::agent_management::manage_agent_status(ctx, new_status)
     }
 
-    pub fn configure_x402(
-        ctx: Context<ConfigureX402>,
-        config: instructions::agent_management::X402ConfigData,
-    ) -> Result<()> {
-        instructions::agent_management::configure_x402(ctx, config)
-    }
-
-    // =====================================================
-    // X402 REPUTATION INSTRUCTIONS
-    // =====================================================
-
-    /// Initialize x402 reputation metrics for an agent
-    pub fn initialize_reputation_metrics(
-        ctx: Context<InitializeReputationMetrics>,
-    ) -> Result<()> {
-        instructions::reputation::initialize_reputation_metrics(ctx)
-    }
-
-    /// Record an x402 payment and update reputation
-    pub fn record_x402_payment(
-        ctx: Context<RecordX402Payment>,
-        payment_signature: String,
-        amount: u64,
-        response_time_ms: u64,
-        success: bool,
-    ) -> Result<()> {
-        instructions::reputation::record_x402_payment(
-            ctx,
-            payment_signature,
-            amount,
-            response_time_ms,
-            success,
-        )
-    }
-
-    /// Submit a rating for an x402 service call
-    pub fn submit_x402_rating(
-        ctx: Context<SubmitX402Rating>,
-        rating: u8,
-        payment_signature: String,
-    ) -> Result<()> {
-        instructions::reputation::submit_x402_rating(ctx, rating, payment_signature)
-    }
-
     // =====================================================
     // MARKETPLACE INSTRUCTIONS
     // =====================================================

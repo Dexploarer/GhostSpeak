@@ -1,11 +1,11 @@
 [toolchain]
-# Enhanced toolchain configuration for July 2025
-anchor_version = "0.31.1"
-solana_version = "2.1.0"  # Latest Agave version
+# Enhanced toolchain configuration for November 2025
+anchor_version = "0.32.1"
+solana_version = "2.3.13"  # Latest stable Agave 2.x version
 # Using npm as package manager for Anchor compatibility
 package_manager = "npm"
-# July 2025 nightly toolchain for IDL generation compatibility
-rust_version = "nightly-2025-07-01"
+# November 2025 nightly toolchain for IDL generation compatibility
+rust_version = "nightly-2025-11-01"
 
 [features]
 # Enable resolution of Anchor feature flags

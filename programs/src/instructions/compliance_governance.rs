@@ -17,7 +17,7 @@ use crate::state::security_governance::{
     AccessAuditConfig, EmergencyAccessConfig, RbacConfig, Role, SecurityPolicies,
 };
 use crate::*;
-use anchor_lang::solana_program::keccak::hashv;
+use sha3::{Digest, Keccak256};
 
 // =====================================================
 // INSTRUCTION CONTEXTS

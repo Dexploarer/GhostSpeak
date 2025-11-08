@@ -242,9 +242,9 @@ pub struct X402ConfigData {
     pub service_endpoint: String,
 }
 
-/// Context for configuring x402 payment settings
+/// Context for configuring x402 payment settings (legacy agent management module)
 #[derive(Accounts)]
-pub struct ConfigureX402<'info> {
+pub struct ConfigureX402AgentManagement<'info> {
     /// Agent account
     #[account(
         mut,
@@ -299,7 +299,7 @@ pub struct X402ConfiguredEvent {
 /// * `InvalidServiceEndpoint` - If endpoint is malformed
 /// * `TooManyCapabilities` - If too many tokens specified
 pub fn configure_x402(
-    ctx: Context<ConfigureX402>,
+    ctx: Context<ConfigureX402AgentManagement>,
     config: X402ConfigData,
 ) -> Result<()> {
     let agent = &mut ctx.accounts.agent;

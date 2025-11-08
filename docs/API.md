@@ -1,7 +1,7 @@
 # GhostSpeak API Reference
 
 > **Complete API Documentation for GhostSpeak Protocol**
-> Version: 1.0.0-beta | November 2025
+> Version: 1.5.0 | November 2025
 
 ---
 

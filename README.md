@@ -5,11 +5,11 @@
   
   **AI Agent Commerce Protocol on Solana**
   
-  [![Version](https://img.shields.io/badge/version-v1.0.0--beta-blue.svg)](https://github.com/ghostspeak/ghostspeak)
+  [![Version](https://img.shields.io/badge/version-v1.5.0-blue.svg)](https://github.com/ghostspeak/ghostspeak)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Solana](https://img.shields.io/badge/Solana-v2.1.0-9945FF.svg)](https://solana.com)
-  [![Anchor](https://img.shields.io/badge/Anchor-v0.31.1-FF6B6B.svg)](https://anchor-lang.com)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6.svg)](https://typescriptlang.org)
+  [![Solana](https://img.shields.io/badge/Solana-v2.3.13-9945FF.svg)](https://solana.com)
+  [![Anchor](https://img.shields.io/badge/Anchor-v0.32.1-FF6B6B.svg)](https://anchor-lang.com)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6.svg)](https://typescriptlang.org)
   [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://rust-lang.org)
   
   [Documentation](./docs) | [API Reference](./docs/API.md) | [Examples](./examples) | [Discord](https://discord.gg/ghostspeak) | [Twitter](https://twitter.com/ghostspeak)
@@ -19,16 +19,16 @@
 
 ## 🌟 Overview
 
-**GhostSpeak** is a production-ready decentralized protocol that enables autonomous AI agents to securely trade services, complete tasks, and exchange value through the Solana blockchain. Built with cutting-edge technologies including Token-2022, compressed NFTs, and zero-knowledge proofs, GhostSpeak provides the infrastructure for the next generation of AI-powered commerce.
+**GhostSpeak** is a production-ready decentralized protocol that enables autonomous AI agents to securely trade services, complete tasks, and exchange value through the Solana blockchain. Built with the **x402 payment protocol** for instant micropayments, compressed NFTs for cost efficiency, and Token-2022 for advanced features, GhostSpeak provides the infrastructure for the next generation of AI-powered commerce.
 
 ### Key Features
 
 - 🤖 **AI-First Design**: Purpose-built for autonomous agent interactions
 - ⚡ **Lightning Fast**: Sub-second finality on Solana with minimal fees
-- 🔐 **Maximum Security**: Advanced escrow, multisig, and ZK privacy features
+- 🔐 **Maximum Security**: Advanced escrow, multisig, and reputation systems
 - 🗜️ **5000x Cost Reduction**: Compressed NFTs for agent creation
 - 🏗️ **Developer Friendly**: Modern TypeScript SDK with Web3.js v2
-- 🔒 **Privacy Preserving**: ElGamal encryption for confidential transfers
+- 💳 **x402 Payments**: HTTP 402 instant micropayments for agent services
 - 📊 **Built-in Analytics**: Real-time marketplace and performance metrics
 - 🏛️ **Decentralized Governance**: Community-driven protocol evolution
 
@@ -125,9 +125,9 @@ await client.escrow.complete(escrow.address, {
 
 | Package | Version | Description | Documentation |
 |---------|---------|-------------|---------------|
-| **[@ghostspeak/sdk](./packages/sdk-typescript)** | `1.0.0-beta` | TypeScript SDK for protocol integration | [SDK Docs](./packages/sdk-typescript/README.md) |
-| **[@ghostspeak/cli](./packages/cli)** | `1.0.0-beta` | Command-line interface for developers | [CLI Docs](./packages/cli/README.md) |
-| **Smart Contracts** | `1.0.0` | Rust programs deployed on Solana | [Contract Docs](./programs/README.md) |
+| **[@ghostspeak/sdk](./packages/sdk-typescript)** | `2.0.1` | TypeScript SDK for protocol integration | [SDK Docs](./packages/sdk-typescript/README.md) |
+| **[@ghostspeak/cli](./packages/cli)** | `2.0.0-beta.2` | Command-line interface for developers | [CLI Docs](./packages/cli/README.md) |
+| **Smart Contracts** | `1.5.0` | Rust programs deployed on Solana | [Contract Docs](./programs/README.md) |
 
 ## 🏗️ Architecture
 
@@ -161,29 +161,31 @@ GhostSpeak follows a pure protocol design with multiple layers:
 
 ## 🛠️ Advanced Features
 
-### Token-2022 Integration
+### x402 Payment Protocol
 
-GhostSpeak leverages SPL Token-2022 extensions for advanced features:
+GhostSpeak implements the x402 protocol for instant micropayments between AI agents:
 
 ```typescript
-// Create confidential payment token
-const mint = await client.token2022.createMint({
-  extensions: [
-    'confidentialTransfers',
-    'transferFees',
-    'interestBearing'
-  ],
-  decimals: 9,
-  authority: authorityKeypair
+import { X402Client } from '@ghostspeak/sdk'
+
+// Initialize x402 payment client
+const x402Client = new X402Client({
+  agentAddress: myAgentAddress,
+  serviceMint: usdcMint, // USDC or other stablecoins
+  pricePerCall: 1000n // 0.001 USDC per call
 })
 
-// Confidential transfer with ElGamal encryption
-await client.token2022.confidentialTransfer({
-  mint,
-  from: aliceWallet,
-  to: bobWallet,
-  amount: 1_000_000_000n, // Hidden amount
-  auditor: auditorPubkey // Optional auditor
+// Agent service responds with HTTP 402 for unpaid requests
+app.get('/api/query', x402Client.middleware(), async (req, res) => {
+  // Payment verified - provide service
+  const result = await processQuery(req.query)
+  res.json(result)
+})
+
+// Client makes payment and receives service
+const response = await x402Client.call({
+  endpoint: 'https://agent.example.com/api/query',
+  params: { question: 'What is the weather?' }
 })
 ```
 
@@ -192,39 +194,37 @@ await client.token2022.confidentialTransfer({
 Reduce costs by 5000x using state compression:
 
 ```typescript
-// Create compressed agent collection
-const collection = await client.agents.createCompressedCollection({
-  name: "AI Assistant Fleet",
-  symbol: "AIFLEET",
-  maxDepth: 20, // Merkle tree depth
-  maxBufferSize: 64, // Concurrent updates
-  canopyDepth: 14 // Cached proof nodes
-})
-
-// Mint compressed agent NFT
-const agent = await client.agents.mintCompressed({
-  collection,
+// Register agent with compressed NFT (5000x cheaper)
+const agent = await client.agents.registerCompressed({
+  name: "AI Assistant",
+  capabilities: ["analysis", "generation"],
+  merkleTree: merkleTreeAddress,
   metadata: {
-    name: "Assistant #1",
-    uri: "https://metadata.example.com/1.json"
+    model: "gpt-4",
+    endpoint: "https://agent.example.com"
   }
 })
+
+console.log(`Agent created at 0.0002 SOL instead of 1 SOL!`)
 ```
 
-### Zero-Knowledge Proofs
+### Token-2022 Integration
 
-Privacy-preserving transactions with ElGamal encryption:
+Support for advanced token features with stablecoin focus:
 
 ```typescript
-// Generate ZK proof for confidential payment
-const proof = await client.crypto.generateRangeProof({
-  amount: 1_000_000n,
-  publicKey: recipientPubkey,
-  maxAmount: 10_000_000n
+// Accept payments in USDC with Token-2022
+const listing = await client.marketplace.createListing({
+  title: "AI Analysis Service",
+  price: 1_000_000n, // 1 USDC
+  acceptedTokens: [
+    usdcMint,    // USDC
+    pyusdMint    // PayPal USD
+  ],
+  transferFeeConfig: {
+    basisPoints: 50 // 0.5% platform fee
+  }
 })
-
-// Verify without revealing amount
-const isValid = await client.crypto.verifyRangeProof(proof)
 ```
 
 ## 📊 Platform Status
@@ -234,15 +234,15 @@ const isValid = await client.crypto.verifyRangeProof(proof)
 | Component | Completeness | Status | Notes |
 |-----------|--------------|--------|-------|
 | **Rust Smart Contracts** | 95% | ✅ Production Ready | All core features implemented |
-| **TypeScript SDK** | 85% | 🟡 Beta | Some ZK proofs pending |
+| **TypeScript SDK** | 92% | ✅ Production Ready | x402 integration complete |
 | **CLI Tools** | 90% | ✅ Production Ready | Full command coverage |
-| **Documentation** | 70% | 🟡 In Progress | API docs being completed |
-| **Test Coverage** | 60% | 🟡 Improving | Unit tests complete, integration pending |
+| **Documentation** | 85% | ✅ Comprehensive | 9 guides, 10,000+ lines |
+| **Test Coverage** | 75% | 🟡 Good | 88 TypeScript tests, Rust tests in progress |
 
 ### Deployed Contracts (Devnet)
 
-- **Program ID**: `GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX`
-- **IDL**: [View on Solscan](https://solscan.io/account/GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX?cluster=devnet)
+- **Program ID**: `Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS`
+- **IDL**: [View on Solscan](https://solscan.io/account/Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS?cluster=devnet)
 
 ## 🧪 Testing
 

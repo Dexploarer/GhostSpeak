@@ -4,8 +4,8 @@
 
 [![npm version](https://badge.fury.io/js/@ghostspeak%2Fcli.svg)](https://badge.fury.io/js/@ghostspeak%2Fcli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
-[![Solana](https://img.shields.io/badge/Solana-Devnet-brightgreen.svg)](https://solana.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Solana](https://img.shields.io/badge/Solana-v2.3.13-9945FF.svg)](https://solana.com/)
 
 > 🚀 **Now Live on Solana Devnet** - Create, deploy, and monetize AI agents in the decentralized economy
 

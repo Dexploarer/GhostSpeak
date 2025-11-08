@@ -51,7 +51,7 @@ This guide covers deployment procedures for all GhostSpeak components across dev
                   │
 ┌─────────────────┴───────────────────────────────────────┐
 │      GhostSpeak Smart Contract (Solana Program)          │
-│       - Anchor 0.31.1+ │ Solana 2.1.0                   │
+│       - Anchor 0.32.1 │ Solana 2.3.13                   │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -68,11 +68,11 @@ rustup update stable
 
 # Solana CLI
 sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
-solana --version  # Should be v2.1.0+
+solana --version  # Should be v2.3.13+
 
 # Anchor
-cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 anchor-cli
-anchor --version  # Should be 0.31.1+
+cargo install --git https://github.com/coral-xyz/anchor --tag v0.32.1 anchor-cli
+anchor --version  # Should be 0.32.1
 
 # Node.js & Bun
 curl -fsSL https://bun.sh/install | bash

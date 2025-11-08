@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **x402 Protocol Focus**: GhostSpeak implements the x402 payment standard for AI agent commerce
 - Remember we are working with new technologies (November 2025) - x402 is the latest payment protocol for autonomous agents
 - This project uses **@solana/kit** (formerly @solana/web3.js v2) - do NOT use old @solana/web3.js v1 patterns
-- Always use Anchor 0.31.1+ compatible patterns with Solana 2.1.0 (Agave)
+- Always use Anchor 0.32.1 compatible patterns with Solana 2.3.13 (Agave)
 - **NO ZK Proofs**: We removed ZK proof infrastructure in favor of x402 micropayments
 
 ## 🔍 Mandatory kluster.ai MCP Verification Protocol
@@ -135,8 +135,8 @@ EVERY code generation must follow this sequence:
 - **Next Priority**: Complete Rust integration tests, security audit, deploy to devnet
 
 ### Technology Stack Specifics
-- **Anchor Framework**: v0.31.1+ (November 2025 features)
-- **Solana**: v2.1.0 (Agave client)
+- **Anchor Framework**: v0.32.1 (November 2025 features)
+- **Solana**: v2.3.13 (Agave client)
 - **Web3.js**: v2+ (@solana/kit patterns only)
 - **x402 Protocol**: Native implementation for AI agent micropayments
 - **SPL Token**: Standard SPL token support (USDC, PYUSD primary)

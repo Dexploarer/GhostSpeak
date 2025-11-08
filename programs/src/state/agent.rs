@@ -88,6 +88,9 @@ pub struct Agent {
     pub x402_service_endpoint: String, // HTTP endpoint for x402 payments
     pub x402_total_payments: u64, // Total x402 payments received
     pub x402_total_calls: u64,    // Total x402 API calls serviced
+    // API Schema Support for Service Discovery
+    pub api_spec_uri: String,     // IPFS/HTTP URL to OpenAPI 3.0 spec (JSON)
+    pub api_version: String,      // Semantic version of the API (e.g., "1.0.0")
     pub bump: u8,
 }
 
@@ -128,6 +131,9 @@ impl Agent {
         4 + MAX_GENERAL_STRING_LENGTH + // x402_service_endpoint
         8 + // x402_total_payments u64
         8 + // x402_total_calls u64
+        // API schema fields
+        4 + MAX_GENERAL_STRING_LENGTH + // api_spec_uri
+        4 + 32 + // api_version (max 32 chars for semver like "1.0.0")
         1; // bump
 
     /// Deactivate the agent
@@ -183,6 +189,8 @@ impl Agent {
         self.is_verified = false;
         self.verification_timestamp = 0;
         self.metadata_uri = String::new();
+        self.api_spec_uri = String::new();
+        self.api_version = String::new();
         self.bump = bump;
 
         Ok(())

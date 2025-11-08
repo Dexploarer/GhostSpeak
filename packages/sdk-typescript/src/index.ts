@@ -68,6 +68,29 @@ export { Token2022Module } from './modules/token2022/Token2022Module.js'
 // H2A Communication module - removed (use A2A instructions for agent communication)
 
 // =====================================================
+// PROTOCOL EXPORTS (x402, A2A, H2A)
+// =====================================================
+
+// x402 Payment Protocol
+export { X402Client, createX402Client } from './x402/X402Client.js'
+export { AgentDiscoveryClient, createAgentDiscoveryClient } from './x402/AgentDiscoveryClient.js'
+export {
+  createX402Middleware,
+  x402FastifyPlugin,
+  withX402RateLimit,
+  type X402MiddlewareOptions,
+  type X402RequestWithPayment,
+  type X402CallerIdentity,
+  type X402FastifyRequest
+} from './x402/middleware.js'
+
+// A2A (Agent-to-Agent) Protocol
+export { A2AClient, createA2AClient } from './protocols/A2AClient.js'
+
+// H2A (Human-to-Agent) Protocol
+export { H2AClient, createH2AClient, ParticipantType } from './protocols/H2AClient.js'
+
+// =====================================================
 // CRYPTO EXPORTS
 // =====================================================
 

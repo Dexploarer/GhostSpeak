@@ -36,7 +36,7 @@ export async function checkForUpdates(currentVersion: string): Promise<void> {
           }
           return
         }
-      } catch (_) {
+      } catch (error) {
         // Ignore cache errors
       }
     }
@@ -69,7 +69,7 @@ export async function checkForUpdates(currentVersion: string): Promise<void> {
       .catch(() => {
         // Silently ignore errors
       })
-  } catch (_) {
+  } catch (error) {
     // Silently ignore all errors
   }
 }

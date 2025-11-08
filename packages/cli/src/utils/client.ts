@@ -5,7 +5,7 @@
 
 import type { KeyPairSigner} from '@solana/kit';
 import { createSolanaRpc, createSolanaRpcSubscriptions, createKeyPairSignerFromBytes, address, type TransactionSigner } from '@solana/kit'
-import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
+import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID, type ExtendedRpcApi } from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, existsSync } from 'fs'
@@ -52,8 +52,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
       log.info('Migrated existing wallet to new wallet system')
       
       return signer
-    } catch (_) {
-      const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       log.error(`Failed to load wallet from config: ${config.walletPath}`)
       log.error(`Error details: ${errorMessage}`)
       if (errorMessage.includes('ENOENT')) {
@@ -77,8 +77,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
       await walletService.importWallet('cli-wallet', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
-    } catch (_) {
-      const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       log.error('Failed to load GhostSpeak CLI wallet')
       log.error(`Error details: ${errorMessage}`)
       if (errorMessage.includes('ENOENT')) {
@@ -102,8 +102,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
       await walletService.importWallet('solana-cli', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
       
       return signer
-    } catch (_) {
-      const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       log.error('Failed to load default Solana CLI wallet')
       log.error(`Error details: ${errorMessage}`)
       if (errorMessage.includes('ENOENT')) {
@@ -136,8 +136,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
     }
     
     return signer
-  } catch (_) {
-    const errorMessage = error instanceof Error ? _error.message : 'Unknown error'
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     log.error('Failed to create new wallet')
     log.error(`Error details: ${errorMessage}`)
     if (errorMessage.includes('permission')) {
@@ -203,7 +203,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   
   try {
     new URL(rpcUrl) // Validate URL format
-  } catch (_) {
+  } catch (error) {
     throw new Error(`Invalid RPC endpoint URL: ${rpcUrl}`)
   }
   
@@ -225,7 +225,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
       .replace('api.mainnet-beta', 'api.mainnet-beta')
     
     rpcSubscriptions = createSolanaRpcSubscriptions(wsUrl)
-  } catch (_) {
+  } catch (error) {
     console.warn('Warning: Could not create RPC subscriptions, transaction confirmations may be slower')
   }
   
@@ -238,9 +238,9 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   console.log('🔍 [DEBUG] Program ID length:', programId.length)
   console.log('🔍 [DEBUG] GHOSTSPEAK_PROGRAM_ID fallback:', GHOSTSPEAK_PROGRAM_ID)
   
-  // Cast to ExtendedRpcApi - the Solana RPC does support all these methods  
+  // Cast to ExtendedRpcApi - the Solana RPC does support all these methods
   // Use the proper typed casting function instead of unsafe 'any' casting
-  const extendedRpc = rpc as import('@ghostspeak/sdk').ExtendedRpcApi
+  const extendedRpc = rpc as ExtendedRpcApi
   const client = new GhostSpeakClient({
     rpc: extendedRpc,
     programId: address(programId),
@@ -258,9 +258,9 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         log.info(chalk.dim('Run: npx ghostspeak faucet --save'))
       }
     }
-  } catch (_) {
+  } catch (error) {
     // Log but don't fail on balance check errors
-    console.warn('Balance check failed:', error instanceof Error ? _error.message : 'Unknown error')
+    console.warn('Balance check failed:', error instanceof Error ? error.message : 'Unknown error')
   }
   
   // Add cleanup method to client
@@ -280,9 +280,9 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         // Close HTTP connections if possible
         // HTTP connections don't need explicit closing in most cases
         // If RPC has a close method in future versions, it can be called here
-      } catch (_) {
-        // Silent cleanup - don't throw _errors during cleanup
-        console.debug('Client cleanup warning:', error instanceof Error ? _error.message : 'Unknown error')
+      } catch (error) {
+        // Silent cleanup - don't throw errors during cleanup
+        console.debug('Client cleanup warning:', error instanceof Error ? error.message : 'Unknown error')
       }
     }
   }
@@ -316,7 +316,7 @@ export function getAddressExplorerUrl(address: string, network = 'devnet'): stri
  * @deprecated Use handleError from error-handler.ts instead
  */
 export function handleTransactionError(error: Error | unknown): string {
-  const message = error instanceof Error ? _error.message : String(error)
+  const message = error instanceof Error ? error.message : String(error)
   
   if (message.includes('insufficient funds')) {
     return 'Insufficient SOL balance. Run: npx ghostspeak faucet --save'

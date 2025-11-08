@@ -32,6 +32,30 @@ export interface DelegationScope {
   value?: string | number
 }
 
+export interface CreateMultisigParams {
+  signers: Address[]
+  threshold: number
+  multisigId: bigint
+  config: {
+    requireSequentialSigning: boolean
+    allowOwnerOffCurve: boolean
+  }
+}
+
+export interface CreateProposalParams {
+  title: string
+  description: string
+  proposalType: ProposalType
+  executionParams: ExecutionParams
+  proposalId: bigint
+}
+
+export interface VoteParams {
+  proposalAddress: Address
+  voteChoice: 'For' | 'Against' | 'Abstain'
+  reasoning?: string
+}
+
 /**
  * Governance management module
  * 

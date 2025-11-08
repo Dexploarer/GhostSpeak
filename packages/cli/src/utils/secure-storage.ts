@@ -59,7 +59,7 @@ export class SecureStorage {
     const dir = this.getStorageDir();
     try {
       await access(dir);
-    } catch (_) {
+    } catch (error) {
       await mkdir(dir, { recursive: true, mode: 0o700 });
     }
     // Ensure directory has proper permissions
@@ -122,7 +122,7 @@ export class SecureStorage {
       ]);
       
       return decrypted.toString('utf8');
-    } catch (_) {
+    } catch (error) {
       throw new Error('Failed to decrypt: Invalid password or corrupted data');
     }
   }
@@ -152,11 +152,11 @@ export class SecureStorage {
       const content = await readFile(path, 'utf8');
       const encrypted = JSON.parse(content) as EncryptedData;
       return await this.decrypt(encrypted, password);
-    } catch (_) {
+    } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         throw new Error(`No data found for key: ${key}`);
       }
-      throw _error;
+      throw error;
     }
   }
   
@@ -167,16 +167,18 @@ export class SecureStorage {
     try {
       await access(this.getStoragePath(key));
       return true;
-    } catch (_) {
+    } catch (error) {
       return false;
     }
   }
   
   /**
    * Store a Solana keypair securely
+   * Note: In Web3.js v2, we can't extract the secret key from a KeyPairSigner.
+   * This method now expects the raw secret key bytes to be passed separately.
    */
-  static async storeKeypair(key: string, keypair: KeyPairSigner, password: string): Promise<void> {
-    const secretKey = JSON.stringify(Array.from(keypair.keyPair.secretKey));
+  static async storeKeypair(key: string, secretKeyBytes: Uint8Array, password: string): Promise<void> {
+    const secretKey = JSON.stringify(Array.from(secretKeyBytes));
     await this.store(key, secretKey, password);
   }
   
@@ -197,9 +199,9 @@ export class SecureStorage {
     const { unlink } = await import('node:fs/promises');
     try {
       await unlink(path);
-    } catch (_) {
+    } catch (error) {
       if (error instanceof Error && 'code' in error && error.code !== 'ENOENT') {
-        throw _error;
+        throw error;
       }
     }
   }
@@ -215,7 +217,7 @@ export class SecureStorage {
       return files
         .filter(f => f.endsWith('.enc'))
         .map(f => f.replace('.enc', ''));
-    } catch (_) {
+    } catch (error) {
       return [];
     }
   }

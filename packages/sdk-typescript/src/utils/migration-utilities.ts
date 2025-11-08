@@ -22,11 +22,28 @@ import {
   PrivateMetadataStorage
 } from './private-metadata.js'
 
-import {
-  isZkProgramAvailable,
-  generateRangeProofWithCommitment,
-  ProofMode
-} from './zk-proof-builder.js'
+// ZK proof builder removed - x402 payment protocol focus
+// import {
+//   isZkProgramAvailable,
+//   generateRangeProofWithCommitment,
+//   ProofMode
+// } from './zk-proof-builder.js'
+
+// Stub implementations for removed ZK proof functionality
+const isZkProgramAvailable = async (): Promise<boolean> => false
+enum ProofMode {
+  LOCAL_ONLY = 'local',
+  ON_CHAIN = 'on-chain',
+  HYBRID = 'hybrid'
+}
+const generateRangeProofWithCommitment = async (
+  _amount: bigint,
+  _randomness: Uint8Array,
+  _options?: { mode: ProofMode }
+): Promise<{ proof: Uint8Array; commitment: Uint8Array }> => ({
+  proof: new Uint8Array(64),
+  commitment: new Uint8Array(32)
+})
 
 import { getFeatureFlags } from './feature-flags.js'
 import { sha256 } from '@noble/hashes/sha256'
@@ -172,8 +189,8 @@ export class MigrationManager {
     }
     
     try {
-      // Check if ZK program is available
-      const zkAvailable = await isZkProgramAvailable(this.rpc)
+      // Check if ZK program is available (always false - ZK removed in favor of x402)
+      const zkAvailable = await isZkProgramAvailable()
       if (!zkAvailable) {
         throw new Error('ZK program is not available for migration')
       }
@@ -212,11 +229,11 @@ export class MigrationManager {
     warnings: string[]
   }> {
     const warnings: string[] = []
-    
-    // Check ZK program
-    const zkAvailable = await isZkProgramAvailable(this.rpc)
+
+    // Check ZK program (always unavailable - ZK removed in favor of x402)
+    const zkAvailable = await isZkProgramAvailable()
     if (!zkAvailable) {
-      warnings.push('ZK ElGamal Proof Program is not available')
+      warnings.push('ZK ElGamal Proof Program is not available (removed in favor of x402)')
     }
     
     // Check feature flags
@@ -371,12 +388,12 @@ export class MigrationManager {
     
     // Generate ZK proof
     if (item.migrationData.zkMetadata.amount && item.migrationData.zkMetadata.randomness) {
+      // ZK proof generation using local mode (ZK program removed in favor of x402)
       await generateRangeProofWithCommitment(
         item.migrationData.zkMetadata.amount,
         item.migrationData.zkMetadata.randomness,
         {
-          mode: ProofMode.ZK_PROGRAM_ONLY,
-          connection: this.rpc
+          mode: ProofMode.LOCAL_ONLY
         }
       )
     }

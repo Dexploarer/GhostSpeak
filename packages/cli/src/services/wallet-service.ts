@@ -60,7 +60,7 @@ export class WalletService implements IWalletService {
     if (existsSync(this.registryPath)) {
       try {
         return JSON.parse(readFileSync(this.registryPath, 'utf-8')) as WalletsRegistry
-      } catch (_) {
+      } catch (error) {
         // If corrupted, start fresh
       }
     }
@@ -111,8 +111,8 @@ export class WalletService implements IWalletService {
       
       // Create signer from keypair
       return await createSignerFromKeyPair(keyPair)
-    } catch (_) {
-      throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   
@@ -206,7 +206,7 @@ export class WalletService implements IWalletService {
           const bytes = JSON.parse(secretKeyOrMnemonic) as number[]
           privateKeyBytes = new Uint8Array(bytes)
           signer = await createKeyPairSignerFromBytes(privateKeyBytes)
-        } catch (_) {
+        } catch (error) {
           throw new Error('Invalid private key or mnemonic format')
         }
       }
@@ -284,7 +284,7 @@ export class WalletService implements IWalletService {
       this.saveRegistry(registry)
       
       return walletData
-    } catch (_) {
+    } catch (error) {
       return null
     }
   }
@@ -397,7 +397,7 @@ export class WalletService implements IWalletService {
       const rpc = createSolanaRpc(rpcUrl)
       const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
       return Number(balance) / 1_000_000_000 // Convert lamports to SOL
-    } catch (_) {
+    } catch (error) {
       return 0
     }
   }
@@ -529,19 +529,24 @@ export class WalletService implements IWalletService {
       
       // Sign the transaction using @solana/kit
       const signedTransaction = await signTransactionKit([signer], tx)
-      
+
       // Extract the signature from the signed transaction
-      // The first signature is from our signer
-      if (signedTransaction.signatures && signedTransaction.signatures.length > 0) {
-        const signature = signedTransaction.signatures[0]
+      // In Web3.js v2, signatures is a SignaturesMap (object), not an array
+      const signatures = Object.values(signedTransaction.signatures)
+      if (signatures.length > 0) {
+        const signature = signatures[0]
+        if (!signature) {
+          throw new Error('Signature is null')
+        }
         console.log(`✅ Transaction signed by ${signer.address.toString()}`)
+        // Signature is already a string in base58 format
         return signature.toString()
       } else {
         throw new Error('No signature found in signed transaction')
       }
-    } catch (_) {
+    } catch (error) {
       console.error('Failed to sign transaction:', error)
-      throw new Error(`Transaction signing failed: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      throw new Error(`Transaction signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -563,7 +568,7 @@ export class WalletService implements IWalletService {
       // Optionally rename the old file
       renameSync(oldWalletPath, oldWalletPath + '.backup')
       
-    } catch (_) {
+    } catch (error) {
       console.warn('Failed to migrate old wallet:', error)
     }
   }

@@ -117,8 +117,8 @@ export async function checkWalletBalance(
     const rpc = createSolanaRpc(rpcUrl)
     const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
     return Number(balance) / 1_000_000_000 // Convert lamports to SOL
-  } catch (_) {
-    console.warn('Failed to check balance:', _error)
+  } catch (error) {
+    console.warn('Failed to check balance:', error)
     return 0
   }
 }
@@ -209,10 +209,10 @@ export async function fundWallet(
             signature,
             amount: 1
           }
-        } catch (_) {
+        } catch (error) {
           result = {
             success: false,
-            error: _error instanceof Error ? _error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error'
           }
         }
       }
@@ -231,8 +231,8 @@ export async function fundWallet(
         errors.push(`${source}: ${result.error ?? 'Failed'}`)
       }
       
-    } catch (_) {
-      errors.push(`${source}: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      errors.push(`${source}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   
@@ -314,8 +314,8 @@ export async function createMultisigWrapper(
       address: multisigPda,
       signature
     }
-  } catch (_) {
-    throw new Error(`Failed to create multisig: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+  } catch (error) {
+    throw new Error(`Failed to create multisig: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

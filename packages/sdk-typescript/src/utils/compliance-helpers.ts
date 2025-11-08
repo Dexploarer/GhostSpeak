@@ -523,14 +523,16 @@ export class ComplianceReporting {
     const reportData = this.formatReportData(reportType, data)
     
     // Generate report signature if signing key provided
-    let signature = new Uint8Array(64)
+    let signature: Uint8Array<ArrayBuffer> = new Uint8Array(64)
     if (signingKey && signingKey.length === 32) {
-      signature = this.generateReportSignature(
+      const generatedSig = this.generateReportSignature(
         reportType,
         period,
         reportData,
         signingKey
       )
+      // Ensure the signature has the correct ArrayBuffer type
+      signature = new Uint8Array(generatedSig.buffer.slice(0)) as Uint8Array<ArrayBuffer>
     }
     
     const report: ComplianceReport = {

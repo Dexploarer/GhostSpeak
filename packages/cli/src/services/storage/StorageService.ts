@@ -23,8 +23,8 @@ export class StorageService implements IStorageService {
       const filePath = this.getFilePath(key)
       const jsonData = JSON.stringify(data, null, 2)
       await fs.writeFile(filePath, jsonData, 'utf-8')
-    } catch (_) {
-      throw new Error(`Failed to save data for key "${key}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      throw new Error(`Failed to save data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -36,11 +36,11 @@ export class StorageService implements IStorageService {
       const filePath = this.getFilePath(key)
       const jsonData = await fs.readFile(filePath, 'utf-8')
       return JSON.parse(jsonData) as T
-    } catch (_) {
+    } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return null // File doesn't exist
       }
-      throw new Error(`Failed to load data for key "${key}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      throw new Error(`Failed to load data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -51,11 +51,11 @@ export class StorageService implements IStorageService {
     try {
       const filePath = this.getFilePath(key)
       await fs.unlink(filePath)
-    } catch (_) {
+    } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return // File doesn't exist, nothing to delete
       }
-      throw new Error(`Failed to delete data for key "${key}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      throw new Error(`Failed to delete data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -67,7 +67,7 @@ export class StorageService implements IStorageService {
       const filePath = this.getFilePath(key)
       await fs.access(filePath)
       return true
-    } catch (_) {
+    } catch (error) {
       return false
     }
   }
@@ -89,8 +89,8 @@ export class StorageService implements IStorageService {
       }
       
       return keys
-    } catch (_) {
-      throw new Error(`Failed to list keys: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      throw new Error(`Failed to list keys: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -103,8 +103,8 @@ export class StorageService implements IStorageService {
       if (exists) {
         await fs.rm(this.baseDir, { recursive: true, force: true })
       }
-    } catch (_) {
-      throw new Error(`Failed to clear storage: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      throw new Error(`Failed to clear storage: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -120,8 +120,8 @@ export class StorageService implements IStorageService {
   private async ensureDirectoryExists(): Promise<void> {
     try {
       await fs.mkdir(this.baseDir, { recursive: true })
-    } catch (_) {
-      throw new Error(`Failed to create storage directory: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      throw new Error(`Failed to create storage directory: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -129,7 +129,7 @@ export class StorageService implements IStorageService {
     try {
       await fs.access(this.baseDir)
       return true
-    } catch (_) {
+    } catch (error) {
       return false
     }
   }

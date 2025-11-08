@@ -26,8 +26,8 @@ export class BlockchainService implements IBlockchainService {
       const { client } = await initializeClient(network as 'devnet' | 'testnet' | 'mainnet-beta')
       this.clients.set(network, client)
       return client
-    } catch (_) {
-      throw new Error(`Failed to initialize client for network "${network}": ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      throw new Error(`Failed to initialize client for network "${network}": ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -139,8 +139,8 @@ export class BlockchainService implements IBlockchainService {
       console.log(`Transaction still processing: ${signature} (${status.confirmationStatus || 'processed'})`)
       return false
       
-    } catch (_) {
-      console.error(`Failed to confirm transaction ${signature}:`, error instanceof Error ? _error.message : 'Unknown error')
+    } catch (error) {
+      console.error(`Failed to confirm transaction ${signature}:`, error instanceof Error ? error.message : 'Unknown error')
       return false
     }
   }
@@ -207,7 +207,7 @@ export class BlockchainService implements IBlockchainService {
       }
       
       throw new NetworkError(
-        `Failed to get account info for ${address}: ${error instanceof Error ? _error.message : 'Unknown error'}`,
+        `Failed to get account info for ${address}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'Check network connectivity and address format'
       )
     }
@@ -240,8 +240,8 @@ export class BlockchainService implements IBlockchainService {
       await new Promise(resolve => setTimeout(resolve, 1000)) // Brief wait for transaction to propagate
       
       return signature
-    } catch (_) {
-      throw new Error(`Failed to request airdrop: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      throw new Error(`Failed to request airdrop: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

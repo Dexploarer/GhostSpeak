@@ -17,7 +17,7 @@ import {
 import { initializeClient, getExplorerUrl, getAddressExplorerUrl, handleTransactionError, toSDKSigner } from '../../utils/client.js'
 import { AgentWalletManager, AgentCNFTManager as _AgentCNFTManager } from '../../utils/agent-wallet.js'
 import type { CreateServiceOptions } from '../../types/cli-types.js'
-import type { AgentWithAddress } from '../../types/ghostspeak-sdk.js'
+import type { AgentWithAddress } from '@ghostspeak/sdk'
 import { 
   deriveServiceListingPda, 
   deriveUserRegistryPda, 
@@ -175,7 +175,7 @@ export function registerCreateCommand(parentCommand: Command): void {
         // Agent ownership is already verified by the on-chain query
         console.log('\n' + chalk.green('✅ Using on-chain agent:'))
         console.log(chalk.gray(`  Address: ${selectedAgent.address.toString()}`))
-        console.log(chalk.gray(`  Authority: ${selectedAgent.data.authority.toString()}`))
+        console.log(chalk.gray(`  Owner: ${selectedAgent.data.owner.toString()}`))
         
         // Try to get local credentials for additional info
         const matchingCredentials = localCredentials.find(cred => 
@@ -238,8 +238,8 @@ export function registerCreateCommand(parentCommand: Command): void {
           throw new Error(handleTransactionError(error as Error))
         }
 
-      } catch (_) {
-        cancel(chalk.red('Failed to create service: ' + (_error instanceof Error ? _error.message : 'Unknown error')))
+      } catch (error) {
+        cancel(chalk.red('Failed to create service: ' + (error instanceof Error ? error.message : 'Unknown error')))
       }
     })
 }

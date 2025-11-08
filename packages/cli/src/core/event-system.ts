@@ -346,7 +346,7 @@ export class StreamManager {
   getStream<T>(key: string, initialValue?: T): Observable<T> {
     let subject = this.subjects.get(key)
     if (!subject) {
-      subject = new BehaviorSubject(initialValue)
+      subject = new BehaviorSubject<unknown>(initialValue)
       this.subjects.set(key, subject)
     }
 
@@ -402,12 +402,13 @@ export class CommandResultStream {
 
   constructor() {
     // Listen to command events
-    this.eventBus.on('command:executed', (event) => {
+    this.eventBus.on('command:executed', (event: { data: unknown; timestamp: Date }) => {
+      const data = event.data as { command: string; success: boolean; result?: unknown; error?: Error }
       this.resultSubject.next({
-        command: event.data.command,
-        success: event.data.success,
-        result: event.data.result,
-        error: event.data.error,
+        command: data.command,
+        success: data.success,
+        result: data.result,
+        error: data.error,
         timestamp: event.timestamp
       })
     })
@@ -559,20 +560,23 @@ export class CLIStateManager {
    * Setup event handlers for state management
    */
   private setupEventHandlers(): void {
-    this.eventBus.on('command:started', (event) => {
-      this.updateState({ activeCommand: event.data.command })
+    this.eventBus.on('command:started', (event: { data: unknown }) => {
+      const command = (event.data as { command: string }).command
+      this.updateState({ activeCommand: command })
     })
 
     this.eventBus.on('command:completed', () => {
       this.updateState({ activeCommand: null })
     })
 
-    this.eventBus.on('wallet:connected', (event) => {
-      this.updateState({ wallet: event.data })
+    this.eventBus.on('wallet:connected', (event: { data: unknown }) => {
+      const wallet = event.data as { address: string; balance: number }
+      this.updateState({ wallet })
     })
 
-    this.eventBus.on('network:changed', (event) => {
-      this.updateState({ network: event.data.network })
+    this.eventBus.on('network:changed', (event: { data: unknown }) => {
+      const network = (event.data as { network: string }).network
+      this.updateState({ network })
     })
   }
 }

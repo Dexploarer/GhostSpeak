@@ -51,6 +51,7 @@ describe('Input Validation Security Tests', () => {
       
       for (const name of maliciousNames) {
         // Should sanitize or reject
+        // eslint-disable-next-line no-control-regex
         const sanitized = name.replace(/[\x00-\x1F\x7F]/g, '')
         expect(sanitized).not.toEqual(name)
       }

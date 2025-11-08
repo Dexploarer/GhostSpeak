@@ -174,10 +174,11 @@ multisigCommand
 
       try {
         const signature = await safeClient.governance.createMultisig(toSDKSigner(wallet), {
-          name,
           signers: memberAddresses.map(addr => address(addr)),
           threshold: thresholdNum,
-          multisigId: BigInt(Date.now())
+          multisigId: BigInt(Date.now()),
+          name: `Multisig-${Date.now()}`,
+          multisigType: 'standard' as const
         })
 
         if (!signature) {
@@ -203,13 +204,13 @@ multisigCommand
           `• Manage transactions through multisig approval process`
         )
 
-      } catch (_error) {
+      } catch (error) {
         s.stop('❌ Failed to create multisig')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_error) {
-      log.error(`Failed to create multisig: ${__error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to create multisig: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -263,8 +264,8 @@ multisigCommand
         `${chalk.cyan('gs governance vote')} - Vote on proposals`
       )
 
-    } catch (_error) {
-      log.error(`Failed to load multisigs: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to load multisigs: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -459,13 +460,13 @@ proposalCommand
           `• Monitor voting progress: ${chalk.cyan('gs governance proposal list')}`
         )
 
-      } catch (_error) {
+      } catch (error) {
         s.stop('❌ Failed to create proposal')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_error) {
-      log.error(`Failed to create proposal: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to create proposal: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -527,8 +528,8 @@ proposalCommand
         `${chalk.cyan('gs governance proposal create')} - Create new proposal`
       )
 
-    } catch (_error) {
-      log.error(`Failed to load proposals: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to load proposals: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -654,13 +655,13 @@ governanceCommand
           `${chalk.yellow('💡 Your vote is now part of the governance process!')}`
         )
 
-      } catch (_error) {
+      } catch (error) {
         s.stop('❌ Failed to cast vote')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_error) {
-      log.error(`Failed to vote: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to vote: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -760,13 +761,13 @@ rbacCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch (_error) {
+      } catch (error) {
         s.stop('❌ Failed to grant role')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_error) {
-      log.error(`Failed to grant role: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to grant role: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -862,13 +863,13 @@ rbacCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}`
         )
 
-      } catch (_error) {
+      } catch (error) {
         s.stop('❌ Failed to revoke role')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_error) {
-      log.error(`Failed to revoke role: ${_error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to revoke role: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 

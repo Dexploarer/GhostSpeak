@@ -261,16 +261,16 @@ describe('Error Handling Utilities', () => {
         .mockRejectedValueOnce(new Error('Fail after reset'))
       
       // Two failures
-      try { await circuitBreaker.execute(mockOperation) } catch (e) {}
-      try { await circuitBreaker.execute(mockOperation) } catch (e) {}
+      try { await circuitBreaker.execute(mockOperation) } catch (e) { void e }
+      try { await circuitBreaker.execute(mockOperation) } catch (e) { void e }
       
       expect(circuitBreaker.getState()).toBe('CLOSED') // Still closed
       
       // Success should reset
       await circuitBreaker.execute(mockOperation)
-      
+
       // One more failure shouldn't open the circuit
-      try { await circuitBreaker.execute(mockOperation) } catch (e) {}
+      try { await circuitBreaker.execute(mockOperation) } catch (e) { void e }
       
       expect(circuitBreaker.getState()).toBe('CLOSED')
     })

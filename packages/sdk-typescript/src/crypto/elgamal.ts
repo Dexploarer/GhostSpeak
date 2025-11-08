@@ -119,25 +119,34 @@ export function generateKeypair(): ElGamalKeypair {
   let publicKey: Uint8Array
   
   // Generate cryptographically secure keypair with validation
-  do {
+  const MAX_ITERATIONS = 1000
+  let iterations = 0
+  let validKeypairGenerated = false
+
+  while (!validKeypairGenerated && iterations < MAX_ITERATIONS) {
+    iterations++
     secretKey = randomBytes(32)
     // Ensure secret key is within valid scalar range [1, n-1]
     const scalar = bytesToNumberLE(secretKey) % ed25519.CURVE.n
     if (scalar === 0n || scalar >= ed25519.CURVE.n) {
       continue // Regenerate if invalid
     }
-    
+
     // Generate public key and validate it's a valid curve point
     const pubkeyPoint = scalarMultiply(G, secretKey)
     if (pubkeyPoint.equals(ed25519.ExtendedPoint.ZERO)) {
       continue // Regenerate if point at infinity
     }
-    
+
     publicKey = pubkeyPoint.toRawBytes()
-    break
-  } while (true)
-  
-  return { publicKey, secretKey }
+    validKeypairGenerated = true
+  }
+
+  if (!validKeypairGenerated) {
+    throw new Error('Failed to generate valid ElGamal keypair after maximum iterations')
+  }
+
+  return { publicKey: publicKey!, secretKey: secretKey! }
 }
 
 /**

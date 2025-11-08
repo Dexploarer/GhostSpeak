@@ -1,8 +1,7 @@
 /**
  * IPFS client utilities for metadata storage
+ * Stub implementation for CLI - use SDK IPFSClient for production
  */
-
-import { create, type IPFSHTTPClient } from 'kubo-rpc-client'
 
 export interface IPFSClient {
   add(content: string): Promise<string>
@@ -11,63 +10,24 @@ export interface IPFSClient {
 }
 
 export class IPFSClientImpl implements IPFSClient {
-  private client: IPFSHTTPClient | null
-
-  constructor(url = 'https://ipfs.infura.io:5001') {
-    try {
-      this.client = create({ url })
-    } catch (_) {
-      console.warn('IPFS client not available, using fallback storage')
-      this.client = null
-    }
+  constructor(_url = 'https://ipfs.infura.io:5001') {
+    console.warn('IPFS client stub - use @ghostspeak/sdk IPFSClient for production')
   }
 
   async add(content: string): Promise<string> {
-    if (!this.client) {
-      // Fallback: Use data URI for local testing
-      return `data:application/json;base64,${Buffer.from(content).toString('base64')}`
-    }
-    
-    try {
-      const result = await this.client.add(content)
-      const hash = result.cid.toString()
-      
-      // Pin the content to ensure it persists
-      await this.pin(hash)
-      
-      return `https://ipfs.io/ipfs/${hash}`
-    } catch (_) {
-      console.warn('Failed to add content to IPFS:', error)
-      // Fallback to data URI
-      return `data:application/json;base64,${Buffer.from(content).toString('base64')}`
-    }
+    // Stub: Return data URI for local testing
+    // In production, use SDK's IPFSClient with proper configuration
+    return `data:application/json;base64,${Buffer.from(content).toString('base64')}`
   }
 
-  async pin(hash: string): Promise<void> {
-    if (!this.client) return
-
-    try {
-      await this.client.pin.add(hash)
-    } catch (_) {
-      console.warn(`Failed to pin IPFS content:`, error)
-      // Non-fatal error - content may still be accessible
-    }
+  async pin(_hash: string): Promise<void> {
+    // Stub: No-op for local testing
+    return
   }
 
-  async get(hash: string): Promise<string> {
-    if (!this.client) {
-      throw new Error('IPFS client not available')
-    }
-
-    try {
-      const chunks = []
-      for await (const chunk of this.client.cat(hash)) {
-        chunks.push(chunk)
-      }
-      return Buffer.concat(chunks).toString()
-    } catch (_) {
-      throw new Error(`Failed to retrieve IPFS content: ${error}`)
-    }
+  async get(_hash: string): Promise<string> {
+    // Stub: Not implemented in CLI
+    throw new Error('IPFS get not implemented in CLI stub - use SDK IPFSClient')
   }
 }
 

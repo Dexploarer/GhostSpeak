@@ -7,12 +7,12 @@
  * @module x402/AgentDiscoveryClient
  */
 
-import type { Address, Commitment } from '@solana/kit'
+import type { Address, Commitment, SolanaRpcApi } from '@solana/kit'
 import { createSolanaRpc, type Rpc } from '@solana/kit'
 import { getAgentDecoder } from '../generated/accounts/agent.js'
 
 // Create compatibility types for connection
-type Connection = Rpc<any>
+type Connection = Rpc<SolanaRpcApi>
 
 // Constants
 const SOLANA_SYSTEM_PROGRAM_ID = '11111111111111111111111111111111' as Address
@@ -204,11 +204,12 @@ export class AgentDiscoveryClient {
     }
 
     try {
-      const accountInfo = await this.rpc.getAccountInfo(address, {
+      const result = await this.rpc.getAccountInfo(address, {
         commitment: this.commitment,
         encoding: 'base64'
       }).send()
 
+      const accountInfo = result as { value: { data: [string, string] } | null }
       if (!accountInfo.value) return null
 
       const agent = this.parseAgentAccount(address, accountInfo.value.data)
@@ -315,10 +316,11 @@ export class AgentDiscoveryClient {
   private async fetchAgentsFromChain(params: AgentSearchParams): Promise<Agent[]> {
     try {
       // Build filters for getProgramAccounts
-      const filters: Array<{ memcmp: { offset: number; bytes: string } } | { dataSize: number }> = []
+      // Note: Currently only using dataSize filter, memcmp filters would require Base58EncodedBytes type
+      const filters: Array<{ dataSize: bigint }> = []
 
       // Add data size filter for Agent account
-      filters.push({ dataSize: 359 }) // Agent account size from CLAUDE.md
+      filters.push({ dataSize: 359n }) // Agent account size from CLAUDE.md
 
       // If x402_enabled filter is true, we need to filter for accounts where x402_enabled = true
       // This would require knowing the exact offset of the x402_enabled field in the account
@@ -330,6 +332,7 @@ export class AgentDiscoveryClient {
         filters
       }).send()
 
+      // Extract accounts from RPC response
       const agents: Agent[] = []
       for (const { pubkey, account } of accounts) {
         const agent = this.parseAgentAccount(pubkey, account.data)
@@ -372,7 +375,8 @@ export class AgentDiscoveryClient {
 
       // Decode using generated Codama decoder
       const decoder = getAgentDecoder()
-      const [decodedAgent] = decoder.decode(dataBytes)
+      const decodedData = decoder.decode(dataBytes)
+      const decodedAgent = Array.isArray(decodedData) ? decodedData[0] : decodedData
 
       // Access x402 fields with type assertion since they may not be in generated types yet
       // TODO: Remove type assertion once IDL is regenerated with x402 fields
@@ -530,11 +534,12 @@ export class AgentDiscoveryClient {
     for (const token of tokens) {
       try {
         // Fetch token mint info
-        const mintInfo = await this.rpc.getAccountInfo(token, {
+        const result = await this.rpc.getAccountInfo(token, {
           commitment: this.commitment,
           encoding: 'base64'
         }).send()
 
+        const mintInfo = result as { value: { data: [string, string] } | null }
         if (mintInfo.value) {
           // Parse mint account to get decimals
           // This would use proper SPL token decoder in production

@@ -254,7 +254,7 @@ export class AgaveOptimizationManager {
         }
       }
     } catch (error) {
-      if (error.name !== 'AbortError') {
+      if (error instanceof Error && error.name !== 'AbortError') {
         console.error('Error monitoring epoch transitions:', error)
       }
     }

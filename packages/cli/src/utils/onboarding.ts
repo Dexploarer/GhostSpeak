@@ -91,7 +91,7 @@ export class OnboardingService {
       await this.firstAgentStep()
       await this.marketplaceTourStep()
       await this.completionStep()
-    } catch (_) {
+    } catch (error) {
       if (error instanceof Error && error.message === 'cancelled') {
         cancel('Setup cancelled by user')
         return
@@ -120,7 +120,7 @@ export class OnboardingService {
         this.progress.skippedSteps = new Set(data.skippedSteps as OnboardingStep[])
         this.config = { ...this.config, ...(data.config ?? {}) }
       }
-    } catch (_) {
+    } catch (error) {
       // Ignore errors loading progress
     }
   }
@@ -359,9 +359,9 @@ export class OnboardingService {
             `Network: ${wallet.metadata.network}`
           ]))
           
-        } catch (_) {
+        } catch (error) {
           s.stop('❌ Import failed')
-          console.log(chalk.red('Failed to import wallet: ' + (error instanceof Error ? _error.message : 'Unknown error')))
+          console.log(chalk.red('Failed to import wallet: ' + (error instanceof Error ? error.message : 'Unknown error')))
           this.markStepSkipped('wallet-setup')
           return
         }
@@ -446,7 +446,7 @@ export class OnboardingService {
               'You\'re ready to start using GhostSpeak!'
             ]))
             
-          } catch (_) {
+          } catch (error) {
             faucetSpinner.stop('❌ Faucet request failed')
             console.log(warningBox('Faucet Failed', [
               'You can try again later with: gs faucet --save',
@@ -462,7 +462,7 @@ export class OnboardingService {
         ]))
       }
       
-    } catch (_) {
+    } catch (error) {
       s.stop('❌ Balance check failed')
       console.log(chalk.yellow('Unable to check balance. You may need to fund your wallet manually.'))
     }
@@ -520,7 +520,7 @@ export class OnboardingService {
           return
         }
       }
-    } catch (_) {
+    } catch (error) {
       // Continue anyway
     }
     
@@ -576,7 +576,7 @@ export class OnboardingService {
         'Create service listings with: gs marketplace create'
       ]))
       
-    } catch (_) {
+    } catch (error) {
       agentSpinner.stop('❌ Agent creation failed')
       console.log(chalk.red('Failed to create agent'))
       console.log(chalk.gray('You can try again later with: gs agent register'))
@@ -711,7 +711,7 @@ export class OnboardingService {
       }
       
       writeFileSync(progressFile, JSON.stringify(data, null, 2))
-    } catch (_) {
+    } catch (error) {
       // Ignore errors saving progress
     }
   }
@@ -729,7 +729,7 @@ export function hasCompletedOnboarding(): boolean {
       completedSteps?: string[]
     }
     return data.completedSteps?.includes('completion') ?? false
-  } catch (_) {
+  } catch (error) {
     return false
   }
 }

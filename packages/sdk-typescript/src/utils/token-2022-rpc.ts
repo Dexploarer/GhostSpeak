@@ -7,15 +7,17 @@
 
 import './text-encoder-polyfill.js'
 import type { Address } from '@solana/addresses'
-import { getAddressDecoder, getAddressEncoder } from '@solana/kit'
-import { 
-  getU8Decoder, 
-  getU16Decoder, 
-  getU32Decoder, 
+import {
+  getAddressDecoder,
+  getAddressEncoder,
+  // Import codecs from @solana/kit instead of @solana/codecs
+  getU8Decoder,
+  getU16Decoder,
+  getU32Decoder,
   getU64Decoder,
   getBooleanDecoder,
   getUtf8Decoder
-} from '@solana/codecs'
+} from '@solana/kit'
 import { 
   type Commitment
 } from '../types/rpc-types.js'

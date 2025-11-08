@@ -182,13 +182,13 @@ export function registerPurchaseCommand(parentCommand: Command): void {
             `• Contact seller if needed: ${chalk.cyan(`gs channel create --participant ${item.seller}`)}`
           )
 
-        } catch (_) {
+        } catch (error) {
           s.stop('❌ Purchase failed')
-          handleTransactionError(_error as Error)
+          handleTransactionError(error as Error)
         }
 
-      } catch (_) {
-        log.error(`Purchase failed: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      } catch (error) {
+        log.error(`Purchase failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })
 }

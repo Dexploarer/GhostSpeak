@@ -225,10 +225,10 @@ export class BatchedRpcClient {
           executionTime: Date.now() - opStartTime
         } as BatchOperationResult<T>
         
-      } catch (_) {
+      } catch (error) {
         return {
           success: false,
-          error: _error as Error,
+          error: error as Error,
           requestId,
           executionTime: Date.now() - opStartTime
         } as BatchOperationResult<T>
@@ -432,14 +432,14 @@ export class BatchUtils {
     
     // Default priorities by request type
     const typePriorities = {
-      'getBalance': 'high',
-      'getAccountInfo': 'medium',
-      'getTransaction': 'medium',
-      'getProgramAccounts': 'low',
-      'getSignaturesForAddress': 'low'
+      'getBalance': 'high' as const,
+      'getAccountInfo': 'medium' as const,
+      'getTransaction': 'medium' as const,
+      'getProgramAccounts': 'low' as const,
+      'getSignaturesForAddress': 'low' as const
     }
-    
-    return typePriorities[requestType as keyof typeof typePriorities] || 'medium'
+
+    return (typePriorities[requestType as keyof typeof typePriorities] ?? 'medium') as 'low' | 'medium' | 'high'
   }
 }
 

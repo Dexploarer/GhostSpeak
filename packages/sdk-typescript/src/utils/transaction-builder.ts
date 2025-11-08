@@ -73,12 +73,14 @@ export class TransactionBuilder {
     }
 
     this.rpc = createSolanaRpc(config.rpcEndpoint)
-    
+
     if (config.wsEndpoint) {
       this.rpcSubscriptions = createSolanaRpcSubscriptions(config.wsEndpoint)
-      this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ 
-        rpc: this.rpc, 
-        rpcSubscriptions: this.rpcSubscriptions 
+      // Type assertion: createSolanaRpc returns an RPC with all required methods
+      // The unknown type parameter is overly restrictive here
+      this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
+        rpc: this.rpc as Parameters<typeof sendAndConfirmTransactionFactory>[0]['rpc'],
+        rpcSubscriptions: this.rpcSubscriptions
       })
     }
   }
@@ -188,8 +190,8 @@ export class TransactionBuilder {
 
       if (recentFees && recentFees.length > 0) {
         // Use 75th percentile for reliable landing
-        const fees = recentFees.map((fee: any) => BigInt(fee.prioritizationFee))
-        fees.sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
+        const fees = recentFees.map((fee: { prioritizationFee: number | bigint | string }) => BigInt(fee.prioritizationFee))
+        fees.sort((a: bigint, b: bigint) => a < b ? -1 : a > b ? 1 : 0)
         const percentile75Index = Math.floor(fees.length * 0.75)
         return fees[percentile75Index] || lamports(1000n) // 1000 microlamports minimum
       }
@@ -326,10 +328,10 @@ export class TransactionBuilder {
         }
       }
 
-      const fees = recentFees.map((fee: any) => BigInt(fee.prioritizationFee))
-      const avgFee = fees.reduce((sum, fee) => sum + fee, 0n) / BigInt(fees.length)
-      
-      fees.sort((a, b) => a < b ? -1 : a > b ? 1 : 0)
+      const fees = recentFees.map((fee: { prioritizationFee: number | bigint | string }) => BigInt(fee.prioritizationFee))
+      const avgFee = fees.reduce((sum: bigint, fee: bigint) => sum + fee, 0n) / BigInt(fees.length)
+
+      fees.sort((a: bigint, b: bigint) => a < b ? -1 : a > b ? 1 : 0)
       const medianFee = fees[Math.floor(fees.length / 2)]
       
       // Determine congestion based on fee levels

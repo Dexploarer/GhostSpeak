@@ -100,9 +100,9 @@ export function withErrorHandling<T extends unknown[], R>(
   return async (...args: T): Promise<R> => {
     try {
       return await fn(...args)
-    } catch (_) {
+    } catch (error) {
       displayErrorAndCancel(error, operation)
-      throw _error // This will never be reached due to process.exit in cancel()
+      throw error // This will never be reached due to process.exit in cancel()
     }
   }
 }

@@ -37,6 +37,7 @@
  */
 
 import { EventEmitter } from 'events'
+import * as os from 'os'
 import { EventBus } from './event-system'
 import { cacheManager } from './cache-system'
 import { enhancedCacheManager } from './enhanced-cache-system'
@@ -360,15 +361,15 @@ export class PerformanceMonitor extends EventEmitter {
 
       return result
 
-    } catch (_) {
+    } catch (error) {
       metrics.endTime = new Date()
       metrics.duration = metrics.endTime.getTime() - startTime.getTime()
       metrics.success = false
-      metrics.error = _error as Error
+      metrics.error = error as Error
 
       this.recordOperationMetrics(metrics)
 
-      throw _error
+      throw error
     }
   }
 
@@ -542,7 +543,7 @@ export class PerformanceMonitor extends EventEmitter {
       },
       cpu: {
         usage: cpuUsage,
-        loadAverage: process.platform !== 'win32' ? process.loadavg() : [0, 0, 0]
+        loadAverage: process.platform !== 'win32' ? os.loadavg() : [0, 0, 0]
       },
       network: {
         totalRequests: networkMetrics.totalRequests,

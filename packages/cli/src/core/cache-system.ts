@@ -217,8 +217,8 @@ export class CacheManager extends EventEmitter {
       this.eventBus.emit('cache:miss', { key })
       return null
 
-    } catch (_) {
-      this.eventBus.emit('cache:error', { key, error: _error })
+    } catch (error) {
+      this.eventBus.emit('cache:error', { key, error: error })
       this.recordMiss(startTime)
       return null
     }
@@ -285,9 +285,9 @@ export class CacheManager extends EventEmitter {
       this.recordOperation(startTime)
       this.eventBus.emit('cache:set', { key, level, size: entry.size })
 
-    } catch (_) {
-      this.eventBus.emit('cache:error', { key, error: _error })
-      throw _error
+    } catch (error) {
+      this.eventBus.emit('cache:error', { key, error: error })
+      throw error
     }
   }
 
@@ -332,8 +332,8 @@ export class CacheManager extends EventEmitter {
       this.recordOperation(startTime)
       return deleted
 
-    } catch (_) {
-      this.eventBus.emit('cache:error', { key, error: _error })
+    } catch (error) {
+      this.eventBus.emit('cache:error', { key, error: error })
       return false
     }
   }
@@ -505,7 +505,7 @@ export class CacheManager extends EventEmitter {
   /**
    * Estimate object size in bytes
    */
-  private estimateSize(value: unknown): number {
+  protected estimateSize(value: unknown): number {
     const str = JSON.stringify(value)
     return new Blob([str]).size
   }
@@ -687,13 +687,15 @@ export class BlockchainCache extends CacheManager {
     const eventBus = EventBus.getInstance()
 
     // Invalidate agent cache when agent is updated
-    eventBus.on('agent:updated', async (event) => {
-      await this.invalidateByTags([`agent:${event.data.agentId}`])
+    eventBus.on('agent:updated', async (event: { data: unknown }) => {
+      const agentId = (event.data as { agentId: string }).agentId
+      await this.invalidateByTags([`agent:${agentId}`])
     })
 
     // Invalidate account cache when balance changes
-    eventBus.on('account:balance_changed', async (event) => {
-      await this.invalidateByTags([`account:${event.data.address}`])
+    eventBus.on('account:balance_changed', async (event: { data: unknown }) => {
+      const address = (event.data as { address: string }).address
+      await this.invalidateByTags([`account:${address}`])
     })
 
     // Invalidate related caches on new block

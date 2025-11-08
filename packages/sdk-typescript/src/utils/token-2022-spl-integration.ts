@@ -11,6 +11,10 @@ import type { Address, IInstruction, TransactionSigner } from '@solana/kit'
 import { getU8Encoder, getU16Encoder, getU64Encoder, getStructEncoder, getBytesEncoder, fixEncoderSize, address } from '@solana/kit'
 import type { Rpc } from '@solana/kit'
 
+// Web3.js v2 compatibility: Connection type alias
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Connection = any
+
 // Import from the new official SPL Token integration
 import {
   createMintWithExtensions as createMintWithExtensionsOfficial,

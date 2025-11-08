@@ -22,7 +22,7 @@ export async function storePendingInfoRequest(
   
   try {
     await fs.access(requestsDir)
-  } catch (_) {
+  } catch (error) {
     await fs.mkdir(requestsDir, { recursive: true })
   }
   
@@ -42,8 +42,8 @@ export async function storePendingInfoRequest(
       try {
         await fs.writeFile(requestFile, JSON.stringify(requestData, null, 2))
         resolve()
-      } catch (_) {
-        reject(_error)
+      } catch (error) {
+        reject(error)
       }
     })
   })
@@ -79,7 +79,7 @@ export function getPendingInfoRequests(agentAddress: string): InfoRequest[] {
     }
     
     return requests.sort((a, b) => b.timestamp - a.timestamp)
-  } catch (_) {
+  } catch (error) {
     return []
   }
 }
@@ -167,7 +167,7 @@ export function isValidUrl(string: string): boolean {
   try {
     new URL(string)
     return true
-  } catch (_) {
+  } catch (error) {
     return false
   }
 }

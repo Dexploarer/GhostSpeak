@@ -56,8 +56,8 @@ program
         console.log(chalk.green(`✅ Report exported to ${options.export}`));
       }
 
-    } catch (_) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });
@@ -94,8 +94,8 @@ program
         console.log(chalk.green(`✅ Report exported to: ${options.export}`));
       }
 
-    } catch (_) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });
@@ -134,7 +134,7 @@ program
           } else {
             unhealthy++;
           }
-        } catch (_) {
+        } catch (error) {
           unhealthy++;
         }
       }
@@ -144,8 +144,8 @@ program
       console.log(chalk.red(`❌ Unhealthy accounts: ${unhealthy}`));
       console.log(chalk.blue(`📊 Health rate: ${((healthy / accounts.length) * 100).toFixed(1)}%`));
       
-    } catch (_) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });
@@ -190,8 +190,8 @@ program
         console.log(chalk.gray('Use --dry-run to see migration plan'));
       }
       
-    } catch (_) {
-      console.error(chalk.red(`❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
       process.exit(1);
     }
   });

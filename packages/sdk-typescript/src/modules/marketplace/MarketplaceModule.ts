@@ -405,6 +405,39 @@ export class MarketplaceModule extends BaseModule {
     return this.getProgramAccounts<AuctionMarketplace>('getAuctionMarketplaceDecoder')
   }
 
+  /**
+   * Get service listing by ID (alias for getServiceListing)
+   */
+  async getServiceById(address: Address): Promise<ServiceListing | null> {
+    return this.getServiceListing(address)
+  }
+
+  /**
+   * Execute purchase service with convenience wrapper
+   */
+  async purchase(signer: TransactionSigner, params: {
+    listingId: string
+    amount: bigint
+  }): Promise<string> {
+    // Parse listing address from listingId
+    // In a real implementation, this would be a proper address derivation
+    const serviceListing = params.listingId.split('_')[0] as Address
+    const servicePurchase = params.listingId.split('_')[0] as Address // Placeholder
+
+    const instruction = this.getPurchaseServiceInstruction({
+      serviceListing,
+      servicePurchase,
+      buyer: signer,
+      listingId: 0, // Placeholder - would be parsed from params
+      quantity: Number(params.amount),
+      requirements: [],
+      customInstructions: '',
+      deadline: Date.now() + (7 * 24 * 60 * 60 * 1000)
+    })
+
+    return this.execute('purchaseService', () => instruction, [signer])
+  }
+
   // =====================================================
   // HELPER METHODS
   // =====================================================

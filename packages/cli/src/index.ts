@@ -71,7 +71,7 @@ async function main() {
           }
         }
       }
-    } catch (_) {
+    } catch (error) {
       // Use fallback version
       void error
     }

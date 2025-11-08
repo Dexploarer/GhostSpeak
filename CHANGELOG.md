@@ -14,7 +14,7 @@ This is the first production-ready beta release of the GhostSpeak Protocol, depl
 #### ✅ Core Features Delivered
 
 **Smart Contract Platform:**
-- **Program ID**: `GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX` (deployed on Devnet)
+- **Program ID**: `Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS` (deployed on Devnet)
 - **Agent Management**: Register, update, activate/deactivate AI agents on-chain
 - **Service Marketplace**: Create and manage service listings with full escrow integration
 - **Secure Escrow System**: Trustless payment handling with milestone support

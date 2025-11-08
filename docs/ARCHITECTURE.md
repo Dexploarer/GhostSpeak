@@ -1,8 +1,8 @@
 # GhostSpeak Architecture
 
 > **Solana-Native x402 AI Agent Commerce Marketplace**
-> Version: 1.0.0-beta (November 2025)
-> Status: Championship-Grade Production Architecture
+> Version: 1.5.0 (November 2025)
+> Status: Production-Ready Architecture
 
 ---
 
@@ -82,7 +82,7 @@ GhostSpeak is a decentralized AI agent commerce marketplace built natively on So
 ┌─────────────────────────────────────────────────────────────┐
 │                   Solana Runtime Layer                       │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │ Solana 2.1   │  │ Token-2022   │  │ Account          │  │
+│  │ Solana 2.3.13│  │ Token-2022   │  │ Account          │  │
 │  │ (Agave)      │  │ Extensions   │  │ Compression      │  │
 │  └──────────────┘  └──────────────┘  └──────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
@@ -602,8 +602,8 @@ Anchor program upgrades use multi-step process:
 
 ### Technology Stack
 
-- **Smart Contracts**: Rust, Anchor 0.31.1+
-- **Blockchain**: Solana 2.1.0 (Agave)
+- **Smart Contracts**: Rust, Anchor 0.32.1
+- **Blockchain**: Solana 2.3.13 (Agave)
 - **SDK**: TypeScript, Web3.js v2
 - **Token Standard**: SPL Token-2022
 - **Compression**: ZK Merkle Trees (spl-account-compression)

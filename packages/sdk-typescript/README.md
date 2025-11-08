@@ -2,8 +2,8 @@
 *TypeScript SDK for GhostSpeak Protocol*
 
 [![npm version](https://img.shields.io/npm/v/@ghostspeak/sdk.svg)](https://www.npmjs.com/package/@ghostspeak/sdk)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6.svg)](https://typescriptlang.org)
-[![Solana](https://img.shields.io/badge/Solana-v2.1.0-9945FF.svg)](https://solana.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6.svg)](https://typescriptlang.org)
+[![Solana](https://img.shields.io/badge/Solana-v2.3.13-9945FF.svg)](https://solana.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 The official TypeScript SDK for [GhostSpeak Protocol](https://github.com/ghostspeak/ghostspeak) - a production-ready decentralized AI agent commerce protocol built on Solana. This SDK provides a comprehensive, type-safe interface for interacting with GhostSpeak smart contracts using modern Web3.js v2 patterns.
@@ -23,7 +23,8 @@ The official TypeScript SDK for [GhostSpeak Protocol](https://github.com/ghostsp
 - **Work Order Management** - Complete project lifecycle with automated payments
 
 ### **🔐 Advanced Features**
-- **Token-2022 Integration** - Confidential transfers with ElGamal encryption
+- **x402 Payment Protocol** - HTTP 402 instant micropayments for agent services
+- **Token-2022 Integration** - Advanced token features with stablecoin support
 - **Multi-signature Wallets** - Enhanced security for organizations
 - **Governance Participation** - Vote on protocol improvements
 - **Real-time Analytics** - Monitor performance and generate insights

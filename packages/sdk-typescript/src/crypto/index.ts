@@ -18,13 +18,13 @@ export {
   type WithdrawProof
 } from './elgamal.js'
 
-// ZK proof operations (advanced usage)  
-export {
-  createVerifyRangeProofInstruction,
-  createVerifyTransferProofInstruction,
-  ZK_ELGAMAL_PROOF_PROGRAM_ID,
-  type ProofContext
-} from './zk-proofs.js'
+// ZK proof operations removed - x402 payment protocol focus
+// export {
+//   createVerifyRangeProofInstruction,
+//   createVerifyTransferProofInstruction,
+//   ZK_ELGAMAL_PROOF_PROGRAM_ID,
+//   type ProofContext
+// } from './zk-proofs.js'
 
 // WASM optimizations (optional performance boost)
 export {
@@ -36,5 +36,6 @@ export {
 // Bulk exports for advanced users (these may increase bundle size)
 // Only import these if you need many crypto operations
 export * as elgamal from './elgamal.js'
-export * as zkProofs from './zk-proofs.js' 
+// ZK proofs removed - x402 payment protocol focus
+// export * as zkProofs from './zk-proofs.js'
 export * as wasmBridge from './wasm-bridge.js'

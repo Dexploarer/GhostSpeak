@@ -44,9 +44,9 @@ sdkCommand
               try {
                 await execAsync('npm init -y')
                 s.stop('Project initialized')
-              } catch (_) {
+              } catch (error) {
                 s.stop('Failed to initialize project')
-                throw _error
+                throw error
               }
             } else {
               outro(pc.yellow('⚠️  Cancelled SDK installation'))
@@ -97,14 +97,14 @@ const agents = await client.agent.listAgents()
             }
 
             outro(pc.green('✅ SDK installed successfully!'))
-          } catch (_) {
+          } catch (error) {
             s.stop('Failed to install SDK')
-            console.error(pc.red(`\nError: ${error instanceof Error ? _error.message : 'Unknown error'}`))
+            console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
             outro(pc.red('❌ SDK installation failed'))
             process.exit(1)
           }
-        } catch (_) {
-          console.error(pc.red(`\nError: ${error instanceof Error ? _error.message : 'Unknown error'}`))
+        } catch (error) {
+          console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
           outro(pc.red('❌ SDK installation failed'))
           process.exit(1)
         }
@@ -140,7 +140,7 @@ sdkCommand
                 console.log(pc.gray(`  Version: ${versionMatch[1]}`))
               }
             }
-          } catch (_) {
+          } catch (error) {
             console.log(pc.yellow('\n✗ SDK not installed globally'))
           }
 
@@ -148,7 +148,7 @@ sdkCommand
           try {
             const { stdout } = await execAsync('npm view @ghostspeak/sdk version')
             console.log(pc.cyan(`\n📦 Latest version: ${stdout.trim()}`))
-          } catch (_) {
+          } catch (error) {
             console.log(pc.gray('\n⚠️  Could not fetch latest version'))
           }
 
@@ -160,8 +160,8 @@ sdkCommand
           }
 
           outro(pc.green('✅ SDK info complete'))
-        } catch (_) {
-          console.error(pc.red(`\nError: ${error instanceof Error ? _error.message : 'Unknown error'}`))
+        } catch (error) {
+          console.error(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`))
           outro(pc.red('❌ Failed to get SDK info'))
           process.exit(1)
         }

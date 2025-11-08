@@ -18,7 +18,7 @@ function loadEnvFiles() {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = dirname(__filename);
         return resolve(__dirname, '../../.env');
-      } catch (_) {
+      } catch (error) {
         return '';
       }
     })(),
@@ -28,7 +28,7 @@ function loadEnvFiles() {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = dirname(__filename);
         return resolve(__dirname, '../../../.env');
-      } catch (_) {
+      } catch (error) {
         return '';
       }
     })()
@@ -96,7 +96,7 @@ function getProgramId(): Address {
   
   try {
     return address(programIdStr);
-  } catch (_) {
+  } catch (error) {
     throw new Error(`Invalid program ID for ${network}: ${programIdStr}`);
   }
 }

@@ -49,11 +49,11 @@ export const updateCommand = new Command('update')
               currentVersion = pkg.version
               break
             }
-          } catch (_) {
+          } catch (error) {
             // Try next path
           }
         }
-      } catch (_) {
+      } catch (error) {
         // If reading package.json fails, we'll try other methods
       }
       
@@ -75,11 +75,11 @@ export const updateCommand = new Command('update')
                 currentVersion = versionMatch[1]
                 break
               }
-            } catch (_) {
+            } catch (error) {
               // Try next command
             }
           }
-        } catch (_) {
+        } catch (error) {
           // If all methods fail, we'll use the fallback version
         }
       }
@@ -92,7 +92,7 @@ export const updateCommand = new Command('update')
           if (match) {
             currentVersion = match[1]
           }
-        } catch (_) {
+        } catch (error) {
           // Still use fallback version
         }
       }
@@ -168,7 +168,7 @@ export const updateCommand = new Command('update')
           void isGlobal
           updateCmd = 'npm install -g @ghostspeak/cli@latest'
         }
-      } catch (_) {
+      } catch (error) {
         // Not globally installed via npm
       }
       
@@ -181,7 +181,7 @@ export const updateCommand = new Command('update')
             updateCmd = 'npm install -g @ghostspeak/cli@latest'
             console.log(chalk.yellow('\n⚠️  Detected npx installation. Installing globally for better performance...'))
           }
-        } catch (_) {
+        } catch (error) {
           // Default to global install
           updateCmd = 'npm install -g @ghostspeak/cli@latest'
         }
@@ -206,7 +206,7 @@ export const updateCommand = new Command('update')
           if (newVersion && newVersion === latest) {
             console.log(chalk.green('✅ Version verified:'), chalk.bold(`v${newVersion}`))
           }
-        } catch (_) {
+        } catch (error) {
           // Version check failed, but update likely succeeded
         }
         
@@ -219,11 +219,11 @@ export const updateCommand = new Command('update')
         console.log(chalk.yellow('💡 Tip: Run "ghostspeak --help" or "gs --help" to see all available commands'))
         
         outro('Update completed successfully')
-      } catch (_) {
+      } catch (error) {
         updateSpinner.stop('❌ Update failed')
         
         console.error('')
-        console.error(chalk.red('Failed to update CLI:'), error instanceof Error ? _error.message : 'Unknown error')
+        console.error(chalk.red('Failed to update CLI:'), error instanceof Error ? error.message : 'Unknown error')
         console.error('')
         console.error(chalk.yellow('Try updating manually with one of these commands:'))
         console.error(chalk.gray('  npm install -g @ghostspeak/cli@latest'))
@@ -236,8 +236,8 @@ export const updateCommand = new Command('update')
         process.exit(1)
       }
       
-    } catch (_) {
-      console.error(chalk.red('Error:'), error instanceof Error ? _error.message : 'Unknown error')
+    } catch (error) {
+      console.error(chalk.red('Error:'), error instanceof Error ? error.message : 'Unknown error')
       outro('Update check failed')
       process.exit(1)
     }

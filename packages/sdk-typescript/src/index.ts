@@ -51,8 +51,16 @@ export { ChannelModule } from './modules/channels/ChannelModule.js'
 // Marketplace module
 export { MarketplaceModule } from './modules/marketplace/MarketplaceModule.js'
 
-// Governance module  
-export { GovernanceModule } from './modules/governance/GovernanceModule.js'
+// Governance module
+export {
+  GovernanceModule,
+  type CreateMultisigParams,
+  type CreateProposalParams,
+  type VoteParams,
+  type ProposalType,
+  type ExecutionParams,
+  type DelegationScope
+} from './modules/governance/index.js'
 
 // Token2022 module
 export { Token2022Module } from './modules/token2022/Token2022Module.js'
@@ -64,6 +72,7 @@ export { Token2022Module } from './modules/token2022/Token2022Module.js'
 // =====================================================
 
 // Crypto exports with renamed TransferProof to avoid conflict
+// ZK proof exports removed - x402 payment protocol focus
 export {
   generateKeypair,
   encrypt,
@@ -74,15 +83,10 @@ export {
   type ElGamalCiphertext,
   type TransferProof as ElGamalTransferProof,
   type WithdrawProof,
-  createVerifyRangeProofInstruction,
-  createVerifyTransferProofInstruction,
-  ZK_ELGAMAL_PROOF_PROGRAM_ID,
-  type ProofContext,
   loadWasmModule,
   isWasmAvailable,
   type WasmModule,
   elgamal,
-  zkProofs,
   wasmBridge
 } from './crypto/index.js'
 
@@ -412,14 +416,15 @@ export {
   type PrivacyManifest
 } from './utils/private-metadata.js'
 
-export {
-  ConfidentialTransferManager,
-  type ConfidentialAccount,
-  type ConfigureAccountParams,
-  type DepositParams,
-  type WithdrawParams,
-  type TransferParams
-} from './utils/confidential-transfer-manager.js'
+// Confidential transfer removed - x402 payment protocol focus
+// export {
+//   ConfidentialTransferManager,
+//   type ConfidentialAccount,
+//   type ConfigureAccountParams,
+//   type DepositParams,
+//   type WithdrawParams,
+//   type TransferParams
+// } from './utils/confidential-transfer-manager.js'
 
 export {
   getFeatureFlags,
@@ -436,15 +441,16 @@ export {
   type FeatureStatus
 } from './utils/feature-gate-detector.js'
 
-export {
-  generateRangeProofWithCommitment,
-  generateTransferProofWithInstruction,
-  isZkProgramAvailable,
-  getZkProgramStatus,
-  ProofMode,
-  type ProofGenerationOptions,
-  type ProofGenerationResult
-} from './utils/zk-proof-builder.js'
+// ZK proof builder removed - x402 payment protocol focus
+// export {
+//   generateRangeProofWithCommitment,
+//   generateTransferProofWithInstruction,
+//   isZkProgramAvailable,
+//   getZkProgramStatus,
+//   ProofMode,
+//   type ProofGenerationOptions,
+//   type ProofGenerationResult
+// } from './utils/zk-proof-builder.js'
 
 export {
   MigrationManager,

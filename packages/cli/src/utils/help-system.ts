@@ -575,7 +575,7 @@ export class HelpSystem {
         const data = JSON.parse(readFileSync(historyFile, 'utf-8')) as Array<{ command: string }>
         return data.map((item) => item.command).slice(0, 5)
       }
-    } catch (_) {
+    } catch (error) {
       // Ignore errors
     }
     return []

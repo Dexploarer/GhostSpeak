@@ -32,19 +32,19 @@ export const deployCommand = new Command('deploy')
       console.log(chalk.gray(`Program size: ${(programData.length / 1024 / 1024).toFixed(2)} MB`))
       
       // Get deployer wallet
-      const walletService = container.get<WalletService>(ServiceTokens.WalletService)
-      const blockchainService = container.get<BlockchainService>(ServiceTokens.BlockchainService)
+      const walletService = container.get<WalletService>(ServiceTokens.WALLET_SERVICE)
+      const blockchainService = container.get<BlockchainService>(ServiceTokens.BLOCKCHAIN_SERVICE)
       
       let deployerSigner: KeyPairSigner
       
       if (options.keypair && existsSync(options.keypair)) {
         // Use specified keypair file
         const keypairData = JSON.parse(readFileSync(options.keypair, 'utf8')) as number[]
-        deployerSigner = createKeyPairSignerFromBytes(new Uint8Array(keypairData))
+        deployerSigner = await createKeyPairSignerFromBytes(new Uint8Array(keypairData))
         console.log(chalk.gray(`Using keypair from: ${options.keypair}`))
       } else {
         // Use CLI wallet
-        const currentWallet = await walletService.getCurrentWallet()
+        const currentWallet = await walletService.getActiveSigner()
         if (!currentWallet) {
           throw new Error('No wallet found. Initialize one with: ghostspeak wallet init')
         }
@@ -70,8 +70,7 @@ export const deployCommand = new Command('deploy')
       
       // Check deployer balance
       const accountInfo = await blockchainService.getAccountInfo(
-        deployerSigner.address.toString() as Address,
-        options.network
+        deployerSigner.address as Address
       )
       
       if (!accountInfo || !accountInfo.balance) {
@@ -157,8 +156,8 @@ export const deployCommand = new Command('deploy')
       console.log(chalk.gray('2. Update program ID in configuration'))
       console.log(chalk.gray('3. Test with: ghostspeak agent list'))
       
-    } catch (_) {
-      console.error(chalk.red(`\n❌ Error: ${error instanceof Error ? _error.message : 'Unknown error'}`))
+    } catch (error) {
+      console.error(chalk.red(`\n❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`))
       process.exit(1)
     }
   })

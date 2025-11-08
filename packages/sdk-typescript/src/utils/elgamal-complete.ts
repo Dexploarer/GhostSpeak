@@ -16,11 +16,46 @@
 import { ed25519 } from '@noble/curves/ed25519'
 import { randomBytes } from '@noble/curves/abstract/utils'
 import { sha256 } from '@noble/hashes/sha256'
-import { 
-  PROOF_SIZES,
-  type WithdrawProofData,
-  type TransferProofData as ZkTransferProofData
-} from '../constants/zk-proof-program.js'
+// ZK proof program removed - x402 payment protocol focus
+// import {
+//   PROOF_SIZES,
+//   type WithdrawProofData,
+//   type TransferProofData as ZkTransferProofData
+// } from '../constants/zk-proof-program.js'
+
+// Define proof sizes and types locally since ZK proof program is removed
+// Note: These are stub values as ZK proof infrastructure was removed in favor of x402
+const PROOF_SIZES = {
+  RANGE_PROOF: 64,
+  TRANSFER_PROOF: 128,
+  WITHDRAW_PROOF: 96,
+  // Bulletproof range proofs are larger than simple range proofs
+  RANGE_PROOF_BULLETPROOF: 256,
+  // Validity and equality proofs for well-formed ciphertexts
+  VALIDITY_PROOF: 96,
+  EQUALITY_PROOF: 96
+} as const
+
+interface WithdrawProofData {
+  proof?: Uint8Array
+  commitment?: Uint8Array
+  // Fields required for complete withdraw proof
+  encryptedWithdrawAmount: Uint8Array
+  newSourceCommitment: Uint8Array
+  equalityProof: Uint8Array
+  rangeProof: Uint8Array
+}
+
+interface ZkTransferProofData {
+  proof?: Uint8Array
+  commitment?: Uint8Array
+  // Fields required for complete transfer proof
+  encryptedTransferAmount: Uint8Array
+  newSourceCommitment: Uint8Array
+  equalityProof: Uint8Array
+  validityProof: Uint8Array
+  rangeProof: Uint8Array
+}
 
 // =====================================================
 // TYPES AND INTERFACES

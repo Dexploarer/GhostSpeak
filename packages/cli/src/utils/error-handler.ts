@@ -30,7 +30,7 @@ export class ErrorHandler {
     ],
     [
       /blockhash not found|blockhash expired/i,
-      (_error) => ({
+      (error) => ({
         message: 'Transaction expired',
         suggestion: 'The transaction took too long and expired.',
         actions: [
@@ -56,7 +56,7 @@ export class ErrorHandler {
     ],
     [
       /already in use|already exists/i,
-      (_error) => ({
+      (error) => ({
         message: 'Resource already exists',
         suggestion: 'You\'re trying to create something that already exists.',
         actions: [

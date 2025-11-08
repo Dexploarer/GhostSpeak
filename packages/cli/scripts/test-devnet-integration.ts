@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Devnet Integration Testing Script
- * 
+ *
  * Tests all CLI commands against the deployed GhostSpeak program on devnet
  * to verify they perform real on-chain transactions
  */
@@ -9,8 +9,13 @@
 import { spawn } from 'child_process'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { existsSync, mkdirSync, rmSync } from 'fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { homedir } from 'os'
+
+// Type declaration for Bun global (when running with Bun)
+declare const Bun: {
+  write: (path: string, data: string) => Promise<void>
+} | undefined
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -148,7 +153,7 @@ async function verifyTransactionOnChain(signature: string): Promise<boolean> {
       })
     })
     
-    const data = await response.json()
+    const data = await response.json() as { result: unknown | null }
     return data.result !== null
   } catch (error) {
     console.warn(`Failed to verify transaction ${signature}:`, error)
@@ -372,7 +377,12 @@ async function runDevnetTests() {
   }
   
   const reportPath = join(__dirname, '../devnet-test-report.json')
-  await Bun.write(reportPath, JSON.stringify(report, null, 2))
+  // Use Bun.write if available (when running with Bun), otherwise use Node.js fs
+  if (typeof Bun !== 'undefined') {
+    await Bun.write(reportPath, JSON.stringify(report, null, 2))
+  } else {
+    writeFileSync(reportPath, JSON.stringify(report, null, 2))
+  }
   console.log(`\n📄 Detailed report saved to: ${colors.cyan}${reportPath}${colors.reset}`)
   
   process.exit(failedTests > 0 ? 1 : 0)

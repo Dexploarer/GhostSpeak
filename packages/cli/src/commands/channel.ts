@@ -173,13 +173,13 @@ channelCommand
           `• Share channel with agents for collaboration`
         )
 
-      } catch (_) {
+      } catch (error) {
         s.stop('❌ Failed to create channel')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_) {
-      log.error(`Failed to create channel: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to create channel: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -247,8 +247,8 @@ channelCommand
         `${chalk.cyan('gs channel list --mine')} - Show your channels`
       )
 
-    } catch (_) {
-      log.error(`Failed to load channels: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to load channels: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -402,13 +402,13 @@ channelCommand
           `${chalk.yellow('💡 Tip:')} Other agents in the channel will see your message and can respond`
         )
 
-      } catch (_) {
+      } catch (error) {
         s.stop('❌ Failed to send message')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_) {
-      log.error(`Failed to send message: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 

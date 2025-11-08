@@ -42,10 +42,7 @@ import {
   
 } from '@solana/spl-token'
 
-import {
-  getBase58Encoder,
-  getBase58Decoder
-} from '@solana/kit'
+import bs58 from 'bs58'
 
 import type { 
   Address, 
@@ -80,11 +77,11 @@ class PublicKey {
     } else if (typeof value === 'object' && 'address' in value) {
       this._address = (value as any).address
     } else if (value instanceof Uint8Array) {
-      // Convert Uint8Array to base58
-      this._address = getBase58Encoder().encode(value) as string
+      // Convert Uint8Array to base58 string using bs58
+      this._address = bs58.encode(value)
     } else if (Array.isArray(value)) {
-      // Convert number array to base58
-      this._address = getBase58Encoder().encode(new Uint8Array(value)) as string
+      // Convert number array to base58 string using bs58
+      this._address = bs58.encode(new Uint8Array(value))
     } else {
       throw new Error('Invalid public key input')
     }
@@ -99,11 +96,11 @@ class PublicKey {
   }
 
   toBuffer(): Buffer {
-    return Buffer.from(getBase58Decoder().decode(this._address))
+    return Buffer.from(bs58.decode(this._address))
   }
 
   toBytes(): Uint8Array {
-    return getBase58Decoder().decode(this._address) as Uint8Array
+    return bs58.decode(this._address)
   }
 
   equals(pubkey: PublicKey): boolean {

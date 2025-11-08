@@ -225,7 +225,9 @@ describe('ElGamal Extended Tests', () => {
         generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
         
         if (i % 20 === 0) {
-          global.gc && global.gc() // Force GC if available
+          if (global.gc) {
+            global.gc() // Force GC if available
+          }
           memReadings.push(process.memoryUsage().heapUsed)
         }
       }

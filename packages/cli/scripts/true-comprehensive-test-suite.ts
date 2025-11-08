@@ -14,12 +14,12 @@
  * - Real SDK module testing
  */
 
-import { 
-  createSolanaRpc, 
+import {
+  createSolanaRpc,
   createSolanaRpcSubscriptions,
-  createKeyPairSignerFromBytes, 
+  createKeyPairSignerFromBytes,
   generateKeyPairSigner,
-  address, 
+  address,
   lamports,
   pipe,
   createTransactionMessage,
@@ -30,7 +30,8 @@ import {
   getSignatureFromTransaction,
   sendAndConfirmTransactionFactory,
   type Address,
-  type KeyPairSigner
+  type KeyPairSigner,
+  type Signature
 } from '@solana/kit'
 import { spawn } from 'child_process'
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs'
@@ -544,12 +545,38 @@ async function testWalletFunding(): Promise<RealTestResult> {
     let balance: any
     
     try {
-      airdropSignature = await rpc.requestAirdrop(testWallet.address, lamports(2_000_000_000n)).send()
-      
-      // Wait for confirmation
+      // Request airdrop and get signature
+      // Type assertion: requestAirdrop exists on devnet/testnet RPC
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const airdropMethod = (rpc as any).requestAirdrop as ((address: Address, lamports: bigint) => { send: () => Promise<Signature> }) | undefined
+      if (!airdropMethod) {
+        throw new Error('requestAirdrop not available on this network')
+      }
+      const airdropResponse = await airdropMethod(testWallet.address, lamports(2_000_000_000n)).send()
+      airdropSignature = String(airdropResponse)
+
+      // Wait for confirmation using subscription pattern
+      // In Web3.js v2, we poll for signature status instead of confirmTransaction
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send()
-      await rpc.confirmTransaction({ signature: airdropSignature, ...latestBlockhash }).send()
-      
+
+      // Poll for confirmation (simple polling approach for tests)
+      let confirmed = false
+      for (let i = 0; i < 30; i++) {
+        // Ensure airdropSignature is defined before using it
+        if (!airdropSignature) break
+        const signatureStatus = await rpc.getSignatureStatuses([airdropSignature as Signature]).send()
+        if (signatureStatus.value[0]?.confirmationStatus === 'confirmed' ||
+            signatureStatus.value[0]?.confirmationStatus === 'finalized') {
+          confirmed = true
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+
+      if (!confirmed) {
+        console.log('  ⚠️  Airdrop confirmation timed out, but may still process')
+      }
+
       // Verify balance
       balance = await rpc.getBalance(testWallet.address).send()
     } catch (rpcError) {

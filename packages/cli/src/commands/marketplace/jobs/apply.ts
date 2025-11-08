@@ -295,13 +295,13 @@ export function registerApplyCommand(parentCommand: Command): void {
             `• Check status: ${chalk.cyan('gs marketplace jobs list --applied')}`
           )
 
-        } catch (_) {
+        } catch (error) {
           s.stop('❌ Failed to submit application')
-          handleTransactionError(_error as Error)
+          handleTransactionError(error as Error)
         }
 
-      } catch (_) {
-        log.error(`Failed to apply to job: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+      } catch (error) {
+        log.error(`Failed to apply to job: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     })
 }

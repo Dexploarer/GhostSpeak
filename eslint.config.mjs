@@ -16,6 +16,9 @@ export default tseslint.config(
       '**/.vercel/**',
       '**/generated/**',
       '.cursor/**',
+      '**/archive/**',
+      '**/examples/**',
+      '**/test-debug.ts',
     ],
   },
   // Base ESLint recommended rules

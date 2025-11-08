@@ -3,11 +3,8 @@ export default {
   rules: {
     // Allow duplicate function declarations for overloads in generated code
     'no-redeclare': 'off',
-    
+
     // Allow logical OR in generated code where nullish coalescing might not be appropriate
-    '@typescript-eslint/prefer-nullish-coalescing': 'off',
-    
-    // Allow assignment expressions in generated code
     '@typescript-eslint/prefer-nullish-coalescing': 'off',
     
     // Allow unused variables in generated code (often used for type constraints)

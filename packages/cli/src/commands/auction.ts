@@ -269,8 +269,8 @@ auctionCommand
         `• View details: ${chalk.cyan('gs auction info <auction-id>')}`
       )
 
-    } catch (_) {
-      handleTransactionError(_error as Error)
+    } catch (error) {
+      handleTransactionError(error as Error)
     }
   })
 
@@ -297,7 +297,7 @@ auctionCommand
       let auctionAddress: Address
       try {
         auctionAddress = auctionId as Address
-      } catch (_) {
+      } catch (error) {
         cancel('Invalid auction ID format')
         return
       }
@@ -388,8 +388,8 @@ auctionCommand
         `• Check your bids: ${chalk.cyan('gs auction list --my-bids')}`
       )
 
-    } catch (_) {
-      handleTransactionError(_error as Error)
+    } catch (error) {
+      handleTransactionError(error as Error)
     }
   })
 
@@ -489,8 +489,8 @@ auctionCommand
 
       outro(chalk.green('✅ Auction listing complete'))
 
-    } catch (_) {
-      log.error(`Failed to list auctions: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to list auctions: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -561,8 +561,8 @@ auctionCommand
 
       outro('Monitor mode not yet implemented - check back for updates!')
 
-    } catch (_) {
-      log.error(`Failed to monitor auction: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to monitor auction: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -638,7 +638,7 @@ auctionCommand
         `${chalk.bold('Explorer:')} ${explorerUrl}`
       )
 
-    } catch (_) {
-      handleTransactionError(_error as Error)
+    } catch (error) {
+      handleTransactionError(error as Error)
     }
   })

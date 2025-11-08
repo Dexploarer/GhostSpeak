@@ -6,9 +6,12 @@
  */
 
 import type { Address, Signature, Transaction } from '@solana/kit';
-import type { Connection } from '@solana/web3.js';
 import { EventEmitter } from 'events';
 import type { X402Client } from './X402Client';
+
+// Web3.js v2 compatibility: Connection type stub
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Connection = any;
 
 /**
  * Payment stream configuration
@@ -378,9 +381,9 @@ export class PaymentStreamingManager extends EventEmitter {
     milestoneId?: string
   ): Promise<Signature> {
     // Create x402 payment request
+    // Note: recipient is automatically set to wallet address in createPaymentRequest
     const paymentRequest = this.x402Client.createPaymentRequest({
       amount,
-      recipient: stream.config.agentAddress,
       token: stream.config.tokenMint,
       description: milestoneId
         ? `Stream ${stream.id} - Milestone ${milestoneId}`

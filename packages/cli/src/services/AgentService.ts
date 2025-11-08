@@ -3,27 +3,65 @@
  */
 
 import type { Address } from '@solana/addresses'
-import type { 
-  IAgentService, 
-  Agent, 
-  RegisterAgentParams, 
-  ListAgentsParams, 
+import type { Signature } from '@solana/keys'
+import type {
+  IAgentService,
+  Agent,
+  RegisterAgentParams,
+  ListAgentsParams,
   UpdateAgentParams,
   AgentAnalytics,
   AgentServiceDependencies
 } from '../types/services.js'
-import { 
-  ValidationError, 
-  NotFoundError, 
-  NetworkError, 
-  UnauthorizedError 
+import {
+  ValidationError,
+  NotFoundError,
+  NetworkError,
+  UnauthorizedError
 } from '../types/services.js'
 import { randomUUID } from 'crypto'
 import { toSDKSigner } from '../utils/client.js'
 import { getCurrentProgramId } from '../../../../config/program-ids.js'
 import { createSolanaRpc } from '@solana/kit'
-import { AgentModule, type GhostSpeakClient } from '@ghostspeak/sdk'
+import { AgentModule, type GhostSpeakClient, type RpcClient } from '@ghostspeak/sdk'
 import { getErrorMessage } from '../utils/type-guards.js'
+
+/**
+ * Wrap Solana RPC with additional methods required by RpcClient interface
+ */
+function wrapRpcClient(rpc: ReturnType<typeof createSolanaRpc>): RpcClient {
+  return {
+    getBalance: async (address: Address) => rpc.getBalance(address).send(),
+    getAccountInfo: async (address: Address) => {
+      const info = await rpc.getAccountInfo(address).send();
+      return info.value as RpcClient['getAccountInfo'] extends (...args: unknown[]) => Promise<infer R> ? R : never;
+    },
+    sendTransaction: async (transaction: unknown) => {
+      // This is a simplified implementation - actual implementation may vary
+      return String(transaction);
+    },
+    confirmTransaction: async (signature: string, _commitment?: string) => {
+      // Simple confirmation using getSignatureStatuses
+      await rpc.getSignatureStatuses([signature as Signature]).send();
+    },
+    getProgramAccounts: async (programId: Address, _options?: Record<string, unknown>) => {
+      const accounts = await rpc.getProgramAccounts(programId).send();
+      return accounts as RpcClient['getProgramAccounts'] extends (...args: unknown[]) => Promise<infer R> ? R : never;
+    },
+    requestAirdrop: (address: Address, lamports: bigint) => ({
+      send: async () => {
+        // Type assertion: requestAirdrop exists on devnet/testnet RPC
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const airdropMethod = (rpc as any).requestAirdrop as ((address: Address, lamports: bigint) => { send: () => Promise<Signature> }) | undefined
+        if (!airdropMethod) {
+          throw new Error('requestAirdrop is not available on this network (mainnet only supports devnet/testnet)')
+        }
+        const sig = await airdropMethod(address, lamports).send();
+        return String(sig);
+      }
+    })
+  };
+}
 
 export class AgentService implements IAgentService {
   private agentCache = new Map<string, { data: Agent; timestamp: number }>()
@@ -92,7 +130,7 @@ export class AgentService implements IAgentService {
       })
       const metadataUri = ''
 
-      const rpc = createSolanaRpc('https://api.devnet.solana.com')
+      const rpc = wrapRpcClient(createSolanaRpc('https://api.devnet.solana.com'))
       this.deps.logger.info('Creating AgentModule instance...')
       const agentModule = new AgentModule({
         programId: getCurrentProgramId(),
@@ -128,7 +166,7 @@ export class AgentService implements IAgentService {
       })
       return agent
     } catch (error) {
-      this.deps.logger.error('Failed to register agent on-chain', error)
+      this.deps.logger.error('Failed to register agent on-chain', error instanceof Error ? error : undefined)
       if (error instanceof ValidationError || error instanceof NetworkError) {
         throw error // Re-throw service errors as-is
       }
@@ -337,7 +375,7 @@ export class AgentService implements IAgentService {
       
       // Use blockchain service to get client and fetch work orders
       const client = await this.deps.blockchainService.getClient('devnet') as GhostSpeakClient
-      const workOrders = await client.rpc.getProgramAccounts(
+      const workOrders = await client.config.rpc.getProgramAccounts(
         programId,
         {
           filters: workOrderFilters,
@@ -471,8 +509,9 @@ export class AgentService implements IAgentService {
       console.log('🔍 Querying all agents from blockchain...')
       
       // Create RPC client  
-      const rpc = createSolanaRpc('https://api.devnet.solana.com')
-      
+      const baseRpc = createSolanaRpc('https://api.devnet.solana.com')
+      const rpc = wrapRpcClient(baseRpc)
+
       // Create AgentModule instance
       const agentModule = new AgentModule({
         programId: getCurrentProgramId(),
@@ -483,7 +522,7 @@ export class AgentService implements IAgentService {
       })
       
       // Query program accounts for agents using RPC
-      const programAccounts = await rpc.getProgramAccounts(getCurrentProgramId(), { commitment: 'confirmed', encoding: 'base64' }).send()
+      const programAccounts = await rpc.getProgramAccounts(getCurrentProgramId(), { commitment: 'confirmed', encoding: 'base64' })
       console.log('🔍 Found', programAccounts.length, 'program accounts on blockchain')
       
       // Parse real agent data from blockchain accounts

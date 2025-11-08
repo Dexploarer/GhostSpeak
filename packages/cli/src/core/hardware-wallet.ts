@@ -115,6 +115,9 @@ export interface IHardwareWallet {
   signMessage(message: Uint8Array, derivationPath: string): Promise<HardwareSignature>
   /** Get device info */
   getDeviceInfo(): Promise<HardwareWalletDevice>
+  /** Add event listener */
+  on(event: 'status_changed', listener: (status: ConnectionStatus) => void): this
+  on(event: 'error', listener: (error: Error) => void): this
 }
 
 /**

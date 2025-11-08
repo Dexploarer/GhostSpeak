@@ -7,10 +7,56 @@
  * @module X402Middleware
  */
 
-import type { Request, Response, NextFunction } from 'express'
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+// Type imports with fallback for optional dependencies
 import type { Address } from '@solana/addresses'
+import type { Signature } from '@solana/kit'
 import type { X402Client } from './X402Client.js'
+import { toSignature } from '../utils/format.js'
+
+// Express types (optional dependency)
+type Request = {
+  headers: Record<string, string | string[] | undefined>
+  body?: unknown
+  query?: unknown
+  params?: unknown
+  url?: string
+  ip?: string
+  [key: string]: unknown
+}
+
+type Response = {
+  status(code: number): Response
+  json(body: unknown): Response
+  set(headers: Record<string, string>): Response
+  send(body?: unknown): Response
+  [key: string]: unknown
+}
+
+type NextFunction = () => void
+
+// Fastify types (optional dependency)
+type FastifyRequest = {
+  headers: Record<string, string | string[] | undefined>
+  body?: unknown
+  query?: unknown
+  params?: unknown
+  url?: string
+  ip?: string
+  [key: string]: unknown
+}
+
+type FastifyReply = {
+  code(statusCode: number): FastifyReply
+  send(payload?: unknown): FastifyReply
+  header(name: string, value: string): FastifyReply
+  headers(headers: Record<string, string>): FastifyReply
+  [key: string]: unknown
+}
+
+type FastifyInstance = {
+  addHook(name: string, hook: (request: FastifyRequest, reply: FastifyReply) => Promise<void>): void
+  [key: string]: unknown
+}
 
 // =====================================================
 // TYPES
@@ -201,7 +247,7 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
     if (!paymentSignature) {
       const headers = options.x402Client.createPaymentHeaders(paymentRequest)
 
-      res.status(402).set(headers).json({
+      res.status(402).set(headers as unknown as Record<string, string>).json({
         error: 'Payment Required',
         message: 'This endpoint requires x402 payment',
         code: 'PAYMENT_REQUIRED',
@@ -269,7 +315,7 @@ export function createX402Middleware(options: X402MiddlewareOptions) {
     try {
       // Verify payment
       const verification = await options.x402Client.verifyPaymentDetails({
-        signature: paymentSignature,
+        signature: toSignature(paymentSignature),
         expectedRecipient: paymentRequest.recipient,
         expectedAmount: options.requiredPayment,
         expectedToken: options.token
@@ -392,7 +438,7 @@ export function x402FastifyPlugin(
   }
 ) {
   fastify.addHook('preHandler', async (request: X402FastifyRequest, reply: FastifyReply) => {
-    const route = options.routes[request.url]
+    const route = request.url ? options.routes[request.url] : undefined
 
     if (!route) {
       // Route not protected by x402
@@ -411,7 +457,7 @@ export function x402FastifyPlugin(
     if (!paymentSignature) {
       const headers = options.x402Client.createPaymentHeaders(paymentRequest)
 
-      reply.code(402).headers(headers).send({
+      reply.code(402).headers(headers as unknown as Record<string, string>).send({
         error: 'Payment Required',
         paymentDetails: {
           address: paymentRequest.recipient,
@@ -424,7 +470,7 @@ export function x402FastifyPlugin(
 
     // Verify payment
     const verification = await options.x402Client.verifyPaymentDetails({
-      signature: paymentSignature,
+      signature: toSignature(paymentSignature),
       expectedRecipient: paymentRequest.recipient,
       expectedAmount: route.payment,
       expectedToken: route.token

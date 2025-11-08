@@ -51,7 +51,7 @@ export function registerVerifyCommand(parentCommand: Command): void {
         
         outro('Agent verification will be available in a future update')
 
-      } catch (_) {
+      } catch (error) {
         displayErrorAndCancel(error, 'Agent verification')
       }
     })

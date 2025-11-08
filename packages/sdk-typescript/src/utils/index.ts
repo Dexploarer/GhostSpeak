@@ -46,8 +46,8 @@ export * as ipfs from './ipfs-client.js'
 // Privacy and encryption (specialized usage)
 export * as privacy from './client-encryption.js'
 
-// Confidential transfers (Token-2022 advanced)
-export * as confidential from './confidential-transfer-manager.js'
+// Confidential transfers removed - x402 payment protocol focus
+// export * as confidential from './confidential-transfer-manager.js'
 
 // Account management (diagnostic and migration)
 export * as accounts from './account-diagnostics.js'

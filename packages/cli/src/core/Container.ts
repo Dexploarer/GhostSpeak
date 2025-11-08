@@ -106,7 +106,7 @@ export class Container {
     tokens.forEach(token => {
       try {
         this.resolve(token)
-      } catch (_) {
+      } catch (error) {
         // Ignore errors during warm-up
       }
     })

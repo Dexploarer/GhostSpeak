@@ -603,7 +603,7 @@ describe('Work Order Verification System', () => {
       })
 
       // Test initial status
-      let summary = await workOrderInstructions.getWorkOrderSummary(
+      const summary = await workOrderInstructions.getWorkOrderSummary(
         statusWorkOrder.workOrderAddress
       )
       expect(summary.status).toBe(WorkOrderStatus.Created)

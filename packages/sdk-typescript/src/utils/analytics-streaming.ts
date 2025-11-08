@@ -16,7 +16,7 @@ class PublicKey {
   private _address: string
 
   constructor(value: string | Address) {
-    this._address = typeof value === 'string' ? value : value.address
+    this._address = value as string
   }
 
   toString(): string {
@@ -182,7 +182,7 @@ export class AnalyticsStreamer extends EventEmitter {
       // Subscribe to program logs for event parsing
       this.wsSubscriptionId = this.connection.onLogs(
         this.programId,
-        (logs, ctx) => {
+        (logs: { signature: string; logs: string[]; err: unknown | null }, ctx: { slot: number }) => {
           this.processLogs(logs, ctx)
         },
         this.options.commitment ?? 'confirmed'

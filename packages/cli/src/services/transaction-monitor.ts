@@ -153,7 +153,7 @@ export class TransactionMonitor {
     if (!spinner || !transaction) return
     
     transaction.status = 'failed'
-    transaction.error = error instanceof Error ? _error.message : error
+    transaction.error = error instanceof Error ? error.message : error
     
     // Stop spinner with error
     spinner.stop(`❌ ${transaction.description} failed`)
@@ -275,7 +275,7 @@ export class TransactionMonitor {
         const data = JSON.parse(readFileSync(TRANSACTION_HISTORY_FILE, 'utf-8')) as Transaction[]
         data.forEach(tx => this.transactions.set(tx.id, tx))
       }
-    } catch (_) {
+    } catch (error) {
       // Ignore errors loading history
     }
   }
@@ -293,7 +293,7 @@ export class TransactionMonitor {
       // Keep only recent transactions
       const recent = this.getHistory(MAX_HISTORY_ITEMS)
       writeFileSync(TRANSACTION_HISTORY_FILE, JSON.stringify(recent, null, 2))
-    } catch (_) {
+    } catch (error) {
       // Ignore errors saving history
     }
   }

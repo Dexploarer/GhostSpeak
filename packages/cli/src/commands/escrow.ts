@@ -79,7 +79,7 @@ escrowCommand
             try {
               address(value.trim())
               return
-            } catch (_) {
+            } catch (error) {
               return 'Please enter a valid Solana address'
             }
           }
@@ -268,13 +268,13 @@ escrowCommand
           `• Release funds when work is complete: ${chalk.cyan('gs escrow release')}`
         )
 
-      } catch (_) {
+      } catch (error) {
         s.stop('❌ Failed to create escrow')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_) {
-      log.error(`Failed to create escrow: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to create escrow: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -351,8 +351,8 @@ escrowCommand
         `${chalk.cyan('gs escrow create')} - Create new escrow`
       )
 
-    } catch (_) {
-      log.error(`Failed to load escrows: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to load escrows: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -531,13 +531,13 @@ escrowCommand
           `${chalk.yellow('✅ The provider will receive the funds shortly')}`
         )
 
-      } catch (_) {
+      } catch (error) {
         s.stop('❌ Failed to release funds')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_) {
-      log.error(`Failed to release funds: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to release funds: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 
@@ -698,13 +698,13 @@ escrowCommand
           `• Check status: ${chalk.cyan('gs dispute list --mine')}`
         )
 
-      } catch (_) {
+      } catch (error) {
         s.stop('❌ Failed to file dispute')
-        handleTransactionError(_error as Error)
+        handleTransactionError(error as Error)
       }
 
-    } catch (_) {
-      log.error(`Failed to file dispute: ${error instanceof Error ? _error.message : 'Unknown error'}`)
+    } catch (error) {
+      log.error(`Failed to file dispute: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   })
 

@@ -187,7 +187,6 @@ describe('Crypto Performance Benchmarks', () => {
         expect(speedup).toBeGreaterThan(BENCHMARK_CONFIG.TARGETS.WASM_SPEEDUP)
       }
     })
-  })
 
     it('should benchmark zero amount encryption (bug fix verification)', async () => {
       const iterations = BENCHMARK_CONFIG.ITERATIONS.STANDARD

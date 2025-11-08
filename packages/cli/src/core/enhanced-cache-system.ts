@@ -121,8 +121,6 @@ interface DiskCacheMetadata {
  * Enhanced cache manager with performance optimizations
  */
 export class EnhancedCacheManager extends CacheManager {
-  private static instance: EnhancedCacheManager | null = null
-
   // Performance tracking
   private usagePatterns = new Map<string, UsagePattern>()
   private accessHistory: Array<{ key: string; timestamp: Date; hit: boolean }> = []
@@ -175,16 +173,16 @@ export class EnhancedCacheManager extends CacheManager {
   /**
    * Get singleton instance
    */
-  static getInstance(options?: {
+  static override getInstance(options?: {
     maxMemorySize?: number
     maxDiskSize?: number
     defaultTTL?: number
     diskCachePath?: string
   }): EnhancedCacheManager {
-    if (!EnhancedCacheManager.instance) {
-      EnhancedCacheManager.instance = new EnhancedCacheManager(options)
+    if (!CacheManager['instance']) {
+      CacheManager['instance'] = new EnhancedCacheManager(options)
     }
-    return EnhancedCacheManager.instance
+    return CacheManager['instance'] as EnhancedCacheManager
   }
 
   /**
@@ -205,7 +203,7 @@ export class EnhancedCacheManager extends CacheManager {
 
       // Handle decompression if needed
       if (result !== null && typeof result === 'string' && this.isCompressedValue(result)) {
-        result = this.decompressValue<T>(result)
+        result = this.decompressValue<T>(result) as Awaited<T>
       }
 
       // Try disk cache if not in memory
@@ -253,8 +251,8 @@ export class EnhancedCacheManager extends CacheManager {
 
       return result
 
-    } catch (_error) {
-      this.eventBus.emit('enhanced_cache:error', { key, error: _error as Error, operation: 'get' })
+    } catch (error) {
+      this.eventBus.emit('enhanced_cache:error', { key, error: error as Error, operation: 'get' })
       return null
     }
   }
@@ -345,9 +343,9 @@ export class EnhancedCacheManager extends CacheManager {
         responseTime: Date.now() - startTime
       })
 
-    } catch (_error) {
-      this.eventBus.emit('enhanced_cache:error', { key, error: _error as Error, operation: 'set' })
-      throw _error
+    } catch (error) {
+      this.eventBus.emit('enhanced_cache:error', { key, error: error as Error, operation: 'set' })
+      throw error
     }
   }
 
@@ -392,10 +390,10 @@ export class EnhancedCacheManager extends CacheManager {
               confidence: prediction.confidence
             })
             
-          } catch (_error) {
+          } catch (error) {
             this.eventBus.emit('enhanced_cache:predictive_failed', {
               key: prediction.key,
-              error: _error as Error
+              error: error as Error
             })
           } finally {
             this.warmingQueue.delete(prediction.key)
@@ -578,8 +576,8 @@ export class EnhancedCacheManager extends CacheManager {
             try {
               await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
               resolve()
-            } catch (_error) {
-              reject(_error)
+            } catch (error) {
+              reject(error)
             }
           })
         })
@@ -587,8 +585,8 @@ export class EnhancedCacheManager extends CacheManager {
         // Update metadata file asynchronously
         setImmediate(() => this.updateDiskMetadata())
         
-      } catch (_error) {
-        this.eventBus.emit('enhanced_cache:disk_write_failed', { key, error: _error as Error })
+      } catch (error) {
+        this.eventBus.emit('enhanced_cache:disk_write_failed', { key, error: error as Error })
       } finally {
         this.diskWriteQueue.delete(key)
       }
@@ -611,8 +609,8 @@ export class EnhancedCacheManager extends CacheManager {
           try {
             const data = await fs.readFile(filePath, 'utf8')
             resolve(data)
-          } catch (_error) {
-            reject(_error)
+          } catch (error) {
+            reject(error)
           }
         })
       })
@@ -1063,14 +1061,6 @@ export class EnhancedCacheManager extends CacheManager {
   private estimateKeySize(key: string): number {
     // This would need access to actual cache entry, simplified for now
     return this.compressionStats.get(key)?.originalSize || 0
-  }
-
-  /**
-   * Estimate object size in bytes
-   */
-  private estimateSize(value: unknown): number {
-    const str = JSON.stringify(value)
-    return new Blob([str]).size
   }
 }
 

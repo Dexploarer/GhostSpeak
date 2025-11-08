@@ -30,8 +30,8 @@ devnet = []
 # Profiles are defined at workspace level
 
 [dependencies]
-anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
-anchor-spl = { version = "0.31.1", features = ["token", "associated_token", "token_2022"] }
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.32.1", features = ["token", "associated_token", "token_2022"] }
 spl-token = { version = "8.0", features = ["no-entrypoint"] }
 spl-token-2022 = { version = "9.0", features = ["no-entrypoint"] }
 spl-associated-token-account = { version = "7.0", features = ["no-entrypoint"] }
@@ -54,5 +54,5 @@ spl-noop = { version = "1.0.0", features = ["no-entrypoint"] }
 
 [dev-dependencies]
 solana-program-test = "2.3"
-solana-sdk = "2.1"
+solana-sdk = "2.3"
 tokio = { version = "1.47", features = ["rt", "macros"] } 

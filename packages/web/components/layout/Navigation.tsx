@@ -4,13 +4,15 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { WalletConnectButton } from '@/components/wallet/WalletConnectButton'
-import { Home, Bot, ShoppingBag, Briefcase, Shield, Gavel, Menu, X, Moon, Sun } from 'lucide-react'
+import { Home, Bot, ShoppingBag, Briefcase, Shield, Gavel, Menu, X, Moon, Sun, Sparkles, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/x402/discover', label: 'Discover', icon: Sparkles },
   { href: '/agents', label: 'Agents', icon: Bot },
   { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
+  { href: '/x402/analytics', label: 'Analytics', icon: TrendingUp },
   { href: '/work-orders', label: 'Work Orders', icon: Briefcase },
   { href: '/escrow', label: 'Escrow', icon: Shield },
   { href: '/governance', label: 'Governance', icon: Gavel },

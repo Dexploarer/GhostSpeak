@@ -107,7 +107,7 @@
     "@solana/options": "^2.3.0",
     "@solana/programs": "^2.3.0",
     "@solana/rpc": "^2.3.0",
-    "@solana/rpc-spec": "^2.3.0",
+    "@solana/rpc-spec": "^5.0.0",
     "@solana/rpc-transport": "^2.0.0-experimental.9741939",
     "@solana/rpc-types": "^2.3.0",
     "@solana/signers": "^2.3.0",

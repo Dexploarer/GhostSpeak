@@ -113,7 +113,7 @@
     "@solana/signers": "^2.3.0",
     "@solana/spl-account-compression": "^0.4.1",
     "@solana/spl-token": "^0.4.13",
-    "@solana/sysvars": "^2.3.0",
+    "@solana/sysvars": "^5.0.0",
     "@solana/transactions": "^2.3.0",
     "bs58": "^6.0.0",
     "kubo-rpc-client": "^5.2.0"

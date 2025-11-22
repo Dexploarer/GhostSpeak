@@ -456,15 +456,21 @@ export class AgentDiscoveryClient {
       inactivityThresholdDays: params.inactivity_threshold_days ?? 30
     }
 
-    filtered = filterAgentsByStatus(
-      filtered as Array<Pick<Agent, 'x402_total_calls' | 'last_payment_timestamp'>>,
-      {
-        excludeUnverified,
-        excludeInactive,
-        excludeDead,
-        config: statusConfig
-      }
-    ) as Agent[]
+    const agentsWithStatus = filtered.map(agent => ({
+      agent,
+      status: getAgentStatus({
+        x402TotalCalls: Number(agent.x402_total_calls),
+        lastPaymentTimestamp: agent.last_payment_timestamp,
+        x402TotalPayments: agent.x402_total_payments,
+      }, statusConfig)
+    }));
+
+    filtered = agentsWithStatus.filter(({ status }) => {
+      if (excludeUnverified && !status.isVerified) return false;
+      if (excludeInactive && !status.isActive && status.isVerified) return false;
+      if (excludeDead && status.isDead) return false;
+      return true;
+    }).map(({ agent }) => agent);
 
     // Filter by x402_enabled
     if (params.x402_enabled !== undefined) {

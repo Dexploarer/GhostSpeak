@@ -97,7 +97,7 @@ export function isAgentActive(
   }
 
   const daysSincePayment = (currentTime - agent.lastPaymentTimestamp) / SECONDS_PER_DAY
-  return daysSincePayment < threshold
+  return daysSincePayment < BigInt(threshold)
 }
 
 /**

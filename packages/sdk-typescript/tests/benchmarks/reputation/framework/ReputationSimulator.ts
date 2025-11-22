@@ -308,7 +308,10 @@ export class ReputationSimulator {
     // Gaming detection: how many fraudulent activities were detected
     const totalFraudDetected = rounds.reduce((sum, r) => sum + r.fraudDetected, 0)
     const totalJobs = rounds.reduce((sum, r) => sum + r.jobsExecuted, 0)
-    const gamingDetectionAccuracy = totalFraudDetected / (scenario.attackerCount * scenario.rounds)
+    const totalAttackerJobs = scenario.attackerCount * scenario.rounds;
+    const gamingDetectionAccuracy = totalAttackerJobs > 0
+      ? totalFraudDetected / totalAttackerJobs
+      : 0;
 
     // False positive rate: honest agents incorrectly flagged
     const falsePositiveRate = 0 // TODO: Implement based on fraud detection logs

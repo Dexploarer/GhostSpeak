@@ -166,8 +166,13 @@ impl Agent {
         if self.last_payment_timestamp == 0 {
             return false;
         }
-        let days_since_payment = (current_time - self.last_payment_timestamp) / 86400;
-        days_since_payment < 30
+
+        const SECONDS_IN_DAY: i64 = 86400;
+        const INACTIVITY_THRESHOLD_DAYS: i64 = 30;
+
+        let seconds_since_payment = current_time.saturating_sub(self.last_payment_timestamp);
+        let days_since_payment = seconds_since_payment / SECONDS_IN_DAY;
+        days_since_payment < INACTIVITY_THRESHOLD_DAYS
     }
 
     /// Check if agent is dead (no payment in 30+ days but has history)

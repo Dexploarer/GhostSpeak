@@ -34,6 +34,19 @@ export {
   type ErrorContext
 } from './enhanced-client-errors.js'
 
+// Agent status checks (proof-of-agent verification)
+export {
+  isAgentVerified,
+  isAgentActive,
+  isAgentDead,
+  getAgentStatus,
+  filterAgentsByStatus,
+  sortAgentsByActivity,
+  AgentStatus,
+  type AgentStatusInfo,
+  type AgentStatusConfig
+} from './agent-status.js'
+
 // Advanced utilities (tree-shakeable bulk exports)
 // Only import specific modules if needed to avoid bundle bloat
 

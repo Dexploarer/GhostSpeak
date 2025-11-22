@@ -10,6 +10,10 @@
 import type { Address, Commitment, SolanaRpcApi } from '@solana/kit'
 import { createSolanaRpc, type Rpc } from '@solana/kit'
 import { getAgentDecoder } from '../generated/accounts/agent.js'
+import {
+  filterAgentsByStatus,
+  type AgentStatusConfig
+} from '../utils/agent-status.js'
 
 // Create compatibility types for connection
 type Connection = Rpc<SolanaRpcApi>
@@ -31,12 +35,18 @@ export interface AgentSearchParams {
   framework_origin?: string
   is_verified?: boolean
 
+  // Activity filtering (proof-of-agent)
+  exclude_unverified?: boolean // Default: true (hide agents with 0 jobs)
+  exclude_inactive?: boolean   // Default: true (hide agents with no payment in 30+ days)
+  exclude_dead?: boolean        // Default: false
+  inactivity_threshold_days?: number // Default: 30
+
   // Pagination
   page?: number
   limit?: number
 
   // Sorting
-  sort_by?: 'reputation' | 'price' | 'total_jobs' | 'created_at'
+  sort_by?: 'reputation' | 'price' | 'total_jobs' | 'created_at' | 'activity'
   sort_order?: 'asc' | 'desc'
 
   // Search
@@ -62,6 +72,7 @@ export interface Agent {
   x402_service_endpoint: string
   x402_total_payments: bigint
   x402_total_calls: bigint
+  last_payment_timestamp: bigint // Last payment received (proof-of-agent)
 
   // Reputation & stats
   reputation_score: number
@@ -435,6 +446,26 @@ export class AgentDiscoveryClient {
   private applyFilters(agents: Agent[], params: AgentSearchParams): Agent[] {
     let filtered = agents
 
+    // Apply activity-based filtering (proof-of-agent)
+    // Default: hide unverified and inactive agents
+    const excludeUnverified = params.exclude_unverified ?? true
+    const excludeInactive = params.exclude_inactive ?? true
+    const excludeDead = params.exclude_dead ?? false
+
+    const statusConfig: AgentStatusConfig = {
+      inactivityThresholdDays: params.inactivity_threshold_days ?? 30
+    }
+
+    filtered = filterAgentsByStatus(
+      filtered as Array<Pick<Agent, 'x402_total_calls' | 'last_payment_timestamp'>>,
+      {
+        excludeUnverified,
+        excludeInactive,
+        excludeDead,
+        config: statusConfig
+      }
+    ) as Agent[]
+
     // Filter by x402_enabled
     if (params.x402_enabled !== undefined) {
       filtered = filtered.filter(a => a.x402_enabled === params.x402_enabled)
@@ -515,6 +546,10 @@ export class AgentDiscoveryClient {
           break
         case 'created_at':
           comparison = Number(a.created_at - b.created_at)
+          break
+        case 'activity':
+          // Sort by last payment timestamp (most recent first when desc)
+          comparison = Number(a.last_payment_timestamp - b.last_payment_timestamp)
           break
       }
 

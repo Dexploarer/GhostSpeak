@@ -88,6 +88,7 @@ pub struct Agent {
     pub x402_service_endpoint: String, // HTTP endpoint for x402 payments
     pub x402_total_payments: u64, // Total x402 payments received
     pub x402_total_calls: u64,    // Total x402 API calls serviced
+    pub last_payment_timestamp: i64, // Last time agent received x402 payment (proof of activity)
     // API Schema Support for Service Discovery
     pub api_spec_uri: String,     // IPFS/HTTP URL to OpenAPI 3.0 spec (JSON)
     pub api_version: String,      // Semantic version of the API (e.g., "1.0.0")
@@ -131,6 +132,7 @@ impl Agent {
         4 + MAX_GENERAL_STRING_LENGTH + // x402_service_endpoint
         8 + // x402_total_payments u64
         8 + // x402_total_calls u64
+        8 + // last_payment_timestamp i64
         // API schema fields
         4 + MAX_GENERAL_STRING_LENGTH + // api_spec_uri
         4 + 32 + // api_version (max 32 chars for semver like "1.0.0")
@@ -151,6 +153,31 @@ impl Agent {
         // SECURITY: Safe conversion with bounds checking
         self.reputation_score = reputation_score.min(u32::MAX as u64) as u32;
         self.updated_at = Clock::get().unwrap().unix_timestamp;
+    }
+
+    /// Check if agent is verified (has completed at least 1 paid job)
+    /// Simple proof-of-agent: real agents do real work
+    pub fn is_verified_agent(&self) -> bool {
+        self.x402_total_calls > 0
+    }
+
+    /// Check if agent is active (received payment in last 30 days)
+    pub fn is_active_agent(&self, current_time: i64) -> bool {
+        if self.last_payment_timestamp == 0 {
+            return false;
+        }
+        let days_since_payment = (current_time - self.last_payment_timestamp) / 86400;
+        days_since_payment < 30
+    }
+
+    /// Check if agent is dead (no payment in 30+ days but has history)
+    pub fn is_dead_agent(&self, current_time: i64) -> bool {
+        self.x402_total_calls > 0 && !self.is_active_agent(current_time)
+    }
+
+    /// Update last payment timestamp (called when x402 payment received)
+    pub fn record_payment_activity(&mut self, timestamp: i64) {
+        self.last_payment_timestamp = timestamp;
     }
 
     /// Initialize a new agent
@@ -191,6 +218,7 @@ impl Agent {
         self.metadata_uri = String::new();
         self.api_spec_uri = String::new();
         self.api_version = String::new();
+        self.last_payment_timestamp = 0;
         self.bump = bump;
 
         Ok(())

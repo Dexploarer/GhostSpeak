@@ -71,8 +71,8 @@ export interface Agent {
   x402_price_per_call: bigint
   x402_service_endpoint: string
   x402_total_payments: bigint
-  x402_total_calls: bigint
-  last_payment_timestamp: bigint // Last payment received (proof-of-agent)
+  x402TotalCalls: bigint
+  lastPaymentTimestamp: bigint // Last payment received (proof-of-agent)
 
   // Reputation & stats
   reputation_score: number

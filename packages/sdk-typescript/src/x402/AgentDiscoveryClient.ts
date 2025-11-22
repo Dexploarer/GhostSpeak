@@ -62,6 +62,7 @@ export interface Agent {
   x402_service_endpoint: string
   x402_total_payments: bigint
   x402_total_calls: bigint
+  last_payment_timestamp: bigint
 
   // Reputation & stats
   reputation_score: number
@@ -414,6 +415,10 @@ export class AgentDiscoveryClient {
         x402_total_calls:
           agentWithX402.x402TotalCalls ??
           agentWithX402.x402_total_calls ??
+          0n,
+        last_payment_timestamp:
+          agentWithX402.lastPaymentTimestamp ??
+          agentWithX402.last_payment_timestamp ??
           0n,
         // Standard fields
         reputation_score: decodedAgent.reputationScore,

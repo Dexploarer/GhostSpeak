@@ -52,10 +52,15 @@ export class ReputationSimulator {
         const roundResult = await this.executeRound(
           round,
           scenario,
-          agentStates,
+          new Map(agentStates),  // Create a deep copy of the agent states
           strategy
         )
         rounds.push(roundResult)
+  
+        // Update master state with round results
+        roundResult.agentStates.forEach((value, key) => {
+          agentStates.set(key, value)
+        })
       }
 
       // Calculate final metrics

@@ -192,6 +192,9 @@ pub fn record_x402_payment(
         .checked_add(payment_data.amount)
         .ok_or(GhostSpeakError::ArithmeticOverflow)?;
 
+    // Update last payment timestamp for proof-of-agent activity tracking
+    agent.last_payment_timestamp = ctx.accounts.clock.unix_timestamp;
+
     msg!(
         "x402 payment recorded: amount={}, total_payments={}, total_calls={}",
         payment_data.amount,

@@ -57,3 +57,20 @@ export * as governance from './governance-helpers.js'
 
 // Feature flags and gates (configuration)
 export * as features from './feature-flags.js'
+
+// Agent status utilities (proof-of-agent)
+export {
+  AgentStatus,
+  isAgentVerified,
+  isAgentActive,
+  isAgentInactive,
+  isAgentDead,
+  getAgentStatus,
+  filterAgentsByStatus,
+  sortAgentsByActivity,
+  getTimeSinceLastPayment,
+  getAgentStatusSummary,
+  type AgentStatusConfig,
+  type AgentStatusFilterOptions,
+  type AgentStatusSummary
+} from './agent-status.js'

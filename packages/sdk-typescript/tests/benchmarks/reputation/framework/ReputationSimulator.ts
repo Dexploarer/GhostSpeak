@@ -346,7 +346,8 @@ export class ReputationSimulator {
       const variance = this.calculateVariance(separations)
 
       // Converged if variance < 100
-      if (variance < 100) {
+      const CONVERGENCE_VARIANCE_THRESHOLD = 100; // Represents a stable reputation separation
+      if (variance < CONVERGENCE_VARIANCE_THRESHOLD) {
         return i
       }
     }

@@ -157,10 +157,9 @@ export function getAgentStatus(
     status = AgentStatus.Unverified
   } else if (isActive) {
     status = AgentStatus.Active
-  } else if (isDead) {
-    status = AgentStatus.Inactive
   } else {
-    status = AgentStatus.Dead
+    // isDead is true here (verified and not active)
+    status = AgentStatus.Inactive
   }
 
   return {

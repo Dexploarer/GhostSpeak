@@ -88,6 +88,7 @@ pub struct Agent {
     pub x402_service_endpoint: String, // HTTP endpoint for x402 payments
     pub x402_total_payments: u64, // Total x402 payments received
     pub x402_total_calls: u64,    // Total x402 API calls serviced
+    pub last_payment_timestamp: i64, // Timestamp of last x402 payment (for proof-of-agent)
     // API Schema Support for Service Discovery
     pub api_spec_uri: String,     // IPFS/HTTP URL to OpenAPI 3.0 spec (JSON)
     pub api_version: String,      // Semantic version of the API (e.g., "1.0.0")
@@ -131,6 +132,7 @@ impl Agent {
         4 + MAX_GENERAL_STRING_LENGTH + // x402_service_endpoint
         8 + // x402_total_payments u64
         8 + // x402_total_calls u64
+        8 + // last_payment_timestamp i64
         // API schema fields
         4 + MAX_GENERAL_STRING_LENGTH + // api_spec_uri
         4 + 32 + // api_version (max 32 chars for semver like "1.0.0")
@@ -191,8 +193,45 @@ impl Agent {
         self.metadata_uri = String::new();
         self.api_spec_uri = String::new();
         self.api_version = String::new();
+        self.last_payment_timestamp = 0;
         self.bump = bump;
 
+        Ok(())
+    }
+
+    // ========== Proof-of-Agent Methods ==========
+
+    /// Constants for proof-of-agent verification
+    const ACTIVITY_THRESHOLD_SECONDS: i64 = 30 * 24 * 60 * 60; // 30 days
+
+    /// Check if agent is verified (has completed at least 1 paid x402 transaction)
+    pub fn is_verified_agent(&self) -> bool {
+        self.x402_total_calls > 0
+    }
+
+    /// Check if agent is active (received payment in last 30 days)
+    pub fn is_active_agent(&self, current_timestamp: i64) -> bool {
+        if !self.is_verified_agent() {
+            return false;
+        }
+        let time_since_last_payment = current_timestamp - self.last_payment_timestamp;
+        time_since_last_payment <= Self::ACTIVITY_THRESHOLD_SECONDS
+    }
+
+    /// Check if agent is dead (has payment history but inactive for 30+ days)
+    pub fn is_dead_agent(&self, current_timestamp: i64) -> bool {
+        if !self.is_verified_agent() {
+            return false; // Unverified agents are not "dead", just unverified
+        }
+        let time_since_last_payment = current_timestamp - self.last_payment_timestamp;
+        time_since_last_payment > Self::ACTIVITY_THRESHOLD_SECONDS
+    }
+
+    /// Record a payment activity (call this when x402 payment is received)
+    pub fn record_payment_activity(&mut self) -> Result<()> {
+        let clock = Clock::get()?;
+        self.last_payment_timestamp = clock.unix_timestamp;
+        self.updated_at = clock.unix_timestamp;
         Ok(())
     }
 

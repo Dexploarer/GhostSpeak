@@ -104,7 +104,7 @@
     "@solana/errors": "^2.3.0",
     "@solana/instructions": "^2.3.0",
     "@solana/kit": "^2.3.0",
-    "@solana/options": "^2.3.0",
+    "@solana/options": "^5.0.0",
     "@solana/programs": "^2.3.0",
     "@solana/rpc": "^2.3.0",
     "@solana/rpc-spec": "^5.0.0",

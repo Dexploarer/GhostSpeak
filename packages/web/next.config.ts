@@ -2,8 +2,8 @@ import type { NextConfig } from 'next'
 import path from 'path'
 
 const nextConfig: NextConfig = {
-  // Enable static export for GitHub Pages
-  output: 'export',
+  // Note: Static export disabled - this is a dynamic web3 app with wallet connections
+  // and real-time blockchain data that requires client-side rendering
 
   // Disable TypeScript checking during build for deployment
   typescript: {

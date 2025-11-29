@@ -242,14 +242,16 @@ export class H2AClient extends EventEmitter {
     try {
       const { value: latestBlockhash } = await this.rpc.getLatestBlockhash().send()
 
-      const message = pipe(
-        createTransactionMessage({ version: 0 }),
-        (m) => setTransactionMessageFeePayer(this.wallet.address, m),
-        (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
-        ...instructions.map((ix) => (m: any) => appendTransactionMessageInstruction(ix as any, m))
-      )
+      // Build transaction message with proper type inference
+      let message: unknown = createTransactionMessage({ version: 0 })
+      message = setTransactionMessageFeePayer(this.wallet.address, message as ReturnType<typeof createTransactionMessage>)
+      message = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message as Parameters<typeof setTransactionMessageLifetimeUsingBlockhash>[1])
 
-      const signedTransaction = await signTransactionMessageWithSigners(message)
+      for (const ix of instructions) {
+        message = appendTransactionMessageInstruction(ix as Parameters<typeof appendTransactionMessageInstruction>[0], message as Parameters<typeof appendTransactionMessageInstruction>[1])
+      }
+
+      const signedTransaction = await signTransactionMessageWithSigners(message as Parameters<typeof signTransactionMessageWithSigners>[0])
 
       const signatures = Object.values(signedTransaction.signatures)
       if (signatures.length === 0) {

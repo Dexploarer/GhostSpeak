@@ -146,7 +146,7 @@ export function useX402AgentPriceComparison(capability: string) {
 
       // Calculate price statistics
       const prices = response.agents
-        .map((agent) => Number(agent.pricing.pricePerCall))
+        .map((agent) => Number(agent.pricing?.pricePerCall ?? 0))
         .filter((price) => price > 0)
 
       const average = prices.length > 0
@@ -219,7 +219,7 @@ export function useX402PlatformStats() {
       return {
         totalVolume: metrics.totalVolume ?? BigInt(0),
         totalPayments: metrics.totalPayments ?? 0,
-        averagePayment: metrics.averagePayment ?? BigInt(0),
+        averagePayment: typeof metrics.averageAmount === 'bigint' ? metrics.averageAmount : BigInt(metrics.averageAmount ?? 0),
         successRate: metrics.successRate ?? 0,
         activeAgents: metrics.activeAgents ?? 0,
         topAgents: metrics.topAgents ?? []

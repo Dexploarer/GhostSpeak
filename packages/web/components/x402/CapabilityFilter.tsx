@@ -53,8 +53,16 @@ export function CapabilityFilter({
   ]
 
   const handleApplyFilters = (): void => {
+    // Map sortBy to the AgentSearchParams format
+    const mappedSortBy =
+      sortBy === 'price_asc' || sortBy === 'price_desc'
+        ? 'price'
+        : sortBy === 'calls'
+          ? 'recent'
+          : 'reputation'
+
     const filters: AgentSearchParams = {
-      sortBy
+      sortBy: mappedSortBy as 'price' | 'reputation' | 'recent'
     }
 
     if (searchTerm) {
@@ -66,11 +74,11 @@ export function CapabilityFilter({
     }
 
     if (priceRange.min !== undefined) {
-      filters.minPrice = BigInt(Math.floor(priceRange.min * 1e9)) // Convert to lamports
+      filters.minPrice = String(BigInt(Math.floor(priceRange.min * 1e9))) // Convert to lamports string
     }
 
     if (priceRange.max !== undefined) {
-      filters.maxPrice = BigInt(Math.floor(priceRange.max * 1e9))
+      filters.maxPrice = String(BigInt(Math.floor(priceRange.max * 1e9)))
     }
 
     onFilterChange(filters)

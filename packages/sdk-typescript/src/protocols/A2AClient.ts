@@ -385,16 +385,17 @@ export class A2AClient extends EventEmitter {
       // Get latest blockhash
       const { value: latestBlockhash } = await this.rpc.getLatestBlockhash().send()
 
-      // Build transaction message
-      const message = pipe(
-        createTransactionMessage({ version: 0 }),
-        (m) => setTransactionMessageFeePayer(this.wallet.address, m),
-        (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
-        ...instructions.map((ix) => (m: any) => appendTransactionMessageInstruction(ix as any, m))
-      )
+      // Build transaction message with proper type inference
+      let message: unknown = createTransactionMessage({ version: 0 })
+      message = setTransactionMessageFeePayer(this.wallet.address, message as ReturnType<typeof createTransactionMessage>)
+      message = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message as Parameters<typeof setTransactionMessageLifetimeUsingBlockhash>[1])
+
+      for (const ix of instructions) {
+        message = appendTransactionMessageInstruction(ix as Parameters<typeof appendTransactionMessageInstruction>[0], message as Parameters<typeof appendTransactionMessageInstruction>[1])
+      }
 
       // Sign transaction
-      const signedTransaction = await signTransactionMessageWithSigners(message)
+      const signedTransaction = await signTransactionMessageWithSigners(message as Parameters<typeof signTransactionMessageWithSigners>[0])
 
       // Extract signature
       const signatures = Object.values(signedTransaction.signatures)

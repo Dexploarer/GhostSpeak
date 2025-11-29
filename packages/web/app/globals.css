@@ -1,20 +1,99 @@
 @import 'tailwindcss';
 
 :root {
+  /* Clean white background with soft purple accents */
   --background: #ffffff;
-  --foreground: #171717;
-  --primary: #00ced1;
-  --secondary: #9945ff;
+  --foreground: #1f2937;
+
+  /* Soft purple primary - friendly and modern */
+  --primary: #8b5cf6;
+  --primary-light: #a78bfa;
+  --primary-dark: #7c3aed;
+
+  /* Soft lavender secondary */
+  --secondary: #f3f4f6;
+  --secondary-dark: #e5e7eb;
+
+  /* Neutral grays - clean and minimal */
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+
+  /* Soft purple accent */
+  --accent: #c4b5fd;
+  --accent-foreground: #1f2937;
+
+  /* Card styling - elevated with soft shadow */
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+
+  /* Subtle text colors */
+  --text-subtle: #9ca3af;
+  --text-muted: #d1d5db;
+
+  /* Pastel task colors */
+  --pastel-pink: #fce7f3;
+  --pastel-yellow: #fef3c7;
+  --pastel-blue: #dbeafe;
+  --pastel-green: #d1fae5;
+  --pastel-purple: #ede9fe;
+
+  /* Status colors - soft and friendly */
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --success: #34d399;
+  --success-foreground: #ffffff;
+  --warning: #fbbf24;
+  --warning-foreground: #ffffff;
+
+  /* Radius - more rounded for friendly feel */
+  --radius: 0.75rem;
 }
 
 .dark {
-  --background: #030712;
+  --background: #111827;
   --foreground: #f9fafb;
+
+  --primary: #a78bfa;
+  --primary-light: #c4b5fd;
+  --primary-dark: #8b5cf6;
+
+  --secondary: #1f2937;
+  --secondary-dark: #374151;
+
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
+  --border: #374151;
+
+  --accent: #8b5cf6;
+  --accent-foreground: #f9fafb;
+
+  --card: #1f2937;
+  --card-foreground: #f9fafb;
+
+  --pastel-pink: #831843;
+  --pastel-yellow: #78350f;
+  --pastel-blue: #1e3a8a;
+  --pastel-green: #065f46;
+  --pastel-purple: #5b21b6;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-card: var(--card);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -25,43 +104,74 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Soft purple theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #6b7280;
+  background: var(--muted);
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+  transition: background 0.2s ease;
 }
 
-/* Glassmorphism effect */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Glassmorphism effect - Modern soft style */
 .glass {
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.08);
 }
 
 .dark .glass {
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(17, 24, 39, 0.7);
+  border: 1px solid rgba(167, 139, 250, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Gradient text */
+/* Gradient text - Purple to Light Purple */
 .gradient-text {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Soft gradient background */
+.gradient-soft {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+/* Purple gradient background */
+.gradient-purple {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+/* Pastel gradient backgrounds */
+.gradient-pastel-pink {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+}
+
+.gradient-pastel-blue {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.gradient-pastel-green {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.gradient-pastel-yellow {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
 }
 
 /* Shimmer animation for skeletons */
@@ -94,9 +204,9 @@ body {
   will-change: transform;
 }
 
-/* Improved focus states for accessibility */
+/* Improved focus states for accessibility - Coral theme */
 .focus-ring {
-  @apply focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950;
+  @apply focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950;
 }
 
 /* Modern button hover effects */
@@ -111,7 +221,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Card hover effects */
+/* Card hover effects - Softer elevation */
 .card-hover {
   transition:
     transform 0.2s ease-in-out,
@@ -119,10 +229,23 @@ body {
 }
 
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.15);
 }
 
 .dark .card-hover:hover {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 32px rgba(167, 139, 250, 0.25);
+}
+
+/* Soft elevation shadows */
+.shadow-soft {
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.08);
+}
+
+.shadow-soft-md {
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.12);
+}
+
+.shadow-soft-lg {
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
 }

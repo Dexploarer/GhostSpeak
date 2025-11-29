@@ -34,6 +34,14 @@
     "./minimal": {
       "import": "./dist/minimal/core-minimal.js",
       "types": "./dist/minimal/core-minimal.d.ts"
+    },
+    "./x402": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./x402/*": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [

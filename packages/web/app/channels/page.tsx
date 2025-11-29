@@ -193,7 +193,7 @@ export default function ChannelsPage(): React.JSX.Element {
             <Hash className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.public}</div>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.public}</div>
           </CardContent>
         </Card>
 
@@ -203,7 +203,7 @@ export default function ChannelsPage(): React.JSX.Element {
             <Lock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.private}</div>
+            <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">{stats.private}</div>
           </CardContent>
         </Card>
 

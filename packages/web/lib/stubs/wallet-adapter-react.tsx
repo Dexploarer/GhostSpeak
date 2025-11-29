@@ -4,14 +4,17 @@
 import React from 'react'
 
 export const useWallet = () => ({
-  publicKey: null as any, // STUB: normally a PublicKey
+  publicKey: null as unknown,
   connected: false,
   connecting: false,
-  disconnect: () => {},
-  connect: () => {},
+  disconnect: async () => {},
+  connect: async () => {},
+  signTransaction: async <T,>(tx: T): Promise<T> => tx,
+  signAllTransactions: async <T,>(txs: T[]): Promise<T[]> => txs,
   wallet: null,
   wallets: [],
   select: () => {},
+  sendTransaction: async () => '' as unknown,
 })
 
 export const useConnection = () => ({

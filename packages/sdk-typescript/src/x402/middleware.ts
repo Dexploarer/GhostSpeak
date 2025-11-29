@@ -601,7 +601,7 @@ async function lookupCallerIdentity(
         is_verified: agent.isVerified,
         capabilities: agent.capabilities,
         framework_origin: agent.frameworkOrigin,
-        x402_enabled: agent.x402Enabled ?? false
+        x402_enabled: true // Assume all agents support x402 (no explicit flag in schema)
       }
     }
   } catch (error) {

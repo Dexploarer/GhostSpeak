@@ -34,39 +34,39 @@ export default defineConfig({
                     label: 'Start Here',
                     items: [
                         // Each item here is one entry in the navigation menu.
-                        { label: 'Introduction', link: '/intro' },
-                        { label: 'Quickstart Guide', link: '/guides/quickstart-guide' },
-                        { label: 'Pitch Deck', link: '/general/pitch-deck' },
+                        { label: 'Introduction', slug: 'intro' },
+                        { label: 'Quickstart Guide', slug: 'guides/quickstart-guide' },
+                        { label: 'Pitch Deck', slug: 'general/pitch-deck' },
                     ],
                 },
                 {
                     label: 'Core Concepts',
                     items: [
-                        { label: 'Architecture', link: '/core/architecture' },
-                        { label: 'Security', link: '/core/security' },
-                        { label: 'x402 Protocol', link: '/core/x402-payment-flow' },
+                        { label: 'Architecture', slug: 'core/architecture' },
+                        { label: 'Security', slug: 'core/security' },
+                        { label: 'x402 Protocol', slug: 'core/x402-payment-flow' },
                     ]
                 },
                 {
                     label: 'Guides',
                     items: [
-                        { label: 'Deployment', link: '/guides/deployment' },
-                        { label: 'Migration', link: '/guides/x402-migration-guide' },
-                        { label: 'Testing', link: '/guides/comprehensive-testing-guide' },
+                        { label: 'Deployment', slug: 'guides/deployment' },
+                        { label: 'Migration', slug: 'guides/x402-migration-guide' },
+                        { label: 'Testing', slug: 'guides/comprehensive-testing-guide' },
                     ]
                 },
                 {
                     label: 'API Reference',
                     items: [
-                        { label: 'API Overview', link: '/api/api' },
-                        { label: 'Examples', link: '/api/x402-api-examples' },
+                        { label: 'API Overview', slug: 'api/api' },
+                        { label: 'Examples', slug: 'api/x402-api-examples' },
                     ]
                 },
                 {
                     label: 'Reports & Analysis',
                     items: [
-                        { label: 'Network Readiness', link: '/reports/network-readiness-report' },
-                        { label: 'Tech Stack Review', link: '/reports/tech-stack-review-2025' },
+                        { label: 'Network Readiness', slug: 'reports/network-readiness-report' },
+                        { label: 'Tech Stack Review', slug: 'reports/tech-stack-review-2025' },
                     ]
                 }
             ],

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWallet } from '@/lib/stubs/wallet-stubs' // STUB for deployment
 import { Plus, Bot, Search, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

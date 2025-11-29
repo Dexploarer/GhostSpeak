@@ -1,7 +1,7 @@
 # Deploy Astro docs site to GitHub Pages
 # For GhostSpeak documentation
 
-name: Deploy Docs to Pages
+name: Deploy Astro docs to Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -57,20 +57,6 @@ jobs:
       - name: Build Astro docs
         working-directory: packages/docs
         run: bun run build
-
-      - name: Add GitHub Pages configuration
-        working-directory: packages/docs/dist
-        run: |
-          # Create .nojekyll to allow underscore-prefixed directories
-          touch .nojekyll
-          # Add a basic favicon if missing
-          if [ ! -f favicon.svg ]; then
-            cat > favicon.svg << 'EOF'
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-</svg>
-EOF
-          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

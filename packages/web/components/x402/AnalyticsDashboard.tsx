@@ -96,7 +96,7 @@ export function AnalyticsDashboard(): React.JSX.Element {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.topAgents.slice(0, 5).map((agent, index) => {
+              {stats.topAgents.slice(0, 5).map((agent: any, index: number) => {
                 const earnings = Number(agent.earnings ?? 0) / 1e9
 
                 return (

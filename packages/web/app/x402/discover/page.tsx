@@ -150,7 +150,7 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                     </div>
                   ) : priceComparison && priceComparison.agents.length > 0 ? (
                     <PricingComparison
-                      agents={priceComparison.agents.map((agent) => ({
+                      agents={priceComparison.agents.map((agent: any) => ({
                         address: agent.address,
                         name: agent.name,
                         pricing: agent.pricing

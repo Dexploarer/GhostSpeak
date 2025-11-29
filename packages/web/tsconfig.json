@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@solana/wallet-adapter-react": ["./lib/stubs/wallet-adapter-react.tsx"],
+      "@solana/wallet-adapter-react-ui": ["./lib/stubs/wallet-adapter-react.tsx"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

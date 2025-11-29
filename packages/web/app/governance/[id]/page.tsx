@@ -605,3 +605,9 @@ export default function ProposalDetailPage(): React.JSX.Element {
     </div>
   )
 }
+
+// Required for static export
+export async function generateStaticParams() {
+  // Return empty array for now - in production this would fetch real proposal IDs
+  return []
+}

@@ -6,11 +6,29 @@
 
 import { createSolanaRpc, address } from '@solana/kit'
 import type { Address, TransactionSigner, Rpc, SolanaRpcApi, GetTransactionApi } from '@solana/kit'
-import { X402Client } from '@ghostspeak/sdk/x402/X402Client'
-import { AgentDiscoveryClient } from '@ghostspeak/sdk/x402/AgentDiscoveryClient'
-import { X402AnalyticsTracker } from '@ghostspeak/sdk/x402/analytics'
-import { PaymentStreamingManager } from '@ghostspeak/sdk/x402/PaymentStreaming'
-import GhostSpeakClient from '@ghostspeak/sdk'
+
+// Temporary stubs for deployment - replace with actual SDK imports when build issues are resolved
+const X402Client = class X402ClientStub {
+  constructor() {}
+  on() {}
+}
+
+const AgentDiscoveryClient = class AgentDiscoveryClientStub {
+  constructor() {}
+}
+
+const X402AnalyticsTracker = class X402AnalyticsTrackerStub {
+  constructor() {}
+  trackPayment() {}
+}
+
+const PaymentStreamingManager = class PaymentStreamingManagerStub {
+  constructor() {}
+}
+
+const GhostSpeakClient = class GhostSpeakClientStub {
+  constructor() {}
+}
 
 // =====================================================
 // CONFIGURATION

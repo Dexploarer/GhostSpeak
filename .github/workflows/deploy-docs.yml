@@ -1,5 +1,6 @@
 # Deploy Astro docs site to GitHub Pages
 # For GhostSpeak documentation
+# Uses official Astro GitHub Action for optimal deployment
 
 name: Deploy Docs to Pages
 
@@ -30,59 +31,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
       - name: Install root dependencies
         run: bun install
 
-      - name: Install docs dependencies
-        working-directory: packages/docs
-        run: bun install
-
-      - name: Build Astro docs
-        working-directory: packages/docs
-        run: bun run build
-
-      - name: Add GitHub Pages configuration
-        working-directory: packages/docs/dist
-        run: |
-          # Create .nojekyll to allow underscore-prefixed directories
-          touch .nojekyll
-          # Add a basic favicon if missing
-          if [ ! -f favicon.svg ]; then
-            echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' > favicon.svg
-          fi
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Build and deploy with Astro
+        uses: withastro/action@v5
         with:
-          path: packages/docs/dist
+          path: ./packages/docs
+          package-manager: bun@latest
 
-  # Deployment job
   deploy:
+    needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

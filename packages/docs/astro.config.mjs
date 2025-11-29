@@ -10,9 +10,13 @@ export default defineConfig({
         starlight({
             title: 'GhostSpeak',
             tagline: 'The Decentralized Service Commerce Protocol',
-            social: {
-                github: 'https://github.com/Dexploarer/GhostSpeak',
-            },
+            social: [
+                {
+                    icon: 'github',
+                    label: 'GitHub',
+                    href: 'https://github.com/Dexploarer/GhostSpeak',
+                },
+            ],
             customCss: [
                 // './src/styles/custom.css',
             ],

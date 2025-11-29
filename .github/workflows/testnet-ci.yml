@@ -82,7 +82,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: false
 
       - name: ⚡ Install Solana CLI
         run: |
@@ -152,7 +151,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: false
 
       - name: 📚 Install dependencies
         run: npm ci
@@ -186,7 +184,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: false
 
       - name: ⚡ Install Solana CLI
         run: |
@@ -258,7 +255,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: false
 
       - name: ⚡ Install Solana CLI
         run: |
@@ -311,7 +307,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: false
 
       - name: ⚡ Install Solana CLI
         run: |
@@ -358,7 +353,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: false
 
       - name: ⚡ Install Solana CLI
         run: |

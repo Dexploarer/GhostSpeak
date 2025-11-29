@@ -5,7 +5,7 @@ import react from '@astrojs/react';
 // https://astro.build/config
 export default defineConfig({
     site: 'https://dexploarer.github.io',
-    base: '/ghostspeak',
+    base: '/GhostSpeak',
     integrations: [
         starlight({
             title: 'GhostSpeak',

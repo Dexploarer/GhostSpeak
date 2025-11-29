@@ -49,8 +49,6 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          static_site_generator: astro
 
       - name: Install root dependencies
         run: bun install

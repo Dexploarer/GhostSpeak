@@ -104,12 +104,14 @@ export function X402AgentCard({
           </div>
 
           {/* x402 Pricing */}
-          <div className="glass rounded-lg p-3">
-            <PricingDisplay pricing={agent.pricing} showDetails />
-          </div>
+          {agent.pricing && (
+            <div className="glass rounded-lg p-3">
+              <PricingDisplay pricing={agent.pricing} showDetails />
+            </div>
+          )}
 
           {/* Performance Indicator */}
-          {agent.pricing.responseTimeMs && agent.pricing.responseTimeMs > 0 && (
+          {agent.pricing?.responseTimeMs && agent.pricing.responseTimeMs > 0 && (
             <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-600/10">
               <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
               <span className="text-sm text-green-600 dark:text-green-400 font-medium">

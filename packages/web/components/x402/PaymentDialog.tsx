@@ -41,7 +41,7 @@ export function PaymentDialog({
 
   const createPayment = useCreateX402Payment()
 
-  const pricePerCall = Number(agent.pricing.pricePerCall) / 1e9 // Convert lamports to SOL
+  const pricePerCall = Number(agent.pricing?.pricePerCall ?? 0) / 1e9 // Convert lamports to SOL
   const totalAmount = pricePerCall * quantity
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -57,7 +57,7 @@ export function PaymentDialog({
       const receipt = await createPayment.mutateAsync({
         recipient: agent.address,
         amount: BigInt(Math.floor(totalAmount * 1e9)), // Convert to lamports
-        token: agent.pricing.paymentToken,
+        token: agent.pricing?.paymentToken ?? agent.address,
         description: `Payment for ${agent.name} service (${quantity} call${quantity > 1 ? 's' : ''})`,
         metadata: {
           agentAddress: agent.address,
@@ -109,7 +109,7 @@ export function PaymentDialog({
             <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">Payment Token</span>
               <span className="font-mono text-xs truncate max-w-[200px]">
-                {agent.pricing.paymentToken}
+                {agent.pricing?.paymentToken ?? 'N/A'}
               </span>
             </div>
           </div>

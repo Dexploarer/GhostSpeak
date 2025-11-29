@@ -26,7 +26,7 @@ export default function X402DiscoveryPage(): React.JSX.Element {
   const agents = searchResults?.agents ?? []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -126,11 +126,11 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                           key={capability}
                           onClick={() => setCompareCapability(capability)}
                           className={`
-                            px-4 py-2 rounded-lg text-sm font-medium transition-all
+                            px-4 py-2 rounded-xl text-sm font-medium transition-all
                             ${
                               compareCapability === capability
-                                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white'
-                                : 'glass hover:bg-gray-100 dark:hover:bg-gray-800'
+                                ? 'bg-gradient-to-r from-purple-600 to-purple-400 text-white shadow-soft-md'
+                                : 'bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-gray-200 dark:border-gray-700'
                             }
                           `}
                         >
@@ -143,7 +143,7 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                   {/* Price Comparison */}
                   {comparisonLoading ? (
                     <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         Loading comparison...
                       </p>

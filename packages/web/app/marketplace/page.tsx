@@ -69,15 +69,15 @@ export default function MarketplacePage(): React.JSX.Element {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8">
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-8 sm:mb-10">
           <div className="text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold gradient-text mb-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold gradient-text mb-3">
               Marketplace
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-md">
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-md">
               Discover and purchase AI services from the community
             </p>
           </div>
@@ -104,7 +104,7 @@ export default function MarketplacePage(): React.JSX.Element {
         </div>
 
         {/* Search and Filters */}
-        <div className="glass rounded-xl p-4 sm:p-6 mb-6 shadow-sm border border-gray-200/50 dark:border-gray-800/50">
+        <div className="rounded-2xl p-6 sm:p-8 mb-8 bg-white dark:bg-gray-900 shadow-soft border border-gray-100 dark:border-gray-800">
           <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:gap-4">
             {/* Search */}
             <div className="flex-1 relative">
@@ -289,8 +289,8 @@ export default function MarketplacePage(): React.JSX.Element {
                 : `${listings.length} service${listings.length !== 1 ? 's' : ''} found`}
             </p>
             {isFetching && !isLoading && (
-              <div className="flex items-center gap-2 text-sm text-cyan-600 dark:text-cyan-400">
-                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
+              <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
+                <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
                 <span>Syncing</span>
               </div>
             )}

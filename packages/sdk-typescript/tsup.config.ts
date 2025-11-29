@@ -21,6 +21,9 @@ export default defineConfig([
     minify: process.env.NODE_ENV === 'production',
     target: 'es2022',
     platform: 'neutral', // Better for both node and browser
+    esbuildOptions(options) {
+      options.conditions = ['edge-light', 'node', 'import']
+    },
     external: [
       // Mark all @solana packages as external for better tree-shaking
       '@solana/kit',
@@ -36,6 +39,7 @@ export default defineConfig([
       '@solana/programs',
       '@solana/sysvars',
       '@solana/spl-token',
+      '@solana/spl-account-compression',
       '@solana/options',
       '@solana/codecs-core',
       '@solana/codecs-data-structures',
@@ -43,11 +47,13 @@ export default defineConfig([
       '@solana/codecs-strings',
       '@solana/codecs',
       '@solana/errors',
+      '@solana/functional',
       '@solana-program/system',
       '@solana-program/token-2022',
       '@noble/curves',
       '@noble/hashes',
       'bs58',
+      'kubo-rpc-client',
       // Node.js built-ins
       'util',
       'fs',

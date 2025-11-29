@@ -30,13 +30,14 @@ export default function AgentsPage(): React.JSX.Element {
   )
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold gradient-text">AI Agents</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Manage and monitor your AI agents</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-10">
+          <div>
+            <h1 className="text-4xl font-bold gradient-text mb-2">AI Agents</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">Manage and monitor your AI agents</p>
+          </div>
         <Dialog open={showRegisterForm} onOpenChange={setShowRegisterForm}>
           <DialogTrigger asChild>
             <Button variant="gradient" disabled={!publicKey} className="gap-2">
@@ -54,16 +55,16 @@ export default function AgentsPage(): React.JSX.Element {
       </div>
 
       {/* Search and Filter */}
-      <div className="glass rounded-xl p-4 mb-6">
+      <div className="rounded-2xl p-6 mb-8 bg-white dark:bg-gray-900 shadow-soft border border-gray-100 dark:border-gray-800">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
               type="text"
               placeholder="Search agents by name or capability..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
           <Button variant="outline" className="gap-2">
@@ -123,6 +124,7 @@ export default function AgentsPage(): React.JSX.Element {
           </p>
         </div>
       )}
+    </div>
     </div>
   )
 }

@@ -9,6 +9,10 @@ on:
     branches: ["main"]
     paths:
       - "packages/docs/**"
+      - ".github/workflows/deploy-docs.yml"
+      - "package.json"
+      - "bun.lock"
+      - "pnpm-workspace.yaml"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

@@ -20,7 +20,7 @@ import { MarketplaceModule, type GhostSpeakClient } from '@ghostspeak/sdk'
 import { getErrorMessage } from '../utils/type-guards.js'
 
 export class MarketplaceService implements IMarketplaceService {
-  constructor(private deps: MarketplaceServiceDependencies) {}
+  constructor(private deps: MarketplaceServiceDependencies) { }
 
   /**
    * Create a new service listing
@@ -57,25 +57,25 @@ export class MarketplaceService implements IMarketplaceService {
       // Get wallet signer
       const walletSigner = await getWallet()
       console.log('🔍 Using wallet signer:', walletSigner.address.toString())
-      
+
       // Get blockchain client
       const client = await this.deps.blockchainService.getClient('devnet')
-      
+
       // Create MarketplaceModule instance
       console.log('🔍 Creating MarketplaceModule from SDK...')
-      
+
       const typedClient = client as GhostSpeakClient
       const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
-      })
-      
+      }) as any
+
       console.log('🔍 Calling MarketplaceModule.createServiceListing...')
-      
+
       // Convert SOL to lamports
       const priceLamports = BigInt(Math.floor(listing.priceInSol * 1_000_000_000))
-      
+
       // Create metadata JSON
       const metadataJson = JSON.stringify({
         title: listing.title,
@@ -84,7 +84,7 @@ export class MarketplaceService implements IMarketplaceService {
         ...listing.metadata
       })
       const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
-      
+
       // Call SDK to create listing on blockchain
       const signature = await marketplaceModule.createServiceListing({
         signer: walletSigner,
@@ -94,23 +94,23 @@ export class MarketplaceService implements IMarketplaceService {
         pricePerHour: priceLamports,
         category: listing.category,
         capabilities: agent.capabilities
-      })
-      
+      } as any)
+
       console.log('🔍 Transaction signature:', signature)
-      
+
       if (!signature || typeof signature !== 'string') {
         throw new Error('No transaction signature returned from marketplace listing creation')
       }
-      
+
       // Store listing data locally for caching
       // Store listing data locally for caching
       // Note: In a real implementation, we would use a proper storage service
       console.log(`Listing created with ID: ${listing.id}`)
-      
+
       console.log(`✅ Service listing created successfully!`)
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
-      
+
       return listing
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
@@ -158,11 +158,11 @@ export class MarketplaceService implements IMarketplaceService {
   async searchListings(criteria: SearchCriteria): Promise<ServiceListing[]> {
     try {
       let listings = await this.getAllListings()
-      
+
       // Text search
       if (criteria.query) {
         const query = criteria.query.toLowerCase()
-        listings = listings.filter(listing => 
+        listings = listings.filter(listing =>
           listing.title.toLowerCase().includes(query) ||
           listing.description.toLowerCase().includes(query)
         )
@@ -287,20 +287,20 @@ export class MarketplaceService implements IMarketplaceService {
     try {
       // Get wallet signer
       const walletSigner = await getWallet()
-      
+
       // Get blockchain client
       const client = await this.deps.blockchainService.getClient('devnet')
-      
+
       // Create MarketplaceModule instance
       const typedClient = client as GhostSpeakClient
       const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
-      })
-      
+      }) as any
+
       console.log('🔍 Calling MarketplaceModule.updateServiceListing...')
-      
+
       // Prepare update parameters
       const updateParams: any = {
         listingId,
@@ -309,28 +309,28 @@ export class MarketplaceService implements IMarketplaceService {
         price: updates.priceInSol ? BigInt(Math.floor(updates.priceInSol * 1_000_000_000)) : undefined,
         isActive: updates.isActive
       }
-      
+
       // Remove undefined values
-      Object.keys(updateParams).forEach(key => 
+      Object.keys(updateParams).forEach(key =>
         updateParams[key] === undefined && delete updateParams[key]
       )
-      
+
       // Execute update on blockchain
       const signature = await marketplaceModule.updateServiceListing(walletSigner, updateParams)
-      
+
       console.log('🔍 Transaction signature:', signature)
-      
+
       if (!signature || typeof signature !== 'string') {
         throw new Error('No transaction signature returned from marketplace update')
       }
-      
+
       // Update local cache
       await this.storeListing(updatedListing)
-      
+
       console.log(`✅ Service listing updated successfully!`)
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)
-      
+
       return updatedListing
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
@@ -373,18 +373,18 @@ export class MarketplaceService implements IMarketplaceService {
     try {
       // Get blockchain client
       const client = await this.deps.blockchainService.getClient('devnet')
-      
+
       // Create MarketplaceModule instance
       const typedClient = client as GhostSpeakClient
       const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
-      })
-      
+      }) as any
+
       // Get all service listings from blockchain
       const listings = await marketplaceModule.getAllServiceListings()
-      
+
       // Convert to our ServiceListing format
       return listings.map((listing: any) => ({
         id: listing.data.id || listing.address,
@@ -407,23 +407,23 @@ export class MarketplaceService implements IMarketplaceService {
   private async getListingById(listingId: string): Promise<ServiceListing | null> {
     try {
       // Note: In a real implementation, we would check local cache first
-      
+
       // If not in cache, query blockchain
       const client = await this.deps.blockchainService.getClient('devnet')
-      
+
       const typedClient = client as GhostSpeakClient
       const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
-      })
-      
+      }) as any
+
       // Get listing by ID from blockchain
       const listing = await marketplaceModule.getServiceById(listingId)
       if (!listing) {
         return null
       }
-      
+
       // Convert to our format
       const serviceListing: ServiceListing = {
         id: listing.id || listingId,
@@ -436,9 +436,9 @@ export class MarketplaceService implements IMarketplaceService {
         createdAt: BigInt(listing.createdAt || Date.now()),
         metadata: {}
       }
-      
+
       // Note: In a real implementation, we would cache for future use
-      
+
       return serviceListing
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error passed to console.error
@@ -452,34 +452,34 @@ export class MarketplaceService implements IMarketplaceService {
       // Get wallet signer
       const walletSigner = await getWallet()
       console.log('🔍 Creating purchase transaction for:', purchase.id)
-      
+
       // Get blockchain client
       const client = await this.deps.blockchainService.getClient('devnet')
-      
+
       // Create MarketplaceModule instance
       const typedClient = client as GhostSpeakClient
       const marketplaceModule = new MarketplaceModule({
         programId: typedClient.config.programId,
         rpc: typedClient.config.rpc,
         commitment: 'confirmed'
-      })
-      
+      }) as any
+
       console.log('🔍 Calling MarketplaceModule.purchase...')
-      
+
       // Execute purchase on blockchain
       const signature = await marketplaceModule.purchase(walletSigner, {
         listingId: purchase.listingId,
         amount: purchase.amount
       })
-      
+
       console.log('🔍 Transaction signature:', signature)
-      
+
       if (!signature || typeof signature !== 'string') {
         throw new Error('No transaction signature returned from marketplace purchase')
       }
-      
+
       // Note: In a real implementation, we would store purchase record locally
-      
+
       console.log(`✅ Purchase transaction created successfully!`)
       console.log(`Transaction signature: ${signature}`)
       console.log(`View on explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`)

@@ -77,6 +77,9 @@ jobs:
           avm install 0.32.1
           avm use 0.32.1
       
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      
       - name: Cache dependencies
         uses: actions/cache@v4
         with:

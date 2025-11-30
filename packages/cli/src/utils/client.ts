@@ -3,9 +3,8 @@
  * Enhanced with connection pooling for optimal performance
  */
 
-import type { KeyPairSigner} from '@solana/kit';
-import { createSolanaRpc, createSolanaRpcSubscriptions, createKeyPairSignerFromBytes, address, type TransactionSigner } from '@solana/kit'
-import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID, type ExtendedRpcApi } from '@ghostspeak/sdk'
+import { createSolanaRpc, createSolanaRpcSubscriptions, createKeyPairSignerFromBytes, address, type TransactionSigner, type KeyPairSigner } from '@solana/kit'
+import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, existsSync } from 'fs'
@@ -23,34 +22,34 @@ import { rpcPoolManager } from '../services/blockchain/rpc-pool-manager.js'
  */
 export async function getWallet(): Promise<KeyPairSigner> {
   const walletService = new WalletService()
-  
+
   // First try to use the active wallet from the new wallet service
   const activeSigner = await walletService.getActiveSigner()
   if (activeSigner) {
     return activeSigner
   }
-  
+
   // Check if we need to migrate old wallet
   await walletService.migrateOldWallet()
-  
+
   // Try again after migration
   const postMigrationSigner = await walletService.getActiveSigner()
   if (postMigrationSigner) {
     return postMigrationSigner
   }
-  
+
   const config = loadConfig()
-  
+
   // Try to load from configured wallet path (old style)
   if (config.walletPath && existsSync(config.walletPath)) {
     try {
       const walletData = JSON.parse(readFileSync(config.walletPath, 'utf-8')) as number[]
       const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
-      
+
       // Import this wallet into the new system
       await walletService.importWallet('migrated', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
       log.info('Migrated existing wallet to new wallet system')
-      
+
       return signer
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -65,17 +64,17 @@ export async function getWallet(): Promise<KeyPairSigner> {
       }
     }
   }
-  
+
   // Fall back to GhostSpeak CLI wallet
   const walletPath = join(homedir(), '.config', 'solana', 'ghostspeak-cli.json')
   if (existsSync(walletPath)) {
     try {
       const walletData = JSON.parse(readFileSync(walletPath, 'utf-8')) as number[]
       const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
-      
+
       // Import this wallet
       await walletService.importWallet('cli-wallet', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
-      
+
       return signer
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -90,17 +89,17 @@ export async function getWallet(): Promise<KeyPairSigner> {
       }
     }
   }
-  
+
   // Try default Solana CLI wallet
   const defaultWalletPath = join(homedir(), '.config', 'solana', 'id.json')
   if (existsSync(defaultWalletPath)) {
     try {
       const walletData = JSON.parse(readFileSync(defaultWalletPath, 'utf-8')) as number[]
       const signer = await createKeyPairSignerFromBytes(new Uint8Array(walletData))
-      
+
       // Import this wallet
       await walletService.importWallet('solana-cli', new Uint8Array(walletData), config.network === 'localnet' ? 'devnet' : config.network as 'devnet' | 'testnet' | 'mainnet-beta')
-      
+
       return signer
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -115,12 +114,12 @@ export async function getWallet(): Promise<KeyPairSigner> {
       }
     }
   }
-  
+
   // Create new wallet if none exists
   try {
     log.info('No wallet found. Creating a new one...')
     const { wallet, mnemonic } = await walletService.createWallet('default', config.network as 'devnet' | 'testnet' | 'mainnet-beta')
-    
+
     log.success(`Created new wallet: ${wallet.metadata.address}`)
     log.warn('⚠️  Save your seed phrase:')
     log.warn(mnemonic)
@@ -129,12 +128,12 @@ export async function getWallet(): Promise<KeyPairSigner> {
     log.info(`  1. Save your seed phrase securely`)
     log.info(`  2. Fund your wallet: ${chalk.cyan('gs faucet')}`)
     log.info(`  3. Create an agent: ${chalk.cyan('gs agent register')}`)
-    
+
     const signer = await walletService.getActiveSigner()
     if (!signer) {
       throw new Error('Failed to retrieve newly created wallet')
     }
-    
+
     return signer
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -172,10 +171,10 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   pooledRpc?: any // PooledRpcClient instance
 }> {
   const config = loadConfig()
-  
+
   // Use network from config if not provided
   const selectedNetwork = network ?? config.network
-  
+
   // Set up RPC connection with connection pooling for optimal performance
   let rpcUrl = config.rpcUrl
   if (!rpcUrl) {
@@ -195,25 +194,25 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
         break
     }
   }
-  
+
   // Validate URL format
   if (!rpcUrl || typeof rpcUrl !== 'string') {
     throw new Error('Invalid RPC URL configuration')
   }
-  
+
   try {
     new URL(rpcUrl) // Validate URL format
   } catch (error) {
     throw new Error(`Invalid RPC endpoint URL: ${rpcUrl}`)
   }
-  
+
   // Use connection pool for improved performance
   const networkType = (selectedNetwork === 'localnet' ? 'devnet' : selectedNetwork) as NetworkType
   const pooledRpcClient = rpcPoolManager.getClient(networkType)
-  
+
   // Create traditional RPC client for compatibility
   const rpc = createSolanaRpc(rpcUrl)
-  
+
   // Create RPC subscriptions for websocket connections
   let rpcSubscriptions: ReturnType<typeof createSolanaRpcSubscriptions> | undefined
   try {
@@ -223,30 +222,30 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
       .replace('api.devnet', 'api.devnet')
       .replace('api.testnet', 'api.testnet')
       .replace('api.mainnet-beta', 'api.mainnet-beta')
-    
+
     rpcSubscriptions = createSolanaRpcSubscriptions(wsUrl)
   } catch (error) {
     console.warn('Warning: Could not create RPC subscriptions, transaction confirmations may be slower')
   }
-  
+
   // Get wallet
   const wallet = await getWallet()
-  
+
   // Initialize client with the program ID from config or default
   const programId = config.programId || GHOSTSPEAK_PROGRAM_ID
   console.log('🔍 [DEBUG] Program ID from config:', programId)
   console.log('🔍 [DEBUG] Program ID length:', programId.length)
   console.log('🔍 [DEBUG] GHOSTSPEAK_PROGRAM_ID fallback:', GHOSTSPEAK_PROGRAM_ID)
-  
+
   // Cast to ExtendedRpcApi - the Solana RPC does support all these methods
   // Use the proper typed casting function instead of unsafe 'any' casting
-  const extendedRpc = rpc as ExtendedRpcApi
+  const extendedRpc = rpc as any
   const client = new GhostSpeakClient({
     rpc: extendedRpc,
     programId: address(programId),
     commitment: 'confirmed'
   })
-  
+
   // Check wallet balance
   try {
     // Ensure wallet has a valid address
@@ -262,7 +261,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     // Log but don't fail on balance check errors
     console.warn('Balance check failed:', error instanceof Error ? error.message : 'Unknown error')
   }
-  
+
   // Add cleanup method to client
   const originalClient = client
   const enhancedClient = {
@@ -276,7 +275,7 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
             await closeMethod.call(rpcSubscriptions)
           }
         }
-        
+
         // Close HTTP connections if possible
         // HTTP connections don't need explicit closing in most cases
         // If RPC has a close method in future versions, it can be called here
@@ -287,9 +286,9 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     }
   }
 
-  return { 
-    client: enhancedClient, 
-    wallet, 
+  return {
+    client: enhancedClient,
+    wallet,
     rpc,
     pooledRpc: pooledRpcClient
   }
@@ -317,19 +316,19 @@ export function getAddressExplorerUrl(address: string, network = 'devnet'): stri
  */
 export function handleTransactionError(error: Error | unknown): string {
   const message = error instanceof Error ? error.message : String(error)
-  
+
   if (message.includes('insufficient funds')) {
     return 'Insufficient SOL balance. Run: npx ghostspeak faucet --save'
   }
-  
+
   if (message.includes('blockhash not found')) {
     return 'Transaction expired. Please try again.'
   }
-  
+
   if (message.includes('already in use')) {
     return 'Account already exists. Try a different ID.'
   }
-  
+
   // Return original error if no specific handling
   return message || 'Transaction failed'
 }

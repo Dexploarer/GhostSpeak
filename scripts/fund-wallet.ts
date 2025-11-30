@@ -32,7 +32,7 @@ async function main() {
     console.log(`Wallet Address: ${publicKeyStr}`);
 
     const rpc = createSolanaRpc('https://api.devnet.solana.com');
-    
+
     // Check balance
     const balance = await rpc.getBalance(address(publicKeyStr)).send();
     console.log(`Current Balance: ${(Number(balance.value) / LAMPORTS_PER_SOL).toFixed(2)} SOL`);
@@ -40,19 +40,19 @@ async function main() {
     console.log(`Requesting airdrop of ${AIRDROP_AMOUNT_SOL} SOL...`);
 
     try {
-        const amount = BigInt(AIRDROP_AMOUNT_SOL) * BigInt(LAMPORTS_PER_SOL);
+        const amount = BigInt(AIRDROP_AMOUNT_SOL) * BigInt(LAMPORTS_PER_SOL) as any;
         const signature = await rpc.requestAirdrop(address(publicKeyStr), amount).send();
         console.log(`Airdrop requested! Signature: ${signature}`);
         console.log(`You can check transaction at: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
     } catch (e) {
         console.error("Airdrop request for 5 SOL failed. Retrying with 1 SOL...");
         try {
-             const amount = BigInt(1) * BigInt(LAMPORTS_PER_SOL);
-             const signature = await rpc.requestAirdrop(address(publicKeyStr), amount).send();
-             console.log(`Airdrop (1 SOL) requested! Signature: ${signature}`);
+            const amount = BigInt(1) * BigInt(LAMPORTS_PER_SOL) as any;
+            const signature = await rpc.requestAirdrop(address(publicKeyStr), amount).send();
+            console.log(`Airdrop (1 SOL) requested! Signature: ${signature}`);
         } catch (e2) {
-             console.error("Airdrop failed:", e2);
-             console.log("Note: The Devnet faucet often has rate limits or IP limits. Try again later or use the web faucet.");
+            console.error("Airdrop failed:", e2);
+            console.log("Note: The Devnet faucet often has rate limits or IP limits. Try again later or use the web faucet.");
         }
     }
 }

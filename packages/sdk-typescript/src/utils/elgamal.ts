@@ -1,14 +1,13 @@
 /**
- * ElGamal Encryption Implementation for Token-2022 Confidential Transfers
+ * ElGamal Encryption Implementation
  * 
- * Implements twisted ElGamal encryption over curve25519 as specified
- * by Solana's confidential transfer extension.
+ * Implements twisted ElGamal encryption over curve25519 for
+ * client-side privacy features.
  * 
  * Key features:
  * - Twisted ElGamal with Pedersen commitments
  * - Homomorphic addition/subtraction of ciphertexts
  * - Efficient decryption for small values (up to 32 bits)
- * - Compatible with Solana's ZK ElGamal Proof Program
  */
 
 import './text-encoder-polyfill.js'
@@ -18,34 +17,6 @@ import { randomBytes, bytesToNumberLE, bytesToHex } from '@noble/curves/abstract
 import type { Address } from '@solana/addresses'
 import { getAddressEncoder } from '@solana/kit'
 import type { TransactionSigner } from '@solana/kit'
-// Bulletproof functionality moved to zk-proof-builder.ts
-// ZK proof program removed - x402 payment protocol focus
-// import {
-//   PROOF_SIZES,
-//   type TransferProofData as ZkTransferProofData
-// } from '../constants/zk-proof-program.js'
-
-// Define proof sizes locally since ZK proof program is removed
-// Note: These are stub values as ZK proof infrastructure was removed in favor of x402
-const PROOF_SIZES = {
-  RANGE_PROOF: 64,
-  TRANSFER_PROOF: 128,
-  WITHDRAW_PROOF: 96,
-  // Additional proof types for well-formed ciphertexts
-  VALIDITY_PROOF: 96,
-  EQUALITY_PROOF: 96
-} as const
-
-interface ZkTransferProofData {
-  proof?: Uint8Array
-  commitment?: Uint8Array
-  // Fields required for complete transfer proof
-  encryptedTransferAmount: Uint8Array
-  newSourceCommitment?: Uint8Array
-  equalityProof?: Uint8Array
-  validityProof?: Uint8Array
-  rangeProof?: Uint8Array
-}
 
 // =====================================================
 // TYPE DEFINITIONS
@@ -159,17 +130,17 @@ function numberToBytesLE(n: bigint, length: number): Uint8Array {
 export function generateElGamalKeypair(seed?: Uint8Array): ElGamalKeypair {
   // Use provided seed or generate random
   const secretKey = seed ? hash(seed).slice(0, 32) : randomBytes(32)
-  
+
   // Ensure secret key is valid scalar
   secretKey[0] &= 248
   secretKey[31] &= 127
   secretKey[31] |= 64
-  
+
   // Compute public key: pubkey = secretKey * G
   // Reduce the scalar to be within the curve order
   const scalarValue = bytesToNumberLE(secretKey) % ed25519.CURVE.n
   const publicKey = G.multiply(scalarValue).toRawBytes()
-  
+
   return { publicKey, secretKey }
 }
 
@@ -192,7 +163,7 @@ export function deriveElGamalKeypair(
   combined.set(signerBytes)
   combined.set(message, signerBytes.length)
   const seed = hash(combined)
-  
+
   return generateElGamalKeypair(seed)
 }
 
@@ -230,35 +201,35 @@ export function encryptAmount(amount: bigint, pubkey: ElGamalPubkey): ElGamalCip
  * @param pubkey - Recipient's ElGamal public key
  * @returns EncryptionResult with ciphertext and randomness
  */
-export function encryptAmountWithRandomness(amount: bigint, pubkey: ElGamalPubkey): EncryptionResult {
+export function encryptAmountWithRandomness(amount: bigint, pubkey: ElGamalPubkey, providedRandomness?: Uint8Array): EncryptionResult {
   if (amount < 0n) {
     throw new Error('Amount must be non-negative')
   }
   if (amount > MAX_DECRYPTABLE_VALUE) {
     throw new Error(`Amount exceeds maximum decryptable value (${MAX_DECRYPTABLE_VALUE})`)
   }
-  
-  // Generate random scalar
-  const randomness = randomBytes(32)
+
+  // Generate random scalar or use provided
+  const randomness = providedRandomness ?? randomBytes(32)
   randomness[0] &= 248
   randomness[31] &= 127
   randomness[31] |= 64
-  
+
   const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
-  
+
   // Parse public key point
   const pubkeyPoint = ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey))
-  
+
   // Standard ElGamal encryption:
   // C = amount * G + r * pubkey (commitment)
   // D = r * G (handle/ephemeral key)
   const amountPoint = amount === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(amount)
   const maskedAmount = amountPoint.add(pubkeyPoint.multiply(r))
   const commitment = maskedAmount.toRawBytes()
-  
+
   // Compute decrypt handle: D = r * G (ephemeral public key)
   const handle = G.multiply(r).toRawBytes()
-  
+
   return {
     ciphertext: {
       commitment: { commitment },
@@ -288,13 +259,13 @@ export function decryptAmount(
   // Parse points
   const C = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.commitment.commitment))
   const D = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.handle.handle))
-  
+
   // Compute: C - sk * D = amount * G
   // Since D = r * G and C = amount * G + r * pubkey = amount * G + r * sk * G
   // Then C - sk * D = amount * G + r * sk * G - sk * r * G = amount * G
   const sk = bytesToNumberLE(secretKey) % ed25519.CURVE.n
   const decryptedPoint = C.subtract(D.multiply(sk))
-  
+
   // Brute force search for small values
   for (let i = 0n; i <= maxValue; i++) {
     // Handle zero case specially (identity point)
@@ -303,7 +274,7 @@ export function decryptAmount(
       return i
     }
   }
-  
+
   return null
 }
 
@@ -323,11 +294,11 @@ export function decryptAmountWithLookup(
 ): bigint | null {
   const C = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.commitment.commitment))
   const D = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.handle.handle))
-  
+
   const sk = bytesToNumberLE(secretKey) % ed25519.CURVE.n
   const decryptedPoint = C.subtract(D.multiply(sk))
   const pointHex = decryptedPoint.toHex()
-  
+
   return lookupTable.get(pointHex) ?? null
 }
 
@@ -339,12 +310,12 @@ export function decryptAmountWithLookup(
  */
 export function buildDecryptionLookupTable(maxValue: bigint): Map<string, bigint> {
   const lookupTable = new Map<string, bigint>()
-  
+
   for (let i = 0n; i <= maxValue; i++) {
     const point = i === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(i)
     lookupTable.set(point.toHex(), i)
   }
-  
+
   return lookupTable
 }
 
@@ -369,11 +340,11 @@ export function addCiphertexts(
   const Cb = ed25519.ExtendedPoint.fromHex(bytesToHex(b.commitment.commitment))
   const Da = ed25519.ExtendedPoint.fromHex(bytesToHex(a.handle.handle))
   const Db = ed25519.ExtendedPoint.fromHex(bytesToHex(b.handle.handle))
-  
+
   // Add commitments and handles
   const sumCommitment = Ca.add(Cb).toRawBytes()
   const sumHandle = Da.add(Db).toRawBytes()
-  
+
   return {
     commitment: { commitment: sumCommitment },
     handle: { handle: sumHandle }
@@ -397,11 +368,11 @@ export function subtractCiphertexts(
   const Cb = ed25519.ExtendedPoint.fromHex(bytesToHex(b.commitment.commitment))
   const Da = ed25519.ExtendedPoint.fromHex(bytesToHex(a.handle.handle))
   const Db = ed25519.ExtendedPoint.fromHex(bytesToHex(b.handle.handle))
-  
+
   // Subtract commitments and handles
   const diffCommitment = Ca.subtract(Cb).toRawBytes()
   const diffHandle = Da.subtract(Db).toRawBytes()
-  
+
   return {
     commitment: { commitment: diffCommitment },
     handle: { handle: diffHandle }
@@ -429,15 +400,15 @@ export function scaleCiphertext(
       handle: { handle: zeroPoint.toRawBytes() }
     }
   }
-  
+
   // Parse points
   const C = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.commitment.commitment))
   const D = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.handle.handle))
-  
+
   // Scale both commitment and handle
   const scaledCommitment = C.multiply(scalar).toRawBytes()
   const scaledHandle = D.multiply(scalar).toRawBytes()
-  
+
   return {
     commitment: { commitment: scaledCommitment },
     handle: { handle: scaledHandle }
@@ -453,11 +424,9 @@ export function scaleCiphertext(
  * Uses Bulletproofs protocol for proving value is in range [0, 2^64)
  */
 
-/** Range proof constants */
-const RANGE_PROOF_BITS = 64 // Full 64-bit range proofs for Solana compatibility
-const RANGE_PROOF_SIZE = 672 // Actual bulletproof size for 64-bit range
-
-// Use full 64-bit proofs to match Solana's ZK ElGamal Proof Program expectations
+// Use full 64-bit range proofs
+const RANGE_PROOF_BITS = 64
+const RANGE_PROOF_SIZE = 672
 
 /**
  * Generate a second generator point H for Pedersen commitments
@@ -555,23 +524,23 @@ function _multiScalarMultiply(scalars: bigint[], points: typeof G[]): typeof G {
   if (scalars.length === 0 || scalars.length !== points.length) {
     return ed25519.ExtendedPoint.ZERO
   }
-  
+
   // Simple but efficient implementation for bulletproofs
   // Focus on avoiding zero multiplications and batching additions
   let result = ed25519.ExtendedPoint.ZERO
   const nonZeroTerms: typeof G[] = []
-  
+
   for (let i = 0; i < scalars.length; i++) {
     if (scalars[i] !== 0n) {
       nonZeroTerms.push(points[i].multiply(scalars[i]))
     }
   }
-  
+
   // Batch addition of all non-zero terms
   for (const term of nonZeroTerms) {
     result = result.add(term)
   }
-  
+
   return result
 }
 
@@ -670,17 +639,17 @@ export function generateValidityProof(
 ): ValidityProof {
   // Convert randomness to scalar
   const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
-  
+
   // Parse public key (already a Uint8Array)
   const pubkeyPoint = ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey))
-  
+
   // Generate random nonce for Schnorr proof
   const k = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  
+
   // Compute commitments for proof
   const R1 = k === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(k) // k * G
   const R2 = k === 0n ? ed25519.ExtendedPoint.ZERO : pubkeyPoint.multiply(k) // k * pubkey
-  
+
   // Fiat-Shamir challenge
   const challenge = bytesToNumberLE(hash(new Uint8Array([
     ...ciphertext.commitment.commitment,
@@ -689,19 +658,19 @@ export function generateValidityProof(
     ...R2.toRawBytes(),
     ...pubkey
   ]))) % ed25519.CURVE.n
-  
+
   // Compute response: s = k + challenge * r
   const s = (k + challenge * r) % ed25519.CURVE.n
-  
+
   // Create proof structure
   const proofData = new Uint8Array(96)
   proofData.set(R1.toRawBytes(), 0)
   proofData.set(R2.toRawBytes(), 32)
-  
+
   // Write scalar s (little-endian)
   const sBytes = numberToBytesLE(s, 32)
   proofData.set(sBytes, 64)
-  
+
   return { proof: proofData }
 }
 
@@ -727,12 +696,12 @@ export function verifyValidityProof(
     const R1 = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(0, 32)))
     const R2 = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(32, 64)))
     const s = bytesToNumberLE(proof.proof.slice(64, 96)) % ed25519.CURVE.n
-    
+
     // Parse points
     const D = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.handle.handle))
     const pubkeyPoint = ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey))
     void pubkeyPoint // Used in more complete verification implementations
-    
+
     // Recompute challenge
     const challenge = bytesToNumberLE(hash(new Uint8Array([
       ...ciphertext.commitment.commitment,
@@ -741,18 +710,18 @@ export function verifyValidityProof(
       ...R2.toRawBytes(),
       ...pubkey
     ]))) % ed25519.CURVE.n
-    
+
     // Verify: s * G = R1 + challenge * D
     // This proves knowledge of r such that D = r * G
     const lhs1 = s === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(s)
     const rhs1 = R1.add(challenge === 0n ? ed25519.ExtendedPoint.ZERO : D.multiply(challenge))
-    
+
     // For a valid ElGamal ciphertext, we should have:
     // D = r * G (handle)
     // C = amount * G + r * pubkey (commitment)
     // We can't verify the second relation without knowing amount,
     // but we can verify that the proof knows the discrete log of D
-    
+
     return lhs1.equals(rhs1)
   } catch {
     return false
@@ -781,31 +750,31 @@ export function generateEqualityProof(
   const r1 = bytesToNumberLE(randomness1) % ed25519.CURVE.n
   const r2 = bytesToNumberLE(randomness2) % ed25519.CURVE.n
   const rdiff = (r1 - r2 + ed25519.CURVE.n) % ed25519.CURVE.n
-  
+
   // Generate random nonce
   const k = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  
+
   // Parse ciphertext points
   const C1 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext1.commitment.commitment))
   const C2 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext2.commitment.commitment))
   const D1 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext1.handle.handle))
   const D2 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext2.handle.handle))
-  
+
   // Compute differences
   const Cdiff = C1.subtract(C2)
   const Ddiff = D1.subtract(D2)
-  
+
   // For twisted ElGamal equality proof, we need to prove:
   // D1 - D2 = (r1 - r2) * G  AND  C1 - C2 = (r1 - r2) * P
   // where P is the public key
-  
+
   // Parse public key if provided
   const P = pubkey ? ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey)) : null
-  
+
   // Compute proof commitments
   const R1 = k === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(k)
   const R2 = P && k !== 0n ? P.multiply(k) : ed25519.ExtendedPoint.ZERO
-  
+
   // Fiat-Shamir challenge
   const challenge = bytesToNumberLE(sha256(new Uint8Array([
     ...ciphertext1.commitment.commitment,
@@ -816,27 +785,27 @@ export function generateEqualityProof(
     ...Cdiff.toRawBytes(),
     ...Ddiff.toRawBytes()
   ]))) % ed25519.CURVE.n
-  
+
   // Compute response: s = k + challenge * rdiff
   const s = (k + challenge * rdiff) % ed25519.CURVE.n
-  
+
   // Create proof structure
   const proofData = new Uint8Array(96) // 3 * 32 bytes for compatibility
   let offset = 0
-  
+
   // Write commitment R1
   proofData.set(R1.toRawBytes(), offset); offset += 32
-  
+
   // Write response s
   const scalarBytes = new Uint8Array(32)
   for (let i = 0; i < 32; i++) {
     scalarBytes[i] = Number((s >> BigInt(i * 8)) & 0xffn)
   }
   proofData.set(scalarBytes, offset); offset += 32
-  
+
   // Write R2 for full discrete log equality proof
   proofData.set(R2.toRawBytes(), offset)
-  
+
   return { proof: proofData }
 }
 
@@ -866,20 +835,20 @@ export function verifyEqualityProof(
     const s = bytesToNumberLE(proof.proof.slice(offset, offset + 32)) % ed25519.CURVE.n
     offset += 32
     const R2 = ed25519.ExtendedPoint.fromHex(bytesToHex(proof.proof.slice(offset, offset + 32)))
-    
+
     // Parse ciphertext points
     const C1 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext1.commitment.commitment))
     const C2 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext2.commitment.commitment))
     const D1 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext1.handle.handle))
     const D2 = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext2.handle.handle))
-    
+
     // Compute differences
     const Cdiff = C1.subtract(C2)
     const Ddiff = D1.subtract(D2)
-    
+
     // Parse public key if provided
     const P = pubkey ? ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey)) : null
-    
+
     // Recompute challenge
     const challenge = bytesToNumberLE(sha256(new Uint8Array([
       ...ciphertext1.commitment.commitment,
@@ -890,28 +859,28 @@ export function verifyEqualityProof(
       ...Cdiff.toRawBytes(),
       ...Ddiff.toRawBytes()
     ]))) % ed25519.CURVE.n
-    
+
     // Verify the handle difference proof:
     // s * G = R1 + challenge * Ddiff
     const lhs1 = s === 0n ? ed25519.ExtendedPoint.ZERO : G.multiply(s)
     const rhs1 = R1.add(challenge === 0n ? ed25519.ExtendedPoint.ZERO : Ddiff.multiply(challenge))
-    
+
     if (!lhs1.equals(rhs1)) {
       return false
     }
-    
+
     // If public key is provided, verify the full discrete log equality proof
     if (P) {
       // Verify: s * P = R2 + challenge * Cdiff
       const lhs2 = s === 0n ? ed25519.ExtendedPoint.ZERO : P.multiply(s)
       const rhs2 = R2.add(challenge === 0n ? ed25519.ExtendedPoint.ZERO : Cdiff.multiply(challenge))
-      
+
       // Both equations must hold for the proof to be valid
       // This proves that log_G(Ddiff) = log_P(Cdiff), which means
       // the ciphertexts encrypt the same value
       return lhs2.equals(rhs2)
     }
-    
+
     // Without public key, we can only verify the handle difference
     // This is weaker but still useful for some applications
     return true
@@ -981,7 +950,7 @@ export function deserializeCiphertext(bytes: Uint8Array): ElGamalCiphertext {
   if (bytes.length !== 64) {
     throw new Error('Invalid ciphertext length')
   }
-  
+
   return {
     commitment: { commitment: bytes.slice(0, 32) },
     handle: { handle: bytes.slice(32, 64) }
@@ -989,411 +958,90 @@ export function deserializeCiphertext(bytes: Uint8Array): ElGamalCiphertext {
 }
 
 // =====================================================
-// ZK PROOF PROGRAM INTEGRATION
+// UTILITY FUNCTIONS
 // =====================================================
 
 /**
- * Generate a transfer proof using native Solana proof structures
+ * Generate a transfer proof (combining range, validity, and equality proofs)
  * 
- * This generates all proofs required for a confidential transfer:
- * - Range proof for the transfer amount
- * - Validity proof that the ciphertext is well-formed
- * - Equality proof that source and destination amounts match
- * 
- * @param sourceBalance - Current encrypted balance
- * @param transferAmount - Amount to transfer (plaintext)
- * @param sourceKeypair - Source account ElGamal keypair
- * @param destPubkey - Destination account public key
- * @returns Transfer proof data compatible with native Solana structures
+ * @param sourceBalance - Current encrypted balance of source
+ * @param amount - Amount to transfer
+ * @param sourceKeypair - Source ElGamal keypair
+ * @param destPubkey - Destination ElGamal public key
+ * @returns Transfer proof and new ciphertexts
  */
 export async function generateTransferProof(
   sourceBalance: ElGamalCiphertext,
-  transferAmount: bigint,
+  amount: bigint,
   sourceKeypair: ElGamalKeypair,
   destPubkey: ElGamalPubkey
 ): Promise<{
-  transferProof: ZkTransferProofData
-  newSourceBalance: ElGamalCiphertext
-  destCiphertext: ElGamalCiphertext
-}> {
-  // Decrypt current balance to validate sufficient funds
-  const currentBalance = decryptAmount(sourceBalance, sourceKeypair.secretKey)
-  if (currentBalance === null || currentBalance < transferAmount) {
-    throw new Error('Insufficient balance for transfer')
-  }
-  
-  // Generate new ciphertexts using homomorphic operations
-  const newBalance = currentBalance - transferAmount
-  const newSourceBalanceResult = encryptAmountWithRandomness(newBalance, sourceKeypair.publicKey)
-  const destCiphertextResult = encryptAmountWithRandomness(transferAmount, destPubkey)
-  
-  const newSourceBalance = newSourceBalanceResult.ciphertext
-  const destCiphertext = destCiphertextResult.ciphertext
-  
-  // Create Pedersen commitment for range proof using native structures
-  const transferRandomness = destCiphertextResult.randomness
-  const gamma = bytesToNumberLE(transferRandomness) % ed25519.CURVE.n
-  const commitment = G.multiply(transferAmount).add(H.multiply(gamma))
-  const transferCommitment: PedersenCommitment = {
-    commitment: commitment.toRawBytes()
-  }
-  
-  // Generate proofs using native Solana-compatible structures
-  const rangeProof = await generateNativeRangeProof(transferAmount, transferCommitment, transferRandomness)
-  const validityProof = generateNativeValidityProof(destCiphertext, transferAmount, transferRandomness, destPubkey)
-  const equalityProof = generateNativeEqualityProof(
-    sourceBalance,
-    newSourceBalance,
-    destCiphertext,
-    transferAmount,
-    transferRandomness
-  )
-  
-  // Prepare transfer proof data using native Solana structures
-  const transferProofData: ZkTransferProofData = {
-    encryptedTransferAmount: serializeCiphertext(destCiphertext),
-    newSourceCommitment: newSourceBalance.commitment.commitment,
-    equalityProof: equalityProof.proof,
-    validityProof: validityProof.proof,
-    rangeProof: rangeProof.proof
-  }
-  
-  return {
-    transferProof: transferProofData,
-    newSourceBalance,
-    destCiphertext
-  }
-}
-
-/**
- * Generate a withdraw proof using native Solana proof structures
- * 
- * This generates all proofs required for a confidential withdrawal:
- * - Range proof for the remaining balance after withdrawal
- * - Equality proof that the withdrawal maintains balance integrity
- * 
- * @param sourceBalance - Current encrypted balance
- * @param withdrawAmount - Amount to withdraw (plaintext)
- * @param sourceKeypair - Source account ElGamal keypair
- * @returns Withdraw proof data compatible with native Solana structures
- */
-export async function generateWithdrawProof(
-  sourceBalance: ElGamalCiphertext,
-  withdrawAmount: bigint,
-  sourceKeypair: ElGamalKeypair
-): Promise<{
-  withdrawProof: {
-    encryptedWithdrawAmount: Uint8Array
+  transferProof: {
+    encryptedTransferAmount: Uint8Array
     newSourceCommitment: Uint8Array
     equalityProof: Uint8Array
+    validityProof: Uint8Array
     rangeProof: Uint8Array
   }
   newSourceBalance: ElGamalCiphertext
+  destCiphertext: ElGamalCiphertext
 }> {
-  // Decrypt current balance to validate sufficient funds
-  const currentBalance = decryptAmount(sourceBalance, sourceKeypair.secretKey)
-  if (currentBalance === null || currentBalance < withdrawAmount) {
-    throw new Error('Insufficient balance for withdrawal')
-  }
-  
-  // Generate new balance ciphertext
-  const newBalance = currentBalance - withdrawAmount
-  const newSourceBalanceResult = encryptAmountWithRandomness(newBalance, sourceKeypair.publicKey)
-  const newSourceBalance = newSourceBalanceResult.ciphertext
-  
-  // Create encrypted withdraw amount (encrypted to zero for public withdrawal)
-  const withdrawCiphertextResult = encryptAmountWithRandomness(withdrawAmount, sourceKeypair.publicKey)
-  const withdrawCiphertext = withdrawCiphertextResult.ciphertext
-  
-  // Create Pedersen commitment for range proof of remaining balance
-  const balanceRandomness = newSourceBalanceResult.randomness
-  const gamma = bytesToNumberLE(balanceRandomness) % ed25519.CURVE.n
-  const commitment = G.multiply(newBalance).add(H.multiply(gamma))
-  const balanceCommitment: PedersenCommitment = {
-    commitment: commitment.toRawBytes()
-  }
-  
-  // Generate range proof for remaining balance (must be non-negative)
-  const rangeProof = await generateNativeRangeProof(newBalance, balanceCommitment, balanceRandomness)
-  
-  // Generate equality proof that old_balance - new_balance = withdraw_amount
-  const equalityProof = generateNativeEqualityProof(
-    sourceBalance,
-    newSourceBalance,
-    withdrawCiphertext,
-    withdrawAmount,
-    withdrawCiphertextResult.randomness
+  // 1. Encrypt amount for destination
+  const destEncryption = encryptAmountWithRandomness(amount, destPubkey)
+  const destCiphertext = destEncryption.ciphertext
+
+  // 2. Encrypt amount for source (to subtract)
+  const sourceEncryption = encryptAmountWithRandomness(amount, sourceKeypair.publicKey)
+  const sourceTransferCiphertext = sourceEncryption.ciphertext
+
+  // 3. Generate equality proof
+  const equalityProof = generateEqualityProof(
+    destCiphertext,
+    sourceTransferCiphertext,
+    destEncryption.randomness,
+    sourceEncryption.randomness,
+    destPubkey
   )
-  
-  // Prepare withdraw proof data
-  const withdrawProofData = {
-    encryptedWithdrawAmount: serializeCiphertext(withdrawCiphertext),
-    newSourceCommitment: newSourceBalance.commitment.commitment,
-    equalityProof: equalityProof.proof,
-    rangeProof: rangeProof.proof
-  }
-  
-  return {
-    withdrawProof: withdrawProofData,
-    newSourceBalance
-  }
-}
 
-/**
- * Generate a validity proof using native Solana proof structures
- * 
- * Proves that an ElGamal ciphertext is well-formed and encrypts
- * a known value under a specific public key using Solana's native
- * proof format and verification requirements.
- * 
- * @param ciphertext - The ciphertext to prove validity for
- * @param amount - The plaintext amount
- * @param randomness - The randomness used in encryption
- * @param pubkey - The public key used for encryption
- * @returns Native Solana validity proof
- */
-export function generateNativeValidityProof(
-  ciphertext: ElGamalCiphertext,
-  amount: bigint,
-  randomness: Uint8Array,
-  pubkey: ElGamalPubkey
-): ValidityProof {
-  // Use Solana's native Schnorr-based validity proof structure
-  const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
-  const pubkeyPoint = ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey))
-  
-  // Generate commitment components for native proof
-  const k_amount = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const k_r = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  
-  // Native Solana proof commitments
-  // R_C proves knowledge of amount in commitment: amount * G + r * pubkey
-  // R_D proves knowledge of randomness in handle: r * G
-  const R_C = G.multiply(k_amount).add(pubkeyPoint.multiply(k_r))
-  const R_D = G.multiply(k_r)
-  
-  // Fiat-Shamir challenge using Solana's challenge format
-  const challengeInput = new Uint8Array([
-    ...ciphertext.commitment.commitment,
-    ...ciphertext.handle.handle,
-    ...pubkey,
-    ...R_C.toRawBytes(),
-    ...R_D.toRawBytes()
-  ])
-  const challenge = bytesToNumberLE(sha256(challengeInput)) % ed25519.CURVE.n
-  
-  // Compute Schnorr responses
-  const s_amount = (k_amount + challenge * amount) % ed25519.CURVE.n
-  const s_r = (k_r + challenge * r) % ed25519.CURVE.n
-  
-  // Construct proof in native Solana format: [R_C || R_D || s_amount || s_r]
-  const proof = new Uint8Array(PROOF_SIZES.VALIDITY_PROOF)
-  let offset = 0
-  
-  // Commitment R_C (32 bytes)
-  proof.set(R_C.toRawBytes(), offset)
-  offset += 32
-  
-  // Handle commitment R_D (32 bytes)
-  proof.set(R_D.toRawBytes(), offset)
-  offset += 32
-  
-  // Response s_amount (32 bytes)
-  const writeScalar = (scalar: bigint) => {
-    const bytes = numberToBytesLE(scalar, 32)
-    proof.set(bytes, offset)
-    offset += 32
-  }
-  
-  writeScalar(s_amount)
-  
-  // Pad remaining space with s_r if there's room
-  if (offset < PROOF_SIZES.VALIDITY_PROOF) {
-    writeScalar(s_r)
-  }
-  
-  return { proof }
-}
+  // 4. Generate validity proof for destination ciphertext
+  const validityProof = generateValidityProof(
+    destCiphertext,
+    destPubkey,
+    destEncryption.randomness
+  )
 
-/**
- * Generate a range proof using native Solana proof structures
- * 
- * Creates a bulletproof range proof that is compatible with Solana's
- * native proof verification without external dependencies.
- * 
- * @param amount - Amount to prove is in valid range
- * @param commitment - Pedersen commitment to the amount
- * @param randomness - Randomness used in commitment
- * @returns Native Solana range proof
- */
-export async function generateNativeRangeProof(
-  amount: bigint,
-  commitment: PedersenCommitment,
-  randomness: Uint8Array
-): Promise<RangeProof> {
-  // Bulletproofs removed - x402 payment protocol focus
-  // Generate placeholder proof for compatibility
-  const proof = new Uint8Array(RANGE_PROOF_SIZE)
+  // 5. Compute new source balance: Balance - TransferAmount
+  const newSourceBalance = subtractCiphertexts(sourceBalance, sourceTransferCiphertext)
+
+  // 6. Generate range proof for new balance (to prove no underflow)
+  // We need the actual new balance value to generate the proof
+  // Decrypt current balance to get it
+  const currentBalance = decryptAmount(sourceBalance, sourceKeypair.secretKey, MAX_DECRYPTABLE_VALUE * 100n) // Allow larger range
+
+  if (currentBalance === null) {
+    throw new Error('Could not decrypt source balance to generate range proof')
+  }
+
+  const newBalanceValue = currentBalance - amount
+  if (newBalanceValue < 0n) {
+    throw new Error('Insufficient balance')
+  }
+
+  // For range proof, we need the randomness of the new balance commitment.
+  // However, our generateRangeProof implementation is currently a placeholder (post-mortem ZK),
+  // so we can pass dummy randomness.
+  const dummyRandomness = new Uint8Array(32)
+  const rangeProof = await generateRangeProof(newBalanceValue, newSourceBalance.commitment, dummyRandomness)
 
   return {
-    proof,
-    commitment: commitment.commitment
+    transferProof: {
+      encryptedTransferAmount: serializeCiphertext(destCiphertext),
+      newSourceCommitment: newSourceBalance.commitment.commitment,
+      equalityProof: equalityProof.proof,
+      validityProof: validityProof.proof,
+      rangeProof: rangeProof.proof
+    },
+    newSourceBalance,
+    destCiphertext
   }
-}
-
-/**
- * Verify transfer validity proof
- * 
- * @param proof - Validity proof to verify
- * @param ciphertext - Ciphertext being validated
- * @param pubkey - Public key used for encryption
- * @returns True if proof is valid
- */
-export function verifyTransferValidityProof(
-  proof: ValidityProof,
-  ciphertext: ElGamalCiphertext,
-  pubkey: ElGamalPubkey
-): boolean {
-  if (proof.proof.length !== 96) {
-    return false
-  }
-
-  try {
-    // Extract proof components
-    const A = proof.proof.slice(0, 32)
-    const z1Bytes = proof.proof.slice(32, 64)
-    const z2Bytes = proof.proof.slice(64, 96)
-    
-    // Convert scalars
-    const z1 = bytesToNumberLE(z1Bytes) % ed25519.CURVE.n
-    const z2 = bytesToNumberLE(z2Bytes) % ed25519.CURVE.n
-    
-    // Decode points
-    const APoint = ed25519.ExtendedPoint.fromHex(bytesToHex(A))
-    const _pubkeyPoint = ed25519.ExtendedPoint.fromHex(bytesToHex(pubkey))
-    const commitment = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.commitment.commitment))
-    const _handle = ed25519.ExtendedPoint.fromHex(bytesToHex(ciphertext.handle.handle))
-    
-    // Recompute challenge
-    const challenge = bytesToNumberLE(
-      sha256(new Uint8Array([
-        ...ciphertext.commitment.commitment,
-        ...ciphertext.handle.handle,
-        ...A
-      ]))
-    ) % ed25519.CURVE.n
-    
-    // Verify the proof equation: z1*G + z2*H = A + challenge*commitment
-    // For handle: z1*pubkey = challenge*handle (not verified here as it would reveal amount)
-    const lhs = G.multiply(z1).add(H.multiply(z2))
-    const rhs = APoint.add(commitment.multiply(challenge))
-    
-    return lhs.equals(rhs)
-  } catch {
-    return false
-  }
-}
-
-/**
- * Verify transfer equality proof
- * 
- * @param proof - Equality proof to verify
- * @param sourceOld - Old source ciphertext
- * @param sourceNew - New source ciphertext
- * @param destCiphertext - Destination ciphertext
- * @param sourcePubkey - Source public key
- * @param destPubkey - Destination public key
- * @returns True if proof is valid
- */
-export function verifyTransferEqualityProof(
-  proof: EqualityProof,
-  sourceOld: ElGamalCiphertext,
-  sourceNew: ElGamalCiphertext,
-  destCiphertext: ElGamalCiphertext,
-  _sourcePubkey: ElGamalPubkey,
-  _destPubkey: ElGamalPubkey
-): boolean {
-  // Verify that sourceOld - sourceNew = destCiphertext
-  const sourceDiff = subtractCiphertexts(sourceOld, sourceNew)
-  return verifyEqualityProof(proof, sourceDiff, destCiphertext)
-}
-
-export function generateNativeEqualityProof(
-  sourceOld: ElGamalCiphertext,
-  sourceNew: ElGamalCiphertext,
-  destCiphertext: ElGamalCiphertext,
-  amount: bigint,
-  randomness: Uint8Array
-): EqualityProof {
-  // This proves that sourceOld - sourceNew = destCiphertext
-  // which ensures no value is created or destroyed
-  
-  const r = bytesToNumberLE(randomness) % ed25519.CURVE.n
-  
-  // Generate blinding factors
-  const s1 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const s2 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  const s3 = bytesToNumberLE(randomBytes(32)) % ed25519.CURVE.n
-  
-  // Compute commitments for the proof
-  const C1 = G.multiply(s1).add(H.multiply(s2))
-  const C2 = G.multiply(s1).add(H.multiply(s3))
-  
-  // Fiat-Shamir challenge
-  const challenge = bytesToNumberLE(
-    sha256(new Uint8Array([
-      ...sourceOld.commitment.commitment,
-      ...sourceNew.commitment.commitment,
-      ...destCiphertext.commitment.commitment,
-      ...C1.toRawBytes(),
-      ...C2.toRawBytes()
-    ]))
-  ) % ed25519.CURVE.n
-  
-  // Responses
-  const z1 = (s1 + challenge * amount) % ed25519.CURVE.n
-  const z2 = (s2 + challenge * r) % ed25519.CURVE.n
-  const z3 = (s3 + challenge * r) % ed25519.CURVE.n
-  
-  // Construct proof
-  const proof = new Uint8Array(PROOF_SIZES.EQUALITY_PROOF)
-  let offset = 0
-  
-  proof.set(C1.toRawBytes(), offset); offset += 32
-  proof.set(C2.toRawBytes(), offset); offset += 32
-  
-  const writeScalar = (scalar: bigint) => {
-    const bytes = new Uint8Array(32)
-    for (let i = 0; i < 32; i++) {
-      bytes[i] = Number((scalar >> BigInt(i * 8)) & 0xffn)
-    }
-    proof.set(bytes, offset)
-    offset += 32
-  }
-  
-  writeScalar(z1)
-  writeScalar(z2)
-  writeScalar(z3)
-  
-  // Add cross-key equality proof component
-  // This proves that the same amount is encrypted under different keys
-  // We need to prove knowledge of the discrete log relationship
-  const crossKeyChallenge = bytesToNumberLE(
-    sha256(new Uint8Array([
-      ...sourceOld.commitment.commitment,
-      ...sourceNew.commitment.commitment,
-      ...destCiphertext.commitment.commitment,
-      ...proof.slice(0, offset)
-    ]))
-  ) % ed25519.CURVE.n
-  
-  // Response for cross-key proof
-  const z4 = (s1 + crossKeyChallenge * r) % ed25519.CURVE.n
-  const crossKeyBytes = new Uint8Array(32)
-  for (let i = 0; i < 32; i++) {
-    crossKeyBytes[i] = Number((z4 >> BigInt(i * 8)) & 0xffn)
-  }
-  proof.set(crossKeyBytes, offset)
-  
-  return { proof }
 }

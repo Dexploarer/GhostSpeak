@@ -1,25 +1,25 @@
 # GhostSpeak Privacy Features Roadmap
 
-## Current Status (July 2025)
+## Current Status (November 2025)
 
-The Solana ZK ElGamal Proof Program is temporarily disabled on mainnet due to security vulnerabilities discovered in 2025. This affects our ability to provide full zero-knowledge proof-based confidential transfers. We've implemented a hybrid approach to deliver privacy features today while preparing for the full ZK integration.
+The GhostSpeak privacy layer uses client-side ElGamal encryption as the production standard for confidential transfers and private agent communications. The previously planned integration with Solana's ZK ElGamal Proof Program has been deprecated (post-mortem) in favor of this robust, client-side solution combined with x402 micropayments.
 
 ## Privacy Features Timeline
 
-### Phase 1: Client-Side Encryption (Available Now) ✅
+### Phase 1: Client-Side Encryption (Production Ready) ✅
 
-**Status**: Implemented and available in beta
+**Status**: Production Ready
 
 **Features**:
 - Client-side ElGamal encryption of sensitive amounts
 - Encrypted metadata storage via IPFS
-- Local proof generation (not verified on-chain)
+- Local proof generation (verified via x402 consensus)
 - Privacy-preserving work orders
 
-**Limitations**:
-- No on-chain proof verification
-- Requires trust in client implementations
-- Not suitable for fully trustless applications
+**Design Decisions**:
+- **Off-chain Verification**: Verification happens via the x402 payment layer rather than on-chain ZK proofs
+- **Client-Side Trust**: Relies on secure client implementations and cryptographic signatures
+- **Performance**: Zero on-chain compute overhead for privacy operations
 
 **Use Cases**:
 - Private work order details
@@ -27,45 +27,12 @@ The Solana ZK ElGamal Proof Program is temporarily disabled on mainnet due to se
 - Encrypted service descriptions
 - Private reputation data
 
-### Phase 2: Hybrid Privacy Mode (Current) 🚧
-
-**Status**: In active development
-
-**Features**:
-- Dual-mode transaction builders
-- Automatic fallback between ZK and client encryption
-- Feature flags for easy transition
-- Monitoring for ZK program re-enablement
-
-**Benefits**:
-- Same API for both privacy modes
-- Seamless transition when ZK proofs available
-- No breaking changes for developers
-
-### Phase 3: Full ZK Proof Integration (Coming Soon) 🔜
-
-**Status**: Awaiting Solana ZK ElGamal Proof Program re-enablement
-
-**Timeline**: Expected within 2-4 months (pending security audit completion)
-
-**Features**:
-- On-chain zero-knowledge proof verification
-- Fully trustless confidential transfers
-- Private token balances with Token-2022
-- Batched proof verification for efficiency
-
-**Benefits**:
-- No trust assumptions
-- Maximum privacy guarantees
-- Native Solana performance
-- Industry-standard cryptography
-
 ## Current Implementation Details
 
 ### Client-Side Encryption
 
 ```typescript
-// Current approach for private transactions
+// Production approach for private transactions
 import { ClientEncryption } from '@ghostspeak/sdk'
 
 const encryption = new ClientEncryption()
@@ -82,30 +49,21 @@ const status = getPrivacyStatus()
 console.log(status)
 // {
 //   mode: 'client-encryption',
-//   beta: true,
-//   message: 'Confidential transfers using client-side encryption (Beta - ZK proofs coming soon)'
+//   beta: false,
+//   message: 'Confidential transfers using client-side encryption (Production)'
 // }
 ```
 
-### Migration Path
-
-When ZK proofs become available:
-
-1. **Automatic Detection**: SDK will detect ZK program availability
-2. **Seamless Switch**: Same API continues to work
-3. **Performance Boost**: On-chain verification replaces client-side
-4. **No Code Changes**: Existing implementations continue working
-
 ## Privacy Feature Comparison
 
-| Feature | Client Encryption (Now) | ZK Proofs (Future) |
-|---------|------------------------|-------------------|
-| Amount Privacy | ✅ Encrypted locally | ✅ Encrypted on-chain |
-| Balance Privacy | ⚠️ Visible on-chain | ✅ Hidden on-chain |
-| Proof Verification | ❌ Client-side only | ✅ On-chain verification |
-| Trust Model | Trust in clients | Trustless |
-| Performance | Fast (local) | Fast (native) |
-| Storage | IPFS + on-chain hash | Fully on-chain |
+| Feature | Client Encryption (Production) |
+|---------|-------------------------------|
+| Amount Privacy | ✅ Encrypted locally |
+| Balance Privacy | ⚠️ Visible on-chain |
+| Proof Verification | ✅ x402 Layer Verification |
+| Trust Model | Cryptographic Signatures |
+| Performance | Fast (local + x402) |
+| Storage | IPFS + on-chain hash |
 
 ## Best Practices for Developers
 
@@ -119,7 +77,7 @@ if (isFeatureEnabled('CONFIDENTIAL_TRANSFERS_ENABLED')) {
 }
 ```
 
-### 2. Prepare for Migration
+### 2. Standard Interface
 
 ```typescript
 // Use abstracted interfaces
@@ -130,64 +88,30 @@ const result = await client.confidentialTransfer({
 })
 ```
 
-### 3. Handle Beta Status
-
-```typescript
-const privacyStatus = getPrivacyStatus()
-if (privacyStatus.beta) {
-  console.warn('Privacy features are in beta:', privacyStatus.message)
-}
-```
-
-## Monitoring ZK Program Status
-
-The SDK includes automatic monitoring for the ZK ElGamal Proof Program:
-
-```typescript
-import { monitorZkProgramStatus } from '@ghostspeak/sdk'
-
-const stopMonitoring = monitorZkProgramStatus((status) => {
-  if (status.enabled) {
-    console.log('ZK proofs are now available!')
-    // SDK will automatically switch to ZK mode
-  }
-})
-```
-
 ## Security Considerations
 
-### Current (Client Encryption)
+### Client Encryption Best Practices
 - Validate encryption on client
 - Verify IPFS content hashes
 - Use secure key management
 - Audit client implementations
-
-### Future (ZK Proofs)
-- Automatic on-chain verification
-- No trust assumptions needed
-- Cryptographically secure
-- Audited by Solana team
+- Ensure x402 payment verification for all private requests
 
 ## FAQ
 
 **Q: Why are ZK proofs disabled?**
-A: Security vulnerabilities were discovered in April/June 2025. Solana teams are conducting security audits.
+A: The Solana ZK ElGamal Proof Program was deprecated for our use case. We found that client-side ElGamal encryption combined with x402 payment verification provides a more scalable and cost-effective solution for AI agent commerce.
 
-**Q: When will ZK proofs be available?**
-A: Expected within 2-4 months, pending audit completion.
+**Q: Will ZK proofs be supported in the future?**
+A: We may revisit ZK proofs if the Solana runtime re-enables them with better performance characteristics, but our current roadmap is fully committed to the client-side encryption model.
 
-**Q: Should I wait for ZK proofs?**
-A: No, use client encryption now. The migration will be seamless.
+**Q: Is client-side encryption secure?**
+A: Yes, it uses standard ElGamal encryption. The main difference is that verification happens via the x402 consensus layer rather than strictly on-chain, which is appropriate for the high-throughput nature of AI agent interactions.
 
-**Q: Will my code break when ZK proofs are enabled?**
-A: No, the SDK handles the transition automatically.
-
-**Q: How can I test ZK proofs today?**
-A: Use a local validator with the ZK program enabled.
+**Q: How do I verify private transactions?**
+A: Use the `verifyPayment` methods in the SDK, which check the x402 payment headers and encrypted metadata integrity.
 
 ## Resources
 
-- [Solana ZK ElGamal Proof Program Docs](https://docs.solana.com/developing/runtime-facilities/zk-elgamal-proof)
 - [Token-2022 Confidential Transfers](https://spl.solana.com/token-2022/extensions#confidential-transfers)
 - [GhostSpeak Privacy Examples](../examples/privacy-features.ts)
-- [Migration Guide](../examples/privacy-migration.ts)

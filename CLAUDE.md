@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Web3.js v2**: Modern Solana integration with latest Web3.js v2 patterns
 - **SPL Token**: Standard SPL token support with focus on USDC and stablecoins
 - **Compressed NFTs**: 5000x cost reduction for agent creation using ZK compression
+- **Privacy Layer**: Client-side ElGamal encryption for confidential transfers and private agent communications
 - **Trust Layer**: Built-in reputation, escrow, and dispute resolution for agent commerce
 
 ## Critical Awareness Directives
@@ -22,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Remember we are working with new technologies (November 2025) - x402 is the latest payment protocol for autonomous agents
 - This project uses **@solana/kit** (formerly @solana/web3.js v2) - do NOT use old @solana/web3.js v1 patterns
 - Always use Anchor 0.32.1 compatible patterns with Solana 2.3.13 (Agave)
-- **NO ZK Proofs**: We removed ZK proof infrastructure in favor of x402 micropayments
+- **Privacy Layer**: Privacy features using client-side ElGamal encryption (Solana ZK ElGamal program is post-mortem, not waiting for it)
 
 ## 🔍 Mandatory kluster.ai MCP Verification Protocol
 
@@ -116,7 +117,16 @@ EVERY code generation must follow this sequence:
 - [ ] **IN PROGRESS**: Full replication workflow integration tests
 - [ ] **NEEDS**: Production deployment for real-world metrics collection
 
-**FOCUS**: x402 marketplace features are now TOP PRIORITY for MVP.
+### Phase 6: Privacy Layer (IN PROGRESS 🚧)
+- [x] **COMPLETE**: Client-side ElGamal encryption implementation
+- [x] **COMPLETE**: Encrypted metadata storage via IPFS
+- [x] **COMPLETE**: Privacy-preserving work orders
+- [x] **COMPLETE**: Confidential agent communications
+- [ ] **IN PROGRESS**: Production-ready privacy API integration
+- [ ] **IN PROGRESS**: Privacy feature documentation and examples
+- [ ] **PENDING**: Privacy layer security audit
+
+**FOCUS**: Privacy layer and x402 marketplace features are TOP PRIORITY for MVP.
 
 ## Development Memories & Context
 
@@ -124,6 +134,7 @@ EVERY code generation must follow this sequence:
 
 **Strategic Achievement**: Complete x402 payment protocol implementation with 92,300+ lines of production code
 
+- **Privacy Layer**: ✅ Client-side encryption (ElGamal) ✅ IPFS metadata storage 🟡 Production integration in progress
 - **Rust Program**: ✅ Production-ready with 200+ error types, 29 instructions, comprehensive security
 - **TypeScript SDK**: ✅ Complete x402 implementation (Client, Middleware, Discovery, Streaming, Analytics)
 - **x402 Integration**: ✅ Full stack - Client ✅ Middleware ✅ Discovery ✅ Streaming ✅ Analytics
@@ -145,6 +156,7 @@ EVERY code generation must follow this sequence:
 ### Architecture Patterns
 - **Pure Protocol Design**: Smart contracts + SDKs, not a platform
 - **x402 Payment Layer**: HTTP 402 middleware for pay-per-call agent services
+- **Privacy Layer**: Client-side ElGamal encryption for confidential transfers and private communications
 - **Trust Layer**: Reputation + Escrow + Dispute resolution for agent commerce
 - **Agent Discovery**: On-chain registry with x402 pricing and capabilities
 - **Compressed NFTs**: 5000x cost reduction using ZK compression
@@ -223,7 +235,7 @@ When implementing features, always check these libraries for latest patterns:
    - Connection pool tuning
 
 ### Medium Priority (Post-Launch)
-8. **ElGamal ZK Proofs**: Integration with Solana's ZK proof program (future)
+8. **Privacy Layer Enhancements**: Additional privacy features and optimizations (future)
 9. **Reputation Analytics**: Real-time metrics collection in production
 10. **WebSocket Notifications**: Real-time event streaming (1 week)
 

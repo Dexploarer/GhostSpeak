@@ -58,8 +58,8 @@ export const Navigation: React.FC = () => {
               </span>
             </Link>
 
-            {/* Desktop Navigation - Hidden on landing page */}
-            {!isLandingPage && (
+            {/* Desktop Navigation - Hidden on landing page and dashboard */}
+            {!isLandingPage && !pathname.startsWith('/dashboard') && (
               <div className="hidden sm:ml-8 sm:flex sm:space-x-2">
                 {navItems.map((item) => {
                   const Icon = item.icon

@@ -66,6 +66,10 @@
     "wasm:build": "cd src/wasm/crypto-wasm && wasm-pack build --target web --out-dir ../../../dist/wasm --scope ghostspeak",
     "wasm:clean": "rm -rf dist/wasm src/wasm/crypto-wasm/pkg",
     "wasm:install": "cargo install wasm-pack",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
     "lint": "eslint src --no-error-on-unmatched-pattern --ignore-pattern 'src/generated/**' && eslint src/generated --no-error-on-unmatched-pattern --config .eslintrc.generated.js",
     "lint:fix": "eslint src --fix --ignore-pattern 'src/generated/**' && eslint src/generated --fix --config .eslintrc.generated.js",
     "clean": "rm -rf dist coverage && bun run wasm:clean"
@@ -99,6 +103,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@libsql/client": "^0.15.0",
     "@noble/curves": "^1.9.4",
     "@noble/hashes": "^1.8.0",
     "@solana-program/system": "^0.10.0",
@@ -124,6 +129,7 @@
     "@solana/sysvars": "^5.0.0",
     "@solana/transactions": "^2.3.0",
     "bs58": "^6.0.0",
+    "drizzle-orm": "^0.36.0",
     "kubo-rpc-client": "^5.2.0"
   },
   "devDependencies": {
@@ -137,6 +143,7 @@
     "@typescript-eslint/parser": "^8.37.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "drizzle-kit": "^0.28.0",
     "eslint": "^9.31.0",
     "glob": "^10.4.5",
     "tsup": "^8.0.0",

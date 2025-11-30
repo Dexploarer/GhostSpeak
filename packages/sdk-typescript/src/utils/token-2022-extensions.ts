@@ -19,19 +19,19 @@ import {
   generateValidityProof,
   generateEqualityProof,
   serializeCiphertext
-} from './elgamal-complete.js'
+} from './elgamal.js'
 
 // Node.js globals
 declare const crypto: { getRandomValues: <T extends Uint8Array>(array: T) => T }
 
 import type { Address } from '@solana/addresses'
-import { 
+import {
   getBytesEncoder,
   getAddressEncoder,
   getU64Encoder,
   getUtf8Encoder
 } from '@solana/kit'
-import { 
+import {
   TokenExtension
 } from './token-utils.js'
 import type {
@@ -74,17 +74,17 @@ export function calculateTransferFee(
   feeConfig: TransferFeeConfig
 ): TransferFeeCalculation {
   const { transferFeeBasisPoints, maximumFee } = feeConfig
-  
+
   // Calculate fee based on basis points (10000 = 100%)
   const calculatedFee = (transferAmount * BigInt(transferFeeBasisPoints)) / 10000n
-  
+
   // Apply maximum fee cap
   const feeAmount = calculatedFee > maximumFee ? maximumFee : calculatedFee
   const wasFeeCapped = calculatedFee > maximumFee
-  
+
   // Calculate net amount after fee
   const netAmount = transferAmount - feeAmount
-  
+
   return {
     transferAmount,
     feeAmount,
@@ -107,11 +107,11 @@ export function calculateRequiredAmountForNetTransfer(
   feeConfig: TransferFeeConfig
 ): TransferFeeCalculation {
   const { transferFeeBasisPoints } = feeConfig
-  
+
   // Calculate required gross amount: net / (1 - fee_rate)
   // For basis points: gross = net * 10000 / (10000 - basis_points)
   const grossAmount = (desiredNetAmount * 10000n) / (10000n - BigInt(transferFeeBasisPoints))
-  
+
   // Calculate actual fee and check if it hits the maximum
   return calculateTransferFee(grossAmount, feeConfig)
 }
@@ -129,13 +129,13 @@ export function estimateAccumulatedFees(
 ): { totalFees: bigint, feeBreakdown: TransferFeeCalculation[] } {
   const feeBreakdown: TransferFeeCalculation[] = []
   let totalFees = 0n
-  
+
   for (const transferAmount of transfers) {
     const calculation = calculateTransferFee(transferAmount, feeConfig)
     feeBreakdown.push(calculation)
     totalFees += calculation.feeAmount
   }
-  
+
   return { totalFees, feeBreakdown }
 }
 
@@ -181,7 +181,7 @@ export interface ConfidentialAccountState {
  * Generate confidential transfer proof
  * 
  * Uses twisted ElGamal encryption to create confidential transfer proofs
- * compatible with Solana's ZK ElGamal Proof Program
+ * for the Token 2022 confidential transfer extension
  * 
  * @param amount - Transfer amount (in token base units)
  * @param senderKeypair - Sender's ElGamal keypair
@@ -198,47 +198,46 @@ export async function generateConfidentialTransferProof(
   // Encrypt amount for recipient
   const recipientCiphertext = encryptAmount(amount, recipientPubkey)
   const encryptedAmount = serializeCiphertext(recipientCiphertext)
-  
+
   // Generate randomness for proofs
   const randomness = new Uint8Array(32)
   crypto.getRandomValues(randomness)
-  
+
   // Generate range proof (proves amount is in valid range)
-  const rangeProof = generateRangeProof(
+  const rangeProof = await generateRangeProof(
     amount,
     recipientCiphertext.commitment,
     randomness
   )
-  
+
   // Generate validity proof (proves ciphertext is well-formed)
-  const validityProof = generateValidityProof(
+  const validityProof = await generateValidityProof(
     recipientCiphertext,
     recipientPubkey,
     randomness
   )
-  
+
   // If auditor is present, encrypt amount for auditor
   let auditorProof: Uint8Array | undefined
   if (auditorPubkey) {
     const auditorCiphertext = encryptAmount(amount, auditorPubkey)
     const auditorRandomness = new Uint8Array(32)
     crypto.getRandomValues(auditorRandomness)
-    
+
     // Generate equality proof (proves both ciphertexts encrypt same amount)
     const equalityProof = generateEqualityProof(
       recipientCiphertext,
       auditorCiphertext,
-      amount,
       randomness,
       auditorRandomness
     )
-    
+
     // Combine auditor ciphertext and equality proof
     auditorProof = new Uint8Array(160) // 64 (ciphertext) + 96 (equality proof)
     auditorProof.set(serializeCiphertext(auditorCiphertext), 0)
     auditorProof.set(equalityProof.proof, 64)
   }
-  
+
   return {
     encryptedAmount,
     rangeProof: rangeProof.proof,
@@ -251,7 +250,7 @@ export async function generateConfidentialTransferProof(
  * Verify confidential transfer proof
  * 
  * Note: In practice, proof verification happens on-chain via the
- * ZK ElGamal Proof Program. This is a client-side validation helper.
+ * confidential transfer extension. This is a client-side validation helper.
  * 
  * @param proof - The proof to verify
  * @param publicInputs - Public inputs for verification
@@ -270,72 +269,72 @@ export async function verifyConfidentialTransferProof(
     if (proof.encryptedAmount.length !== 64) {
       return false
     }
-    
+
     if (proof.rangeProof.length < 128) {
       return false
     }
-    
+
     if (proof.validityProof.length < 64) {
       return false
     }
-    
+
     if (publicInputs.auditorPubkey && !proof.auditorProof) {
       return false
     }
-    
+
     if (proof.auditorProof && proof.auditorProof.length !== 160) {
       return false
     }
-    
+
     // Import verification functions
-    const { 
-      verifyRangeProof, 
-      verifyValidityProof, 
+    const {
+      verifyRangeProof,
+      verifyValidityProof,
       verifyEqualityProof,
       deserializeCiphertext
     } = await import('./elgamal.js')
-    
+
     // Deserialize the encrypted amount ciphertext
     const encryptedAmountCiphertext = deserializeCiphertext(proof.encryptedAmount)
-    
+
     // 1. Verify the range proof using bulletproofs
     const rangeProofValid = await verifyRangeProof(
       { proof: proof.rangeProof, commitment: encryptedAmountCiphertext.commitment.commitment },
       encryptedAmountCiphertext.commitment.commitment
     )
-    
+
     if (!rangeProofValid) {
       return false
     }
-    
+
     // 2. Verify the validity proof using Schnorr signatures
     const validityProofValid = verifyValidityProof(
       { proof: proof.validityProof },
       encryptedAmountCiphertext,
       publicInputs.recipientPubkey
     )
-    
+
     if (!validityProofValid) {
       return false
     }
-    
+
     // 3. Verify the equality proof if auditor is present
     if (proof.auditorProof && publicInputs.auditorPubkey) {
       // Extract auditor ciphertext and equality proof from combined data
       const auditorCiphertext = deserializeCiphertext(proof.auditorProof.slice(0, 64))
       const equalityProofData = proof.auditorProof.slice(64)
-      
+
       const equalityProofValid = verifyEqualityProof(
         { proof: equalityProofData },
         encryptedAmountCiphertext,
         auditorCiphertext
       )
-      
+
       if (!equalityProofValid) {
         return false
       }
     }
-    
+
     // 4. All proofs are valid
     return true
   } catch {
@@ -379,20 +378,20 @@ export function calculateInterest(
   currentTimestamp: bigint
 ): InterestCalculation {
   const timePeriodSeconds = currentTimestamp - config.lastUpdateTimestamp
-  
+
   // Calculate interest using compound interest formula
   // Interest = Principal * (rate/10000) * (time_seconds / seconds_per_year)
   const secondsPerYear = 365n * 24n * 60n * 60n // 31,536,000 seconds
   const rateBasisPoints = BigInt(config.currentRate)
-  
+
   // Simple interest calculation (for more complex scenarios, implement compound interest)
   const interestAmount = (principal * rateBasisPoints * timePeriodSeconds) / (10000n * secondsPerYear)
   const newBalance = principal + interestAmount
-  
+
   // Calculate effective annual rate
   const yearFraction = Number(timePeriodSeconds) / Number(secondsPerYear)
   const effectiveAnnualRate = config.currentRate / 100 * yearFraction
-  
+
   return {
     principal,
     annualRateBasisPoints: config.currentRate,
@@ -420,15 +419,15 @@ export function calculateCompoundInterest(
 ): InterestCalculation {
   const rate = annualRateBasisPoints / 10000 // Convert basis points to decimal
   const n = compoundingPeriodsPerYear
-  
+
   // Compound interest formula: A = P(1 + r/n)^(nt)
   const compoundFactor = Math.pow(1 + rate / n, n * years)
   const newBalanceFloat = Number(principal) * compoundFactor
   const newBalance = BigInt(Math.floor(newBalanceFloat))
   const interestAmount = newBalance - principal
-  
+
   const timePeriodSeconds = BigInt(Math.floor(years * 365 * 24 * 60 * 60))
-  
+
   return {
     principal,
     annualRateBasisPoints,
@@ -461,7 +460,7 @@ export interface TransferHookInstruction {
 export interface TransferHookContext {
   /** Source account */
   source: Address
-  /** Destination account */  
+  /** Destination account */
   destination: Address
   /** Authority performing the transfer */
   authority: Address
@@ -485,7 +484,7 @@ export function validateTransferHookInstruction(
   // Basic validation - real implementation would be more comprehensive
   if (!instruction.programId) return false
   if (!Array.isArray(instruction.additionalAccounts)) return false
-  
+
   return true
 }
 
@@ -509,7 +508,7 @@ export function createTransferHookInstruction(
     ...getAddressEncoder().encode(context.mint),
     ...getBytesEncoder().encode(context.contextData)
   ])
-  
+
   return {
     programId: hookProgramId,
     instructionData,
@@ -584,7 +583,7 @@ export enum TokenAccountState {
   /** Account is uninitialized */
   UNINITIALIZED = 0,
   /** Account is initialized and usable */
-  INITIALIZED = 1, 
+  INITIALIZED = 1,
   /** Account is frozen (transfers disabled) */
   FROZEN = 2
 }
@@ -632,7 +631,7 @@ export function canTransfer(
   if (state !== TokenAccountState.INITIALIZED) return false
   if (isNonTransferable) return false
   if (isFrozen) return false
-  
+
   return true
 }
 
@@ -646,10 +645,10 @@ export function getRequiredExtensions(
   extensions: TokenExtension[]
 ): TokenExtension[] {
   const required = new Set<TokenExtension>()
-  
+
   for (const extension of extensions) {
     required.add(extension)
-    
+
     // Add dependencies
     switch (extension) {
       case TokenExtension.TRANSFER_FEE_AMOUNT:
@@ -663,7 +662,7 @@ export function getRequiredExtensions(
         break
     }
   }
-  
+
   return Array.from(required).sort((a, b) => a - b)
 }
 
@@ -714,7 +713,7 @@ export function estimateComputeUnits(
   extensions: TokenExtension[] = []
 ): bigint {
   let baseUnits = 0n
-  
+
   switch (operation) {
     case 'transfer':
       baseUnits = 15000n // Base transfer cost
@@ -729,7 +728,7 @@ export function estimateComputeUnits(
       baseUnits = 10000n // Base burn cost
       break
   }
-  
+
   // Add costs for extensions
   let extensionUnits = 0n
   for (const extension of extensions) {
@@ -739,7 +738,7 @@ export function estimateComputeUnits(
         break
       case TokenExtension.CONFIDENTIAL_TRANSFER_MINT:
       case TokenExtension.CONFIDENTIAL_TRANSFER_ACCOUNT:
-        extensionUnits += 50000n // ZK proofs are expensive
+        extensionUnits += 50000n // Confidential transfers are expensive
         break
       case TokenExtension.TRANSFER_HOOK:
         extensionUnits += 15000n // External program calls
@@ -748,7 +747,7 @@ export function estimateComputeUnits(
         extensionUnits += 2000n // Default extension cost
     }
   }
-  
+
   return baseUnits + extensionUnits
 }
 
@@ -842,7 +841,7 @@ export function parseTokenExtension(
         }
       }
     }
-    
+
     case 'InterestBearingConfig': {
       if (data.length < 40) {
         throw new Error('Invalid extension data length')
@@ -860,7 +859,7 @@ export function parseTokenExtension(
         currentRate: 0
       }
     }
-    
+
     default:
       throw new Error('Unknown extension type')
   }

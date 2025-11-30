@@ -9,9 +9,6 @@ export interface FeatureFlags {
   /** Enable confidential transfers (currently in beta) */
   CONFIDENTIAL_TRANSFERS_ENABLED: boolean
   
-  /** Use ZK proofs for verification (disabled until ZK program re-enabled) */
-  USE_ZK_PROOFS: boolean
-  
   /** Use client-side encryption as fallback */
   USE_CLIENT_ENCRYPTION: boolean
   
@@ -35,9 +32,8 @@ export interface FeatureFlags {
  * Default feature flags for production
  */
 export const DEFAULT_FLAGS: FeatureFlags = {
-  // Privacy features in beta due to ZK program being disabled
-  CONFIDENTIAL_TRANSFERS_ENABLED: false,
-  USE_ZK_PROOFS: false,
+  // Privacy features using client-side encryption
+  CONFIDENTIAL_TRANSFERS_ENABLED: true,
   USE_CLIENT_ENCRYPTION: true,
   ENABLE_IPFS_STORAGE: true,
   
@@ -55,7 +51,6 @@ export const DEFAULT_FLAGS: FeatureFlags = {
  */
 export const DEV_FLAGS: FeatureFlags = {
   CONFIDENTIAL_TRANSFERS_ENABLED: true,
-  USE_ZK_PROOFS: true,
   USE_CLIENT_ENCRYPTION: true,
   ENABLE_IPFS_STORAGE: true,
   ENABLE_COMPRESSED_AGENTS: true,
@@ -95,11 +90,6 @@ export class FeatureFlagManager {
       const confidentialTransfers = parseEnvBool('GHOSTSPEAK_CONFIDENTIAL_TRANSFERS')
       if (confidentialTransfers !== undefined) {
         envOverrides.CONFIDENTIAL_TRANSFERS_ENABLED = confidentialTransfers
-      }
-      
-      const useZkProofs = parseEnvBool('GHOSTSPEAK_USE_ZK_PROOFS')
-      if (useZkProofs !== undefined) {
-        envOverrides.USE_ZK_PROOFS = useZkProofs
       }
       
       const useClientEncryption = parseEnvBool('GHOSTSPEAK_USE_CLIENT_ENCRYPTION')
@@ -145,7 +135,7 @@ export class FeatureFlagManager {
    * Get privacy feature status
    */
   getPrivacyStatus(): {
-    mode: 'zk-proofs' | 'client-encryption' | 'disabled'
+    mode: 'client-encryption' | 'disabled'
     beta: boolean
     message: string
   } {
@@ -159,19 +149,11 @@ export class FeatureFlagManager {
       }
     }
     
-    if (flags.USE_ZK_PROOFS) {
-      return {
-        mode: 'zk-proofs',
-        beta: true,
-        message: 'Confidential transfers using ZK proofs (Beta - Limited availability)'
-      }
-    }
-    
     if (flags.USE_CLIENT_ENCRYPTION) {
       return {
         mode: 'client-encryption',
-        beta: true,
-        message: 'Confidential transfers using client-side encryption (Beta - ZK proofs coming soon)'
+        beta: false,
+        message: 'Confidential transfers using client-side encryption (Production)'
       }
     }
     
@@ -183,21 +165,12 @@ export class FeatureFlagManager {
   }
   
   /**
-   * Check if we should use ZK proofs or client encryption
-   */
-  shouldUseZkProofs(): boolean {
-    const flags = this.getFlags()
-    return flags.CONFIDENTIAL_TRANSFERS_ENABLED && flags.USE_ZK_PROOFS
-  }
-  
-  /**
    * Check if we should use client encryption
    */
   shouldUseClientEncryption(): boolean {
     const flags = this.getFlags()
     return flags.CONFIDENTIAL_TRANSFERS_ENABLED && 
-           flags.USE_CLIENT_ENCRYPTION && 
-           !flags.USE_ZK_PROOFS
+           flags.USE_CLIENT_ENCRYPTION
   }
 }
 

@@ -6,7 +6,7 @@
  * implementations when WASM is not available.
  */
 
-import type { ElGamalKeypair, ElGamalCiphertext, PedersenCommitment } from './elgamal-complete.js'
+import type { ElGamalKeypair, ElGamalCiphertext, PedersenCommitment } from './elgamal.js'
 
 // Browser globals for Node.js compatibility
 declare const performance: {
@@ -40,7 +40,7 @@ interface WasmEngineType {
 }
 
 // Constructor type for WASM engine
-type WasmEngineConstructor = new() => WasmEngineType
+type WasmEngineConstructor = new () => WasmEngineType
 
 // WASM module exports interface
 interface WasmModuleExports {
@@ -96,16 +96,16 @@ interface VersionInfo {
 interface WasmModule {
   WasmElGamalEngine: WasmElGamalEngineConstructor
   WasmElGamalKeypair: WasmElGamalKeypairConstructor
-  WasmElGamalCiphertext: WasmElGamalCiphertextConstructor  
+  WasmElGamalCiphertext: WasmElGamalCiphertextConstructor
   WasmCryptoUtils: WasmCryptoUtilsConstructor
 }
 
 // Constructor types for legacy interfaces
-type WasmElGamalEngineConstructor = new() => WasmElGamalEngine
+type WasmElGamalEngineConstructor = new () => WasmElGamalEngine
 
-type WasmElGamalKeypairConstructor = new() => WasmElGamalKeypair
+type WasmElGamalKeypairConstructor = new () => WasmElGamalKeypair
 
-type WasmElGamalCiphertextConstructor = new(commitment: Uint8Array, handle: Uint8Array) => WasmElGamalCiphertext
+type WasmElGamalCiphertextConstructor = new (commitment: Uint8Array, handle: Uint8Array) => WasmElGamalCiphertext
 
 interface WasmCryptoUtilsConstructor {
   has_simd_support(): boolean
@@ -164,19 +164,19 @@ export async function initializeWasmCrypto(): Promise<boolean> {
         console.warn('WASM module not found, disabling WASM features')
         return false
       }
-      
+
       // Initialize the WASM module
       await wasmModuleImport.default()
-      
+
       // Verify WASM is available
       if (!wasmModuleImport.is_wasm_available()) {
         throw new Error('WASM module initialization failed')
       }
-      
+
       console.log('📊 WASM Module Info:', wasmModuleImport.get_wasm_info())
-      
+
       // Create wrapper that matches our interface using actual WASM
-      
+
       wasmModule = {
         WasmElGamalEngine: class WasmElGamalEngineWrapper {
           private engine: WasmEngineType
@@ -188,10 +188,10 @@ export async function initializeWasmCrypto(): Promise<boolean> {
 
           encrypt_amount(amount: bigint, publicKey: Uint8Array, randomness?: Uint8Array): WasmElGamalCiphertext {
             // Convert bigint to number, ensuring it fits in u64 range
-            const amountNum = amount > BigInt(Number.MAX_SAFE_INTEGER) ? 
+            const amountNum = amount > BigInt(Number.MAX_SAFE_INTEGER) ?
               Number.MAX_SAFE_INTEGER : Number(amount)
             const result = this.engine.encrypt_amount(amountNum, publicKey, randomness ?? null)
-            
+
             // Convert WASM result to our interface
             return {
               commitment: result.c1,
@@ -207,10 +207,10 @@ export async function initializeWasmCrypto(): Promise<boolean> {
               const view = new DataView(bytes.buffer, bytes.byteOffset, 8)
               amountArray.push(view.getBigUint64(0, true))
             }
-            
+
             const jsArray = Array.from(amountArray.map(n => Number(n)))
             const results = this.engine.batch_encrypt_amounts(jsArray, publicKey)
-            
+
             // Convert WASM results to our interface
             return Array.from(results).map((result) => ({
               commitment: (result as { c1: Uint8Array }).c1,
@@ -315,7 +315,7 @@ export async function initializeWasmCrypto(): Promise<boolean> {
       isWasmSupported = true
 
       console.log('✅ WebAssembly crypto module initialized successfully')
-      
+
       // Log performance info
       const perfInfo = wasmEngine.get_performance_info()
       console.log('📊 WASM Performance Info:', perfInfo)
@@ -324,7 +324,7 @@ export async function initializeWasmCrypto(): Promise<boolean> {
     } catch (error) {
       console.error('❌ Failed to initialize WebAssembly crypto module:', error)
       console.log('⚠️ Falling back to JavaScript implementations')
-      
+
       // Set up fallback mock implementations
       wasmModule = null
       wasmEngine = null
@@ -374,7 +374,7 @@ export async function generateElGamalKeypair(): Promise<ElGamalKeypair> {
   }
 
   // Fallback to JavaScript implementation
-  const { generateElGamalKeypair: jsGenerateKeypair } = await import('./elgamal-complete')
+  const { generateElGamalKeypair: jsGenerateKeypair } = await import('./elgamal')
   return jsGenerateKeypair()
 }
 
@@ -391,7 +391,7 @@ export async function encryptAmount(
       const startTime = performance.now()
       const wasmCiphertext = wasmEngine!.encrypt_amount(amount, publicKey, randomness)
       const elapsed = performance.now() - startTime
-      
+
       if (elapsed < 5) {
         console.log(`⚡ WASM encryption completed in ${elapsed.toFixed(2)}ms`)
       }
@@ -406,8 +406,8 @@ export async function encryptAmount(
   }
 
   // Fallback to JavaScript implementation
-  const { encryptAmount: jsEncryptAmount, encryptAmountWithRandomness } = await import('./elgamal-complete')
-  return randomness ? 
+  const { encryptAmount: jsEncryptAmount, encryptAmountWithRandomness } = await import('./elgamal')
+  return randomness ?
     encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :
     jsEncryptAmount(amount, publicKey)
 }
@@ -422,22 +422,22 @@ export async function batchEncryptAmounts(
   if (isWasmCryptoAvailable() && amounts.length > 1) {
     try {
       const startTime = performance.now()
-      
+
       // Pack amounts into byte array for WASM
       const amountBuffer = new ArrayBuffer(amounts.length * 8)
       const amountView = new DataView(amountBuffer)
-      
+
       amounts.forEach((amount, index) => {
         // Use little-endian encoding for consistency with Rust
         amountView.setBigUint64(index * 8, amount, true)
       })
-      
+
       const packedAmounts = new Uint8Array(amountBuffer)
       const wasmCiphertexts = wasmEngine!.batch_encrypt(packedAmounts, publicKey)
-      
+
       const elapsed = performance.now() - startTime
       console.log(`⚡ WASM batch encryption of ${amounts.length} amounts completed in ${elapsed.toFixed(2)}ms`)
-      
+
       // Convert WASM ciphertexts to our format
       return wasmCiphertexts.map(ciphertext => ({
         commitment: { commitment: ciphertext.commitment },
@@ -469,7 +469,7 @@ export async function generateRangeProof(
       const startTime = performance.now()
       const proof = wasmEngine!.generate_range_proof(amount, commitment.commitment, blindingFactor)
       const elapsed = performance.now() - startTime
-      
+
       if (elapsed < 50) {
         console.log(`⚡ WASM range proof generated in ${elapsed.toFixed(2)}ms (target: <50ms)`)
       } else {
@@ -486,7 +486,7 @@ export async function generateRangeProof(
   }
 
   // Fallback to JavaScript implementation
-  const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete')
+  const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal')
   return jsGenerateRangeProof(amount, commitment, blindingFactor)
 }
 
@@ -503,35 +503,35 @@ export async function batchGenerateRangeProofs(
   if (isWasmCryptoAvailable() && proofRequests.length > 1) {
     try {
       const startTime = performance.now()
-      
+
       // Pack proof data for WASM: amount(8) + commitment(32) + blinding(32) per proof
       const proofDataSize = proofRequests.length * 72
       const proofDataBuffer = new ArrayBuffer(proofDataSize)
       const proofDataView = new DataView(proofDataBuffer)
-      
+
       proofRequests.forEach((request, index) => {
         const offset = index * 72
-        
+
         // Amount (8 bytes, little-endian)
         proofDataView.setBigUint64(offset, request.amount, true)
-        
+
         // Commitment (32 bytes)
         const commitmentBytes = new Uint8Array(proofDataBuffer, offset + 8, 32)
         commitmentBytes.set(request.commitment.commitment)
-        
+
         // Blinding factor (32 bytes)
         const blindingBytes = new Uint8Array(proofDataBuffer, offset + 40, 32)
         blindingBytes.set(request.blindingFactor)
       })
-      
+
       const packedData = new Uint8Array(proofDataBuffer)
       const proofs = wasmEngine!.batch_generate_range_proofs(packedData)
-      
+
       const elapsed = performance.now() - startTime
       const avgTime = elapsed / proofRequests.length
-      
+
       console.log(`⚡ WASM batch generated ${proofRequests.length} range proofs in ${elapsed.toFixed(2)}ms (avg: ${avgTime.toFixed(2)}ms per proof)`)
-      
+
       // Convert results
       return proofs.map((proof, index) => ({
         proof,
@@ -564,7 +564,7 @@ export async function getCryptoPerformanceInfo(): Promise<{
   benchmarkResults?: { [key: string]: number }
 }> {
   await initializeWasmCrypto()
-  
+
   const result = {
     wasm: null as PerformanceInfo | null,
     version: null as VersionInfo | null,
@@ -575,7 +575,7 @@ export async function getCryptoPerformanceInfo(): Promise<{
   if (isWasmCryptoAvailable()) {
     result.wasm = wasmEngine!.get_performance_info()
     result.version = wasmModule!.WasmCryptoUtils.get_version_info()
-    
+
     // Run quick benchmarks
     result.benchmarkResults = {
       scalar_mult_100: wasmModule!.WasmCryptoUtils.benchmark_scalar_mult(100),
@@ -595,7 +595,7 @@ export async function runCryptoBenchmarks(): Promise<{
   batchEncryption: { wasm: number; js: number; speedup: number }
 }> {
   await initializeWasmCrypto()
-  
+
   // Generate a valid test keypair for benchmarks
   const testKeypair = await generateElGamalKeypair()
   const testAmount = BigInt(1000) // Reduced from 1000000 for faster operations
@@ -607,7 +607,7 @@ export async function runCryptoBenchmarks(): Promise<{
   // Encryption benchmark
   const encryptionBench = async () => {
     const iterations = 10 // Reduced from 100 to prevent timeouts
-    
+
     // WASM benchmark
     let wasmTime = 0
     if (isWasmCryptoAvailable()) {
@@ -617,15 +617,15 @@ export async function runCryptoBenchmarks(): Promise<{
       }
       wasmTime = performance.now() - start
     }
-    
+
     // JS benchmark (fallback)
-    const { encryptAmount: jsEncryptAmount } = await import('./elgamal-complete')
+    const { encryptAmount: jsEncryptAmount } = await import('./elgamal')
     const jsStart = performance.now()
     for (let i = 0; i < iterations; i++) {
       jsEncryptAmount(testAmount, testPublicKey)
     }
     const jsTime = performance.now() - jsStart
-    
+
     return {
       wasm: wasmTime,
       js: jsTime,
@@ -636,7 +636,7 @@ export async function runCryptoBenchmarks(): Promise<{
   // Range proof benchmark
   const rangeProofBench = async () => {
     const iterations = 3 // Reduced from 10 to prevent timeouts
-    
+
     // WASM benchmark
     let wasmTime = 0
     if (isWasmCryptoAvailable()) {
@@ -646,15 +646,15 @@ export async function runCryptoBenchmarks(): Promise<{
       }
       wasmTime = performance.now() - start
     }
-    
+
     // JS benchmark
-    const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal-complete')
+    const { generateRangeProof: jsGenerateRangeProof } = await import('./elgamal')
     const jsStart = performance.now()
     for (let i = 0; i < iterations; i++) {
       jsGenerateRangeProof(testAmount, testCommitment, testBlinding)
     }
     const jsTime = performance.now() - jsStart
-    
+
     return {
       wasm: wasmTime,
       js: jsTime,
@@ -671,14 +671,14 @@ export async function runCryptoBenchmarks(): Promise<{
       await batchEncryptAmounts(testAmounts as bigint[], testPublicKey)
       wasmTime = performance.now() - start
     }
-    
+
     // JS benchmark (sequential)
     const jsStart = performance.now()
     for (const amount of testAmounts) {
       await encryptAmount(amount as bigint, testPublicKey)
     }
     const jsTime = performance.now() - jsStart
-    
+
     return {
       wasm: wasmTime,
       js: jsTime,

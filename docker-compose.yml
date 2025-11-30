@@ -10,6 +10,16 @@ services:
     environment:
       - NODE_ENV=production
     restart: always
+
+  docs:
+    build:
+      context: .
+      dockerfile: packages/docs/Dockerfile
+    ports:
+      - "4321:4321"
+    environment:
+      - NODE_ENV=production
+    restart: always
   # Optional: Local Solana Validator for development
   # validator:
   #   image: solanalabs/solana:v1.18.11

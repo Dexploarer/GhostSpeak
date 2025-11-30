@@ -23,3 +23,12 @@ export {
     isAvailable,
     resetConnectionState
 } from './connection.js'
+
+// Database instance
+export { getDb, type Database } from './db.js'
+
+// Services
+export * from './services/index.js'
+
+// Schemas (for advanced usage)
+export * from './schema/index.js'

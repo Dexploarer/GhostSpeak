@@ -10,6 +10,7 @@
 import type { Address, Commitment, SolanaRpcApi } from '@solana/kit'
 import { createSolanaRpc, type Rpc } from '@solana/kit'
 import { getAgentDecoder } from '../generated/accounts/agent.js'
+import { AgentCacheService } from '../database/services/AgentCacheService.js'
 
 // Create compatibility types for connection
 type Connection = Rpc<SolanaRpcApi>
@@ -41,6 +42,9 @@ export interface AgentSearchParams {
 
   // Search
   query?: string
+
+  // Cache control
+  force_refresh?: boolean
 }
 
 /**
@@ -104,6 +108,7 @@ export interface AgentSearchResponse {
     totalPages: number
   }
   filters: AgentSearchParams
+  fromCache?: boolean // Indicates if results came from cache
 }
 
 /**
@@ -115,6 +120,7 @@ export interface AgentDiscoveryOptions {
   commitment?: Commitment
   cacheEnabled?: boolean
   cacheTTL?: number // seconds
+  useDatabaseCache?: boolean // Use Turso database cache
 }
 
 /**
@@ -130,6 +136,8 @@ export class AgentDiscoveryClient {
   private cache: Map<string, { data: unknown; expiry: number }> = new Map()
   private cacheEnabled: boolean
   private cacheTTL: number
+  private useDatabaseCache: boolean
+  private dbCache: AgentCacheService
 
   constructor(options: AgentDiscoveryOptions) {
     this.rpc = createSolanaRpc(options.rpcEndpoint) as Connection
@@ -137,6 +145,8 @@ export class AgentDiscoveryClient {
     this.commitment = options.commitment ?? 'confirmed'
     this.cacheEnabled = options.cacheEnabled ?? true
     this.cacheTTL = options.cacheTTL ?? 300 // 5 minutes default
+    this.useDatabaseCache = options.useDatabaseCache ?? true
+    this.dbCache = AgentCacheService.getInstance()
   }
 
   /**
@@ -193,16 +203,40 @@ export class AgentDiscoveryClient {
   }
 
   /**
-   * Get agent by address
+   * Get agent by address with database cache support
+   * 
+   * Cache hierarchy:
+   * 1. Check Turso database cache (if enabled)
+   * 2. Fallback to RPC fetch
+   * 3. Cache result in database for future requests
    */
-  async getAgent(address: Address): Promise<Agent | null> {
+  async getAgent(address: Address, forceRefresh = false): Promise<Agent | null> {
     const cacheKey = this.getCacheKey('agent', { address })
 
-    // Check cache
-    if (this.cacheEnabled) {
-      const cached = this.getFromCache<Agent>(cacheKey)
-      if (cached) return cached
+    // Try database cache first (if enabled and not forcing refresh)
+    if (this.useDatabaseCache && !forceRefresh) {
+      const cachedAgent = await this.dbCache.getAgent(address, {
+        maxAge: this.cacheTTL * 1000,
+        forceRefresh
+      })
+
+      if (cachedAgent) {
+        console.log(`[AgentDiscovery] Cache HIT for agent ${address}`)
+        return this.transformCachedAgent(cachedAgent)
+      }
     }
+
+    // Check memory cache
+    if (this.cacheEnabled && !forceRefresh) {
+      const cached = this.getFromCache<Agent>(cacheKey)
+      if (cached) {
+        console.log(`[AgentDiscovery] Memory cache HIT for agent ${address}`)
+        return cached
+      }
+    }
+
+    // Cache MISS - fetch from RPC
+    console.log(`[AgentDiscovery] Cache MISS for agent ${address}, fetching from RPC`)
 
     try {
       const result = await this.rpc.getAccountInfo(address, {
@@ -215,15 +249,87 @@ export class AgentDiscoveryClient {
 
       const agent = this.parseAgentAccount(address, accountInfo.value.data)
 
-      // Cache result
-      if (this.cacheEnabled && agent) {
-        this.setCache(cacheKey, agent)
+      if (agent) {
+        // Cache in database asynchronously (fire and forget)
+        if (this.useDatabaseCache) {
+          this.cacheAgentInDatabase(agent).catch(err =>
+            console.warn('[AgentDiscovery] Failed to cache agent in database:', err)
+          )
+        }
+
+        // Cache in memory
+        if (this.cacheEnabled) {
+          this.setCache(cacheKey, agent)
+        }
       }
 
       return agent
     } catch (error) {
       console.error(`Failed to fetch agent ${address}:`, error)
       return null
+    }
+  }
+
+  /**
+   * Helper to cache agent in database
+   */
+  private async cacheAgentInDatabase(agent: Agent): Promise<void> {
+    await this.dbCache.cacheAgent(
+      {
+        agentAddress: agent.address,
+        owner: agent.owner,
+        name: agent.name,
+        description: agent.description,
+        reputationScore: agent.reputation_score,
+        totalJobsCompleted: Number(agent.total_jobs),
+        totalEarnings: agent.total_earnings.toString(),
+        x402Enabled: agent.x402_enabled,
+        x402PaymentAddress: agent.x402_payment_address,
+        x402PricePerCall: agent.x402_price_per_call.toString(),
+        x402ServiceEndpoint: agent.x402_service_endpoint,
+        x402TotalPayments: agent.x402_total_payments.toString(),
+        x402TotalCalls: agent.x402_total_calls.toString(),
+        lastPaymentTimestamp: Number(agent.last_payment_timestamp),
+        metadataUri: agent.metadata_uri,
+        frameworkOrigin: agent.framework_origin,
+        isVerified: agent.is_verified,
+        createdAt: Number(agent.created_at),
+        updatedAt: Date.now(),
+        cachedAt: Date.now(),
+        bump: 0 // Placeholder
+      },
+      agent.capabilities,
+      [] // Pricing info would be added here
+    )
+  }
+
+  /**
+   * Transform cached database agent to Agent interface
+   */
+  private transformCachedAgent(cachedAgent: any): Agent {
+    return {
+      address: cachedAgent.agentAddress as Address,
+      owner: cachedAgent.owner as Address,
+      name: cachedAgent.name,
+      description: cachedAgent.description,
+      capabilities: [], // Would need to join from agentCapabilities table
+      x402_enabled: Boolean(cachedAgent.x402Enabled),
+      x402_payment_address: cachedAgent.x402PaymentAddress as Address,
+      x402_accepted_tokens: [], // Would join from agentPricing table
+      x402_price_per_call: BigInt(cachedAgent.x402PricePerCall),
+      x402_service_endpoint: cachedAgent.x402ServiceEndpoint,
+      x402_total_payments: BigInt(cachedAgent.x402TotalPayments),
+      x402_total_calls: BigInt(cachedAgent.x402TotalCalls),
+      last_payment_timestamp: BigInt(cachedAgent.lastPaymentTimestamp),
+      reputation_score: cachedAgent.reputationScore,
+      total_jobs: BigInt(cachedAgent.totalJobsCompleted),
+      successful_jobs: BigInt(cachedAgent.totalJobsCompleted),
+      total_earnings: BigInt(cachedAgent.totalEarnings),
+      average_rating: cachedAgent.reputationScore / REPUTATION_BASIS_POINTS_PER_STAR,
+      created_at: BigInt(cachedAgent.createdAt),
+      metadata_uri: cachedAgent.metadataUri,
+      framework_origin: cachedAgent.frameworkOrigin,
+      is_verified: Boolean(cachedAgent.isVerified)
     }
   }
 

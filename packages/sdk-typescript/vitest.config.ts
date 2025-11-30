@@ -51,13 +51,14 @@ export default defineConfig({
       }
     },
     // Include/exclude patterns based on mode
-    ...(isQuickTest ? { 
+    ...(isQuickTest ? {
       include: quickTestPattern,
-      exclude: slowTestPattern 
+      exclude: slowTestPattern
     } : {}),
     // Performance optimizations
-    testTimeout: isFullTest ? 120000 : (isQuickTest ? 10000 : 30000),
-    hookTimeout: isFullTest ? 120000 : (isQuickTest ? 10000 : 30000),
+    testTimeout: isFullTest ? 120000 : (isQuickTest ? 10000 : 15000), // 15s for integration tests
+    hookTimeout: isFullTest ? 120000 : (isQuickTest ? 10000 : 10000),  // 10s for hooks
+    teardownTimeout: 5000, // 5s for cleanup (database connections)
     // Parallel execution with better defaults
     threads: !isFullTest, // Disable threads for full test runs to avoid race conditions
     maxConcurrency: isFullTest ? 1 : 5,

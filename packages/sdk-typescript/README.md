@@ -35,6 +35,7 @@ The official TypeScript SDK for [GhostSpeak Protocol](https://github.com/ghostsp
 - **Enhanced Error Handling** - User-friendly error messages
 - **IPFS Integration** - Automatic large content storage
 - **Comprehensive Testing** - 85% test coverage with Vitest
+- **Database Integration** - Optional Turso caching for 80%+ RPC reduction 🆕
 
 ## 🚀 **Quick Start**
 

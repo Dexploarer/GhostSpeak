@@ -38,7 +38,7 @@ describe('Agent Register Command', () => {
     container.register(ServiceTokens.LOGGER_SERVICE, () => mockLoggerService)
 
     // Mock the spinner
-    vi.mocked(prompts.spinner).mockReturnValue({
+    (prompts.spinner).mockReturnValue({
         start: vi.fn(),
         stop: vi.fn(),
         message: vi.fn(),
@@ -57,12 +57,12 @@ describe('Agent Register Command', () => {
       capabilities: ['test', 'debug'],
       serviceEndpoint: 'http://localhost:8080',
     }
-    vi.mocked(prompts.isCancel).mockReturnValue(false)
-    vi.mocked(agentPrompts.registerAgentPrompts).mockResolvedValue(agentData)
-    vi.mocked(agentHelpers.validateAgentParams).mockReturnValue(null)
+    (prompts.isCancel).mockReturnValue(false)
+    (agentPrompts.registerAgentPrompts).mockResolvedValue(agentData)
+    (agentHelpers.validateAgentParams).mockReturnValue(null)
 
     const registeredAgent = { id: '123', ...agentData, address: 'someaddress', owner: 'someowner', isActive: true, reputationScore: 0, createdAt: 0n, updatedAt: 0n }
-    vi.mocked(mockAgentService.register).mockResolvedValue(registeredAgent)
+    (mockAgentService.register).mockResolvedValue(registeredAgent)
 
     await program.parseAsync(['node', 'test', 'agent', 'register'])
 
@@ -81,12 +81,12 @@ describe('Agent Register Command', () => {
       capabilities: ['test', 'debug'],
       serviceEndpoint: 'http://localhost:8080',
     }
-    vi.mocked(prompts.isCancel).mockReturnValue(false)
-    vi.mocked(agentPrompts.registerAgentPrompts).mockResolvedValue(agentData)
-    vi.mocked(agentHelpers.validateAgentParams).mockReturnValue(null)
+    (prompts.isCancel).mockReturnValue(false)
+    (agentPrompts.registerAgentPrompts).mockResolvedValue(agentData)
+    (agentHelpers.validateAgentParams).mockReturnValue(null)
 
     const error = new Error('Registration failed')
-    vi.mocked(mockAgentService.register).mockRejectedValue(error)
+    (mockAgentService.register).mockRejectedValue(error)
 
     await program.parseAsync(['node', 'test', 'agent', 'register'])
 
@@ -94,8 +94,8 @@ describe('Agent Register Command', () => {
   })
 
   it('should warn if user cancels prompts', async () => {
-    vi.mocked(prompts.isCancel).mockReturnValue(true)
-    vi.mocked(agentPrompts.registerAgentPrompts).mockResolvedValue({} as any) // It will be cancelled, so we don't care about the value
+    (prompts.isCancel).mockReturnValue(true)
+    (agentPrompts.registerAgentPrompts).mockResolvedValue({} as any) // It will be cancelled, so we don't care about the value
 
     await program.parseAsync(['node', 'test', 'agent', 'register'])
 
@@ -110,9 +110,9 @@ describe('Agent Register Command', () => {
       capabilities: [],
     }
     const validationError = 'Agent name must be at least 3 characters long'
-    vi.mocked(prompts.isCancel).mockReturnValue(false)
-    vi.mocked(agentPrompts.registerAgentPrompts).mockResolvedValue(agentData)
-    vi.mocked(agentHelpers.validateAgentParams).mockReturnValue(validationError)
+    (prompts.isCancel).mockReturnValue(false)
+    (agentPrompts.registerAgentPrompts).mockResolvedValue(agentData)
+    (agentHelpers.validateAgentParams).mockReturnValue(validationError)
 
     await program.parseAsync(['node', 'test', 'agent', 'register'])
 

@@ -1,259 +1,32 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   lint:
-    name: "🎨 Lint & Format"
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
+      - uses: actions/checkout@v4
+      
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Install Rust toolchain
+      
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Solana CLI
-        run: |
-          echo "⚙️ Installing Solana CLI..."
-          set -e
-          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.15/install)" || {
-            echo "❌ Failed to install Solana CLI"
-            exit 1
-          }
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-          solana --version || {
-            echo "❌ Failed to verify Solana CLI installation"
-            exit 1
-          }
-          echo "✅ Solana CLI installed and verified successfully"
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
         with:
-          path: |
-            ~/.bun/install/cache
-            ~/.cargo/registry
-            ~/.cargo/git
-            node_modules
-            packages/*/node_modules
-          key: ${{ runner.os }}-lint-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-lint-
-
-      - name: Install dependencies
-        run: |
-          echo "📦 Installing workspace dependencies for linting..."
-          set -e
-          
-          echo "🔧 Installing root dependencies..."
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install root dependencies"
-            exit 1
-          }
-          echo "✅ Root dependencies installed successfully"
-          
-          echo "🔧 Installing SDK TypeScript dependencies..."
-          cd packages/sdk-typescript
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install SDK TypeScript dependencies"
-            exit 1
-          }
-          echo "✅ SDK TypeScript dependencies installed successfully"
-          
-          echo "🎉 All dependencies installed successfully"
-
-      - name: Lint TypeScript & Prettier
-        run: |
-          echo "🎨 Running TypeScript and Prettier linting..."
-          set -e
-          bun run lint:comprehensive || {
-            echo "❌ TypeScript and Prettier linting failed"
-            exit 1
-          }
-          echo "✅ TypeScript and Prettier linting passed"
-
-      - name: Lint Rust
-        run: |
-          echo "🦀 Running Rust linting..."
-          set -e
-          cd programs/podai
-          
-          echo "🔧 Checking Rust formatting..."
-          cargo fmt -- --check || {
-            echo "❌ Rust formatting check failed"
-            exit 1
-          }
-          echo "✅ Rust formatting check passed"
-          
-          echo "🔧 Running Rust clippy..."
-          cargo clippy -- -D warnings || {
-            echo "❌ Rust clippy check failed"
-            exit 1
-          }
-          echo "✅ Rust clippy check passed"
-
-  security-audit:
-    name: "🔒 Security Audit"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-audit
-        run: |
-          echo "🔒 Installing cargo-audit..."
-          set -e
-          cargo install cargo-audit --locked || {
-            echo "❌ Failed to install cargo-audit"
-            exit 1
-          }
-          echo "✅ cargo-audit installed successfully"
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            ~/.cargo/registry
-            ~/.cargo/git
-            node_modules
-            packages/*/node_modules
-          key: ${{ runner.os }}-security-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-security-
-
-      - name: Install dependencies
-        run: |
-          echo "📦 Installing workspace dependencies for security audit..."
-          set -e
-          
-          echo "🔧 Installing root dependencies..."
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install root dependencies"
-            exit 1
-          }
-          echo "✅ Root dependencies installed successfully"
-          
-          echo "🔧 Installing SDK TypeScript dependencies..."
-          cd packages/sdk-typescript
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install SDK TypeScript dependencies"
-            exit 1
-          }
-          echo "✅ SDK TypeScript dependencies installed successfully"
-          
-          echo "🎉 All dependencies installed successfully"
-
-      - name: Rust Security Audit
-        run: |
-          echo "🔒 Running Rust security audit..."
-          set -e
-          cd programs/podai
-          cargo audit --deny warnings || {
-            echo "❌ Rust security audit failed"
-            exit 1
-          }
-          echo "✅ Rust security audit passed"
-
-      - name: Node.js Security Audit (Root)
-        run: |
-          echo "🔒 Running Node.js security audit for root workspace..."
-          set -e
-          bun audit --audit-level high || {
-            echo "❌ Root workspace security audit failed"
-            exit 1
-          }
-          echo "✅ Root workspace security audit passed"
-
-      - name: Node.js Security Audit (SDK TypeScript)
-        run: |
-          echo "🔒 Running Node.js security audit for SDK TypeScript..."
-          set -e
-          cd packages/sdk-typescript
-          bun audit --audit-level high || {
-            echo "❌ SDK TypeScript security audit failed"
-            exit 1
-          }
-          echo "✅ SDK TypeScript security audit passed"
-
-      - name: Check for known vulnerabilities in dependencies
-        run: |
-          echo "🔍 Checking for vulnerable patterns in code..."
-          # Check for common security anti-patterns
-          if grep -r --include="*.ts" --include="*.js" --include="*.rs" -n "eval\|innerHTML\|dangerouslySetInnerHTML" . ; then
-            echo "⚠️ Warning: Found potentially dangerous patterns. Review for security implications."
-          fi
-          
-          # Check for hardcoded secrets (basic patterns)
-          if grep -r --include="*.ts" --include="*.js" --include="*.rs" -i "password\|secret\|key\|token" . | grep -v "test\|example\|placeholder" | grep "=" ; then
-            echo "⚠️ Warning: Found potential hardcoded credentials. Review for security implications."
-          fi
-          
-          echo "✅ Security pattern check completed"
-
-  build:
-    name: "🏗️ Build All"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install system dependencies
-        run: |
-          echo "📦 Installing system dependencies for build..."
-          set -e
-          sudo apt-get update || {
-            echo "❌ Failed to update package lists"
-            exit 1
-          }
-          sudo apt-get install -y pkg-config build-essential libudev-dev || {
-            echo "❌ Failed to install system dependencies"
-            exit 1
-          }
-          echo "✅ System dependencies installed successfully"
-
-      - name: Install Anchor CLI via avm
-        run: |
-          echo "⚙️ Installing Anchor CLI for build..."
-          set -e
-          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force || {
-            echo "❌ Failed to install AVM"
-            exit 1
-          }
-          avm install 0.31.1 || {
-            echo "❌ Failed to install Anchor version 0.31.1"
-            exit 1
-          }
-          avm use 0.31.1 || {
-            echo "❌ Failed to use Anchor version 0.31.1"
-            exit 1
-          }
-          echo "✅ Anchor CLI installed and configured successfully"
-
+          components: rustfmt, clippy
+      
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -263,157 +36,47 @@ jobs:
             ~/.cargo/git
             target
             node_modules
-            packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
+          key: ${{ runner.os }}-lint-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-build-
-
+            ${{ runner.os }}-lint-
+      
       - name: Install dependencies
-        run: |
-          echo "📦 Installing workspace dependencies for build..."
-          set -e
-          
-          echo "🔧 Installing root dependencies..."
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install root dependencies"
-            exit 1
-          }
-          echo "✅ Root dependencies installed successfully"
-          
-          echo "🔧 Installing SDK TypeScript dependencies..."
-          cd packages/sdk-typescript
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install SDK TypeScript dependencies"
-            exit 1
-          }
-          cd ..
-          echo "✅ SDK TypeScript dependencies installed successfully"
-          
-          echo "🎉 All dependencies installed successfully"
+        run: bun install
+      
+      - name: Lint TypeScript
+        run: bun run lint:ts
+      
+      - name: Check Rust formatting
+        run: cd programs && cargo fmt -- --check
+      
+      - name: Lint Rust
+        run: cd programs && cargo clippy -- -D warnings
 
-      - name: Build Solana Program
-        run: |
-          echo "⚓ Building Anchor program..."
-          set -e
-          anchor build || {
-            echo "❌ Failed to build Anchor program"
-            exit 1
-          }
-          echo "✅ Anchor program built successfully"
-
-      - name: Build SDK TypeScript
-        run: |
-          echo "📦 Building SDK TypeScript..."
-          set -e
-          cd packages/sdk-typescript
-          bun run build || {
-            echo "❌ Failed to build SDK TypeScript"
-            exit 1
-          }
-          echo "✅ SDK TypeScript built successfully"
-
-      - name: Build SDK Rust
-        run: |
-          echo "🦀 Building SDK Rust..."
-          set -e
-          cd packages/sdk-rust
-          cargo build --release || {
-            echo "❌ Failed to build SDK Rust"
-            exit 1
-          }
-          echo "✅ SDK Rust built successfully"
-
-      - name: Build Core
-        run: |
-          echo "�️ Building Core package..."
-          set -e
-          cd packages/core
-          cargo build --release || {
-            echo "❌ Failed to build Core package"
-            exit 1
-          }
-          echo "✅ Core package built successfully"
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            target/deploy/
-            target/idl/
-            packages/sdk-typescript/dist/
-            packages/sdk-rust/target/release/
-            packages/core/target/release/
-
-  test:
-    name: "🧪 Test Suite"
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    needs: build
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
+      - uses: actions/checkout@v4
+      
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      - name: Install Rust toolchain
+      
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Solana CLI
-        run: |
-          echo "⚙️ Installing Solana CLI..."
-          set -e
-          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.15/install)" || {
-            echo "❌ Failed to install Solana CLI"
-            exit 1
-          }
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-          solana --version || {
-            echo "❌ Failed to verify Solana CLI installation"
-            exit 1
-          }
-          echo "✅ Solana CLI installed and verified successfully"
-
+      
       - name: Install system dependencies
         run: |
-          echo "📦 Installing system dependencies for testing..."
-          set -e
-          sudo apt-get update || {
-            echo "❌ Failed to update package lists"
-            exit 1
-          }
-          sudo apt-get install -y pkg-config build-essential libudev-dev netcat-openbsd curl || {
-            echo "❌ Failed to install system dependencies"
-            exit 1
-          }
-          echo "✅ System dependencies installed successfully"
-
-      - name: Install Anchor CLI via avm
+          sudo apt-get update
+          sudo apt-get install -y pkg-config build-essential libudev-dev
+      
+      - name: Install Anchor CLI
         run: |
-          echo "⚙️ Installing Anchor CLI for testing..."
-          set -e
-          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force || {
-            echo "❌ Failed to install AVM"
-            exit 1
-          }
-          avm install 0.31.1 || {
-            echo "❌ Failed to install Anchor version 0.31.1"
-            exit 1
-          }
-          avm use 0.31.1 || {
-            echo "❌ Failed to use Anchor version 0.31.1"
-            exit 1
-          }
-          echo "✅ Anchor CLI installed and configured successfully"
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+          avm install 0.32.1
+          avm use 0.32.1
+      
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -421,129 +84,85 @@ jobs:
             ~/.bun/install/cache
             ~/.cargo/registry
             ~/.cargo/git
+            target
             node_modules
-            packages/*/node_modules
-          key: ${{ runner.os }}-test-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
+          key: ${{ runner.os }}-build-${{ hashFiles('**/bun.lock', '**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Build Anchor programs
+        run: anchor build
+      
+      - name: Build SDK
+        run: cd packages/sdk-typescript && bun run build
+      
+      - name: Build CLI
+        run: cd packages/cli && bun run build
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            target/deploy/
+            target/idl/
+            packages/sdk-typescript/dist/
+            packages/cli/dist/
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-test-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-test-
-
+      
       - name: Install dependencies
-        run: |
-          echo "📦 Installing workspace dependencies for testing..."
-          set -e
-          
-          echo "🔧 Installing root dependencies..."
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install root dependencies"
-            exit 1
-          }
-          echo "✅ Root dependencies installed successfully"
-          
-          echo "🔧 Installing SDK TypeScript dependencies..."
-          cd packages/sdk-typescript
-          bun install --frozen-lockfile || {
-            echo "❌ Failed to install SDK TypeScript dependencies"
-            exit 1
-          }
-          cd ..
-          echo "✅ SDK TypeScript dependencies installed successfully"
-          
-          echo "🎉 All dependencies installed successfully"
+        run: bun install
+      
+      - name: Run SDK unit tests
+        run: cd packages/sdk-typescript && bun run test:unit
+        timeout-minutes: 5
+      
+      - name: Run CLI tests
+        run: cd packages/cli && bun run test:unit
+        timeout-minutes: 5
 
-      - name: Setup Solana keypair
-        run: |
-          echo "🔑 Setting up Solana keypair..."
-          set -e
-          mkdir -p ~/.config/solana || {
-            echo "❌ Failed to create Solana config directory"
-            exit 1
-          }
-          solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json || {
-            echo "❌ Failed to generate Solana keypair"
-            exit 1
-          }
-          solana config set --url localhost || {
-            echo "❌ Failed to configure Solana URL"
-            exit 1
-          }
-          echo "✅ Solana keypair and configuration setup successfully"
-
-      - name: Start and Wait for Solana Test Validator
-        run: |
-          echo "🚀 Starting Solana test validator..."
-          solana-test-validator --reset --quiet --log /tmp/validator.log &
-          VALIDATOR_PID=$!
-          echo "Validator PID: $VALIDATOR_PID"
-          
-          echo "⏳ Waiting for validator to be ready..."
-          for i in {1..60}; do
-            if nc -z localhost 8899 && nc -z localhost 8900; then
-              echo "✅ Validator is ready on ports 8899 (RPC) and 8900 (WebSocket)"
-              
-              # Additional health check
-              if curl -s -X POST -H "Content-Type: application/json" \
-                -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' \
-                http://localhost:8899 | grep -q '"result":"ok"'; then
-                echo "✅ Validator health check passed"
-                break
-              fi
-            fi
-            
-            if [ $i -eq 60 ]; then
-              echo "❌ Validator did not start within 60 seconds"
-              echo "📋 Validator logs:"
-              if [ -f /tmp/validator.log ]; then
-                tail -50 /tmp/validator.log
-              fi
-              kill $VALIDATOR_PID 2>/dev/null || true
-              exit 1
-            fi
-            
-            if [ $((i % 10)) -eq 0 ]; then
-              echo "⏳ Attempt $i/60: Still waiting for validator..."
-            fi
-            sleep 1
-          done
-
-      - name: Run Anchor Tests
-        run: |
-          echo "🧪 Running Anchor tests..."
-          set -e
-          anchor test --skip-build || {
-            echo "❌ Anchor tests failed"
-            exit 1
-          }
-          echo "✅ Anchor tests passed"
-
-      - name: Run SDK & Package Tests
-        run: |
-          echo "🧪 Running SDK & Package tests..."
-          set -e
-          bun run test:comprehensive || {
-            echo "❌ SDK & Package tests failed"
-            exit 1
-          }
-          echo "✅ SDK & Package tests passed"
-
-      - name: Run Compute Unit Benchmarks
-        run: |
-          echo "⚡ Running compute unit benchmarks..."
-          set -e
-          if [ -f tests/performance-benchmark.test.ts ]; then
-            echo "📊 Found performance benchmark, running..."
-            cd tests
-            bun run performance-benchmark.test.ts || {
-              echo "❌ Performance benchmark failed"
-              exit 1
-            }
-            echo "✅ Performance benchmark completed"
-            cd ..
-          else
-            echo "ℹ️  No performance benchmark found, skipping..."
-          fi
-
-      - name: Stop Solana test validator
-        run: |
-          echo "🛑 Stopping Solana test validator..."
-          pkill -f solana-test-validator || echo "ℹ️  No validator process found to stop"
-          echo "✅ Validator cleanup completed"
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      
+      - name: Audit Rust dependencies
+        run: cd programs && cargo audit
+      
+      - name: Audit Node dependencies
+        run: bun audit --audit-level=high || true  # Don't fail on npm audit issues

@@ -9,7 +9,7 @@ on:
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       sdk-typescript: ${{ steps.changes.outputs.sdk-typescript }}
       sdk-rust: ${{ steps.changes.outputs.sdk-rust }}
@@ -33,7 +33,7 @@ jobs:
   sync-typescript:
     needs: detect-changes
     if: needs.detect-changes.outputs.sdk-typescript == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v5
         with:
@@ -60,7 +60,7 @@ jobs:
   sync-rust:
     needs: detect-changes
     if: needs.detect-changes.outputs.sdk-rust == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v5
         with:
@@ -83,7 +83,7 @@ jobs:
   sync-core:
     needs: detect-changes
     if: needs.detect-changes.outputs.core == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v5
         with:
@@ -106,7 +106,7 @@ jobs:
   notify-success:
     needs: [sync-typescript, sync-rust, sync-core]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Notification
         run: |

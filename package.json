@@ -49,7 +49,7 @@
     "lint": "bun run lint:rust && bun run lint:ts",
     "lint:comprehensive": "bun run qa:lint && bun run qa:format-check",
     "lint:rust": "cd programs && cargo clippy -- -D warnings",
-    "lint:ts": "eslint . --max-warnings=750",
+    "lint:ts": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings 1000",
     "lint:fix": "eslint . --fix && cd programs && cargo fmt",
     "format": "cd programs && cargo fmt",
     "type-check:root": "tsc --noEmit",

@@ -11,14 +11,14 @@ declare const performance: {
   now(): number
 }
 
-import type { 
-  ElGamalKeypair, 
-  ElGamalCiphertext, 
+import type {
+  ElGamalKeypair,
+  ElGamalCiphertext,
   PedersenCommitment,
   RangeProof,
   ElGamalPubkey,
   ElGamalSecretKey
-} from './elgamal-complete.js'
+} from './elgamal.js'
 
 import {
   initializeWasmCrypto,
@@ -36,7 +36,7 @@ import {
 } from './browser-compatibility.js'
 
 // Import JavaScript fallback implementations
-import * as JSCrypto from './elgamal-complete.js'
+import * as JSCrypto from './elgamal.js'
 
 // =====================================================
 // ENHANCED TYPES WITH PERFORMANCE METADATA
@@ -100,7 +100,7 @@ export interface ElGamalConfig {
 
 const DEFAULT_CONFIG: ElGamalConfig = {
   forceImplementation: 'auto',
-  enableProfiling: true,  
+  enableProfiling: true,
   preferredBatchSize: 10,
   maxConcurrentOps: 4,
   wasmTimeout: 5000
@@ -161,10 +161,10 @@ export class WasmOptimizedElGamalEngine {
    */
   async generateKeypair(seed?: Uint8Array): Promise<ElGamalOperationResult<ElGamalKeypair>> {
     await this.ensureInitialized()
-    
+
     const startTime = performance.now()
     const shouldUseWasm = this.shouldUseWasm('keypair_generation')
-    
+
     let result: ElGamalKeypair
     let implementation: 'wasm' | 'javascript'
 
@@ -183,7 +183,7 @@ export class WasmOptimizedElGamalEngine {
     }
 
     const timeMs = performance.now() - startTime
-    
+
     this.recordPerformance('keypair_generation', timeMs, implementation === 'wasm')
 
     return {
@@ -206,10 +206,10 @@ export class WasmOptimizedElGamalEngine {
     randomness?: Uint8Array
   ): Promise<ElGamalOperationResult<ElGamalCiphertext>> {
     await this.ensureInitialized()
-    
+
     const startTime = performance.now()
     const shouldUseWasm = this.shouldUseWasm('encryption')
-    
+
     let result: ElGamalCiphertext
     let implementation: 'wasm' | 'javascript'
 
@@ -219,20 +219,20 @@ export class WasmOptimizedElGamalEngine {
         implementation = 'wasm'
       } catch (error) {
         console.warn('⚠️ WASM encryption failed, falling back to JS:', error)
-        result = randomness ? 
+        result = randomness ?
           JSCrypto.encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :
           JSCrypto.encryptAmount(amount, publicKey)
         implementation = 'javascript'
       }
     } else {
-      result = randomness ? 
+      result = randomness ?
         JSCrypto.encryptAmountWithRandomness(amount, publicKey, randomness).ciphertext :
         JSCrypto.encryptAmount(amount, publicKey)
       implementation = 'javascript'
     }
 
     const timeMs = performance.now() - startTime
-    
+
     this.recordPerformance('encryption', timeMs, implementation === 'wasm')
 
     return {
@@ -254,11 +254,11 @@ export class WasmOptimizedElGamalEngine {
     publicKey: ElGamalPubkey
   ): Promise<BatchOperationResult<ElGamalCiphertext>> {
     await this.ensureInitialized()
-    
+
     const startTime = performance.now()
     const batchSize = amounts.length
     const shouldUseBatch = this.shouldUseBatchOperation(batchSize)
-    
+
     let result: ElGamalCiphertext[]
     let implementation: 'wasm' | 'javascript'
     let speedupFactor = 1
@@ -268,7 +268,7 @@ export class WasmOptimizedElGamalEngine {
         // Use WASM batch operation
         result = await wasmBatchEncryptAmounts(amounts, publicKey)
         implementation = 'wasm'
-        
+
         // Estimate speedup (would be measured in practice)
         speedupFactor = Math.min(batchSize * 0.8, 8) // Up to 8x speedup for large batches
       } catch (error) {
@@ -284,7 +284,7 @@ export class WasmOptimizedElGamalEngine {
 
     const timeMs = performance.now() - startTime
     const avgTimePerItem = timeMs / batchSize
-    
+
     this.recordPerformance('batch_encryption', timeMs, implementation === 'wasm')
 
     return {
@@ -312,14 +312,14 @@ export class WasmOptimizedElGamalEngine {
     secretKey: ElGamalSecretKey
   ): Promise<ElGamalOperationResult<bigint | null>> {
     await this.ensureInitialized()
-    
+
     const startTime = performance.now()
-    
+
     // Decryption currently only uses JavaScript implementation
     // WASM decryption could be added in the future
     const result = JSCrypto.decryptAmount(ciphertext, secretKey)
     const timeMs = performance.now() - startTime
-    
+
     this.recordPerformance('decryption', timeMs, false)
 
     return {
@@ -342,10 +342,10 @@ export class WasmOptimizedElGamalEngine {
     blindingFactor: Uint8Array
   ): Promise<ElGamalOperationResult<RangeProof>> {
     await this.ensureInitialized()
-    
+
     const startTime = performance.now()
     const shouldUseWasm = this.shouldUseWasm('range_proof')
-    
+
     let result: RangeProof
     let implementation: 'wasm' | 'javascript'
 
@@ -359,16 +359,16 @@ export class WasmOptimizedElGamalEngine {
         implementation = 'wasm'
       } catch (error) {
         console.warn('⚠️ WASM range proof generation failed, falling back to JS:', error)
-        result = JSCrypto.generateRangeProof(amount, commitment, blindingFactor)
+        result = await JSCrypto.generateRangeProof(amount, commitment, blindingFactor)
         implementation = 'javascript'
       }
     } else {
-      result = JSCrypto.generateRangeProof(amount, commitment, blindingFactor)
+      result = await JSCrypto.generateRangeProof(amount, commitment, blindingFactor)
       implementation = 'javascript'
     }
 
     const timeMs = performance.now() - startTime
-    
+
     this.recordPerformance('range_proof', timeMs, implementation === 'wasm')
 
     // Verify performance target
@@ -398,11 +398,11 @@ export class WasmOptimizedElGamalEngine {
     }[]
   ): Promise<BatchOperationResult<RangeProof>> {
     await this.ensureInitialized()
-    
+
     const startTime = performance.now()
     const batchSize = proofRequests.length
     const shouldUseBatch = this.shouldUseBatchOperation(batchSize)
-    
+
     let result: RangeProof[]
     let implementation: 'wasm' | 'javascript'
     let speedupFactor = 1
@@ -416,7 +416,7 @@ export class WasmOptimizedElGamalEngine {
           commitment: r.commitment
         }))
         implementation = 'wasm'
-        
+
         // Range proofs show significant speedup in batches
         speedupFactor = Math.min(batchSize * 1.5, 10) // Up to 10x speedup
       } catch (error) {
@@ -432,7 +432,7 @@ export class WasmOptimizedElGamalEngine {
 
     const timeMs = performance.now() - startTime
     const avgTimePerItem = timeMs / batchSize
-    
+
     this.recordPerformance('batch_range_proof', timeMs, implementation === 'wasm')
 
     return {
@@ -472,14 +472,14 @@ export class WasmOptimizedElGamalEngine {
     destCiphertext: ElGamalCiphertext
   }>> {
     await this.ensureInitialized()
-    
+
     const startTime = performance.now()
-    
+
     // Use JavaScript implementation for complex transfer proofs
     // WASM implementation could be added for better performance
-    const result = JSCrypto.generateTransferProof(sourceBalance, amount, sourceKeypair, destPubkey)
+    const result = await JSCrypto.generateTransferProof(sourceBalance, amount, sourceKeypair, destPubkey)
     const timeMs = performance.now() - startTime
-    
+
     this.recordPerformance('transfer_proof', timeMs, false)
 
     return {
@@ -537,7 +537,7 @@ export class WasmOptimizedElGamalEngine {
 
     // Calculate operation breakdown
     const operationGroups: { [key: string]: { timeMs: number; usedWasm: boolean }[] } = {}
-    
+
     for (const record of this.performanceHistory) {
       // Group already exists or will be created
       operationGroups[record.operation].push({
@@ -549,7 +549,7 @@ export class WasmOptimizedElGamalEngine {
     for (const [operation, records] of Object.entries(operationGroups)) {
       const wasmRecords = records.filter(r => r.usedWasm)
       const totalTime = records.reduce((sum, r) => sum + r.timeMs, 0)
-      
+
       stats.operationBreakdown[operation] = {
         count: records.length,
         avgTime: totalTime / records.length,
@@ -582,7 +582,7 @@ export class WasmOptimizedElGamalEngine {
     stats: ReturnType<WasmOptimizedElGamalEngine['getPerformanceStats']>
   } {
     const browserManager = getBrowserCompatibilityManager()
-    
+
     return {
       config: this.config,
       browserInfo: browserManager.getCapabilities(),
@@ -605,11 +605,11 @@ export class WasmOptimizedElGamalEngine {
     if (this.config.forceImplementation === 'javascript') {
       return false
     }
-    
+
     if (this.config.forceImplementation === 'wasm') {
       return this.wasmAvailable
     }
-    
+
     // Auto mode - use WASM for operations that benefit from it
     return this.wasmAvailable && ['encryption', 'range_proof'].includes(operation)
   }
@@ -632,7 +632,7 @@ export class WasmOptimizedElGamalEngine {
         usedWasm,
         timestamp: Date.now()
       })
-      
+
       // Keep only last 1000 records
       if (this.performanceHistory.length > 1000) {
         this.performanceHistory.shift()
@@ -642,12 +642,12 @@ export class WasmOptimizedElGamalEngine {
 
   private async encryptSequentially(amounts: bigint[], publicKey: ElGamalPubkey): Promise<ElGamalCiphertext[]> {
     const results: ElGamalCiphertext[] = []
-    
+
     for (const amount of amounts) {
       const result = await this.encryptAmount(amount, publicKey)
       results.push(result.result)
     }
-    
+
     return results
   }
 
@@ -659,12 +659,12 @@ export class WasmOptimizedElGamalEngine {
     }[]
   ): Promise<RangeProof[]> {
     const results: RangeProof[] = []
-    
+
     for (const request of requests) {
       const result = await this.generateRangeProof(request.amount, request.commitment, request.blindingFactor)
       results.push(result.result)
     }
-    
+
     return results
   }
 }
@@ -781,4 +781,4 @@ export type {
   EqualityProof,
   ElGamalPubkey,
   ElGamalSecretKey
-} from './elgamal-complete.js'
+} from './elgamal.js'

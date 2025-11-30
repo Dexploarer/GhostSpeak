@@ -28,7 +28,7 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       { name: 'merkleTree', pda: false },
       { name: 'systemProgram', pda: false }
     ],
-    docs: 'Register a compressed AI agent using ZK compression'
+    docs: 'Register a compressed AI agent using state compression'
   },
   
   updateAgent: {

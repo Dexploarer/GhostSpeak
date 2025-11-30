@@ -419,11 +419,9 @@ export {
   ClientEncryptionService,
   generateLocalPrivacyProof,
   verifyLocalPrivacyProof,
-  prepareForZkMigration,
   type EncryptedData,
   type PrivateMetadata,
-  type ClientEncryptionOptions,
-  type ZkMigrationData
+  type ClientEncryptionOptions
 } from './utils/client-encryption.js'
 
 export {
@@ -457,7 +455,6 @@ export {
 } from './utils/feature-flags.js'
 
 export {
-  isZkProgramEnabled,
   checkFeatureGate,
   clearFeatureGateCache,
   FEATURE_GATES,
@@ -475,14 +472,5 @@ export {
 //   type ProofGenerationResult
 // } from './utils/zk-proof-builder.js'
 
-export {
-  MigrationManager,
-  MigrationRollback,
-  estimateMigrationCost,
-  createMigrationReport as createPrivacyMigrationReport,
-  type MigrationBatch,
-  type MigrationItem,
-  type MigrationResult as PrivacyMigrationResult
-} from './utils/migration-utilities.js'
-
+// Migration utilities removed - ZK program post-mortem
 // All necessary functionality is available through the modern client implementation above

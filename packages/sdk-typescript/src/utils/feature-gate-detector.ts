@@ -4,7 +4,7 @@
  * Runtime detection of Solana feature gates to determine which native
  * programs and features are available on the current network.
  * 
- * This module specifically tracks the ZK ElGamal Proof Program feature gate
+ * This module specifically tracks feature gates
  * and provides caching to minimize RPC calls.
  */
 
@@ -20,9 +20,6 @@ import type { Rpc, GetAccountInfoApi } from '@solana/rpc'
  * Known feature gate addresses
  */
 export const FEATURE_GATES = {
-  /** ZK ElGamal Proof Program re-enablement */
-  ZK_ELGAMAL_PROOF_REENABLED: address('zkemPXcuM3G4wpMDZ36Cpw34EjUpvm1nuioiSGbGZPR'),
-  
   /** Confidential transfers feature (placeholder) */
   CONFIDENTIAL_TRANSFERS: address('11111111111111111111111111111111'),
   
@@ -194,38 +191,6 @@ export async function checkFeatureGate(
 }
 
 /**
- * Check if the ZK ElGamal Proof Program is enabled
- * 
- * @param connection - Solana connection
- * @returns Whether the ZK program is available
- */
-export async function isZkProgramEnabled(
-  rpc: Rpc<GetAccountInfoApi>
-): Promise<boolean> {
-  const status = await checkFeatureGate(
-    rpc,
-    FEATURE_GATES.ZK_ELGAMAL_PROOF_REENABLED
-  )
-  
-  return status.activated
-}
-
-/**
- * Get detailed status of the ZK ElGamal Proof Program
- * 
- * @param connection - Solana connection
- * @returns Detailed feature status
- */
-export async function getZkProgramFeatureStatus(
-  rpc: Rpc<GetAccountInfoApi>
-): Promise<FeatureStatus> {
-  return checkFeatureGate(
-    rpc,
-    FEATURE_GATES.ZK_ELGAMAL_PROOF_REENABLED
-  )
-}
-
-/**
  * Check multiple feature gates in parallel
  * 
  * @param connection - Solana connection
@@ -305,31 +270,6 @@ export function monitorFeatureGate(
  */
 export function clearFeatureGateCache(): void {
   featureCache.clear()
-}
-
-/**
- * Get a human-readable description of the ZK program status
- * 
- * @param connection - Solana connection
- * @returns Status description
- */
-export async function getZkProgramStatusDescription(
-  rpc: Rpc<GetAccountInfoApi>
-): Promise<string> {
-  const status = await getZkProgramFeatureStatus(rpc)
-  
-  if (status.error) {
-    return `ZK ElGamal Proof Program status unknown: ${status.error}`
-  }
-  
-  if (status.activated) {
-    const slotInfo = status.activationSlot 
-      ? ` (activated at slot ${status.activationSlot})` 
-      : ''
-    return `ZK ElGamal Proof Program is ENABLED${slotInfo}`
-  }
-  
-  return 'ZK ElGamal Proof Program is DISABLED pending security audit completion'
 }
 
 /**

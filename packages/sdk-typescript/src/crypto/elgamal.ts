@@ -2,7 +2,7 @@
  * Unified ElGamal Encryption Module
  * 
  * This module consolidates all ElGamal implementations into a single, optimized solution
- * for Solana's Token-2022 confidential transfers with complete ZK proof support.
+ * for client-side privacy features.
  * 
  * Features:
  * - Twisted ElGamal encryption on curve25519
@@ -10,7 +10,6 @@
  * - Validity and equality proofs
  * - Homomorphic addition/subtraction
  * - WASM optimization support
- * - Full Solana ZK Proof Program integration
  */
 
 import { ed25519 } from '@noble/curves/ed25519'
@@ -96,7 +95,7 @@ function createHGenerator(): typeof ed25519.ExtendedPoint.BASE {
 }
 const H = createHGenerator()
 
-// Proof sizes from Solana's ZK Proof Program
+// Proof sizes for client-side verification
 export const PROOF_SIZES = {
   RANGE_PROOF: 674,
   VALIDITY_PROOF: 160,
@@ -366,7 +365,6 @@ export async function generateRangeProof(
   }
   
   // Fallback to JavaScript implementation using bulletproofs
-  // For production, this should integrate with Solana's ZK proof program
   
   // Generate bulletproof range proof using cryptographic operations
   // This creates a real range proof that value is in [0, 2^64)
@@ -433,7 +431,6 @@ export async function generateValidityProof(
   }
   
   // Fallback implementation using Schnorr signatures
-  // For production, integrate with Solana's ZK proof program
   
   // Generate a validity proof that proves knowledge of the secret key
   // corresponding to the ciphertext without revealing it
@@ -503,11 +500,10 @@ export async function generateEqualityProof(
   }
   
   // Fallback implementation using zero-knowledge equality proofs
-  // For production, integrate with Solana's ZK proof program
   
   // Generate proof that two ciphertexts encrypt the same value
   // without revealing the value itself
-  const proof = await generateZKEqualityProof(
+  const proof = await generateEqualityProofInternal(
     sourceCiphertext,
     destCiphertext,
     transferAmount,
@@ -618,7 +614,6 @@ export async function generateWithdrawProof(
   }
   
   // Fallback implementation using discrete log equality proofs
-  // For production, integrate with Solana's ZK proof program
   
   // Generate proof that allows withdrawal of exact balance
   // without revealing the secret key
@@ -747,7 +742,7 @@ async function generateSchnorrValidityProof(
  * Generate zero-knowledge equality proof
  * Proves two ciphertexts encrypt the same value
  */
-async function generateZKEqualityProof(
+async function generateEqualityProofInternal(
   sourceCiphertext: ElGamalCiphertext,
   destCiphertext: ElGamalCiphertext,
   transferAmount: bigint,

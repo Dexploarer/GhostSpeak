@@ -80,7 +80,9 @@
     "precommit": "bun run qa:all && bun run test:unit",
     "prepush": "bun run test:all",
     "test:beta": "tsx scripts/beta-test-devnet.ts",
-    "fund-wallets": "tsx scripts/fund-wallets.ts"
+    "fund-wallets": "tsx scripts/fund-wallets.ts",
+    "fund-wallet": "bun scripts/fund-wallet.ts",
+    "setup-wallet": "bun scripts/fund-wallet.ts"
   },
   "keywords": [
     "solana",
@@ -126,6 +128,7 @@
     "ora": "^9.0.0",
     "table": "^6.9.0",
     "tsx": "^4.20.3",
+    "tweetnacl": "^1.0.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.37.0",
     "vitest": "^3.2.4",

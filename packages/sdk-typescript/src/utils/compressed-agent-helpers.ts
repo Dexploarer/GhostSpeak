@@ -146,7 +146,7 @@ export interface CompressedAgentParams {
 }
 
 /**
- * ZK proof for compressed agent verification
+ * Merkle proof for compressed agent verification
  */
 export interface CompressedAgentProof {
   /** Merkle proof path */
@@ -289,7 +289,7 @@ export async function createCompressedAgentTree(
 }
 
 /**
- * Generates a ZK proof for a compressed agent
+ * Generates a Merkle proof for a compressed agent
  * This proof can be used to verify agent existence without revealing all data
  */
 export async function generateCompressedAgentProof(

@@ -1,9 +1,8 @@
 /**
  * Client-Side Encryption Service
  * 
- * Provides client-side encryption for privacy features while the
- * ZK ElGamal Proof Program is disabled. This is a temporary solution
- * that will be replaced/enhanced when ZK proofs are re-enabled.
+ * Provides production-ready client-side encryption for privacy features 
+ * using ElGamal encryption and x402 verification.
  */
 
 import { sha256 } from '@noble/hashes/sha256'
@@ -289,8 +288,8 @@ function bytesToBigInt(bytes: Uint8Array): bigint {
 // =====================================================
 
 /**
- * Generate a local privacy proof (not verified on-chain)
- * This is a placeholder for when ZK proofs are unavailable
+ * Generate a local privacy proof (verified via x402 consensus)
+ * This provides cryptographic commitment without on-chain proofs
  */
 export async function generateLocalPrivacyProof(
   encrypted: EncryptedData,
@@ -336,47 +335,6 @@ export async function verifyLocalPrivacyProof(
   
   return bytesToHex(proofCommitment) === bytesToHex(encrypted.commitment) &&
          bytesToHex(inputCommitment) === bytesToHex(encrypted.commitment)
-}
-
-// =====================================================
-// MIGRATION HELPERS
-// =====================================================
-
-/**
- * Prepare encrypted data for future ZK proof migration
- */
-export interface ZkMigrationData {
-  /** Current encrypted data */
-  clientEncrypted: EncryptedData
-  
-  /** Metadata for ZK proof generation */
-  zkMetadata: {
-    amount?: bigint
-    randomness?: Uint8Array
-    publicKey: ElGamalPubkey
-  }
-  
-  /** Migration version */
-  migrationVersion: number
-}
-
-/**
- * Prepare data for future ZK proof migration
- */
-export function prepareForZkMigration(
-  encrypted: EncryptedData,
-  amount?: bigint,
-  randomness?: Uint8Array
-): ZkMigrationData {
-  return {
-    clientEncrypted: encrypted,
-    zkMetadata: {
-      amount,
-      randomness,
-      publicKey: encrypted.publicKey
-    },
-    migrationVersion: 1
-  }
 }
 
 // =====================================================

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { WalletContextProvider } from '@/components/wallet/WalletProvider'
 import { Navigation } from '@/components/layout/Navigation'
 import { Providers } from './providers'
 import { Toaster } from '@/components/ui/toaster'
@@ -35,12 +34,10 @@ export default function RootLayout({
       >
         <Providers>
           <GhostSpeakErrorBoundary level="page">
-            <WalletContextProvider>
-              <div className="min-h-screen flex flex-col">
-                <Navigation />
-                <main className="flex-1">{children}</main>
-              </div>
-            </WalletContextProvider>
+            <div className="min-h-screen flex flex-col">
+              <Navigation />
+              <main className="flex-1">{children}</main>
+            </div>
           </GhostSpeakErrorBoundary>
           <Toaster />
         </Providers>

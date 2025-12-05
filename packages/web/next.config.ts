@@ -16,15 +16,8 @@ const nextConfig: NextConfig = {
   // Configure asset prefix for GitHub Pages
   // assetPrefix: process.env.NODE_ENV === 'production' ? '/ghostspeak/' : '',
 
-  // Add webpack aliases for stub modules
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@solana/wallet-adapter-react': path.resolve(__dirname, 'lib/stubs/wallet-adapter-react.tsx'),
-      '@solana/wallet-adapter-react-ui': path.resolve(__dirname, 'lib/stubs/wallet-adapter-react.tsx'),
-    }
-    return config
-  },
+  // Configure asset prefix for GitHub Pages
+  // assetPrefix: process.env.NODE_ENV === 'production' ? '/ghostspeak/' : '',
 }
 
 export default nextConfig

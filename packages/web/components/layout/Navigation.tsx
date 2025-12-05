@@ -1,11 +1,20 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { WalletConnectButton } from '@/components/wallet/WalletConnectButton'
-import { Home, Bot, ShoppingBag, Briefcase, Shield, Gavel, Menu, X, Moon, Sun, Sparkles, TrendingUp } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
+import { 
+  Home, Bot, ShoppingBag, Briefcase, Shield, Gavel, 
+  Menu, X, Moon, Sun, Sparkles, TrendingUp 
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+const WalletConnectButton = dynamic(
+  () => import('@/components/wallet/WalletConnectButton').then((mod) => mod.WalletConnectButton),
+  { ssr: false }
+)
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -13,20 +22,32 @@ const navItems = [
   { href: '/agents', label: 'Agents', icon: Bot },
   { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { href: '/x402/analytics', label: 'Analytics', icon: TrendingUp },
-  { href: '/work-orders', label: 'Work Orders', icon: Briefcase },
+  { href: '/work-orders', label: 'Orders', icon: Briefcase }, // Shortened label
   { href: '/escrow', label: 'Escrow', icon: Shield },
-  { href: '/governance', label: 'Governance', icon: Gavel },
+  { href: '/governance', label: 'Gov', icon: Gavel }, // Shortened label
 ]
 
 export const Navigation: React.FC = () => {
   const pathname = usePathname()
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
-  const [darkMode, setDarkMode] = React.useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  
+  const { scrollY } = useScroll()
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious() || 0
+    if (latest > 50 && latest > previous) {
+      setIsScrolled(true)
+    } else if (latest < 20) {
+      setIsScrolled(false)
+    }
+  })
 
   // Check if we're on the landing page
   const isLandingPage = pathname === '/'
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Check for saved theme preference or default to dark
     const savedTheme = localStorage.getItem('theme')
     const prefersDark = savedTheme === 'dark' || (!savedTheme && true) // Default to dark
@@ -42,107 +63,142 @@ export const Navigation: React.FC = () => {
   }
 
   return (
-    <nav className={cn(
-      "backdrop-blur-xl border-b sticky top-0 z-50",
-      isLandingPage
-        ? "bg-white/60 dark:bg-gray-900/60 border-transparent shadow-none"
-        : "bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800 shadow-soft"
-    )}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-purple-500 to-blue-500 bg-clip-text text-transparent">
-                GhostSpeak
-              </span>
-            </Link>
+    <>
+      <motion.nav
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ 
+          y: 0, 
+          opacity: 1,
+          width: isScrolled ? 'fit-content' : '100%',
+          top: isScrolled ? 20 : 0,
+          borderRadius: isScrolled ? '9999px' : '0px',
+        }}
+        transition={{ duration: 0.3, type: 'spring', stiffness: 260, damping: 20 }}
+        className={cn(
+          "fixed z-50 left-0 right-0 mx-auto transition-all duration-300",
+          isScrolled 
+            ? "glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-purple-500/10" 
+            : cn(
+                "border-b py-4 px-6 md:px-8",
+                isLandingPage
+                  ? "bg-transparent border-transparent"
+                  : "glass border-gray-200 dark:border-gray-800"
+              )
+        )}
+        style={{ maxWidth: isScrolled ? '90%' : '100%' }}
+      >
+        <div className={cn("flex items-center justify-between", isScrolled ? "gap-6" : "")}>
+          
+          {/* Logo Section */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform duration-300">
+               <span className="text-white font-bold text-lg">G</span>
+            </div>
+            <span className={cn(
+              "text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 group-hover:from-purple-500 group-hover:to-blue-500 transition-all duration-300",
+              isScrolled && "hidden sm:block"
+            )}>
+              GhostSpeak
+            </span>
+          </Link>
 
-            {/* Desktop Navigation - Hidden on landing page and dashboard */}
-            {!isLandingPage && !pathname.startsWith('/dashboard') && (
-              <div className="hidden sm:ml-8 sm:flex sm:space-x-2">
+          {/* Desktop Navigation */}
+          {!isLandingPage && !mobileMenuOpen && (
+             <div className="hidden md:flex items-center gap-1">
                 {navItems.map((item) => {
                   const Icon = item.icon
-                  const isActive = pathname === item.href
+                  const isActive = pathname.startsWith(item.href)
+                  
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={cn(
-                        'inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200',
-                        isActive
-                          ? 'text-purple-600 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 shadow-soft'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'
-                      )}
+                      className="relative px-3 py-2 rounded-full group overflow-hidden"
                     >
-                      <Icon className="w-4 h-4 mr-2" />
-                      {item.label}
+                      <span className={cn(
+                        "relative z-10 flex items-center text-sm font-medium transition-colors duration-200",
+                        isActive 
+                          ? "text-purple-600 dark:text-purple-300" 
+                          : "text-gray-600 dark:text-gray-400 group-hover:text-purple-500 dark:group-hover:text-purple-200"
+                      )}>
+                        <Icon className="w-4 h-4 mr-1.5" />
+                        {item.label}
+                      </span>
+                      
+                      {/* Hover Pill Background */}
+                      {isActive && (
+                        <motion.div
+                          layoutId="nav-pill"
+                          className="absolute inset-0 bg-purple-100 dark:bg-purple-900/30 rounded-full"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+                      
+                      {/* Hover Effect for non-active items */}
+                      {!isActive && (
+                        <div className="absolute inset-0 bg-gray-100 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                      )}
                     </Link>
                   )
                 })}
-              </div>
-            )}
-          </div>
+             </div>
+          )}
 
-          {/* Right side */}
-          <div className="flex items-center space-x-4">
-            {/* Dark mode toggle */}
-            <button
+          {/* Actions Section */}
+          <div className="flex items-center gap-3">
+             <button
               onClick={toggleDarkMode}
-              className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-300 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200"
-              aria-label="Toggle dark mode"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
             >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Wallet Connect */}
-            <div className="hidden sm:block">
+            <div className={cn("transition-all duration-300", isScrolled ? "scale-90" : "scale-100")}>
               <WalletConnectButton />
             </div>
 
-            {/* Mobile menu button - Hidden on landing page */}
-            {!isLandingPage && (
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="sm:hidden p-2.5 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-300 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            )}
+            {/* Mobile Menu Toggle */}
+            <button
+               className="md:hidden p-2 text-gray-600 dark:text-gray-300"
+               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </button>
           </div>
         </div>
-      </div>
+      </motion.nav>
 
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800">
-          <div className="px-3 pt-3 pb-4 space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
-              return (
-                <Link
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-xl md:hidden pt-24 px-6"
+          >
+            <div className="flex flex-col space-y-4">
+              {navItems.map((item, idx) => (
+                <motion.div
                   key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all duration-200',
-                    isActive
-                      ? 'text-purple-600 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 shadow-soft'
-                      : 'text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'
-                  )}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
                 >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.label}
-                </Link>
-              )
-            })}
-            <div className="pt-2">
-              <WalletConnectButton />
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10"
+                  >
+                    <item.icon className="w-6 h-6 mr-4 text-purple-500" />
+                    <span className="text-lg font-medium text-gray-900 dark:text-white">{item.label}</span>
+                  </Link>
+                </motion.div>
+              ))}
             </div>
-          </div>
-        </div>
-      )}
-    </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

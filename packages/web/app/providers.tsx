@@ -10,6 +10,12 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ReactQueryStreamedHydration } from '@tanstack/react-query-next-experimental'
 import { ThemeProvider } from '@/components/theme-provider'
 import * as React from 'react'
+import dynamic from 'next/dynamic'
+
+const WalletContextProvider = dynamic(
+  () => import('@/components/wallet/WalletProvider').then((mod) => mod.WalletContextProvider),
+  { ssr: false }
+)
 
 function makeQueryClient() {
   return new QueryClient({
@@ -83,7 +89,11 @@ export function Providers(props: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ReactQueryStreamedHydration>
-        <ThemeProvider>{props.children}</ThemeProvider>
+        <ThemeProvider>
+          <WalletContextProvider>
+            {props.children}
+          </WalletContextProvider>
+        </ThemeProvider>
       </ReactQueryStreamedHydration>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

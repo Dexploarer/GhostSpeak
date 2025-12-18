@@ -1,8 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd packages/sdk-typescript && npx tsup --no-dts && cd ../web && bun run build",
   "installCommand": "bun install",
-  "outputDirectory": "packages/web/.next",
-  "framework": null,
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- packages/web/ packages/sdk-typescript/"
+  "buildCommand": "cd packages/sdk-typescript && npx tsup --no-dts && cd ../web && next build",
+  "outputDirectory": "packages/web/.next"
 }

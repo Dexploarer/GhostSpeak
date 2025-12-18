@@ -89,6 +89,93 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Typography & Prose Styles */
+.prose {
+  @apply text-foreground;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  @apply text-foreground font-bold tracking-tight;
+}
+
+.prose p {
+  @apply text-muted-foreground leading-7;
+}
+
+.prose code {
+  @apply font-mono text-sm px-1.5 py-0.5 rounded bg-muted text-foreground font-medium;
+}
+
+.prose pre {
+  @apply rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 overflow-x-auto;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0 text-inherit;
+}
+
+.prose blockquote {
+  @apply border-l-2 border-primary pl-6 italic text-muted-foreground;
+}
+
+.prose ul {
+  @apply list-disc list-inside space-y-2;
+}
+
+.prose ol {
+  @apply list-decimal list-inside space-y-2;
+}
+
+.prose table {
+  @apply w-full border-collapse my-6;
+}
+
+.prose th {
+  @apply border border-border px-4 py-2 bg-muted/50 text-left font-bold;
+}
+
+.prose td {
+  @apply border border-border px-4 py-2 text-muted-foreground;
+}
+
+/* Code Highlighting - GitHub Dark/Light style integration */
+.hljs-comment,
+.hljs-quote {
+  @apply text-slate-500 italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  @apply text-lime-500 font-bold;
+}
+
+.hljs-string,
+.hljs-doctag,
+.hljs-type,
+.hljs-attr {
+  @apply text-emerald-400;
+}
+
+.hljs-built_in,
+.hljs-bullet,
+.hljs-number,
+.hljs-symbol {
+  @apply text-sky-400;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+  @apply text-purple-400 font-bold;
+}
+
+.hljs-params,
+.hljs-variable,
+.hljs-template-variable {
+  @apply text-orange-400;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

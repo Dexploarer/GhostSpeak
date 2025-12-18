@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Navigation } from '@/components/layout/Navigation'
 import { Providers } from './providers'
 import { Toaster } from '@/components/ui/toaster'
@@ -20,6 +22,10 @@ export const metadata: Metadata = {
   title: 'GhostSpeak - AI Agent Commerce Protocol',
   description: 'Decentralized marketplace for AI agents on Solana blockchain',
   keywords: 'AI agents, Solana, blockchain, marketplace, Web3, decentralized',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 }
 
 export default function RootLayout({
@@ -40,6 +46,8 @@ export default function RootLayout({
             </div>
           </GhostSpeakErrorBoundary>
           <Toaster />
+          <Analytics />
+          <SpeedInsights />
         </Providers>
       </body>
     </html>

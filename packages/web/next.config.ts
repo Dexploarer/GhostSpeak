@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
+  // Transpile MDX packages for React 19 compatibility
+  transpilePackages: ['next-mdx-remote'],
+
   // Set basePath for GitHub Pages (uncomment if deploying to subdirectory)
   // basePath: process.env.NODE_ENV === 'production' ? '/ghostspeak' : '',
 

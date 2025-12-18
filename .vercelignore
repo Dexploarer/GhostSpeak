@@ -1,8 +1,7 @@
-# Ignore node_modules (Vercel installs fresh)
+# Ignore node_modules
 **/node_modules/
 
-# Ignore lock files (except pnpm)
-bun.lock
+# Ignore lock files (except pnpm/bun)
 package-lock.json
 
 # Ignore Rust/Anchor build artifacts (root level only)
@@ -31,9 +30,15 @@ packages/docs/
 **/.next/
 **/dist/
 
-# Ignore documentation
-docs/
-*.md
+# Documentation - Keep the root docs/ directory
+!docs/
+!docs/*.md
+
+# Ignore top-level markdown files that aren't docs
+/README.md
+/CHANGELOG.md
+/CONTRIBUTING.md
+/LICENSE
 
 # Ignore IDE/editor files
 .cursor/
@@ -43,5 +48,5 @@ docs/
 # Ignore git
 .git/
 
-# Ignore scripts (not needed for build)
+# Ignore scripts
 scripts/

@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
+  // Disable ESLint during build (run separately in CI)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Transpile MDX packages for React 19 compatibility
   transpilePackages: ['next-mdx-remote'],
 

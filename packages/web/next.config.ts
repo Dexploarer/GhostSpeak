@@ -34,6 +34,13 @@ const nextConfig: NextConfig = {
 
   // Configure webpack to handle SDK imports properly
   webpack: (config, { isServer }) => {
+    // Handle pino-pretty - it's an optional dependency of pino used by WalletConnect
+    // We don't need pretty printing in production, so we can safely ignore it
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'pino-pretty': path.resolve(__dirname, 'lib/utils/pino-pretty-noop.js'),
+    }
+    
     if (!isServer) {
       // Don't bundle server-only packages in client
       config.resolve.fallback = {

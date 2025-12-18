@@ -45,9 +45,11 @@ export function DocsSidebar({ isMobile = false }: { isMobile?: boolean }) {
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <span className="mr-2 flex h-4 w-4 items-center justify-center">
-                    {item.icon}
-                  </span>
+                  {item.icon && (
+                    <span className="mr-2 flex h-4 w-4 items-center justify-center">
+                      <item.icon className="w-4 h-4" />
+                    </span>
+                  )}
                   {item.title}
                   {pathname === item.href && (
                     <ChevronRight className="ml-auto h-3 w-3" />

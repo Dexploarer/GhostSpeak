@@ -1,4 +1,3 @@
-import React from 'react'
 import { 
   BookOpen, 
   Cpu, 
@@ -7,13 +6,14 @@ import {
   Layout, 
   FileCode, 
   BarChart3,
-  Terminal
+  Terminal,
+  type LucideIcon
 } from 'lucide-react'
 
 export interface NavItem {
   title: string
   href: string
-  icon?: React.ReactNode
+  icon?: LucideIcon
   label?: string
 }
 
@@ -29,17 +29,17 @@ export const docsConfig: NavSection[] = [
       {
         title: 'Introduction',
         href: '/docs',
-        icon: <BookOpen className="w-4 h-4" />,
+        icon: BookOpen,
       },
       {
         title: 'Quick Start',
         href: '/docs/quickstart',
-        icon: <Zap className="w-4 h-4" />,
+        icon: Zap,
       },
       {
         title: 'Deployment',
         href: '/docs/deployment',
-        icon: <Terminal className="w-4 h-4" />,
+        icon: Terminal,
       },
     ],
   },
@@ -49,17 +49,17 @@ export const docsConfig: NavSection[] = [
       {
         title: 'Overview',
         href: '/docs/architecture',
-        icon: <Layout className="w-4 h-4" />,
+        icon: Layout,
       },
       {
         title: 'x402 Protocol',
         href: '/docs/x402-protocol',
-        icon: <ShieldCheck className="w-4 h-4" />,
+        icon: ShieldCheck,
       },
       {
         title: 'Privacy Layer',
         href: '/docs/privacy',
-        icon: <ShieldCheck className="w-4 h-4" />,
+        icon: ShieldCheck,
       },
     ],
   },
@@ -69,17 +69,17 @@ export const docsConfig: NavSection[] = [
       {
         title: 'SDK Reference',
         href: '/docs/sdk',
-        icon: <FileCode className="w-4 h-4" />,
+        icon: FileCode,
       },
       {
         title: 'API Endpoints',
         href: '/docs/api',
-        icon: <Cpu className="w-4 h-4" />,
+        icon: Cpu,
       },
       {
         title: 'Examples',
         href: '/docs/examples',
-        icon: <FileCode className="w-4 h-4" />,
+        icon: FileCode,
       },
     ],
   },
@@ -89,12 +89,12 @@ export const docsConfig: NavSection[] = [
       {
         title: 'Network Report',
         href: '/docs/network-readiness',
-        icon: <BarChart3 className="w-4 h-4" />,
+        icon: BarChart3,
       },
       {
         title: 'Security Audit',
         href: '/docs/security',
-        icon: <ShieldCheck className="w-4 h-4" />,
+        icon: ShieldCheck,
       },
     ],
   },

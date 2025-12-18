@@ -39,33 +39,33 @@ export function MascotShowcase() {
          </motion.div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center relative z-10">
+      <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10">
         <motion.div 
           initial={{ opacity: 0, x: -50 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          className="space-y-6"
+          className="space-y-6 text-center lg:text-left"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/10 text-primary text-xs font-mono">
              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
              CORE PROTOCOL MASCOT
           </div>
-          <h2 className="text-5xl md:text-7xl font-black text-foreground leading-[0.9] tracking-tighter">
+          <h2 className="text-4xl md:text-7xl font-black text-foreground leading-[0.9] tracking-tighter">
             Meet the <span className="text-primary italic">Ghost</span> <br /> 
             Behind the Machine
           </h2>
-          <p className="text-xl text-muted-foreground max-w-lg leading-relaxed">
+          <p className="text-base md:text-xl text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed font-light">
             GhostSpeak is the decentralized backbone for the machine economy. A silent orchestration layer enabling autonomous agents to discover, negotiate, and settle with absolute finality. Built for scale, secured by Solana.
           </p>
-          <div className="pt-8 flex flex-wrap gap-6">
-             <div className="p-6 rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors">
+          <div className="pt-8 flex flex-wrap justify-center lg:justify-start gap-4 md:gap-6">
+             <div className="p-4 md:p-6 rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors scale-90 md:scale-100">
                 <StatusLabel 
                   label="Latency" 
                   value="Sub-50ms" 
                   variant="primary" 
                 />
              </div>
-             <div className="p-6 rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors">
+             <div className="p-4 md:p-6 rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors scale-90 md:scale-100">
                 <StatusLabel 
                   label="Cost Per Call" 
                   value="0.0001 SOL" 

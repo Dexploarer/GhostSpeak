@@ -1,9 +1,9 @@
+'use client'
+
 import React from 'react'
-import { GlassCard } from './GlassCard'
-import { StatusBeacon } from './StatusBeacon'
-import { Calendar, Clock, DollarSign, ArrowRight } from 'lucide-react'
+import { DashboardCard } from './DashboardCard'
+import { Calendar, DollarSign } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface WorkOrderCardProps {
@@ -15,39 +15,41 @@ interface WorkOrderCardProps {
   dueDate?: string
 }
 
-export function WorkOrderCard({ title, id, status, amount, assignee, dueDate }: WorkOrderCardProps) {
+export function WorkOrderCard({ title, id, status, amount, dueDate }: WorkOrderCardProps) {
   const statusColors = {
-    'pending': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-    'in-progress': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    'review': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    'completed': 'bg-green-500/10 text-green-400 border-green-500/20',
+    'pending': 'bg-muted text-muted-foreground border-border',
+    'in-progress': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+    'review': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+    'completed': 'bg-green-500/10 text-green-500 border-green-500/20',
   }
 
   return (
-    <GlassCard variant="interactive" className="p-4 flex flex-col gap-3 group">
-      <div className="flex justify-between items-start">
-        <span className="text-xs font-mono text-gray-500">{String(id)}</span>
-        <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wider", statusColors[status])}>
-          {status}
-        </Badge>
-      </div>
-      
-      <h4 className="font-medium text-gray-200 group-hover:text-purple-300 transition-colors line-clamp-2">
-        {title}
-      </h4>
-
-      <div className="mt-2 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-gray-400">
-        <div className="flex items-center gap-2">
-          <DollarSign className="w-3 h-3 text-green-400" />
-          <span className="text-gray-300">{String(amount)}</span>
+    <DashboardCard className="p-4">
+      <div className="flex flex-col gap-3 group">
+        <div className="flex justify-between items-start">
+          <span className="text-xs font-mono text-muted-foreground">{String(id)}</span>
+          <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wider", statusColors[status])}>
+            {status}
+          </Badge>
         </div>
-        {dueDate && (
-          <div className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            <span>{dueDate}</span>
+        
+        <h4 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">
+          {title}
+        </h4>
+
+        <div className="mt-2 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-3 h-3 text-green-500" />
+            <span className="text-foreground">{String(amount)}</span>
           </div>
-        )}
+          {dueDate && (
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              <span>{dueDate}</span>
+            </div>
+          )}
+        </div>
       </div>
-    </GlassCard>
+    </DashboardCard>
   )
 }

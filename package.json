@@ -112,6 +112,7 @@
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
+    "next": "15.4.5",
     "@eslint/js": "^9.31.0",
     "@types/inquirer": "^9.0.8",
     "@types/node": "^24.0.15",

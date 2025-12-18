@@ -19,6 +19,26 @@ use crate::state::security_governance::{
 use crate::*;
 use sha3::{Digest, Keccak256};
 
+/// Helper function to hash multiple byte slices using Keccak256
+/// Replaces solana_program::hash::hashv which was removed in Solana SDK v2
+fn hashv(data: &[&[u8]]) -> HashOutput {
+    let mut hasher = Keccak256::new();
+    for slice in data {
+        hasher.update(slice);
+    }
+    HashOutput {
+        0: hasher.finalize().into(),
+    }
+}
+
+/// Hash output wrapper compatible with previous API
+struct HashOutput([u8; 32]);
+impl HashOutput {
+    fn to_bytes(&self) -> [u8; 32] {
+        self.0
+    }
+}
+
 // =====================================================
 // INSTRUCTION CONTEXTS
 // =====================================================

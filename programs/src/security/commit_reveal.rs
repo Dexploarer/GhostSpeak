@@ -6,10 +6,10 @@
  */
 
 use anchor_lang::prelude::*;
-use sha3::{Digest, Keccak256};
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, TokenAccount};
 use anchor_spl::token_2022::Token2022;
+use sha3::{Digest, Keccak256};
 
 /// Commitment state for bid hiding
 #[account]
@@ -63,7 +63,10 @@ impl BidCommitment {
         data.extend_from_slice(&amount.to_le_bytes());
         data.extend_from_slice(&nonce);
 
-        keccak::hash(&data).to_bytes()
+        // Use sha3 Keccak256 for hashing (Solana SDK v2 compatible)
+        let mut hasher = Keccak256::new();
+        hasher.update(&data);
+        hasher.finalize().into()
     }
 
     /// Verify a revealed bid matches the commitment

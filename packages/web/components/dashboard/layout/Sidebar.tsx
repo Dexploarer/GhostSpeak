@@ -34,7 +34,7 @@ export function DashboardSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 hidden lg:flex flex-col h-[calc(100vh-4rem)] sticky top-16 border-r border-white/10 bg-gray-950/50 backdrop-blur-xl">
+    <aside className="w-64 hidden lg:flex flex-col h-screen sticky top-0 border-r border-white/10 bg-gray-950/80 backdrop-blur-xl shrink-0">
       <div className="p-4 space-y-6 flex-1 overflow-y-auto no-scrollbar">
         
         {/* Main Navigation */}
@@ -54,13 +54,13 @@ export function DashboardSidebar() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group",
                   isActive 
-                    ? "bg-purple-500/10 text-purple-400 shadow-[0_0_20px_-5px_rgba(168,85,247,0.4)] border border-purple-500/20" 
+                    ? "bg-lime-500/10 text-lime-400 shadow-[0_0_20px_-5px_rgba(204,255,0,0.4)] border border-lime-500/20" 
                     : "text-gray-400 hover:text-gray-100 hover:bg-white/5"
                 )}
               >
                 <item.icon className={cn(
                   "w-4 h-4 transition-colors",
-                  isActive ? "text-purple-400" : "text-gray-500 group-hover:text-gray-300"
+                  isActive ? "text-lime-400" : "text-gray-500 group-hover:text-gray-300"
                 )} />
                 {item.label}
               </Link>
@@ -88,9 +88,9 @@ export function DashboardSidebar() {
       {/* User / Footer */}
       <div className="p-4 border-t border-white/10">
          {/* This could be a user profile snippet or just extra links */}
-         <div className="p-3 rounded-xl bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-white/5">
+         <div className="p-3 rounded-xl bg-linear-to-r from-lime-900/20 to-lime-800/20 border border-lime-500/10">
             <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-purple-300">v2.0.1 Beta</span>
+                <span className="text-xs font-mono text-lime-300">v2.0.1 Beta</span>
                 <StatusBeacon status="active" size="sm" />
             </div>
          </div>

@@ -1,67 +1,67 @@
 @import 'tailwindcss';
 
 :root {
-  /* Premium Dark/Ghost Theme Base */
-  --background: #ffffff;
-  --foreground: #09090b;
+  /* GhostSpeak Brand - Light "Clinical" Theme */
+  --background: #f8fafc; /* Very light slate */
+  --foreground: #020617; /* Deepest slate */
 
-  /* Brand Colors - Ethereal Purple/Blue */
-  --primary: #7c3aed;
-  --primary-foreground: #ffffff;
+  /* Brand Colors - Electric Lime (#ccff00) */
+  --primary: #a3e635; /* Slightly more legible lime for light theme */
+  --primary-foreground: #000000;
 
-  --secondary: #eef2ff;
-  --secondary-foreground: #312e81;
+  --secondary: #ecfdf5; /* Clean emerald tint */
+  --secondary-foreground: #065f46;
 
   --card: #ffffff;
-  --card-foreground: #09090b;
+  --card-foreground: #020617;
 
   --popover: #ffffff;
-  --popover-foreground: #09090b;
+  --popover-foreground: #020617;
 
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
 
-  --accent: #f5f3ff;
-  --accent-foreground: #5b21b6;
+  --accent: #f7fee7;
+  --accent-foreground: #365314;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #7c3aed;
+  --ring: #a3e635;
 
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: #030014; /* Deep space/void black */
+  --background: #0a0a0a; /* Pure dark */
   --foreground: #f8fafc;
 
-  --primary: #8b5cf6;
-  --primary-foreground: #ffffff;
+  --primary: #ccff00;
+  --primary-foreground: #000000;
 
-  --secondary: #1e1b4b;
-  --secondary-foreground: #c7d2fe;
+  --secondary: #1a2e00; /* Dark lime tint */
+  --secondary-foreground: #d9f99d; /* Light lime for text */
 
-  --card: #0f0720; /* Dark purple tinted card */
+  --card: #111111;
   --card-foreground: #f8fafc;
 
-  --popover: #0f0720;
+  --popover: #111111;
   --popover-foreground: #f8fafc;
 
-  --muted: #1e1b4b;
+  --muted: #1a1a1a;
   --muted-foreground: #94a3b8;
 
-  --accent: #2e1065;
-  --accent-foreground: #e9d5ff;
+  --accent: #111a00;
+  --accent-foreground: #bef264;
 
   --destructive: #7f1d1d;
   --destructive-foreground: #fecaca;
 
-  --border: #2e1065;
-  --input: #2e1065;
-  --ring: #8b5cf6;
+  --border: #262626;
+  --input: #262626;
+  --ring: #ccff00;
 }
 
 @theme inline {
@@ -115,15 +115,15 @@ body {
 
 .aurora-bg {
   background-image:
-    radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
+    radial-gradient(at 100% 100%, rgba(204, 255, 0, 0.12) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, rgba(163, 230, 53, 0.12) 0px, transparent 50%);
   background-size: 100% 100%;
 }
 
 .dark .aurora-bg {
   background-image:
-    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
-    radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.15) 0px, transparent 50%);
+    radial-gradient(at 100% 100%, rgba(204, 255, 0, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, rgba(163, 230, 53, 0.08) 0px, transparent 50%);
 }
 
 /* Glassmorphism Refined */
@@ -134,7 +134,7 @@ body {
 }
 
 .dark .glass {
-  background: rgba(15, 7, 32, 0.6);
+  background: rgba(10, 10, 10, 0.6);
   backdrop-filter: blur(12px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -143,11 +143,11 @@ body {
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(12px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  @apply shadow-xl transition-all duration-300;
+  @apply shadow-xl;
 }
 
 .dark .glass-panel {
-  background: rgba(15, 7, 32, 0.6);
+  background: rgba(10, 10, 10, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -191,7 +191,113 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
-/* Scrollbar */
+/* Holographic Grid Effect */
+.holographic-grid {
+  position: relative;
+  background-image:
+    linear-gradient(to right, var(--primary) 0.5px, transparent 0.5px),
+    linear-gradient(to bottom, var(--primary) 0.5px, transparent 0.5px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  opacity: 0.1;
+}
+
+.dark .holographic-grid {
+  opacity: 0.05;
+}
+
+/* Scanline Effect */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(204, 255, 0, 0.1);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 50;
+  animation: scanline 8s linear infinite;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Chromatic Aberration Text */
+.text-chromatic {
+  position: relative;
+  color: var(--foreground);
+}
+
+.text-chromatic::before,
+.text-chromatic::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+}
+
+.text-chromatic::before {
+  color: #ff00ff;
+  z-index: -1;
+  animation: shift-red 2s infinite;
+}
+
+.text-chromatic::after {
+  color: #00ffff;
+  z-index: -2;
+  animation: shift-blue 2s infinite;
+}
+
+@keyframes shift-red {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-1px, 1px);
+  }
+}
+
+@keyframes shift-blue {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(1px, -1px);
+  }
+}
+
+/* Beam/Ray Effect */
+.beam {
+  position: absolute;
+  width: 1px;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, var(--primary), transparent);
+  opacity: 0.2;
+  animation: travel-v 10s linear infinite;
+}
+
+@keyframes travel-v {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Custom Scrollbar - Infra Grade */
 ::-webkit-scrollbar {
   width: 6px;
 }

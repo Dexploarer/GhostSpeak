@@ -1,95 +1,111 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { motion } from 'framer-motion'
 import { Hero } from '@/components/landing/Hero'
 import { BentoGrid } from '@/components/landing/BentoGrid'
-import { ArrowRight, Github, Twitter } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import { NetworkTelemetry } from '@/components/landing/NetworkTelemetry'
+import { MascotShowcase } from '@/components/landing/MascotShowcase'
+import { GhostIcon } from '@/components/shared/GhostIcon'
+import { ManifestoSection } from '@/components/landing/ManifestoSection'
+import { ArchitectureLayers } from '@/components/landing/ArchitectureLayers'
+import { CostComparison } from '@/components/landing/CostComparison'
 
-export default function LandingPage(): React.JSX.Element {
-  const [mounted, setMounted] = useState(false)
+const AgentSwarm3D = dynamic(
+  () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
+  { ssr: false }
+)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) return <div className="min-h-screen bg-white dark:bg-black" />
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white overflow-x-hidden selection:bg-purple-500/30">
-      
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
       {/* 1. Hero Section */}
       <Hero />
 
-      {/* 2. Features Grid (Bento) */}
-      <section className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Built for the <span className="text-purple-600 dark:text-purple-400">Machine Economy</span>
+      {/* 2. Manifesto - High Impact Brand Statement */}
+      <ManifestoSection />
+
+      {/* 3. Live Telemetry - Proof of Performance */}
+      <section className="relative py-24 border-b border-border">
+        <NetworkTelemetry />
+      </section>
+
+      {/* 3. The Mascot Showcase - Brand Soul */}
+      <MascotShowcase />
+
+      {/* 4. Architecture Deep Dive */}
+      <ArchitectureLayers />
+
+      {/* 5. Cost Efficiency */}
+      <CostComparison />
+
+      {/* 6. Protocol Visualization - The x402 Layer */}
+      <section className="py-32 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 mb-20 text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-4"
+          >
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter">
+              AI Agents, <span className="text-primary">Settled Instantly.</span>
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg font-light">
+              Observe the x402 protocol in action. Autonomous entities discovering and transacting on a unified decentralized backbone.
+            </p>
+          </motion.div>
+        </div>
+        
+        <div className="w-full h-[800px] border border-border rounded-3xl overflow-hidden shadow-2xl bg-card/40 backdrop-blur-sm relative">
+          <div className="absolute inset-0 bg-radial-gradient from-primary/5 via-transparent to-transparent opacity-50 z-0" />
+          <div className="relative z-10 w-full h-full">
+             <AgentSwarm3D />
+          </div>
+        </div>
+
+        {/* Floating background elements */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[150px] -z-10" />
+      </section>
+
+      {/* 5. Features Grid (Bento) */}
+      <section className="py-32 relative border-t border-border">
+        <div className="max-w-7xl mx-auto px-4 mb-20 text-center">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+            Built for the <span className="text-primary italic">Machine Economy</span>
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-lg">
-            Traditional APIs are siloed. GhostSpeak provides the shared settlement layer for AI agents to collaborate, trade, and execute complex workflows.
-          </p>
         </div>
         <BentoGrid />
       </section>
 
-      {/* 3. Developer CTA */}
-      <section className="py-24 bg-gray-50 dark:bg-gray-900/30 border-y border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="relative z-10 max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
-              Ready to deploy your first Agent?
-            </h2>
-            <p className="text-xl text-gray-500 dark:text-gray-400 mb-10 max-w-2xl mx-auto">
-              Get started with our TypeScript SDK. It takes less than 5 minutes to spin up a payment-enabled agent on Devnet.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-               <Link href="/docs">
-                <Button size="lg" className="h-14 px-8 rounded-full text-lg bg-white text-black hover:bg-gray-100 border border-gray-200 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-xl">
-                  Read the Docs
-                </Button>
-               </Link>
-               <Link href="https://github.com/ghostspeak/protocol">
-                <Button variant="outline" size="lg" className="h-14 px-8 rounded-full text-lg border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800">
-                  <Github className="w-5 h-5 mr-2" />
-                  Star on GitHub
-                </Button>
-               </Link>
+      {/* 6. Footer */}
+      <footer className="py-24 border-t border-border bg-card/80 relative">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-12 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center rotate-3 hover:rotate-0 transition-transform cursor-pointer shadow-[0_0_30px_rgba(204,255,0,0.3)]">
+               <GhostIcon variant="logo" size={40} className="text-primary-foreground" />
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Footer */}
-      <footer className="py-12 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">G</span>
-            </div>
-            <span className="font-bold text-xl tracking-tight">GhostSpeak</span>
+            <span className="font-black text-3xl tracking-tighter">GhostSpeak</span>
           </div>
           
-          <div className="flex gap-8 text-sm text-gray-500 dark:text-gray-400">
-            <Link href="/terms" className="hover:text-purple-600 transition-colors">Terms</Link>
-            <Link href="/privacy" className="hover:text-purple-600 transition-colors">Privacy</Link>
-            <Link href="/docs" className="hover:text-purple-600 transition-colors">Documentation</Link>
+          <div className="flex gap-8 text-sm text-muted-foreground font-mono">
+            <a href="#" className="hover:text-primary transition-colors">PROTOCOL</a>
+            <a href="#" className="hover:text-primary transition-colors">MARKETPLACE</a>
+            <a href="#" className="hover:text-primary transition-colors">INTEGRATIONS</a>
+            <a href="#" className="hover:text-primary transition-colors">GOVERNANCE</a>
           </div>
 
-          <div className="flex gap-4">
-            <Link href="https://twitter.com" className="text-gray-400 hover:text-purple-500 transition-colors">
-              <Twitter className="w-5 h-5" />
-            </Link>
-            <Link href="https://github.com" className="text-gray-400 hover:text-purple-500 transition-colors">
-              <Github className="w-5 h-5" />
-            </Link>
+          <div className="text-[10px] text-muted-foreground/60 font-mono tracking-widest uppercase">
+            &copy; 2025 GhostSpeak Labs • Secured by Solana
           </div>
         </div>
-        <div className="mt-8 text-center text-xs text-gray-400 font-mono">
-            <span className="opacity-50">System Status:</span> <span className="text-green-500">● Operational</span>
+        
+        {/* Final Status Indicator */}
+        <div className="mt-12 flex justify-center items-center gap-3 text-[10px] font-mono">
+            <span className="text-primary animate-pulse italic">NETWORK_STATUS: OPERATIONAL</span>
+            <span className="w-1 h-1 rounded-full bg-border" />
+            <span className="text-muted-foreground/40">FINALITY: &lt; 400ms</span>
         </div>
       </footer>
     </div>

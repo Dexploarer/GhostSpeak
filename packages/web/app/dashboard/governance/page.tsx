@@ -26,7 +26,7 @@ function ProposalCard({ id, title, description, votesFor, votesAgainst, timeLeft
             </div>
          </div>
          
-         <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">{title}</h3>
+         <h3 className="text-lg font-bold text-white mb-2 group-hover:text-lime-300 transition-colors">{title}</h3>
          <p className="text-sm text-gray-400 mb-6 line-clamp-2">{description}</p>
          
          {/* Voting Bar */}
@@ -56,7 +56,7 @@ export default function GovernancePage() {
         title="Governance" 
         description="Participate in shaping the future of the GhostSpeak protocol"
       >
-         <Button className="bg-white text-purple-900 hover:bg-gray-200">New Proposal</Button>
+         <Button className="bg-lime-500 text-black font-bold hover:bg-lime-400">New Proposal</Button>
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

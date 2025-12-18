@@ -25,7 +25,7 @@ export default function WorkOrdersPage() {
           <Filter className="w-4 h-4 mr-2" />
           Filter
         </Button>
-        <Button className="bg-purple-600 hover:bg-purple-500">
+        <Button className="bg-lime-500 hover:bg-lime-400 text-black font-bold">
           <Plus className="w-4 h-4 mr-2" />
           Create Order
         </Button>

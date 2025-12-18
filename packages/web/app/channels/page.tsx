@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,8 +33,13 @@ import { CreateChannelForm } from '@/components/channels/CreateChannelForm'
 
 export default function ChannelsPage(): React.JSX.Element {
   const { publicKey } = useWallet()
+  const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState('all')
+  
+  // Edit modal state
+  const [editChannel, setEditChannel] = React.useState<Channel | null>(null)
+  const [isEditOpen, setIsEditOpen] = React.useState(false)
 
   // Filters
   const [search, setSearch] = React.useState('')
@@ -101,13 +107,19 @@ export default function ChannelsPage(): React.JSX.Element {
   }, [channels, publicKey])
 
   const handleViewDetails = (channel: Channel): void => {
-    // TODO: Open channel details modal
-    console.log('View channel details:', channel)
+    // Navigate to channel detail page
+    router.push(`/channels/${channel.address}`)
   }
 
   const handleEditChannel = (channel: Channel): void => {
-    // TODO: Open edit channel modal
-    console.log('Edit channel:', channel)
+    // Open edit channel modal
+    setEditChannel(channel)
+    setIsEditOpen(true)
+  }
+  
+  const handleCloseEditModal = (): void => {
+    setEditChannel(null)
+    setIsEditOpen(false)
   }
 
   const resetFilters = (): void => {
@@ -161,6 +173,34 @@ export default function ChannelsPage(): React.JSX.Element {
               onSuccess={() => setIsCreateOpen(false)}
               onCancel={() => setIsCreateOpen(false)}
             />
+          </DialogContent>
+        </Dialog>
+        
+        {/* Edit Channel Modal */}
+        <Dialog open={isEditOpen} onOpenChange={(open) => !open && handleCloseEditModal()}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Channel: {editChannel?.name}</DialogTitle>
+            </DialogHeader>
+            {editChannel && (
+              <div className="space-y-4 py-4">
+                <p className="text-sm text-muted-foreground">
+                  Channel settings can be updated by the owner. To modify channel settings,
+                  navigate to the channel and use the settings menu.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={handleCloseEditModal}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => {
+                    handleCloseEditModal()
+                    router.push(`/channels/${editChannel.address}`)
+                  }}>
+                    Go to Channel
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

@@ -42,6 +42,9 @@ pub use agent_validation::{
 
 pub use circuit_breaker::{
     initialize_circuit_breaker, pause_instruction, pause_protocol, unpause_instruction,
-    unpause_protocol, CircuitBreaker, InitializeCircuitBreaker, InstructionType,
-    PauseProtocol, PausedInstructions, UnpauseProtocol, check_not_paused,
+    unpause_protocol, CircuitBreaker, InitializeCircuitBreaker, InstructionType, PauseProtocol,
+    PausedInstructions, UnpauseProtocol,
 };
+
+// Re-export the check_not_paused macro from crate root (macros are exported at crate root)
+pub use crate::check_not_paused;

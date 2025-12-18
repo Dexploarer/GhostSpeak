@@ -6,6 +6,7 @@ export default defineConfig([
     entry: {
       index: 'src/index.ts',
       // Separate entry points for tree-shaking
+      browser: 'src/browser.ts', // Browser-safe entry without libsql
       client: 'src/core/GhostSpeakClient.ts',
       types: 'src/core/types.ts',
       errors: 'src/core/errors.ts',

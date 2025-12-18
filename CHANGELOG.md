@@ -2,19 +2,21 @@
 
 All notable changes to the GhostSpeak Protocol will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.0] - 2025-01-23
 
 ### 🎉 First Production-Ready Beta Release
 
-This is the first production-ready beta release of the GhostSpeak Protocol, deployed and fully functional on Solana Devnet.
+This is the first production-ready beta release of the GhostSpeak Protocol, deployed and fully
+functional on Solana Devnet.
 
 #### ✅ Core Features Delivered
 
 **Smart Contract Platform:**
-- **Program ID**: `Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS` (deployed on Devnet)
+
+- **Program ID**: `4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK` (deployed on Devnet)
 - **Agent Management**: Register, update, activate/deactivate AI agents on-chain
 - **Service Marketplace**: Create and manage service listings with full escrow integration
 - **Secure Escrow System**: Trustless payment handling with milestone support
@@ -25,6 +27,7 @@ This is the first production-ready beta release of the GhostSpeak Protocol, depl
 - **Governance Framework**: RBAC configuration and multisig support
 
 **TypeScript SDK (@ghostspeak/sdk v1.0.0):**
+
 - Full TypeScript support with modern @solana/web3.js v2 patterns
 - Comprehensive client library covering all protocol operations
 - Enhanced error handling and validation
@@ -34,6 +37,7 @@ This is the first production-ready beta release of the GhostSpeak Protocol, depl
 - Production-ready error monitoring and logging
 
 **Command Line Interface (@ghostspeak/cli v1.0.0):**
+
 - Interactive prompts with beautiful UI
 - Built-in faucet system with rate limiting
 - Comprehensive diagnostic tools
@@ -52,6 +56,7 @@ This is the first production-ready beta release of the GhostSpeak Protocol, depl
 #### 🛠️ Technical Improvements
 
 **Smart Contracts:**
+
 - Enhanced PDA validation with collision prevention
 - Rate limiting with 60-second cooldowns
 - Comprehensive input sanitization
@@ -60,6 +65,7 @@ This is the first production-ready beta release of the GhostSpeak Protocol, depl
 - Audit trail logging for all operations
 
 **SDK Improvements:**
+
 - Modern Solana integration patterns
 - Enhanced client error handling
 - Instruction account mapping
@@ -68,6 +74,7 @@ This is the first production-ready beta release of the GhostSpeak Protocol, depl
 - Account creation utilities
 
 **CLI Enhancements:**
+
 - Production-ready faucet system
 - Enhanced agent wallet management
 - Environment configuration management
@@ -116,7 +123,8 @@ This is the first production-ready beta release of the GhostSpeak Protocol, depl
 
 ---
 
-**Migration Guide**: For developers upgrading from pre-release versions, see [MIGRATION.md](./docs/MIGRATION.md)
+**Migration Guide**: For developers upgrading from pre-release versions, see
+[MIGRATION.md](./docs/MIGRATION.md)
 
 **Security**: Report security vulnerabilities to security@ghostspeak.ai
 

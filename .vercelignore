@@ -1,0 +1,47 @@
+# Ignore node_modules (Vercel installs fresh)
+**/node_modules/
+
+# Ignore lock files (except pnpm)
+bun.lock
+package-lock.json
+
+# Ignore Rust/Anchor build artifacts (root level only)
+/target/
+/programs/
+Cargo.lock
+Cargo.toml
+Anchor.toml
+
+# Ignore CLI and docs packages (not needed for web)
+packages/cli/
+packages/docs/
+
+# Ignore test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/tests/
+**/test/
+**/__tests__/
+
+# Ignore dev/build artifacts
+**/coverage/
+**/.turbo/
+**/.next/
+**/dist/
+
+# Ignore documentation
+docs/
+*.md
+
+# Ignore IDE/editor files
+.cursor/
+.idea/
+.vscode/
+
+# Ignore git
+.git/
+
+# Ignore scripts (not needed for build)
+scripts/

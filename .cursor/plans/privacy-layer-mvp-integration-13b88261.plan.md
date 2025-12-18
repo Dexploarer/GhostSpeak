@@ -1,4 +1,90 @@
-<!-- 13b88261-9ada-41e5-855e-4ab2e0ae0b78 d446a9ca-c15a-4f88-899c-2bfb134c8864 -->
+---
+name: Privacy Layer MVP Integration Plan
+overview: ""
+todos:
+  - id: bb6fdab4-112d-4438-a7c5-000e94400ef7
+    content: Update CLAUDE.md - Add Privacy Layer to Key Characteristics (line 17)
+    status: pending
+  - id: 8a85c5e6-811a-4dbc-bfc1-a48e933f1770
+    content: Update CLAUDE.md - Update Critical Awareness Directives (line 25) to reflect ZK program post-mortem
+    status: pending
+  - id: e4f7b83b-5f50-4119-9580-047f26049356
+    content: "Update CLAUDE.md - Add Phase 6: Privacy Layer section after Phase 5"
+    status: pending
+  - id: 47ee9559-1571-4313-ac96-5eb42248d3b3
+    content: Update CLAUDE.md - Update focus statement (line 119) to include Privacy Layer
+    status: pending
+  - id: 36e31769-fb61-4f2a-9ab1-ee6474b3a6d6
+    content: Update CLAUDE.md - Add Privacy Layer to Current Status section
+    status: pending
+  - id: fb11fda7-a055-44c7-a13b-73621782f740
+    content: Update CLAUDE.md - Add Privacy Layer to Architecture Patterns section
+    status: pending
+  - id: e7df3982-2a08-423f-93b6-9c3e8a1e50fb
+    content: Update CLAUDE.md - Update Known Issues section to remove ZK proof waiting reference
+    status: pending
+  - id: 32318fe8-8453-4295-a231-d66a03e4a5be
+    content: "Phase 1 Validation: Run validation checklist and grep search to verify no ZK program waiting references"
+    status: pending
+  - id: 4212560a-9987-446b-bcc9-205fe73e5e37
+    content: Update privacy-roadmap.md - Rewrite header to state ZK program is post-mortem
+    status: pending
+  - id: 01cdcbbf-aba5-4e5a-bbf7-b67e329b5649
+    content: Update privacy-roadmap.md - Remove Phase 2 (Hybrid Privacy Mode) and Phase 3 (Full ZK Proof Integration)
+    status: pending
+  - id: 5e0cba76-6e99-4774-9afb-6f019c4e4b28
+    content: Update privacy-roadmap.md - Update Phase 1 status from beta to production-ready
+    status: pending
+  - id: 28a19092-b961-40b0-ab00-f22b926d9085
+    content: Update privacy-roadmap.md - Remove or update Limitations section
+    status: pending
+  - id: 76621c6d-842c-4727-b2cc-fb475927c24a
+    content: Update privacy-roadmap.md - Update Feature Detection example to remove beta/ZK references
+    status: pending
+  - id: 7e96af6d-1206-44f2-84a0-b87c2c58e540
+    content: Update privacy-roadmap.md - Remove Migration Path section
+    status: pending
+  - id: 6330afe9-7e72-43a1-b989-3efc90728541
+    content: Update privacy-roadmap.md - Update Privacy Feature Comparison table to remove ZK Proofs column
+    status: pending
+  - id: 7a18feee-5161-4e76-a1fe-fbe85ebc9ba5
+    content: Update privacy-roadmap.md - Remove ZK Program Monitoring section
+    status: pending
+  - id: 088dfe26-cce7-4434-8a5a-c7bb62bb131c
+    content: Update privacy-roadmap.md - Remove Future ZK Proofs from Security Considerations
+    status: pending
+  - id: a2a63c28-85af-4bfb-a6fb-f8606275b4ef
+    content: Update privacy-roadmap.md - Rewrite FAQ section to reflect ZK program post-mortem
+    status: pending
+  - id: fc002a41-598b-4798-9ae3-8ffd5080557c
+    content: Update privacy-roadmap.md - Remove Solana ZK ElGamal Proof Program Docs link from Resources
+    status: pending
+  - id: b4571ecf-7c4a-4db3-9543-16a77ec4b0d0
+    content: "Phase 2 Validation: Run validation checklist and grep search to verify privacy roadmap updated"
+    status: pending
+  - id: 1eb127f5-ac25-47d9-8405-54b0c5d8f7b0
+    content: Update client-encryption.ts - Update file header comment to reflect production status
+    status: pending
+  - id: 4132e1c2-a686-4fe6-8264-66ae789669e9
+    content: Search and update all source code comments referencing ZK program waiting
+    status: pending
+  - id: 6b60346c-0636-40ce-a371-ac91a548566e
+    content: "Phase 3 Validation: Verify no source code comments suggest waiting for ZK program"
+    status: pending
+  - id: 6967a6c4-8ed4-4e04-ae0a-2fb50f99510d
+    content: Run comprehensive grep search for any remaining ZK program waiting references
+    status: pending
+  - id: 6cbc7704-9445-4479-95db-37e6dd4cb475
+    content: Verify documentation consistency across all files
+    status: pending
+  - id: f912031b-6503-4d57-9f85-6aca84af59c9
+    content: Run TypeScript/ESLint checks to ensure no build breaks
+    status: pending
+  - id: 2dbc3342-ddb3-442a-9d1d-c24ea808975b
+    content: "Phase 4 Final Validation: All checks pass, documentation consistent, ready for MVP"
+    status: pending
+---
+
 # Privacy Layer MVP Integration Plan
 
 ## Overview
@@ -26,16 +112,19 @@ Integrate Privacy Layer as Phase 6 of the MVP, updating all documentation and co
 - **File**: `CLAUDE.md`
 - **Action**: Add Phase 6: Privacy Layer section after Phase 5 (after line 117)
 - **Content**:
+  ```javascript
+    ### Phase 6: Privacy Layer (IN PROGRESS 🚧)
+    - [x] **COMPLETE**: Client-side ElGamal encryption implementation
+    - [x] **COMPLETE**: Encrypted metadata storage via IPFS
+    - [x] **COMPLETE**: Privacy-preserving work orders
+    - [x] **COMPLETE**: Confidential agent communications
+    - [ ] **IN PROGRESS**: Production-ready privacy API integration
+    - [ ] **IN PROGRESS**: Privacy feature documentation and examples
+    - [ ] **PENDING**: Privacy layer security audit
   ```
-  ### Phase 6: Privacy Layer (IN PROGRESS 🚧)
-  - [x] **COMPLETE**: Client-side ElGamal encryption implementation
-  - [x] **COMPLETE**: Encrypted metadata storage via IPFS
-  - [x] **COMPLETE**: Privacy-preserving work orders
-  - [x] **COMPLETE**: Confidential agent communications
-  - [ ] **IN PROGRESS**: Production-ready privacy API integration
-  - [ ] **IN PROGRESS**: Privacy feature documentation and examples
-  - [ ] **PENDING**: Privacy layer security audit
-  ```
+
+
+
 
 - **Validation**: Verify Phase 6 exists after Phase 5 with correct checklist items
 
@@ -222,34 +311,3 @@ Integrate Privacy Layer as Phase 6 of the MVP, updating all documentation and co
 3. **Atomic Tasks**: Each task is independent and can be verified individually
 4. **No Skipping**: Do not proceed to next phase until current phase validation passes
 5. **Documentation First**: Phase 1 and 2 (documentation) must complete before Phase 3 (code)
-6. **Final Verification**: Phase 4 must pass before considering work complete
-
-### To-dos
-
-- [ ] Update CLAUDE.md - Add Privacy Layer to Key Characteristics (line 17)
-- [ ] Update CLAUDE.md - Update Critical Awareness Directives (line 25) to reflect ZK program post-mortem
-- [ ] Update CLAUDE.md - Add Phase 6: Privacy Layer section after Phase 5
-- [ ] Update CLAUDE.md - Update focus statement (line 119) to include Privacy Layer
-- [ ] Update CLAUDE.md - Add Privacy Layer to Current Status section
-- [ ] Update CLAUDE.md - Add Privacy Layer to Architecture Patterns section
-- [ ] Update CLAUDE.md - Update Known Issues section to remove ZK proof waiting reference
-- [ ] Phase 1 Validation: Run validation checklist and grep search to verify no ZK program waiting references
-- [ ] Update privacy-roadmap.md - Rewrite header to state ZK program is post-mortem
-- [ ] Update privacy-roadmap.md - Remove Phase 2 (Hybrid Privacy Mode) and Phase 3 (Full ZK Proof Integration)
-- [ ] Update privacy-roadmap.md - Update Phase 1 status from beta to production-ready
-- [ ] Update privacy-roadmap.md - Remove or update Limitations section
-- [ ] Update privacy-roadmap.md - Update Feature Detection example to remove beta/ZK references
-- [ ] Update privacy-roadmap.md - Remove Migration Path section
-- [ ] Update privacy-roadmap.md - Update Privacy Feature Comparison table to remove ZK Proofs column
-- [ ] Update privacy-roadmap.md - Remove ZK Program Monitoring section
-- [ ] Update privacy-roadmap.md - Remove Future ZK Proofs from Security Considerations
-- [ ] Update privacy-roadmap.md - Rewrite FAQ section to reflect ZK program post-mortem
-- [ ] Update privacy-roadmap.md - Remove Solana ZK ElGamal Proof Program Docs link from Resources
-- [ ] Phase 2 Validation: Run validation checklist and grep search to verify privacy roadmap updated
-- [ ] Update client-encryption.ts - Update file header comment to reflect production status
-- [ ] Search and update all source code comments referencing ZK program waiting
-- [ ] Phase 3 Validation: Verify no source code comments suggest waiting for ZK program
-- [ ] Run comprehensive grep search for any remaining ZK program waiting references
-- [ ] Verify documentation consistency across all files
-- [ ] Run TypeScript/ESLint checks to ensure no build breaks
-- [ ] Phase 4 Final Validation: All checks pass, documentation consistent, ready for MVP

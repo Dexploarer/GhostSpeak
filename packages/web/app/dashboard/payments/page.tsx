@@ -25,7 +25,7 @@ export default function PaymentsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Balance Card */}
-        <GlassCard className="p-6 bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border-yellow-500/20">
+        <GlassCard className="p-6 bg-linear-to-br from-yellow-900/20 to-orange-900/20 border-yellow-500/20">
            <div className="flex items-center gap-3 mb-6">
               <div className="p-2 rounded-lg bg-yellow-500/20 text-yellow-400">
                  <Wallet className="w-6 h-6" />
@@ -42,7 +42,7 @@ export default function PaymentsPage() {
         <GlassCard className="p-6 flex flex-col justify-center space-y-6">
            <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                 <div className="p-2 rounded-lg bg-purple-500/20 text-purple-400">
+                 <div className="p-2 rounded-lg bg-lime-500/20 text-lime-400">
                     <Zap className="w-5 h-5" />
                  </div>
                  <div>
@@ -50,7 +50,7 @@ export default function PaymentsPage() {
                     <p className="text-lg font-bold text-white">4.2 SOL</p>
                  </div>
               </div>
-              <div className="h-8 w-[1px] bg-white/10" />
+              <div className="h-8 w-px bg-white/10" />
               <div className="flex items-center gap-3">
                  <div className="p-2 rounded-lg bg-green-500/20 text-green-400">
                     <ArrowUpRight className="w-5 h-5" />

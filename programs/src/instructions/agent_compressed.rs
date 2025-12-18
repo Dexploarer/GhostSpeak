@@ -8,7 +8,7 @@
 use crate::state::*;
 use crate::GhostSpeakError;
 use anchor_lang::prelude::*;
-use spl_account_compression::{program::SplAccountCompression, Noop};
+use sha3::{Digest, Keccak256};
 
 /// Register Agent using ZK compression (Metaplex Bubblegum pattern)
 ///
@@ -48,10 +48,14 @@ pub struct RegisterAgentCompressed<'info> {
     pub signer: Signer<'info>,
 
     /// SPL Account Compression program
-    pub compression_program: Program<'info, SplAccountCompression>,
+    /// CHECK: Validated by address constraint
+    #[account(address = spl_account_compression::ID)]
+    pub compression_program: UncheckedAccount<'info>,
 
     /// SPL Noop program for logging
-    pub log_wrapper: Program<'info, Noop>,
+    /// CHECK: Validated by address constraint
+    #[account(address = spl_noop::ID)]
+    pub log_wrapper: UncheckedAccount<'info>,
 
     /// System program for account creation
     pub system_program: Program<'info, System>,
@@ -142,26 +146,55 @@ pub fn register_agent_compressed(
     // Serialize metadata for compression
     let metadata_bytes = compressed_metadata.try_to_vec()?;
 
-    // Create hash for the compressed data
-    let data_hash = anchor_lang::solana_program::keccak::hash(&metadata_bytes);
+    // Create keccak256 hash for the compressed data using sha3 crate
+    let mut hasher = Keccak256::new();
+    hasher.update(&metadata_bytes);
+    let data_hash: [u8; 32] = hasher.finalize().into();
 
     // Prepare the leaf node data for the Merkle tree
     let _leaf_node = metadata_bytes.as_slice();
 
     // CPI to SPL Account Compression program to append the leaf
-    let cpi_accounts = spl_account_compression::cpi::accounts::Modify {
-        merkle_tree: ctx.accounts.merkle_tree.to_account_info(),
-        authority: tree_authority.to_account_info(),
-        noop: ctx.accounts.log_wrapper.to_account_info(),
+    // Due to anchor-lang version incompatibility between this project (0.32.1)
+    // and spl-account-compression (which bundles 0.31.1), we use raw invoke
+    let append_ix = anchor_lang::solana_program::instruction::Instruction {
+        program_id: spl_account_compression::ID,
+        accounts: vec![
+            anchor_lang::solana_program::instruction::AccountMeta::new(
+                ctx.accounts.merkle_tree.key(),
+                false,
+            ),
+            anchor_lang::solana_program::instruction::AccountMeta::new_readonly(
+                tree_authority.key(),
+                true,
+            ),
+            anchor_lang::solana_program::instruction::AccountMeta::new_readonly(
+                ctx.accounts.log_wrapper.key(),
+                false,
+            ),
+        ],
+        // Instruction data: discriminator (8 bytes) + leaf (32 bytes)
+        // Append instruction discriminator from spl-account-compression
+        data: {
+            let mut data = vec![163, 52, 200, 231, 140, 3, 69, 186]; // append discriminator
+            data.extend_from_slice(&data_hash);
+            data
+        },
     };
 
-    let cpi_ctx = CpiContext::new(
-        ctx.accounts.compression_program.to_account_info(),
-        cpi_accounts,
-    );
-
-    // Append the compressed agent data to the Merkle tree
-    spl_account_compression::cpi::append(cpi_ctx, data_hash.to_bytes())?;
+    anchor_lang::solana_program::program::invoke_signed(
+        &append_ix,
+        &[
+            ctx.accounts.merkle_tree.to_account_info(),
+            tree_authority.to_account_info(),
+            ctx.accounts.log_wrapper.to_account_info(),
+        ],
+        &[&[
+            b"agent_tree_config",
+            ctx.accounts.signer.key().as_ref(),
+            &[tree_authority.bump],
+        ]],
+    )?;
 
     tree_authority.num_minted = tree_authority
         .num_minted
@@ -187,7 +220,7 @@ pub fn register_agent_compressed(
         owner: ctx.accounts.signer.key(),
         tree_authority: tree_authority.key(),
         merkle_tree: ctx.accounts.merkle_tree.key(),
-        data_hash: data_hash.to_bytes(),
+        data_hash,
         index: tree_authority.num_minted - 1,
         metadata_uri: metadata_uri.clone(),
         created_at: clock.unix_timestamp,

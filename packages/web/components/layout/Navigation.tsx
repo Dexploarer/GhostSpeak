@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
@@ -36,16 +37,19 @@ export const Navigation: React.FC = () => {
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    const previous = scrollY.getPrevious() || 0
-    if (latest > 50 && latest > previous) {
-      setIsScrolled(true)
-    } else if (latest < 20) {
-      setIsScrolled(false)
-    }
+    setIsScrolled(latest > 50)
   })
 
   // Check if we're on the landing page
   const isLandingPage = pathname === '/'
+  
+  // Hide navigation on dashboard routes - dashboard has its own sidebar
+  const isDashboardPage = pathname.startsWith('/dashboard')
+  
+  // Don't render navigation at all on dashboard
+  if (isDashboardPage) {
+    return null
+  }
 
   useEffect(() => {
     // Check for saved theme preference or default to dark
@@ -62,22 +66,31 @@ export const Navigation: React.FC = () => {
     document.documentElement.classList.toggle('dark', newDarkMode)
   }
 
+  const navTransition = {
+    type: 'spring',
+    stiffness: 400,
+    damping: 30,
+    mass: 1,
+  }
+
   return (
     <>
       <motion.nav
+        layout
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
           y: 0, 
           opacity: 1,
-          width: isScrolled ? 'fit-content' : '100%',
+          width: isScrolled ? 'auto' : '100%',
+          maxWidth: isScrolled ? '90%' : '100%',
           top: isScrolled ? 20 : 0,
           borderRadius: isScrolled ? '9999px' : '0px',
         }}
-        transition={{ duration: 0.3, type: 'spring', stiffness: 260, damping: 20 }}
+        transition={navTransition}
         className={cn(
-          "fixed z-50 left-0 right-0 mx-auto transition-all duration-300",
+          "fixed z-50 left-0 right-0 mx-auto",
           isScrolled 
-            ? "glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-purple-500/10" 
+            ? "glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-lime-500/10 w-fit" 
             : cn(
                 "border-b py-4 px-6 md:px-8",
                 isLandingPage
@@ -85,26 +98,52 @@ export const Navigation: React.FC = () => {
                   : "glass border-gray-200 dark:border-gray-800"
               )
         )}
-        style={{ maxWidth: isScrolled ? '90%' : '100%' }}
+        style={{ 
+          transition: 'none'
+        }}
       >
-        <div className={cn("flex items-center justify-between", isScrolled ? "gap-6" : "")}>
+        <motion.div 
+          layout
+          className={cn(
+            "flex items-center justify-between",
+            isScrolled ? "gap-8" : "gap-4"
+          )}
+        >
           
           {/* Logo Section */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform duration-300">
-               <span className="text-white font-bold text-lg">G</span>
-            </div>
-            <span className={cn(
-              "text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 group-hover:from-purple-500 group-hover:to-blue-500 transition-all duration-300",
-              isScrolled && "hidden sm:block"
-            )}>
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <motion.div 
+              layout
+              className="relative w-8 h-8 group-hover:scale-105 transition-transform duration-300"
+            >
+              <Image 
+                src="/ghost-logo.png"
+                alt="GhostSpeak"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            </motion.div>
+            <motion.span 
+              layout
+              animate={{ 
+                opacity: isScrolled ? (mobileMenuOpen ? 1 : 0) : 1,
+                width: isScrolled ? (mobileMenuOpen ? 'auto' : 0) : 'auto',
+              }}
+              className={cn(
+                "text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 group-hover:from-lime-500 group-hover:to-lime-300 sm:block! sm:opacity-100! sm:w-auto!"
+              )}
+            >
               GhostSpeak
-            </span>
+            </motion.span>
           </Link>
 
           {/* Desktop Navigation */}
           {!isLandingPage && !mobileMenuOpen && (
-             <div className="hidden md:flex items-center gap-1">
+             <motion.div 
+               layout
+               className="hidden md:flex items-center gap-1 overflow-hidden"
+             >
                 {navItems.map((item) => {
                   const Icon = item.icon
                   const isActive = pathname.startsWith(item.href)
@@ -113,13 +152,13 @@ export const Navigation: React.FC = () => {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="relative px-3 py-2 rounded-full group overflow-hidden"
+                      className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
                     >
                       <span className={cn(
                         "relative z-10 flex items-center text-sm font-medium transition-colors duration-200",
                         isActive 
-                          ? "text-purple-600 dark:text-purple-300" 
-                          : "text-gray-600 dark:text-gray-400 group-hover:text-purple-500 dark:group-hover:text-purple-200"
+                          ? "text-lime-600 dark:text-lime-300" 
+                          : "text-gray-600 dark:text-gray-400 group-hover:text-lime-500 dark:group-hover:text-lime-200"
                       )}>
                         <Icon className="w-4 h-4 mr-1.5" />
                         {item.label}
@@ -129,7 +168,7 @@ export const Navigation: React.FC = () => {
                       {isActive && (
                         <motion.div
                           layoutId="nav-pill"
-                          className="absolute inset-0 bg-purple-100 dark:bg-purple-900/30 rounded-full"
+                          className="absolute inset-0 bg-lime-100 dark:bg-lime-900/30 rounded-full"
                           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                         />
                       )}
@@ -141,11 +180,11 @@ export const Navigation: React.FC = () => {
                     </Link>
                   )
                 })}
-             </div>
+             </motion.div>
           )}
 
           {/* Actions Section */}
-          <div className="flex items-center gap-3">
+          <motion.div layout className="flex items-center gap-3 shrink-0">
              <button
               onClick={toggleDarkMode}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
@@ -153,9 +192,15 @@ export const Navigation: React.FC = () => {
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            <div className={cn("transition-all duration-300", isScrolled ? "scale-90" : "scale-100")}>
+            <motion.div 
+              layout
+              animate={{ 
+                scale: isScrolled ? 0.95 : 1,
+              }}
+              transition={navTransition}
+            >
               <WalletConnectButton />
-            </div>
+            </motion.div>
 
             {/* Mobile Menu Toggle */}
             <button
@@ -164,8 +209,8 @@ export const Navigation: React.FC = () => {
             >
               {mobileMenuOpen ? <X /> : <Menu />}
             </button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </motion.nav>
 
       {/* Mobile Menu Overlay */}
@@ -190,7 +235,7 @@ export const Navigation: React.FC = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10"
                   >
-                    <item.icon className="w-6 h-6 mr-4 text-purple-500" />
+                    <item.icon className="w-6 h-6 mr-4 text-lime-500" />
                     <span className="text-lg font-medium text-gray-900 dark:text-white">{item.label}</span>
                   </Link>
                 </motion.div>

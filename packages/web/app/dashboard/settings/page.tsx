@@ -19,7 +19,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
          <GlassCard className="p-6 space-y-6">
             <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
-               <Settings className="w-5 h-5 text-purple-400" />
+               <Settings className="w-5 h-5 text-lime-400" />
                <h2 className="font-semibold text-white">General</h2>
             </div>
             

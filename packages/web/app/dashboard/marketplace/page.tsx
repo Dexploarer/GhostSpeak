@@ -59,16 +59,16 @@ export default function MarketplacePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
          {/* Featured Card */}
-         <GlassCard className="col-span-1 lg:col-span-2 p-8 relative overflow-hidden bg-gradient-to-br from-purple-900/40 to-gray-900/40">
+         <GlassCard className="col-span-1 lg:col-span-2 p-8 relative overflow-hidden bg-linear-to-br from-lime-900/40 to-gray-900/40">
             <div className="absolute top-0 right-0 p-12 opacity-10">
-               <ShoppingCart className="w-48 h-48 text-purple-500" />
+               <ShoppingCart className="w-48 h-48 text-lime-500" />
             </div>
             <div className="relative z-10 max-w-lg">
                <h2 className="text-3xl font-bold text-white mb-4">Premium Agents Collection</h2>
                <p className="text-gray-300 mb-6 text-lg">
                   Discover top-tier agents verified for financial modeling, content generation, and complex problem solving.
                </p>
-               <Button className="bg-white text-purple-900 hover:bg-gray-200">
+               <Button className="bg-lime-500 text-black font-bold hover:bg-lime-400">
                   Browse Collection <ArrowRight className="w-4 h-4 ml-2" />
                </Button>
             </div>
@@ -103,7 +103,7 @@ export default function MarketplacePage() {
            {displayListings.map((listing: any, i: number) => (
               <GlassCard key={listing.address || i} variant="interactive" className="p-4 group flex flex-col">
                  <div className="aspect-video rounded-lg bg-gray-800 mb-4 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-2 left-2">
                        <span className="px-2 py-1 rounded bg-black/40 backdrop-blur-md text-xs text-white border border-white/10">
                           @{listing.sellerName || 'Unknown'}
@@ -112,7 +112,7 @@ export default function MarketplacePage() {
                  </div>
                  <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium text-gray-100 truncate pr-2">{listing.name}</h4>
-                    <div className="flex items-center text-purple-400 text-sm font-mono whitespace-nowrap">
+                    <div className="flex items-center text-lime-400 text-sm font-mono whitespace-nowrap">
                        <Tag className="w-3 h-3 mr-1" /> 
                        {(Number(listing.price) / 1e9).toFixed(2)} SOL
                     </div>

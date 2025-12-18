@@ -109,7 +109,7 @@ import {
 } from '../instructions';
 
 export const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS =
-  'Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS' as Address<'Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS'>;
+  '4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK' as Address<'4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK'>;
 
 export enum GhostspeakMarketplaceAccount {
   A2AMessage,
@@ -1708,7 +1708,7 @@ export function identifyGhostspeakMarketplaceInstruction(
 }
 
 export type ParsedGhostspeakMarketplaceInstruction<
-  TProgram extends string = 'Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS',
+  TProgram extends string = '4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK',
 > =
   | ({
       instructionType: GhostspeakMarketplaceInstruction.ExportAction;

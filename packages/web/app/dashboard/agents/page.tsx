@@ -26,14 +26,14 @@ export default function AgentsPage() {
              <input 
                type="text" 
                placeholder="Search agents..." 
-               className="pl-9 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-200 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all w-64"
+               className="pl-9 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-200 focus:outline-none focus:border-lime-500/50 focus:bg-white/10 transition-all w-64"
              />
            </div>
            <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 text-gray-200">
              <Filter className="w-4 h-4 mr-2" />
              Filter
            </Button>
-           <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-[0_0_20px_-5px_rgba(168,85,247,0.5)]">
+           <Button className="bg-lime-500 hover:bg-lime-400 text-black font-bold border-0 shadow-[0_0_20px_-5px_rgba(204,255,0,0.5)]">
              <Plus className="w-4 h-4 mr-2" />
              Register Agent
            </Button>
@@ -48,14 +48,14 @@ export default function AgentsPage() {
         </div>
       ) : agents.length === 0 ? (
         <GlassCard className="p-16 flex flex-col items-center justify-center text-center border-dashed border-white/20 bg-transparent">
-          <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mb-6">
-            <Bot className="w-10 h-10 text-purple-400" />
+          <div className="w-20 h-20 rounded-full bg-lime-500/10 flex items-center justify-center mb-6">
+            <Bot className="w-10 h-10 text-lime-400" />
           </div>
           <h3 className="text-xl font-bold text-white mb-2">No Agents Deployed</h3>
           <p className="text-gray-400 max-w-md mb-8">
             You haven't registered any AI agents on the network yet. Deploy your first agent to start offering services.
           </p>
-          <Button className="bg-purple-600 hover:bg-purple-500 text-white">
+          <Button className="bg-lime-500 hover:bg-lime-400 text-black font-bold">
             Register Agent
           </Button>
         </GlassCard>
@@ -64,13 +64,13 @@ export default function AgentsPage() {
           {agents.map((agent) => (
             <GlassCard key={agent.address} variant="interactive" className="p-6 group flex flex-col h-full">
               <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center border border-white/10 group-hover:border-purple-500/30 transition-colors">
-                  <Bot className="w-6 h-6 text-purple-300 group-hover:text-white transition-colors" />
+                <div className="w-12 h-12 rounded-xl bg-lime-500/20 flex items-center justify-center border border-white/10 group-hover:border-lime-500/30 transition-colors">
+                  <Bot className="w-6 h-6 text-lime-300 group-hover:text-white transition-colors" />
                 </div>
                 <StatusBeacon status={agent.isActive ? 'active' : 'inactive'} />
               </div>
               
-              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">
+              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-lime-300 transition-colors">
                 {agent.name}
               </h3>
               <p className="text-xs font-mono text-gray-500 mb-4">
@@ -80,7 +80,7 @@ export default function AgentsPage() {
               <div className="flex-1">
                 <p className="text-sm text-gray-400 mb-2">Capabilities:</p>
                 <div className="flex flex-wrap gap-1.5">
-                   {(agent.capabilities || []).slice(0, 3).map((cap) => (
+                   {(agent.capabilities || []).slice(0, 3).map((cap: string) => (
                       <Badge key={cap} variant="outline" className="bg-white/5 border-white/10 text-gray-300 hover:bg-white/10">
                         {cap}
                       </Badge>

@@ -50,6 +50,7 @@ bytemuck = { version = "1.23", features = ["derive"] }
 log = "0.4"
 spl-account-compression = { version = "1.0.0", features = ["no-entrypoint", "cpi"] }
 spl-noop = { version = "1.0.0", features = ["no-entrypoint"] }
+# solana-security-txt not used due to symbol conflicts with SPL dependencies
 # Remove proc-macro2 constraint to use system default
 
 [dev-dependencies]

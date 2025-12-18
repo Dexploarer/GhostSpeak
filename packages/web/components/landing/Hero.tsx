@@ -3,18 +3,21 @@
 import { ArrowRight, PlayCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { easeOut, motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { CodePreview } from './CodePreview'
 import { LiveTicker } from './LiveTicker'
+import { GhostIcon } from '../shared/GhostIcon'
+import { StatusLabel } from '../shared/StatusLabel'
 
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollY } = useScroll()
-  const y1 = useTransform(scrollY, [0, 500], [0, 200])
-  const y2 = useTransform(scrollY, [0, 500], [0, -150])
+  const y1 = useTransform(scrollY, [0, 500], [0, 150])
+  const y2 = useTransform(scrollY, [0, 500], [0, -100])
   
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -27,145 +30,219 @@ export function Hero() {
       }
     }
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('mousemove', handleMouseMove)
-    }
-    
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('mousemove', handleMouseMove)
-      }
-    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [])
 
   return (
     <div 
       ref={containerRef}
-      className="relative min-h-[100vh] flex flex-col justify-center overflow-hidden bg-background"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="relative min-h-[110vh] flex flex-col justify-center overflow-hidden bg-background selection:bg-primary/30"
     >
-      {/* Dynamic Aurora Background */}
-      <div className="absolute inset-0 aurora-bg opacity-40 dark:opacity-20 animate-pulse pointer-events-none" />
-      
-      {/* Interactive Spotlight */}
+      {/* 1. Underlying Holographic Grid (Revealed by Spotlight) */}
       <div 
-        className="pointer-events-none absolute inset-0 transition-opacity duration-500 opacity-0 dark:opacity-100 mix-blend-screen"
+        className="absolute inset-0 holographic-grid transition-opacity duration-1000"
         style={{
-          background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(124, 58, 237, 0.15), transparent 40%)`,
+          opacity: isHovered ? 0.15 : 0.05,
+          maskImage: `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`
         }}
       />
 
-      {/* Grid Texture */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-30 mix-blend-overlay pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+      {/* 2. Scanline Overlay */}
+      <div className="scanline" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 lg:pt-48">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+      {/* 3. Floating Beams */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+         {[...Array(5)].map((_, i) => (
+           <div 
+             key={i} 
+             className="beam shadow-[0_0_15px_rgba(204,255,0,0.3)]" 
+             style={{ 
+               left: `${i * 20 + 10}%`, 
+               animationDelay: `${i * 2}s`,
+               opacity: 0.1
+             }} 
+           />
+         ))}
+      </div>
+
+      {/* 4. Interactive Spotlight (Glow) */}
+      <div 
+        className="pointer-events-none absolute inset-0 transition-opacity duration-700 opacity-40 mix-blend-screen"
+        style={{
+          background: `radial-gradient(1000px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(204, 255, 0, 0.08), transparent 50%)`,
+        }}
+      />
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 lg:pt-48 z-10">
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
           
           {/* Text Content */}
           <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-left space-y-8 z-10"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-left space-y-10"
           >
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center rounded-full border border-purple-200/50 dark:border-purple-800/50 bg-purple-50/50 dark:bg-purple-950/30 px-4 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-300 backdrop-blur-xl shadow-lg shadow-purple-500/10"
+              className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-mono uppercase tracking-[0.2em] text-primary backdrop-blur-3xl shadow-[0_0_20px_rgba(204,255,0,0.1)]"
             >
-              <span className="flex h-2 w-2 rounded-full bg-purple-500 mr-2 animate-pulse shadow-[0_0_10px_rgba(168,85,247,0.5)]"></span>
-              Protocol v1.0 Live on Devnet
+              <span className="flex h-1.5 w-1.5 rounded-full bg-primary mr-2 animate-ping" />
+              Infrastructure Layer v1.0.4-Stable
             </motion.div>
 
-            <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black tracking-tighter text-gray-900 dark:text-white leading-[0.9]">
-              The Native<br />
-              <span className="text-shimmer relative">
-                Currency of AI
-                <svg className="absolute -bottom-2 w-full h-3 text-purple-500 opacity-60" viewBox="0 0 100 10" preserveAspectRatio="none">
-                   <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="2" fill="none" />
-                </svg>
-              </span>
-            </h1>
+            <div className="space-y-4">
+              <h1 className="text-6xl sm:text-7xl lg:text-9xl font-black tracking-tighter text-foreground leading-[0.85]">
+                The Silent <br />
+                <span className="text-primary italic relative">
+                  Engine
+                  <motion.span 
+                    initial={{ width: 0 }}
+                    animate={{ width: '100%' }}
+                    transition={{ delay: 1, duration: 1 }}
+                    className="absolute -bottom-2 left-0 h-2 bg-primary/30 blur-[2px]"
+                  />
+                </span>
+                <br />
+                of AI
+              </h1>
+            </div>
 
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed font-light">
-              GhostSpeak is the first <span className="font-semibold text-gray-900 dark:text-white">x402-compliant marketplace</span> for autonomous agents. 
-              Deploy, monetize, and compose AI services with sub-second settlement on Solana.
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
+              GhostSpeak provides the <span className="text-foreground font-medium">high-performance settlement layer</span> for autonomous agent clusters. Sub-second x402 payments. Bulletproof security.
             </p>
 
-            <div className="flex flex-wrap gap-5 pt-2">
+            <div className="flex flex-wrap gap-6 pt-4">
               <Link href="/dashboard">
-                <Button size="lg" className="h-16 px-10 rounded-full text-lg bg-primary hover:bg-primary/90 text-white shadow-xl shadow-purple-500/25 transition-all hover:scale-105 active:scale-95">
-                  Launch App <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <Button size="lg" className="h-16 px-10 rounded-xl text-lg bg-primary hover:bg-primary/90 text-primary-foreground font-black transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(204,255,0,0.2)]">
+                  Access Protocol <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="https://github.com/ghostspeak/protocol" target="_blank">
-                <Button variant="outline" size="lg" className="h-16 px-10 rounded-full text-lg border-2 hover:bg-white/10 dark:hover:bg-white/5 backdrop-blur-sm transition-all hover:border-purple-500/50">
-                  <PlayCircle className="mr-2 w-5 h-5" />
-                  View Demo
+              <Link href="/docs">
+                <Button variant="outline" size="lg" className="h-16 px-10 rounded-xl text-lg border-border text-foreground hover:bg-muted transition-all">
+                  Documentation
                 </Button>
               </Link>
             </div>
 
-            <div className="pt-10 border-t border-gray-200 dark:border-white/10 flex items-center gap-12 text-sm text-gray-500 dark:text-gray-400 font-mono">
-              <motion.div whileHover={{ scale: 1.05 }} className="cursor-default">
-                <span className="block text-3xl font-bold text-gray-900 dark:text-white tracking-tight">50ms</span>
-                Latency
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} className="cursor-default">
-                <span className="block text-3xl font-bold text-gray-900 dark:text-white tracking-tight">$0.0002</span>
-                Cost/Call
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} className="cursor-default">
-                <span className="block text-3xl font-bold text-gray-900 dark:text-white tracking-tight">10k+</span>
-                Agents
-              </motion.div>
+            <div className="pt-12 grid grid-cols-3 gap-8 border-t border-border">
+              {[
+                { label: 'Latency', val: '42ms' },
+                { label: 'Settlement', val: 'x402' },
+                { label: 'Cost', val: '0.0001' },
+              ].map((stat, i) => (
+                <StatusLabel 
+                  key={stat.label}
+                  label={stat.label}
+                  value={stat.val}
+                  variant="white"
+                  animate
+                />
+              ))}
             </div>
           </motion.div>
 
-          {/* Graphic Content - Parallax & 3D */}
+          {/* Graphic Content - Parallax & 3D Effect */}
           <motion.div 
             style={{ y: y1 }}
-            className="relative hidden lg:block perspective-1000"
+            className="relative hidden lg:block perspective-2000"
           >
-             {/* Glowing Orbs */}
-            <div className="absolute -top-32 -right-32 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] animate-pulse" />
-            <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] animate-pulse animation-delay-2000" />
+             {/* Deep Background Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] animate-pulse" />
             
             <motion.div 
-              style={{ rotateY: -10, rotateX: 5 }}
-              whileHover={{ rotateY: 0, rotateX: 0, scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 100, damping: 20 }}
+              style={{ rotateY: -12, rotateX: 6 }}
+              whileHover={{ rotateY: -5, rotateX: 2, scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 40, damping: 20 }}
               className="relative z-10"
             >
-              <div className="rounded-2xl p-1 bg-gradient-to-br from-white/20 to-white/0 dark:from-white/10 dark:to-transparent backdrop-blur-sm border border-white/20 shadow-2xl">
-                 <div className="rounded-xl overflow-hidden bg-black/80 backdrop-blur-xl">
-                   <CodePreview />
+              {/* Main Terminal Frame */}
+              <div className="rounded-2xl p-px bg-linear-to-br from-foreground/20 via-foreground/5 to-transparent backdrop-blur-3xl shadow-2xl overflow-hidden group">
+                 <div className="rounded-2xl overflow-hidden bg-background/90 relative p-2 border border-border">
+                    {/* Header bar */}
+                    <div className="h-8 flex items-center px-4 gap-1.5 border-b border-border mb-2">
+                       <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
+                       <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20" />
+                       <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
+                       <div className="ml-auto text-[10px] font-mono text-muted-foreground select-none">root@ghostspeak:~/protocol</div>
+                    </div>
+                    
+                    <CodePreview />
+                    
+                    <div className="absolute top-8 right-8 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity duration-1000">
+                       <GhostIcon variant="circuit" size={120} className="text-primary/20 animate-float" />
+                    </div>
                  </div>
               </div>
               
-              {/* Floating Card Overlay */}
+              {/* Floating Status Card Overlay */}
               <motion.div 
                 style={{ y: y2 }}
-                className="absolute -right-16 top-1/3 bg-white/90 dark:bg-gray-900/90 p-5 rounded-2xl shadow-2xl border border-white/20 w-72 animate-float backdrop-blur-xl"
+                className="absolute -right-20 top-1/4 bg-background/80 p-6 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.1)] border border-border w-80 animate-float backdrop-blur-2xl group"
               >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-                    <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center relative border border-primary/20">
+                    <div className="absolute inset-0 bg-primary/20 rounded-xl animate-ping opacity-20" />
+                    <GhostIcon variant="logo" size={32} className="text-primary" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-gray-900 dark:text-white">Payment Finalized</div>
-                    <div className="text-xs text-gray-500 font-mono">block #2491029</div>
+                    <div className="text-sm font-black text-foreground tracking-tight group-hover:text-primary transition-colors">AGENT_042_READY</div>
+                    <div className="text-[10px] text-primary/50 font-mono">ENCRYPTED_SIGNAL_LOCK</div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full w-3/4 animate-pulse" />
-                  <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full w-1/2 animate-pulse" />
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between text-[10px] font-mono">
+                     <span className="text-muted-foreground">PAYMENT_HEX</span>
+                     <span className="text-primary truncate ml-4 italic">0x402_AUTH_OK</span>
+                  </div>
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                     <motion.div 
+                       initial={{ width: 0 }}
+                       animate={{ width: "100%" }}
+                       transition={{ duration: 3, repeat: Infinity }}
+                       className="h-full bg-primary"
+                     />
+                  </div>
                 </div>
-                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-white/5 flex justify-between items-center text-xs font-mono">
-                  <span className="text-gray-500">TX HASH</span>
-                  <span className="text-purple-500 bg-purple-500/10 px-2 py-1 rounded">8x...92k</span>
+
+                <div className="mt-6 flex gap-2">
+                     {['G', 'H', 'O', 'S', 'T'].map((letter, i) => (
+                       <motion.div 
+                         key={i}
+                         initial={{ backgroundColor: 'transparent', borderColor: 'var(--border)' }}
+                         animate={{ 
+                           backgroundColor: ['transparent', 'transparent', 'var(--color-primary-10)', 'var(--color-primary-10)', 'transparent'],
+                           borderColor: ['var(--border)', 'var(--border)', 'var(--color-primary-30)', 'var(--color-primary-30)', 'var(--border)']
+                         }}
+                         transition={{ 
+                           duration: 3, 
+                           times: [0, 0.05 + (i * 0.15), 0.15 + (i * 0.15), 0.9, 1],
+                           repeat: Infinity,
+                           repeatDelay: 0,
+                           ease: "easeInOut"
+                         }}
+                         className="flex-1 h-12 rounded-lg flex items-center justify-center font-black text-xl border transition-colors"
+                       >
+                         <motion.span
+                            animate={{ opacity: [0, 0, 1, 1, 0] }}
+                            transition={{ 
+                                duration: 3,
+                                times: [0, 0.05 + (i * 0.15), 0.15 + (i * 0.15), 0.9, 1],
+                                repeat: Infinity,
+                                repeatDelay: 0
+                            }}
+                            className="text-primary"
+                         >
+                           {letter}
+                         </motion.span>
+                       </motion.div>
+                     ))}
                 </div>
               </motion.div>
             </motion.div>
@@ -173,17 +250,18 @@ export function Hero() {
         </div>
       </div>
 
-      {/* Ticker at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-white/10 bg-background/50 backdrop-blur-sm">
+      {/* Background Orbs */}
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[200px] -z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[180px] -z-10 pointer-events-none" />
+
+      {/* Bottom Ticker */}
+      <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-border bg-background/60 backdrop-blur-md">
         <LiveTicker />
       </div>
 
       <style jsx>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
+        .perspective-2000 {
+          perspective: 2000px;
         }
       `}</style>
     </div>

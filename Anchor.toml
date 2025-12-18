@@ -1,116 +1,54 @@
 [toolchain]
-# Enhanced toolchain configuration for November 2025
 anchor_version = "0.32.1"
-solana_version = "2.3.13"  # Latest stable Agave 2.x version
-# Using npm as package manager for Anchor compatibility
+solana_version = "2.3.13"
 package_manager = "npm"
-# November 2025 nightly toolchain for IDL generation compatibility
-rust_version = "nightly-2025-11-01"
 
 [features]
-# Enable resolution of Anchor feature flags
 resolution = true
-# Enable idl-build for better IDL generation
-idl-build = true
-# Skip linting during development (enable for production)
 skip-lint = false
 
-# Enhanced program configurations for different clusters
-[programs.localnet]
-ghostspeak_marketplace = "Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS"
-
 [programs.devnet]
-ghostspeak_marketplace = "Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS"
+ghostspeak_marketplace = "4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK"
+
+[programs.localnet]
+ghostspeak_marketplace = "4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK"
 
 [programs.mainnet]
-ghostspeak_marketplace = "Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS"  # Will be updated for mainnet deployment
+ghostspeak_marketplace = "4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK"
 
-# Registry configuration for Anchor programs
 [registry]
 url = "https://api.apr.dev"
 
-# Enhanced provider configuration
 [provider]
-# Default cluster to use (devnet, testnet, mainnet, or localnet)
 cluster = "devnet"
-# Path to the wallet to use for deployment
 wallet = "~/.config/solana/id.json"
 
-# Enhanced test configuration
-[scripts]
-# Use standard anchor testing with TypeScript/JavaScript  
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests-js/**/*.ts"
-lint = "npm run lint:rust"
-build = "npm run build"
-deploy = "npm run deploy"
-
-# Enhanced test validator configuration
-[test.validator]
-# AI-friendly test environment
-url = "http://127.0.0.1:8899"
-ledger = ".anchor/test-ledger"
-bind_address = "0.0.0.0"
-rpc_port = 8899
-rpc_bind_address = "0.0.0.0"
-limit_ledger_size = "10000"
-quiet = false
-# Enable features for modern Solana development
-reset = true
-verifier = true
-# Enable Agave-specific features
-enable_rpc_transaction_history = true
-enable_extended_tx_metadata_storage = true
-
-# Clone important accounts for testing AI agents
-[[test.validator.clone]]
-address = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"  # Token Program
-
-[[test.validator.clone]]
-address = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"  # Associated Token Program
-
-[[test.validator.clone]]
-address = "11111111111111111111111111111111"  # System Program
-
-# Enhanced Solana configuration for 2025
-[solana]
-# Enable the Agave BPF loader (required for modern Solana)
-enable_bpf_loader = true
-enable_sbf_loader = true
-# Enable modern deployment features
-enable_deploy = true
-# Enhanced security features
-enable_program_runtime_v2 = true
-# AI Agent features
-enable_ai_cpi = true
-
-# Build configuration for optimized performance
-[build]
-# Use SBF (Solana Bytecode Format) instead of deprecated BPF
-arch = "sbf"
-# Enable overflow checks for security
-overflow-checks = true
-# Optimize for size and performance
-opt-level = 3
-# Enable Link Time Optimization
-lto = true
-
-# Workspace configuration for program location
 [workspace]
 members = ["programs"]
 
-# Development configuration
-[dev]
-# Hot reload configuration for enhanced DX
-hot_reload = true
-auto_save = true
-watch_timeout = 1000
+[scripts]
+build = "npm run build"
+deploy = "npm run deploy"
+lint = "npm run lint:rust"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests-js/**/*.ts"
 
-# Enhanced deployment configuration
-[deploy]
-# Deployment safety checks
-verify_program_id = true
-confirm_deployment = true
-upgrade_authority_check = true
-# Modern deployment features
-use_quic = true
-priority_fees = "auto"
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false
+
+[test.validator]
+bind_address = "0.0.0.0"
+url = "http://127.0.0.1:8899"
+ledger = ".anchor/test-ledger"
+limit_ledger_size = "10000"
+rpc_port = 8899
+
+[[test.validator.clone]]
+address = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+
+[[test.validator.clone]]
+address = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+
+[[test.validator.clone]]
+address = "11111111111111111111111111111111"

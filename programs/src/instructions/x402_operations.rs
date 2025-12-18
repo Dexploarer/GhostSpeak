@@ -8,7 +8,6 @@
 use crate::state::Agent;
 use crate::GhostSpeakError;
 use crate::*;
-use anchor_lang::prelude::*;
 
 // =====================================================
 // CONFIGURE X402 INSTRUCTION

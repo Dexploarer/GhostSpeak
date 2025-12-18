@@ -42,11 +42,11 @@ export default function DashboardOverview() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-white to-gray-400 bg-clip-text text-transparent">
             Command Center
           </h1>
           <p className="text-gray-400 mt-1">
-            System Overview for <span className="font-mono text-purple-400">{(publicKey as any)?.toBase58?.().slice(0,6) || 'Wallet'}...</span>
+            System Overview for <span className="font-mono text-lime-400">{(publicKey as any)?.toBase58?.().slice(0,6) || 'Wallet'}...</span>
           </p>
         </div>
         <div className="flex gap-3">
@@ -54,7 +54,7 @@ export default function DashboardOverview() {
             <Clock className="w-4 h-4 mr-2" />
             History
           </Button>
-          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-[0_0_20px_-5px_rgba(168,85,247,0.5)]">
+          <Button className="bg-lime-500 hover:bg-lime-400 text-black font-bold border-0 shadow-[0_0_20px_-5px_rgba(204,255,0,0.5)]">
             <Plus className="w-4 h-4 mr-2" />
             Deploy Agent
           </Button>
@@ -79,7 +79,7 @@ export default function DashboardOverview() {
           trend="+2" 
           trendUp={true} 
           icon={Bot} 
-          iconColor="text-purple-400" 
+          iconColor="text-lime-400" 
         />
         <StatsCard 
           label="Total Requests" 
@@ -127,7 +127,7 @@ export default function DashboardOverview() {
             <div className="space-y-3 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
               {agents.length > 0 ? agents.slice(0, 3).map((agent, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:text-white group-hover:bg-purple-500/40 transition-all">
+                  <div className="w-10 h-10 rounded-lg bg-lime-500/20 flex items-center justify-center text-lime-400 group-hover:text-white group-hover:bg-lime-500/40 transition-all">
                     <Bot className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -159,7 +159,7 @@ export default function DashboardOverview() {
                   <span>78%</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-green-500 to-yellow-500 w-[78%]" />
+                  <div className="h-full bg-linear-to-r from-green-500 to-yellow-500 w-[78%]" />
                 </div>
               </div>
               <div className="space-y-2">

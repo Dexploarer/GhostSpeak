@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
           trend="Stable" 
           trendUp={true} 
           icon={BarChart3} 
-          iconColor="text-purple-400" 
+          iconColor="text-lime-400" 
         />
       </div>
 

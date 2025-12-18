@@ -134,7 +134,9 @@ export class SDKErrorBoundary extends Component<Props, State> {
     // e.g., Sentry, LogRocket, etc.
 
     const errorReport = {
+      category: this.categorizeError(error),
       message: error.message,
+      code: error.name,
       stack: error.stack,
       errorInfo: errorInfo.componentStack,
       timestamp: new Date().toISOString(),
@@ -142,11 +144,46 @@ export class SDKErrorBoundary extends Component<Props, State> {
       url: window.location.href,
     }
 
-    // For now, just log to console
-    console.log('Error Report:', errorReport)
+    // Log to console for development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Error Report:', errorReport)
+    }
 
-    // TODO: Send to error reporting service
-    // errorReportingService.report(errorReport)
+    // Send to configured error reporting service
+    // To integrate an error reporting service (e.g., Sentry, LogRocket):
+    // 1. Set the static callback: SDKErrorBoundary.setErrorReporter(myReporter)
+    // 2. Or use environment variables in production
+    if (SDKErrorBoundary.errorReporter) {
+      try {
+        SDKErrorBoundary.errorReporter(errorReport)
+      } catch (reporterError) {
+        console.error('Error reporting failed:', reporterError)
+      }
+    }
+  }
+
+  // Static error reporter callback - set this to integrate with Sentry, LogRocket, etc.
+  private static errorReporter: ((report: {
+    category: string
+    message: string
+    code?: string
+    timestamp: string
+    userAgent: string
+    url: string
+  }) => void) | null = null
+
+  // Public method to configure error reporting
+  public static setErrorReporter(
+    reporter: (report: {
+      category: string
+      message: string
+      code?: string
+      timestamp: string
+      userAgent: string
+      url: string
+    }) => void
+  ): void {
+    SDKErrorBoundary.errorReporter = reporter
   }
 
   private handleRetry = () => {

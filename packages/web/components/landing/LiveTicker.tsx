@@ -17,7 +17,7 @@ export function LiveTicker() {
       <div className="flex animate-marquee whitespace-nowrap">
         {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, idx) => (
           <div key={`${item.id}-${idx}`} className="flex items-center mx-8">
-            <Sparkles className="w-3 h-3 text-purple-500 mr-2" />
+            <Sparkles className="w-3 h-3 text-primary mr-2" />
             <span className="text-xs font-mono text-gray-600 dark:text-gray-400 uppercase tracking-wider">
               {item.text}
             </span>

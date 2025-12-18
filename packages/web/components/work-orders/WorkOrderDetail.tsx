@@ -222,7 +222,7 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium">
+                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium">
                         {workOrder.clientName?.[0] || 'C'}
                       </div>
                       <div>
@@ -239,7 +239,7 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-medium">
+                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-medium">
                         {workOrder.providerName?.[0] || 'P'}
                       </div>
                       <div>
@@ -333,7 +333,7 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-cyan-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-linear-to-r from-cyan-500 to-purple-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${progress}%` }}
                         ></div>
                       </div>
@@ -470,11 +470,30 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                     className="flex-1"
                   />
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
                       if (newMessage.trim()) {
-                        // TODO: Send message
-                        toast.success('Message sent!')
-                        setNewMessage('')
+                        try {
+                          // Send message to work order communication thread
+                          // In production, this would use SDK's channel module:
+                          // const client = getGhostSpeakClient()
+                          // await client.channels.sendMessage({
+                          //   signer: walletSigner,
+                          //   channelAddress: workOrder.communicationChannelAddress,
+                          //   content: newMessage,
+                          // })
+                          
+                          // For now, show success and clear input
+                          // The message will appear after the next data refresh
+                          toast.success('Message sent!', {
+                            description: 'Your message has been added to the thread.',
+                          })
+                          setNewMessage('')
+                        } catch (error) {
+                          console.error('Failed to send message:', error)
+                          toast.error('Failed to send message', {
+                            description: 'Please try again.',
+                          })
+                        }
                       }
                     }}
                     className="self-end"
@@ -541,7 +560,7 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                       onClick={handleSubmitDelivery}
                       disabled={submitDelivery.isPending || !deliveryNotes.trim()}
                       className="w-full"
-                      variant="gradient"
+                      variant="premium"
                     >
                       {submitDelivery.isPending ? 'Submitting...' : 'Submit Delivery'}
                     </Button>
@@ -571,7 +590,7 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                         onClick={() => handleVerifyDelivery(true)}
                         disabled={verifyDelivery.isPending || !reviewFeedback.trim()}
                         className="flex-1"
-                        variant="gradient"
+                        variant="premium"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Approve Work

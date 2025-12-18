@@ -5,8 +5,8 @@
  * based on payment performance, response time, and service quality.
  */
 
+use crate::state::ReputationMetrics;
 use crate::{GhostSpeakError, *};
-use anchor_lang::prelude::*;
 
 /// Context for initializing reputation metrics
 #[derive(Accounts)]
@@ -93,9 +93,7 @@ pub struct SubmitX402RatingReputation<'info> {
 }
 
 /// Initialize reputation metrics for an agent
-pub fn initialize_reputation_metrics(
-    ctx: Context<InitializeReputationMetrics>,
-) -> Result<()> {
+pub fn initialize_reputation_metrics(ctx: Context<InitializeReputationMetrics>) -> Result<()> {
     let reputation_metrics = &mut ctx.accounts.reputation_metrics;
     let clock = &ctx.accounts.clock;
 
@@ -147,7 +145,8 @@ pub fn record_x402_payment(
 
     // Update payment counters
     if success {
-        reputation_metrics.successful_payments = reputation_metrics.successful_payments.saturating_add(1);
+        reputation_metrics.successful_payments =
+            reputation_metrics.successful_payments.saturating_add(1);
 
         // Update agent's x402 fields
         agent.x402_total_calls = agent.x402_total_calls.saturating_add(1);
@@ -160,8 +159,11 @@ pub fn record_x402_payment(
     }
 
     // Update response time metrics
-    reputation_metrics.total_response_time = reputation_metrics.total_response_time.saturating_add(response_time_ms);
-    reputation_metrics.response_time_count = reputation_metrics.response_time_count.saturating_add(1);
+    reputation_metrics.total_response_time = reputation_metrics
+        .total_response_time
+        .saturating_add(response_time_ms);
+    reputation_metrics.response_time_count =
+        reputation_metrics.response_time_count.saturating_add(1);
 
     // Calculate and update reputation score
     let reputation_score = calculate_x402_reputation_score(reputation_metrics)?;
@@ -169,7 +171,7 @@ pub fn record_x402_payment(
 
     reputation_metrics.updated_at = clock.unix_timestamp;
 
-    emit!(X402PaymentRecordedEvent {
+    emit!(ReputationPaymentRecordedEvent {
         agent: agent.key(),
         payment_signature,
         amount,
@@ -193,14 +195,14 @@ pub fn submit_x402_rating(
     let clock = &ctx.accounts.clock;
 
     // Validate rating (1-5 scale)
-    require!(
-        rating >= 1 && rating <= 5,
-        GhostSpeakError::InvalidRating
-    );
+    require!(rating >= 1 && rating <= 5, GhostSpeakError::InvalidRating);
 
     // Update rating metrics
-    reputation_metrics.total_rating = reputation_metrics.total_rating.saturating_add(rating as u32);
-    reputation_metrics.total_ratings_count = reputation_metrics.total_ratings_count.saturating_add(1);
+    reputation_metrics.total_rating = reputation_metrics
+        .total_rating
+        .saturating_add(rating as u32);
+    reputation_metrics.total_ratings_count =
+        reputation_metrics.total_ratings_count.saturating_add(1);
 
     // Recalculate reputation score
     let reputation_score = calculate_x402_reputation_score(reputation_metrics)?;
@@ -208,7 +210,7 @@ pub fn submit_x402_rating(
 
     reputation_metrics.updated_at = clock.unix_timestamp;
 
-    emit!(X402RatingSubmittedEvent {
+    emit!(ReputationRatingSubmittedEvent {
         agent: agent.key(),
         client: ctx.accounts.client.key(),
         rating,
@@ -292,7 +294,7 @@ pub struct ReputationMetricsInitializedEvent {
 }
 
 #[event]
-pub struct X402PaymentRecordedEvent {
+pub struct ReputationPaymentRecordedEvent {
     pub agent: Pubkey,
     pub payment_signature: String,
     pub amount: u64,
@@ -303,7 +305,7 @@ pub struct X402PaymentRecordedEvent {
 }
 
 #[event]
-pub struct X402RatingSubmittedEvent {
+pub struct ReputationRatingSubmittedEvent {
     pub agent: Pubkey,
     pub client: Pubkey,
     pub rating: u8,

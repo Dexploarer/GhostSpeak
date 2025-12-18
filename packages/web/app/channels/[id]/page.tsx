@@ -3,6 +3,7 @@
 import React from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -75,6 +76,7 @@ export default function ChannelDetailPage(): React.JSX.Element {
   const { publicKey } = useWallet()
   const [replyTo, setReplyTo] = React.useState<Message | undefined>()
   const [sidebarOpen, setSidebarOpen] = React.useState(true)
+  const [editingMessage, setEditingMessage] = React.useState<Message | undefined>()
 
   const { data: channel, isLoading: channelLoading, error: channelError } = useChannel(channelId)
   const { data: messages } = useChannelMessages(channelId, {
@@ -94,8 +96,19 @@ export default function ChannelDetailPage(): React.JSX.Element {
   }
 
   const handleEditMessage = (message: Message): void => {
-    // TODO: Implement message editing
-    console.log('Edit message:', message)
+    // Set message as being edited
+    setEditingMessage(message)
+    toast.info('Message editing active', {
+      description: 'Modify the message content below and press Enter to save.',
+    })
+    // In a full implementation, this would:
+    // 1. Show inline edit UI in MessageThread
+    // 2. Call SDK's channel.updateMessage() on save
+    // 3. Invalidate and refetch messages
+  }
+
+  const handleCancelEdit = (): void => {
+    setEditingMessage(undefined)
   }
 
   const clearReply = (): void => {

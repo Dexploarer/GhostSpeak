@@ -392,7 +392,7 @@ pub struct MarketTrendUpdatedEvent {
 }
 
 #[event]
-pub struct AgentPerformanceUpdatedEvent {
+pub struct CollectorAgentPerformanceEvent {
     pub agent: Pubkey,
     pub revenue: u64,
     pub success_rate: u32,

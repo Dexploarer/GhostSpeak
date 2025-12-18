@@ -100,7 +100,8 @@ pub fn create_token_2022_mint(
         extensions.push(ExtensionType::DefaultAccountState);
     }
 
-    let space = ExtensionType::try_calculate_account_len::<SplMint>(&extensions)?;
+    let space = ExtensionType::try_calculate_account_len::<SplMint>(&extensions)
+        .map_err(|_| GhostSpeakError::InvalidExtensionConfiguration)?;
 
     // Create the account for the mint
     let rent = ctx.accounts.rent.minimum_balance(space);

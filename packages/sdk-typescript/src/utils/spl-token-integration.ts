@@ -48,7 +48,7 @@ import type {
   Address,
   IInstruction,
   TransactionSigner,
-  IAccountMeta,
+  AccountMeta,
   Commitment
 } from '@solana/kit'
 import { address } from '@solana/kit'
@@ -516,7 +516,7 @@ export async function getOrCreateAssociatedTokenAccount(
  * Convert web3.js instruction to IInstruction format
  */
 function convertToIInstruction(instruction: any): IInstruction {
-  const accounts: IAccountMeta[] = instruction.keys.map((key: any) => ({
+  const accounts: AccountMeta[] = instruction.keys.map((key: any) => ({
     address: address(key.pubkey.toBase58()),
     role: (key.isSigner ? 1 : 0) + (key.isWritable ? 2 : 0)
   }))

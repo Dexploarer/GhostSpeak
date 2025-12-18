@@ -24,7 +24,14 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("F3qAjuzkNTbDL6wtZv4wGyHUi66j7uM2uRCDXWJ3Bg87");
+declare_id!("4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK");
+
+// NOTE: security_txt macro is NOT embedded here because SPL dependencies
+// (spl-account-compression, spl-token-2022) already embed their own security_txt,
+// causing linker symbol conflicts. Security contact info is available at:
+// - SECURITY.md in the repository
+// - https://github.com/dexploarer/GhostSpeak
+// - Email: dexploarer@gmail.com
 
 // Module declarations
 mod instructions;
@@ -89,6 +96,7 @@ pub use state::IncentiveConfig;
 pub use state::MessageType;
 pub use state::ProposalType;
 pub use state::ReportType;
+pub use state::ReputationMetrics;
 pub use state::Role;
 pub use state::VoteChoice;
 pub use state::VotingResults;
@@ -241,9 +249,12 @@ pub const PROTOCOL_ADMIN: Pubkey =
     anchor_lang::solana_program::pubkey!("7WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
 
 // Default fallback for localnet and other environments
+// Note: Using Pubkey::from_str at runtime since pubkey! macro path changed in Solana 2.x
 #[cfg(not(any(feature = "devnet", feature = "testnet", feature = "mainnet")))]
-pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("6WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([
+    0x4f, 0xf3, 0x1b, 0x42, 0x3c, 0xd5, 0x8e, 0x7a, 0x91, 0x0a, 0xb2, 0xc4, 0x6e, 0x1d, 0x9f, 0x83,
+    0x57, 0x2b, 0xe0, 0x14, 0x68, 0xa9, 0x3c, 0x5d, 0x76, 0x02, 0xf5, 0x19, 0x88, 0x4b, 0xc7, 0xde,
+]);
 
 /// Enhanced admin validation with runtime configuration support
 /// This function provides a secure way to validate admin operations
@@ -1119,6 +1130,22 @@ pub enum GhostSpeakError {
     ReputationTooLowToSlash = 2345,
     #[msg("Invalid reputation weight configuration - weights must sum to 100")]
     InvalidReputationWeights = 2346,
+
+    // Circuit breaker errors (2360-2379)
+    #[msg("Protocol is already paused")]
+    AlreadyPaused = 2360,
+    #[msg("Protocol is not paused")]
+    NotPaused = 2361,
+    #[msg("Protocol is paused - all operations halted")]
+    ProtocolPaused = 2362,
+    #[msg("This instruction is paused")]
+    InstructionPaused = 2363,
+    #[msg("Too many multisig authorities")]
+    TooManyAuthorities = 2364,
+    #[msg("Authority already exists in multisig")]
+    AuthorityAlreadyExists = 2365,
+    #[msg("Invalid required signatures configuration")]
+    InvalidRequiredSignatures = 2366,
 }
 
 // =====================================================

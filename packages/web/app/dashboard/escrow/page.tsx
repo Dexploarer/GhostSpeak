@@ -45,7 +45,7 @@ function EscrowItem({ id, amount, parties, status, progress }: any) {
          
          <div className="text-right min-w-[100px]">
             <p className="text-lg font-bold text-white">{amount} SOL</p>
-            <Button variant="link" size="sm" className="h-auto p-0 text-purple-400">View Details</Button>
+            <Button variant="link" size="sm" className="h-auto p-0 text-lime-400">View Details</Button>
          </div>
       </GlassCard>
    )
@@ -58,7 +58,7 @@ export default function EscrowPage() {
         title="Escrow Management" 
         description="Secure fund holding and dispute resolution for agent transactions"
       >
-         <Button className="bg-purple-600 hover:bg-purple-500">Create Escrow</Button>
+         <Button className="bg-lime-500 hover:bg-lime-400 text-black font-bold">Create Escrow</Button>
       </PageHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -92,7 +92,7 @@ export default function EscrowPage() {
          
          {/* Right: Stats & Info */}
          <div className="space-y-6">
-            <GlassCard className="p-6 bg-gradient-to-br from-green-900/20 to-emerald-900/20 border-green-500/20">
+            <GlassCard className="p-6 bg-linear-to-br from-green-900/20 to-emerald-900/20 border-green-500/20">
                <div className="flex items-center gap-3 mb-4">
                   <Shield className="w-6 h-6 text-green-400" />
                   <h3 className="font-bold text-white">Funds Secured</h3>

@@ -1,59 +1,95 @@
-// TEMPORARY STUBS for GitHub Pages deployment - replace with real SDK integration later
-// Using temporary stubs to allow static site build and deployment
-// TODO: Replace with actual @ghostspeak/sdk integration once build issues are resolved
+'use client'
 
-type Address = string
-type TransactionSigner = any
+/**
+ * GhostSpeak SDK Client - Real blockchain integration
+ * 
+ * Provides access to SDK modules for agent, escrow, marketplace,
+ * governance, and channel operations.
+ * 
+ * Uses the browser-safe SDK entry point to avoid server-only dependencies.
+ */
 
-// STUB program ID for deployment
-const GHOSTSPEAK_PROGRAM_ID = 'Ga2aEq5HQeBMUd7AzCcjLaTTLHqigcTQkxcCt4ET9YuS' as Address
+import type { Address } from '@solana/addresses'
+import type { TransactionSigner } from '@solana/kit'
 
-// STUB client interface for deployment
-export interface RealGhostSpeakClient {
-  sdk: any
+// Import from browser-safe SDK entry point
+import {
+  AgentModule,
+  EscrowModule,
+  MarketplaceModule,
+  GovernanceModule,
+  ChannelModule,
+  GHOSTSPEAK_PROGRAM_ID,
+  type GhostSpeakConfig
+} from '@ghostspeak/sdk/browser'
+
+// Network configurations
+export const NETWORK_ENDPOINTS = {
+  devnet: 'https://api.devnet.solana.com',
+  testnet: 'https://api.testnet.solana.com',
+  mainnet: 'https://api.mainnet-beta.solana.com',
+} as const
+
+export type NetworkType = keyof typeof NETWORK_ENDPOINTS
+
+/**
+ * GhostSpeak client interface with all SDK modules
+ */
+export interface GhostSpeakClient {
   programId: Address
-  agents: {
-    getAllAgents: () => Promise<any[]>
-    getAgentByAddress: (address: Address) => Promise<any>
-    registerAgent: (signer: TransactionSigner, data: any) => Promise<{ address: Address; signature: string }>
-    updateAgent: (signer: TransactionSigner, address: Address, data: any) => Promise<{ signature: string }>
-    deactivateAgent: (signer: TransactionSigner, address: Address) => Promise<{ signature: string }>
-  }
-  marketplace: any
-  workOrders: any
-  escrow: any
-  channels: any
-  governance: any
+  rpcUrl: string
+  agents: AgentModule
+  escrow: EscrowModule
+  marketplace: MarketplaceModule
+  governance: GovernanceModule
+  channels: ChannelModule
 }
 
-// STUB client instance for deployment
-let clientInstance: RealGhostSpeakClient | null = null
+// Client singleton cache
+const clientCache = new Map<string, GhostSpeakClient>()
 
-export function getGhostSpeakClient(): RealGhostSpeakClient {
-  if (!clientInstance) {
-    const sdk = {} // STUB SDK
-    clientInstance = {
-      sdk,
-      programId: GHOSTSPEAK_PROGRAM_ID,
-      agents: {
-        getAllAgents: async () => [],
-        getAgentByAddress: async () => null,
-        registerAgent: async () => ({ address: 'stub-address', signature: 'stub-signature' }),
-        updateAgent: async () => ({ signature: 'stub-signature' }),
-        deactivateAgent: async () => ({ signature: 'stub-signature' }),
-      },
-      marketplace: {},
-      workOrders: {},
-      escrow: {},
-      channels: {},
-      governance: {},
-    }
+/**
+ * Create a GhostSpeak client instance for the specified network
+ */
+export function createGhostSpeakClient(
+  network: NetworkType = 'devnet',
+  customRpcUrl?: string
+): GhostSpeakClient {
+  const rpcUrl = customRpcUrl ?? NETWORK_ENDPOINTS[network]
+  const cacheKey = rpcUrl
+  
+  // Return cached client if available
+  if (clientCache.has(cacheKey)) {
+    return clientCache.get(cacheKey)!
   }
-  return clientInstance!
+  
+  const config: GhostSpeakConfig = {
+    programId: GHOSTSPEAK_PROGRAM_ID,
+    rpcUrl,
+  }
+  
+  const client: GhostSpeakClient = {
+    programId: GHOSTSPEAK_PROGRAM_ID,
+    rpcUrl,
+    agents: new AgentModule(config),
+    escrow: new EscrowModule(config),
+    marketplace: new MarketplaceModule(config),
+    governance: new GovernanceModule(config),
+    channels: new ChannelModule(config),
+  }
+  
+  // Cache the client
+  clientCache.set(cacheKey, client)
+  
+  return client
 }
 
-// Export with correct typing
-export const GhostSpeakClient = getGhostSpeakClient
+/**
+ * Get the default devnet client
+ */
+export function getGhostSpeakClient(): GhostSpeakClient {
+  return createGhostSpeakClient('devnet')
+}
 
-// Export type for external use
-export { type RealGhostSpeakClient as GhostSpeakClientType }
+// Re-export types
+export type { Address, TransactionSigner }

@@ -142,7 +142,7 @@ pub use message::*;
 pub use negotiation::*;
 pub use pricing::*;
 pub use replication::*;
-pub use reputation::*;
+pub use reputation::ReputationMetrics;
 pub use risk_management::*;
 pub use royalty::*;
 // Selective imports from security_governance to avoid conflicts

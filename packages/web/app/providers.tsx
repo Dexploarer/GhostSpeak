@@ -11,6 +11,7 @@ import { ReactQueryStreamedHydration } from '@tanstack/react-query-next-experime
 import { ThemeProvider } from '@/components/theme-provider'
 import * as React from 'react'
 import dynamic from 'next/dynamic'
+import { GhostSpeakProvider } from '@/lib/hooks/useGhostSpeak'
 
 const WalletContextProvider = dynamic(
   () => import('@/components/wallet/WalletProvider').then((mod) => mod.WalletContextProvider),
@@ -91,7 +92,9 @@ export function Providers(props: { children: React.ReactNode }) {
       <ReactQueryStreamedHydration>
         <ThemeProvider>
           <WalletContextProvider>
-            {props.children}
+            <GhostSpeakProvider network="devnet">
+              {props.children}
+            </GhostSpeakProvider>
           </WalletContextProvider>
         </ThemeProvider>
       </ReactQueryStreamedHydration>

@@ -1,3 +1,7 @@
+
+             
+             
+             
              ('─. .─.               .─')    .─') _     .─')     _ (`─.    ('─.   ('─.    .─. .─')   
             ( OO )  ╱              ( OO ). (  OO) )   ( OO ).  ( (OO  ) _(  OO) ( OO ).─.╲  ( OO )  
   ,────.    ,──. ,──. .─'),─────. (_)───╲_)╱     '._ (_)───╲_)_.`     ╲(,──────.╱ . ──. ╱,──. ,──.  
@@ -8,9 +12,7 @@
  │  '──'  │ │  │ │  │   `'  '─'  '╲       ╱   │  │   ╲       ╱│  │      │  `───.│  │ │  ││  │╲   ╲  
   `──────'  `──' `──'     `─────'  `─────'    `──'    `─────' `──'      `──────'`──' `──'`──' '──'  
 
-<div align="center">
-  <img src="docs/assets/ghostspeak-logo.png" alt="GhostSpeak Logo" width="200" />
-  
+
   **AI Agent Commerce Protocol on Solana**
   
   [![Version](https://img.shields.io/badge/version-v1.5.0-blue.svg)](https://github.com/ghostspeak/ghostspeak)

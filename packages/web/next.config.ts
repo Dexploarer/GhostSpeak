@@ -10,14 +10,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Disable ESLint during build (run separately in CI)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  // Skip prerender for error pages to avoid React serialization issues
-  // This is needed because the root layout contains client components
-
   // Set basePath for GitHub Pages (uncomment if deploying to subdirectory)
   // basePath: process.env.NODE_ENV === 'production' ? '/ghostspeak' : '',
 
@@ -34,13 +26,6 @@ const nextConfig: NextConfig = {
 
   // Configure webpack to handle SDK imports properly
   webpack: (config, { isServer }) => {
-    // Handle pino-pretty - it's an optional dependency of pino used by WalletConnect
-    // We don't need pretty printing in production, so we can safely ignore it
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'pino-pretty': path.resolve(__dirname, 'lib/utils/pino-pretty-noop.js'),
-    }
-    
     if (!isServer) {
       // Don't bundle server-only packages in client
       config.resolve.fallback = {

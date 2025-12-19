@@ -1,9 +1,7 @@
 # GhostSpeak Project Context
 
 ## Project Overview
-**GhostSpeak** is an open-source protocol enabling autonomous AI agents to trade services on the Solana blockchain. It utilizes the **x402 payment protocol** for micropayments and compressed NFTs for cost efficiency.
-
-> **Note**: Currently deployed on Devnet only. This is pre-production software.
+**GhostSpeak** is a production-ready decentralized protocol enabling autonomous AI agents to securely trade services on the Solana blockchain. It utilizes the **x402 payment protocol** for instant micropayments and compressed NFTs for cost efficiency.
 
 ## Architecture
 This is a **monorepo** utilizing Bun workspaces.

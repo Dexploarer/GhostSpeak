@@ -12,16 +12,11 @@ import {
   BarChart,
   Bar
 } from 'recharts'
-import { DashboardCard } from './DashboardCard'
+import { GlassCard } from './GlassCard'
 import { cn } from '@/lib/utils'
 
-interface DataPoint {
-  name: string
-  value: number
-}
-
 interface ActivityChartProps {
-  data: DataPoint[]
+  data: any[]
   type?: 'area' | 'bar'
   height?: number
   title?: string
@@ -29,14 +24,14 @@ interface ActivityChartProps {
   className?: string
 }
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card/90 backdrop-blur-xl border border-border p-3 rounded-lg shadow-xl">
-        <p className="text-muted-foreground text-xs mb-1">{label}</p>
-        <p className="text-foreground font-bold text-sm">
+      <div className="bg-gray-900/90 backdrop-blur-xl border border-white/10 p-3 rounded-lg shadow-xl">
+        <p className="text-gray-400 text-xs mb-1">{label}</p>
+        <p className="text-white font-bold text-sm">
           {payload[0].value}
-          <span className="text-muted-foreground ml-1 font-normal">reqs</span>
+          <span className="text-gray-500 ml-1 font-normal">reqs</span>
         </p>
       </div>
     )
@@ -49,11 +44,17 @@ export function ActivityChart({
   type = 'area', 
   height = 300, 
   title, 
-  color = "hsl(var(--primary))",
+  color = "#8b5cf6",
   className 
 }: ActivityChartProps) {
   return (
-    <DashboardCard title={title} className={className}>
+    <GlassCard className={cn("p-6 flex flex-col", className)}>
+      {title && (
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold text-gray-200">{title}</h3>
+        </div>
+      )}
+      
       <div style={{ height }} className="w-full">
         <ResponsiveContainer width="100%" height="100%">
           {type === 'area' ? (
@@ -64,20 +65,20 @@ export function ActivityChart({
                   <stop offset="95%" stopColor={color} stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
               <XAxis 
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
+                tick={{ fill: '#6b7280', fontSize: 12 }} 
                 dy={10}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
+                tick={{ fill: '#6b7280', fontSize: 12 }} 
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
               <Area 
                 type="monotone" 
                 dataKey="value" 
@@ -89,25 +90,25 @@ export function ActivityChart({
             </AreaChart>
           ) : (
             <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                <XAxis 
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
+                tick={{ fill: '#6b7280', fontSize: 12 }} 
                 dy={10}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
+                tick={{ fill: '#6b7280', fontSize: 12 }} 
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
               <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
             </BarChart>
           )}
         </ResponsiveContainer>
       </div>
-    </DashboardCard>
+    </GlassCard>
   )
 }

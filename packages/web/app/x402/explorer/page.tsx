@@ -175,7 +175,7 @@ function StatsCard({
 }: {
   title: string
   value: string | number
-  icon: React.ElementType
+  icon: React.ComponentType<{ className?: string }>
   change?: string
 }) {
   return (
@@ -217,7 +217,7 @@ function ResourceCard({ resource }: { resource: ExplorerResource }) {
             <CardTitle className="text-lg flex items-center gap-2">
               {resource.name}
               {resource.isVerified && (
-                <Shield className="w-4 h-4 text-green-500" title="Verified" />
+                <Shield className="w-4 h-4 text-green-500" aria-label="Verified" />
               )}
             </CardTitle>
             <CardDescription className="text-sm mt-1">{resource.description}</CardDescription>
@@ -428,7 +428,7 @@ export default function X402ExplorerPage(): React.JSX.Element {
               <div className="flex gap-2 flex-wrap">
                 <Select
                   value={filters.network}
-                  onValueChange={v => setFilters(f => ({ ...f, network: v }))}
+                  onValueChange={(v: string) => setFilters(f => ({ ...f, network: v }))}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Network" />
@@ -444,7 +444,7 @@ export default function X402ExplorerPage(): React.JSX.Element {
 
                 <Select
                   value={filters.category}
-                  onValueChange={v => setFilters(f => ({ ...f, category: v }))}
+                  onValueChange={(v: string) => setFilters(f => ({ ...f, category: v }))}
                 >
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Category" />
@@ -460,7 +460,7 @@ export default function X402ExplorerPage(): React.JSX.Element {
 
                 <Select
                   value={filters.facilitator}
-                  onValueChange={v => setFilters(f => ({ ...f, facilitator: v }))}
+                  onValueChange={(v: string) => setFilters(f => ({ ...f, facilitator: v }))}
                 >
                   <SelectTrigger className="w-36">
                     <SelectValue placeholder="Facilitator" />
@@ -509,7 +509,7 @@ export default function X402ExplorerPage(): React.JSX.Element {
               </p>
               <Select
                 value={filters.sortBy}
-                onValueChange={v => setFilters(f => ({ ...f, sortBy: v }))}
+                onValueChange={(v: string) => setFilters(f => ({ ...f, sortBy: v }))}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Sort by" />

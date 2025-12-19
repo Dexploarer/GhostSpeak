@@ -1,7 +1,5 @@
-'use client'
-
 import React from 'react'
-import { DashboardCard } from './DashboardCard'
+import { GlassCard } from './GlassCard'
 import { cn } from '@/lib/utils'
 
 interface Column<T> {
@@ -21,10 +19,17 @@ interface GlassTableProps<T> {
 
 export function GlassTable<T>({ data, columns, title, actions, isLoading }: GlassTableProps<T>) {
   return (
-    <DashboardCard title={title} actions={actions} noPadding>
+    <GlassCard className="p-0 overflow-hidden flex flex-col">
+      {(title || actions) && (
+        <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
+          {title && <h3 className="font-semibold text-gray-200">{title}</h3>}
+          {actions && <div className="flex gap-2">{actions}</div>}
+        </div>
+      )}
+      
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs text-muted-foreground uppercase bg-muted/20 border-b border-border">
+          <thead className="text-xs text-gray-500 uppercase bg-black/20 border-b border-white/5">
             <tr>
               {columns.map((col, i) => (
                 <th key={i} className={cn("px-6 py-3 font-medium", col.className)}>
@@ -33,29 +38,29 @@ export function GlassTable<T>({ data, columns, title, actions, isLoading }: Glas
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-white/5">
             {isLoading ? (
               // Skeleton Loading Rows
               [1, 2, 3].map((i) => (
                 <tr key={i} className="animate-pulse">
                   {columns.map((_, j) => (
                     <td key={j} className="px-6 py-4">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-4 bg-white/5 rounded w-3/4"></div>
                     </td>
                   ))}
                 </tr>
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-8 text-center text-muted-foreground">
+                <td colSpan={columns.length} className="px-6 py-8 text-center text-gray-500">
                   No data available
                 </td>
               </tr>
             ) : (
               data.map((item, i) => (
-                <tr key={i} className="hover:bg-muted/30 transition-colors">
+                <tr key={i} className="hover:bg-white/5 transition-colors">
                   {columns.map((col, j) => (
-                    <td key={j} className={cn("px-6 py-4 text-foreground", col.className)}>
+                    <td key={j} className={cn("px-6 py-4", col.className)}>
                       {col.cell 
                         ? col.cell(item) 
                         : col.accessorKey 
@@ -69,6 +74,6 @@ export function GlassTable<T>({ data, columns, title, actions, isLoading }: Glas
           </tbody>
         </table>
       </div>
-    </DashboardCard>
+    </GlassCard>
   )
 }

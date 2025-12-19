@@ -24,9 +24,15 @@ function makeQueryClient() {
       queries: {
         // Reduce stale time for more real-time feel
         staleTime: 5 * 1000, // 5 seconds
-        // Add retry configuration - more resilient for initial load
-        retry: 3,
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+        // Add retry configuration
+        retry: (failureCount, error) => {
+          // Don't retry on 4xx errors
+          if (error instanceof Error && error.message.includes('4')) {
+            return false
+          }
+          return failureCount < 3
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
         // Cleanup configuration
         gcTime: 5 * 60 * 1000, // 5 minutes (was cacheTime)
         refetchOnWindowFocus: true,
@@ -72,10 +78,14 @@ export function Providers(props: { children: React.ReactNode }) {
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient()
 
-  // Note: Removed cleanup effect that was canceling queries on unmount.
-  // This was causing "Query Failed" errors on initial load because React 18
-  // strict mode and hydration can cause mount/unmount cycles.
-  // React Query handles its own cleanup via gcTime (garbage collection).
+  // Cleanup subscriptions on unmount
+  React.useEffect(() => {
+    return () => {
+      // Cancel all queries and clear cache on unmount
+      queryClient.cancelQueries()
+      queryClient.clear()
+    }
+  }, [queryClient])
 
   return (
     <QueryClientProvider client={queryClient}>

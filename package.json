@@ -111,12 +111,8 @@
     "@types/node-fetch": "^2.6.12",
     "node-fetch": "^3.3.2"
   },
-  "overrides": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
-  },
   "devDependencies": {
-    "next": "15.4.5",
+    "next": "15.4.10",
     "@eslint/js": "^9.31.0",
     "@types/inquirer": "^9.0.8",
     "@types/node": "^24.0.15",

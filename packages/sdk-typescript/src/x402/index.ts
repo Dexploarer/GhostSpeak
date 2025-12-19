@@ -242,6 +242,53 @@ export type {
 } from './schemas/enhanced-x402.js'
 
 // =====================================================
+// X402 INSTRUCTION BUILDERS (Manual - for instructions not in generated SDK)
+// =====================================================
+
+export {
+  getConfigureX402Instruction,
+  CONFIGURE_X402_DISCRIMINATOR
+} from './instructions/configureX402.js'
+export type {
+  ConfigureX402Input,
+  ConfigureX402InstructionDataArgs
+} from './instructions/configureX402.js'
+
+export {
+  getRecordX402PaymentInstruction,
+  RECORD_X402_PAYMENT_DISCRIMINATOR
+} from './instructions/recordX402Payment.js'
+export type {
+  RecordX402PaymentInput,
+  X402PaymentData
+} from './instructions/recordX402Payment.js'
+
+export {
+  getSubmitX402RatingInstruction,
+  SUBMIT_X402_RATING_DISCRIMINATOR,
+  calculateNewReputation,
+  reputationToPercentage,
+  reputationToStars
+} from './instructions/submitX402Rating.js'
+export type {
+  SubmitX402RatingInput,
+  X402RatingData
+} from './instructions/submitX402Rating.js'
+
+// =====================================================
+// AGENT ACCOUNT FETCHER (x402-aware)
+// =====================================================
+
+export {
+  AgentAccountFetcher,
+  createAgentAccountFetcher
+} from './AgentAccountFetcher.js'
+export type {
+  AgentWithX402,
+  AgentDiscoveryOptions as AgentFetcherDiscoveryOptions
+} from './AgentAccountFetcher.js'
+
+// =====================================================
 // GHOSTSPEAK NATIVE FACILITATOR (CORE VALUE)
 // =====================================================
 
@@ -256,6 +303,53 @@ export type {
   X402ReputationUpdate,
   GhostSpeakFacilitatorOptions
 } from './GhostSpeakFacilitator.js'
+
+// =====================================================
+// GASLESS PAYMENTS (PayAI-inspired)
+// =====================================================
+
+export {
+  GaslessPaymentManager,
+  createGaslessPaymentManager
+} from './GaslessPayments.js'
+export type {
+  GaslessConfig,
+  SponsoredTxRequest,
+  SponsoredTxResult,
+  UserGaslessQuota,
+  FeeEstimate
+} from './GaslessPayments.js'
+
+// =====================================================
+// COMPLIANCE SCREENING (PayAI-inspired)
+// =====================================================
+
+export {
+  ComplianceScreeningService,
+  createComplianceScreening,
+  complianceMiddleware
+} from './ComplianceScreening.js'
+export type {
+  ComplianceResult,
+  ComplianceFlag,
+  ComplianceFlagType,
+  ComplianceConfig,
+  MonitoredTransaction
+} from './ComplianceScreening.js'
+
+// =====================================================
+// ECOSYSTEM INTEGRATION (UNIFIED INTERFACE)
+// =====================================================
+
+export {
+  X402Ecosystem,
+  createX402Ecosystem,
+  setupX402
+} from './X402Ecosystem.js'
+export type {
+  X402EcosystemOptions,
+  EcosystemStats
+} from './X402Ecosystem.js'
 
 // =====================================================
 // DEFAULT EXPORT

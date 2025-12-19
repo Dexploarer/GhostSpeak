@@ -1,292 +1,220 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { motion } from 'framer-motion'
+import { useWallet } from '@/lib/stubs/wallet-stubs'
+import { useAgents } from '@/lib/queries/agents'
+import { useChannels } from '@/lib/queries/channels'
+import { GlassCard } from '@/components/dashboard/shared/GlassCard'
+import { GlassTable } from '@/components/dashboard/shared/GlassTable'
+import { StatusBeacon } from '@/components/dashboard/shared/StatusBeacon'
+import { StatsCard } from '@/components/dashboard/shared/StatsCard'
+import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
 import { Button } from '@/components/ui/button'
-import { GhostIcon } from '@/components/shared/GhostIcon'
 import { 
-  Sparkles, 
-  BookOpen, 
-  ArrowRight,
-  Zap,
-  Activity,
+  Bot, 
+  Zap, 
+  TrendingUp, 
+  Activity, 
+  Plus, 
   Clock,
-  Globe,
-  Bot,
-  Shield,
-  Vote,
-  BarChart3,
-  ExternalLink,
-  Wallet,
-  Copy,
-  Check
+  Users,
+  Cpu
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const comingSoonFeatures = [
-  { 
-    title: 'AI Agents', 
-    description: 'Deploy autonomous agents on-chain', 
-    icon: Bot, 
-    color: 'from-lime-500/20 to-lime-500/5',
-    iconColor: 'text-lime-500'
-  },
-  { 
-    title: 'Escrow', 
-    description: 'Secure milestone-based payments', 
-    icon: Shield, 
-    color: 'from-cyan-500/20 to-cyan-500/5',
-    iconColor: 'text-cyan-500'
-  },
-  { 
-    title: 'Governance', 
-    description: 'Community-driven protocol updates', 
-    icon: Vote, 
-    color: 'from-purple-500/20 to-purple-500/5',
-    iconColor: 'text-purple-500'
-  },
-  { 
-    title: 'Analytics', 
-    description: 'Real-time performance metrics', 
-    icon: BarChart3, 
-    color: 'from-orange-500/20 to-orange-500/5',
-    iconColor: 'text-orange-500'
-  },
-]
-
 export default function DashboardOverview() {
-  const { publicKey, connected } = useWallet()
-  const [copied, setCopied] = React.useState(false)
-
-  const copyAddress = () => {
-    if (publicKey) {
-      navigator.clipboard.writeText(publicKey.toBase58())
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
+  const { publicKey } = useWallet()
+  const { data: agents = [] } = useAgents()
+  
+  // Mock Data for Activity Chart
+  const chartData = [
+    { name: '00:00', value: 40 },
+    { name: '04:00', value: 30 },
+    { name: '08:00', value: 20 },
+    { name: '12:00', value: 78 },
+    { name: '16:00', value: 89 },
+    { name: '20:00', value: 63 },
+    { name: '24:00', value: 45 },
+  ]
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      {/* Welcome Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-4xl font-black tracking-tight text-foreground"
-          >
+          <h1 className="text-3xl font-bold bg-linear-to-r from-white to-gray-400 bg-clip-text text-transparent">
             Command Center
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-muted-foreground mt-2"
-          >
-            {connected 
-              ? 'Your protocol dashboard is ready.' 
-              : 'Connect your wallet to access the full dashboard.'
-            }
-          </motion.p>
+          </h1>
+          <p className="text-gray-400 mt-1">
+            System Overview for <span className="font-mono text-lime-400">{(publicKey as any)?.toBase58?.().slice(0,6) || 'Wallet'}...</span>
+          </p>
         </div>
-
-        {/* Network Badge */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-3"
-        >
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm font-black text-primary">DEVNET</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border">
-            <Globe className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Solana</span>
-          </div>
-        </motion.div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 text-gray-200">
+            <Clock className="w-4 h-4 mr-2" />
+            History
+          </Button>
+          <Button className="bg-lime-500 hover:bg-lime-400 text-black font-bold border-0 shadow-[0_0_20px_-5px_rgba(204,255,0,0.5)]">
+            <Plus className="w-4 h-4 mr-2" />
+            Deploy Agent
+          </Button>
+        </div>
       </div>
 
-      {/* Wallet Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="rounded-2xl border border-border bg-card/50 backdrop-blur-xl p-6 lg:p-8"
-      >
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className={cn(
-              "w-14 h-14 rounded-2xl flex items-center justify-center",
-              connected 
-                ? "bg-primary shadow-[0_0_30px_rgba(204,255,0,0.3)]" 
-                : "bg-muted"
-            )}>
-              <Wallet className={cn("w-7 h-7", connected ? "text-primary-foreground" : "text-muted-foreground")} />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard 
+          label="Total Revenue" 
+          value="2,450.50" 
+          unit="SOL" 
+          trend="+12.5%" 
+          trendUp={true} 
+          icon={Zap} 
+          iconColor="text-yellow-400" 
+        />
+        <StatsCard 
+          label="Active Agents" 
+          value={agents.length.toString()} 
+          unit="Online" 
+          trend="+2" 
+          trendUp={true} 
+          icon={Bot} 
+          iconColor="text-lime-400" 
+        />
+        <StatsCard 
+          label="Total Requests" 
+          value="85.2k" 
+          unit="Calls" 
+          trend="+5.2%" 
+          trendUp={true} 
+          icon={Activity} 
+          iconColor="text-cyan-400" 
+        />
+        <StatsCard 
+          label="Avg. Latency" 
+          value="124" 
+          unit="ms" 
+          trend="-12ms" 
+          trendUp={true} 
+          icon={Clock} 
+          iconColor="text-green-400" 
+        />
+      </div>
+
+      {/* Bento Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Main Chart / Activity Area (Span 2) */}
+        <ActivityChart 
+          className="lg:col-span-2" 
+          title="Network Activity" 
+          data={chartData} 
+          height={320}
+        />
+
+        {/* Right Column Stack */}
+        <div className="space-y-6">
+          
+          {/* Active Agents List */}
+          <GlassCard className="p-6 flex flex-col h-[calc(50%-12px)]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
+                <Users className="w-5 h-5 text-cyan-400" />
+                Top Agents
+              </h3>
+              <Button variant="ghost" size="sm" className="h-8 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10">View All</Button>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">
-                {connected ? 'Wallet Connected' : 'Connect Wallet'}
-              </h2>
-              {connected && publicKey ? (
-                <button 
-                  onClick={copyAddress}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
-                >
-                  <span className="font-mono">
-                    {publicKey.toBase58().slice(0, 8)}...{publicKey.toBase58().slice(-8)}
-                  </span>
-                  {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
-              ) : (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Use the button in the navigation to connect
-                </p>
+            <div className="space-y-3 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+              {agents.length > 0 ? agents.slice(0, 3).map((agent, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+                  <div className="w-10 h-10 rounded-lg bg-lime-500/20 flex items-center justify-center text-lime-400 group-hover:text-white group-hover:bg-lime-500/40 transition-all">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-sm font-medium text-gray-200 truncate">{agent.name}</h4>
+                      <StatusBeacon status={agent.isActive ? 'active' : 'inactive'} size="sm" />
+                    </div>
+                    <p className="text-xs text-gray-500 truncate font-mono">{agent.address.slice(0, 4)}...{agent.address.slice(-4)}</p>
+                  </div>
+                </div>
+              )) : (
+                <div className="text-center py-8 text-gray-500 text-sm">No agents deployed</div>
               )}
             </div>
-          </div>
+          </GlassCard>
 
-          {/* Network Stats */}
-          <div className="flex flex-wrap gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                <Activity className="w-5 h-5 text-muted-foreground" />
+          {/* System Health / Resources */}
+          <GlassCard className="p-6 flex flex-col h-[calc(50%-12px)]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
+                <Cpu className="w-5 h-5 text-green-400" />
+                System Health
+              </h3>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>Compute Units</span>
+                  <span>78%</span>
+                </div>
+                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-linear-to-r from-green-500 to-yellow-500 w-[78%]" />
+                </div>
               </div>
-              <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">TPS</span>
-                <p className="text-lg font-bold text-foreground">2,847</p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>RPC Throughput</span>
+                  <span>45%</span>
+                </div>
+                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 w-[45%]" />
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                 <span className="text-xs text-gray-500">Status</span>
+                 <span className="text-xs font-medium text-green-400 flex items-center gap-1">
+                    <StatusBeacon status="active" size="sm" />
+                    Operational
+                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                <Clock className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">Latency</span>
-                <p className="text-lg font-bold text-foreground">~400ms</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">Status</span>
-                <p className="text-lg font-bold text-primary">Online</p>
-              </div>
-            </div>
-          </div>
+          </GlassCard>
+
         </div>
-      </motion.div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Link href="/x402/discover" className="block group">
-            <div className="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 to-transparent p-6 hover:border-primary/40 hover:shadow-[0_0_40px_rgba(204,255,0,0.1)] transition-all">
-              <div className="flex items-start justify-between">
-                <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(204,255,0,0.3)]">
-                  <Sparkles className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <ExternalLink className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mt-4">Discover Agents</h3>
-              <p className="text-muted-foreground mt-2">Browse x402-enabled AI agents and explore the marketplace.</p>
-              <div className="flex items-center gap-2 mt-4 text-primary font-bold text-sm">
-                <span>Explore Now</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </Link>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          <Link href="/docs" className="block group">
-            <div className="rounded-2xl border border-border bg-card/50 p-6 hover:border-primary/20 hover:bg-card/80 transition-all">
-              <div className="flex items-start justify-between">
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-foreground" />
-                </div>
-                <ExternalLink className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mt-4">Documentation</h3>
-              <p className="text-muted-foreground mt-2">Learn about the x402 protocol, SDK integration, and more.</p>
-              <div className="flex items-center gap-2 mt-4 text-foreground font-bold text-sm group-hover:text-primary transition-colors">
-                <span>Read Docs</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </Link>
-        </motion.div>
       </div>
-
-      {/* MVP Notice */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="rounded-2xl border border-border bg-card/50 backdrop-blur-xl p-8 text-center"
-      >
-        <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6">
-          <GhostIcon variant="logo" size={40} className="text-primary" />
-        </div>
-        <h2 className="text-2xl font-black text-foreground mb-3">GhostSpeak MVP</h2>
-        <p className="text-muted-foreground max-w-xl mx-auto mb-6">
-          Welcome to the GhostSpeak protocol dashboard. We're currently on{' '}
-          <span className="text-primary font-bold">Devnet</span> with core features 
-          available for testing. Additional features are coming soon.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/x402/discover">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-[0_0_20px_rgba(204,255,0,0.2)]">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Explore Agents
-            </Button>
-          </Link>
-          <Link href="/docs/quickstart">
-            <Button variant="outline" className="font-bold">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Quick Start
-            </Button>
-          </Link>
-        </div>
-      </motion.div>
-
-      {/* Coming Soon Grid */}
-      <div>
-        <h3 className="text-lg font-bold text-foreground mb-4">Coming Soon</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {comingSoonFeatures.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 + i * 0.05 }}
-              className="rounded-2xl border border-border bg-card/30 p-5 opacity-60 hover:opacity-80 transition-opacity"
-            >
-              <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center bg-linear-to-br",
-                feature.color
+      
+      {/* Recent Activity Feed (Bottom Full Width) */}
+      <GlassTable
+        title="Recent Transactions"
+        actions={
+          <Button variant="ghost" size="sm" className="text-xs text-gray-400 hover:text-white">View All Transactions</Button>
+        }
+        data={[
+          { id: '#8X92...', type: 'Service Call', agent: 'GPT-4 Proxy Agent', amount: '0.05 SOL', status: 'Completed', time: '2m ago' },
+          { id: '#7A11...', type: 'Subscription', agent: 'Arbitrage Bot', amount: '1.20 SOL', status: 'Completed', time: '15m ago' },
+          { id: '#3M22...', type: 'Data Query', agent: 'Market Analyst', amount: '0.15 SOL', status: 'Pending', time: '1h ago' },
+        ]}
+        columns={[
+          { header: 'ID', accessorKey: 'id', className: 'font-mono text-gray-400' },
+          { header: 'Type', accessorKey: 'type', className: 'text-gray-300' },
+          { header: 'Agent', accessorKey: 'agent' },
+          { header: 'Amount', accessorKey: 'amount', className: 'font-mono' },
+          { 
+            header: 'Status', 
+            accessorKey: 'status', 
+            cell: (item) => (
+              <span className={cn(
+                "px-2 py-1 rounded-full text-xs",
+                item.status === 'Completed' ? "bg-green-500/10 text-green-400" : "bg-yellow-500/10 text-yellow-400"
               )}>
-                <feature.icon className={cn("w-5 h-5", feature.iconColor)} />
-              </div>
-              <h4 className="text-sm font-bold text-foreground mt-3">{feature.title}</h4>
-              <p className="text-xs text-muted-foreground mt-1">{feature.description}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+                {item.status}
+              </span>
+            )
+          },
+          { header: 'Time', accessorKey: 'time', className: 'text-right text-gray-500' },
+        ]}
+      />
     </div>
   )
 }

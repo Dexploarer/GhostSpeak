@@ -2,6 +2,8 @@
  * x402 AI Tools Marketplace Page
  *
  * Browse AI-ready x402 tools with integration snippets for OpenAI, Anthropic, and LangChain
+ *
+ * @module x402/ai-tools
  */
 
 'use client'

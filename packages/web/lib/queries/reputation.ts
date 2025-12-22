@@ -13,6 +13,8 @@ interface AgentAccountData {
   totalStaked?: bigint
   disputeCount?: number
   lastActivity?: bigint
+  capabilities?: string[]
+  name?: string
 }
 
 interface JobHistoryItem {
@@ -20,7 +22,9 @@ interface JobHistoryItem {
   category?: string
   earnings?: bigint
   completedAt?: Date
+  createdAt?: Date
   rating?: number
+  status?: string
 }
 
 interface EscrowHistoryItem {
@@ -42,6 +46,8 @@ interface WorkOrderData {
   completedAt?: bigint
   category?: string
   client?: Address
+  createdAt?: bigint
+  amount?: bigint
 }
 
 interface EscrowData {
@@ -50,22 +56,35 @@ interface EscrowData {
   amount?: bigint
   completedAt?: bigint
   disputeCount?: number
+  createdAt?: bigint
 }
 
+/**
+ * Comprehensive metrics representing an agent's reputation on the network.
+ */
 export interface ReputationMetrics {
+  /** Overall reputation score (0-100) based on weighted factors */
   score: number
+  /** Total number of jobs successfully completed */
   totalJobs: number
+  /** Percentage of jobs completed successfully without dispute (0-100) */
   successRate: number
+  /** Calculated tier based on score and volume */
   tier: 'NEWCOMER' | 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND'
+  /** Collection of earned achievements and badges */
   badges: Array<{
     type: string
     name: string
     description: string
     earnedAt: Date
   }>
+  /** Breakdown of reputation scores by job category */
   categoryScores: Record<string, number>
+  /** Calculated risk score (0-100), where higher means higher risk */
   riskScore: number
+  /** Overall trust classification level */
   trustLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'FLAGGED'
+  /** Historical performance data points */
   performanceHistory: Array<{
     period: string
     score: number
@@ -75,7 +94,13 @@ export interface ReputationMetrics {
 }
 
 /**
- * Hook to get comprehensive reputation data for an agent
+ * Hook to retrieve comprehensive reputation metrics for a specific agent.
+ * 
+ * Fetches on-chain data including job history, escrow performance, and account stats
+ * to calculate a detailed reputation profile.
+ * 
+ * @param agentAddress - The Solana public key of the agent to fetch
+ * @returns React Query result containing the @see ReputationMetrics
  */
 export function useAgentReputation(agentAddress: string) {
   return useQuery({
@@ -84,9 +109,11 @@ export function useAgentReputation(agentAddress: string) {
       try {
         const client = getGhostSpeakClient()
 
-        // Get agent account data
-        const agentModule = client.agents()
-        const agentAccount = await agentModule.module.getAgentByAddress(agentAddress as Address)
+        // Get agent account data - use getAllAgents and filter
+        const allAgents = await client.agents.getAllAgents()
+        const agentAccount = allAgents.find(
+          (agent: { address: Address }) => agent.address.toString() === agentAddress
+        )?.data as AgentAccountData | undefined
 
         if (!agentAccount) {
           throw new Error(`Agent not found: ${agentAddress}`)
@@ -163,24 +190,25 @@ async function getAgentJobHistory(agentAddress: string) {
   const client = getGhostSpeakClient()
 
   try {
-    // Get work orders where this agent is involved
-    const workOrdersModule = client.workOrders()
-    const allWorkOrders = await workOrdersModule.module.getAllWorkOrders()
+    // Get work orders where this agent is involved - use casted module
+    const workOrdersClient = client as unknown as { workOrders: { getAllWorkOrders: () => Promise<Array<{ address: Address; data?: WorkOrderData }>> } }
+    const allWorkOrders = await workOrdersClient.workOrders.getAllWorkOrders().catch(() => [] as Array<{ address: Address; data?: WorkOrderData }>)
 
     // Filter work orders for this agent
     const agentWorkOrders = allWorkOrders.filter(
       (wo: { data?: { agent?: Address } }) => wo.data?.agent?.toString() === agentAddress
     )
 
-    return agentWorkOrders.map((wo: { data?: WorkOrderData }) => ({
-      id: wo.address,
+    return agentWorkOrders.map((wo: { address: Address; data?: WorkOrderData }) => ({
+      id: wo.address.toString(),
       type: 'work_order',
       status: wo.data?.status || 'unknown',
+      completed: wo.data?.status === 'completed',
       createdAt: new Date(Number(wo.data?.createdAt || 0) * 1000),
-      completedAt: wo.data?.completedAt ? new Date(Number(wo.data.completedAt) * 1000) : null,
+      completedAt: wo.data?.completedAt ? new Date(Number(wo.data.completedAt) * 1000) : undefined,
       category: wo.data?.category || 'general',
       amount: wo.data?.amount || BigInt(0),
-    }))
+    })) as JobHistoryItem[]
   } catch (error) {
     console.warn('Failed to fetch job history:', error)
     return []
@@ -194,24 +222,25 @@ async function getAgentEscrowHistory(agentAddress: string) {
   const client = getGhostSpeakClient()
 
   try {
-    const escrowModule = client.escrow()
-    const allEscrows = await escrowModule.module.getAllEscrows()
+    const escrowClient = client as unknown as { escrow: { getAllEscrows: () => Promise<Array<{ address: Address; data?: EscrowData }>> } }
+    const allEscrows = await escrowClient.escrow.getAllEscrows().catch(() => [] as Array<{ address: Address; data?: EscrowData }>)
 
     // Filter escrows where this agent is involved
     const agentEscrows = allEscrows.filter(
       (escrow: { data?: { agent?: Address } }) => escrow.data?.agent?.toString() === agentAddress
     )
 
-    return agentEscrows.map((escrow: { data?: EscrowData }) => ({
-      id: escrow.address,
+    return agentEscrows.map((escrow: { address: Address; data?: EscrowData }) => ({
+      id: escrow.address.toString(),
       status: escrow.data?.status || 'unknown',
+      completed: escrow.data?.status === 'completed',
       amount: escrow.data?.amount || BigInt(0),
       createdAt: new Date(Number(escrow.data?.createdAt || 0) * 1000),
       completedAt: escrow.data?.completedAt
         ? new Date(Number(escrow.data.completedAt) * 1000)
-        : null,
+        : undefined,
       disputeCount: escrow.data?.disputeCount || 0,
-    }))
+    })) as EscrowHistoryItem[]
   } catch (error) {
     console.warn('Failed to fetch escrow history:', error)
     return []
@@ -225,22 +254,22 @@ async function getAgentMarketplaceActivity(agentAddress: string) {
   const client = getGhostSpeakClient()
 
   try {
-    const marketplaceModule = client.marketplace()
-    const allListings = await marketplaceModule.module.getAllServiceListings()
+    const marketplaceModule = client.marketplace
+    const allListings = await client.marketplace.getAllServiceListings()
 
-    // Filter listings created by this agent
-    const agentListings = allListings.filter(
-      (listing: { data?: { provider?: Address } }) =>
+    // Filter listings created by this agent - cast to any for type flexibility
+    const agentListings = (allListings as unknown as Array<{ address: Address; data?: { provider?: Address; isActive?: boolean; purchaseCount?: number } }>).filter(
+      (listing) =>
         listing.data?.provider?.toString() === agentAddress
     )
 
     return {
       totalListings: agentListings.length,
       activeListings: agentListings.filter(
-        (l: { data?: { isActive?: boolean } }) => l.data?.isActive
+        (l) => l.data?.isActive
       ).length,
       totalSales: agentListings.reduce(
-        (sum: number, l: { data?: { purchaseCount?: number } }) =>
+        (sum, l) =>
           sum + (l.data?.purchaseCount || 0),
         0
       ),
@@ -320,7 +349,7 @@ function calculateRiskScore(
   }
 
   // New agents with high scores are suspicious
-  if (totalJobs < 5 && agentAccount.reputationScore > 5000) {
+  if (totalJobs < 5 && (agentAccount.reputationScore ?? 0) > 5000) {
     riskScore += 30
   }
 
@@ -414,6 +443,7 @@ function generatePerformanceHistory(
   const monthlyStats: Record<string, { jobs: number; completed: number; avgQuality: number }> = {}
 
   for (const job of jobHistory) {
+    if (!job.createdAt) continue
     const month = job.createdAt.toISOString().substring(0, 7) // YYYY-MM
     if (!monthlyStats[month]) {
       monthlyStats[month] = { jobs: 0, completed: 0, avgQuality: 0 }
@@ -445,8 +475,7 @@ export function useReputationLeaderboard(category?: string, limit = 10) {
     queryKey: ['reputation', 'leaderboard', category, limit],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const agentsModule = client.agents()
-      const allAgents = await agentsModule.module.getAllAgents()
+      const allAgents = await client.agents.getAllAgents()
 
       // Filter by category if specified
       let filteredAgents = allAgents

@@ -59,9 +59,9 @@
     "deploy:mainnet": "anchor deploy --provider.cluster mainnet",
     "deploy:auto": "tsx scripts/automated-deployment.ts",
     "idl": "anchor idl build",
-    "idl:init": "anchor idl init CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4 --filepath target/idl/ghostspeak_marketplace.json",
-    "idl:upgrade": "anchor idl upgrade CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4 --filepath target/idl/ghostspeak_marketplace.json",
-    "idl:fetch": "anchor idl fetch CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4",
+    "idl:init": "anchor idl init GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9 --filepath target/idl/ghostspeak_marketplace.json",
+    "idl:upgrade": "anchor idl upgrade GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9 --filepath target/idl/ghostspeak_marketplace.json",
+    "idl:fetch": "anchor idl fetch GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9",
     "setup:devnet": "solana config set --url https://api.devnet.solana.com && solana airdrop 2",
     "setup:testnet": "solana config set --url https://api.testnet.solana.com && solana airdrop 10",
     "setup:mainnet": "solana config set --url https://api.mainnet-beta.solana.com",
@@ -133,6 +133,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.37.0",
     "vitest": "^3.2.4",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "@types/bun": "latest"
   }
 }

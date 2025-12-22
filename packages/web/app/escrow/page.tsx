@@ -30,7 +30,7 @@ import {
   CheckCircle,
   Loader2,
 } from 'lucide-react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import {
   useEscrows,
   useCompleteEscrow,
@@ -46,7 +46,7 @@ import { EscrowDetail } from '@/components/escrow/EscrowDetail'
 import { toast } from 'sonner'
 
 export default function EscrowPage(): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { address: publicKey, isConnected } = useWalletAddress()
   const [selectedEscrow, setSelectedEscrow] = React.useState<Escrow | null>(null)
   const [isDetailOpen, setIsDetailOpen] = React.useState(false)
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)

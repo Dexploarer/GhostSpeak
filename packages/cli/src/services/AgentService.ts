@@ -74,7 +74,7 @@ export class AgentService implements IAgentService {
    * Register a new AI agent
    */
   async register(params: RegisterAgentParams): Promise<Agent> {
-    this.deps.logger.info('AgentService.register called', { params })
+    this.deps.logger.info('AgentService.register called', { name: params.name })
 
     // Validate parameters
     await this.validateRegisterParams(params)
@@ -140,15 +140,33 @@ export class AgentService implements IAgentService {
         rpcEndpoint: 'https://api.devnet.solana.com',
       })
 
-      const registrationParams = {
-        agentType: 0,
-        metadataUri,
-        agentId: agent.id,
-        skipSimulation: true,
+      let signature: string
+      
+      if (params.merkleTree) {
+        this.deps.logger.info('Calling AgentModule.registerCompressed', { 
+            merkleTree: params.merkleTree,
+            agentId: agent.id 
+        })
+        
+        signature = await agentModule.registerCompressed(toSDKSigner(signer), {
+            agentType: 0,
+            metadataUri, 
+            agentId: agent.id,
+            merkleTree: params.merkleTree as Address
+        })
+      } else {
+        const registrationParams = {
+            agentType: 0,
+            name: agent.name,
+            description: agent.description,
+            metadataUri,
+            agentId: agent.id,
+            skipSimulation: true,
+        }
+        this.deps.logger.info('Calling AgentModule.register', { registrationParams })
+        signature = await agentModule.register(toSDKSigner(signer), registrationParams)
       }
-      this.deps.logger.info('Calling AgentModule.register', { registrationParams })
-
-      const signature = await agentModule.register(signer, registrationParams)
+      
       this.deps.logger.info('Agent registration transaction sent', { signature })
 
       if (!signature || typeof signature !== 'string') {

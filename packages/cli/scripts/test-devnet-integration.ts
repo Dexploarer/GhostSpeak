@@ -226,7 +226,7 @@ async function testCommand(
 async function runDevnetTests() {
   console.log(`${colors.bold}${colors.cyan}🚀 GhostSpeak Devnet Integration Tests${colors.reset}\n`)
   console.log(`${colors.yellow}Testing CLI commands against deployed program on devnet${colors.reset}`)
-  console.log(`${colors.dim}Program ID: GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX${colors.reset}\n`)
+  console.log(`${colors.dim}Program ID: GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9${colors.reset}\n`)
   
   // Setup test environment
   if (existsSync(TEST_CONFIG_DIR)) {
@@ -315,7 +315,7 @@ async function runDevnetTests() {
     'Escrow Creation',
     ['escrow', 'create'],
     [
-      'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX', // dummy provider address
+      'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9', // dummy provider address
       'Test Work Order',                              // title
       '0.05',                                        // amount
       'y'                                            // confirm
@@ -365,7 +365,7 @@ async function runDevnetTests() {
   // Generate report
   const report = {
     timestamp: new Date().toISOString(),
-    programId: 'GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX',
+    programId: 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9',
     network: 'devnet',
     summary: {
       total: totalTests,

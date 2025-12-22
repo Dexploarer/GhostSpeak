@@ -112,7 +112,7 @@ impl ReputationMetrics {
         let variance: u64 = self.payment_history_7d
             .iter()
             .map(|&v| {
-                let diff = if v > avg { v - avg } else { avg - v };
+                let diff = v.abs_diff(avg);
                 (diff * diff) / avg
             })
             .sum();

@@ -18,7 +18,7 @@ export function ManifestoSection() {
   return (
     <div ref={containerRef} className="relative min-h-screen flex items-center justify-center bg-primary text-primary-foreground overflow-hidden py-32">
       {/* Background Texture */}
-      <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-multiply pointer-events-none" />
+      <div className="absolute inset-0 opacity-10 bg-[url('/assets/noise.svg')] mix-blend-multiply pointer-events-none" />
       
       {/* Large background text for texture */}
       <div className="absolute inset-0 flex flex-col justify-between pointer-events-none overflow-hidden select-none opacity-5">
@@ -36,10 +36,10 @@ export function ManifestoSection() {
           viewport={{ once: true, margin: "-100px" }}
           className="text-center"
         >
-          <div className="text-[12px] md:text-sm font-bold uppercase tracking-[0.2em] mb-2 border-b-2 border-primary-foreground/20 inline-block pb-1">Core Philosophy</div>
+          <div className="text-[12px] md:text-sm font-bold uppercase tracking-[0.2em] mb-2 border-b-2 border-primary-foreground/20 inline-block pb-1">What Makes Us Different</div>
           <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-black tracking-tighter leading-[0.85] uppercase">
-            AI-First <br/>
-            <span className="text-background drop-shadow-xl stroke-primary-foreground">Design</span>
+            Trust <br/>
+            <span className="text-background drop-shadow-xl stroke-primary-foreground">Built In</span>
           </h2>
         </motion.div>
 
@@ -49,10 +49,10 @@ export function ManifestoSection() {
           className="md:text-left text-center md:pl-20"
         >
           <div className="inline-flex flex-col items-start">
-            <span className="bg-primary-foreground text-primary px-4 py-1 text-xl font-bold uppercase -rotate-2 transform mb-2">Network</span>
+            <span className="bg-primary-foreground text-primary px-4 py-1 text-xl font-bold uppercase -rotate-2 transform mb-2">Protection</span>
             <h3 className="text-5xl md:text-8xl font-black tracking-tighter w-full leading-[0.9]">
-              Lightning <br/>
-              <span className="text-transparent stroke-text-primary-foreground opacity-70">Fast</span>
+              Escrow <br/>
+              <span className="text-transparent stroke-text-primary-foreground opacity-70">Backed</span>
             </h3>
           </div>
         </motion.div>
@@ -63,13 +63,13 @@ export function ManifestoSection() {
           className="md:text-right text-center md:pr-20"
         >
           <div className="inline-flex flex-col items-end">
-            <span className="text-xl font-bold uppercase mb-2">Settlement</span>
+            <span className="text-xl font-bold uppercase mb-2">Reputation</span>
             <h3 className="text-5xl md:text-8xl font-black tracking-tighter leading-[0.9]">
-              <span className="text-7xl md:text-[8rem] mr-2">x402</span> <br/>
-              Payments
+              <span className="text-7xl md:text-[8rem] mr-2">On</span> <br/>
+              Chain
             </h3>
             <p className="mt-4 max-w-md text-lg md:text-xl font-medium opacity-80 leading-tight">
-              Micro-transactions settled in sub-seconds. The native currency for autonomous agent swarms.
+              Every payment builds verified reputation. Know who you&apos;re paying before you pay.
             </p>
           </div>
         </motion.div>
@@ -83,8 +83,8 @@ export function ManifestoSection() {
         >
           <div className="inline-block p-1 bg-primary-foreground transform rotate-1">
             <div className="bg-background border-2 border-primary-foreground p-8 md:p-12">
-              <h4 className="text-4xl md:text-6xl font-black uppercase mb-4 tracking-tight text-foreground">Maximum Security</h4>
-              <p className="font-mono text-muted-foreground uppercase tracking-widest text-sm">Powered by Solana Blockchain</p>
+              <h4 className="text-4xl md:text-6xl font-black uppercase mb-4 tracking-tight text-foreground">Dispute Resolution</h4>
+              <p className="font-mono text-muted-foreground uppercase tracking-widest text-sm">On-Chain Arbitration When Issues Arise</p>
             </div>
           </div>
         </motion.div>

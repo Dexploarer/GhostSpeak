@@ -15,7 +15,19 @@ import { GhostSpeakProvider } from '@/lib/hooks/useGhostSpeak'
 
 const WalletContextProvider = dynamic(
   () => import('@/components/wallet/WalletProvider').then((mod) => mod.WalletContextProvider),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center animate-pulse">
+             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-muted-foreground text-sm font-mono animate-pulse">Initializing Protocol...</p>
+        </div>
+      </div>
+    )
+  }
 )
 
 function makeQueryClient() {
@@ -90,7 +102,7 @@ export function Providers(props: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ReactQueryStreamedHydration>
-        <ThemeProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <WalletContextProvider>
             <GhostSpeakProvider network="devnet">
               {props.children}

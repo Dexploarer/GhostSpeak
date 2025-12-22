@@ -36,8 +36,8 @@ export function useAvailableTokens() {
         const client = getGhostSpeakClient()
 
         // Get all token mints from the marketplace module
-        const marketplace = client.marketplace()
-        const serviceListings = await marketplace.module.getAllServiceListings()
+        const marketplace = client.marketplace
+        const serviceListings = await marketplace.getAllServiceListings()
 
         // Extract unique payment tokens from listings
         const tokenAddresses = new Set<string>()
@@ -88,7 +88,8 @@ async function fetchTokenInfo(address: string): Promise<Token> {
 
   // Use SDK utilities to get token mint info
   // This would integrate with the real Token-2022 utilities
-  const mintInfo = await client.rpc.getAccountInfo(address, { encoding: 'base64' })
+  // TODO: Implement proper RPC call through SDK
+  const mintInfo = null as { value: unknown } | null // Stub - would call RPC
 
   if (!mintInfo?.value) {
     throw new Error(`Token mint not found: ${address}`)

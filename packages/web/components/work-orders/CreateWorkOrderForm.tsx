@@ -285,7 +285,7 @@ export function CreateWorkOrderForm({ onSuccess }: { onSuccess?: () => void }) {
                     {milestoneFields.map((field, index) => (
                       <div key={field.id} className="p-3 border rounded-lg space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label className="text-sm font-medium">Milestone {index + 1}</Label>
+                          <Label className="text-sm font-medium">{`Milestone ${index + 1}`}</Label>
                           <Button
                             type="button"
                             variant="outline"

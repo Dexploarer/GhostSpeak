@@ -71,6 +71,7 @@ export function registerRegisterCommand(parentCommand: Command): void {
             description: agentData.description,
             capabilities: agentData.capabilities,
             category: agentData.capabilities[0] || 'automation',
+            merkleTree: agentData.merkleTree,
             metadata: {
               serviceEndpoint: agentData.serviceEndpoint
             }

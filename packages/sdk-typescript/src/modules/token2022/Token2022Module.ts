@@ -1,5 +1,7 @@
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner, ReadonlyUint8Array, IInstruction } from '@solana/kit'
+import type { TransactionSigner, ReadonlyUint8Array, Instruction } from '@solana/kit'
+// Type alias for backward compatibility with @solana/kit v2
+type IInstruction = Instruction
 import { generateKeyPairSigner } from '@solana/signers'
 import { BaseModule } from '../../core/BaseModule.js'
 import {

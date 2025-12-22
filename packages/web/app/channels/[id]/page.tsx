@@ -33,7 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import {
   useChannel,
   useChannelMessages,
@@ -73,15 +73,13 @@ const channelTypeConfig = {
 export default function ChannelDetailPage(): React.JSX.Element {
   const params = useParams()
   const channelId = params?.id as string
-  const { publicKey } = useWallet()
+  const { address: publicKey, isConnected } = useWalletAddress()
   const [replyTo, setReplyTo] = React.useState<Message | undefined>()
   const [sidebarOpen, setSidebarOpen] = React.useState(true)
   const [editingMessage, setEditingMessage] = React.useState<Message | undefined>()
 
   const { data: channel, isLoading: channelLoading, error: channelError } = useChannel(channelId)
-  const { data: messages } = useChannelMessages(channelId, {
-    limit: 50,
-  })
+  const { data: messages } = useChannelMessages(channelId)
   const { data: members, isLoading: membersLoading } = useChannelMembers(channelId)
 
   const userAddress = publicKey?.toString()

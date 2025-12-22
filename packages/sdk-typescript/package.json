@@ -52,6 +52,7 @@
     "dist"
   ],
   "scripts": {
+    "generate": "codama generate codama.config.ts",
     "build": "bun run build:wasm && tsup",
     "build:wasm": "bun run wasm:build",
     "build:dev": "tsup --watch",

@@ -10,11 +10,13 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   Activity,
-  Zap
+  Zap,
+  Shield,
+  DollarSign,
+  Clock
 } from 'lucide-react'
 
 export default function AnalyticsPage() {
-  // Mock data
   const revenueData = [
     { name: 'Mon', value: 120 },
     { name: 'Tue', value: 132 },
@@ -38,8 +40,8 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-8">
       <PageHeader 
-        title="Performance Analytics" 
-        description="Deep insights into agent performance and network utilization"
+        title="x402 Analytics" 
+        description="Performance insights for your agents and transactions"
       />
 
       {/* Top Stats Row */}
@@ -48,84 +50,126 @@ export default function AnalyticsPage() {
           label="Avg Response Time" 
           value="145" 
           unit="ms" 
-          trend="-5%" 
+          trend="-12%" 
           trendUp={true} 
-          icon={Activity} 
-          iconColor="text-blue-400" 
+          icon={Clock} 
+          iconColor="text-blue-500" 
+        />
+        <StatsCard 
+          label="Total Volume" 
+          value="12,450" 
+          unit="USDC" 
+          trend="+23.5%" 
+          trendUp={true} 
+          icon={DollarSign} 
+          iconColor="text-green-500" 
+        />
+        <StatsCard 
+          label="x402 Requests" 
+          value="85.2k" 
+          unit="calls" 
+          trend="+18%" 
+          trendUp={true} 
+          icon={Zap} 
+          iconColor="text-primary" 
         />
         <StatsCard 
           label="Success Rate" 
           value="99.2" 
           unit="%" 
-          trend="+0.1%" 
+          trend="+0.5%" 
           trendUp={true} 
-          icon={Zap} 
-          iconColor="text-green-400" 
-        />
-        <StatsCard 
-          label="Total Errors" 
-          value="24" 
-          unit="errs" 
-          trend="+2" 
-          trendUp={false} 
-          icon={ArrowDownRight} 
-          iconColor="text-red-400" 
-        />
-        <StatsCard 
-          label="Network Load" 
-          value="42" 
-          unit="%" 
-          trend="Stable" 
-          trendUp={true} 
-          icon={BarChart3} 
-          iconColor="text-lime-400" 
+          icon={Activity} 
+          iconColor="text-cyan-500" 
         />
       </div>
 
-      {/* Charts Row 1 */}
+      {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActivityChart 
-          title="Revenue Growth (7D)" 
+          title="Revenue (USDC)" 
           data={revenueData} 
-          color="#eab308" // yellow
-          height={300}
+          height={280}
         />
         <ActivityChart 
-          title="Request Volume (7D)" 
+          title="x402 Requests" 
           data={requestsData} 
-          type="bar"
-          color="#06b6d4" // cyan
-          height={300}
+          height={280}
         />
       </div>
 
-      {/* Detailed Metrics Section */}
+      {/* Trust Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <GlassCard className="lg:col-span-2 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Regional Traffic Distribution</h3>
-          <div className="h-[200px] flex items-center justify-center border border-dashed border-white/10 rounded-lg bg-black/20">
-            <p className="text-gray-500 text-sm">Map Visualization Placeholder</p>
+        <GlassCard className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+          <div className="flex items-center gap-3 mb-4">
+            <Shield className="w-6 h-6 text-green-500" />
+            <h3 className="font-bold text-foreground">Escrow Stats</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total Escrowed</span>
+              <span className="font-bold text-foreground">8,450 USDC</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Released This Week</span>
+              <span className="font-bold text-green-500">2,340 USDC</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Dispute Rate</span>
+              <span className="font-bold text-foreground">0.8%</span>
+            </div>
           </div>
         </GlassCard>
 
         <GlassCard className="p-6">
-           <h3 className="text-lg font-semibold text-white mb-4">Top Performing Agents</h3>
-           <div className="space-y-4">
-              {[1,2,3,4].map((i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 font-bold text-xs">
-                      #{i}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-200">GPT-4 Proxy</p>
-                      <p className="text-xs text-gray-500">2.4k requests</p>
-                    </div>
-                  </div>
-                  <span className="text-green-400 text-sm font-mono">+12%</span>
+          <div className="flex items-center gap-3 mb-4">
+            <BarChart3 className="w-6 h-6 text-primary" />
+            <h3 className="font-bold text-foreground">Top Agents</h3>
+          </div>
+          <div className="space-y-3">
+            {[
+              { name: 'DataAnalyst.ai', revenue: '2,450 USDC', change: '+12%' },
+              { name: 'CodeReviewer.ai', revenue: '1,890 USDC', change: '+8%' },
+              { name: 'ContentGen.ai', revenue: '1,240 USDC', change: '+25%' },
+            ].map((agent) => (
+              <div key={agent.name} className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
+                <span className="text-sm text-foreground">{agent.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono text-foreground">{agent.revenue}</span>
+                  <span className="text-xs text-green-500 flex items-center">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {agent.change}
+                  </span>
                 </div>
-              ))}
-           </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Activity className="w-6 h-6 text-cyan-500" />
+            <h3 className="font-bold text-foreground">Reputation</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="text-center py-4">
+              <p className="text-4xl font-bold text-foreground">4.8</p>
+              <p className="text-sm text-muted-foreground">Average Rating</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">5 Star</span>
+                <span className="text-foreground">85%</span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary w-[85%]" />
+              </div>
+            </div>
+            <div className="flex justify-between text-sm pt-2 border-t border-border">
+              <span className="text-muted-foreground">Total Reviews</span>
+              <span className="font-bold text-foreground">1,247</span>
+            </div>
+          </div>
         </GlassCard>
       </div>
     </div>

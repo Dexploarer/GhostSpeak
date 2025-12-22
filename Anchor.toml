@@ -8,13 +8,13 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-ghostspeak_marketplace = "4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK"
+ghostspeak_marketplace = "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9"
 
 [programs.localnet]
-ghostspeak_marketplace = "4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK"
+ghostspeak_marketplace = "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9"
 
 [programs.mainnet]
-ghostspeak_marketplace = "4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK"
+ghostspeak_marketplace = "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9"
 
 [registry]
 url = "https://api.apr.dev"

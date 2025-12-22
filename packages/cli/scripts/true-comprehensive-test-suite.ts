@@ -54,7 +54,7 @@ const __dirname = dirname(__filename)
 const DEVNET_RPC = 'https://api.devnet.solana.com'
 const DEVNET_WSS = 'wss://api.devnet.solana.com'
 const TEST_WALLET_PATH = join(homedir(), '.ghostspeak', 'wallets', 'test-wallet.json')
-const GHOSTSPEAK_PROGRAM_ID = address('GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX')
+const GHOSTSPEAK_PROGRAM_ID = address('GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9')
 
 // ANSI color codes
 const colors = {

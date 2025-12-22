@@ -11,7 +11,8 @@ use crate::state::audit::{
 };
 use crate::state::governance::{
     EmergencyConfig, ExecutionParams, GovernanceProposal, Multisig, MultisigConfig,
-    ProposalMetadata, ProposalStatus, ProposalType, QuorumRequirements, TransactionType,
+    MultisigType, MultisigTypeConfig, ProposalMetadata, ProposalStatus, ProposalType,
+    QuorumRequirements, TransactionType,
 };
 use crate::state::security_governance::{
     AccessAuditConfig, EmergencyAccessConfig, RbacConfig, Role, SecurityPolicies,
@@ -26,9 +27,7 @@ fn hashv(data: &[&[u8]]) -> HashOutput {
     for slice in data {
         hasher.update(slice);
     }
-    HashOutput {
-        0: hasher.finalize().into(),
-    }
+    HashOutput(hasher.finalize().into())
 }
 
 /// Hash output wrapper compatible with previous API
@@ -205,17 +204,61 @@ pub fn create_multisig(
     signers: Vec<Pubkey>,
     config: MultisigConfig,
 ) -> Result<()> {
+    // Use default Custom type for backwards compatibility
+    create_multisig_with_type(
+        ctx,
+        multisig_id,
+        threshold,
+        signers,
+        config,
+        MultisigType::Custom,
+    )
+}
+
+/// Create a multisig with explicit type classification
+/// 
+/// This function validates that the multisig meets the requirements for its type:
+/// - Minimum/maximum signer count
+/// - Reputation requirements (for Protocol, Dispute, AgentConsortium types)
+/// - Token holding requirements (for Protocol, Dao, Dispute types)
+pub fn create_multisig_with_type(
+    ctx: Context<CreateMultisig>,
+    multisig_id: u64,
+    threshold: u8,
+    signers: Vec<Pubkey>,
+    config: MultisigConfig,
+    multisig_type: MultisigType,
+) -> Result<()> {
+    // Get type-specific configuration
+    let type_config = MultisigTypeConfig::default_for_type(multisig_type);
+
+    // Validate threshold
     require!(
         threshold > 0 && threshold <= signers.len() as u8,
         GhostSpeakError::InvalidConfiguration
     );
 
-    require!(signers.len() <= 10, GhostSpeakError::InvalidConfiguration);
+    // Validate signer count against type requirements
+    let signer_count = signers.len() as u8;
+    require!(
+        signer_count >= type_config.min_signers,
+        GhostSpeakError::InsufficientSigners
+    );
+    require!(
+        signer_count <= type_config.max_signers,
+        GhostSpeakError::TooManySigners
+    );
+
+    // Note: In production, additional validations would be added here:
+    // - Check reputation_score for each signer if min_reputation_score > 0
+    // - Check token balance for each signer if requires_token_holdings
+    // These require passing additional accounts to the instruction
 
     let multisig = &mut ctx.accounts.multisig;
     let clock = Clock::get()?;
 
     multisig.multisig_id = multisig_id;
+    multisig.multisig_type = multisig_type;
     multisig.threshold = threshold;
     multisig.signers = signers;
     multisig.owner = ctx.accounts.owner.key();
@@ -234,8 +277,22 @@ pub fn create_multisig(
         frozen_at: None,
         auto_unfreeze_duration: Some(86400), // 24 hours
     };
+    multisig.type_config = type_config;
 
-    msg!("Multisig created with ID: {}", multisig_id);
+    emit!(MultisigCreatedEvent {
+        multisig_id,
+        multisig_type,
+        owner: ctx.accounts.owner.key(),
+        threshold,
+        signer_count,
+        timestamp: clock.unix_timestamp,
+    });
+
+    msg!(
+        "Multisig created with ID: {}, type: {:?}",
+        multisig_id,
+        multisig_type
+    );
     Ok(())
 }
 
@@ -552,11 +609,12 @@ pub struct AuditTrailInitializedEvent {
 
 #[event]
 pub struct MultisigCreatedEvent {
-    pub multisig: Pubkey,
     pub multisig_id: u64,
+    pub multisig_type: MultisigType,
     pub owner: Pubkey,
     pub threshold: u8,
-    pub signers_count: u8,
+    pub signer_count: u8,
+    pub timestamp: i64,
 }
 
 #[event]

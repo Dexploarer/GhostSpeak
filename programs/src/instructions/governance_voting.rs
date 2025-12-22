@@ -6,9 +6,11 @@
  */
 
 use crate::state::governance::{
-    DelegationInfo, DelegationScope, ExecutionQueue, GovernanceProposal, Multisig, ProposalStatus,
-    Vote, VoteChoice,
+    calculate_enhanced_voting_power, DelegationInfo, DelegationScope, ExecutionQueue,
+    GovernanceProposal, Multisig, ProposalStatus, Vote, VoteChoice, VotingPowerBreakdown,
+    VotingPowerInput, MIN_VOTING_POWER,
 };
+use crate::state::staking::StakingAccount;
 use crate::*;
 use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
 use anchor_spl::token::TokenAccount;
@@ -17,7 +19,7 @@ use anchor_spl::token::TokenAccount;
 // INSTRUCTION CONTEXTS
 // =====================================================
 
-/// Cast a vote on a governance proposal
+/// Cast a vote on a governance proposal (legacy - token balance only)
 #[derive(Accounts)]
 pub struct CastVote<'info> {
     #[account(mut)]
@@ -31,6 +33,28 @@ pub struct CastVote<'info> {
 
     /// Optional: Delegate's token account if voting as a delegate
     pub delegate_token_account: Option<Account<'info, TokenAccount>>,
+}
+
+/// Cast a vote with staking multiplier
+/// Simplified context to avoid stack overflow
+#[derive(Accounts)]
+pub struct CastVoteEnhanced<'info> {
+    #[account(mut)]
+    pub proposal: Account<'info, GovernanceProposal>,
+
+    #[account(mut)]
+    pub voter: Signer<'info>,
+
+    /// Voter's GHOST token account for voting power calculation
+    pub voter_token_account: Account<'info, TokenAccount>,
+
+    /// Voter's staking account for lockup multiplier
+    #[account(
+        seeds = [b"staking", voter.key().as_ref()],
+        bump = staking_account.bump,
+        constraint = staking_account.owner == voter.key() @ GhostSpeakError::InvalidAgentOwner
+    )]
+    pub staking_account: Account<'info, StakingAccount>,
 }
 
 /// Delegate voting power to another account
@@ -166,9 +190,30 @@ pub fn cast_vote(
 
     require!(!already_voted, GhostSpeakError::AlreadyVoted);
 
-    // Calculate voting power from token balance
-    let voting_power = ctx.accounts.voter_token_account.amount;
-    require!(voting_power > 0, GhostSpeakError::InsufficientVotingPower);
+    // Build voting power input for enhanced calculation
+    // In production, these would be fetched from:
+    // - Agent account for reputation_score and x402 metrics
+    // - Staking account for staked_balance and lockup_duration
+    // - Delegation accounts for delegated power
+    let voting_input = VotingPowerInput {
+        token_balance: ctx.accounts.voter_token_account.amount,
+        staked_balance: 0, // Would fetch from staking account
+        lockup_duration: 0, // Would fetch from staking account
+        reputation_score: 0, // Would fetch from agent account if verified
+        is_verified_agent: false, // Would check x402_total_calls > 0
+        x402_volume_30d: 0, // Would fetch from agent account
+        delegated_power: 0, // Would fetch from delegation accounts
+        delegated_out: 0, // Would fetch from delegation accounts
+    };
+
+    // Calculate enhanced voting power
+    let power_breakdown = calculate_enhanced_voting_power(&voting_input);
+    let voting_power = power_breakdown.effective_power;
+
+    require!(
+        power_breakdown.can_vote && voting_power >= MIN_VOTING_POWER,
+        GhostSpeakError::InsufficientVotingPower
+    );
 
     // Check for delegation
     let delegation_info = if let Some(delegate_token_account) = &ctx.accounts.delegate_token_account
@@ -253,6 +298,90 @@ pub fn cast_vote(
         proposal_id
     );
 
+    Ok(())
+}
+
+/// Cast a vote with staking lockup multiplier
+/// 
+/// Uses token balance + staked tokens with lockup multiplier for voting power.
+/// For full x402 voting power (including reputation), use the SDK's calculation.
+pub fn cast_vote_enhanced(
+    ctx: Context<CastVoteEnhanced>,
+    vote_choice: VoteChoice,
+    reasoning: Option<String>,
+) -> Result<()> {
+    let clock = Clock::get()?;
+    let proposal = &mut ctx.accounts.proposal;
+    let voter_key = ctx.accounts.voter.key();
+    let staking = &ctx.accounts.staking_account;
+
+    // Validate voting period
+    require!(
+        proposal.status == ProposalStatus::Active,
+        GhostSpeakError::VotingNotStarted
+    );
+    require!(
+        clock.unix_timestamp >= proposal.voting_starts_at,
+        GhostSpeakError::VotingNotStarted
+    );
+    require!(
+        clock.unix_timestamp <= proposal.voting_ends_at,
+        GhostSpeakError::VotingEnded
+    );
+
+    // Check if already voted
+    let already_voted = proposal
+        .voting_results
+        .individual_votes
+        .iter()
+        .any(|v| v.voter == voter_key);
+    require!(!already_voted, GhostSpeakError::AlreadyVoted);
+
+    // Calculate voting power: token balance + staked with lockup multiplier
+    let token_balance = ctx.accounts.voter_token_account.amount;
+    let _lockup_remaining = staking.remaining_lockup(clock.unix_timestamp);
+    let multiplier = StakingAccount::lockup_multiplier_from_tier(staking.lockup_tier);
+    
+    // Staking power = staked_amount * multiplier / 10000
+    let staking_power = (staking.staked_amount as u128 * multiplier as u128 / 10000) as u64;
+    let voting_power = token_balance.saturating_add(staking_power);
+
+    require!(voting_power >= MIN_VOTING_POWER, GhostSpeakError::InsufficientVotingPower);
+
+    // Record vote
+    let vote = Vote {
+        voter: voter_key,
+        choice: vote_choice,
+        voting_power,
+        voted_at: clock.unix_timestamp,
+        reasoning,
+        delegation_info: None,
+    };
+
+    // Update counts
+    match vote_choice {
+        VoteChoice::For => proposal.voting_results.votes_for += voting_power,
+        VoteChoice::Against => proposal.voting_results.votes_against += voting_power,
+        VoteChoice::Abstain => proposal.voting_results.votes_abstain += voting_power,
+    }
+    proposal.voting_results.individual_votes.push(vote);
+    proposal.voting_results.total_voting_power += voting_power;
+
+    // Emit event
+    emit!(VoteCastEnhancedEvent {
+        proposal: proposal.key(),
+        voter: voter_key,
+        vote_choice,
+        voting_power,
+        token_power: token_balance,
+        reputation_power: 0,
+        volume_power: 0,
+        staking_power,
+        lockup_multiplier: multiplier,
+        timestamp: clock.unix_timestamp,
+    });
+
+    msg!("Vote cast with {} power ({}x lockup)", voting_power, multiplier as f64 / 10000.0);
     Ok(())
 }
 
@@ -520,7 +649,10 @@ pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
 // HELPER FUNCTIONS
 // =====================================================
 
-/// Calculate voting power based on token balance and lockup duration
+/// Calculate voting power based on token balance and lockup duration (legacy)
+/// 
+/// DEPRECATED: Use calculate_enhanced_voting_power() for full x402 marketplace integration
+/// This function is kept for backwards compatibility with existing tests
 pub fn calculate_voting_power(
     token_balance: u64,
     lockup_duration: Option<i64>,
@@ -541,6 +673,23 @@ pub fn calculate_voting_power(
     Ok(voting_power)
 }
 
+/// Calculate enhanced voting power using the x402 marketplace formula
+/// 
+/// This is the recommended voting power calculation that includes:
+/// - Token balance (40% weight, square-root voting)
+/// - Agent reputation (25% weight, verified agents only)
+/// - x402 payment volume (20% weight, 30-day rolling)
+/// - Staked tokens with lockup multiplier (15% weight)
+/// 
+/// # Arguments
+/// * `input` - VotingPowerInput struct with all voting power factors
+/// 
+/// # Returns
+/// * VotingPowerBreakdown with detailed component breakdown and effective power
+pub fn calculate_voting_power_enhanced(input: &VotingPowerInput) -> VotingPowerBreakdown {
+    calculate_enhanced_voting_power(input)
+}
+
 // =====================================================
 // EVENTS
 // =====================================================
@@ -551,6 +700,20 @@ pub struct VoteCastEvent {
     pub voter: Pubkey,
     pub vote_choice: VoteChoice,
     pub voting_power: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct VoteCastEnhancedEvent {
+    pub proposal: Pubkey,
+    pub voter: Pubkey,
+    pub vote_choice: VoteChoice,
+    pub voting_power: u64,
+    pub token_power: u64,
+    pub reputation_power: u64,
+    pub volume_power: u64,
+    pub staking_power: u64,
+    pub lockup_multiplier: u16,
     pub timestamp: i64,
 }
 

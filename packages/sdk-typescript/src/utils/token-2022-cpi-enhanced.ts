@@ -5,7 +5,7 @@
  * and full support for all extension types including confidential transfers.
  */
 
-import type { Address, IInstruction, TransactionSigner } from '@solana/kit'
+import type { Address, Instruction, TransactionSigner } from '@solana/kit'
 import { address as toAddress } from '@solana/addresses'
 
 // SPL Token-2022 program address (well-known constant)
@@ -243,7 +243,7 @@ export interface ConfidentialTransferParams {
  */
 export function createInitializeMintInstruction(
   params: CreateMintInstructionParams
-): IInstruction {
+): Instruction {
   // Manual serialization for Token-2022 InitializeMint
   const data = new Uint8Array(67) // 1 + 1 + 32 + 1 + 32
   let offset = 0
@@ -286,7 +286,7 @@ export function createInitializeMintInstruction(
  */
 export function createMintToInstruction(
   params: MintToInstructionParams
-): IInstruction {
+): Instruction {
   // Manual serialization
   const data = new Uint8Array(9) // 1 + 8
   let offset = 0
@@ -313,7 +313,7 @@ export function createMintToInstruction(
  */
 export function createTransferCheckedInstruction(
   params: TransferInstructionParams
-): IInstruction {
+): Instruction {
   // Manual serialization
   const data = new Uint8Array(10) // 1 + 8 + 1
   let offset = 0
@@ -347,7 +347,7 @@ export function createTransferCheckedInstruction(
  */
 export function createTransferCheckedWithFeeInstruction(
   params: TransferWithFeeParams
-): IInstruction {
+): Instruction {
   // Manual serialization for TransferCheckedWithFee
   const data = new Uint8Array(19) // 1 + 1 + 8 + 1 + 8
   let offset = 0
@@ -386,7 +386,7 @@ export function createTransferCheckedWithFeeInstruction(
  */
 export function createConfidentialTransferInstruction(
   params: ConfidentialTransferParams
-): IInstruction {
+): Instruction {
   // Manual serialization
   const data = new Uint8Array(2) // 1 + 1
   data[0] = TokenInstruction.ConfidentialTransferExtension
@@ -419,7 +419,7 @@ export function createInitializeAccountInstruction(
   account: Address,
   mint: Address,
   owner: Address
-): IInstruction {
+): Instruction {
   const data = new Uint8Array(1)
   data[0] = TokenInstruction.InitializeAccount
   
@@ -442,7 +442,7 @@ export function createCloseAccountInstruction(
   account: Address,
   destination: Address,
   owner: TransactionSigner
-): IInstruction {
+): Instruction {
   const data = new Uint8Array(1)
   data[0] = TokenInstruction.CloseAccount
   
@@ -462,7 +462,7 @@ export function createCloseAccountInstruction(
  */
 export function createAssociatedTokenAccountInstruction(
   params: CreateAssociatedTokenAccountParams
-): IInstruction {
+): Instruction {
   // ATA creation doesn't need instruction data
   return {
     programAddress: ATA_PROGRAM_ADDRESS,
@@ -580,8 +580,8 @@ export function createInitializeMintWithExtensionsInstructions(
       auditorElgamalPubkey?: Uint8Array
     }
   }
-): IInstruction[] {
-  const instructions: IInstruction[] = []
+): Instruction[] {
+  const instructions: Instruction[] = []
   
   // Add extension initialization instructions before mint initialization
   if (extensions.transferFeeConfig) {
@@ -628,7 +628,7 @@ function createInitializeTransferFeeConfigInstruction(
     transferFeeBasisPoints: number
     maximumFee: bigint
   }
-): IInstruction {
+): Instruction {
   // Manual serialization
   const data = new Uint8Array(78) // 1 + 1 + 1 + 32 + 1 + 32 + 2 + 8
   let offset = 0
@@ -672,7 +672,7 @@ function createInitializeTransferFeeConfigInstruction(
 function createInitializeDefaultAccountStateInstruction(
   mint: Address,
   state: 'initialized' | 'frozen'
-): IInstruction {
+): Instruction {
   const data = new Uint8Array(3)
   data[0] = TokenInstruction.DefaultAccountStateExtension
   data[1] = 0 // InitializeDefaultAccountState
@@ -697,7 +697,7 @@ function createInitializeConfidentialTransferMintInstruction(
     autoApproveNewAccounts: boolean
     auditorElgamalPubkey?: Uint8Array
   }
-): IInstruction {
+): Instruction {
   // Calculate data size based on optional fields
   const hasAuditor = config.auditorElgamalPubkey !== undefined
   const dataSize = 3 + 1 + 32 + 1 + (hasAuditor ? 32 : 0)

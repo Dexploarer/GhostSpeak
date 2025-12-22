@@ -4,6 +4,7 @@ import React from 'react'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { GlassTable } from '@/components/dashboard/shared/GlassTable'
 import { Zap, Activity, ArrowUpRight, Wallet } from 'lucide-react'
+import { CrossmintPaymentManager } from '@/components/payments/CrossmintPaymentManager'
 
 export default function PaymentsPage() {
   const transactions = [
@@ -46,51 +47,67 @@ export default function PaymentsPage() {
                     <Zap className="w-5 h-5" />
                  </div>
                  <div>
-                    <p className="text-sm text-gray-400">Total Spent</p>
-                    <p className="text-lg font-bold text-white">4.2 SOL</p>
+                    <p className="text-sm text-muted-foreground">Total Spent</p>
+                    <p className="text-lg font-bold text-foreground">4.2 SOL</p>
                  </div>
               </div>
-              <div className="h-8 w-px bg-white/10" />
+              <div className="h-8 w-px bg-border" />
               <div className="flex items-center gap-3">
                  <div className="p-2 rounded-lg bg-green-500/20 text-green-400">
                     <ArrowUpRight className="w-5 h-5" />
                  </div>
                  <div>
-                    <p className="text-sm text-gray-400">Total Earned</p>
-                    <p className="text-lg font-bold text-white">12.8 SOL</p>
+                    <p className="text-sm text-muted-foreground">Total Earned</p>
+                    <p className="text-lg font-bold text-foreground">12.8 SOL</p>
                  </div>
               </div>
            </div>
         </GlassCard>
         
-        <GlassCard className="p-6 flex items-center justify-center relative overflow-hidden">
-           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.05]" />
-           <div className="text-center relative z-10">
-              <Activity className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">Payment Activity Graph Placeholder</p>
-           </div>
-        </GlassCard>
+        {/* Graph Placeholder -> Activity */}
+         <GlassCard className="p-6 flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.05]" />
+            <div className="text-center relative z-10">
+               <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+               <p className="text-muted-foreground">Payment Activity</p>
+            </div>
+         </GlassCard>
       </div>
 
-      <GlassTable 
-        title="Recent Transactions"
-        data={transactions}
-        columns={[
-          { header: 'Transaction ID', accessorKey: 'id', className: 'font-mono text-gray-400' },
-          { header: 'Service', accessorKey: 'service', className: 'text-gray-300' },
-          { header: 'Date', accessorKey: 'date', className: 'text-gray-500' },
-          { 
-            header: 'Amount', 
-            accessorKey: 'amount', 
-            className: 'text-right font-mono',
-            cell: (item) => (
-              <span className={item.amount.startsWith('+') ? 'text-green-400' : 'text-red-400'}>
-                {item.amount}
-              </span>
-            )
-          }
-        ]}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Agent Payment Methods */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
+            Agent Payment Methods
+          </h2>
+          <CrossmintPaymentManager />
+        </div>
+
+        {/* Recent Transactions */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-foreground">Overview</h2>
+          <GlassTable 
+            title="Recent Transactions"
+            data={transactions}
+            columns={[
+              { header: 'Transaction ID', accessorKey: 'id', className: 'font-mono text-muted-foreground' },
+              { header: 'Service', accessorKey: 'service', className: 'text-foreground' },
+              { header: 'Date', accessorKey: 'date', className: 'text-muted-foreground' },
+              { 
+                header: 'Amount', 
+                accessorKey: 'amount', 
+                className: 'text-right font-mono',
+                cell: (item) => (
+                  <span className={item.amount.startsWith('+') ? 'text-green-500' : 'text-red-500'}>
+                    {item.amount}
+                  </span>
+                )
+              }
+            ]}
+          />
+        </div>
+      </div>
     </div>
   )
 }

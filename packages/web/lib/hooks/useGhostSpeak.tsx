@@ -9,7 +9,7 @@
 
 import React, { createContext, useContext, useMemo, useCallback } from 'react'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
-import { createGhostSpeakClient, type GhostSpeakClient, type NetworkType } from '../ghostspeak/client'
+import { createGhostSpeakClient, type GhostSpeakClient, type NetworkType, type Address } from '../ghostspeak/client'
 
 // Re-export types
 export type { GhostSpeakClient, NetworkType }
@@ -100,12 +100,12 @@ export function useAgents() {
   
   const getUserAgents = useCallback(async () => {
     if (!client || !publicKey) return []
-    return client.agents.getUserAgents(publicKey as `${string}`)
+    return client.agents.getUserAgents(publicKey as Address)
   }, [client, publicKey])
   
   const getAgent = useCallback(async (address: string) => {
     if (!client) return null
-    return client.agents.getAgentAccount(address as `${string}`)
+    return client.agents.getAgentAccount(address as Address)
   }, [client])
   
   return {
@@ -130,12 +130,12 @@ export function useEscrows() {
   
   const getEscrowsByBuyer = useCallback(async () => {
     if (!client || !publicKey) return []
-    return client.escrow.getEscrowsByBuyer(publicKey as `${string}`)
+    return client.escrow.getEscrowsByBuyer(publicKey as Address)
   }, [client, publicKey])
   
   const getEscrowsBySeller = useCallback(async () => {
     if (!client || !publicKey) return []
-    return client.escrow.getEscrowsBySeller(publicKey as `${string}`)
+    return client.escrow.getEscrowsBySeller(publicKey as Address)
   }, [client, publicKey])
   
   return {
@@ -155,12 +155,12 @@ export function useMarketplace() {
   
   const getServiceListing = useCallback(async (address: string) => {
     if (!client) return null
-    return client.marketplace.getServiceListing(address as `${string}`)
+    return client.marketplace.getServiceListing(address as Address)
   }, [client])
   
   const getJobPosting = useCallback(async (address: string) => {
     if (!client) return null
-    return client.marketplace.getJobPosting(address as `${string}`)
+    return client.marketplace.getJobPosting(address as Address)
   }, [client])
   
   return {
@@ -184,12 +184,12 @@ export function useGovernance() {
   
   const getProposalsByProposer = useCallback(async () => {
     if (!client || !publicKey) return []
-    return client.governance.getProposalsByProposer(publicKey as `${string}`)
+    return client.governance.getProposalsByProposer(publicKey as Address)
   }, [client, publicKey])
   
   const getProposal = useCallback(async (address: string) => {
     if (!client) return null
-    return client.governance.getProposal(address as `${string}`)
+    return client.governance.getProposal(address as Address)
   }, [client])
   
   return {
@@ -219,12 +219,12 @@ export function useChannels() {
   
   const getChannelsByCreator = useCallback(async () => {
     if (!client || !publicKey) return []
-    return client.channels.getChannelsByCreator(publicKey as `${string}`)
+    return client.channels.getChannelsByCreator(publicKey as Address)
   }, [client, publicKey])
   
   const getChannelMessages = useCallback(async (channelAddress: string) => {
     if (!client) return []
-    return client.channels.getChannelMessages(channelAddress as `${string}`)
+    return client.channels.getChannelMessages(channelAddress as Address)
   }, [client])
   
   return {

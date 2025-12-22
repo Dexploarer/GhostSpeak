@@ -15,7 +15,7 @@ pub mod audit;
 pub mod bulk_deals;
 pub mod channel;
 pub mod commerce;
-pub mod compliance;
+// pub mod compliance; // REMOVED: Unused - saves ~2100 lines
 pub mod dispute;
 pub mod escrow;
 pub mod extensions;
@@ -28,9 +28,10 @@ pub mod pricing;
 pub mod protocol_structures;
 pub mod replication;
 pub mod reputation;
-pub mod risk_management;
+// pub mod risk_management; // REMOVED: Unused - saves ~1950 lines
 pub mod royalty;
 pub mod security_governance;
+pub mod staking;
 pub mod user_registry;
 pub mod work_order;
 
@@ -96,36 +97,7 @@ pub use commerce::{
     JobApplicationData as CommerceJobApplicationData,
     ServiceListingData as CommerceServiceListingData,
 };
-// Selective imports from compliance to avoid conflicts
-pub use compliance::{
-    CommunicationMethod,
-    ComplianceEvidence,
-    CompliancePenalty,
-    ComplianceRequirement,
-    ComplianceStatus as ComplianceStatusEnum,
-    ContactType,
-    DataPrivacyConfig,
-    DocumentRequirement,
-    EvidenceType,
-    FinancialComplianceConfig,
-    // Rename conflicting types
-    ImplementationStatus as ComplianceImplementationStatus,
-    JurisdictionCompliance,
-    JurisdictionStatus,
-    KycAmlConfig,
-    KycLevel,
-    License,
-    LicenseStatus,
-    MonitoringConfig,
-    PenaltyType,
-    RegulatoryCompliance,
-    RegulatoryContact,
-    RegulatoryFramework,
-    ReportingConfig,
-    RequirementType,
-    SanctionsConfig,
-    VerificationStatus,
-};
+// REMOVED: compliance module exports - unused, saves ~2100 lines
 pub use dispute::*;
 pub use escrow::*;
 pub use extensions::*;
@@ -143,7 +115,7 @@ pub use negotiation::*;
 pub use pricing::*;
 pub use replication::*;
 pub use reputation::ReputationMetrics;
-pub use risk_management::*;
+// REMOVED: risk_management exports - unused, saves ~1950 lines
 pub use royalty::*;
 // Selective imports from security_governance to avoid conflicts
 pub use protocol_structures::*;

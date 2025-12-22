@@ -13,11 +13,146 @@ use anchor_lang::prelude::*;
 // MULTI-SIGNATURE STRUCTURES
 // =====================================================
 
+// =====================================================
+// MULTISIG TYPE CLASSIFICATION
+// =====================================================
+
+/// MultisigType defines the governance layer a multisig belongs to.
+/// Different types have different permissions and requirements.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MultisigType {
+    /// Protocol-level security council for emergency actions and upgrades
+    /// Requirements: 5-9 signers, high reputation, token holdings
+    /// Permissions: Protocol upgrade, emergency freeze, security patches
+    Protocol,
+
+    /// Community DAO governance for treasury and parameter changes
+    /// Requirements: Token-weighted voting with quorum
+    /// Permissions: Treasury allocation, fee parameters, grants
+    Dao,
+
+    /// Dispute resolution arbitrators for escrow disputes
+    /// Requirements: Staked tokens + reputation-ranked arbitrators
+    /// Permissions: Resolve disputes, release escrow, slash reputation
+    Dispute,
+
+    /// Multi-agent collaboration treasury
+    /// Requirements: Agent owners or agents themselves
+    /// Permissions: Shared treasury, collaborative service delivery
+    AgentConsortium,
+
+    /// Individual agent earnings management
+    /// Requirements: Agent owner + backup + optional agent signer
+    /// Permissions: Withdraw earnings, reinvestment
+    AgentTreasury,
+
+    /// Generic user-created multisig
+    /// Requirements: Standard signer threshold
+    /// Permissions: All standard operations
+    Custom,
+}
+
+impl Default for MultisigType {
+    fn default() -> Self {
+        MultisigType::Custom
+    }
+}
+
+/// Metadata and requirements for each MultisigType
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct MultisigTypeConfig {
+    /// The multisig type
+    pub multisig_type: MultisigType,
+
+    /// Required timelock duration in seconds (0 = no timelock)
+    pub timelock_seconds: i64,
+
+    /// Minimum number of signers allowed
+    pub min_signers: u8,
+
+    /// Maximum number of signers allowed
+    pub max_signers: u8,
+
+    /// Minimum reputation score required (0-10000 basis points)
+    pub min_reputation_score: u16,
+
+    /// Whether signers must hold governance tokens
+    pub requires_token_holdings: bool,
+
+    /// Minimum token balance required (if requires_token_holdings)
+    pub min_token_balance: u64,
+}
+
+impl MultisigTypeConfig {
+    /// Get default config for a MultisigType
+    pub fn default_for_type(multisig_type: MultisigType) -> Self {
+        match multisig_type {
+            MultisigType::Protocol => MultisigTypeConfig {
+                multisig_type,
+                timelock_seconds: 48 * 3600, // 48 hours
+                min_signers: 5,
+                max_signers: 11,
+                min_reputation_score: 9000, // 90%
+                requires_token_holdings: true,
+                min_token_balance: 50_000_000_000, // 50,000 tokens (6 decimals)
+            },
+            MultisigType::Dao => MultisigTypeConfig {
+                multisig_type,
+                timelock_seconds: 72 * 3600, // 72 hours
+                min_signers: 3,
+                max_signers: 20,
+                min_reputation_score: 0,
+                requires_token_holdings: true,
+                min_token_balance: 1_000_000_000, // 1,000 tokens
+            },
+            MultisigType::Dispute => MultisigTypeConfig {
+                multisig_type,
+                timelock_seconds: 0, // No timelock for quick resolution
+                min_signers: 3,
+                max_signers: 7,
+                min_reputation_score: 8000, // 80%
+                requires_token_holdings: true,
+                min_token_balance: 10_000_000_000, // 10,000 tokens
+            },
+            MultisigType::AgentConsortium => MultisigTypeConfig {
+                multisig_type,
+                timelock_seconds: 24 * 3600, // 24 hours
+                min_signers: 2,
+                max_signers: 10,
+                min_reputation_score: 5000, // 50%
+                requires_token_holdings: false,
+                min_token_balance: 0,
+            },
+            MultisigType::AgentTreasury => MultisigTypeConfig {
+                multisig_type,
+                timelock_seconds: 0,
+                min_signers: 2,
+                max_signers: 5,
+                min_reputation_score: 0,
+                requires_token_holdings: false,
+                min_token_balance: 0,
+            },
+            MultisigType::Custom => MultisigTypeConfig {
+                multisig_type,
+                timelock_seconds: 24 * 3600, // 24 hours default
+                min_signers: 1,
+                max_signers: 10,
+                min_reputation_score: 0,
+                requires_token_holdings: false,
+                min_token_balance: 0,
+            },
+        }
+    }
+}
+
 /// Multi-signature wallet for governance operations
 #[account]
 pub struct Multisig {
     /// Unique identifier
     pub multisig_id: u64,
+
+    /// Multisig type classification (Protocol, DAO, Dispute, etc.)
+    pub multisig_type: MultisigType,
 
     /// Required number of signatures
     pub threshold: u8,
@@ -46,8 +181,11 @@ pub struct Multisig {
     /// Emergency settings
     pub emergency_config: EmergencyConfig,
 
+    /// Type-specific configuration
+    pub type_config: MultisigTypeConfig,
+
     /// Reserved space for future extensions
-    pub reserved: [u8; 128],
+    pub reserved: [u8; 64],
 }
 
 /// Pending transaction in multisig queue
@@ -1213,7 +1351,7 @@ pub const MAX_MULTISIG_SIGNERS: usize = 20;
 pub const MAX_PENDING_TRANSACTIONS: usize = 100;
 
 /// Maximum proposal instructions
-pub const MAX_PROPOSAL_INSTRUCTIONS: usize = 10;
+pub const MAX_PROPOSAL_INSTRUCTIONS: usize = 2; // Reduced from 10 to fit in account limits
 
 /// Maximum council members
 pub const MAX_COUNCIL_MEMBERS: usize = 15;
@@ -1227,6 +1365,220 @@ pub const MAX_VOTING_POWER_MULTIPLIER: u32 = 100000; // Basis points
 /// Maximum proposals in execution queue
 pub const MAX_QUEUED_PROPOSALS: usize = 50;
 
+// =====================================================
+// ENHANCED VOTING POWER SYSTEM (x402 Marketplace)
+// =====================================================
+
+/// Voting power component weights (in basis points, total = 10000)
+pub const VOTING_WEIGHT_TOKEN: u16 = 4000;       // 40% - Token balance
+pub const VOTING_WEIGHT_REPUTATION: u16 = 2500;  // 25% - Agent reputation
+pub const VOTING_WEIGHT_X402_VOLUME: u16 = 2000; // 20% - x402 payment volume
+pub const VOTING_WEIGHT_STAKING: u16 = 1500;     // 15% - Staked tokens with lockup
+
+/// Lockup tier thresholds and multipliers
+pub const LOCKUP_TIER_NONE: i64 = 0;
+pub const LOCKUP_TIER_1_MONTH: i64 = 30 * 24 * 60 * 60;      // 30 days
+pub const LOCKUP_TIER_3_MONTHS: i64 = 90 * 24 * 60 * 60;     // 90 days
+pub const LOCKUP_TIER_6_MONTHS: i64 = 180 * 24 * 60 * 60;    // 180 days
+pub const LOCKUP_TIER_1_YEAR: i64 = 365 * 24 * 60 * 60;      // 365 days
+pub const LOCKUP_TIER_2_YEARS: i64 = 730 * 24 * 60 * 60;     // 730 days
+
+/// Lockup multipliers in basis points (10000 = 1.0x)
+pub const LOCKUP_MULTIPLIER_NONE: u16 = 10000;       // 1.0x
+pub const LOCKUP_MULTIPLIER_1_MONTH: u16 = 11000;    // 1.1x
+pub const LOCKUP_MULTIPLIER_3_MONTHS: u16 = 12500;   // 1.25x
+pub const LOCKUP_MULTIPLIER_6_MONTHS: u16 = 15000;   // 1.5x
+pub const LOCKUP_MULTIPLIER_1_YEAR: u16 = 20000;     // 2.0x
+pub const LOCKUP_MULTIPLIER_2_YEARS: u16 = 30000;    // 3.0x
+
+/// Maximum x402 volume voting power (prevents volume dominance)
+pub const MAX_X402_VOLUME_POWER: u64 = 1000;
+
+/// x402 volume divisor for voting power (in smallest token units)
+/// $10,000 volume = 100 voting power
+pub const X402_VOLUME_DIVISOR: u64 = 100_000_000; // Assuming 6 decimals
+
+/// Minimum requirements for voting
+pub const MIN_VOTING_POWER: u64 = 100;
+pub const MIN_REPUTATION_FOR_VOTE: u16 = 0; // Anyone can vote
+pub const MIN_REPUTATION_FOR_PROPOSAL: u16 = 2500; // 25% reputation to create proposals
+
+/// Enhanced voting power input data
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct VotingPowerInput {
+    /// User's token balance
+    pub token_balance: u64,
+
+    /// User's staked tokens
+    pub staked_balance: u64,
+
+    /// Lockup duration in seconds (0 if not locked)
+    pub lockup_duration: i64,
+
+    /// Agent reputation score (0-10000 basis points, 0 if not an agent)
+    pub reputation_score: u16,
+
+    /// Is the user a verified agent (has x402 payment history)
+    pub is_verified_agent: bool,
+
+    /// 30-day x402 payment volume in smallest token units
+    pub x402_volume_30d: u64,
+
+    /// Voting power delegated to this user
+    pub delegated_power: u64,
+
+    /// Voting power this user has delegated out
+    pub delegated_out: u64,
+}
+
+impl Default for VotingPowerInput {
+    fn default() -> Self {
+        VotingPowerInput {
+            token_balance: 0,
+            staked_balance: 0,
+            lockup_duration: 0,
+            reputation_score: 0,
+            is_verified_agent: false,
+            x402_volume_30d: 0,
+            delegated_power: 0,
+            delegated_out: 0,
+        }
+    }
+}
+
+/// Detailed voting power breakdown
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]
+pub struct VotingPowerBreakdown {
+    /// Token-based voting power (before weighting)
+    pub token_power: u64,
+
+    /// Reputation-based voting power (before weighting)
+    pub reputation_power: u64,
+
+    /// x402 volume-based voting power (before weighting)
+    pub volume_power: u64,
+
+    /// Staking-based voting power (before weighting)
+    pub staking_power: u64,
+
+    /// Lockup multiplier applied (basis points)
+    pub lockup_multiplier: u16,
+
+    /// Total weighted voting power (sum of weighted components)
+    pub total_power: u64,
+
+    /// Effective voting power (after delegations)
+    pub effective_power: u64,
+
+    /// Whether the user can vote
+    pub can_vote: bool,
+}
+
+/// Calculate lockup multiplier based on duration
+pub fn get_lockup_multiplier(lockup_duration: i64) -> u16 {
+    if lockup_duration >= LOCKUP_TIER_2_YEARS {
+        LOCKUP_MULTIPLIER_2_YEARS
+    } else if lockup_duration >= LOCKUP_TIER_1_YEAR {
+        LOCKUP_MULTIPLIER_1_YEAR
+    } else if lockup_duration >= LOCKUP_TIER_6_MONTHS {
+        LOCKUP_MULTIPLIER_6_MONTHS
+    } else if lockup_duration >= LOCKUP_TIER_3_MONTHS {
+        LOCKUP_MULTIPLIER_3_MONTHS
+    } else if lockup_duration >= LOCKUP_TIER_1_MONTH {
+        LOCKUP_MULTIPLIER_1_MONTH
+    } else {
+        LOCKUP_MULTIPLIER_NONE
+    }
+}
+
+/// Calculate integer square root for token voting power
+/// Uses Newton's method for efficiency
+fn isqrt(n: u64) -> u64 {
+    if n < 2 {
+        return n;
+    }
+    let mut x = n;
+    let mut y = (x + 1) / 2;
+    while y < x {
+        x = y;
+        y = (x + n / x) / 2;
+    }
+    x
+}
+
+/// Calculate enhanced voting power with all components
+/// 
+/// Formula:
+/// Voting Power = (Token × 0.40) + (Reputation × 0.25) + (x402Volume × 0.20) + (Staking × 0.15)
+/// 
+/// Where:
+/// - Token uses square-root voting to reduce whale dominance
+/// - Reputation is only counted for verified agents
+/// - x402Volume rewards active marketplace participants
+/// - Staking applies lockup multipliers
+pub fn calculate_enhanced_voting_power(input: &VotingPowerInput) -> VotingPowerBreakdown {
+    let mut breakdown = VotingPowerBreakdown::default();
+
+    // 1. Token-based voting power (square root to reduce whale dominance)
+    // sqrt(1,000,000 tokens) = 1000 power
+    breakdown.token_power = isqrt(input.token_balance);
+
+    // 2. Reputation-based voting power (only for verified agents)
+    // reputation_score is 0-10000 basis points
+    // 10000 bp = 100% = 1000 voting power
+    if input.is_verified_agent && input.reputation_score > 0 {
+        breakdown.reputation_power = (input.reputation_score as u64) / 10;
+    }
+
+    // 3. x402 Volume-based voting power
+    // $10,000 volume = 100 voting power, capped at 1000
+    if input.x402_volume_30d > 0 {
+        let volume_power = input.x402_volume_30d / X402_VOLUME_DIVISOR;
+        breakdown.volume_power = core::cmp::min(volume_power, MAX_X402_VOLUME_POWER);
+    }
+
+    // 4. Staking-based voting power with lockup multiplier
+    breakdown.lockup_multiplier = get_lockup_multiplier(input.lockup_duration);
+    if input.staked_balance > 0 {
+        let base_staking_power = isqrt(input.staked_balance);
+        // Apply lockup multiplier
+        breakdown.staking_power = ((base_staking_power as u128 * breakdown.lockup_multiplier as u128) / 10000) as u64;
+    }
+
+    // Calculate weighted total
+    let weighted_token = (breakdown.token_power as u128 * VOTING_WEIGHT_TOKEN as u128) / 10000;
+    let weighted_reputation = (breakdown.reputation_power as u128 * VOTING_WEIGHT_REPUTATION as u128) / 10000;
+    let weighted_volume = (breakdown.volume_power as u128 * VOTING_WEIGHT_X402_VOLUME as u128) / 10000;
+    let weighted_staking = (breakdown.staking_power as u128 * VOTING_WEIGHT_STAKING as u128) / 10000;
+
+    breakdown.total_power = (weighted_token + weighted_reputation + weighted_volume + weighted_staking) as u64;
+
+    // Calculate effective power (including delegations)
+    breakdown.effective_power = breakdown
+        .total_power
+        .saturating_add(input.delegated_power)
+        .saturating_sub(input.delegated_out);
+
+    // Can vote if meets minimum threshold
+    breakdown.can_vote = breakdown.effective_power >= MIN_VOTING_POWER;
+
+    breakdown
+}
+
+/// VotingPowerEvent emitted when voting power is calculated
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct VotingPowerCalculatedEvent {
+    pub voter: Pubkey,
+    pub token_power: u64,
+    pub reputation_power: u64,
+    pub volume_power: u64,
+    pub staking_power: u64,
+    pub lockup_multiplier: u16,
+    pub total_power: u64,
+    pub effective_power: u64,
+    pub timestamp: i64,
+}
+
 /// Maximum trigger conditions
 pub const MAX_TRIGGER_CONDITIONS: usize = 10;
 
@@ -1238,6 +1590,7 @@ impl Multisig {
     pub const fn space() -> usize {
         8 + // discriminator
         8 + // multisig_id
+        1 + // multisig_type (enum)
         1 + // threshold
         4 + (MAX_MULTISIG_SIGNERS * 32) + // signers
         32 + // owner
@@ -1247,7 +1600,20 @@ impl Multisig {
         4 + (MAX_PENDING_TRANSACTIONS * PendingTransaction::size()) + // pending_transactions
         MultisigConfig::size() + // config
         EmergencyConfig::size() + // emergency_config
-        128 // reserved
+        MultisigTypeConfig::size() + // type_config
+        64 // reserved (reduced from 128 to accommodate new fields)
+    }
+}
+
+impl MultisigTypeConfig {
+    pub const fn size() -> usize {
+        1 + // multisig_type
+        8 + // timelock_seconds
+        1 + // min_signers
+        1 + // max_signers
+        2 + // min_reputation_score
+        1 + // requires_token_holdings
+        8   // min_token_balance
     }
 }
 
@@ -1330,8 +1696,8 @@ impl GovernanceProposal {
         8 + // discriminator
         8 + // proposal_id
         32 + // proposer
-        4 + 256 + // title
-        4 + 2048 + // description
+        4 + 64 + // title (reduced from 256)
+        4 + 256 + // description (reduced from 2048)
         1 + // proposal_type
         8 + // created_at
         8 + // voting_starts_at
@@ -1342,7 +1708,7 @@ impl GovernanceProposal {
         ExecutionParams::size() + // execution_params
         QuorumRequirements::size() + // quorum_requirements
         ProposalMetadata::size() + // metadata
-        64 // reserved
+        32 // reserved (reduced)
     }
 }
 
@@ -1353,7 +1719,7 @@ impl VotingResults {
         8 + // votes_abstain
         8 + // total_voting_power
         1 + // participation_rate
-        4 + (1000 * Vote::size()) + // individual_votes
+        4 + (10 * Vote::size()) + // individual_votes (max 10 inline, rest stored separately)
         1 + // weighted_voting
         1 + // quorum_reached
         1 // approval_threshold_met
@@ -1366,7 +1732,7 @@ impl Vote {
         1 + // choice
         8 + // voting_power
         8 + // voted_at
-        1 + 4 + 512 + // reasoning
+        1 + 4 + 64 + // reasoning (reduced from 512)
         1 + DelegationInfo::size() // delegation_info
     }
 }
@@ -1394,9 +1760,9 @@ impl ExecutionParams {
 impl ProposalInstruction {
     pub const fn size() -> usize {
         32 + // program_id
-        4 + (20 * ProposalAccount::size()) + // accounts
-        4 + 1024 + // data
-        4 + 256 // description
+        4 + (5 * ProposalAccount::size()) + // accounts (reduced from 20)
+        4 + 256 + // data (reduced from 1024)
+        4 + 64 // description (reduced from 256)
     }
 }
 
@@ -1421,12 +1787,12 @@ impl QuorumRequirements {
 
 impl ProposalMetadata {
     pub const fn size() -> usize {
-        1 + 4 + 128 + // ipfs_hash
-        4 + (10 * (4 + 256)) + // external_references
-        4 + (20 * (4 + 64)) + // tags
-        1 + 4 + 512 + // risk_assessment
-        1 + 4 + 512 + // impact_analysis
-        1 + 4 + 256 // implementation_timeline
+        1 + 4 + 64 + // ipfs_hash (reduced)
+        4 + (3 * (4 + 64)) + // external_references (reduced from 10 * 260)
+        4 + (5 * (4 + 32)) + // tags (reduced from 20 * 68)
+        1 + 4 + 128 + // risk_assessment (reduced)
+        1 + 4 + 128 + // impact_analysis (reduced)
+        1 + 4 + 64 // implementation_timeline (reduced)
     }
 }
 

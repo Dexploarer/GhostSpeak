@@ -65,8 +65,9 @@ export function createGhostSpeakClient(
   
   const config: GhostSpeakConfig = {
     programId: GHOSTSPEAK_PROGRAM_ID,
-    rpcUrl,
-  }
+    rpcEndpoint: rpcUrl,
+    cluster: network === 'mainnet' ? 'mainnet-beta' : network,
+  } as GhostSpeakConfig
   
   const client: GhostSpeakClient = {
     programId: GHOSTSPEAK_PROGRAM_ID,
@@ -85,10 +86,23 @@ export function createGhostSpeakClient(
 }
 
 /**
- * Get the default devnet client
+ * Get the current network from environment
+ */
+export function getCurrentNetwork(): NetworkType {
+  const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK
+  if (network === 'mainnet' || network === 'testnet' || network === 'devnet') {
+    return network
+  }
+  return 'devnet' // Default to devnet
+}
+
+/**
+ * Get the GhostSpeak client configured from environment variables
  */
 export function getGhostSpeakClient(): GhostSpeakClient {
-  return createGhostSpeakClient('devnet')
+  const network = getCurrentNetwork()
+  const customRpc = process.env.NEXT_PUBLIC_SOLANA_RPC_URL
+  return createGhostSpeakClient(network, customRpc)
 }
 
 // Re-export types

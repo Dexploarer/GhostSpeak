@@ -301,10 +301,10 @@ export function CreateProposalForm({
         </h3>
 
         <div className="space-y-2">
-          <Label htmlFor="title">
-            Proposal Title
-            <span className="text-red-500 ml-1">*</span>
-          </Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="title">Proposal Title</Label>
+            <span className="text-red-500">*</span>
+          </div>
           <Input
             id="title"
             {...form.register('title')}
@@ -316,10 +316,10 @@ export function CreateProposalForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">
-            Description
-            <span className="text-red-500 ml-1">*</span>
-          </Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="description">Description</Label>
+            <span className="text-red-500">*</span>
+          </div>
           <Textarea
             id="description"
             {...form.register('description')}
@@ -439,10 +439,10 @@ export function CreateProposalForm({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="votingDuration">
-                Voting Duration (Days)
-                <span className="text-red-500 ml-1">*</span>
-              </Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="votingDuration">Voting Duration (Days)</Label>
+                <span className="text-red-500">*</span>
+              </div>
               <Select
                 value={form.watch('votingDuration').toString()}
                 onValueChange={(value: string) => form.setValue('votingDuration', parseInt(value))}

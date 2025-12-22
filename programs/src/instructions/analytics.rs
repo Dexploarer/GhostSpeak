@@ -220,7 +220,7 @@ pub fn update_analytics_dashboard(
 ///
 /// # Errors
 ///
-/// * `InvalidPeriod` - If period_end is not greater than period_start
+/// * `InvalidExpiration` - If period_end is not greater than period_start
 /// * `UnauthorizedAccess` - If caller lacks permission to create market analytics
 pub fn create_market_analytics(
     ctx: Context<CreateMarketAnalytics>,

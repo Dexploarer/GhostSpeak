@@ -312,3 +312,140 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
+
+/* ============================================
+   Crossmint SDK Theme Overrides
+   Matches GhostSpeak's lime/dark theme
+   ============================================ */
+
+/* Crossmint Container */
+.crossmint-wrapper {
+  --cm-primary: var(--primary);
+  --cm-primary-text: var(--primary-foreground);
+  --cm-background: var(--card);
+  --cm-text: var(--foreground);
+  --cm-border: var(--border);
+  --cm-muted: var(--muted-foreground);
+}
+
+/* Crossmint Buttons */
+.crossmint-wrapper [class*="cm-button"],
+.crossmint-wrapper button[class*="crossmint"] {
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+  padding: 0.625rem 1rem !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 14px 0 rgba(204, 255, 0, 0.25) !important;
+}
+
+.crossmint-wrapper [class*="cm-button"]:hover,
+.crossmint-wrapper button[class*="crossmint"]:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px 0 rgba(204, 255, 0, 0.35) !important;
+}
+
+/* Crossmint Input Fields */
+.crossmint-wrapper input,
+.crossmint-wrapper [class*="cm-input"] {
+  background: var(--muted) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.5rem !important;
+  color: var(--foreground) !important;
+  padding: 0.625rem 0.875rem !important;
+}
+
+.crossmint-wrapper input:focus,
+.crossmint-wrapper [class*="cm-input"]:focus {
+  border-color: var(--primary) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(204, 255, 0, 0.2) !important;
+}
+
+/* Crossmint Cards/Panels */
+.crossmint-wrapper [class*="cm-card"],
+.crossmint-wrapper [class*="cm-panel"] {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.75rem !important;
+}
+
+/* Crossmint Text */
+.crossmint-wrapper [class*="cm-text"],
+.crossmint-wrapper p,
+.crossmint-wrapper span,
+.crossmint-wrapper label {
+  color: var(--foreground) !important;
+}
+
+.crossmint-wrapper [class*="cm-muted"],
+.crossmint-wrapper [class*="cm-secondary"] {
+  color: var(--muted-foreground) !important;
+}
+
+/* Crossmint Modal/Dialog */
+.crossmint-wrapper [class*="cm-modal"],
+.crossmint-wrapper [class*="cm-dialog"] {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Crossmint Payment Method Cards */
+.crossmint-wrapper [class*="payment-method"],
+.crossmint-wrapper [class*="cm-payment"] {
+  background: var(--muted) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.75rem !important;
+  padding: 1rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.crossmint-wrapper [class*="payment-method"]:hover,
+.crossmint-wrapper [class*="cm-payment"]:hover {
+  border-color: var(--primary) !important;
+  background: rgba(204, 255, 0, 0.05) !important;
+}
+
+.crossmint-wrapper [class*="payment-method"][class*="selected"],
+.crossmint-wrapper [class*="cm-payment"][class*="active"] {
+  border-color: var(--primary) !important;
+  background: rgba(204, 255, 0, 0.1) !important;
+}
+
+/* Crossmint Icons */
+.crossmint-wrapper svg {
+  color: currentColor !important;
+}
+
+/* Crossmint Loading States */
+.crossmint-wrapper [class*="cm-loading"],
+.crossmint-wrapper [class*="cm-spinner"] {
+  border-color: var(--border) !important;
+  border-top-color: var(--primary) !important;
+}
+
+/* Crossmint Links */
+.crossmint-wrapper a {
+  color: var(--primary) !important;
+  text-decoration: none !important;
+}
+
+.crossmint-wrapper a:hover {
+  text-decoration: underline !important;
+}
+
+/* Dark mode specific overrides */
+.dark .crossmint-wrapper [class*="cm-card"],
+.dark .crossmint-wrapper [class*="cm-panel"] {
+  background: rgba(17, 17, 17, 0.8) !important;
+}
+
+.dark .crossmint-wrapper input,
+.dark .crossmint-wrapper [class*="cm-input"] {
+  background: rgba(26, 26, 26, 0.8) !important;
+}

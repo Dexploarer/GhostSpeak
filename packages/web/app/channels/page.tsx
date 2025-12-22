@@ -26,13 +26,13 @@ import {
   Loader2,
   TrendingUp,
 } from 'lucide-react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import { useChannels, ChannelType, type Channel } from '@/lib/queries/channels'
 import { ChannelCard } from '@/components/channels/ChannelCard'
 import { CreateChannelForm } from '@/components/channels/CreateChannelForm'
 
 export default function ChannelsPage(): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { address: publicKey, isConnected } = useWalletAddress()
   const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState('all')

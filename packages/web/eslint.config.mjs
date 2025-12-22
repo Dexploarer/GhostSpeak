@@ -28,7 +28,7 @@ const eslintConfig = [
       prettier: prettierPlugin,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       'prettier/prettier': 'warn',

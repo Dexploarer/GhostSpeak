@@ -8,8 +8,14 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_pack::Pack;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{Mint, TokenAccount};
-use anchor_spl::token_2022::{spl_token_2022, Token2022};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_lang::prelude::InterfaceAccount;
+use anchor_lang::prelude::Interface;
+use anchor_spl::token_2022::spl_token_2022;
+
+/// Native SOL mint address - owned by the ORIGINAL Token program
+/// Note: Native SOL wrapping only works with the original Token program, not Token2022
+pub const NATIVE_MINT: Pubkey = anchor_spl::token::spl_token::native_mint::ID;
 use spl_token_2022::extension::transfer_fee::{
     instruction::transfer_checked_with_fee, TransferFeeConfig,
 };
@@ -18,9 +24,10 @@ use spl_token_2022::extension::{BaseStateWithExtensions, StateWithExtensions};
 use crate::security::ReentrancyGuard;
 use crate::state::{
     escrow::{Escrow, EscrowStatus, Payment},
+    work_order::{WorkOrder, WorkOrderStatus},
     Agent,
 };
-use crate::{GhostSpeakError, PaymentProcessedEvent};
+use crate::{GhostSpeakError, PaymentProcessedEvent, MAX_PAYMENT_AMOUNT, MIN_PAYMENT_AMOUNT};
 
 // =====================================================
 // INSTRUCTION CONTEXTS - WITH REENTRANCY PROTECTION
@@ -51,24 +58,29 @@ pub struct CreateEscrow<'info> {
     /// CHECK: Agent account will be verified in instruction logic
     pub agent: UncheckedAccount<'info>,
 
+    /// Client's token account - created if it doesn't exist
     #[account(
-        mut,
+        init_if_needed,
+        payer = client,
         associated_token::mint = payment_token,
         associated_token::authority = client,
+        associated_token::token_program = token_program,
     )]
-    pub client_token_account: Account<'info, TokenAccount>,
+    pub client_token_account: InterfaceAccount<'info, TokenAccount>,
 
+    /// Escrow's token account - always created fresh
     #[account(
         init,
         payer = client,
         associated_token::mint = payment_token,
         associated_token::authority = escrow,
+        associated_token::token_program = token_program,
     )]
-    pub escrow_token_account: Account<'info, TokenAccount>,
+    pub escrow_token_account: InterfaceAccount<'info, TokenAccount>,
 
-    pub payment_token: Account<'info, Mint>,
+    pub payment_token: InterfaceAccount<'info, Mint>,
 
-    pub token_program: Program<'info, Token2022>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -101,17 +113,17 @@ pub struct CompleteEscrow<'info> {
         associated_token::mint = escrow_token_account.mint,
         associated_token::authority = escrow,
     )]
-    pub escrow_token_account: Account<'info, TokenAccount>,
+    pub escrow_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
         associated_token::mint = escrow_token_account.mint,
         associated_token::authority = agent,
     )]
-    pub agent_token_account: Account<'info, TokenAccount>,
+    pub agent_token_account: InterfaceAccount<'info, TokenAccount>,
 
     pub authority: Signer<'info>,
-    pub token_program: Program<'info, Token2022>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -176,24 +188,24 @@ pub struct ProcessEscrowPayment<'info> {
         associated_token::mint = payment_token,
         associated_token::authority = escrow,
     )]
-    pub escrow_token_account: Account<'info, TokenAccount>,
+    pub escrow_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
         associated_token::mint = payment_token,
         associated_token::authority = recipient,
     )]
-    pub recipient_token_account: Account<'info, TokenAccount>,
+    pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         constraint = recipient.key() == escrow.agent @ GhostSpeakError::UnauthorizedAccess,
     )]
     pub recipient: Signer<'info>,
 
-    pub payment_token: Account<'info, Mint>,
+    pub payment_token: InterfaceAccount<'info, Mint>,
     #[account(mut)]
     pub authority: Signer<'info>,
-    pub token_program: Program<'info, Token2022>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
@@ -220,22 +232,22 @@ pub struct CancelEscrow<'info> {
         associated_token::mint = escrow.payment_token,
         associated_token::authority = escrow,
     )]
-    pub escrow_token_account: Account<'info, TokenAccount>,
+    pub escrow_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
         associated_token::mint = escrow.payment_token,
         associated_token::authority = escrow.client,
     )]
-    pub client_refund_account: Account<'info, TokenAccount>,
+    pub client_refund_account: InterfaceAccount<'info, TokenAccount>,
 
     /// The token mint used for payments
-    pub payment_token: Account<'info, Mint>,
+    pub payment_token: InterfaceAccount<'info, Mint>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    pub token_program: Program<'info, Token2022>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -261,23 +273,23 @@ pub struct RefundExpiredEscrow<'info> {
         associated_token::mint = escrow.payment_token,
         associated_token::authority = escrow,
     )]
-    pub escrow_token_account: Account<'info, TokenAccount>,
+    pub escrow_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
         associated_token::mint = escrow.payment_token,
         associated_token::authority = escrow.client,
     )]
-    pub client_refund_account: Account<'info, TokenAccount>,
+    pub client_refund_account: InterfaceAccount<'info, TokenAccount>,
 
     /// The token mint used for payments
-    pub payment_token: Account<'info, Mint>,
+    pub payment_token: InterfaceAccount<'info, Mint>,
 
     /// Can be called by anyone for expired escrows
     #[account(mut)]
     pub caller: Signer<'info>,
 
-    pub token_program: Program<'info, Token2022>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -302,24 +314,24 @@ pub struct ProcessPartialRefund<'info> {
         associated_token::mint = escrow.payment_token,
         associated_token::authority = escrow,
     )]
-    pub escrow_token_account: Account<'info, TokenAccount>,
+    pub escrow_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
         associated_token::mint = escrow.payment_token,
         associated_token::authority = escrow.client,
     )]
-    pub client_refund_account: Account<'info, TokenAccount>,
+    pub client_refund_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
         associated_token::mint = escrow.payment_token,
         associated_token::authority = escrow.agent,
     )]
-    pub agent_payment_account: Account<'info, TokenAccount>,
+    pub agent_payment_account: InterfaceAccount<'info, TokenAccount>,
 
     /// The token mint used for payments
-    pub payment_token: Account<'info, Mint>,
+    pub payment_token: InterfaceAccount<'info, Mint>,
 
     /// Authority to approve partial refunds (dispute resolver/admin)
     #[account(
@@ -327,7 +339,70 @@ pub struct ProcessPartialRefund<'info> {
     )]
     pub authority: Signer<'info>,
 
-    pub token_program: Program<'info, Token2022>,
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
+// =====================================================
+// SOL WRAPPING - CREATE ESCROW WITH NATIVE SOL
+// =====================================================
+
+/// Accounts for creating an escrow by depositing native SOL
+/// The instruction will automatically wrap SOL into wSOL
+/// NOTE: Uses the ORIGINAL Token program because native SOL mint is owned by it
+#[derive(Accounts)]
+#[instruction(task_id: String, amount: u64)]
+pub struct CreateEscrowWithSol<'info> {
+    #[account(
+        init,
+        payer = client,
+        space = Escrow::LEN,
+        seeds = [b"escrow", task_id.as_bytes()],
+        bump
+    )]
+    pub escrow: Account<'info, Escrow>,
+
+    #[account(
+        mut,
+        seeds = [b"reentrancy_guard"],
+        bump
+    )]
+    pub reentrancy_guard: Account<'info, ReentrancyGuard>,
+
+    #[account(mut)]
+    pub client: Signer<'info>,
+
+    /// CHECK: Agent account will be verified in instruction logic
+    pub agent: UncheckedAccount<'info>,
+
+    /// Client's wSOL token account - created if it doesn't exist
+    /// This will hold the wrapped SOL
+    #[account(
+        init_if_needed,
+        payer = client,
+        associated_token::mint = native_mint,
+        associated_token::authority = client,
+    )]
+    pub client_wsol_account: Account<'info, anchor_spl::token::TokenAccount>,
+
+    /// Escrow's wSOL token account - always created fresh
+    #[account(
+        init,
+        payer = client,
+        associated_token::mint = native_mint,
+        associated_token::authority = escrow,
+    )]
+    pub escrow_wsol_account: Account<'info, anchor_spl::token::TokenAccount>,
+
+    /// The native SOL mint (wSOL) - owned by original Token program
+    #[account(
+        address = NATIVE_MINT @ GhostSpeakError::InvalidConfiguration
+    )]
+    pub native_mint: Account<'info, anchor_spl::token::Mint>,
+
+    /// Original Token program (not Token2022) - required for native SOL wrapping
+    pub token_program: Program<'info, anchor_spl::token::Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
 }
 
 // =====================================================
@@ -553,6 +628,123 @@ pub fn create_escrow(
     Ok(())
 }
 
+/// Creates a new escrow by depositing native SOL (auto-wraps to wSOL)
+///
+/// This instruction provides a convenient way for users to create escrows
+/// using native SOL instead of requiring them to manually wrap SOL first.
+/// The instruction handles the wrapping automatically.
+///
+/// # Arguments
+///
+/// * `ctx` - The context containing escrow and token accounts
+/// * `task_id` - Unique identifier for the task (max 64 chars)
+/// * `amount` - Payment amount in lamports (will be wrapped to wSOL)
+/// * `expires_at` - Unix timestamp when escrow expires
+/// * `transfer_hook` - Optional SPL-2022 transfer hook address
+/// * `is_confidential` - Enable confidential transfers if supported
+///
+/// # Security Features
+///
+/// - Reentrancy protection using global guard
+/// - Amount validation within protocol limits
+/// - Automatic SOL wrapping via sync_native
+/// - Native mint verification
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful escrow creation
+pub fn create_escrow_with_sol(
+    ctx: Context<CreateEscrowWithSol>,
+    task_id: String,
+    amount: u64,
+    expires_at: i64,
+    transfer_hook: Option<Pubkey>,
+    is_confidential: bool,
+) -> Result<()> {
+    msg!("Creating escrow with SOL - Task: {}, Amount: {} lamports", task_id, amount);
+
+    // SECURITY: Apply reentrancy protection
+    ctx.accounts.reentrancy_guard.lock()?;
+
+    // SECURITY: Use centralized validation
+    crate::utils::validate_string_input(&task_id, "task_id", 64, false, false)?;
+    crate::utils::validate_payment_amount(amount, "escrow")?;
+
+    let clock = Clock::get()?;
+    crate::utils::validate_timestamp(expires_at, 3600, 2592000)?; // 1 hour min, 30 days max
+
+    // STEP 1: Transfer native SOL to the client's wSOL account
+    // This is done via a system transfer
+    let transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
+        ctx.accounts.client.key,
+        &ctx.accounts.client_wsol_account.key(),
+        amount,
+    );
+    
+    anchor_lang::solana_program::program::invoke(
+        &transfer_ix,
+        &[
+            ctx.accounts.client.to_account_info(),
+            ctx.accounts.client_wsol_account.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+    )?;
+
+    // STEP 2: Sync native to wrap the SOL
+    // This tells the token program to recognize the transferred lamports as tokens
+    // Use the original spl_token (not spl_token_2022) for native SOL
+    let sync_native_ix = anchor_spl::token::spl_token::instruction::sync_native(
+        ctx.accounts.token_program.key,
+        &ctx.accounts.client_wsol_account.key(),
+    )?;
+
+    anchor_lang::solana_program::program::invoke(
+        &sync_native_ix,
+        &[
+            ctx.accounts.client_wsol_account.to_account_info(),
+        ],
+    )?;
+
+    msg!("Wrapped {} lamports into wSOL", amount);
+
+    // STEP 3: Initialize escrow account
+    let escrow = &mut ctx.accounts.escrow;
+    escrow.initialize(
+        ctx.accounts.client.key(),
+        ctx.accounts.agent.key(),
+        task_id.clone(),
+        amount,
+        expires_at,
+        NATIVE_MINT, // Use native mint as payment token
+        transfer_hook,
+        is_confidential,
+        ctx.bumps.escrow,
+    )?;
+
+    // STEP 4: Transfer wSOL to escrow using regular Token program
+    let cpi_accounts = anchor_spl::token::Transfer {
+        from: ctx.accounts.client_wsol_account.to_account_info(),
+        to: ctx.accounts.escrow_wsol_account.to_account_info(),
+        authority: ctx.accounts.client.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+    anchor_spl::token::transfer(cpi_ctx, amount)?;
+
+    // Emit escrow creation event
+    emit!(crate::EscrowCreatedEvent {
+        escrow: ctx.accounts.escrow.key(),
+        client: ctx.accounts.client.key(),
+        agent: ctx.accounts.agent.key(),
+        amount,
+        task_id,
+        expires_at,
+        timestamp: clock.unix_timestamp,
+    });
+
+    msg!("Escrow created successfully with auto-wrapped SOL");
+    Ok(())
+}
+
 /// Completes an escrow and releases funds with reentrancy protection
 ///
 /// Marks the escrow as completed and prepares it for payment processing.
@@ -743,7 +935,7 @@ pub fn process_escrow_payment(
 /// # Returns
 ///
 /// Returns `Ok(true)` if transfer fee is enabled, `Ok(false)` otherwise
-fn detect_transfer_fee(mint_account: &Account<Mint>) -> Result<bool> {
+fn detect_transfer_fee(mint_account: &InterfaceAccount<Mint>) -> Result<bool> {
     // Get the mint account info
     let mint_info = mint_account.to_account_info();
 
@@ -1071,5 +1263,150 @@ pub fn process_partial_refund(
     });
 
     msg!("Partial refund processed successfully");
+    Ok(())
+}
+
+// =====================================================
+// WORK ORDER PAYMENT PROCESSING (merged from escrow_payment.rs)
+// =====================================================
+
+#[derive(Accounts)]
+pub struct ProcessPayment<'info> {
+    #[account(
+        init,
+        payer = payer,
+        space = Payment::LEN,
+        seeds = [b"payment", work_order.key().as_ref()],
+        bump
+    )]
+    pub payment: Account<'info, Payment>,
+
+    #[account(mut)]
+    pub work_order: Account<'info, WorkOrder>,
+
+    #[account(mut)]
+    pub provider_agent: Account<'info, Agent>,
+
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(mut)]
+    pub payer_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub provider_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub token_mint: InterfaceAccount<'info, Mint>,
+
+    pub token_program: Interface<'info, TokenInterface>,
+
+    pub system_program: Program<'info, System>,
+}
+
+/// Processes payment from client to provider for completed work order
+///
+/// # Performance Optimizations
+/// - Compute units: ~25,000 CU
+/// - Safe arithmetic operations
+/// - Efficient validation
+///
+/// # Security Features
+/// - Authorization verification
+/// - Amount validation
+/// - Safe arithmetic operations
+/// - State consistency checks
+pub fn process_payment(
+    ctx: Context<ProcessPayment>,
+    amount: u64,
+    use_confidential_transfer: bool,
+) -> Result<()> {
+    msg!("Processing payment - Amount: {}", amount);
+
+    // SECURITY: Verify signer authorization
+    require!(
+        ctx.accounts.payer.is_signer,
+        GhostSpeakError::UnauthorizedAccess
+    );
+
+    // SECURITY: Validate token accounts belong to the correct mint
+    require!(
+        ctx.accounts.payer_token_account.mint == ctx.accounts.token_mint.key(),
+        GhostSpeakError::InvalidConfiguration
+    );
+
+    require!(
+        ctx.accounts.provider_token_account.mint == ctx.accounts.token_mint.key(),
+        GhostSpeakError::InvalidConfiguration
+    );
+
+    // SECURITY: Amount validation
+    require!(
+        amount >= MIN_PAYMENT_AMOUNT,
+        GhostSpeakError::ValueBelowMinimum
+    );
+
+    require!(
+        amount <= MAX_PAYMENT_AMOUNT,
+        GhostSpeakError::ValueExceedsMaximum
+    );
+
+    // SECURITY: Verify work order is in correct state for payment
+    let work_order = &ctx.accounts.work_order;
+    require!(
+        matches!(
+            work_order.status,
+            WorkOrderStatus::InProgress | WorkOrderStatus::Submitted
+        ),
+        GhostSpeakError::InvalidStatusTransition
+    );
+
+    let payment = &mut ctx.accounts.payment;
+    let work_order = &mut ctx.accounts.work_order;
+    let provider_agent = &mut ctx.accounts.provider_agent;
+    let clock = Clock::get()?;
+
+    // Initialize payment record
+    payment.work_order = work_order.key();
+    payment.payer = ctx.accounts.payer.key();
+    payment.recipient = provider_agent.owner;
+    payment.amount = amount;
+    payment.token_mint = ctx.accounts.token_mint.key();
+    payment.is_confidential = use_confidential_transfer;
+    payment.paid_at = clock.unix_timestamp;
+    payment.bump = ctx.bumps.payment;
+
+    // SECURITY: Safe arithmetic for provider earnings update
+    provider_agent.total_earnings = provider_agent
+        .total_earnings
+        .checked_add(amount)
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
+
+    // SECURITY: Safe arithmetic for job completion count
+    provider_agent.total_jobs_completed = provider_agent
+        .total_jobs_completed
+        .checked_add(1)
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
+
+    // Update work order status
+    work_order.status = WorkOrderStatus::Completed;
+    work_order.updated_at = clock.unix_timestamp;
+
+    // Calculate and update reputation score with overflow protection
+    let reputation_increment = std::cmp::min((amount / 1_000_000) as u64, 10u64); // Max 10 points per payment
+    provider_agent.reputation_score = provider_agent
+        .reputation_score
+        .checked_add(reputation_increment as u32)
+        .ok_or(GhostSpeakError::ArithmeticOverflow)?;
+
+    // Emit payment event
+    emit!(PaymentProcessedEvent {
+        work_order: work_order.key(),
+        from: ctx.accounts.payer.key(),
+        to: provider_agent.owner,
+        amount,
+        timestamp: clock.unix_timestamp,
+    });
+
+    msg!("Payment processed successfully");
     Ok(())
 }

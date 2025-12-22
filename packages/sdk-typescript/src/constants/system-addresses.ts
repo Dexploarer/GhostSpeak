@@ -73,10 +73,17 @@ export const TOKEN_2022_PROGRAM_ADDRESS = address('TokenzQdBNbLqP5VEhdkAS6EPFLC1
 export const ASSOCIATED_TOKEN_PROGRAM_ADDRESS = address('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
 
 /**
- * Native SOL Mint Address
- * The mint address for wrapped SOL (native token)
+ * Native SOL Mint Address (wSOL) - Original Token Program
+ * The mint address for wrapped SOL on the original Token program
  */
-export const NATIVE_MINT_ADDRESS = address('So11111111111111111111111111111111111111111')
+export const NATIVE_MINT_ADDRESS_TOKEN = address('So11111111111111111111111111111111111111112')
+
+/**
+ * Native SOL Mint Address (wSOL) - Token 2022 Program
+ * The mint address for wrapped SOL on Token 2022
+ * This is the one used by GhostSpeak escrow operations
+ */
+export const NATIVE_MINT_ADDRESS = address('9pan9bMn5HatX4EJdBwg9VgCa7Uz5HL8N1m5D3NdXejP')
 
 /**
  * Metaplex Token Metadata Program

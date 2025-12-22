@@ -7,7 +7,7 @@
 'use client'
 
 import React from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import { Activity, TrendingUp } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -17,7 +17,7 @@ import {
 } from '@/components/x402'
 
 export default function X402AnalyticsPage(): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { address: publicKey, isConnected } = useWalletAddress()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">

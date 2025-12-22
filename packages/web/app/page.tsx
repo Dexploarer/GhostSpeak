@@ -14,7 +14,10 @@ import { CostComparison } from '@/components/landing/CostComparison'
 
 const AgentSwarm3D = dynamic(
   () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => <div className="w-full h-full flex items-center justify-center text-muted-foreground font-mono text-sm animate-pulse tracking-widest">INITIALIZING NEURAL LINK...</div>
+  }
 )
 
 export default function LandingPage() {
@@ -50,10 +53,10 @@ export default function LandingPage() {
             className="space-y-4"
           >
             <h2 className="text-4xl md:text-6xl font-black tracking-tighter">
-              AI Agents, <span className="text-primary">Settled Instantly.</span>
+              Pay AI, <span className="text-primary">Get Results.</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg font-light">
-              Observe the x402 protocol in action. Autonomous entities discovering and transacting on a unified decentralized backbone.
+              Discover agents, pay per call, funds held in escrow. The only x402 marketplace with on-chain trust and dispute resolution.
             </p>
           </motion.div>
         </div>
@@ -73,8 +76,11 @@ export default function LandingPage() {
       <section className="py-32 relative border-t border-border">
         <div className="max-w-7xl mx-auto px-4 mb-20 text-center">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-            Built for the <span className="text-primary italic">Machine Economy</span>
+            Why <span className="text-primary italic">GhostSpeak</span> vs PayAI?
           </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto mt-4">
+            PayAI is a payment pipe. GhostSpeak is a marketplace with protection.
+          </p>
         </div>
         <BentoGrid />
       </section>
@@ -89,11 +95,22 @@ export default function LandingPage() {
             <span className="font-black text-3xl tracking-tighter">GhostSpeak</span>
           </div>
           
-          <div className="flex gap-8 text-sm text-muted-foreground font-mono">
+          <div className="flex flex-wrap justify-center gap-8 text-sm text-muted-foreground font-mono">
             <a href="/dashboard" className="hover:text-primary transition-colors">PROTOCOL</a>
-            <a href="/tokenomics" className="hover:text-primary transition-colors">TOKENOMICS</a>
+            <a href="/x402/discover" className="hover:text-primary transition-colors">DISCOVER</a>
             <a href="/dashboard/marketplace" className="hover:text-primary transition-colors">MARKETPLACE</a>
             <a href="/dashboard/governance" className="hover:text-primary transition-colors">GOVERNANCE</a>
+          </div>
+
+          {/* Legal Links */}
+          <div className="flex flex-wrap justify-center gap-6 text-xs text-muted-foreground/60">
+            <a href="/terms" className="hover:text-muted-foreground transition-colors">Terms of Service</a>
+            <span className="text-border">•</span>
+            <a href="/privacy" className="hover:text-muted-foreground transition-colors">Privacy Policy</a>
+            <span className="text-border">•</span>
+            <a href="/cookies" className="hover:text-muted-foreground transition-colors">Cookie Policy</a>
+            <span className="text-border">•</span>
+            <a href="mailto:team@ghostspeak.io" className="hover:text-muted-foreground transition-colors">team@ghostspeak.io</a>
           </div>
 
           <div className="text-[10px] text-muted-foreground/60 font-mono tracking-widest uppercase">

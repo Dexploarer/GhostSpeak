@@ -200,15 +200,15 @@ impl ServiceAuction {
 
         require!(
             duration >= MIN_AUCTION_DURATION,
-            GhostSpeakError::AuctionDurationTooShort
+            GhostSpeakError::InvalidConfiguration
         );
         require!(
             duration <= MAX_AUCTION_DURATION,
-            GhostSpeakError::AuctionDurationTooLong
+            GhostSpeakError::InvalidConfiguration
         );
         require!(
             minimum_bid_increment >= MIN_BID_INCREMENT,
-            GhostSpeakError::BidIncrementTooLow
+            GhostSpeakError::InvalidBid
         );
         require!(starting_price > 0, GhostSpeakError::InvalidStartingPrice);
 
@@ -259,7 +259,7 @@ impl ServiceAuction {
         require!(self.is_active, GhostSpeakError::AuctionNotActive);
         require!(
             clock.unix_timestamp >= self.auction_end_time,
-            GhostSpeakError::AuctionNotEnded
+            GhostSpeakError::AuctionNotActive
         );
 
         self.is_active = false;
@@ -271,7 +271,7 @@ impl ServiceAuction {
         require!(self.is_active, GhostSpeakError::AuctionNotActive);
         require!(
             self.total_bids == 0,
-            GhostSpeakError::CannotCancelAuctionWithBids
+            GhostSpeakError::InvalidConfiguration
         );
 
         self.is_active = false;
@@ -311,11 +311,11 @@ impl Negotiation {
         );
         require!(
             terms.len() <= MAX_TERMS_COUNT,
-            GhostSpeakError::TooManyTerms
+            GhostSpeakError::TooManyRequirements
         );
 
         for term in &terms {
-            require!(term.len() <= MAX_TERM_LENGTH, GhostSpeakError::TermTooLong);
+            require!(term.len() <= MAX_TERM_LENGTH, GhostSpeakError::InputTooLong);
         }
 
         self.initiator = initiator;
@@ -338,18 +338,18 @@ impl Negotiation {
 
         require!(
             clock.unix_timestamp < self.negotiation_deadline,
-            GhostSpeakError::NegotiationExpired
+            GhostSpeakError::InvalidExpiration
         );
         require!(
             matches!(
                 self.status,
                 NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer
             ),
-            GhostSpeakError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidStatusTransition
         );
         require!(
             self.counter_offers.len() < MAX_COUNTER_OFFERS,
-            GhostSpeakError::TooManyCounterOffers
+            GhostSpeakError::TooManyBids
         );
 
         self.counter_offers.push(offer);
@@ -365,14 +365,14 @@ impl Negotiation {
 
         require!(
             clock.unix_timestamp < self.negotiation_deadline,
-            GhostSpeakError::NegotiationExpired
+            GhostSpeakError::InvalidExpiration
         );
         require!(
             matches!(
                 self.status,
                 NegotiationStatus::InitialOffer | NegotiationStatus::CounterOffer
             ),
-            GhostSpeakError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidStatusTransition
         );
 
         self.status = NegotiationStatus::Accepted;
@@ -567,7 +567,7 @@ impl AuctionMarketplace {
         );
         require!(
             clock.unix_timestamp >= self.auction_end_time,
-            GhostSpeakError::AuctionNotEnded
+            GhostSpeakError::AuctionNotActive
         );
 
         self.status = AuctionStatus::Ended;
@@ -579,7 +579,7 @@ impl AuctionMarketplace {
     pub fn settle_auction(&mut self) -> Result<()> {
         require!(
             self.status == AuctionStatus::Ended,
-            GhostSpeakError::AuctionNotEnded
+            GhostSpeakError::AuctionNotActive
         );
 
         // Check if reserve price was met

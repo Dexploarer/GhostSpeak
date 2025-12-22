@@ -18,7 +18,9 @@ import {
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Cpu,
+  Key
 } from 'lucide-react'
 
 const navItems = [
@@ -31,6 +33,8 @@ const navItems = [
   { href: '/dashboard/payments', label: 'Payments', icon: CreditCard },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/governance', label: 'Governance', icon: Gavel },
+  { href: '/dashboard/multisig', label: 'Multisig', icon: Key },
+  { href: '/dashboard/architecture', label: 'Architecture', icon: Cpu },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -46,14 +50,14 @@ export function DashboardSidebar() {
   return (
     <aside 
       className={cn(
-        'sticky top-0 h-screen flex flex-col border-r border-white/10 bg-gray-950/50 backdrop-blur-xl transition-all duration-300',
+        'sticky top-0 h-screen flex flex-col border-r border-border bg-background/80 backdrop-blur-xl transition-all duration-300',
         isCollapsed ? 'w-20' : 'w-64'
       )}
     >
       {/* Logo Section */}
-      <div className="flex items-center justify-between p-4 border-b border-white/5">
+      <div className="flex items-center justify-between p-4 border-b border-border">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-lime-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-primary/20 flex items-center justify-center group-hover:scale-105 transition-transform">
             <Image 
               src="/ghost-logo.png" 
               alt="GhostSpeak" 
@@ -63,14 +67,14 @@ export function DashboardSidebar() {
             />
           </div>
           {!isCollapsed && (
-            <span className="text-lg font-bold text-white tracking-tight">
+            <span className="text-lg font-bold text-foreground tracking-tight">
               GhostSpeak
             </span>
           )}
         </Link>
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors hidden lg:block"
+          className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors hidden lg:block"
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -89,18 +93,18 @@ export function DashboardSidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative',
                 active 
-                  ? 'bg-lime-500/10 text-lime-400' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               )}
             >
               {/* Active indicator */}
               {active && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-lime-500 rounded-r-full" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
               )}
               
               <Icon className={cn(
                 'w-5 h-5 shrink-0',
-                active ? 'text-lime-400' : 'text-gray-500 group-hover:text-gray-300'
+                active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
               )} />
               
               {!isCollapsed && (
@@ -112,20 +116,20 @@ export function DashboardSidebar() {
       </nav>
       
       {/* x402 Quick Access */}
-      <div className="p-3 border-t border-white/5">
+      <div className="p-3 border-t border-border">
         <Link
           href="/x402/discover"
           className={cn(
             'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200',
-            'bg-linear-to-r from-lime-500/10 to-cyan-500/10 border border-lime-500/20',
-            'text-lime-400 hover:from-lime-500/20 hover:to-cyan-500/20'
+            'bg-linear-to-r from-primary/10 to-cyan-500/10 border border-primary/20',
+            'text-primary hover:from-primary/20 hover:to-cyan-500/20'
           )}
         >
           <Sparkles className="w-5 h-5 shrink-0" />
           {!isCollapsed && (
             <div className="flex flex-col">
               <span>x402 Protocol</span>
-              <span className="text-xs text-gray-500">Discover & Integrate</span>
+              <span className="text-xs text-muted-foreground">Discover & Integrate</span>
             </div>
           )}
         </Link>
@@ -133,12 +137,12 @@ export function DashboardSidebar() {
       
       {/* Protocol Status */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-white/5">
+        <div className="p-4 border-t border-border">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">Network</span>
+            <span className="text-muted-foreground">Network</span>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-green-400 font-mono">Mainnet</span>
+              <span className="text-green-500 font-mono">Mainnet</span>
             </div>
           </div>
         </div>

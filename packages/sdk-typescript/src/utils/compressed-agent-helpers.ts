@@ -2,7 +2,7 @@ import type { Address } from '@solana/addresses'
 import type { Rpc } from '@solana/rpc'
 import type { TransactionSigner } from '@solana/kit'
 import { sha256 } from '@noble/hashes/sha256'
-import type { IInstruction } from '@solana/instructions'
+import type { Instruction } from '@solana/instructions'
 import { 
   getBytesEncoder
 } from '@solana/kit'
@@ -231,7 +231,7 @@ export async function createCompressedAgentTree(
   const createAccountSpace = 8 + 32 + 32 + 8 + 8 + 8 + 8 + canopySize // Header + canopy
   const rentExemptBalance = await (rpc as any).getMinimumBalanceForRentExemption(createAccountSpace).send()
 
-  const createTreeIx: IInstruction = {
+  const createTreeIx: Instruction = {
     programAddress: SystemProgram.programAddress,
     accounts: [
       { address: params.payer.address, role: 1 }, // Payer (signer)
@@ -403,7 +403,7 @@ export async function createCompressedAgentBatch(
   }
 
   for (const batch of batches) {
-    const instructions: IInstruction[] = []
+    const instructions: Instruction[] = []
     
     // Create instruction for each agent in the batch
     for (const agent of batch) {
@@ -419,7 +419,7 @@ export async function createCompressedAgentBatch(
         agentId: agent.agentId
       }, { programAddress: programId })
       
-      instructions.push(instruction as unknown as IInstruction)
+      instructions.push(instruction as unknown as Instruction)
       agentIds.push(agent.agentId)
     }
     

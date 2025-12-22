@@ -10,7 +10,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::Discriminator;
 
 /// Reentrancy guard states
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ReentrancyState {
     Unlocked = 0,
     Locked = 1,
@@ -514,8 +514,11 @@ mod tests {
         let account_lock_size = AccountLock::LEN;
 
         // Test expected structure sizes (discriminator + data fields)
-        assert_eq!(guard_size, 8 + 1 + 8); // discriminator + state + slot
-        assert_eq!(instruction_lock_size, 8 + 32 + 8 + 1); // discriminator + pubkey + slot + state
-        assert_eq!(account_lock_size, 8 + 32 + 8 + 1); // discriminator + account + slot + state
+        // ReentrancyGuard: discriminator(8) + state(1) + nonce(8) + last_interaction(8) + authority(32) + bump(1)
+        assert_eq!(guard_size, 8 + 1 + 8 + 8 + 32 + 1);
+        // InstructionLock: discriminator(8) + instruction_hash(8) + locked_by(32) + locked_at(8) + max_duration(8) + is_locked(1) + bump(1)
+        assert_eq!(instruction_lock_size, 8 + 8 + 32 + 8 + 8 + 1 + 1);
+        // AccountLock: discriminator(8) + protected_account(32) + operation_type(4+64) + lock_signature(4+88) + locked_by(32) + locked_at(8) + expires_at(8) + is_active(1) + bump(1)
+        assert_eq!(account_lock_size, 8 + 32 + 4 + 64 + 4 + 88 + 32 + 8 + 8 + 1 + 1);
     }
 }

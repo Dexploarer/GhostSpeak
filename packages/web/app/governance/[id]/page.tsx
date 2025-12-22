@@ -29,7 +29,7 @@ import {
   Crown,
   TrendingUp,
 } from 'lucide-react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import { useProposal, ProposalType, ProposalStatus } from '@/lib/queries/governance'
 import { VotingInterface } from '@/components/governance/VotingInterface'
 import { cn } from '@/lib/utils'
@@ -122,7 +122,7 @@ const impactLevelConfig = {
 export default function ProposalDetailPage(): React.JSX.Element {
   const params = useParams()
   const proposalId = params?.id as string
-  const { publicKey } = useWallet()
+  const { address: publicKey, isConnected } = useWalletAddress()
   const [copied, setCopied] = React.useState(false)
 
   const {

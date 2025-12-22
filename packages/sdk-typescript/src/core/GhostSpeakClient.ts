@@ -162,6 +162,8 @@ interface AgentBuilderParams {
   compressed?: boolean
   forceIPFS?: boolean
   signer?: TransactionSigner
+  name?: string
+  description?: string
 }
 
 /**
@@ -175,13 +177,20 @@ class AgentBuilder {
     this.module = new AgentModule(config)
   }
 
-  create(params: { name: string; capabilities: string[] }): this {
+  create(params: { name: string; description?: string; capabilities: string[] }): this {
     this.params = {
       ...this.params,
       agentType: 0, // Default type
       metadataUri: JSON.stringify(params),
-      agentId: params.name.toLowerCase().replace(/\s+/g, '-')
+      agentId: params.name.toLowerCase().replace(/\s+/g, '-'),
+      name: params.name,
+      description: params.description || ''
     }
+    return this
+  }
+
+  withDescription(description: string): this {
+    this.params.description = description
     return this
   }
 
@@ -257,6 +266,8 @@ class AgentBuilder {
     
     const signature = await this.module.register(this.params.signer!, {
       agentType: this.params.agentType!,
+      name: this.params.name!,
+      description: this.params.description!,
       metadataUri: this.params.metadataUri!,
       agentId: this.params.agentId!
     })

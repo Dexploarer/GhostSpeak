@@ -127,8 +127,8 @@ export const COMMAND_ALIASES: CommandAlias[] = [
     description: 'View your job postings'
   },
   {
-    aliases: ['tx', 'transactions'],
-    command: 'transaction history',
+    aliases: ['transactions'],
+    command: 'tx',
     description: 'View transaction history'
   }
 ]

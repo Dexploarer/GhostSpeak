@@ -144,6 +144,17 @@ const PaymentStreamingManager = class PaymentStreamingManagerStub {
 }
 
 const GhostSpeakClient = class GhostSpeakClientStub {
+  // Stub tokens module for type compatibility
+  public tokens = {
+    getBalance: async (_wallet: unknown, _token: Address): Promise<bigint> => {
+      console.warn('SDK tokens module not implemented - returning 0')
+      return BigInt(0)
+    },
+    getAllBalances: async (_wallet: unknown): Promise<Array<{ token: Address; balance: bigint }>> => {
+      console.warn('SDK tokens module not implemented - returning empty array')
+      return []
+    },
+  }
   constructor(_config: { rpcUrl: string; programId: Address; signer?: unknown }) {}
 }
 

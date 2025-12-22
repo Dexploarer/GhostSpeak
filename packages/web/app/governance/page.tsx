@@ -29,7 +29,7 @@ import {
   BarChart3,
   FileText,
 } from 'lucide-react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import {
   useProposals,
   useVotingPower,
@@ -45,7 +45,7 @@ import { CreateProposalForm } from '@/components/governance/CreateProposalForm'
 import { useCastVote } from '@/lib/queries/governance'
 
 export default function GovernancePage(): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { address: publicKey, isConnected } = useWalletAddress()
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState('all')
 

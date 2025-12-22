@@ -53,6 +53,8 @@ pub struct AgentAnalytics {
 #[account]
 pub struct Agent {
     pub owner: Pubkey,
+    pub agent_id: String,         // Unique agent identifier
+    pub agent_type: u8,           // Agent type (0=general, 1=trading, 2=content, 3=automation, etc.)
     pub name: String,
     pub description: String,
     pub capabilities: Vec<String>,
@@ -96,12 +98,21 @@ pub struct Agent {
 }
 
 impl Agent {
+    // Reduced sizes to prevent memory allocation failures
+    pub const MAX_DESC_LEN: usize = 64;    // Reduced from 128
+    pub const MAX_ENDPOINT_LEN: usize = 64; // Reduced for endpoints
+    pub const MAX_URI_LEN: usize = 64;      // Reduced for URIs
+    pub const MAX_TOKENS: usize = 5;        // Reduced from 10
+    pub const MAX_CAP_LEN: usize = 32;      // Reduced capability string length
+    
     pub const LEN: usize = 8 + // discriminator
         32 + // owner
+        4 + 32 + // agent_id (max 32 chars)
+        1 + // agent_type u8
         4 + MAX_NAME_LENGTH + // name
-        4 + MAX_GENERAL_STRING_LENGTH + // description
-        4 + (4 + MAX_GENERAL_STRING_LENGTH) * MAX_CAPABILITIES_COUNT + // capabilities
-        1 + 1 + // pricing_model enum (1 byte discriminator + 1 byte for enum variant)
+        4 + Self::MAX_DESC_LEN + // description (reduced)
+        4 + (4 + Self::MAX_CAP_LEN) * MAX_CAPABILITIES_COUNT + // capabilities (reduced)
+        1 + 1 + // pricing_model enum
         4 + // reputation_score
         4 + // total_jobs_completed
         8 + // total_earnings
@@ -109,15 +120,15 @@ impl Agent {
         8 + // created_at
         8 + // updated_at
         8 + // original_price
-        4 + MAX_GENERAL_STRING_LENGTH + // genome_hash
+        4 + Self::MAX_DESC_LEN + // genome_hash (reduced)
         1 + // is_replicable
         8 + // replication_fee
-        4 + MAX_GENERAL_STRING_LENGTH + // service_endpoint
+        4 + Self::MAX_ENDPOINT_LEN + // service_endpoint (reduced)
         1 + // is_verified
         8 + // verification_timestamp
-        4 + MAX_GENERAL_STRING_LENGTH + // metadata_uri
-        4 + MAX_GENERAL_STRING_LENGTH + // framework_origin
-        4 + (10 * 32) + // supported_tokens (max 10)
+        4 + Self::MAX_URI_LEN + // metadata_uri (reduced)
+        4 + 32 + // framework_origin (reduced)
+        4 + (Self::MAX_TOKENS * 32) + // supported_tokens (reduced)
         1 + 32 + // cnft_mint Option
         1 + 32 + // merkle_tree Option
         1 + // supports_a2a
@@ -127,15 +138,15 @@ impl Agent {
         // x402 fields
         1 + // x402_enabled bool
         32 + // x402_payment_address Pubkey
-        4 + (10 * 32) + // x402_accepted_tokens (max 10)
+        4 + (Self::MAX_TOKENS * 32) + // x402_accepted_tokens (reduced)
         8 + // x402_price_per_call u64
-        4 + MAX_GENERAL_STRING_LENGTH + // x402_service_endpoint
+        4 + Self::MAX_ENDPOINT_LEN + // x402_service_endpoint (reduced)
         8 + // x402_total_payments u64
         8 + // x402_total_calls u64
         8 + // last_payment_timestamp i64
         // API schema fields
-        4 + MAX_GENERAL_STRING_LENGTH + // api_spec_uri
-        4 + 32 + // api_version (max 32 chars for semver like "1.0.0")
+        4 + Self::MAX_URI_LEN + // api_spec_uri (reduced)
+        4 + 16 + // api_version (reduced for semver)
         1; // bump
 
     /// Deactivate the agent
@@ -251,7 +262,7 @@ impl Agent {
         );
         require!(
             self.genome_hash.len() <= MAX_GENERAL_STRING_LENGTH,
-            GhostSpeakError::InvalidGenomeHash
+            GhostSpeakError::InvalidInput
         );
         require!(
             self.service_endpoint.len() <= MAX_GENERAL_STRING_LENGTH,

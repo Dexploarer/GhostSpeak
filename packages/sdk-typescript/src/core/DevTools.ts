@@ -4,7 +4,9 @@
  * Provides debugging, inspection, and development utilities
  */
 
-import type { IInstruction, AccountRole } from '@solana/kit'
+import type { Instruction, AccountRole } from '@solana/kit'
+// Type alias for backward compatibility with @solana/kit v2
+type IInstruction = Instruction
 import type { Address } from '@solana/addresses'
 import type { GhostSpeakConfig } from '../types/index.js'
 import { RpcClient } from './rpc-client.js'

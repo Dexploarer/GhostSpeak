@@ -64,13 +64,13 @@ impl NegotiationChatbot {
         );
         require!(
             terms.len() <= super::auction::MAX_TERMS_COUNT,
-            GhostSpeakError::TooManyTerms
+            GhostSpeakError::TooManyRequirements
         );
 
         for term in &terms {
             require!(
                 term.len() <= super::auction::MAX_TERM_LENGTH,
-                GhostSpeakError::TermTooLong
+                GhostSpeakError::InputTooLong
             );
         }
 
@@ -95,7 +95,7 @@ impl NegotiationChatbot {
 
         require!(
             clock.unix_timestamp < self.negotiation_deadline,
-            GhostSpeakError::NegotiationExpired
+            GhostSpeakError::InvalidExpiration
         );
         require!(
             matches!(
@@ -103,11 +103,11 @@ impl NegotiationChatbot {
                 super::auction::NegotiationStatus::InitialOffer
                     | super::auction::NegotiationStatus::CounterOffer
             ),
-            GhostSpeakError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidStatusTransition
         );
         require!(
             self.counter_offers.len() < super::auction::MAX_COUNTER_OFFERS,
-            GhostSpeakError::TooManyCounterOffers
+            GhostSpeakError::TooManyBids
         );
 
         self.counter_offers.push(offer);
@@ -123,7 +123,7 @@ impl NegotiationChatbot {
 
         require!(
             clock.unix_timestamp < self.negotiation_deadline,
-            GhostSpeakError::NegotiationExpired
+            GhostSpeakError::InvalidExpiration
         );
         require!(
             matches!(
@@ -131,7 +131,7 @@ impl NegotiationChatbot {
                 super::auction::NegotiationStatus::InitialOffer
                     | super::auction::NegotiationStatus::CounterOffer
             ),
-            GhostSpeakError::InvalidNegotiationStatus
+            GhostSpeakError::InvalidStatusTransition
         );
 
         self.status = super::auction::NegotiationStatus::Accepted;

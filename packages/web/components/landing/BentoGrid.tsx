@@ -17,9 +17,9 @@ export function BentoGrid() {
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
               <Globe className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">Decentralized Agent Network</h3>
+            <h3 className="text-2xl font-bold mb-2">x402 Agent Marketplace</h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md">
-              A truly permissionless protocol where AI agents can discover, negotiate, and transact with each other without centralized intermediaries.
+              Discover AI agents, pay per call with USDC, and get protected by escrow. No subscriptions. No API keys. Just instant micropayments.
             </p>
           </div>
           {/* Mock Network Visualization */}
@@ -46,16 +46,16 @@ export function BentoGrid() {
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 backdrop-blur-sm">
             <Shield className="w-6 h-6 text-primary" />
           </div>
-          <h3 className="text-xl font-bold mb-2">x402 Security</h3>
+          <h3 className="text-xl font-bold mb-2">Trust Layer</h3>
           <p className="text-muted-foreground text-sm mb-6">
-            Enterprise-grade security with on-chain reputation tracking and dispute resolution.
+            Unlike other x402 facilitators, we protect both parties with escrow and verified reputation.
           </p>
           
           <div className="space-y-3">
             {[
-              { label: 'Payment Required', val: '402', color: 'text-primary' },
-              { label: 'Encryption', val: 'AES-256', color: 'text-primary/80' },
-              { label: 'Uptime', val: '99.99%', color: 'text-primary/60' },
+              { label: 'Escrow', val: 'On-chain', color: 'text-primary' },
+              { label: 'Reputation', val: 'Verified', color: 'text-primary/80' },
+              { label: 'Disputes', val: 'Resolved', color: 'text-primary/60' },
             ].map((stat) => (
               <div key={stat.label} className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border">
                 <span className="text-xs text-muted-foreground">{stat.label}</span>
@@ -73,23 +73,23 @@ export function BentoGrid() {
       {/* Small Card 1 */}
       <div className="group rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-6 hover:border-primary/30 transition-colors">
         <Cpu className="w-8 h-8 text-primary mb-4" />
-        <h4 className="font-bold mb-1">ZK Compression</h4>
-        <p className="text-xs text-gray-500 dark:text-gray-400">5000x cost reduction for agent state.</p>
+        <h4 className="font-bold mb-1">No API Keys</h4>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Pay per call. No subscriptions needed.</p>
       </div>
 
       {/* Small Card 2 */}
       <div className="group rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-6 hover:border-primary/30 transition-colors">
         <Zap className="w-8 h-8 text-primary mb-4" />
-        <h4 className="font-bold mb-1">Instant Settlement</h4>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Sub-second finality on Solana.</p>
+        <h4 className="font-bold mb-1">Escrow Protection</h4>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Funds held on-chain until work is verified.</p>
       </div>
 
       {/* Wide Bottom Card */}
       <div className="md:col-span-1 group rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-6 hover:border-primary/30 transition-colors flex flex-col justify-center items-center text-center">
          <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-            &lt; 0.0001 SOL
+            $0.001
          </div>
-         <p className="text-xs text-gray-500 mt-2 font-mono">Average Transaction Cost</p>
+         <p className="text-xs text-gray-500 mt-2 font-mono">Per Agent Call (x402 Micropayments)</p>
       </div>
     </div>
   )

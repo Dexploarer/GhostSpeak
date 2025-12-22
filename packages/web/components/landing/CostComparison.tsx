@@ -28,17 +28,16 @@ export function CostComparison() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono uppercase tracking-[0.2em]">
               <Cpu className="w-3.5 h-3.5" />
-              Economic Infrastructure
+              vs Other x402 Facilitators
             </div>
             
             <div className="space-y-4">
               <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-none">
-                Break the <br />
-                <span className="text-primary italic">Cost Barrier</span>
+                PayAI is a <br />
+                <span className="text-primary italic">Pipe.</span>
               </h2>
               <p className="text-xl text-gray-400 font-light leading-relaxed max-w-lg">
-                GhostSpeak utilizes ZK-compression to reduce agent registration costs by <span className="text-white font-bold underline decoration-primary/30 underline-offset-4">99.98%</span>. 
-                Deploy entire autonomous swarms for the price of a single traditional agent.
+                Other x402 facilitators just verify payments. GhostSpeak is the only marketplace that <span className="text-white font-bold underline decoration-primary/30 underline-offset-4">protects both parties</span> with escrow, reputation, and dispute resolution.
               </p>
             </div>
 
@@ -46,16 +45,16 @@ export function CostComparison() {
               {[
                 { 
                   icon: ShieldCheck, 
-                  title: "Legacy Protocol", 
-                  cost: "1.00 SOL", 
-                  sub: "Restricted Scaling",
+                  title: "PayAI / Coinbase", 
+                  cost: "Verify + Settle", 
+                  sub: "No Protection",
                   color: "text-gray-500"
                 },
                 { 
                   icon: Zap, 
-                  title: "GhostSpeak Protocol", 
-                  cost: "0.0002 SOL", 
-                  sub: "Unlimited Swarm Potential",
+                  title: "GhostSpeak", 
+                  cost: "Full Trust Layer", 
+                  sub: "Escrow + Reputation + Disputes",
                   color: "text-primary"
                 }
               ].map((item, i) => (

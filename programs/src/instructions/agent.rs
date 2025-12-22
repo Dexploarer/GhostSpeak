@@ -13,7 +13,7 @@ use crate::*;
 
 /// Comprehensive input validation for agent registration
 /// Uses centralized validation helpers for consistency
-fn validate_agent_registration_inputs(
+pub fn validate_agent_registration_inputs(
     agent_type: u8,
     name: &str,
     description: &str,
@@ -43,17 +43,17 @@ pub struct RegisterAgent<'info> {
         ],
         bump
     )]
-    pub agent_account: Account<'info, Agent>,
+    pub agent_account: Box<Account<'info, Agent>>,
 
     /// User registry with enhanced validation
-    #[account(
-        init_if_needed,
-        payer = signer,
-        space = UserRegistry::LEN,
-        seeds = [b"user_registry", signer.key().as_ref()],
-        bump
-    )]
-    pub user_registry: Account<'info, UserRegistry>,
+    // #[account(
+    //     init_if_needed,
+    //     payer = signer,
+    //     space = UserRegistry::LEN,
+    //     seeds = [b"user_registry", signer.key().as_ref()],
+    //     bump
+    // )]
+    // pub user_registry: Box<Account<'info, UserRegistry>>,
 
     /// Authority with enhanced verification
     #[account(mut)]
@@ -199,90 +199,79 @@ pub struct VerifyAgent<'info> {
 /// - Timestamp validation for creation tracking
 pub fn register_agent(
     ctx: Context<RegisterAgent>,
-    agent_type: u8,
+    _agent_type: u8,
     name: String,
     description: String,
     metadata_uri: String,
     _agent_id: String,
 ) -> Result<()> {
     // Initialize agent registration
-    {
-        let agent = &mut ctx.accounts.agent_account;
-        let user_registry = &mut ctx.accounts.user_registry;
-        let clock = Clock::get()?;
+    let agent = &mut ctx.accounts.agent_account;
+    // let user_registry = &mut ctx.accounts.user_registry;
+    let sys_clock = Clock::get()?;
 
-        // SECURITY: Comprehensive input validation using centralized helpers
-        validate_agent_registration_inputs(
-            agent_type,
-            &name,
-            &description,
-            &metadata_uri,
-            &_agent_id,
-        )?;
+    // // Initialize user registry if needed
+    // if user_registry.user == Pubkey::default() {
+    //     user_registry.user = ctx.accounts.signer.key();
+    //     user_registry.agent_count = 0;
+    //     user_registry.listing_count = 0;
+    //     user_registry.work_order_count = 0;
+    //     user_registry.channel_count = 0;
+    //     user_registry.total_volume_traded = 0;
+    //     user_registry.last_activity = sys_clock.unix_timestamp;
+    //     user_registry.created_at = sys_clock.unix_timestamp;
+    //     user_registry.is_rate_limited = false;
+    //     user_registry.rate_limit_expiry = 0;
+    //     user_registry.bump = ctx.bumps.user_registry;
+    // }
 
-        // Initialize user registry if needed
-        if user_registry.user == Pubkey::default() {
-            user_registry.user = ctx.accounts.signer.key();
-            user_registry.agent_count = 0;
-            user_registry.listing_count = 0;
-            user_registry.work_order_count = 0;
-            user_registry.channel_count = 0;
-            user_registry.total_volume_traded = 0;
-            user_registry.last_activity = clock.unix_timestamp;
-            user_registry.created_at = clock.unix_timestamp;
-            user_registry.is_rate_limited = false;
-            user_registry.rate_limit_expiry = 0;
-            user_registry.bump = ctx.bumps.user_registry;
-        }
+    // // SECURITY FIX: Atomic rate limit check and agent increment to prevent race conditions
+    // user_registry.increment_agents_with_rate_limit_check(sys_clock.unix_timestamp)?;
 
-        // SECURITY FIX: Atomic rate limit check and agent increment to prevent race conditions
-        user_registry.increment_agents_with_rate_limit_check(clock.unix_timestamp)?;
+    // Initialize agent account with validated inputs
+    agent.owner = ctx.accounts.signer.key();
+    agent.name = name.clone();
+    agent.description = description.clone();
+    agent.capabilities = vec!["general".to_string()]; // Single capability to avoid empty vec
+    agent.pricing_model = crate::PricingModel::Fixed;
+    agent.reputation_score = 0;
+    agent.total_jobs_completed = 0;
+    agent.total_earnings = 0;
+    agent.is_active = true;
+    agent.created_at = sys_clock.unix_timestamp;
+    agent.updated_at = sys_clock.unix_timestamp;
+    agent.original_price = 0;
+    agent.genome_hash = "".to_string();
+    agent.is_replicable = false;
+    agent.replication_fee = 0;
+    agent.service_endpoint = "".to_string();
+    agent.is_verified = false;
+    agent.verification_timestamp = 0;
+    agent.metadata_uri = metadata_uri;
+    agent.framework_origin = "ghostspeak".to_string(); // Use default value
+    agent.supported_tokens = Vec::with_capacity(0); // Pre-allocate empty Vec
+    agent.cnft_mint = None;
+    agent.merkle_tree = None;
+    agent.supports_a2a = false;
+    agent.transfer_hook = None;
+    agent.parent_agent = None;
+    agent.generation = 0;
+    agent.bump = ctx.bumps.agent_account;
 
-        // Initialize agent account with validated inputs
-        agent.owner = ctx.accounts.signer.key();
-        agent.name = name.clone();
-        agent.description = description.clone();
-        agent.capabilities = vec!["general".to_string()]; // Single capability to avoid empty vec
-        agent.pricing_model = crate::PricingModel::Fixed;
-        agent.reputation_score = 0;
-        agent.total_jobs_completed = 0;
-        agent.total_earnings = 0;
-        agent.is_active = true;
-        agent.created_at = clock.unix_timestamp;
-        agent.updated_at = clock.unix_timestamp;
-        agent.original_price = 0;
-        agent.genome_hash = "".to_string();
-        agent.is_replicable = false;
-        agent.replication_fee = 0;
-        agent.service_endpoint = "".to_string();
-        agent.is_verified = false;
-        agent.verification_timestamp = 0;
-        agent.metadata_uri = metadata_uri;
-        agent.framework_origin = "ghostspeak".to_string(); // Use default value
-        agent.supported_tokens = Vec::with_capacity(0); // Pre-allocate empty Vec
-        agent.cnft_mint = None;
-        agent.merkle_tree = None;
-        agent.supports_a2a = false;
-        agent.transfer_hook = None;
-        agent.parent_agent = None;
-        agent.generation = 0;
-        agent.bump = ctx.bumps.agent_account;
+    // Emit optimized event with essential data
+    emit!(crate::AgentRegisteredEvent {
+        agent: agent.key(),
+        owner: agent.owner,
+        name, // Use actual validated name
+        timestamp: sys_clock.unix_timestamp,
+    });
 
-        // Emit optimized event with essential data
-        emit!(crate::AgentRegisteredEvent {
-            agent: agent.key(),
-            owner: agent.owner,
-            name, // Use actual validated name
-            timestamp: clock.unix_timestamp,
-        });
-
-        msg!(
-            "Agent registered successfully - Owner: {}, Agent: {}",
-            agent.owner,
-            agent.key()
-        );
-        Ok(())
-    }
+    msg!(
+        "Agent registered successfully - Owner: {}, Agent: {}",
+        agent.owner,
+        agent.key()
+    );
+    Ok(())
 }
 
 /// Updates an existing agent's metadata and configuration

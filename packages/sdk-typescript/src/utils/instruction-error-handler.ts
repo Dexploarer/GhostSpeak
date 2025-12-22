@@ -10,6 +10,9 @@ import {
   type InstructionMapping
 } from '../generated/instruction-mappings.js'
 
+// Re-export for convenience
+export { type InstructionMapping }
+
 interface ExpectedAccount {
   name: string
   pda: boolean
@@ -267,8 +270,8 @@ export function getRequiredSigners(instructionName: string): string[] {
   if (!mapping) return [];
   
   return mapping.expectedAccounts
-    .filter(account => account.name.includes('authority') || account.name.includes('signer'))
-    .map(account => account.name);
+    .filter((account: ExpectedAccount) => account.name.includes('authority') || account.name.includes('signer'))
+    .map((account: ExpectedAccount) => account.name);
 }
 
 /**
@@ -280,8 +283,8 @@ export function getWritableAccounts(instructionName: string): string[] {
   
   // Return accounts that are likely writable (PDAs and data accounts)
   return mapping.expectedAccounts
-    .filter(account => account.pda || account.name.includes('data') || account.name.includes('account'))
-    .map(account => account.name);
+    .filter((account: ExpectedAccount) => account.pda || account.name.includes('data') || account.name.includes('account'))
+    .map((account: ExpectedAccount) => account.name);
 }
 
 /**
@@ -292,8 +295,8 @@ export function getPDAAccounts(instructionName: string): string[] {
   if (!mapping) return [];
   
   return mapping.expectedAccounts
-    .filter(account => account.pda)
-    .map(account => account.name);
+    .filter((account: ExpectedAccount) => account.pda)
+    .map((account: ExpectedAccount) => account.name);
 }
 
 /**

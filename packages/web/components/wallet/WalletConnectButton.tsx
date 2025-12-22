@@ -1,9 +1,8 @@
 'use client'
 
-import { useWallet } from '@solana/wallet-adapter-react'
-import { useWalletModal } from '@solana/wallet-adapter-react-ui'
+import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 import { Button } from '@/components/ui/button'
-import { Wallet, LogOut, Copy, Check } from 'lucide-react'
+import { Wallet, LogOut, Copy, Check, Loader2 } from 'lucide-react'
 import { formatAddress } from '@/lib/utils'
 import { useState } from 'react'
 import {
@@ -17,58 +16,71 @@ import {
 import { toast } from 'sonner'
 
 export function WalletConnectButton() {
-  const { publicKey, disconnect, connected, connecting } = useWallet()
-  const { setVisible } = useWalletModal()
+  const { login, logout, status } = useAuth()
+  const { wallet } = useWallet()
   const [copied, setCopied] = useState(false)
 
+  const isLoading = status === 'initializing'
+  const isConnected = wallet?.address
+
   const handleCopy = async () => {
-    if (publicKey) {
-      await navigator.clipboard.writeText(publicKey.toString())
+    if (wallet?.address) {
+      await navigator.clipboard.writeText(wallet.address)
       setCopied(true)
       toast.success('Address copied to clipboard')
       setTimeout(() => setCopied(false), 2000)
     }
   }
 
-  if (!connected) {
+  // Loading state
+  if (isLoading) {
     return (
-      <Button
-        onClick={() => setVisible(true)}
-        disabled={connecting}
-        variant="gradient"
-        className="gap-2"
-      >
-        <Wallet className="h-4 w-4" />
-        {connecting ? 'Connecting...' : 'Connect Wallet'}
+      <Button variant="outline" disabled className="gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Loading...
       </Button>
     )
   }
 
+  // Connected state
+  if (isConnected && wallet?.address) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <Wallet className="h-4 w-4 text-primary" />
+            {formatAddress(wallet.address)}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-primary" />
+            Connected Wallet
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleCopy} className="gap-2">
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            Copy address
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={logout} className="gap-2 text-red-600">
+            <LogOut className="h-4 w-4" />
+            Disconnect
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  // Not connected - show connect button
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Wallet className="h-4 w-4" />
-          {formatAddress(publicKey?.toString() || '')}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Wallet</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleCopy} className="gap-2">
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          Copy address
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setVisible(true)} className="gap-2">
-          <Wallet className="h-4 w-4" />
-          Change wallet
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={disconnect} className="gap-2 text-red-600">
-          <LogOut className="h-4 w-4" />
-          Disconnect
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      onClick={login}
+      variant="gradient"
+      className="gap-2"
+    >
+      <Wallet className="h-4 w-4" />
+      Connect
+    </Button>
   )
 }

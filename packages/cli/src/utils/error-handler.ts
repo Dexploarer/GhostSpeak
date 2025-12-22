@@ -153,7 +153,7 @@ export class ErrorHandler {
    * Handle an error with user-friendly output
    */
   static handle(error: Error | unknown, context?: ErrorContext): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+     
     const errorMessage = error instanceof Error ? error.message : String(error)
     const errorInfo = this.parseError(errorMessage)
     
@@ -281,7 +281,7 @@ export class ErrorHandler {
       try {
         return await operation()
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+         
         lastError = error instanceof Error ? error : new Error(String(error))
         
         if (attempt === maxRetries) {
@@ -334,7 +334,7 @@ export async function withRetry<T>(
  * Format error for display without handling
  */
 export function formatError(error: Error | unknown): string {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+   
   const errorMessage = error instanceof Error ? error.message : String(error)
   return ErrorHandler['cleanErrorMessage'](errorMessage)
 }

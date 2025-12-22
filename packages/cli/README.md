@@ -306,7 +306,7 @@ The CLI stores settings in `~/.ghostspeak/config.json`:
 {
   "network": "devnet",
   "rpcUrl": "https://api.devnet.solana.com",
-  "programId": "GssMyhkQPePLzByJsJadbQePZc6GtzGi22aQqW5opvUX",
+  "programId": "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9",
   "walletPath": "~/.ghostspeak/wallets/",
   "autoUpdate": true,
   "confirmation": "confirmed"

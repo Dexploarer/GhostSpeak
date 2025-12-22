@@ -4,7 +4,6 @@
  * Contains state structures for agent replication and template management.
  */
 
-use crate::MAX_GENERAL_STRING_LENGTH;
 use anchor_lang::prelude::*;
 
 #[account]
@@ -55,11 +54,16 @@ pub struct AgentReplicatedEvent {
 }
 
 impl ReplicationTemplate {
+    // Reduced sizes to prevent memory allocation failures
+    pub const MAX_CAPABILITIES: usize = 5; // Reduced from 20
+    pub const MAX_HASH_LEN: usize = 64;    // Reduced for genome_hash
+    pub const MAX_URI_LEN: usize = 64;     // Reduced for metadata_uri
+    
     pub const LEN: usize = 8 + // discriminator
         32 + // source_agent
         32 + // creator
-        4 + MAX_GENERAL_STRING_LENGTH + // genome_hash
-        4 + (20 * (4 + MAX_GENERAL_STRING_LENGTH)) + // base_capabilities (max 20)
+        4 + Self::MAX_HASH_LEN + // genome_hash (reduced)
+        4 + (Self::MAX_CAPABILITIES * (4 + 32)) + // base_capabilities (max 5, 32 chars each)
         8 + // replication_fee
         4 + // max_replications
         4 + // current_replications
@@ -67,7 +71,7 @@ impl ReplicationTemplate {
         8 + // created_at
         1 + 32 + // cnft_asset_id Option
         1 + 32 + // merkle_tree Option
-        4 + MAX_GENERAL_STRING_LENGTH + // metadata_uri
+        4 + Self::MAX_URI_LEN + // metadata_uri (reduced)
         1; // bump
 }
 

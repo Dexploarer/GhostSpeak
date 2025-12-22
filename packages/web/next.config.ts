@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   // Note: Static export disabled - this is a dynamic web3 app with wallet connections
   // and real-time blockchain data that requires client-side rendering
 
-  // Disable TypeScript checking during build for deployment
+  // TypeScript checking during build - set to false to enforce type safety
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Set basePath for GitHub Pages (uncomment if deploying to subdirectory)

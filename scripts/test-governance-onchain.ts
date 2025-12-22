@@ -148,7 +148,7 @@ class OnChainGovernanceTest {
     
     try {
       // The program data account stores the actual bytecode
-      const programDataAddress = address('8QkHD4T4LRkjyhRykTn96VygiEQTUhpTsqDR5E3FJN9C');
+      const programDataAddress = address('8fxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
       
       const dataInfo = await this.rpc.getAccountInfo(programDataAddress, { encoding: 'base64' }).send();
       

@@ -1,7 +1,7 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
-import { GHOSTSPEAK_PROGRAM_ID, ParticipantType } from '../types/index.js'
+import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js'
 import { AgentModule } from './modules/AgentModule.js'
 import { EscrowModule } from '../modules/escrow/EscrowModule.js'
 import { ChannelModule } from '../modules/channels/ChannelModule.js'

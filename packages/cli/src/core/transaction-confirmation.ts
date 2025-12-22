@@ -567,7 +567,7 @@ export class TransactionConfirmationSystem extends EventEmitter {
       '11111111111111111111111111111111', // System Program
       'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', // Token Program
       'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb', // Token-2022 Program
-      '3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot' // GhostSpeak Program
+      'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9' // GhostSpeak Program
     ]
 
     return trustedPrograms.includes(programId)

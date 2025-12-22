@@ -1,6 +1,5 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import { getProgramDerivedAddress } from '@solana/addresses'
 import type { GhostSpeakConfig } from '../../types/index.js'
 import type { IPFSConfig } from '../../types/ipfs-types.js'
 import { BaseModule } from '../BaseModule.js'
@@ -101,6 +100,8 @@ export class AgentModule extends BaseModule {
    */
   async registerCompressed(signer: TransactionSigner, params: {
     agentType: number
+    name: string
+    description: string
     metadataUri: string
     agentId: string
     merkleTree: Address
@@ -117,6 +118,8 @@ export class AgentModule extends BaseModule {
         systemProgram: this.systemProgramId,
         compressionProgram: this.compressionProgramId,
         agentType: params.agentType,
+        name: params.name,
+        description: params.description,
         metadataUri: params.metadataUri,
         agentId: params.agentId,
         logWrapper: 'noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV' as Address // Explicitly provide Noop program

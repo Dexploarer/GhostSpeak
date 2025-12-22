@@ -27,7 +27,7 @@ vi.mock('@solana/addresses', () => ({
 // Mock environment variables
 process.env.NODE_ENV = 'test'
 process.env.GHOSTSPEAK_CONFIG_DIR = '/tmp/ghostspeak-test'
-process.env.GHOSTSPEAK_PROGRAM_ID_DEVNET = '3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot'
+process.env.GHOSTSPEAK_PROGRAM_ID_DEVNET = 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9'
 
 // Global test utilities
 global.mockConsole = {

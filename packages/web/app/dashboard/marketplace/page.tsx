@@ -63,7 +63,7 @@ export default function MarketplacePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
          {/* Featured Card */}
-         <GlassCard className="col-span-1 lg:col-span-2 p-8 relative overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/20">
+         <GlassCard className="col-span-1 lg:col-span-2 p-8 relative overflow-hidden bg-linear-to-br from-primary/10 to-secondary/20">
             <div className="absolute top-0 right-0 p-12 opacity-10">
                <ShoppingCart className="w-48 h-48 text-primary" />
             </div>
@@ -113,7 +113,7 @@ export default function MarketplacePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
            {displayListings.map((listing: any, i: number) => (
               <GlassCard key={listing.address || i} variant="interactive" className="p-4 group flex flex-col">
-                 <div className="aspect-video rounded-lg bg-gradient-to-br from-muted to-muted/50 mb-4 relative overflow-hidden flex items-center justify-center">
+                 <div className="aspect-video rounded-lg bg-linear-to-br from-muted to-muted/50 mb-4 relative overflow-hidden flex items-center justify-center">
                     <ShoppingCart className="w-12 h-12 text-muted-foreground/30" />
                     <div className="absolute bottom-2 left-2">
                        <span className="px-2 py-1 rounded bg-background/80 backdrop-blur-md text-xs text-foreground border border-border">

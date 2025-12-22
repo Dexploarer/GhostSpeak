@@ -10,35 +10,119 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
+  getOptionDecoder,
+  getOptionEncoder,
+  getTupleDecoder,
+  getTupleEncoder,
+  getU8Decoder,
+  getU8Encoder,
+  getI64Decoder,
+  getI64Encoder,
+  getU64Decoder,
+  getU64Encoder,
+  getBooleanDecoder,
+  getBooleanEncoder,
+  addDecoderSizePrefix,
+  addEncoderSizePrefix,
+  getU32Decoder,
+  getU32Encoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   type Codec,
   type Decoder,
   type Encoder,
+  type Option,
+  type OptionOrNullable,
 } from '@solana/kit';
 
+import {
+  getTransactionTypeDecoder,
+  getTransactionTypeEncoder,
+  type TransactionType,
+  type TransactionTypeArgs,
+} from './transactionType';
 
-// Define MultisigConfig interface
+/**
+ * Multi-signature configuration matching Rust struct
+ */
 export interface MultisigConfig {
-  requireSequentialSigning: boolean;
-  allowOwnerOffCurve: boolean;
+  /** Maximum number of signers */
+  maxSigners: number;
+  /** Default transaction timeout (seconds) */
+  defaultTimeout: bigint;
+  /** Allow emergency override */
+  allowEmergencyOverride: boolean;
+  /** Emergency threshold (if different from normal) */
+  emergencyThreshold: Option<number>;
+  /** Automatic execution enabled */
+  autoExecute: boolean;
+  /** Required confirmations for signer changes */
+  signerChangeThreshold: number;
+  /** Allowed transaction types */
+  allowedTransactionTypes: Array<TransactionType>;
+  /** Daily transaction limits */
+  dailyLimits: Array<readonly [string, bigint]>;
 }
 
-export type MultisigConfigArgs = MultisigConfig;
-
-// Define encoder/decoder for MultisigConfig
-import { getBooleanEncoder, getBooleanDecoder } from '@solana/kit';
+export interface MultisigConfigArgs {
+  /** Maximum number of signers */
+  maxSigners: number;
+  /** Default transaction timeout (seconds) */
+  defaultTimeout: number | bigint;
+  /** Allow emergency override */
+  allowEmergencyOverride: boolean;
+  /** Emergency threshold (if different from normal) */
+  emergencyThreshold: OptionOrNullable<number>;
+  /** Automatic execution enabled */
+  autoExecute: boolean;
+  /** Required confirmations for signer changes */
+  signerChangeThreshold: number;
+  /** Allowed transaction types */
+  allowedTransactionTypes: Array<TransactionTypeArgs>;
+  /** Daily transaction limits */
+  dailyLimits: Array<readonly [string, number | bigint]>;
+}
 
 export function getMultisigConfigEncoder(): Encoder<MultisigConfigArgs> {
   return getStructEncoder([
-    ['requireSequentialSigning', getBooleanEncoder()],
-    ['allowOwnerOffCurve', getBooleanEncoder()]
+    ['maxSigners', getU8Encoder()],
+    ['defaultTimeout', getI64Encoder()],
+    ['allowEmergencyOverride', getBooleanEncoder()],
+    ['emergencyThreshold', getOptionEncoder(getU8Encoder())],
+    ['autoExecute', getBooleanEncoder()],
+    ['signerChangeThreshold', getU8Encoder()],
+    ['allowedTransactionTypes', getArrayEncoder(getTransactionTypeEncoder())],
+    ['dailyLimits', getArrayEncoder(
+      getTupleEncoder([
+        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()),
+        getU64Encoder()
+      ])
+    )],
   ]);
 }
 
 export function getMultisigConfigDecoder(): Decoder<MultisigConfig> {
   return getStructDecoder([
-    ['requireSequentialSigning', getBooleanDecoder()],
-    ['allowOwnerOffCurve', getBooleanDecoder()]
+    ['maxSigners', getU8Decoder()],
+    ['defaultTimeout', getI64Decoder()],
+    ['allowEmergencyOverride', getBooleanDecoder()],
+    ['emergencyThreshold', getOptionDecoder(getU8Decoder())],
+    ['autoExecute', getBooleanDecoder()],
+    ['signerChangeThreshold', getU8Decoder()],
+    ['allowedTransactionTypes', getArrayDecoder(getTransactionTypeDecoder())],
+    ['dailyLimits', getArrayDecoder(
+      getTupleDecoder([
+        addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()),
+        getU64Decoder()
+      ])
+    )],
   ]);
+}
+
+export function getMultisigConfigCodec(): Codec<MultisigConfigArgs, MultisigConfig> {
+  return combineCodec(getMultisigConfigEncoder(), getMultisigConfigDecoder());
 }
 
 export type MultisigConfigExport = { data: MultisigConfig };

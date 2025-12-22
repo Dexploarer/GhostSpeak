@@ -42,7 +42,7 @@ export default function DashboardOverview() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             Agent Marketplace
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -158,7 +158,7 @@ export default function DashboardOverview() {
           </GlassCard>
 
           {/* Trust Layer Info */}
-          <GlassCard className="p-6 flex flex-col h-[calc(50%-12px)] bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
+          <GlassCard className="p-6 flex flex-col h-[calc(50%-12px)] bg-linear-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
                 <Scale className="w-5 h-5 text-green-500" />

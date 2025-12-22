@@ -1347,8 +1347,11 @@ pub enum ComparisonOperator {
 /// Maximum number of signers in multisig
 pub const MAX_MULTISIG_SIGNERS: usize = 20;
 
-/// Maximum pending transactions
-pub const MAX_PENDING_TRANSACTIONS: usize = 100;
+/// Maximum pending transactions in Multisig account
+/// Set to 0 because Solana limits account creation via CPI to 10KB
+/// Pending transactions should be stored in separate PDA accounts
+/// Each pending transaction is ~13KB which exceeds the CPI limit
+pub const MAX_PENDING_TRANSACTIONS: usize = 0;
 
 /// Maximum proposal instructions
 pub const MAX_PROPOSAL_INSTRUCTIONS: usize = 2; // Reduced from 10 to fit in account limits

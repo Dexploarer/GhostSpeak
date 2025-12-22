@@ -201,6 +201,8 @@ export type RegisterAgentCompressedAsyncInput<
   agentType: RegisterAgentCompressedInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentCompressedInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentCompressedInstructionDataArgs['agentId'];
+  name: RegisterAgentCompressedInstructionDataArgs['name'];
+  description: RegisterAgentCompressedInstructionDataArgs['description'];
 };
 
 export async function getRegisterAgentCompressedInstructionAsync<
@@ -370,6 +372,8 @@ export type RegisterAgentCompressedInput<
   agentType: RegisterAgentCompressedInstructionDataArgs['agentType'];
   metadataUri: RegisterAgentCompressedInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentCompressedInstructionDataArgs['agentId'];
+  name: RegisterAgentCompressedInstructionDataArgs['name'];
+  description: RegisterAgentCompressedInstructionDataArgs['description'];
 };
 
 export function getRegisterAgentCompressedInstruction<

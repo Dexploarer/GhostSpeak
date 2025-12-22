@@ -245,9 +245,9 @@ const listing = await client.marketplace.createListing({
 
 ### Deployed Contracts (Devnet)
 
-- **Program ID**: `4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK`
+- **Program ID**: `GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9`
 - **IDL**:
-  [View on Solscan](https://solscan.io/account/4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK?cluster=devnet)
+  [View on Solscan](https://solscan.io/account/GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9?cluster=devnet)
 
 ## 🧪 Testing
 

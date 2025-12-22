@@ -1,15 +1,25 @@
+'use client'
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { toast } from 'sonner'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
+import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
+import { useTransactionFeedback } from '@/lib/transaction-feedback'
+import { getErrorInfo } from '@/lib/errors/error-messages'
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
+
+// Import Agent type from SDK
+import type { Agent as SDKAgent } from '@ghostspeak/sdk/browser'
 
 // Helper function to calculate comprehensive reputation
-async function calculateAgentReputation(agentAddress: string, agentAccount: any) {
+function calculateAgentReputation(agentData: SDKAgent | null) {
+  if (!agentData) {
+    return { score: 0, totalJobs: 0, successRate: 0 }
+  }
+  
   // Calculate basic reputation metrics from blockchain data
-  const totalJobs = agentAccount.totalJobsCompleted || 0
-  const reputationScore = agentAccount.reputationScore || 0
+  const totalJobs = agentData.totalJobsCompleted ?? 0
+  const reputationScore = agentData.reputationScore ?? 0
 
   // Convert reputation score from basis points to 0-100 scale
   const score = Math.round(reputationScore / 100)
@@ -25,21 +35,11 @@ async function calculateAgentReputation(agentAddress: string, agentAccount: any)
   }
 }
 
-// Convert wallet adapter to SDK signer
-function createSDKSigner(
-  publicKey: { toBase58(): string },
-  signTransaction: (tx: unknown) => Promise<unknown>
-): TransactionSigner {
-  return {
-    address: publicKey.toBase58() as Address,
-    signTransactions: async (txs: unknown[]) => {
-      const signed = await Promise.all(txs.map((tx) => signTransaction(tx)))
-      return signed as unknown[]
-    },
-  } as TransactionSigner
-}
-
-// Types for agent data
+// Types for agent data (UI representation)
+/**
+ * UI representation of a GhostSpeak Agent.
+ * Normalized from SDK data.
+ */
 interface Agent {
   address: string
   name: string
@@ -69,7 +69,9 @@ export const agentKeys = {
   detail: (id: string) => [...agentKeys.details(), id] as const,
 }
 
-// Interfaces for agent filtering
+/**
+ * Filter criteria for the agent directory.
+ */
 interface AgentFilters {
   category?: string
   minReputation?: number
@@ -79,57 +81,75 @@ interface AgentFilters {
   search?: string
 }
 
-// Fetch agent by address
+// Helper to transform SDK agent to UI agent
+function transformSDKAgent(address: string, data: SDKAgent): Agent {
+  return {
+    address,
+    name: data.name ?? 'Unknown Agent',
+    metadata: {
+      description: data.description ?? undefined,
+      avatar: data.metadataUri
+        ? `https://arweave.net/${data.metadataUri}`
+        : undefined,
+      category: data.frameworkOrigin ?? 'General',
+    },
+    owner: data.owner?.toString() ?? '',
+    reputation: calculateAgentReputation(data),
+    pricing: data.originalPrice ?? BigInt(0),
+    capabilities: data.capabilities ?? [],
+    isActive: data.isActive ?? false,
+    createdAt: new Date(Number(data.createdAt ?? 0) * 1000),
+  }
+}
+
+/**
+ * Hook to retrieve details for a single agent by address.
+ * 
+ * @param agentAddress - Public key of the agent
+ * @returns React Query result containing @see Agent
+ */
 export function useAgent(agentAddress: string | undefined) {
   return useQuery({
-    queryKey: agentKeys.detail(agentAddress || ''),
+    queryKey: agentKeys.detail(agentAddress ?? ''),
     queryFn: async () => {
       if (!agentAddress) throw new Error('Agent address required')
 
       const client = getGhostSpeakClient()
 
-      // Get the agent account data using the real client API
-      const agentAccount = await client.agents.getAgentByAddress(agentAddress as Address)
-      if (!agentAccount) {
+      // Get the agent account data using the correct SDK method
+      const agentData = await client.agents.getAgentAccount(agentAddress as Address)
+      if (!agentData) {
         throw new Error('Agent not found')
       }
 
-      // Transform the SDK data to match our Agent interface
-      return {
-        address: agentAddress,
-        name: agentAccount.data?.name || 'Unknown Agent',
-        metadata: {
-          description: agentAccount.data?.description || undefined,
-          avatar: agentAccount.data?.metadataUri
-            ? `https://arweave.net/${agentAccount.data.metadataUri}`
-            : undefined,
-          category: agentAccount.data?.frameworkOrigin || 'General',
-        },
-        owner: agentAccount.data?.owner?.toString() || '',
-        reputation: await calculateAgentReputation(agentAddress, agentAccount.data),
-        pricing: agentAccount.data?.originalPrice || BigInt(0),
-        capabilities: agentAccount.data?.capabilities || [],
-        isActive: agentAccount.data?.isActive || false,
-        createdAt: new Date(Number(agentAccount.data?.createdAt || 0) * 1000), // Convert from Unix timestamp
-      }
+      return transformSDKAgent(agentAddress, agentData)
     },
     enabled: !!agentAddress,
     staleTime: 60000, // 1 minute
+    refetchInterval: 120000, // Refetch every 2 minutes when focused
+    refetchIntervalInBackground: false, // Don't refetch when tab is hidden
   })
 }
 
-// Fetch all agents with efficient server-side filtering (Kluster MCP optimization)
+/**
+ * Hook to list agents with optional filtering.
+ * 
+ * Retrieves all agents from the program and applies filtering client-side
+ * (until indexer support is available).
+ * 
+ * @param filters - Optional criteria to filter the agent list
+ * @returns React Query result containing an array of @see Agent objects
+ */
 export function useAgents(filters?: AgentFilters) {
   return useQuery({
-    queryKey: agentKeys.list(JSON.stringify(filters || {})),
+    queryKey: agentKeys.list(JSON.stringify(filters ?? {})),
     queryFn: async () => {
       const client = getGhostSpeakClient()
 
-      // Get all agents using the real client API
-      let agentAccounts: { address: Address; data: any }[]
+      // Get all agents using the correct SDK method
+      let agentAccounts: { address: Address; data: SDKAgent }[]
 
       try {
-        // Use the fixed client API
         agentAccounts = await client.agents.getAllAgents()
       } catch (error) {
         console.warn('Error fetching agents:', error)
@@ -137,27 +157,8 @@ export function useAgents(filters?: AgentFilters) {
       }
 
       // Transform SDK data to match our Agent interface
-      let agents = await Promise.all(
-        agentAccounts.map(async (account: { address: Address; data: any }) => {
-          const agentData = account.data
-          return {
-            address: account.address.toString(),
-            name: agentData.name || 'Unknown Agent',
-            metadata: {
-              description: agentData.description || undefined,
-              avatar: agentData.metadataUri
-                ? `https://arweave.net/${agentData.metadataUri}`
-                : undefined,
-              category: agentData.frameworkOrigin || 'General',
-            },
-            owner: agentData.owner.toString(),
-            reputation: await calculateAgentReputation(account.address.toString(), agentData),
-            pricing: agentData.originalPrice || BigInt(0),
-            capabilities: agentData.capabilities || [],
-            isActive: agentData.isActive || false,
-            createdAt: new Date(Number(agentData.createdAt) * 1000), // Convert from Unix timestamp
-          }
-        })
+      let agents = agentAccounts.map((account) => 
+        transformSDKAgent(account.address.toString(), account.data)
       )
 
       // Apply client-side filtering
@@ -165,31 +166,31 @@ export function useAgents(filters?: AgentFilters) {
         if (filters.search) {
           const searchLower = filters.search.toLowerCase()
           agents = agents.filter(
-            (agent: Agent) =>
+            (agent) =>
               agent.name.toLowerCase().includes(searchLower) ||
               agent.metadata.description?.toLowerCase().includes(searchLower)
           )
         }
 
         if (filters.category) {
-          agents = agents.filter((agent: Agent) => agent.metadata.category === filters.category)
+          agents = agents.filter((agent) => agent.metadata.category === filters.category)
         }
 
         if (filters.minReputation !== undefined) {
-          agents = agents.filter((agent: Agent) => agent.reputation.score >= filters.minReputation!)
+          agents = agents.filter((agent) => agent.reputation.score >= filters.minReputation!)
         }
 
         if (filters.maxPricing !== undefined) {
-          agents = agents.filter((agent: Agent) => agent.pricing <= filters.maxPricing!)
+          agents = agents.filter((agent) => agent.pricing <= filters.maxPricing!)
         }
 
         if (filters.isActive !== undefined) {
-          agents = agents.filter((agent: Agent) => agent.isActive === filters.isActive)
+          agents = agents.filter((agent) => agent.isActive === filters.isActive)
         }
 
         if (filters.capabilities && filters.capabilities.length > 0) {
-          agents = agents.filter((agent: Agent) =>
-            filters.capabilities!.some((cap: string) => agent.capabilities.includes(cap))
+          agents = agents.filter((agent) =>
+            filters.capabilities!.some((cap) => agent.capabilities.includes(cap))
           )
         }
       }
@@ -197,95 +198,114 @@ export function useAgents(filters?: AgentFilters) {
       return agents
     },
     staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every 60s when window focused
+    refetchIntervalInBackground: false, // Don't refetch when tab is hidden
   })
 }
 
-// Register new agent
+/**
+ * Hook to register a new agent on the blockchain.
+ * Uses Crossmint wallet for signing.
+ */
 export function useRegisterAgent() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
+  const feedback = useTransactionFeedback()
 
   return useMutation({
     mutationFn: async (params: {
       name: string
-      metadata: string
+      metadataUri: string
       capabilities: string[]
-      pricing: bigint
+      agentType?: number
+      agentId: string
       compressed?: boolean
     }) => {
-      if (!publicKey || !signTransaction) {
+      const txId = `agent-register-${Date.now()}`
+
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
-      const client = getGhostSpeakClient()
-      const signer = createSDKSigner(publicKey, signTransaction)
+      const signer = createSigner()
+      if (!signer) {
+        throw new Error('Could not create signer')
+      }
 
-      // Note: metadata parameter is parsed but not used in current implementation
-      // It would be used if the SDK supported metadata fields
-
-      // Use the real client API to register agent
-      const result = await client.agents.registerAgent(signer, {
-        name: params.name,
-        capabilities: params.capabilities,
-        agentType: 0,
-        compressed: params.compressed,
+      // Start feedback
+      feedback.startTransaction(txId, {
+        type: 'agent',
+        description: `Registering agent: ${params.name}`,
       })
 
-      return {
-        signature: result.signature,
-        agentAddress: result.address.toString(),
+      try {
+        const client = getGhostSpeakClient()
+
+        // Use the correct SDK method: register()
+        const signature = await client.agents.register(signer, {
+          agentType: params.agentType ?? 0,
+          metadataUri: params.metadataUri,
+          agentId: params.agentId,
+        })
+
+        // Update feedback with signature
+        feedback.updateWithSignature(txId, signature)
+        feedback.confirmTransaction(txId)
+
+        return {
+          signature,
+          agentAddress: '', // Would need to derive PDA to get address
+        }
+      } catch (error) {
+        const errorInfo = getErrorInfo(error)
+        feedback.failTransaction(txId, errorInfo.description)
+        throw error
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })
-      toast.success('Agent registered successfully!')
     },
     onError: (error) => {
       console.error('Failed to register agent:', error)
-      toast.error('Failed to register agent')
     },
   })
 }
 
-// Update agent
+/**
+ * Hook to update an existing agent's metadata or configuration.
+ * Uses Crossmint wallet for signing.
+ */
 export function useUpdateAgent() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (params: {
       agentAddress: string
-      name?: string
-      metadata?: string
-      capabilities?: string[]
-      pricing?: bigint
-      isActive?: boolean
+      metadataUri?: string
+      agentType?: number
+      agentId: string
     }) => {
-      if (!publicKey || !signTransaction) {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
-      const client = getGhostSpeakClient()
-      const signer = createSDKSigner(publicKey, signTransaction)
-
-      // Combine update data
-      const updateData = {
-        name: params.name,
-        metadata: params.metadata ? JSON.parse(params.metadata) : undefined,
-        capabilities: params.capabilities,
-        pricing: params.pricing?.toString(),
-        agentType: 0,
-        agentId: params.name?.toLowerCase().replace(/\s+/g, '-') || 'updated-agent',
+      const signer = createSigner()
+      if (!signer) {
+        throw new Error('Could not create signer')
       }
 
-      // Use the real client API to update agent
-      const result = await client.agents.updateAgent(
-        signer,
-        params.agentAddress as Address,
-        updateData
-      )
+      const client = getGhostSpeakClient()
 
-      return { signature: result.signature }
+      // Use the correct SDK method: update()
+      const signature = await client.agents.update(signer, {
+        agentAddress: params.agentAddress as Address,
+        metadataUri: params.metadataUri ?? '',
+        agentType: params.agentType ?? 0,
+        agentId: params.agentId,
+      })
+
+      return { signature }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: agentKeys.detail(variables.agentAddress) })
@@ -299,24 +319,35 @@ export function useUpdateAgent() {
   })
 }
 
-// Delete agent (deactivate)
+/**
+ * Hook to deactivate an agent (soft delete).
+ * Deactivated agents cannot accept new jobs.
+ * Uses Crossmint wallet for signing.
+ */
 export function useDeleteAgent() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
-    mutationFn: async (agentAddress: string) => {
-      if (!publicKey || !signTransaction) {
+    mutationFn: async (params: { agentAddress: string; agentId: string }) => {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
+      const signer = createSigner()
+      if (!signer) {
+        throw new Error('Could not create signer')
+      }
+
       const client = getGhostSpeakClient()
-      const signer = createSDKSigner(publicKey, signTransaction)
 
-      // Use the real client API to deactivate agent
-      const result = await client.agents.deactivateAgent(signer, agentAddress as Address)
+      // Use the correct SDK method: deactivate()
+      const signature = await client.agents.deactivate(signer, {
+        agentAddress: params.agentAddress as Address,
+        agentId: params.agentId,
+      })
 
-      return { signature: result.signature }
+      return { signature }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })
@@ -329,28 +360,34 @@ export function useDeleteAgent() {
   })
 }
 
-// Activate agent
+/**
+ * Hook to reactivate a previously deactivated agent.
+ * Uses Crossmint wallet for signing.
+ */
 export function useActivateAgent() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
-    mutationFn: async (agentAddress: string) => {
-      if (!publicKey || !signTransaction) {
+    mutationFn: async (params: { agentAddress: string; agentId: string }) => {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
-      const client = getGhostSpeakClient()
-      const signer = createSDKSigner(publicKey, signTransaction)
+      const signer = createSigner()
+      if (!signer) {
+        throw new Error('Could not create signer')
+      }
 
-      // Note: Activate is not in the current client interface
-      // For now, we'll treat this as an update operation
-      const result = await client.agents.updateAgent(signer, agentAddress as Address, {
-        isActive: true,
-        agentId: 'activated-agent',
+      const client = getGhostSpeakClient()
+
+      // Use the correct SDK method: activate()
+      const signature = await client.agents.activate(signer, {
+        agentAddress: params.agentAddress as Address,
+        agentId: params.agentId,
       })
 
-      return { signature: result.signature }
+      return { signature }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })

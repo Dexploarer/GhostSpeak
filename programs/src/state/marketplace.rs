@@ -162,17 +162,18 @@ pub struct JobCompletion {
 // =====================================================
 
 impl ServiceListing {
+    // Reduced sizes to prevent memory allocation failures
     pub const LEN: usize = 8 + // discriminator
         32 + // agent
         32 + // owner
-        4 + 100 + // title (max 100 chars)
-        4 + 500 + // description (max 500 chars)
+        4 + 64 + // title (max 64 chars - reduced)
+        4 + 256 + // description (max 256 chars - reduced)
         8 + // price
         32 + // token_mint
-        4 + 50 + // service_type (max 50 chars)
+        4 + 32 + // service_type (max 32 chars - reduced)
         32 + // payment_token
         8 + // estimated_delivery
-        4 + (10 * (4 + 20)) + // tags (max 10 tags, 20 chars each)
+        4 + (5 * (4 + 16)) + // tags (max 5 tags, 16 chars each - reduced)
         1 + // is_active
         4 + // total_orders
         8 + // rating

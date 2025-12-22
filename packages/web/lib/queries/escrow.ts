@@ -3,7 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
+import { useTransactionFeedback } from '@/lib/transaction-feedback'
+import { getErrorInfo } from '@/lib/errors/error-messages'
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 // Import types from SDK via dynamic import to avoid fs dependency issues
@@ -27,16 +29,7 @@ import type { TransactionSigner } from '@solana/kit'
 //   calculateInterest,
 // } from '@ghostspeak/sdk'
 
-// Convert wallet adapter to SDK signer
-function createSDKSigner(
-  publicKey: { toBase58(): string },
-  signTransaction: (tx: unknown) => Promise<unknown>
-): TransactionSigner {
-  return {
-    address: publicKey.toBase58() as Address,
-    signTransaction,
-  } as TransactionSigner
-}
+// Signer is now provided by useCrossmintSigner hook
 
 // Define local types and constants to avoid import issues
 type SDKEscrowStatus = 'Active' | 'Completed' | 'Disputed' | 'Refunded' | 'Expired'
@@ -59,7 +52,7 @@ interface EscrowSDKData {
 // Local constants to avoid import issues
 const NATIVE_MINT_ADDRESS = 'So11111111111111111111111111111111111111112'
 const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
-const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS = 'GHSTkqVhYGwmMCQthiE3p1Vww5nQstbsB6sQ8cqyKhHR'
+const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS = 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9'
 
 // Helper function to derive escrow PDA
 const deriveEscrowPDA = async (workOrder: unknown, program: string): Promise<string> => {
@@ -428,8 +421,9 @@ export function useEscrows(filters?: {
     queryKey: ['escrows', filters],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const escrowModule = client.escrow()
-      const rpcClient = client.config?.rpc || {}
+      const escrowModule = client.escrow
+      // Note: rpcClient would need to be configured separately if needed
+      const rpcClient = {} as Record<string, unknown>
 
       // Fetch all escrows from the blockchain
       const escrows = await escrowModule.getAllEscrows()
@@ -497,11 +491,11 @@ export function useEscrows(filters?: {
 
       // Apply client-side filters
       if (filters?.status && filters.status.length > 0) {
-        results = results.filter((escrow) => filters.status!.includes(escrow.status))
+        results = results.filter((escrow: Escrow) => filters.status!.includes(escrow.status))
       }
 
       if (filters?.role && filters.role !== 'all' && filters.userAddress) {
-        results = results.filter((escrow) => {
+        results = results.filter((escrow: Escrow) => {
           if (filters.role === 'client') {
             return escrow.client === filters.userAddress
           } else {
@@ -511,7 +505,7 @@ export function useEscrows(filters?: {
       }
 
       if (filters?.tokenType && filters.tokenType !== 'all') {
-        results = results.filter((escrow) => {
+        results = results.filter((escrow: Escrow) => {
           if (filters.tokenType === 'native') {
             return escrow.paymentToken === NATIVE_MINT_ADDRESS
           } else if (filters.tokenType === 'token2022') {
@@ -526,14 +520,14 @@ export function useEscrows(filters?: {
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase()
         results = results.filter(
-          (escrow) =>
+          (escrow: Escrow) =>
             escrow.taskId.toLowerCase().includes(searchLower) ||
             escrow.address.toLowerCase().includes(searchLower)
         )
       }
 
       // Sort by most recent
-      results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      results.sort((a: Escrow, b: Escrow) => b.createdAt.getTime() - a.createdAt.getTime())
 
       return results
     },
@@ -546,8 +540,8 @@ export function useEscrow(address: string) {
     queryKey: ['escrow', address],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const escrowModule = client.escrow()
-      const rpcClient = client.config?.rpc || {}
+      const escrowModule = client.escrow
+      const rpcClient = {} as Record<string, unknown>
 
       // Fetch the escrow account
       const escrowData = await escrowModule.getEscrowAccount(address as Address)
@@ -557,7 +551,7 @@ export function useEscrow(address: string) {
       }
 
       // Type the escrow data properly based on SDK Escrow type
-      const escrowTypedData = escrowData as EscrowSDKData
+      const escrowTypedData = escrowData as unknown as EscrowSDKData
 
       // Fetch token metadata
       const tokenMetadata = await fetchTokenMetadata(escrowTypedData.paymentToken, rpcClient)
@@ -625,7 +619,7 @@ export function useTokenMetadata(tokenAddress: string) {
     queryKey: ['token-metadata', tokenAddress],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const rpcClient = client.config?.rpc || {}
+      const rpcClient = {} as Record<string, unknown>
 
       return fetchTokenMetadata(tokenAddress as Address, rpcClient)
     },
@@ -636,78 +630,96 @@ export function useTokenMetadata(tokenAddress: string) {
 
 export function useCreateEscrow() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
+  const feedback = useTransactionFeedback()
 
   return useMutation({
     mutationFn: async (data: CreateEscrowData) => {
-      if (!publicKey || !signTransaction) {
+      const txId = `escrow-create-${Date.now()}`
+      
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
-      const client = getGhostSpeakClient()
-      const escrowModule = client.escrow()
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
 
-      // Create the escrow
-      const signature = await escrowModule.create({
-        signer: createSDKSigner(publicKey, signTransaction),
-        amount: data.amount,
-        buyer: data.client as Address,
-        seller: data.agent as Address,
-        description: data.taskId,
-        milestones: data.milestones?.map((m) => ({
-          amount: m.amount,
-          description: m.title,
-        })),
+      // Start feedback
+      feedback.startTransaction(txId, {
+        type: 'escrow',
+        description: `Creating escrow for ${Number(data.amount) / 1e6} USDC`,
       })
 
-      // Wait for confirmation
-      const rpcClient = client.config?.rpc || {}
-      await rpcClient.confirmTransaction?.(signature, 'confirmed')
+      try {
+        const client = getGhostSpeakClient()
+        const escrowModule = client.escrow
 
-      // Derive the escrow address
-      const escrowAddress = await deriveEscrowPDA(
-        (data.workOrderAddress as Address) || (publicKey.toBase58() as Address),
-        GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS
-      )
+        // Create the escrow
+        const signature = await escrowModule.create({
+          signer,
+          amount: data.amount,
+          buyer: data.client as Address,
+          seller: data.agent as Address,
+          description: data.taskId,
+          milestones: data.milestones?.map((m) => ({
+            amount: m.amount,
+            description: m.title,
+          })),
+        })
 
-      return {
-        signature,
-        escrowAddress: escrowAddress[0],
+        // Update feedback with signature
+        feedback.updateWithSignature(txId, signature)
+
+        // Derive the escrow address
+        const escrowAddress = await deriveEscrowPDA(
+          (data.workOrderAddress as Address) || (address as Address),
+          GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS
+        )
+
+        // Mark as confirmed
+        feedback.confirmTransaction(txId)
+
+        return {
+          signature,
+          escrowAddress: escrowAddress[0],
+        }
+      } catch (error) {
+        const errorInfo = getErrorInfo(error)
+        feedback.failTransaction(txId, errorInfo.description)
+        throw error
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escrows'] })
-      toast.success('Escrow created successfully!')
     },
     onError: (error) => {
       console.error('Failed to create escrow:', error)
-      toast.error('Failed to create escrow')
     },
   })
 }
 
 export function useCompleteEscrow() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: CompleteEscrowData) => {
-      if (!publicKey || !signTransaction) {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
+
       const client = getGhostSpeakClient()
-      const escrowModule = client.escrow()
+      const escrowModule = client.escrow
 
       // Complete the escrow
       const signature = await escrowModule.complete(
-        createSDKSigner(publicKey, signTransaction),
+        signer,
         data.escrowAddress as Address
       )
 
-      // Wait for confirmation
-      const rpcClient = client.config?.rpc || {}
-      await rpcClient.confirmTransaction?.(signature, 'confirmed')
 
       return {
         transactionId: signature,
@@ -728,16 +740,19 @@ export function useCompleteEscrow() {
 
 export function useCancelEscrow() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: { escrowAddress: string; reason: string }) => {
-      if (!publicKey || !signTransaction) {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
+
       const client = getGhostSpeakClient()
-      const escrowModule = client.escrow()
+      const escrowModule = client.escrow
 
       // Fetch escrow to get buyer address
       const escrowData = await escrowModule.getEscrowAccount(data.escrowAddress as Address)
@@ -747,14 +762,11 @@ export function useCancelEscrow() {
 
       // Cancel the escrow
       const signature = await escrowModule.cancel(
-        createSDKSigner(publicKey, signTransaction),
+        signer,
         data.escrowAddress as Address,
         { buyer: escrowData.client }
       )
 
-      // Wait for confirmation
-      const rpcClient = client.config?.rpc || {}
-      await rpcClient.confirmTransaction?.(signature, 'confirmed')
 
       return {
         transactionId: signature,
@@ -775,27 +787,27 @@ export function useCancelEscrow() {
 
 export function useDisputeEscrow() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: DisputeEscrowData) => {
-      if (!publicKey || !signTransaction) {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
+
       const client = getGhostSpeakClient()
-      const escrowModule = client.escrow()
+      const escrowModule = client.escrow
 
       // Dispute the escrow
       const signature = await escrowModule.dispute(
-        createSDKSigner(publicKey, signTransaction),
+        signer,
         data.escrowAddress as Address,
         data.reason
       )
 
-      // Wait for confirmation
-      const rpcClient = client.config?.rpc || {}
-      await rpcClient.confirmTransaction?.(signature, 'confirmed')
 
       return {
         transactionId: signature,
@@ -816,34 +828,37 @@ export function useDisputeEscrow() {
 
 export function useProcessPartialRefund() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: PartialRefundData) => {
-      if (!publicKey || !signTransaction) {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 
-      const client = getGhostSpeakClient()
-      const escrowModule = client.escrow()
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
 
-      // Fetch escrow to get amount
+      const client = getGhostSpeakClient()
+      const escrowModule = client.escrow
+
+      // Fetch escrow to get amount and participant addresses
       const escrowData = await escrowModule.getEscrowAccount(data.escrowAddress as Address)
       if (!escrowData) {
         throw new Error('Escrow not found')
       }
 
       // Process partial refund with provided amount
+      // SDK expects: signer, taskId, refundAmount, totalAmount, clientAddress, agentAddress, mint?
       const signature = await escrowModule.processPartialRefund(
-        createSDKSigner(publicKey, signTransaction),
-        data.escrowAddress as Address,
+        signer,
+        String(escrowData.taskId ?? data.escrowAddress), // taskId
         data.refundAmount,
-        escrowData.amount
+        escrowData.amount,
+        escrowData.client, // clientAddress
+        escrowData.agent   // agentAddress
       )
 
-      // Wait for confirmation
-      const rpcClient = client.config?.rpc || {}
-      await rpcClient.confirmTransaction?.(signature, 'confirmed')
 
       return {
         transactionId: signature,
@@ -865,11 +880,11 @@ export function useProcessPartialRefund() {
 
 export function useConfidentialTransfer() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (_data: ConfidentialTransferData) => {
-      if (!publicKey || !signTransaction) {
+      if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
 

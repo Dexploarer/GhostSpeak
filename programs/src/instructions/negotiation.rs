@@ -157,7 +157,7 @@ pub fn initiate_negotiation(
 ///
 /// * `NotYourTurn` - If it's not the party's turn
 /// * `OfferNotImproved` - If offer doesn't improve terms
-/// * `NegotiationExpired` - If round timeout exceeded
+/// * `InvalidExpiration` - If round timeout exceeded
 /// * `MaxRoundsReached` - If negotiation limit hit
 ///
 /// # Offer Requirements

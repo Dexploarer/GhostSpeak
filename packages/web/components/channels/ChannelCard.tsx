@@ -94,7 +94,7 @@ export function ChannelCard({
 
   const handleJoin = async (): Promise<void> => {
     try {
-      await joinChannel.mutateAsync({ channelAddress: channel.address })
+      await joinChannel.mutateAsync(channel.address)
     } catch (error) {
       console.error('Failed to join channel:', error)
     }
@@ -116,7 +116,7 @@ export function ChannelCard({
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* Channel Avatar */}
-            <Avatar className="w-12 h-12 flex-shrink-0">
+            <Avatar className="w-12 h-12 shrink-0">
               <AvatarImage src={channel.avatarUrl} alt={channel.name} />
               <AvatarFallback className={cn('text-white font-bold', typeInfo.color)}>
                 {channel.channelType === ChannelType.Direct ? (
@@ -130,9 +130,9 @@ export function ChannelCard({
             {/* Channel Info */}
             <div className="flex-1 min-w-0">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                <TypeIcon className="w-4 h-4 flex-shrink-0" />
+                <TypeIcon className="w-4 h-4 shrink-0" />
                 <span className="truncate">{channel.name}</span>
-                {isOwner && <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" />}
+                {isOwner && <Crown className="w-4 h-4 text-yellow-500 shrink-0" />}
               </CardTitle>
 
               {channel.description && (
@@ -160,7 +160,7 @@ export function ChannelCard({
           </div>
 
           {/* Channel Type Badge */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <Badge variant={typeInfo.variant} className="flex items-center gap-1">
               <TypeIcon className="w-3 h-3" />
               {typeInfo.label}

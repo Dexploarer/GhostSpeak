@@ -98,9 +98,9 @@ describe('Agents Queries', () => {
 
       const registerData = {
         name: 'New Agent',
-        metadata: JSON.stringify({ description: 'Test agent' }),
+        metadataUri: JSON.stringify({ description: 'Test agent' }),
         capabilities: ['testing'],
-        pricing: BigInt(1000000000),
+        agentId: 'test-agent-id',
       }
 
       result.current.mutate(registerData)

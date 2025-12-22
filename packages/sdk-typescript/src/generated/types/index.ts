@@ -173,6 +173,7 @@ export * from './permissionConstraint';
 export * from './permissionConstraintType';
 export * from './permissionMetadata';
 export * from './permissionScope';
+export * from './participantType';
 export * from './policyMetadata';
 export * from './policyRule';
 export * from './policyScope';

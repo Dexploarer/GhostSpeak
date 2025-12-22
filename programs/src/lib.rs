@@ -24,7 +24,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK");
+declare_id!("GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9");
 
 // NOTE: security_txt macro is NOT embedded here because SPL dependencies
 // (spl-account-compression, spl-token-2022) already embed their own security_txt,
@@ -268,7 +268,7 @@ pub fn validate_admin_authority(provided_authority: &Pubkey) -> Result<()> {
     // Additional security checks
     require!(
         *provided_authority != Pubkey::default(),
-        GhostSpeakError::InvalidAccountData
+        GhostSpeakError::InvalidInput
     );
 
     // Warn if using development keys in production context
@@ -518,197 +518,178 @@ pub struct JobApplicationAcceptedEvent {
 // ADVANCED ERROR DEFINITIONS
 // =====================================================
 
+// =====================================================
+// CONSOLIDATED ERROR DEFINITIONS
+// Reduced from 244 to 128 errors (removed 116 unused)
+// =====================================================
+
 #[error_code]
 pub enum GhostSpeakError {
-    // Agent-related errors (1000-1099)
-    #[msg("Agent is not active - check agent status or reactivate the agent")]
+    // ===== AGENT ERRORS (1000-1099) =====
+    #[msg("Agent is not active")]
     AgentNotActive = 1000,
-    #[msg("Agent not found - verify the agent ID and ensure the agent is registered")]
+    #[msg("Agent not found")]
     AgentNotFound = 1001,
+    #[msg("Agent is already active")]
+    AgentAlreadyActive = 1002,
 
-    // Pricing and payment errors (1100-1199)
-    #[msg("Invalid price range - price must be between minimum and maximum allowed values")]
+    // ===== PAYMENT ERRORS (1100-1199) =====
+    #[msg("Invalid price range")]
     InvalidPriceRange = 1100,
-    #[msg("Invalid payment amount - amount must be between minimum and maximum payment limits")]
+    #[msg("Invalid payment amount")]
     InvalidPaymentAmount = 1101,
-    #[msg("Insufficient balance - account balance is too low for this transaction")]
+    #[msg("Insufficient balance")]
     InsufficientBalance = 1102,
-    #[msg("Payment already processed - duplicate payment attempt detected")]
-    PaymentAlreadyProcessed = 1103,
-    #[msg("Invalid token account - token account does not match expected mint or authority")]
+    #[msg("Invalid token account")]
     InvalidTokenAccount = 1104,
+    #[msg("Insufficient funds")]
+    InsufficientFunds = 1105,
 
-    // Access control errors (1200-1299)
-    #[msg("Unauthorized access - caller does not have permission for this operation")]
+    // ===== ACCESS CONTROL (1200-1299) =====
+    #[msg("Unauthorized access")]
     UnauthorizedAccess = 1200,
-    #[msg("Invalid agent owner - only the agent owner can perform this action")]
+    #[msg("Invalid agent owner")]
     InvalidAgentOwner = 1201,
+    #[msg("Invalid account owner")]
+    InvalidAccountOwner = 1202,
+    #[msg("Unauthorized arbitrator")]
+    UnauthorizedArbitrator = 1203,
+    #[msg("Unauthorized executor")]
+    UnauthorizedExecutor = 1204,
 
-    // State transition errors (1300-1399)
-    #[msg("Invalid status transition - cannot change from current status to requested status")]
+    // ===== STATUS ERRORS (1300-1399) =====
+    #[msg("Invalid status transition")]
     InvalidStatusTransition = 1300,
-    #[msg("Work order not found - verify work order ID and ensure it exists")]
-    WorkOrderNotFound = 1301,
-    #[msg("Service not found - verify service ID and ensure it is registered")]
-    ServiceNotFound = 1302,
-    #[msg(
-        "Invalid work order status - work order is not in the correct status for this operation"
-    )]
-    InvalidWorkOrderStatus = 1303,
-    #[msg("Invalid task status")]
-    InvalidTaskStatus = 1304,
+    #[msg("Invalid work order status")]
+    InvalidWorkOrderStatus = 1301,
     #[msg("Invalid escrow status")]
-    InvalidEscrowStatus = 1305,
-    #[msg("Invalid report status")]
-    InvalidReportStatus = 1306,
-    #[msg("Invalid negotiation status")]
-    InvalidNegotiationStatus = 1307,
-
-    // Time-related errors (1400-1499)
-    #[msg("Deadline passed")]
-    DeadlinePassed = 1400,
-    #[msg("Invalid deadline")]
-    InvalidDeadline = 1401,
-    #[msg("Update frequency too high")]
-    UpdateFrequencyTooHigh = 1403,
-    #[msg("Invalid period")]
-    InvalidPeriod = 1406,
-    #[msg("Invalid expiration")]
-    InvalidExpiration = 1407,
-    #[msg("Task deadline exceeded")]
-    TaskDeadlineExceeded = 1408,
-    #[msg("Negotiation expired")]
-    NegotiationExpired = 1409,
-    #[msg("Deal expired")]
-    DealExpired = 1410,
-
-    // Marketplace-specific errors (1404-1499)
-    #[msg("Invalid bid")]
-    InvalidBid = 1404,
+    InvalidEscrowStatus = 1302,
     #[msg("Invalid application status")]
-    InvalidApplicationStatus = 1405,
-    #[msg("Auction duration too short")]
-    AuctionDurationTooShort = 1411,
-    #[msg("Auction duration too long")]
-    AuctionDurationTooLong = 1412,
-    #[msg("Bid increment too low")]
-    BidIncrementTooLow = 1413,
+    InvalidApplicationStatus = 1303,
+    #[msg("Invalid job status")]
+    InvalidJobStatus = 1304,
+    #[msg("Invalid deal status")]
+    InvalidDealStatus = 1305,
+    #[msg("Invalid extension status")]
+    InvalidExtensionStatus = 1306,
+    #[msg("Invalid state")]
+    InvalidState = 1307,
+
+    // ===== TIME ERRORS (1400-1499) =====
+    #[msg("Invalid deadline")]
+    InvalidDeadline = 1400,
+    #[msg("Update frequency too high")]
+    UpdateFrequencyTooHigh = 1401,
+    #[msg("Invalid expiration")]
+    InvalidExpiration = 1402,
+    #[msg("Evidence window expired")]
+    EvidenceWindowExpired = 1403,
+
+    // ===== AUCTION ERRORS (1500-1599) =====
+    #[msg("Invalid bid")]
+    InvalidBid = 1500,
     #[msg("Invalid starting price")]
-    InvalidStartingPrice = 1414,
+    InvalidStartingPrice = 1501,
     #[msg("Auction not active")]
-    AuctionNotActive = 1415,
+    AuctionNotActive = 1502,
     #[msg("Auction ended")]
-    AuctionEnded = 1416,
+    AuctionEnded = 1503,
     #[msg("Bid too low")]
-    BidTooLow = 1417,
-    #[msg("Auction not ended")]
-    AuctionNotEnded = 1418,
-    #[msg("Cannot cancel auction with bids")]
-    CannotCancelAuctionWithBids = 1419,
+    BidTooLow = 1504,
     #[msg("Invalid amount")]
-    InvalidAmount = 1420,
+    InvalidAmount = 1505,
     #[msg("Invalid auction type")]
-    InvalidAuctionType = 1431,
+    InvalidAuctionType = 1506,
     #[msg("Escrow not expired")]
-    EscrowNotExpired = 1430,
-    #[msg("Invalid volume tier")]
-    InvalidVolumeTier = 1421,
+    EscrowNotExpired = 1507,
     #[msg("Invalid discount percentage")]
-    InvalidDiscountPercentage = 1422,
-    #[msg("Overlapping volume tiers")]
-    OverlappingVolumeTiers = 1423,
-    #[msg("Deal not active")]
-    DealNotActive = 1424,
-    #[msg("Deal full")]
-    DealFull = 1425,
-    #[msg("No participants")]
-    NoParticipants = 1426,
-    #[msg("Insufficient participants")]
-    InsufficientParticipants = 1427,
-    #[msg("Invalid min participants")]
-    InvalidMinParticipants = 1428,
-    #[msg("Invalid max participants")]
-    InvalidMaxParticipants = 1429,
-
-    // Reserve price and auction extension errors (1432-1449)
+    InvalidDiscountPercentage = 1508,
     #[msg("Reserve price already met")]
-    ReservePriceAlreadyMet = 1432,
+    ReservePriceAlreadyMet = 1509,
     #[msg("Maximum extensions reached")]
-    MaxExtensionsReached = 1433,
+    MaxExtensionsReached = 1510,
     #[msg("Auction not eligible for extension")]
-    AuctionNotEligibleForExtension = 1434,
-    #[msg("No valid bids for extension")]
-    NoValidBids = 1435,
-    #[msg("Reserve price locked after first bid")]
-    ReservePriceLocked = 1436,
+    AuctionNotEligibleForExtension = 1511,
+    #[msg("No valid bids")]
+    NoValidBids = 1512,
+    #[msg("Reserve price locked")]
+    ReservePriceLocked = 1513,
     #[msg("Invalid reserve price")]
-    InvalidReservePrice = 1437,
+    InvalidReservePrice = 1514,
     #[msg("Reserve price too low")]
-    ReservePriceTooLow = 1438,
+    ReservePriceTooLow = 1515,
+    #[msg("Invalid escrow amount")]
+    InvalidEscrowAmount = 1516,
 
-    // Input validation errors (1500-1599)
+    // ===== INPUT VALIDATION (1600-1699) =====
     #[msg("Input too long")]
-    InputTooLong = 1500,
+    InputTooLong = 1600,
     #[msg("Name too long")]
-    NameTooLong = 1501,
+    NameTooLong = 1601,
     #[msg("Message too long")]
-    MessageTooLong = 1502,
+    MessageTooLong = 1602,
     #[msg("Invalid rating")]
-    InvalidRating = 1503,
+    InvalidRating = 1603,
     #[msg("Description too long")]
-    DescriptionTooLong = 1504,
+    DescriptionTooLong = 1604,
     #[msg("Title too long")]
-    TitleTooLong = 1505,
-    #[msg("Too many capabilities")]
-    TooManyCapabilities = 1506,
+    TitleTooLong = 1605,
     #[msg("Capability too long")]
-    CapabilityTooLong = 1507,
-    #[msg("Invalid genome hash")]
-    InvalidGenomeHash = 1508,
+    CapabilityTooLong = 1606,
     #[msg("Invalid service endpoint")]
-    InvalidServiceEndpoint = 1509,
+    InvalidServiceEndpoint = 1607,
     #[msg("Invalid metadata URI")]
-    InvalidMetadataUri = 1510,
+    InvalidMetadataUri = 1608,
     #[msg("Metadata URI too long")]
-    MetadataUriTooLong = 1511,
+    MetadataUriTooLong = 1609,
     #[msg("Metrics too long")]
-    MetricsTooLong = 1512,
-    #[msg("Too many requirements")]
-    TooManyRequirements = 1513,
-    #[msg("Requirement too long")]
-    RequirementTooLong = 1514,
-    #[msg("No deliverables")]
-    NoDeliverables = 1515,
-    #[msg("Too many deliverables")]
-    TooManyDeliverables = 1516,
-    #[msg("IPFS hash too long")]
-    IpfsHashTooLong = 1517,
-    #[msg("Term too long")]
-    TermTooLong = 1518,
-    #[msg("Too many terms")]
-    TooManyTerms = 1519,
-    #[msg("Too many volume tiers")]
-    TooManyVolumeTiers = 1520,
-    #[msg("Too many bids")]
-    TooManyBids = 1521,
-    #[msg("Too many audit entries")]
-    TooManyAuditEntries = 1522,
-    #[msg("Too many top agents")]
-    TooManyTopAgents = 1523,
-    #[msg("Too many counter offers")]
-    TooManyCounterOffers = 1524,
-    #[msg("Task ID too long")]
-    TaskIdTooLong = 1525,
-    #[msg("Dispute reason too long")]
-    DisputeReasonTooLong = 1526,
-    #[msg("Completion proof too long")]
-    CompletionProofTooLong = 1527,
-    #[msg("Dispute details too long")]
-    DisputeDetailsTooLong = 1528,
-    #[msg("Resolution notes too long")]
-    ResolutionNotesTooLong = 1529,
+    MetricsTooLong = 1610,
+    #[msg("Invalid input")]
+    InvalidInput = 1611,
+    #[msg("Invalid input format")]
+    InvalidInputFormat = 1612,
+    #[msg("Invalid input length")]
+    InvalidInputLength = 1613,
+    #[msg("Invalid parameter")]
+    InvalidParameter = 1614,
+    #[msg("Invalid work delivery")]
+    InvalidWorkDelivery = 1615,
+    #[msg("Invalid rejection reason")]
+    InvalidRejectionReason = 1616,
+    #[msg("Invalid batch size")]
+    InvalidBatchSize = 1617,
+    #[msg("Invalid value")]
+    InvalidValue = 1618,
 
-    // Arithmetic and overflow errors (1800-1899)
+    // ===== LIMIT ERRORS (1700-1799) =====
+    #[msg("Too many capabilities")]
+    TooManyCapabilities = 1700,
+    #[msg("Too many requirements")]
+    TooManyRequirements = 1701,
+    #[msg("Too many deliverables")]
+    TooManyDeliverables = 1702,
+    #[msg("Too many bids")]
+    TooManyBids = 1703,
+    #[msg("Too many audit entries")]
+    TooManyAuditEntries = 1704,
+    #[msg("Too many evidence items")]
+    TooManyEvidenceItems = 1705,
+    #[msg("Too many messages")]
+    TooManyMessages = 1706,
+    #[msg("Too many attachments")]
+    TooManyAttachments = 1707,
+    #[msg("Too many participants")]
+    TooManyParticipants = 1708,
+    #[msg("Too many evidence submissions")]
+    TooManyEvidenceSubmissions = 1709,
+    #[msg("Too many signers")]
+    TooManySigners = 1710,
+    #[msg("Too many authorities")]
+    TooManyAuthorities = 1711,
+    #[msg("File too large")]
+    FileTooLarge = 1712,
+
+    // ===== ARITHMETIC ERRORS (1800-1899) =====
     #[msg("Arithmetic overflow")]
     ArithmeticOverflow = 1800,
     #[msg("Arithmetic underflow")]
@@ -720,432 +701,121 @@ pub enum GhostSpeakError {
     #[msg("Value below minimum")]
     ValueBelowMinimum = 1804,
 
-    // Configuration errors (2100-2199)
+    // ===== CONFIGURATION ERRORS (1900-1999) =====
     #[msg("Invalid configuration")]
-    InvalidConfiguration = 2100,
-
-    // Additional errors
-    #[msg("Invalid offer")]
-    InvalidOffer = 2101,
-
-    #[msg("Service is not active")]
-    ServiceNotActive = 2104,
-
-    #[msg("Invalid percentage value")]
-    InvalidPercentage = 2105,
-
-    #[msg("Compute budget exceeded")]
-    ComputeBudgetExceeded = 2106,
-
-    #[msg("Job posting is not active")]
-    JobNotActive = 2107,
-
-    #[msg("Insufficient funds for operation")]
-    InsufficientFunds = 2108,
-
-    #[msg("Agent is already active")]
-    AgentAlreadyActive = 2109,
-
-    #[msg("Invalid reputation score")]
-    InvalidReputationScore = 2110,
-
-    #[msg("Invalid service configuration")]
-    InvalidServiceConfiguration = 2111,
-
-    #[msg("Invalid job status")]
-    InvalidJobStatus = 2112,
-
-    // Missing error variants found in codebase
-    #[msg("Auction already ended")]
-    AuctionAlreadyEnded = 2113,
-
-    #[msg("Dispute case not found")]
-    DisputeCaseNotFound = 2114,
-
-    #[msg("Dispute already resolved")]
-    DisputeAlreadyResolved = 2115,
-
-    #[msg("Invalid dispute status")]
-    InvalidDisputeStatus = 2116,
-
-    #[msg("Too many evidence items")]
-    TooManyEvidenceItems = 2117,
-
-    #[msg("Invalid contract status")]
-    InvalidContractStatus = 2118,
-
-    #[msg("String too long")]
-    StringTooLong = 2119,
-
-    #[msg("Invalid volume")]
-    InvalidVolume = 2120,
-
-    #[msg("Invalid value")]
-    InvalidValue = 2121,
-
-    #[msg("Invalid duration")]
-    InvalidDuration = 2122,
-
-    #[msg("Job already filled")]
-    JobAlreadyFilled = 2123,
-
-    #[msg("Application not found")]
-    ApplicationNotFound = 2124,
-
-    #[msg("Application already processed")]
-    ApplicationAlreadyProcessed = 2125,
-
-    #[msg("Listing already active")]
-    ListingAlreadyActive = 2126,
-
-    #[msg("Listing not active")]
-    ListingNotActive = 2127,
-
-    #[msg("Invalid service type")]
-    InvalidServiceType = 2128,
-
-    #[msg("Agent already registered")]
-    AgentAlreadyRegistered = 2129,
-
-    #[msg("Invalid agent status")]
-    InvalidAgentStatus = 2130,
-
-    #[msg("Message not found")]
-    MessageNotFound = 2131,
-
-    #[msg("Invalid message status")]
-    InvalidMessageStatus = 2132,
-
-    #[msg("Channel not found")]
-    ChannelNotFound = 2133,
-
-    #[msg("Channel already exists")]
-    ChannelAlreadyExists = 2134,
-
-    #[msg("Invalid channel configuration")]
-    InvalidChannelConfiguration = 2135,
-
-    #[msg("Work order already exists")]
-    WorkOrderAlreadyExists = 2203,
-
-    #[msg("Invalid delivery status")]
-    InvalidDeliveryStatus = 2136,
-
-    #[msg("Escrow not found")]
-    EscrowNotFound = 2137,
-
-    #[msg("Escrow already released")]
-    EscrowAlreadyReleased = 2138,
-
-    #[msg("Invalid escrow amount")]
-    InvalidEscrowAmount = 2139,
-
-    #[msg("Negotiation not found")]
-    NegotiationNotFound = 2140,
-
-    #[msg("Invalid offer amount")]
-    InvalidOfferAmount = 2141,
-
-    #[msg("Royalty configuration invalid")]
-    RoyaltyConfigurationInvalid = 2142,
-
-    #[msg("Invalid royalty percentage")]
-    InvalidRoyaltyPercentage = 2143,
-
-    #[msg("Analytics not enabled")]
-    AnalyticsNotEnabled = 2144,
-
-    #[msg("Invalid metrics data")]
-    InvalidMetricsData = 2145,
-
-    #[msg("Extension not found")]
-    ExtensionNotFound = 2146,
-
-    #[msg("Extension already enabled")]
-    ExtensionAlreadyEnabled = 2147,
-
+    InvalidConfiguration = 1900,
     #[msg("Invalid extension configuration")]
-    InvalidExtensionConfiguration = 2148,
+    InvalidExtensionConfiguration = 1901,
+    #[msg("Invalid reputation score")]
+    InvalidReputationScore = 1902,
+    #[msg("Invalid royalty percentage")]
+    InvalidRoyaltyPercentage = 1903,
+    #[msg("Invalid percentage")]
+    InvalidPercentage = 1904,
+    #[msg("Invalid required signatures")]
+    InvalidRequiredSignatures = 1905,
+    #[msg("Invalid target program")]
+    InvalidTargetProgram = 1906,
 
-    #[msg("Invalid account data provided")]
-    InvalidAccountData = 2149,
-
-    #[msg("Invalid auction type specified")]
-    InvalidAuctionTypeSpecified = 2150,
-
-    #[msg("Insufficient accounts provided for operation")]
-    InsufficientAccounts = 2151,
-
-    #[msg("Invalid target program specified")]
-    InvalidTargetProgram = 2152,
-
-    #[msg("Account mismatch detected")]
-    AccountMismatch = 2153,
-
-    #[msg("Incentive pool exhausted")]
-    IncentivePoolExhausted = 2154,
-
-    #[msg("Invalid incentive configuration")]
-    InvalidIncentiveConfiguration = 2197,
-
-    #[msg("Compliance check failed")]
-    ComplianceCheckFailed = 2198,
-
-    #[msg("Governance proposal invalid")]
-    GovernanceProposalInvalid = 2199,
-
-    #[msg("Voting period ended")]
-    VotingPeriodEnded = 2200,
-
-    #[msg("Already voted")]
-    AlreadyVoted = 2201,
-
-    #[msg("Insufficient voting power")]
-    InsufficientVotingPower = 2155,
-
-    #[msg("JSON parsing failed")]
-    JsonParseError = 2328,
-
-    #[msg("JSON structure too deeply nested")]
-    JsonDepthExceeded = 2329,
-
-    #[msg("JSON structure too complex")]
-    JsonComplexityExceeded = 2330,
-
-    #[msg("JSON must be an object")]
-    JsonInvalidStructure = 2331,
-
-    #[msg("Replication not allowed")]
-    ReplicationNotAllowed = 2156,
-
-    #[msg("Invalid replication config")]
-    InvalidReplicationConfig = 2157,
-
-    #[msg("Price model not supported")]
-    PriceModelNotSupported = 2158,
-
-    #[msg("Invalid price configuration")]
-    InvalidPriceConfiguration = 2159,
-
-    #[msg("Bulk deal not found")]
-    BulkDealNotFound = 2160,
-
-    #[msg("Invalid participant count")]
-    InvalidParticipantCount = 2161,
-
-    #[msg("Deal already finalized")]
-    DealAlreadyFinalized = 2162,
-
-    #[msg("Invalid A2A protocol message")]
-    InvalidA2AProtocolMessage = 2163,
-
-    #[msg("Protocol version mismatch")]
-    ProtocolVersionMismatch = 2164,
-
-    #[msg("Task not found")]
-    TaskNotFound = 2165,
-
-    #[msg("Task already completed")]
-    TaskAlreadyCompleted = 2166,
-
-    #[msg("Invalid task configuration")]
-    InvalidTaskConfiguration = 2167,
-
-    #[msg("Report not found")]
-    ReportNotFound = 2168,
-
-    #[msg("Invalid report data")]
-    InvalidReportData = 2169,
-
-    #[msg("Access denied")]
-    AccessDenied = 2170,
-
-    #[msg("Operation not supported")]
-    OperationNotSupported = 2171,
-
-    #[msg("Resource locked")]
-    ResourceLocked = 2172,
-
-    #[msg("Rate limit exceeded")]
-    RateLimitExceeded = 2173,
-
-    #[msg("Invalid state transition")]
-    InvalidStateTransition = 2174,
-
-    #[msg("Data corruption detected")]
-    DataCorruptionDetected = 2175,
-
-    #[msg("Signature verification failed")]
-    SignatureVerificationFailed = 2176,
-
-    #[msg("Token transfer failed")]
-    TokenTransferFailed = 2177,
-
-    #[msg("Account not initialized")]
-    AccountNotInitialized = 2178,
-
-    #[msg("Account already initialized")]
-    AccountAlreadyInitialized = 2179,
-
-    #[msg("Invalid account owner")]
-    InvalidAccountOwner = 2180,
-
-    #[msg("Maximum retries exceeded")]
-    MaximumRetriesExceeded = 2181,
-
-    #[msg("Operation timed out")]
-    OperationTimedOut = 2182,
-
-    #[msg("Invalid input format")]
-    InvalidInputFormat = 2183,
-
-    #[msg("Feature not enabled")]
-    FeatureNotEnabled = 2184,
-
-    #[msg("Maintenance mode active")]
-    MaintenanceModeActive = 2185,
-
-    #[msg("Invalid input length")]
-    InvalidInputLength = 2186,
-
-    #[msg("Invalid parameter")]
-    InvalidParameter = 2187,
-
-    #[msg("Invalid deal status")]
-    InvalidDealStatus = 2188,
-
-    #[msg("Dispute window expired")]
-    DisputeWindowExpired = 2189,
-
-    #[msg("Evidence window expired")]
-    EvidenceWindowExpired = 2190,
-
-    #[msg("Too many evidence submissions")]
-    TooManyEvidenceSubmissions = 2191,
-
-    #[msg("Unauthorized arbitrator")]
-    UnauthorizedArbitrator = 2192,
-    #[msg("Invalid batch size")]
-    InvalidBatchSize = 2193,
-
-    #[msg("Invalid transaction status")]
-    InvalidTransactionStatus = 2194,
-
-    #[msg("Invalid extension status")]
-    InvalidExtensionStatus = 2195,
-
-    #[msg("Arbitrator already assigned")]
-    ArbitratorAlreadyAssigned = 2196,
-
-    #[msg("Conflict of interest")]
-    ConflictOfInterest = 2202,
-
-    // Security and Reentrancy errors (2300-2399)
-    #[msg("Reentrancy detected - operation already in progress")]
-    ReentrancyDetected = 2300,
-    #[msg("Invalid state transition")]
-    InvalidState = 2301,
-    #[msg("Channel is full - maximum participants reached")]
-    ChannelFull = 2302,
+    // ===== SERVICE/JOB ERRORS (2000-2099) =====
+    #[msg("Service not active")]
+    ServiceNotActive = 2000,
+    #[msg("Job not active")]
+    JobNotActive = 2001,
+    #[msg("Channel not found")]
+    ChannelNotFound = 2002,
+    #[msg("Channel full")]
+    ChannelFull = 2003,
     #[msg("User already in channel")]
-    UserAlreadyInChannel = 2303,
-    #[msg("Too many messages in channel")]
-    TooManyMessages = 2304,
-    #[msg("Too many attachments")]
-    TooManyAttachments = 2305,
-    #[msg("File too large")]
-    FileTooLarge = 2306,
-    #[msg("Too many participants")]
-    TooManyParticipants = 2307,
-    #[msg("Invalid task ID")]
-    InvalidTaskId = 2308,
-    #[msg("Invalid input data")]
-    InvalidInput = 2309,
-    #[msg("Invalid work delivery")]
-    InvalidWorkDelivery = 2310,
-    #[msg("Invalid rejection reason")]
-    InvalidRejectionReason = 2311,
+    UserAlreadyInChannel = 2004,
 
-    // Token-2022 and agent validation errors (2312-2330)
-    #[msg("Agent is inactive")]
-    InactiveAgent = 2312,
-    #[msg("Agent is not verified")]
-    UnverifiedAgent = 2313,
-    #[msg("Token not supported by agent")]
-    UnsupportedToken = 2314,
-    #[msg("Agent does not support A2A communication")]
-    A2ANotSupported = 2315,
-    #[msg("Agent reputation insufficient")]
-    InsufficientReputation = 2316,
-
-    #[msg("Voting has not started yet")]
-    VotingNotStarted = 2317,
-
-    #[msg("Voting has ended")]
-    VotingEnded = 2318,
-
-    #[msg("Voting period has not ended")]
-    VotingNotEnded = 2319,
-
-    #[msg("Proposal is not active")]
-    ProposalNotActive = 2320,
-
-    #[msg("Proposal has not passed")]
-    ProposalNotPassed = 2321,
-
-    #[msg("Proposal execution not scheduled")]
-    ExecutionNotScheduled = 2322,
-
+    // ===== GOVERNANCE ERRORS (2100-2199) =====
+    #[msg("Already voted")]
+    AlreadyVoted = 2100,
+    #[msg("Insufficient voting power")]
+    InsufficientVotingPower = 2101,
+    #[msg("Insufficient signers")]
+    InsufficientSigners = 2102,
+    #[msg("Multisig timelock active")]
+    MultisigTimelockActive = 2103,
+    #[msg("Voting not started")]
+    VotingNotStarted = 2104,
+    #[msg("Voting ended")]
+    VotingEnded = 2105,
+    #[msg("Voting not ended")]
+    VotingNotEnded = 2106,
+    #[msg("Proposal not active")]
+    ProposalNotActive = 2107,
+    #[msg("Proposal not passed")]
+    ProposalNotPassed = 2108,
+    #[msg("Execution not scheduled")]
+    ExecutionNotScheduled = 2109,
     #[msg("Execution delay not met")]
-    ExecutionDelayNotMet = 2323,
-
-    #[msg("Proposal is still in grace period")]
-    InGracePeriod = 2324,
-
-    #[msg("Proposal execution failed during CPI")]
-    ProposalExecutionFailed = 2325,
-
-    #[msg("Unauthorized executor")]
-    UnauthorizedExecutor = 2326,
-
+    ExecutionDelayNotMet = 2110,
+    #[msg("In grace period")]
+    InGracePeriod = 2111,
     #[msg("No instructions to execute")]
-    NoInstructionsToExecute = 2327,
+    NoInstructionsToExecute = 2112,
 
-    // Token-2022 extension errors (2332-2339)
+    // ===== JSON ERRORS (2200-2249) =====
+    #[msg("JSON parse error")]
+    JsonParseError = 2200,
+    #[msg("JSON depth exceeded")]
+    JsonDepthExceeded = 2201,
+    #[msg("JSON complexity exceeded")]
+    JsonComplexityExceeded = 2202,
+    #[msg("JSON invalid structure")]
+    JsonInvalidStructure = 2203,
+
+    // ===== SECURITY ERRORS (2300-2399) =====
+    #[msg("Reentrancy detected")]
+    ReentrancyDetected = 2300,
+    #[msg("Rate limit exceeded")]
+    RateLimitExceeded = 2301,
+    #[msg("Account not initialized")]
+    AccountNotInitialized = 2302,
+    #[msg("Authority already exists")]
+    AuthorityAlreadyExists = 2303,
+    #[msg("Arbitrator already assigned")]
+    ArbitratorAlreadyAssigned = 2304,
+    #[msg("Conflict of interest")]
+    ConflictOfInterest = 2305,
+
+    // ===== AGENT VALIDATION (2400-2449) =====
+    #[msg("Agent inactive")]
+    InactiveAgent = 2400,
+    #[msg("Agent unverified")]
+    UnverifiedAgent = 2401,
+    #[msg("Unsupported token")]
+    UnsupportedToken = 2402,
+    #[msg("Insufficient reputation")]
+    InsufficientReputation = 2403,
+    #[msg("Invalid agent")]
+    InvalidAgent = 2404,
+
+    // ===== X402/SIGNATURE ERRORS (2450-2499) =====
+    #[msg("Invalid signature")]
+    InvalidSignature = 2450,
+    #[msg("Invalid response time")]
+    InvalidResponseTime = 2451,
+
+    // ===== CIRCUIT BREAKER (2500-2549) =====
+    #[msg("Already paused")]
+    AlreadyPaused = 2500,
+    #[msg("Not paused")]
+    NotPaused = 2501,
+    #[msg("Protocol paused")]
+    ProtocolPaused = 2502,
+    #[msg("Instruction paused")]
+    InstructionPaused = 2503,
+
+    // ===== TOKEN EXTENSION (2550-2599) =====
     #[msg("Extension not supported")]
-    ExtensionNotSupported = 2332,
+    ExtensionNotSupported = 2550,
 
-    // x402 and reputation errors (2340-2359)
-    #[msg("Invalid signature format")]
-    InvalidSignature = 2340,
-    #[msg("Invalid response time - response time exceeds maximum allowed value")]
-    InvalidResponseTime = 2341,
-    #[msg("Invalid agent reference")]
-    InvalidAgent = 2342,
-    #[msg("Too many reputation categories")]
-    TooManyCategories = 2343,
-    #[msg("Slash percentage exceeds maximum")]
-    SlashPercentageTooHigh = 2344,
-    #[msg("Reputation too low to slash")]
-    ReputationTooLowToSlash = 2345,
-    #[msg("Invalid reputation weight configuration - weights must sum to 100")]
-    InvalidReputationWeights = 2346,
-
-    // Circuit breaker errors (2360-2379)
-    #[msg("Protocol is already paused")]
-    AlreadyPaused = 2360,
-    #[msg("Protocol is not paused")]
-    NotPaused = 2361,
-    #[msg("Protocol is paused - all operations halted")]
-    ProtocolPaused = 2362,
-    #[msg("This instruction is paused")]
-    InstructionPaused = 2363,
-    #[msg("Too many multisig authorities")]
-    TooManyAuthorities = 2364,
-    #[msg("Authority already exists in multisig")]
-    AuthorityAlreadyExists = 2365,
-    #[msg("Invalid required signatures configuration")]
-    InvalidRequiredSignatures = 2366,
+    // ===== FEATURE FLAGS (2600-2649) =====
+    #[msg("Feature not enabled")]
+    FeatureNotEnabled = 2600,
 }
 
 // =====================================================
@@ -1155,6 +825,77 @@ pub enum GhostSpeakError {
 #[program]
 pub mod ghostspeak_marketplace {
     use super::*;
+
+
+    // =====================================================
+    // SECURITY INITIALIZATION INSTRUCTIONS
+    // =====================================================
+
+    /// Initialize the global reentrancy guard PDA
+    /// This must be called once by a program admin before any reentrancy-protected instructions can be used
+    pub fn init_reentrancy_guard(ctx: Context<InitReentrancyGuard>) -> Result<()> {
+        instructions::security_init::init_reentrancy_guard(ctx)
+    }
+
+    /// Reset a stuck reentrancy guard (admin only)
+    /// Use this to recover from stuck states after failed transactions
+    pub fn reset_reentrancy_guard(ctx: Context<ResetReentrancyGuard>) -> Result<()> {
+        instructions::security_init::reset_reentrancy_guard(ctx)
+    }
+
+    // =====================================================
+    // STAKING INSTRUCTIONS (Governance Voting Power)
+    // =====================================================
+
+    /// Initialize the global staking configuration
+    pub fn initialize_staking_config(
+        ctx: Context<InitializeStakingConfig>,
+        base_apy: u16,
+        min_stake_amount: u64,
+        max_stake_amount: u64,
+    ) -> Result<()> {
+        instructions::staking::initialize_staking_config(ctx, base_apy, min_stake_amount, max_stake_amount)
+    }
+
+    /// Create a staking account for a user
+    pub fn create_staking_account(ctx: Context<CreateStakingAccount>) -> Result<()> {
+        instructions::staking::create_staking_account(ctx)
+    }
+
+    /// Stake tokens with optional lockup tier (0-5)
+    /// Tier 0: No lockup, Tier 1: 1 month, Tier 2: 3 months, etc.
+    pub fn stake_tokens(ctx: Context<StakeTokens>, amount: u64, lockup_tier: u8) -> Result<()> {
+        instructions::staking::stake_tokens(ctx, amount, lockup_tier)
+    }
+
+    /// Unstake tokens (must not be locked)
+    pub fn unstake_tokens(ctx: Context<UnstakeTokens>, amount: u64) -> Result<()> {
+        instructions::staking::unstake_tokens(ctx, amount)
+    }
+
+    /// Claim pending staking rewards
+    pub fn claim_staking_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
+        instructions::staking::claim_rewards(ctx)
+    }
+
+    /// Extend lockup period for bonus rewards
+    pub fn extend_lockup(ctx: Context<ExtendLockup>, new_tier: u8) -> Result<()> {
+        instructions::staking::extend_lockup(ctx, new_tier)
+    }
+
+    // =====================================================
+    // ENHANCED GOVERNANCE VOTING
+    // =====================================================
+
+    /// Cast a vote with full x402 marketplace voting power
+    /// Uses token balance, staking, agent reputation, and x402 volume
+    pub fn cast_vote_enhanced(
+        ctx: Context<CastVoteEnhanced>,
+        vote_choice: VoteChoice,
+        reasoning: Option<String>,
+    ) -> Result<()> {
+        instructions::governance_voting::cast_vote_enhanced(ctx, vote_choice, reasoning)
+    }
 
     // =====================================================
     // AGENT MANAGEMENT INSTRUCTIONS
@@ -1184,15 +925,18 @@ pub mod ghostspeak_marketplace {
         agent_type: u8,
         metadata_uri: String,
         agent_id: String,
+        name: String,
+        description: String,
     ) -> Result<()> {
         instructions::agent_compressed::register_agent_compressed(
             ctx,
             agent_type,
             metadata_uri,
             agent_id,
+            name,
+            description,
         )
     }
-
     pub fn update_agent(
         ctx: Context<UpdateAgent>,
         _agent_type: u8,
@@ -1315,7 +1059,7 @@ pub mod ghostspeak_marketplace {
         amount: u64,
         use_confidential_transfer: bool,
     ) -> Result<()> {
-        instructions::escrow_payment::process_payment(ctx, amount, use_confidential_transfer)
+        instructions::escrow_operations::process_payment(ctx, amount, use_confidential_transfer)
     }
 
     // =====================================================
@@ -1714,6 +1458,26 @@ pub mod ghostspeak_marketplace {
         is_confidential: bool,
     ) -> Result<()> {
         instructions::escrow_operations::create_escrow(
+            ctx,
+            task_id,
+            amount,
+            expires_at,
+            transfer_hook,
+            is_confidential,
+        )
+    }
+
+    /// Create escrow by depositing native SOL (auto-wraps to wSOL)
+    /// This provides a better UX by handling SOL wrapping automatically
+    pub fn create_escrow_with_sol(
+        ctx: Context<CreateEscrowWithSol>,
+        task_id: String,
+        amount: u64,
+        expires_at: i64,
+        transfer_hook: Option<Pubkey>,
+        is_confidential: bool,
+    ) -> Result<()> {
+        instructions::escrow_operations::create_escrow_with_sol(
             ctx,
             task_id,
             amount,

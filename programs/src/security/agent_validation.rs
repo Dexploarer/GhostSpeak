@@ -38,7 +38,7 @@ pub fn validate_agent_supports_token(agent: &Account<Agent>, token_mint: &Pubkey
 
 /// Validates that the agent supports agent-to-agent communication
 pub fn require_a2a_support(agent: &Account<Agent>) -> Result<()> {
-    require!(agent.supports_a2a, GhostSpeakError::A2ANotSupported);
+    require!(agent.supports_a2a, GhostSpeakError::UnsupportedToken);
 
     Ok(())
 }

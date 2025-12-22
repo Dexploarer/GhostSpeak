@@ -958,7 +958,7 @@ impl ComplianceReport {
         period_start: i64,
         period_end: i64,
     ) -> Result<()> {
-        require!(period_end > period_start, GhostSpeakError::InvalidPeriod);
+        require!(period_end > period_start, GhostSpeakError::InvalidExpiration);
 
         let clock = Clock::get()?;
 
@@ -1000,7 +1000,7 @@ impl ComplianceReport {
     pub fn approve(&mut self) -> Result<()> {
         require!(
             self.status == ReportStatus::Reviewed,
-            GhostSpeakError::InvalidReportStatus
+            GhostSpeakError::InvalidStatusTransition
         );
 
         self.status = ReportStatus::Approved;
@@ -1012,7 +1012,7 @@ impl ComplianceReport {
     pub fn submit(&mut self, regulatory_body: String, submission_reference: String) -> Result<()> {
         require!(
             self.status == ReportStatus::Approved,
-            GhostSpeakError::InvalidReportStatus
+            GhostSpeakError::InvalidStatusTransition
         );
 
         let clock = Clock::get()?;

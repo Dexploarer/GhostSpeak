@@ -122,12 +122,16 @@ export type RegisterAgentCompressedInstructionData = {
   agentType: number;
   metadataUri: string;
   agentId: string;
+  name: string;
+  description: string;
 };
 
 export type RegisterAgentCompressedInstructionDataArgs = {
   agentType: number;
   metadataUri: string;
   agentId: string;
+  name: string;
+  description: string;
 };
 
 export function getRegisterAgentCompressedInstructionDataEncoder(): Encoder<RegisterAgentCompressedInstructionDataArgs> {
@@ -137,6 +141,8 @@ export function getRegisterAgentCompressedInstructionDataEncoder(): Encoder<Regi
       ['agentType', getU8Encoder()],
       ['metadataUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['agentId', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['description', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ]),
     (value) => ({
       ...value,
@@ -151,6 +157,8 @@ export function getRegisterAgentCompressedInstructionDataDecoder(): Decoder<Regi
     ['agentType', getU8Decoder()],
     ['metadataUri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ['agentId', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['description', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
   ]);
 }
 

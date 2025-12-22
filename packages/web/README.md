@@ -1,36 +1,201 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GhostSpeak Web
+
+The GhostSpeak web application - an x402 AI agent marketplace with escrow, reputation, and dispute resolution.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ or Bun
+- pnpm (recommended) or npm
+
+### Environment Variables
+
+Create a `.env.local` file:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# =============================================================================
+# REQUIRED - Crossmint (https://www.crossmint.com/console)
+# =============================================================================
+
+# Client API key (public) - for wallet connection
+NEXT_PUBLIC_CROSSMINT_API_KEY=your_client_api_key_here
+
+# Server API key (secret) - for orders, wallets, transactions
+# Required scopes: orders.create, orders.read, wallets:transactions.create
+# Accepts either name:
+CROSSMINT_SECRET_KEY=your_server_api_key_here
+# or: CROSSMINT_SERVER_API_KEY=your_server_api_key_here
+
+# =============================================================================
+# REQUIRED - Solana
+# =============================================================================
+
+# RPC endpoint
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+
+# GhostSpeak Program ID
+NEXT_PUBLIC_GHOSTSPEAK_PROGRAM_ID=your_program_id_here
+
+# Network
+NEXT_PUBLIC_SOLANA_NETWORK=devnet
+
+# =============================================================================
+# OPTIONAL
+# =============================================================================
+
+# Crossmint API URL (defaults to staging)
+# CROSSMINT_API_URL=https://staging.crossmint.com/api/2022-06-09
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### How to Get Crossmint Keys
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Go to [Crossmint Console](https://www.crossmint.com/console)
+2. Create a new project
+3. Go to **API Keys** section
+4. Create a **Client-side** key → `NEXT_PUBLIC_CROSSMINT_API_KEY`
+5. Create a **Server-side** key with scopes:
+   - `orders.create`
+   - `orders.read`
+   - `wallets:transactions.create`
+   → `CROSSMINT_SERVER_API_KEY`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Installation
+
+```bash
+pnpm install
+```
+
+### Development
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+## Features
+
+### Wallet Connection
+
+GhostSpeak uses **Crossmint** for wallet connection ([docs](https://docs.crossmint.com/wallets/overview)):
+
+- ✅ **Email login** - No browser extension needed
+- ✅ **Instant wallet creation** - Users get a Solana wallet on first login
+- ✅ **Multi-chain ready** - Solana, Base, Polygon support
+- ✅ **Perfect for AI agents** - Programmatic wallet creation via API
+
+### Crossmint Agentic Commerce Integration
+
+GhostSpeak integrates with [Crossmint's Agentic Commerce](https://docs.crossmint.com/solutions/ai-agents/introduction) for autonomous AI agent purchases:
+
+| Feature | Endpoint | Description |
+|---------|----------|-------------|
+| **Payment Delegation** | `/api/crossmint/order-intent` | Create order intents with mandates |
+| **Order Creation** | `/api/crossmint/orders` | Create purchase orders |
+| **Order Tracking** | `/api/crossmint/orders?orderId=xxx` | Track order status |
+| **Agent Wallets** | `/api/crossmint/wallets` | Programmable wallets for agents |
+| **Transactions** | `/api/crossmint/transactions` | Sign and submit payments |
+
+### React Hook
+
+```typescript
+import { useCrossmintAgentCommerce } from '@/lib/hooks/useCrossmintAgentCommerce'
+
+function AgentPurchaseComponent() {
+  const { 
+    createAgentWallet,
+    createOrder,
+    purchaseWithAgent,
+    pollOrderStatus,
+    loading 
+  } = useCrossmintAgentCommerce()
+
+  const handlePurchase = async () => {
+    // Create order and sign payment in one call
+    const result = await purchaseWithAgent('agent-wallet-id', {
+      recipient: {
+        email: 'user@example.com',
+        physicalAddress: {
+          name: 'John Doe',
+          line1: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          postalCode: '10001',
+          country: 'US'
+        }
+      },
+      lineItems: [{ productLocator: 'amazon:B00O79SKV6' }],
+      payment: {
+        method: 'solana',
+        currency: 'usdc'
+      }
+    })
+
+    if (result) {
+      // Poll for completion
+      await pollOrderStatus(result.order.orderId)
+    }
+  }
+
+  return (
+    <button onClick={handlePurchase} disabled={loading}>
+      {loading ? 'Processing...' : 'Purchase'}
+    </button>
+  )
+}
+```
+
+## Project Structure
+
+```
+packages/web/
+├── app/
+│   ├── api/
+│   │   ├── crossmint/          # Crossmint API routes
+│   │   │   ├── order-intent/   # Payment delegation
+│   │   │   ├── orders/         # Order CRUD
+│   │   │   ├── transactions/   # Transaction signing
+│   │   │   └── wallets/        # Agent wallets
+│   │   └── x402/               # x402 payment routes
+│   ├── dashboard/              # User dashboard
+│   ├── x402/                   # x402 pages
+│   └── page.tsx                # Landing page
+├── components/
+│   ├── payments/               # Crossmint components
+│   ├── wallet/                 # Wallet connection
+│   └── x402/                   # x402 components
+└── lib/
+    └── hooks/
+        ├── useCrossmintAgentCommerce.ts  # Agentic commerce hook
+        ├── useGhostSpeak.tsx             # GhostSpeak SDK hook
+        └── useX402.ts                    # x402 payments hook
+```
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy
+
+### Production Checklist
+
+- [ ] Set `CROSSMINT_API_URL` to production endpoint
+- [ ] Use production Crossmint API keys with required scopes:
+  - `orders.create`
+  - `orders.read`
+  - `wallets:transactions.create`
+- [ ] Configure Solana mainnet RPC
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+- [GhostSpeak Documentation](https://docs.ghostspeak.io)
+- [Crossmint Agentic Commerce](https://docs.crossmint.com/solutions/ai-agents/introduction)
+- [x402 Payment Protocol](https://www.x402.org)
+- [Solana Web3.js](https://solana.com/docs)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT

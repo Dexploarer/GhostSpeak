@@ -378,8 +378,9 @@ mod tests {
         let rate_limiter_size = RateLimiter::LEN;
         let user_rate_limit_size = UserRateLimit::LEN;
 
-        // These are compile-time constants, so we test their expected values
-        assert_eq!(rate_limiter_size, 8 + 8 + 8 + 32 + 8); // discriminator + fields
-        assert_eq!(user_rate_limit_size, 8 + 32 + 8 + 8 + 8 + 8); // discriminator + fields
+        // RateLimiter: discriminator(8) + authority(32) + global_config(128) + operation_limits(4 + 50*64) + bump(1)
+        assert_eq!(rate_limiter_size, 8 + 32 + 128 + 4 + (50 * 64) + 1);
+        // UserRateLimit: discriminator(8) + user(32) + operation(4+64) + request_timestamps(4 + 100*8) + window_start(8) + request_count(2) + penalty_until(8) + violation_count(1) + bump(1)
+        assert_eq!(user_rate_limit_size, 8 + 32 + 4 + 64 + 4 + (100 * 8) + 8 + 2 + 8 + 1 + 1);
     }
 }

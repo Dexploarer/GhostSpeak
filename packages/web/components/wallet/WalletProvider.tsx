@@ -1,41 +1,53 @@
 'use client'
 
-import React, { FC, ReactNode, useMemo } from 'react'
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
-import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
-import { clusterApiUrl } from '@solana/web3.js'
-
-// Default styles that can be overridden by your app
-import '@solana/wallet-adapter-react-ui/styles.css'
+import React, { FC, ReactNode } from 'react'
+import { 
+  CrossmintProvider, 
+  CrossmintAuthProvider, 
+  CrossmintWalletProvider 
+} from '@crossmint/client-sdk-react-ui'
 
 interface WalletContextProviderProps {
   children: ReactNode
 }
 
 export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children }) => {
-  // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
-  const network = WalletAdapterNetwork.Devnet
+  const crossmintApiKey = process.env.NEXT_PUBLIC_CROSSMINT_API_KEY
 
-  // You can also provide a custom RPC endpoint.
-  const endpoint = useMemo(() => clusterApiUrl(network), [network])
-
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ],
-    []
-  )
+  if (!crossmintApiKey) {
+    // Show helpful error in development
+    if (process.env.NODE_ENV === 'development') {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95">
+          <div className="max-w-md p-6 bg-card border border-destructive/50 rounded-lg text-center">
+            <h2 className="text-xl font-bold text-destructive mb-2">Missing Environment Variable</h2>
+            <p className="text-muted-foreground mb-4">
+              <code className="bg-muted px-2 py-1 rounded">NEXT_PUBLIC_CROSSMINT_API_KEY</code> is required.
+            </p>
+            <ol className="text-left text-sm text-muted-foreground space-y-2">
+              <li>1. Go to <a href="https://www.crossmint.com/console" className="text-primary underline" target="_blank">crossmint.com/console</a></li>
+              <li>2. Create a project and get your API key</li>
+              <li>3. Add to <code className="bg-muted px-1 rounded">.env.local</code></li>
+            </ol>
+          </div>
+        </div>
+      )
+    }
+    return <>{children}</>
+  }
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
+    <CrossmintProvider apiKey={crossmintApiKey}>
+      <CrossmintAuthProvider>
+        <CrossmintWalletProvider
+          createOnLogin={{
+            chain: 'solana',
+            signer: { type: 'email' }
+          }}
+        >
           {children}
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+        </CrossmintWalletProvider>
+      </CrossmintAuthProvider>
+    </CrossmintProvider>
   )
 }

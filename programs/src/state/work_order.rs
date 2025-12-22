@@ -129,7 +129,7 @@ impl WorkOrder {
         for req in &requirements {
             require!(
                 req.len() <= MAX_GENERAL_STRING_LENGTH,
-                GhostSpeakError::RequirementTooLong
+                GhostSpeakError::InputTooLong
             );
         }
 
@@ -254,14 +254,14 @@ impl WorkDelivery {
         metadata_uri: String,
         bump: u8,
     ) -> Result<()> {
-        require!(deliverables.len() > 0, GhostSpeakError::NoDeliverables);
+        require!(deliverables.len() > 0, GhostSpeakError::InvalidInput);
         require!(
             deliverables.len() <= MAX_DELIVERABLES,
             GhostSpeakError::TooManyDeliverables
         );
         require!(
             ipfs_hash.len() <= MAX_IPFS_HASH_LENGTH,
-            GhostSpeakError::IpfsHashTooLong
+            GhostSpeakError::InputTooLong
         );
         require!(
             metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,

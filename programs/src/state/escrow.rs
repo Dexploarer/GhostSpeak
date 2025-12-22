@@ -98,7 +98,7 @@ impl Escrow {
     ) -> Result<()> {
         require!(
             task_id.len() <= MAX_TASK_ID_LENGTH,
-            GhostSpeakError::TaskIdTooLong
+            GhostSpeakError::InputTooLong
         );
         require!(amount > 0, GhostSpeakError::InvalidAmount);
 
@@ -134,7 +134,7 @@ impl Escrow {
         if let Some(notes) = &resolution_notes {
             require!(
                 notes.len() <= MAX_RESOLUTION_NOTES_LENGTH,
-                GhostSpeakError::ResolutionNotesTooLong
+                GhostSpeakError::InputTooLong
             );
         }
 
@@ -151,7 +151,7 @@ impl Escrow {
         );
         require!(
             dispute_reason.len() <= MAX_DISPUTE_REASON_LENGTH,
-            GhostSpeakError::DisputeReasonTooLong
+            GhostSpeakError::InputTooLong
         );
 
         self.status = EscrowStatus::Disputed;
@@ -167,7 +167,7 @@ impl Escrow {
         );
         require!(
             resolution_notes.len() <= MAX_RESOLUTION_NOTES_LENGTH,
-            GhostSpeakError::ResolutionNotesTooLong
+            GhostSpeakError::InputTooLong
         );
 
         self.status = EscrowStatus::Resolved;
@@ -212,7 +212,7 @@ impl TaskEscrow {
     ) -> Result<()> {
         require!(
             task_id.len() <= MAX_TASK_ID_LENGTH,
-            GhostSpeakError::TaskIdTooLong
+            GhostSpeakError::InputTooLong
         );
         require!(amount > 0, GhostSpeakError::InvalidAmount);
 
@@ -239,7 +239,7 @@ impl TaskEscrow {
     pub fn start_task(&mut self) -> Result<()> {
         require!(
             self.status == TaskStatus::Pending,
-            GhostSpeakError::InvalidTaskStatus
+            GhostSpeakError::InvalidStatusTransition
         );
 
         self.status = TaskStatus::InProgress;
@@ -250,17 +250,17 @@ impl TaskEscrow {
     pub fn complete_task(&mut self, completion_proof: String) -> Result<()> {
         require!(
             self.status == TaskStatus::InProgress,
-            GhostSpeakError::InvalidTaskStatus
+            GhostSpeakError::InvalidStatusTransition
         );
         require!(
             completion_proof.len() <= MAX_COMPLETION_PROOF_LENGTH,
-            GhostSpeakError::CompletionProofTooLong
+            GhostSpeakError::InputTooLong
         );
 
         let clock = Clock::get()?;
         require!(
             clock.unix_timestamp <= self.deadline,
-            GhostSpeakError::TaskDeadlineExceeded
+            GhostSpeakError::InvalidDeadline
         );
 
         self.status = TaskStatus::Completed;
@@ -272,11 +272,11 @@ impl TaskEscrow {
     pub fn dispute_task(&mut self, dispute_details: String) -> Result<()> {
         require!(
             matches!(self.status, TaskStatus::InProgress | TaskStatus::Completed),
-            GhostSpeakError::InvalidTaskStatus
+            GhostSpeakError::InvalidStatusTransition
         );
         require!(
             dispute_details.len() <= MAX_DISPUTE_REASON_LENGTH,
-            GhostSpeakError::DisputeDetailsTooLong
+            GhostSpeakError::InputTooLong
         );
 
         self.status = TaskStatus::Disputed;
@@ -288,7 +288,7 @@ impl TaskEscrow {
     pub fn cancel_task(&mut self) -> Result<()> {
         require!(
             matches!(self.status, TaskStatus::Pending | TaskStatus::InProgress),
-            GhostSpeakError::InvalidTaskStatus
+            GhostSpeakError::InvalidStatusTransition
         );
 
         self.status = TaskStatus::Cancelled;

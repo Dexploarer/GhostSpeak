@@ -109,7 +109,7 @@ import {
 } from '../instructions';
 
 export const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS =
-  '4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK' as Address<'4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK'>;
+  'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9' as Address<'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9'>;
 
 export enum GhostspeakMarketplaceAccount {
   A2AMessage,

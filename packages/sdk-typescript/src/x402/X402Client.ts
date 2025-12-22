@@ -16,20 +16,19 @@ import type {
   SolanaRpcApi,
   Signature,
   TransactionSigner,
-  TransactionMessage
 } from '@solana/kit'
 import {
   createSolanaRpc,
-  getAddressFromPublicKey,
   createTransactionMessage,
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
   appendTransactionMessageInstruction,
   signTransactionMessageWithSigners,
-  sendAndConfirmTransactionFactory,
   getBase64EncodedWireTransaction
 } from '@solana/kit'
-import type { IInstruction } from '@solana/kit'
+import type { Instruction } from '@solana/kit'
+// Type alias for backward compatibility with @solana/kit v2
+type IInstruction = Instruction
 import { EventEmitter } from 'node:events'
 
 // =====================================================

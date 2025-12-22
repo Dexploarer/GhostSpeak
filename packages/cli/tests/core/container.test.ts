@@ -13,10 +13,10 @@ describe('Container', () => {
   })
 
   describe('service registration and resolution', () => {
-    it('should register and resolve a service', () => {
+    it('should register and resolve a service via factory', () => {
       const mockService = { name: 'test-service' }
       
-      container.register('testService', mockService)
+      container.register('testService', () => mockService)
       const resolved = container.resolve('testService')
       
       expect(resolved).toBe(mockService)
@@ -32,10 +32,9 @@ describe('Container', () => {
     })
 
     it('should handle singleton services', () => {
-      let counter = 0
-      const factory = () => ({ id: ++counter })
+      const singletonInstance = { id: 1 }
       
-      container.registerSingleton('singletonService', factory)
+      container.registerSingleton('singletonService', singletonInstance)
       
       const first = container.resolve('singletonService')
       const second = container.resolve('singletonService')
@@ -44,54 +43,97 @@ describe('Container', () => {
       expect(first.id).toBe(1)
     })
 
+    it('should cache factory results as singletons', () => {
+      let counter = 0
+      const factory = () => ({ id: ++counter })
+      
+      container.register('cachedService', factory)
+      
+      const first = container.resolve('cachedService')
+      const second = container.resolve('cachedService')
+      
+      // Factory should only be called once
+      expect(first).toBe(second)
+      expect(first.id).toBe(1)
+    })
+
     it('should throw error for unregistered service', () => {
       expect(() => {
         container.resolve('nonExistentService')
-      }).toThrow('Service nonExistentService not found')
+      }).toThrow('Service not registered: nonExistentService')
     })
   })
 
-  describe('dependency injection', () => {
-    it('should inject dependencies automatically', () => {
-      const dependency = { value: 42 }
-      const serviceFactory = (dep: any) => ({ dependency: dep })
+  describe('service checks', () => {
+    it('should check if a service is registered', () => {
+      container.register('testService', () => ({}))
       
-      container.register('dependency', dependency)
-      container.register('service', serviceFactory, ['dependency'])
-      
-      const resolved = container.resolve('service')
-      expect(resolved.dependency).toBe(dependency)
+      expect(container.has('testService')).toBe(true)
+      expect(container.has('unregisteredService')).toBe(false)
     })
 
-    it('should handle complex dependency chains', () => {
-      container.register('config', { apiUrl: 'test-url' })
-      container.register('httpClient', (config: any) => ({ config }), ['config'])
-      container.register('apiService', (client: any) => ({ client }), ['httpClient'])
+    it('should get service using get alias', () => {
+      const mockService = { name: 'test' }
+      container.register('testService', () => mockService)
       
-      const apiService = container.resolve('apiService')
-      expect(apiService.client.config.apiUrl).toBe('test-url')
+      const resolved = container.get('testService')
+      expect(resolved).toBe(mockService)
     })
   })
 
-  describe('lifecycle management', () => {
-    it('should support cleanup functions', () => {
-      let cleaned = false
-      const service = {
-        cleanup: () => { cleaned = true }
-      }
+  describe('container management', () => {
+    it('should clear all services', () => {
+      container.register('service1', () => ({}))
+      container.register('service2', () => ({}))
       
-      container.register('cleanupService', service)
-      container.cleanup()
+      expect(container.has('service1')).toBe(true)
+      expect(container.has('service2')).toBe(true)
       
-      expect(cleaned).toBe(true)
+      container.clear()
+      
+      expect(container.has('service1')).toBe(false)
+      expect(container.has('service2')).toBe(false)
     })
 
-    it('should handle services without cleanup', () => {
-      const service = { name: 'no-cleanup' }
+    it('should get registered tokens', () => {
+      container.register('service1', () => ({}))
+      container.registerSingleton('service2', {})
       
-      container.register('service', service)
+      const tokens = container.getRegisteredTokens()
       
-      expect(() => container.cleanup()).not.toThrow()
+      expect(tokens).toContain('service1')
+      expect(tokens).toContain('service2')
+    })
+
+    it('should warm up services', () => {
+      let called = false
+      container.register('warmService', () => {
+        called = true
+        return {}
+      })
+      
+      container.warmUp(['warmService', 'nonExistentService'])
+      
+      expect(called).toBe(true)
+    })
+  })
+
+  describe('performance tracking', () => {
+    it('should track service creation time', () => {
+      container.register('slowService', () => {
+        // Simulate some work
+        const start = Date.now()
+        while (Date.now() - start < 5) {
+          // Wait a few ms
+        }
+        return {}
+      })
+      
+      container.resolve('slowService')
+      
+      const metrics = container.getPerformanceMetrics()
+      expect(metrics).toHaveProperty('slowService')
+      expect(metrics.slowService).toBeGreaterThanOrEqual(0)
     })
   })
 })

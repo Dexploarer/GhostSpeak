@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Command } from 'commander'
 import chalk from 'chalk'
 import { 
@@ -15,6 +19,7 @@ import {
 import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
 import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
+import { EscrowModule } from '@ghostspeak/sdk'
 
 // Clean type definitions
 interface CreateEscrowOptions {
@@ -22,6 +27,9 @@ interface CreateEscrowOptions {
   provider?: string
   amount?: string
   title?: string
+  description?: string
+  deadline?: string
+  yes?: boolean
 }
 
 interface ListEscrowOptions {
@@ -51,6 +59,9 @@ escrowCommand
   .option('-p, --provider <address>', 'Service provider address')
   .option('-a, --amount <amount>', 'Escrow amount in SOL')
   .option('-t, --title <title>', 'Work order title')
+  .option('--description <description>', 'Work description')
+  .option('--deadline <hours>', 'Deadline in hours (default: 72)')
+  .option('-y, --yes', 'Skip confirmation prompts')
   .action(async (options: CreateEscrowOptions) => {
     intro(chalk.green('🔒 Create Escrow Payment'))
 
@@ -59,7 +70,7 @@ escrowCommand
       s.start('Connecting to network...')
       
       const { client, wallet } = await initializeClient('devnet')
-      const safeClient = createSafeSDKClient(client)
+      const _safeClient = createSafeSDKClient(client)
       
       s.stop('✅ Connected to devnet')
 
@@ -79,7 +90,7 @@ escrowCommand
             try {
               address(value.trim())
               return
-            } catch (error) {
+            } catch {
               return 'Please enter a valid Solana address'
             }
           }
@@ -146,63 +157,72 @@ escrowCommand
       }
 
       // Get work description
-      const description = await text({
-        message: 'Work description:',
-        placeholder: 'Detailed description of the work to be performed...',
-        validate: (value) => {
-          if (!value || value.trim().length < 10) {
-            return 'Please provide at least 10 characters describing the work'
-          }
-          if (value.length > 500) {
-            return 'Description must be less than 500 characters'
-          }
-        }
-      })
-
-      if (isCancel(description)) {
-        cancel('Escrow creation cancelled')
-        return
-      }
-
-      // Get deadline
-      const deadlineChoice = await select({
-        message: 'Work deadline:',
-        options: [
-          { value: '24', label: '24 hours', hint: 'Rush job' },
-          { value: '72', label: '3 days', hint: 'Standard turnaround' },
-          { value: '168', label: '1 week', hint: 'Complex work' },
-          { value: '336', label: '2 weeks', hint: 'Major project' },
-          { value: 'custom', label: 'Custom deadline', hint: 'Specify custom timeframe' }
-        ]
-      })
-
-      if (isCancel(deadlineChoice)) {
-        cancel('Escrow creation cancelled')
-        return
-      }
-
-      let deadlineHours = deadlineChoice.toString()
-      if (deadlineHours === 'custom') {
-        const customDeadline = await text({
-          message: 'Deadline (hours from now):',
-          placeholder: '48',
+      let description: string | symbol = options.description ?? ''
+      if (!description && !options.yes) {
+        description = await text({
+          message: 'Work description:',
+          placeholder: 'Detailed description of the work to be performed...',
           validate: (value) => {
-            const num = parseInt(value)
-            if (isNaN(num) || num <= 0) {
-              return 'Please enter a valid number of hours'
+            if (!value || value.trim().length < 10) {
+              return 'Please provide at least 10 characters describing the work'
             }
-            if (num > 8760) { // 1 year
-              return 'Deadline cannot be more than 1 year'
+            if (value.length > 500) {
+              return 'Description must be less than 500 characters'
             }
           }
         })
 
-        if (isCancel(customDeadline)) {
+        if (isCancel(description)) {
+          cancel('Escrow creation cancelled')
+          return
+        }
+      }
+      if (!description) {
+        description = `Work order: ${title}`
+      }
+
+      // Get deadline
+      let deadlineHours = options.deadline ?? '72'
+      if (!options.deadline && !options.yes) {
+        const deadlineChoice = await select({
+          message: 'Work deadline:',
+          options: [
+            { value: '24', label: '24 hours', hint: 'Rush job' },
+            { value: '72', label: '3 days', hint: 'Standard turnaround' },
+            { value: '168', label: '1 week', hint: 'Complex work' },
+            { value: '336', label: '2 weeks', hint: 'Major project' },
+            { value: 'custom', label: 'Custom deadline', hint: 'Specify custom timeframe' }
+          ]
+        })
+
+        if (isCancel(deadlineChoice)) {
           cancel('Escrow creation cancelled')
           return
         }
 
-        deadlineHours = customDeadline.toString()
+        deadlineHours = deadlineChoice.toString()
+        if (deadlineHours === 'custom') {
+          const customDeadline = await text({
+            message: 'Deadline (hours from now):',
+            placeholder: '48',
+            validate: (value) => {
+              const num = parseInt(value)
+              if (isNaN(num) || num <= 0) {
+                return 'Please enter a valid number of hours'
+              }
+              if (num > 8760) { // 1 year
+                return 'Deadline cannot be more than 1 year'
+              }
+            }
+          })
+
+          if (isCancel(customDeadline)) {
+            cancel('Escrow creation cancelled')
+            return
+          }
+
+          deadlineHours = customDeadline.toString()
+        }
       }
 
       // Show escrow preview
@@ -222,13 +242,15 @@ escrowCommand
         'Escrow Preview'
       )
 
-      const confirmCreate = await confirm({
-        message: `Create escrow for ${totalCost.toFixed(4)} SOL?`
-      })
+      if (!options.yes) {
+        const confirmCreate = await confirm({
+          message: `Create escrow for ${totalCost.toFixed(4)} SOL?`
+        })
 
-      if (isCancel(confirmCreate) || !confirmCreate) {
-        cancel('Escrow creation cancelled')
-        return
+        if (isCancel(confirmCreate) || !confirmCreate) {
+          cancel('Escrow creation cancelled')
+          return
+        }
       }
 
       s.start('Creating escrow on blockchain...')
@@ -238,9 +260,19 @@ escrowCommand
         const amountLamports = Math.floor(amountNum * 1_000_000_000)
         // const _deadlineTimestamp = Math.floor(Date.now() / 1000) + (parseInt(deadlineHours) * 3600)
 
-        const signature = await safeClient.escrow.create(toSDKSigner(wallet), {
-          provider: address(providerAddress),
+        // Create escrow module directly
+        const escrowModule = new EscrowModule({
+          rpc: client.config.rpc,
+          programId: client.config.programId,
+          commitment: 'confirmed',
+          cluster: 'devnet'
+        })
+
+        // Use createWithSol for better UX - auto-wraps SOL!
+        const signature = await escrowModule.createWithSol({
+          signer: toSDKSigner(wallet),
           amount: BigInt(amountLamports),
+          seller: address(providerAddress),
           description: description.toString()
         })
 

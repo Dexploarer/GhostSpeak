@@ -148,6 +148,7 @@ export interface RegisterAgentParams {
     fixedRate?: number
   }
   metadata?: Record<string, unknown>
+  merkleTree?: string
 }
 
 export interface ListAgentsParams {

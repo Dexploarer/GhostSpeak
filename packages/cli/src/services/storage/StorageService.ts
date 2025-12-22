@@ -21,7 +21,9 @@ export class StorageService implements IStorageService {
     try {
       await this.ensureDirectoryExists()
       const filePath = this.getFilePath(key)
-      const jsonData = JSON.stringify(data, null, 2)
+      const jsonData = JSON.stringify(data, (_, value) => 
+        typeof value === 'bigint' ? value.toString() : value
+      , 2)
       await fs.writeFile(filePath, jsonData, 'utf-8')
     } catch (error) {
       throw new Error(`Failed to save data for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`)

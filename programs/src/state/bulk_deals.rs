@@ -85,19 +85,19 @@ impl BulkDeal {
     ) -> Result<()> {
         require!(
             sla_terms.len() <= MAX_GENERAL_STRING_LENGTH,
-            GhostSpeakError::StringTooLong
+            GhostSpeakError::InputTooLong
         );
         require!(
             volume_tiers.len() <= MAX_VOLUME_TIERS,
-            GhostSpeakError::TooManyVolumeTiers
+            GhostSpeakError::TooManyRequirements
         );
-        require!(total_volume > 0, GhostSpeakError::InvalidVolume);
+        require!(total_volume > 0, GhostSpeakError::InvalidAmount);
         require!(total_value > 0, GhostSpeakError::InvalidValue);
         require!(
             discount_percentage >= 0.0 && discount_percentage <= 100.0,
             GhostSpeakError::InvalidDiscountPercentage
         );
-        require!(contract_duration > 0, GhostSpeakError::InvalidDuration);
+        require!(contract_duration > 0, GhostSpeakError::InvalidExpiration);
 
         let clock = Clock::get()?;
         require!(
@@ -109,7 +109,7 @@ impl BulkDeal {
         for (i, tier) in volume_tiers.iter().enumerate() {
             require!(
                 tier.max_quantity > tier.min_quantity,
-                GhostSpeakError::InvalidVolumeTier
+                GhostSpeakError::InvalidConfiguration
             );
             require!(
                 tier.discount_percentage <= MAX_DISCOUNT_PERCENTAGE,
@@ -120,7 +120,7 @@ impl BulkDeal {
             if i > 0 {
                 require!(
                     tier.min_quantity > volume_tiers[i - 1].max_quantity,
-                    GhostSpeakError::OverlappingVolumeTiers
+                    GhostSpeakError::InvalidConfiguration
                 );
             }
         }

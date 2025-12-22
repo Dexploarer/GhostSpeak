@@ -7,7 +7,7 @@
  * access to all Token-2022 features.
  */
 
-import type { Address, IInstruction, TransactionSigner } from '@solana/kit'
+import type { Address, Instruction, TransactionSigner } from '@solana/kit'
 import { getU8Encoder, getU16Encoder, getU64Encoder, getStructEncoder, getBytesEncoder, fixEncoderSize, address } from '@solana/kit'
 import type { Rpc } from '@solana/kit'
 
@@ -184,7 +184,7 @@ export {
 export async function createMintWithExtensions(
   rpc: Rpc<unknown>,
   params: CreateMintWithExtensionsParams
-): Promise<IInstruction[]> {
+): Promise<Instruction[]> {
   // SPL Token still uses Connection v1, so we delegate to spl-token-integration.ts
   // which handles the compatibility layer
   return createMintWithExtensionsOfficial(rpc as unknown as Connection, params)
@@ -209,7 +209,7 @@ export async function transferWithFee(
     decimals: number
     multiSigners?: TransactionSigner[]
   }
-): Promise<IInstruction> {
+): Promise<Instruction> {
   return transferWithFeeOfficial(rpc as unknown as Connection, params)
 }
 
@@ -228,7 +228,7 @@ export function createTransferCheckedWithFeeInstruction(params: {
   amount: bigint
   decimals: number
   fee: bigint
-}): IInstruction {
+}): Instruction {
   const dataEncoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['extensionInstruction', getU8Encoder()],
@@ -265,7 +265,7 @@ export function createWithdrawWithheldTokensFromAccountsInstruction(params: {
   destination: Address
   withdrawWithheldAuthority: TransactionSigner
   sources: Address[]
-}): IInstruction {
+}): Instruction {
   const dataEncoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['extensionInstruction', getU8Encoder()],
@@ -308,7 +308,7 @@ export function createConfigureAccountInstruction(params: {
   maximumPendingBalanceCreditCounter: bigint
   authority: TransactionSigner
   multisigSigners: TransactionSigner[]
-}): IInstruction {
+}): Instruction {
   const dataEncoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['extensionInstruction', getU8Encoder()],
@@ -347,7 +347,7 @@ export function createDepositInstruction(params: {
   decimals: number
   authority: TransactionSigner
   multisigSigners: TransactionSigner[]
-}): IInstruction {
+}): Instruction {
   const dataEncoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['extensionInstruction', getU8Encoder()],
@@ -385,7 +385,7 @@ export function createConfidentialTransferInstruction(params: {
   authority: TransactionSigner
   multisigSigners: TransactionSigner[]
   proofInstructionOffset: number
-}): IInstruction {
+}): Instruction {
   const dataEncoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['extensionInstruction', getU8Encoder()],
@@ -427,7 +427,7 @@ export function createUpdateRateInstruction(params: {
   mint: Address
   rateAuthority: TransactionSigner
   rate: number // basis points per year
-}): IInstruction {
+}): Instruction {
   const dataEncoder = getStructEncoder([
     ['instruction', getU8Encoder()],
     ['extensionInstruction', getU8Encoder()],

@@ -105,12 +105,16 @@ export type RegisterAgentInstruction<
 export type RegisterAgentInstructionData = {
   discriminator: ReadonlyUint8Array;
   agentType: number;
+  name: string;
+  description: string;
   metadataUri: string;
   agentId: string;
 };
 
 export type RegisterAgentInstructionDataArgs = {
   agentType: number;
+  name: string;
+  description: string;
   metadataUri: string;
   agentId: string;
 };
@@ -120,6 +124,8 @@ export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentI
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['agentType', getU8Encoder()],
+      ['name', getUtf8Encoder()],
+      ['description', getUtf8Encoder()],
       ['metadataUri', getUtf8Encoder()],
       ['agentId', getUtf8Encoder()],
     ]),
@@ -131,6 +137,8 @@ export function getRegisterAgentInstructionDataDecoder(): Decoder<RegisterAgentI
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['agentType', getU8Decoder()],
+    ['name', getUtf8Decoder()],
+    ['description', getUtf8Decoder()],
     ['metadataUri', getUtf8Decoder()],
     ['agentId', getUtf8Decoder()],
   ]);
@@ -164,6 +172,8 @@ export type RegisterAgentAsyncInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   agentType: RegisterAgentInstructionDataArgs['agentType'];
+  name: RegisterAgentInstructionDataArgs['name'];
+  description: RegisterAgentInstructionDataArgs['description'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentInstructionDataArgs['agentId'];
 };
@@ -291,6 +301,8 @@ export type RegisterAgentInput<
   /** Clock sysvar for timestamp validation */
   clock?: Address<TAccountClock>;
   agentType: RegisterAgentInstructionDataArgs['agentType'];
+  name: RegisterAgentInstructionDataArgs['name'];
+  description: RegisterAgentInstructionDataArgs['description'];
   metadataUri: RegisterAgentInstructionDataArgs['metadataUri'];
   agentId: RegisterAgentInstructionDataArgs['agentId'];
 };

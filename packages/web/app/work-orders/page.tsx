@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import { Plus, Briefcase, Search, Filter, TrendingUp, Clock, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function WorkOrdersPage(): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { address: publicKey, isConnected } = useWalletAddress()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState<WorkOrderStatus[]>([])
   const [roleFilter, setRoleFilter] = useState<'all' | 'client' | 'provider'>('all')
@@ -73,12 +73,12 @@ export default function WorkOrdersPage(): React.JSX.Element {
 
   // Calculate stats
   const activeOrders = workOrders.filter(
-    (order) => order.status === WorkOrderStatus.InProgress || order.status === WorkOrderStatus.Open
+    (order: WorkOrder) => order.status === WorkOrderStatus.InProgress || order.status === WorkOrderStatus.Open
   ).length
   const completedOrders = workOrders.filter(
-    (order) => order.status === WorkOrderStatus.Completed
+    (order: WorkOrder) => order.status === WorkOrderStatus.Completed
   ).length
-  const totalValue = workOrders.reduce((sum, order) => sum + Number(order.paymentAmount), 0) / 1e9 // Convert from lamports
+  const totalValue = workOrders.reduce((sum: number, order: WorkOrder) => sum + Number(order.paymentAmount), 0) / 1e9 // Convert from lamports
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -270,7 +270,7 @@ export default function WorkOrdersPage(): React.JSX.Element {
       ) : !isLoading && !error ? (
         workOrders.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {workOrders.map((workOrder) => (
+            {workOrders.map((workOrder: WorkOrder) => (
               <WorkOrderCard
                 key={workOrder.address}
                 workOrder={workOrder}

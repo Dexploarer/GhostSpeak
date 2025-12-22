@@ -47,7 +47,7 @@ cargo install solana-verify
 
 # Verify the deployed program
 solana-verify verify-from-repo -u devnet \
-  --program-id 4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK \
+  --program-id GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9 \
   https://github.com/dexploarer/GhostSpeak
 ```
 

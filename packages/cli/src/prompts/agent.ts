@@ -14,6 +14,7 @@ export interface AgentData {
   capabilities: string[]
   metadataUri: string
   serviceEndpoint: string
+  merkleTree?: string
 }
 
 export async function registerAgentPrompts(options: { name?: string; description?: string; capabilities?: string; category?: string; endpoint?: string; metadata?: boolean; yes?: boolean }): Promise<AgentData> {
@@ -99,6 +100,21 @@ export async function registerAgentPrompts(options: { name?: string; description
     process.exit(0)
   }
 
+  // Merkle Tree Address
+  const merkleTree = await text({
+    message: 'Enter Merkle Tree Address (for compressed agent):',
+    placeholder: 'Base58 address...',
+    validate: (value) => {
+      if (!value) return 'Merkle Tree address is required'
+      if (value.length < 32) return 'Invalid address length'
+    }
+  })
+
+  if (isCancel(merkleTree)) {
+    cancel('Agent registration cancelled')
+    process.exit(0)
+  }
+
   // Metadata URI (optional)
   const hasMetadata = options.metadata === false ? false : 
     options.metadata === true ? true :
@@ -160,6 +176,7 @@ export async function registerAgentPrompts(options: { name?: string; description
     description,
     capabilities,
     metadataUri,
-    serviceEndpoint
+    serviceEndpoint,
+    merkleTree: merkleTree as string
   }
 }

@@ -1,11 +1,12 @@
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
+import type { TransactionSigner, Instruction } from '@solana/kit'
 // Use string type for signature since @solana/rpc-types doesn't export Signature in v2
 type Signature = string
+// Type alias for backward compatibility with @solana/kit v2
+type IInstruction = Instruction
 import type { GhostSpeakConfig } from '../types/index.js'
 import { InstructionBuilder } from './InstructionBuilder.js'
 import type { TransactionResult } from '../utils/transaction-urls.js'
-import type { IInstruction } from '@solana/instructions'
 
 /**
  * Base class for all instruction modules using the unified InstructionBuilder.

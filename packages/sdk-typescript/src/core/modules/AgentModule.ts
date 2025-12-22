@@ -34,23 +34,45 @@ export class AgentModule extends BaseModule {
    */
   async register(signer: TransactionSigner, params: {
     agentType: number
+    name: string
+    description: string
     metadataUri: string
     agentId: string
     skipSimulation?: boolean
   }): Promise<string> {
-    const instructionGetter = async () => {
+    const registerGetter = async () => {
       const agentAccount = await this.deriveAgentPda(params.agentId, signer.address)
       const userRegistry = await this.deriveUserRegistryPda(signer.address)
-      const result = await getRegisterAgentInstructionAsync({
+      const ix = await getRegisterAgentInstructionAsync({
         agentAccount,
         userRegistry,
         signer,
         systemProgram: this.systemProgramId,
         agentType: params.agentType,
+        name: params.name,
+        description: params.description,
         metadataUri: params.metadataUri,
         agentId: params.agentId
       })
-      return result
+      
+      // DEBUG: Remove UserRegistry account (index 1) to match modified program
+      ix.accounts.splice(1, 1);
+      
+      return ix;
+    }
+
+    const heapGetter = () => {
+      // Request 64KB Heap (Index 1)
+      // ComputeBudgetProgram ID: ComputeBudget111111111111111111111111111111
+      const heapData = new Uint8Array(5);
+      heapData[0] = 1; // RequestHeapFrame
+      new DataView(heapData.buffer).setUint32(1, 256 * 1024, true); // 256KB (Safe margin)
+
+      return {
+        programAddress: 'ComputeBudget111111111111111111111111111111' as Address,
+        accounts: [],
+        data: heapData
+      }
     }
     
     // Enable debug mode to get detailed transaction information
@@ -59,19 +81,19 @@ export class AgentModule extends BaseModule {
     // If skipSimulation is true, call builder directly to bypass simulation
     if (params.skipSimulation) {
       console.log('🚀 SKIPPING SIMULATION - Sending transaction directly')
-      return this.builder.execute(
+      return this.builder.executeBatch(
         'registerAgent',
-        instructionGetter,
+        [heapGetter, registerGetter],
         [signer] as unknown as TransactionSigner[],
         { simulate: false, skipPreflight: true }
       ) as Promise<string>
     }
     
-    return this.execute(
+    return this.builder.executeBatch(
       'registerAgent',
-      instructionGetter,
+      [heapGetter, registerGetter],
       [signer] as unknown as TransactionSigner[]
-    )
+    ) as Promise<string>
   }
 
   /**
@@ -82,17 +104,22 @@ export class AgentModule extends BaseModule {
     metadataUri: string
     agentId: string
     merkleTree: Address
-    treeConfig: Address
+    treeConfig?: Address
   }): Promise<string> {
     const instructionGetter = async () => {
+      // Derive treeConfig if not provided
+      const treeConfig = params.treeConfig || await this.deriveTreeConfigPda(signer.address)
+      
       const result = await getRegisterAgentCompressedInstructionAsync({
         merkleTree: params.merkleTree,
+        treeAuthority: treeConfig, // Map to correct instruction field (it's treeAuthority in IDL?)
         signer,
         systemProgram: this.systemProgramId,
         compressionProgram: this.compressionProgramId,
         agentType: params.agentType,
         metadataUri: params.metadataUri,
-        agentId: params.agentId
+        agentId: params.agentId,
+        logWrapper: 'noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV' as Address // Explicitly provide Noop program
       })
       return result
     }
@@ -265,6 +292,23 @@ export class AgentModule extends BaseModule {
     // Use the standard PDA utility function that matches Rust implementation
     const { deriveUserRegistryPda } = await import('../../utils/pda.js')
     return deriveUserRegistryPda(this.programId, owner)
+  }
+
+  private async deriveTreeConfigPda(owner: Address): Promise<Address> {
+    const { getProgramDerivedAddress, getAddressEncoder } = await import('@solana/addresses')
+    const addressEncoder = getAddressEncoder()
+    const ownerBytes = addressEncoder.encode(owner)
+    
+    // seeds = [b"agent_tree_config", signer.key().as_ref()]
+    const [pda] = await getProgramDerivedAddress({
+      programAddress: this.programId,
+      seeds: [
+        new TextEncoder().encode('agent_tree_config'),
+        ownerBytes
+      ]
+    })
+    
+    return pda
   }
 
   private get systemProgramId(): Address {

@@ -24,6 +24,7 @@ export * from './createChannel';
 export * from './createDynamicPricingEngine';
 export * from './createEnhancedChannel';
 export * from './createEscrow';
+export * from './createEscrowWithSol';
 export * from './createIncentiveProgram';
 export * from './createJobPosting';
 export * from './createMarketAnalytics';

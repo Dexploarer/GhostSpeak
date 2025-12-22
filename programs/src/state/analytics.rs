@@ -379,7 +379,7 @@ impl MarketAnalytics {
         1; // bump
 
     pub fn initialize(&mut self, period_start: i64, period_end: i64, bump: u8) -> Result<()> {
-        require!(period_end > period_start, GhostSpeakError::InvalidPeriod);
+        require!(period_end > period_start, GhostSpeakError::InvalidExpiration);
 
         self.period_start = period_start;
         self.period_end = period_end;
@@ -416,7 +416,7 @@ impl MarketAnalytics {
     pub fn add_top_agent(&mut self, agent: Pubkey) -> Result<()> {
         require!(
             self.top_agents.len() < MAX_TOP_AGENTS,
-            GhostSpeakError::TooManyTopAgents
+            GhostSpeakError::TooManyParticipants
         );
 
         if !self.top_agents.contains(&agent) {

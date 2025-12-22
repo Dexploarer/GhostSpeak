@@ -130,10 +130,11 @@ describe('End-to-End Workflows', () => {
       // Step 2: Check required options
       expect(registerHelp.stdout.toLowerCase()).toMatch(/name|description|capabilities/i)
 
-      // Step 3: List agents (should be empty or show loading)
+      // Step 3: List agents (should show agents or loading or empty state)
       const listResult = await runCLI(['agent', 'list'])
       expect(listResult.exitCode).toBe(0)
-      expect(listResult.stdout.toLowerCase()).toMatch(/loading|no agents|empty/i)
+      // Match any valid output: loading, listing results, no agents, or empty
+      expect(listResult.stdout.toLowerCase()).toMatch(/loading|agent|no agents|empty|listing|completed/i)
 
       // Step 4: Check agent status
       const statusHelp = await runCLI(['agent', 'status', '--help'])

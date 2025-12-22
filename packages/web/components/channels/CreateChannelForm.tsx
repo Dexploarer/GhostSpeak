@@ -215,10 +215,10 @@ export function CreateChannelForm({
       {/* Basic Information */}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">
-            Channel Name
-            <span className="text-red-500 ml-1">*</span>
-          </Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="name">Channel Name</Label>
+            <span className="text-red-500 text-sm">*</span>
+          </div>
           <div className="relative">
             <SelectedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input

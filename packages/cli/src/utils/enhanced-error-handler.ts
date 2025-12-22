@@ -49,7 +49,7 @@ export function handleServiceError(error: unknown): ErrorInfo {
   }
   
   // Handle unknown errors
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Error.message access on unknown error type
+   
   const message = error instanceof Error ? error.message : 'Unknown error occurred'
   return {
     message,

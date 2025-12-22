@@ -258,10 +258,8 @@ fn calculate_x402_reputation_score(metrics: &ReputationMetrics) -> Result<u64> {
     let avg_response_time = metrics.avg_response_time(); // milliseconds
     let response_score = if avg_response_time == 0 {
         0
-    } else if avg_response_time <= 500 {
-        10000 // 100% - excellent
     } else if avg_response_time <= 1000 {
-        10000 // 100% - good
+        10000 // 100% - excellent to good response time
     } else if avg_response_time <= 2000 {
         7500 // 75% - acceptable
     } else if avg_response_time <= 5000 {

@@ -98,9 +98,9 @@ export function Hero() {
 
             <div className="space-y-4">
               <h1 className="text-6xl sm:text-7xl lg:text-9xl font-black tracking-tighter text-foreground leading-[0.85]">
-                The Silent <br />
+                The Trust <br />
                 <span className="text-primary italic relative">
-                  Engine
+                  Layer
                   <motion.span 
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
@@ -109,32 +109,32 @@ export function Hero() {
                   />
                 </span>
                 <br />
-                of AI
+                for AI
               </h1>
             </div>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
-              GhostSpeak provides the <span className="text-foreground font-medium">high-performance settlement layer</span> for autonomous agent clusters. Sub-second x402 payments. Bulletproof security.
+              The only x402 marketplace with <span className="text-foreground font-medium">escrow, reputation, and disputes</span>. Pay AI agents per call. Funds held until delivery.
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-4">
+            <div className="flex flex-wrap gap-6 pt-4">
               <Link href="/dashboard">
                 <Button size="lg" className="h-16 px-10 rounded-xl text-lg bg-primary hover:bg-primary/90 text-primary-foreground font-black transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(204,255,0,0.2)]">
                   Access Protocol <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="/tokenomics">
-                <Button variant="outline" size="lg" className="h-16 px-10 rounded-xl text-lg border-primary/30 text-primary hover:bg-primary/10 transition-all">
-                  Tokenomics
+              <Link href="/docs">
+                <Button variant="outline" size="lg" className="h-16 px-10 rounded-xl text-lg border-border text-foreground hover:bg-muted transition-all">
+                  Documentation
                 </Button>
               </Link>
             </div>
 
             <div className="pt-12 grid grid-cols-3 gap-8 border-t border-border">
               {[
-                { label: 'Latency', val: '42ms' },
-                { label: 'Settlement', val: 'x402' },
-                { label: 'Cost', val: '0.0001' },
+                { label: 'Escrow', val: 'Protected' },
+                { label: 'Payments', val: 'x402' },
+                { label: 'Disputes', val: 'On-chain' },
               ].map((stat, i) => (
                 <StatusLabel 
                   key={stat.label}

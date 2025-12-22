@@ -76,17 +76,25 @@ export function RegisterAgentForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const onSubmit = async (data: RegisterAgentForm) => {
     try {
-      const metadata = JSON.stringify({
+      // Create metadata JSON and convert to URI (in production, this would be uploaded to IPFS/Arweave)
+      const metadataJson = JSON.stringify({
+        name: data.name,
         description: data.description,
         category: data.category,
         avatar: data.avatar || undefined,
       })
+      
+      // For now, use a data URI - in production, upload to IPFS and use the hash
+      const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
+      
+      // Generate a unique agent ID
+      const agentId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 
       await registerAgent.mutateAsync({
         name: data.name,
-        metadata,
+        metadataUri,
         capabilities: data.capabilities,
-        pricing: BigInt(Math.floor(data.pricing * 1e9)), // Convert SOL to lamports
+        agentId,
       })
 
       reset()

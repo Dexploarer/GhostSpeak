@@ -16,7 +16,7 @@ use sha3::{Digest, Keccak256};
 /// instead of a traditional large account, solving the compute budget issue.
 /// This achieves 5000x cost reduction as mentioned in CLAUDE.md.
 #[derive(Accounts)]
-#[instruction(agent_type: u8, metadata_uri: String, agent_id: String)]
+#[instruction(agent_type: u8, metadata_uri: String, agent_id: String, name: String, description: String)]
 pub struct RegisterAgentCompressed<'info> {
     /// Tree authority PDA that manages the compressed Agent tree
     #[account(
@@ -108,6 +108,8 @@ pub fn register_agent_compressed(
     agent_type: u8,
     metadata_uri: String,
     agent_id: String,
+    name: String,
+    description: String,
 ) -> Result<()> {
     let clock = Clock::get()?;
 
@@ -116,6 +118,11 @@ pub fn register_agent_compressed(
     require!(
         metadata_uri.len() <= MAX_GENERAL_STRING_LENGTH,
         GhostSpeakError::AgentNotFound
+    );
+    require!(name.len() <= MAX_NAME_LENGTH, GhostSpeakError::NameTooLong);
+    require!(
+        description.len() <= MAX_GENERAL_STRING_LENGTH,
+        GhostSpeakError::DescriptionTooLong
     );
 
     // Initialize tree config if needed
@@ -133,8 +140,8 @@ pub fn register_agent_compressed(
         agent_id: agent_id.clone(),
         agent_type,
         metadata_uri: metadata_uri.clone(),
-        name: format!("Agent-{agent_id}"), // Auto-generated name
-        description: "Compressed AI Agent".to_string(),
+        name: name.clone(),
+        description: description.clone(),
         capabilities: Vec::new(), // Start with empty capabilities, can be updated later
         pricing_model: crate::PricingModel::Fixed, // Default pricing model
         is_active: true,

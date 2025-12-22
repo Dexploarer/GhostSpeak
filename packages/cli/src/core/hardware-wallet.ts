@@ -164,7 +164,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
       this.status = 'error'
       this.emit('status_changed', this.status)
       this.emit('error', error)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+       
       throw new Error(`Failed to connect to Ledger: ${error}`)
     }
   }
@@ -219,7 +219,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
     } catch (error) {
       this.emit('error', error)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+       
       throw new Error(`Failed to get public key: ${error}`)
     }
   }
@@ -260,7 +260,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+       
       throw new Error(`Failed to sign transaction: ${error}`)
     }
   }
@@ -291,7 +291,7 @@ export class LedgerWallet extends EventEmitter implements IHardwareWallet {
 
     } catch (error) {
       this.emit('error', error)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error conversion to string for Error constructor
+       
       throw new Error(`Failed to sign message: ${error}`)
     }
   }
@@ -461,7 +461,7 @@ export class HardwareWalletManager extends EventEmitter {
       return devices
 
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Error passed to console.warn
+       
       console.warn('Failed to detect hardware wallet devices:', error)
       return []
     }
@@ -512,7 +512,7 @@ export class HardwareWalletManager extends EventEmitter {
     } catch (error) {
       this.eventBus.emit('hardware_wallet:connection_failed', {
         type,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument -- Error handling for unknown error type
+         
         error: error instanceof Error ? error.message : String(error)
       })
       throw error

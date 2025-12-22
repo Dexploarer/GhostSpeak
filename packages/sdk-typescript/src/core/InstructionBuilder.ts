@@ -1,6 +1,8 @@
 import type { Address } from '@solana/addresses'
-import type { IInstruction, TransactionSigner, Blockhash, Base64EncodedBytes, Base58EncodedBytes, TransactionMessageBytesBase64, TransactionMessageBytes, SignaturesMap, Signature } from '@solana/kit'
-import type { GhostSpeakConfig } from '../types/index.js'
+import type { Instruction, TransactionSigner, Blockhash, Base64EncodedBytes, Base58EncodedBytes, TransactionMessageBytesBase64, TransactionMessageBytes, SignaturesMap, Signature } from '@solana/kit'
+// Type alias for backward compatibility with @solana/kit v2
+type IInstruction = Instruction
+import type { GhostSpeakConfig, ParticipantType } from '../types/index.js'
 import { RpcClient } from './rpc-client.js'
 import { createTransactionResult } from '../utils/transaction-urls.js'
 import { logEnhancedError, createErrorContext } from '../utils/enhanced-client-errors.js'
@@ -523,7 +525,7 @@ export class InstructionBuilder {
         if (statuses[0]) {
           console.log('🔍 Status found:', statuses[0])
           if (statuses[0].err) {
-            throw new Error(`Transaction failed: ${JSON.stringify(statuses[0].err)}`)
+            throw new Error(`Transaction failed: ${JSON.stringify(statuses[0].err, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`)
           }
           
           const confirmationStatus = statuses[0].confirmationStatus
@@ -548,7 +550,7 @@ export class InstructionBuilder {
             
             if (transaction && transaction.meta) {
               if (transaction.meta.err) {
-                throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err)}`)
+                throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`)
               }
               confirmed = true
               console.log('✅ Transaction confirmed via direct lookup')
@@ -587,7 +589,7 @@ export class InstructionBuilder {
         
         if (transaction && transaction.meta) {
           if (transaction.meta.err) {
-            throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err)}`)
+            throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`)
           }
           console.log('✅ Transaction confirmed on final check - returning success')
           return signature as Signature
@@ -696,9 +698,9 @@ export class InstructionBuilder {
   async createCommunicationSession(params: {
     sessionId: bigint
     initiator: Address
-    initiatorType: any // ParticipantType
+    initiatorType: ParticipantType
     responder: Address
-    responderType: any // ParticipantType
+    responderType: ParticipantType
     sessionType: string
     metadata: string
     expiresAt: bigint

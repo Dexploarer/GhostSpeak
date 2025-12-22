@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import type { Address } from '@solana/kit'
 import type { TransactionSigner } from '@solana/kit'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
@@ -230,21 +230,25 @@ function mapProposalTypeToCategory(proposalType: string): ProposalCategory {
   return categoryMap[proposalType] || ProposalCategory.Community
 }
 
-// Types for SDK data
-interface ProposalSDKData {
-  id?: string
-  title: string
-  description: string
-  proposer: Address
-  status: string
-  proposalType: string
-  votingStart: bigint
-  votingEnd: bigint
+// Types for SDK data - matches the actual generated GovernanceProposal type
+interface SDKVotingResults {
   forVotes: bigint
   againstVotes: bigint
   abstainVotes: bigint
+  totalVotes: bigint
+}
+
+interface ProposalSDKData {
+  proposalId: bigint
+  proposer: Address
+  title: string
+  description: string
+  proposalType: unknown
   createdAt: bigint
-  executionDelay: bigint
+  votingStartsAt: bigint
+  votingEndsAt: bigint
+  status: unknown
+  votingResults: SDKVotingResults
 }
 
 interface ProposalAccountData {
@@ -267,18 +271,7 @@ function determineImpactLevel(proposalType: ProposalType): 'Low' | 'Medium' | 'H
   }
 }
 
-function createSDKSigner(
-  publicKey: { toBase58(): string },
-  signTransaction: (tx: unknown) => Promise<unknown>
-): TransactionSigner {
-  return {
-    address: publicKey.toBase58() as Address,
-    signTransactions: async (txs: unknown[]) => {
-      const signed = await Promise.all(txs.map((tx) => signTransaction(tx)))
-      return signed
-    },
-  }
-}
+// Signer is now provided by useCrossmintSigner hook
 
 // =====================================================
 // REACT QUERY HOOKS
@@ -294,39 +287,43 @@ export function useProposals(filters?: GovernanceFilters, options?: { enabled?: 
       const client = getGhostSpeakClient()
 
       // Fetch proposals from the SDK
-      const proposals = await client.governance.getAllProposals()
+      const proposals = await client.governance.getActiveProposals() as unknown as ProposalAccountData[]
 
       // Transform SDK data to match our Proposal interface
       let filteredProposals = proposals.map(
-        (proposal): Proposal => ({
-          address: proposal.address,
-          id: proposal.data.id || `PROP-${proposal.address.slice(0, 8)}`,
-          title: proposal.data.title,
-          description: proposal.data.description,
-          proposer: proposal.data.proposer,
-          proposerName: undefined, // Will be fetched separately if needed
-          status: mapSDKProposalStatus(proposal.data.status),
-          proposalType: proposal.data.proposalType as ProposalType,
-          category: mapProposalTypeToCategory(proposal.data.proposalType),
-          impactLevel: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical', // Default, not stored in SDK
-          votingStartsAt: new Date(Number(proposal.data.votingStart) * 1000),
-          votingEndsAt: new Date(Number(proposal.data.votingEnd) * 1000),
-          quorumRequired: '30', // Default, not stored in current SDK
-          approvalThreshold: 51, // Default, not stored in current SDK
-          results: {
-            forVotes: String(proposal.data.forVotes),
-            againstVotes: String(proposal.data.againstVotes),
-            abstainVotes: String(proposal.data.abstainVotes),
-            totalVotes: String(Number(proposal.data.forVotes) + Number(proposal.data.againstVotes) + Number(proposal.data.abstainVotes)),
-            quorumReached: false,
-            participationRate: 0,
-          },
-          tags: [], // Would need to be stored separately
-          category: mapProposalTypeToCategory(proposal.data.proposalType),
-          updatedAt: new Date(),
-          createdAt: new Date(Number(proposal.data.createdAt) * 1000),
-          executedAt: undefined, // Not stored in current SDK
-        })
+        (proposalAccount: ProposalAccountData): Proposal => {
+          const proposal = proposalAccount.data
+          const proposalTypeStr = String(proposal.proposalType)
+          const statusStr = String(proposal.status)
+          return {
+            address: proposalAccount.address,
+            id: `PROP-${String(proposal.proposalId)}`,
+            title: proposal.title,
+            description: proposal.description,
+            proposer: proposal.proposer,
+            proposerName: undefined, // Will be fetched separately if needed
+            status: mapSDKProposalStatus(statusStr),
+            proposalType: mapSDKProposalType(proposalTypeStr),
+            category: mapProposalTypeToCategory(proposalTypeStr),
+            impactLevel: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical', // Default, not stored in SDK
+            votingStartsAt: new Date(Number(proposal.votingStartsAt) * 1000),
+            votingEndsAt: new Date(Number(proposal.votingEndsAt) * 1000),
+            quorumRequired: '30', // Default, not stored in current SDK
+            approvalThreshold: 51, // Default, not stored in current SDK
+            results: {
+              forVotes: String(proposal.votingResults.forVotes),
+              againstVotes: String(proposal.votingResults.againstVotes),
+              abstainVotes: String(proposal.votingResults.abstainVotes),
+              totalVotes: String(proposal.votingResults.totalVotes),
+              quorumReached: false,
+              participationRate: 0,
+            },
+            tags: [], // Would need to be stored separately
+            updatedAt: new Date(),
+            createdAt: new Date(Number(proposal.createdAt) * 1000),
+            executedAt: undefined, // Not stored in current SDK
+          }
+        }
       )
 
       if (filters) {
@@ -381,38 +378,42 @@ export function useProposal(address: Address | undefined, options?: { enabled?: 
       if (!address) return null
 
       const client = getGhostSpeakClient()
-      const proposalData = await client.governance.getProposal(address)
+      const proposal = await client.governance.getProposal(address)
 
-      if (!proposalData) return null
+      if (!proposal) return null
+
+      // Cast to any to access SDK fields - GovernanceProposal has different structure
+      const proposalData = proposal as unknown as ProposalSDKData
+      const proposalTypeStr = String(proposalData.proposalType)
+      const statusStr = String(proposalData.status)
 
       // Transform SDK data to match our Proposal interface
       return {
-        address: proposalData.address,
-        id: proposalData.data.id || `PROP-${proposalData.address.slice(0, 8)}`,
-        title: proposalData.data.title,
-        description: proposalData.data.description,
-        proposer: proposalData.data.proposer,
+        address: address,
+        id: `PROP-${String(proposalData.proposalId)}`,
+        title: proposalData.title,
+        description: proposalData.description,
+        proposer: proposalData.proposer,
         proposerName: undefined, // Will be fetched separately if needed
-        status: mapSDKProposalStatus(proposalData.data.status),
-        proposalType: proposalData.data.proposalType as ProposalType,
-        category: mapProposalTypeToCategory(proposalData.data.proposalType),
+        status: mapSDKProposalStatus(statusStr),
+        proposalType: mapSDKProposalType(proposalTypeStr),
+        category: mapProposalTypeToCategory(proposalTypeStr),
         impactLevel: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical', // Default, not stored in SDK
-        votingStartsAt: new Date(Number(proposalData.data.votingStart) * 1000),
-        votingEndsAt: new Date(Number(proposalData.data.votingEnd) * 1000),
+        votingStartsAt: new Date(Number(proposalData.votingStartsAt) * 1000),
+        votingEndsAt: new Date(Number(proposalData.votingEndsAt) * 1000),
         quorumRequired: '30', // Default, not stored in current SDK
         approvalThreshold: 51, // Default, not stored in current SDK
         results: {
-          forVotes: String(proposalData.data.forVotes),
-          againstVotes: String(proposalData.data.againstVotes),
-          abstainVotes: String(proposalData.data.abstainVotes),
-          totalVotes: String(Number(proposalData.data.forVotes) + Number(proposalData.data.againstVotes) + Number(proposalData.data.abstainVotes)),
+          forVotes: String(proposalData.votingResults.forVotes),
+          againstVotes: String(proposalData.votingResults.againstVotes),
+          abstainVotes: String(proposalData.votingResults.abstainVotes),
+          totalVotes: String(proposalData.votingResults.totalVotes),
           quorumReached: false,
           participationRate: 0,
         },
         tags: [], // Would need to be stored separately
-        category: mapProposalTypeToCategory(proposalData.data.proposalType),
         updatedAt: new Date(),
-        createdAt: new Date(Number(proposalData.data.createdAt) * 1000),
+        createdAt: new Date(Number(proposalData.createdAt) * 1000),
         executedAt: undefined, // Not stored in current SDK
       }
     },
@@ -458,12 +459,12 @@ export function useProposalVotes(
  * Get user's voting power
  */
 export function useVotingPower(options?: { enabled?: boolean }) {
-  const { publicKey } = useWallet()
+  const { address, isConnected } = useCrossmintSigner()
 
   return useQuery({
-    queryKey: ['voting-power', publicKey?.toString()],
+    queryKey: ['voting-power', address],
     queryFn: async (): Promise<VotingPower | null> => {
-      if (!publicKey) return null
+      if (!isConnected) return null
 
       const client = getGhostSpeakClient()
 
@@ -488,7 +489,7 @@ export function useVotingPower(options?: { enabled?: boolean }) {
         return null
       }
     },
-    enabled: (options?.enabled ?? true) && !!publicKey,
+    enabled: (options?.enabled ?? true) && isConnected,
   })
 }
 
@@ -496,12 +497,12 @@ export function useVotingPower(options?: { enabled?: boolean }) {
  * Get user's delegations (both given and received)
  */
 export function useDelegations(options?: { enabled?: boolean }) {
-  const { publicKey } = useWallet()
+  const { address, isConnected } = useCrossmintSigner()
 
   return useQuery({
-    queryKey: ['delegations', publicKey?.toString()],
+    queryKey: ['delegations', address],
     queryFn: async (): Promise<{ given: Delegation[]; received: Delegation[] }> => {
-      if (!publicKey) return { given: [], received: [] }
+      if (!isConnected) return { given: [], received: [] }
 
       const client = getGhostSpeakClient()
 
@@ -517,7 +518,7 @@ export function useDelegations(options?: { enabled?: boolean }) {
         return { given: [], received: [] }
       }
     },
-    enabled: (options?.enabled ?? true) && !!publicKey,
+    enabled: (options?.enabled ?? true) && isConnected,
   })
 }
 
@@ -526,37 +527,39 @@ export function useDelegations(options?: { enabled?: boolean }) {
  */
 export function useCreateProposal() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: CreateProposalData): Promise<Proposal> => {
-      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
+      if (!isConnected || !address) throw new Error('Wallet not connected')
 
       const client = getGhostSpeakClient()
-      const signer = createSDKSigner(publicKey, signTransaction)
+      const signer = createSigner()
+      if (!signer) throw new Error("Could not create signer")
 
       // Create the proposal using SDK
       const result = await client.governance.createProposal({
         signer,
         title: data.title,
         description: data.description,
-        proposalType: mapProposalTypeToSDK(data.proposalType),
+        proposalType: mapProposalTypeToSDK(data.proposalType) as 'parameter_change' | 'treasury' | 'upgrade',
         votingDuration: data.votingDuration,
         executionDelay: data.executionDelay
       })
 
       // Fetch the created proposal to get full data
-      const proposalData = await client.governance.getProposal(result.address)
+      const proposalAddress = typeof result === 'string' ? result : (result as { address: string }).address
+      const _proposalData = await client.governance.getProposal(proposalAddress as Address)
 
       // Transform to UI format
       const newProposal: Proposal = {
-        address: result.address,
-        id: `PROP-${result.address.slice(0, 8)}`,
+        address: proposalAddress as Address,
+        id: `PROP-${proposalAddress.slice(0, 8)}`,
         title: data.title,
         description: data.description,
         proposalType: data.proposalType,
         status: ProposalStatus.Draft,
-        proposer: publicKey.toString() as Address,
+        proposer: address as Address,
         proposerName: 'You',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -571,8 +574,7 @@ export function useCreateProposal() {
         executionParams: data.executionParams
           ? ({
               executionDelay: data.executionDelay,
-              targetProgram:
-                data.executionParams.targetProgram || (proposalData?.data.targetProgram as Address),
+              targetProgram: data.executionParams.targetProgram || ('' as Address),
               instructions: data.executionParams.instructions || [],
               accounts: data.executionParams.accounts || [],
             } as ProposalExecutionParams)
@@ -597,33 +599,37 @@ export function useCreateProposal() {
  */
 export function useCastVote() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: CreateVoteData): Promise<Vote> => {
-      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
+      if (!isConnected || !address) throw new Error('Wallet not connected')
 
       const client = getGhostSpeakClient()
-      const signer = createSDKSigner(publicKey, signTransaction)
+      const signer = createSigner()
+      if (!signer) throw new Error("Could not create signer")
 
       // Map vote choice to SDK format
-      const voteChoiceMap: Record<VoteChoice, number> = {
-        [VoteChoice.For]: 0,
-        [VoteChoice.Against]: 1,
-        [VoteChoice.Abstain]: 2,
+      const voteChoiceMap: Record<VoteChoice, 'yes' | 'no' | 'abstain'> = {
+        [VoteChoice.For]: 'yes',
+        [VoteChoice.Against]: 'no',
+        [VoteChoice.Abstain]: 'abstain',
       }
 
-      // Cast vote using SDK
-      await client.governance.vote(signer, data.proposalAddress, {
-        support: data.choice === VoteChoice.For,
-        reason: data.reasoning,
+      // Cast vote using SDK - use empty string for tokenAccount as placeholder
+      await client.governance.vote({
+        signer,
+        proposalAddress: data.proposalAddress,
+        choice: voteChoiceMap[data.choice],
+        reasoning: data.reasoning,
+        tokenAccount: '' as Address, // Would need to be fetched from wallet
       })
 
       // Create vote record for UI
       const newVote: Vote = {
         id: `vote-${Date.now()}`,
         proposalAddress: data.proposalAddress,
-        voter: publicKey.toString() as Address,
+        voter: address as Address,
         voterName: 'You',
         choice: data.choice,
         votingPower: '1785', // This would come from actual voting power calculation
@@ -651,11 +657,11 @@ export function useCastVote() {
  */
 export function useDelegateVotes() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: CreateDelegationData): Promise<Delegation> => {
-      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
+      if (!isConnected || !address) throw new Error('Wallet not connected')
 
       // Note: The current SDK might not have delegation support
       // In a real implementation, this would create a delegation account
@@ -664,7 +670,7 @@ export function useDelegateVotes() {
       // Return a placeholder delegation for UI consistency
       const newDelegation: Delegation = {
         id: `del-${Date.now()}`,
-        delegator: publicKey.toString() as Address,
+        delegator: address as Address,
         delegate: data.delegate,
         delegatorName: 'You',
         delegateName: undefined,
@@ -696,19 +702,24 @@ export function useDelegateVotes() {
  */
 export function useExecuteProposal() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (proposalAddress: Address): Promise<string> => {
-      if (!publicKey || !signTransaction) throw new Error('Wallet not connected')
+      if (!isConnected || !address) throw new Error('Wallet not connected')
 
       const client = getGhostSpeakClient()
-      const signer = createSDKSigner(publicKey, signTransaction)
+      const signer = createSigner()
+      if (!signer) throw new Error("Could not create signer")
 
       // Execute the proposal using SDK
-      const result = await client.governance.executeProposal(signer, proposalAddress)
+      const result = await client.governance.executeProposal({
+        signer,
+        proposalAddress,
+        proposalId: proposalAddress, // Use address as ID for now
+      })
 
-      return result.signature
+      return result
     },
     onSuccess: (_, proposalAddress) => {
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalAddress] })

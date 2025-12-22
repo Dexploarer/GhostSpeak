@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+ 
 /**
  * Enhanced high-performance caching system for GhostSpeak CLI
  * 
@@ -121,6 +126,9 @@ interface DiskCacheMetadata {
  * Enhanced cache manager with performance optimizations
  */
 export class EnhancedCacheManager extends CacheManager {
+  // Separate singleton instance for EnhancedCacheManager
+  private static enhancedInstance: EnhancedCacheManager | null = null
+  
   // Performance tracking
   private usagePatterns = new Map<string, UsagePattern>()
   private accessHistory: Array<{ key: string; timestamp: Date; hit: boolean }> = []
@@ -179,10 +187,17 @@ export class EnhancedCacheManager extends CacheManager {
     defaultTTL?: number
     diskCachePath?: string
   }): EnhancedCacheManager {
-    if (!CacheManager['instance']) {
-      CacheManager['instance'] = new EnhancedCacheManager(options)
+    if (!EnhancedCacheManager.enhancedInstance) {
+      EnhancedCacheManager.enhancedInstance = new EnhancedCacheManager(options)
     }
-    return CacheManager['instance'] as EnhancedCacheManager
+    return EnhancedCacheManager.enhancedInstance
+  }
+
+  /**
+   * Reset singleton instance (for testing)
+   */
+  static resetInstance(): void {
+    EnhancedCacheManager.enhancedInstance = null
   }
 
   /**

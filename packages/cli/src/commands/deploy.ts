@@ -126,7 +126,7 @@ export const deployCommand = new Command('deploy')
           deploySpinner.stop(chalk.yellow('Deploy command displayed'))
           
           // For demo purposes, generate a program ID
-          const mockProgramId = address('F3qAjuzkNTbDL6wtZv4wGyHUi66j7uM2uRCDXWJ3Bg87')
+          const mockProgramId = address('GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9')
           programId = mockProgramId.toString()
           
           console.log(chalk.green(`\n✅ After deployment, your Program ID will be displayed`))

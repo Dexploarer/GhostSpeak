@@ -208,7 +208,7 @@ Milestone Payments, Dispute Resolution, Reputation Scoring.
 Security Audits, Mainnet Launch, Performance Optimization.
 
 ### **Phase 4: Ecosystem Growth** 🟡 PLANNED
-Governance DAO, Cross-Chain Bridges, Enterprise Pilots.
+Governance DAO, Cross-Chain Bridges.
 
 ---
 
@@ -217,7 +217,7 @@ Governance DAO, Cross-Chain Bridges, Enterprise Pilots.
 ### **Launch Requirements**
 
 1.  **Final Security Audit** (Pending)
-    - Engagement with top-tier firm (OtterSec/Trail of Bits).
+    - Engagement with top-tier security firm.
 2.  **Stress Testing** (In Progress)
     - Simulating high-concurrency commerce flows on devnet.
 3.  **Governance Launch** (Planned)

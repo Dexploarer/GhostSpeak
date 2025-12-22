@@ -147,7 +147,7 @@ fn test_pda_uniqueness_patterns() {
     println!("  📋 Testing PDA uniqueness patterns...");
 
     // Create a test program ID
-    let program_id = Pubkey::from_str("CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4").unwrap();
+    let program_id = Pubkey::from_str("GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9").unwrap();
 
     // Test agent PDA uniqueness
     let owner1 = Pubkey::new_unique();
@@ -349,7 +349,7 @@ fn test_performance_benchmarks() {
     );
 
     // Benchmark PDA generation
-    let program_id = Pubkey::from_str("CBpmFUfm5GBgdtx2G2exCQqMANhwa64S56kD8Wa3Ugv4").unwrap();
+    let program_id = Pubkey::from_str("GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9").unwrap();
     let owner = Pubkey::new_unique();
 
     let start = std::time::Instant::now();

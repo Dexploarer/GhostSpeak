@@ -124,7 +124,7 @@ export default function EscrowPage() {
         
         {/* Right: Stats & Info */}
         <div className="space-y-6">
-          <GlassCard className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+          <GlassCard className="p-6 bg-linear-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
             <div className="flex items-center gap-3 mb-4">
               <Shield className="w-6 h-6 text-green-500" />
               <h3 className="font-bold text-foreground">Funds Secured</h3>

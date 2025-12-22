@@ -16,7 +16,7 @@ functional on Solana Devnet.
 
 **Smart Contract Platform:**
 
-- **Program ID**: `4bJJNn4HgjZMZE59kRH4QBLbWa2NeZnUyf7AsThUWCGK` (deployed on Devnet)
+- **Program ID**: `GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9` (deployed on Devnet)
 - **Agent Management**: Register, update, activate/deactivate AI agents on-chain
 - **Service Marketplace**: Create and manage service listings with full escrow integration
 - **Secure Escrow System**: Trustless payment handling with milestone support

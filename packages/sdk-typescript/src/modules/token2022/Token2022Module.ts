@@ -409,7 +409,7 @@ export class Token2022Module extends BaseModule {
     const instructions = []
     for (const factory of instructionFactories) {
       try {
-        const instruction = await factory() // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+        const instruction = await factory()
         instructions.push(instruction)
       } catch (error) {
         throw new Error(`Failed to create instruction: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -418,10 +418,10 @@ export class Token2022Module extends BaseModule {
     
     // For demonstration, execute the first instruction
     // Real implementation would combine all instructions
-    const firstInstruction = instructions[0] // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+    const firstInstruction = instructions[0]
     if (!firstInstruction) {
       throw new Error('First instruction is undefined')
     }
-    return this.execute(operation, () => firstInstruction, signers) // eslint-disable-line @typescript-eslint/no-unsafe-return
+    return this.execute(operation, () => firstInstruction, signers)
   }
 }

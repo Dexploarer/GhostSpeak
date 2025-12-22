@@ -17,7 +17,7 @@ async function testAgentRegister() {
     // Initialize agent module directly
     const agentModule = new AgentModule({
       cluster: 'devnet',
-      programId: '3yCZtq3dK1WDoz88kryyK7Cv6d9fpNdsbQHFbxcLe9ot',
+      programId: 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9',
       commitment: 'confirmed'
     })
     

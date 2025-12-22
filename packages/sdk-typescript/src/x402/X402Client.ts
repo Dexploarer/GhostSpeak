@@ -72,6 +72,69 @@ export interface X402VerificationResult {
 }
 
 // =====================================================
+// SOLANA TRANSACTION TYPES (for parsing jsonParsed responses)
+// =====================================================
+
+interface ParsedTransferInfo {
+  destination?: string
+  source?: string
+  authority?: string
+  account?: string
+  amount?: string
+  mint?: string
+  tokenAmount?: {
+    amount: string
+    decimals: number
+    uiAmount: number
+  }
+}
+
+interface ParsedInstruction {
+  program?: string
+  programId?: Address | { toString(): string; toBase58?(): string }
+  parsed?: {
+    type?: string
+    info?: ParsedTransferInfo
+    data?: string
+  } | string
+  data?: string
+}
+
+interface TokenBalance {
+  accountIndex: number
+  mint: string | Address
+  owner?: Address
+  programId?: Address
+  uiTokenAmount: {
+    uiAmount: number | null
+    decimals: number
+    amount: string
+    uiAmountString?: string
+  }
+}
+
+interface TransactionMeta {
+  err: unknown | null
+  preTokenBalances?: readonly TokenBalance[] | null
+  postTokenBalances?: readonly TokenBalance[] | null
+  innerInstructions?: readonly { index: number; instructions: readonly ParsedInstruction[] }[] | null
+}
+
+interface ParsedTransactionMessage {
+  instructions: readonly ParsedInstruction[]
+  accountKeys?: readonly { pubkey: Address | { toString(): string } }[]
+}
+
+interface ParsedSolanaTransaction {
+  transaction?: {
+    message?: ParsedTransactionMessage
+  }
+  meta?: TransactionMeta | null
+  blockTime?: number | bigint | null
+  slot?: bigint
+}
+
+// =====================================================
 // X402 CLIENT
 // =====================================================
 
@@ -511,55 +574,65 @@ export class X402Client extends EventEmitter {
   }
 
   private parseTransactionReceipt(
-    tx: any,
+    tx: ParsedSolanaTransaction,
     signature: Signature
   ): X402PaymentReceipt {
     // Parse transaction to extract payment details from SPL token transfer
-    const instructions = tx.transaction?.message?.instructions ?? []
+    const instructions: readonly ParsedInstruction[] = tx.transaction?.message?.instructions ?? []
 
     // Find the SPL token transfer instruction
-    const transferInstruction = instructions.find((ix: any) =>
-      ix.program === 'spl-token' && ix.parsed?.type === 'transfer'
-    )
+    const transferInstruction = instructions.find((ix: ParsedInstruction) => {
+      const parsed = typeof ix.parsed === 'object' ? ix.parsed : null
+      return ix.program === 'spl-token' && parsed?.type === 'transfer'
+    })
 
     if (!transferInstruction) {
       throw new Error('No SPL token transfer found in transaction')
     }
 
-    const transferInfo = transferInstruction.parsed?.info
+    const parsed = typeof transferInstruction.parsed === 'object' ? transferInstruction.parsed : null
+    const transferInfo = parsed?.info
     if (!transferInfo) {
       throw new Error('Failed to parse SPL token transfer instruction')
     }
 
     // Extract recipient, amount, and token from the transfer instruction
-    const recipient = address(transferInfo.destination ?? transferInfo.account)
+    const recipient = address(transferInfo.destination ?? transferInfo.account ?? '')
     const amount = BigInt(transferInfo.amount ?? transferInfo.tokenAmount?.amount ?? '0')
 
     // Get token mint from pre or post token balances
     let tokenMint: Address
-    const tokenBalances = tx.meta?.preTokenBalances ?? []
+    const tokenBalances: readonly TokenBalance[] = tx.meta?.preTokenBalances ?? []
     if (tokenBalances.length > 0) {
-      tokenMint = address(tokenBalances[0].mint)
+      tokenMint = address(String(tokenBalances[0].mint))
     } else {
       throw new Error('Failed to extract token mint from transaction')
     }
 
     // Parse memo instruction for metadata
-    const memoInstruction = instructions.find((ix: any) =>
-      ix.program === 'spl-memo' || ix.programId?.toString() === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
-    )
+    const memoInstruction = instructions.find((ix: ParsedInstruction) => {
+      const programIdStr = typeof ix.programId === 'string' 
+        ? ix.programId 
+        : ix.programId?.toString() ?? ''
+      return ix.program === 'spl-memo' || programIdStr === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
+    })
 
     let metadata: Record<string, string> | undefined
     if (memoInstruction) {
       try {
-        const memoText = memoInstruction.parsed ??
+        const parsedMemo = typeof memoInstruction.parsed === 'string' 
+          ? memoInstruction.parsed 
+          : typeof memoInstruction.parsed === 'object' 
+            ? (memoInstruction.parsed?.data ?? '')
+            : ''
+        const memoText = parsedMemo ||
                         (memoInstruction.data ? new TextDecoder().decode(Buffer.from(memoInstruction.data, 'base64')) : '')
 
         if (typeof memoText === 'string' && memoText.startsWith('x402:')) {
           const parts = memoText.split(':')
           if (parts.length >= 3) {
             try {
-              metadata = JSON.parse(parts[2])
+              metadata = JSON.parse(parts[2]) as Record<string, string>
             } catch {
               // Ignore JSON parse errors for metadata
             }
@@ -570,14 +643,19 @@ export class X402Client extends EventEmitter {
       }
     }
 
+    // Handle blockTime which can be number | bigint | null
+    const blockTimeNum = tx.blockTime != null 
+      ? (typeof tx.blockTime === 'bigint' ? Number(tx.blockTime) : tx.blockTime)
+      : undefined
+
     return {
       signature,
       recipient,
       amount,
       token: tokenMint,
-      timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
+      timestamp: blockTimeNum != null ? blockTimeNum * 1000 : Date.now(),
       metadata,
-      blockTime: tx.blockTime,
+      blockTime: blockTimeNum,
       slot: tx.slot
     }
   }

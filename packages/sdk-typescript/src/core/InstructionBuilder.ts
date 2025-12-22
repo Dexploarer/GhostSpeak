@@ -525,7 +525,7 @@ export class InstructionBuilder {
         if (statuses[0]) {
           console.log('🔍 Status found:', statuses[0])
           if (statuses[0].err) {
-            throw new Error(`Transaction failed: ${JSON.stringify(statuses[0].err, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`)
+            throw new Error(`Transaction failed: ${JSON.stringify(statuses[0].err, (_, v: unknown) => typeof v === 'bigint' ? v.toString() : v)}`)
           }
           
           const confirmationStatus = statuses[0].confirmationStatus
@@ -550,13 +550,13 @@ export class InstructionBuilder {
             
             if (transaction && transaction.meta) {
               if (transaction.meta.err) {
-                throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`)
+                throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err, (_, v: unknown) => typeof v === 'bigint' ? v.toString() : v)}`)
               }
               confirmed = true
               console.log('✅ Transaction confirmed via direct lookup')
               break
             }
-          } catch (txError) {
+          } catch {
             console.log('🔍 Transaction details not yet available')
           }
         }
@@ -589,7 +589,7 @@ export class InstructionBuilder {
         
         if (transaction && transaction.meta) {
           if (transaction.meta.err) {
-            throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`)
+            throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err, (_, v: unknown) => typeof v === 'bigint' ? v.toString() : v)}`)
           }
           console.log('✅ Transaction confirmed on final check - returning success')
           return signature as Signature
@@ -695,7 +695,7 @@ export class InstructionBuilder {
   /**
    * Create a communication session instruction
    */
-  async createCommunicationSession(params: {
+  async createCommunicationSession(_params: {
     sessionId: bigint
     initiator: Address
     initiatorType: ParticipantType
@@ -717,9 +717,9 @@ export class InstructionBuilder {
   /**
    * Send a communication message instruction
    */
-  async sendCommunicationMessage(sessionAddress: Address, params: {
+  async sendCommunicationMessage(_sessionAddress: Address, _params: {
     messageId: bigint
-    senderType: any // ParticipantType
+    senderType: unknown // ParticipantType
     content: string
     messageType: string
     attachments: string[]
@@ -736,9 +736,9 @@ export class InstructionBuilder {
   /**
    * Update participant status instruction
    */
-  async updateParticipantStatus(params: {
+  async updateParticipantStatus(_params: {
     participant: Address
-    participantType: any // ParticipantType
+    participantType: unknown // ParticipantType
     servicesOffered: string[]
     availability: boolean
     reputationScore: number

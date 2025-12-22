@@ -18,11 +18,7 @@ const SYSTEM_PROGRAM_IDS: &[&str] = &[
 ];
 
 /// Known test addresses that should only be used in development
-const TEST_ADDRESSES: &[&str] = &[
-    "DevnetAdminKey11111111111111111111111111111",
-    "TestnetAdminKey1111111111111111111111111111",
-    "MainnetAdmin1111111111111111111111111111111",
-];
+const TEST_ADDRESSES: &[&str] = &["JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk"];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NetworkType {
@@ -233,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_test_address_detection() {
-        let test_key = Pubkey::from_str("DevnetAdminKey11111111111111111111111111111").unwrap();
+        let test_key = Pubkey::from_str("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk").unwrap();
         assert!(is_test_address(&test_key));
 
         let random_key = Pubkey::new_unique();

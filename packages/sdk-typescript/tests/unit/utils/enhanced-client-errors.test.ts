@@ -130,7 +130,7 @@ describe('Enhanced Client Errors', () => {
     it('should debug accounts when provided', async () => {
       const { debugInstructionCall } = await import('../../../src/utils/instruction-error-handler')
       const accounts: AccountContext[] = [
-        address('9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM')
+        address('JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk')
       ]
       
       withEnhancedErrorsSync(

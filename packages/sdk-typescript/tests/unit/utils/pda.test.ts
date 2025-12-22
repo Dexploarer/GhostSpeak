@@ -264,7 +264,7 @@ describe('PDA Derivation Utilities', () => {
 
   describe('Compressed Agent PDAs', () => {
     it('should derive agent tree config PDA', async () => {
-      const signer = address('9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM')
+      const signer = address('JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk')
       const pda = await deriveAgentTreeConfigPda(programId, signer)
       
       expect(pda).toBeDefined()

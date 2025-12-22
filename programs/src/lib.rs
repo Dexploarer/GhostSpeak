@@ -238,15 +238,15 @@ pub const RESERVED_SPACE: usize = 128; // Reserved space for future extensions
 // Temporary development admin keys - REPLACE FOR PRODUCTION
 #[cfg(feature = "devnet")]
 pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+    anchor_lang::solana_program::pubkey!("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk");
 
 #[cfg(feature = "testnet")]
 pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("8WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+    anchor_lang::solana_program::pubkey!("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk");
 
 #[cfg(feature = "mainnet")]
 pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("7WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+    anchor_lang::solana_program::pubkey!("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk");
 
 // Default fallback for localnet and other environments
 // Note: Using Pubkey::from_str at runtime since pubkey! macro path changed in Solana 2.x
@@ -826,7 +826,6 @@ pub enum GhostSpeakError {
 pub mod ghostspeak_marketplace {
     use super::*;
 
-
     // =====================================================
     // SECURITY INITIALIZATION INSTRUCTIONS
     // =====================================================
@@ -854,7 +853,12 @@ pub mod ghostspeak_marketplace {
         min_stake_amount: u64,
         max_stake_amount: u64,
     ) -> Result<()> {
-        instructions::staking::initialize_staking_config(ctx, base_apy, min_stake_amount, max_stake_amount)
+        instructions::staking::initialize_staking_config(
+            ctx,
+            base_apy,
+            min_stake_amount,
+            max_stake_amount,
+        )
     }
 
     /// Create a staking account for a user

@@ -27,7 +27,7 @@ describe('Format Utilities', () => {
     })
 
     it('should handle valid Solana addresses', () => {
-      const validAddress = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+      const validAddress = 'JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk'
       const result = toAddress(validAddress)
       
       expect(result).toBe(validAddress)

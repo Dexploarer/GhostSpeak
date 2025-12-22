@@ -95,7 +95,7 @@ async function main() {
   // Step 4: Verify Program Data Account (upgrade authority)
   logStep(4, 'Verifying Upgrade Authority');
   try {
-    const programDataAddress = address('8QkHD4T4LRkjyhRykTn96VygiEQTUhpTsqDR5E3FJN9C');
+    const programDataAddress = address('8fxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
     const dataInfo = await rpc.getAccountInfo(programDataAddress, { encoding: 'base64' }).send();
     
     if (dataInfo.value) {

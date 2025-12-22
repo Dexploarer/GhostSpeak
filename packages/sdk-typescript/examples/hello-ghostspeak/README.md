@@ -76,7 +76,7 @@ console.log("Status:", agent.status);
 
 🤖 Registering agent...
 ✅ Agent registered successfully!
-📍 Agent address: 9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM
+📍 Agent address: JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk
 
 📋 Agent Details:
   Name: Hello Agent

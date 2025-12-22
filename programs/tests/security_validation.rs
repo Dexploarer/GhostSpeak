@@ -25,7 +25,7 @@ fn test_admin_key_patterns() {
     println!("  📋 Testing admin key validation patterns...");
 
     // Test that admin keys are not default/null
-    let test_admin_key = Pubkey::from_str("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM").unwrap();
+    let test_admin_key = Pubkey::from_str("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk").unwrap();
     assert_ne!(
         test_admin_key,
         Pubkey::default(),
@@ -302,7 +302,7 @@ fn test_security_edge_cases() {
 fn test_performance_benchmarks() {
     println!("  📋 Running security performance benchmarks...");
 
-    let test_admin_key = Pubkey::from_str("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM").unwrap();
+    let test_admin_key = Pubkey::from_str("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk").unwrap();
 
     // Benchmark admin validations
     let start = std::time::Instant::now();

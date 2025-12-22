@@ -4,10 +4,17 @@
  * Implements staking functionality for GHOST token lockup and governance voting power.
  * Users can stake tokens with optional lockup periods to earn rewards and increase
  * their voting power in the x402 marketplace governance.
+ *
+ * Supports Token-2022 with transfer fee extensions.
  */
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token_2022::spl_token_2022;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use spl_token_2022::extension::transfer_fee::{
+    instruction::transfer_checked_with_fee, TransferFeeConfig,
+};
+use spl_token_2022::extension::{BaseStateWithExtensions, StateWithExtensions};
 
 use crate::state::staking::{StakingAccount, StakingConfig};
 use crate::GhostSpeakError;
@@ -88,25 +95,31 @@ pub struct StakeTokens<'info> {
     )]
     pub staking_config: Account<'info, StakingConfig>,
 
+    /// GHOST token mint (for transfer fee calculation)
+    #[account(
+        constraint = ghost_mint.key() == staking_config.ghost_token_mint @ GhostSpeakError::InvalidTokenAccount
+    )]
+    pub ghost_mint: InterfaceAccount<'info, Mint>,
+
     /// User's token account
     #[account(
         mut,
         constraint = user_token_account.owner == owner.key() @ GhostSpeakError::InvalidTokenAccount,
         constraint = user_token_account.mint == staking_config.ghost_token_mint @ GhostSpeakError::InvalidTokenAccount
     )]
-    pub user_token_account: Account<'info, TokenAccount>,
+    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
 
     /// Staking vault (holds staked tokens)
     #[account(
         mut,
         constraint = staking_vault.mint == staking_config.ghost_token_mint @ GhostSpeakError::InvalidTokenAccount
     )]
-    pub staking_vault: Account<'info, TokenAccount>,
+    pub staking_vault: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut)]
     pub owner: Signer<'info>,
 
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 /// Unstake tokens (if not locked)
@@ -128,20 +141,26 @@ pub struct UnstakeTokens<'info> {
     )]
     pub staking_config: Account<'info, StakingConfig>,
 
+    /// GHOST token mint (for transfer fee calculation)
+    #[account(
+        constraint = ghost_mint.key() == staking_config.ghost_token_mint @ GhostSpeakError::InvalidTokenAccount
+    )]
+    pub ghost_mint: InterfaceAccount<'info, Mint>,
+
     /// User's token account
     #[account(
         mut,
         constraint = user_token_account.owner == owner.key() @ GhostSpeakError::InvalidTokenAccount,
         constraint = user_token_account.mint == staking_config.ghost_token_mint @ GhostSpeakError::InvalidTokenAccount
     )]
-    pub user_token_account: Account<'info, TokenAccount>,
+    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
 
     /// Staking vault
     #[account(
         mut,
         constraint = staking_vault.mint == staking_config.ghost_token_mint @ GhostSpeakError::InvalidTokenAccount
     )]
-    pub staking_vault: Account<'info, TokenAccount>,
+    pub staking_vault: InterfaceAccount<'info, TokenAccount>,
 
     /// Vault authority PDA
     /// CHECK: PDA verified in seeds
@@ -151,7 +170,7 @@ pub struct UnstakeTokens<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
 
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 /// Claim staking rewards
@@ -171,19 +190,25 @@ pub struct ClaimRewards<'info> {
     )]
     pub staking_config: Account<'info, StakingConfig>,
 
+    /// GHOST token mint (for transfer fee calculation)
+    #[account(
+        constraint = ghost_mint.key() == staking_config.ghost_token_mint @ GhostSpeakError::InvalidTokenAccount
+    )]
+    pub ghost_mint: InterfaceAccount<'info, Mint>,
+
     /// User's token account for reward payout
     #[account(
         mut,
         constraint = user_token_account.owner == owner.key() @ GhostSpeakError::InvalidTokenAccount
     )]
-    pub user_token_account: Account<'info, TokenAccount>,
+    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
 
     /// Rewards treasury
     #[account(
         mut,
         constraint = rewards_treasury.key() == staking_config.rewards_treasury @ GhostSpeakError::InvalidTokenAccount
     )]
-    pub rewards_treasury: Account<'info, TokenAccount>,
+    pub rewards_treasury: InterfaceAccount<'info, TokenAccount>,
 
     /// Treasury authority PDA
     /// CHECK: PDA verified in seeds
@@ -193,7 +218,7 @@ pub struct ClaimRewards<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
 
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 /// Extend lockup period
@@ -216,6 +241,96 @@ pub struct ExtendLockup<'info> {
 
     #[account(mut)]
     pub owner: Signer<'info>,
+}
+
+// =====================================================
+// TOKEN-2022 HELPER FUNCTIONS
+// =====================================================
+
+/// Calculates the transfer fee for Token-2022 mints with TransferFeeConfig extension
+/// Returns (amount_after_fee, fee_amount)
+fn calculate_transfer_fee(mint_account: &AccountInfo, transfer_amount: u64) -> Result<(u64, u64)> {
+    let mint_data = mint_account.try_borrow_data()?;
+
+    // Check if this is a Token-2022 mint with transfer fee extension
+    if let Ok(mint) = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&mint_data) {
+        if let Ok(transfer_fee_config) = mint.get_extension::<TransferFeeConfig>() {
+            let epoch = Clock::get()?.epoch;
+            let fee = transfer_fee_config
+                .calculate_epoch_fee(epoch, transfer_amount)
+                .unwrap_or(0);
+
+            let amount_after_fee = transfer_amount.saturating_sub(fee);
+            return Ok((amount_after_fee, fee));
+        }
+    }
+
+    // No transfer fee - return original amount
+    Ok((transfer_amount, 0))
+}
+
+/// Performs a Token-2022 transfer with proper fee handling
+fn transfer_with_fee_support<'info>(
+    from: AccountInfo<'info>,
+    to: AccountInfo<'info>,
+    authority: AccountInfo<'info>,
+    mint: AccountInfo<'info>,
+    token_program: AccountInfo<'info>,
+    amount: u64,
+    signers_seeds: &[&[&[u8]]],
+) -> Result<()> {
+    let (_amount_after_fee, fee) = calculate_transfer_fee(&mint, amount)?;
+
+    if fee > 0 {
+        msg!("Token-2022 transfer fee: {} tokens", fee);
+
+        // Get decimals for transfer_checked
+        let decimals = {
+            let mint_data = mint.try_borrow_data()?;
+            let mint_state =
+                StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&mint_data)?;
+            mint_state.base.decimals
+        };
+
+        let ix = transfer_checked_with_fee(
+            &spl_token_2022::id(),
+            &from.key(),
+            &mint.key(),
+            &to.key(),
+            &authority.key(),
+            &[],
+            amount,
+            decimals,
+            fee,
+        )?;
+
+        if signers_seeds.is_empty() {
+            anchor_lang::solana_program::program::invoke(&ix, &[from, mint, to, authority])?;
+        } else {
+            anchor_lang::solana_program::program::invoke_signed(
+                &ix,
+                &[from, mint, to, authority],
+                signers_seeds,
+            )?;
+        }
+    } else {
+        // Use regular transfer for non-fee tokens
+        let cpi_accounts = anchor_spl::token_2022::Transfer {
+            from,
+            to,
+            authority,
+        };
+
+        if signers_seeds.is_empty() {
+            let cpi_ctx = CpiContext::new(token_program, cpi_accounts);
+            anchor_spl::token_2022::transfer(cpi_ctx, amount)?;
+        } else {
+            let cpi_ctx = CpiContext::new_with_signer(token_program, cpi_accounts, signers_seeds);
+            anchor_spl::token_2022::transfer(cpi_ctx, amount)?;
+        }
+    }
+
+    Ok(())
 }
 
 // =====================================================
@@ -308,19 +423,34 @@ pub fn stake_tokens(ctx: Context<StakeTokens>, amount: u64, lockup_tier: u8) -> 
         staking_account.pending_rewards = staking_account.pending_rewards.saturating_add(pending);
     }
 
-    // Transfer tokens to vault
-    let transfer_ctx = CpiContext::new(
-        ctx.accounts.token_program.to_account_info(),
-        Transfer {
-            from: ctx.accounts.user_token_account.to_account_info(),
-            to: ctx.accounts.staking_vault.to_account_info(),
-            authority: ctx.accounts.owner.to_account_info(),
-        },
-    );
-    token::transfer(transfer_ctx, amount)?;
+    // Calculate transfer fee to determine net staked amount
+    let (amount_after_fee, fee) =
+        calculate_transfer_fee(&ctx.accounts.ghost_mint.to_account_info(), amount)?;
 
-    // Update staking account
-    staking_account.staked_amount = staking_account.staked_amount.saturating_add(amount);
+    if fee > 0 {
+        msg!(
+            "Staking {} tokens (fee: {} tokens, net: {} tokens)",
+            amount,
+            fee,
+            amount_after_fee
+        );
+    }
+
+    // Transfer tokens to vault using Token-2022 with fee support
+    transfer_with_fee_support(
+        ctx.accounts.user_token_account.to_account_info(),
+        ctx.accounts.staking_vault.to_account_info(),
+        ctx.accounts.owner.to_account_info(),
+        ctx.accounts.ghost_mint.to_account_info(),
+        ctx.accounts.token_program.to_account_info(),
+        amount,
+        &[],
+    )?;
+
+    // Update staking account with NET amount (after fees)
+    staking_account.staked_amount = staking_account
+        .staked_amount
+        .saturating_add(amount_after_fee);
     staking_account.staked_at = clock.unix_timestamp;
     staking_account.last_claim_at = clock.unix_timestamp;
     staking_account.updated_at = clock.unix_timestamp;
@@ -332,13 +462,13 @@ pub fn stake_tokens(ctx: Context<StakeTokens>, amount: u64, lockup_tier: u8) -> 
         staking_account.lockup_ends_at = clock.unix_timestamp + lockup_duration;
     }
 
-    // Update global stats
-    staking_config.total_staked = staking_config.total_staked.saturating_add(amount);
+    // Update global stats with net amount
+    staking_config.total_staked = staking_config.total_staked.saturating_add(amount_after_fee);
     staking_config.updated_at = clock.unix_timestamp;
 
     msg!(
-        "Staked {} tokens with tier {} lockup, ends at {}",
-        amount,
+        "Staked {} tokens (net) with tier {} lockup, ends at {}",
+        amount_after_fee,
         lockup_tier,
         staking_account.lockup_ends_at
     );
@@ -368,22 +498,37 @@ pub fn unstake_tokens(ctx: Context<UnstakeTokens>, amount: u64) -> Result<()> {
     let pending = staking_config.calculate_rewards(staking_account, clock.unix_timestamp);
     staking_account.pending_rewards = staking_account.pending_rewards.saturating_add(pending);
 
-    // Transfer tokens back to user
-    let seeds = &[b"staking_vault_authority".as_ref(), &[ctx.bumps.vault_authority]];
+    // Calculate transfer fee for user awareness
+    let (amount_after_fee, fee) =
+        calculate_transfer_fee(&ctx.accounts.ghost_mint.to_account_info(), amount)?;
+
+    if fee > 0 {
+        msg!(
+            "Unstaking {} tokens (fee: {} tokens, user receives: {} tokens)",
+            amount,
+            fee,
+            amount_after_fee
+        );
+    }
+
+    // Transfer tokens back to user using Token-2022 with fee support
+    let seeds = &[
+        b"staking_vault_authority".as_ref(),
+        &[ctx.bumps.vault_authority],
+    ];
     let signer_seeds = &[&seeds[..]];
 
-    let transfer_ctx = CpiContext::new_with_signer(
+    transfer_with_fee_support(
+        ctx.accounts.staking_vault.to_account_info(),
+        ctx.accounts.user_token_account.to_account_info(),
+        ctx.accounts.vault_authority.to_account_info(),
+        ctx.accounts.ghost_mint.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
-        Transfer {
-            from: ctx.accounts.staking_vault.to_account_info(),
-            to: ctx.accounts.user_token_account.to_account_info(),
-            authority: ctx.accounts.vault_authority.to_account_info(),
-        },
+        amount,
         signer_seeds,
-    );
-    token::transfer(transfer_ctx, amount)?;
+    )?;
 
-    // Update staking account
+    // Update staking account (debit full amount, user receives net)
     staking_account.staked_amount = staking_account.staked_amount.saturating_sub(amount);
     staking_account.last_claim_at = clock.unix_timestamp;
     staking_account.updated_at = clock.unix_timestamp;
@@ -399,8 +544,9 @@ pub fn unstake_tokens(ctx: Context<UnstakeTokens>, amount: u64) -> Result<()> {
     staking_config.updated_at = clock.unix_timestamp;
 
     msg!(
-        "Unstaked {} tokens, remaining: {}",
+        "Unstaked {} tokens (user receives {}), remaining: {}",
         amount,
+        amount_after_fee,
         staking_account.staked_amount
     );
 
@@ -419,30 +565,48 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
 
     require!(total_rewards > 0, GhostSpeakError::InsufficientBalance);
 
-    // Transfer rewards from treasury
-    let seeds = &[b"rewards_treasury_authority".as_ref(), &[ctx.bumps.treasury_authority]];
+    // Calculate transfer fee for user awareness
+    let (amount_after_fee, fee) =
+        calculate_transfer_fee(&ctx.accounts.ghost_mint.to_account_info(), total_rewards)?;
+
+    if fee > 0 {
+        msg!(
+            "Claiming {} rewards (fee: {} tokens, user receives: {} tokens)",
+            total_rewards,
+            fee,
+            amount_after_fee
+        );
+    }
+
+    // Transfer rewards from treasury using Token-2022 with fee support
+    let seeds = &[
+        b"rewards_treasury_authority".as_ref(),
+        &[ctx.bumps.treasury_authority],
+    ];
     let signer_seeds = &[&seeds[..]];
 
-    let transfer_ctx = CpiContext::new_with_signer(
+    transfer_with_fee_support(
+        ctx.accounts.rewards_treasury.to_account_info(),
+        ctx.accounts.user_token_account.to_account_info(),
+        ctx.accounts.treasury_authority.to_account_info(),
+        ctx.accounts.ghost_mint.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
-        Transfer {
-            from: ctx.accounts.rewards_treasury.to_account_info(),
-            to: ctx.accounts.user_token_account.to_account_info(),
-            authority: ctx.accounts.treasury_authority.to_account_info(),
-        },
+        total_rewards,
         signer_seeds,
-    );
-    token::transfer(transfer_ctx, total_rewards)?;
+    )?;
 
     // Update staking account
     staking_account.pending_rewards = 0;
-    staking_account.rewards_claimed = staking_account.rewards_claimed.saturating_add(total_rewards);
+    staking_account.rewards_claimed = staking_account
+        .rewards_claimed
+        .saturating_add(total_rewards);
     staking_account.last_claim_at = clock.unix_timestamp;
     staking_account.updated_at = clock.unix_timestamp;
 
     msg!(
-        "Claimed {} rewards, total claimed: {}",
+        "Claimed {} rewards (user receives {}), total claimed: {}",
         total_rewards,
+        amount_after_fee,
         staking_account.rewards_claimed
     );
 

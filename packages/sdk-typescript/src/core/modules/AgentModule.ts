@@ -12,6 +12,7 @@ import {
   getDeactivateAgentInstruction,
   getActivateAgentInstruction,
   getRegisterAgentCompressedInstructionAsync,
+  getConfigureX402Instruction,
   type Agent
 } from '../../generated/index.js'
 
@@ -41,10 +42,8 @@ export class AgentModule extends BaseModule {
   }): Promise<string> {
     const registerGetter = async () => {
       const agentAccount = await this.deriveAgentPda(params.agentId, signer.address)
-      const userRegistry = await this.deriveUserRegistryPda(signer.address)
       const ix = await getRegisterAgentInstructionAsync({
         agentAccount,
-        userRegistry,
         signer,
         systemProgram: this.systemProgramId,
         agentType: params.agentType,
@@ -142,6 +141,8 @@ export class AgentModule extends BaseModule {
     metadataUri: string
     agentType: number
     agentId: string
+    name?: string | null
+    description?: string | null
   }): Promise<string> {
     const instructionGetter = () => {
       const result = getUpdateAgentInstruction({
@@ -149,7 +150,9 @@ export class AgentModule extends BaseModule {
         signer,
         metadataUri: params.metadataUri,
         agentType: params.agentType,
-        agentId: params.agentId
+        agentId: params.agentId,
+        name: params.name ?? null,
+        description: params.description ?? null
       })
       return result
     }

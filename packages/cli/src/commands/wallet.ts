@@ -92,8 +92,8 @@ walletCommand
       console.log('')
       
       log.info(chalk.gray('Tips:'))
-      log.info(chalk.gray('  • Use "gs wallet use <name>" to switch active wallet'))
-      log.info(chalk.gray('  • Use "gs wallet show" to see full wallet details'))
+      log.info(chalk.gray('  • Use "ghost wallet use <name>" to switch active wallet'))
+      log.info(chalk.gray('  • Use "ghost wallet show" to see full wallet details'))
       
       outro('Wallet list complete')
       
@@ -175,7 +175,7 @@ walletCommand
         
         if (isCancel(confirmed) || !confirmed) {
           // Still created, but warn user
-          log.warn('⚠️  Please save your seed phrase! Use "gs wallet backup" to see it again.')
+          log.warn('⚠️  Please save your seed phrase! Use "ghost wallet backup" to see it again.')
         }
       }
       

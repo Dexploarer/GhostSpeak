@@ -4,7 +4,18 @@
  */
 
 import { createSolanaRpc, createSolanaRpcSubscriptions, createKeyPairSignerFromBytes, address, type TransactionSigner, type KeyPairSigner } from '@solana/kit'
-import { GhostSpeakClient, GHOSTSPEAK_PROGRAM_ID } from '@ghostspeak/sdk'
+import { 
+  GhostSpeakClient, 
+  GHOSTSPEAK_PROGRAM_ID,
+  AgentModule,
+  MarketplaceModule,
+  // @ts-ignore - Modules exist at runtime but missing from type definitions
+  EscrowModule,
+  // @ts-ignore
+  ChannelModule,
+  // @ts-ignore
+  GovernanceModule
+} from '@ghostspeak/sdk'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readFileSync, existsSync } from 'fs'
@@ -246,6 +257,40 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
     commitment: 'confirmed'
   })
 
+  // Polyfill missing or uninitialized modules
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const clientAny = client as any
+  
+  // Reuse the same config for all modules
+  const moduleConfig = {
+    rpc: extendedRpc,
+    programId: address(programId),
+    commitment: 'confirmed' as const,
+    cluster: (config.network === 'devnet' || config.network === 'testnet' || config.network === 'mainnet-beta') ? config.network : 'devnet',
+    rpcEndpoint: rpcUrl
+  }
+
+  // Force instantiation if module is missing or is just a class constructor (function)
+  if (!client.agent || typeof client.agent === 'function') {
+    clientAny.agent = new AgentModule(moduleConfig)
+  }
+  
+  if (!clientAny.marketplace || typeof clientAny.marketplace === 'function') {
+    clientAny.marketplace = new MarketplaceModule(moduleConfig)
+  }
+  
+  if (!clientAny.escrow || typeof clientAny.escrow === 'function') {
+    clientAny.escrow = new EscrowModule(moduleConfig)
+  }
+
+  if (!clientAny.channel || typeof clientAny.channel === 'function') {
+    clientAny.channel = new ChannelModule(moduleConfig)
+  }
+
+  if (!clientAny.governance || typeof clientAny.governance === 'function') {
+    clientAny.governance = new GovernanceModule(moduleConfig)
+  }
+
   // Check wallet balance
   try {
     // Ensure wallet has a valid address
@@ -263,31 +308,26 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   }
 
   // Add cleanup method to client
-  const originalClient = client
-  const enhancedClient = {
-    ...originalClient,
-    cleanup: async () => {
-      try {
-        // Close RPC subscriptions if they exist
-        if (rpcSubscriptions) {
-          if ('close' in rpcSubscriptions && typeof rpcSubscriptions.close === 'function') {
-            const closeMethod = rpcSubscriptions.close as () => Promise<void>
-            await closeMethod.call(rpcSubscriptions)
-          }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (client as any).cleanup = async () => {
+    try {
+      // Close RPC subscriptions if they exist
+      if (rpcSubscriptions) {
+        if ('close' in rpcSubscriptions && typeof rpcSubscriptions.close === 'function') {
+          const closeMethod = rpcSubscriptions.close as () => Promise<void>
+          await closeMethod.call(rpcSubscriptions)
         }
-
-        // Close HTTP connections if possible
-        // HTTP connections don't need explicit closing in most cases
-        // If RPC has a close method in future versions, it can be called here
-      } catch (error) {
-        // Silent cleanup - don't throw errors during cleanup
-        console.debug('Client cleanup warning:', error instanceof Error ? error.message : 'Unknown error')
       }
+
+      // Close HTTP connections if possible
+    } catch (error) {
+      // Silent cleanup - don't throw errors during cleanup
+      console.debug('Client cleanup warning:', error instanceof Error ? error.message : 'Unknown error')
     }
   }
 
   return {
-    client: enhancedClient,
+    client,
     wallet,
     rpc,
     pooledRpc: pooledRpcClient

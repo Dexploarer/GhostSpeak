@@ -14,6 +14,7 @@ import { join } from 'path'
 import { homedir } from 'os'
 import * as bip39 from 'bip39'
 import { derivePath } from 'ed25519-hd-key'
+import nacl from 'tweetnacl'
 import type { IWalletService, WalletInfo } from '../types/services.js'
 
 export interface WalletMetadata {
@@ -87,8 +88,9 @@ export class WalletService implements IWalletService {
 
   /**
    * Create keypair from mnemonic with proper BIP44 derivation
+   * Returns both the signer and the raw 64-byte secret key
    */
-  async keypairFromMnemonic(mnemonic: string, index = 0): Promise<KeyPairSigner> {
+  async keypairFromMnemonic(mnemonic: string, index = 0): Promise<{ signer: KeyPairSigner; secretKey: Uint8Array }> {
     if (!bip39.validateMnemonic(mnemonic)) {
       throw new Error('Invalid mnemonic phrase')
     }
@@ -101,16 +103,15 @@ export class WalletService implements IWalletService {
       const derivationPath = `m/44'/501'/${index}'/0'`
       const { key } = derivePath(derivationPath, seed.toString('hex'))
 
-      // The key from derivePath is 32 bytes, but we need to use it as a private key
-      // For Solana v2, we should use the 32-byte private key directly with createKeyPairFromPrivateKeyBytes
-      const { createKeyPairFromPrivateKeyBytes } = await import('@solana/keys')
-      const { createSignerFromKeyPair } = await import('@solana/signers')
+      // Derive full 64-byte keypair from the 32-byte seed
+      // This ensures we have the correct public key matching the private key
+      const keyPair = nacl.sign.keyPair.fromSeed(new Uint8Array(key))
+      const secretKey = keyPair.secretKey
 
-      // Create keypair from 32-byte private key
-      const keyPair = await createKeyPairFromPrivateKeyBytes(new Uint8Array(key))
+      // Create signer from the full 64-byte secret key
+      const signer = await createKeyPairSignerFromBytes(secretKey)
 
-      // Create signer from keypair
-      return await createSignerFromKeyPair(keyPair)
+      return { signer, secretKey }
     } catch (error) {
       throw new Error(`Failed to derive keypair from mnemonic: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -133,14 +134,7 @@ export class WalletService implements IWalletService {
 
     // Generate or use provided mnemonic
     const seedPhrase = mnemonic ?? this.generateMnemonic()
-    const signer = await this.keypairFromMnemonic(seedPhrase)
-
-    // Get private key bytes
-    const privateKeyBytes = 'privateKey' in signer && signer.privateKey instanceof Uint8Array
-      ? signer.privateKey
-      : 'secretKey' in signer && signer.secretKey instanceof Uint8Array
-        ? signer.secretKey
-        : new Uint8Array(64)
+    const { signer, secretKey } = await this.keypairFromMnemonic(seedPhrase)
 
     const walletData: WalletData = {
       metadata: {
@@ -151,7 +145,7 @@ export class WalletService implements IWalletService {
         lastUsed: Date.now(),
         isActive: Object.keys(registry.wallets).length === 0 // First wallet is active by default
       },
-      keypair: Array.from(privateKeyBytes)
+      keypair: Array.from(secretKey)
     }
 
     // Save wallet file
@@ -188,23 +182,21 @@ export class WalletService implements IWalletService {
     if (typeof secretKeyOrMnemonic === 'string') {
       // Check if it's a mnemonic
       if (bip39.validateMnemonic(secretKeyOrMnemonic)) {
-        signer = await this.keypairFromMnemonic(secretKeyOrMnemonic)
-        // For mnemonic-derived keys, we need to extract the private key differently
-        const privateKey = 'privateKey' in signer && signer.privateKey instanceof Uint8Array
-          ? signer.privateKey
-          : 'secretKey' in signer && signer.secretKey instanceof Uint8Array
-            ? signer.secretKey
-            : null
-
-        if (!privateKey) {
-          throw new Error('Failed to extract private key from mnemonic-derived signer')
-        }
-        privateKeyBytes = privateKey
+        const result = await this.keypairFromMnemonic(secretKeyOrMnemonic)
+        signer = result.signer
+        privateKeyBytes = result.secretKey
       } else {
         // Try to parse as JSON array or base58
         try {
           const bytes = JSON.parse(secretKeyOrMnemonic) as number[]
           privateKeyBytes = new Uint8Array(bytes)
+          
+          // If 32 bytes, convert to 64 bytes
+          if (privateKeyBytes.length === 32) {
+            const keyPair = nacl.sign.keyPair.fromSeed(privateKeyBytes)
+            privateKeyBytes = keyPair.secretKey
+          }
+          
           signer = await createKeyPairSignerFromBytes(privateKeyBytes)
         } catch (error) {
           throw new Error('Invalid private key or mnemonic format')
@@ -213,7 +205,14 @@ export class WalletService implements IWalletService {
     } else {
       // Use the raw bytes directly - this is the most reliable approach
       privateKeyBytes = secretKeyOrMnemonic
-      signer = await createKeyPairSignerFromBytes(secretKeyOrMnemonic)
+      
+      // If 32 bytes, convert to 64 bytes
+      if (privateKeyBytes.length === 32) {
+        const keyPair = nacl.sign.keyPair.fromSeed(privateKeyBytes)
+        privateKeyBytes = keyPair.secretKey
+      }
+      
+      signer = await createKeyPairSignerFromBytes(privateKeyBytes)
     }
 
     const walletData: WalletData = {

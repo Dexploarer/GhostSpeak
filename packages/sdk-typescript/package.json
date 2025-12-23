@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/sdk",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "TypeScript SDK for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "main": "./dist/index.js",
@@ -52,7 +52,7 @@
     "dist"
   ],
   "scripts": {
-    "generate": "codama generate codama.config.ts",
+    "generate": "codama run --config codama.config.js js && bun scripts/generate-mappings.ts && bun scripts/generate-missing-types.ts",
     "build": "bun run build:wasm && tsup",
     "build:wasm": "bun run wasm:build",
     "build:dev": "tsup --watch",

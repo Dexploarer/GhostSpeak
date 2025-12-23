@@ -59,7 +59,7 @@ export class BlockchainService implements IBlockchainService {
           throw new ServiceError(
             'Insufficient SOL balance to complete transaction',
             'INSUFFICIENT_FUNDS',
-            'Fund your wallet using: gs faucet',
+            'Fund your wallet using: ghost faucet',
             false
           )
         }

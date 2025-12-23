@@ -1,0 +1,259 @@
+
+> @ghostspeak/sdk@2.0.1 test
+> vitest run --reporter=verbose tests/unit/client/base-instructions.test.ts
+
+ DEPRECATED  "cache.dir" is deprecated, use Vite's "cacheDir" instead if you want to change the cache director. Note caches will be written to "cacheDir/vitest"
+
+ RUN  v3.2.4 /Users/home/projects/GhostSpeak/packages/sdk-typescript
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should send a basic transaction successfully 9ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should send transaction with detailed results 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle multiple instructions in a single transaction 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should validate instructions before sending 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should warn about large transaction sizes 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle transaction errors gracefully 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should retry with exponential backoff in RPC-only mode 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle subscription-based confirmation when available 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle confirmation timeout 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should log instruction details during debug 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should estimate transaction cost accurately 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should fall back to default cost estimation on RPC failure 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should simulate transactions before sending 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should handle simulation errors 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should calculate transaction size correctly 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should calculate size for multiple instructions 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should log instruction details 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get and decode a single account 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should return null for non-existent accounts 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle decoder not found 2ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get and decode multiple accounts 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle various data formats in account decoding 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get program accounts with filters 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle decoding errors gracefully in program accounts 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get raw account data 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get all program accounts for recovery 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle discriminator validation errors 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should execute single instruction 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should execute instruction with context 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should execute instruction with detailed results 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should propagate execution errors with context 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should handle missing context in error messages 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Batching > should send multiple transactions in sequence 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Batching > should stop batch on first failure 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle empty instruction arrays 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle missing signers 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle very large instruction data 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle RPC endpoint detection fallback 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle transaction confirmation with various statuses 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle transaction errors in confirmation status 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Performance Tests > should handle rapid sequential transactions 0ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+ × tests/unit/client/base-instructions.test.ts > BaseInstructions > Performance Tests > should efficiently estimate costs for multiple instructions 1ms
+   → [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 42 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should send a basic transaction successfully
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should send transaction with detailed results
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle multiple instructions in a single transaction
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should validate instructions before sending
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should warn about large transaction sizes
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle transaction errors gracefully
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should retry with exponential backoff in RPC-only mode
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle subscription-based confirmation when available
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should handle confirmation timeout
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Building & Sending > should log instruction details during debug
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should estimate transaction cost accurately
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should fall back to default cost estimation on RPC failure
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should simulate transactions before sending
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should handle simulation errors
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should calculate transaction size correctly
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should calculate size for multiple instructions
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Utilities > should log instruction details
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get and decode a single account
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should return null for non-existent accounts
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle decoder not found
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get and decode multiple accounts
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle various data formats in account decoding
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get program accounts with filters
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle decoding errors gracefully in program accounts
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get raw account data
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should get all program accounts for recovery
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Account Operations > should handle discriminator validation errors
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should execute single instruction
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should execute instruction with context
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should execute instruction with detailed results
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should propagate execution errors with context
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Execution Helpers > should handle missing context in error messages
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Batching > should send multiple transactions in sequence
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Transaction Batching > should stop batch on first failure
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle empty instruction arrays
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle missing signers
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle very large instruction data
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle RPC endpoint detection fallback
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle transaction confirmation with various statuses
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Edge Cases and Error Handling > should handle transaction errors in confirmation status
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Performance Tests > should handle rapid sequential transactions
+ FAIL  tests/unit/client/base-instructions.test.ts > BaseInstructions > Performance Tests > should efficiently estimate costs for multiple instructions
+Error: [vitest] No "createSolanaRpc" export is defined on the "@solana/kit" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi[33m.[39m[34mmock[39m([35mimport[39m([32m"@solana/kit"[39m)[33m,[39m [35masync[39m (importOriginal) [33m=>[39m {
+  [35mconst[39m actual [33m=[39m [35mawait[39m [34mimportOriginal[39m()
+  [35mreturn[39m {
+    [33m...[39mactual[33m,[39m
+    [90m// your mocked methods[39m
+  }
+})
+
+ ❯ new RpcClient src/core/rpc-client.ts:46:16
+     44|   constructor(config: RpcClientConfig) {
+     45|     this.endpoint = config.endpoint
+     46|     this.rpc = createSolanaRpc(config.endpoint)
+       |                ^
+     47|     this.commitment = config.commitment ?? 'confirmed'
+     48|     this.maxRetries = config.maxRetries ?? 3
+ ❯ new InstructionBuilder src/core/InstructionBuilder.ts:53:22
+ ❯ new BaseModule src/core/BaseModule.ts:22:20
+ ❯ new TestInstructions tests/unit/client/base-instructions.test.ts:89:1
+ ❯ tests/unit/client/base-instructions.test.ts:228:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/42]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  42 failed (42)
+   Start at  16:44:42
+   Duration  334ms (transform 178ms, setup 17ms, collect 187ms, tests 29ms, environment 0ms, prepare 32ms)
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /Users/home/projects/GhostSpeak/packages/sdk-typescript
+npm error workspace @ghostspeak/sdk@2.0.1
+npm error location /Users/home/projects/GhostSpeak/packages/sdk-typescript
+npm error command failed
+npm error command sh -c vitest run --reporter=verbose tests/unit/client/base-instructions.test.ts

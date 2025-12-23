@@ -240,7 +240,7 @@ export class TransactionMonitor {
     const errorLower = error.toLowerCase()
     
     if (errorLower.includes('insufficient funds') || errorLower.includes('insufficient lamports')) {
-      return 'You need more SOL. Run: gs faucet --save'
+      return 'You need more SOL. Run: ghost faucet --save'
     }
     
     if (errorLower.includes('blockhash not found') || errorLower.includes('blockhash expired')) {

@@ -265,7 +265,7 @@ export class CostEstimator {
     if (!balanceInfo.isAffordable) {
       const shortage = formatSOL(balanceInfo.shortage)
       const actions = [
-        'Get SOL from faucet: gs faucet --save',
+        'Get SOL from faucet: ghost faucet --save',
         'Transfer SOL from another wallet',
         'Reduce the transaction amount if possible'
       ]

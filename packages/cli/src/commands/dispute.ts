@@ -209,8 +209,8 @@ disputeCommand
           `${chalk.gray('Signature:')} ${signature}\n` +
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
           `${chalk.yellow('Next Steps:')}\n` +
-          `• Submit evidence: ${chalk.cyan('gs dispute evidence')}\n` +
-          `• Check status: ${chalk.cyan('gs dispute list --mine')}`
+          `• Submit evidence: ${chalk.cyan('ghost dispute evidence')}\n` +
+          `• Check status: ${chalk.cyan('ghost dispute list --mine')}`
         )
 
       } catch (error) {
@@ -254,8 +254,8 @@ disputeCommand
       if (disputes.length === 0) {
         outro(
           `${chalk.yellow('No disputes found')}\n\n` +
-          `${chalk.gray('• File a dispute:')} ${chalk.cyan('gs dispute file')}\n` +
-          `${chalk.gray('• Check all disputes:')} ${chalk.cyan('gs dispute list')}`
+          `${chalk.gray('• File a dispute:')} ${chalk.cyan('ghost dispute file')}\n` +
+          `${chalk.gray('• Check all disputes:')} ${chalk.cyan('ghost dispute list')}`
         )
         return
       }
@@ -284,9 +284,9 @@ disputeCommand
 
       outro(
         `${chalk.yellow('💡 Commands:')}\n` +
-        `${chalk.cyan('gs dispute evidence')} - Submit evidence\n` +
-        `${chalk.cyan('gs dispute resolve')} - Resolve dispute (arbitrators)\n` +
-        `${chalk.cyan('gs dispute escalate')} - Escalate dispute`
+        `${chalk.cyan('ghost dispute evidence')} - Submit evidence\n` +
+        `${chalk.cyan('ghost dispute resolve')} - Resolve dispute (arbitrators)\n` +
+        `${chalk.cyan('ghost dispute escalate')} - Escalate dispute`
       )
 
     } catch (error) {
@@ -779,7 +779,7 @@ disputeCommand
           `${chalk.yellow('Next Steps:')}\n` +
           `• Higher-tier arbitrators will review the case\n` +
           `• You will be notified of the final decision\n` +
-          `• Check status: ${chalk.cyan('gs dispute list --mine')}`
+          `• Check status: ${chalk.cyan('ghost dispute list --mine')}`
         )
 
       } catch (error) {

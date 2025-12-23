@@ -61,7 +61,21 @@ export function showProgress(progress: SetupProgress): void {
  */
 export async function generateNewWallet(name?: string): Promise<WalletInfo & { mnemonic: string }> {
   const walletService = new WalletService()
-  const walletName = name ?? 'quickstart-wallet'
+  
+  // Determine wallet name
+  let walletName = name ?? 'ghost1'
+  const registry = walletService.listWallets()
+  const existingNames = new Set(registry.map(w => w.name))
+  
+  if (existingNames.has(walletName)) {
+    // If name is taken (or default ghost1 is taken), find next available ghostN
+    let i = 1
+    while (existingNames.has(`ghost${i}`)) {
+      i++
+    }
+    walletName = `ghost${i}`
+  }
+  
   const { wallet, mnemonic } = await walletService.createWallet(walletName, 'devnet')
   
   const signer = await walletService.getSigner(walletName)

@@ -5,6 +5,7 @@ export default defineConfig({
   format: ['esm'],
   dts: true,
   clean: true,
+  silent: true,
   sourcemap: true,
   splitting: false,
   treeshake: true,
@@ -21,5 +22,7 @@ export default defineConfig({
       js: `import { createRequire } from 'module';
 const require = createRequire(import.meta.url);`
     }
+    // Suppress warnings about unused imports from external modules
+    options.logLevel = 'error'
   }
 })

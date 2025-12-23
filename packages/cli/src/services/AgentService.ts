@@ -44,8 +44,9 @@ function wrapRpcClient(rpc: ReturnType<typeof createSolanaRpc>): RpcClient {
       // Simple confirmation using getSignatureStatuses
       await rpc.getSignatureStatuses([signature as Signature]).send();
     },
-    getProgramAccounts: async (programId: Address, _options?: Record<string, unknown>) => {
-      const accounts = await rpc.getProgramAccounts(programId).send();
+    getProgramAccounts: async (programId: Address, options?: Record<string, unknown>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const accounts = await rpc.getProgramAccounts(programId, options as any).send();
       return accounts as RpcClient['getProgramAccounts'] extends (...args: unknown[]) => Promise<infer R> ? R : never;
     },
     requestAirdrop: (address: Address, lamports: bigint) => ({
@@ -115,7 +116,7 @@ export class AgentService implements IAgentService {
       const signer = walletSigner
       this.deps.logger.info('Using signer', { address: signer.address.toString() })
 
-      const metadataJson = JSON.stringify({
+      const _metadataJson = JSON.stringify({
         name: agent.name,
         description: agent.description,
         capabilities: agent.capabilities,
@@ -148,7 +149,8 @@ export class AgentService implements IAgentService {
             agentId: agent.id 
         })
         
-        signature = await agentModule.registerCompressed(toSDKSigner(signer), {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        signature = await (agentModule as any).registerCompressed(toSDKSigner(signer), {
             agentType: 0,
             metadataUri, 
             agentId: agent.id,
@@ -409,7 +411,6 @@ export class AgentService implements IAgentService {
       let totalEarnings = BigInt(0)
       let totalRating = 0
       let ratedJobs = 0
-      let totalResponseTime = 0
       
       for (const workOrder of workOrders) {
         totalJobs++
@@ -477,6 +478,84 @@ export class AgentService implements IAgentService {
   }
 
   /**
+   * Configure x402 payment settings
+   */
+  async configureX402(agentId: string, params: {
+    enabled: boolean
+    pricePerCall: bigint
+    acceptedTokens: Address[]
+    paymentAddress: Address
+    serviceEndpoint: string
+  }): Promise<Agent> {
+    const agent = await this.getById(agentId)
+    if (!agent) {
+      throw new NotFoundError('Agent', agentId)
+    }
+
+    const wallet = this.deps.walletService.getActiveWalletInterface()
+    if (!wallet || agent.owner !== wallet.address) {
+      throw new UnauthorizedError('You can only configure your own agents')
+    }
+
+    try {
+      this.deps.logger.info('Configuring x402 settings...', { agentId, enabled: params.enabled })
+      
+      const client = await this.deps.blockchainService.getClient('devnet')
+      const walletSigner = await this.deps.walletService.getActiveSigner()
+      
+      if (!walletSigner) {
+        throw new UnauthorizedError('No active wallet signer available')
+      }
+
+      const typedClient = client as GhostSpeakClient
+      const agentModule = new AgentModule({
+        programId: typedClient.config.programId,
+        rpc: typedClient.config.rpc,
+        commitment: 'confirmed'
+      })
+
+      // Assuming AgentModule now has configureX402 (after SDK update)
+      // We cast to any because TS might complain until SDK is rebuilt/reinstalled
+      // In a real monorepo setup we'd link them.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const signature = await (agentModule as any).configureX402(toSDKSigner(walletSigner), {
+        agentAddress: agent.address,
+        agentId: agent.id,
+        ...params
+      })
+
+      this.deps.logger.info('x402 configuration updated on blockchain', { signature })
+
+      // Update local cache/storage
+      const updatedAgent = {
+        ...agent,
+        updatedAt: BigInt(Date.now()),
+        metadata: {
+          ...agent.metadata,
+          x402: {
+            enabled: params.enabled,
+            price: params.pricePerCall.toString(),
+            tokens: params.acceptedTokens,
+            paymentAddress: params.paymentAddress,
+            endpoint: params.serviceEndpoint
+          }
+        }
+      }
+
+      await this.deps.storageService.save(`agent:${agentId}`, updatedAgent)
+      this.agentCache.set(agentId, { data: updatedAgent, timestamp: Date.now() })
+      
+      return updatedAgent
+    } catch (error) {
+      this.deps.logger.error('Failed to configure x402', error instanceof Error ? error : undefined)
+      throw new NetworkError(
+        `Failed to configure x402: ${getErrorMessage(error)}`,
+        'Check your network connection and try again'
+      )
+    }
+  }
+
+  /**
    * Private helper methods
    */
   private async validateRegisterParams(params: RegisterAgentParams): Promise<void> {
@@ -530,14 +609,7 @@ export class AgentService implements IAgentService {
       const baseRpc = createSolanaRpc('https://api.devnet.solana.com')
       const rpc = wrapRpcClient(baseRpc)
 
-      // Create AgentModule instance
-      const agentModule = new AgentModule({
-        programId: getCurrentProgramId(),
-        rpc: rpc,
-        commitment: 'confirmed',
-        cluster: 'devnet',
-        rpcEndpoint: 'https://api.devnet.solana.com'
-      })
+
       
       // Query program accounts for agents using RPC
       const programAccounts = await rpc.getProgramAccounts(getCurrentProgramId(), { commitment: 'confirmed', encoding: 'base64' })
@@ -558,7 +630,7 @@ export class AgentService implements IAgentService {
           
           // Check discriminator (first 8 bytes) to identify agent accounts
           // Agent account discriminator would be specific pattern
-          const discriminator = data.slice(0, 8)
+          // const discriminator = data.slice(0, 8)
           
           // Parse agent account data
           // In production, use proper Borsh deserialization

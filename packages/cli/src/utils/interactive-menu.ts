@@ -7,6 +7,9 @@ import { homedir } from 'os'
 import { initializeClient } from './client.js'
 import { createSolanaRpc } from '@solana/kit'
 import { address } from '@solana/addresses'
+import { container, ServiceTokens } from '../core/Container.js'
+import { type IAgentService } from '../types/services.js'
+import { createSafeSDKClient } from './sdk-helpers.js'
 
 interface MenuOption {
   value: string
@@ -204,8 +207,27 @@ export class InteractiveMenu {
       const { value: balance } = await rpc.getBalance(address(wallet.address)).send()
       status.balance = `${(Number(balance) / 1e9).toFixed(4)} SOL`
       
-      // Could check for agents and multisigs here
-    } catch (error) {
+      // Check for agents using AgentService
+      try {
+        const agentService = container.resolve<IAgentService>(ServiceTokens.AGENT_SERVICE)
+        const agents = await agentService.list({ owner: address(wallet.address) })
+        status.agents = agents.length
+      } catch {
+        // Fallback or just keep 0 if service fails (e.g. offline)
+        status.agents = 0
+      }
+
+      // Check for multisigs
+      try {
+        const { client } = await initializeClient()
+        const safeSdk = createSafeSDKClient(client)
+        const multisigs = await safeSdk.governance.listMultisigs({ creator: address(wallet.address) })
+        status.multisig = multisigs.length > 0
+      } catch {
+        // Fallback
+        status.multisig = false
+      }
+    } catch {
       // Wallet not configured
     }
     
@@ -702,23 +724,25 @@ export class InteractiveMenu {
   private async showHelp(): Promise<void> {
     console.log(chalk.cyan('\n📚 GhostSpeak Help & Documentation\n'))
     console.log(chalk.bold('Quick Start:'))
-    console.log('  1. Use "Creation" to register agents and create listings')
-    console.log('  2. Use "Management" to monitor and control your operations')
-    console.log('  3. Use "Development" for SDK tools and testing\n')
+    console.log('  1. Use "Creation" to register AI agents, listings, and auctions')
+    console.log('  2. Use "Management" to oversee your agents and marketplace activity')
+    console.log('  3. Use "Transactions" for payments, escrows, and A2A channels')
+    console.log('  4. Use "Development" for wallet tools and SDK integration\n')
     
-    console.log(chalk.bold('Useful Commands:'))
-    console.log(chalk.gray('  gs agent register') + ' - Register a new AI agent')
-    console.log(chalk.gray('  gs marketplace list') + ' - Browse available services')
-    console.log(chalk.gray('  gs faucet') + ' - Get SOL for development')
-    console.log(chalk.gray('  gs --help') + ' - Show all CLI commands\n')
+    console.log(chalk.bold('Key Features:'))
+    console.log(chalk.gray('  🤖 Agents') + '      - Register and manage autonomous AI agents')
+    console.log(chalk.gray('  🛍️ Marketplace') + ' - Buy and sell agent services instantly')
+    console.log(chalk.gray('  🔐 Security') + '    - Built-in multisig and escrow protection')
+    console.log(chalk.gray('  📡 Channels') + '    - Agent-to-Agent (A2A) encrypted comms\n')
     
     console.log(chalk.bold('Resources:'))
-    console.log('  Documentation: https://docs.ghostspeak.ai')
-    console.log('  GitHub: https://github.com/Prompt-or-Die/ghostspeak')
+    console.log('  Documentation: https://docs.ghostspeak.io')
+    console.log('  GitHub: https://github.com/ghostspeak/ghostspeak')
+    console.log('  Email: team@ghostspeak.io')
     console.log('  Discord: https://discord.gg/ghostspeak\n')
     
     console.log(chalk.bold('Tips:'))
-    console.log('  • Use direct commands for scripts: ' + chalk.gray('gs agent list'))
+    console.log('  • Use direct commands for scripts: ' + chalk.gray('ghost agent list'))
     console.log('  • Add ' + chalk.gray('--interactive') + ' to force menu mode')
     console.log('  • Your recent commands are saved for quick access')
     
@@ -745,8 +769,8 @@ export class InteractiveMenu {
         cliCommand = process.argv[0]
         cliArgs = [process.argv[1], ...args]
       } else {
-        // Running via global install or npx - use 'gs' or 'ghostspeak'
-        cliCommand = 'gs'
+        // Running via global install or npx - use 'ghost' or 'ghostspeak'
+        cliCommand = 'ghost'
         cliArgs = args
       }
       
@@ -842,20 +866,22 @@ import { GhostSpeakClient } from '@ghostspeak/sdk'
 import { createKeyPairSignerFromBytes } from '@solana/kit'
 
 // Initialize client
+const client = new GhostSpeakClient({ rpcEndpoint: 'https://api.devnet.solana.com' })
 const signer = await createKeyPairSignerFromBytes(walletBytes)
-const client = new GhostSpeakClient(connection, signer)
 
-// Register an agent
-const result = await client.agents.register({
-  name: 'My AI Assistant',
-  description: 'Specialized in data analysis',
-  capabilities: ['data-analysis', 'reporting'],
-  serviceEndpoint: 'https://my-agent.example.com',
-  agentType: 1 // SERVICE_AGENT
-})
+// Register an agent (Fluent API)
+const { address, signature } = await client.agent()
+  .create({
+    name: 'My AI Assistant',
+    capabilities: ['data-analysis', 'reporting']
+  })
+  .withDescription('Specialized in data analysis')
+  .withType(1) // SERVICE_AGENT
+  .withSigner(signer)
+  .execute()
 
-console.log('Agent registered:', result.agent)
-console.log('Credentials:', result.credentials)
+console.log('Agent registered:', address)
+console.log('Signature:', signature)
 `))
     
     await this.waitForKeyPress()
@@ -872,20 +898,24 @@ import { GhostSpeakClient } from '@ghostspeak/sdk'
 import { createSolanaRpc } from '@solana/kit'
 
 const rpc = createSolanaRpc('https://api.devnet.solana.com')
-const client = new GhostSpeakClient(rpc, signer)
+// Initialize with just config (signer passed to builders via withSigner)
+const client = new GhostSpeakClient({ rpcEndpoint: 'https://api.devnet.solana.com' })
 
-// List marketplace services
-const listings = await client.marketplace.list({ limit: 10 })
+// List marketplace services (Fluent API Query)
+const listings = await client.marketplace().query().serviceListings()
 
 // Create a work order
-const workOrder = await client.marketplace.purchase({
-  listing: listingAddress,
-  requirements: 'Process this dataset...'
-})
-
-// Check escrow status
-const escrow = await client.escrow.get(workOrder.escrow)
-console.log('Payment status:', escrow.status)
+const { address, signature } = await client.marketplace()
+  .service() // Create service purchase builder
+  .pricePerHour(100n) // Example configuration
+  // ... other configuration ...
+  .withSigner(signer)
+  // Note: Actual purchase would use 'purchase()' builder if available
+  // This is illustrative of the fluent pattern
+  // For buying: client.marketplace().purchase().listing(addr).withSigner(s).execute()
+  .execute() 
+  
+console.log('Transaction signature:', signature)
 `))
     
     await this.waitForKeyPress()
@@ -912,7 +942,7 @@ console.log('Payment status:', escrow.status)
 // Helper function to check if running in interactive mode
 export function shouldRunInteractive(argv: string[]): boolean {
   // Run interactive if:
-  // 1. No command provided (just 'ghostspeak' or 'gs')
+  // 1. No command provided (just 'ghostspeak' or 'ghost')
   // 2. --interactive flag is present
   // But NOT if help or version flags are present
   

@@ -1,0 +1,264 @@
+
+> @ghostspeak/sdk@2.0.1 test
+> vitest run --reporter=verbose tests/unit/crypto/wasm-crypto-bridge.test.ts
+
+ DEPRECATED  "cache.dir" is deprecated, use Vite's "cacheDir" instead if you want to change the cache director. Note caches will be written to "cacheDir/vitest"
+
+ RUN  v3.2.4 /Users/home/projects/GhostSpeak/packages/sdk-typescript
+
+stdout | tests/unit/crypto/wasm-crypto-bridge.test.ts
+🚀 Initializing WebAssembly crypto module...
+
+stderr | tests/unit/crypto/wasm-crypto-bridge.test.ts
+WASM module not found, disabling WASM features
+
+stderr | tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Module Initialization > should return cached initialization promise
+❌ Failed to initialize WebAssembly crypto module: TypeError: Cannot read properties of undefined (reading 'simd_enabled')
+    at WasmElGamalEngineWrapper.get_performance_info [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39msrc/utils/wasm-crypto-bridge.ts:241:39[90m)[39m
+    at [90m/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39msrc/utils/wasm-crypto-bridge.ts:320:35
+
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Module Initialization > should initialize WASM module successfully 2ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Module Initialization > should handle WASM initialization failure gracefully 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Module Initialization > should detect missing WebAssembly support 0ms
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Module Initialization > should return cached initialization promise 5ms
+   → expected false to be true // Object.is equality
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > WASM Engine Access > should throw error when accessing engine before initialization 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > WASM Engine Access > should return engine after successful initialization 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Keypair Generation > should generate keypair using WASM when available 1ms
+stderr | tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Keypair Generation > should handle WASM keypair generation failure
+❌ Failed to initialize WebAssembly crypto module: Error: WASM error
+    at t.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:178:15[90m)[39m
+    at new mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at new spy (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:34)
+    at new WasmElGamalEngineWrapper [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39msrc/utils/wasm-crypto-bridge.ts:185:27[90m)[39m
+    at [90m/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39msrc/utils/wasm-crypto-bridge.ts:314:20
+
+stderr | tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Encryption Operations > should fallback to JavaScript on WASM encryption failure
+❌ Failed to initialize WebAssembly crypto module: TypeError: this.engine.get_performance_info is not a function
+    at WasmElGamalEngineWrapper.get_performance_info [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39msrc/utils/wasm-crypto-bridge.ts:238:42[90m)[39m
+    at [90m/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39msrc/utils/wasm-crypto-bridge.ts:320:35
+
+stderr | tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Encryption > should pack amounts correctly for WASM
+❌ Failed to initialize WebAssembly crypto module: RangeError: Maximum call stack size exceeded
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:33:19)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:280:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:280:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:280:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+
+stderr | tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Encryption > should handle batch encryption failure gracefully
+❌ Failed to initialize WebAssembly crypto module: RangeError: Maximum call stack size exceeded
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:33:19)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:298:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:298:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:298:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+
+stderr | tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Range Proof Generation > should pack proof data correctly for WASM
+❌ Failed to initialize WebAssembly crypto module: RangeError: Maximum call stack size exceeded
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:33:19)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:405:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:405:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+    at Object.<anonymous> [90m(/Users/home/projects/GhostSpeak/packages/sdk-typescript/[39mtests/unit/crypto/wasm-crypto-bridge.test.ts:405:23[90m)[39m
+    at Object.mockCall (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest/spy[24m/dist/index.js:96:15)
+    at Object.spy [as WasmElGamalEngine] (file:///Users/home/projects/GhostSpeak/node_modules/[4m.bun[24m/tinyspy@4.0.4/node_modules/[4mtinyspy[24m/dist/index.js:47:80)
+
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Keypair Generation > should fallback to JavaScript implementation when WASM unavailable 105ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Keypair Generation > should handle WASM keypair generation failure 2ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Encryption Operations > should encrypt amount using WASM 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Encryption Operations > should handle large amounts by capping at MAX_SAFE_INTEGER 0ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Encryption Operations > should measure encryption performance 0ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Encryption Operations > should fallback to JavaScript on WASM encryption failure 3ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Encryption > should batch encrypt using WASM for multiple amounts 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Encryption > should use sequential encryption for single amount 0ms
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Encryption > should pack amounts correctly for WASM 27ms
+   → expected "spy" to be called at least once
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Encryption > should handle batch encryption failure gracefully 24ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Range Proof Generation > should generate range proof using WASM 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Range Proof Generation > should log warning for slow range proof generation 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Range Proof Generation > should handle range proof generation failure 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Range Proof Generation > should batch generate range proofs using WASM 1ms
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Range Proof Generation > should pack proof data correctly for WASM 18ms
+   → expected "spy" to be called at least once
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Range Proof Generation > should calculate average time per proof 1ms
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Performance Information > should return performance info when WASM is available 1ms
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Performance Information > should return null performance info when WASM unavailable 1ms
+   → expected true to be false // Object.is equality
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Performance Information > should run scalar multiplication benchmarks 1ms
+   → expected "spy" to be called with arguments: [ 100 ][90m
+
+Number of calls: [1m0[22m
+[39m
+ ✓ tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Comprehensive Benchmarks > should run full crypto benchmarks 20ms
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Comprehensive Benchmarks > should calculate speedup factors correctly 19ms
+   → expected +0 to be 4 // Object.is equality
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Comprehensive Benchmarks > should handle benchmark when WASM is unavailable 18ms
+   → expected 510 to be +0 // Object.is equality
+ × tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Auto-initialization > should auto-initialize on module import 1ms
+   → expected [Function] to not throw an error but 'Error: Cannot find module \'../../../…' was thrown
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Module Initialization > should return cached initialization promise
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:120:23
+    118|       // All should resolve to the same value
+    119|       const [result1, result2, result3] = await Promise.all([promise1,…
+    120|       expect(result1).toBe(true)
+       |                       ^
+    121|       expect(result2).toBe(true)
+    122|       expect(result3).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Encryption > should pack amounts correctly for WASM
+AssertionError: expected "spy" to be called at least once
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:289:31
+    287|       await batchEncryptAmounts(testAmounts, testPublicKey)
+    288|       
+    289|       expect(batchEncryptSpy).toHaveBeenCalled()
+       |                               ^
+    290|       const packedAmounts = batchEncryptSpy.mock.calls[0][0]
+    291|       expect(packedAmounts).toBeInstanceOf(Uint8Array)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Batch Range Proof Generation > should pack proof data correctly for WASM
+AssertionError: expected "spy" to be called at least once
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:414:29
+    412|       await batchGenerateRangeProofs(proofRequests)
+    413|       
+    414|       expect(batchProofSpy).toHaveBeenCalled()
+       |                             ^
+    415|       const packedData = batchProofSpy.mock.calls[0][0]
+    416|       expect(packedData).toBeInstanceOf(Uint8Array)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Performance Information > should return null performance info when WASM unavailable
+AssertionError: expected true to be false // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:455:36
+    453|       const perfInfo = await getCryptoPerformanceInfo()
+    454|       
+    455|       expect(perfInfo.isAvailable).toBe(false)
+       |                                    ^
+    456|       expect(perfInfo.wasm).toBeNull()
+    457|       expect(perfInfo.version).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Performance Information > should run scalar multiplication benchmarks
+AssertionError: expected "spy" to be called with arguments: [ 100 ][90m
+
+Number of calls: [1m0[22m
+[39m
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:481:28
+    479|       const perfInfo = await getCryptoPerformanceInfo()
+    480|       
+    481|       expect(benchmarkSpy).toHaveBeenCalledWith(100)
+       |                            ^
+    482|       expect(benchmarkSpy).toHaveBeenCalledWith(1000)
+    483|       expect(perfInfo.benchmarkResults?.scalar_mult_100).toBe(5)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Comprehensive Benchmarks > should calculate speedup factors correctly
+AssertionError: expected +0 to be 4 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 4[39m
+[31m+ 0[39m
+
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:537:45
+    535|       
+    536|       // WASM should show speedup
+    537|       expect(benchmarks.encryption.speedup).toBe(4) // 400/100 = 4x
+       |                                             ^
+    538|       expect(benchmarks.rangeProof.speedup).toBe(4) // 200/50 = 4x
+    539|       expect(benchmarks.batchEncryption.speedup).toBe(4) // 200/50 = 4x
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Comprehensive Benchmarks > should handle benchmark when WASM is unavailable
+AssertionError: expected 510 to be +0 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 510[39m
+
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:546:42
+    544|       
+    545|       // Should still run JS benchmarks
+    546|       expect(benchmarks.encryption.wasm).toBe(0)
+       |                                          ^
+    547|       expect(benchmarks.encryption.js).toBeGreaterThan(0)
+    548|       expect(benchmarks.encryption.speedup).toBe(0)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  tests/unit/crypto/wasm-crypto-bridge.test.ts > WASM Crypto Bridge > Auto-initialization > should auto-initialize on module import
+AssertionError: expected [Function] to not throw an error but 'Error: Cannot find module \'../../../…' was thrown
+
+[32m- Expected:[39m 
+undefined
+
+[31m+ Received:[39m 
+"Error: Cannot find module '../../../src/utils/wasm-crypto-bridge'
+Require stack:
+- /Users/home/projects/GhostSpeak/packages/sdk-typescript/tests/unit/crypto/wasm-crypto-bridge.test.ts"
+
+ ❯ tests/unit/crypto/wasm-crypto-bridge.test.ts:557:74
+    555|       // We can't easily test this without resetting the entire module…
+    556|       // But we can verify it doesn't throw
+    557|       expect(() => require('../../../src/utils/wasm-crypto-bridge')).n…
+       |                                                                          ^
+    558|     })
+    559|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 22 passed (30)
+   Start at  16:44:43
+   Duration  392ms (transform 60ms, setup 16ms, collect 33ms, tests 258ms, environment 0ms, prepare 27ms)
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /Users/home/projects/GhostSpeak/packages/sdk-typescript
+npm error workspace @ghostspeak/sdk@2.0.1
+npm error location /Users/home/projects/GhostSpeak/packages/sdk-typescript
+npm error command failed
+npm error command sh -c vitest run --reporter=verbose tests/unit/crypto/wasm-crypto-bridge.test.ts

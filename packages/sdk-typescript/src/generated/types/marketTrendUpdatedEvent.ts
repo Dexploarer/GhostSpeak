@@ -8,8 +8,6 @@
 
 import {
   combineCodec,
-  getI32Decoder,
-  getI32Encoder,
   getI64Decoder,
   getI64Encoder,
   getStructDecoder,
@@ -20,6 +18,7 @@ import {
   type FixedSizeDecoder,
   type FixedSizeEncoder,
 } from "@solana/kit";
+import { getI32Encoder, getI32Decoder } from "@solana/codecs-numbers";
 
 export type MarketTrendUpdatedEvent = {
   supplyTrend: number;

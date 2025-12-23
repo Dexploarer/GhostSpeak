@@ -49,11 +49,11 @@ export const updateCommand = new Command('update')
               currentVersion = pkg.version
               break
             }
-          } catch (error) {
+          } catch {
             // Try next path
           }
         }
-      } catch (error) {
+      } catch {
         // If reading package.json fails, we'll try other methods
       }
       
@@ -75,11 +75,11 @@ export const updateCommand = new Command('update')
                 currentVersion = versionMatch[1]
                 break
               }
-            } catch (error) {
+            } catch {
               // Try next command
             }
           }
-        } catch (error) {
+        } catch {
           // If all methods fail, we'll use the fallback version
         }
       }
@@ -92,7 +92,7 @@ export const updateCommand = new Command('update')
           if (match) {
             currentVersion = match[1]
           }
-        } catch (error) {
+        } catch {
           // Still use fallback version
         }
       }
@@ -168,7 +168,7 @@ export const updateCommand = new Command('update')
           void isGlobal
           updateCmd = 'npm install -g @ghostspeak/cli@latest'
         }
-      } catch (error) {
+      } catch {
         // Not globally installed via npm
       }
       
@@ -180,8 +180,11 @@ export const updateCommand = new Command('update')
           if (stdout.includes('npx') || stdout.includes('.npm')) {
             updateCmd = 'npm install -g @ghostspeak/cli@latest'
             console.log(chalk.yellow('\n⚠️  Detected npx installation. Installing globally for better performance...'))
+          } else {
+            // Default to global install if we can't determine
+            updateCmd = 'npm install -g @ghostspeak/cli@latest'
           }
-        } catch (error) {
+        } catch {
           // Default to global install
           updateCmd = 'npm install -g @ghostspeak/cli@latest'
         }
@@ -191,7 +194,28 @@ export const updateCommand = new Command('update')
       
       try {
         // Use install instead of update for more reliable results
-        await execAsync(updateCmd)
+        // Use spawn to allow interactivity and showing output
+        const { spawn } = await import('child_process')
+        
+        await new Promise<void>((resolve, reject) => {
+          // split command into cmd and args
+          const parts = updateCmd.split(' ')
+          const cmd = parts[0]
+          const args = parts.slice(1)
+          
+          const child = spawn(cmd, args, {
+            stdio: 'inherit',
+            shell: true
+          })
+          
+          child.on('close', (code) => {
+            if (code === 0) resolve()
+            else reject(new Error(`Command failed with code ${code}`))
+          })
+          
+          child.on('error', (err) => reject(err))
+        })
+        
         updateSpinner.stop('✅ Update successful!')
         
         console.log('')
@@ -206,7 +230,7 @@ export const updateCommand = new Command('update')
           if (newVersion && newVersion === latest) {
             console.log(chalk.green('✅ Version verified:'), chalk.bold(`v${newVersion}`))
           }
-        } catch (error) {
+        } catch {
           // Version check failed, but update likely succeeded
         }
         
@@ -216,7 +240,7 @@ export const updateCommand = new Command('update')
         console.log(chalk.gray('• Enhanced performance'))
         console.log(chalk.gray('• Updated dependencies'))
         console.log('')
-        console.log(chalk.yellow('💡 Tip: Run "ghostspeak --help" or "gs --help" to see all available commands'))
+        console.log(chalk.yellow('💡 Tip: Run "ghostspeak --help" or "ghost --help" to see all available commands'))
         
         outro('Update completed successfully')
       } catch (error) {

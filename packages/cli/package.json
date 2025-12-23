@@ -1,11 +1,11 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.14",
   "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "bin": {
     "ghostspeak": "dist/index.js",
-    "gs": "dist/index.js"
+    "ghost": "dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
+    "dev": "tsup --watch src --watch ../sdk-typescript/dist --ignore-watch node_modules",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "test": "vitest",

@@ -6,7 +6,6 @@ import { generateKeyPairSigner } from '@solana/signers'
 import { BaseModule } from '../../core/BaseModule.js'
 import {
   getCreateToken2022MintInstructionAsync,
-  getInitializeTransferFeeConfigInstructionAsync,
   getInitializeConfidentialTransferMintInstructionAsync,
   getInitializeInterestBearingConfigInstructionAsync,
   getInitializeMintCloseAuthorityInstructionAsync,
@@ -70,23 +69,34 @@ export class Token2022Module extends BaseModule {
     enableTransferFee: boolean
     enableConfidentialTransfers: boolean
     enableInterestBearing: boolean
+    // Optional config params
+    transferFeeBasisPoints?: number | null
+    maximumFee?: bigint | null
+    transferFeeAuthority?: Address | null
+    withdrawWithheldAuthority?: Address | null
+    autoApproveNewAccounts?: boolean | null
+    auditorElgamalPubkey?: ReadonlyUint8Array | null
+    interestRate?: number | null
+    rateAuthority?: Address | null
+    closeAuthority?: Address | null
+    defaultAccountState?: AccountState | null
   }) {
-    return getCreateToken2022MintInstructionAsync(params)
+    return getCreateToken2022MintInstructionAsync({
+      ...params,
+      // Ensure defaults for optional fields if passed as undefined
+      transferFeeBasisPoints: params.transferFeeBasisPoints ?? null,
+      maximumFee: params.maximumFee ?? null,
+      transferFeeAuthority: params.transferFeeAuthority ?? null,
+      withdrawWithheldAuthority: params.withdrawWithheldAuthority ?? null,
+      autoApproveNewAccounts: params.autoApproveNewAccounts ?? null,
+      auditorElgamalPubkey: params.auditorElgamalPubkey ?? null,
+      interestRate: params.interestRate ?? null,
+      rateAuthority: params.rateAuthority ?? null,
+      closeAuthority: params.closeAuthority ?? null,
+      defaultAccountState: params.defaultAccountState ?? null
+    })
   }
 
-  /**
-   * Get initialize transfer fee config instruction
-   */
-  getInitializeTransferFeeConfigInstruction(params: {
-    authority: TransactionSigner
-    mint: Address
-    transferFeeBasisPoints: number
-    maximumFee: number | bigint
-    transferFeeAuthority: Address | null
-    withdrawWithheldAuthority: Address | null
-  }) {
-    return getInitializeTransferFeeConfigInstructionAsync(params)
-  }
 
   /**
    * Get initialize confidential transfer mint instruction
@@ -175,9 +185,6 @@ export class Token2022Module extends BaseModule {
     return this.execute('createToken2022Mint', () => instruction, [params.signer, mintKeypair])
   }
 
-  /**
-   * Create a Token-2022 mint with transfer fees
-   */
   async createMintWithTransferFees(params: {
     signer: TransactionSigner
     agentAddress: Address
@@ -196,27 +203,17 @@ export class Token2022Module extends BaseModule {
       freezeAuthority: null,
       enableTransferFee: true,
       enableConfidentialTransfers: false,
-      enableInterestBearing: false
-    })
-
-    const feeInstruction = await this.getInitializeTransferFeeConfigInstruction({
-      authority: params.signer,
-      mint: mintKeypair.address,
+      enableInterestBearing: false,
+      // Transfer fee extension params
       transferFeeBasisPoints: params.transferFeeBasisPoints,
       maximumFee: params.maxFee,
       transferFeeAuthority: params.signer.address,
       withdrawWithheldAuthority: params.withdrawWithheldAuthority ?? null
     })
 
-    return this.executeMultiple('createMintWithFees', [
-      async () => mintInstruction,
-      async () => feeInstruction
-    ], [params.signer, mintKeypair])
+    return this.execute('createMintWithFees', () => mintInstruction, [params.signer, mintKeypair])
   }
 
-  /**
-   * Create a Token-2022 mint with confidential transfers
-   */
   async createMintWithConfidentialTransfers(params: {
     signer: TransactionSigner
     agentAddress: Address
@@ -234,25 +231,15 @@ export class Token2022Module extends BaseModule {
       freezeAuthority: null,
       enableConfidentialTransfers: true,
       enableTransferFee: false,
-      enableInterestBearing: false
-    })
-
-    const confidentialInstruction = await this.getInitializeConfidentialTransferMintInstruction({
-      mint: mintKeypair.address,
-      authority: params.signer,
+      enableInterestBearing: false,
+      // Confidential transfer params
       auditorElgamalPubkey: params.auditorElgamalPubkey ?? null,
       autoApproveNewAccounts: params.autoApproveNewAccounts ?? false
     })
 
-    return this.executeMultiple('createMintWithConfidential', [
-      async () => mintInstruction,
-      async () => confidentialInstruction
-    ], [params.signer, mintKeypair])
+    return this.execute('createMintWithConfidential', () => mintInstruction, [params.signer, mintKeypair])
   }
 
-  /**
-   * Create a Token-2022 mint with interest bearing
-   */
   async createMintWithInterestBearing(params: {
     signer: TransactionSigner
     agentAddress: Address
@@ -270,20 +257,13 @@ export class Token2022Module extends BaseModule {
       freezeAuthority: null,
       enableConfidentialTransfers: false,
       enableTransferFee: false,
-      enableInterestBearing: true
-    })
-
-    const interestInstruction = await this.getInitializeInterestBearingConfigInstruction({
-      mint: mintKeypair.address,
-      authority: params.signer,
-      rate: params.interestRate,
+      enableInterestBearing: true,
+      // Interest bearing params
+      interestRate: params.interestRate,
       rateAuthority: params.rateAuthority ?? params.signer.address
     })
 
-    return this.executeMultiple('createMintWithInterest', [
-      async () => mintInstruction,
-      async () => interestInstruction
-    ], [params.signer, mintKeypair])
+    return this.execute('createMintWithInterest', () => mintInstruction, [params.signer, mintKeypair])
   }
 
   /**
@@ -303,7 +283,7 @@ export class Token2022Module extends BaseModule {
     
     const instructions = []
     
-    // Create the mint with all extensions enabled
+    // Create the mint with all extensions enabled and configured
     instructions.push(async () => this.getCreateToken2022MintInstruction({
       authority: params.signer,
       agent: params.agentAddress,
@@ -312,32 +292,17 @@ export class Token2022Module extends BaseModule {
       freezeAuthority: params.signer.address,
       enableConfidentialTransfers: true,
       enableTransferFee: true,
-      enableInterestBearing: true
-    }))
-
-    // Initialize transfer fee config
-    instructions.push(async () => this.getInitializeTransferFeeConfigInstruction({
-      mint: mintKeypair.address,
-      authority: params.signer,
+      enableInterestBearing: true,
+      // Transfer fee params
       transferFeeBasisPoints: params.transferFeeBasisPoints,
       maximumFee: params.maxFee,
       transferFeeAuthority: params.signer.address,
-      withdrawWithheldAuthority: params.signer.address
-    }))
-
-    // Initialize confidential transfers
-    instructions.push(async () => this.getInitializeConfidentialTransferMintInstruction({
-      mint: mintKeypair.address,
-      authority: params.signer,
+      withdrawWithheldAuthority: params.signer.address,
+      // Confidential transfer params
       auditorElgamalPubkey: null,
-      autoApproveNewAccounts: params.autoApproveConfidential ?? false
-    }))
-
-    // Initialize interest bearing
-    instructions.push(async () => this.getInitializeInterestBearingConfigInstruction({
-      mint: mintKeypair.address,
-      authority: params.signer,
-      rate: params.interestRate,
+      autoApproveNewAccounts: params.autoApproveConfidential ?? false,
+      // Interest bearing params
+      interestRate: params.interestRate,
       rateAuthority: params.signer.address
     }))
 

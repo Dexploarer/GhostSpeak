@@ -147,9 +147,9 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           })
           console.log('')
           console.log(chalk.bold('What you can do instead:'))
-          console.log(chalk.cyan('• gs agent status') + chalk.gray(' - View basic agent information'))
-          console.log(chalk.cyan('• gs agent list') + chalk.gray(' - See all registered agents'))
-          console.log(chalk.cyan('• gs marketplace list') + chalk.gray(' - Browse marketplace activity'))
+          console.log(chalk.cyan('• ghost agent status') + chalk.gray(' - View basic agent information'))
+          console.log(chalk.cyan('• ghost agent list') + chalk.gray(' - See all registered agents'))
+          console.log(chalk.cyan('• ghost marketplace list') + chalk.gray(' - Browse marketplace activity'))
           console.log('')
           console.log(chalk.gray('Analytics will be available in a future SDK update.'))
           

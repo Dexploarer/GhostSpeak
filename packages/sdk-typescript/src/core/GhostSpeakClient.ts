@@ -35,7 +35,7 @@ import type { AccountState } from '../generated/types/accountState.js'
  *   .execute()
  * ```
  */
-export class GhostSpeak {
+export class GhostSpeakClient {
   private config: GhostSpeakConfig
   
   constructor(config?: Partial<GhostSpeakConfig>) {
@@ -214,6 +214,11 @@ class AgentBuilder {
     return this
   }
 
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
+
   private validateParams(): void {
     if (!this.params.signer) {
       throw new Error('Agent builder requires a signer. Call with signer first.')
@@ -336,6 +341,11 @@ class EscrowBuilder {
     return this
   }
 
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
+
   private validateParams(): void {
     if (!this.params.buyer) {
       throw new Error('Escrow builder requires buyer address. Call between() first.')
@@ -449,6 +459,11 @@ class ChannelBuilder {
     return this
   }
 
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
+
   private validateParams(): void {
     if (!this.params.name) {
       throw new Error('Channel builder requires name. Call create() first.')
@@ -547,6 +562,11 @@ class MarketplaceBuilder {
     this.module.debug()
     return this
   }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
 }
 
 /**
@@ -623,6 +643,11 @@ class ServiceBuilder {
     const address = `service_${this.params.agentAddress}_${this.params.title}` as Address
     return { address, signature }
   }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
 }
 
 /**
@@ -694,6 +719,11 @@ class JobBuilder {
     
     const address = `job_${this.params.signer!.address}_${this.params.title}` as Address
     return { address, signature }
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
   }
 }
 
@@ -768,6 +798,11 @@ class AuctionBuilder {
     const address = `auction_${this.params.serviceListingAddress}` as Address
     return { address, signature }
   }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
 }
 
 /**
@@ -826,6 +861,11 @@ class GovernanceBuilder {
 
   debug(): this {
     this.module.debug()
+    return this
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
     return this
   }
 }
@@ -898,6 +938,11 @@ class ProposalBuilder {
     const address = `proposal_${this.params.signer!.address}_${this.params.title}` as Address
     return { address, signature }
   }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
 }
 
 /**
@@ -946,6 +991,11 @@ class Token2022Builder {
 
   debug(): this {
     this.module.debug()
+    return this
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
     return this
   }
 }
@@ -1034,6 +1084,7 @@ class MintBuilder {
   async execute(): Promise<{ address: Address; signature: string }> {
     this.validateParams()
     
+    // ... implementation ...
     let signature: string
     
     // Determine which creation method to use based on enabled features
@@ -1091,6 +1142,11 @@ class MintBuilder {
     const address = `mint_${this.params.agentAddress}_${this.params.decimals}` as Address
     return { address, signature }
   }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
 }
 
 /**
@@ -1128,8 +1184,5 @@ export function lamportsToSol(lamports: bigint): number {
   return Number(lamports) / 1_000_000_000
 }
 
-// Named export for explicit imports
-export { GhostSpeak as GhostSpeakClient }
-
 // Default export for easy importing
-export default GhostSpeak
+export default GhostSpeakClient

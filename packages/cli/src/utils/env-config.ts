@@ -37,7 +37,7 @@ function loadEnvFiles() {
   for (const envPath of envLocations) {
     if (existsSync(envPath)) {
       config({ path: envPath });
-      console.debug(`Loaded environment from: ${envPath}`);
+      // Env loaded silently
       break;
     }
   }
@@ -48,7 +48,7 @@ loadEnvFiles();
 export interface EnvironmentConfig {
   network: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet';
   rpcUrl: string;
-  programId: Address;
+  programId: Address | null;
   walletPath: string;
   usdcMint: Address;
   debug: boolean;
@@ -70,17 +70,21 @@ function getCurrentNetwork(): 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
 
 /**
  * Get program ID for the current network using July 2025 patterns
+ * Returns null if not configured (for graceful CLI startup)
  */
-function getProgramId(): Address {
+function getProgramId(): Address | null {
   const network = getCurrentNetwork();
   let programIdStr: string | undefined;
+  
+  // Default devnet program ID (deployed GhostSpeak program)
+  const DEFAULT_DEVNET_PROGRAM_ID = 'GHSTSPKUhJAMv3j79AFyPoYjyPHaSDe65bE8F6yEhV8s';
   
   switch (network) {
     case 'mainnet-beta':
       programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_MAINNET;
       break;
     case 'devnet':
-      programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_DEVNET;
+      programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_DEVNET ?? DEFAULT_DEVNET_PROGRAM_ID;
       break;
     case 'testnet':
       programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_TESTNET;
@@ -91,13 +95,15 @@ function getProgramId(): Address {
   }
   
   if (!programIdStr) {
-    throw new Error(`Program ID not configured for network: ${network}`);
+    // Return null for graceful handling - some CLI commands don't need the program
+    return null;
   }
   
   try {
     return address(programIdStr);
   } catch (error) {
-    throw new Error(`Invalid program ID for ${network}: ${programIdStr}`);
+    console.warn(`Invalid program ID for ${network}: ${programIdStr}`);
+    return null;
   }
 }
 
@@ -175,5 +181,19 @@ export function validateEnvironmentConfig(config: EnvironmentConfig): void {
   }
 }
 
-// Export a singleton instance
-export const envConfig = loadEnvironmentConfig();
+// Lazy-loaded configuration to prevent startup crashes
+let _envConfig: EnvironmentConfig | null = null;
+
+export function getEnvConfig(): EnvironmentConfig {
+  if (!_envConfig) {
+    _envConfig = loadEnvironmentConfig();
+  }
+  return _envConfig;
+}
+
+// For backwards compatibility - lazy getter
+export const envConfig: EnvironmentConfig = new Proxy({} as EnvironmentConfig, {
+  get(_target, prop) {
+    return getEnvConfig()[prop as keyof EnvironmentConfig];
+  }
+});

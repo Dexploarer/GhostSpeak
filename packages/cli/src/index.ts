@@ -33,7 +33,7 @@ import { bootstrapServices } from './core/bootstrap.js'
 // ASCII art banner
 function showBanner(version: string) {
   console.log(
-    chalk.cyan(
+    chalk.yellow(
       figlet.textSync('GhostSpeak', {
         font: 'Small',
         horizontalLayout: 'default',
@@ -93,10 +93,10 @@ async function main() {
     if (shouldTriggerOnboarding && process.argv.length === 2) {
       console.log(chalk.yellow('👋 Welcome to GhostSpeak! It looks like this is your first time.'))
       console.log(chalk.cyan('\nQuick Start Options:'))
-      console.log(chalk.gray('  • Run'), chalk.bold.white('gs quickstart'), chalk.gray('for complete guided setup'))
-      console.log(chalk.gray('  • Run'), chalk.bold.white('gs onboard'), chalk.gray('for interactive onboarding'))
-      console.log(chalk.gray('  • Run'), chalk.bold.white('gs -i'), chalk.gray('for interactive menu mode'))
-      console.log(chalk.gray('  • Run'), chalk.bold.white('gs help getting-started'), chalk.gray('for help documentation\n'))
+      console.log(chalk.gray('  • Run'), chalk.bold.white('ghost quickstart'), chalk.gray('for complete guided setup'))
+      console.log(chalk.gray('  • Run'), chalk.bold.white('ghost onboard'), chalk.gray('for interactive onboarding'))
+      console.log(chalk.gray('  • Run'), chalk.bold.white('ghost -i'), chalk.gray('for interactive menu mode'))
+      console.log(chalk.gray('  • Run'), chalk.bold.white('ghost help getting-started'), chalk.gray('for help documentation\n'))
     }
     
     // Check for updates in background

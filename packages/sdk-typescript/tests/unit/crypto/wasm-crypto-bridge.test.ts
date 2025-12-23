@@ -106,6 +106,9 @@ describe('WASM Crypto Bridge', () => {
         }))
       }
       
+      // Ensure it appears available
+      ;(globalThis as any).__WASM_MOCK__.is_wasm_available.mockReturnValue(true)
+      
       // First call - starts initialization
       const promise1 = initializeWasmCrypto()
       
@@ -114,6 +117,9 @@ describe('WASM Crypto Bridge', () => {
       
       // Third call for good measure
       const promise3 = initializeWasmCrypto()
+      
+      expect(promise1).toBe(promise2)
+      expect(promise2).toBe(promise3)
       
       // All should resolve to the same value
       const [result1, result2, result3] = await Promise.all([promise1, promise2, promise3])
@@ -138,7 +144,16 @@ describe('WASM Crypto Bridge', () => {
 
     it('should return engine after successful initialization', async () => {
       // Ensure mock is set up
-      ;(globalThis as any).__WASM_MOCK__ = mockWasmModule()
+      // Ensure mock is set up with utils
+      const mockModule = mockWasmModule()
+      mockModule.WasmCryptoUtils = {
+        get_version_info: vi.fn().mockReturnValue({
+          version: '1.0.0',
+          simd_enabled: true
+        }),
+        benchmark_scalar_mult: vi.fn().mockReturnValue(100)
+      }
+      ;(globalThis as any).__WASM_MOCK__ = mockModule
       
       await initializeWasmCrypto()
       const engine = getWasmEngine()
@@ -276,10 +291,17 @@ describe('WASM Crypto Bridge', () => {
         { commitment: new Uint8Array(32), handle: new Uint8Array(32) }
       ])
       
-      mockModule.WasmElGamalEngine = vi.fn().mockImplementation(() => ({
-        ...mockModule.WasmElGamalEngine(),
-        batch_encrypt: batchEncryptSpy
-      }))
+      
+      // Override mock for this test
+      const engineMock = {
+        encrypt: vi.fn(),
+        batch_encrypt: batchEncryptSpy,
+        generate_range_proof: vi.fn(),
+        batch_generate_range_proof: vi.fn(), 
+        get_performance_info: vi.fn(),
+        free: vi.fn()
+      }
+      mockModule.WasmElGamalEngine = vi.fn().mockImplementation(() => engineMock)
       
       ;(globalThis as any).__WASM_MOCK__ = mockModule
       
@@ -294,8 +316,9 @@ describe('WASM Crypto Bridge', () => {
 
     it('should handle batch encryption failure gracefully', async () => {
       const mockModule = mockWasmModule()
+      const baseEngine = mockModule.WasmElGamalEngine()
       mockModule.WasmElGamalEngine = vi.fn().mockImplementation(() => ({
-        ...mockModule.WasmElGamalEngine(),
+        ...baseEngine,
         batch_encrypt: vi.fn().mockImplementation(() => {
           throw new Error('Batch failed')
         })
@@ -401,8 +424,9 @@ describe('WASM Crypto Bridge', () => {
         { proof: new Uint8Array(674), commitment: new Uint8Array(32) }
       ])
       
+      const baseEngine = mockModule.WasmElGamalEngine()
       mockModule.WasmElGamalEngine = vi.fn().mockImplementation(() => ({
-        ...mockModule.WasmElGamalEngine(),
+        ...baseEngine,
         batch_generate_range_proofs: batchProofSpy
       }))
       
@@ -450,6 +474,10 @@ describe('WASM Crypto Bridge', () => {
     })
 
     it('should return null performance info when WASM unavailable', async () => {
+      // Force availablity to false
+      const mockModule = (globalThis as any).__WASM_MOCK__
+      mockModule.is_wasm_available.mockReturnValue(false)
+
       const perfInfo = await getCryptoPerformanceInfo()
       
       expect(perfInfo.isAvailable).toBe(false)
@@ -551,10 +579,9 @@ describe('WASM Crypto Bridge', () => {
 
   describe('Auto-initialization', () => {
     it('should auto-initialize on module import', async () => {
-      // The module auto-initializes when imported
-      // We can't easily test this without resetting the entire module system
-      // But we can verify it doesn't throw
-      expect(() => require('../../../src/utils/wasm-crypto-bridge')).not.toThrow()
+      // We can't easily test this without resetting the entire module state and mocks
+      // But we can verify it doesn't throw when imported dynamically
+      await expect(import('../../../src/utils/wasm-crypto-bridge')).resolves.not.toThrow()
     })
   })
 })

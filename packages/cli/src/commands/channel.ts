@@ -168,8 +168,8 @@ channelCommand
           `${chalk.gray('Signature:')} ${signature}\n` +
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
           `${chalk.yellow('Next Steps:')}\n` +
-          `• View your channels: ${chalk.cyan('gs channel list --mine')}\n` +
-          `• Send a message: ${chalk.cyan('gs channel send')}\n` +
+          `• View your channels: ${chalk.cyan('ghost channel list --mine')}\n` +
+          `• Send a message: ${chalk.cyan('ghost channel send')}\n` +
           `• Share channel with agents for collaboration`
         )
 
@@ -213,8 +213,8 @@ channelCommand
       if (channels.length === 0) {
         outro(
           `${chalk.yellow('No channels found')}\n\n` +
-          `${chalk.gray('• Create a channel:')} ${chalk.cyan('gs channel create')}\n` +
-          `${chalk.gray('• Join public channels:')} ${chalk.cyan('gs channel list --public')}`
+          `${chalk.gray('• Create a channel:')} ${chalk.cyan('ghost channel create')}\n` +
+          `${chalk.gray('• Join public channels:')} ${chalk.cyan('ghost channel list --public')}`
         )
         return
       }
@@ -242,9 +242,9 @@ channelCommand
 
       outro(
         `${chalk.yellow('💡 Commands:')}\n` +
-        `${chalk.cyan('gs channel send')} - Send a message to a channel\n` +
-        `${chalk.cyan('gs channel create')} - Create a new channel\n` +
-        `${chalk.cyan('gs channel list --mine')} - Show your channels`
+        `${chalk.cyan('ghost channel send')} - Send a message to a channel\n` +
+        `${chalk.cyan('ghost channel create')} - Create a new channel\n` +
+        `${chalk.cyan('ghost channel list --mine')} - Show your channels`
       )
 
     } catch (error) {
@@ -276,8 +276,8 @@ channelCommand
       if (channels.length === 0) {
         outro(
           `${chalk.yellow('No channels found')}\n\n` +
-          `${chalk.gray('• Create a channel:')} ${chalk.cyan('gs channel create')}\n` +
-          `${chalk.gray('• Join public channels:')} ${chalk.cyan('gs channel list --public')}`
+          `${chalk.gray('• Create a channel:')} ${chalk.cyan('ghost channel create')}\n` +
+          `${chalk.gray('• Join public channels:')} ${chalk.cyan('ghost channel list --public')}`
         )
         return
       }

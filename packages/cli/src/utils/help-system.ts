@@ -36,33 +36,33 @@ export interface HelpTopic {
 }
 
 const HELP_TOPICS: Record<string, HelpTopic> = {
-  'getting-started': {
-    title: '🚀 Getting Started',
+  'quickstart': {
+    title: '🚀 Quick Start',
     description: 'Essential commands for new users',
     commands: [
       {
-        command: 'gs quickstart',
+        command: 'ghost quickstart',
         description: 'Complete guided setup',
-        example: 'gs quickstart',
+        example: 'ghost quickstart',
         aliases: ['qs', 'start']
       },
       {
-        command: 'gs --interactive',
+        command: 'ghost --interactive',
         description: 'Interactive menu mode',
-        example: 'gs --interactive',
+        example: 'ghost --interactive',
         aliases: ['i', 'menu']
       },
       {
-        command: 'gs config setup',
+        command: 'ghost config setup',
         description: 'Configure CLI settings',
-        example: 'gs config setup',
+        example: 'ghost config setup',
         aliases: ['cfg', 'configure']
       }
     ],
     tips: [
       'Run the quickstart for a guided setup experience',
       'Use interactive mode if you prefer menus over commands',
-      'Check your setup status anytime with "gs status"'
+      'Check your setup status anytime with "ghost status"'
     ],
     relatedTopics: ['wallet', 'agent']
   },
@@ -72,27 +72,27 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     description: 'Manage your Solana wallets and SOL balance',
     commands: [
       {
-        command: 'gs wallet create',
+        command: 'ghost wallet create',
         description: 'Create a new wallet',
-        example: 'gs wallet create MyWallet',
+        example: 'ghost wallet create MyWallet',
         aliases: ['wc', 'new-wallet']
       },
       {
-        command: 'gs wallet list',
+        command: 'ghost wallet list',
         description: 'List all your wallets',
-        example: 'gs wallet list',
+        example: 'ghost wallet list',
         aliases: ['wl', 'wallets']
       },
       {
-        command: 'gs wallet balance',
+        command: 'ghost wallet balance',
         description: 'Check wallet balance',
-        example: 'gs wallet balance',
+        example: 'ghost wallet balance',
         aliases: ['w', 'balance', 'bal']
       },
       {
-        command: 'gs faucet',
+        command: 'ghost faucet',
         description: 'Get free SOL (devnet only)',
-        example: 'gs faucet --save',
+        example: 'ghost faucet --save',
         aliases: ['f', 'fund', 'airdrop']
       }
     ],
@@ -110,21 +110,21 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     description: 'Register and manage your AI agents',
     commands: [
       {
-        command: 'gs agent register',
+        command: 'ghost agent register',
         description: 'Register a new AI agent',
-        example: 'gs agent register',
+        example: 'ghost agent register',
         aliases: ['a r', 'ar', 'register']
       },
       {
-        command: 'gs agent list',
+        command: 'ghost agent list',
         description: 'List your registered agents',
-        example: 'gs agent list',
+        example: 'ghost agent list',
         aliases: ['a l', 'al', 'agents']
       },
       {
-        command: 'gs agent status',
+        command: 'ghost agent status',
         description: 'Check agent status and metrics',
-        example: 'gs agent status <agent-id>',
+        example: 'ghost agent status <agent-id>',
         aliases: ['a s', 'as']
       }
     ],
@@ -142,27 +142,27 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     description: 'Browse, purchase, and list services',
     commands: [
       {
-        command: 'gs marketplace list',
+        command: 'ghost marketplace list',
         description: 'Browse available services',
-        example: 'gs marketplace list --category development',
+        example: 'ghost marketplace list --category development',
         aliases: ['m', 'market', 'browse']
       },
       {
-        command: 'gs marketplace search',
+        command: 'ghost marketplace search',
         description: 'Search for services',
-        example: 'gs marketplace search "data analysis"',
+        example: 'ghost marketplace search "data analysis"',
         aliases: ['m s', 'ms', 'search']
       },
       {
-        command: 'gs marketplace create',
+        command: 'ghost marketplace create',
         description: 'Create a service listing',
-        example: 'gs marketplace create',
+        example: 'ghost marketplace create',
         aliases: ['m c', 'mc', 'list-service']
       },
       {
-        command: 'gs marketplace purchase',
+        command: 'ghost marketplace purchase',
         description: 'Purchase a service',
-        example: 'gs marketplace purchase <listing-id>',
+        example: 'ghost marketplace purchase <listing-id>',
         aliases: ['buy', 'purchase']
       }
     ],
@@ -180,21 +180,21 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     description: 'Secure payment management',
     commands: [
       {
-        command: 'gs escrow create',
+        command: 'ghost escrow create',
         description: 'Create an escrow payment',
-        example: 'gs escrow create',
+        example: 'ghost escrow create',
         aliases: ['e c', 'ec', 'create-escrow']
       },
       {
-        command: 'gs escrow list',
+        command: 'ghost escrow list',
         description: 'List your escrow payments',
-        example: 'gs escrow list',
+        example: 'ghost escrow list',
         aliases: ['e', 'escrows']
       },
       {
-        command: 'gs escrow release',
+        command: 'ghost escrow release',
         description: 'Release funds from escrow',
-        example: 'gs escrow release <escrow-id>',
+        example: 'ghost escrow release <escrow-id>',
         aliases: ['e r', 'er', 'release']
       }
     ],
@@ -212,15 +212,15 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     description: 'Monitor and manage blockchain transactions',
     commands: [
       {
-        command: 'gs transaction history',
+        command: 'ghost transaction history',
         description: 'View recent transactions',
-        example: 'gs transaction history --limit 10',
+        example: 'ghost transaction history --limit 10',
         aliases: ['tx', 'transactions']
       },
       {
-        command: 'gs wallet balance',
+        command: 'ghost wallet balance',
         description: 'Check current balance',
-        example: 'gs wallet balance',
+        example: 'ghost wallet balance',
         aliases: ['balance', 'bal']
       }
     ],
@@ -239,7 +239,7 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     commands: [],
     tips: [
       'Use natural language: "create agent", "check balance"',
-      'Short forms: "gs a r" for "gs agent register"',
+      'Short forms: "ghost a r" for "ghost agent register"',
       'Tab completion works for most commands',
       'Use --interactive for a guided menu experience'
     ]
@@ -250,19 +250,19 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
     description: 'Common issues and solutions',
     commands: [
       {
-        command: 'gs diagnose',
+        command: 'ghost diagnose',
         description: 'Diagnose common issues',
-        example: 'gs diagnose'
+        example: 'ghost diagnose'
       },
       {
-        command: 'gs config show',
+        command: 'ghost config show',
         description: 'Show current configuration',
-        example: 'gs config show'
+        example: 'ghost config show'
       },
       {
-        command: 'gs update',
+        command: 'ghost update',
         description: 'Update to latest version',
-        example: 'gs update'
+        example: 'ghost update'
       }
     ],
     tips: [
@@ -351,7 +351,7 @@ export class HelpSystem {
     
     if (helpTopic.relatedTopics && helpTopic.relatedTopics.length > 0) {
       console.log(chalk.bold('🔗 Related Topics:'))
-      const related = helpTopic.relatedTopics.map(t => `gs help ${t}`).join(', ')
+      const related = helpTopic.relatedTopics.map(t => `ghost help ${t}`).join(', ')
       console.log(chalk.gray(`  ${related}`))
       console.log('')
     }
@@ -364,11 +364,11 @@ export class HelpSystem {
     console.log(chalk.bold('\n📋 Available Help Topics:\n'))
     
     Object.entries(HELP_TOPICS).forEach(([key, topic]) => {
-      console.log(`  ${chalk.cyan(('gs help ' + key).padEnd(25))} ${topic.description}`)
+      console.log(`  ${chalk.cyan(('ghost help ' + key).padEnd(25))} ${topic.description}`)
     })
     
     console.log('')
-    console.log(chalk.gray('Example: gs help wallet'))
+    console.log(chalk.gray('Example: ghost help wallet'))
   }
   
   /**
@@ -388,7 +388,7 @@ export class HelpSystem {
     results.forEach(result => {
       console.log(chalk.cyan(`${result.topic}: ${result.title}`))
       console.log(chalk.gray(`  ${result.description}`))
-      console.log(chalk.gray(`  Command: gs help ${result.topic}`))
+      console.log(chalk.gray(`  Command: ghost help ${result.topic}`))
       console.log('')
     })
   }
@@ -437,9 +437,9 @@ export class HelpSystem {
     console.log('')
     console.log(chalk.bold('🚀 Quick Start:'))
     console.log('')
-    console.log(`  ${chalk.cyan('gs quickstart'.padEnd(20))} Complete guided setup`)
-    console.log(`  ${chalk.cyan('gs --interactive'.padEnd(20))} Interactive menu mode`)
-    console.log(`  ${chalk.cyan('gs help getting-started'.padEnd(20))} Detailed getting started guide`)
+    console.log(`  ${chalk.cyan('ghost quickstart'.padEnd(20))} Complete guided setup`)
+    console.log(`  ${chalk.cyan('ghost --interactive'.padEnd(20))} Interactive menu mode`)
+    console.log(`  ${chalk.cyan('ghost help getting-started'.padEnd(20))} Detailed getting started guide`)
     console.log('')
   }
   
@@ -455,9 +455,9 @@ export class HelpSystem {
     console.log('')
     console.log(chalk.bold('Wallet Commands:'))
     console.log('')
-    console.log(`  ${chalk.cyan('gs wallet create'.padEnd(20))} Create a new wallet`)
-    console.log(`  ${chalk.cyan('gs wallet import'.padEnd(20))} Import existing wallet`)
-    console.log(`  ${chalk.cyan('gs help wallet'.padEnd(20))} Complete wallet guide`)
+    console.log(`  ${chalk.cyan('ghost wallet create'.padEnd(20))} Create a new wallet`)
+    console.log(`  ${chalk.cyan('ghost wallet import'.padEnd(20))} Import existing wallet`)
+    console.log(`  ${chalk.cyan('ghost help wallet'.padEnd(20))} Complete wallet guide`)
     console.log('')
   }
   
@@ -473,8 +473,8 @@ export class HelpSystem {
     console.log('')
     console.log(chalk.bold('Funding Commands:'))
     console.log('')
-    console.log(`  ${chalk.cyan('gs faucet --save'.padEnd(20))} Get free SOL (devnet)`)
-    console.log(`  ${chalk.cyan('gs wallet balance'.padEnd(20))} Check current balance`)
+    console.log(`  ${chalk.cyan('ghost faucet --save'.padEnd(20))} Get free SOL (devnet)`)
+    console.log(`  ${chalk.cyan('ghost wallet balance'.padEnd(20))} Check current balance`)
     console.log('')
   }
   
@@ -490,9 +490,9 @@ export class HelpSystem {
     console.log('')
     console.log(chalk.bold('Agent Commands:'))
     console.log('')
-    console.log(`  ${chalk.cyan('gs agent register'.padEnd(20))} Register new agent`)
-    console.log(`  ${chalk.cyan('gs agent list'.padEnd(20))} List your agents`)
-    console.log(`  ${chalk.cyan('gs help agent'.padEnd(20))} Complete agent guide`)
+    console.log(`  ${chalk.cyan('ghost agent register'.padEnd(20))} Register new agent`)
+    console.log(`  ${chalk.cyan('ghost agent list'.padEnd(20))} List your agents`)
+    console.log(`  ${chalk.cyan('ghost help agent'.padEnd(20))} Complete agent guide`)
     console.log('')
   }
   
@@ -504,11 +504,11 @@ export class HelpSystem {
     console.log('')
     
     const commonCommands = [
-      { cmd: 'gs marketplace list', desc: 'Browse services' },
-      { cmd: 'gs escrow create', desc: 'Create secure payment' },
-      { cmd: 'gs agent status', desc: 'Check agent performance' },
-      { cmd: 'gs wallet balance', desc: 'Check SOL balance' },
-      { cmd: 'gs --interactive', desc: 'Interactive menu' }
+      { cmd: 'ghost marketplace list', desc: 'Browse services' },
+      { cmd: 'ghost escrow create', desc: 'Create secure payment' },
+      { cmd: 'ghost agent status', desc: 'Check agent performance' },
+      { cmd: 'ghost wallet balance', desc: 'Check SOL balance' },
+      { cmd: 'ghost --interactive', desc: 'Interactive menu' }
     ]
     
     commonCommands.forEach(({ cmd, desc }) => {
@@ -542,9 +542,9 @@ export class HelpSystem {
     console.log('')
     console.log(chalk.gray('If you\'re experiencing issues, try:'))
     console.log('')
-    console.log(`  ${chalk.cyan('gs diagnose'.padEnd(20))} Run diagnostic checks`)
-    console.log(`  ${chalk.cyan('gs config show'.padEnd(20))} Verify configuration`)
-    console.log(`  ${chalk.cyan('gs help troubleshooting'.padEnd(20))} Troubleshooting guide`)
+    console.log(`  ${chalk.cyan('ghost diagnose'.padEnd(20))} Run diagnostic checks`)
+    console.log(`  ${chalk.cyan('ghost config show'.padEnd(20))} Verify configuration`)
+    console.log(`  ${chalk.cyan('ghost help troubleshooting'.padEnd(20))} Troubleshooting guide`)
     console.log('')
   }
   
@@ -556,10 +556,10 @@ export class HelpSystem {
     console.log('')
     console.log(chalk.bold('⚡ Quick Reference:'))
     console.log('')
-    console.log(`  ${chalk.gray('Get help for any command:')} ${chalk.cyan('gs <command> --help')}`)
-    console.log(`  ${chalk.gray('Interactive mode:')} ${chalk.cyan('gs --interactive')}`)
-    console.log(`  ${chalk.gray('View all help topics:')} ${chalk.cyan('gs help')}`)
-    console.log(`  ${chalk.gray('Search help:')} ${chalk.cyan('gs help search <query>')}`)
+    console.log(`  ${chalk.gray('Get help for any command:')} ${chalk.cyan('ghost <command> --help')}`)
+    console.log(`  ${chalk.gray('Interactive mode:')} ${chalk.cyan('ghost --interactive')}`)
+    console.log(`  ${chalk.gray('View all help topics:')} ${chalk.cyan('ghost help')}`)
+    console.log(`  ${chalk.gray('Search help:')} ${chalk.cyan('ghost help search <query>')}`)
     console.log('')
     console.log(chalk.gray('💡 Tip: Use tab completion and command shortcuts to work faster!'))
     console.log('')
@@ -596,20 +596,20 @@ export class HelpSystem {
     const suggestions = []
     
     if (this.context.recentCommands.includes('agent register')) {
-      suggestions.push('Create a service listing: gs marketplace create')
+      suggestions.push('Create a service listing: ghost marketplace create')
     }
     
     if (this.context.recentCommands.includes('marketplace create')) {
-      suggestions.push('Check your listings: gs marketplace list --mine')
+      suggestions.push('Check your listings: ghost marketplace list --mine')
     }
     
     if (this.context.recentCommands.includes('escrow create')) {
-      suggestions.push('Monitor escrow status: gs escrow list')
+      suggestions.push('Monitor escrow status: ghost escrow list')
     }
     
     if (suggestions.length === 0) {
-      suggestions.push('Explore the marketplace: gs marketplace list')
-      suggestions.push('Check your agent status: gs agent list')
+      suggestions.push('Explore the marketplace: ghost marketplace list')
+      suggestions.push('Check your agent status: ghost agent list')
     }
     
     return suggestions

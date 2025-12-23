@@ -100,6 +100,15 @@ export interface IAgentService {
   update(agentId: string, updates: UpdateAgentParams): Promise<Agent>
   deactivate(agentId: string): Promise<void>
   getAnalytics(agentId: string): Promise<AgentAnalytics>
+  configureX402(agentId: string, params: X402ConfigParams): Promise<Agent>
+}
+
+export interface X402ConfigParams {
+  enabled: boolean
+  pricePerCall: bigint
+  acceptedTokens: Address[]
+  paymentAddress: Address
+  serviceEndpoint: string
 }
 
 export interface IMarketplaceService {

@@ -70,7 +70,7 @@ quickstartCommand
       const s = spinner()
       s.start('Generating secure wallet...')
       
-      const walletResult = await generateNewWallet('main')
+      const walletResult = await generateNewWallet()
       wallet = walletResult
       
       s.stop('✅ Wallet generated and saved')
@@ -454,13 +454,13 @@ quickstartCommand
       // Directly execute the new user flow
       const newCommand = quickstartCommand.commands.find(cmd => cmd.name() === 'new')
       if (newCommand) {
-        await newCommand.parseAsync(['node', 'quickstart', 'new'], { from: 'node' })
+        await newCommand.parseAsync(['node', 'quickstart'], { from: 'node' })
       }
     } else if (choice === 'existing') {
       // Directly execute the existing user flow
       const existingCommand = quickstartCommand.commands.find(cmd => cmd.name() === 'existing')
       if (existingCommand) {
-        await existingCommand.parseAsync(['node', 'quickstart', 'existing'], { from: 'node' })
+        await existingCommand.parseAsync(['node', 'quickstart'], { from: 'node' })
       }
     } else {
       // Manual setup - use existing config setup

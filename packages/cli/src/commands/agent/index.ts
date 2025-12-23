@@ -20,6 +20,7 @@ import { registerVerifyCommand } from './verify.js'
 import { registerAnalyticsCommand } from './analytics.js'
 import { registerCredentialsCommand } from './credentials.js'
 import { registerUuidCommand } from './uuid.js'
+import { registerX402Command } from './x402.js'
 
 // Register all subcommands
 registerRegisterCommand(agentCommand)
@@ -31,6 +32,7 @@ registerVerifyCommand(agentCommand)
 registerAnalyticsCommand(agentCommand)
 registerCredentialsCommand(agentCommand)
 registerUuidCommand(agentCommand)
+registerX402Command(agentCommand)
 
 // Set up help formatting
 agentCommand.configureHelp({
@@ -43,35 +45,35 @@ agentCommand.addHelpText('after', `
 ${chalk.cyan('🤖 AI Agent Management Commands')}
 
 ${chalk.yellow('Getting Started:')}
-  $ gs agent register                    # Register a new AI agent with guided setup
-  $ gs agent status                      # Check your agents' current status
-  $ gs agent list                        # View all registered agents
+  $ ghost agent register                    # Register a new AI agent with guided setup
+  $ ghost agent status                      # Check your agents' current status
+  $ ghost agent list                        # View all registered agents
 
 ${chalk.yellow('Agent Operations:')}
-  $ gs agent update --agent-id <id>      # Update agent details and capabilities
-  $ gs agent search                      # Find agents by capabilities
-  $ gs agent analytics --mine            # View your agent performance metrics
-  $ gs agent verify --agent <id>         # Verify agent (admin only)
+  $ ghost agent update --agent-id <id>      # Update agent details and capabilities
+  $ ghost agent search                      # Find agents by capabilities
+  $ ghost agent analytics --mine            # View your agent performance metrics
+  $ ghost agent verify --agent <id>         # Verify agent (admin only)
 
 ${chalk.yellow('Management:')}
-  $ gs agent credentials                 # Backup/restore agent credentials
-  $ gs agent uuid <uuid>                 # Look up agent by UUID
+  $ ghost agent credentials                 # Backup/restore agent credentials
+  $ ghost agent uuid <uuid>                 # Look up agent by UUID
 
 ${chalk.cyan('Quick Shortcuts:')}
-  $ gs a r                              # agent register
-  $ gs a l                              # agent list  
-  $ gs a s                              # agent status
-  $ gs a u                              # agent update
+  $ ghost a r                              # agent register
+  $ ghost a l                              # agent list  
+  $ ghost a s                              # agent status
+  $ ghost a u                              # agent update
 
 ${chalk.gray('💡 Tips:')}
-  ${chalk.gray('• Start with')} gs agent register ${chalk.gray('to create your first agent')}
-  ${chalk.gray('• Use')} gs agent status ${chalk.gray('to monitor agent health and activity')}
+  ${chalk.gray('• Start with')} ghost agent register ${chalk.gray('to create your first agent')}
+  ${chalk.gray('• Use')} ghost agent status ${chalk.gray('to monitor agent health and activity')}
   ${chalk.gray('• Agents can have multiple capabilities for broader marketplace appeal')}
   ${chalk.gray('• Keep your agent credentials secure - they cannot be recovered if lost')}
 
 ${chalk.blue('🔗 Related Commands:')}
-  $ gs marketplace create                # List your agent in the marketplace
-  $ gs wallet list                       # Manage agent owner wallets
+  $ ghost marketplace create                # List your agent in the marketplace
+  $ ghost wallet list                       # Manage agent owner wallets
 `)
 
 export default agentCommand

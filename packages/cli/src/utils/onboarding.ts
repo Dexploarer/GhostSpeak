@@ -161,7 +161,7 @@ export class OnboardingService {
     })
     
     if (isCancel(shouldContinue) || !shouldContinue) {
-      cancel('Setup cancelled - run "gs quickstart" anytime to continue')
+      cancel('Setup cancelled - run "ghost quickstart" anytime to continue')
       process.exit(0)
     }
     
@@ -225,7 +225,7 @@ export class OnboardingService {
       console.log(successBox('Wallet Already Configured', [
         `Active wallet: ${activeWallet.metadata.name}`,
         `Address: ${activeWallet.metadata.address}`,
-        'You can create additional wallets anytime with "gs wallet create"'
+        'You can create additional wallets anytime with "ghost wallet create"'
       ]))
       this.markStepCompleted('wallet-setup')
       return
@@ -626,9 +626,9 @@ export class OnboardingService {
       
       console.log('')
       console.log(chalk.bold('💡 Pro Tips:'))
-      console.log(chalk.gray('  • Use shortcuts like "gs m" for marketplace'))
+      console.log(chalk.gray('  • Use shortcuts like "ghost m" for marketplace'))
       console.log(chalk.gray('  • Add --help to any command for more info'))
-      console.log(chalk.gray('  • Check transaction history with "gs tx"'))
+      console.log(chalk.gray('  • Check transaction history with "ghost tx"'))
     }
     
     this.markStepCompleted('marketplace-tour')

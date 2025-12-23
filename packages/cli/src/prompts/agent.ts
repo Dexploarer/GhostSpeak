@@ -100,19 +100,36 @@ export async function registerAgentPrompts(options: { name?: string; description
     process.exit(0)
   }
 
-  // Merkle Tree Address
-  const merkleTree = await text({
-    message: 'Enter Merkle Tree Address (for compressed agent):',
-    placeholder: 'Base58 address...',
-    validate: (value) => {
-      if (!value) return 'Merkle Tree address is required'
-      if (value.length < 32) return 'Invalid address length'
-    }
+  // Agent Type Selection
+  const agentType = await select({
+    message: 'Select Agent Type:',
+    options: [
+      { value: 'standard', label: 'Standard Agent', hint: 'Best for most use cases (Mutable, On-chain Reputation)' },
+      { value: 'compressed', label: 'Compressed Agent', hint: 'Lower cost, requires Merkle Tree (x402 Optimized)' }
+    ]
   })
 
-  if (isCancel(merkleTree)) {
+  if (isCancel(agentType)) {
     cancel('Agent registration cancelled')
     process.exit(0)
+  }
+
+  // Merkle Tree Address (only if compressed)
+  let merkleTree: string | undefined
+  if (agentType === 'compressed') {
+    merkleTree = await text({
+      message: 'Enter Merkle Tree Address:',
+      placeholder: 'Base58 address...',
+      validate: (value) => {
+        if (!value) return 'Merkle Tree address is required for compressed agents'
+        if (value.length < 32) return 'Invalid address length'
+      }
+    }) as string
+
+    if (isCancel(merkleTree)) {
+      cancel('Agent registration cancelled')
+      process.exit(0)
+    }
   }
 
   // Metadata URI (optional)

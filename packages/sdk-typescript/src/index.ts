@@ -254,17 +254,11 @@ export {
   getProcessPartialRefundInstruction,
   getCreateEnhancedChannelInstructionAsync,
   getSendEnhancedMessageInstructionAsync,
+
   getJoinChannelInstruction,
   getLeaveChannelInstruction,
   getUpdateChannelSettingsInstruction,
   getAddMessageReactionInstruction,
-  // Account decoders
-  getAgentDecoder,
-  getEscrowDecoder,
-  getChannelDecoder,
-  getMessageDecoder,
-  getWorkOrderDecoder,
-  getWorkDeliveryDecoder,
   // Work order instructions
   getCreateWorkOrderInstruction,
   getSubmitWorkDeliveryInstruction,
@@ -281,6 +275,16 @@ export {
   // Other generated utilities
   GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS
 } from './generated/index.js'
+
+// Account decoders (exported specifically to avoid conflict with types)
+export {
+  getAgentDecoder,
+  getEscrowDecoder,
+  getChannelDecoder,
+  getMessageDecoder,
+  getWorkOrderDecoder,
+  getWorkDeliveryDecoder
+} from './generated/accounts/index.js'
 
 // Export program constants
 export { GHOSTSPEAK_PROGRAM_ID } from './constants/index.js'

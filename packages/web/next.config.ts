@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next'
-import path from 'path'
 
 const nextConfig: NextConfig = {
   // Note: Static export disabled - this is a dynamic web3 app with wallet connections
@@ -37,20 +36,19 @@ const nextConfig: NextConfig = {
         path: false,
         os: false,
       }
-      
+
       // Externalize native modules
       config.externals = [
         ...((config.externals as unknown[]) || []),
         'libsql',
         '@libsql/client',
-        '@libsql/darwin-arm64', 
+        '@libsql/darwin-arm64',
         '@libsql/hrana-client',
       ]
     }
-    
+
     return config
   },
 }
 
 export default nextConfig
-

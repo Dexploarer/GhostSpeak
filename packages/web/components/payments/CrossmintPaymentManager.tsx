@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { 
-  CrossmintProvider, 
-  CrossmintAuthProvider, 
-  CrossmintPaymentMethodManagement, 
-  useCrossmintAuth
-} from "@crossmint/client-sdk-react-ui"
+import {
+  CrossmintProvider,
+  CrossmintAuthProvider,
+  CrossmintPaymentMethodManagement,
+  useCrossmintAuth,
+} from '@crossmint/client-sdk-react-ui'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { AlertCircle, CheckCircle2, Loader2, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 // Define type locally since it's not exported from the package index
 interface CrossmintPaymentMethod {
   paymentMethodId: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 function PaymentManagerContent() {
@@ -35,7 +35,7 @@ function PaymentManagerContent() {
             Authenticate with Crossmint to allow your agents to autonomously process payments.
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => login()}
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
         >
@@ -48,18 +48,18 @@ function PaymentManagerContent() {
   const handlePaymentMethodSelected = async (method: CrossmintPaymentMethod) => {
     try {
       setProcessing(true)
-      console.log("Selected Payment Method:", method)
+      console.log('Selected Payment Method:', method)
 
       // 1. Create Order Intent (Mandate) via our Backend API
       const response = await fetch('/api/crossmint/order-intent', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           paymentMethodId: method.paymentMethodId,
-          jwt // Pass JWT for verification
-        })
+          jwt, // Pass JWT for verification
+        }),
       })
 
       if (!response.ok) {
@@ -67,7 +67,7 @@ function PaymentManagerContent() {
       }
 
       const orderIntent = await response.json()
-      console.log("Order Intent Created:", orderIntent)
+      console.log('Order Intent Created:', orderIntent)
 
       // 2. Verify if required (3DS)
       if (orderIntent.phase === 'requires-verification') {
@@ -80,7 +80,6 @@ function PaymentManagerContent() {
 
       setActiveMethod(method.paymentMethodId)
       toast.success('Payment method active and mandate authorized.')
-
     } catch (error) {
       console.error('Payment linking failed:', error)
       toast.error('Failed to link payment method')
@@ -95,11 +94,11 @@ function PaymentManagerContent() {
         <h3 className="text-lg font-semibold">Payment Methods</h3>
         {processing && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
       </div>
-      
+
       {/* Crossmint UI - Styled via globals.css .crossmint-wrapper */}
       <div className="crossmint-wrapper">
-        <CrossmintPaymentMethodManagement 
-          jwt={jwt} 
+        <CrossmintPaymentMethodManagement
+          jwt={jwt}
           onPaymentMethodSelected={handlePaymentMethodSelected}
         />
       </div>
@@ -109,7 +108,9 @@ function PaymentManagerContent() {
           <CheckCircle2 className="w-5 h-5 text-green-500" />
           <div className="text-sm">
             <p className="font-medium text-green-500">Agent Spending Authorized</p>
-            <p className="text-muted-foreground">Your agent can now process payments using method ending in ...{activeMethod.slice(-4)}</p>
+            <p className="text-muted-foreground">
+              Your agent can now process payments using method ending in ...{activeMethod.slice(-4)}
+            </p>
           </div>
         </div>
       )}
@@ -128,7 +129,8 @@ export function CrossmintPaymentManager() {
           <h3 className="font-semibold">Configuration Error</h3>
         </div>
         <p className="text-sm text-red-300/80">
-          Missing <code>NEXT_PUBLIC_CROSSMINT_API_KEY</code>. Please configure your environment variables.
+          Missing <code>NEXT_PUBLIC_CROSSMINT_API_KEY</code>. Please configure your environment
+          variables.
         </p>
       </GlassCard>
     )

@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Plus,
   Shield,
@@ -34,14 +33,12 @@ import {
   CheckCircle,
   Loader2,
   AlertTriangle,
-  Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Multisig } from '@/lib/queries/multisig'
 import { TransactionType, TransactionPriority } from '@/lib/queries/multisig'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import { toast } from 'sonner'
-import type { Address } from '@solana/kit'
 
 interface MultisigTransactionFlowProps {
   multisig: Multisig
@@ -129,9 +126,7 @@ export function MultisigTransactionFlow({
   const isSigner = address ? multisig.signers.includes(address) : false
   const canCreateTransaction = isOwner || isSigner
 
-  const selectedTypeOption = transactionTypeOptions.find(
-    (opt) => opt.value === transactionType
-  )
+  const selectedTypeOption = transactionTypeOptions.find((opt) => opt.value === transactionType)
 
   const handleOpen = () => {
     setStep('type')
@@ -164,7 +159,7 @@ export function MultisigTransactionFlow({
       // In production, this would create a pending transaction
       // that other signers need to approve
       await new Promise((resolve) => setTimeout(resolve, 2000))
-      
+
       toast.success('Transaction created! Waiting for other signers.')
       setIsDialogOpen(false)
       onSuccess?.()
@@ -176,15 +171,11 @@ export function MultisigTransactionFlow({
     }
   }
 
-  const shortenAddress = (addr: string) =>
-    `${addr.slice(0, 4)}...${addr.slice(-4)}`
+  const shortenAddress = (addr: string) => `${addr.slice(0, 4)}...${addr.slice(-4)}`
 
   return (
     <>
-      <Button
-        onClick={handleOpen}
-        disabled={!isConnected || !canCreateTransaction}
-      >
+      <Button onClick={handleOpen} disabled={!isConnected || !canCreateTransaction}>
         <Plus className="w-4 h-4 mr-2" />
         New Transaction
       </Button>
@@ -240,9 +231,7 @@ export function MultisigTransactionFlow({
             {/* Step 1: Select Type */}
             {step === 'type' && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">
-                  Select Transaction Type
-                </Label>
+                <Label className="text-base font-semibold">Select Transaction Type</Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {transactionTypeOptions.map((option) => {
                     const Icon = option.icon
@@ -281,9 +270,7 @@ export function MultisigTransactionFlow({
               <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                    <selectedTypeOption.icon
-                      className={cn('w-5 h-5', selectedTypeOption.color)}
-                    />
+                    <selectedTypeOption.icon className={cn('w-5 h-5', selectedTypeOption.color)} />
                   </div>
                   <div>
                     <div className="font-medium">{selectedTypeOption.label}</div>
@@ -309,9 +296,7 @@ export function MultisigTransactionFlow({
                     transactionType === TransactionType.ThresholdUpdate) && (
                     <div className="space-y-2">
                       <Label htmlFor="amount">
-                        {transactionType === TransactionType.Transfer
-                          ? 'Amount'
-                          : 'New Threshold'}
+                        {transactionType === TransactionType.Transfer ? 'Amount' : 'New Threshold'}
                       </Label>
                       <Input
                         id="amount"
@@ -373,9 +358,7 @@ export function MultisigTransactionFlow({
             {/* Step 3: Review */}
             {step === 'review' && selectedTypeOption && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">
-                  Review Transaction
-                </Label>
+                <Label className="text-base font-semibold">Review Transaction</Label>
 
                 <GlassCard className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -384,16 +367,12 @@ export function MultisigTransactionFlow({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Target</span>
-                    <span className="font-mono text-sm">
-                      {shortenAddress(targetAddress)}
-                    </span>
+                    <span className="font-mono text-sm">{shortenAddress(targetAddress)}</span>
                   </div>
                   {amount && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">
-                        {transactionType === TransactionType.Transfer
-                          ? 'Amount'
-                          : 'New Threshold'}
+                        {transactionType === TransactionType.Transfer ? 'Amount' : 'New Threshold'}
                       </span>
                       <span className="font-medium">{amount}</span>
                     </div>
@@ -402,18 +381,14 @@ export function MultisigTransactionFlow({
                     <span className="text-sm text-muted-foreground">Priority</span>
                     <Badge
                       variant="outline"
-                      className={
-                        priorityOptions.find((p) => p.value === priority)?.color
-                      }
+                      className={priorityOptions.find((p) => p.value === priority)?.color}
                     >
                       {priority}
                     </Badge>
                   </div>
                   {description && (
                     <div className="pt-2 border-t">
-                      <span className="text-sm text-muted-foreground">
-                        Description
-                      </span>
+                      <span className="text-sm text-muted-foreground">Description</span>
                       <p className="text-sm mt-1">{description}</p>
                     </div>
                   )}
@@ -427,9 +402,8 @@ export function MultisigTransactionFlow({
                         Requires {multisig.threshold} Signatures
                       </p>
                       <p className="text-muted-foreground">
-                        This transaction will require approval from{' '}
-                        {multisig.threshold} of {multisig.signers.length} signers
-                        before it can be executed.
+                        This transaction will require approval from {multisig.threshold} of{' '}
+                        {multisig.signers.length} signers before it can be executed.
                       </p>
                     </div>
                   </div>

@@ -83,10 +83,10 @@ export function RegisterAgentForm({ onSuccess }: { onSuccess?: () => void }) {
         category: data.category,
         avatar: data.avatar || undefined,
       })
-      
+
       // For now, use a data URI - in production, upload to IPFS and use the hash
       const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
-      
+
       // Generate a unique agent ID
       const agentId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 

@@ -6,12 +6,7 @@ import { PageHeader } from '@/components/dashboard/shared/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Shield,
   Plus,
@@ -23,8 +18,20 @@ import {
   Key,
   Loader2,
 } from 'lucide-react'
-import { CreateMultisigForm, MultisigCard, PendingTransactionCard, MultisigTransactionFlow } from '@/components/multisig'
-import { useMultisigs, useMultisigsAsSigner, type Multisig, TransactionStatus, TransactionType, TransactionPriority } from '@/lib/queries/multisig'
+import {
+  CreateMultisigForm,
+  MultisigCard,
+  PendingTransactionCard,
+  MultisigTransactionFlow,
+} from '@/components/multisig'
+import {
+  useMultisigs,
+  useMultisigsAsSigner,
+  type Multisig,
+  TransactionStatus,
+  TransactionType,
+  TransactionPriority,
+} from '@/lib/queries/multisig'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import type { Address } from '@solana/kit'
 
@@ -159,23 +166,30 @@ export default function MultisigPage() {
   // Calculate stats
   const totalMultisigs = displayMultisigs.length + displaySignerMultisigs.length
   const pendingTransactions = displayMultisigs.reduce(
-    (acc, m) => acc + m.pendingTransactions.filter(
-      tx => tx.status === TransactionStatus.Pending || tx.status === TransactionStatus.PartiallyApproved
-    ).length,
+    (acc, m) =>
+      acc +
+      m.pendingTransactions.filter(
+        (tx) =>
+          tx.status === TransactionStatus.Pending ||
+          tx.status === TransactionStatus.PartiallyApproved
+      ).length,
     0
   )
   const readyToExecute = displayMultisigs.reduce(
-    (acc, m) => acc + m.pendingTransactions.filter(
-      tx => tx.status === TransactionStatus.FullyApproved
-    ).length,
+    (acc, m) =>
+      acc +
+      m.pendingTransactions.filter((tx) => tx.status === TransactionStatus.FullyApproved).length,
     0
   )
   const totalSigners = displayMultisigs.reduce((acc, m) => acc + m.signers.length, 0)
 
-  const allPendingTransactions = displayMultisigs.flatMap(m => 
+  const allPendingTransactions = displayMultisigs.flatMap((m) =>
     m.pendingTransactions
-      .filter(tx => tx.status !== TransactionStatus.Executed && tx.status !== TransactionStatus.Cancelled)
-      .map(tx => ({ ...tx, multisigAddress: m.address, threshold: m.threshold }))
+      .filter(
+        (tx) =>
+          tx.status !== TransactionStatus.Executed && tx.status !== TransactionStatus.Cancelled
+      )
+      .map((tx) => ({ ...tx, multisigAddress: m.address, threshold: m.threshold }))
   )
 
   return (
@@ -241,8 +255,8 @@ export default function MultisigPage() {
             <div>
               <h3 className="font-semibold text-foreground">Wallet Not Connected</h3>
               <p className="text-sm text-muted-foreground">
-                Connect your wallet to view and manage your multisig wallets.
-                Showing demo data for preview.
+                Connect your wallet to view and manage your multisig wallets. Showing demo data for
+                preview.
               </p>
             </div>
           </div>
@@ -280,8 +294,8 @@ export default function MultisigPage() {
                 </div>
                 <h3 className="text-lg font-semibold">No Multisigs Yet</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Create your first multisig wallet to securely manage funds and
-                  execute governance operations with multiple signers.
+                  Create your first multisig wallet to securely manage funds and execute governance
+                  operations with multiple signers.
                 </p>
                 <Button onClick={() => setIsCreateDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
@@ -317,8 +331,8 @@ export default function MultisigPage() {
                 </div>
                 <h3 className="text-lg font-semibold">Not a Signer on Any Multisig</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  You are not listed as a signer on any multisig wallets.
-                  Ask the owner of a multisig to add your address as a signer.
+                  You are not listed as a signer on any multisig wallets. Ask the owner of a
+                  multisig to add your address as a signer.
                 </p>
               </div>
             </GlassCard>
@@ -359,7 +373,7 @@ export default function MultisigPage() {
                   multisigAddress={tx.multisigAddress}
                   threshold={tx.threshold}
                   isUserSigner={true}
-                  hasUserSigned={tx.currentSignatures.some(s => s.signer === address)}
+                  hasUserSigned={tx.currentSignatures.some((s) => s.signer === address)}
                   currentUserAddress={address ?? undefined}
                 />
               ))}
@@ -397,7 +411,7 @@ export default function MultisigPage() {
             <div className="space-y-6">
               {/* Actions */}
               <div className="flex justify-end">
-                <MultisigTransactionFlow 
+                <MultisigTransactionFlow
                   multisig={selectedMultisig}
                   onSuccess={() => setSelectedMultisig(null)}
                 />
@@ -442,9 +456,7 @@ export default function MultisigPage() {
                         {index + 1}
                       </div>
                       <span className="font-mono text-sm flex-1">{signer}</span>
-                      {signer === address && (
-                        <Badge variant="outline">You</Badge>
-                      )}
+                      {signer === address && <Badge variant="outline">You</Badge>}
                     </GlassCard>
                   ))}
                 </div>
@@ -465,7 +477,7 @@ export default function MultisigPage() {
                         multisigAddress={selectedMultisig.address}
                         threshold={selectedMultisig.threshold}
                         isUserSigner={address ? selectedMultisig.signers.includes(address) : false}
-                        hasUserSigned={tx.currentSignatures.some(s => s.signer === address)}
+                        hasUserSigned={tx.currentSignatures.some((s) => s.signer === address)}
                         currentUserAddress={address ?? undefined}
                       />
                     ))}

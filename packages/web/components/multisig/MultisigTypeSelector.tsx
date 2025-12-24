@@ -18,13 +18,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-  MultisigType,
-  MULTISIG_TYPE_INFO,
-  getMultisigTypeInfo,
-  canCreateMultisigType,
-  type MultisigTypeInfo,
-} from '@/lib/queries/multisig'
+import { MultisigType, getMultisigTypeInfo, canCreateMultisigType } from '@/lib/queries/multisig'
 
 // Icon mapping
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -109,16 +103,10 @@ export function MultisigTypeSelector({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{info.label}</span>
-                    {!canCreate && (
-                      <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                    )}
+                    {!canCreate && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {info.description}
-                  </p>
-                  {!canCreate && reason && (
-                    <p className="text-xs text-yellow-500 mt-1">{reason}</p>
-                  )}
+                  <p className="text-xs text-muted-foreground line-clamp-2">{info.description}</p>
+                  {!canCreate && reason && <p className="text-xs text-yellow-500 mt-1">{reason}</p>}
                 </div>
               </div>
             </button>
@@ -127,9 +115,7 @@ export function MultisigTypeSelector({
       </div>
 
       {/* Selected type details */}
-      {showDetails && selectedType && (
-        <MultisigTypeDetails type={selectedType} className="mt-4" />
-      )}
+      {showDetails && selectedType && <MultisigTypeDetails type={selectedType} className="mt-4" />}
     </div>
   )
 }
@@ -267,10 +253,7 @@ export function MultisigTypeBadge({
   }
 
   return (
-    <Badge
-      variant="outline"
-      className={cn('border', colorClasses, sizeClasses[size], className)}
-    >
+    <Badge variant="outline" className={cn('border', colorClasses, sizeClasses[size], className)}>
       <Icon className={cn(iconSizes[size], showLabel && 'mr-1')} />
       {showLabel && info.label}
     </Badge>

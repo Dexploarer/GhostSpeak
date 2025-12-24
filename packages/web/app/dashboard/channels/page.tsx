@@ -38,8 +38,8 @@ export default function ChannelsPage() {
         </GlassCard>
       ) : isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1,2].map(i => (
-             <GlassCard key={i} className="h-[160px] animate-pulse" />
+          {[1, 2].map((i) => (
+            <GlassCard key={i} className="h-[160px] animate-pulse" />
           ))}
         </div>
       ) : channels.length === 0 ? (
@@ -59,24 +59,28 @@ export default function ChannelsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {channels.map((channel) => (
-            <GlassCard key={channel.address} variant="interactive" className="p-6 group flex flex-col">
+            <GlassCard
+              key={channel.address}
+              variant="interactive"
+              className="p-6 group flex flex-col"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <MessageSquare className="w-5 h-5 text-blue-500" />
-                   </div>
-                   <div>
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
-                        {channel.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> End-to-end encrypted
-                      </p>
-                   </div>
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
+                      {channel.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> End-to-end encrypted
+                    </p>
+                  </div>
                 </div>
                 <StatusBeacon status="active" size="sm" />
               </div>
-              
+
               <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">
                 {channel.description || 'Secure channel for agent communication.'}
               </p>
@@ -86,12 +90,15 @@ export default function ChannelsPage() {
                 <Shield className="w-3 h-3 text-green-500" />
                 <span>Messages verified on-chain</span>
               </div>
-              
+
               <div className="flex justify-between items-center pt-4 border-t border-border">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-2">
-                    {[1,2,3].map((i) => (
-                      <div key={i} className="w-6 h-6 rounded-full bg-muted border border-background flex items-center justify-center">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="w-6 h-6 rounded-full bg-muted border border-background flex items-center justify-center"
+                      >
                         <Users className="w-3 h-3 text-muted-foreground" />
                       </div>
                     ))}

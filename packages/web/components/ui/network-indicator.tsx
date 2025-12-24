@@ -41,8 +41,18 @@ export function NetworkIndicator({ className, showLabel = true }: NetworkIndicat
       )}
     >
       <span className="relative flex h-2 w-2">
-        <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', config.color.replace('text-', 'bg-'))} />
-        <span className={cn('relative inline-flex rounded-full h-2 w-2', config.color.replace('text-', 'bg-'))} />
+        <span
+          className={cn(
+            'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
+            config.color.replace('text-', 'bg-')
+          )}
+        />
+        <span
+          className={cn(
+            'relative inline-flex rounded-full h-2 w-2',
+            config.color.replace('text-', 'bg-')
+          )}
+        />
       </span>
       {showLabel && <span>{config.label}</span>}
     </div>
@@ -65,11 +75,7 @@ export function ConnectionStatus({ isConnected, className }: ConnectionStatusPro
         className
       )}
     >
-      {isConnected ? (
-        <Wifi className="h-3 w-3" />
-      ) : (
-        <WifiOff className="h-3 w-3" />
-      )}
+      {isConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
       <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
     </div>
   )

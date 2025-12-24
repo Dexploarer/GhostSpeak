@@ -5,15 +5,15 @@ import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { PageHeader } from '@/components/dashboard/shared/PageHeader'
 import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
 import { StatsCard } from '@/components/dashboard/shared/StatsCard'
-import { 
-  BarChart3, 
-  ArrowUpRight, 
-  ArrowDownRight, 
+import {
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
   Activity,
   Zap,
   Shield,
   DollarSign,
-  Clock
+  Clock,
 } from 'lucide-react'
 
 export default function AnalyticsPage() {
@@ -39,63 +39,55 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader 
-        title="x402 Analytics" 
+      <PageHeader
+        title="x402 Analytics"
         description="Performance insights for your agents and transactions"
       />
 
       {/* Top Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard 
-          label="Avg Response Time" 
-          value="145" 
-          unit="ms" 
-          trend="-12%" 
-          trendUp={true} 
-          icon={Clock} 
-          iconColor="text-blue-500" 
+        <StatsCard
+          label="Avg Response Time"
+          value="145"
+          unit="ms"
+          trend="-12%"
+          trendUp={true}
+          icon={Clock}
+          iconColor="text-blue-500"
         />
-        <StatsCard 
-          label="Total Volume" 
-          value="12,450" 
-          unit="USDC" 
-          trend="+23.5%" 
-          trendUp={true} 
-          icon={DollarSign} 
-          iconColor="text-green-500" 
+        <StatsCard
+          label="Total Volume"
+          value="12,450"
+          unit="USDC"
+          trend="+23.5%"
+          trendUp={true}
+          icon={DollarSign}
+          iconColor="text-green-500"
         />
-        <StatsCard 
-          label="x402 Requests" 
-          value="85.2k" 
-          unit="calls" 
-          trend="+18%" 
-          trendUp={true} 
-          icon={Zap} 
-          iconColor="text-primary" 
+        <StatsCard
+          label="x402 Requests"
+          value="85.2k"
+          unit="calls"
+          trend="+18%"
+          trendUp={true}
+          icon={Zap}
+          iconColor="text-primary"
         />
-        <StatsCard 
-          label="Success Rate" 
-          value="99.2" 
-          unit="%" 
-          trend="+0.5%" 
-          trendUp={true} 
-          icon={Activity} 
-          iconColor="text-cyan-500" 
+        <StatsCard
+          label="Success Rate"
+          value="99.2"
+          unit="%"
+          trend="+0.5%"
+          trendUp={true}
+          icon={Activity}
+          iconColor="text-cyan-500"
         />
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ActivityChart 
-          title="Revenue (USDC)" 
-          data={revenueData} 
-          height={280}
-        />
-        <ActivityChart 
-          title="x402 Requests" 
-          data={requestsData} 
-          height={280}
-        />
+        <ActivityChart title="Revenue (USDC)" data={revenueData} height={280} />
+        <ActivityChart title="x402 Requests" data={requestsData} height={280} />
       </div>
 
       {/* Trust Metrics */}
@@ -131,18 +123,29 @@ export default function AnalyticsPage() {
               { name: 'DataAnalyst.ai', revenue: '2,450 USDC', change: '+12%' },
               { name: 'CodeReviewer.ai', revenue: '1,890 USDC', change: '+8%' },
               { name: 'ContentGen.ai', revenue: '1,240 USDC', change: '+25%' },
-            ].map((agent) => (
-              <div key={agent.name} className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
-                <span className="text-sm text-foreground">{agent.name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono text-foreground">{agent.revenue}</span>
-                  <span className="text-xs text-green-500 flex items-center">
-                    <ArrowUpRight className="w-3 h-3" />
-                    {agent.change}
-                  </span>
+            ].map((agent) => {
+              const isPositive = agent.change.startsWith('+')
+              return (
+                <div
+                  key={agent.name}
+                  className="flex justify-between items-center p-2 rounded-lg bg-muted/50"
+                >
+                  <span className="text-sm text-foreground">{agent.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono text-foreground">{agent.revenue}</span>
+                    <div
+                      className={`text-xs flex items-center ${isPositive ? 'text-green-500' : 'text-red-500'}`}
+                    >
+                      {isPositive ? (
+                        <ArrowUpRight className="w-3 h-3" />
+                      ) : (
+                        <ArrowDownRight className="w-3 h-3" />
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </GlassCard>
 

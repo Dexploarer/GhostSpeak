@@ -74,11 +74,7 @@ export function WalletConnectButton() {
 
   // Not connected - show connect button
   return (
-    <Button
-      onClick={login}
-      variant="gradient"
-      className="gap-2"
-    >
+    <Button onClick={login} variant="gradient" className="gap-2">
       <Wallet className="h-4 w-4" />
       Connect
     </Button>

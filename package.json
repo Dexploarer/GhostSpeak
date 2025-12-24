@@ -96,7 +96,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Prompt-or-Die/ghostspeak"
+    "url": "https://github.com/Ghostspeak/GhostSpeak"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

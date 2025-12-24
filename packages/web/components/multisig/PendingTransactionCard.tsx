@@ -25,9 +25,13 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
-import type { PendingTransaction, MultisigSignature } from '@/lib/queries/multisig'
+import type { PendingTransaction } from '@/lib/queries/multisig'
 import { TransactionType, TransactionStatus, TransactionPriority } from '@/lib/queries/multisig'
-import { useApproveTransaction, useExecuteTransaction, useCancelTransaction } from '@/lib/queries/multisig'
+import {
+  useApproveTransaction,
+  useExecuteTransaction,
+  useCancelTransaction,
+} from '@/lib/queries/multisig'
 import type { Address } from '@solana/kit'
 
 interface PendingTransactionCardProps {
@@ -96,7 +100,7 @@ export function PendingTransactionCard({
   threshold,
   isUserSigner,
   hasUserSigned,
-  currentUserAddress,
+  currentUserAddress: _currentUserAddress,
   className,
 }: PendingTransactionCardProps): React.JSX.Element {
   const approveTransaction = useApproveTransaction()
@@ -109,8 +113,9 @@ export function PendingTransactionCard({
   const signaturesNeeded = threshold - transaction.currentSignatures.length
   const progressPercentage = (transaction.currentSignatures.length / threshold) * 100
   const isReady = transaction.status === TransactionStatus.FullyApproved
-  const isPending = transaction.status === TransactionStatus.Pending || 
-                    transaction.status === TransactionStatus.PartiallyApproved
+  const isPending =
+    transaction.status === TransactionStatus.Pending ||
+    transaction.status === TransactionStatus.PartiallyApproved
   const isExpired = transaction.expiresAt < new Date()
 
   const handleApprove = async () => {
@@ -134,18 +139,16 @@ export function PendingTransactionCard({
     })
   }
 
-  const shortenAddress = (address: string) =>
-    `${address.slice(0, 4)}...${address.slice(-4)}`
+  const shortenAddress = (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`
 
   return (
     <GlassCard className={cn('p-6', className)}>
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center',
-            'bg-primary/10'
-          )}>
+          <div
+            className={cn('w-10 h-10 rounded-lg flex items-center justify-center', 'bg-primary/10')}
+          >
             <Icon className="w-5 h-5 text-primary" />
           </div>
           <div>
@@ -172,16 +175,16 @@ export function PendingTransactionCard({
             <span>Created {formatDistanceToNow(transaction.createdAt, { addSuffix: true })}</span>
           </div>
           {isPending && !isExpired && (
-            <div className={cn(
-              'mt-1',
-              transaction.expiresAt.getTime() - Date.now() < 86400000 && 'text-yellow-500'
-            )}>
+            <div
+              className={cn(
+                'mt-1',
+                transaction.expiresAt.getTime() - Date.now() < 86400000 && 'text-yellow-500'
+              )}
+            >
               Expires {formatDistanceToNow(transaction.expiresAt, { addSuffix: true })}
             </div>
           )}
-          {isExpired && isPending && (
-            <div className="text-red-500 mt-1">Expired</div>
-          )}
+          {isExpired && isPending && <div className="text-red-500 mt-1">Expired</div>}
         </div>
       </div>
 
@@ -194,9 +197,7 @@ export function PendingTransactionCard({
 
       {/* Description */}
       {transaction.description && (
-        <p className="text-sm text-muted-foreground mb-4">
-          {transaction.description}
-        </p>
+        <p className="text-sm text-muted-foreground mb-4">{transaction.description}</p>
       )}
 
       {/* Signature Progress */}
@@ -230,7 +231,9 @@ export function PendingTransactionCard({
         {isPending && signaturesNeeded > 0 && (
           <div className="flex items-center gap-2 text-xs text-yellow-500">
             <AlertTriangle className="w-3 h-3" />
-            <span>{signaturesNeeded} more signature{signaturesNeeded !== 1 ? 's' : ''} needed</span>
+            <span>
+              {signaturesNeeded} more signature{signaturesNeeded !== 1 ? 's' : ''} needed
+            </span>
           </div>
         )}
       </div>

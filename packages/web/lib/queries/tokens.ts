@@ -84,7 +84,7 @@ export function useAvailableTokens() {
  * Fetch real token information from the blockchain
  */
 async function fetchTokenInfo(address: string): Promise<Token> {
-  const client = getGhostSpeakClient()
+  // const client = getGhostSpeakClient()
 
   // Use SDK utilities to get token mint info
   // This would integrate with the real Token-2022 utilities

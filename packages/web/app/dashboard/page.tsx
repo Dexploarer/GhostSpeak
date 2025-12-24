@@ -1,41 +1,66 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import { useAgents } from '@/lib/queries/agents'
+import { useEscrows, EscrowStatus } from '@/lib/queries/escrow'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
-import { GlassTable } from '@/components/dashboard/shared/GlassTable'
-import { StatusBeacon } from '@/components/dashboard/shared/StatusBeacon'
 import { StatsCard } from '@/components/dashboard/shared/StatsCard'
 import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
 import { Button } from '@/components/ui/button'
-import { 
-  Bot, 
-  Shield, 
-  TrendingUp, 
-  Activity, 
-  Plus, 
-  Clock,
-  Users,
-  Scale
-} from 'lucide-react'
+import { Bot, Shield, TrendingUp, Activity, Plus, CheckCircle2, Scale } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function DashboardOverview() {
-  const { shortAddress, isConnected } = useWalletAddress()
-  const { data: agents = [] } = useAgents()
+  const { shortAddress, isConnected, address } = useWalletAddress()
+  const { data: agents = [], isLoading: isLoadingAgents } = useAgents()
   
-  // Activity data for chart
+  // Use 'all' role to see everything for now, can be refined to 'client' or 'agent'
+  const { data: escrows = [], isLoading: isLoadingEscrows } = useEscrows({
+    userAddress: address ?? undefined,
+    role: 'all',
+  })
+
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    // Total Escrowed Funds (Active Escrows)
+    const activeEscrows = escrows.filter((e) => e.status === EscrowStatus.Active)
+    const totalEscrowed = activeEscrows.reduce((acc, curr) => {
+      // Assuming 6 decimals for USDC/SOL. 
+      // TODO: Use proper token metadata decimals from escrow.tokenMetadata
+      return acc + Number(curr.amount) / 1_000_000
+    }, 0)
+
+    // Completed Payments (Escrows Completed)
+    const completedEscrows = escrows.filter((e) => e.status === EscrowStatus.Completed)
+    
+    // Average Reputation (Mock for now as it's not fully aggregated yet)
+    const avgReputation = agents.length > 0 
+      ? agents.reduce((acc, curr) => acc + curr.reputation.score, 0) / agents.length
+      : 0
+
+    return {
+      totalEscrowed,
+      activeEscrowCount: activeEscrows.length,
+      completedCount: completedEscrows.length,
+      agentCount: agents.length,
+      avgReputation,
+    }
+  }, [escrows, agents])
+
+  // Activity data for chart (Mock until historical indexer is live)
   const chartData = [
-    { name: '00:00', value: 40 },
-    { name: '04:00', value: 30 },
-    { name: '08:00', value: 20 },
-    { name: '12:00', value: 78 },
-    { name: '16:00', value: 89 },
-    { name: '20:00', value: 63 },
-    { name: '24:00', value: 45 },
+    { name: '00:00', value: 0 },
+    { name: '04:00', value: 0 },
+    { name: '08:00', value: 0 },
+    { name: '12:00', value: 0 },
+    { name: '16:00', value: 0 },
+    { name: '20:00', value: 0 },
+    { name: '24:00', value: 0 },
   ]
+
+  const isLoading = isLoadingAgents || isLoadingEscrows
 
   return (
     <div className="space-y-8">
@@ -68,160 +93,103 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* Stats Grid - Emphasize Trust Features */}
+      {/* Stats Grid - Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard 
-          label="Escrowed Funds" 
-          value="2,450.50" 
-          unit="USDC" 
-          trend="+12.5%" 
-          trendUp={true} 
-          icon={Shield} 
-          iconColor="text-green-500" 
+        <StatsCard
+          label="active funds" // Lowercase label style
+          value={isLoading ? '...' : `${stats.totalEscrowed.toFixed(2)}`}
+          unit="USDC" // Defaulting to USDC for display
+          trend={stats.activeEscrowCount > 0 ? `${stats.activeEscrowCount} active` : 'No active escrows'}
+          trendUp={stats.activeEscrowCount > 0}
+          icon={Shield}
+          iconColor="text-green-500"
         />
-        <StatsCard 
-          label="My Agents" 
-          value={agents.length.toString()} 
-          unit="Registered" 
-          trend={agents.length > 0 ? `+${agents.length}` : '0'} 
-          trendUp={agents.length > 0} 
-          icon={Bot} 
-          iconColor="text-primary" 
+        <StatsCard
+          label="my agents"
+          value={isLoading ? '...' : stats.agentCount.toString()}
+          unit="Registered"
+          trend={stats.agentCount > 0 ? 'Active' : 'No agents'}
+          trendUp={stats.agentCount > 0}
+          icon={Bot}
+          iconColor="text-primary"
         />
-        <StatsCard 
-          label="x402 Payments" 
-          value="85.2k" 
-          unit="Calls" 
-          trend="+5.2%" 
-          trendUp={true} 
-          icon={Activity} 
-          iconColor="text-cyan-500" 
+        <StatsCard
+          label="completed jobs"
+          value={isLoading ? '...' : stats.completedCount.toString()}
+          unit="Escrows"
+          trend="Lifetime"
+          trendUp={true}
+          icon={Activity}
+          iconColor="text-cyan-500"
         />
-        <StatsCard 
-          label="Reputation" 
-          value="4.8" 
-          unit="★" 
-          trend="+0.2" 
-          trendUp={true} 
-          icon={TrendingUp} 
-          iconColor="text-yellow-500" 
+        <StatsCard
+          label="avg reputation"
+          value={isLoading ? '...' : stats.avgReputation.toFixed(1)}
+          unit="/ 100"
+          trend="Network"
+          trendUp={true}
+          icon={TrendingUp}
+          iconColor="text-yellow-500"
         />
       </div>
 
-      {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Main Chart / Activity Area (Span 2) */}
-        <ActivityChart 
-          className="lg:col-span-2" 
-          title="Network Activity" 
-          data={chartData} 
-          height={320}
-        />
+      {/* Recent Activity Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold">Activity Volume</h3>
+            <select className="bg-background border border-input rounded-md text-sm px-2 py-1">
+              <option>Last 24 Hours</option>
+              <option>Last 7 Days</option>
+              <option>Last 30 Days</option>
+            </select>
+          </div>
+          <ActivityChart data={chartData} height={300} />
+        </div>
 
-        {/* Right Column Stack */}
         <div className="space-y-6">
-          
-          {/* Active Agents List */}
-          <GlassCard className="p-6 flex flex-col h-[calc(50%-12px)]">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-                <Users className="w-5 h-5 text-cyan-500" />
-                Top Agents
-              </h3>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/agents">View All</Link>
-              </Button>
+          <h3 className="text-lg font-bold">Recent Escrows(3)</h3>
+          {isLoading ? (
+            <div className="space-y-4">
+               {[1, 2, 3].map((i) => (
+                 <GlassCard key={i} className="h-20 animate-pulse" />
+               ))}
             </div>
-            <div className="space-y-3 overflow-y-auto pr-2">
-              {agents.length > 0 ? agents.slice(0, 3).map((agent, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-card/60 hover:bg-card/80 transition-colors cursor-pointer group">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary/40 transition-all">
-                    <Bot className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-sm font-medium text-foreground truncate">{agent.name}</h4>
-                      <StatusBeacon status={agent.isActive ? 'active' : 'inactive'} size="sm" />
+          ) : escrows.length === 0 ? (
+            <GlassCard className="p-6 text-center text-muted-foreground border-dashed">
+              No recent escrow activity.
+            </GlassCard>
+          ) : (
+            <div className="space-y-4">
+              {escrows.slice(0, 3).map((escrow) => (
+                <GlassCard key={escrow.address} className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center",
+                      escrow.status === EscrowStatus.Active ? "bg-green-500/20 text-green-500" : "bg-gray-500/20 text-gray-500"
+                    )}>
+                      {escrow.status === EscrowStatus.Active ? <Shield className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate font-mono">
-                      {agent.address.slice(0, 4)}...{agent.address.slice(-4)}
-                    </p>
+                    <div>
+                      <p className="text-sm font-medium">{escrow.taskId}</p>
+                      <p className="text-xs text-muted-foreground">{escrow.status}</p>
+                    </div>
                   </div>
-                </div>
-              )) : (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  No agents registered yet
-                </div>
-              )}
+                  <div className="text-right">
+                    {/* Assuming 6 decimals for now */}
+                    <p className="text-sm font-bold">{(Number(escrow.amount) / 1_000_000).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">USDC</p>
+                  </div>
+                </GlassCard>
+              ))}
             </div>
-          </GlassCard>
-
-          {/* Trust Layer Info */}
-          <GlassCard className="p-6 flex flex-col h-[calc(50%-12px)] bg-linear-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-                <Scale className="w-5 h-5 text-green-500" />
-                Trust Layer
-              </h3>
-            </div>
-            <div className="space-y-4 flex-1">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Active Escrows</span>
-                <span className="font-medium text-foreground">12</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Open Disputes</span>
-                <span className="font-medium text-yellow-500">2</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Resolution Rate</span>
-                <span className="font-medium text-green-500">98.5%</span>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="mt-4" asChild>
-              <Link href="/dashboard/escrow">Manage Escrows</Link>
-            </Button>
-          </GlassCard>
-
+          )}
+          
+          <Button variant="outline" className="w-full" asChild>
+            <Link href="/dashboard/escrow">View All Activity</Link>
+          </Button>
         </div>
       </div>
-      
-      {/* Recent Activity Feed */}
-      <GlassTable
-        title="Recent Transactions"
-        actions={
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/dashboard/payments">View All</Link>
-          </Button>
-        }
-        data={[
-          { id: '#8X92...', type: 'x402 Payment', agent: 'GPT-4 Proxy', amount: '0.50 USDC', status: 'Completed', time: '2m ago' },
-          { id: '#7A11...', type: 'Escrow Created', agent: 'Data Analyst', amount: '25.00 USDC', status: 'Active', time: '15m ago' },
-          { id: '#3M22...', type: 'Escrow Released', agent: 'Code Reviewer', amount: '10.00 USDC', status: 'Completed', time: '1h ago' },
-        ]}
-        columns={[
-          { header: 'ID', accessorKey: 'id', className: 'font-mono text-muted-foreground' },
-          { header: 'Type', accessorKey: 'type', className: 'text-foreground' },
-          { header: 'Agent', accessorKey: 'agent' },
-          { header: 'Amount', accessorKey: 'amount', className: 'font-mono' },
-          { 
-            header: 'Status', 
-            accessorKey: 'status', 
-            cell: (item) => (
-              <span className={cn(
-                "px-2 py-1 rounded-full text-xs",
-                item.status === 'Completed' ? "bg-green-500/10 text-green-500" : 
-                item.status === 'Active' ? "bg-blue-500/10 text-blue-500" :
-                "bg-yellow-500/10 text-yellow-500"
-              )}>
-                {item.status}
-              </span>
-            )
-          },
-          { header: 'Time', accessorKey: 'time', className: 'text-right text-muted-foreground' },
-        ]}
-      />
     </div>
   )
 }

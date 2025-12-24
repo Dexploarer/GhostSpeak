@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server'
 
-const CROSSMINT_API_URL = process.env.CROSSMINT_API_URL ?? 'https://staging.crossmint.com/api/2022-06-09'
-const CROSSMINT_API_KEY = process.env.CROSSMINT_SECRET_KEY ?? process.env.CROSSMINT_SERVER_API_KEY ?? process.env.NEXT_PUBLIC_CROSSMINT_API_KEY
+const CROSSMINT_API_URL =
+  process.env.CROSSMINT_API_URL ?? 'https://staging.crossmint.com/api/2022-06-09'
+const CROSSMINT_API_KEY =
+  process.env.CROSSMINT_SECRET_KEY ??
+  process.env.CROSSMINT_SERVER_API_KEY ??
+  process.env.NEXT_PUBLIC_CROSSMINT_API_KEY
 
 /**
  * POST /api/crossmint/orders
  * Create a purchase order for agentic commerce
- * 
+ *
  * Required body:
  * - recipient: { email, physicalAddress? }
  * - lineItems: [{ productLocator: string }]
  * - payment: { method, currency, payerAddress? }
- * 
+ *
  * Optional:
  * - locale: string (default: 'en-US')
  */
@@ -45,14 +49,14 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: {
         'X-API-KEY': CROSSMINT_API_KEY,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         recipient,
         lineItems,
         payment,
-        locale
-      })
+        locale,
+      }),
     })
 
     const data = await response.json()
@@ -68,10 +72,7 @@ export async function POST(req: Request) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Create Order Error:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
@@ -97,8 +98,8 @@ export async function GET(req: Request) {
 
     const response = await fetch(`${CROSSMINT_API_URL}/orders/${orderId}`, {
       headers: {
-        'X-API-KEY': CROSSMINT_API_KEY
-      }
+        'X-API-KEY': CROSSMINT_API_KEY,
+      },
     })
 
     const data = await response.json()
@@ -114,9 +115,6 @@ export async function GET(req: Request) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Get Order Error:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

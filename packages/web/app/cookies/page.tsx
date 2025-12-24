@@ -14,8 +14,9 @@ export default function CookiePolicyPage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">1. What Are Cookies</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Cookies are small text files that are placed on your computer or mobile device when you visit a website. 
-              They are widely used to make websites work more efficiently and provide information to website owners.
+              Cookies are small text files that are placed on your computer or mobile device when
+              you visit a website. They are widely used to make websites work more efficiently and
+              provide information to website owners.
             </p>
           </section>
 
@@ -24,10 +25,11 @@ export default function CookiePolicyPage(): React.JSX.Element {
             <p className="text-muted-foreground leading-relaxed">
               GhostSpeak uses cookies and similar technologies for the following purposes:
             </p>
-            
+
             <h3 className="text-xl font-medium mt-6 mb-3">2.1 Essential Cookies</h3>
             <p className="text-muted-foreground leading-relaxed">
-              These cookies are necessary for the website to function properly. They enable core functionality such as:
+              These cookies are necessary for the website to function properly. They enable core
+              functionality such as:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>Remembering your wallet connection state</li>
@@ -63,7 +65,9 @@ export default function CookiePolicyPage(): React.JSX.Element {
               <table className="w-full mt-4 text-muted-foreground">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left py-3 pr-4 font-semibold text-foreground">Cookie Name</th>
+                    <th className="text-left py-3 pr-4 font-semibold text-foreground">
+                      Cookie Name
+                    </th>
                     <th className="text-left py-3 pr-4 font-semibold text-foreground">Purpose</th>
                     <th className="text-left py-3 pr-4 font-semibold text-foreground">Duration</th>
                     <th className="text-left py-3 font-semibold text-foreground">Type</th>
@@ -99,13 +103,19 @@ export default function CookiePolicyPage(): React.JSX.Element {
               We may use third-party services that set their own cookies. These may include:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li><strong>Analytics providers:</strong> To help us understand website usage</li>
-              <li><strong>Wallet providers:</strong> For cryptocurrency wallet connections</li>
-              <li><strong>RPC providers:</strong> For blockchain data fetching</li>
+              <li>
+                <strong>Analytics providers:</strong> To help us understand website usage
+              </li>
+              <li>
+                <strong>Wallet providers:</strong> For cryptocurrency wallet connections
+              </li>
+              <li>
+                <strong>RPC providers:</strong> For blockchain data fetching
+              </li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              We do not control these third-party cookies. Please refer to their respective privacy policies 
-              for more information about their cookie practices.
+              We do not control these third-party cookies. Please refer to their respective privacy
+              policies for more information about their cookie practices.
             </p>
           </section>
 
@@ -114,11 +124,9 @@ export default function CookiePolicyPage(): React.JSX.Element {
             <p className="text-muted-foreground leading-relaxed">
               You can control and manage cookies in several ways:
             </p>
-            
+
             <h3 className="text-xl font-medium mt-6 mb-3">5.1 Browser Settings</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Most browsers allow you to:
-            </p>
+            <p className="text-muted-foreground leading-relaxed">Most browsers allow you to:</p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>View what cookies are stored and delete them individually</li>
               <li>Block third-party cookies</li>
@@ -129,7 +137,8 @@ export default function CookiePolicyPage(): React.JSX.Element {
 
             <h3 className="text-xl font-medium mt-6 mb-3">5.2 Impact of Disabling Cookies</h3>
             <p className="text-muted-foreground leading-relaxed">
-              If you disable cookies, some features of our website may not function properly, including:
+              If you disable cookies, some features of our website may not function properly,
+              including:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>Theme preferences may not be saved</li>
@@ -141,17 +150,18 @@ export default function CookiePolicyPage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">6. Local Storage and Session Storage</h2>
             <p className="text-muted-foreground leading-relaxed">
-              In addition to cookies, we may use browser local storage and session storage for similar purposes. 
-              These technologies store data locally on your device and are subject to the same controls as cookies 
-              in most browsers.
+              In addition to cookies, we may use browser local storage and session storage for
+              similar purposes. These technologies store data locally on your device and are subject
+              to the same controls as cookies in most browsers.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">7. Updates to This Policy</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We may update this Cookie Policy from time to time to reflect changes in our practices or for 
-              other operational, legal, or regulatory reasons. Please check this page periodically for updates.
+              We may update this Cookie Policy from time to time to reflect changes in our practices
+              or for other operational, legal, or regulatory reasons. Please check this page
+              periodically for updates.
             </p>
           </section>
 
@@ -161,7 +171,9 @@ export default function CookiePolicyPage(): React.JSX.Element {
               If you have questions about our use of cookies, please contact us at:
             </p>
             <p className="text-primary mt-4">
-              <a href="mailto:team@ghostspeak.io" className="hover:underline">team@ghostspeak.io</a>
+              <a href="mailto:team@ghostspeak.io" className="hover:underline">
+                team@ghostspeak.io
+              </a>
             </p>
           </section>
         </div>

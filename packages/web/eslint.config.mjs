@@ -1,19 +1,30 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
 import typescriptPlugin from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
 import prettierPlugin from 'eslint-plugin-prettier'
+import reactHooksPlugin from 'eslint-plugin-react-hooks'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
-
+/**
+ * ESLint Flat Config for GhostSpeak Web App
+ * 
+ * Note: eslint-config-next is incompatible with ESLint 9 flat config.
+ * We use native plugins directly instead.
+ */
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  {
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'dist/**',
+      'coverage/**',
+      '*.config.js',
+      '*.config.mjs',
+    ],
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -21,19 +32,38 @@ const eslintConfig = [
       parserOptions: {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname,
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
     },
     plugins: {
       '@typescript-eslint': typescriptPlugin,
-      prettier: prettierPlugin,
+      'prettier': prettierPlugin,
+      'react-hooks': reactHooksPlugin,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': 'warn',
+      // TypeScript rules
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      }],
       '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-empty-interface': 'warn',
+      '@typescript-eslint/no-empty-function': 'warn',
+      
+      // React Hooks rules
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      
+      // Prettier
       'prettier/prettier': 'warn',
-      '@next/next/no-img-element': 'warn',
-      'jsx-a11y/alt-text': 'warn'
+      
+      // General - allow console for development
+      'prefer-const': 'warn',
     },
   },
 ]

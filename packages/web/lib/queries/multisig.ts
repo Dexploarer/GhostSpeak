@@ -413,7 +413,7 @@ interface SDKMultisigData {
   }
 }
 
-function transformMultisig(address: Address, data: SDKMultisigData): Multisig {
+function _transformMultisig(address: Address, data: SDKMultisigData): Multisig {
   return {
     address,
     multisigId: String(data.multisigId),
@@ -483,8 +483,9 @@ export function useMultisigs(options?: { enabled?: boolean }) {
       try {
         // Query multisig accounts owned by the current user
         // In production, this would use getProgramAccounts with memcmp filters
-        const rpc = (client as unknown as { rpc: unknown }).rpc
-        
+        // const _rpc = (client as unknown as { rpc: unknown }).rpc
+        console.log('Client initialized', client)
+
         // For now, return empty array - will be populated when user creates multisigs
         // In production, implement proper account fetching
         console.log('Fetching multisigs for:', address)
@@ -508,7 +509,7 @@ export function useMultisig(multisigAddress: Address | undefined, options?: { en
     queryFn: async (): Promise<Multisig | null> => {
       if (!multisigAddress) return null
 
-      const client = getGhostSpeakClient()
+      // const client = getGhostSpeakClient()
 
       try {
         // Fetch multisig account data
@@ -562,7 +563,7 @@ export function useCreateMultisig() {
     mutationFn: async (data: CreateMultisigData): Promise<Multisig> => {
       if (!isConnected || !address) throw new Error('Wallet not connected')
 
-      const client = getGhostSpeakClient()
+      // const client = getGhostSpeakClient()
       const signer = createSigner()
       if (!signer) throw new Error('Could not create signer')
 
@@ -678,7 +679,12 @@ export function useApproveTransaction() {
       if (!signer) throw new Error('Could not create signer')
 
       // In production, this would sign and submit the approval
-      console.log('Approving transaction:', data.transactionId, 'on multisig:', data.multisigAddress)
+      console.log(
+        'Approving transaction:',
+        data.transactionId,
+        'on multisig:',
+        data.multisigAddress
+      )
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['multisig', variables.multisigAddress] })
@@ -706,8 +712,13 @@ export function useExecuteTransaction() {
       if (!signer) throw new Error('Could not create signer')
 
       // In production, this would execute the transaction
-      console.log('Executing transaction:', data.transactionId, 'on multisig:', data.multisigAddress)
-      
+      console.log(
+        'Executing transaction:',
+        data.transactionId,
+        'on multisig:',
+        data.multisigAddress
+      )
+
       return `tx_${Date.now()}`
     },
     onSuccess: (_, variables) => {

@@ -48,7 +48,7 @@ export function RealtimeIndicator({
     if (!lastUpdate) return null
     const now = new Date()
     const diff = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000)
-    
+
     if (diff < 5) return 'Just now'
     if (diff < 60) return `${diff}s ago`
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
@@ -91,13 +91,7 @@ export function RealtimeDot({
   className?: string
 }) {
   return (
-    <span
-      className={cn(
-        'relative inline-flex h-2 w-2',
-        className
-      )}
-      title={`Real-time: ${status}`}
-    >
+    <span className={cn('relative inline-flex h-2 w-2', className)} title={`Real-time: ${status}`}>
       {status === 'connected' && (
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
       )}

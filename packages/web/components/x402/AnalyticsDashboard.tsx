@@ -34,7 +34,7 @@ export function AnalyticsDashboard(): React.JSX.Element {
     averagePayment: BigInt(0),
     successRate: 0,
     activeAgents: 0,
-    topAgents: []
+    topAgents: [],
   }
 
   const totalVolumeSol = Number(stats.totalVolume) / 1e9
@@ -81,9 +81,7 @@ export function AnalyticsDashboard(): React.JSX.Element {
           <CardDescription>Mean transaction value across all x402 payments</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold gradient-text">
-            {averagePaymentSol.toFixed(6)} SOL
-          </div>
+          <div className="text-4xl font-bold gradient-text">{averagePaymentSol.toFixed(6)} SOL</div>
         </CardContent>
       </Card>
 
@@ -96,38 +94,47 @@ export function AnalyticsDashboard(): React.JSX.Element {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.topAgents.slice(0, 5).map((agent: any, index: number) => {
-                const earnings = Number(agent.earnings ?? 0) / 1e9
+              {stats.topAgents.slice(0, 5).map(
+                (
+                  agent: {
+                    address: string
+                    name: string
+                    earnings?: bigint
+                    totalCalls?: number
+                    successRate?: number
+                  },
+                  index: number
+                ) => {
+                  const earnings = Number(agent.earnings ?? 0) / 1e9
 
-                return (
-                  <div
-                    key={agent.address}
-                    className="flex items-center justify-between p-3 glass rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold">
-                        #{index + 1}
-                      </div>
-                      <div>
-                        <div className="font-medium">{agent.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {agent.totalCalls ?? 0} calls
+                  return (
+                    <div
+                      key={agent.address}
+                      className="flex items-center justify-between p-3 glass rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold">
+                          #{index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium">{agent.name}</div>
+                          <div className="text-sm text-gray-500">{agent.totalCalls ?? 0} calls</div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold gradient-text">
-                        {earnings.toFixed(4)} SOL
-                      </div>
-                      {agent.successRate !== undefined && (
-                        <div className="text-xs text-gray-500">
-                          {(agent.successRate * 100).toFixed(1)}% success
+                      <div className="text-right">
+                        <div className="text-lg font-bold gradient-text">
+                          {earnings.toFixed(4)} SOL
                         </div>
-                      )}
+                        {agent.successRate !== undefined && (
+                          <div className="text-xs text-gray-500">
+                            {(agent.successRate * 100).toFixed(1)}% success
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                }
+              )}
             </div>
           </CardContent>
         </Card>
@@ -152,15 +159,13 @@ function StatCard({ title, value, icon: Icon, trend, color }: StatCardProps): Re
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className={`p-3 rounded-lg bg-gradient-to-r ${color} bg-opacity-10`}>
+          <div className={`p-3 rounded-lg bg-linear-to-r ${color} bg-opacity-10`}>
             <Icon className="w-6 h-6 text-white" />
           </div>
           {trend !== undefined && (
             <div
               className={`flex items-center gap-1 text-sm ${
-                isPositive
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
+                isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}
             >
               <TrendIcon className="w-4 h-4" />

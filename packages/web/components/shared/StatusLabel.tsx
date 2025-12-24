@@ -21,7 +21,7 @@ export const StatusLabel: React.FC<StatusLabelProps> = ({
   variant = 'white',
   align = 'left',
   animate = false,
-  glitch = false,
+  glitch: _glitch = false,
 }) => {
   const variantStyles = {
     primary: 'text-primary',
@@ -38,24 +38,32 @@ export const StatusLabel: React.FC<StatusLabelProps> = ({
   }
 
   return (
-    <div className={cn(
-      "flex flex-col gap-1",
-      align === 'right' ? 'items-end text-right' : align === 'center' ? 'items-center text-center' : 'items-start text-left',
-      className
-    )}>
-      <span className={cn(
-        "text-[10px] font-mono uppercase tracking-[0.2em] leading-none",
-        labelStyles[variant]
-      )}>
+    <div
+      className={cn(
+        'flex flex-col gap-1',
+        align === 'right'
+          ? 'items-end text-right'
+          : align === 'center'
+            ? 'items-center text-center'
+            : 'items-start text-left',
+        className
+      )}
+    >
+      <span
+        className={cn(
+          'text-[10px] font-mono uppercase tracking-[0.2em] leading-none',
+          labelStyles[variant]
+        )}
+      >
         {label}
       </span>
-      <motion.span 
+      <motion.span
         initial={animate ? { opacity: 0, y: 5 } : false}
         animate={animate ? { opacity: 1, y: 0 } : false}
         className={cn(
-          "text-xl font-black italic tracking-tighter leading-none",
+          'text-xl font-black italic tracking-tighter leading-none',
           variantStyles[variant],
-          animate && "animate-pulse"
+          animate && 'animate-pulse'
         )}
       >
         {value}

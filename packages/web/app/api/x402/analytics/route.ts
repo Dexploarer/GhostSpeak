@@ -74,7 +74,7 @@ function generateMockMetrics(window: TimeWindow): TimeWindowMetrics {
     '7d': 168,
     '15d': 360,
     '30d': 720,
-    all: 2160
+    all: 2160,
   }
 
   const m = multiplier[window]
@@ -86,29 +86,29 @@ function generateMockMetrics(window: TimeWindow): TimeWindowMetrics {
       total: Math.floor(baseRequests * m),
       success: Math.floor(baseRequests * m * 0.95),
       failure: Math.floor(baseRequests * m * 0.05),
-      successRate: 95.2
+      successRate: 95.2,
     },
     latency: {
       p50: 120 + Math.random() * 50,
       p90: 350 + Math.random() * 100,
-      p99: 800 + Math.random() * 200
+      p99: 800 + Math.random() * 200,
     },
     statusCodes: {
       '2xx': Math.floor(baseRequests * m * 0.93),
       '3xx': Math.floor(baseRequests * m * 0.02),
       '4xx': Math.floor(baseRequests * m * 0.03),
-      '5xx': Math.floor(baseRequests * m * 0.02)
+      '5xx': Math.floor(baseRequests * m * 0.02),
     },
     uptime: {
       percent: 99.5 - Math.random() * 0.5,
-      outages: Math.floor(Math.random() * 3)
+      outages: Math.floor(Math.random() * 3),
     },
     payments: {
       volume: (Math.floor(baseRequests * m * 0.001 * 100) / 100).toString(),
       count: Math.floor(baseRequests * m * 0.8),
       average: '0.00125',
-      uniquePayers: Math.floor(baseRequests * m * 0.3)
-    }
+      uniquePayers: Math.floor(baseRequests * m * 0.3),
+    },
   }
 }
 
@@ -118,8 +118,8 @@ function generateMockMetrics(window: TimeWindow): TimeWindowMetrics {
 
 export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsResponse>> {
   const searchParams = request.nextUrl.searchParams
-  const resourceId = searchParams.get('resourceId')
-  const window = (searchParams.get('window') as TimeWindow) ?? '24h'
+  const _resourceId = searchParams.get('resourceId')
+  const _window = (searchParams.get('window') as TimeWindow) ?? '24h'
 
   // Generate metrics for all windows
   const windows: TimeWindow[] = ['1h', '6h', '24h', '3d', '7d', '15d', '30d', 'all']
@@ -139,8 +139,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsR
         base: 412,
         polygon: 189,
         ethereum: 78,
-        arbitrum: 45
-      }
+        arbitrum: 45,
+      },
     },
     metrics,
     topResources: [
@@ -148,20 +148,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<AnalyticsR
         resourceId: 'res_1',
         name: 'GhostSpeak Text Generation',
         volume: '$12,450',
-        requests: 45000
+        requests: 45000,
       },
       {
         resourceId: 'res_2',
         name: 'PayAI Image Generator',
         volume: '$8,200',
-        requests: 12000
+        requests: 12000,
       },
       {
         resourceId: 'res_3',
         name: 'Questflow Workflow Executor',
         volume: '$4,100',
-        requests: 5600
-      }
-    ]
+        requests: 5600,
+      },
+    ],
   })
 }

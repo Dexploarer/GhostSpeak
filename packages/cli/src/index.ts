@@ -42,7 +42,7 @@ function showBanner(version: string) {
     )
   )
   console.log(chalk.gray('AI Agent Commerce Protocol CLI'))
-  console.log(chalk.gray(`CLI v${version} | SDK v2.0.1\n`))
+  console.log(chalk.gray(`CLI v${version} | SDK v2.0.4\n`))
 }
 
 // Main CLI setup

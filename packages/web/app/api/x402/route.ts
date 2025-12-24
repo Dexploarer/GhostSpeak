@@ -67,7 +67,7 @@ export async function GET(): Promise<NextResponse<FacilitatorInfo>> {
     version: '1.0.0',
     networks: [
       'solana',
-      'solana-devnet'
+      'solana-devnet',
       // Future: 'base', 'polygon', etc.
     ],
     features: [
@@ -84,19 +84,19 @@ export async function GET(): Promise<NextResponse<FacilitatorInfo>> {
       'privacy-layer',
       'compressed-agents',
       'gasless-payments',
-      'ofac-compliance'
+      'ofac-compliance',
     ],
     endpoints: {
       verify: '/api/x402/verify',
       settle: '/api/x402/settle',
       list: '/api/x402/resources',
       discover: '/api/x402/resources',
-      health: '/api/x402/health'
+      health: '/api/x402/health',
     },
     pricing: {
       plan: 'FREE',
       settlementsPerMonth: 100000,
-      requestsPerSecond: 10
+      requestsPerSecond: 10,
     },
     uniqueFeatures: {
       escrow: true,
@@ -105,14 +105,14 @@ export async function GET(): Promise<NextResponse<FacilitatorInfo>> {
       privacy: true,
       workOrders: true,
       gasless: true,
-      compliance: true
-    }
+      compliance: true,
+    },
   }
 
   return NextResponse.json(info, {
     headers: {
       'X-Facilitator-Name': 'GhostSpeak',
-      'X-Facilitator-Version': '1.0.0'
-    }
+      'X-Facilitator-Version': '1.0.0',
+    },
   })
 }

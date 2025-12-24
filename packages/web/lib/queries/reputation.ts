@@ -34,7 +34,8 @@ interface EscrowHistoryItem {
   completedAt?: Date
 }
 
-interface MarketplaceActivity {
+// Future: Marketplace activity for reputation calculation
+interface _MarketplaceActivity {
   serviceListings: unknown[]
   purchasedServices: unknown[]
 }
@@ -95,10 +96,10 @@ export interface ReputationMetrics {
 
 /**
  * Hook to retrieve comprehensive reputation metrics for a specific agent.
- * 
+ *
  * Fetches on-chain data including job history, escrow performance, and account stats
  * to calculate a detailed reputation profile.
- * 
+ *
  * @param agentAddress - The Solana public key of the agent to fetch
  * @returns React Query result containing the @see ReputationMetrics
  */
@@ -191,8 +192,14 @@ async function getAgentJobHistory(agentAddress: string) {
 
   try {
     // Get work orders where this agent is involved - use casted module
-    const workOrdersClient = client as unknown as { workOrders: { getAllWorkOrders: () => Promise<Array<{ address: Address; data?: WorkOrderData }>> } }
-    const allWorkOrders = await workOrdersClient.workOrders.getAllWorkOrders().catch(() => [] as Array<{ address: Address; data?: WorkOrderData }>)
+    const workOrdersClient = client as unknown as {
+      workOrders: {
+        getAllWorkOrders: () => Promise<Array<{ address: Address; data?: WorkOrderData }>>
+      }
+    }
+    const allWorkOrders = await workOrdersClient.workOrders
+      .getAllWorkOrders()
+      .catch(() => [] as Array<{ address: Address; data?: WorkOrderData }>)
 
     // Filter work orders for this agent
     const agentWorkOrders = allWorkOrders.filter(
@@ -222,8 +229,12 @@ async function getAgentEscrowHistory(agentAddress: string) {
   const client = getGhostSpeakClient()
 
   try {
-    const escrowClient = client as unknown as { escrow: { getAllEscrows: () => Promise<Array<{ address: Address; data?: EscrowData }>> } }
-    const allEscrows = await escrowClient.escrow.getAllEscrows().catch(() => [] as Array<{ address: Address; data?: EscrowData }>)
+    const escrowClient = client as unknown as {
+      escrow: { getAllEscrows: () => Promise<Array<{ address: Address; data?: EscrowData }>> }
+    }
+    const allEscrows = await escrowClient.escrow
+      .getAllEscrows()
+      .catch(() => [] as Array<{ address: Address; data?: EscrowData }>)
 
     // Filter escrows where this agent is involved
     const agentEscrows = allEscrows.filter(
@@ -250,29 +261,26 @@ async function getAgentEscrowHistory(agentAddress: string) {
 /**
  * Get agent marketplace activity
  */
-async function getAgentMarketplaceActivity(agentAddress: string) {
+// TODO: Integrate marketplace activity into reputation calculation
+async function _getAgentMarketplaceActivity(agentAddress: string) {
   const client = getGhostSpeakClient()
 
   try {
-    const marketplaceModule = client.marketplace
+    // const marketplaceModule = client.marketplace
     const allListings = await client.marketplace.getAllServiceListings()
 
     // Filter listings created by this agent - cast to any for type flexibility
-    const agentListings = (allListings as unknown as Array<{ address: Address; data?: { provider?: Address; isActive?: boolean; purchaseCount?: number } }>).filter(
-      (listing) =>
-        listing.data?.provider?.toString() === agentAddress
-    )
+    const agentListings = (
+      allListings as unknown as Array<{
+        address: Address
+        data?: { provider?: Address; isActive?: boolean; purchaseCount?: number }
+      }>
+    ).filter((listing) => listing.data?.provider?.toString() === agentAddress)
 
     return {
       totalListings: agentListings.length,
-      activeListings: agentListings.filter(
-        (l) => l.data?.isActive
-      ).length,
-      totalSales: agentListings.reduce(
-        (sum, l) =>
-          sum + (l.data?.purchaseCount || 0),
-        0
-      ),
+      activeListings: agentListings.filter((l) => l.data?.isActive).length,
+      totalSales: agentListings.reduce((sum, l) => sum + (l.data?.purchaseCount || 0), 0),
     }
   } catch (error) {
     console.warn('Failed to fetch marketplace activity:', error)
@@ -376,7 +384,7 @@ function determineTrustLevel(
 function calculateEarnedBadges(
   agentAccount: AgentAccountData,
   jobHistory: JobHistoryItem[],
-  escrowHistory: EscrowHistoryItem[]
+  _escrowHistory: EscrowHistoryItem[]
 ) {
   const badges: ReputationMetrics['badges'] = []
 
@@ -437,7 +445,7 @@ function calculateEarnedBadges(
  */
 function generatePerformanceHistory(
   jobHistory: JobHistoryItem[],
-  escrowHistory: EscrowHistoryItem[]
+  _escrowHistory: EscrowHistoryItem[]
 ) {
   // Group jobs by month for performance tracking
   const monthlyStats: Record<string, { jobs: number; completed: number; avgQuality: number }> = {}

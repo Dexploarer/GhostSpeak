@@ -7,7 +7,6 @@ import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import { useTransactionFeedback } from '@/lib/transaction-feedback'
 import { getErrorInfo } from '@/lib/errors/error-messages'
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
 // Import types from SDK via dynamic import to avoid fs dependency issues
 // import {
 //   EscrowStatus as SDKEscrowStatus,
@@ -179,15 +178,17 @@ async function fetchMilestoneData(
     if (jobPosting) {
       // Job postings have budget/requirements but not formal milestones
       // Return a single "milestone" representing the full job
-      return [{
-        id: workOrderAddress,
-        title: jobPosting.title ?? 'Complete Work',
-        description: jobPosting.description,
-        amount: BigInt(jobPosting.budget ?? 0),
-        completed: false, // Would need to check job contract status
-        completedAt: undefined,
-        transactionId: undefined,
-      }]
+      return [
+        {
+          id: workOrderAddress,
+          title: jobPosting.title ?? 'Complete Work',
+          description: jobPosting.description,
+          amount: BigInt(jobPosting.budget ?? 0),
+          completed: false, // Would need to check job contract status
+          completedAt: undefined,
+          transactionId: undefined,
+        },
+      ]
     }
     return []
   } catch (error) {
@@ -213,7 +214,6 @@ function getCompletionTime(escrowData: EscrowSDKData): Date | undefined {
   }
   return undefined
 }
-
 
 export enum EscrowStatus {
   Active = 'Active',
@@ -444,10 +444,7 @@ export function useEscrows(filters?: {
           const interestEarned = BigInt(0)
 
           // Enrich with agent names
-          const [clientName, agentName] = await fetchAgentNames(
-            escrowData.client,
-            escrowData.agent
-          )
+          const [clientName, agentName] = await fetchAgentNames(escrowData.client, escrowData.agent)
 
           // Derive work order address from task ID
           const workOrderAddress = await deriveWorkOrderFromEscrow(
@@ -474,15 +471,23 @@ export function useEscrows(filters?: {
             status: mapSDKStatusToUIStatus(escrowData.status as SDKEscrowStatus),
             paymentToken: escrowData.paymentToken,
             tokenMetadata,
-            isConfidential: (escrowData as unknown as { isConfidential?: boolean }).isConfidential ?? false,
-            transferHook: (escrowData as unknown as { transferHook?: string | null }).transferHook ?? undefined,
+            isConfidential:
+              (escrowData as unknown as { isConfidential?: boolean }).isConfidential ?? false,
+            transferHook:
+              (escrowData as unknown as { transferHook?: string | null }).transferHook ?? undefined,
             createdAt: new Date(Number(escrowData.createdAt) * 1000),
-            expiresAt: new Date(Number((escrowData as unknown as { expiresAt?: bigint }).expiresAt ?? escrowData.createdAt + BigInt(604800)) * 1000),
+            expiresAt: new Date(
+              Number(
+                (escrowData as unknown as { expiresAt?: bigint }).expiresAt ??
+                  escrowData.createdAt + BigInt(604800)
+              ) * 1000
+            ),
             completedAt,
             milestones,
             disputeReason: escrowData.disputeReason !== null ? escrowData.disputeReason : undefined,
             resolutionNotes:
-              (escrowData as unknown as { resolutionNotes?: string | null }).resolutionNotes ?? undefined,
+              (escrowData as unknown as { resolutionNotes?: string | null }).resolutionNotes ??
+              undefined,
             totalFeesCollected,
             interestEarned,
           } as Escrow
@@ -596,16 +601,25 @@ export function useEscrow(address: string) {
         status: mapSDKStatusToUIStatus(escrowTypedData.status as SDKEscrowStatus),
         paymentToken: escrowTypedData.paymentToken,
         tokenMetadata,
-        isConfidential: (escrowTypedData as unknown as { isConfidential?: boolean }).isConfidential ?? false,
-        transferHook: (escrowTypedData as unknown as { transferHook?: string | null }).transferHook ?? undefined,
+        isConfidential:
+          (escrowTypedData as unknown as { isConfidential?: boolean }).isConfidential ?? false,
+        transferHook:
+          (escrowTypedData as unknown as { transferHook?: string | null }).transferHook ??
+          undefined,
         createdAt: new Date(Number(escrowTypedData.createdAt) * 1000),
-        expiresAt: new Date(Number((escrowTypedData as unknown as { expiresAt?: bigint }).expiresAt ?? escrowTypedData.createdAt + BigInt(604800)) * 1000),
+        expiresAt: new Date(
+          Number(
+            (escrowTypedData as unknown as { expiresAt?: bigint }).expiresAt ??
+              escrowTypedData.createdAt + BigInt(604800)
+          ) * 1000
+        ),
         completedAt,
         milestones,
         disputeReason:
           escrowTypedData.disputeReason !== null ? escrowTypedData.disputeReason : undefined,
         resolutionNotes:
-          (escrowTypedData as unknown as { resolutionNotes?: string | null }).resolutionNotes ?? undefined,
+          (escrowTypedData as unknown as { resolutionNotes?: string | null }).resolutionNotes ??
+          undefined,
         totalFeesCollected,
         interestEarned,
       } as Escrow
@@ -618,7 +632,7 @@ export function useTokenMetadata(tokenAddress: string) {
   return useQuery({
     queryKey: ['token-metadata', tokenAddress],
     queryFn: async () => {
-      const client = getGhostSpeakClient()
+      // const client = getGhostSpeakClient()
       const rpcClient = {} as Record<string, unknown>
 
       return fetchTokenMetadata(tokenAddress as Address, rpcClient)
@@ -636,7 +650,7 @@ export function useCreateEscrow() {
   return useMutation({
     mutationFn: async (data: CreateEscrowData) => {
       const txId = `escrow-create-${Date.now()}`
-      
+
       if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
@@ -715,11 +729,7 @@ export function useCompleteEscrow() {
       const escrowModule = client.escrow
 
       // Complete the escrow
-      const signature = await escrowModule.complete(
-        signer,
-        data.escrowAddress as Address
-      )
-
+      const signature = await escrowModule.complete(signer, data.escrowAddress as Address)
 
       return {
         transactionId: signature,
@@ -761,12 +771,9 @@ export function useCancelEscrow() {
       }
 
       // Cancel the escrow
-      const signature = await escrowModule.cancel(
-        signer,
-        data.escrowAddress as Address,
-        { buyer: escrowData.client }
-      )
-
+      const signature = await escrowModule.cancel(signer, data.escrowAddress as Address, {
+        buyer: escrowData.client,
+      })
 
       return {
         transactionId: signature,
@@ -807,7 +814,6 @@ export function useDisputeEscrow() {
         data.escrowAddress as Address,
         data.reason
       )
-
 
       return {
         transactionId: signature,
@@ -856,9 +862,8 @@ export function useProcessPartialRefund() {
         data.refundAmount,
         escrowData.amount,
         escrowData.client, // clientAddress
-        escrowData.agent   // agentAddress
+        escrowData.agent // agentAddress
       )
-
 
       return {
         transactionId: signature,
@@ -880,7 +885,7 @@ export function useProcessPartialRefund() {
 
 export function useConfidentialTransfer() {
   const queryClient = useQueryClient()
-  const { createSigner, isConnected, address } = useCrossmintSigner()
+  const { isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (_data: ConfidentialTransferData) => {

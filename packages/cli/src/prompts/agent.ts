@@ -2,6 +2,7 @@ import {
   text, 
   multiselect, 
   confirm,
+  select,
   isCancel,
   cancel
 } from '@clack/prompts'
@@ -89,7 +90,7 @@ export async function registerAgentPrompts(options: { name?: string; description
       try {
         new URL(value)
         return undefined
-      } catch (error) {
+      } catch {
         return 'Please enter a valid URL'
       }
     }
@@ -154,7 +155,7 @@ export async function registerAgentPrompts(options: { name?: string; description
         try {
           new URL(value)
           return undefined
-        } catch (error) {
+        } catch {
           return 'Please enter a valid URL'
         }
       }

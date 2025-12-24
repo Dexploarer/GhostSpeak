@@ -12,36 +12,26 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Play,
   Shield,
-  Users,
   Clock,
   CheckCircle,
   AlertTriangle,
   Loader2,
-  ArrowRight,
   Key,
   Lock,
   Unlock,
+  ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatDistanceToNow } from 'date-fns'
 import type { Proposal } from '@/lib/queries/governance'
 import { ProposalStatus } from '@/lib/queries/governance'
 import { useMultisigs, type Multisig } from '@/lib/queries/multisig'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import { toast } from 'sonner'
-import type { Address } from '@solana/kit'
 
 interface ProposalExecutionFlowProps {
   proposal: Proposal
@@ -61,7 +51,7 @@ export function ProposalExecutionFlow({
   const [selectedMultisig, setSelectedMultisig] = useState<Multisig | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { address, isConnected } = useCrossmintSigner()
+  const { isConnected } = useCrossmintSigner()
   const { data: multisigs, isLoading: loadingMultisigs } = useMultisigs()
 
   // Only show for succeeded proposals
@@ -141,8 +131,7 @@ export function ProposalExecutionFlow({
 
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep)
 
-  const shortenAddress = (addr: string) =>
-    `${addr.slice(0, 4)}...${addr.slice(-4)}`
+  const shortenAddress = (addr: string) => `${addr.slice(0, 4)}...${addr.slice(-4)}`
 
   return (
     <>
@@ -190,6 +179,9 @@ export function ProposalExecutionFlow({
             </DialogDescription>
           </DialogHeader>
 
+          {/* Progress Bar */}
+          <Progress value={(currentStepIndex / (steps.length - 1)) * 100} className="h-2 mb-4" />
+
           {/* Progress Steps */}
           <div className="flex items-center justify-between mb-6">
             {steps.map((step, index) => {
@@ -207,11 +199,7 @@ export function ProposalExecutionFlow({
                         !isComplete && !isActive && 'bg-muted text-muted-foreground'
                       )}
                     >
-                      {isComplete ? (
-                        <CheckCircle className="w-4 h-4" />
-                      ) : (
-                        index + 1
-                      )}
+                      {isComplete ? <CheckCircle className="w-4 h-4" /> : index + 1}
                     </div>
                     <span
                       className={cn(
@@ -240,12 +228,10 @@ export function ProposalExecutionFlow({
             {/* Step 1: Select Multisig */}
             {currentStep === 'select-multisig' && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">
-                  Select a Multisig Wallet
-                </Label>
+                <Label className="text-base font-semibold">Select a Multisig Wallet</Label>
                 <p className="text-sm text-muted-foreground">
-                  Choose which multisig wallet will execute this proposal.
-                  You must be an owner or signer on the selected multisig.
+                  Choose which multisig wallet will execute this proposal. You must be an owner or
+                  signer on the selected multisig.
                 </p>
 
                 {loadingMultisigs ? (
@@ -284,9 +270,7 @@ export function ProposalExecutionFlow({
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">
-                                {multisig.multisigId.slice(0, 8)}
-                              </span>
+                              <span className="font-medium">{multisig.multisigId.slice(0, 8)}</span>
                               <Badge variant="outline">
                                 {multisig.threshold} of {multisig.signers.length}
                               </Badge>
@@ -297,10 +281,7 @@ export function ProposalExecutionFlow({
                           </div>
                           <div className="flex -space-x-2">
                             {multisig.signers.slice(0, 3).map((signer) => (
-                              <Avatar
-                                key={signer}
-                                className="w-6 h-6 border-2 border-background"
-                              >
+                              <Avatar key={signer} className="w-6 h-6 border-2 border-background">
                                 <AvatarFallback className="text-xs">
                                   {signer.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
@@ -339,9 +320,7 @@ export function ProposalExecutionFlow({
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Required Signatures
-                    </span>
+                    <span className="text-sm text-muted-foreground">Required Signatures</span>
                     <span>
                       {selectedMultisig.threshold} of {selectedMultisig.signers.length}
                     </span>
@@ -354,18 +333,15 @@ export function ProposalExecutionFlow({
                     <div className="text-sm">
                       <p className="font-medium text-blue-400">Multisig Execution</p>
                       <p className="text-muted-foreground">
-                        This will create a pending transaction in the multisig that
-                        requires {selectedMultisig.threshold} signatures before execution.
+                        This will create a pending transaction in the multisig that requires{' '}
+                        {selectedMultisig.threshold} signatures before execution.
                       </p>
                     </div>
                   </div>
                 </GlassCard>
 
                 <div className="flex justify-between pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentStep('select-multisig')}
-                  >
+                  <Button variant="outline" onClick={() => setCurrentStep('select-multisig')}>
                     Back
                   </Button>
                   <Button onClick={handleProceedToSign}>
@@ -381,8 +357,8 @@ export function ProposalExecutionFlow({
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Sign Transaction</Label>
                 <p className="text-sm text-muted-foreground">
-                  Sign the execution transaction. Other signers will need to approve
-                  before it can be executed.
+                  Sign the execution transaction. Other signers will need to approve before it can
+                  be executed.
                 </p>
 
                 <GlassCard className="p-6 text-center">
@@ -391,8 +367,8 @@ export function ProposalExecutionFlow({
                   </div>
                   <h4 className="font-semibold mb-2">Sign with Your Wallet</h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    You will be prompted to sign a transaction that creates the
-                    execution request in the multisig.
+                    You will be prompted to sign a transaction that creates the execution request in
+                    the multisig.
                   </p>
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
@@ -425,8 +401,7 @@ export function ProposalExecutionFlow({
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Execute Proposal</Label>
                 <p className="text-sm text-muted-foreground">
-                  The required signatures have been collected. You can now execute
-                  the proposal.
+                  The required signatures have been collected. You can now execute the proposal.
                 </p>
 
                 <GlassCard className="p-6 text-center">
@@ -435,8 +410,8 @@ export function ProposalExecutionFlow({
                   </div>
                   <h4 className="font-semibold mb-2">Ready to Execute</h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    All required signatures have been collected. Click execute to
-                    finalize the proposal.
+                    All required signatures have been collected. Click execute to finalize the
+                    proposal.
                   </p>
                   <div className="flex items-center justify-center gap-2 text-green-500 text-sm">
                     <CheckCircle className="w-4 h-4" />
@@ -471,8 +446,8 @@ export function ProposalExecutionFlow({
                 </div>
                 <h3 className="text-xl font-semibold">Proposal Executed!</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  The proposal "{proposal.title}" has been successfully executed
-                  through the multisig wallet.
+                  The proposal "{proposal.title}" has been successfully executed through the
+                  multisig wallet.
                 </p>
                 <Button onClick={handleClose}>Close</Button>
               </div>

@@ -29,7 +29,7 @@ pub fn validate_agent_registration_inputs(
 /// Implements canonical PDA validation, anti-collision measures,
 /// and comprehensive security constraints following 2025 best practices
 #[derive(Accounts)]
-#[instruction(agent_type: u8, metadata_uri: String, agent_id: String)]
+#[instruction(agent_type: u8, name: String, description: String, metadata_uri: String, agent_id: String)]
 pub struct RegisterAgent<'info> {
     /// Agent account with enhanced 2025 PDA security
     #[account(
@@ -70,7 +70,7 @@ pub struct RegisterAgent<'info> {
 ///
 /// Implements canonical bump validation and comprehensive authority checks
 #[derive(Accounts)]
-#[instruction(agent_type: u8, metadata_uri: String, agent_id: String)]
+#[instruction(agent_type: u8, name: Option<String>, description: Option<String>, metadata_uri: String, agent_id: String)]
 pub struct UpdateAgent<'info> {
     /// Agent account with canonical PDA validation
     #[account(

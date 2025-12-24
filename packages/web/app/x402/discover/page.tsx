@@ -12,21 +12,20 @@ import { CapabilityFilter, X402AgentGrid, PricingComparison } from '@/components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useX402AgentDiscovery, useX402AgentPriceComparison } from '@/lib/hooks/useX402'
-import type { AgentSearchParams } from '@/lib/ghostspeak'
+import type { AgentSearchParams, Agent, Address } from '@/lib/ghostspeak'
 
 export default function X402DiscoveryPage(): React.JSX.Element {
   const [filters, setFilters] = useState<AgentSearchParams>({ sortBy: 'reputation' })
   const [compareCapability, setCompareCapability] = useState<string>('text-generation')
 
   const { data: searchResults, isLoading: searchLoading } = useX402AgentDiscovery(filters)
-  const { data: priceComparison, isLoading: comparisonLoading } = useX402AgentPriceComparison(
-    compareCapability
-  )
+  const { data: priceComparison, isLoading: comparisonLoading } =
+    useX402AgentPriceComparison(compareCapability)
 
   const agents = searchResults?.agents ?? []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -61,9 +60,7 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                   <Search className="w-5 h-5" />
                   Search & Filter
                 </CardTitle>
-                <CardDescription>
-                  Find agents by capability, price, and performance
-                </CardDescription>
+                <CardDescription>Find agents by capability, price, and performance</CardDescription>
               </CardHeader>
               <CardContent>
                 <CapabilityFilter
@@ -74,7 +71,7 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                     'data-analysis',
                     'image-processing',
                     'translation',
-                    'summarization'
+                    'summarization',
                   ]}
                 />
               </CardContent>
@@ -111,16 +108,14 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                 <div className="space-y-4">
                   {/* Capability Selector */}
                   <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Select Capability
-                    </label>
+                    <label className="text-sm font-medium mb-2 block">Select Capability</label>
                     <div className="flex flex-wrap gap-2">
                       {[
                         'text-generation',
                         'code-generation',
                         'data-analysis',
                         'image-processing',
-                        'translation'
+                        'translation',
                       ].map((capability) => (
                         <button
                           key={capability}
@@ -129,7 +124,7 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                             px-4 py-2 rounded-xl text-sm font-medium transition-all
                             ${
                               compareCapability === capability
-                                ? 'bg-gradient-to-r from-purple-600 to-purple-400 text-white shadow-soft-md'
+                                ? 'bg-linear-to-r from-purple-600 to-purple-400 text-white shadow-soft-md'
                                 : 'bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-gray-200 dark:border-gray-700'
                             }
                           `}
@@ -150,10 +145,16 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                     </div>
                   ) : priceComparison && priceComparison.agents.length > 0 ? (
                     <PricingComparison
-                      agents={priceComparison.agents.map((agent: any) => ({
+                      agents={priceComparison.agents.map((agent: Agent) => ({
                         address: agent.address,
                         name: agent.name,
-                        pricing: agent.pricing
+                        pricing: agent.pricing || {
+                          model: 'cpm',
+                          basePrice: '0',
+                          currency: 'SOL',
+                          amount: '0',
+                          token: 'So11111111111111111111111111111111111111112' as Address,
+                        },
                       }))}
                     />
                   ) : (

@@ -19,25 +19,27 @@ export default function AgentsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">My Agents</h1>
-          <p className="text-muted-foreground">Register and manage your AI agents on the x402 marketplace</p>
+          <p className="text-muted-foreground">
+            Register and manage your AI agents on the x402 marketplace
+          </p>
         </div>
         <div className="flex gap-3">
-           <div className="relative hidden md:block">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-             <input 
-               type="text" 
-               placeholder="Search agents..." 
-               className="pl-9 pr-4 py-2 rounded-xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary/50 focus:bg-muted/80 transition-all w-64"
-             />
-           </div>
-           <Button variant="outline">
-             <Filter className="w-4 h-4 mr-2" />
-             Filter
-           </Button>
-           <Button>
-             <Plus className="w-4 h-4 mr-2" />
-             Register Agent
-           </Button>
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search agents..."
+              className="pl-9 pr-4 py-2 rounded-xl bg-muted border border-border text-sm text-foreground focus:outline-none focus:border-primary/50 focus:bg-muted/80 transition-all w-64"
+            />
+          </div>
+          <Button variant="outline">
+            <Filter className="w-4 h-4 mr-2" />
+            Filter
+          </Button>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Register Agent
+          </Button>
         </div>
       </div>
 
@@ -53,8 +55,8 @@ export default function AgentsPage() {
         </GlassCard>
       ) : isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1,2,3].map(i => (
-             <GlassCard key={i} className="h-[200px] animate-pulse" />
+          {[1, 2, 3].map((i) => (
+            <GlassCard key={i} className="h-[200px] animate-pulse" />
           ))}
         </div>
       ) : agents.length === 0 ? (
@@ -64,8 +66,8 @@ export default function AgentsPage() {
           </div>
           <h3 className="text-xl font-bold text-foreground mb-2">No Agents Registered</h3>
           <p className="text-muted-foreground max-w-md mb-8">
-            Register your first AI agent to start offering services on the x402 marketplace. 
-            All payments are protected by escrow.
+            Register your first AI agent to start offering services on the x402 marketplace. All
+            payments are protected by escrow.
           </p>
           <Button>
             <Plus className="w-4 h-4 mr-2" />
@@ -75,34 +77,38 @@ export default function AgentsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {agents.map((agent) => (
-            <GlassCard key={agent.address} variant="interactive" className="p-6 group flex flex-col h-full">
+            <GlassCard
+              key={agent.address}
+              variant="interactive"
+              className="p-6 group flex flex-col h-full"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center border border-border group-hover:border-primary/30 transition-colors">
                   <Bot className="w-6 h-6 text-primary" />
                 </div>
                 <StatusBeacon status={agent.isActive ? 'active' : 'inactive'} />
               </div>
-              
+
               <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
                 {agent.name}
               </h3>
               <p className="text-xs font-mono text-muted-foreground mb-4">
                 {agent.address.slice(0, 8)}...{agent.address.slice(-8)}
               </p>
-              
+
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground mb-2">Capabilities:</p>
                 <div className="flex flex-wrap gap-1.5">
-                   {(agent.capabilities || []).slice(0, 3).map((cap: string) => (
-                      <Badge key={cap} variant="outline" className="text-xs">
-                        {cap}
-                      </Badge>
-                   ))}
-                   {(agent.capabilities || []).length > 3 && (
-                      <Badge variant="outline" className="text-xs text-muted-foreground">
-                        +{(agent.capabilities || []).length - 3}
-                      </Badge>
-                   )}
+                  {(agent.capabilities || []).slice(0, 3).map((cap: string) => (
+                    <Badge key={cap} variant="outline" className="text-xs">
+                      {cap}
+                    </Badge>
+                  ))}
+                  {(agent.capabilities || []).length > 3 && (
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      +{(agent.capabilities || []).length - 3}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
@@ -117,14 +123,14 @@ export default function AgentsPage() {
                   x402
                 </span>
               </div>
-              
+
               <div className="mt-4 flex justify-between items-center">
-                 <span className="text-sm text-muted-foreground">
-                   Requests: <span className="text-foreground font-medium">1.2k</span>
-                 </span>
-                 <Button variant="ghost" size="sm" asChild>
-                   <Link href={`/dashboard/agents/${agent.address}`}>Manage</Link>
-                 </Button>
+                <span className="text-sm text-muted-foreground">
+                  Requests: <span className="text-foreground font-medium">1.2k</span>
+                </span>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/dashboard/agents/${agent.address}`}>Manage</Link>
+                </Button>
               </div>
             </GlassCard>
           ))}

@@ -73,7 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
   const startTime = Date.now()
 
   try {
-    const body = await request.json() as SettleRequest
+    const body = (await request.json()) as SettleRequest
 
     // Validate required fields
     if (!body.paymentHeader) {
@@ -106,15 +106,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
     // First, verify the payment exists and is valid
     let transaction
     try {
-      transaction = await rpc.getTransaction(signature as Parameters<typeof rpc.getTransaction>[0], {
-        maxSupportedTransactionVersion: 0,
-        encoding: 'jsonParsed'
-      }).send()
+      transaction = await rpc
+        .getTransaction(signature as Parameters<typeof rpc.getTransaction>[0], {
+          maxSupportedTransactionVersion: 0,
+          encoding: 'jsonParsed',
+        })
+        .send()
     } catch (error) {
       return NextResponse.json(
         {
           success: false,
-          errorMessage: `Failed to fetch transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
+          errorMessage: `Failed to fetch transaction: ${error instanceof Error ? error.message : 'Unknown error'}`,
         },
         { status: 400 }
       )
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
     const response: SettleResponse = {
       success: true,
       transaction: signature,
-      settledAt: new Date().toISOString()
+      settledAt: new Date().toISOString(),
     }
 
     // If agent ID provided, record for reputation
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
       console.log('Reputation recording requested:', {
         agentId: body.agentId,
         signature,
-        responseTimeMs: body.responseTimeMs
+        responseTimeMs: body.responseTimeMs,
       })
     }
 
@@ -170,7 +172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
 
       console.log('Escrow release requested:', {
         escrowId: body.escrowId,
-        paymentSignature: signature
+        paymentSignature: signature,
       })
     }
 
@@ -180,15 +182,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
       headers: {
         'X-Settlement-Time-Ms': settlementTime.toString(),
         'X-Facilitator': 'GhostSpeak',
-        'X-Network': 'solana'
-      }
+        'X-Network': 'solana',
+      },
     })
   } catch (error) {
     console.error('Payment settlement error:', error)
     return NextResponse.json(
       {
         success: false,
-        errorMessage: error instanceof Error ? error.message : 'Settlement failed'
+        errorMessage: error instanceof Error ? error.message : 'Settlement failed',
       },
       { status: 500 }
     )
@@ -211,8 +213,8 @@ export async function GET(): Promise<NextResponse> {
       'instant-settlement',
       'reputation-recording',
       'escrow-release',
-      'metrics-tracking'
+      'metrics-tracking',
     ],
-    note: 'For Solana, payments are already settled on-chain. This endpoint records them for reputation and releases escrows.'
+    note: 'For Solana, payments are already settled on-chain. This endpoint records them for reputation and releases escrows.',
   })
 }

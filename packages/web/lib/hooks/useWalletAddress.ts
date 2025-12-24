@@ -8,12 +8,12 @@ import { useWallet } from '@crossmint/client-sdk-react-ui'
  */
 export function useWalletAddress() {
   const { wallet } = useWallet()
-  
+
   return {
     address: wallet?.address ?? null,
-    shortAddress: wallet?.address 
+    shortAddress: wallet?.address
       ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
       : null,
-    isConnected: Boolean(wallet?.address)
+    isConnected: Boolean(wallet?.address),
   }
 }

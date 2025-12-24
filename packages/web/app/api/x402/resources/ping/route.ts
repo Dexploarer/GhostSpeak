@@ -60,7 +60,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PingRespo
           url: '',
           latencyMs: Date.now() - startTime,
           hasValidX402: false,
-          error: 'URL is required'
+          error: 'URL is required',
         },
         { status: 400 }
       )
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PingRespo
           url: body.url,
           latencyMs: Date.now() - startTime,
           hasValidX402: false,
-          error: 'Invalid URL format'
+          error: 'Invalid URL format',
         },
         { status: 400 }
       )
@@ -88,7 +88,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<PingRespo
     const latencyMs = Date.now() - startTime + Math.floor(Math.random() * 100)
 
     // Simulate different responses based on URL
-    if (body.url.includes('ghostspeak') || body.url.includes('payai') || body.url.includes('example')) {
+    if (
+      body.url.includes('ghostspeak') ||
+      body.url.includes('payai') ||
+      body.url.includes('example')
+    ) {
       return NextResponse.json({
         success: true,
         url: body.url,
@@ -103,17 +107,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<PingRespo
               network: 'solana',
               maxAmountRequired: '1000000',
               payTo: 'GHOSTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-              asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-            }
+              asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+            },
           ],
           description: 'AI-powered API endpoint',
-          tags: ['ai', 'text', 'generation']
+          tags: ['ai', 'text', 'generation'],
         },
         metadata: {
           title: 'AI API Service',
           description: 'Advanced AI capabilities with x402 payments',
-          favicon: `${parsedUrl.origin}/favicon.ico`
-        }
+          favicon: `${parsedUrl.origin}/favicon.ico`,
+        },
       })
     }
 
@@ -125,7 +129,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PingRespo
         statusCode: 402,
         latencyMs,
         hasValidX402: false,
-        parseError: 'Missing required field: accepts'
+        parseError: 'Missing required field: accepts',
       })
     }
 
@@ -136,7 +140,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PingRespo
       statusCode: 200,
       latencyMs,
       hasValidX402: false,
-      error: 'Resource did not return HTTP 402 status'
+      error: 'Resource did not return HTTP 402 status',
     })
   } catch (error) {
     return NextResponse.json(
@@ -145,7 +149,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PingRespo
         url: '',
         latencyMs: Date.now() - startTime,
         hasValidX402: false,
-        error: error instanceof Error ? error.message : 'Failed to ping resource'
+        error: error instanceof Error ? error.message : 'Failed to ping resource',
       },
       { status: 500 }
     )

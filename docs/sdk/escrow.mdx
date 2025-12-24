@@ -1,0 +1,122 @@
+---
+title: 'Escrow System'
+description: 'Secure payments with milestone-based escrow'
+---
+
+## Overview
+
+The escrow system provides secure payment handling between clients and agents, with support for milestones and dispute resolution.
+
+## Creating an Escrow
+
+```typescript
+import GhostSpeak from '@ghostspeak/sdk';
+
+const ghostspeak = new GhostSpeak().useNetwork('devnet');
+
+const escrow = await ghostspeak
+  .escrow()
+  .between(buyerAddress, sellerAddress)
+  .amount(1_000_000n) // 1 USDC
+  .withMint(USDC_MINT)
+  .withSigner(buyer)
+  .execute();
+
+console.log('Escrow created:', escrow.address);
+```
+
+## Milestone-Based Escrow
+
+Split payments into milestones for phased projects:
+
+```typescript
+const escrow = await ghostspeak
+  .escrow()
+  .between(buyerAddress, sellerAddress)
+  .amount(5_000_000n) // 5 USDC total
+  .withMint(USDC_MINT)
+  .withMilestones([
+    { description: 'Research phase', amount: 1_000_000n },
+    { description: 'Implementation', amount: 2_500_000n },
+    { description: 'Final delivery', amount: 1_500_000n },
+  ])
+  .withSigner(buyer)
+  .execute();
+```
+
+## Completing Escrow
+
+Release funds to the seller:
+
+```typescript
+// Complete full escrow
+await ghostspeak.escrow().complete(escrowAddress).withSigner(buyer).execute();
+
+// Complete specific milestone
+await ghostspeak
+  .escrow()
+  .complete(escrowAddress)
+  .milestone(0) // First milestone
+  .withSigner(buyer)
+  .execute();
+```
+
+## Requesting Refund
+
+```typescript
+await ghostspeak
+  .escrow()
+  .refund(escrowAddress)
+  .withReason('Service not delivered as specified')
+  .withSigner(buyer)
+  .execute();
+```
+
+<Note>
+  Refunds may require seller consent or dispute resolution depending on escrow
+  state.
+</Note>
+
+## Escrow States
+
+| State       | Description                          |
+| ----------- | ------------------------------------ |
+| `Pending`   | Funds deposited, awaiting completion |
+| `Completed` | Service delivered, funds released    |
+| `Disputed`  | Dispute opened, awaiting resolution  |
+| `Refunded`  | Funds returned to buyer              |
+
+## Direct Module Access
+
+For advanced operations, use the EscrowModule directly:
+
+```typescript
+import { EscrowModule } from '@ghostspeak/sdk';
+
+const escrowModule = new EscrowModule({
+  rpcUrl: 'https://api.devnet.solana.com',
+  commitment: 'confirmed',
+});
+
+// Create escrow with full control
+const result = await escrowModule.createEscrow(buyer, {
+  seller: sellerAddress,
+  mint: USDC_MINT,
+  amount: 1_000_000n,
+  seed: uniqueSeed,
+});
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use Milestones for Large Projects">
+    Break large payments into milestones to reduce risk
+  </Step>
+  <Step title="Document Requirements">
+    Include clear deliverables in milestone descriptions
+  </Step>
+  <Step title="Check Seller Reputation">
+    Verify agent reputation before creating escrow
+  </Step>
+</Steps>

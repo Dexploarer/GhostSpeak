@@ -21,7 +21,7 @@ import {
   Shield,
   Clock,
   DollarSign,
-  Users
+  Users,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,7 +33,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -91,7 +91,7 @@ const MOCK_STATS: GlobalStats = {
   totalFacilitators: 7,
   totalVolume24h: '$45,230',
   totalRequests24h: 89420,
-  avgLatency: 142
+  avgLatency: 142,
 }
 
 const MOCK_RESOURCES: ExplorerResource[] = [
@@ -111,7 +111,7 @@ const MOCK_RESOURCES: ExplorerResource[] = [
     totalRequests: 45000,
     paymentVolume: '$12,450',
     isVerified: true,
-    isActive: true
+    isActive: true,
   },
   {
     id: '2',
@@ -129,7 +129,7 @@ const MOCK_RESOURCES: ExplorerResource[] = [
     totalRequests: 12000,
     paymentVolume: '$8,200',
     isVerified: true,
-    isActive: true
+    isActive: true,
   },
   {
     id: '3',
@@ -147,8 +147,8 @@ const MOCK_RESOURCES: ExplorerResource[] = [
     totalRequests: 5600,
     paymentVolume: '$4,100',
     isVerified: false,
-    isActive: true
-  }
+    isActive: true,
+  },
 ]
 
 const NETWORKS = ['all', 'solana', 'base', 'polygon', 'ethereum', 'arbitrum']
@@ -159,9 +159,17 @@ const CATEGORIES = [
   'image-processing',
   'data-analysis',
   'translation',
-  'other'
+  'other',
 ]
-const FACILITATORS = ['all', 'ghostspeak', 'coinbase', 'thirdweb', 'payai', 'questflow', 'aurracloud']
+const FACILITATORS = [
+  'all',
+  'ghostspeak',
+  'coinbase',
+  'thirdweb',
+  'payai',
+  'questflow',
+  'aurracloud',
+]
 
 // =====================================================
 // COMPONENTS
@@ -171,7 +179,7 @@ function StatsCard({
   title,
   value,
   icon: Icon,
-  change
+  change,
 }: {
   title: string
   value: string | number
@@ -206,7 +214,7 @@ function ResourceCard({ resource }: { resource: ExplorerResource }) {
     solana: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
     base: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
     polygon: 'bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300',
-    ethereum: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+    ethereum: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
   }
 
   return (
@@ -234,7 +242,7 @@ function ResourceCard({ resource }: { resource: ExplorerResource }) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-1 mb-3">
-          {resource.tags.slice(0, 4).map(tag => (
+          {resource.tags.slice(0, 4).map((tag) => (
             <Badge key={tag} variant="outline" className="text-xs">
               {tag}
             </Badge>
@@ -279,7 +287,7 @@ function ResourceCard({ resource }: { resource: ExplorerResource }) {
 
 function LeaderboardTable({
   resources,
-  metric
+  metric,
 }: {
   resources: ExplorerResource[]
   metric: 'volume' | 'requests' | 'uptime'
@@ -288,8 +296,10 @@ function LeaderboardTable({
     return [...resources].sort((a, b) => {
       switch (metric) {
         case 'volume':
-          return parseFloat(b.paymentVolume?.replace(/[^0-9.]/g, '') ?? '0') -
+          return (
+            parseFloat(b.paymentVolume?.replace(/[^0-9.]/g, '') ?? '0') -
             parseFloat(a.paymentVolume?.replace(/[^0-9.]/g, '') ?? '0')
+          )
         case 'requests':
           return (b.totalRequests ?? 0) - (a.totalRequests ?? 0)
         case 'uptime':
@@ -339,27 +349,28 @@ export default function X402ExplorerPage(): React.JSX.Element {
     facilitator: 'all',
     priceRange: 'all',
     sortBy: 'volume',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
   })
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [isLoading, setIsLoading] = useState(false)
 
   // Filter resources
   const filteredResources = useMemo(() => {
-    return MOCK_RESOURCES.filter(resource => {
+    return MOCK_RESOURCES.filter((resource) => {
       if (filters.query) {
         const query = filters.query.toLowerCase()
         if (
           !resource.name.toLowerCase().includes(query) &&
           !resource.description?.toLowerCase().includes(query) &&
-          !resource.tags.some(t => t.toLowerCase().includes(query))
+          !resource.tags.some((t) => t.toLowerCase().includes(query))
         ) {
           return false
         }
       }
       if (filters.network !== 'all' && resource.network !== filters.network) return false
       if (filters.category !== 'all' && resource.category !== filters.category) return false
-      if (filters.facilitator !== 'all' && resource.facilitator !== filters.facilitator) return false
+      if (filters.facilitator !== 'all' && resource.facilitator !== filters.facilitator)
+        return false
       return true
     })
   }, [filters])
@@ -421,20 +432,20 @@ export default function X402ExplorerPage(): React.JSX.Element {
                   placeholder="Search resources by name, description, or tags..."
                   className="pl-10"
                   value={filters.query}
-                  onChange={e => setFilters(f => ({ ...f, query: e.target.value }))}
+                  onChange={(e) => setFilters((f) => ({ ...f, query: e.target.value }))}
                 />
               </div>
 
               <div className="flex gap-2 flex-wrap">
                 <Select
                   value={filters.network}
-                  onValueChange={(v: string) => setFilters(f => ({ ...f, network: v }))}
+                  onValueChange={(v: string) => setFilters((f) => ({ ...f, network: v }))}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Network" />
                   </SelectTrigger>
                   <SelectContent>
-                    {NETWORKS.map(n => (
+                    {NETWORKS.map((n) => (
                       <SelectItem key={n} value={n}>
                         {n === 'all' ? 'All Networks' : n.charAt(0).toUpperCase() + n.slice(1)}
                       </SelectItem>
@@ -444,13 +455,13 @@ export default function X402ExplorerPage(): React.JSX.Element {
 
                 <Select
                   value={filters.category}
-                  onValueChange={(v: string) => setFilters(f => ({ ...f, category: v }))}
+                  onValueChange={(v: string) => setFilters((f) => ({ ...f, category: v }))}
                 >
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(c => (
+                    {CATEGORIES.map((c) => (
                       <SelectItem key={c} value={c}>
                         {c === 'all' ? 'All Categories' : c.replace('-', ' ')}
                       </SelectItem>
@@ -460,13 +471,13 @@ export default function X402ExplorerPage(): React.JSX.Element {
 
                 <Select
                   value={filters.facilitator}
-                  onValueChange={(v: string) => setFilters(f => ({ ...f, facilitator: v }))}
+                  onValueChange={(v: string) => setFilters((f) => ({ ...f, facilitator: v }))}
                 >
                   <SelectTrigger className="w-36">
                     <SelectValue placeholder="Facilitator" />
                   </SelectTrigger>
                   <SelectContent>
-                    {FACILITATORS.map(f => (
+                    {FACILITATORS.map((f) => (
                       <SelectItem key={f} value={f}>
                         {f === 'all' ? 'All Facilitators' : f}
                       </SelectItem>
@@ -504,12 +515,10 @@ export default function X402ExplorerPage(): React.JSX.Element {
           {/* Resource Grid */}
           <div className="lg:col-span-3">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500">
-                {filteredResources.length} resources found
-              </p>
+              <p className="text-sm text-gray-500">{filteredResources.length} resources found</p>
               <Select
                 value={filters.sortBy}
-                onValueChange={(v: string) => setFilters(f => ({ ...f, sortBy: v }))}
+                onValueChange={(v: string) => setFilters((f) => ({ ...f, sortBy: v }))}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Sort by" />
@@ -526,7 +535,7 @@ export default function X402ExplorerPage(): React.JSX.Element {
 
             {isLoading ? (
               <div className="grid md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map(i => (
+                {[1, 2, 3, 4].map((i) => (
                   <Card key={i} className="bg-white/70 dark:bg-gray-900/70">
                     <CardHeader>
                       <Skeleton className="h-6 w-48" />
@@ -539,12 +548,8 @@ export default function X402ExplorerPage(): React.JSX.Element {
                 ))}
               </div>
             ) : (
-              <div
-                className={
-                  viewMode === 'grid' ? 'grid md:grid-cols-2 gap-4' : 'space-y-4'
-                }
-              >
-                {filteredResources.map(resource => (
+              <div className={viewMode === 'grid' ? 'grid md:grid-cols-2 gap-4' : 'space-y-4'}>
+                {filteredResources.map((resource) => (
                   <ResourceCard key={resource.id} resource={resource} />
                 ))}
               </div>

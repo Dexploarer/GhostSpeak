@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server'
 
-const CROSSMINT_API_URL = process.env.CROSSMINT_API_URL ?? 'https://staging.crossmint.com/api/2022-06-09'
-const CROSSMINT_API_KEY = process.env.CROSSMINT_SECRET_KEY ?? process.env.CROSSMINT_SERVER_API_KEY ?? process.env.NEXT_PUBLIC_CROSSMINT_API_KEY
+const CROSSMINT_API_URL =
+  process.env.CROSSMINT_API_URL ?? 'https://staging.crossmint.com/api/2022-06-09'
+const CROSSMINT_API_KEY =
+  process.env.CROSSMINT_SECRET_KEY ??
+  process.env.CROSSMINT_SERVER_API_KEY ??
+  process.env.NEXT_PUBLIC_CROSSMINT_API_KEY
 
 /**
  * POST /api/crossmint/transactions
  * Create and sign a transaction for an agent wallet
- * 
+ *
  * Required body:
  * - walletId: string (the agent's Crossmint wallet ID)
  * - serializedTransaction: string (from order payment preparation)
@@ -37,16 +41,18 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: {
         'X-API-KEY': CROSSMINT_API_KEY,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         params: {
-          calls: [{
-            transaction: serializedTransaction
-          }],
-          chain
-        }
-      })
+          calls: [
+            {
+              transaction: serializedTransaction,
+            },
+          ],
+          chain,
+        },
+      }),
     })
 
     const data = await response.json()
@@ -62,10 +68,7 @@ export async function POST(req: Request) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Create Transaction Error:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
@@ -97,8 +100,8 @@ export async function GET(req: Request) {
       `${CROSSMINT_API_URL}/wallets/${walletId}/transactions/${transactionId}`,
       {
         headers: {
-          'X-API-KEY': CROSSMINT_API_KEY
-        }
+          'X-API-KEY': CROSSMINT_API_KEY,
+        },
       }
     )
 
@@ -115,9 +118,6 @@ export async function GET(req: Request) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Get Transaction Error:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

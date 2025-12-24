@@ -30,7 +30,12 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useCreateMultisig, type CreateMultisigData, MultisigType, MULTISIG_TYPE_INFO } from '@/lib/queries/multisig'
+import {
+  useCreateMultisig,
+  type CreateMultisigData,
+  MultisigType,
+  MULTISIG_TYPE_INFO,
+} from '@/lib/queries/multisig'
 import { MultisigTypeSelector } from './MultisigTypeSelector'
 import type { Address } from '@solana/kit'
 
@@ -38,10 +43,15 @@ const createMultisigSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name too long'),
   multisigType: z.nativeEnum(MultisigType),
   threshold: z.number().min(1, 'At least 1 signature required').max(10, 'Maximum 10 signatures'),
-  signers: z.array(z.object({
-    address: z.string().min(32, 'Invalid address').max(64, 'Invalid address'),
-    label: z.string().optional(),
-  })).min(1, 'At least one signer required').max(10, 'Maximum 10 signers'),
+  signers: z
+    .array(
+      z.object({
+        address: z.string().min(32, 'Invalid address').max(64, 'Invalid address'),
+        label: z.string().optional(),
+      })
+    )
+    .min(1, 'At least one signer required')
+    .max(10, 'Maximum 10 signers'),
   autoExecute: z.boolean(),
   allowEmergencyOverride: z.boolean(),
   defaultTimeout: z.number().min(3600, 'Minimum 1 hour').max(604800, 'Maximum 7 days'),
@@ -115,8 +125,8 @@ export function CreateMultisigForm({
         name: data.name,
         threshold: data.threshold,
         signers: data.signers
-          .filter(s => s.address.trim() !== '')
-          .map(s => s.address as Address),
+          .filter((s) => s.address.trim() !== '')
+          .map((s) => s.address as Address),
         config: {
           autoExecute: data.autoExecute,
           allowEmergencyOverride: data.allowEmergencyOverride,
@@ -131,11 +141,15 @@ export function CreateMultisigForm({
     }
   }
 
-  const validSignersCount = watchedSigners.filter(s => s.address.trim() !== '').length
-  const securityLevel = 
-    watchedThreshold === 1 ? 'Low' :
-    watchedThreshold <= 2 ? 'Medium' :
-    watchedThreshold <= 4 ? 'High' : 'Critical'
+  const validSignersCount = watchedSigners.filter((s) => s.address.trim() !== '').length
+  const securityLevel =
+    watchedThreshold === 1
+      ? 'Low'
+      : watchedThreshold <= 2
+        ? 'Medium'
+        : watchedThreshold <= 4
+          ? 'High'
+          : 'Critical'
 
   const securityColors = {
     Low: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20',
@@ -272,25 +286,34 @@ export function CreateMultisigForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: Math.min(validSignersCount, 10) }, (_, i) => i + 1).map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n} of {validSignersCount} signatures required
-                  </SelectItem>
-                ))}
+                {Array.from({ length: Math.min(validSignersCount, 10) }, (_, i) => i + 1).map(
+                  (n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} of {validSignersCount} signatures required
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>
-          <div className={cn('px-3 py-1 rounded-full border text-sm font-medium', securityColors[securityLevel])}>
+          <div
+            className={cn(
+              'px-3 py-1 rounded-full border text-sm font-medium',
+              securityColors[securityLevel]
+            )}
+          >
             {securityLevel} Security
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {thresholdPresets.map((preset) => {
-            const [required, total] = preset.label.split('-of-').map((s, i) => 
-              i === 1 ? 'N' : parseInt(s)
-            )
-            const isSelected = required === watchedThreshold && validSignersCount >= (typeof required === 'number' ? required : 0)
+            const [required, _total] = preset.label
+              .split('-of-')
+              .map((s, i) => (i === 1 ? 'N' : parseInt(s)))
+            const isSelected =
+              required === watchedThreshold &&
+              validSignersCount >= (typeof required === 'number' ? required : 0)
 
             return (
               <button
@@ -306,7 +329,9 @@ export function CreateMultisigForm({
                   'p-3 rounded-lg border text-left transition-all',
                   'hover:border-primary/50 hover:bg-primary/5',
                   isSelected && 'border-primary bg-primary/10',
-                  typeof required === 'number' && validSignersCount < required && 'opacity-50 cursor-not-allowed'
+                  typeof required === 'number' &&
+                    validSignersCount < required &&
+                    'opacity-50 cursor-not-allowed'
                 )}
               >
                 <div className="font-medium text-sm">{preset.label}</div>
@@ -391,11 +416,15 @@ export function CreateMultisigForm({
               <div className="space-y-1 text-blue-800 dark:text-blue-200">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  <span>{validSignersCount} signer{validSignersCount !== 1 ? 's' : ''} configured</span>
+                  <span>
+                    {validSignersCount} signer{validSignersCount !== 1 ? 's' : ''} configured
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Key className="w-4 h-4" />
-                  <span>Requires {watchedThreshold} of {validSignersCount} signatures</span>
+                  <span>
+                    Requires {watchedThreshold} of {validSignersCount} signatures
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
@@ -414,7 +443,7 @@ export function CreateMultisigForm({
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Warning:</strong> With a 1-of-N threshold, any single signer can execute 
+                <strong>Warning:</strong> With a 1-of-N threshold, any single signer can execute
                 transactions. Consider increasing the threshold for better security.
               </div>
             </div>

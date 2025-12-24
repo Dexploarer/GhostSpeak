@@ -1,0 +1,101 @@
+{
+  "$schema": "https://mintlify.com/schema/docs.json",
+  "name": "GhostSpeak",
+  "theme": "maple",
+  "colors": {
+    "primary": "#ccff00",
+    "light": "#e5ff80",
+    "dark": "#1a1a1a"
+  },
+  "logo": {
+    "dark": "/assets/ghostspeak-logo.png",
+    "light": "/assets/ghostspeak-logo.png"
+  },
+  "favicon": "/assets/ghostspeak-logo.png",
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/ghostspeak/ghostspeak"
+      },
+      {
+        "label": "Discord",
+        "href": "https://discord.gg/ghostspeak"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/ghostspeak/ghostspeak",
+      "discord": "https://discord.gg/ghostspeak",
+      "x": "https://twitter.com/ghostspeak"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "index",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/security"
+            ]
+          },
+          {
+            "group": "SDK Reference",
+            "pages": [
+              "sdk/api-reference",
+              "sdk/agents",
+              "sdk/escrow"
+            ]
+          },
+          {
+            "group": "X402 Payments",
+            "pages": [
+              "x402/overview",
+              "x402/examples",
+              "x402/migration",
+              "x402/integration",
+              "x402/discovery"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/deployment",
+              "guides/governance",
+              "guides/testing"
+            ]
+          },
+          {
+            "group": "CLI",
+            "pages": [
+              "cli/overview",
+              "cli/commands"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "styling": {
+    "codeblocks": {
+      "theme": "github-dark"
+    }
+  },
+  "api": {
+    "playground": {
+      "mode": "interactive"
+    }
+  }
+}

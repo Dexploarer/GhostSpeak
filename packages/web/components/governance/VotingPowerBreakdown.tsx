@@ -5,12 +5,7 @@ import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Coins,
   Star,
@@ -23,7 +18,6 @@ import {
   ArrowDown,
   CheckCircle,
   AlertCircle,
-  Bot,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -32,7 +26,6 @@ import {
   formatVotingPower,
   formatTokenAmount,
   VOTING_WEIGHTS,
-  type VotingPowerBreakdown as VotingPowerBreakdownType,
 } from '@/lib/hooks/useVotingPower'
 
 // =====================================================
@@ -43,9 +36,7 @@ interface VotingPowerBreakdownProps {
   className?: string
 }
 
-export function VotingPowerBreakdown({
-  className,
-}: VotingPowerBreakdownProps): React.JSX.Element {
+export function VotingPowerBreakdown({ className }: VotingPowerBreakdownProps): React.JSX.Element {
   const { data: breakdown, isLoading } = useVotingPowerBreakdown()
 
   if (isLoading || !breakdown) {
@@ -61,10 +52,15 @@ export function VotingPowerBreakdown({
   }
 
   // Calculate percentages for the pie chart representation
-  const tokenContribution = Number(breakdown.tokenVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.TOKEN * 100))) / 100
-  const repContribution = Number(breakdown.reputationVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.REPUTATION * 100))) / 100
-  const volumeContribution = Number(breakdown.volumeVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.VOLUME * 100))) / 100
-  const stakingContribution = Number(breakdown.stakingVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.STAKING * 100))) / 100
+  const tokenContribution =
+    Number(breakdown.tokenVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.TOKEN * 100))) / 100
+  const repContribution =
+    Number(breakdown.reputationVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.REPUTATION * 100))) /
+    100
+  const volumeContribution =
+    Number(breakdown.volumeVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.VOLUME * 100))) / 100
+  const stakingContribution =
+    Number(breakdown.stakingVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.STAKING * 100))) / 100
 
   const total = tokenContribution + repContribution + volumeContribution + stakingContribution
   const tokenPercent = total > 0 ? (tokenContribution / total) * 100 : 0
@@ -96,22 +92,10 @@ export function VotingPowerBreakdown({
       {/* Visual Breakdown Bar */}
       <div className="mb-6">
         <div className="flex h-4 rounded-full overflow-hidden">
-          <div
-            className="bg-yellow-500 transition-all"
-            style={{ width: `${tokenPercent}%` }}
-          />
-          <div
-            className="bg-purple-500 transition-all"
-            style={{ width: `${repPercent}%` }}
-          />
-          <div
-            className="bg-green-500 transition-all"
-            style={{ width: `${volumePercent}%` }}
-          />
-          <div
-            className="bg-blue-500 transition-all"
-            style={{ width: `${stakingPercent}%` }}
-          />
+          <div className="bg-yellow-500 transition-all" style={{ width: `${tokenPercent}%` }} />
+          <div className="bg-purple-500 transition-all" style={{ width: `${repPercent}%` }} />
+          <div className="bg-green-500 transition-all" style={{ width: `${volumePercent}%` }} />
+          <div className="bg-blue-500 transition-all" style={{ width: `${stakingPercent}%` }} />
         </div>
         <div className="flex justify-between mt-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -214,25 +198,24 @@ export function VotingPowerBreakdown({
 
       {/* Delegations */}
       <div className="space-y-3">
-        <h4 className="text-sm font-medium text-muted-foreground">Delegations</h4>
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-muted-foreground" />
+          <h4 className="text-sm font-medium text-muted-foreground">Delegations</h4>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
             <div className="flex items-center gap-2 text-green-500 text-sm mb-1">
               <ArrowUp className="w-4 h-4" />
               Received
             </div>
-            <p className="text-lg font-semibold">
-              +{formatVotingPower(breakdown.delegatedToYou)}
-            </p>
+            <p className="text-lg font-semibold">+{formatVotingPower(breakdown.delegatedToYou)}</p>
           </div>
           <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
             <div className="flex items-center gap-2 text-yellow-500 text-sm mb-1">
               <ArrowDown className="w-4 h-4" />
               Delegated Out
             </div>
-            <p className="text-lg font-semibold">
-              -{formatVotingPower(breakdown.delegatedByYou)}
-            </p>
+            <p className="text-lg font-semibold">-{formatVotingPower(breakdown.delegatedByYou)}</p>
           </div>
         </div>
       </div>

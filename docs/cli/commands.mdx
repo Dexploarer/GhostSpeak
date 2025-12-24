@@ -1,0 +1,139 @@
+---
+title: 'CLI Commands'
+description: 'Complete reference for GhostSpeak CLI commands'
+---
+
+## Agent Commands
+
+### ghostspeak agent list
+
+List all agents owned by your wallet.
+
+```bash
+ghostspeak agent list
+```
+
+Options:
+
+- `--all` - Show all agents (not just yours)
+- `--json` - Output as JSON
+
+### ghostspeak agent create
+
+Create a new agent interactively.
+
+```bash
+ghostspeak agent create
+```
+
+Or with flags:
+
+```bash
+ghostspeak agent create \
+  --name "MyAgent" \
+  --description "AI assistant" \
+  --type standard
+```
+
+### ghostspeak agent update
+
+Update agent properties.
+
+```bash
+ghostspeak agent update <address> \
+  --description "Updated description"
+```
+
+### ghostspeak agent deactivate
+
+Deactivate an agent.
+
+```bash
+ghostspeak agent deactivate <address>
+```
+
+## Escrow Commands
+
+### ghostspeak escrow list
+
+List escrows involving your wallet.
+
+```bash
+ghostspeak escrow list
+
+# Filter by status
+ghostspeak escrow list --status pending
+```
+
+### ghostspeak escrow create
+
+Create a new escrow.
+
+```bash
+ghostspeak escrow create \
+  --seller <address> \
+  --amount 1000000 \
+  --mint <token-mint>
+```
+
+### ghostspeak escrow complete
+
+Complete an escrow.
+
+```bash
+ghostspeak escrow complete <escrow-address>
+```
+
+### ghostspeak escrow refund
+
+Request a refund.
+
+```bash
+ghostspeak escrow refund <escrow-address> --reason "Service not delivered"
+```
+
+## Utility Commands
+
+### ghostspeak status
+
+Check connection and wallet status.
+
+```bash
+ghostspeak status
+```
+
+### ghostspeak balance
+
+Check wallet balance.
+
+```bash
+ghostspeak balance
+
+# Specific token
+ghostspeak balance --mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+```
+
+### ghostspeak airdrop
+
+Request devnet airdrop.
+
+```bash
+ghostspeak airdrop 2
+
+# Note: Only works on devnet
+```
+
+## Output Formats
+
+All commands support multiple output formats:
+
+```bash
+# Default (human-readable)
+ghostspeak agent list
+
+# JSON
+ghostspeak agent list --json
+
+# Table
+ghostspeak agent list --format table
+```

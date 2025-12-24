@@ -6,9 +6,20 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import { 
-  Home, Bot, ShoppingBag, Briefcase, Shield, Gavel, 
-  Menu, X, Moon, Sun, Sparkles, Coins, FileText
+import {
+  Home,
+  Bot,
+  ShoppingBag,
+  Briefcase,
+  Shield,
+  Gavel,
+  Menu,
+  X,
+  Moon,
+  Sun,
+  Sparkles,
+  Coins,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
@@ -39,10 +50,10 @@ export const Navigation: React.FC = () => {
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  
+
   const { scrollY } = useScroll()
 
-  useMotionValueEvent(scrollY, "change", (latest) => {
+  useMotionValueEvent(scrollY, 'change', (latest) => {
     setIsScrolled(latest > 50)
   })
 
@@ -51,11 +62,12 @@ export const Navigation: React.FC = () => {
   }, [])
 
   // Check if we're on a marketing/landing page where we shouldn't show the main app nav
-  const isMarketingPage = pathname === '/' || pathname === '/tokenomics' || pathname?.startsWith('/x402/discover')
-  
+  const isMarketingPage =
+    pathname === '/' || pathname === '/tokenomics' || pathname?.startsWith('/x402/discover')
+
   // Hide navigation on dashboard routes - dashboard has its own sidebar
   const isDashboardPage = pathname?.startsWith('/dashboard') ?? false
-  
+
   // Don't render navigation at all on dashboard
   if (isDashboardPage) {
     return null
@@ -77,8 +89,8 @@ export const Navigation: React.FC = () => {
       <motion.nav
         layout
         initial={{ y: -100, opacity: 0 }}
-        animate={{ 
-          y: 0, 
+        animate={{
+          y: 0,
           opacity: 1,
           width: isScrolled ? 'auto' : '100%',
           maxWidth: isScrolled ? '90%' : '100%',
@@ -87,148 +99,155 @@ export const Navigation: React.FC = () => {
         }}
         transition={navTransition}
         className={cn(
-          "fixed z-50 left-0 right-0 mx-auto",
-          isScrolled 
-            ? "glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-lime-500/10 w-fit" 
+          'fixed z-50 left-0 right-0 mx-auto',
+          isScrolled
+            ? 'glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-lime-500/10 w-fit'
             : cn(
-                "border-b py-4 px-6 md:px-8",
+                'border-b py-4 px-6 md:px-8',
                 isMarketingPage
-                  ? "bg-transparent border-transparent"
-                  : "glass border-gray-200 dark:border-gray-800"
+                  ? 'bg-transparent border-transparent'
+                  : 'glass border-gray-200 dark:border-gray-800'
               )
         )}
-        style={{ 
-          transition: 'none'
+        style={{
+          transition: 'none',
         }}
       >
         <motion.div layout className="flex items-center justify-between w-full max-w-7xl mx-auto">
-           {/* Logo Section */}
-           <motion.div layout className="flex items-center gap-2 shrink-0">
-             <Link href="/" className="relative group">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                     <div className="absolute inset-0 bg-lime-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                     <Image 
-                       src="/ghost-logo.png" 
-                       alt="GhostSpeak" 
-                       width={32} 
-                       height={32}
-                       className="relative z-10 w-8 h-8 object-contain transition-transform group-hover:scale-110 duration-300"
-                     />
-                  </div>
-                  <span className={cn(
-                    "font-bold text-lg tracking-tight transition-colors",
-                     isMarketingPage && !isScrolled ? "text-white" : "text-gray-900 dark:text-white"
-                  )}>
-                    Ghost<span className="text-lime-500">Speak</span>
-                  </span>
+          {/* Logo Section */}
+          <motion.div layout className="flex items-center gap-2 shrink-0">
+            <Link href="/" className="relative group">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-lime-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <Image
+                    src="/ghost-logo.png"
+                    alt="GhostSpeak"
+                    width={32}
+                    height={32}
+                    className="relative z-10 w-8 h-8 object-contain transition-transform group-hover:scale-110 duration-300"
+                  />
                 </div>
-             </Link>
-           </motion.div>
+                <span
+                  className={cn(
+                    'font-bold text-lg tracking-tight transition-colors',
+                    isMarketingPage && !isScrolled ? 'text-white' : 'text-gray-900 dark:text-white'
+                  )}
+                >
+                  Ghost<span className="text-lime-500">Speak</span>
+                </span>
+              </div>
+            </Link>
+          </motion.div>
 
-           {/* Desktop Navigation */}
-           {!isMarketingPage ? (
-             <motion.div 
-               layout 
-               className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
-             >
-                {navItems.map((item) => {
-                  const isActive = pathname?.startsWith(item.href) ?? false
-                  const Icon = item.icon
-                  
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
+          {/* Desktop Navigation */}
+          {!isMarketingPage ? (
+            <motion.div
+              layout
+              className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
+            >
+              {navItems.map((item) => {
+                const isActive = pathname?.startsWith(item.href) ?? false
+                const Icon = item.icon
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
+                  >
+                    <span
+                      className={cn(
+                        'relative z-10 flex items-center text-sm font-medium transition-colors duration-200',
+                        isActive
+                          ? 'text-lime-600 dark:text-lime-300'
+                          : 'text-gray-600 dark:text-gray-400 group-hover:text-lime-500 dark:group-hover:text-lime-200'
+                      )}
                     >
-                      <span className={cn(
-                        "relative z-10 flex items-center text-sm font-medium transition-colors duration-200",
-                        isActive 
-                          ? "text-lime-600 dark:text-lime-300" 
-                          : "text-gray-600 dark:text-gray-400 group-hover:text-lime-500 dark:group-hover:text-lime-200"
-                      )}>
-                        <Icon className="w-4 h-4 mr-1.5" />
-                        {item.label}
-                      </span>
-                      
-                      {/* Hover Pill Background */}
-                      {isActive && (
-                        <motion.div
-                          layoutId="nav-pill"
-                          className="absolute inset-0 bg-lime-100 dark:bg-lime-900/30 rounded-full"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                        />
-                      )}
-                      
-                      {/* Hover Effect for non-active items */}
-                      {!isActive && (
-                        <div className="absolute inset-0 bg-gray-100 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                      )}
-                    </Link>
-                  )
-                })}
-             </motion.div>
+                      <Icon className="w-4 h-4 mr-1.5" />
+                      {item.label}
+                    </span>
+
+                    {/* Hover Pill Background */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="nav-pill"
+                        className="absolute inset-0 bg-lime-100 dark:bg-lime-900/30 rounded-full"
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+
+                    {/* Hover Effect for non-active items */}
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-gray-100 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    )}
+                  </Link>
+                )
+              })}
+            </motion.div>
           ) : (
-            <motion.div 
-               layout 
-               className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
-             >
-                {marketingNavItems.map((item) => {
-                  const isActive = pathname === item.href
-                  const Icon = item.icon
-                  
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
-                    >
-                      <span className={cn(
-                        "relative z-10 flex items-center text-sm font-medium transition-colors duration-200",
-                        isActive 
-                          ? "text-lime-600 dark:text-lime-300" 
+            <motion.div
+              layout
+              className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
+            >
+              {marketingNavItems.map((item) => {
+                const isActive = pathname === item.href
+                const Icon = item.icon
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
+                  >
+                    <span
+                      className={cn(
+                        'relative z-10 flex items-center text-sm font-medium transition-colors duration-200',
+                        isActive
+                          ? 'text-lime-600 dark:text-lime-300'
                           : cn(
-                              isMarketingPage && !isScrolled 
-                                ? "text-white/70 group-hover:text-white" 
-                                : "text-gray-600 dark:text-gray-400 group-hover:text-lime-500 dark:group-hover:text-lime-200"
+                              isMarketingPage && !isScrolled
+                                ? 'text-white/70 group-hover:text-white'
+                                : 'text-gray-600 dark:text-gray-400 group-hover:text-lime-500 dark:group-hover:text-lime-200'
                             )
-                      )}>
-                        <Icon className="w-4 h-4 mr-1.5" />
-                        {item.label}
-                      </span>
-                      
-                      {/* Hover Pill Background */}
-                      {isActive && (
-                        <motion.div
-                          layoutId="marketing-nav-pill"
-                          className="absolute inset-0 bg-lime-100/20 dark:bg-lime-900/30 rounded-full"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                        />
                       )}
-                      
-                      {/* Hover Effect for non-active items */}
-                      {!isActive && (
-                        <div className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                      )}
-                    </Link>
-                  )
-                })}
-             </motion.div>
+                    >
+                      <Icon className="w-4 h-4 mr-1.5" />
+                      {item.label}
+                    </span>
+
+                    {/* Hover Pill Background */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="marketing-nav-pill"
+                        className="absolute inset-0 bg-lime-100/20 dark:bg-lime-900/30 rounded-full"
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+
+                    {/* Hover Effect for non-active items */}
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    )}
+                  </Link>
+                )
+              })}
+            </motion.div>
           )}
 
           {/* Actions Section */}
           <motion.div layout className="flex items-center gap-3 shrink-0">
-             <button
+            <button
               onClick={toggleDarkMode}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
             >
-              {mounted && (theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />)}
+              {mounted &&
+                (theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />)}
             </button>
 
-            <motion.div 
+            <motion.div
               layout
-              animate={{ 
+              animate={{
                 scale: isScrolled ? 0.95 : 1,
               }}
               transition={navTransition}
@@ -238,8 +257,8 @@ export const Navigation: React.FC = () => {
 
             {/* Mobile Menu Toggle */}
             <button
-               className="md:hidden p-2 text-gray-600 dark:text-gray-300"
-               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-gray-600 dark:text-gray-300"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X /> : <Menu />}
             </button>
@@ -270,7 +289,9 @@ export const Navigation: React.FC = () => {
                     className="flex items-center p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10"
                   >
                     <item.icon className="w-6 h-6 mr-4 text-lime-500" />
-                    <span className="text-lg font-medium text-gray-900 dark:text-white">{item.label}</span>
+                    <span className="text-lg font-medium text-gray-900 dark:text-white">
+                      {item.label}
+                    </span>
                   </Link>
                 </motion.div>
               ))}

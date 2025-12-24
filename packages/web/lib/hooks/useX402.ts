@@ -1,28 +1,23 @@
 /**
  * React Query Hooks for x402 Payment Protocol
+ *
+ * Uses Crossmint wallet for wallet integration.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useWallet } from '@crossmint/client-sdk-react-ui'
 import { address } from '@solana/addresses'
-import type { Address } from '@solana/addresses'
 import { getSDKManager } from '../ghostspeak'
-import type {
-  X402PaymentRequest,
-  X402PaymentReceipt,
-  AgentSearchParams,
-  Agent,
-  X402TransactionMetrics,
-  PaymentStream
-} from '../ghostspeak'
+import type { X402PaymentRequest, AgentSearchParams } from '../ghostspeak'
 
 // =====================================================
 // X402 PAYMENT HOOKS
 // =====================================================
 
 export function useCreateX402Payment() {
-  const { publicKey } = useWallet()
+  const { wallet } = useWallet()
   const queryClient = useQueryClient()
+  const walletAddress = wallet?.address ?? null
 
   return useMutation({
     mutationFn: async (params: {
@@ -32,7 +27,7 @@ export function useCreateX402Payment() {
       description: string
       metadata?: Record<string, string>
     }) => {
-      if (!publicKey) throw new Error('Wallet not connected')
+      if (!walletAddress) throw new Error('Wallet not connected')
 
       const sdk = getSDKManager()
       const request: X402PaymentRequest = {
@@ -41,7 +36,7 @@ export function useCreateX402Payment() {
         token: address(params.token),
         description: params.description,
         metadata: params.metadata,
-        requiresReceipt: true
+        requiresReceipt: true,
       }
 
       const signature = await sdk.x402.sendPayment(request)
@@ -49,7 +44,7 @@ export function useCreateX402Payment() {
       // Wait for confirmation
       const receipt = await sdk.x402.waitForConfirmation(signature, {
         maxRetries: 30,
-        retryInterval: 1000
+        retryInterval: 1000,
       })
 
       return receipt
@@ -58,7 +53,7 @@ export function useCreateX402Payment() {
       // Invalidate payment history
       queryClient.invalidateQueries({ queryKey: ['x402-payments'] })
       queryClient.invalidateQueries({ queryKey: ['x402-analytics'] })
-    }
+    },
   })
 }
 
@@ -67,24 +62,25 @@ export function useVerifyX402Payment() {
     mutationFn: async (signature: string) => {
       const sdk = getSDKManager()
       return sdk.x402.verifyPayment(signature)
-    }
+    },
   })
 }
 
 export function useX402PaymentHistory() {
-  const { publicKey } = useWallet()
+  const { wallet } = useWallet()
+  const walletAddress = wallet?.address ?? null
 
   return useQuery({
-    queryKey: ['x402-payments', publicKey?.toBase58()],
+    queryKey: ['x402-payments', walletAddress],
     queryFn: async () => {
-      if (!publicKey) return []
+      if (!walletAddress) return []
 
       const sdk = getSDKManager()
-      const payments = await sdk.x402.getPaymentHistory(publicKey)
+      const payments = await sdk.x402.getPaymentHistory(walletAddress)
       return payments
     },
-    enabled: !!publicKey,
-    refetchInterval: 10000 // Refresh every 10 seconds
+    enabled: !!walletAddress,
+    refetchInterval: 10000, // Refresh every 10 seconds
   })
 }
 
@@ -100,7 +96,7 @@ export function useX402AgentDiscovery(params?: AgentSearchParams) {
       return sdk.discovery.searchAgents(params ?? {})
     },
     refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 20000 // Consider data stale after 20 seconds
+    staleTime: 20000, // Consider data stale after 20 seconds
   })
 }
 
@@ -114,7 +110,7 @@ export function useX402Agent(agentAddress?: string) {
       return sdk.discovery.getAgent(address(agentAddress))
     },
     enabled: !!agentAddress,
-    staleTime: 60000 // Cache for 1 minute
+    staleTime: 60000, // Cache for 1 minute
   })
 }
 
@@ -125,11 +121,11 @@ export function useX402AgentsByCapability(capability: string) {
       const sdk = getSDKManager()
       return sdk.discovery.searchAgents({
         capability,
-        sortBy: 'price_asc'
+        sortBy: 'price_asc',
       })
     },
     enabled: !!capability,
-    staleTime: 30000
+    staleTime: 30000,
   })
 }
 
@@ -141,7 +137,7 @@ export function useX402AgentPriceComparison(capability: string) {
       const response = await sdk.discovery.searchAgents({
         capability,
         sortBy: 'price_asc',
-        limit: 20
+        limit: 20,
       })
 
       // Calculate price statistics
@@ -149,9 +145,7 @@ export function useX402AgentPriceComparison(capability: string) {
         .map((agent) => Number(agent.pricing?.pricePerCall ?? 0))
         .filter((price) => price > 0)
 
-      const average = prices.length > 0
-        ? prices.reduce((sum, p) => sum + p, 0) / prices.length
-        : 0
+      const average = prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) / prices.length : 0
 
       const min = prices.length > 0 ? Math.min(...prices) : 0
       const max = prices.length > 0 ? Math.max(...prices) : 0
@@ -162,12 +156,12 @@ export function useX402AgentPriceComparison(capability: string) {
           average,
           min,
           max,
-          count: prices.length
-        }
+          count: prices.length,
+        },
       }
     },
     enabled: !!capability,
-    staleTime: 60000
+    staleTime: 60000,
   })
 }
 
@@ -176,22 +170,23 @@ export function useX402AgentPriceComparison(capability: string) {
 // =====================================================
 
 export function useX402Analytics() {
-  const { publicKey } = useWallet()
+  const { wallet } = useWallet()
+  const walletAddress = wallet?.address ?? null
 
   return useQuery({
-    queryKey: ['x402-analytics', publicKey?.toBase58()],
+    queryKey: ['x402-analytics', walletAddress],
     queryFn: async () => {
       const sdk = getSDKManager()
 
-      if (publicKey) {
-        return sdk.analytics.getUserMetrics(publicKey)
+      if (walletAddress) {
+        return sdk.analytics.getUserMetrics(walletAddress)
       }
 
       // Return platform-wide metrics if no wallet connected
       return sdk.analytics.getPlatformMetrics()
     },
     refetchInterval: 15000, // Refresh every 15 seconds
-    staleTime: 10000
+    staleTime: 10000,
   })
 }
 
@@ -205,7 +200,7 @@ export function useX402AgentEarnings(agentAddress?: string) {
       return sdk.analytics.getAgentEarnings(address(agentAddress))
     },
     enabled: !!agentAddress,
-    refetchInterval: 20000
+    refetchInterval: 20000,
   })
 }
 
@@ -219,14 +214,17 @@ export function useX402PlatformStats() {
       return {
         totalVolume: metrics.totalVolume ?? BigInt(0),
         totalPayments: metrics.totalPayments ?? 0,
-        averagePayment: typeof metrics.averageAmount === 'bigint' ? metrics.averageAmount : BigInt(metrics.averageAmount ?? 0),
+        averagePayment:
+          typeof metrics.averageAmount === 'bigint'
+            ? metrics.averageAmount
+            : BigInt(metrics.averageAmount ?? 0),
         successRate: metrics.successRate ?? 0,
         activeAgents: metrics.activeAgents ?? 0,
-        topAgents: metrics.topAgents ?? []
+        topAgents: metrics.topAgents ?? [],
       }
     },
     refetchInterval: 30000,
-    staleTime: 20000
+    staleTime: 20000,
   })
 }
 
@@ -256,30 +254,31 @@ export function useCreatePaymentStream() {
         totalAmount: params.totalAmount,
         token: address(params.token),
         milestones: params.milestones,
-        description: params.description
+        description: params.description,
       })
 
       return stream
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment-streams'] })
-    }
+    },
   })
 }
 
 export function usePaymentStreams() {
-  const { publicKey } = useWallet()
+  const { wallet } = useWallet()
+  const walletAddress = wallet?.address ?? null
 
   return useQuery({
-    queryKey: ['payment-streams', publicKey?.toBase58()],
+    queryKey: ['payment-streams', walletAddress],
     queryFn: async () => {
-      if (!publicKey) return []
+      if (!walletAddress) return []
 
       const sdk = getSDKManager()
-      return sdk.streaming.getUserStreams(publicKey)
+      return sdk.streaming.getUserStreams(walletAddress)
     },
-    enabled: !!publicKey,
-    refetchInterval: 10000
+    enabled: !!walletAddress,
+    refetchInterval: 10000,
   })
 }
 
@@ -293,7 +292,7 @@ export function usePaymentStream(streamId?: string) {
       return sdk.streaming.getStream(streamId)
     },
     enabled: !!streamId,
-    refetchInterval: 5000 // Refresh every 5 seconds for live updates
+    refetchInterval: 5000, // Refresh every 5 seconds for live updates
   })
 }
 
@@ -301,22 +300,16 @@ export function useReleaseMilestone() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (params: {
-      streamId: string
-      milestoneIndex: number
-    }) => {
+    mutationFn: async (params: { streamId: string; milestoneIndex: number }) => {
       const sdk = getSDKManager()
-      return sdk.streaming.releaseMilestone(
-        params.streamId,
-        params.milestoneIndex
-      )
+      return sdk.streaming.releaseMilestone(params.streamId, params.milestoneIndex)
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['payment-stream', variables.streamId]
+        queryKey: ['payment-stream', variables.streamId],
       })
       queryClient.invalidateQueries({ queryKey: ['payment-streams'] })
-    }
+    },
   })
 }
 
@@ -325,37 +318,36 @@ export function useReleaseMilestone() {
 // =====================================================
 
 export function useTokenBalance(tokenAddress?: string) {
-  const { publicKey } = useWallet()
+  const { wallet } = useWallet()
+  const walletAddress = wallet?.address ?? null
 
   return useQuery({
-    queryKey: ['token-balance', publicKey?.toBase58(), tokenAddress],
+    queryKey: ['token-balance', walletAddress, tokenAddress],
     queryFn: async () => {
-      if (!publicKey || !tokenAddress) return BigInt(0)
+      if (!walletAddress || !tokenAddress) return BigInt(0)
 
       const sdk = getSDKManager()
-      const balance = await sdk.ghostspeak.tokens.getBalance(
-        publicKey,
-        address(tokenAddress)
-      )
+      const balance = await sdk.ghostspeak.tokens.getBalance(walletAddress, address(tokenAddress))
       return balance
     },
-    enabled: !!publicKey && !!tokenAddress,
-    refetchInterval: 10000
+    enabled: !!walletAddress && !!tokenAddress,
+    refetchInterval: 10000,
   })
 }
 
 export function useTokenBalances() {
-  const { publicKey } = useWallet()
+  const { wallet } = useWallet()
+  const walletAddress = wallet?.address ?? null
 
   return useQuery({
-    queryKey: ['token-balances', publicKey?.toBase58()],
+    queryKey: ['token-balances', walletAddress],
     queryFn: async () => {
-      if (!publicKey) return []
+      if (!walletAddress) return []
 
       const sdk = getSDKManager()
-      return sdk.ghostspeak.tokens.getAllBalances(publicKey)
+      return sdk.ghostspeak.tokens.getAllBalances(walletAddress)
     },
-    enabled: !!publicKey,
-    refetchInterval: 15000
+    enabled: !!walletAddress,
+    refetchInterval: 15000,
   })
 }

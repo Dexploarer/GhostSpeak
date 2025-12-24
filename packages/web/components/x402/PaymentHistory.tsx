@@ -22,9 +22,10 @@ export function PaymentHistory(): React.JSX.Element {
 
   const { data: payments = [], isLoading, isError } = useX402PaymentHistory()
 
-  const filteredPayments = payments.filter((payment) =>
-    payment.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.recipient.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPayments = payments.filter(
+    (payment) =>
+      payment.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.recipient.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (!publicKey) {
@@ -47,9 +48,7 @@ export function PaymentHistory(): React.JSX.Element {
           <History className="w-5 h-5" />
           Payment History
         </CardTitle>
-        <CardDescription>
-          Your x402 micropayment transactions
-        </CardDescription>
+        <CardDescription>Your x402 micropayment transactions</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search */}
@@ -125,20 +124,20 @@ function PaymentItem({ payment }: PaymentItemProps): React.JSX.Element {
       icon: Clock,
       color: 'text-yellow-600 dark:text-yellow-400',
       bg: 'bg-yellow-100 dark:bg-yellow-900/20',
-      label: 'Pending'
+      label: 'Pending',
     },
     confirmed: {
       icon: CheckCircle2,
       color: 'text-green-600 dark:text-green-400',
       bg: 'bg-green-100 dark:bg-green-900/20',
-      label: 'Confirmed'
+      label: 'Confirmed',
     },
     failed: {
       icon: XCircle,
       color: 'text-red-600 dark:text-red-400',
       bg: 'bg-red-100 dark:bg-red-900/20',
-      label: 'Failed'
-    }
+      label: 'Failed',
+    },
   }
 
   const config = statusConfig[status]
@@ -153,9 +152,7 @@ function PaymentItem({ payment }: PaymentItemProps): React.JSX.Element {
             <div className={`p-1.5 rounded ${config.bg}`}>
               <StatusIcon className={`w-4 h-4 ${config.color}`} />
             </div>
-            <h4 className="font-medium truncate">
-              {payment.description ?? 'x402 Payment'}
-            </h4>
+            <h4 className="font-medium truncate">{payment.description ?? 'x402 Payment'}</h4>
             <Badge variant="outline" className="text-xs">
               {config.label}
             </Badge>
@@ -171,7 +168,7 @@ function PaymentItem({ payment }: PaymentItemProps): React.JSX.Element {
             </div>
             <div>
               {formatDistance(new Date(payment.timestamp), new Date(), {
-                addSuffix: true
+                addSuffix: true,
               })}
             </div>
           </div>
@@ -179,9 +176,7 @@ function PaymentItem({ payment }: PaymentItemProps): React.JSX.Element {
 
         {/* Amount & Link */}
         <div className="text-right shrink-0">
-          <div className="text-lg font-bold mb-2">
-            {amount.toFixed(6)} SOL
-          </div>
+          <div className="text-lg font-bold mb-2">{amount.toFixed(6)} SOL</div>
           <Button
             variant="ghost"
             size="sm"

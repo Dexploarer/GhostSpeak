@@ -163,14 +163,16 @@ export class SDKErrorBoundary extends Component<Props, State> {
   }
 
   // Static error reporter callback - set this to integrate with Sentry, LogRocket, etc.
-  private static errorReporter: ((report: {
-    category: string
-    message: string
-    code?: string
-    timestamp: string
-    userAgent: string
-    url: string
-  }) => void) | null = null
+  private static errorReporter:
+    | ((report: {
+        category: string
+        message: string
+        code?: string
+        timestamp: string
+        userAgent: string
+        url: string
+      }) => void)
+    | null = null
 
   // Public method to configure error reporting
   public static setErrorReporter(

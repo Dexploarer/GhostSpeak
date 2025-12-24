@@ -46,7 +46,7 @@ import { EscrowDetail } from '@/components/escrow/EscrowDetail'
 import { toast } from 'sonner'
 
 export default function EscrowPage(): React.JSX.Element {
-  const { address: publicKey, isConnected } = useWalletAddress()
+  const { address: publicKey } = useWalletAddress()
   const [selectedEscrow, setSelectedEscrow] = React.useState<Escrow | null>(null)
   const [isDetailOpen, setIsDetailOpen] = React.useState(false)
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)

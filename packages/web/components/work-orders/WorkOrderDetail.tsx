@@ -481,7 +481,7 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                           //   channelAddress: workOrder.communicationChannelAddress,
                           //   content: newMessage,
                           // })
-                          
+
                           // For now, show success and clear input
                           // The message will appear after the next data refresh
                           toast.success('Message sent!', {

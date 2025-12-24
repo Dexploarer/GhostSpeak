@@ -1,0 +1,154 @@
+---
+title: 'Testing'
+description: 'Testing strategies for GhostSpeak integrations'
+---
+
+## Testing Overview
+
+This guide covers testing strategies for GhostSpeak integrations.
+
+## Unit Testing
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { GhostSpeakClient, createSolanaRpc } from '@ghostspeak/sdk';
+
+describe('Agent Registration', () => {
+  it('should build register instruction', async () => {
+    const ghostspeak = new GhostSpeakClient({
+      rpcUrl: 'https://api.devnet.solana.com',
+    });
+
+    const builder = ghostspeak
+      .agent()
+      .create({
+        name: 'TestAgent',
+        description: 'Test agent for unit tests',
+        capabilities: ['test'],
+        agentId: 'test-agent',
+      })
+      .withSigner(testWallet);
+
+    // Verify builder state before execution
+    expect(builder).toBeDefined();
+  });
+});
+```
+
+## Mocking the SDK
+
+You can mock `GhostSpeakClient` for faster tests:
+
+```typescript
+// Example using Vitest/Jest mocks
+vi.mock('@ghostspeak/sdk', () => ({
+  GhostSpeakClient: vi.fn().mockImplementation(() => ({
+    agent: () => ({
+      create: () => ({
+        withSigner: () => ({
+          execute: vi.fn().resolve('mock-tx-signature'),
+        }),
+      }),
+      getAccount: vi.fn().resolve({ name: 'MockAgent' }),
+    }),
+  })),
+}));
+```
+
+## Integration Testing
+
+### Devnet Testing
+
+```typescript
+describe('Integration Tests', () => {
+  const ghostspeak = new GhostSpeakClient({
+    rpcUrl: 'https://api.devnet.solana.com',
+  });
+
+  it('should complete full escrow flow', async () => {
+    // 1. Create Escrow
+    const escrowTx = await ghostspeak
+      .escrow()
+      .create({
+        buyer: buyerWallet.address,
+        seller: sellerAddress,
+        token: USDC_MINT,
+        amount: 100_000n,
+      })
+      .withSigner(buyerWallet)
+      .execute();
+
+    console.log('Escrow created:', escrowTx);
+
+    // 2. Complete Escrow
+    await ghostspeak
+      .escrow()
+      .complete({
+        escrow: escrowAddress, // Derived or fetched
+        authority: buyerWallet.address,
+      })
+      .withSigner(buyerWallet)
+      .execute();
+  });
+});
+```
+
+## X402 Testing
+
+### Mock Middleware
+
+```typescript
+import { createX402Middleware } from '@ghostspeak/sdk';
+
+// Create middleware with mock client or permissive logic
+const mockMiddleware = (req, res, next) => {
+  // Mock payment info
+  req.paymentInfo = {
+    signature: 'mock-sig',
+    amount: 100000n,
+    sender: 'mock-sender',
+  };
+  next();
+};
+
+app.use(
+  '/api',
+  process.env.NODE_ENV === 'test' ? mockMiddleware : realX402Middleware
+);
+```
+
+## CI/CD Integration
+
+```yaml
+# .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+
+      - run: bun install
+      - run: bun test
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Devnet" icon="flask">
+    Always test on devnet before mainnet
+  </Card>
+  <Card title="Mock External Calls" icon="mask">
+    Mock RPC calls for faster unit tests
+  </Card>
+  <Card title="Test Edge Cases" icon="triangle-exclamation">
+    Test error handling and edge cases
+  </Card>
+  <Card title="Automate" icon="robot">
+    Set up CI/CD for continuous testing
+  </Card>
+</CardGroup>

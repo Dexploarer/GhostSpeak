@@ -84,6 +84,17 @@ export {
   type X402FastifyRequest
 } from './x402/middleware.js'
 
+export {
+  fetchWithX402Payment,
+  wrapFetchWithPayment,
+  FetchWithPaymentClient,
+  type FetchWithPaymentOptions,
+  type X402Response
+} from './x402/fetchWithPayment.js'
+
+export { X402AnalyticsTracker, createX402AnalyticsTracker } from './x402/analytics.js'
+export { PaymentStreamingManager } from './x402/PaymentStreaming.js'
+
 // A2A (Agent-to-Agent) Protocol
 export { A2AClient, createA2AClient } from './protocols/A2AClient.js'
 

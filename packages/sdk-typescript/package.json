@@ -39,6 +39,10 @@
       "import": "./dist/minimal/core-minimal.js",
       "types": "./dist/minimal/core-minimal.d.ts"
     },
+    "./credentials": {
+      "import": "./dist/credentials.js",
+      "types": "./dist/credentials.d.ts"
+    },
     "./x402": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"

@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "bun install",
-  "buildCommand": "cd packages/sdk-typescript && npx tsup --no-dts && cd ../web && next build",
+  "buildCommand": "turbo run build --filter=web",
   "outputDirectory": "packages/web/.next"
 }

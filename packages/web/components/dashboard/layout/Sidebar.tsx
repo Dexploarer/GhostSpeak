@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { BrandLogo } from '@/components/shared/BrandLogo'
 import {
   LayoutDashboard,
   Bot,
@@ -62,13 +63,7 @@ export function DashboardSidebar() {
       <div className="flex items-center justify-between p-4 border-b border-border">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-primary/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <Image
-              src="/ghost-logo.png"
-              alt="GhostSpeak"
-              width={32}
-              height={32}
-              className="object-contain"
-            />
+            <BrandLogo className="object-contain" />
           </div>
           {!isCollapsed && (
             <span className="text-lg font-bold text-foreground tracking-tight">GhostSpeak</span>

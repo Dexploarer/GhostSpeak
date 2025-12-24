@@ -186,10 +186,7 @@ class BrowserX402Client {
    * Execute an instant x402 payment via direct SPL token transfer
    * This is the standard x402 flow - atomic, instant payments
    */
-  async pay(
-    request: X402PaymentRequest,
-    signer: TransactionSigner
-  ): Promise<X402PaymentReceipt> {
+  async pay(request: X402PaymentRequest, signer: TransactionSigner): Promise<X402PaymentReceipt> {
     // Validate payment request
     if (request.amount <= 0n) {
       throw new Error('Payment amount must be greater than zero')
@@ -206,13 +203,13 @@ class BrowserX402Client {
     // For x402 instant payments, we use the escrow module's underlying
     // transaction infrastructure but skip the escrow creation step.
     // In production, this would be a direct SPL token transfer.
-    
+
     // For now, we use the SDK's token transfer capabilities through escrow.createWithSol
     // which handles native SOL wrapping and Token2022 properly.
     // But we complete it immediately for instant payment semantics.
-    
+
     const taskDescription = `x402:${request.description}:${Date.now()}`
-    
+
     try {
       // Create the payment using escrow infrastructure for reliability
       // In the future, this should be replaced with direct transfer instructions
@@ -225,7 +222,7 @@ class BrowserX402Client {
 
       // For true x402, the escrow would be immediately released
       // or we'd use direct transfer. For now, return the receipt.
-      
+
       return {
         signature,
         recipient: request.recipient,
@@ -236,7 +233,7 @@ class BrowserX402Client {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      
+
       // Provide helpful error messages
       if (errorMessage.includes('insufficient funds')) {
         throw new Error('Insufficient funds to complete payment')
@@ -244,7 +241,7 @@ class BrowserX402Client {
       if (errorMessage.includes('Blockhash not found')) {
         throw new Error('Transaction expired. Please retry the payment.')
       }
-      
+
       throw new Error(`x402 payment failed: ${errorMessage}`)
     }
   }
@@ -361,9 +358,7 @@ class BrowserAgentDiscoveryClient {
 
       // Apply filters if provided
       if (params?.capability) {
-        results = results.filter((a) =>
-          (a.capabilities as string[]).includes(params.capability!)
-        )
+        results = results.filter((a) => (a.capabilities as string[]).includes(params.capability!))
       }
 
       // Sort
@@ -417,12 +412,8 @@ class BrowserAnalyticsTracker {
   async getUserMetrics(walletAddress: string): Promise<X402TransactionMetrics> {
     try {
       // Get user's escrow history for metrics
-      const buyerEscrows = await this.sdkClient.escrow.getEscrowsByBuyer(
-        walletAddress as Address
-      )
-      const sellerEscrows = await this.sdkClient.escrow.getEscrowsBySeller(
-        walletAddress as Address
-      )
+      const buyerEscrows = await this.sdkClient.escrow.getEscrowsByBuyer(walletAddress as Address)
+      const sellerEscrows = await this.sdkClient.escrow.getEscrowsBySeller(walletAddress as Address)
 
       const allEscrows = [...buyerEscrows, ...sellerEscrows]
       const totalVolume = allEscrows.reduce((sum, e) => sum + e.data.amount, BigInt(0))
@@ -431,8 +422,7 @@ class BrowserAnalyticsTracker {
       return {
         totalVolume,
         transactionCount,
-        averagePayment:
-          transactionCount > 0 ? totalVolume / BigInt(transactionCount) : BigInt(0),
+        averagePayment: transactionCount > 0 ? totalVolume / BigInt(transactionCount) : BigInt(0),
         successRate: 1.0, // Would calculate from escrow statuses
       }
     } catch (error) {
@@ -507,9 +497,7 @@ class BrowserTokenClient {
     }
   }
 
-  async getAllTokenBalances(
-    walletAddress: string
-  ): Promise<{ mint: string; balance: bigint }[]> {
+  async getAllTokenBalances(walletAddress: string): Promise<{ mint: string; balance: bigint }[]> {
     try {
       // Get SOL balance
       const solBalance = await this.rpc.getBalance(walletAddress as Address).send()

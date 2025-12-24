@@ -30,7 +30,7 @@ import { shortenAddress, lamportsToSol, formatDate, formatRelativeTime } from '.
  * Create a formatted info box with title and content
  * 
  * @param title - The title to display at the top of the box
- * @param content - Content as string or array of strings (joined with newlines)
+ * @param content - Content as string or array of stringhost (joined with newlines)
  * @param options - Customization options for the box appearance
  * @param options.borderColor - Color of the border (default: 'cyan')
  * @param options.padding - Internal padding in spaces (default: 1)

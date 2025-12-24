@@ -427,7 +427,7 @@ export class SafeMarketplaceClient {
   async listItems(_params?: Record<string, unknown>): Promise<ValidatedMarketplaceItem[]> {
     try {
       if (!this.marketplaceClient) return []
-      // Use getServiceListings instead
+      // Use getServiceListinghost instead
       const result = await this.marketplaceClient.getServiceListings()
       // Convert ServiceListingWithAddress[] to our validated format
       const items = result.map(listing => ({

@@ -15,7 +15,7 @@ import Link from 'next/link'
 export default function DashboardOverview() {
   const { shortAddress, isConnected, address } = useWalletAddress()
   const { data: agents = [], isLoading: isLoadingAgents } = useAgents()
-  
+
   // Use 'all' role to see everything for now, can be refined to 'client' or 'agent'
   const { data: escrows = [], isLoading: isLoadingEscrows } = useEscrows({
     userAddress: address ?? undefined,
@@ -27,18 +27,19 @@ export default function DashboardOverview() {
     // Total Escrowed Funds (Active Escrows)
     const activeEscrows = escrows.filter((e) => e.status === EscrowStatus.Active)
     const totalEscrowed = activeEscrows.reduce((acc, curr) => {
-      // Assuming 6 decimals for USDC/SOL. 
+      // Assuming 6 decimals for USDC/SOL.
       // TODO: Use proper token metadata decimals from escrow.tokenMetadata
       return acc + Number(curr.amount) / 1_000_000
     }, 0)
 
     // Completed Payments (Escrows Completed)
     const completedEscrows = escrows.filter((e) => e.status === EscrowStatus.Completed)
-    
+
     // Average Reputation (Mock for now as it's not fully aggregated yet)
-    const avgReputation = agents.length > 0 
-      ? agents.reduce((acc, curr) => acc + curr.reputation.score, 0) / agents.length
-      : 0
+    const avgReputation =
+      agents.length > 0
+        ? agents.reduce((acc, curr) => acc + curr.reputation.score, 0) / agents.length
+        : 0
 
     return {
       totalEscrowed,
@@ -99,7 +100,9 @@ export default function DashboardOverview() {
           label="active funds" // Lowercase label style
           value={isLoading ? '...' : `${stats.totalEscrowed.toFixed(2)}`}
           unit="USDC" // Defaulting to USDC for display
-          trend={stats.activeEscrowCount > 0 ? `${stats.activeEscrowCount} active` : 'No active escrows'}
+          trend={
+            stats.activeEscrowCount > 0 ? `${stats.activeEscrowCount} active` : 'No active escrows'
+          }
           trendUp={stats.activeEscrowCount > 0}
           icon={Shield}
           iconColor="text-green-500"
@@ -151,9 +154,9 @@ export default function DashboardOverview() {
           <h3 className="text-lg font-bold">Recent Escrows(3)</h3>
           {isLoading ? (
             <div className="space-y-4">
-               {[1, 2, 3].map((i) => (
-                 <GlassCard key={i} className="h-20 animate-pulse" />
-               ))}
+              {[1, 2, 3].map((i) => (
+                <GlassCard key={i} className="h-20 animate-pulse" />
+              ))}
             </div>
           ) : escrows.length === 0 ? (
             <GlassCard className="p-6 text-center text-muted-foreground border-dashed">
@@ -164,11 +167,19 @@ export default function DashboardOverview() {
               {escrows.slice(0, 3).map((escrow) => (
                 <GlassCard key={escrow.address} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      escrow.status === EscrowStatus.Active ? "bg-green-500/20 text-green-500" : "bg-gray-500/20 text-gray-500"
-                    )}>
-                      {escrow.status === EscrowStatus.Active ? <Shield className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                    <div
+                      className={cn(
+                        'w-8 h-8 rounded-full flex items-center justify-center',
+                        escrow.status === EscrowStatus.Active
+                          ? 'bg-green-500/20 text-green-500'
+                          : 'bg-gray-500/20 text-gray-500'
+                      )}
+                    >
+                      {escrow.status === EscrowStatus.Active ? (
+                        <Shield className="w-4 h-4" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
                     </div>
                     <div>
                       <p className="text-sm font-medium">{escrow.taskId}</p>
@@ -177,14 +188,16 @@ export default function DashboardOverview() {
                   </div>
                   <div className="text-right">
                     {/* Assuming 6 decimals for now */}
-                    <p className="text-sm font-bold">{(Number(escrow.amount) / 1_000_000).toFixed(2)}</p>
+                    <p className="text-sm font-bold">
+                      {(Number(escrow.amount) / 1_000_000).toFixed(2)}
+                    </p>
                     <p className="text-xs text-muted-foreground">USDC</p>
                   </div>
                 </GlassCard>
               ))}
             </div>
           )}
-          
+
           <Button variant="outline" className="w-full" asChild>
             <Link href="/dashboard/escrow">View All Activity</Link>
           </Button>

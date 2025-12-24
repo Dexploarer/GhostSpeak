@@ -11,6 +11,8 @@ import { GhostIcon } from '@/components/shared/GhostIcon'
 import { ManifestoSection } from '@/components/landing/ManifestoSection'
 import { ArchitectureLayers } from '@/components/landing/ArchitectureLayers'
 import { CostComparison } from '@/components/landing/CostComparison'
+import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
+import { IdentityBridge } from '@/components/landing/IdentityBridge'
 
 const AgentSwarm3D = dynamic(
   () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
@@ -33,6 +35,9 @@ export default function LandingPage() {
       {/* 2. Manifesto - High Impact Brand Statement */}
       <ManifestoSection />
 
+      {/* 1.5 Integration Marquee */}
+      <IntegrationMarquee />
+
       {/* 3. Live Telemetry - Proof of Performance */}
       <section className="relative py-24 border-b border-border">
         <NetworkTelemetry />
@@ -46,6 +51,9 @@ export default function LandingPage() {
 
       {/* 5. Cost Efficiency */}
       <CostComparison />
+
+      {/* 5.5 Cross-Chain Identity Bridge */}
+      <IdentityBridge />
 
       {/* 6. Protocol Visualization - The x402 Layer */}
       <section className="py-32 relative overflow-hidden">

@@ -264,9 +264,9 @@ auctionCommand
         `${chalk.bold('Transaction:')} ${signature}\n` +
         `${chalk.bold('Explorer:')} ${explorerUrl}\n\n` +
         `${chalk.yellow('Next steps:')}\n` +
-        `• Share your auction: ${chalk.cyan('gs auction list --active')}\n` +
-        `• Monitor bids: ${chalk.cyan('gs auction monitor')}\n` +
-        `• View details: ${chalk.cyan('gs auction info <auction-id>')}`
+        `• Share your auction: ${chalk.cyan('ghost auction list --active')}\n` +
+        `• Monitor bids: ${chalk.cyan('ghost auction monitor')}\n` +
+        `• View details: ${chalk.cyan('ghost auction info <auction-id>')}`
       )
 
     } catch (error) {
@@ -384,8 +384,8 @@ auctionCommand
         `${chalk.bold('Transaction:')} ${signature}\n` +
         `${chalk.bold('Explorer:')} ${explorerUrl}\n\n` +
         `${chalk.yellow('Next steps:')}\n` +
-        `• Monitor auction: ${chalk.cyan(`gs auction monitor ${auctionId}`)}\n` +
-        `• Check your bids: ${chalk.cyan('gs auction list --my-bids')}`
+        `• Monitor auction: ${chalk.cyan(`ghost auction monitor ${auctionId}`)}\n` +
+        `• Check your bids: ${chalk.cyan('ghost auction list --my-bids')}`
       )
 
     } catch (error) {
@@ -401,7 +401,7 @@ auctionCommand
   .option('--ending', 'Show auctions ending soon')
   .option('--my-auctions', 'Show your auctions')
   .action(async (options: ListAuctionsOptions) => {
-    intro(chalk.cyan('📋 Auction Listings'))
+    intro(chalk.cyan('📋 Auction Listinghost'))
 
     try {
       const s = spinner()
@@ -441,8 +441,8 @@ auctionCommand
       if (auctions.length === 0) {
         outro(
           `${chalk.yellow('No auctions found')}\n\n` +
-          `${chalk.gray('• Create your first auction:')} ${chalk.cyan('gs auction create')}\n` +
-          `${chalk.gray('• Check all auctions:')} ${chalk.cyan('gs auction list')}`
+          `${chalk.gray('• Create your first auction:')} ${chalk.cyan('ghost auction create')}\n` +
+          `${chalk.gray('• Check all auctions:')} ${chalk.cyan('ghost auction list')}`
         )
         return
       }
@@ -482,8 +482,8 @@ auctionCommand
         })
 
         if (!isCancel(selectedAuction)) {
-          log.info(`To bid on this auction: ${chalk.cyan(`gs auction bid ${selectedAuction}`)}`)
-          log.info(`To view details: ${chalk.cyan(`gs auction info ${selectedAuction}`)}`)
+          log.info(`To bid on this auction: ${chalk.cyan(`ghost auction bid ${selectedAuction}`)}`)
+          log.info(`To view details: ${chalk.cyan(`ghost auction info ${selectedAuction}`)}`)
         }
       }
 

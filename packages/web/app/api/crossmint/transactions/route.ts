@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 
-const CROSSMINT_API_URL =
-  process.env.CROSSMINT_API_URL ?? 'https://staging.crossmint.com/api/2022-06-09'
+// Crossmint API base URL - append api path if not present
+const BASE_URL = process.env.CROSSMINT_API_URL ?? 'https://staging.crossmint.com'
+const CROSSMINT_API_URL = BASE_URL.includes('/api') ? BASE_URL : `${BASE_URL}/api/2022-06-09`
 const CROSSMINT_API_KEY =
   process.env.CROSSMINT_SECRET_KEY ??
   process.env.CROSSMINT_SERVER_API_KEY ??

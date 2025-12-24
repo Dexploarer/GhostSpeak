@@ -322,7 +322,7 @@ export async function createMultisigWrapper(
     const signature = 'quickstart-multisig-' + multisigId.toString()
     
     console.log(chalk.gray(`\n💡 Note: Multisig creation is simulated in quickstart.`))
-    console.log(chalk.gray(`   To create a real multisig, use: ${chalk.white('gs governance multisig create')}\n`))
+    console.log(chalk.gray(`   To create a real multisig, use: ${chalk.white('ghost governance multisig create')}\n`))
     
     return {
       address: multisigPda,
@@ -366,12 +366,12 @@ export function showSetupSummary(result: SetupResult): void {
   console.log('\n' + chalk.bold('Next Steps:'))
   if (!result.agentCreated) {
     console.log(chalk.gray('  1. Create your first agent:'))
-    console.log(chalk.cyan('     gs agent register'))
+    console.log(chalk.cyan('     ghost agent register'))
   }
   console.log(chalk.gray('  2. Browse the marketplace:'))
-  console.log(chalk.cyan('     gs marketplace list'))
+  console.log(chalk.cyan('     ghost marketplace list'))
   console.log(chalk.gray('  3. View your setup:'))
-  console.log(chalk.cyan('     gs config show'))
+  console.log(chalk.cyan('     ghost config show'))
   
   console.log('\n' + chalk.green('Welcome to GhostSpeak! 🚀'))
 }

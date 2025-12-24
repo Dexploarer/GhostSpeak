@@ -16,6 +16,7 @@ pub mod bulk_deals;
 pub mod channel;
 pub mod commerce;
 // pub mod compliance; // REMOVED: Unused - saves ~2100 lines
+pub mod credential;
 pub mod dispute;
 pub mod escrow;
 pub mod extensions;
@@ -25,6 +26,7 @@ pub mod marketplace;
 pub mod message;
 pub mod negotiation;
 pub mod pricing;
+pub mod protocol_config;
 pub mod protocol_structures;
 pub mod replication;
 pub mod reputation;
@@ -105,6 +107,7 @@ pub use governance::*;
 // Selective imports from incentives
 pub use incentives::{AgentIncentives, IncentiveConfig, IncentiveProgram};
 // Selective imports from marketplace to avoid conflicts
+pub use credential::*;
 pub use marketplace::{
     JobApplication, JobApplicationData as MarketplaceJobApplicationData, JobCompletion,
     JobContract, JobPosting, PurchaseStatus, ServiceListing,
@@ -118,6 +121,7 @@ pub use reputation::ReputationMetrics;
 // REMOVED: risk_management exports - unused, saves ~1950 lines
 pub use royalty::*;
 // Selective imports from security_governance to avoid conflicts
+pub use protocol_config::*;
 pub use protocol_structures::*;
 pub use security_governance::{
     AccessAuditConfig, AccessPolicy, AccountLockoutPolicies, Action, ActionConstraint, ActionType,

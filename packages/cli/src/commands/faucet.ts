@@ -244,8 +244,8 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
       console.log(chalk.yellow('⚠️  No active wallet found.'))
       console.log('')
       console.log('Create a wallet first:')
-      console.log(`  ${chalk.cyan('gs wallet create')} - Create a new wallet`)
-      console.log(`  ${chalk.cyan('gs wallet import')} - Import existing wallet`)
+      console.log(`  ${chalk.cyan('ghost wallet create')} - Create a new wallet`)
+      console.log(`  ${chalk.cyan('ghost wallet import')} - Import existing wallet`)
       console.log('')
       process.exit(1)
     }
@@ -369,7 +369,7 @@ async function faucetCommand(options: FaucetOptions): Promise<void> {
     console.log(`   Network: ${network}`)
     console.log(`   Balance: ${await checkBalance(walletAddress, network)} SOL`)
 
-    console.log('\n💡 TIP: Your wallet is saved. Use gs wallet list to see all wallets.')
+    console.log('\n💡 TIP: Your wallet is saved. Use ghost wallet list to see all wallets.')
 
   } catch (error) {
     console.error('❌ Faucet command failed:', error)
@@ -421,7 +421,7 @@ export function setupFaucetCommand(program: Command): void {
           // Use active wallet
           const activeWallet = walletService.getActiveWallet()
           if (!activeWallet) {
-            console.error('❌ No active wallet found. Create one with: gs wallet create')
+            console.error('❌ No active wallet found. Create one with: ghost wallet create')
             process.exit(1)
           }
           walletAddress = activeWallet.metadata.address
@@ -466,7 +466,7 @@ export function setupFaucetCommand(program: Command): void {
         } else {
           const activeWallet = walletService.getActiveWallet()
           if (!activeWallet) {
-            console.error('❌ No active wallet found. Create one with: gs wallet create')
+            console.error('❌ No active wallet found. Create one with: ghost wallet create')
             process.exit(1)
           }
           walletAddress = activeWallet.metadata.address

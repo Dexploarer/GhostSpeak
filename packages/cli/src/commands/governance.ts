@@ -200,7 +200,7 @@ multisigCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
           `${chalk.yellow('Next Steps:')}\n` +
           `• Share multisig address with members\n` +
-          `• Create proposals: ${chalk.cyan('gs governance proposal create')}\n` +
+          `• Create proposals: ${chalk.cyan('ghost governance proposal create')}\n` +
           `• Manage transactions through multisig approval process`
         )
 
@@ -227,15 +227,15 @@ multisigCommand
       const { client, wallet } = await initializeClient('devnet')
       const safeClient = createSafeSDKClient(client)
 
-      const multisigs = await safeClient.governance.listMultisigs({ creator: wallet.address })
+      const multisighost = await safeClient.governance.listMultisigs({ creator: wallet.address })
 
       s.stop(`✅ Found ${multisigs.length} multisig wallets`)
 
       if (multisigs.length === 0) {
         outro(
           `${chalk.yellow('No multisig wallets found')}\n\n` +
-          `${chalk.gray('• Create a multisig:')} ${chalk.cyan('gs governance multisig create')}\n` +
-          `${chalk.gray('Get invited to existing multisigs by other members')}`
+          `${chalk.gray('• Create a multisig:')} ${chalk.cyan('ghost governance multisig create')}\n` +
+          `${chalk.gray('Get invited to existing multisighost by other members')}`
         )
         return
       }
@@ -259,9 +259,9 @@ multisigCommand
 
       outro(
         `${chalk.yellow('💡 Commands:')}\n` +
-        `${chalk.cyan('gs governance proposal create')} - Create proposal\n` +
-        `${chalk.cyan('gs governance proposal list')} - View proposals\n` +
-        `${chalk.cyan('gs governance vote')} - Vote on proposals`
+        `${chalk.cyan('ghost governance proposal create')} - Create proposal\n` +
+        `${chalk.cyan('ghost governance proposal list')} - View proposals\n` +
+        `${chalk.cyan('ghost governance vote')} - Vote on proposals`
       )
 
     } catch (error) {
@@ -292,12 +292,12 @@ proposalCommand
       const safeClient = createSafeSDKClient(client)
 
       // Get user's multisigs
-      const multisigs = await safeClient.governance.listMultisigs({ creator: wallet.address })
+      const multisighost = await safeClient.governance.listMultisigs({ creator: wallet.address })
       
       s.stop(`✅ Found ${multisigs.length} multisig wallets`)
 
       if (multisigs.length === 0) {
-        outro('No multisig wallets found. Create one first with: gs governance multisig create')
+        outro('No multisig wallets found. Create one first with: ghost governance multisig create')
         return
       }
 
@@ -456,8 +456,8 @@ proposalCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
           `${chalk.yellow('Next Steps:')}\n` +
           `• Notify multisig members about the proposal\n` +
-          `• Members can vote: ${chalk.cyan('gs governance vote')}\n` +
-          `• Monitor voting progress: ${chalk.cyan('gs governance proposal list')}`
+          `• Members can vote: ${chalk.cyan('ghost governance vote')}\n` +
+          `• Monitor voting progress: ${chalk.cyan('ghost governance proposal list')}`
         )
 
       } catch (error) {
@@ -492,7 +492,7 @@ proposalCommand
       if (proposals.length === 0) {
         outro(
           `${chalk.yellow('No proposals found')}\n\n` +
-          `${chalk.gray('• Create a proposal:')} ${chalk.cyan('gs governance proposal create')}\n` +
+          `${chalk.gray('• Create a proposal:')} ${chalk.cyan('ghost governance proposal create')}\n` +
           `${chalk.gray('• Join a multisig to participate in governance')}`
         )
         return
@@ -524,8 +524,8 @@ proposalCommand
 
       outro(
         `${chalk.yellow('💡 Commands:')}\n` +
-        `${chalk.cyan('gs governance vote')} - Vote on active proposals\n` +
-        `${chalk.cyan('gs governance proposal create')} - Create new proposal`
+        `${chalk.cyan('ghost governance vote')} - Vote on active proposals\n` +
+        `${chalk.cyan('ghost governance proposal create')} - Create new proposal`
       )
 
     } catch (error) {
@@ -881,10 +881,10 @@ governanceCommand
     intro(chalk.blue('🏛️ GhostSpeak Governance'))
     
     log.info(`\n${chalk.bold('Available Commands:')}\n`)
-    log.info(`${chalk.cyan('gs governance multisig')} - Manage multisig wallets`)
-    log.info(`${chalk.cyan('gs governance proposal')} - Create and manage proposals`)
-    log.info(`${chalk.cyan('gs governance vote')} - Vote on active proposals`)
-    log.info(`${chalk.cyan('gs governance rbac')} - Manage roles and permissions`)
+    log.info(`${chalk.cyan('ghost governance multisig')} - Manage multisig wallets`)
+    log.info(`${chalk.cyan('ghost governance proposal')} - Create and manage proposals`)
+    log.info(`${chalk.cyan('ghost governance vote')} - Vote on active proposals`)
+    log.info(`${chalk.cyan('ghost governance rbac')} - Manage roles and permissions`)
     
     outro('Use --help with any command for more details')
   })

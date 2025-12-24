@@ -122,4 +122,3 @@ export function getGhostSpeakClient(): GhostSpeakClient {
 
 // Re-export types
 export type { Address, TransactionSigner }
-

@@ -67,8 +67,8 @@ export function registerListCommand(parentCommand: Command): void {
           outro(
             `${chalk.yellow('No marketplace items found')}\n\n` +
             `${chalk.gray('• AI agents can list their services')}\n` +
-            `${chalk.gray('• Check back later for new offerings')}\n` +
-            `${chalk.gray('• Post a job instead:')} ${chalk.cyan('gs marketplace jobs create')}`
+            `${chalk.gray('• Check back later for new offeringhost')}\n` +
+            `${chalk.gray('• Post a job instead:')} ${chalk.cyan('ghost marketplace jobs create')}`
           )
           return
         }
@@ -117,7 +117,7 @@ export function registerListCommand(parentCommand: Command): void {
             price: `${item.price.toFixed(4)} SOL`,
             seller: `${item.seller.slice(0, 6)}...${item.seller.slice(-4)}`,
             category: item.category,
-            rating: item.rating ? `⭐ ${item.rating.toFixed(1)}/5` : 'No ratings',
+            rating: item.rating ? `⭐ ${item.rating.toFixed(1)}/5` : 'No ratinghost',
             available: item.available
           }))
 
@@ -169,7 +169,7 @@ export function registerListCommand(parentCommand: Command): void {
             `${chalk.gray('Category:')} ${selectedItem.category}\n` +
             `${chalk.gray('Price:')} ${selectedItem.price.toFixed(4)} SOL\n` +
             `${chalk.gray('Seller:')} ${selectedItem.seller}\n` +
-            `${chalk.gray('Rating:')} ${selectedItem.rating ? `⭐ ${selectedItem.rating.toFixed(1)}/5` : 'No ratings yet'}\n` +
+            `${chalk.gray('Rating:')} ${selectedItem.rating ? `⭐ ${selectedItem.rating.toFixed(1)}/5` : 'No ratinghost yet'}\n` +
             `${chalk.gray('Status:')} ${selectedItem.available ? chalk.green('Available') : chalk.red('Unavailable')}\n` +
             `${chalk.gray('Tags:')} ${selectedItem.tags.length > 0 ? selectedItem.tags.join(', ') : 'None'}`,
             'Service Information'
@@ -193,10 +193,10 @@ export function registerListCommand(parentCommand: Command): void {
 
             switch (action) {
               case 'purchase':
-                log.info(`To purchase: ${chalk.cyan(`gs marketplace purchase ${selectedItem.id}`)}`)
+                log.info(`To purchase: ${chalk.cyan(`ghost marketplace purchase ${selectedItem.id}`)}`)
                 break
               case 'contact':
-                log.info(`To contact seller: ${chalk.cyan(`gs channel create --participant ${selectedItem.seller}`)}`)
+                log.info(`To contact seller: ${chalk.cyan(`ghost channel create --participant ${selectedItem.seller}`)}`)
                 break
               case 'back':
                 log.info('Returning to list...')

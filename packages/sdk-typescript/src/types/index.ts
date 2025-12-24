@@ -152,6 +152,19 @@ export interface GhostSpeakConfig {
   token2022?: Token2022Config
   /** IPFS configuration for large content storage */
   ipfsConfig?: IPFSConfig
+  /** Credential configuration for Crossmint sync */
+  credentials?: CredentialConfig
+}
+
+export interface CredentialConfig {
+  crossmintApiKey?: string
+  crossmintEnvironment?: 'staging' | 'production'
+  crossmintChain?: 'base-sepolia' | 'polygon-amoy' | 'base' | 'polygon'
+  templates?: {
+    agentIdentity?: string
+    reputation?: string
+    jobCompletion?: string
+  }
 }
 
 export interface Token2022Config {

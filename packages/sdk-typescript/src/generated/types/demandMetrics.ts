@@ -11,6 +11,8 @@ import {
   getU16Decoder,
   getU32Encoder,
   getU32Decoder,
+  getI32Encoder,
+  getI32Decoder,
   getU64Encoder,
   getU64Decoder,
   getI64Encoder,
@@ -46,7 +48,7 @@ export type DemandMetrics = {
   current_demand: bigint;
   peak_demand: bigint;
   average_demand: bigint;
-  demand_trend: unknown;
+  demand_trend: number;
   demand_volatility: number;
   last_updated: bigint;
 };
@@ -55,7 +57,7 @@ export type DemandMetricsArgs = {
   current_demand: number | bigint;
   peak_demand: number | bigint;
   average_demand: number | bigint;
-  demand_trend: unknown;
+  demand_trend: number;
   demand_volatility: number;
   last_updated: number | bigint;
 };

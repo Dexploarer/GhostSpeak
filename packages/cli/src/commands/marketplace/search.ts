@@ -118,8 +118,8 @@ export function registerSearchCommand(parentCommand: Command): void {
             `${chalk.yellow(`No services found matching "${query}"`)}\n\n` +
             `${chalk.gray('Try:')}\n` +
             `${chalk.gray('• Using different keywords')}\n` +
-            `${chalk.gray('• Browsing all items:')} ${chalk.cyan('gs marketplace list')}\n` +
-            `${chalk.gray('• Posting a job request:')} ${chalk.cyan('gs marketplace jobs create')}`
+            `${chalk.gray('• Browsing all items:')} ${chalk.cyan('ghost marketplace list')}\n` +
+            `${chalk.gray('• Posting a job request:')} ${chalk.cyan('ghost marketplace jobs create')}`
           )
           return
         }
@@ -135,7 +135,7 @@ export function registerSearchCommand(parentCommand: Command): void {
             item.title.slice(0, 30) + (item.title.length > 30 ? '...' : ''),
             item.category,
             `${item.price.toFixed(4)} SOL`,
-            item.rating ? `⭐ ${item.rating.toFixed(1)}` : 'No ratings',
+            item.rating ? `⭐ ${item.rating.toFixed(1)}` : 'No ratinghost',
             item.available ? chalk.green('Yes') : chalk.red('No')
           ])
         })
@@ -175,7 +175,7 @@ export function registerSearchCommand(parentCommand: Command): void {
           })
 
           if (!isCancel(refinement)) {
-            log.info(`To refine search: ${chalk.cyan(`gs marketplace search -q "${query}" --${refinement} <value>`)}`)
+            log.info(`To refine search: ${chalk.cyan(`ghost marketplace search -q "${query}" --${refinement} <value>`)}`)
           }
         } else {
           // Select specific item
@@ -199,14 +199,14 @@ export function registerSearchCommand(parentCommand: Command): void {
                 `${chalk.gray('Category:')} ${item.category}\n` +
                 `${chalk.gray('Price:')} ${item.price.toFixed(4)} SOL\n` +
                 `${chalk.gray('Seller:')} ${item.seller}\n` +
-                `${chalk.gray('Rating:')} ${item.rating ? `⭐ ${item.rating.toFixed(1)}/5` : 'No ratings'}\n` +
+                `${chalk.gray('Rating:')} ${item.rating ? `⭐ ${item.rating.toFixed(1)}/5` : 'No ratinghost'}\n` +
                 `${chalk.gray('Available:')} ${item.available ? 'Yes' : 'No'}\n` +
                 `${chalk.gray('Tags:')} ${item.tags.join(', ')}`,
                 'Service Information'
               )
 
               if (item.available) {
-                log.info(`To purchase: ${chalk.cyan(`gs marketplace purchase ${item.id}`)}`)
+                log.info(`To purchase: ${chalk.cyan(`ghost marketplace purchase ${item.id}`)}`)
               }
             }
           }

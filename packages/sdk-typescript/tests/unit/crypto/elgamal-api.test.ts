@@ -135,7 +135,7 @@ describe('ElGamal API Structure', () => {
       const amount = 1000n
       const result = encryptAmountWithRandomness(amount, keypair.publicKey)
       
-      const rangeProof = generateRangeProof(
+      const rangeProof = await generateRangeProof(
         amount,
         result.ciphertext.commitment,
         result.randomness

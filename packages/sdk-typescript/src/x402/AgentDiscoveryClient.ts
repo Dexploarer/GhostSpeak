@@ -485,10 +485,7 @@ export class AgentDiscoveryClient {
       const decodedData = decoder.decode(dataBytes)
       const decodedAgent = Array.isArray(decodedData) ? decodedData[0] : decodedData
 
-      // Access x402 fields with type assertion since they may not be in generated types yet
-      // TODO: Remove type assertion once IDL is regenerated with x402 fields
-      const agentWithX402 = decodedAgent as any
-
+      // Access x402 fields directly from generated type
       // Transform to our Agent interface format
       return {
         address,
@@ -496,36 +493,15 @@ export class AgentDiscoveryClient {
         name: decodedAgent.name,
         description: decodedAgent.description,
         capabilities: decodedAgent.capabilities,
-        // x402 fields (use defaults if not present in generated types)
-        x402_enabled: agentWithX402.x402Enabled ?? agentWithX402.x402_enabled ?? false,
-        x402_payment_address:
-          agentWithX402.x402PaymentAddress ??
-          agentWithX402.x402_payment_address ??
-          SOLANA_SYSTEM_PROGRAM_ID,
-        x402_accepted_tokens:
-          agentWithX402.x402AcceptedTokens ??
-          agentWithX402.x402_accepted_tokens ??
-          [],
-        x402_price_per_call:
-          agentWithX402.x402PricePerCall ??
-          agentWithX402.x402_price_per_call ??
-          0n,
-        x402_service_endpoint:
-          agentWithX402.x402ServiceEndpoint ??
-          agentWithX402.x402_service_endpoint ??
-          '',
-        x402_total_payments:
-          agentWithX402.x402TotalPayments ??
-          agentWithX402.x402_total_payments ??
-          0n,
-        x402_total_calls:
-          agentWithX402.x402TotalCalls ??
-          agentWithX402.x402_total_calls ??
-          0n,
-        last_payment_timestamp:
-          agentWithX402.lastPaymentTimestamp ??
-          agentWithX402.last_payment_timestamp ??
-          0n,
+        // x402 fields
+        x402_enabled: decodedAgent.x402Enabled,
+        x402_payment_address: decodedAgent.x402PaymentAddress,
+        x402_accepted_tokens: decodedAgent.x402AcceptedTokens,
+        x402_price_per_call: decodedAgent.x402PricePerCall,
+        x402_service_endpoint: decodedAgent.x402ServiceEndpoint,
+        x402_total_payments: decodedAgent.x402TotalPayments,
+        x402_total_calls: decodedAgent.x402TotalCalls,
+        last_payment_timestamp: decodedAgent.lastPaymentTimestamp,
         // Standard fields
         reputation_score: decodedAgent.reputationScore,
         total_jobs: BigInt(decodedAgent.totalJobsCompleted),
@@ -653,11 +629,14 @@ export class AgentDiscoveryClient {
         const mintInfo = result as { value: { data: [string, string] } | null }
         if (mintInfo.value) {
           // Parse mint account to get decimals
-          // This would use proper SPL token decoder in production
+          // Mint layout: MintAuthority(36) + Supply(8) + Decimals(1) + ...
+          const data = Buffer.from(mintInfo.value.data[0], 'base64')
+          const decimals = data[44]
+          
           tokenInfo.push({
             token,
-            decimals: 6, // Placeholder - would parse from mint account
-            symbol: 'USDC' // Placeholder - would look up from token registry
+            decimals, 
+            symbol: 'USDC' // Placeholder - would look up from token registry or metadata
           })
         }
       } catch (error) {

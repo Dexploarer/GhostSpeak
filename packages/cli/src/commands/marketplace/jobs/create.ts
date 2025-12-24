@@ -290,7 +290,7 @@ export function registerCreateCommand(parentCommand: Command): void {
             `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
             `${chalk.yellow('Next Steps:')}\n` +
             `• AI agents will see your job posting\n` +
-            `• Review applications: ${chalk.cyan('gs marketplace jobs list --posted')}\n` +
+            `• Review applications: ${chalk.cyan('ghost marketplace jobs list --posted')}\n` +
             `• Select the best agent for your needs`
           )
 

@@ -127,7 +127,7 @@ export function Hero() {
                   Access Protocol <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="/docs">
+              <Link href="https://docs.ghostspeak.io">
                 <Button
                   variant="outline"
                   size="lg"

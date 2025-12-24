@@ -16,16 +16,9 @@ export const disputeKeys = {
   all: ['disputes'] as const,
   list: () => [...disputeKeys.all, 'list'] as const,
   detail: (address: string) => [...disputeKeys.all, 'detail', address] as const,
-  byComplainant: (complainant: string) => [
-    ...disputeKeys.all,
-    'byComplainant',
-    complainant,
-  ] as const,
-  byRespondent: (respondent: string) => [
-    ...disputeKeys.all,
-    'byRespondent',
-    respondent,
-  ] as const,
+  byComplainant: (complainant: string) =>
+    [...disputeKeys.all, 'byComplainant', complainant] as const,
+  byRespondent: (respondent: string) => [...disputeKeys.all, 'byRespondent', respondent] as const,
   pending: () => [...disputeKeys.all, 'pending'] as const,
 }
 
@@ -131,10 +124,8 @@ export function useDisputeStats() {
   const resolved = allDisputes.filter((d) => client.disputes.isResolved(d.data))
   const avgAiConfidence =
     allDisputes.length > 0
-      ? allDisputes.reduce(
-          (sum, d) => sum + client.disputes.getAiConfidence(d.data),
-          0
-        ) / allDisputes.length
+      ? allDisputes.reduce((sum, d) => sum + client.disputes.getAiConfidence(d.data), 0) /
+        allDisputes.length
       : 0
 
   return {
@@ -149,10 +140,7 @@ export function useDisputeStats() {
 /**
  * Transform dispute data for UI display
  */
-export function transformDisputeForDisplay(dispute: {
-  address: Address
-  data: DisputeCase
-}) {
+export function transformDisputeForDisplay(dispute: { address: Address; data: DisputeCase }) {
   if (!dispute.data) return null
   const client = getGhostSpeakClient()
 
@@ -169,4 +157,3 @@ export function transformDisputeForDisplay(dispute: {
     createdAt: new Date(Number(dispute.data.createdAt) * 1000),
   }
 }
-

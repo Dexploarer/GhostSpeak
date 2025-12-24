@@ -591,6 +591,10 @@ export async function generateRangeProof(
   commitment: PedersenCommitment | { commitment: Uint8Array },
   randomness: Uint8Array
 ): Promise<RangeProof> {
+  if (amount < 0n || amount > MAX_DECRYPTABLE_VALUE) {
+    throw new Error('Amount must be in range [0, 2^32)')
+  }
+
   // ZK proof builder removed - x402 payment protocol focus
   // Generate a placeholder proof for compatibility
   const proof = new Uint8Array(RANGE_PROOF_SIZE)

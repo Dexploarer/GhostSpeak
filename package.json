@@ -5,7 +5,9 @@
   "type": "module",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "programs",
+    "scripts"
   ],
   "engines": {
     "node": ">=24.0.0"
@@ -17,11 +19,12 @@
     "build:sdk": "cd packages/sdk-typescript && bun run build",
     "build:cli": "cd packages/cli && bun run build",
     "build:all": "bun run build && bun run build:packages",
+    "dev": "turbo dev",
     "dev:sdk": "cd packages/sdk-typescript && bun run dev",
     "dev:cli": "cd packages/cli && bun run dev",
-    "clean": "anchor clean && bun run clean:packages",
+    "clean": "turbo clean",
     "clean:packages": "cd packages/sdk-typescript && bun run clean && cd ../cli && bun run clean",
-    "test": "anchor test",
+    "test": "turbo test",
     "test:unit": "vitest run packages/**/tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/user-acceptance",
@@ -115,8 +118,8 @@
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "next": "15.4.10",
     "@eslint/js": "^9.31.0",
+    "@types/bun": "latest",
     "@types/inquirer": "^9.0.8",
     "@types/node": "^24.0.15",
     "@types/winston": "^2.4.4",
@@ -129,14 +132,16 @@
     "eslint": "^9.31.0",
     "figlet": "^1.7.0",
     "inquirer": "^12.2.0",
+    "next": "15.4.10",
     "ora": "^9.0.0",
     "table": "^6.9.0",
     "tsx": "^4.20.3",
+    "turbo": "^2.7.2",
     "tweetnacl": "^1.0.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.37.0",
     "vitest": "^3.2.4",
-    "winston": "^3.17.0",
-    "@types/bun": "latest"
-  }
+    "winston": "^3.17.0"
+  },
+  "packageManager": "bun@1.3.4"
 }

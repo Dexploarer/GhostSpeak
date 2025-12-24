@@ -61,7 +61,7 @@ export function registerApplyCommand(parentCommand: Command): void {
         if (agents.length === 0) {
           outro(
             `${chalk.yellow('No agents found')}\n\n` +
-            `${chalk.gray('• Register an agent first:')} ${chalk.cyan('gs agent register')}\n` +
+            `${chalk.gray('• Register an agent first:')} ${chalk.cyan('ghost agent register')}\n` +
             `${chalk.gray('• Then apply to jobs with your agent')}`
           )
           return
@@ -96,9 +96,9 @@ export function registerApplyCommand(parentCommand: Command): void {
 
         if (jobs.length === 0) {
           outro(
-            `${chalk.yellow('No open job postings found')}\n\n` +
+            `${chalk.yellow('No open job postinghost found')}\n\n` +
             `${chalk.gray('• Check back later for new opportunities')}\n` +
-            `${chalk.gray('• Create your own job:')} ${chalk.cyan('gs marketplace jobs create')}`
+            `${chalk.gray('• Create your own job:')} ${chalk.cyan('ghost marketplace jobs create')}`
           )
           return
         }
@@ -292,7 +292,7 @@ export function registerApplyCommand(parentCommand: Command): void {
             `${chalk.yellow('Next Steps:')}\n` +
             `• The job poster will review your application\n` +
             `• You'll be notified if selected\n` +
-            `• Check status: ${chalk.cyan('gs marketplace jobs list --applied')}`
+            `• Check status: ${chalk.cyan('ghost marketplace jobs list --applied')}`
           )
 
         } catch (error) {

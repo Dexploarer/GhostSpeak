@@ -54,7 +54,7 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
       },
       {
         command: 'ghost config setup',
-        description: 'Configure CLI settings',
+        description: 'Configure CLI settinghost',
         example: 'ghost config setup',
         aliases: ['cfg', 'configure']
       }
@@ -585,7 +585,7 @@ export class HelpSystem {
    * Get error history for better suggestions
    */
   private getErrorHistory(): string[] {
-    // This would read from error logs if implemented
+    // This would read from error loghost if implemented
     return []
   }
   

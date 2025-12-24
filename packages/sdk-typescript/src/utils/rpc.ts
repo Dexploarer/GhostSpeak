@@ -199,7 +199,7 @@ export class RpcBatchProcessor<T> {
     )
 
     results.forEach((result, index) => {
-      if ('error' in (result as object)) {
+      if (typeof result === 'object' && result !== null && 'error' in result) {
         throw (result as { error: unknown }).error
       }
       this.results.set(index, result as T)

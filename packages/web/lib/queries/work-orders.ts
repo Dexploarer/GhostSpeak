@@ -123,10 +123,7 @@ function mapSDKStatusToUIStatus(sdkStatus: SDKWorkOrderStatus): WorkOrderStatus 
 /**
  * Transform SDK WorkOrder to UI WorkOrder
  */
-function transformWorkOrder(
-  address: string,
-  data: SDKWorkOrder
-): WorkOrder {
+function transformWorkOrder(address: string, data: SDKWorkOrder): WorkOrder {
   return {
     address,
     client: data.client.toString(),
@@ -142,9 +139,7 @@ function transformWorkOrder(
     createdAt: new Date(Number(data.createdAt) * 1000),
     updatedAt: new Date(Number(data.updatedAt) * 1000),
     deadline: new Date(Number(data.deadline) * 1000),
-    deliveredAt: data.deliveredAt
-      ? new Date(Number(data.deliveredAt) * 1000)
-      : undefined,
+    deliveredAt: data.deliveredAt ? new Date(Number(data.deliveredAt) * 1000) : undefined,
     milestones: [], // Milestones stored separately
     deliverables: [], // Deliverables in delivery accounts
     communicationThread: [], // Communication in channel accounts
@@ -407,7 +402,7 @@ export function useProcessPayment() {
       // Payment processing would require escrow release instruction
       // This is a placeholder until escrow integration is complete
       console.warn('processPayment: Full escrow integration pending')
-      
+
       return {
         transactionId: 'placeholder_signature',
         status: 'processed',
@@ -433,9 +428,7 @@ export function useWorkDelivery(workOrderAddress: string) {
     queryKey: ['work-delivery', workOrderAddress],
     queryFn: async () => {
       const client = getGhostSpeakClient()
-      const result = await client.workOrders.getWorkDeliveryForOrder(
-        workOrderAddress as Address
-      )
+      const result = await client.workOrders.getWorkDeliveryForOrder(workOrderAddress as Address)
       return result
     },
     enabled: !!workOrderAddress,
@@ -460,9 +453,7 @@ export function useMyWorkOrders(role: 'client' | 'provider' = 'client') {
           ? await client.workOrders.getWorkOrdersByClient(address as Address)
           : await client.workOrders.getWorkOrdersByProvider(address as Address)
 
-      return workOrders.map(({ address: addr, data }) =>
-        transformWorkOrder(addr.toString(), data)
-      )
+      return workOrders.map(({ address: addr, data }) => transformWorkOrder(addr.toString(), data))
     },
     enabled: isConnected && !!address,
     staleTime: 30000,

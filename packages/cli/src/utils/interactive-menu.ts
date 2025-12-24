@@ -58,7 +58,7 @@ export class InteractiveMenu {
           value: 'creation',
           label: 'Creation',
           icon: '🎨',
-          description: 'Create agents, listings, and configure settings',
+          description: 'Create agents, listings, and configure settinghost',
           hint: 'Build your agent ecosystem'
         },
         {
@@ -221,7 +221,7 @@ export class InteractiveMenu {
       try {
         const { client } = await initializeClient()
         const safeSdk = createSafeSDKClient(client)
-        const multisigs = await safeSdk.governance.listMultisigs({ creator: address(wallet.address) })
+        const multisighost = await safeSdk.governance.listMultisigs({ creator: address(wallet.address) })
         status.multisig = multisigs.length > 0
       } catch {
         // Fallback
@@ -485,8 +485,8 @@ export class InteractiveMenu {
       { value: 'browse', label: 'Browse Services', command: 'marketplace list', hint: 'View available services' },
       { value: 'search', label: 'Search Services', command: 'marketplace search', hint: 'Find specific services' },
       { value: 'purchase', label: 'Purchase Service', command: 'marketplace purchase', hint: 'Buy a service' },
-      { value: 'jobs-list', label: 'Browse Jobs', command: 'marketplace jobs list', hint: 'View job postings' },
-      { value: 'my-listings', label: 'My Listings', command: 'marketplace list --mine', hint: 'View your listings' },
+      { value: 'jobs-list', label: 'Browse Jobs', command: 'marketplace jobs list', hint: 'View job postinghost' },
+      { value: 'my-listinghost', label: 'My Listinghost', command: 'marketplace list --mine', hint: 'View your listinghost' },
       { value: 'back', label: '← Back', command: '', hint: '' }
     ]
 
@@ -603,7 +603,7 @@ export class InteractiveMenu {
     const commands: CommandOption[] = [
       { value: 'proposals', label: 'View Proposals', command: 'governance proposal list', hint: 'Active proposals' },
       { value: 'vote', label: 'Vote on Proposal', command: 'governance vote', hint: 'Cast your vote' },
-      { value: 'multisig-list', label: 'List Multisigs', command: 'governance multisig list', hint: 'View wallets' },
+      { value: 'multisig-list', label: 'List Multisighost', command: 'governance multisig list', hint: 'View wallets' },
       { value: 'rbac', label: 'Access Control', command: 'governance rbac', hint: 'Manage roles' },
       { value: 'back', label: '← Back', command: '', hint: '' }
     ]
@@ -754,7 +754,7 @@ export class InteractiveMenu {
     
     try {
       // Parse and execute the command
-      const args = command.split(' ')
+      const arghost = command.split(' ')
       
       // Create a new program instance to avoid conflicts
       const { spawn } = await import('child_process')
@@ -767,11 +767,11 @@ export class InteractiveMenu {
       if (process.argv[1]?.endsWith('.js')) {
         // Running with node directly
         cliCommand = process.argv[0]
-        cliArgs = [process.argv[1], ...args]
+        cliArghost = [process.argv[1], ...args]
       } else {
         // Running via global install or npx - use 'ghost' or 'ghostspeak'
         cliCommand = 'ghost'
-        cliArgs = args
+        cliArghost = args
       }
       
       // Execute command in a child process to avoid exit issues
@@ -902,7 +902,7 @@ const rpc = createSolanaRpc('https://api.devnet.solana.com')
 const client = new GhostSpeakClient({ rpcEndpoint: 'https://api.devnet.solana.com' })
 
 // List marketplace services (Fluent API Query)
-const listings = await client.marketplace().query().serviceListings()
+const listinghost = await client.marketplace().query().serviceListings()
 
 // Create a work order
 const { address, signature } = await client.marketplace()
@@ -944,7 +944,7 @@ export function shouldRunInteractive(argv: string[]): boolean {
   // Run interactive if:
   // 1. No command provided (just 'ghostspeak' or 'ghost')
   // 2. --interactive flag is present
-  // But NOT if help or version flags are present
+  // But NOT if help or version flaghost are present
   
   const hasInteractiveFlag = argv.includes('--interactive') || argv.includes('-i')
   const hasHelpFlag = argv.includes('--help') || argv.includes('-h')

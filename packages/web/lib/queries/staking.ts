@@ -113,7 +113,6 @@ export function useClaimStakingRewards() {
   })
 }
 
-
 /**
  * Hook to calculate pending rewards
  */

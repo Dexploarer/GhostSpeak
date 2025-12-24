@@ -29,6 +29,9 @@ export default function RootLayout({
 }>): React.JSX.Element {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="devfun-verification" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-linear-to-br from-purple-50 via-white to-blue-50 dark:bg-linear-to-br dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 text-gray-900 dark:text-gray-100`}
       >

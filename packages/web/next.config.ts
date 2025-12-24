@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   // Set basePath for GitHub Pages (uncomment if deploying to subdirectory)
   // basePath: process.env.NODE_ENV === 'production' ? '/ghostspeak' : '',
 
+  // Configure output file tracing for monorepo (includes files from parent dirs)
+  outputFileTracingRoot: require('path').join(__dirname, '../../'),
+
   // Configure asset prefix for GitHub Pages
   // assetPrefix: process.env.NODE_ENV === 'production' ? '/ghostspeak/' : '',
 

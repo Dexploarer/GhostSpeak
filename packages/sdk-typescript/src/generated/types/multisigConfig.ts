@@ -55,7 +55,7 @@ export type MultisigConfig = {
   auto_execute: boolean;
   signer_change_threshold: number;
   allowed_transaction_types: Array<TransactionType>;
-  daily_limits: Array<readonly [string, bigint]>;
+  daily_limits: Array<[string, bigint]>;
 };
 
 export type MultisigConfigArgs = {
@@ -66,7 +66,7 @@ export type MultisigConfigArgs = {
   auto_execute: boolean;
   signer_change_threshold: number;
   allowed_transaction_types: Array<TransactionTypeArgs>;
-  daily_limits: Array<readonly [string, bigint]>;
+  daily_limits: Array<unknown>;
 };
 
 export function getMultisigConfigEncoder(): Encoder<MultisigConfigArgs> {

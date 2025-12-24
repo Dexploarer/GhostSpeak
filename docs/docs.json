@@ -48,7 +48,8 @@
             "group": "Core Concepts",
             "pages": [
               "concepts/architecture",
-              "concepts/security"
+              "concepts/security",
+              "tokenomics"
             ]
           },
           {
@@ -56,7 +57,16 @@
             "pages": [
               "sdk/api-reference",
               "sdk/agents",
-              "sdk/escrow"
+              "sdk/escrow",
+              "sdk/staking",
+              "sdk/disputes",
+              "sdk/reputation",
+              "sdk/auctions",
+              "sdk/work-orders",
+              "sdk/channels",
+              "sdk/marketplace",
+              "sdk/governance",
+              "sdk/token2022"
             ]
           },
           {

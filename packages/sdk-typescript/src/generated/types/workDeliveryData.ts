@@ -38,6 +38,7 @@ import {
   type ReadonlyUint8Array,
   type Option
 } from "@solana/kit";
+import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures";
 
 import {
   getDeliverableEncoder,

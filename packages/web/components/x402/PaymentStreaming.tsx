@@ -99,12 +99,13 @@ function PaymentStreamCard({ streamId }: PaymentStreamCardProps): React.JSX.Elem
     )
   }
 
-  const totalAmount = Number(stream.totalAmount) / 1e9
+  const totalAmount = Number(stream.totalAmount ?? stream.amount) / 1e9
   const releasedAmount = Number(stream.releasedAmount ?? 0) / 1e9
   const progress = totalAmount > 0 ? (releasedAmount / totalAmount) * 100 : 0
 
-  const completedMilestones = stream.milestones.filter((m) => m.released).length
-  const totalMilestones = stream.milestones.length
+  const milestones = stream.milestones ?? []
+  const completedMilestones = milestones.filter((m) => m.released).length
+  const totalMilestones = milestones.length
 
   return (
     <Card>
@@ -167,7 +168,7 @@ function PaymentStreamCard({ streamId }: PaymentStreamCardProps): React.JSX.Elem
         {/* Milestones */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium">Milestones</h4>
-          {stream.milestones.map((milestone, index) => {
+          {milestones.map((milestone, index) => {
             const amount = Number(milestone.amount) / 1e9
             const isReleased = milestone.released
             const canRelease = !isReleased && index === completedMilestones

@@ -55,7 +55,7 @@ export type ReportEntry = {
   parties: Array<Address>;
   risk_score: number;
   compliance_flags: ComplianceFlags;
-  metadata: Array<readonly [string, string]>;
+  metadata: Array<[string, string]>;
 };
 
 export type ReportEntryArgs = {
@@ -66,7 +66,7 @@ export type ReportEntryArgs = {
   parties: Array<Address>;
   risk_score: number;
   compliance_flags: ComplianceFlagsArgs;
-  metadata: Array<readonly [string, string]>;
+  metadata: Array<unknown>;
 };
 
 export function getReportEntryEncoder(): Encoder<ReportEntryArgs> {

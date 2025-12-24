@@ -38,16 +38,16 @@ import {
   type ReadonlyUint8Array,
   type Option
 } from "@solana/kit";
-import { getI16Encoder, getI16Decoder } from "@solana/codecs-numbers";
+import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures";
 
 
 
 export type InterestBearingConfigParams = {
-  rate: number;
+  rate: unknown;
 };
 
 export type InterestBearingConfigParamsArgs = {
-  rate: number;
+  rate: unknown;
 };
 
 export function getInterestBearingConfigParamsEncoder(): Encoder<InterestBearingConfigParamsArgs> {

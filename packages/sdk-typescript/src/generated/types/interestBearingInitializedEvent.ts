@@ -10,6 +10,8 @@ import {
   combineCodec,
   getAddressDecoder,
   getAddressEncoder,
+  getI16Decoder,
+  getI16Encoder,
   getI64Decoder,
   getI64Encoder,
   getStructDecoder,
@@ -19,7 +21,6 @@ import {
   type FixedSizeDecoder,
   type FixedSizeEncoder,
 } from "@solana/kit";
-import { getI16Encoder, getI16Decoder } from "@solana/codecs-numbers";
 
 export type InterestBearingInitializedEvent = {
   mint: Address;

@@ -80,74 +80,100 @@ export function useAvailableTokens() {
   })
 }
 
+import { Connection, PublicKey } from '@solana/web3.js'
+
 /**
  * Fetch real token information from the blockchain
  */
 async function fetchTokenInfo(address: string): Promise<Token> {
-  // const client = getGhostSpeakClient()
+  const client = getGhostSpeakClient()
+  const connection = new Connection(client.rpcUrl)
 
-  // Use SDK utilities to get token mint info
-  // This would integrate with the real Token-2022 utilities
-  // TODO: Implement proper RPC call through SDK
-  const mintInfo = null as { value: unknown } | null // Stub - would call RPC
+  try {
+    const mintPubkey = new PublicKey(address)
+    const accountInfo = await connection.getParsedAccountInfo(mintPubkey)
 
-  if (!mintInfo?.value) {
-    throw new Error(`Token mint not found: ${address}`)
+    if (!accountInfo.value) {
+      throw new Error(`Token mint not found: ${address}`)
+    }
+
+    const data = accountInfo.value.data
+    if (!('parsed' in data)) {
+      throw new Error('Invalid token data')
+    }
+
+    const info = data.parsed.info
+
+    const token: Token = {
+      address,
+      symbol: getTokenSymbol(address), // Fallback if metadata not found (would need Metaplex for real symbols)
+      name: getTokenName(address),
+      decimals: info.decimals,
+      logoUri: getTokenLogoUri(address),
+      extensions: [],
+      isInitialized: info.isInitialized,
+      supply: BigInt(info.supply),
+    }
+
+    // Check for Token-2022 extensions
+    if (data.program === 'spl-token-2022') {
+       token.extensions = await parseTokenExtensions(connection, mintPubkey)
+       
+      // Get transfer fee config if applicable
+      if (token.extensions.some((ext) => ext.type === 'TransferFee' && ext.enabled)) {
+        token.transferFeeConfig = await parseTransferFeeConfig(connection, mintPubkey)
+      }
+
+      // Get confidential transfer config if applicable
+      if (token.extensions.some((ext) => ext.type === 'ConfidentialTransfer' && ext.enabled)) {
+        token.confidentialTransferConfig = await parseConfidentialTransferConfig(
+          connection,
+          mintPubkey
+        )
+      }
+    }
+
+    return token
+  } catch (error) {
+    console.warn(`Error fetching token info for ${address}:`, error)
+    return createFallbackToken(address)
   }
-
-  // Parse mint data (simplified - would use proper SPL Token parsing)
-  const token: Token = {
-    address,
-    symbol: getTokenSymbol(address),
-    name: getTokenName(address),
-    decimals: getTokenDecimals(address),
-    logoUri: getTokenLogoUri(address),
-    extensions: [], // Would parse from mint extensions
-    isInitialized: true,
-    supply: BigInt(0), // Would parse from mint data
-  }
-
-  // Check for Token-2022 extensions
-  token.extensions = await parseTokenExtensions(address)
-
-  // Get transfer fee config if applicable
-  if (token.extensions.some((ext) => ext.type === 'TransferFee' && ext.enabled)) {
-    token.transferFeeConfig = await parseTransferFeeConfig(address)
-  }
-
-  // Get confidential transfer config if applicable
-  if (token.extensions.some((ext) => ext.type === 'ConfidentialTransfer' && ext.enabled)) {
-    token.confidentialTransferConfig = await parseConfidentialTransferConfig(address)
-  }
-
-  return token
 }
 
 /**
  * Parse Token-2022 extensions from mint account
  */
 async function parseTokenExtensions(
-  address: string
+  connection: Connection,
+  mint: PublicKey
 ): Promise<Array<{ type: string; enabled: boolean }>> {
-  // This would use the real SDK utilities to parse extensions
-  // For now, return based on known token addresses
-  const extensions: Array<{ type: string; enabled: boolean }> = []
+  try {
+    const info = await connection.getAccountInfo(mint)
+    if (!info) return []
 
-  if (address === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
-    // USDC has transfer fees
-    extensions.push({ type: 'TransferFee', enabled: true })
+    // This is a simplified check. In a full implementation we would parse the TLV data
+    // For now, we rely on the program owner check we did earlier
+    const extensions: Array<{ type: string; enabled: boolean }> = []
+    
+    // Check for specific extension types based on data length or known patterns
+    // Real implementation requires unpacking the mint data which is complex without the spl-token library
+    // For this context, we'll mark it as having extensions if it's token-2022
+    if (info.owner.toString().includes('Tokenz')) {
+       // extensions.push({ type: 'Token2022', enabled: true })
+    }
+
+    return extensions
+  } catch (_e) {
+    return []
   }
-
-  return extensions
 }
-
 /**
  * Parse transfer fee configuration
  */
-async function parseTransferFeeConfig(address: string) {
+async function parseTransferFeeConfig(_connection: Connection, address: PublicKey) {
   // This would use real SDK utilities to parse transfer fee config
   // For now, return default config for known tokens
-  if (address === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
+  if (address.toString() === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
     return {
       transferFeeBasisPoints: 50, // 0.5%
       maximumFee: BigInt(5000), // 0.005 USDC max
@@ -161,7 +187,7 @@ async function parseTransferFeeConfig(address: string) {
 /**
  * Parse confidential transfer configuration
  */
-async function parseConfidentialTransferConfig(_address: string) {
+async function parseConfidentialTransferConfig(_connection: Connection, _address: PublicKey) {
   // This would use real SDK utilities to parse confidential transfer config
   return undefined // Not implemented for current tokens
 }

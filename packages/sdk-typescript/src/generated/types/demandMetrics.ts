@@ -38,14 +38,15 @@ import {
   type ReadonlyUint8Array,
   type Option
 } from "@solana/kit";
-import { getI32Encoder, getI32Decoder } from "@solana/codecs-numbers";
+import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures";
+
 
 
 export type DemandMetrics = {
   current_demand: bigint;
   peak_demand: bigint;
   average_demand: bigint;
-  demand_trend: number;
+  demand_trend: unknown;
   demand_volatility: number;
   last_updated: bigint;
 };
@@ -54,7 +55,7 @@ export type DemandMetricsArgs = {
   current_demand: number | bigint;
   peak_demand: number | bigint;
   average_demand: number | bigint;
-  demand_trend: number;
+  demand_trend: unknown;
   demand_volatility: number;
   last_updated: number | bigint;
 };

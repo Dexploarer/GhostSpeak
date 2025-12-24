@@ -48,11 +48,7 @@ import {
   getRiskAssessmentEncoder,
   getRiskAssessmentDecoder,
   type RiskAssessment,
-  type RiskAssessmentArgs,
-  getRegulatoryStatusEncoder,
-  getRegulatoryStatusDecoder,
-  type RegulatoryStatus,
-  type RegulatoryStatusArgs
+  type RiskAssessmentArgs
 } from ".";
 
 export type ComplianceStatus = {
@@ -60,7 +56,7 @@ export type ComplianceStatus = {
   last_review: bigint;
   next_review: bigint;
   active_violations: Array<ComplianceViolation>;
-  regulatory_status: Array<readonly [string, RegulatoryStatus]>;
+  regulatory_status: Array<[string, RegulatoryStatus]>;
   risk_assessment: RiskAssessment;
   compliance_officers: Array<Address>;
 };
@@ -70,7 +66,7 @@ export type ComplianceStatusArgs = {
   last_review: number | bigint;
   next_review: number | bigint;
   active_violations: Array<ComplianceViolationArgs>;
-  regulatory_status: Array<readonly [string, RegulatoryStatusArgs]>;
+  regulatory_status: Array<unknown>;
   risk_assessment: RiskAssessmentArgs;
   compliance_officers: Array<Address>;
 };

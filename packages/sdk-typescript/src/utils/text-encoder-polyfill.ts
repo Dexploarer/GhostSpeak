@@ -8,27 +8,16 @@ interface GlobalWithTextEncoder {
   TextDecoder?: typeof TextDecoder
 }
 
-interface NodeUtil {
-  TextEncoder: typeof TextEncoder
-  TextDecoder: typeof TextDecoder
-}
+
 
 // Check if TextEncoder is already available globally
 const globalScope = globalThis as GlobalWithTextEncoder
+// TextEncoder is globally available in Node.js >= 11 and modern browsers.
+// This check ensures TS compliance without runtime eval risks.
 if (typeof globalScope.TextEncoder === 'undefined') {
-  // In Node.js environment, try to use util module  
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (typeof process !== 'undefined' && process.versions?.node) {
-    try {
-      // Dynamic import for Node.js util module using typed interface
-      const requireFn = eval('require') as (module: string) => NodeUtil
-      const util = requireFn('util')
-      globalScope.TextEncoder = util.TextEncoder
-      globalScope.TextDecoder = util.TextDecoder
-    } catch {
-      // Ignore errors - TextEncoder might not be needed or available elsewhere
-    }
-  }
+  // If we are in an environment without TextEncoder (e.g. very old browsers), 
+  // you should include a dedicated polyfill instructions in README.
+  // We avoid eval('require') here to prevent bundler warnings and security issues.
 }
 
 // Export for explicit usage

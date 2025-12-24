@@ -1,0 +1,151 @@
+---
+title: 'Staking'
+description: 'Stake $GHOST tokens to earn rewards and participate in governance'
+---
+
+## Overview
+
+The staking system allows users to lock their $GHOST tokens to earn APY rewards, boost their reputation, and gain voting power in protocol governance.
+
+## Browser-Safe Import
+
+```typescript
+import {
+  StakingModule,
+  LockupTier,
+} from '@ghostspeak/sdk/browser';
+```
+
+## Creating a Staking Account
+
+```typescript
+import { StakingModule } from '@ghostspeak/sdk/browser';
+
+const stakingModule = new StakingModule({
+  programId: GHOSTSPEAK_PROGRAM_ID,
+  rpcEndpoint: 'https://api.devnet.solana.com',
+});
+
+const result = await stakingModule.createStakingAccount({
+  signer: wallet,
+});
+
+console.log('Staking account created:', result);
+```
+
+## Lockup Tiers
+
+Longer lockups earn higher APY bonuses:
+
+| Tier | Duration | Bonus APY |
+|------|----------|-----------|
+| None | 0 days | +0% |
+| OneMonth | 30 days | +1% |
+| ThreeMonths | 90 days | +3% |
+| SixMonths | 180 days | +5% |
+| OneYear | 365 days | +10% |
+| TwoYears | 730 days | +20% |
+
+```typescript
+import { LockupTier } from '@ghostspeak/sdk/browser';
+
+// Available tiers
+LockupTier.None        // No lockup
+LockupTier.OneMonth    // 1 month
+LockupTier.ThreeMonths // 3 months
+LockupTier.SixMonths   // 6 months
+LockupTier.OneYear     // 1 year
+LockupTier.TwoYears    // 2 years
+```
+
+## Claiming Rewards
+
+```typescript
+const tx = await stakingModule.claimRewards({
+  signer: wallet,
+  ghostMint: GHOST_TOKEN_MINT,
+  userTokenAccount: userGhostTokenAccount,
+  rewardsTreasury: REWARDS_TREASURY,
+});
+
+console.log('Rewards claimed:', tx);
+```
+
+## Querying Staking Data
+
+### Get Staking Config
+
+```typescript
+const config = await stakingModule.getStakingConfig();
+
+console.log('Base APY:', config.baseApy);
+console.log('Total Staked:', config.totalStaked);
+console.log('Tier bonuses:', config.tierBonusApy);
+```
+
+### Get User's Staking Account
+
+```typescript
+const account = await stakingModule.getStakingAccount(ownerAddress);
+
+console.log('Staked amount:', account.stakedAmount);
+console.log('Lockup tier:', account.lockupTier);
+console.log('Auto-compound:', account.autoCompound);
+console.log('Rewards claimed:', account.rewardsClaimed);
+```
+
+### Get All Staking Accounts
+
+```typescript
+const allAccounts = await stakingModule.getAllStakingAccounts();
+
+console.log(`${allAccounts.length} stakers total`);
+```
+
+## Utility Methods
+
+### Calculate Pending Rewards
+
+```typescript
+const pending = stakingModule.calculatePendingRewards(stakingAccount, config);
+console.log('Pending rewards:', pending);
+```
+
+### Check Lockup Status
+
+```typescript
+const isLocked = stakingModule.isLocked(stakingAccount);
+const timeRemaining = stakingModule.getLockupTimeRemaining(stakingAccount);
+
+console.log('Locked:', isLocked);
+console.log('Time remaining (seconds):', timeRemaining);
+```
+
+### Get APY for Tier
+
+```typescript
+const totalApy = stakingModule.getTotalApy(config, LockupTier.OneYear);
+console.log('Total APY with 1-year lockup:', totalApy);
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Choose Appropriate Lockup">
+    Match your lockup period to your investment horizon for maximum rewards
+  </Step>
+  <Step title="Enable Auto-Compound">
+    Auto-compound reinvests rewards for compounding gains
+  </Step>
+  <Step title="Monitor Rewards">
+    Check pending rewards regularly and claim when gas-efficient
+  </Step>
+  <Step title="Consider Governance">
+    Staked tokens give you voting power in protocol governance
+  </Step>
+</Steps>
+
+<Note>
+  Staking rewards are calculated every Solana epoch (~2-3 days). Auto-compound 
+  automatically reinvests rewards into your staked balance.
+</Note>

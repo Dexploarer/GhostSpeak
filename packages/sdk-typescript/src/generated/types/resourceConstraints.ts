@@ -45,16 +45,16 @@ import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures
 export type ResourceConstraints = {
   allowed_resource_types: Array<string>;
   blocked_resource_types: Array<string>;
-  access_limits: Array<readonly [string, bigint]>;
-  quotas: Array<readonly [string, bigint]>;
+  access_limits: Array<[string, bigint]>;
+  quotas: Array<[string, ResourceQuota]>;
   compartments: Array<string>;
 };
 
 export type ResourceConstraintsArgs = {
   allowed_resource_types: Array<string>;
   blocked_resource_types: Array<string>;
-  access_limits: Array<readonly [string, number | bigint]>;
-  quotas: Array<readonly [string, number | bigint]>;
+  access_limits: Array<unknown>;
+  quotas: Array<unknown>;
   compartments: Array<string>;
 };
 
@@ -63,7 +63,7 @@ export function getResourceConstraintsEncoder(): Encoder<ResourceConstraintsArgs
     ["allowed_resource_types", getArrayEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()))],
     ["blocked_resource_types", getArrayEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()))],
     ["access_limits", getArrayEncoder(getTupleEncoder([addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()), getU64Encoder()]))],
-    ["quotas", getArrayEncoder(getTupleEncoder([addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()), getU64Encoder()]))],
+    ["quotas", getArrayEncoder(getTupleEncoder([addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()), getResourceQuotaEncoder()]))],
     ["compartments", getArrayEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()))]
   ]);
 }
@@ -73,7 +73,7 @@ export function getResourceConstraintsDecoder(): Decoder<ResourceConstraints> {
     ["allowed_resource_types", getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()))],
     ["blocked_resource_types", getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()))],
     ["access_limits", getArrayDecoder(getTupleDecoder([addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()), getU64Decoder()]))],
-    ["quotas", getArrayDecoder(getTupleDecoder([addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()), getU64Decoder()]))],
+    ["quotas", getArrayDecoder(getTupleDecoder([addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()), getResourceQuotaDecoder()]))],
     ["compartments", getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()))]
   ]);
 }

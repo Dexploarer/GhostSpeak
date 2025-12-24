@@ -11,7 +11,8 @@ export default defineConfig([
       types: 'src/core/types.ts',
       errors: 'src/core/errors.ts',
       crypto: 'src/crypto/index.ts',
-      utils: 'src/utils/index.ts'
+      utils: 'src/utils/index.ts',
+      credentials: 'src/modules/credentials/CrossmintVCClient.ts'
     },
     format: ['esm'],
     dts: true,

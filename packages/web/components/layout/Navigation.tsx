@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
+import { BrandLogo } from '@/components/shared/BrandLogo'
 
 const WalletConnectButton = dynamic(
   () => import('@/components/wallet/WalletConnectButton').then((mod) => mod.WalletConnectButton),
@@ -120,11 +121,7 @@ export const Navigation: React.FC = () => {
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <div className="absolute inset-0 bg-lime-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <Image
-                    src="/ghost-logo.png"
-                    alt="GhostSpeak"
-                    width={32}
-                    height={32}
+                  <BrandLogo 
                     className="relative z-10 w-8 h-8 object-contain transition-transform group-hover:scale-110 duration-300"
                   />
                 </div>

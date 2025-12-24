@@ -1,5 +1,18 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "CROSSMINT_SECRET_KEY",
+    "CROSSMINT_API_URL",
+    "CROSSMINT_AGENT_TEMPLATE_ID",
+    "CROSSMINT_REPUTATION_TEMPLATE_ID",
+    "CROSSMINT_JOB_TEMPLATE_ID",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_SOLANA_RPC_URL",
+    "NEXT_PUBLIC_SOLANA_NETWORK",
+    "NEXT_PUBLIC_CROSSMINT_API_KEY",
+    "NEXT_PUBLIC_GHOSTSPEAK_PROGRAM_ID"
+  ],
   "tasks": {
     "build": {
       "inputs": ["{app,packages,programs}/**/*"],

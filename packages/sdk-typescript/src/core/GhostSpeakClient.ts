@@ -7,9 +7,13 @@ import { EscrowModule } from '../modules/escrow/EscrowModule.js'
 import { ChannelModule } from '../modules/channels/ChannelModule.js'
 import { MarketplaceModule } from '../modules/marketplace/MarketplaceModule.js'
 import { GovernanceModule } from '../modules/governance/GovernanceModule.js'
+import { MultisigModule } from '../modules/multisig/MultisigModule.js'
 import { Token2022Module } from '../modules/token2022/Token2022Module.js'
+import { UnifiedCredentialService } from '../modules/credentials/UnifiedCredentialService.js'
 // H2A Module has been removed - use A2A (Agent-to-Agent) instructions instead
 import { ChannelType } from '../generated/types/channelType.js'
+import { ProposalType } from '../generated/types/proposalType.js'
+import { VoteChoice } from '../generated/types/voteChoice.js'
 import type { AccountState } from '../generated/types/accountState.js'
 
 /**
@@ -86,10 +90,32 @@ export class GhostSpeakClient {
   }
 
   /**
+   * Multisig operations
+   */
+  multisig(): MultisigBuilder {
+    return new MultisigBuilder(this.config)
+  }
+
+  /**
    * Token-2022 operations
    */
   token2022(): Token2022Builder {
     return new Token2022Builder(this.config)
+  }
+
+  /**
+   * Unified Credential operations (Solana + Crossmint)
+   */
+  credentials(): UnifiedCredentialService {
+    return new UnifiedCredentialService({
+      programId: this.config.programId,
+      crossmint: this.config.credentials?.crossmintApiKey ? {
+        apiKey: this.config.credentials.crossmintApiKey,
+        environment: this.config.credentials.crossmintEnvironment,
+        chain: this.config.credentials.crossmintChain
+      } : undefined,
+      crossmintTemplates: this.config.credentials?.templates
+    })
   }
 
   // H2A module has been removed - use A2A (Agent-to-Agent) instructions instead
@@ -961,6 +987,260 @@ class GovernanceQuery {
 
   async proposalsByStatus(status: 'draft' | 'voting' | 'succeeded' | 'defeated' | 'executed') {
     return this.module.getProposalsByStatus(status)
+  }
+}
+
+/**
+ * Multisig builder for fluent API
+ */
+class MultisigBuilder {
+  private module: MultisigModule
+  private params: MultisigBuilderParams = {}
+
+  constructor(config: GhostSpeakConfig) {
+    this.module = new MultisigModule(config)
+  }
+
+  create(): CreateMultisigBuilder {
+    return new CreateMultisigBuilder(this.module, this.params)
+  }
+
+  proposal(): MultisigProposalBuilder {
+    return new MultisigProposalBuilder(this.module, this.params)
+  }
+
+  approve(): MultisigApproveBuilder {
+    return new MultisigApproveBuilder(this.module, this.params)
+  }
+
+  executeProposal(): MultisigExecuteBuilder {
+    return new MultisigExecuteBuilder(this.module, this.params)
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
+
+  debug(): this {
+    this.module.debug()
+    return this
+  }
+}
+
+interface MultisigBuilderParams {
+  signer?: TransactionSigner
+}
+
+class CreateMultisigBuilder {
+  private params: {
+    multisigId?: bigint
+    threshold?: number
+    signers?: Address[]
+    signer?: TransactionSigner
+  } = {}
+
+  constructor(private module: MultisigModule, private builderParams: MultisigBuilderParams) {
+    this.params.signer = builderParams.signer
+  }
+
+  withId(id: bigint): this {
+    this.params.multisigId = id
+    return this
+  }
+
+  threshold(t: number): this {
+    this.params.threshold = t
+    return this
+  }
+
+  signers(s: Address[]): this {
+    this.params.signers = s
+    return this
+  }
+
+  async execute(): Promise<{ signature: string }> {
+    if (!this.params.signer) throw new Error('Signer required')
+    if (!this.params.multisigId) throw new Error('Multisig ID required')
+    if (!this.params.threshold) throw new Error('Threshold required')
+    if (!this.params.signers) throw new Error('Signers required')
+
+    return {
+      signature: await this.module.createMultisig({
+        owner: this.params.signer,
+        multisigId: this.params.multisigId,
+        threshold: this.params.threshold,
+        signers: this.params.signers
+      })
+    }
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
+}
+
+class MultisigProposalBuilder {
+  private params: {
+    multisigAddress?: Address
+    title?: string
+    description?: string
+    signer?: TransactionSigner
+  } = {}
+
+  constructor(private module: MultisigModule, private builderParams: MultisigBuilderParams) {
+    this.params.signer = builderParams.signer
+  }
+
+  forMultisig(address: Address): this {
+    this.params.multisigAddress = address
+    return this
+  }
+
+  title(t: string): this {
+    this.params.title = t
+    return this
+  }
+
+  description(d: string): this {
+    this.params.description = d
+    return this
+  }
+
+  async execute(): Promise<{ signature: string }> {
+     if (!this.params.signer) throw new Error('Signer required')
+     if (!this.params.title) throw new Error('Title required')
+     if (!this.params.description) throw new Error('Description required')
+     
+     // Placeholder execution since we simplified createProposal in module
+     // We would need more params in a real app (execution params, type etc)
+     // For now we just call it with minimal dummy data to prove wiring
+     return {
+      signature: await this.module.createProposal({
+        multisigAddress: this.params.multisigAddress!,
+        title: this.params.title,
+        description: this.params.description,
+        proposalType: ProposalType.Custom,
+        executionParams: {
+          instructions: [],
+          executionDelay: 0n,
+          executionConditions: [],
+          cancellable: true,
+          autoExecute: true,
+          executionAuthority: this.params.signer.address
+        },
+        proposalId: BigInt(Date.now()),
+        proposer: this.params.signer
+      })
+     }
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
+}
+
+class MultisigApproveBuilder {
+  private params: {
+    proposalAddress?: Address
+    voteChoice?: VoteChoice
+    reasoning?: string
+    signer?: TransactionSigner
+    tokenAccount?: Address
+  } = {}
+
+  constructor(private module: MultisigModule, private builderParams: MultisigBuilderParams) {
+    this.params.signer = builderParams.signer
+  }
+
+  proposal(address: Address): this {
+    this.params.proposalAddress = address
+    return this
+  }
+
+  vote(choice: VoteChoice): this {
+    this.params.voteChoice = choice
+    return this
+  }
+
+  reason(text: string): this {
+    this.params.reasoning = text
+    return this
+  }
+
+  tokenAccount(account: Address): this {
+    this.params.tokenAccount = account
+    return this
+  }
+
+  async execute(): Promise<{ signature: string }> {
+    if (!this.params.signer) throw new Error('Signer required')
+    if (!this.params.proposalAddress) throw new Error('Proposal address required')
+    
+    // Default to 'For' if token account provided but choice isn't
+    const voteChoice = this.params.voteChoice ?? VoteChoice.For
+    
+    // In a real scenario, we might need to derive the token account if not provided
+    // For now we assume it's provided or we use a dummy one if acceptable by the logic
+    if (!this.params.tokenAccount) throw new Error('Voter token account required')
+
+    return {
+      signature: await this.module.approveProposal({
+        proposalAddress: this.params.proposalAddress,
+        voter: this.params.signer,
+        voterTokenAccount: this.params.tokenAccount,
+        voteChoice,
+        reasoning: this.params.reasoning
+      })
+    }
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
+  }
+}
+
+class MultisigExecuteBuilder {
+  private params: {
+    proposalAddress?: Address
+    targetProgram?: Address
+    signer?: TransactionSigner
+  } = {}
+
+  constructor(private module: MultisigModule, private builderParams: MultisigBuilderParams) {
+    this.params.signer = builderParams.signer
+  }
+
+  proposal(address: Address): this {
+    this.params.proposalAddress = address
+    return this
+  }
+
+  target(programId: Address): this {
+    this.params.targetProgram = programId
+    return this
+  }
+
+  async execute(): Promise<{ signature: string }> {
+    if (!this.params.signer) throw new Error('Signer required')
+    if (!this.params.proposalAddress) throw new Error('Proposal address required')
+    if (!this.params.targetProgram) throw new Error('Target program required')
+
+    return {
+      signature: await this.module.executeProposal({
+        proposalAddress: this.params.proposalAddress,
+        executor: this.params.signer,
+        targetProgram: this.params.targetProgram
+      })
+    }
+  }
+
+  withSigner(signer: TransactionSigner): this {
+    this.params.signer = signer
+    return this
   }
 }
 

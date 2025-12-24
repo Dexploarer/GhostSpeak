@@ -15,6 +15,8 @@ import {
   getU64Decoder,
   getI64Encoder,
   getI64Decoder,
+  getI16Encoder,
+  getI16Decoder,
   getBooleanEncoder,
   getUtf8Encoder,
   getUtf8Decoder,
@@ -59,7 +61,7 @@ export type CreateToken2022MintParams = {
   withdraw_withheld_authority: Option<Address>;
   auto_approve_new_accounts: Option<boolean>;
   auditor_elgamal_pubkey: Option<Array<number>>;
-  interest_rate: Option<unknown>;
+  interest_rate: Option<number>;
   rate_authority: Option<Address>;
   close_authority: Option<Address>;
   default_account_state: Option<AccountState>;
@@ -77,7 +79,7 @@ export type CreateToken2022MintParamsArgs = {
   withdraw_withheld_authority: Option<Address>;
   auto_approve_new_accounts: Option<boolean>;
   auditor_elgamal_pubkey: Option<Array<number>>;
-  interest_rate: Option<unknown>;
+  interest_rate: Option<number>;
   rate_authority: Option<Address>;
   close_authority: Option<Address>;
   default_account_state: Option<AccountStateArgs>;

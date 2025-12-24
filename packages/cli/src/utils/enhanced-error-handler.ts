@@ -54,7 +54,7 @@ export function handleServiceError(error: unknown): ErrorInfo {
   return {
     message,
     suggestion: 'This is an unexpected error. Please try again or contact support',
-    actions: ['Try the command again', 'Check the logs for more details'],
+    actions: ['Try the command again', 'Check the loghost for more details'],
     canRetry: true
   }
 }

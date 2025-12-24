@@ -124,7 +124,7 @@ export const COMMAND_ALIASES: CommandAlias[] = [
   {
     aliases: ['my-jobs'],
     command: 'marketplace jobs list --my-jobs',
-    description: 'View your job postings'
+    description: 'View your job postinghost'
   },
   {
     aliases: ['transactions'],

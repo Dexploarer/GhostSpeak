@@ -74,9 +74,13 @@ export function WalletConnectButton() {
 
   // Not connected - show connect button
   return (
-    <Button onClick={login} variant="gradient" className="gap-2">
+    <Button
+      onClick={login}
+      variant="outline"
+      className="gap-2 border-primary text-primary bg-transparent hover:bg-primary/10 hover:text-primary transition-all duration-300 shadow-[0_0_15px_rgba(204,255,0,0.1)] border-2 font-black"
+    >
       <Wallet className="h-4 w-4" />
-      Connect
+      Connect Wallet
     </Button>
   )
 }

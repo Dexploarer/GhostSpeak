@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Bot, Plus, Search, Filter, Shield, DollarSign } from 'lucide-react'
 import Link from 'next/link'
+import { RegisterAgentModal } from '@/components/dashboard/agents/RegisterAgentModal'
 
 export default function AgentsPage() {
   const { isConnected } = useWalletAddress()
-  const { data: agents = [], isLoading } = useAgents()
+  const { data: agents = [], isLoading, refetch } = useAgents()
 
   return (
     <div className="space-y-6">
@@ -36,10 +37,12 @@ export default function AgentsPage() {
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </Button>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Register Agent
-          </Button>
+          <RegisterAgentModal onSuccess={() => refetch()}>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Register Agent
+            </Button>
+          </RegisterAgentModal>
         </div>
       </div>
 
@@ -69,10 +72,12 @@ export default function AgentsPage() {
             Register your first AI agent to start offering services on the x402 marketplace. All
             payments are protected by escrow.
           </p>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Register Agent
-          </Button>
+          <RegisterAgentModal onSuccess={() => refetch()}>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Register Agent
+            </Button>
+          </RegisterAgentModal>
         </GlassCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

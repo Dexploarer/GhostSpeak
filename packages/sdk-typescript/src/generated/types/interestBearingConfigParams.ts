@@ -9,6 +9,8 @@ import {
   getU8Decoder,
   getU16Encoder,
   getU16Decoder,
+  getI16Encoder,
+  getI16Decoder,
   getU32Encoder,
   getU32Decoder,
   getU64Encoder,
@@ -43,11 +45,11 @@ import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures
 
 
 export type InterestBearingConfigParams = {
-  rate: unknown;
+  rate: number;
 };
 
 export type InterestBearingConfigParamsArgs = {
-  rate: unknown;
+  rate: number;
 };
 
 export function getInterestBearingConfigParamsEncoder(): Encoder<InterestBearingConfigParamsArgs> {

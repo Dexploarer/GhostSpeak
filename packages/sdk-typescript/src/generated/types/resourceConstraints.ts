@@ -40,21 +40,28 @@ import {
 } from "@solana/kit";
 import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures";
 
+import {
+  getResourceQuotaEncoder,
+  getResourceQuotaDecoder,
+  type ResourceQuota,
+  type ResourceQuotaArgs
+} from ".";
+
 
 
 export type ResourceConstraints = {
   allowed_resource_types: Array<string>;
   blocked_resource_types: Array<string>;
-  access_limits: Array<[string, bigint]>;
-  quotas: Array<[string, ResourceQuota]>;
+  access_limits: Array<readonly [string, bigint]>;
+  quotas: Array<readonly [string, ResourceQuota]>;
   compartments: Array<string>;
 };
 
 export type ResourceConstraintsArgs = {
   allowed_resource_types: Array<string>;
   blocked_resource_types: Array<string>;
-  access_limits: Array<unknown>;
-  quotas: Array<unknown>;
+  access_limits: Array<readonly [string, number | bigint]>;
+  quotas: Array<readonly [string, ResourceQuotaArgs]>;
   compartments: Array<string>;
 };
 

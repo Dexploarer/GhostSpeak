@@ -62,8 +62,35 @@ export {
   type DelegationScope
 } from './modules/governance/index.js'
 
+// Multisig module
+export { MultisigModule } from './modules/multisig/index.js'
+
 // Token2022 module
 export { Token2022Module } from './modules/token2022/Token2022Module.js'
+
+// Credential module
+export { 
+  CredentialModule, 
+  CredentialKind, 
+  CredentialStatus,
+  type W3CVerifiableCredential,
+  type Credential,
+  type CredentialTemplate
+} from './modules/credentials/CredentialModule.js'
+
+export { 
+  UnifiedCredentialService, 
+  type UnifiedCredentialConfig,
+  type IssuedCredentialResult
+} from './modules/credentials/UnifiedCredentialService.js'
+
+export {
+  CrossmintVCClient,
+  type CrossmintClientOptions,
+  type CredentialType as CrossmintCredentialType,
+  type IssuedCredential as CrossmintIssuedCredential,
+  GHOSTSPEAK_CREDENTIAL_TYPES
+} from './modules/credentials/CrossmintVCClient.js'
 
 // Work Order module
 export {

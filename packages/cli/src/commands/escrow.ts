@@ -296,8 +296,8 @@ escrowCommand
           `${chalk.gray('Explorer:')} ${explorerUrl}\n\n` +
           `${chalk.yellow('Next Steps:')}\n` +
           `• Provider can now begin work\n` +
-          `• Monitor progress: ${chalk.cyan('gs escrow list')}\n` +
-          `• Release funds when work is complete: ${chalk.cyan('gs escrow release')}`
+          `• Monitor progress: ${chalk.cyan('ghost escrow list')}\n` +
+          `• Release funds when work is complete: ${chalk.cyan('ghost escrow release')}`
         )
 
       } catch (error) {
@@ -348,8 +348,8 @@ escrowCommand
       if (filteredEscrows.length === 0) {
         outro(
           `${chalk.yellow('No escrows found')}\n\n` +
-          `${chalk.gray('• Create an escrow:')} ${chalk.cyan('gs escrow create')}\n` +
-          `${chalk.gray('• Check all escrows:')} ${chalk.cyan('gs escrow list')}`
+          `${chalk.gray('• Create an escrow:')} ${chalk.cyan('ghost escrow create')}\n` +
+          `${chalk.gray('• Check all escrows:')} ${chalk.cyan('ghost escrow list')}`
         )
         return
       }
@@ -378,9 +378,9 @@ escrowCommand
 
       outro(
         `${chalk.yellow('💡 Commands:')}\n` +
-        `${chalk.cyan('gs escrow release')} - Release funds to provider\n` +
-        `${chalk.cyan('gs escrow dispute')} - File a dispute\n` +
-        `${chalk.cyan('gs escrow create')} - Create new escrow`
+        `${chalk.cyan('ghost escrow release')} - Release funds to provider\n` +
+        `${chalk.cyan('ghost escrow dispute')} - File a dispute\n` +
+        `${chalk.cyan('ghost escrow create')} - Create new escrow`
       )
 
     } catch (error) {
@@ -727,7 +727,7 @@ escrowCommand
           `• The escrow is now frozen until resolution\n` +
           `• An arbitrator will review the dispute\n` +
           `• You can submit additional evidence if needed\n` +
-          `• Check status: ${chalk.cyan('gs dispute list --mine')}`
+          `• Check status: ${chalk.cyan('ghost dispute list --mine')}`
         )
 
       } catch (error) {

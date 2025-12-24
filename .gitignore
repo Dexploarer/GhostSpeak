@@ -1,5 +1,5 @@
-# === Proprietary/secret files ===
 seed.txt
+.turbo/
 faucet-keypair.json
 *-keypair.json
 *.key

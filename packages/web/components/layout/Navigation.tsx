@@ -39,7 +39,7 @@ const navItems = [
 ]
 
 const marketingNavItems = [
-  { href: '/docs', label: 'Docs', icon: FileText },
+  { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText },
   { href: '/tokenomics', label: '$GHOST', icon: Coins },
   { href: '/x402/discover', label: 'Discover', icon: Sparkles },
 ]

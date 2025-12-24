@@ -20,7 +20,22 @@ import { Table } from 'console-table-printer'
 import { WalletService } from '../services/wallet-service.js'
 import { getExplorerUrl } from '../utils/client.js'
 import { saveConfig, loadConfig } from '../utils/config.js'
+import { successBox } from '../utils/format-helpers.js'
 import boxen from 'boxen'
+
+// Type definitions for link API responses
+interface LinkInitResponse {
+  code: string
+  linkUrl: string
+  expiresIn: number
+}
+
+interface LinkStatusResponse {
+  status: 'pending' | 'authorized' | 'rejected' | 'expired'
+  cliPublicKey: string
+  webWalletAddress?: string
+  authorizedAt?: number
+}
 
 export const walletCommand = new Command('wallet')
   .description('Manage GhostSpeak wallets')
@@ -39,7 +54,7 @@ walletCommand
       const wallets = walletService.listWallets()
       
       if (wallets.length === 0) {
-        log.info('No wallets found. Create one with: gs wallet create')
+        log.info('No wallets found. Create one with: ghost wallet create')
         outro('No wallets available')
         return
       }
@@ -200,9 +215,9 @@ walletCommand
       
       console.log('')
       log.info('Next steps:')
-      log.info(`  1. Fund your wallet: ${chalk.cyan('gs faucet')}`)
-      log.info(`  2. Check balance: ${chalk.cyan('gs wallet balance')}`)
-      log.info(`  3. Create an agent: ${chalk.cyan('gs agent register')}`)
+      log.info(`  1. Fund your wallet: ${chalk.cyan('ghost faucet')}`)
+      log.info(`  2. Check balance: ${chalk.cyan('ghost wallet balance')}`)
+      log.info(`  3. Create an agent: ${chalk.cyan('ghost agent register')}`)
       
       outro('Wallet created successfully')
       
@@ -232,7 +247,7 @@ walletCommand
       } else {
         wallet = walletService.getActiveWallet()
         if (!wallet) {
-          throw new Error('No active wallet. Create one with: gs wallet create')
+          throw new Error('No active wallet. Create one with: ghost wallet create')
         }
       }
       
@@ -288,7 +303,7 @@ walletCommand
       const wallets = walletService.listWallets()
       
       if (wallets.length === 0) {
-        log.error('No wallets found. Create one with: gs wallet create')
+        log.error('No wallets found. Create one with: ghost wallet create')
         outro('No wallets available')
         return
       }
@@ -631,6 +646,132 @@ walletCommand
       cancel(chalk.red('Failed to rename wallet: ' + (error instanceof Error ? error.message : 'Unknown error')))
     }
   })
+
+// Link wallet with Web App
+walletCommand
+  .command('link')
+  .description('Link your local CLI wallet with the GhostSpeak Web App')
+  .option('--api-url <url>', 'API base URL', 'http://localhost:3000')
+  .action(async (options: { apiUrl: string }) => {
+    intro(chalk.cyan('🔗 Link with GhostSpeak Web App'))
+    
+    try {
+      const walletService = new WalletService()
+      const wallet = walletService.getActiveWallet()
+      
+      if (!wallet) {
+        throw new Error('No active wallet. Create one first with: ghost wallet create')
+      }
+      
+      const s = spinner()
+      s.start('Initiating link request...')
+      
+      // Step 1: Request a link code from the API
+      const initResponse = await fetch(`${options.apiUrl}/api/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'initiate',
+          cliPublicKey: wallet.metadata.address,
+        }),
+      })
+      
+      if (!initResponse.ok) {
+        const error = await initResponse.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(error.error || 'Failed to initiate link')
+      }
+      
+      const { code, linkUrl, expiresIn } = await initResponse.json() as LinkInitResponse
+      
+      s.stop('✅ Link request created')
+      
+      // Step 2: Display instructions
+      log.info('')
+      log.info('To link your CLI wallet with your Web App account:')
+      log.info('')
+      log.info(`${chalk.bold('1.')} Open your browser and navigate to:`)
+      console.log(chalk.bold.cyan(`\n   ${linkUrl}\n`))
+      log.info(`${chalk.bold('2.')} Sign in with your Crossmint account`)
+      log.info(`${chalk.bold('3.')} Confirm the linking request`)
+      log.info('')
+      
+      note(
+        `${chalk.bold('Verification Code:')} ${chalk.yellow.bold(code)}\n\n` +
+        `This code expires in ${Math.floor(expiresIn / 60)} minutes.`,
+        'Authorization Required'
+      )
+      
+      // Step 3: Poll for authorization
+      s.start('Waiting for authorization in browser...')
+      
+      const pollInterval = 2000 // 2 seconds
+      const maxAttempts = Math.floor((expiresIn * 1000) / pollInterval)
+      let attempts = 0
+      let authorized = false
+      let linkDetails: LinkStatusResponse | null = null
+      
+      while (attempts < maxAttempts && !authorized) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval))
+        
+        try {
+          const statusResponse = await fetch(`${options.apiUrl}/api/link?code=${code}`)
+          
+          if (statusResponse.ok) {
+            const status = await statusResponse.json() as LinkStatusResponse
+            
+            if (status.status === 'authorized') {
+              authorized = true
+              linkDetails = status
+            } else if (status.status === 'rejected') {
+              throw new Error('Link request was rejected')
+            } else if (status.status === 'expired') {
+              throw new Error('Link request expired')
+            }
+          } else if (statusResponse.status === 404 || statusResponse.status === 410) {
+            throw new Error('Link request not found or expired')
+          }
+        } catch (fetchError) {
+          // Continue polling on network errors
+          if (fetchError instanceof Error && 
+              (fetchError.message.includes('rejected') || 
+               fetchError.message.includes('expired') ||
+               fetchError.message.includes('not found'))) {
+            throw fetchError
+          }
+        }
+        
+        attempts++
+        
+        // Update spinner message with elapsed time
+        const elapsed = Math.floor((attempts * pollInterval) / 1000)
+        s.message(`Waiting for authorization... (${elapsed}s)`)
+      }
+      
+      if (!authorized) {
+        throw new Error('Authorization timeout. Please try again.')
+      }
+      
+      s.stop('✅ Wallet linked successfully!')
+      
+      successBox('Connection Established', [
+        `CLI Wallet: ${wallet.metadata.address.slice(0, 8)}...${wallet.metadata.address.slice(-8)}`,
+        `Linked to: ${linkDetails?.webWalletAddress?.slice(0, 8) || 'Crossmint'}...`,
+        '',
+        'Your CLI is now authorized as a delegated signer.',
+        'You can perform on-chain actions via your web identity.'
+      ])
+      
+      outro('Linking complete')
+      
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('fetch')) {
+        cancel(chalk.red('Could not connect to web app. Is it running at the specified URL?'))
+      } else {
+        cancel(chalk.red('Linking failed: ' + (error instanceof Error ? error.message : 'Unknown error')))
+      }
+    }
+  })
+
 
 // Delete wallet
 walletCommand

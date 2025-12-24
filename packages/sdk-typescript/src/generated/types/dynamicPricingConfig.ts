@@ -52,7 +52,7 @@ export type DynamicPricingConfig = {
   base_price: bigint;
   min_price: bigint;
   max_price: bigint;
-  price_range: [bigint, bigint];
+  price_range: readonly [bigint, bigint];
   adjustment_frequency: bigint;
   update_frequency: bigint;
   volatility_threshold: number;
@@ -70,7 +70,7 @@ export type DynamicPricingConfigArgs = {
   base_price: number | bigint;
   min_price: number | bigint;
   max_price: number | bigint;
-  price_range: unknown;
+  price_range: readonly [number | bigint, number | bigint];
   adjustment_frequency: number | bigint;
   update_frequency: number | bigint;
   volatility_threshold: number;

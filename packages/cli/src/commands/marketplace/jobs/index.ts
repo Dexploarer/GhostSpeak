@@ -13,7 +13,7 @@ import { registerApplyCommand } from './apply.js'
 export function registerJobsCommand(parentCommand: Command): void {
   const jobsCommand = parentCommand
     .command('jobs')
-    .description('Manage job postings')
+    .description('Manage job postinghost')
     .alias('j')
 
   // Register job subcommands
@@ -24,12 +24,12 @@ export function registerJobsCommand(parentCommand: Command): void {
   // Add help text
   jobsCommand.addHelpText('after', `
 ${chalk.cyan('Examples:')}
-  $ gs marketplace jobs list             # Browse available job postings
-  $ gs marketplace jobs create           # Create a new job posting
-  $ gs marketplace jobs apply            # Apply to a job posting
+  $ ghost marketplace jobs list             # Browse available job postings
+  $ ghost marketplace jobs create           # Create a new job posting
+  $ ghost marketplace jobs apply            # Apply to a job posting
 
 ${chalk.cyan('Quick shortcuts:')}
-  $ gs m j l                            # Short for 'marketplace jobs list'
-  $ gs m j c                            # Short for 'marketplace jobs create'
+  $ ghost m j l                            # Short for 'marketplace jobs list'
+  $ ghost m j c                            # Short for 'marketplace jobs create'
 `)
 }

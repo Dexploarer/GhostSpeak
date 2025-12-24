@@ -39,13 +39,13 @@ interface _JobSummary {
 export function registerListCommand(parentCommand: Command): void {
   parentCommand
     .command('list')
-    .description('Browse and filter job postings')
+    .description('Browse and filter job postinghost')
     .option('--posted', 'Show jobs you posted')
     .option('--applied', 'Show jobs you applied to')
     .option('--category <category>', 'Filter by category')
     .option('--status <status>', 'Filter by status (open, active, completed)')
     .action(async (options: JobListOptions) => {
-      intro(chalk.magenta('💼 Browse Job Postings'))
+      intro(chalk.magenta('💼 Browse Job Postinghost'))
 
       try {
         const s = spinner()
@@ -82,7 +82,7 @@ export function registerListCommand(parentCommand: Command): void {
         s.stop(`✅ Found ${jobs.length} job postings`)
 
         if (jobs.length === 0) {
-          let message = 'No job postings found'
+          let message = 'No job postinghost found'
           if (options.applied) {
             message = 'You have not applied to any jobs yet'
           } else if (options.posted) {
@@ -91,15 +91,15 @@ export function registerListCommand(parentCommand: Command): void {
           
           outro(
             `${chalk.yellow(message)}\n\n` +
-            `${chalk.gray('• Browse available jobs:')} ${chalk.cyan('gs marketplace jobs list')}\n` +
-            `${chalk.gray('• Create a job posting:')} ${chalk.cyan('gs marketplace jobs create')}\n` +
-            `${chalk.gray('• Apply to jobs:')} ${chalk.cyan('gs marketplace jobs apply')}`
+            `${chalk.gray('• Browse available jobs:')} ${chalk.cyan('ghost marketplace jobs list')}\n` +
+            `${chalk.gray('• Create a job posting:')} ${chalk.cyan('ghost marketplace jobs create')}\n` +
+            `${chalk.gray('• Apply to jobs:')} ${chalk.cyan('ghost marketplace jobs apply')}`
           )
           return
         }
 
         // Determine list title
-        let listTitle = 'Available Job Postings'
+        let listTitle = 'Available Job Postinghost'
         if (options.applied) {
           listTitle = 'Jobs You Applied To'
         } else if (options.posted) {
@@ -162,9 +162,9 @@ export function registerListCommand(parentCommand: Command): void {
           case 'apply':
             note(
               `To apply to a job, use:\n` +
-              `${chalk.cyan('gs marketplace jobs apply [job-id]')}\n\n` +
+              `${chalk.cyan('ghost marketplace jobs apply [job-id]')}\n\n` +
               `Or apply to any job:\n` +
-              `${chalk.cyan('gs marketplace jobs apply')}`
+              `${chalk.cyan('ghost marketplace jobs apply')}`
             )
             break
             
@@ -172,33 +172,33 @@ export function registerListCommand(parentCommand: Command): void {
             note(
               'Job details viewer coming soon!\n\n' +
               'For now, you can see basic details in the list above.\n' +
-              `Apply to jobs with: ${chalk.cyan('gs marketplace jobs apply')}`
+              `Apply to jobs with: ${chalk.cyan('ghost marketplace jobs apply')}`
             )
             break
             
           case 'filter':
             note(
               `Available filter options:\n\n` +
-              `${chalk.cyan('gs marketplace jobs list --category customer_support')}\n` +
-              `${chalk.cyan('gs marketplace jobs list --status open')}\n` +
-              `${chalk.cyan('gs marketplace jobs list --posted')} (your posted jobs)\n` +
-              `${chalk.cyan('gs marketplace jobs list --applied')} (jobs you applied to)`
+              `${chalk.cyan('ghost marketplace jobs list --category customer_support')}\n` +
+              `${chalk.cyan('ghost marketplace jobs list --status open')}\n` +
+              `${chalk.cyan('ghost marketplace jobs list --posted')} (your posted jobs)\n` +
+              `${chalk.cyan('ghost marketplace jobs list --applied')} (jobs you applied to)`
             )
             break
             
           case 'create':
             note(
               `Create a new job posting:\n` +
-              `${chalk.cyan('gs marketplace jobs create')}`
+              `${chalk.cyan('ghost marketplace jobs create')}`
             )
             break
         }
 
         outro(
           `${chalk.yellow('Job Marketplace Commands:')}\n` +
-          `${chalk.cyan('gs marketplace jobs create')} - Post a new job\n` +
-          `${chalk.cyan('gs marketplace jobs apply [job-id]')} - Apply to jobs\n` +
-          `${chalk.cyan('gs marketplace jobs list --posted')} - Your posted jobs`
+          `${chalk.cyan('ghost marketplace jobs create')} - Post a new job\n` +
+          `${chalk.cyan('ghost marketplace jobs apply [job-id]')} - Apply to jobs\n` +
+          `${chalk.cyan('ghost marketplace jobs list --posted')} - Your posted jobs`
         )
 
       } catch (error) {

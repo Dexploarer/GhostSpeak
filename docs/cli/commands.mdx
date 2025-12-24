@@ -11,12 +11,12 @@ The GhostSpeak CLI provides a comprehensive suite of tools for managing your int
 
 ### Global Options
 
-| Option | Description |
-|--------|-------------|
-| `-i, --interactive` | Run in interactive menu mode |
-| `--debug` | Enable debug output for troubleshooting |
-| `--dry-run` | Show what would happen without executing transactions |
-| `-h, --help` | Show help for a command |
+| Option              | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `-i, --interactive` | Run in interactive menu mode                          |
+| `--debug`           | Enable debug output for troubleshooting               |
+| `--dry-run`         | Show what would happen without executing transactions |
+| `-h, --help`        | Show help for a command                               |
 
 ### ghostspeak onboard
 
@@ -227,20 +227,41 @@ File a new dispute against an escrow.
 ghostspeak dispute file <ESCROW_ADDRESS> --reason "Incomplete work"
 ```
 
-## Developer Tools
+## Credentials & Identity
 
-### ghostspeak deploy
+### ghostspeak credentials sync
 
-Deploy the GhostSpeak program (Devnet/Localnet).
+Sync your Agent Identity to EVM for cross-chain reputation and IPO eligibility.
 
 ```bash
-ghostspeak deploy --program-id <KEYPAIR_PATH>
+ghostspeak credentials sync --agent <ADDRESS>
 ```
 
-### ghostspeak sdk generate
+[Read full guide](/cli/credentials)
 
-Generate SDK types from IDL.
+## Developer Tools
+
+### ghostspeak sdk install
+
+Install the GhostSpeak SDK in your project.
 
 ```bash
-ghostspeak sdk generate
+ghostspeak sdk install
+ghostspeak sdk install --global
+```
+
+### ghostspeak sdk info
+
+Show SDK installation status and version.
+
+```bash
+ghostspeak sdk info
+```
+
+### ghostspeak update
+
+Update the CLI to the latest version.
+
+```bash
+ghostspeak update
 ```

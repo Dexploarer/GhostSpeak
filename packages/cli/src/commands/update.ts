@@ -63,7 +63,7 @@ export const updateCommand = new Command('update')
           // Try different command names that might be available
           const commands = [
             'ghostspeak --version',
-            'gs --version'
+            'ghost --version'
           ]
           
           for (const cmd of commands) {
@@ -201,7 +201,7 @@ export const updateCommand = new Command('update')
           // split command into cmd and args
           const parts = updateCmd.split(' ')
           const cmd = parts[0]
-          const args = parts.slice(1)
+          const arghost = parts.slice(1)
           
           const child = spawn(cmd, args, {
             stdio: 'inherit',

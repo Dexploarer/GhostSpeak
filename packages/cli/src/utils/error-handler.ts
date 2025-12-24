@@ -21,8 +21,8 @@ export class ErrorHandler {
         message: 'Insufficient SOL balance',
         suggestion: 'You need more SOL to complete this transaction.',
         actions: [
-          'Run: gs faucet --save (for devnet)',
-          'Check balance: gs wallet balance',
+          'Run: ghost faucet --save (for devnet)',
+          'Check balance: ghost wallet balance',
           'Transfer SOL from another wallet'
         ],
         canRetry: false

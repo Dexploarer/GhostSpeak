@@ -12,6 +12,7 @@ export interface AccountInfo {
   address?: string;
   pda?: {
     seeds: unknown[];
+    program?: unknown;
   };
 }
 

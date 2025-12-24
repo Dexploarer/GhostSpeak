@@ -81,7 +81,7 @@ function showUpdateNotification(currentVersion: string, latestVersion: string): 
   console.log(chalk.yellow('│') + chalk.gray(`  Current: v${currentVersion}`) + ' '.repeat(41 - currentVersion.length) + chalk.yellow('│'))
   console.log(chalk.yellow('│') + chalk.green(`  Latest:  v${latestVersion}`) + ' '.repeat(41 - latestVersion.length) + chalk.yellow('│'))
   console.log(chalk.yellow('│') + ' '.repeat(53) + chalk.yellow('│'))
-  console.log(chalk.yellow('│') + chalk.cyan('  Run ') + chalk.bold.cyan('gs update') + chalk.cyan(' to update automatically') + ' '.repeat(14) + chalk.yellow('│'))
+  console.log(chalk.yellow('│') + chalk.cyan('  Run ') + chalk.bold.cyan('ghost update') + chalk.cyan(' to update automatically') + ' '.repeat(14) + chalk.yellow('│'))
   console.log(chalk.yellow('╰─────────────────────────────────────────────────────╯'))
   console.log('')
 }

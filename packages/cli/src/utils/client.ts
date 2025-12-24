@@ -137,8 +137,8 @@ export async function getWallet(): Promise<KeyPairSigner> {
     log.info('')
     log.info('Next steps:')
     log.info(`  1. Save your seed phrase securely`)
-    log.info(`  2. Fund your wallet: ${chalk.cyan('gs faucet')}`)
-    log.info(`  3. Create an agent: ${chalk.cyan('gs agent register')}`)
+    log.info(`  2. Fund your wallet: ${chalk.cyan('ghost faucet')}`)
+    log.info(`  3. Create an agent: ${chalk.cyan('ghost agent register')}`)
 
     const signer = await walletService.getActiveSigner()
     if (!signer) {

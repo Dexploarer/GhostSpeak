@@ -25,26 +25,35 @@ const nextConfig: NextConfig = {
 
   // Configure webpack to handle SDK imports properly
   webpack: (config, { isServer }) => {
+    // Ignore markdown files which can cause issues with dynamic imports in dependencies
+    config.module.rules.push({
+      test: /\.md$/,
+      use: 'ignore-loader',
+    })
+
+    // Handle .node binary files
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'node-loader',
+      type: 'javascript/auto',
+    })
+
     if (!isServer) {
       // Don't bundle server-only packages in client
       config.resolve.fallback = {
         ...config.resolve.fallback,
+        // @libsql/client uses these
         fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
         path: false,
         os: false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        net: false,
+        tls: false,
+        child_process: false,
       }
-
-      // Externalize native modules
-      config.externals = [
-        ...((config.externals as unknown[]) || []),
-        'libsql',
-        '@libsql/client',
-        '@libsql/darwin-arm64',
-        '@libsql/hrana-client',
-      ]
     }
 
     return config

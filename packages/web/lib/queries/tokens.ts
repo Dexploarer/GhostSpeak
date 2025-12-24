@@ -117,8 +117,8 @@ async function fetchTokenInfo(address: string): Promise<Token> {
 
     // Check for Token-2022 extensions
     if (data.program === 'spl-token-2022') {
-       token.extensions = await parseTokenExtensions(connection, mintPubkey)
-       
+      token.extensions = await parseTokenExtensions(connection, mintPubkey)
+
       // Get transfer fee config if applicable
       if (token.extensions.some((ext) => ext.type === 'TransferFee' && ext.enabled)) {
         token.transferFeeConfig = await parseTransferFeeConfig(connection, mintPubkey)
@@ -154,12 +154,12 @@ async function parseTokenExtensions(
     // This is a simplified check. In a full implementation we would parse the TLV data
     // For now, we rely on the program owner check we did earlier
     const extensions: Array<{ type: string; enabled: boolean }> = []
-    
+
     // Check for specific extension types based on data length or known patterns
     // Real implementation requires unpacking the mint data which is complex without the spl-token library
     // For this context, we'll mark it as having extensions if it's token-2022
     if (info.owner.toString().includes('Tokenz')) {
-       // extensions.push({ type: 'Token2022', enabled: true })
+      // extensions.push({ type: 'Token2022', enabled: true })
     }
 
     return extensions

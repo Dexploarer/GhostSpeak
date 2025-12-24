@@ -19,7 +19,6 @@ import {
 import { useWalletAddress } from '../../../lib/hooks/useWalletAddress'
 import { LockupTier } from '@ghostspeak/sdk/browser'
 
-
 // Helper to format SOL amounts
 function formatAmount(amount: bigint, decimals = 9): string {
   const divisor = BigInt(10 ** decimals)
@@ -141,7 +140,9 @@ export default function StakingPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-400">Time Remaining</p>
-                    <p className={`mt-1 font-medium ${isLocked ? 'text-yellow-400' : 'text-green-400'}`}>
+                    <p
+                      className={`mt-1 font-medium ${isLocked ? 'text-yellow-400' : 'text-green-400'}`}
+                    >
                       {formatDuration(timeRemaining)}
                     </p>
                   </div>
@@ -196,9 +197,7 @@ export default function StakingPage() {
         {/* Lockup Tiers Info */}
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
           <h2 className="text-xl font-semibold text-white">Lockup Tiers</h2>
-          <p className="mt-2 text-sm text-gray-400">
-            Longer lockups earn higher APY bonuses
-          </p>
+          <p className="mt-2 text-sm text-gray-400">Longer lockups earn higher APY bonuses</p>
 
           <div className="mt-6 space-y-3">
             {Object.entries(tierLabels).map(([tier, label]) => {

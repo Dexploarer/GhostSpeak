@@ -9,8 +9,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 })
     }
 
-    // Default to staging if not configured
-    const apiUrl = process.env.CROSSMINT_API_URL || 'https://staging.crossmint.com/api'
+    // Crossmint API base URL - append api path if not present
+    const baseUrl = process.env.CROSSMINT_API_URL || 'https://staging.crossmint.com'
+    const apiUrl = baseUrl.includes('/api') ? baseUrl : `${baseUrl}/api`
     const apiKey =
       process.env.CROSSMINT_SECRET_KEY ??
       process.env.CROSSMINT_SERVER_API_KEY ??

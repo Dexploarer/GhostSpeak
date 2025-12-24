@@ -318,3 +318,6 @@ export * from "./actionType";
 export * from "./actionConstraint";
 export * from "./regulatoryStatus";
 export * from "./complianceViolation";
+export * from "./ruleCondition";
+export * from "./resourceQuota";
+export * from "./quotaResetBehavior";

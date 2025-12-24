@@ -98,7 +98,7 @@ export class OnboardingService {
       }
       
       console.error(chalk.red('Onboarding failed:'), error)
-      cancel('Setup failed - you can restart anytime with: gs quickstart')
+      cancel('Setup failed - you can restart anytime with: ghost quickstart')
     }
   }
   
@@ -449,7 +449,7 @@ export class OnboardingService {
           } catch (error) {
             faucetSpinner.stop('❌ Faucet request failed')
             console.log(warningBox('Faucet Failed', [
-              'You can try again later with: gs faucet --save',
+              'You can try again later with: ghost faucet --save',
               'Or fund your wallet manually'
             ]))
           }
@@ -493,7 +493,7 @@ export class OnboardingService {
     
     if (isCancel(createAgent) || !createAgent) {
       console.log(infoBox('Agent Creation Skipped', [
-        'You can create an agent anytime with: gs agent register',
+        'You can create an agent anytime with: ghost agent register',
         'Agents are required to provide services in the marketplace'
       ]))
       this.markStepSkipped('first-agent')
@@ -514,7 +514,7 @@ export class OnboardingService {
         if (!balanceInfo.isAffordable) {
           console.log(warningBox('Insufficient Funds', [
             'You need more SOL to create an agent.',
-            'Fund your wallet first, then create an agent with: gs agent register'
+            'Fund your wallet first, then create an agent with: ghost agent register'
           ]))
           this.markStepSkipped('first-agent')
           return
@@ -573,13 +573,13 @@ export class OnboardingService {
         `Name: ${agentName}`,
         `Type: ${agentType}`,
         'Your agent can now provide services in the marketplace',
-        'Create service listings with: gs marketplace create'
+        'Create service listinghost with: ghost marketplace create'
       ]))
       
     } catch (error) {
       agentSpinner.stop('❌ Agent creation failed')
       console.log(chalk.red('Failed to create agent'))
-      console.log(chalk.gray('You can try again later with: gs agent register'))
+      console.log(chalk.gray('You can try again later with: ghost agent register'))
     }
     
     this.markStepCompleted('first-agent')
@@ -612,12 +612,12 @@ export class OnboardingService {
       console.log('')
       
       const commands = [
-        { cmd: 'gs marketplace list', desc: 'Browse available services' },
-        { cmd: 'gs marketplace search', desc: 'Search for specific services' },
-        { cmd: 'gs marketplace create', desc: 'List your agent\'s services' },
-        { cmd: 'gs escrow create', desc: 'Create secure payments' },
-        { cmd: 'gs wallet balance', desc: 'Check your SOL balance' },
-        { cmd: 'gs --interactive', desc: 'Interactive menu mode' }
+        { cmd: 'ghost marketplace list', desc: 'Browse available services' },
+        { cmd: 'ghost marketplace search', desc: 'Search for specific services' },
+        { cmd: 'ghost marketplace create', desc: 'List your agent\'s services' },
+        { cmd: 'ghost escrow create', desc: 'Create secure payments' },
+        { cmd: 'ghost wallet balance', desc: 'Check your SOL balance' },
+        { cmd: 'ghost --interactive', desc: 'Interactive menu mode' }
       ]
       
       commands.forEach(({ cmd, desc }) => {
@@ -655,9 +655,9 @@ export class OnboardingService {
     console.log('')
     
     const nextSteps = [
-      '1. Browse the marketplace: gs marketplace list',
-      '2. Create a service listing: gs marketplace create',
-      '3. Check your agent status: gs agent list',
+      '1. Browse the marketplace: ghost marketplace list',
+      '2. Create a service listing: ghost marketplace create',
+      '3. Check your agent status: ghost agent list',
       '4. Join our community: https://discord.gg/ghostspeak'
     ]
     

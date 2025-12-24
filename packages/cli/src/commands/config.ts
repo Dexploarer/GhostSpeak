@@ -17,7 +17,7 @@ import { lamportsToSol } from '../utils/helpers.js'
 import { homedir } from 'os'
 
 export const configCommand = new Command('config')
-  .description('Configure GhostSpeak CLI settings')
+  .description('Configure GhostSpeak CLI settinghost')
 
 configCommand
   .command('setup')
@@ -119,7 +119,7 @@ configCommand
     try {
       const config = loadConfig()
       
-      console.log('\n' + chalk.bold('⚙️  GhostSpeak CLI Settings'))
+      console.log('\n' + chalk.bold('⚙️  GhostSpeak CLI Settinghost'))
       console.log('═'.repeat(50))
       console.log(chalk.green('Network:') + ` ${config.network}`)
       console.log(chalk.green('RPC URL:') + ` ${config.rpcUrl ?? `Default ${config.network} RPC`}`)
@@ -187,7 +187,7 @@ configCommand
 
     s.stop('✅ Configuration reset!')
 
-    console.log('\n' + chalk.yellow('🔄 All settings have been reset to defaults.'))
+    console.log('\n' + chalk.yellow('🔄 All settinghost have been reset to defaults.'))
     console.log(chalk.gray('Run "ghostspeak config setup" to reconfigure.'))
 
     outro('Reset completed')

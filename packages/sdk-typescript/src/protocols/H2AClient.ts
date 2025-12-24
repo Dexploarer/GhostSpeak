@@ -26,7 +26,8 @@ import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from '../generated/programs/gh
 import { getCreateCommunicationSessionInstructionAsync } from '../generated/instructions/createCommunicationSession.js'
 import { getSendCommunicationMessageInstruction } from '../generated/instructions/sendCommunicationMessage.js'
 import { getCommunicationSessionDataDecoder, type CommunicationSessionData } from '../generated/types/communicationSessionData.js'
-import { ParticipantType } from '../generated/types/participantType.js' // Import generated Enum
+export { ParticipantType } from '../generated/types/participantType.js' // Export generated Enum
+import { ParticipantType } from '../generated/types/participantType.js' // Local import for usage
 import { EventEmitter } from 'node:events'
 import { getProgramDerivedAddress, getBytesEncoder, getAddressEncoder } from '@solana/kit'
 

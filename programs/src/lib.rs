@@ -843,6 +843,56 @@ pub mod ghostspeak_marketplace {
     }
 
     // =====================================================
+    // PROTOCOL CONFIGURATION INSTRUCTIONS
+    // =====================================================
+
+    /// Initialize the global protocol configuration
+    ///
+    /// Sets up fee infrastructure with all fees initially disabled (set to 0).
+    /// Fees will be enabled via governance after mainnet deployment.
+    ///
+    /// NOTE: Fee structure is in place but set to 0 until mainnet.
+    pub fn initialize_protocol_config(ctx: Context<InitializeProtocolConfig>) -> Result<()> {
+        instructions::protocol_config::initialize_protocol_config(ctx)
+    }
+
+    /// Enable production fees (authority only)
+    ///
+    /// Activates the full fee structure for mainnet:
+    /// - Escrow: 0.5% (80% Treasury, 20% Buyback)
+    /// - Agent Registration: 0.01 SOL
+    /// - Marketplace Listing: 0.001 SOL
+    /// - Dispute Resolution: 1%
+    pub fn enable_protocol_fees(ctx: Context<EnableProtocolFees>) -> Result<()> {
+        instructions::protocol_config::enable_protocol_fees(ctx)
+    }
+
+    /// Update protocol configuration parameters
+    pub fn update_protocol_config(
+        ctx: Context<UpdateProtocolConfig>,
+        escrow_fee_bps: Option<u16>,
+        agent_registration_fee: Option<u64>,
+        listing_fee: Option<u64>,
+        dispute_fee_bps: Option<u16>,
+        fees_enabled: Option<bool>,
+        treasury: Option<Pubkey>,
+        buyback_pool: Option<Pubkey>,
+        moderator_pool: Option<Pubkey>,
+    ) -> Result<()> {
+        instructions::protocol_config::update_protocol_config(
+            ctx,
+            escrow_fee_bps,
+            agent_registration_fee,
+            listing_fee,
+            dispute_fee_bps,
+            fees_enabled,
+            treasury,
+            buyback_pool,
+            moderator_pool,
+        )
+    }
+
+    // =====================================================
     // STAKING INSTRUCTIONS (Governance Voting Power)
     // =====================================================
 

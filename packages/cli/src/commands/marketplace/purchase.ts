@@ -50,8 +50,8 @@ export function registerPurchaseCommand(parentCommand: Command): void {
           if (availableItems.length === 0) {
             outro(
               `${chalk.yellow('No items available for purchase')}\n\n` +
-              `${chalk.gray('• Browse all items:')} ${chalk.cyan('gs marketplace list')}\n` +
-              `${chalk.gray('• Search for specific services:')} ${chalk.cyan('gs marketplace search')}`
+              `${chalk.gray('• Browse all items:')} ${chalk.cyan('ghost marketplace list')}\n` +
+              `${chalk.gray('• Search for specific services:')} ${chalk.cyan('ghost marketplace search')}`
             )
             return
           }
@@ -67,7 +67,7 @@ export function registerPurchaseCommand(parentCommand: Command): void {
               item.title.slice(0, 30) + (item.title.length > 30 ? '...' : ''),
               item.category,
               `${item.price.toFixed(4)} SOL`,
-              item.rating ? `⭐ ${item.rating.toFixed(1)}` : 'No ratings',
+              item.rating ? `⭐ ${item.rating.toFixed(1)}` : 'No ratinghost',
               `${item.seller.slice(0, 6)}...${item.seller.slice(-4)}`
             ])
           })
@@ -121,7 +121,7 @@ export function registerPurchaseCommand(parentCommand: Command): void {
           `${chalk.gray('Category:')} ${item.category}\n` +
           `${chalk.gray('Price:')} ${item.price.toFixed(4)} SOL\n` +
           `${chalk.gray('Seller:')} ${item.seller}\n` +
-          `${chalk.gray('Rating:')} ${item.rating ? `⭐ ${item.rating.toFixed(1)}/5` : 'No ratings'}\n` +
+          `${chalk.gray('Rating:')} ${item.rating ? `⭐ ${item.rating.toFixed(1)}/5` : 'No ratinghost'}\n` +
           `${chalk.gray('Your Balance:')} ${wallet.address.slice(0, 8)}...`,
           'Review Purchase'
         )
@@ -178,8 +178,8 @@ export function registerPurchaseCommand(parentCommand: Command): void {
             `${chalk.bold('Explorer:')} ${explorerUrl}\n\n` +
             `${chalk.yellow('Next steps:')}\n` +
             `• The seller will be notified of your purchase\n` +
-            `• Check your escrow status: ${chalk.cyan('gs escrow list')}\n` +
-            `• Contact seller if needed: ${chalk.cyan(`gs channel create --participant ${item.seller}`)}`
+            `• Check your escrow status: ${chalk.cyan('ghost escrow list')}\n` +
+            `• Contact seller if needed: ${chalk.cyan(`ghost channel create --participant ${item.seller}`)}`
           )
 
         } catch (error) {

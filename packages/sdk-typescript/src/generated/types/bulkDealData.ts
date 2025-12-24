@@ -15,6 +15,8 @@ import {
   getU64Decoder,
   getI64Encoder,
   getI64Decoder,
+  getF64Encoder,
+  getF64Decoder,
   getBooleanEncoder,
   getUtf8Encoder,
   getUtf8Decoder,
@@ -56,7 +58,7 @@ export type BulkDealData = {
   deal_type: DealType;
   total_volume: number;
   total_value: bigint;
-  discount_percentage: unknown;
+  discount_percentage: number;
   volume_tiers: Array<VolumeTier>;
   sla_terms: string;
   contract_duration: bigint;
@@ -68,7 +70,7 @@ export type BulkDealDataArgs = {
   deal_type: DealTypeArgs;
   total_volume: number;
   total_value: number | bigint;
-  discount_percentage: unknown;
+  discount_percentage: number;
   volume_tiers: Array<VolumeTierArgs>;
   sla_terms: string;
   contract_duration: number | bigint;

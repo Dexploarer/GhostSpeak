@@ -550,6 +550,61 @@ const MANUAL_TYPES = [
     { name: 'RegulatoryStatus', type: { kind: 'struct', fields: [] } },
     { name: 'ComplianceViolation', type: { kind: 'struct', fields: [] } },
     { name: 'TransactionType', type: { kind: 'enum', variants: [{ name: 'Transfer' }] } },
+    {
+        name: 'RuleCondition',
+        type: {
+            kind: 'struct',
+            fields: [
+                { name: 'condition_type', type: { defined: { name: 'ConditionType' } } },
+                { name: 'subject_attributes', type: { vec: { tuple: ['string', 'string'] } } },
+                { name: 'resource_attributes', type: { vec: { tuple: ['string', 'string'] } } },
+                { name: 'action_attributes', type: { vec: { tuple: ['string', 'string'] } } },
+                { name: 'environment_attributes', type: { vec: { tuple: ['string', 'string'] } } }
+            ]
+        }
+    },
+    {
+        name: 'RuleEffect',
+        type: {
+            kind: 'enum',
+            variants: [
+                { name: 'Allow' }, { name: 'Deny' }, { name: 'AuditOnly' },
+                { name: 'RequireApproval' }, { name: 'RequireMfa' }, { name: 'RequireJustification' }
+            ]
+        }
+    },
+    {
+        name: 'ResourceQuota',
+        type: {
+            kind: 'struct',
+            fields: [
+                { name: 'max_usage', type: 'u64' },
+                { name: 'time_period', type: 'i64' },
+                { name: 'reset_behavior', type: { defined: { name: 'QuotaResetBehavior' } } },
+                { name: 'warning_threshold', type: 'u8' }
+            ]
+        }
+    },
+    {
+        name: 'QuotaResetBehavior',
+        type: {
+            kind: 'enum',
+            variants: [
+                { name: 'Rolling' }, { name: 'Fixed' }, { name: 'Manual' }, { name: 'OnDemand' }
+            ]
+        }
+    },
+    // Overwriting the placeholder ConditionType if it exists or ensuring it is correct
+    {
+        name: 'ConditionType',
+        type: {
+            kind: 'enum',
+            variants: [
+                { name: 'AttributeBased' }, { name: 'RoleBased' }, { name: 'TimeBased' },
+                { name: 'LocationBased' }, { name: 'RiskBased' }, { name: 'ContextBased' }
+            ]
+        }
+    }
 ];
 
 const accountNames = new Set((idl.accounts || []).map(a => a.name));

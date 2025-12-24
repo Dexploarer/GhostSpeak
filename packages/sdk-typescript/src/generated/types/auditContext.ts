@@ -46,7 +46,7 @@ export type AuditContext = {
   transaction_signature: Option<string>;
   amount: Option<bigint>;
   token: Option<Address>;
-  metadata: Array<[string, string]>;
+  metadata: Array<readonly [string, string]>;
   risk_score: Option<number>;
   location: Option<string>;
   client_info: Option<string>;
@@ -56,7 +56,7 @@ export type AuditContextArgs = {
   transaction_signature: Option<string>;
   amount: Option<number | bigint>;
   token: Option<Address>;
-  metadata: Array<unknown>;
+  metadata: Array<readonly [string, string]>;
   risk_score: Option<number>;
   location: Option<string>;
   client_info: Option<string>;

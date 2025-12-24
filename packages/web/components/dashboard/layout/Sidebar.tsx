@@ -21,6 +21,8 @@ import {
   Sparkles,
   Cpu,
   Key,
+  Link2,
+  Fingerprint,
 } from 'lucide-react'
 
 const navItems = [
@@ -34,6 +36,8 @@ const navItems = [
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/governance', label: 'Governance', icon: Gavel },
   { href: '/dashboard/multisig', label: 'Multisig', icon: Key },
+  { href: '/link', label: 'Link CLI Wallet', icon: Link2 },
+  { href: '/dashboard/credentials', label: 'Credentials', icon: Fingerprint },
   { href: '/dashboard/architecture', label: 'Architecture', icon: Cpu },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]

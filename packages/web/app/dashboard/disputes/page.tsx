@@ -34,7 +34,6 @@ export default function DisputesPage() {
   const { data: allDisputes, isLoading } = useAllDisputes()
   const stats = useDisputeStats()
 
-
   // Filter disputes
   const filteredDisputes = allDisputes?.filter((dispute) => {
     const transformed = transformDisputeForDisplay(dispute as any)
@@ -55,9 +54,7 @@ export default function DisputesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Disputes</h1>
-          <p className="mt-1 text-gray-400">
-            View and manage escrow dispute cases
-          </p>
+          <p className="mt-1 text-gray-400">View and manage escrow dispute cases</p>
         </div>
       </div>
 
@@ -117,9 +114,7 @@ export default function DisputesPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-white">
-                      Dispute Case
-                    </h3>
+                    <h3 className="font-semibold text-white">Dispute Case</h3>
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         dispute!.isResolved
@@ -136,9 +131,7 @@ export default function DisputesPage() {
                           : 'Pending'}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-gray-400 line-clamp-2">
-                    {dispute!.reason}
-                  </p>
+                  <p className="mt-2 text-sm text-gray-400 line-clamp-2">{dispute!.reason}</p>
                   <div className="mt-4 flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Complainant: </span>
@@ -159,9 +152,7 @@ export default function DisputesPage() {
                   </div>
                 </div>
                 <div className="ml-6 text-right">
-                  <div className="text-sm text-gray-500">
-                    AI Confidence
-                  </div>
+                  <div className="text-sm text-gray-500">AI Confidence</div>
                   <div
                     className={`text-lg font-bold ${
                       dispute!.aiConfidence >= 70
@@ -193,7 +184,8 @@ export default function DisputesPage() {
             </div>
             <h3 className="font-medium text-white">File Dispute</h3>
             <p className="text-sm text-gray-400">
-              Either party can file a dispute if there&apos;s a disagreement about an escrow transaction.
+              Either party can file a dispute if there&apos;s a disagreement about an escrow
+              transaction.
             </p>
           </div>
           <div className="space-y-2">

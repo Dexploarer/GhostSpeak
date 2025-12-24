@@ -4,7 +4,7 @@
  * GhostSpeak SDK Client - Real blockchain integration
  *
  * Provides access to SDK modules for agent, escrow, marketplace,
- * governance, and channel operations.
+ * governance, channel, work order, staking, dispute, reputation, and auction operations.
  *
  * Uses the browser-safe SDK entry point to avoid server-only dependencies.
  */
@@ -19,6 +19,11 @@ import {
   MarketplaceModule,
   GovernanceModule,
   ChannelModule,
+  WorkOrderModule,
+  StakingModule,
+  DisputeModule,
+  ReputationModule,
+  AuctionModule,
   GHOSTSPEAK_PROGRAM_ID,
   type GhostSpeakConfig,
 } from '@ghostspeak/sdk/browser'
@@ -43,6 +48,11 @@ export interface GhostSpeakClient {
   marketplace: MarketplaceModule
   governance: GovernanceModule
   channels: ChannelModule
+  workOrders: WorkOrderModule
+  staking: StakingModule
+  disputes: DisputeModule
+  reputation: ReputationModule
+  auctions: AuctionModule
 }
 
 // Client singleton cache
@@ -77,6 +87,11 @@ export function createGhostSpeakClient(
     marketplace: new MarketplaceModule(config),
     governance: new GovernanceModule(config),
     channels: new ChannelModule(config),
+    workOrders: new WorkOrderModule(config),
+    staking: new StakingModule(config),
+    disputes: new DisputeModule(config),
+    reputation: new ReputationModule(config),
+    auctions: new AuctionModule(config),
   }
 
   // Cache the client
@@ -107,3 +122,4 @@ export function getGhostSpeakClient(): GhostSpeakClient {
 
 // Re-export types
 export type { Address, TransactionSigner }
+

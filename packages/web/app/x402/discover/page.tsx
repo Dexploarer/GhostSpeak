@@ -12,10 +12,10 @@ import { CapabilityFilter, X402AgentGrid, PricingComparison } from '@/components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useX402AgentDiscovery, useX402AgentPriceComparison } from '@/lib/hooks/useX402'
-import type { AgentSearchParams, Agent, Address } from '@/lib/ghostspeak'
+import type { AgentSearchParams, Agent } from '@/lib/ghostspeak'
 
 export default function X402DiscoveryPage(): React.JSX.Element {
-  const [filters, setFilters] = useState<AgentSearchParams>({ sortBy: 'reputation' })
+  const [filters, setFilters] = useState<AgentSearchParams>({ sort_by: 'reputation' })
   const [compareCapability, setCompareCapability] = useState<string>('text-generation')
 
   const { data: searchResults, isLoading: searchLoading } = useX402AgentDiscovery(filters)
@@ -146,14 +146,12 @@ export default function X402DiscoveryPage(): React.JSX.Element {
                   ) : priceComparison && priceComparison.agents.length > 0 ? (
                     <PricingComparison
                       agents={priceComparison.agents.map((agent: Agent) => ({
-                        address: agent.address,
+                        address: agent.address.toString(),
                         name: agent.name,
                         pricing: agent.pricing || {
-                          model: 'cpm',
-                          basePrice: '0',
-                          currency: 'SOL',
-                          amount: '0',
-                          token: 'So11111111111111111111111111111111111111112' as Address,
+                          pricePerCall: BigInt(0),
+                          paymentToken: 'So11111111111111111111111111111111111111112',
+                          responseTimeMs: 0,
                         },
                       }))}
                     />

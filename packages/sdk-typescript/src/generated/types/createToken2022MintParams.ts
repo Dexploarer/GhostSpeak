@@ -38,7 +38,7 @@ import {
   type ReadonlyUint8Array,
   type Option
 } from "@solana/kit";
-import { getI16Encoder, getI16Decoder } from "@solana/codecs-numbers";
+import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures";
 
 import {
   getAccountStateEncoder,
@@ -59,7 +59,7 @@ export type CreateToken2022MintParams = {
   withdraw_withheld_authority: Option<Address>;
   auto_approve_new_accounts: Option<boolean>;
   auditor_elgamal_pubkey: Option<Array<number>>;
-  interest_rate: Option<number>;
+  interest_rate: Option<unknown>;
   rate_authority: Option<Address>;
   close_authority: Option<Address>;
   default_account_state: Option<AccountState>;
@@ -77,7 +77,7 @@ export type CreateToken2022MintParamsArgs = {
   withdraw_withheld_authority: Option<Address>;
   auto_approve_new_accounts: Option<boolean>;
   auditor_elgamal_pubkey: Option<Array<number>>;
-  interest_rate: Option<number>;
+  interest_rate: Option<unknown>;
   rate_authority: Option<Address>;
   close_authority: Option<Address>;
   default_account_state: Option<AccountStateArgs>;

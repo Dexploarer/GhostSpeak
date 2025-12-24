@@ -5,75 +5,14 @@ import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import type { Address } from '@solana/addresses'
+import type {
+  WorkOrder as SDKWorkOrder,
+  WorkOrderStatus as SDKWorkOrderStatus,
+} from '@ghostspeak/sdk/browser'
 
-// Signer is now provided by useCrossmintSigner hook
-
-// Define local types to avoid import issues
-type SDKWorkOrderStatus = 'Open' | 'InProgress' | 'Delivered' | 'Completed' | 'Cancelled'
-
-// SDK Work Order data structure
-interface WorkOrderSDKData {
-  client: Address
-  provider: Address
-  title: string
-  description: string
-  requirements: string[]
-  paymentAmount: bigint
-  paymentToken: string
-  status: SDKWorkOrderStatus
-  createdAt: bigint
-  updatedAt: bigint
-  deadline: bigint
-  deliveredAt: bigint | null
-}
-
-// Local constants to avoid import issues
-const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS = 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9'
-
-// Helper functions for PDA derivation (real implementation)
-import { getProgramDerivedAddress, getUtf8Encoder } from '@solana/kit'
-
-const deriveWorkOrderPda = async (
-  program: string,
-  client: Address,
-  orderId: bigint
-): Promise<[Address, number]> => {
-  const result = await getProgramDerivedAddress({
-    programAddress: program as Address,
-    seeds: [
-      getUtf8Encoder().encode('work_order'),
-      getUtf8Encoder().encode(client),
-      getUtf8Encoder().encode(orderId.toString()),
-    ],
-  })
-  return [result[0], result[1]]
-}
-
-const deriveWorkDeliveryPda = async (
-  program: string,
-  workOrder: Address,
-  provider: Address
-): Promise<[Address, number]> => {
-  const result = await getProgramDerivedAddress({
-    programAddress: program as Address,
-    seeds: [
-      getUtf8Encoder().encode('delivery'),
-      getUtf8Encoder().encode(workOrder),
-      getUtf8Encoder().encode(provider),
-    ],
-  })
-  return [result[0], result[1]]
-}
-
-const getCreateWorkOrderInstruction = (params: unknown): { type: string; params: unknown } => ({
-  type: 'createWorkOrder',
-  params,
-})
-
-const getSubmitWorkDeliveryInstruction = (_params: unknown): { type: string; params: unknown } => ({
-  type: 'submitWorkDelivery',
-  params: _params,
-})
+// =====================================================
+// UI TYPE DEFINITIONS
+// =====================================================
 
 export enum WorkOrderStatus {
   Created = 'Created',
@@ -151,26 +90,72 @@ export interface SubmitDeliveryData {
 
 export interface VerifyDeliveryData {
   workOrderAddress: string
+  workDeliveryAddress?: string // Optional - will be fetched if not provided
   approved: boolean
   feedback: string
   milestoneIds?: string[]
 }
 
-// Removed unused Deliverable interface - using SDK types instead
+// =====================================================
+// HELPER FUNCTIONS
+// =====================================================
 
-// Helper to map SDK status to UI status
+/**
+ * Map SDK status to UI status
+ */
 function mapSDKStatusToUIStatus(sdkStatus: SDKWorkOrderStatus): WorkOrderStatus {
-  const statusMap: Record<SDKWorkOrderStatus, WorkOrderStatus> = {
+  // SDK status is an enum object, need to compare against enum variants
+  const statusName = typeof sdkStatus === 'object' ? Object.keys(sdkStatus)[0] : String(sdkStatus)
+
+  const statusMap: Record<string, WorkOrderStatus> = {
+    Created: WorkOrderStatus.Created,
     Open: WorkOrderStatus.Open,
     InProgress: WorkOrderStatus.InProgress,
+    Submitted: WorkOrderStatus.Submitted,
     Delivered: WorkOrderStatus.Submitted, // Map SDK 'Delivered' to UI 'Submitted'
+    Approved: WorkOrderStatus.Approved,
     Completed: WorkOrderStatus.Completed,
     Cancelled: WorkOrderStatus.Cancelled,
   }
-  return statusMap[sdkStatus] || WorkOrderStatus.Created
+  return statusMap[statusName] || WorkOrderStatus.Created
 }
 
-// Using real GhostSpeak client type from the SDK
+/**
+ * Transform SDK WorkOrder to UI WorkOrder
+ */
+function transformWorkOrder(
+  address: string,
+  data: SDKWorkOrder
+): WorkOrder {
+  return {
+    address,
+    client: data.client.toString(),
+    provider: data.provider.toString(),
+    clientName: undefined,
+    providerName: undefined,
+    title: data.title,
+    description: data.description,
+    requirements: data.requirements,
+    paymentAmount: data.paymentAmount,
+    paymentToken: data.paymentToken.toString(),
+    status: mapSDKStatusToUIStatus(data.status),
+    createdAt: new Date(Number(data.createdAt) * 1000),
+    updatedAt: new Date(Number(data.updatedAt) * 1000),
+    deadline: new Date(Number(data.deadline) * 1000),
+    deliveredAt: data.deliveredAt
+      ? new Date(Number(data.deliveredAt) * 1000)
+      : undefined,
+    milestones: [], // Milestones stored separately
+    deliverables: [], // Deliverables in delivery accounts
+    communicationThread: [], // Communication in channel accounts
+    disputeReason: undefined,
+    arbitrator: undefined,
+  }
+}
+
+// =====================================================
+// HOOKS
+// =====================================================
 
 export function useWorkOrders(filters?: {
   status?: WorkOrderStatus[]
@@ -183,67 +168,23 @@ export function useWorkOrders(filters?: {
     queryFn: async () => {
       const client = getGhostSpeakClient()
 
-      // Use the SDK to fetch work orders - workOrders module may not exist yet
-      const workOrders = await (
-        client as unknown as {
-          workOrders: {
-            getAllWorkOrders: () => Promise<Array<{ address: Address; data: WorkOrderSDKData }>>
-          }
-        }
-      ).workOrders
+      // Use the real SDK WorkOrderModule
+      const workOrders = await client.workOrders
         .getAllWorkOrders()
-        .catch(() => [] as Array<{ address: Address; data: WorkOrderSDKData }>)
+        .catch(() => [] as Array<{ address: Address; data: SDKWorkOrder }>)
 
-      // Transform SDK data to match our WorkOrder interface
-      let results = await Promise.all(
-        workOrders.map(
-          async ({
-            address,
-            data: workOrderData,
-          }: {
-            address: Address
-            data: WorkOrderSDKData
-          }) => {
-            // For now, we'll create placeholder milestone data
-            // In a real implementation, these would be stored separately
-            const milestones: Milestone[] = []
-
-            return {
-              address: address.toString(),
-              client: workOrderData.client.toString(),
-              provider: workOrderData.provider.toString(),
-              clientName: undefined, // Will be fetched from agent/user registry if needed
-              providerName: undefined, // Will be fetched from agent/user registry if needed
-              title: workOrderData.title,
-              description: workOrderData.description,
-              requirements: workOrderData.requirements,
-              paymentAmount: workOrderData.paymentAmount,
-              paymentToken: workOrderData.paymentToken,
-              status: mapSDKStatusToUIStatus(workOrderData.status as SDKWorkOrderStatus),
-              createdAt: new Date(Number(workOrderData.createdAt) * 1000),
-              updatedAt: new Date(Number(workOrderData.updatedAt) * 1000),
-              deadline: new Date(Number(workOrderData.deadline) * 1000),
-              deliveredAt:
-                workOrderData.deliveredAt !== null
-                  ? new Date(Number(workOrderData.deliveredAt) * 1000)
-                  : undefined,
-              milestones,
-              deliverables: [], // Work deliverables would be stored in separate delivery accounts
-              communicationThread: [], // Communication would be in associated channel accounts
-              disputeReason: undefined, // Dispute data would be in separate dispute accounts
-              arbitrator: undefined, // Arbitrator would be assigned in dispute accounts
-            } as WorkOrder
-          }
-        )
+      // Transform SDK data to UI format
+      let results = workOrders.map(({ address, data }) =>
+        transformWorkOrder(address.toString(), data)
       )
 
       // Apply client-side filters
       if (filters?.status && filters.status.length > 0) {
-        results = results.filter((order: WorkOrder) => filters.status!.includes(order.status))
+        results = results.filter((order) => filters.status!.includes(order.status))
       }
 
       if (filters?.role && filters.role !== 'all' && filters.userAddress) {
-        results = results.filter((order: WorkOrder) => {
+        results = results.filter((order) => {
           if (filters.role === 'client') {
             return order.client === filters.userAddress
           } else {
@@ -255,15 +196,15 @@ export function useWorkOrders(filters?: {
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase()
         results = results.filter(
-          (order: WorkOrder) =>
+          (order) =>
             order.title.toLowerCase().includes(searchLower) ||
             order.description.toLowerCase().includes(searchLower) ||
-            order.requirements.some((req: string) => req.toLowerCase().includes(searchLower))
+            order.requirements.some((req) => req.toLowerCase().includes(searchLower))
         )
       }
 
       // Sort by most recent
-      results.sort((a: WorkOrder, b: WorkOrder) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      results.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
       return results
     },
@@ -277,53 +218,14 @@ export function useWorkOrder(address: string) {
     queryFn: async () => {
       const client = getGhostSpeakClient()
 
-      // Use SDK to fetch the work order - workOrders module may not exist yet
-      const workOrderAccount = await (
-        client as unknown as {
-          workOrders: {
-            getWorkOrderByAddress: (
-              addr: Address
-            ) => Promise<{ address: Address; data: WorkOrderSDKData } | null>
-          }
-        }
-      ).workOrders.getWorkOrderByAddress(address as Address)
+      // Use real SDK method
+      const result = await client.workOrders.getWorkOrderByAddress(address as Address)
 
-      if (!workOrderAccount) {
+      if (!result) {
         throw new Error('Work order not found')
       }
 
-      const workOrderData = workOrderAccount.data
-
-      // For now, we'll create placeholder milestone data
-      // In a real implementation, these would be stored separately
-      const milestones: Milestone[] = []
-
-      // Transform SDK data to match our WorkOrder interface
-      return {
-        address: address,
-        client: workOrderData.client,
-        provider: workOrderData.provider,
-        clientName: undefined, // Will be fetched from agent/user registry if needed
-        providerName: undefined, // Will be fetched from agent/user registry if needed
-        title: workOrderData.title,
-        description: workOrderData.description,
-        requirements: workOrderData.requirements,
-        paymentAmount: workOrderData.paymentAmount,
-        paymentToken: workOrderData.paymentToken,
-        status: mapSDKStatusToUIStatus(workOrderData.status as SDKWorkOrderStatus),
-        createdAt: new Date(Number(workOrderData.createdAt) * 1000),
-        updatedAt: new Date(Number(workOrderData.updatedAt) * 1000),
-        deadline: new Date(Number(workOrderData.deadline) * 1000),
-        deliveredAt:
-          workOrderData.deliveredAt !== null
-            ? new Date(Number(workOrderData.deliveredAt) * 1000)
-            : undefined,
-        milestones,
-        deliverables: [], // Work deliverables would be stored in separate delivery accounts
-        communicationThread: [], // Communication would be in associated channel accounts
-        disputeReason: undefined, // Dispute data would be in separate dispute accounts
-        arbitrator: undefined, // Arbitrator would be assigned in dispute accounts
-      } as WorkOrder
+      return transformWorkOrder(address, result.data)
     },
     enabled: !!address,
   })
@@ -339,66 +241,26 @@ export function useCreateWorkOrder() {
         throw new Error('Wallet not connected')
       }
 
-      const _client = getGhostSpeakClient()
+      const client = getGhostSpeakClient()
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
 
-      // Generate order ID (timestamp-based for uniqueness)
-      const orderId = BigInt(Date.now())
-
-      // Derive work order PDA
-      const workOrderAddress = await deriveWorkOrderPda(
-        GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-        address as Address,
-        orderId
-      )
-
-      const _instruction = getCreateWorkOrderInstruction({
-        workOrder: workOrderAddress,
-        client: createSigner(),
-        orderId: orderId,
+      // Use the real SDK method
+      const signature = await client.workOrders.createWorkOrder({
+        signer,
         provider: data.provider as Address,
         title: data.title,
         description: data.description,
         requirements: data.requirements,
         paymentAmount: data.paymentAmount,
         paymentToken: data.paymentToken as Address,
-        deadline: BigInt(Math.floor(data.deadline.getTime() / 1000)), // Convert to Unix timestamp
+        deadline: data.deadline,
       })
 
-      // SDK integration to be implemented based on actual API
-      console.warn('createWorkOrder: SDK integration pending')
-      const _signature = 'placeholder_signature'
-
-      // Return placeholder work order for now
-      const newWorkOrder: WorkOrder = {
-        address: workOrderAddress.toString(),
-        client: address,
-        provider: data.provider,
-        clientName: 'You',
-        title: data.title,
-        description: data.description,
-        requirements: data.requirements,
-        paymentAmount: data.paymentAmount,
-        paymentToken: data.paymentToken,
-        status: WorkOrderStatus.Open,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deadline: data.deadline,
-        milestones:
-          data.milestones?.map(
-            (milestone, index): Milestone => ({
-              id: `milestone_${index + 1}`,
-              title: milestone.title,
-              description: milestone.description,
-              amount: milestone.amount,
-              completed: false,
-              paymentReleased: false,
-            })
-          ) || [],
-        deliverables: [],
-        communicationThread: [],
+      return {
+        signature,
+        address: address, // Work order PDA would be derived
       }
-
-      return newWorkOrder
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] })
@@ -421,39 +283,28 @@ export function useSubmitDelivery() {
         throw new Error('Wallet not connected')
       }
 
+      const client = getGhostSpeakClient()
       const signer = createSigner()
       if (!signer) throw new Error('Could not create signer')
 
-      const _client = getGhostSpeakClient()
+      // Build deliverables in the expected format
+      const deliverables = data.deliverables.map((url, index) => ({
+        title: `Deliverable ${index + 1}`,
+        description: data.notes,
+        fileUrl: url,
+        fileHash: '', // Would compute hash in production
+      }))
 
-      // Derive work delivery PDA
-      const workDeliveryAddress = await deriveWorkDeliveryPda(
-        GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-        data.workOrderAddress as Address,
-        address as Address
-      )
-
-      const _instruction = getSubmitWorkDeliveryInstruction({
-        workOrder: data.workOrderAddress as Address,
-        workDelivery: workDeliveryAddress,
-        provider: signer,
-        deliverables: data.deliverables.map((deliverable) => ({
-          title: 'Deliverable',
-          description: deliverable,
-          fileUrl: deliverable,
-          fileHash: 'placeholder_hash', // In real implementation, compute file hash
-        })),
-        ipfsHash: 'placeholder_ipfs_hash', // Required parameter
-        metadataUri: 'placeholder_metadata_uri', // Required parameter
+      const signature = await client.workOrders.submitDelivery({
+        signer,
+        workOrderAddress: data.workOrderAddress as Address,
+        deliverables: deliverables as any, // Cast to SDK's Deliverable type
+        ipfsHash: 'pending_ipfs_upload', // Would upload to IPFS first
+        metadataUri: 'pending_metadata_uri',
       })
 
-      // Execute the instruction
-      // SDK integration to be implemented based on actual API
-      console.warn('submitDelivery: SDK integration pending')
-      const _signature = 'placeholder_signature'
-
       return {
-        transactionId: _signature,
+        transactionId: signature,
         status: 'submitted',
       }
     },
@@ -479,17 +330,50 @@ export function useVerifyDelivery() {
         throw new Error('Wallet not connected')
       }
 
-      const _client = getGhostSpeakClient()
+      const client = getGhostSpeakClient()
       const signer = createSigner()
       if (!signer) throw new Error('Could not create signer')
 
-      // SDK integration to be implemented based on actual API
-      console.warn('verifyDelivery: SDK integration pending')
-      const result = { signature: 'placeholder_signature' }
+      let deliveryAddress = data.workDeliveryAddress
 
-      return {
-        transactionId: result.signature,
-        status: data.approved ? 'approved' : 'rejected',
+      // If workDeliveryAddress not provided, try to fetch it
+      if (!deliveryAddress) {
+        const delivery = await client.workOrders.getWorkDeliveryForOrder(
+          data.workOrderAddress as Address
+        )
+        if (!delivery) {
+          throw new Error('No delivery found for this work order')
+        }
+        deliveryAddress = delivery.address.toString()
+      }
+
+      if (data.approved) {
+        // Verify and approve the delivery
+        const signature = await client.workOrders.verifyDelivery({
+          signer,
+          workOrderAddress: data.workOrderAddress as Address,
+          workDeliveryAddress: deliveryAddress as Address,
+          verificationNotes: data.feedback || undefined,
+        })
+
+        return {
+          transactionId: signature,
+          status: 'approved',
+        }
+      } else {
+        // Reject the delivery
+        const signature = await client.workOrders.rejectDelivery({
+          signer,
+          workOrderAddress: data.workOrderAddress as Address,
+          workDeliveryAddress: deliveryAddress as Address,
+          rejectionReason: data.feedback,
+          requestedChanges: data.milestoneIds, // Repurpose for change requests
+        })
+
+        return {
+          transactionId: signature,
+          status: 'rejected',
+        }
       }
     },
     onSuccess: (result, variables) => {
@@ -520,12 +404,12 @@ export function useProcessPayment() {
       const signer = createSigner()
       if (!signer) throw new Error('Could not create signer')
 
-      // SDK integration to be implemented based on actual API
-      console.warn('processPayment: SDK integration pending')
-      const result = { signature: 'placeholder_signature' }
-
+      // Payment processing would require escrow release instruction
+      // This is a placeholder until escrow integration is complete
+      console.warn('processPayment: Full escrow integration pending')
+      
       return {
-        transactionId: result.signature,
+        transactionId: 'placeholder_signature',
         status: 'processed',
       }
     },
@@ -538,5 +422,49 @@ export function useProcessPayment() {
       console.error('Failed to process payment:', error)
       toast.error('Failed to process payment')
     },
+  })
+}
+
+/**
+ * Get work delivery associated with a work order
+ */
+export function useWorkDelivery(workOrderAddress: string) {
+  return useQuery({
+    queryKey: ['work-delivery', workOrderAddress],
+    queryFn: async () => {
+      const client = getGhostSpeakClient()
+      const result = await client.workOrders.getWorkDeliveryForOrder(
+        workOrderAddress as Address
+      )
+      return result
+    },
+    enabled: !!workOrderAddress,
+  })
+}
+
+/**
+ * Get work orders for the current user
+ */
+export function useMyWorkOrders(role: 'client' | 'provider' = 'client') {
+  const { address, isConnected } = useCrossmintSigner()
+
+  return useQuery({
+    queryKey: ['my-work-orders', role, address],
+    queryFn: async () => {
+      if (!address) return []
+
+      const client = getGhostSpeakClient()
+
+      const workOrders =
+        role === 'client'
+          ? await client.workOrders.getWorkOrdersByClient(address as Address)
+          : await client.workOrders.getWorkOrdersByProvider(address as Address)
+
+      return workOrders.map(({ address: addr, data }) =>
+        transformWorkOrder(addr.toString(), data)
+      )
+    },
+    enabled: isConnected && !!address,
+    staleTime: 30000,
   })
 }

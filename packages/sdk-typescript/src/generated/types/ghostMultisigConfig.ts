@@ -55,7 +55,7 @@ export type GhostMultisigConfig = {
   auto_execute: boolean;
   signer_change_threshold: number;
   allowed_transaction_types: Array<TransactionType>;
-  daily_limits: Array<readonly [string, bigint]>;
+  daily_limits: Array<[string, bigint]>;
 };
 
 export type GhostMultisigConfigArgs = {
@@ -66,7 +66,7 @@ export type GhostMultisigConfigArgs = {
   auto_execute: boolean;
   signer_change_threshold: number;
   allowed_transaction_types: Array<TransactionTypeArgs>;
-  daily_limits: Array<readonly [string, bigint]>;
+  daily_limits: Array<unknown>;
 };
 
 export function getGhostMultisigConfigEncoder(): Encoder<GhostMultisigConfigArgs> {

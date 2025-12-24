@@ -1,0 +1,121 @@
+---
+title: 'Token-2022'
+description: 'Advanced token features including transfer hooks and interest'
+---
+
+## Overview
+
+GhostSpeak leverages Solana's Token-2022 standard (Token Extensions) to provide advanced capabilities for service tokens, including transfer fees, interest-bearing tokens, and transfer hooks.
+
+## Browser-Safe Import
+
+```typescript
+import {
+  Token2022Module,
+} from '@ghostspeak/sdk/browser';
+```
+
+## Using the Token-2022 Module
+
+```typescript
+import { Token2022Module } from '@ghostspeak/sdk/browser';
+
+const tokenModule = new Token2022Module({
+  rpcEndpoint: 'https://api.devnet.solana.com',
+  startBlock: 0, // Optional: for indexing
+});
+```
+
+## Create Advanced Tokens
+
+### Create Token with Transfer Fee
+
+Useful for revenue sharing or protocol taxes.
+
+```typescript
+const result = await tokenModule.createTokenWithTransferFee(
+  wallet,
+  wallet.publicKey, // Update authority
+  wallet.publicKey, // Mint authority
+  9,                // Decimals
+  500,              // Fee basis points (5%)
+  5000n             // Max fee
+);
+
+console.log('Token Mint:', result.mint);
+```
+
+### Create Interest-Bearing Token
+
+Useful for staking receipt tokens or yield-bearing assets.
+
+```typescript
+const result = await tokenModule.createInterestBearingToken(
+  wallet,
+  wallet.publicKey, // Mint authority
+  9,                // Decimals
+  500               // Interest rate basis points (5%)
+);
+
+console.log('Mint:', result.mint);
+```
+
+## Transfer Hooks
+
+Token-2022 allows logic to be executed on every transfer. GhostSpeak uses this for enforcing payment splits or royalty enforcement.
+
+### Verify Transfer Hook
+
+```typescript
+const isHookValid = await tokenModule.verifyTransferHook(mintAddress);
+console.log('Transfer hook valid:', isHookValid);
+```
+
+## Calculating Fees
+
+### Calculate Transfer Fee
+
+```typescript
+const amount = 1_000_000n;
+const fee = await tokenModule.calculateTransferFee(mintAddress, amount);
+
+console.log(`Transferring ${amount} incurs ${fee} fee`);
+console.log(`Recipient receives: ${amount - fee}`);
+```
+
+## Token Metadata
+
+Token-2022 supports on-chain metadata natively.
+
+### Update Metadata
+
+```typescript
+await tokenModule.updateTokenMetadata(
+  mintAddress,
+  wallet,
+  {
+    name: "Updated Name",
+    symbol: "NEW",
+    uri: "https://..."
+  }
+);
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Check Client Support">
+    Ensure your users' wallets support Token-2022
+  </Step>
+  <Step title="Set Reasonable Fees">
+    High transfer fees can discourage usage
+  </Step>
+  <Step title="Immutable Authority">
+    Revoke authorities for trustless tokens
+  </Step>
+</Steps>
+
+<Info>
+  GhostSpeak uses Token-2022 for the $GHOST token to enable governance-controlled 
+  parameters and optional transfer fees on commercial transactions.
+</Info>

@@ -38,6 +38,7 @@ import {
   type ReadonlyUint8Array,
   type Option
 } from "@solana/kit";
+import { getTupleEncoder, getTupleDecoder } from "@solana/codecs-data-structures";
 
 import {
   getDealTypeEncoder,
@@ -55,7 +56,7 @@ export type BulkDealData = {
   deal_type: DealType;
   total_volume: number;
   total_value: bigint;
-  discount_percentage: bigint;
+  discount_percentage: unknown;
   volume_tiers: Array<VolumeTier>;
   sla_terms: string;
   contract_duration: bigint;
@@ -67,7 +68,7 @@ export type BulkDealDataArgs = {
   deal_type: DealTypeArgs;
   total_volume: number;
   total_value: number | bigint;
-  discount_percentage: number | bigint;
+  discount_percentage: unknown;
   volume_tiers: Array<VolumeTierArgs>;
   sla_terms: string;
   contract_duration: number | bigint;
@@ -80,7 +81,7 @@ export function getBulkDealDataEncoder(): Encoder<BulkDealDataArgs> {
     ["deal_type", getDealTypeEncoder()],
     ["total_volume", getU32Encoder()],
     ["total_value", getU64Encoder()],
-    ["discount_percentage", getU64Encoder()],
+    ["discount_percentage", getF64Encoder()],
     ["volume_tiers", getArrayEncoder(getVolumeTierEncoder())],
     ["sla_terms", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ["contract_duration", getI64Encoder()],
@@ -94,7 +95,7 @@ export function getBulkDealDataDecoder(): Decoder<BulkDealData> {
     ["deal_type", getDealTypeDecoder()],
     ["total_volume", getU32Decoder()],
     ["total_value", getU64Decoder()],
-    ["discount_percentage", getU64Decoder()],
+    ["discount_percentage", getF64Decoder()],
     ["volume_tiers", getArrayDecoder(getVolumeTierDecoder())],
     ["sla_terms", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["contract_duration", getI64Decoder()],

@@ -46,14 +46,14 @@ export type BiometricQuality = {
   minimum_quality: number;
   assessment_method: string;
   multiple_samples: boolean;
-  quality_thresholds: Array<readonly [string, number]>;
+  quality_thresholds: Array<[string, number]>;
 };
 
 export type BiometricQualityArgs = {
   minimum_quality: number;
   assessment_method: string;
   multiple_samples: boolean;
-  quality_thresholds: Array<readonly [string, number]>;
+  quality_thresholds: Array<unknown>;
 };
 
 export function getBiometricQualityEncoder(): Encoder<BiometricQualityArgs> {

@@ -12,7 +12,7 @@
  */
 
 import type { Address, Rpc, SolanaRpcApi, TransactionSigner, Signature } from '@solana/kit'
-import { pipe } from '@solana/functional'
+// Don't import conflicting local ParticipantType enum
 import {
   createSolanaRpc,
   createTransactionMessage,
@@ -23,16 +23,16 @@ import {
   getBase64EncodedWireTransaction
 } from '@solana/kit'
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from '../generated/programs/ghostspeakMarketplace.js'
+import { getCreateCommunicationSessionInstructionAsync } from '../generated/instructions/createCommunicationSession.js'
+import { getSendCommunicationMessageInstruction } from '../generated/instructions/sendCommunicationMessage.js'
+import { getCommunicationSessionDataDecoder, type CommunicationSessionData } from '../generated/types/communicationSessionData.js'
+import { ParticipantType } from '../generated/types/participantType.js' // Import generated Enum
 import { EventEmitter } from 'node:events'
+import { getProgramDerivedAddress, getBytesEncoder, getAddressEncoder } from '@solana/kit'
 
 // =====================================================
 // TYPES
 // =====================================================
-
-export enum ParticipantType {
-  Human = 'Human',
-  Agent = 'Agent'
-}
 
 export interface H2ASessionConfig {
   agentAddress: Address
@@ -138,25 +138,53 @@ export class H2AClient extends EventEmitter {
    * ```
    */
   async createSession(config: H2ASessionConfig): Promise<{ address: Address; signature: Signature }> {
-    throw new Error(
-      'H2A createSession not yet implemented. ' +
-      'Requires IDL regeneration to include create_communication_session instruction. ' +
-      'Run: bun run codama'
-    )
+    const expiresAt = BigInt(Math.floor(Date.now() / 1000) + (config.expiresIn ?? 3600))
+    const sessionId = BigInt(Date.now())
+    
+    // Explicitly cast to unknown first to avoid type overlap issues
+    const initiator = this.wallet.address
 
-    // TODO: Implementation will look like:
-    // const instruction = await getCreateCommunicationSessionInstructionAsync({
-    //   creator: this.wallet,
-    //   sessionId: BigInt(Date.now()),
-    //   initiator: this.wallet.address,
-    //   initiatorType: ParticipantType.Human,
-    //   responder: config.agentAddress,
-    //   responderType: ParticipantType.Agent,
-    //   sessionType: config.sessionType,
-    //   metadata: config.metadata ?? '',
-    //   expiresAt: BigInt(Math.floor(Date.now() / 1000) + (config.expiresIn ?? 3600))
-    // })
-    // return await this.sendTransaction([instruction])
+    // Derive session PDA
+    // Pattern: ['comm_session', creator]
+    // We'll compute this inside getCreateCommunicationSessionInstructionAsync's default resolution
+    // but the return type gives us the resolved account addresses.
+    
+    // We can also pre-calculate it if needed for the return value
+    const [sessionAddress] = await getProgramDerivedAddress({
+      programAddress: this.programId,
+      seeds: [
+        getBytesEncoder().encode(new Uint8Array([99, 111, 109, 109, 95, 115, 101, 115, 115, 105, 111, 110])), // 'comm_session'
+        getAddressEncoder().encode(initiator)
+      ]
+    })
+
+    const instruction = await getCreateCommunicationSessionInstructionAsync({
+      session: sessionAddress,
+      creator: this.wallet,
+      sessionId,
+      initiator: initiator,
+      initiatorType: ParticipantType.Human,
+      responder: config.agentAddress,
+      responderType: ParticipantType.Agent,
+      sessionType: config.sessionType,
+      metadata: config.metadata ?? '',
+      expiresAt: expiresAt
+    }, { programAddress: this.programId })
+
+    const signature = await this.sendTransaction([instruction])
+
+    // Emit event
+    this.emit('session_created', {
+      type: 'session_created',
+      timestamp: Date.now(),
+      data: {
+        address: sessionAddress,
+        signature,
+        agent: config.agentAddress
+      }
+    } as H2AEvent)
+
+    return { address: sessionAddress, signature }
   }
 
   /**
@@ -166,8 +194,6 @@ export class H2AClient extends EventEmitter {
    *
    * @param request - Service request parameters
    * @returns Transaction signature
-   *
-   * @throws {Error} Currently not implemented - requires IDL regeneration
    *
    * @example
    * ```typescript
@@ -182,24 +208,47 @@ export class H2AClient extends EventEmitter {
    * ```
    */
   async sendServiceRequest(request: H2AServiceRequest): Promise<Signature> {
-    throw new Error(
-      'H2A sendServiceRequest not yet implemented. ' +
-      'Requires IDL regeneration to include send_communication_message instruction. ' +
-      'Run: bun run codama'
-    )
+    const messageId = BigInt(Date.now())
+    
+    // Derive message PDA
+    // Pattern: ['communication_message', session, messageId]
+    const messageIdBytes = new Uint8Array(8)
+    const view = new DataView(messageIdBytes.buffer)
+    view.setBigUint64(0, messageId, true) // Little-endian
 
-    // TODO: Implementation will look like:
-    // const instruction = getSendCommunicationMessageInstruction({
-    //   message: await this.deriveMessageAddress(request.sessionAddress),
-    //   session: request.sessionAddress,
-    //   sender: this.wallet,
-    //   messageId: BigInt(Date.now()),
-    //   senderType: ParticipantType.Human,
-    //   content: request.content,
-    //   messageType: request.messageType ?? 'service_request',
-    //   attachments: request.attachments ?? []
-    // })
-    // return await this.sendTransaction([instruction])
+    const [messageAddress] = await getProgramDerivedAddress({
+      programAddress: this.programId,
+      seeds: [
+        getBytesEncoder().encode(new Uint8Array([99, 111, 109, 109, 95, 109, 101, 115, 115, 97, 103, 101])), // 'comm_message'
+        getAddressEncoder().encode(request.sessionAddress),
+        getBytesEncoder().encode(messageIdBytes)
+      ]
+    })
+
+    const instruction = getSendCommunicationMessageInstruction({
+      message: messageAddress,
+      session: request.sessionAddress,
+      sender: this.wallet,
+      messageId: messageId,
+      senderType: ParticipantType.Human,
+      content: request.content,
+      messageType: request.messageType ?? 'service_request',
+      attachments: request.attachments ?? []
+    }, { programAddress: this.programId })
+
+    const signature = await this.sendTransaction([instruction])
+
+    this.emit('service_requested', {
+      type: 'service_requested',
+      timestamp: Date.now(),
+      data: {
+        messageAddress,
+        sessionAddress: request.sessionAddress,
+        signature
+      }
+    } as H2AEvent)
+
+    return signature
   }
 
   /**
@@ -209,28 +258,72 @@ export class H2AClient extends EventEmitter {
    *
    * @param params - Message parameters
    * @returns Transaction signature
-   *
-   * @throws {Error} Currently not implemented - requires IDL regeneration
    */
   async sendMessage(params: H2AMessageParams): Promise<Signature> {
-    throw new Error(
-      'H2A sendMessage not yet implemented. ' +
-      'Requires IDL regeneration to include send_communication_message instruction. ' +
-      'Run: bun run codama'
-    )
+    const messageId = BigInt(Date.now())
+    
+    // Derive message PDA
+    // Pattern: ['communication_message', session, messageId]
+    const messageIdBytes = new Uint8Array(8)
+    const view = new DataView(messageIdBytes.buffer)
+    view.setBigUint64(0, messageId, true) // Little-endian
+
+    const [messageAddress] = await getProgramDerivedAddress({
+      programAddress: this.programId,
+      seeds: [
+        getBytesEncoder().encode(new Uint8Array([99, 111, 109, 109, 95, 109, 101, 115, 115, 97, 103, 101])), // 'comm_message'
+        getAddressEncoder().encode(params.sessionAddress),
+        getBytesEncoder().encode(messageIdBytes)
+      ]
+    })
+
+    const instruction = getSendCommunicationMessageInstruction({
+      message: messageAddress,
+      session: params.sessionAddress,
+      sender: this.wallet,
+      messageId: messageId,
+      senderType: ParticipantType.Human,
+      content: params.content,
+      messageType: params.messageType ?? 'text',
+      attachments: params.attachments ?? []
+    }, { programAddress: this.programId })
+
+    const signature = await this.sendTransaction([instruction])
+
+    this.emit('message_sent', {
+      type: 'message_sent',
+      timestamp: Date.now(),
+      data: {
+        messageAddress,
+        sessionAddress: params.sessionAddress,
+        signature
+      }
+    } as H2AEvent)
+
+    return signature
   }
 
   /**
    * Get session details
    *
    * @param sessionAddress - Session PDA address
-   * @throws {Error} Currently not implemented - requires IDL regeneration
    */
-  async getSession(sessionAddress: Address): Promise<unknown> {
-    throw new Error(
-      'H2A getSession not yet implemented. ' +
-      'Requires IDL regeneration to include CommunicationSession account decoder. ' +
-      'Run: bun run codama'
+  async getSession(sessionAddress: Address): Promise<CommunicationSessionData> {
+    const accountInfo = await this.rpc.getAccountInfo(sessionAddress, { encoding: 'base64' }).send()
+    
+    if (!accountInfo.value) {
+      throw new Error(`Session account not found: ${sessionAddress}`)
+    }
+
+    const data = accountInfo.value.data
+    // Decode data - assuming generated getCommunicationSessionDataDecoder exists
+    // If not, we'd need to manually decode or use the generated decoder
+    
+    // For now, we'll return the decoded data using the generated decoder
+    return getCommunicationSessionDataDecoder().decode(
+      typeof data === 'string' 
+        ? Uint8Array.from(Buffer.from(data, 'base64'))
+        : new Uint8Array(data as unknown as ArrayBuffer)
     )
   }
 

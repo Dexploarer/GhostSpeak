@@ -11,6 +11,23 @@ export { EscrowModule } from './modules/escrow/EscrowModule.js'
 export { MarketplaceModule } from './modules/marketplace/MarketplaceModule.js'
 export { GovernanceModule } from './modules/governance/GovernanceModule.js'
 export { ChannelModule } from './modules/channels/ChannelModule.js'
+export { WorkOrderModule } from './modules/workorders/WorkOrderModule.js'
+export { Token2022Module } from './modules/token2022/Token2022Module.js'
+
+// New modules - browser safe
+export { StakingModule, LockupTier } from './modules/staking/index.js'
+export { DisputeModule, DisputeResolution, type EvidenceSubmission } from './modules/dispute/index.js'
+export {
+  ReputationModule,
+  ReputationTier,
+  BadgeType,
+  REPUTATION_CONSTANTS,
+  type ReputationData,
+  type JobPerformance,
+  type ReputationCalculationResult,
+  type CategoryReputation,
+} from './modules/reputation/index.js'
+export { AuctionModule, AuctionType } from './modules/auction/index.js'
 
 // Constants - browser safe
 export { GHOSTSPEAK_PROGRAM_ID, NETWORK_CONFIG } from './constants/ghostspeak.js'
@@ -48,5 +65,21 @@ export type {
   Channel,
   Message,
   ChannelType,
-  MessageType
+  MessageType,
+  WorkOrder,
+  WorkDelivery,
+  WorkOrderStatus,
+  Deliverable,
+  // Staking types
+  StakingAccount,
+  StakingConfig,
+  // Dispute types
+  DisputeCase,
+  DisputeStatus,
+  DisputeEvidence,
+  // Auction types
+  AuctionMarketplace,
+  AuctionBid,
 } from './generated/index.js'
+
+

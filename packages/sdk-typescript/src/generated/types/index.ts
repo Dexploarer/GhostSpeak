@@ -225,7 +225,6 @@ export * from "./roleStatus";
 export * from "./roleType";
 export * from "./royaltyConfig";
 export * from "./royaltyStreamCreatedEvent";
-export * from "./ruleCondition";
 export * from "./ruleConditionExport";
 export * from "./ruleEffect";
 export * from "./scopeBoundaries";

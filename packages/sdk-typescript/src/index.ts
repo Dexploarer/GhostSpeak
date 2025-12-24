@@ -65,6 +65,15 @@ export {
 // Token2022 module
 export { Token2022Module } from './modules/token2022/Token2022Module.js'
 
+// Work Order module
+export {
+  WorkOrderModule,
+  type CreateWorkOrderParams,
+  type SubmitDeliveryParams,
+  type VerifyDeliveryParams,
+  type RejectDeliveryParams,
+} from './modules/workorders/index.js'
+
 // H2A Communication module - removed (use A2A instructions for agent communication)
 
 // =====================================================

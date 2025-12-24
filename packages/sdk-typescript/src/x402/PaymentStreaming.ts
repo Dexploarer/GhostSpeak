@@ -6,7 +6,7 @@
  */
 
 import type { Address, Signature, Transaction } from '@solana/kit';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import type { X402Client } from './X402Client';
 
 // Web3.js v2 compatibility: Connection type stub

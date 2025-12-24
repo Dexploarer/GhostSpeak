@@ -1,0 +1,175 @@
+---
+title: 'Disputes'
+description: 'Resolve disagreements with AI-assisted dispute resolution'
+---
+
+## Overview
+
+The dispute system provides fair resolution for escrow disagreements, combining AI analysis with optional human moderation.
+
+## Browser-Safe Import
+
+```typescript
+import {
+  DisputeModule,
+  DisputeResolution,
+  type EvidenceSubmission,
+} from '@ghostspeak/sdk/browser';
+```
+
+## Dispute Flow
+
+<Steps>
+  <Step title="File Dispute">
+    Either party files a dispute against an active escrow transaction
+  </Step>
+  <Step title="Submit Evidence">
+    Both parties submit evidence (documents, screenshots, messages)
+  </Step>
+  <Step title="AI Analysis">
+    AI analyzes the case and provides a confidence score
+  </Step>
+  <Step title="Resolution">
+    A moderator reviews cases with low AI confidence and issues a ruling
+  </Step>
+</Steps>
+
+## Dispute Resolution Types
+
+```typescript
+import { DisputeResolution } from '@ghostspeak/sdk/browser';
+
+// Possible resolutions
+DisputeResolution.FavorComplainant  // Funds returned to buyer
+DisputeResolution.FavorRespondent   // Funds released to seller
+DisputeResolution.Split             // Funds split between parties
+DisputeResolution.Dismissed         // Dispute dismissed, no action
+```
+
+## Querying Disputes
+
+### Get All Disputes
+
+```typescript
+import { DisputeModule } from '@ghostspeak/sdk/browser';
+
+const disputeModule = new DisputeModule({
+  programId: GHOSTSPEAK_PROGRAM_ID,
+  rpcEndpoint: 'https://api.devnet.solana.com',
+});
+
+const allDisputes = await disputeModule.getAllDisputes();
+
+allDisputes.forEach(({ address, data }) => {
+  console.log('Dispute:', address);
+  console.log('Reason:', data.reason);
+  console.log('AI Score:', data.aiScore);
+});
+```
+
+### Get Dispute by Address
+
+```typescript
+const dispute = await disputeModule.getDisputeCase(disputeAddress);
+
+console.log('Complainant:', dispute.complainant);
+console.log('Respondent:', dispute.respondent);
+console.log('Transaction:', dispute.transaction);
+```
+
+### Filter Disputes
+
+```typescript
+// Disputes filed by a user
+const myDisputes = await disputeModule.getDisputesByComplainant(myAddress);
+
+// Disputes against a user
+const againstMe = await disputeModule.getDisputesByRespondent(myAddress);
+
+// Pending (unresolved) disputes
+const pending = await disputeModule.getPendingDisputes();
+```
+
+## Utility Methods
+
+### Check Resolution Status
+
+```typescript
+const isResolved = disputeModule.isResolved(dispute);
+console.log('Is resolved:', isResolved);
+```
+
+### Get Evidence Count
+
+```typescript
+const evidenceCount = disputeModule.getEvidenceCount(dispute);
+console.log('Evidence items:', evidenceCount);
+```
+
+### Get AI Confidence
+
+```typescript
+const confidence = disputeModule.getAiConfidence(dispute);
+console.log('AI confidence:', confidence, '%');
+```
+
+### Check if Human Review Required
+
+```typescript
+const needsReview = disputeModule.requiresHumanReview(dispute);
+
+if (needsReview) {
+  console.log('This dispute requires human moderator review');
+}
+```
+
+## Evidence Types
+
+When submitting evidence, use these types:
+
+```typescript
+interface EvidenceSubmission {
+  evidenceType: 'document' | 'screenshot' | 'message' | 'other';
+  description: string;
+  contentHash: string;  // IPFS hash or data hash
+  uri?: string;         // Optional: Link to evidence
+}
+```
+
+## AI Scoring
+
+The AI analyzes:
+
+| Factor | Weight |
+|--------|--------|
+| Communication history | 25% |
+| Delivery timeline | 20% |
+| Work quality evidence | 25% |
+| Contract terms | 20% |
+| Historical reputation | 10% |
+
+<Info>
+  Disputes with AI confidence below 70% are automatically flagged for human review.
+</Info>
+
+## Best Practices
+
+<Steps>
+  <Step title="Document Everything">
+    Keep records of all communications and deliverables
+  </Step>
+  <Step title="Submit Strong Evidence">
+    Provide clear, timestamped evidence supporting your case
+  </Step>
+  <Step title="Respond Promptly">
+    Quick responses improve your case and expedite resolution
+  </Step>
+  <Step title="Use Clear Terms">
+    Define deliverables clearly in the original escrow
+  </Step>
+</Steps>
+
+<Warning>
+  False or fraudulent dispute claims negatively impact your on-chain reputation 
+  and may result in penalties.
+</Warning>

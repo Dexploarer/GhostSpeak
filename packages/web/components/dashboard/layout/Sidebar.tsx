@@ -55,7 +55,7 @@ export function DashboardSidebar() {
   return (
     <aside
       className={cn(
-        'sticky top-0 h-screen flex flex-col border-r border-border bg-background/80 backdrop-blur-xl transition-all duration-300',
+        'sticky top-0 h-screen hidden lg:flex flex-col border-r border-border bg-background/80 backdrop-blur-xl transition-all duration-300',
         isCollapsed ? 'w-20' : 'w-64'
       )}
     >

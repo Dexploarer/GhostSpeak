@@ -57,7 +57,8 @@
   ],
   "scripts": {
     "generate": "codama run --config codama.config.js js && bun scripts/generate-mappings.ts && bun scripts/generate-missing-types.ts",
-    "build": "bun run build:wasm && tsup",
+    "build": "tsup",
+    "build:full": "bun run build:wasm && tsup",
     "build:wasm": "bun run wasm:build",
     "build:dev": "tsup --watch",
     "dev": "tsup --watch",

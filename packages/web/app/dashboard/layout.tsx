@@ -5,11 +5,7 @@ import { DashboardSidebar } from '@/components/dashboard/layout/Sidebar'
 import { GhostSpeakErrorBoundary } from '@/components/error-boundaries/GhostSpeakErrorBoundary'
 import { NetworkIndicator } from '@/components/ui/network-indicator'
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
       {/* Ambient Background Effects */}
@@ -27,11 +23,9 @@ export default function DashboardLayout({
           <div className="flex justify-end mb-4">
             <NetworkIndicator />
           </div>
-          
+
           <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <GhostSpeakErrorBoundary level="page">
-              {children}
-            </GhostSpeakErrorBoundary>
+            <GhostSpeakErrorBoundary level="page">{children}</GhostSpeakErrorBoundary>
           </div>
         </main>
       </div>

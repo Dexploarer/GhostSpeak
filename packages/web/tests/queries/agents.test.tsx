@@ -5,15 +5,28 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient } from '@tanstack/react-query'
 import { useAgents, useAgent, useRegisterAgent } from '@/lib/queries/agents'
-import { TestProviders, createMockAgent } from '../test-utils'
+import { TestProviders, mockCrossmintSigner, mockGhostSpeakClient } from '../test-utils'
 
-// Mock wallet adapter
-vi.mock('@solana/wallet-adapter-react', () => ({
+// Mock Crossmint SDK
+vi.mock('@crossmint/client-sdk-react-ui', () => ({
   useWallet: vi.fn(() => ({
-    publicKey: { toBase58: () => 'mock-public-key' },
-    signTransaction: vi.fn(),
-    connected: true,
+    wallet: { address: 'mock-wallet-address' },
   })),
+  useAuth: vi.fn(() => ({
+    status: 'logged-in',
+  })),
+}))
+
+// Mock useCrossmintSigner hook
+vi.mock('@/lib/hooks/useCrossmintSigner', () => ({
+  useCrossmintSigner: vi.fn(() => mockCrossmintSigner),
+}))
+
+// Mock the GhostSpeak client
+vi.mock('@/lib/ghostspeak/client', () => ({
+  getGhostSpeakClient: vi.fn(() => mockGhostSpeakClient),
+  createGhostSpeakClient: vi.fn(() => mockGhostSpeakClient),
+  getCurrentNetwork: vi.fn(() => 'devnet'),
 }))
 
 describe('Agents Queries', () => {
@@ -37,7 +50,6 @@ describe('Agents Queries', () => {
         ),
       })
 
-      // Since we're using a mock client, we expect it to return empty results
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true)
       })
@@ -52,7 +64,6 @@ describe('Agents Queries', () => {
         ),
       })
 
-      // Test that it doesn't throw errors with our mock setup
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true)
       })
@@ -82,14 +93,13 @@ describe('Agents Queries', () => {
         expect(result.current.isSuccess).toBe(true)
       })
 
-      // With our mock client, it should return a structured agent
       expect(result.current.data).toBeDefined()
       expect(result.current.data?.address).toBe('test-agent-address')
     })
   })
 
   describe('useRegisterAgent', () => {
-    it('should handle registration attempt', async () => {
+    it('should handle registration attempt with connected wallet', async () => {
       const { result } = renderHook(() => useRegisterAgent(), {
         wrapper: ({ children }) => (
           <TestProviders queryClient={queryClient}>{children}</TestProviders>

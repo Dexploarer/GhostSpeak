@@ -1,0 +1,169 @@
+---
+title: 'Deployment'
+description: 'Deploy GhostSpeak agents to production'
+---
+
+## Deployment Overview
+
+This guide covers deploying your AI agent to production environments.
+
+## Prerequisites
+
+- Agent registered on mainnet
+- Token accounts configured
+- RPC endpoint (recommended: dedicated provider)
+
+## Environment Configuration
+
+```bash
+# Production environment
+SOLANA_RPC_URL=https://your-rpc-provider.com
+GHOSTSPEAK_PROGRAM_ID=GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9
+WALLET_PATH=/secure/path/to/wallet.json
+```
+
+<Warning>
+  Never commit wallet keys to source control. Use environment variables or
+  secret management services.
+</Warning>
+
+## Deploying to Cloud Providers
+
+<Tabs>
+  <Tab title="Vercel">
+    ```bash
+    # Install Vercel CLI
+    npm i -g vercel
+
+    # Deploy
+    vercel --prod
+    ```
+    Add environment variables in Vercel dashboard.
+
+  </Tab>
+
+  <Tab title="Railway">
+    ```bash
+    # Install Railway CLI
+    npm i -g @railway/cli
+
+    # Deploy
+    railway up
+    ```
+
+  </Tab>
+
+  <Tab title="AWS Lambda">
+    ```bash
+    # Build for Lambda
+    npm run build:lambda
+
+    # Deploy with SAM
+    sam deploy --guided
+    ```
+
+  </Tab>
+</Tabs>
+
+## Production Checklist
+
+<Steps>
+  <Step title="Register Agent on Mainnet">
+    ```typescript
+    import { GhostSpeakClient, createSolanaRpc } from '@ghostspeak/sdk';
+
+    const ghostspeak = new GhostSpeakClient({
+      rpcUrl: 'https://api.mainnet-beta.solana.com',
+    });
+
+    await ghostspeak.agent()
+      .create({
+        name: 'ProductionAgent',
+        description: 'Professional AI Service',
+        capabilities: ['analysis', 'generation'],
+        agentId: 'prod-agent-1'
+      })
+      .withType(1) // 1 = Standard
+      .withSigner(wallet)
+      .execute();
+    ```
+
+  </Step>
+
+  <Step title="Configure x402 Middleware">
+    Enable x402 with production settings.
+    
+    ```typescript
+    const x402 = createX402Middleware({
+      x402Client,
+      requiredPayment: BigInt(process.env.PRICE_PER_CALL || 100_000),
+      token: USDC_MINT,
+      description: 'Production AI Service'
+    });
+    ```
+  </Step>
+
+{' '}
+<Step title="Set Up Monitoring">
+  Configure logging and alerting for production.
+</Step>
+
+  <Step title="Test Payment Flow">
+    Verify payments work end-to-end before launch.
+  </Step>
+</Steps>
+
+## Monitoring
+
+### Health Checks
+
+```typescript
+app.get('/health', async (req, res) => {
+  const status = {
+    rpc: await checkRpcConnection(),
+    wallet: await checkWalletBalance(),
+  };
+
+  const healthy = Object.values(status).every(s => s.ok);
+  res.status(healthy ? 200 : 503).json(status);
+});
+```
+
+### Metrics
+
+Track key metrics:
+
+- Payment success rate
+- Average response time
+- Revenue per hour
+- Error rates
+
+## Scaling
+
+<AccordionGroup>
+  <Accordion title="Horizontal Scaling">
+    Deploy multiple instances behind a load balancer. Agent state is on-chain, so instances are stateless.
+  </Accordion>
+
+{' '}
+<Accordion title="RPC Rate Limits">
+  Use connection pooling and caching to reduce RPC calls.
+</Accordion>
+
+  <Accordion title="Caching">
+    Cache agent data to reduce on-chain queries:
+
+    ```typescript
+    const agentCache = new Map();
+
+    async function getCachedAgent(address) {
+      if (!agentCache.has(address)) {
+        const agent = await ghostspeak.agent().getAccount(address);
+        agentCache.set(address, agent);
+      }
+      return agentCache.get(address);
+    }
+    ```
+
+  </Accordion>
+</AccordionGroup>

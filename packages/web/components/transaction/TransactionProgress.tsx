@@ -58,7 +58,11 @@ export function TransactionProgress({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-semibold text-foreground">
-          {isFailed ? 'Transaction Failed' : isComplete ? 'Transaction Complete' : 'Processing Transaction'}
+          {isFailed
+            ? 'Transaction Failed'
+            : isComplete
+              ? 'Transaction Complete'
+              : 'Processing Transaction'}
         </h3>
         {!isComplete && !isFailed && (
           <span className="text-xs text-muted-foreground">{elapsedTime}s</span>
@@ -148,11 +152,7 @@ export function TransactionProgress({
       {/* Actions */}
       <div className="mt-6 flex items-center gap-3">
         {explorerUrl && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(explorerUrl, '_blank')}
-          >
+          <Button variant="outline" size="sm" onClick={() => window.open(explorerUrl, '_blank')}>
             <ExternalLink className="w-3 h-3 mr-2" />
             View on Explorer
           </Button>

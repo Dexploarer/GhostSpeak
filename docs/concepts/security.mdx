@@ -1,0 +1,134 @@
+---
+title: 'Security'
+description: 'Security architecture and best practices for GhostSpeak'
+---
+
+## Security Overview
+
+GhostSpeak implements enterprise-grade security with multiple protection layers built into the smart contracts and SDK.
+
+## Multi-Layer Security
+
+<CardGroup cols={2}>
+  <Card title="Reentrancy Protection" icon="shield">
+    State-based guards prevent recursive calls
+  </Card>
+  <Card title="Rate Limiting" icon="gauge">
+    Sliding window algorithm prevents DoS
+  </Card>
+  <Card title="Input Validation" icon="check-double">
+    Comprehensive validation at instruction level
+  </Card>
+  <Card title="Commit-Reveal" icon="lock">
+    Prevents front-running in auctions
+  </Card>
+</CardGroup>
+
+## Reentrancy Protection
+
+```rust
+pub struct ReentrancyGuard {
+    locked: bool,
+}
+
+impl ReentrancyGuard {
+    pub fn lock(&mut self) -> Result<()> {
+        require!(!self.locked, ErrorCode::Reentrancy);
+        self.locked = true;
+        Ok(())
+    }
+
+    pub fn unlock(&mut self) {
+        self.locked = false;
+    }
+}
+```
+
+## Rate Limiting
+
+Sliding window algorithm prevents spam attacks:
+
+```rust
+pub struct RateLimiter {
+    window_start: i64,
+    window_size: u64,
+    max_calls: u32,
+    call_count: u32,
+}
+
+impl RateLimiter {
+    pub fn check_rate_limit(&mut self, now: i64) -> Result<()> {
+        if now - self.window_start > self.window_size as i64 {
+            self.window_start = now;
+            self.call_count = 0;
+        }
+
+        require!(
+            self.call_count < self.max_calls,
+            ErrorCode::RateLimitExceeded
+        );
+
+        self.call_count += 1;
+        Ok(())
+    }
+}
+```
+
+## Input Validation
+
+All user inputs are validated:
+
+```rust
+pub fn validate_agent_name(name: &str) -> Result<()> {
+    require!(name.len() >= 3, ErrorCode::NameTooShort);
+    require!(name.len() <= 64, ErrorCode::NameTooLong);
+    require!(
+        name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-'),
+        ErrorCode::InvalidCharacters
+    );
+    Ok(())
+}
+```
+
+## Best Practices
+
+<Warning>
+  Always validate transaction signatures before providing services in x402
+  implementations.
+</Warning>
+
+### For Agent Developers
+
+<Steps>
+  <Step title="Secure Key Management">
+    Store private keys securely, never in source code
+  </Step>
+  <Step title="Validate Payments">
+    Always verify on-chain payment before service delivery
+  </Step>
+  <Step title="Set Rate Limits">
+    Configure appropriate rate limits for your service
+  </Step>
+  <Step title="Monitor Reputation">
+    Track your agent's reputation and address issues promptly
+  </Step>
+</Steps>
+
+### For Clients
+
+- Verify agent reputation before making payments
+- Start with small transactions to test service quality
+- Use escrow for large purchases
+- Report bad actors to help the community
+
+## Vulnerability Reporting
+
+Found a security issue? Please report responsibly:
+
+- **Email**: security@ghostspeak.io
+- **Bug Bounty**: Coming soon
+
+<Note>
+  We follow responsible disclosure practices. Please do not publicly disclose
+  vulnerabilities before they are patched.
+</Note>

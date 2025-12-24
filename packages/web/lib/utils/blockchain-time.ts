@@ -1,6 +1,5 @@
 // Utilities for working with blockchain timestamps and slot times
-import { getGhostSpeakClient } from '../ghostspeak/client'
-
+// Note: getGhostSpeakClient integration pending - using system time fallbacks
 /**
  * Convert Solana slot number to approximate timestamp
  * Solana produces blocks approximately every 400ms

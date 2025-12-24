@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight, PlayCircle } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
@@ -15,7 +15,7 @@ export function Hero() {
   const { scrollY } = useScroll()
   const y1 = useTransform(scrollY, [0, 500], [0, 150])
   const y2 = useTransform(scrollY, [0, 500], [0, -100])
-  
+
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [isHovered, setIsHovered] = useState(false)
 
@@ -35,18 +35,18 @@ export function Hero() {
   }, [])
 
   return (
-    <div 
+    <div
       ref={containerRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="relative min-h-[110vh] flex flex-col justify-center overflow-hidden bg-background selection:bg-primary/30"
     >
       {/* 1. Underlying Holographic Grid (Revealed by Spotlight) */}
-      <div 
+      <div
         className="absolute inset-0 holographic-grid transition-opacity duration-1000"
         style={{
           opacity: isHovered ? 0.15 : 0.05,
-          maskImage: `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`
+          maskImage: `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`,
         }}
       />
 
@@ -55,21 +55,21 @@ export function Hero() {
 
       {/* 3. Floating Beams */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-         {[...Array(5)].map((_, i) => (
-           <div 
-             key={i} 
-             className="beam shadow-[0_0_15px_rgba(204,255,0,0.3)]" 
-             style={{ 
-               left: `${i * 20 + 10}%`, 
-               animationDelay: `${i * 2}s`,
-               opacity: 0.1
-             }} 
-           />
-         ))}
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="beam shadow-[0_0_15px_rgba(204,255,0,0.3)]"
+            style={{
+              left: `${i * 20 + 10}%`,
+              animationDelay: `${i * 2}s`,
+              opacity: 0.1,
+            }}
+          />
+        ))}
       </div>
 
       {/* 4. Interactive Spotlight (Glow) */}
-      <div 
+      <div
         className="pointer-events-none absolute inset-0 transition-opacity duration-700 opacity-40 mix-blend-screen"
         style={{
           background: `radial-gradient(1000px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(204, 255, 0, 0.08), transparent 50%)`,
@@ -78,15 +78,14 @@ export function Hero() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 lg:pt-48 z-10">
         <div className="grid lg:grid-cols-2 gap-20 items-center">
-          
           {/* Text Content */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="text-left space-y-10"
           >
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
@@ -101,7 +100,7 @@ export function Hero() {
                 The Trust <br />
                 <span className="text-primary italic relative">
                   Layer
-                  <motion.span 
+                  <motion.span
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
                     transition={{ delay: 1, duration: 1 }}
@@ -114,17 +113,26 @@ export function Hero() {
             </div>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
-              The only x402 marketplace with <span className="text-foreground font-medium">escrow, reputation, and disputes</span>. Pay AI agents per call. Funds held until delivery.
+              The only x402 marketplace with{' '}
+              <span className="text-foreground font-medium">escrow, reputation, and disputes</span>.
+              Pay AI agents per call. Funds held until delivery.
             </p>
 
             <div className="flex flex-wrap gap-6 pt-4">
               <Link href="/dashboard">
-                <Button size="lg" className="h-16 px-10 rounded-xl text-lg bg-primary hover:bg-primary/90 text-primary-foreground font-black transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(204,255,0,0.2)]">
+                <Button
+                  size="lg"
+                  className="h-16 px-10 rounded-xl text-lg bg-primary hover:bg-primary/90 text-primary-foreground font-black transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(204,255,0,0.2)]"
+                >
                   Access Protocol <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
               <Link href="/docs">
-                <Button variant="outline" size="lg" className="h-16 px-10 rounded-xl text-lg border-border text-foreground hover:bg-muted transition-all">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-16 px-10 rounded-xl text-lg border-border text-foreground hover:bg-muted transition-all"
+                >
                   Documentation
                 </Button>
               </Link>
@@ -135,8 +143,8 @@ export function Hero() {
                 { label: 'Escrow', val: 'Protected' },
                 { label: 'Payments', val: 'x402' },
                 { label: 'Disputes', val: 'On-chain' },
-              ].map((stat, i) => (
-                <StatusLabel 
+              ].map((stat, _i) => (
+                <StatusLabel
                   key={stat.label}
                   label={stat.label}
                   value={stat.val}
@@ -148,40 +156,43 @@ export function Hero() {
           </motion.div>
 
           {/* Graphic Content - Parallax & 3D Effect */}
-          <motion.div 
-            style={{ y: y1 }}
-            className="relative hidden lg:block perspective-2000"
-          >
-             {/* Deep Background Glow */}
+          <motion.div style={{ y: y1 }} className="relative hidden lg:block perspective-2000">
+            {/* Deep Background Glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] animate-pulse" />
-            
-            <motion.div 
+
+            <motion.div
               style={{ rotateY: -12, rotateX: 6 }}
               whileHover={{ rotateY: -5, rotateX: 2, scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 40, damping: 20 }}
+              transition={{ type: 'spring', stiffness: 40, damping: 20 }}
               className="relative z-10"
             >
               {/* Main Terminal Frame */}
               <div className="rounded-2xl p-px bg-linear-to-br from-foreground/20 via-foreground/5 to-transparent backdrop-blur-3xl shadow-2xl overflow-hidden group">
-                 <div className="rounded-2xl overflow-hidden bg-background/90 relative p-2 border border-border">
-                    {/* Header bar */}
-                    <div className="h-8 flex items-center px-4 gap-1.5 border-b border-border mb-2">
-                       <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
-                       <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20" />
-                       <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
-                       <div className="ml-auto text-[10px] font-mono text-muted-foreground select-none">root@ghostspeak:~/protocol</div>
+                <div className="rounded-2xl overflow-hidden bg-background/90 relative p-2 border border-border">
+                  {/* Header bar */}
+                  <div className="h-8 flex items-center px-4 gap-1.5 border-b border-border mb-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
+                    <div className="ml-auto text-[10px] font-mono text-muted-foreground select-none">
+                      root@ghostspeak:~/protocol
                     </div>
-                    
-                    <CodePreview />
-                    
-                    <div className="absolute top-8 right-8 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity duration-1000">
-                       <GhostIcon variant="circuit" size={120} className="text-primary/20 animate-float" />
-                    </div>
-                 </div>
+                  </div>
+
+                  <CodePreview />
+
+                  <div className="absolute top-8 right-8 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity duration-1000">
+                    <GhostIcon
+                      variant="circuit"
+                      size={120}
+                      className="text-primary/20 animate-float"
+                    />
+                  </div>
+                </div>
               </div>
-              
+
               {/* Floating Status Card Overlay */}
-              <motion.div 
+              <motion.div
                 style={{ y: y2 }}
                 className="absolute -right-20 top-1/4 bg-background/80 p-6 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.1)] border border-border w-80 animate-float backdrop-blur-2xl group"
               >
@@ -191,58 +202,74 @@ export function Hero() {
                     <GhostIcon variant="logo" size={32} className="text-primary" />
                   </div>
                   <div>
-                    <div className="text-sm font-black text-foreground tracking-tight group-hover:text-primary transition-colors">AGENT_042_READY</div>
-                    <div className="text-[10px] text-primary/50 font-mono">ENCRYPTED_SIGNAL_LOCK</div>
+                    <div className="text-sm font-black text-foreground tracking-tight group-hover:text-primary transition-colors">
+                      AGENT_042_READY
+                    </div>
+                    <div className="text-[10px] text-primary/50 font-mono">
+                      ENCRYPTED_SIGNAL_LOCK
+                    </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex justify-between text-[10px] font-mono">
-                     <span className="text-muted-foreground">PAYMENT_HEX</span>
-                     <span className="text-primary truncate ml-4 italic">0x402_AUTH_OK</span>
+                    <span className="text-muted-foreground">PAYMENT_HEX</span>
+                    <span className="text-primary truncate ml-4 italic">0x402_AUTH_OK</span>
                   </div>
                   <div className="h-1 bg-muted rounded-full overflow-hidden">
-                     <motion.div 
-                       initial={{ width: 0 }}
-                       animate={{ width: "100%" }}
-                       transition={{ duration: 3, repeat: Infinity }}
-                       className="h-full bg-primary"
-                     />
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: '100%' }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                      className="h-full bg-primary"
+                    />
                   </div>
                 </div>
 
                 <div className="mt-6 flex gap-2">
-                     {['G', 'H', 'O', 'S', 'T'].map((letter, i) => (
-                       <motion.div 
-                         key={i}
-                         initial={{ backgroundColor: 'transparent', borderColor: 'var(--border)' }}
-                         animate={{ 
-                           backgroundColor: ['transparent', 'transparent', 'var(--color-primary-10)', 'var(--color-primary-10)', 'transparent'],
-                           borderColor: ['var(--border)', 'var(--border)', 'var(--color-primary-30)', 'var(--color-primary-30)', 'var(--border)']
-                         }}
-                         transition={{ 
-                           duration: 3, 
-                           times: [0, 0.05 + (i * 0.15), 0.15 + (i * 0.15), 0.9, 1],
-                           repeat: Infinity,
-                           repeatDelay: 0,
-                           ease: "easeInOut"
-                         }}
-                         className="flex-1 h-12 rounded-lg flex items-center justify-center font-black text-xl border transition-colors"
-                       >
-                         <motion.span
-                            animate={{ opacity: [0, 0, 1, 1, 0] }}
-                            transition={{ 
-                                duration: 3,
-                                times: [0, 0.05 + (i * 0.15), 0.15 + (i * 0.15), 0.9, 1],
-                                repeat: Infinity,
-                                repeatDelay: 0
-                            }}
-                            className="text-primary"
-                         >
-                           {letter}
-                         </motion.span>
-                       </motion.div>
-                     ))}
+                  {['G', 'H', 'O', 'S', 'T'].map((letter, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ backgroundColor: 'transparent', borderColor: 'var(--border)' }}
+                      animate={{
+                        backgroundColor: [
+                          'transparent',
+                          'transparent',
+                          'var(--color-primary-10)',
+                          'var(--color-primary-10)',
+                          'transparent',
+                        ],
+                        borderColor: [
+                          'var(--border)',
+                          'var(--border)',
+                          'var(--color-primary-30)',
+                          'var(--color-primary-30)',
+                          'var(--border)',
+                        ],
+                      }}
+                      transition={{
+                        duration: 3,
+                        times: [0, 0.05 + i * 0.15, 0.15 + i * 0.15, 0.9, 1],
+                        repeat: Infinity,
+                        repeatDelay: 0,
+                        ease: 'easeInOut',
+                      }}
+                      className="flex-1 h-12 rounded-lg flex items-center justify-center font-black text-xl border transition-colors"
+                    >
+                      <motion.span
+                        animate={{ opacity: [0, 0, 1, 1, 0] }}
+                        transition={{
+                          duration: 3,
+                          times: [0, 0.05 + i * 0.15, 0.15 + i * 0.15, 0.9, 1],
+                          repeat: Infinity,
+                          repeatDelay: 0,
+                        }}
+                        className="text-primary"
+                      >
+                        {letter}
+                      </motion.span>
+                    </motion.div>
+                  ))}
                 </div>
               </motion.div>
             </motion.div>

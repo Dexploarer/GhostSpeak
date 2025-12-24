@@ -24,7 +24,7 @@ interface X402AgentCardProps {
 export function X402AgentCard({
   agent,
   showPayButton = true,
-  onPaymentSuccess
+  onPaymentSuccess,
 }: X402AgentCardProps): React.JSX.Element {
   const [showPayment, setShowPayment] = useState(false)
 
@@ -154,7 +154,7 @@ interface X402AgentGridProps {
 export function X402AgentGrid({
   agents,
   isLoading,
-  emptyMessage = 'No agents found'
+  emptyMessage = 'No agents found',
 }: X402AgentGridProps): React.JSX.Element {
   if (isLoading) {
     return (

@@ -118,9 +118,7 @@ export function useMarketplaceListings(filters?: MarketplaceFilters) {
 
           // Validate addresses safely
           const addressStr = listing.address.toString()
-          const sellerAddress = listingData.agent
-            ? listingData.agent.toString()
-            : addressStr
+          const sellerAddress = listingData.agent ? listingData.agent.toString() : addressStr
 
           // Filter and validate images
           const validImages = (listingData.images || [])
@@ -295,7 +293,7 @@ export function useCreateListing() {
 
         // Use the real client API to create service listing
         const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+        if (!signer) throw new Error('Could not create signer')
         const result = await client.marketplace.createServiceListing({
           signer,
           title: data.name,
@@ -387,9 +385,13 @@ export function usePurchaseListing() {
 
         // Purchase the service using the client
         const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+        if (!signer) throw new Error('Could not create signer')
         // TODO: purchaseService may not exist in current SDK - stub if needed
-        const result = await (client.marketplace as unknown as { purchaseService: (signer: TransactionSigner, address: Address) => Promise<string> }).purchaseService(signer, validatedListingAddress)
+        const result = await (
+          client.marketplace as unknown as {
+            purchaseService: (signer: TransactionSigner, address: Address) => Promise<string>
+          }
+        ).purchaseService(signer, validatedListingAddress)
 
         // Update with signature if available
         if (typeof result === 'string') {
@@ -446,9 +448,11 @@ export function useCreateJobPosting() {
 
       // job() method may not exist - use createJobPosting directly
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
-      const result = await (client.marketplace as unknown as { createJobPosting: (params: unknown) => Promise<string> }).createJobPosting({
+      const result = await (
+        client.marketplace as unknown as { createJobPosting: (params: unknown) => Promise<string> }
+      ).createJobPosting({
         title: data.title,
         description: data.description,
         budget: data.budget,

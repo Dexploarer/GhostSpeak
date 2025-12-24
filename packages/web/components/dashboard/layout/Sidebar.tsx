@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
-import { 
-  LayoutDashboard, 
-  Bot, 
-  ShoppingBag, 
-  Briefcase, 
-  Shield, 
+import {
+  LayoutDashboard,
+  Bot,
+  ShoppingBag,
+  Briefcase,
+  Shield,
   Gavel,
   Settings,
   BarChart3,
@@ -20,7 +20,7 @@ import {
   ChevronRight,
   Sparkles,
   Cpu,
-  Key
+  Key,
 } from 'lucide-react'
 
 const navItems = [
@@ -41,14 +41,14 @@ const navItems = [
 export function DashboardSidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
-  
+
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href
     return pathname?.startsWith(href) ?? false
   }
-  
+
   return (
-    <aside 
+    <aside
       className={cn(
         'sticky top-0 h-screen flex flex-col border-r border-border bg-background/80 backdrop-blur-xl transition-all duration-300',
         isCollapsed ? 'w-20' : 'w-64'
@@ -58,42 +58,40 @@ export function DashboardSidebar() {
       <div className="flex items-center justify-between p-4 border-b border-border">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-primary/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <Image 
-              src="/ghost-logo.png" 
-              alt="GhostSpeak" 
-              width={32} 
+            <Image
+              src="/ghost-logo.png"
+              alt="GhostSpeak"
+              width={32}
               height={32}
               className="object-contain"
             />
           </div>
           {!isCollapsed && (
-            <span className="text-lg font-bold text-foreground tracking-tight">
-              GhostSpeak
-            </span>
+            <span className="text-lg font-bold text-foreground tracking-tight">GhostSpeak</span>
           )}
         </Link>
-        <button 
+        <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors hidden lg:block"
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
-      
+
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon
           const active = isActive(item.href, item.exact)
-          
+
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative',
-                active 
-                  ? 'bg-primary/10 text-primary' 
+                active
+                  ? 'bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               )}
             >
@@ -101,20 +99,20 @@ export function DashboardSidebar() {
               {active && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
               )}
-              
-              <Icon className={cn(
-                'w-5 h-5 shrink-0',
-                active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-              )} />
-              
-              {!isCollapsed && (
-                <span className="truncate">{item.label}</span>
-              )}
+
+              <Icon
+                className={cn(
+                  'w-5 h-5 shrink-0',
+                  active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                )}
+              />
+
+              {!isCollapsed && <span className="truncate">{item.label}</span>}
             </Link>
           )
         })}
       </nav>
-      
+
       {/* x402 Quick Access */}
       <div className="p-3 border-t border-border">
         <Link
@@ -134,7 +132,7 @@ export function DashboardSidebar() {
           )}
         </Link>
       </div>
-      
+
       {/* Protocol Status */}
       {!isCollapsed && (
         <div className="p-4 border-t border-border">

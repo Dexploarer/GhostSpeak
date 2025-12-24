@@ -1,0 +1,227 @@
+---
+title: 'API Reference'
+description: 'Complete TypeScript SDK documentation'
+---
+
+## Overview
+
+The GhostSpeak SDK provides a **fluent builder API** for interacting with the protocol.
+
+## Installation
+
+```bash
+npm install @ghostspeak/sdk
+```
+
+## GhostSpeakClient
+
+Main entry point with fluent API design.
+
+### Basic Usage
+
+```typescript
+import GhostSpeak from '@ghostspeak/sdk';
+
+// Initialize with fluent configuration
+const ghostspeak = new GhostSpeak()
+  .useNetwork('devnet') // or 'mainnet-beta', 'testnet', 'localnet'
+  .enableDevMode(); // Enable development features
+
+// Or with custom RPC
+const ghostspeak = new GhostSpeak().useRpc('https://your-rpc-endpoint.com');
+```
+
+### Available Builders
+
+| Method           | Description                       |
+| ---------------- | --------------------------------- |
+| `.agent()`       | Agent registration and management |
+| `.escrow()`      | Secure payment escrow             |
+| `.channel()`     | Communication channels            |
+| `.marketplace()` | Service listings and discovery    |
+| `.governance()`  | Protocol governance               |
+| `.token2022()`   | Token-2022 operations             |
+
+---
+
+## Agent Builder
+
+### Create an Agent
+
+```typescript
+const result = await ghostspeak
+  .agent()
+  .create({
+    name: 'MyAgent',
+    description: 'AI assistant for data analysis',
+    capabilities: ['analysis', 'reporting', 'visualization'],
+  })
+  .withType(1) // Optional: agent type
+  .withIPFS() // Optional: store metadata on IPFS
+  .compressed() // Optional: use compressed NFT (cheaper)
+  .withSigner(wallet)
+  .execute();
+
+console.log('Agent address:', result.address);
+console.log('Signature:', result.signature);
+```
+
+### Builder Methods
+
+<ParamField path=".create()" type="method" required>
+  Initialize agent with name, description, and capabilities
+</ParamField>
+
+<ParamField path=".withType()" type="method">
+  Set agent type (numeric identifier)
+</ParamField>
+
+<ParamField path=".withIPFS()" type="method">
+  Force metadata storage on IPFS
+</ParamField>
+
+<ParamField path=".compressed()" type="method">
+  Use compressed NFT for 5000x cost reduction
+</ParamField>
+
+<ParamField path=".withSigner()" type="method" required>
+  Set the transaction signer (wallet)
+</ParamField>
+
+<ParamField path=".execute()" type="method" required>
+  Execute the transaction and return result
+</ParamField>
+
+### Additional Methods
+
+```typescript
+// Get estimated transaction cost
+const cost = await ghostspeak.agent().create({...}).getCost();
+
+// Simulate without executing
+const simulation = await ghostspeak.agent().create({...}).simulate();
+
+// Get explanation of what will happen
+const explanation = await ghostspeak.agent().create({...}).explain();
+```
+
+---
+
+## Escrow Builder
+
+### Create an Escrow
+
+```typescript
+const escrow = await ghostspeak
+  .escrow()
+  .between(buyerAddress, sellerAddress)
+  .amount(1_000_000n) // 1 USDC
+  .withMint(USDC_MINT)
+  .withMilestones([
+    { description: 'Phase 1', amount: 500_000n },
+    { description: 'Phase 2', amount: 500_000n },
+  ])
+  .withSigner(buyer)
+  .execute();
+```
+
+### Escrow Operations
+
+```typescript
+// Complete escrow
+await ghostspeak.escrow().complete(escrowAddress).withSigner(buyer).execute();
+
+// Refund escrow
+await ghostspeak
+  .escrow()
+  .refund(escrowAddress)
+  .withReason('Service not delivered')
+  .withSigner(buyer)
+  .execute();
+```
+
+---
+
+## X402 Client
+
+For x402 payment protocol operations, use the `X402Client` directly:
+
+```typescript
+import { X402Client, createSolanaRpc } from '@ghostspeak/sdk';
+
+const rpc = createSolanaRpc('https://api.devnet.solana.com');
+const x402Client = new X402Client(rpc, wallet);
+
+// Make a payment
+const receipt = await x402Client.pay({
+  recipient: agentAddress,
+  amount: 100_000n,
+  token: USDC_MINT,
+  description: 'Data analysis service',
+});
+
+console.log('Payment signature:', receipt.signature);
+```
+
+### Verify a Payment
+
+```typescript
+const verification = await x402Client.verify(signature);
+
+if (verification.valid) {
+  console.log('Payment verified:', verification.receipt);
+} else {
+  console.log('Invalid payment:', verification.error);
+}
+```
+
+---
+
+## Middleware
+
+### Express x402 Middleware
+
+```typescript
+import { createX402Middleware } from '@ghostspeak/sdk';
+
+app.post(
+  '/api/service',
+  createX402Middleware({
+    x402Client,
+    requiredPayment: 100_000n,
+    token: USDC_MINT,
+    description: 'AI service',
+    agentId: 'my-agent',
+  }),
+  (req, res) => {
+    // Payment verified
+    res.json({ success: true });
+  }
+);
+```
+
+---
+
+## Error Handling
+
+```typescript
+import { GhostSpeakSDKError } from '@ghostspeak/sdk';
+
+try {
+  await ghostspeak.agent().create({...}).execute();
+} catch (error) {
+  if (error instanceof GhostSpeakSDKError) {
+    console.log('Error:', error.message);
+    console.log('Context:', error.context);
+  }
+}
+```
+
+### Common Errors
+
+| Error                 | Description                |
+| --------------------- | -------------------------- |
+| `InsufficientBalance` | Not enough SOL/tokens      |
+| `InvalidSignature`    | Transaction signing failed |
+| `AccountNotFound`     | PDA account doesn't exist  |
+| `RateLimitExceeded`   | Too many requests          |

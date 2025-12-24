@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
-import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
+// import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import type { Address } from '@solana/kit'
 
 // =====================================================
@@ -72,9 +72,9 @@ export interface LockupTier {
 // =====================================================
 
 export const VOTING_WEIGHTS = {
-  TOKEN: 0.40,
+  TOKEN: 0.4,
   REPUTATION: 0.25,
-  VOLUME: 0.20,
+  VOLUME: 0.2,
   STAKING: 0.15,
 } as const
 
@@ -147,10 +147,7 @@ export function getLockupMultiplier(lockupDays: number): number {
 /**
  * Calculate staking voting power with lockup multiplier
  */
-export function calculateStakingVotingPower(
-  stakedTokens: bigint,
-  lockupDays: number
-): bigint {
+export function calculateStakingVotingPower(stakedTokens: bigint, lockupDays: number): bigint {
   if (stakedTokens <= 0n) return 0n
   const multiplier = getLockupMultiplier(lockupDays)
   const basePower = calculateTokenVotingPower(stakedTokens)
@@ -184,14 +181,18 @@ export function calculateTotalVotingPower(breakdown: {
 
   // Calculate weighted total
   const weightedToken = (tokenVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.TOKEN * 100))) / 100n
-  const weightedReputation = (reputationVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.REPUTATION * 100))) / 100n
-  const weightedVolume = (volumeVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.VOLUME * 100))) / 100n
-  const weightedStaking = (stakingVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.STAKING * 100))) / 100n
+  const weightedReputation =
+    (reputationVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.REPUTATION * 100))) / 100n
+  const weightedVolume =
+    (volumeVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.VOLUME * 100))) / 100n
+  const weightedStaking =
+    (stakingVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.STAKING * 100))) / 100n
 
   const totalVotingPower = weightedToken + weightedReputation + weightedVolume + weightedStaking
 
   // Effective power includes delegations
-  const effectiveVotingPower = totalVotingPower + breakdown.delegatedToYou - breakdown.delegatedByYou
+  const effectiveVotingPower =
+    totalVotingPower + breakdown.delegatedToYou - breakdown.delegatedByYou
 
   return {
     tokenBalance: breakdown.tokenBalance,
@@ -301,7 +302,7 @@ export function useAgentReputationForVoting(
       if (!agentAddress) return null
 
       try {
-        const client = getGhostSpeakClient()
+        // const client = getGhostSpeakClient()
 
         // Fetch agent data
         // In production, this would call client.agents.getAgent(agentAddress)
@@ -402,7 +403,7 @@ export function formatTokenAmount(amount: bigint, decimals = 6): string {
   const whole = amount / divisor
   const fraction = amount % divisor
   const num = Number(whole) + Number(fraction) / Number(divisor)
-  
+
   if (num >= 1_000_000) {
     return `${(num / 1_000_000).toFixed(2)}M`
   }

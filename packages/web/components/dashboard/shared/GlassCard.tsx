@@ -8,12 +8,7 @@ export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode
 }
 
-export function GlassCard({ 
-  variant = 'default', 
-  className, 
-  children, 
-  ...props 
-}: GlassCardProps) {
+export function GlassCard({ variant = 'default', className, children, ...props }: GlassCardProps) {
   return (
     <div
       className={cn(
@@ -26,16 +21,14 @@ export function GlassCard({
           'transition-all duration-300',
           'hover:bg-card/50 hover:border-primary/50',
           'hover:shadow-lg hover:shadow-primary/5',
-          'cursor-pointer'
+          'cursor-pointer',
         ],
-        variant === 'static' && [
-          'bg-card/20 border-border/50'
-        ],
+        variant === 'static' && ['bg-card/20 border-border/50'],
         variant === 'interactive' && [
           'transition-all duration-300',
           'hover:bg-card/50 hover:border-primary/50',
           'hover:shadow-lg hover:shadow-primary/10',
-          'cursor-pointer active:scale-[0.98]'
+          'cursor-pointer active:scale-[0.98]',
         ],
         className
       )}
@@ -43,11 +36,9 @@ export function GlassCard({
     >
       {/* Subtle gradient overlay */}
       <div className="absolute inset-0 bg-linear-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
-      
+
       {/* Content */}
-      <div className="relative z-10">
-        {children}
-      </div>
+      <div className="relative z-10">{children}</div>
     </div>
   )
 }

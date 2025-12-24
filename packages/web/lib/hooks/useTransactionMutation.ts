@@ -21,7 +21,7 @@ interface TransactionMutationOptions<TData, TVariables> {
 
 /**
  * Wrapper hook that adds transaction feedback to any mutation
- * 
+ *
  * Usage:
  * ```tsx
  * const createEscrow = useTransactionMutation({

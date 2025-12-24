@@ -7,15 +7,7 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function Skeleton({ className, ...props }: SkeletonProps) {
-  return (
-    <div
-      className={cn(
-        'animate-pulse rounded-md bg-muted',
-        className
-      )}
-      {...props}
-    />
-  )
+  return <div className={cn('animate-pulse rounded-md bg-muted', className)} {...props} />
 }
 
 // Agent Card Skeleton
@@ -54,7 +46,12 @@ export function AgentCardSkeletonGrid({ count = 6 }: { count?: number }) {
 // Escrow Item Skeleton
 export function EscrowItemSkeleton({ className }: SkeletonProps) {
   return (
-    <div className={cn('rounded-xl border bg-card p-4 flex flex-col md:flex-row md:items-center gap-6', className)}>
+    <div
+      className={cn(
+        'rounded-xl border bg-card p-4 flex flex-col md:flex-row md:items-center gap-6',
+        className
+      )}
+    >
       <div className="flex items-center gap-4 min-w-[200px]">
         <Skeleton className="w-10 h-10 rounded-full" />
         <div>

@@ -16,7 +16,7 @@ function calculateAgentReputation(agentData: SDKAgent | null) {
   if (!agentData) {
     return { score: 0, totalJobs: 0, successRate: 0 }
   }
-  
+
   // Calculate basic reputation metrics from blockchain data
   const totalJobs = agentData.totalJobsCompleted ?? 0
   const reputationScore = agentData.reputationScore ?? 0
@@ -88,9 +88,7 @@ function transformSDKAgent(address: string, data: SDKAgent): Agent {
     name: data.name ?? 'Unknown Agent',
     metadata: {
       description: data.description ?? undefined,
-      avatar: data.metadataUri
-        ? `https://arweave.net/${data.metadataUri}`
-        : undefined,
+      avatar: data.metadataUri ? `https://arweave.net/${data.metadataUri}` : undefined,
       category: data.frameworkOrigin ?? 'General',
     },
     owner: data.owner?.toString() ?? '',
@@ -104,7 +102,7 @@ function transformSDKAgent(address: string, data: SDKAgent): Agent {
 
 /**
  * Hook to retrieve details for a single agent by address.
- * 
+ *
  * @param agentAddress - Public key of the agent
  * @returns React Query result containing @see Agent
  */
@@ -133,10 +131,10 @@ export function useAgent(agentAddress: string | undefined) {
 
 /**
  * Hook to list agents with optional filtering.
- * 
+ *
  * Retrieves all agents from the program and applies filtering client-side
  * (until indexer support is available).
- * 
+ *
  * @param filters - Optional criteria to filter the agent list
  * @returns React Query result containing an array of @see Agent objects
  */
@@ -157,7 +155,7 @@ export function useAgents(filters?: AgentFilters) {
       }
 
       // Transform SDK data to match our Agent interface
-      let agents = agentAccounts.map((account) => 
+      let agents = agentAccounts.map((account) =>
         transformSDKAgent(account.address.toString(), account.data)
       )
 
@@ -244,6 +242,8 @@ export function useRegisterAgent() {
         // Use the correct SDK method: register()
         const signature = await client.agents.register(signer, {
           agentType: params.agentType ?? 0,
+          name: params.name,
+          description: '', // Description stored in metadata URI
           metadataUri: params.metadataUri,
           agentId: params.agentId,
         })

@@ -15,11 +15,10 @@ import {
   Globe,
   Tag,
   Sparkles,
-  ExternalLink,
   AlertCircle,
   Info,
   DollarSign,
-  Zap
+  Zap,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,7 +32,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select'
 
 // =====================================================
@@ -133,12 +132,17 @@ function MetadataPreview({
   metadata,
   suggestedTags,
   suggestedCategory,
-  onUseMetadata
+  onUseMetadata,
 }: {
   metadata?: ValidationResult['metadata']
   suggestedTags?: string[]
   suggestedCategory?: string
-  onUseMetadata: (data: { name?: string; description?: string; tags?: string[]; category?: string }) => void
+  onUseMetadata: (data: {
+    name?: string
+    description?: string
+    tags?: string[]
+    category?: string
+  }) => void
 }) {
   if (!metadata && !suggestedTags?.length) return null
 
@@ -169,7 +173,7 @@ function MetadataPreview({
           <div>
             <p className="text-xs text-gray-500 mb-1">Suggested Tags</p>
             <div className="flex flex-wrap gap-1">
-              {suggestedTags.map(tag => (
+              {suggestedTags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
@@ -194,7 +198,7 @@ function MetadataPreview({
               name: metadata?.title,
               description: metadata?.description,
               tags: suggestedTags,
-              category: suggestedCategory
+              category: suggestedCategory,
             })
           }
         >
@@ -221,7 +225,7 @@ const CATEGORIES = [
   'search',
   'embedding',
   'classification',
-  'other'
+  'other',
 ]
 
 const POPULAR_TAGS = [
@@ -236,7 +240,7 @@ const POPULAR_TAGS = [
   'api',
   'fast',
   'cheap',
-  'enterprise'
+  'enterprise',
 ]
 
 export default function X402RegisterPage(): React.JSX.Element {
@@ -246,7 +250,7 @@ export default function X402RegisterPage(): React.JSX.Element {
     description: '',
     category: '',
     tags: [],
-    customTag: ''
+    customTag: '',
   })
 
   const [validation, setValidation] = useState<ValidationResult>({ status: 'idle' })
@@ -270,7 +274,7 @@ export default function X402RegisterPage(): React.JSX.Element {
     setValidation({ status: 'validating' })
 
     // Simulate API call for validation
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, 1500))
 
     // Mock successful validation
     setValidation({
@@ -282,24 +286,24 @@ export default function X402RegisterPage(): React.JSX.Element {
             network: 'solana',
             amount: '0.001 USDC',
             token: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-            payTo: 'GHOSTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-          }
-        ]
+            payTo: 'GHOSTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        ],
       },
       metadata: {
         title: 'AI Text Generation API',
         description: 'Generate high-quality text using advanced AI models',
-        favicon: '/favicon.ico'
+        favicon: '/favicon.ico',
       },
       suggestedTags: ['ai', 'text', 'llm', 'gpt'],
-      suggestedCategory: 'text-generation'
+      suggestedCategory: 'text-generation',
     })
   }, [])
 
   const handleUrlChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const url = e.target.value
-      setForm(f => ({ ...f, url }))
+      setForm((f) => ({ ...f, url }))
 
       // Debounce validation
       const timeout = setTimeout(() => validateUrl(url), 500)
@@ -310,12 +314,12 @@ export default function X402RegisterPage(): React.JSX.Element {
 
   const handleUseMetadata = useCallback(
     (data: { name?: string; description?: string; tags?: string[]; category?: string }) => {
-      setForm(f => ({
+      setForm((f) => ({
         ...f,
         name: data.name ?? f.name,
         description: data.description ?? f.description,
         tags: data.tags ?? f.tags,
-        category: data.category ?? f.category
+        category: data.category ?? f.category,
       }))
     },
     []
@@ -324,14 +328,14 @@ export default function X402RegisterPage(): React.JSX.Element {
   const handleAddTag = useCallback(
     (tag: string) => {
       if (tag && !form.tags.includes(tag)) {
-        setForm(f => ({ ...f, tags: [...f.tags, tag], customTag: '' }))
+        setForm((f) => ({ ...f, tags: [...f.tags, tag], customTag: '' }))
       }
     },
     [form.tags]
   )
 
   const handleRemoveTag = useCallback((tag: string) => {
-    setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))
+    setForm((f) => ({ ...f, tags: f.tags.filter((t) => t !== tag) }))
   }, [])
 
   const handleSubmit = useCallback(async () => {
@@ -340,7 +344,7 @@ export default function X402RegisterPage(): React.JSX.Element {
     setIsSubmitting(true)
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     setIsSubmitting(false)
     setSubmitResult('success')
@@ -366,8 +370,8 @@ export default function X402RegisterPage(): React.JSX.Element {
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">Resource Registered!</h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Your resource has been added to the x402 ecosystem and will appear in search
-                results shortly.
+                Your resource has been added to the x402 ecosystem and will appear in search results
+                shortly.
               </p>
               <div className="flex gap-3 justify-center">
                 <Button asChild>
@@ -383,7 +387,7 @@ export default function X402RegisterPage(): React.JSX.Element {
                       description: '',
                       category: '',
                       tags: [],
-                      customTag: ''
+                      customTag: '',
                     })
                     setValidation({ status: 'idle' })
                   }}
@@ -400,9 +404,7 @@ export default function X402RegisterPage(): React.JSX.Element {
               <Card className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>Resource URL</CardTitle>
-                  <CardDescription>
-                    Enter the URL of your x402-enabled API endpoint
-                  </CardDescription>
+                  <CardDescription>Enter the URL of your x402-enabled API endpoint</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="relative">
@@ -433,7 +435,7 @@ export default function X402RegisterPage(): React.JSX.Element {
                           id="name"
                           placeholder="My AI API"
                           value={form.name}
-                          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                         />
                       </div>
 
@@ -444,7 +446,7 @@ export default function X402RegisterPage(): React.JSX.Element {
                           placeholder="Describe what your API does..."
                           rows={3}
                           value={form.description}
-                          onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                         />
                       </div>
 
@@ -452,13 +454,13 @@ export default function X402RegisterPage(): React.JSX.Element {
                         <Label htmlFor="category">Category</Label>
                         <Select
                           value={form.category}
-                          onValueChange={v => setForm(f => ({ ...f, category: v }))}
+                          onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                           <SelectContent>
-                            {CATEGORIES.map(c => (
+                            {CATEGORIES.map((c) => (
                               <SelectItem key={c} value={c}>
                                 {c.replace('-', ' ')}
                               </SelectItem>
@@ -479,7 +481,7 @@ export default function X402RegisterPage(): React.JSX.Element {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex flex-wrap gap-2">
-                        {form.tags.map(tag => (
+                        {form.tags.map((tag) => (
                           <Badge
                             key={tag}
                             variant="secondary"
@@ -496,8 +498,8 @@ export default function X402RegisterPage(): React.JSX.Element {
                         <Input
                           placeholder="Add custom tag..."
                           value={form.customTag}
-                          onChange={e => setForm(f => ({ ...f, customTag: e.target.value }))}
-                          onKeyDown={e => {
+                          onChange={(e) => setForm((f) => ({ ...f, customTag: e.target.value }))}
+                          onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault()
                               handleAddTag(form.customTag)
@@ -516,7 +518,7 @@ export default function X402RegisterPage(): React.JSX.Element {
                       <div>
                         <p className="text-xs text-gray-500 mb-2">Popular tags:</p>
                         <div className="flex flex-wrap gap-1">
-                          {POPULAR_TAGS.filter(t => !form.tags.includes(t)).map(tag => (
+                          {POPULAR_TAGS.filter((t) => !form.tags.includes(t)).map((tag) => (
                             <Badge
                               key={tag}
                               variant="outline"

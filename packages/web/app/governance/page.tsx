@@ -45,7 +45,7 @@ import { CreateProposalForm } from '@/components/governance/CreateProposalForm'
 import { useCastVote } from '@/lib/queries/governance'
 
 export default function GovernancePage(): React.JSX.Element {
-  const { address: publicKey, isConnected } = useWalletAddress()
+  const { address: publicKey } = useWalletAddress()
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState('all')
 

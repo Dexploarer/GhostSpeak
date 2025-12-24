@@ -1,9 +1,6 @@
-import React from 'react'
 import { GlassCard } from './GlassCard'
-import { StatusBeacon } from './StatusBeacon'
-import { Calendar, Clock, DollarSign, ArrowRight } from 'lucide-react'
+import { Calendar, DollarSign } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface WorkOrderCardProps {
@@ -15,23 +12,33 @@ interface WorkOrderCardProps {
   dueDate?: string
 }
 
-export function WorkOrderCard({ title, id, status, amount, assignee, dueDate }: WorkOrderCardProps) {
+export function WorkOrderCard({
+  title,
+  id,
+  status,
+  amount,
+  assignee: _assignee,
+  dueDate,
+}: WorkOrderCardProps) {
   const statusColors = {
-    'pending': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+    pending: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
     'in-progress': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    'review': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    'completed': 'bg-green-500/10 text-green-400 border-green-500/20',
+    review: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+    completed: 'bg-green-500/10 text-green-400 border-green-500/20',
   }
 
   return (
     <GlassCard variant="interactive" className="p-4 flex flex-col gap-3 group">
       <div className="flex justify-between items-start">
         <span className="text-xs font-mono text-gray-500">{String(id)}</span>
-        <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wider", statusColors[status])}>
+        <Badge
+          variant="outline"
+          className={cn('text-[10px] uppercase tracking-wider', statusColors[status])}
+        >
           {status}
         </Badge>
       </div>
-      
+
       <h4 className="font-medium text-gray-200 group-hover:text-purple-300 transition-colors line-clamp-2">
         {title}
       </h4>

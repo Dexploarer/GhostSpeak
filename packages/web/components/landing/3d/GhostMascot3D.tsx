@@ -2,12 +2,19 @@
 
 import React, { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Float, MeshDistortMaterial, MeshWobbleMaterial, Environment, Sphere, Points, PointMaterial } from '@react-three/drei'
+import {
+  Float,
+  MeshDistortMaterial,
+  MeshWobbleMaterial,
+  Environment,
+  Points,
+  PointMaterial,
+} from '@react-three/drei'
 import * as THREE from 'three'
 
 function NeuralNetwork() {
   const pointsRef = useRef<THREE.Points>(null)
-  
+
   const count = 1000
   const positions = useMemo(() => {
     const pos = new Float32Array(count * 3)
@@ -44,7 +51,7 @@ function NeuralNetwork() {
 
 function DataRings() {
   const groupRef = useRef<THREE.Group>(null)
-  
+
   useFrame((state) => {
     if (!groupRef.current) return
     const t = state.clock.getElapsedTime()
@@ -122,20 +129,23 @@ function CentralVoid() {
 export function GhostMascot3D() {
   return (
     <div className="w-full h-full min-h-[500px] relative">
-      <Canvas 
-        gl={{ antialias: true, alpha: true }}
-        camera={{ position: [0, 0, 10], fov: 45 }}
-      >
+      <Canvas gl={{ antialias: true, alpha: true }} camera={{ position: [0, 0, 10], fov: 45 }}>
         <ambientLight intensity={0.1} />
         <pointLight position={[10, 10, 10]} intensity={1.5} color="#ccff00" />
-        <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={2} color="#ccff00" />
-        
+        <spotLight
+          position={[-10, 10, 10]}
+          angle={0.15}
+          penumbra={1}
+          intensity={2}
+          color="#ccff00"
+        />
+
         <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
           <CentralVoid />
           <NeuralNetwork />
           <DataRings />
         </Float>
-        
+
         <Environment preset="night" />
       </Canvas>
     </div>

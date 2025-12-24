@@ -3,7 +3,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import type { Address } from '@solana/kit'
-import type { TransactionSigner } from '@solana/kit'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
 
@@ -287,44 +286,43 @@ export function useProposals(filters?: GovernanceFilters, options?: { enabled?: 
       const client = getGhostSpeakClient()
 
       // Fetch proposals from the SDK
-      const proposals = await client.governance.getActiveProposals() as unknown as ProposalAccountData[]
+      const proposals =
+        (await client.governance.getActiveProposals()) as unknown as ProposalAccountData[]
 
       // Transform SDK data to match our Proposal interface
-      let filteredProposals = proposals.map(
-        (proposalAccount: ProposalAccountData): Proposal => {
-          const proposal = proposalAccount.data
-          const proposalTypeStr = String(proposal.proposalType)
-          const statusStr = String(proposal.status)
-          return {
-            address: proposalAccount.address,
-            id: `PROP-${String(proposal.proposalId)}`,
-            title: proposal.title,
-            description: proposal.description,
-            proposer: proposal.proposer,
-            proposerName: undefined, // Will be fetched separately if needed
-            status: mapSDKProposalStatus(statusStr),
-            proposalType: mapSDKProposalType(proposalTypeStr),
-            category: mapProposalTypeToCategory(proposalTypeStr),
-            impactLevel: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical', // Default, not stored in SDK
-            votingStartsAt: new Date(Number(proposal.votingStartsAt) * 1000),
-            votingEndsAt: new Date(Number(proposal.votingEndsAt) * 1000),
-            quorumRequired: '30', // Default, not stored in current SDK
-            approvalThreshold: 51, // Default, not stored in current SDK
-            results: {
-              forVotes: String(proposal.votingResults.forVotes),
-              againstVotes: String(proposal.votingResults.againstVotes),
-              abstainVotes: String(proposal.votingResults.abstainVotes),
-              totalVotes: String(proposal.votingResults.totalVotes),
-              quorumReached: false,
-              participationRate: 0,
-            },
-            tags: [], // Would need to be stored separately
-            updatedAt: new Date(),
-            createdAt: new Date(Number(proposal.createdAt) * 1000),
-            executedAt: undefined, // Not stored in current SDK
-          }
+      let filteredProposals = proposals.map((proposalAccount: ProposalAccountData): Proposal => {
+        const proposal = proposalAccount.data
+        const proposalTypeStr = String(proposal.proposalType)
+        const statusStr = String(proposal.status)
+        return {
+          address: proposalAccount.address,
+          id: `PROP-${String(proposal.proposalId)}`,
+          title: proposal.title,
+          description: proposal.description,
+          proposer: proposal.proposer,
+          proposerName: undefined, // Will be fetched separately if needed
+          status: mapSDKProposalStatus(statusStr),
+          proposalType: mapSDKProposalType(proposalTypeStr),
+          category: mapProposalTypeToCategory(proposalTypeStr),
+          impactLevel: determineImpactLevel(mapSDKProposalType(proposalTypeStr)),
+          votingStartsAt: new Date(Number(proposal.votingStartsAt) * 1000),
+          votingEndsAt: new Date(Number(proposal.votingEndsAt) * 1000),
+          quorumRequired: '30', // Default, not stored in current SDK
+          approvalThreshold: 51, // Default, not stored in current SDK
+          results: {
+            forVotes: String(proposal.votingResults.forVotes),
+            againstVotes: String(proposal.votingResults.againstVotes),
+            abstainVotes: String(proposal.votingResults.abstainVotes),
+            totalVotes: String(proposal.votingResults.totalVotes),
+            quorumReached: false,
+            participationRate: 0,
+          },
+          tags: [], // Would need to be stored separately
+          updatedAt: new Date(),
+          createdAt: new Date(Number(proposal.createdAt) * 1000),
+          executedAt: undefined, // Not stored in current SDK
         }
-      )
+      })
 
       if (filters) {
         if (filters.status?.length) {
@@ -398,7 +396,7 @@ export function useProposal(address: Address | undefined, options?: { enabled?: 
         status: mapSDKProposalStatus(statusStr),
         proposalType: mapSDKProposalType(proposalTypeStr),
         category: mapProposalTypeToCategory(proposalTypeStr),
-        impactLevel: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical', // Default, not stored in SDK
+        impactLevel: determineImpactLevel(mapSDKProposalType(proposalTypeStr)),
         votingStartsAt: new Date(Number(proposalData.votingStartsAt) * 1000),
         votingEndsAt: new Date(Number(proposalData.votingEndsAt) * 1000),
         quorumRequired: '30', // Default, not stored in current SDK
@@ -434,7 +432,7 @@ export function useProposalVotes(
     queryFn: async (): Promise<Vote[]> => {
       if (!proposalAddress) return []
 
-      const client = getGhostSpeakClient()
+      // const client = getGhostSpeakClient()
 
       // Get votes from the SDK (if supported)
       // Note: The current SDK might not have a direct method to fetch votes
@@ -466,7 +464,7 @@ export function useVotingPower(options?: { enabled?: boolean }) {
     queryFn: async (): Promise<VotingPower | null> => {
       if (!isConnected) return null
 
-      const client = getGhostSpeakClient()
+      // const client = getGhostSpeakClient()
 
       try {
         // Get user's token balance and other metrics
@@ -504,7 +502,7 @@ export function useDelegations(options?: { enabled?: boolean }) {
     queryFn: async (): Promise<{ given: Delegation[]; received: Delegation[] }> => {
       if (!isConnected) return { given: [], received: [] }
 
-      const client = getGhostSpeakClient()
+      // const client = getGhostSpeakClient()
 
       try {
         // Query delegation accounts from the SDK
@@ -535,20 +533,24 @@ export function useCreateProposal() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       // Create the proposal using SDK
       const result = await client.governance.createProposal({
         signer,
         title: data.title,
         description: data.description,
-        proposalType: mapProposalTypeToSDK(data.proposalType) as 'parameter_change' | 'treasury' | 'upgrade',
+        proposalType: mapProposalTypeToSDK(data.proposalType) as
+          | 'parameter_change'
+          | 'treasury'
+          | 'upgrade',
         votingDuration: data.votingDuration,
-        executionDelay: data.executionDelay
+        executionDelay: data.executionDelay,
       })
 
       // Fetch the created proposal to get full data
-      const proposalAddress = typeof result === 'string' ? result : (result as { address: string }).address
+      const proposalAddress =
+        typeof result === 'string' ? result : (result as { address: string }).address
       const _proposalData = await client.governance.getProposal(proposalAddress as Address)
 
       // Transform to UI format
@@ -607,7 +609,7 @@ export function useCastVote() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       // Map vote choice to SDK format
       const voteChoiceMap: Record<VoteChoice, 'yes' | 'no' | 'abstain'> = {
@@ -657,7 +659,7 @@ export function useCastVote() {
  */
 export function useDelegateVotes() {
   const queryClient = useQueryClient()
-  const { createSigner, isConnected, address } = useCrossmintSigner()
+  const { isConnected, address } = useCrossmintSigner()
 
   return useMutation({
     mutationFn: async (data: CreateDelegationData): Promise<Delegation> => {
@@ -710,7 +712,7 @@ export function useExecuteProposal() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       // Execute the proposal using SDK
       const result = await client.governance.executeProposal({

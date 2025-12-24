@@ -14,9 +14,13 @@ import { CostComparison } from '@/components/landing/CostComparison'
 
 const AgentSwarm3D = dynamic(
   () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
-  { 
+  {
     ssr: false,
-    loading: () => <div className="w-full h-full flex items-center justify-center text-muted-foreground font-mono text-sm animate-pulse tracking-widest">INITIALIZING NEURAL LINK...</div>
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center text-muted-foreground font-mono text-sm animate-pulse tracking-widest">
+        INITIALIZING NEURAL LINK...
+      </div>
+    ),
   }
 )
 
@@ -56,15 +60,16 @@ export default function LandingPage() {
               Pay AI, <span className="text-primary">Get Results.</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg font-light">
-              Discover agents, pay per call, funds held in escrow. The only x402 marketplace with on-chain trust and dispute resolution.
+              Discover agents, pay per call, funds held in escrow. The only x402 marketplace with
+              on-chain trust and dispute resolution.
             </p>
           </motion.div>
         </div>
-        
+
         <div className="w-full h-[800px] border border-border rounded-3xl overflow-hidden shadow-2xl bg-card/40 backdrop-blur-sm relative">
           <div className="absolute inset-0 bg-radial-gradient from-primary/5 via-transparent to-transparent opacity-50 z-0" />
           <div className="relative z-10 w-full h-full">
-             <AgentSwarm3D />
+            <AgentSwarm3D />
           </div>
         </div>
 
@@ -90,39 +95,58 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-12 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center rotate-3 hover:rotate-0 transition-transform cursor-pointer shadow-[0_0_30px_rgba(204,255,0,0.3)]">
-               <GhostIcon variant="logo" size={40} className="text-primary-foreground" />
+              <GhostIcon variant="logo" size={40} className="text-primary-foreground" />
             </div>
             <span className="font-black text-3xl tracking-tighter">GhostSpeak</span>
           </div>
-          
+
           <div className="flex flex-wrap justify-center gap-8 text-sm text-muted-foreground font-mono">
-            <a href="/dashboard" className="hover:text-primary transition-colors">PROTOCOL</a>
-            <a href="/x402/discover" className="hover:text-primary transition-colors">DISCOVER</a>
-            <a href="/dashboard/marketplace" className="hover:text-primary transition-colors">MARKETPLACE</a>
-            <a href="/dashboard/governance" className="hover:text-primary transition-colors">GOVERNANCE</a>
+            <a href="/dashboard" className="hover:text-primary transition-colors">
+              PROTOCOL
+            </a>
+            <a href="/x402/discover" className="hover:text-primary transition-colors">
+              DISCOVER
+            </a>
+            <a href="/dashboard/marketplace" className="hover:text-primary transition-colors">
+              MARKETPLACE
+            </a>
+            <a href="/dashboard/governance" className="hover:text-primary transition-colors">
+              GOVERNANCE
+            </a>
           </div>
 
           {/* Legal Links */}
           <div className="flex flex-wrap justify-center gap-6 text-xs text-muted-foreground/60">
-            <a href="/terms" className="hover:text-muted-foreground transition-colors">Terms of Service</a>
+            <a href="/terms" className="hover:text-muted-foreground transition-colors">
+              Terms of Service
+            </a>
             <span className="text-border">•</span>
-            <a href="/privacy" className="hover:text-muted-foreground transition-colors">Privacy Policy</a>
+            <a href="/privacy" className="hover:text-muted-foreground transition-colors">
+              Privacy Policy
+            </a>
             <span className="text-border">•</span>
-            <a href="/cookies" className="hover:text-muted-foreground transition-colors">Cookie Policy</a>
+            <a href="/cookies" className="hover:text-muted-foreground transition-colors">
+              Cookie Policy
+            </a>
             <span className="text-border">•</span>
-            <a href="mailto:team@ghostspeak.io" className="hover:text-muted-foreground transition-colors">team@ghostspeak.io</a>
+            <a
+              href="mailto:team@ghostspeak.io"
+              className="hover:text-muted-foreground transition-colors"
+            >
+              team@ghostspeak.io
+            </a>
           </div>
 
           <div className="text-[10px] text-muted-foreground/60 font-mono tracking-widest uppercase">
             &copy; 2025 GhostSpeak Labs • Secured by Solana
           </div>
         </div>
-        
+
         {/* Final Status Indicator */}
         <div className="mt-12 flex justify-center items-center gap-3 text-[10px] font-mono">
-            <span className="text-primary animate-pulse italic">NETWORK_STATUS: OPERATIONAL</span>
-            <span className="w-1 h-1 rounded-full bg-border" />
-            <span className="text-muted-foreground/40">FINALITY: &lt; 400ms</span>
+          <span className="text-primary animate-pulse italic">NETWORK_STATUS: OPERATIONAL</span>
+          <span className="w-1 h-1 rounded-full bg-border" />
+          <span className="text-muted-foreground/40">FINALITY: &lt; 400ms</span>
         </div>
       </footer>
     </div>

@@ -28,13 +28,13 @@ export interface CrossmintSignerResult {
 
 /**
  * Hook to create a Crossmint-compatible signer for the GhostSpeak SDK
- * 
+ *
  * This bridges between Crossmint's wallet API and the SDK's TransactionSigner interface.
- * 
+ *
  * Usage:
  * ```tsx
  * const { createSigner, isConnected, address } = useCrossmintSigner()
- * 
+ *
  * if (isConnected) {
  *   const signer = createSigner()
  *   await client.agents.register(signer, { ... })
@@ -44,49 +44,55 @@ export interface CrossmintSignerResult {
 export function useCrossmintSigner(): CrossmintSignerResult {
   const { wallet } = useWallet()
   const { status: authStatus } = useAuth()
-  
+
   const address = wallet?.address as Address | null
   const isConnected = Boolean(wallet?.address)
   const isAuthenticated = authStatus === 'logged-in'
   const isLoading = authStatus === 'initializing'
-  
+
   /**
    * Sign a transaction using Crossmint's wallet API
    */
-  const signTransaction = useCallback(async (transaction: Uint8Array): Promise<Uint8Array> => {
-    if (!wallet) {
-      throw new Error('Wallet not connected')
-    }
-    
-    // Crossmint wallet signing
-    // The wallet object from Crossmint has a signTransaction method
-    // that takes a serialized transaction and returns the signed version
-    if ('signTransaction' in wallet && typeof wallet.signTransaction === 'function') {
-      const signed = await wallet.signTransaction(transaction)
-      return signed as Uint8Array
-    }
-    
-    // For Crossmint embedded wallets, we need to use their API
-    // This would typically go through their transaction signing endpoint
-    throw new Error('Crossmint wallet signing not available - please use the Crossmint API routes')
-  }, [wallet])
-  
+  const signTransaction = useCallback(
+    async (transaction: Uint8Array): Promise<Uint8Array> => {
+      if (!wallet) {
+        throw new Error('Wallet not connected')
+      }
+
+      // Crossmint wallet signing
+      // The wallet object from Crossmint has a signTransaction method
+      // that takes a serialized transaction and returns the signed version
+      if ('signTransaction' in wallet && typeof wallet.signTransaction === 'function') {
+        const signed = await wallet.signTransaction(transaction)
+        return signed as Uint8Array
+      }
+
+      // For Crossmint embedded wallets, we need to use their API
+      // This would typically go through their transaction signing endpoint
+      throw new Error(
+        'Crossmint wallet signing not available - please use the Crossmint API routes'
+      )
+    },
+    [wallet]
+  )
+
   /**
    * Sign multiple transactions
    */
-  const signTransactions = useCallback(async (transactions: readonly Uint8Array[]): Promise<Uint8Array[]> => {
-    if (!wallet) {
-      throw new Error('Wallet not connected')
-    }
-    
-    // Sign each transaction individually
-    const signed = await Promise.all(
-      transactions.map(tx => signTransaction(tx))
-    )
-    
-    return signed
-  }, [wallet, signTransaction])
-  
+  const signTransactions = useCallback(
+    async (transactions: readonly Uint8Array[]): Promise<Uint8Array[]> => {
+      if (!wallet) {
+        throw new Error('Wallet not connected')
+      }
+
+      // Sign each transaction individually
+      const signed = await Promise.all(transactions.map((tx) => signTransaction(tx)))
+
+      return signed
+    },
+    [wallet, signTransaction]
+  )
+
   /**
    * Create a TransactionSigner compatible with the GhostSpeak SDK
    */
@@ -94,7 +100,7 @@ export function useCrossmintSigner(): CrossmintSignerResult {
     if (!address || !wallet) {
       return null
     }
-    
+
     // Create a signer that adapts Crossmint's wallet to SDK expectations
     // Note: For Crossmint embedded wallets, actual signing happens via API routes
     return {
@@ -107,7 +113,7 @@ export function useCrossmintSigner(): CrossmintSignerResult {
       },
     } as unknown as TransactionSigner
   }, [address, wallet])
-  
+
   return {
     address,
     isConnected,

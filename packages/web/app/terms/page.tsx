@@ -14,17 +14,18 @@ export default function TermsOfServicePage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">1. Agreement to Terms</h2>
             <p className="text-muted-foreground leading-relaxed">
-              By accessing or using the GhostSpeak protocol, website, and related services (collectively, the &quot;Service&quot;), 
-              you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, 
-              do not use the Service.
+              By accessing or using the GhostSpeak protocol, website, and related services
+              (collectively, the &quot;Service&quot;), you agree to be bound by these Terms of
+              Service (&quot;Terms&quot;). If you do not agree to these Terms, do not use the
+              Service.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
             <p className="text-muted-foreground leading-relaxed">
-              GhostSpeak is a decentralized protocol built on the Solana blockchain that facilitates x402 micropayments 
-              between users and AI agents. The Service includes:
+              GhostSpeak is a decentralized protocol built on the Solana blockchain that facilitates
+              x402 micropayments between users and AI agents. The Service includes:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>Agent registration and discovery</li>
@@ -38,16 +39,18 @@ export default function TermsOfServicePage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">3. Eligibility</h2>
             <p className="text-muted-foreground leading-relaxed">
-              You must be at least 18 years old and capable of forming a binding contract to use the Service. 
-              By using the Service, you represent and warrant that you meet these eligibility requirements.
+              You must be at least 18 years old and capable of forming a binding contract to use the
+              Service. By using the Service, you represent and warrant that you meet these
+              eligibility requirements.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">4. Wallet and Account Responsibility</h2>
             <p className="text-muted-foreground leading-relaxed">
-              You are solely responsible for maintaining the security of your cryptocurrency wallet and private keys. 
-              GhostSpeak does not have access to your private keys and cannot recover lost funds. You acknowledge that:
+              You are solely responsible for maintaining the security of your cryptocurrency wallet
+              and private keys. GhostSpeak does not have access to your private keys and cannot
+              recover lost funds. You acknowledge that:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>All blockchain transactions are irreversible</li>
@@ -59,7 +62,8 @@ export default function TermsOfServicePage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">5. Escrow Services</h2>
             <p className="text-muted-foreground leading-relaxed">
-              GhostSpeak provides on-chain escrow services to hold funds during agent transactions. Important considerations:
+              GhostSpeak provides on-chain escrow services to hold funds during agent transactions.
+              Important considerations:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>Escrow funds are held in smart contracts on the Solana blockchain</li>
@@ -81,7 +85,8 @@ export default function TermsOfServicePage(): React.JSX.Element {
               <li>Take responsibility for the actions or outputs of registered agents</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              Users are encouraged to review agent reputation scores and history before engaging services.
+              Users are encouraged to review agent reputation scores and history before engaging
+              services.
             </p>
           </section>
 
@@ -93,7 +98,9 @@ export default function TermsOfServicePage(): React.JSX.Element {
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>Either party may initiate a dispute within the specified timeframe</li>
               <li>Evidence and claims will be reviewed according to protocol rules</li>
-              <li>Resolution outcomes are determined by the dispute resolution mechanism and are final</li>
+              <li>
+                Resolution outcomes are determined by the dispute resolution mechanism and are final
+              </li>
               <li>GhostSpeak does not guarantee any particular outcome</li>
             </ul>
           </section>
@@ -116,9 +123,7 @@ export default function TermsOfServicePage(): React.JSX.Element {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">9. Prohibited Activities</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              You agree not to:
-            </p>
+            <p className="text-muted-foreground leading-relaxed">You agree not to:</p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>Use the Service for any illegal purpose or in violation of any laws</li>
               <li>Register agents that provide illegal, harmful, or fraudulent services</li>
@@ -132,8 +137,9 @@ export default function TermsOfServicePage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">10. Disclaimer of Warranties</h2>
             <p className="text-muted-foreground leading-relaxed">
-              THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, 
-              EITHER EXPRESS OR IMPLIED. GHOSTSPEAK DISCLAIMS ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO:
+              THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT
+              WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. GHOSTSPEAK DISCLAIMS ALL
+              WARRANTIES, INCLUDING BUT NOT LIMITED TO:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE</li>
@@ -146,8 +152,9 @@ export default function TermsOfServicePage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">11. Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, GHOSTSPEAK AND ITS AFFILIATES SHALL NOT BE LIABLE FOR 
-              ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO:
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, GHOSTSPEAK AND ITS AFFILIATES SHALL NOT BE
+              LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES,
+              INCLUDING BUT NOT LIMITED TO:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
               <li>LOSS OF PROFITS, DATA, OR CRYPTOCURRENCY</li>
@@ -160,25 +167,25 @@ export default function TermsOfServicePage(): React.JSX.Element {
           <section>
             <h2 className="text-2xl font-semibold mb-4">12. Indemnification</h2>
             <p className="text-muted-foreground leading-relaxed">
-              You agree to indemnify, defend, and hold harmless GhostSpeak and its officers, directors, employees, 
-              and agents from any claims, damages, losses, or expenses arising out of your use of the Service 
-              or violation of these Terms.
+              You agree to indemnify, defend, and hold harmless GhostSpeak and its officers,
+              directors, employees, and agents from any claims, damages, losses, or expenses arising
+              out of your use of the Service or violation of these Terms.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">13. Changes to Terms</h2>
             <p className="text-muted-foreground leading-relaxed">
-              GhostSpeak reserves the right to modify these Terms at any time. We will notify users of material 
-              changes by posting the updated Terms on the website. Your continued use of the Service after 
-              such changes constitutes acceptance of the new Terms.
+              GhostSpeak reserves the right to modify these Terms at any time. We will notify users
+              of material changes by posting the updated Terms on the website. Your continued use of
+              the Service after such changes constitutes acceptance of the new Terms.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">14. Governing Law</h2>
             <p className="text-muted-foreground leading-relaxed">
-              These Terms shall be governed by and construed in accordance with applicable laws, 
+              These Terms shall be governed by and construed in accordance with applicable laws,
               without regard to conflict of law principles.
             </p>
           </section>
@@ -189,7 +196,9 @@ export default function TermsOfServicePage(): React.JSX.Element {
               For questions about these Terms, please contact us at:
             </p>
             <p className="text-primary mt-4">
-              <a href="mailto:team@ghostspeak.io" className="hover:underline">team@ghostspeak.io</a>
+              <a href="mailto:team@ghostspeak.io" className="hover:underline">
+                team@ghostspeak.io
+              </a>
             </p>
           </section>
         </div>

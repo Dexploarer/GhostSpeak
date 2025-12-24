@@ -122,7 +122,7 @@ const impactLevelConfig = {
 export default function ProposalDetailPage(): React.JSX.Element {
   const params = useParams()
   const proposalId = params?.id as string
-  const { address: publicKey, isConnected } = useWalletAddress()
+  const { address: publicKey } = useWalletAddress()
   const [copied, setCopied] = React.useState(false)
 
   const {

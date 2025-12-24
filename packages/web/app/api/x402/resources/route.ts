@@ -61,7 +61,7 @@ const MOCK_RESOURCES: ResourceResponse[] = [
     isActive: true,
     isVerified: true,
     createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-11-01T00:00:00Z'
+    updatedAt: '2024-11-01T00:00:00Z',
   },
   {
     id: 'res_2',
@@ -76,8 +76,8 @@ const MOCK_RESOURCES: ResourceResponse[] = [
     isActive: true,
     isVerified: true,
     createdAt: '2024-03-01T00:00:00Z',
-    updatedAt: '2024-11-01T00:00:00Z'
-  }
+    updatedAt: '2024-11-01T00:00:00Z',
+  },
 ]
 
 // =====================================================
@@ -102,28 +102,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListResour
   if (query) {
     const lowerQuery = query.toLowerCase()
     filtered = filtered.filter(
-      r =>
+      (r) =>
         r.name.toLowerCase().includes(lowerQuery) ||
         r.description?.toLowerCase().includes(lowerQuery) ||
-        r.tags.some(t => t.toLowerCase().includes(lowerQuery))
+        r.tags.some((t) => t.toLowerCase().includes(lowerQuery))
     )
   }
 
   if (network) {
-    filtered = filtered.filter(r => r.network === network)
+    filtered = filtered.filter((r) => r.network === network)
   }
 
   if (category) {
-    filtered = filtered.filter(r => r.category === category)
+    filtered = filtered.filter((r) => r.category === category)
   }
 
   if (facilitatorId) {
-    filtered = filtered.filter(r => r.facilitatorId === facilitatorId)
+    filtered = filtered.filter((r) => r.facilitatorId === facilitatorId)
   }
 
   if (isActive !== null) {
     const activeFilter = isActive === 'true'
-    filtered = filtered.filter(r => r.isActive === activeFilter)
+    filtered = filtered.filter((r) => r.isActive === activeFilter)
   }
 
   // Paginate
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListResour
     total,
     page,
     pageSize,
-    hasMore: start + pageSize < total
+    hasMore: start + pageSize < total,
   })
 }
 
@@ -171,9 +171,9 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      resourceId
+      resourceId,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to register resource' },
       { status: 500 }

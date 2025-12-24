@@ -49,7 +49,7 @@ const MOCK_FACILITATORS: FacilitatorResponse[] = [
     enabled: true,
     healthStatus: 'healthy',
     latencyMs: 45,
-    uptimePercent: 99.9
+    uptimePercent: 99.9,
   },
   {
     id: 'coinbase',
@@ -64,7 +64,7 @@ const MOCK_FACILITATORS: FacilitatorResponse[] = [
     enabled: true,
     healthStatus: 'healthy',
     latencyMs: 120,
-    uptimePercent: 99.5
+    uptimePercent: 99.5,
   },
   {
     id: 'thirdweb',
@@ -78,7 +78,7 @@ const MOCK_FACILITATORS: FacilitatorResponse[] = [
     enabled: true,
     healthStatus: 'healthy',
     latencyMs: 85,
-    uptimePercent: 99.2
+    uptimePercent: 99.2,
   },
   {
     id: 'payai',
@@ -93,7 +93,7 @@ const MOCK_FACILITATORS: FacilitatorResponse[] = [
     enabled: true,
     healthStatus: 'healthy',
     latencyMs: 95,
-    uptimePercent: 98.8
+    uptimePercent: 98.8,
   },
   {
     id: 'aurracloud',
@@ -108,7 +108,7 @@ const MOCK_FACILITATORS: FacilitatorResponse[] = [
     enabled: true,
     healthStatus: 'degraded',
     latencyMs: 250,
-    uptimePercent: 97.5
+    uptimePercent: 97.5,
   },
   {
     id: 'x402scan-auto',
@@ -123,8 +123,8 @@ const MOCK_FACILITATORS: FacilitatorResponse[] = [
     enabled: true,
     healthStatus: 'healthy',
     latencyMs: 65,
-    uptimePercent: 99.7
-  }
+    uptimePercent: 99.7,
+  },
 ]
 
 // =====================================================
@@ -143,20 +143,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListFacili
   let filtered = [...MOCK_FACILITATORS]
 
   if (network) {
-    filtered = filtered.filter(f => f.networks.includes(network))
+    filtered = filtered.filter((f) => f.networks.includes(network))
   }
 
   if (enabled !== null) {
     const enabledFilter = enabled === 'true'
-    filtered = filtered.filter(f => f.enabled === enabledFilter)
+    filtered = filtered.filter((f) => f.enabled === enabledFilter)
   }
 
   if (hasDiscovery === 'true') {
-    filtered = filtered.filter(f => f.discoveryUrl != null)
+    filtered = filtered.filter((f) => f.discoveryUrl != null)
   }
 
   return NextResponse.json({
     facilitators: filtered,
-    total: filtered.length
+    total: filtered.length,
   })
 }

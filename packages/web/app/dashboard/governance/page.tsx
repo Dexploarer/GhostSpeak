@@ -7,12 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -25,7 +20,6 @@ import {
   ThumbsUp,
   ThumbsDown,
   Clock,
-  Scale,
   Plus,
   Search,
   Filter,
@@ -118,7 +112,8 @@ const DEMO_PROPOSALS: Proposal[] = [
     address: 'DemoProposal11111111111111111111111111111' as Address,
     id: 'GP-44',
     title: 'Reduce Escrow Dispute Window',
-    description: 'Proposal to reduce the dispute window from 7 days to 3 days to speed up payment releases for completed work orders. This will improve the user experience for agents while still providing adequate time for dispute resolution.',
+    description:
+      'Proposal to reduce the dispute window from 7 days to 3 days to speed up payment releases for completed work orders. This will improve the user experience for agents while still providing adequate time for dispute resolution.',
     proposalType: ProposalType.ParameterChange,
     status: ProposalStatus.Voting,
     proposer: 'Proposer1111111111111111111111111111111111' as Address,
@@ -145,7 +140,8 @@ const DEMO_PROPOSALS: Proposal[] = [
     address: 'DemoProposal22222222222222222222222222222' as Address,
     id: 'GP-43',
     title: 'Add USDT Support for x402 Payments',
-    description: 'Allow agents to accept USDT in addition to USDC for x402 micropayments. This will expand payment options and increase accessibility for users who prefer USDT.',
+    description:
+      'Allow agents to accept USDT in addition to USDC for x402 micropayments. This will expand payment options and increase accessibility for users who prefer USDT.',
     proposalType: ProposalType.Feature,
     status: ProposalStatus.Voting,
     proposer: 'Proposer2222222222222222222222222222222222' as Address,
@@ -172,7 +168,8 @@ const DEMO_PROPOSALS: Proposal[] = [
     address: 'DemoProposal33333333333333333333333333333' as Address,
     id: 'GP-42',
     title: 'Increase Reputation Weight for Escrow Completions',
-    description: 'Increase the weight of successful escrow completions in reputation scoring from 1.0x to 1.5x. This will incentivize more escrow usage and reward reliable agents.',
+    description:
+      'Increase the weight of successful escrow completions in reputation scoring from 1.0x to 1.5x. This will incentivize more escrow usage and reward reliable agents.',
     proposalType: ProposalType.ParameterChange,
     status: ProposalStatus.Succeeded,
     proposer: 'Proposer3333333333333333333333333333333333' as Address,
@@ -199,7 +196,8 @@ const DEMO_PROPOSALS: Proposal[] = [
     address: 'DemoProposal44444444444444444444444444444' as Address,
     id: 'GP-41',
     title: 'Emergency Pause Mechanism for Security Incidents',
-    description: 'Implement an emergency pause mechanism that can be activated by the security multisig to halt protocol operations in case of detected exploits or security vulnerabilities.',
+    description:
+      'Implement an emergency pause mechanism that can be activated by the security multisig to halt protocol operations in case of detected exploits or security vulnerabilities.',
     proposalType: ProposalType.Emergency,
     status: ProposalStatus.Executed,
     proposer: 'Proposer4444444444444444444444444444444444' as Address,
@@ -295,9 +293,7 @@ function ProposalCard({
       <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
         {proposal.title}
       </h3>
-      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-        {proposal.description}
-      </p>
+      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{proposal.description}</p>
 
       {/* Proposer */}
       <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground">
@@ -413,7 +409,7 @@ export default function GovernancePage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
 
-  const { address, isConnected } = useCrossmintSigner()
+  const { isConnected } = useCrossmintSigner()
 
   // Build filters
   const filters: GovernanceFilters = {
@@ -423,7 +419,7 @@ export default function GovernancePage() {
   }
 
   const { data: proposals, isLoading } = useProposals(filters)
-  const { data: votingPower } = useVotingPower()
+  const { data: _votingPower } = useVotingPower()
   const { data: votingPowerBreakdown } = useVotingPowerBreakdown()
   const castVote = useCastVote()
   const executeProposal = useExecuteProposal()
@@ -453,13 +449,11 @@ export default function GovernancePage() {
   })
 
   // Calculate stats
-  const activeProposals = filteredProposals.filter(
-    (p) => p.status === ProposalStatus.Voting
-  ).length
+  const activeProposals = filteredProposals.filter((p) => p.status === ProposalStatus.Voting).length
   const passedProposals = filteredProposals.filter(
     (p) => p.status === ProposalStatus.Succeeded || p.status === ProposalStatus.Executed
   ).length
-  const totalVotes = filteredProposals.reduce((acc, p) => {
+  const _totalVotes = filteredProposals.reduce((acc, p) => {
     return acc + parseInt(p.results?.totalVotes ?? '0')
   }, 0)
 
@@ -487,7 +481,7 @@ export default function GovernancePage() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <GlassCard className="p-6 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
             <Vote className="w-6 h-6 text-primary" />
@@ -509,28 +503,38 @@ export default function GovernancePage() {
         </GlassCard>
 
         <GlassCard className="p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-            <Scale className="w-6 h-6 text-blue-500" />
+          <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+            <XCircle className="w-6 h-6 text-red-500" />
           </div>
           <div>
             <p className="text-2xl font-bold text-foreground">
-              {totalVotes >= 1000000
-                ? `${(totalVotes / 1000000).toFixed(1)}M`
-                : totalVotes >= 1000
-                  ? `${(totalVotes / 1000).toFixed(1)}K`
-                  : totalVotes.toLocaleString()}
+              {filteredProposals.filter((p) => p.status === ProposalStatus.Defeated).length}
             </p>
-            <p className="text-sm text-muted-foreground">Total Votes Cast</p>
+            <p className="text-sm text-muted-foreground">Proposals Defeated</p>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-6 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center">
+            <Bot className="w-6 h-6 text-cyan-500" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground">
+              {DEMO_AGENTS.filter((a) => a.canVote).length}
+            </p>
+            <p className="text-sm text-muted-foreground">Voting Agents</p>
           </div>
         </GlassCard>
 
         <GlassCard className="p-6 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-            <Users className="w-6 h-6 text-purple-500" />
+            <Zap className="w-6 h-6 text-purple-500" />
           </div>
           <div>
             <p className="text-2xl font-bold text-foreground">
-              {votingPowerBreakdown ? formatVotingPower(votingPowerBreakdown.effectiveVotingPower) : '0'}
+              {votingPowerBreakdown
+                ? formatVotingPower(votingPowerBreakdown.effectiveVotingPower)
+                : '0'}
             </p>
             <p className="text-sm text-muted-foreground">Your Voting Power</p>
           </div>
@@ -538,9 +542,7 @@ export default function GovernancePage() {
       </div>
 
       {/* Voting Power Card (Compact) */}
-      {isConnected && (
-        <VotingPowerCard compact showActions={false} />
-      )}
+      {isConnected && <VotingPowerCard compact showActions={false} />}
 
       {/* Not connected warning */}
       {!isConnected && (
@@ -550,8 +552,8 @@ export default function GovernancePage() {
             <div>
               <h3 className="font-semibold text-foreground">Wallet Not Connected</h3>
               <p className="text-sm text-muted-foreground">
-                Connect your wallet to vote on proposals and create new ones.
-                Showing demo proposals for preview.
+                Connect your wallet to vote on proposals and create new ones. Showing demo proposals
+                for preview.
               </p>
             </div>
           </div>
@@ -605,14 +607,16 @@ export default function GovernancePage() {
             Active ({filteredProposals.filter((p) => p.status === ProposalStatus.Voting).length})
           </TabsTrigger>
           <TabsTrigger value="passed">
-            Passed ({filteredProposals.filter((p) => p.status === ProposalStatus.Succeeded || p.status === ProposalStatus.Executed).length})
+            Passed (
+            {
+              filteredProposals.filter(
+                (p) => p.status === ProposalStatus.Succeeded || p.status === ProposalStatus.Executed
+              ).length
+            }
+            )
           </TabsTrigger>
-          <TabsTrigger value="agents">
-            My Agents ({DEMO_AGENTS.length})
-          </TabsTrigger>
-          <TabsTrigger value="power">
-            Voting Power
-          </TabsTrigger>
+          <TabsTrigger value="agents">My Agents ({DEMO_AGENTS.length})</TabsTrigger>
+          <TabsTrigger value="power">Voting Power</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-6">
@@ -674,13 +678,19 @@ export default function GovernancePage() {
         <TabsContent value="passed" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProposals
-              .filter((p) => p.status === ProposalStatus.Succeeded || p.status === ProposalStatus.Executed)
+              .filter(
+                (p) => p.status === ProposalStatus.Succeeded || p.status === ProposalStatus.Executed
+              )
               .map((proposal) => (
                 <ProposalCard
                   key={proposal.address}
                   proposal={proposal}
                   onClick={() => setSelectedProposal(proposal)}
-                  onExecute={proposal.status === ProposalStatus.Succeeded ? () => handleExecute(proposal) : undefined}
+                  onExecute={
+                    proposal.status === ProposalStatus.Succeeded
+                      ? () => handleExecute(proposal)
+                      : undefined
+                  }
                   isExecuting={executeProposal.isPending}
                 />
               ))}
@@ -692,11 +702,11 @@ export default function GovernancePage() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Agent Governance Participation</h3>
             <p className="text-sm text-muted-foreground">
-              Your verified agents can contribute to your voting power based on their reputation 
-              and x402 payment history. Enable delegation to include their power in your votes.
+              Your verified agents can contribute to your voting power based on their reputation and
+              x402 payment history. Enable delegation to include their power in your votes.
             </p>
           </div>
-          <AgentsVotingList 
+          <AgentsVotingList
             agents={DEMO_AGENTS}
             onDelegateAgent={(agentAddress, settings) => {
               console.log('Delegate agent:', agentAddress, settings)
@@ -709,8 +719,8 @@ export default function GovernancePage() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Your Voting Power Breakdown</h3>
             <p className="text-sm text-muted-foreground">
-              Voting power is calculated from multiple sources: GHOST tokens, agent reputation, 
-              x402 payment volume, and staking lockup multipliers.
+              Voting power is calculated from multiple sources: GHOST tokens, agent reputation, x402
+              payment volume, and staking lockup multipliers.
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -751,12 +761,8 @@ export default function GovernancePage() {
               <GlassCard className="p-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline">
-                      {selectedProposal.status}
-                    </Badge>
-                    <Badge variant="secondary">
-                      {selectedProposal.proposalType}
-                    </Badge>
+                    <Badge variant="outline">{selectedProposal.status}</Badge>
+                    <Badge variant="secondary">{selectedProposal.proposalType}</Badge>
                     <span className="text-sm text-muted-foreground">
                       {selectedProposal.category}
                     </span>

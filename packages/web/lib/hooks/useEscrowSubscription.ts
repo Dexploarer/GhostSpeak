@@ -31,19 +31,17 @@ export function useEscrowSubscription(escrowAddress: string | undefined) {
     const network = getCurrentNetwork()
     const httpEndpoint = NETWORK_ENDPOINTS[network]
     // Convert HTTP endpoint to WebSocket
-    const wsEndpoint = httpEndpoint
-      .replace('https://', 'wss://')
-      .replace('http://', 'ws://')
+    const wsEndpoint = httpEndpoint.replace('https://', 'wss://').replace('http://', 'ws://')
 
     try {
       setState((prev) => ({ ...prev, status: 'connecting' }))
-      
+
       const ws = new WebSocket(wsEndpoint)
       wsRef.current = ws
 
       ws.onopen = () => {
         setState((prev) => ({ ...prev, status: 'connected' }))
-        
+
         // Subscribe to account changes
         const subscribeMessage = {
           jsonrpc: '2.0',
@@ -63,7 +61,7 @@ export function useEscrowSubscription(escrowAddress: string | undefined) {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          
+
           // Handle subscription confirmation
           if (data.id === 1 && data.result !== undefined) {
             subscriptionIdRef.current = data.result
@@ -125,7 +123,7 @@ export function useEscrowSubscription(escrowAddress: string | undefined) {
         }
         wsRef.current.send(JSON.stringify(unsubscribeMessage))
       }
-      
+
       wsRef.current.close()
       wsRef.current = null
       subscriptionIdRef.current = null
@@ -171,7 +169,7 @@ export function useEscrowSubscriptions(escrowAddresses: string[]) {
   useEffect(() => {
     // For multiple subscriptions, we use a single connection with multiple subscribes
     // This is more efficient than multiple WebSocket connections
-    
+
     if (escrowAddresses.length === 0) {
       setActiveCount(0)
       return
@@ -179,9 +177,7 @@ export function useEscrowSubscriptions(escrowAddresses: string[]) {
 
     const network = getCurrentNetwork()
     const httpEndpoint = NETWORK_ENDPOINTS[network]
-    const wsEndpoint = httpEndpoint
-      .replace('https://', 'wss://')
-      .replace('http://', 'ws://')
+    const wsEndpoint = httpEndpoint.replace('https://', 'wss://').replace('http://', 'ws://')
 
     const ws = new WebSocket(wsEndpoint)
     const subscriptionIds: Map<string, number> = new Map()
@@ -193,10 +189,7 @@ export function useEscrowSubscriptions(escrowAddresses: string[]) {
           jsonrpc: '2.0',
           id: index + 100, // Use offset to avoid conflicts
           method: 'accountSubscribe',
-          params: [
-            address,
-            { encoding: 'base64', commitment: 'confirmed' },
-          ],
+          params: [address, { encoding: 'base64', commitment: 'confirmed' }],
         }
         ws.send(JSON.stringify(subscribeMessage))
       })
@@ -205,7 +198,7 @@ export function useEscrowSubscriptions(escrowAddresses: string[]) {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
-        
+
         // Handle subscription confirmation
         if (data.id >= 100 && data.result !== undefined) {
           const index = data.id - 100
@@ -228,12 +221,14 @@ export function useEscrowSubscriptions(escrowAddresses: string[]) {
     return () => {
       // Unsubscribe all before closing
       subscriptionIds.forEach((subId) => {
-        ws.send(JSON.stringify({
-          jsonrpc: '2.0',
-          id: 999,
-          method: 'accountUnsubscribe',
-          params: [subId],
-        }))
+        ws.send(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 999,
+            method: 'accountUnsubscribe',
+            params: [subId],
+          })
+        )
       })
       ws.close()
     }

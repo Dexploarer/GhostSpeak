@@ -2,10 +2,10 @@
 
 /**
  * GhostSpeak SDK Client - Real blockchain integration
- * 
+ *
  * Provides access to SDK modules for agent, escrow, marketplace,
  * governance, and channel operations.
- * 
+ *
  * Uses the browser-safe SDK entry point to avoid server-only dependencies.
  */
 
@@ -20,7 +20,7 @@ import {
   GovernanceModule,
   ChannelModule,
   GHOSTSPEAK_PROGRAM_ID,
-  type GhostSpeakConfig
+  type GhostSpeakConfig,
 } from '@ghostspeak/sdk/browser'
 
 // Network configurations
@@ -57,18 +57,18 @@ export function createGhostSpeakClient(
 ): GhostSpeakClient {
   const rpcUrl = customRpcUrl ?? NETWORK_ENDPOINTS[network]
   const cacheKey = rpcUrl
-  
+
   // Return cached client if available
   if (clientCache.has(cacheKey)) {
     return clientCache.get(cacheKey)!
   }
-  
+
   const config: GhostSpeakConfig = {
     programId: GHOSTSPEAK_PROGRAM_ID,
     rpcEndpoint: rpcUrl,
     cluster: network === 'mainnet' ? 'mainnet-beta' : network,
   } as GhostSpeakConfig
-  
+
   const client: GhostSpeakClient = {
     programId: GHOSTSPEAK_PROGRAM_ID,
     rpcUrl,
@@ -78,10 +78,10 @@ export function createGhostSpeakClient(
     governance: new GovernanceModule(config),
     channels: new ChannelModule(config),
   }
-  
+
   // Cache the client
   clientCache.set(cacheKey, client)
-  
+
   return client
 }
 

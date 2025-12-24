@@ -17,7 +17,7 @@ import {
   DollarSign,
   Plus,
   X,
-  Loader2
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,7 +29,7 @@ import {
   usePaymentStreams,
   usePaymentStream,
   useCreatePaymentStream,
-  useReleaseMilestone
+  useReleaseMilestone,
 } from '@/lib/hooks/useX402'
 import { formatDistance } from 'date-fns'
 
@@ -112,16 +112,42 @@ function PaymentStreamCard({ streamId }: PaymentStreamCardProps): React.JSX.Elem
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5" />
+              {stream.status === 'active' ? (
+                <Play className="w-5 h-5 text-green-500" />
+              ) : stream.status === 'cancelled' ? (
+                <Pause className="w-5 h-5 text-red-500" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              )}
               {stream.description}
             </CardTitle>
             <CardDescription className="mt-1">
               {completedMilestones} of {totalMilestones} milestones completed
             </CardDescription>
           </div>
-          <Badge variant={stream.status === 'active' ? 'default' : 'outline'}>
-            {stream.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {stream.status === 'active' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="Cancel stream"
+              >
+                <Pause className="w-4 h-4" />
+              </Button>
+            )}
+            <Badge
+              variant={
+                stream.status === 'active'
+                  ? 'default'
+                  : stream.status === 'completed'
+                    ? 'secondary'
+                    : 'outline'
+              }
+            >
+              {stream.status}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -151,9 +177,10 @@ function PaymentStreamCard({ streamId }: PaymentStreamCardProps): React.JSX.Elem
                 key={index}
                 className={`
                   flex items-center justify-between p-3 rounded-lg border
-                  ${isReleased
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                    : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+                  ${
+                    isReleased
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
                   }
                 `}
               >
@@ -168,8 +195,9 @@ function PaymentStreamCard({ streamId }: PaymentStreamCardProps): React.JSX.Elem
                     {milestone.deadline && (
                       <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3" />
-                        Due {formatDistance(new Date(milestone.deadline), new Date(), {
-                          addSuffix: true
+                        Due{' '}
+                        {formatDistance(new Date(milestone.deadline), new Date(), {
+                          addSuffix: true,
                         })}
                       </div>
                     )}
@@ -231,7 +259,7 @@ function PaymentStreamCard({ streamId }: PaymentStreamCardProps): React.JSX.Elem
 
 export function CreatePaymentStreamForm({
   recipient,
-  onSuccess
+  onSuccess,
 }: {
   recipient: string
   onSuccess?: () => void
@@ -239,11 +267,13 @@ export function CreatePaymentStreamForm({
   const [description, setDescription] = useState('')
   const [totalAmount, setTotalAmount] = useState('')
   const [token, setToken] = useState('So11111111111111111111111111111111111111112') // SOL
-  const [milestones, setMilestones] = useState<Array<{
-    description: string
-    amount: string
-    deadline?: string
-  }>>([{ description: '', amount: '', deadline: '' }])
+  const [milestones, setMilestones] = useState<
+    Array<{
+      description: string
+      amount: string
+      deadline?: string
+    }>
+  >([{ description: '', amount: '', deadline: '' }])
 
   const createStream = useCreatePaymentStream()
 
@@ -274,7 +304,7 @@ export function CreatePaymentStreamForm({
       const milestonesData = milestones.map((m) => ({
         description: m.description,
         amount: BigInt(Math.floor(parseFloat(m.amount) * 1e9)),
-        deadline: m.deadline ? new Date(m.deadline).getTime() : undefined
+        deadline: m.deadline ? new Date(m.deadline).getTime() : undefined,
       }))
 
       await createStream.mutateAsync({
@@ -282,7 +312,7 @@ export function CreatePaymentStreamForm({
         totalAmount: totalAmountLamports,
         token,
         milestones: milestonesData,
-        description
+        description,
       })
 
       onSuccess?.()

@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { AgentSearchParams } from '@/lib/ghostspeak'
 
@@ -34,8 +34,8 @@ export function CapabilityFilter({
     'code-generation',
     'data-analysis',
     'image-processing',
-    'translation'
-  ]
+    'translation',
+  ],
 }: CapabilityFilterProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCapability, setSelectedCapability] = useState<string>()
@@ -49,7 +49,7 @@ export function CapabilityFilter({
     { value: 'reputation', label: 'Highest Rated' },
     { value: 'calls', label: 'Most Popular' },
     { value: 'price_asc', label: 'Price: Low to High' },
-    { value: 'price_desc', label: 'Price: High to Low' }
+    { value: 'price_desc', label: 'Price: High to Low' },
   ]
 
   const handleApplyFilters = (): void => {
@@ -62,7 +62,7 @@ export function CapabilityFilter({
           : 'reputation'
 
     const filters: AgentSearchParams = {
-      sortBy: mappedSortBy as 'price' | 'reputation' | 'recent'
+      sortBy: mappedSortBy as 'price' | 'reputation' | 'recent',
     }
 
     if (searchTerm) {
@@ -164,9 +164,7 @@ export function CapabilityFilter({
               variant={selectedCapability === capability ? 'default' : 'outline'}
               className="cursor-pointer transition-all duration-200 hover:scale-105 focus-ring"
               onClick={() => {
-                setSelectedCapability(
-                  selectedCapability === capability ? undefined : capability
-                )
+                setSelectedCapability(selectedCapability === capability ? undefined : capability)
                 handleApplyFilters()
               }}
               role="button"
@@ -174,9 +172,7 @@ export function CapabilityFilter({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  setSelectedCapability(
-                    selectedCapability === capability ? undefined : capability
-                  )
+                  setSelectedCapability(selectedCapability === capability ? undefined : capability)
                   handleApplyFilters()
                 }
               }}
@@ -207,7 +203,7 @@ export function CapabilityFilter({
                 onChange={(e) => {
                   setPriceRange((prev) => ({
                     ...prev,
-                    min: e.target.value ? Math.max(0, parseFloat(e.target.value)) : undefined
+                    min: e.target.value ? Math.max(0, parseFloat(e.target.value)) : undefined,
                   }))
                 }}
                 className="text-sm focus-ring"
@@ -221,7 +217,7 @@ export function CapabilityFilter({
                 onChange={(e) => {
                   setPriceRange((prev) => ({
                     ...prev,
-                    max: e.target.value ? Math.max(0, parseFloat(e.target.value)) : undefined
+                    max: e.target.value ? Math.max(0, parseFloat(e.target.value)) : undefined,
                   }))
                 }}
                 className="text-sm focus-ring"
@@ -240,11 +236,7 @@ export function CapabilityFilter({
               <X className="w-4 h-4" />
               Clear
             </Button>
-            <Button
-              variant="gradient"
-              onClick={handleApplyFilters}
-              className="flex-1 gap-1"
-            >
+            <Button variant="gradient" onClick={handleApplyFilters} className="flex-1 gap-1">
               <Filter className="w-4 h-4" />
               Apply Filters
             </Button>

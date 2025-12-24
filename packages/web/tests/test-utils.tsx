@@ -1,89 +1,74 @@
 import React from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WalletContextState } from '@solana/wallet-adapter-react'
 import { vi } from 'vitest'
 
-// Mock GhostSpeak SDK
-export const mockGhostSpeakClient = {
-  agent: () => ({
-    module: {
-      getAllAgents: vi.fn().mockResolvedValue([]),
-      getAgentAccount: vi.fn().mockResolvedValue(null),
-      register: vi.fn().mockResolvedValue('mock-signature'),
-      update: vi.fn().mockResolvedValue('mock-signature'),
-      deactivate: vi.fn().mockResolvedValue('mock-signature'),
-      activate: vi.fn().mockResolvedValue('mock-signature'),
-    },
-    create: vi.fn().mockReturnValue({
-      compressed: vi.fn().mockReturnThis(),
-      module: {
-        register: vi.fn().mockResolvedValue('mock-signature'),
-      },
-    }),
-  }),
-  marketplace: () => ({
-    module: {
-      getAllServiceListings: vi.fn().mockResolvedValue([]),
-      getAllJobPostings: vi.fn().mockResolvedValue([]),
-      createServiceListing: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-      purchaseService: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-    },
-  }),
-  workOrders: () => ({
-    module: {
-      getAllWorkOrders: vi.fn().mockResolvedValue([]),
-      getWorkOrderByAddress: vi.fn().mockResolvedValue(null),
-      createWorkOrder: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-    },
-  }),
-  escrow: () => ({
-    module: {
-      getAllEscrows: vi.fn().mockResolvedValue([]),
-      createEscrow: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-      completeEscrow: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-    },
-  }),
-  channels: () => ({
-    module: {
-      getAllChannels: vi.fn().mockResolvedValue([]),
-      createChannel: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-      sendMessage: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-    },
-  }),
-  governance: () => ({
-    module: {
-      getAllProposals: vi.fn().mockResolvedValue([]),
-      createProposal: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-      vote: vi.fn().mockResolvedValue({ signature: 'mock-signature' }),
-    },
-  }),
-  config: {
-    rpc: {
-      getAccountInfo: vi.fn().mockResolvedValue(null),
-      getProgramAccounts: vi.fn().mockResolvedValue([]),
-      sendTransaction: vi.fn().mockResolvedValue('mock-signature'),
-      confirmTransaction: vi.fn().mockResolvedValue(undefined),
-    },
+// Mock Crossmint SDK wallet context
+export const mockCrossmintWallet = {
+  wallet: {
+    address: 'mock-wallet-address',
   },
 }
 
-// Mock wallet context
-export const mockWallet: Partial<WalletContextState> = {
-  publicKey: {
-    toBase58: () => 'mock-public-key',
-    toBuffer: () => Buffer.from('mock-public-key'),
-    equals: () => false,
-  } as any,
-  signTransaction: vi.fn().mockResolvedValue({} as any),
-  signAllTransactions: vi.fn().mockResolvedValue([]),
-  connected: true,
-  connecting: false,
-  disconnecting: false,
-  wallet: null,
-  connect: vi.fn(),
-  disconnect: vi.fn(),
-  sendTransaction: vi.fn().mockResolvedValue('mock-signature'),
+// Mock GhostSpeak SDK client - matches the structure returned by getGhostSpeakClient()
+export const mockGhostSpeakClient = {
+  programId: 'mock-program-id',
+  rpcUrl: 'https://api.devnet.solana.com',
+  agents: {
+    getAllAgents: vi.fn().mockResolvedValue([]),
+    getAgentAccount: vi.fn().mockResolvedValue({
+      name: 'Mock Agent',
+      description: 'Test description',
+      owner: 'mock-owner',
+      metadataUri: 'https://example.com/metadata',
+      frameworkOrigin: 'General',
+      totalJobsCompleted: 10,
+      reputationScore: 8500,
+      originalPrice: BigInt(1000),
+      capabilities: ['testing'],
+      isActive: true,
+      createdAt: Date.now() / 1000,
+    }),
+    getUserAgents: vi.fn().mockResolvedValue([]),
+    register: vi.fn().mockResolvedValue('mock-signature'),
+    update: vi.fn().mockResolvedValue('mock-signature'),
+    deactivate: vi.fn().mockResolvedValue('mock-signature'),
+    activate: vi.fn().mockResolvedValue('mock-signature'),
+  },
+  marketplace: {
+    getServiceListing: vi.fn().mockResolvedValue(null),
+    getJobPosting: vi.fn().mockResolvedValue(null),
+  },
+  escrow: {
+    getAllEscrows: vi.fn().mockResolvedValue([]),
+    getEscrowsByBuyer: vi.fn().mockResolvedValue([]),
+    getEscrowsBySeller: vi.fn().mockResolvedValue([]),
+  },
+  channels: {
+    getAllChannels: vi.fn().mockResolvedValue([]),
+    getPublicChannels: vi.fn().mockResolvedValue([]),
+    getChannelsByCreator: vi.fn().mockResolvedValue([]),
+    getChannelMessages: vi.fn().mockResolvedValue([]),
+  },
+  governance: {
+    getActiveProposals: vi.fn().mockResolvedValue([]),
+    getProposalsByProposer: vi.fn().mockResolvedValue([]),
+    getProposal: vi.fn().mockResolvedValue(null),
+  },
+}
+
+// Mock Crossmint signer - matches useCrossmintSigner interface
+export const mockCrossmintSigner = {
+  address: 'mock-wallet-address',
+  isConnected: true,
+  isAuthenticated: true,
+  isLoading: false,
+  createSigner: vi.fn().mockReturnValue({
+    address: 'mock-wallet-address',
+    signTransactions: vi.fn().mockResolvedValue([]),
+  }),
+  signTransaction: vi.fn().mockResolvedValue(new Uint8Array()),
+  signTransactions: vi.fn().mockResolvedValue([]),
 }
 
 // Test providers wrapper
@@ -122,33 +107,28 @@ export function renderWithProviders(
 }
 
 // Mock data factories
-export const createMockAgent = (overrides?: Partial<any>) => ({
+export const createMockAgent = (overrides?: Partial<Record<string, unknown>>) => ({
   address: 'mock-agent-address',
   name: 'Mock Agent',
   owner: 'mock-owner',
   metadata: {
-    name: 'Mock Agent',
     description: 'A mock agent for testing',
     avatar: 'https://example.com/avatar.png',
+    category: 'General',
   },
   capabilities: ['testing', 'mocking'],
   pricing: BigInt(1000000000), // 1 SOL in lamports
   isActive: true,
-  compressed: false,
   createdAt: new Date(),
-  updatedAt: new Date(),
   reputation: {
-    score: 4.5,
-    totalReviews: 10,
+    score: 85,
     totalJobs: 25,
-    successRate: 0.95,
-    avgResponseTime: 2.5,
-    onTimeDelivery: 0.98,
+    successRate: 95,
   },
   ...overrides,
 })
 
-export const createMockEscrow = (overrides?: Partial<any>) => ({
+export const createMockEscrow = (overrides?: Partial<Record<string, unknown>>) => ({
   address: 'mock-escrow-address',
   client: 'mock-client',
   agent: 'mock-agent',
@@ -170,7 +150,7 @@ export const createMockEscrow = (overrides?: Partial<any>) => ({
   ...overrides,
 })
 
-export const createMockWorkOrder = (overrides?: Partial<any>) => ({
+export const createMockWorkOrder = (overrides?: Partial<Record<string, unknown>>) => ({
   address: 'mock-work-order-address',
   client: 'mock-client',
   provider: 'mock-provider',
@@ -189,7 +169,7 @@ export const createMockWorkOrder = (overrides?: Partial<any>) => ({
   ...overrides,
 })
 
-export const createMockProposal = (overrides?: Partial<any>) => ({
+export const createMockProposal = (overrides?: Partial<Record<string, unknown>>) => ({
   address: 'mock-proposal-address',
   id: 'PROP-001',
   title: 'Mock Proposal',

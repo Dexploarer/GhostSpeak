@@ -320,8 +320,8 @@ export default function TokenomicsPage() {
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
-              80% to the community. Transparent vesting. Milestone-based buybacks. 
-              Built for long-term value, not quick exits.
+              80% to the community. Transparent vesting. Milestone-based buybacks. Built for
+              long-term value, not quick exits.
             </p>
           </motion.div>
 
@@ -540,9 +540,7 @@ export default function TokenomicsPage() {
                       </div>
                     </div>
 
-                    <div className="text-sm text-muted-foreground">
-                      {milestone.action}
-                    </div>
+                    <div className="text-sm text-muted-foreground">{milestone.action}</div>
 
                     <div className="mt-6 pt-6 border-t border-border">
                       <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
@@ -564,8 +562,8 @@ export default function TokenomicsPage() {
             viewport={{ once: true }}
           >
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Buybacks reduce circulating supply and are executed transparently on-chain. 
-              All transactions are verifiable on Solana Explorer.
+              Buybacks reduce circulating supply and are executed transparently on-chain. All
+              transactions are verifiable on Solana Explorer.
             </p>
           </motion.div>
         </div>
@@ -590,8 +588,8 @@ export default function TokenomicsPage() {
             </h2>
 
             <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-              Be part of the most community-focused AI agent protocol on Solana. 
-              80% community allocation. Fair launch. No VCs.
+              Be part of the most community-focused AI agent protocol on Solana. 80% community
+              allocation. Fair launch. No VCs.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

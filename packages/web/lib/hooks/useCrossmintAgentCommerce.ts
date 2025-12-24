@@ -74,37 +74,40 @@ export function useCrossmintAgentCommerce() {
   /**
    * Create a programmable wallet for an AI agent
    */
-  const createAgentWallet = useCallback(async (
-    linkedUser: string,
-    type: 'solana-mpc-wallet' | 'evm-smart-wallet' = 'solana-mpc-wallet'
-  ): Promise<AgentWallet | null> => {
-    setLoading(true)
-    setError(null)
+  const createAgentWallet = useCallback(
+    async (
+      linkedUser: string,
+      type: 'solana-mpc-wallet' | 'evm-smart-wallet' = 'solana-mpc-wallet'
+    ): Promise<AgentWallet | null> => {
+      setLoading(true)
+      setError(null)
 
-    try {
-      const response = await fetch('/api/crossmint/wallets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, linkedUser })
-      })
+      try {
+        const response = await fetch('/api/crossmint/wallets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, linkedUser }),
+        })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to create wallet')
+        if (!response.ok) {
+          throw new Error(data.error ?? 'Failed to create wallet')
+        }
+
+        toast.success('Agent wallet created successfully')
+        return data as AgentWallet
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        setError(message)
+        toast.error(message)
+        return null
+      } finally {
+        setLoading(false)
       }
-
-      toast.success('Agent wallet created successfully')
-      return data as AgentWallet
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      setError(message)
-      toast.error(message)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    },
+    []
+  )
 
   /**
    * Create a purchase order for agentic commerce
@@ -117,7 +120,7 @@ export function useCrossmintAgentCommerce() {
       const response = await fetch('/api/crossmint/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params)
+        body: JSON.stringify(params),
       })
 
       const data = await response.json()
@@ -166,144 +169,151 @@ export function useCrossmintAgentCommerce() {
   /**
    * Sign and submit a transaction from an agent wallet
    */
-  const signTransaction = useCallback(async (
-    walletId: string,
-    serializedTransaction: string,
-    chain: string = 'solana'
-  ): Promise<{ hash: string } | null> => {
-    setLoading(true)
-    setError(null)
+  const signTransaction = useCallback(
+    async (
+      walletId: string,
+      serializedTransaction: string,
+      chain: string = 'solana'
+    ): Promise<{ hash: string } | null> => {
+      setLoading(true)
+      setError(null)
 
-    try {
-      const response = await fetch('/api/crossmint/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletId, serializedTransaction, chain })
-      })
+      try {
+        const response = await fetch('/api/crossmint/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletId, serializedTransaction, chain }),
+        })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to sign transaction')
+        if (!response.ok) {
+          throw new Error(data.error ?? 'Failed to sign transaction')
+        }
+
+        toast.success('Transaction signed and submitted')
+        return data
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        setError(message)
+        toast.error(message)
+        return null
+      } finally {
+        setLoading(false)
       }
-
-      toast.success('Transaction signed and submitted')
-      return data
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      setError(message)
-      toast.error(message)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    },
+    []
+  )
 
   /**
    * Complete flow: Create order and sign payment in one call
    */
-  const purchaseWithAgent = useCallback(async (
-    agentWalletId: string,
-    params: CreateOrderParams
-  ): Promise<{ order: Order; txHash: string } | null> => {
-    setLoading(true)
-    setError(null)
+  const purchaseWithAgent = useCallback(
+    async (
+      agentWalletId: string,
+      params: CreateOrderParams
+    ): Promise<{ order: Order; txHash: string } | null> => {
+      setLoading(true)
+      setError(null)
 
-    try {
-      // 1. Create order
-      const order = await createOrder(params)
-      if (!order) {
-        throw new Error('Failed to create order')
-      }
-
-      // 2. Check if payment requires transaction
-      if (order.payment?.preparation?.serializedTransaction) {
-        const chain = params.payment.method.includes('base') 
-          ? params.payment.method 
-          : 'solana'
-
-        const txResult = await signTransaction(
-          agentWalletId,
-          order.payment.preparation.serializedTransaction,
-          chain
-        )
-
-        if (!txResult) {
-          throw new Error('Failed to sign payment transaction')
+      try {
+        // 1. Create order
+        const order = await createOrder(params)
+        if (!order) {
+          throw new Error('Failed to create order')
         }
 
-        return { order, txHash: txResult.hash }
-      }
+        // 2. Check if payment requires transaction
+        if (order.payment?.preparation?.serializedTransaction) {
+          const chain = params.payment.method.includes('base') ? params.payment.method : 'solana'
 
-      return { order, txHash: '' }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      setError(message)
-      toast.error(message)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [createOrder, signTransaction])
+          const txResult = await signTransaction(
+            agentWalletId,
+            order.payment.preparation.serializedTransaction,
+            chain
+          )
+
+          if (!txResult) {
+            throw new Error('Failed to sign payment transaction')
+          }
+
+          return { order, txHash: txResult.hash }
+        }
+
+        return { order, txHash: '' }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        setError(message)
+        toast.error(message)
+        return null
+      } finally {
+        setLoading(false)
+      }
+    },
+    [createOrder, signTransaction]
+  )
 
   /**
    * Poll order status until completed or failed
    */
-  const pollOrderStatus = useCallback(async (
-    orderId: string,
-    intervalMs: number = 30000,
-    maxAttempts: number = 20
-  ): Promise<Order | null> => {
-    let attempts = 0
+  const pollOrderStatus = useCallback(
+    async (
+      orderId: string,
+      intervalMs: number = 30000,
+      maxAttempts: number = 20
+    ): Promise<Order | null> => {
+      let attempts = 0
 
-    return new Promise((resolve) => {
-      const poll = setInterval(async () => {
-        attempts++
-        const order = await getOrderStatus(orderId)
+      return new Promise((resolve) => {
+        const poll = setInterval(async () => {
+          attempts++
+          const order = await getOrderStatus(orderId)
 
-        if (!order) {
-          clearInterval(poll)
-          resolve(null)
-          return
-        }
-
-        if (order.phase === 'completed' || order.phase === 'failed') {
-          clearInterval(poll)
-          if (order.phase === 'completed') {
-            toast.success('Order completed!')
-          } else {
-            toast.error('Order failed')
+          if (!order) {
+            clearInterval(poll)
+            resolve(null)
+            return
           }
-          resolve(order)
-          return
-        }
 
-        if (attempts >= maxAttempts) {
-          clearInterval(poll)
-          toast.info('Order still processing...')
-          resolve(order)
-        }
-      }, intervalMs)
-    })
-  }, [getOrderStatus])
+          if (order.phase === 'completed' || order.phase === 'failed') {
+            clearInterval(poll)
+            if (order.phase === 'completed') {
+              toast.success('Order completed!')
+            } else {
+              toast.error('Order failed')
+            }
+            resolve(order)
+            return
+          }
+
+          if (attempts >= maxAttempts) {
+            clearInterval(poll)
+            toast.info('Order still processing...')
+            resolve(order)
+          }
+        }, intervalMs)
+      })
+    },
+    [getOrderStatus]
+  )
 
   return {
     // State
     loading,
     error,
-    
+
     // Wallet operations
     createAgentWallet,
-    
+
     // Order operations
     createOrder,
     getOrderStatus,
     pollOrderStatus,
-    
+
     // Transaction operations
     signTransaction,
-    
+
     // Combined flows
-    purchaseWithAgent
+    purchaseWithAgent,
   }
 }

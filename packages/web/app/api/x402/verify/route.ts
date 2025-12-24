@@ -68,7 +68,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
   const startTime = Date.now()
 
   try {
-    const body = await request.json() as VerifyRequest
+    const body = (await request.json()) as VerifyRequest
 
     // Validate required fields
     if (!body.paymentHeader) {
@@ -101,15 +101,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
     // Fetch transaction from Solana
     let transaction
     try {
-      transaction = await rpc.getTransaction(signature as Parameters<typeof rpc.getTransaction>[0], {
-        maxSupportedTransactionVersion: 0,
-        encoding: 'jsonParsed'
-      }).send()
+      transaction = await rpc
+        .getTransaction(signature as Parameters<typeof rpc.getTransaction>[0], {
+          maxSupportedTransactionVersion: 0,
+          encoding: 'jsonParsed',
+        })
+        .send()
     } catch (error) {
       return NextResponse.json(
         {
           valid: false,
-          invalidReason: `Failed to fetch transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
+          invalidReason: `Failed to fetch transaction: ${error instanceof Error ? error.message : 'Unknown error'}`,
         },
         { status: 400 }
       )
@@ -127,7 +129,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
       return NextResponse.json(
         {
           valid: false,
-          invalidReason: `Transaction failed: ${JSON.stringify(transaction.meta.err)}`
+          invalidReason: `Transaction failed: ${JSON.stringify(transaction.meta.err)}`,
         },
         { status: 400 }
       )
@@ -145,9 +147,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
     let tokenMint: string | undefined
 
     for (const postBalance of postBalances) {
-      const preBalance = preBalances.find(
-        pre => pre.accountIndex === postBalance.accountIndex
-      )
+      const preBalance = preBalances.find((pre) => pre.accountIndex === postBalance.accountIndex)
 
       const preBal = BigInt(preBalance?.uiTokenAmount.amount ?? '0')
       const postBal = BigInt(postBalance.uiTokenAmount.amount)
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
       return NextResponse.json(
         {
           valid: false,
-          invalidReason: `Recipient mismatch: expected ${body.requirement.payTo}, got ${recipientAddress}`
+          invalidReason: `Recipient mismatch: expected ${body.requirement.payTo}, got ${recipientAddress}`,
         },
         { status: 400 }
       )
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
       return NextResponse.json(
         {
           valid: false,
-          invalidReason: `Insufficient payment: required ${requiredAmount}, got ${transferAmount}`
+          invalidReason: `Insufficient payment: required ${requiredAmount}, got ${transferAmount}`,
         },
         { status: 400 }
       )
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
       return NextResponse.json(
         {
           valid: false,
-          invalidReason: `Token mismatch: expected ${body.requirement.asset}, got ${tokenMint}`
+          invalidReason: `Token mismatch: expected ${body.requirement.asset}, got ${tokenMint}`,
         },
         { status: 400 }
       )
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
       payer: payerAddress,
       amount: transferAmount?.toString(),
       transaction: signature,
-      verifiedAt: new Date().toISOString()
+      verifiedAt: new Date().toISOString(),
     }
 
     // Add verification timing header
@@ -213,15 +213,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
       headers: {
         'X-Verification-Time-Ms': verificationTime.toString(),
         'X-Facilitator': 'GhostSpeak',
-        'X-Network': 'solana'
-      }
+        'X-Network': 'solana',
+      },
     })
   } catch (error) {
     console.error('Payment verification error:', error)
     return NextResponse.json(
       {
         valid: false,
-        invalidReason: error instanceof Error ? error.message : 'Verification failed'
+        invalidReason: error instanceof Error ? error.message : 'Verification failed',
       },
       { status: 500 }
     )
@@ -245,7 +245,7 @@ export async function GET(): Promise<NextResponse> {
       'spl-token-verification',
       'token-2022-verification',
       'escrow-verification',
-      'reputation-lookup'
-    ]
+      'reputation-lookup',
+    ],
   })
 }

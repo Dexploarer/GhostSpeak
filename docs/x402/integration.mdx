@@ -1,0 +1,108 @@
+---
+title: 'Integration Guide'
+description: 'Deep dive into x402 integration patterns'
+---
+
+## Integration Patterns
+
+### Pattern 1: Direct Integration
+
+Best for: Single-service APIs
+
+```typescript
+import { createX402Middleware, X402Client } from '@ghostspeak/sdk';
+
+const x402 = createX402Middleware({
+  x402Client,
+  requiredPayment: 100_000n,
+  token: USDC_MINT,
+});
+
+app.use('/api/paid', x402);
+```
+
+### Pattern 2: Router-Based Pricing
+
+Best for: Multiple endpoints with different prices
+
+```typescript
+const router = express.Router();
+
+// Cheap endpoint
+router.post(
+  '/fast',
+  createX402Middleware({
+    x402Client,
+    requiredPayment: 10_000n,
+    token: USDC_MINT,
+  }),
+  handler
+);
+
+// Expensive endpoint
+router.post(
+  '/slow',
+  createX402Middleware({
+    x402Client,
+    requiredPayment: 100_000n,
+    token: USDC_MINT,
+  }),
+  handler
+);
+```
+
+### Pattern 3: Prepaid Accounts (Hybrid)
+
+You can combine x402 with off-chain balances for high frequency:
+
+```typescript
+app.post('/api/service', async (req, res, next) => {
+  // Check off-chain balance first
+  if (await hasPrepaidBalance(req.headers['x-user-id'])) {
+    return next();
+  }
+
+  // Fallback to x402 payment
+  return x402Middleware(req, res, next);
+});
+```
+
+## Token Support
+
+### USDC (Recommended)
+
+```typescript
+import { address } from '@ghostspeak/sdk';
+const USDC_MINT = address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+```
+
+## Error Handling
+
+Handle payment errors gracefully on the client:
+
+```typescript
+try {
+  await x402Client.pay(details);
+} catch (error) {
+  if (error.message.includes('Insufficent funds')) {
+    // Prompt user to top up
+  }
+}
+```
+
+## Analytics
+
+Access payment info in your route handlers:
+
+```typescript
+app.post('/api/service', x402, (req, res) => {
+  // req.paymentInfo is injected by middleware
+  console.log('Paid by:', req.paymentInfo.sender);
+  console.log('Signature:', req.paymentInfo.signature);
+
+  // Log to database
+  await db.recordUsage(req.paymentInfo);
+
+  res.json({ success: true });
+});
+```

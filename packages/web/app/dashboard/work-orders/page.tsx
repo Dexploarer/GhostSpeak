@@ -5,9 +5,17 @@ import { PageHeader } from '@/components/dashboard/shared/PageHeader'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Filter, Clock, DollarSign, Shield, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import {
+  Plus,
+  Filter,
+  Clock,
+  DollarSign,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import Link from 'next/link'
 
 interface WorkOrder {
   id: string
@@ -24,7 +32,7 @@ function WorkOrderCard({ order }: { order: WorkOrder }) {
     'in-progress': { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-500/10' },
     review: { icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-500/10' },
     completed: { icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-500/10' },
-    disputed: { icon: Shield, color: 'text-red-500', bg: 'bg-red-500/10' }
+    disputed: { icon: Shield, color: 'text-red-500', bg: 'bg-red-500/10' },
   }
 
   const config = statusConfig[order.status]
@@ -35,19 +43,17 @@ function WorkOrderCard({ order }: { order: WorkOrder }) {
       <div className="flex justify-between items-start mb-3">
         <span className="font-mono text-xs text-muted-foreground">{order.id}</span>
         <Badge variant="outline" className={cn(config.bg, config.color, 'border-0 text-xs')}>
-          <Icon className={cn("w-3 h-3 mr-1", order.status === 'in-progress' && "animate-spin")} />
+          <Icon className={cn('w-3 h-3 mr-1', order.status === 'in-progress' && 'animate-spin')} />
           {order.status.replace('-', ' ')}
         </Badge>
       </div>
-      
+
       <h4 className="font-medium text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
         {order.title}
       </h4>
-      
-      {order.agent && (
-        <p className="text-xs text-muted-foreground mb-3">Agent: {order.agent}</p>
-      )}
-      
+
+      {order.agent && <p className="text-xs text-muted-foreground mb-3">Agent: {order.agent}</p>}
+
       <div className="flex justify-between items-center pt-3 border-t border-border">
         <div className="flex items-center gap-1 text-sm font-mono">
           <DollarSign className="w-3 h-3 text-primary" />
@@ -64,11 +70,45 @@ function WorkOrderCard({ order }: { order: WorkOrder }) {
 
 export default function WorkOrdersPage() {
   const orders: WorkOrder[] = [
-    { id: 'WO-2025-001', title: 'Optimize trading strategy for SOL/USDC pair', status: 'in-progress', amount: '125 USDC', dueDate: '2d left', agent: 'TradingBot.ai' },
-    { id: 'WO-2025-002', title: 'Generate marketing content for launch', status: 'review', amount: '42 USDC', dueDate: 'Today', agent: 'ContentGen.ai' },
-    { id: 'WO-2025-003', title: 'Security audit for escrow contract', status: 'pending', amount: '250 USDC', dueDate: '1w left' },
-    { id: 'WO-2025-004', title: 'Deploy and test x402 endpoint', status: 'completed', amount: '20 USDC', dueDate: 'Done', agent: 'DevOps.ai' },
-    { id: 'WO-2025-005', title: 'Data analysis for Q4 metrics', status: 'disputed', amount: '85 USDC', dueDate: 'On hold', agent: 'DataMind.ai' },
+    {
+      id: 'WO-2025-001',
+      title: 'Optimize trading strategy for SOL/USDC pair',
+      status: 'in-progress',
+      amount: '125 USDC',
+      dueDate: '2d left',
+      agent: 'TradingBot.ai',
+    },
+    {
+      id: 'WO-2025-002',
+      title: 'Generate marketing content for launch',
+      status: 'review',
+      amount: '42 USDC',
+      dueDate: 'Today',
+      agent: 'ContentGen.ai',
+    },
+    {
+      id: 'WO-2025-003',
+      title: 'Security audit for escrow contract',
+      status: 'pending',
+      amount: '250 USDC',
+      dueDate: '1w left',
+    },
+    {
+      id: 'WO-2025-004',
+      title: 'Deploy and test x402 endpoint',
+      status: 'completed',
+      amount: '20 USDC',
+      dueDate: 'Done',
+      agent: 'DevOps.ai',
+    },
+    {
+      id: 'WO-2025-005',
+      title: 'Data analysis for Q4 metrics',
+      status: 'disputed',
+      amount: '85 USDC',
+      dueDate: 'On hold',
+      agent: 'DataMind.ai',
+    },
   ]
 
   const columns = [
@@ -80,8 +120,8 @@ export default function WorkOrdersPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader 
-        title="Work Orders" 
+      <PageHeader
+        title="Work Orders"
         description="Track tasks with milestone payments and escrow protection"
       >
         <Button variant="outline">
@@ -137,7 +177,7 @@ export default function WorkOrdersPage() {
       {/* Kanban Board */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {columns.map((col) => {
-          const columnOrders = orders.filter(o => col.statuses.includes(o.status))
+          const columnOrders = orders.filter((o) => col.statuses.includes(o.status))
           return (
             <div key={col.key} className="space-y-4">
               <div className="flex items-center justify-between px-1">
@@ -148,7 +188,7 @@ export default function WorkOrdersPage() {
                   {columnOrders.length}
                 </span>
               </div>
-              
+
               <div className="space-y-3 min-h-[200px]">
                 {columnOrders.map((order) => (
                   <WorkOrderCard key={order.id} order={order} />

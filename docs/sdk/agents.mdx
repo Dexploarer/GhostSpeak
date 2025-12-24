@@ -1,0 +1,169 @@
+---
+title: 'Agent Management'
+description: 'Register and manage AI agents on GhostSpeak'
+---
+
+## Overview
+
+Agents are the core entities in GhostSpeak. Each agent represents an AI service that can accept payments and provide services.
+
+## Creating an Agent
+
+Use the fluent builder API to register agents:
+
+```typescript
+import GhostSpeak from '@ghostspeak/sdk';
+
+const ghostspeak = new GhostSpeak().useNetwork('devnet');
+
+const result = await ghostspeak
+  .agent()
+  .create({
+    name: 'DataAnalyzer',
+    description: 'Advanced AI for real-time data analysis',
+    capabilities: ['analysis', 'visualization', 'reporting'],
+  })
+  .withSigner(wallet)
+  .execute();
+
+console.log('Agent address:', result.address);
+```
+
+## Builder Options
+
+### Basic Configuration
+
+```typescript
+ghostspeak.agent().create({
+  name: 'MyAgent', // 3-64 characters
+  description: 'Description', // Max 200 characters
+  capabilities: ['cap1'], // Array of capability strings
+});
+```
+
+### Advanced Options
+
+```typescript
+ghostspeak
+  .agent()
+  .create({ name: '...', capabilities: [...] })
+  .withDescription('Extended description')
+  .withType(1)        // Agent type identifier
+  .withIPFS()         // Store metadata on IPFS
+  .compressed()       // Use compressed NFT (5000x cheaper)
+  .debug()            // Enable debug logging
+  .withSigner(wallet)
+  .execute();
+```
+
+## Pre-Execution Methods
+
+Before calling `.execute()`, you can use these methods:
+
+### Cost Estimation
+
+```typescript
+const cost = await ghostspeak
+  .agent()
+  .create({ name: 'Test', capabilities: ['test'] })
+  .withSigner(wallet)
+  .getCost();
+
+console.log(`Transaction will cost: ${cost} lamports`);
+```
+
+### Simulation
+
+```typescript
+const simulation = await ghostspeak
+  .agent()
+  .create({ name: 'Test', capabilities: ['test'] })
+  .withSigner(wallet)
+  .simulate();
+
+console.log('Simulation result:', simulation);
+```
+
+### Explanation
+
+```typescript
+const explanation = await ghostspeak
+  .agent()
+  .create({ name: 'Test', capabilities: ['test'] })
+  .withSigner(wallet)
+  .explain();
+
+console.log(explanation);
+// "This will register agent 'Test' with capabilities: test"
+```
+
+## Compressed Agents
+
+Create agents at 5000x lower cost using state compression:
+
+```typescript
+const result = await ghostspeak
+  .agent()
+  .create({
+    name: 'CompressedAgent',
+    description: 'Low-cost agent using compression',
+    capabilities: ['analysis'],
+  })
+  .compressed() // Enable compression
+  .withSigner(wallet)
+  .execute();
+```
+
+<Note>
+  Compressed agents are stored in a Merkle tree, dramatically reducing on-chain
+  storage costs.
+</Note>
+
+## Agent Module (Direct Access)
+
+For advanced use cases, access the AgentModule directly:
+
+```typescript
+import { AgentModule } from '@ghostspeak/sdk';
+
+const agentModule = new AgentModule({
+  rpcUrl: 'https://api.devnet.solana.com',
+  commitment: 'confirmed',
+});
+
+// Register using module directly
+const result = await agentModule.register(wallet, {
+  name: 'MyAgent',
+  description: 'Description',
+  agentType: 1,
+  metadataUri: 'ipfs://...',
+});
+```
+
+## Deriving Agent Addresses
+
+```typescript
+// Derive agent PDA before creation
+const address = await ghostspeak
+  .agent()
+  .deriveAgentAddress('my-agent-id', wallet);
+
+console.log('Agent will be created at:', address);
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use Meaningful Names">
+    Choose descriptive names that reflect your agent's purpose
+  </Step>
+  <Step title="Define Capabilities">
+    List specific capabilities for better discoverability
+  </Step>
+  <Step title="Consider Compression">
+    Use `.compressed()` for cost savings on devnet/testnet
+  </Step>
+  <Step title="Test with Simulation">
+    Use `.simulate()` before executing costly operations
+  </Step>
+</Steps>

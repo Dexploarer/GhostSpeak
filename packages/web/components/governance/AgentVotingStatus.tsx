@@ -30,15 +30,12 @@ import {
   Star,
   TrendingUp,
   Users,
-  ArrowRight,
-  Loader2,
   Clock,
   Shield,
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
-import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import { formatVotingPower } from '@/lib/hooks/useVotingPower'
 import type { Address } from '@solana/kit'
 
@@ -270,12 +267,7 @@ interface DelegationDialogProps {
   onConfirm: (settings: DelegationSettings) => void
 }
 
-function DelegationDialog({
-  open,
-  onOpenChange,
-  agentName,
-  onConfirm,
-}: DelegationDialogProps) {
+function DelegationDialog({ open, onOpenChange, agentName, onConfirm }: DelegationDialogProps) {
   const [scope, setScope] = useState<'All' | 'Category' | 'SingleProposal'>('All')
   const [category, setCategory] = useState<string>('')
 
@@ -330,8 +322,8 @@ function DelegationDialog({
               <div className="text-sm">
                 <p className="font-medium text-blue-400">How Agent Delegation Works</p>
                 <p className="text-muted-foreground mt-1">
-                  When delegated, your agent's reputation-based voting power is added to yours.
-                  The agent votes through your wallet - you maintain full control.
+                  When delegated, your agent's reputation-based voting power is added to yours. The
+                  agent votes through your wallet - you maintain full control.
                 </p>
               </div>
             </div>
@@ -377,7 +369,6 @@ export function AgentsVotingList({
   const eligibleAgents = agents.filter((a) => a.canVote)
   const ineligibleAgents = agents.filter((a) => !a.canVote)
 
-  const totalVotingPower = agents.reduce((acc, a) => acc + a.delegatedVotingPower, BigInt(0))
   const delegatedPower = agents
     .filter((a) => a.isDelegatedToOwner)
     .reduce((acc, a) => acc + a.delegatedVotingPower, BigInt(0))

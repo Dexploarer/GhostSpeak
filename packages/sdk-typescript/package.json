@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/sdk",
-  "version": "2.0.2",
+  "version": "2.0.4",
   "description": "TypeScript SDK for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "main": "./dist/index.js",
@@ -93,12 +93,12 @@
     "escrow",
     "devnet-ready"
   ],
-  "author": "GhostSpeak Protocol",
+  "author": "GhostSpeak Protocol <team@ghostspeak.io>",
   "license": "MIT",
-  "homepage": "https://github.com/Prompt-or-Die/ghostspeak#readme",
+  "homepage": "https://www.ghostspeak.io/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Prompt-or-Die/ghostspeak.git",
+    "url": "https://github.com/Ghostspeak/GhostSpeak",
     "directory": "packages/sdk-typescript"
   },
   "bugs": {

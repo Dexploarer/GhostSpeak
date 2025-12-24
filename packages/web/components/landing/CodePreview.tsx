@@ -53,33 +53,41 @@ export function CodePreview() {
       <div className="p-6 overflow-x-auto">
         <pre className="font-mono text-sm leading-relaxed">
           <code className="text-gray-300">
-            <span className="text-primary/80">import</span> {'{'} GhostSpeak {'}'} <span className="text-primary/80">from</span> <span className="text-green-400">'@ghostspeak/sdk'</span>
+            <span className="text-primary/80">import</span> {'{'} GhostSpeak {'}'}{' '}
+            <span className="text-primary/80">from</span>{' '}
+            <span className="text-green-400">'@ghostspeak/sdk'</span>
             {'\n\n'}
             <span className="text-gray-500">// Initialize the client</span>
             {'\n'}
-            <span className="text-blue-400">const</span> ghost = <span className="text-primary/80">new</span> <span className="text-primary">GhostSpeak</span>({'{'}
+            <span className="text-blue-400">const</span> ghost ={' '}
+            <span className="text-primary/80">new</span>{' '}
+            <span className="text-primary">GhostSpeak</span>({'{'}
             {'\n  '}network: <span className="text-green-400">'mainnet-beta'</span>
             {'\n'}
-            {'}'})
-            {'\n\n'}
+            {'}'}){'\n\n'}
             <span className="text-gray-500">// 1. Create an Autonomous Agent</span>
             {'\n'}
-            <span className="text-blue-400">const</span> agent = <span className="text-primary/80">await</span> ghost.agent.<span className="text-blue-300">create</span>({'{'}
-            {'\n  '}name: <span className="text-green-400">'TraderBot_v1'</span>,
-            {'\n  '}capabilities: [<span className="text-green-400">'defi'</span>, <span className="text-green-400">'arbitrage'</span>],
+            <span className="text-blue-400">const</span> agent ={' '}
+            <span className="text-primary/80">await</span> ghost.agent.
+            <span className="text-blue-300">create</span>({'{'}
+            {'\n  '}name: <span className="text-green-400">'TraderBot_v1'</span>,{'\n  '}
+            capabilities: [<span className="text-green-400">'defi'</span>,{' '}
+            <span className="text-green-400">'arbitrage'</span>],
             {'\n  '}pricing: {'{'}
-            {'\n    '}model: <span className="text-green-400">'x402'</span>,
-            {'\n    '}rate: <span className="text-orange-400">0.001</span> <span className="text-gray-500">// SOL per request</span>
+            {'\n    '}model: <span className="text-green-400">'x402'</span>,{'\n    '}rate:{' '}
+            <span className="text-orange-400">0.001</span>{' '}
+            <span className="text-gray-500">// SOL per request</span>
             {'\n  '}
             {'}'}
             {'\n'}
-            {'}'})
-            {'\n\n'}
+            {'}'}){'\n\n'}
             <span className="text-gray-500">// 2. Deploy to the Network</span>
             {'\n'}
-            <span className="text-primary/80">await</span> agent.<span className="text-blue-300">deploy</span>()
+            <span className="text-primary/80">await</span> agent.
+            <span className="text-blue-300">deploy</span>()
             {'\n\n'}
-            console.<span className="text-blue-300">log</span>(<span className="text-green-400">'Agent active at:'</span>, agent.address)
+            console.<span className="text-blue-300">log</span>(
+            <span className="text-green-400">'Agent active at:'</span>, agent.address)
           </code>
         </pre>
       </div>

@@ -58,21 +58,21 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
       { name: 'api', status: 'up', latencyMs: 5 },
       { name: 'database', status: 'up', latencyMs: 12 },
       { name: 'cache', status: 'up', latencyMs: 2 },
-      { name: 'solana-rpc', status: 'up', latencyMs: 45 }
+      { name: 'solana-rpc', status: 'up', latencyMs: 45 },
     ],
     networks: [
       {
         network: 'solana',
         status: 'connected',
         blockHeight: 250000000, // Mock
-        latencyMs: 45
+        latencyMs: 45,
       },
       {
         network: 'solana-devnet',
         status: 'connected',
         blockHeight: 280000000, // Mock
-        latencyMs: 50
-      }
+        latencyMs: 50,
+      },
     ],
     features: {
       verification: true,
@@ -80,14 +80,14 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
       escrow: true,
       reputation: true,
       gasless: true,
-      compliance: true
-    }
+      compliance: true,
+    },
   }
 
   return NextResponse.json(health, {
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'X-Response-Time': `${Date.now() - now}ms`
-    }
+      'X-Response-Time': `${Date.now() - now}ms`,
+    },
   })
 }

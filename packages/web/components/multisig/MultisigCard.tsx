@@ -5,14 +5,12 @@ import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Progress } from '@/components/ui/progress'
 import {
   Shield,
   Users,
   Clock,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   ExternalLink,
   Copy,
   MoreVertical,
@@ -73,15 +71,10 @@ export function MultisigCard({
     toast.success('Address copied!')
   }
 
-  const shortenAddress = (address: string) =>
-    `${address.slice(0, 4)}...${address.slice(-4)}`
+  const shortenAddress = (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`
 
   return (
-    <GlassCard
-      variant="interactive"
-      className={cn('p-6 group', className)}
-      onClick={onClick}
-    >
+    <GlassCard variant="interactive" className={cn('p-6 group', className)} onClick={onClick}>
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -90,19 +83,14 @@ export function MultisigCard({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-foreground">
-                {multisig.multisigId.slice(0, 8)}
-              </h3>
+              <h3 className="font-semibold text-foreground">{multisig.multisigId.slice(0, 8)}</h3>
               {isOwner && (
                 <Badge variant="outline" className="text-xs">
                   Owner
                 </Badge>
               )}
               {multisig.emergencyConfig.frozen && (
-                <Badge
-                  variant="destructive"
-                  className="flex items-center gap-1"
-                >
+                <Badge variant="destructive" className="flex items-center gap-1">
                   <Snowflake className="w-3 h-3" />
                   Frozen
                 </Badge>
@@ -110,10 +98,7 @@ export function MultisigCard({
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-mono">{shortenAddress(multisig.address)}</span>
-              <button
-                onClick={copyAddress}
-                className="hover:text-foreground transition-colors"
-              >
+              <button onClick={copyAddress} className="hover:text-foreground transition-colors">
                 <Copy className="w-3 h-3" />
               </button>
             </div>
@@ -152,9 +137,7 @@ export function MultisigCard({
           <Users className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm">
             <span className="font-semibold">{multisig.threshold}</span>
-            <span className="text-muted-foreground">
-              {' '}of {multisig.signers.length} signatures
-            </span>
+            <span className="text-muted-foreground"> of {multisig.signers.length} signatures</span>
           </span>
         </div>
         <Badge variant="outline" className={securityColors[securityLevel]}>
@@ -165,11 +148,8 @@ export function MultisigCard({
       {/* Signers Preview */}
       <div className="flex items-center gap-2 mb-4">
         <div className="flex -space-x-2">
-          {multisig.signers.slice(0, 5).map((signer, index) => (
-            <Avatar
-              key={signer}
-              className="w-8 h-8 border-2 border-background"
-            >
+          {multisig.signers.slice(0, 5).map((signer, _index) => (
+            <Avatar key={signer} className="w-8 h-8 border-2 border-background">
               <AvatarFallback className="bg-primary/10 text-primary text-xs">
                 {signer.slice(0, 2).toUpperCase()}
               </AvatarFallback>
@@ -181,9 +161,7 @@ export function MultisigCard({
             </div>
           )}
         </div>
-        <span className="text-xs text-muted-foreground">
-          {multisig.signers.length} signers
-        </span>
+        <span className="text-xs text-muted-foreground">{multisig.signers.length} signers</span>
       </div>
 
       {/* Pending Transactions */}

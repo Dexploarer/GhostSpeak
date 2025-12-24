@@ -4,8 +4,8 @@ export { ProposalExecutionFlow } from './ProposalExecutionFlow'
 export { VotingInterface } from './VotingInterface'
 export { VotingPowerCard, LockupTierSelector } from './VotingPowerCard'
 export { AgentVotingStatus, AgentsVotingList } from './AgentVotingStatus'
-export { 
-  VotingPowerBreakdown, 
-  X402VolumeDisplay, 
-  ReputationVotingPower 
+export {
+  VotingPowerBreakdown,
+  X402VolumeDisplay,
+  ReputationVotingPower,
 } from './VotingPowerBreakdown'

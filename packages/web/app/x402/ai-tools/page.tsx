@@ -18,11 +18,10 @@ import {
   Play,
   Filter,
   Zap,
-  DollarSign,
   Clock,
   Search,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -34,13 +33,9 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger
-} from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 // =====================================================
 // TYPES
@@ -84,26 +79,29 @@ const MOCK_TOOLS: AITool[] = [
       properties: {
         prompt: { type: 'string', description: 'The text prompt' },
         maxTokens: { type: 'integer', description: 'Maximum tokens', default: 1024 },
-        temperature: { type: 'number', description: 'Sampling temperature', default: 0.7 }
+        temperature: { type: 'number', description: 'Sampling temperature', default: 0.7 },
       },
-      required: ['prompt']
+      required: ['prompt'],
     },
     outputSchema: {
       type: 'object',
       properties: {
         text: { type: 'string', description: 'Generated text' },
-        tokensUsed: { type: 'integer' }
-      }
+        tokensUsed: { type: 'integer' },
+      },
     },
     examples: [
       {
         input: { prompt: 'Write a haiku about AI', maxTokens: 50 },
-        output: { text: 'Silicon whispers,\nNeural paths illuminate,\nThoughts born from code.', tokensUsed: 15 }
-      }
+        output: {
+          text: 'Silicon whispers,\nNeural paths illuminate,\nThoughts born from code.',
+          tokensUsed: 15,
+        },
+      },
     ],
     facilitator: 'ghostspeak',
     avgLatency: 120,
-    totalCalls: 45000
+    totalCalls: 45000,
   },
   {
     id: '2',
@@ -120,13 +118,13 @@ const MOCK_TOOLS: AITool[] = [
       properties: {
         code: { type: 'string', description: 'Input code' },
         language: { type: 'string', description: 'Programming language' },
-        task: { type: 'string', enum: ['complete', 'explain', 'refactor'] }
+        task: { type: 'string', enum: ['complete', 'explain', 'refactor'] },
       },
-      required: ['code']
+      required: ['code'],
     },
     facilitator: 'payai',
     avgLatency: 450,
-    totalCalls: 12000
+    totalCalls: 12000,
   },
   {
     id: '3',
@@ -142,14 +140,14 @@ const MOCK_TOOLS: AITool[] = [
       type: 'object',
       properties: {
         text: { type: 'string', description: 'Text to summarize' },
-        length: { type: 'string', enum: ['short', 'medium', 'long'] }
+        length: { type: 'string', enum: ['short', 'medium', 'long'] },
       },
-      required: ['text']
+      required: ['text'],
     },
     facilitator: 'aurracloud',
     avgLatency: 800,
-    totalCalls: 8500
-  }
+    totalCalls: 8500,
+  },
 ]
 
 // =====================================================
@@ -301,7 +299,7 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-function CodeBlock({ code, language = 'typescript' }: { code: string; language?: string }) {
+function CodeBlock({ code }: { code: string; language?: string }) {
   return (
     <div className="relative">
       <div className="absolute top-2 right-2">
@@ -338,7 +336,7 @@ function ToolCard({ tool }: { tool: AITool }) {
           </div>
 
           <div className="flex flex-wrap gap-1 mt-2">
-            {tool.capabilities.map(cap => (
+            {tool.capabilities.map((cap) => (
               <Badge key={cap} variant="secondary" className="text-xs">
                 {cap}
               </Badge>
@@ -365,11 +363,7 @@ function ToolCard({ tool }: { tool: AITool }) {
                 <Sparkles className="w-4 h-4" />
                 Integration Snippets
               </span>
-              {isOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+              {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </Button>
           </CollapsibleTrigger>
 
@@ -446,20 +440,26 @@ function ToolCard({ tool }: { tool: AITool }) {
 // MAIN PAGE
 // =====================================================
 
-const CATEGORIES = ['all', 'text-generation', 'code-generation', 'summarization', 'image-processing']
+const CATEGORIES = [
+  'all',
+  'text-generation',
+  'code-generation',
+  'summarization',
+  'image-processing',
+]
 
 export default function AIToolsPage(): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
 
   const filteredTools = useMemo(() => {
-    return MOCK_TOOLS.filter(tool => {
+    return MOCK_TOOLS.filter((tool) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         if (
           !tool.name.toLowerCase().includes(query) &&
           !tool.description.toLowerCase().includes(query) &&
-          !tool.capabilities.some(c => c.toLowerCase().includes(query))
+          !tool.capabilities.some((c) => c.toLowerCase().includes(query))
         ) {
           return false
         }
@@ -508,7 +508,7 @@ export default function AIToolsPage(): React.JSX.Element {
               placeholder="Search tools by name or capability..."
               className="pl-10"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -517,7 +517,7 @@ export default function AIToolsPage(): React.JSX.Element {
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map(cat => (
+              {CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat}>
                   {cat === 'all' ? 'All Categories' : cat.replace('-', ' ')}
                 </SelectItem>
@@ -550,7 +550,7 @@ export default function AIToolsPage(): React.JSX.Element {
 
         {/* Tools List */}
         <div className="space-y-4">
-          {filteredTools.map(tool => (
+          {filteredTools.map((tool) => (
             <ToolCard key={tool.id} tool={tool} />
           ))}
         </div>

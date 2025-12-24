@@ -2,14 +2,19 @@
 
 /**
  * GhostSpeak React Context and Hooks
- * 
+ *
  * Provides React context and hooks for accessing GhostSpeak SDK functionality
- * with wallet adapter integration.
+ * with Crossmint wallet adapter integration.
  */
 
 import React, { createContext, useContext, useMemo, useCallback } from 'react'
-import { useWallet, useConnection } from '@solana/wallet-adapter-react'
-import { createGhostSpeakClient, type GhostSpeakClient, type NetworkType, type Address } from '../ghostspeak/client'
+import { useWallet } from '@crossmint/client-sdk-react-ui'
+import {
+  createGhostSpeakClient,
+  type GhostSpeakClient,
+  type NetworkType,
+  type Address,
+} from '../ghostspeak/client'
 
 // Re-export types
 export type { GhostSpeakClient, NetworkType }
@@ -37,35 +42,32 @@ interface GhostSpeakProviderProps {
 
 /**
  * GhostSpeak context provider
- * 
- * Wraps children with GhostSpeak SDK context, integrating with wallet adapter.
+ *
+ * Wraps children with GhostSpeak SDK context, integrating with Crossmint wallet.
  */
-export function GhostSpeakProvider({ 
-  children, 
+export function GhostSpeakProvider({
+  children,
   network = 'devnet',
-  customRpcUrl 
+  customRpcUrl,
 }: GhostSpeakProviderProps) {
-  const { publicKey, connected } = useWallet()
-  const { connection } = useConnection()
-  
-  // Create client with connection endpoint if available
+  const { wallet } = useWallet()
+
+  // Create client with custom or default RPC endpoint
   const client = useMemo(() => {
-    const rpcUrl = customRpcUrl ?? connection?.rpcEndpoint
-    return createGhostSpeakClient(network, rpcUrl)
-  }, [network, customRpcUrl, connection?.rpcEndpoint])
-  
-  const value = useMemo<GhostSpeakContextValue>(() => ({
-    client,
-    isConnected: connected,
-    publicKey: publicKey?.toBase58() ?? null,
-    network,
-  }), [client, connected, publicKey, network])
-  
-  return (
-    <GhostSpeakContext.Provider value={value}>
-      {children}
-    </GhostSpeakContext.Provider>
+    return createGhostSpeakClient(network, customRpcUrl)
+  }, [network, customRpcUrl])
+
+  const value = useMemo<GhostSpeakContextValue>(
+    () => ({
+      client,
+      isConnected: Boolean(wallet?.address),
+      publicKey: wallet?.address ?? null,
+      network,
+    }),
+    [client, wallet?.address, network]
   )
+
+  return <GhostSpeakContext.Provider value={value}>{children}</GhostSpeakContext.Provider>
 }
 
 /**
@@ -92,22 +94,25 @@ export function useGhostSpeakClient(): GhostSpeakClient | null {
  */
 export function useAgents() {
   const { client, publicKey, isConnected } = useGhostSpeak()
-  
+
   const getAllAgents = useCallback(async () => {
     if (!client) return []
     return client.agents.getAllAgents()
   }, [client])
-  
+
   const getUserAgents = useCallback(async () => {
     if (!client || !publicKey) return []
     return client.agents.getUserAgents(publicKey as Address)
   }, [client, publicKey])
-  
-  const getAgent = useCallback(async (address: string) => {
-    if (!client) return null
-    return client.agents.getAgentAccount(address as Address)
-  }, [client])
-  
+
+  const getAgent = useCallback(
+    async (address: string) => {
+      if (!client) return null
+      return client.agents.getAgentAccount(address as Address)
+    },
+    [client]
+  )
+
   return {
     getAllAgents,
     getUserAgents,
@@ -122,22 +127,22 @@ export function useAgents() {
  */
 export function useEscrows() {
   const { client, publicKey, isConnected } = useGhostSpeak()
-  
+
   const getAllEscrows = useCallback(async () => {
     if (!client) return []
     return client.escrow.getAllEscrows()
   }, [client])
-  
+
   const getEscrowsByBuyer = useCallback(async () => {
     if (!client || !publicKey) return []
     return client.escrow.getEscrowsByBuyer(publicKey as Address)
   }, [client, publicKey])
-  
+
   const getEscrowsBySeller = useCallback(async () => {
     if (!client || !publicKey) return []
     return client.escrow.getEscrowsBySeller(publicKey as Address)
   }, [client, publicKey])
-  
+
   return {
     getAllEscrows,
     getEscrowsByBuyer,
@@ -152,17 +157,23 @@ export function useEscrows() {
  */
 export function useMarketplace() {
   const { client, isConnected } = useGhostSpeak()
-  
-  const getServiceListing = useCallback(async (address: string) => {
-    if (!client) return null
-    return client.marketplace.getServiceListing(address as Address)
-  }, [client])
-  
-  const getJobPosting = useCallback(async (address: string) => {
-    if (!client) return null
-    return client.marketplace.getJobPosting(address as Address)
-  }, [client])
-  
+
+  const getServiceListing = useCallback(
+    async (address: string) => {
+      if (!client) return null
+      return client.marketplace.getServiceListing(address as Address)
+    },
+    [client]
+  )
+
+  const getJobPosting = useCallback(
+    async (address: string) => {
+      if (!client) return null
+      return client.marketplace.getJobPosting(address as Address)
+    },
+    [client]
+  )
+
   return {
     getServiceListing,
     getJobPosting,
@@ -176,22 +187,25 @@ export function useMarketplace() {
  */
 export function useGovernance() {
   const { client, publicKey, isConnected } = useGhostSpeak()
-  
+
   const getActiveProposals = useCallback(async () => {
     if (!client) return []
     return client.governance.getActiveProposals()
   }, [client])
-  
+
   const getProposalsByProposer = useCallback(async () => {
     if (!client || !publicKey) return []
     return client.governance.getProposalsByProposer(publicKey as Address)
   }, [client, publicKey])
-  
-  const getProposal = useCallback(async (address: string) => {
-    if (!client) return null
-    return client.governance.getProposal(address as Address)
-  }, [client])
-  
+
+  const getProposal = useCallback(
+    async (address: string) => {
+      if (!client) return null
+      return client.governance.getProposal(address as Address)
+    },
+    [client]
+  )
+
   return {
     getActiveProposals,
     getProposalsByProposer,
@@ -206,27 +220,30 @@ export function useGovernance() {
  */
 export function useChannels() {
   const { client, publicKey, isConnected } = useGhostSpeak()
-  
+
   const getAllChannels = useCallback(async () => {
     if (!client) return []
     return client.channels.getAllChannels()
   }, [client])
-  
+
   const getPublicChannels = useCallback(async () => {
     if (!client) return []
     return client.channels.getPublicChannels()
   }, [client])
-  
+
   const getChannelsByCreator = useCallback(async () => {
     if (!client || !publicKey) return []
     return client.channels.getChannelsByCreator(publicKey as Address)
   }, [client, publicKey])
-  
-  const getChannelMessages = useCallback(async (channelAddress: string) => {
-    if (!client) return []
-    return client.channels.getChannelMessages(channelAddress as Address)
-  }, [client])
-  
+
+  const getChannelMessages = useCallback(
+    async (channelAddress: string) => {
+      if (!client) return []
+      return client.channels.getChannelMessages(channelAddress as Address)
+    },
+    [client]
+  )
+
   return {
     getAllChannels,
     getPublicChannels,

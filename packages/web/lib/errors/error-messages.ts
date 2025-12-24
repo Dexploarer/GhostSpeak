@@ -133,7 +133,7 @@ const WALLET_ERRORS: Record<string, ErrorInfo> = {
  */
 export function getErrorInfo(error: unknown): ErrorInfo {
   const errorString = error instanceof Error ? error.message : String(error)
-  
+
   // Check for Anchor error codes
   const anchorMatch = errorString.match(/custom program error: 0x([0-9a-fA-F]+)/)
   if (anchorMatch) {

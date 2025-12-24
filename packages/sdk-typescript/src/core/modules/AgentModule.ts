@@ -12,7 +12,6 @@ import {
   getDeactivateAgentInstruction,
   getActivateAgentInstruction,
   getRegisterAgentCompressedInstructionAsync,
-  getConfigureX402Instruction,
   type Agent
 } from '../../generated/index.js'
 
@@ -52,9 +51,6 @@ export class AgentModule extends BaseModule {
         metadataUri: params.metadataUri,
         agentId: params.agentId
       })
-      
-      // DEBUG: Remove UserRegistry account (index 1) to match modified program
-      ix.accounts.splice(1, 1);
       
       return ix;
     }

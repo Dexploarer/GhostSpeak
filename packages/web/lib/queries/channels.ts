@@ -5,14 +5,13 @@ import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import type { Address } from '@solana/addresses'
-import type { TransactionSigner } from '@solana/kit'
 
 // Import SDK types from browser entry point
-import type { 
+import type {
   Channel as SDKChannel,
   Message as SDKMessage,
   ChannelType as SDKChannelType,
-  MessageType as SDKMessageType
+  MessageType as SDKMessageType,
 } from '@ghostspeak/sdk/browser'
 
 // =====================================================
@@ -148,15 +147,19 @@ export interface SendMessageData {
 // Map SDK channel type to UI channel type
 function mapSDKChannelTypeToUI(sdkType: SDKChannelType | undefined): ChannelType {
   if (!sdkType) return ChannelType.Public
-  
+
   // SDK ChannelType is an enum-like object
   const typeStr = String(sdkType)
   switch (typeStr) {
-    case 'Direct': return ChannelType.Direct
-    case 'Group': return ChannelType.Group
-    case 'Private': return ChannelType.Private
+    case 'Direct':
+      return ChannelType.Direct
+    case 'Group':
+      return ChannelType.Group
+    case 'Private':
+      return ChannelType.Private
     case 'Public':
-    default: return ChannelType.Public
+    default:
+      return ChannelType.Public
   }
 }
 
@@ -232,7 +235,7 @@ export function useChannel(channelAddress: string | undefined) {
 
       const client = getGhostSpeakClient()
       const channelData = await client.channels.getChannelAccount(channelAddress as Address)
-      
+
       if (!channelData) {
         throw new Error('Channel not found')
       }
@@ -257,7 +260,9 @@ export function useChannels(filters?: { isPublic?: boolean; userAddress?: string
         if (filters?.isPublic) {
           channelAccounts = await client.channels.getPublicChannels()
         } else if (filters?.userAddress) {
-          channelAccounts = await client.channels.getChannelsByCreator(filters.userAddress as Address)
+          channelAccounts = await client.channels.getChannelsByCreator(
+            filters.userAddress as Address
+          )
         } else {
           channelAccounts = await client.channels.getAllChannels()
         }
@@ -282,26 +287,28 @@ export function useChannelMembers(channelAddress: string | undefined) {
       if (!channelAddress) return []
 
       const client = getGhostSpeakClient()
-      
+
       try {
         const channelData = await client.channels.getChannelAccount(channelAddress as Address)
-        
+
         if (!channelData) return []
-        
+
         // Transform participants to ChannelMember format
-        return (channelData.participants ?? []).map((participant, index): ChannelMember => ({
-          address: participant.toString(),
-          joinedAt: new Date(),
-          lastActiveAt: new Date(),
-          role: index === 0 ? 'owner' : 'member',
-          isOnline: false,
-          permissions: {
-            canSendMessages: true,
-            canUploadFiles: true,
-            canManageMembers: index === 0,
-            canDeleteMessages: index === 0,
-          },
-        }))
+        return (channelData.participants ?? []).map(
+          (participant, index): ChannelMember => ({
+            address: participant.toString(),
+            joinedAt: new Date(),
+            lastActiveAt: new Date(),
+            role: index === 0 ? 'owner' : 'member',
+            isOnline: false,
+            permissions: {
+              canSendMessages: true,
+              canUploadFiles: true,
+              canManageMembers: index === 0,
+              canDeleteMessages: index === 0,
+            },
+          })
+        )
       } catch (error) {
         console.warn('Error fetching channel members:', error)
         return []
@@ -320,10 +327,10 @@ export function useChannelMessages(channelAddress: string | undefined) {
       if (!channelAddress) return []
 
       const client = getGhostSpeakClient()
-      
+
       try {
         const messageAccounts = await client.channels.getChannelMessages(channelAddress as Address)
-        
+
         return messageAccounts.map((account) =>
           transformSDKMessage(account.address.toString(), account.data)
         )
@@ -360,7 +367,7 @@ export function useCreateChannel() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       // Map UI channel type to SDK channel type
       const sdkChannelType = params.channelType as unknown as SDKChannelType
@@ -403,7 +410,7 @@ export function useSendMessage() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       const signature = await client.channels.sendMessage({
         signer,
@@ -438,7 +445,7 @@ export function useJoinChannel() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       const signature = await client.channels.join(signer, channelAddress as Address)
 
@@ -468,7 +475,7 @@ export function useLeaveChannel() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       const signature = await client.channels.leave(signer, channelAddress as Address)
 
@@ -503,7 +510,7 @@ export function useUpdateChannel() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       const signature = await client.channels.updateSettings(
         signer,
@@ -535,7 +542,12 @@ export function useAddReaction() {
   const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
-    mutationFn: async (params: { messageId?: string; messageAddress?: string; channelAddress: string; emoji: string }) => {
+    mutationFn: async (params: {
+      messageId?: string
+      messageAddress?: string
+      channelAddress: string
+      emoji: string
+    }) => {
       if (!isConnected || !address) {
         throw new Error('Wallet not connected')
       }
@@ -548,7 +560,7 @@ export function useAddReaction() {
 
       const client = getGhostSpeakClient()
       const signer = createSigner()
-      if (!signer) throw new Error("Could not create signer")
+      if (!signer) throw new Error('Could not create signer')
 
       const signature = await client.channels.addReaction(
         signer,
@@ -573,7 +585,7 @@ export function useEditMessage() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (params: { messageId: string; channelAddress: string; content: string }) => {
+    mutationFn: async (_params: { messageId: string; channelAddress: string; content: string }) => {
       // TODO: Implement when SDK supports message editing
       console.warn('Message editing not yet supported by SDK')
       return { signature: '' }
@@ -594,7 +606,7 @@ export function useDeleteMessage() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (params: { messageId: string; channelAddress: string }) => {
+    mutationFn: async (_params: { messageId: string; channelAddress: string }) => {
       // TODO: Implement when SDK supports message deletion
       console.warn('Message deletion not yet supported by SDK')
       return { signature: '' }
@@ -615,4 +627,3 @@ export function useDeleteMessage() {
 // =====================================================
 
 export type { SDKChannel, SDKMessage }
-

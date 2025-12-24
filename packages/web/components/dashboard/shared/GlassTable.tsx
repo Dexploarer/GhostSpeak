@@ -26,13 +26,13 @@ export function GlassTable<T>({ data, columns, title, actions, isLoading }: Glas
           {actions && <div className="flex gap-2">{actions}</div>}
         </div>
       )}
-      
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 uppercase bg-black/20 border-b border-white/5">
             <tr>
               {columns.map((col, i) => (
-                <th key={i} className={cn("px-6 py-3 font-medium", col.className)}>
+                <th key={i} className={cn('px-6 py-3 font-medium', col.className)}>
                   {col.header}
                 </th>
               ))}
@@ -60,11 +60,11 @@ export function GlassTable<T>({ data, columns, title, actions, isLoading }: Glas
               data.map((item, i) => (
                 <tr key={i} className="hover:bg-white/5 transition-colors">
                   {columns.map((col, j) => (
-                    <td key={j} className={cn("px-6 py-4", col.className)}>
-                      {col.cell 
-                        ? col.cell(item) 
-                        : col.accessorKey 
-                          ? String(item[col.accessorKey]) 
+                    <td key={j} className={cn('px-6 py-4', col.className)}>
+                      {col.cell
+                        ? col.cell(item)
+                        : col.accessorKey
+                          ? String(item[col.accessorKey])
                           : null}
                     </td>
                   ))}

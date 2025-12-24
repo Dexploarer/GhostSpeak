@@ -1,8 +1,8 @@
 'use client'
 
-import { AlertCircle, RefreshCw, Copy, ExternalLink, HelpCircle } from 'lucide-react'
+import { AlertCircle, RefreshCw, Copy, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getErrorInfo, type ErrorInfo } from '@/lib/errors/error-messages'
+import { getErrorInfo } from '@/lib/errors/error-messages'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -25,7 +25,12 @@ export function QueryError({ error, onRetry, className, compact = false }: Query
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20', className)}>
+      <div
+        className={cn(
+          'flex items-center gap-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20',
+          className
+        )}
+      >
         <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
         <p className="text-sm text-red-500 flex-1">{errorInfo.title}</p>
         {onRetry && errorInfo.isRecoverable && (
@@ -95,16 +100,16 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center py-12 px-6 text-center', className)}>
+    <div
+      className={cn('flex flex-col items-center justify-center py-12 px-6 text-center', className)}
+    >
       {icon && (
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
           {icon}
         </div>
       )}
       <h3 className="font-semibold text-foreground mb-1">{title}</h3>
-      {description && (
-        <p className="text-sm text-muted-foreground max-w-sm">{description}</p>
-      )}
+      {description && <p className="text-sm text-muted-foreground max-w-sm">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   )
@@ -125,7 +130,9 @@ export function WalletRequired({ className }: { className?: string }) {
 // Network error state
 export function NetworkError({ onRetry, className }: { onRetry?: () => void; className?: string }) {
   return (
-    <div className={cn('flex flex-col items-center justify-center py-12 px-6 text-center', className)}>
+    <div
+      className={cn('flex flex-col items-center justify-center py-12 px-6 text-center', className)}
+    >
       <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-4">
         <AlertCircle className="w-8 h-8 text-yellow-500" />
       </div>

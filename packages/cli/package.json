@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "2.0.0-beta.14",
+  "version": "2.0.0-beta.18",
   "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "bin": {
@@ -46,16 +46,16 @@
     "command-line",
     "devnet-ready"
   ],
-  "author": "GhostSpeak Protocol",
+  "author": "GhostSpeak Protocol <team@ghostspeak.io>",
   "license": "MIT",
-  "homepage": "https://github.com/Prompt-or-Die/ghostspeak#readme",
+  "homepage": "https://www.ghostspeak.io/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Prompt-or-Die/ghostspeak.git",
+    "url": "https://github.com/Ghostspeak/GhostSpeak",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/Prompt-or-Die/ghostspeak/issues"
+    "url": "https://github.com/Ghostspeak/GhostSpeak/issues "
   },
   "publishConfig": {
     "access": "public"

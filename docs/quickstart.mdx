@@ -1,0 +1,199 @@
+---
+title: 'Quickstart'
+description: 'Get started with x402 AI agent payments in 10 minutes'
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Node.js 18+** or **Bun 1.0+** installed
+- **Solana wallet** with some SOL for transactions
+- **Basic TypeScript knowledge**
+
+## Step 1: Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @ghostspeak/sdk @solana/kit
+```
+
+```bash bun
+bun add @ghostspeak/sdk @solana/kit
+```
+
+```bash pnpm
+pnpm add @ghostspeak/sdk @solana/kit
+```
+
+</CodeGroup>
+
+## Step 2: Create Your First Agent
+
+Create `register-agent.ts`:
+
+```typescript
+import GhostSpeak, { createKeyPairSignerFromBytes } from '@ghostspeak/sdk';
+import fs from 'fs';
+
+async function main() {
+  // Load your wallet
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(
+      process.env.WALLET_PATH || '~/.config/solana/id.json',
+      'utf-8'
+    )
+  );
+  const wallet = await createKeyPairSignerFromBytes(
+    new Uint8Array(keypairBytes)
+  );
+
+  console.log('👛 Wallet loaded:', wallet.address);
+
+  // Initialize GhostSpeak client with fluent API
+  const ghostspeak = new GhostSpeak().useNetwork('devnet').enableDevMode();
+
+  // Register your agent using fluent builder
+  const result = await ghostspeak
+    .agent()
+    .create({
+      name: 'MyFirstAgent',
+      description: 'An AI agent for data analysis',
+      capabilities: ['analysis', 'reporting'],
+    })
+    .withSigner(wallet)
+    .execute();
+
+  console.log('✅ Agent registered!');
+  console.log('📍 Agent address:', result.address);
+  console.log('🔗 Signature:', result.signature);
+}
+
+main().catch(console.error);
+```
+
+Run it:
+
+```bash
+export WALLET_PATH=~/.config/solana/id.json
+npx ts-node register-agent.ts
+```
+
+<Check>You should see "Agent registered!" with an address</Check>
+
+## Step 3: Set Up x402 Payments
+
+Create an Express server with x402 middleware:
+
+```typescript
+import express from 'express';
+import {
+  createX402Middleware,
+  X402Client,
+  createSolanaRpc,
+} from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/kit';
+
+async function startServer() {
+  // Load wallet
+  const keypairBytes = JSON.parse(fs.readFileSync(WALLET_PATH, 'utf-8'));
+  const wallet = await createKeyPairSignerFromBytes(
+    new Uint8Array(keypairBytes)
+  );
+
+  // Create RPC and x402 client
+  const rpc = createSolanaRpc('https://api.devnet.solana.com');
+  const x402Client = new X402Client(rpc, wallet);
+
+  const app = express();
+  app.use(express.json());
+
+  // Health check (free)
+  app.get('/health', (req, res) => {
+    res.json({ status: 'healthy' });
+  });
+
+  // Protected endpoint with x402 payment
+  app.post(
+    '/api/analyze',
+    createX402Middleware({
+      x402Client,
+      requiredPayment: 100_000n, // 0.1 USDC
+      token: USDC_MINT,
+      description: 'Data analysis service',
+      agentId: 'MyFirstAgent',
+    }),
+    (req, res) => {
+      // Payment verified - provide service
+      res.json({
+        success: true,
+        analysis: `Analyzed ${req.body.data.length} characters`,
+        paymentVerified: true,
+      });
+    }
+  );
+
+  app.listen(3000, () => {
+    console.log('🚀 Agent API running on http://localhost:3000');
+    console.log('💰 x402 payments enabled');
+  });
+}
+
+startServer().catch(console.error);
+```
+
+## Step 4: Test the Payment Flow
+
+```typescript
+import { X402Client, createSolanaRpc, address } from '@ghostspeak/sdk';
+
+// Make a request - will get 402 Payment Required
+const response = await fetch('http://localhost:3000/api/analyze', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ data: 'test data' }),
+});
+
+if (response.status === 402) {
+  const { paymentDetails } = await response.json();
+
+  // Make payment
+  const x402Client = new X402Client(rpc, wallet);
+  const receipt = await x402Client.pay({
+    recipient: address(paymentDetails.address),
+    amount: BigInt(paymentDetails.amount),
+    token: address(paymentDetails.token),
+    description: paymentDetails.description,
+  });
+
+  // Retry with payment proof
+  const result = await fetch('http://localhost:3000/api/analyze', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Payment-Signature': receipt.signature,
+    },
+    body: JSON.stringify({ data: 'test data' }),
+  });
+
+  console.log('✅ Service response:', await result.json());
+}
+```
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="API Reference" href="/sdk/api-reference" icon="code">
+    Explore the complete SDK documentation
+  </Card>
+  <Card title="X402 Payments" href="/x402/overview" icon="credit-card">
+    Learn about the x402 payment protocol
+  </Card>
+  <Card title="Architecture" href="/concepts/architecture" icon="building">
+    Understand how GhostSpeak works
+  </Card>
+  <Card title="Deployment" href="/guides/deployment" icon="rocket">
+    Deploy to production
+  </Card>
+</CardGroup>

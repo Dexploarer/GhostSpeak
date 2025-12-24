@@ -20,7 +20,7 @@ interface PricingDisplayProps {
 export function PricingDisplay({
   pricing,
   showDetails = false,
-  className = ''
+  className = '',
 }: PricingDisplayProps): React.JSX.Element {
   const pricePerCall = Number(pricing.pricePerCall) / 1e9 // Convert lamports to SOL
   const hasResponseTime = pricing.responseTimeMs && pricing.responseTimeMs > 0
@@ -34,9 +34,7 @@ export function PricingDisplay({
           <span className="text-sm text-gray-600 dark:text-gray-400">Per Call</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold gradient-text">
-            {pricePerCall.toFixed(6)}
-          </span>
+          <span className="text-2xl font-bold gradient-text">{pricePerCall.toFixed(6)}</span>
           <span className="text-sm text-gray-500">SOL</span>
         </div>
       </div>
@@ -59,9 +57,7 @@ export function PricingDisplay({
 
           {/* Payment Token */}
           <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-              Payment Token
-            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Payment Token</div>
             <div className="font-mono text-xs p-2 rounded bg-gray-100 dark:bg-gray-800 truncate">
               {pricing.paymentToken}
             </div>
@@ -83,7 +79,7 @@ interface PricingComparisonProps {
 
 export function PricingComparison({
   agents,
-  highlightAddress
+  highlightAddress,
 }: PricingComparisonProps): React.JSX.Element {
   const sortedAgents = [...agents].sort((a, b) => {
     const priceA = Number(a.pricing.pricePerCall)
@@ -117,9 +113,7 @@ export function PricingComparison({
         {sortedAgents.map((agent, index) => {
           const price = Number(agent.pricing.pricePerCall) / 1e9
           const isHighlighted = agent.address === highlightAddress
-          const percentDiff = avgPrice > 0
-            ? ((price - avgPrice) / avgPrice) * 100
-            : 0
+          const percentDiff = avgPrice > 0 ? ((price - avgPrice) / avgPrice) * 100 : 0
 
           return (
             <div

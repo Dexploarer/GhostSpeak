@@ -5,12 +5,7 @@ import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Coins,
   Star,
@@ -32,7 +27,6 @@ import {
   useCanVote,
   formatVotingPower,
   formatTokenAmount,
-  VOTING_WEIGHTS,
   LOCKUP_TIERS,
   type VotingPowerBreakdown,
 } from '@/lib/hooks/useVotingPower'
@@ -89,9 +83,7 @@ export function VotingPowerCard({
           </div>
           <div>
             <h3 className="font-semibold text-lg">Your Voting Power</h3>
-            <p className="text-sm text-muted-foreground">
-              Based on tokens, reputation & activity
-            </p>
+            <p className="text-sm text-muted-foreground">Based on tokens, reputation & activity</p>
           </div>
         </div>
         <Badge
@@ -120,14 +112,14 @@ export function VotingPowerCard({
         </p>
         {breakdown.delegatedToYou > BigInt(0) && (
           <p className="text-xs text-green-500 mt-1 flex items-center justify-center gap-1">
-            <ArrowUpRight className="w-3 h-3" />
-            +{formatVotingPower(breakdown.delegatedToYou)} delegated to you
+            <ArrowUpRight className="w-3 h-3" />+{formatVotingPower(breakdown.delegatedToYou)}{' '}
+            delegated to you
           </p>
         )}
         {breakdown.delegatedByYou > BigInt(0) && (
           <p className="text-xs text-yellow-500 mt-1 flex items-center justify-center gap-1">
-            <ArrowDownRight className="w-3 h-3" />
-            -{formatVotingPower(breakdown.delegatedByYou)} delegated by you
+            <ArrowDownRight className="w-3 h-3" />-{formatVotingPower(breakdown.delegatedByYou)}{' '}
+            delegated by you
           </p>
         )}
       </div>
@@ -152,7 +144,11 @@ export function VotingPowerCard({
           icon={Star}
           iconColor="text-purple-500"
           label="Reputation Score"
-          sublabel={breakdown.isVerifiedAgent ? `${(breakdown.reputationScore / 100).toFixed(0)}% verified` : 'Not verified'}
+          sublabel={
+            breakdown.isVerifiedAgent
+              ? `${(breakdown.reputationScore / 100).toFixed(0)}% verified`
+              : 'Not verified'
+          }
           power={breakdown.reputationVotingPower}
           weight={breakdown.reputationWeight}
           tooltip="Voting power from your agent's reputation. Only verified agents (with x402 payment history) get this bonus."
@@ -175,9 +171,11 @@ export function VotingPowerCard({
           icon={Lock}
           iconColor="text-blue-500"
           label="Staked Tokens"
-          sublabel={breakdown.lockupDuration > 0 
-            ? `${formatTokenAmount(breakdown.stakedTokens)} × ${breakdown.lockupMultiplier}x` 
-            : 'No lockup'}
+          sublabel={
+            breakdown.lockupDuration > 0
+              ? `${formatTokenAmount(breakdown.stakedTokens)} × ${breakdown.lockupMultiplier}x`
+              : 'No lockup'
+          }
           power={breakdown.stakingVotingPower}
           weight={breakdown.stakingWeight}
           tooltip={`Voting power from staked tokens with ${breakdown.lockupMultiplier}x multiplier for ${breakdown.lockupDuration}-day lockup.`}
@@ -335,11 +333,7 @@ interface LockupTierSelectorProps {
   className?: string
 }
 
-export function LockupTierSelector({
-  selectedDays,
-  onSelect,
-  className,
-}: LockupTierSelectorProps) {
+export function LockupTierSelector({ selectedDays, onSelect, className }: LockupTierSelectorProps) {
   return (
     <div className={cn('grid grid-cols-2 md:grid-cols-3 gap-2', className)}>
       {LOCKUP_TIERS.map((tier) => {
@@ -355,9 +349,7 @@ export function LockupTierSelector({
             )}
           >
             <div className="font-medium text-sm">{tier.label}</div>
-            <div className="text-xs text-muted-foreground">
-              {tier.multiplier}x multiplier
-            </div>
+            <div className="text-xs text-muted-foreground">{tier.multiplier}x multiplier</div>
           </button>
         )
       })}

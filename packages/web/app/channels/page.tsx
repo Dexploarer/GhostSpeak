@@ -32,11 +32,11 @@ import { ChannelCard } from '@/components/channels/ChannelCard'
 import { CreateChannelForm } from '@/components/channels/CreateChannelForm'
 
 export default function ChannelsPage(): React.JSX.Element {
-  const { address: publicKey, isConnected } = useWalletAddress()
+  const { address: publicKey } = useWalletAddress()
   const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState('all')
-  
+
   // Edit modal state
   const [editChannel, setEditChannel] = React.useState<Channel | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
@@ -116,7 +116,7 @@ export default function ChannelsPage(): React.JSX.Element {
     setEditChannel(channel)
     setIsEditOpen(true)
   }
-  
+
   const handleCloseEditModal = (): void => {
     setEditChannel(null)
     setIsEditOpen(false)
@@ -175,7 +175,7 @@ export default function ChannelsPage(): React.JSX.Element {
             />
           </DialogContent>
         </Dialog>
-        
+
         {/* Edit Channel Modal */}
         <Dialog open={isEditOpen} onOpenChange={(open) => !open && handleCloseEditModal()}>
           <DialogContent className="max-w-md">
@@ -185,17 +185,19 @@ export default function ChannelsPage(): React.JSX.Element {
             {editChannel && (
               <div className="space-y-4 py-4">
                 <p className="text-sm text-muted-foreground">
-                  Channel settings can be updated by the owner. To modify channel settings,
-                  navigate to the channel and use the settings menu.
+                  Channel settings can be updated by the owner. To modify channel settings, navigate
+                  to the channel and use the settings menu.
                 </p>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={handleCloseEditModal}>
                     Cancel
                   </Button>
-                  <Button onClick={() => {
-                    handleCloseEditModal()
-                    router.push(`/channels/${editChannel.address}`)
-                  }}>
+                  <Button
+                    onClick={() => {
+                      handleCloseEditModal()
+                      router.push(`/channels/${editChannel.address}`)
+                    }}
+                  >
                     Go to Channel
                   </Button>
                 </div>
@@ -233,7 +235,9 @@ export default function ChannelsPage(): React.JSX.Element {
             <Hash className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.public}</div>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {stats.public}
+            </div>
           </CardContent>
         </Card>
 
@@ -243,7 +247,9 @@ export default function ChannelsPage(): React.JSX.Element {
             <Lock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">{stats.private}</div>
+            <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+              {stats.private}
+            </div>
           </CardContent>
         </Card>
 

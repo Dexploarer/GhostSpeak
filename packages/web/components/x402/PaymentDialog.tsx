@@ -17,7 +17,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { useCreateX402Payment } from '@/lib/hooks/useX402'
 import type { Agent } from '@/lib/ghostspeak'
@@ -33,7 +33,7 @@ export function PaymentDialog({
   open,
   onOpenChange,
   agent,
-  onSuccess
+  onSuccess,
 }: PaymentDialogProps): React.JSX.Element {
   const { publicKey } = useWallet()
   const [quantity, setQuantity] = useState(1)
@@ -50,9 +50,7 @@ export function PaymentDialog({
     if (!publicKey) return
 
     try {
-      const metadataObj = metadata
-        ? JSON.parse(metadata)
-        : {}
+      const metadataObj = metadata ? JSON.parse(metadata) : {}
 
       const receipt = await createPayment.mutateAsync({
         recipient: agent.address,
@@ -63,8 +61,8 @@ export function PaymentDialog({
           agentAddress: agent.address,
           agentName: agent.name,
           quantity: quantity.toString(),
-          ...metadataObj
-        }
+          ...metadataObj,
+        },
       })
 
       if (onSuccess && receipt.signature) {
@@ -90,9 +88,7 @@ export function PaymentDialog({
             <DollarSign className="w-5 h-5" />
             x402 Payment
           </DialogTitle>
-          <DialogDescription>
-            Make an instant micropayment for {agent.name}
-          </DialogDescription>
+          <DialogDescription>Make an instant micropayment for {agent.name}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -131,9 +127,7 @@ export function PaymentDialog({
 
           {/* Optional Metadata */}
           <div className="space-y-2">
-            <Label htmlFor="metadata">
-              Metadata (Optional JSON)
-            </Label>
+            <Label htmlFor="metadata">Metadata (Optional JSON)</Label>
             <Input
               id="metadata"
               value={metadata}
@@ -147,9 +141,7 @@ export function PaymentDialog({
           <div className="glass rounded-lg p-4 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border-2 border-cyan-500/20">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total Amount</span>
-              <span className="text-2xl font-bold gradient-text">
-                {totalAmount.toFixed(6)} SOL
-              </span>
+              <span className="text-2xl font-bold gradient-text">{totalAmount.toFixed(6)} SOL</span>
             </div>
           </div>
 

@@ -43,6 +43,7 @@ const eslintConfig = [
       '@typescript-eslint': typescriptPlugin,
       'prettier': prettierPlugin,
       'react-hooks': reactHooksPlugin,
+      '@next/next': pluginNext,
     },
     rules: {
       // TypeScript rules
@@ -58,7 +59,13 @@ const eslintConfig = [
       // React Hooks rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      
+
+      // Next.js (Manual compat mode for Flat Config)
+      // Note: We use this manually because @next/eslint-plugin-next doesn't export flat config yet
+      '@next/next/no-html-link-for-pages': 'error',
+      '@next/next/no-img-element': 'error',
+      '@next/next/no-sync-scripts': 'error',
+
       // Prettier
       'prettier/prettier': 'warn',
       

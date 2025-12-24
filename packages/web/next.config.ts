@@ -19,7 +19,10 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     'libsql',
     '@libsql/client',
+    '@libsql/core',
     '@libsql/darwin-arm64',
+    '@libsql/linux-x64-gnu',
+    '@libsql/linux-x64-musl',
     '@libsql/hrana-client',
   ],
 

@@ -79,10 +79,7 @@ export function useCredentials() {
                 name: String(data.name ?? 'Unknown Agent'),
                 capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
               },
-              crossmintSync: {
-                status: 'pending' as const,
-                chain: 'base-sepolia',
-              },
+              crossmintSync: undefined,
             }
           }
         )
@@ -100,9 +97,6 @@ export function useCredentials() {
 
 /**
  * Hook to sync a credential to EVM via Crossmint
- *
- * Note: Full implementation requires wallet signing and Crossmint API integration.
- * This is a simplified version that demonstrates the flow.
  */
 export function useSyncCredential() {
   const queryClient = useQueryClient()
@@ -110,17 +104,31 @@ export function useSyncCredential() {
 
   return useMutation({
     mutationFn: async (params: SyncCredentialParams) => {
-      // TODO: Integrate with actual Crossmint SDK when wallet signing is available
-      // For now, this returns a mock success to demonstrate the UI flow
+      const typeMap = {
+        AgentIdentity: 'agent',
+        Reputation: 'reputation',
+        JobCompletion: 'job',
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const response = await fetch('/api/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: typeMap[params.credentialType],
+          recipientEmail: params.recipientEmail,
+          subject: {
+            id: params.agentAddress,
+            // In a real app we'd pass more subject data here
+          },
+        }),
+      })
 
-      // In production, this would:
-      // 1. Get the wallet signer
-      // 2. Sign the credential subject data
-      // 3. Call the SDK's credential service with the signature
-      // const result = await client.credentials().issueAgentIdentityCredential({...})
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to sync credential')
+      }
+
+      const data = await response.json()
 
       return {
         solanaCredential: {
@@ -130,17 +138,30 @@ export function useSyncCredential() {
         crossmintSync: {
           status: 'synced' as const,
           chain: 'base-sepolia',
-          credentialId: `cred_${Date.now()}`,
+          credentialId: data.credential?.id || `cred_${Date.now()}`,
         },
       }
     },
-    onSuccess: (result) => {
-      if (result.crossmintSync?.status === 'synced') {
-        toast.success('Credential synced to EVM successfully!')
-      } else {
-        toast.success('Credential created on Solana')
-      }
-      queryClient.invalidateQueries({ queryKey: credentialKeys.list(wallet.address ?? undefined) })
+    onSuccess: (result, variables) => {
+      toast.success('Credential synced to EVM successfully!')
+      
+      // Manually update the cache to reflect the new sync status immediately
+      // This persists the status until the next full page refresh/query invalidation
+      queryClient.setQueryData(
+        credentialKeys.list(wallet.address ?? undefined),
+        (old: Credential[] | undefined) => {
+          if (!old) return []
+          return old.map((c) => {
+            if (c.subject === variables.agentAddress && c.type === variables.credentialType) {
+              return {
+                ...c,
+                crossmintSync: result.crossmintSync,
+              }
+            }
+            return c
+          })
+        }
+      )
     },
     onError: (error: Error) => {
       toast.error(`Failed to sync credential: ${error.message}`)

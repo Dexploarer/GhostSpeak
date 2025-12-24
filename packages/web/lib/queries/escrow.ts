@@ -116,13 +116,15 @@ async function deriveWorkOrderFromEscrow(
       return `${taskIdStr}_${clientAddress.slice(0, 8)}` as Address
     }
     // For numeric task IDs, derive from client + task ID
-    const { getProgramDerivedAddress, getUtf8Encoder } = await import('@solana/kit')
+    // For numeric task IDs, derive from client + task ID
+    const { getProgramDerivedAddress, getUtf8Encoder, getAddressEncoder } = await import('@solana/kit')
     const encoder = getUtf8Encoder()
+    const addressEncoder = getAddressEncoder()
     const [workOrderAddress] = await getProgramDerivedAddress({
       programAddress: GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS as Address,
       seeds: [
         encoder.encode('work_order'),
-        encoder.encode(clientAddress),
+        addressEncoder.encode(clientAddress),
         encoder.encode(String(taskId)),
       ],
     })
@@ -354,9 +356,10 @@ function mapSDKStatusToUIStatus(sdkStatus: SDKEscrowStatus): EscrowStatus {
 }
 
 // Helper function to fetch token metadata
+// Helper function to fetch token metadata
 async function fetchTokenMetadata(
   tokenAddress: Address,
-  rpcClient: unknown
+  connection: any // Using 'any' to avoid deep import issues here, but expects @solana/web3.js Connection
 ): Promise<Token2022Metadata> {
   try {
     // For native SOL
@@ -367,26 +370,25 @@ async function fetchTokenMetadata(
         symbol: 'SOL',
         name: 'Solana',
         extensions: [],
-        totalSupply: BigInt(0), // Would need to fetch actual supply
+        totalSupply: BigInt(0),
         mintAuthority: undefined,
         freezeAuthority: undefined,
       }
     }
 
     // For Token-2022 tokens, fetch metadata from chain
-    const rpc = rpcClient as {
-      getAccountInfo: (address: Address) => Promise<{ data: Uint8Array } | null>
-    }
-    const accountInfo = await rpc.getAccountInfo(tokenAddress)
+    const { PublicKey } = await import('@solana/web3.js')
+    const accountInfo = await connection.getAccountInfo(new PublicKey(tokenAddress))
+    
     if (!accountInfo || !accountInfo.data) {
       throw new Error('Token not found')
     }
 
-    // Parse token metadata and extensions
-    // This is simplified - real implementation would parse the account data
+    // In a real implementation we would parse the account data using @solana/spl-token
+    // For this MVP, we return defaults if we can't parse
     return {
       programId: TOKEN_2022_PROGRAM_ADDRESS,
-      decimals: 6, // Default, would parse from data
+      decimals: 6,
       symbol: 'TOKEN',
       name: 'Token',
       extensions: [],
@@ -395,8 +397,7 @@ async function fetchTokenMetadata(
       freezeAuthority: undefined,
     }
   } catch (error) {
-    console.error('Error fetching token metadata:', error)
-    // Return default metadata
+    console.warn('Error fetching token metadata:', error)
     return {
       programId: TOKEN_2022_PROGRAM_ADDRESS,
       decimals: 6,
@@ -422,8 +423,9 @@ export function useEscrows(filters?: {
     queryFn: async () => {
       const client = getGhostSpeakClient()
       const escrowModule = client.escrow
-      // Note: rpcClient would need to be configured separately if needed
-      const rpcClient = {} as Record<string, unknown>
+      // Use standard Solana connection
+      const { Connection } = await import('@solana/web3.js')
+      const connection = new Connection(client.rpcUrl)
 
       // Fetch all escrows from the blockchain
       const escrows = await escrowModule.getAllEscrows()
@@ -435,7 +437,7 @@ export function useEscrows(filters?: {
           const escrowData = data as EscrowSDKData
 
           // Fetch token metadata
-          const tokenMetadata = await fetchTokenMetadata(escrowData.paymentToken, rpcClient)
+          const tokenMetadata = await fetchTokenMetadata(escrowData.paymentToken, connection)
 
           // Calculate fees and interest
           // Skip fee and interest calculations for now due to type complexity
@@ -546,7 +548,9 @@ export function useEscrow(address: string) {
     queryFn: async () => {
       const client = getGhostSpeakClient()
       const escrowModule = client.escrow
-      const rpcClient = {} as Record<string, unknown>
+
+      const { Connection } = await import('@solana/web3.js')
+      const connection = new Connection(client.rpcUrl)
 
       // Fetch the escrow account
       const escrowData = await escrowModule.getEscrowAccount(address as Address)
@@ -559,7 +563,7 @@ export function useEscrow(address: string) {
       const escrowTypedData = escrowData as unknown as EscrowSDKData
 
       // Fetch token metadata
-      const tokenMetadata = await fetchTokenMetadata(escrowTypedData.paymentToken, rpcClient)
+      const tokenMetadata = await fetchTokenMetadata(escrowTypedData.paymentToken, connection)
 
       // Skip fee and interest calculations for now due to type complexity
       // TODO: Fix Token-2022 extension type handling

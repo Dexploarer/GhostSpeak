@@ -73,11 +73,12 @@ export function WalletConnectButton() {
   }
 
   // Not connected - show connect button
+  // Note: Standard shadcn outline button might be problematic on dark backgrounds if not customized
+  // Forcing a solid style for high visibility
   return (
     <Button
       onClick={login}
-      variant="outline"
-      className="gap-2 border-primary text-primary bg-transparent hover:bg-primary/10 hover:text-primary transition-all duration-300 shadow-[0_0_15px_rgba(204,255,0,0.1)] border-2 font-black"
+      className="gap-2 bg-primary text-black hover:bg-lime-400 border-2 border-primary font-bold shadow-[0_0_20px_rgba(204,255,0,0.3)]"
     >
       <Wallet className="h-4 w-4" />
       Connect Wallet

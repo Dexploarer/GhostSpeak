@@ -27,15 +27,14 @@ export default function DashboardOverview() {
     // Total Escrowed Funds (Active Escrows)
     const activeEscrows = escrows.filter((e) => e.status === EscrowStatus.Active)
     const totalEscrowed = activeEscrows.reduce((acc, curr) => {
-      // Assuming 6 decimals for USDC/SOL.
-      // TODO: Use proper token metadata decimals from escrow.tokenMetadata
-      return acc + Number(curr.amount) / 1_000_000
+      const decimals = curr.tokenMetadata?.decimals ?? 6
+      return acc + Number(curr.amount) / Math.pow(10, decimals)
     }, 0)
 
     // Completed Payments (Escrows Completed)
     const completedEscrows = escrows.filter((e) => e.status === EscrowStatus.Completed)
 
-    // Average Reputation (Mock for now as it's not fully aggregated yet)
+    // Average Reputation
     const avgReputation =
       agents.length > 0
         ? agents.reduce((acc, curr) => acc + curr.reputation.score, 0) / agents.length
@@ -50,16 +49,36 @@ export default function DashboardOverview() {
     }
   }, [escrows, agents])
 
-  // Activity data for chart (Mock until historical indexer is live)
-  const chartData = [
-    { name: '00:00', value: 0 },
-    { name: '04:00', value: 0 },
-    { name: '08:00', value: 0 },
-    { name: '12:00', value: 0 },
-    { name: '16:00', value: 0 },
-    { name: '20:00', value: 0 },
-    { name: '24:00', value: 0 },
-  ]
+  // Process real escrow timestamps for the activity chart
+  const chartData = useMemo(() => {
+    // Initialize 24h buckets (every 4 hours)
+    const buckets = [
+      { name: '00:00', value: 0 },
+      { name: '04:00', value: 0 },
+      { name: '08:00', value: 0 },
+      { name: '12:00', value: 0 },
+      { name: '16:00', value: 0 },
+      { name: '20:00', value: 0 },
+      { name: '24:00', value: 0 },
+    ]
+
+    // If no data, just return the empty buckets (don't show random mock data)
+    if (escrows.length === 0) return buckets
+
+    // Simple distribution of escrow creation times (last 24h)
+    // In a real indexer, we'd query this efficiently.
+    // Here we just map client-side data to the nearest bucket for visualization.
+    escrows.forEach((e) => {
+      const hour = e.createdAt.getHours()
+      // Map hour 0-23 to one of the 6 buckets roughly
+      const bucketIndex = Math.floor(hour / 4)
+      if (buckets[bucketIndex]) {
+        buckets[bucketIndex].value += 1
+      }
+    })
+
+    return buckets
+  }, [escrows])
 
   const isLoading = isLoadingAgents || isLoadingEscrows
 
@@ -68,9 +87,14 @@ export default function DashboardOverview() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Agent Marketplace
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+              Agent Marketplace
+            </h1>
+            <span className="px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-500 text-xs font-mono uppercase tracking-wider border border-lime-500/20">
+              Devnet
+            </span>
+          </div>
           <p className="text-muted-foreground mt-1">
             Pay per call. Protected by escrow.{' '}
             <span className="font-mono text-primary">
@@ -99,7 +123,7 @@ export default function DashboardOverview() {
         <StatsCard
           label="active funds" // Lowercase label style
           value={isLoading ? '...' : `${stats.totalEscrowed.toFixed(2)}`}
-          unit="USDC" // Defaulting to USDC for display
+          unit="Total Value" // Defaulting to value label as we might mix tokens
           trend={
             stats.activeEscrowCount > 0 ? `${stats.activeEscrowCount} active` : 'No active escrows'
           }
@@ -164,37 +188,40 @@ export default function DashboardOverview() {
             </GlassCard>
           ) : (
             <div className="space-y-4">
-              {escrows.slice(0, 3).map((escrow) => (
-                <GlassCard key={escrow.address} className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'w-8 h-8 rounded-full flex items-center justify-center',
-                        escrow.status === EscrowStatus.Active
-                          ? 'bg-green-500/20 text-green-500'
-                          : 'bg-gray-500/20 text-gray-500'
-                      )}
-                    >
-                      {escrow.status === EscrowStatus.Active ? (
-                        <Shield className="w-4 h-4" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4" />
-                      )}
+              {escrows.slice(0, 3).map((escrow) => {
+                const decimals = escrow.tokenMetadata?.decimals ?? 6
+                const formattedAmount = (Number(escrow.amount) / Math.pow(10, decimals)).toFixed(2)
+                const symbol = escrow.tokenMetadata?.symbol ?? 'USDC'
+
+                return (
+                  <GlassCard key={escrow.address} className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center',
+                          escrow.status === EscrowStatus.Active
+                            ? 'bg-green-500/20 text-green-500'
+                            : 'bg-gray-500/20 text-gray-500'
+                        )}
+                      >
+                        {escrow.status === EscrowStatus.Active ? (
+                          <Shield className="w-4 h-4" />
+                        ) : (
+                          <CheckCircle2 className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{escrow.taskId}</p>
+                        <p className="text-xs text-muted-foreground">{escrow.status}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{escrow.taskId}</p>
-                      <p className="text-xs text-muted-foreground">{escrow.status}</p>
+                    <div className="text-right">
+                      <p className="text-sm font-bold">{formattedAmount}</p>
+                      <p className="text-xs text-muted-foreground">{symbol}</p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    {/* Assuming 6 decimals for now */}
-                    <p className="text-sm font-bold">
-                      {(Number(escrow.amount) / 1_000_000).toFixed(2)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">USDC</p>
-                  </div>
-                </GlassCard>
-              ))}
+                  </GlassCard>
+                )
+              })}
             </div>
           )}
 

@@ -32,7 +32,7 @@ const allocations: TokenAllocation[] = [
     id: 'community',
     label: 'Community',
     percentage: 80,
-    color: '#ccff00',
+    color: '#ccff00', // Lime
     icon: Users,
     description: 'The backbone of GhostSpeak — our community drives everything.',
     details: [
@@ -46,7 +46,7 @@ const allocations: TokenAllocation[] = [
     id: 'creator-fees',
     label: 'Creator Fees',
     percentage: 10,
-    color: '#22c55e',
+    color: '#06b6d4', // Cyan
     icon: Code,
     description: 'Development funding and strategic buybacks at milestones.',
     details: [
@@ -60,7 +60,7 @@ const allocations: TokenAllocation[] = [
     id: 'early-contributors',
     label: 'Early Contributors',
     percentage: 4,
-    color: '#a855f7',
+    color: '#e4e4e7', // Zinc-200 (White-ish)
     icon: Heart,
     description: 'Rewarding those who believed in the vision from day one.',
     details: [
@@ -74,7 +74,7 @@ const allocations: TokenAllocation[] = [
     id: 'team',
     label: 'Team',
     percentage: 3,
-    color: '#3b82f6',
+    color: '#71717a', // Zinc-500
     icon: Sparkles,
     description: 'Core team allocation with transparent vesting schedule.',
     details: [
@@ -88,7 +88,7 @@ const allocations: TokenAllocation[] = [
     id: 'liquidity',
     label: 'Liquidity & Marketing',
     percentage: 3,
-    color: '#f59e0b',
+    color: '#84cc16', // Lime-600 (Darker Lime)
     icon: Droplets,
     description: 'Ensuring deep liquidity and strategic market presence.',
     details: [
@@ -134,7 +134,7 @@ function TokenomicsDonut({
   return (
     <div className="relative">
       {/* Glow effect */}
-      <div className="absolute inset-0 blur-3xl opacity-30">
+      <div className="absolute inset-0 blur-3xl opacity-20">
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           {allocations.map((alloc) => {
             const segmentLength = (alloc.percentage / 100) * circumference
@@ -191,7 +191,7 @@ function TokenomicsDonut({
                 className="cursor-pointer transition-all duration-300"
                 style={{
                   filter: isActive ? `drop-shadow(0 0 20px ${alloc.color})` : 'none',
-                  opacity: activeSegment && !isActive ? 0.4 : 1,
+                  opacity: activeSegment && !isActive ? 0.3 : 1,
                 }}
                 onMouseEnter={() => setActiveSegment(alloc.id)}
                 onMouseLeave={() => setActiveSegment(null)}
@@ -212,9 +212,9 @@ function TokenomicsDonut({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <GhostIcon variant="logo" size={48} className="mx-auto mb-2 text-primary" />
-          <div className="text-3xl font-black text-foreground">$GHOST</div>
-          <div className="text-xs font-mono text-muted-foreground mt-1">100% DISTRIBUTED</div>
+          <GhostIcon variant="logo" size={48} className="mx-auto mb-2 text-lime-500" />
+          <div className="text-3xl font-black text-white">$GHOST</div>
+          <div className="text-xs font-mono text-zinc-500 mt-1">100% DISTRIBUTED</div>
         </motion.div>
       </div>
     </div>
@@ -237,8 +237,8 @@ function AllocationCard({
     <motion.div
       className={`relative p-6 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
         isActive
-          ? 'bg-card border-primary/50 shadow-lg shadow-primary/10'
-          : 'bg-card/50 border-border hover:border-primary/30'
+          ? 'bg-zinc-900 border-lime-500/50 shadow-lg shadow-lime-500/10'
+          : 'bg-zinc-900/50 border-white/10 hover:border-lime-500/30'
       }`}
       onMouseEnter={() => onHover(alloc.id)}
       onMouseLeave={() => onHover(null)}
@@ -275,12 +275,12 @@ function AllocationCard({
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-foreground mb-2">{alloc.label}</h3>
-        <p className="text-sm text-muted-foreground mb-4">{alloc.description}</p>
+        <h3 className="text-lg font-bold text-white mb-2">{alloc.label}</h3>
+        <p className="text-sm text-zinc-400 mb-4">{alloc.description}</p>
 
         <div className="space-y-2">
           {alloc.details.map((detail, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div key={i} className="flex items-center gap-2 text-xs text-zinc-500">
               <ChevronRight className="w-3 h-3" style={{ color: alloc.color }} />
               <span>{detail}</span>
             </div>
@@ -295,13 +295,13 @@ export default function TokenomicsPage() {
   const [activeSegment, setActiveSegment] = useState<string | null>(null)
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white selection:bg-lime-500/30">
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32 overflow-hidden border-b border-border">
+      <section className="relative py-24 md:py-32 overflow-hidden border-b border-white/10">
         {/* Background effects */}
-        <div className="absolute inset-0 aurora-bg opacity-50" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-[100px]" />
+        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.05]" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-lime-500/5 rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-cyan-500/5 rounded-full blur-[100px]" />
 
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <motion.div
@@ -310,16 +310,16 @@ export default function TokenomicsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <Coins className="w-4 h-4 text-primary" />
-              <span className="text-sm font-mono text-primary">TOKENOMICS</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-500/10 border border-lime-500/20 mb-6">
+              <Coins className="w-4 h-4 text-lime-500" />
+              <span className="text-sm font-mono text-lime-500">TOKENOMICS</span>
             </div>
 
             <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-6">
-              Fair Launch. <span className="text-primary">Community First.</span>
+              Fair Launch. <span className="text-lime-500">Community First.</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
+            <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-light">
               80% to the community. Transparent vesting. Milestone-based buybacks. Built for
               long-term value, not quick exits.
             </p>
@@ -352,7 +352,7 @@ export default function TokenomicsPage() {
                   <motion.div
                     key={alloc.id}
                     className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all duration-300 ${
-                      isActive ? 'bg-card border border-primary/30' : 'hover:bg-card/50'
+                      isActive ? 'bg-zinc-900 border border-lime-500/30' : 'hover:bg-zinc-900/50'
                     }`}
                     onMouseEnter={() => setActiveSegment(alloc.id)}
                     onMouseLeave={() => setActiveSegment(null)}
@@ -364,13 +364,13 @@ export default function TokenomicsPage() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-semibold text-foreground">{alloc.label}</span>
+                        <Icon className="w-4 h-4 text-zinc-500" />
+                        <span className="font-semibold text-white">{alloc.label}</span>
                       </div>
                     </div>
                     <div
                       className="text-xl font-black font-mono"
-                      style={{ color: isActive ? alloc.color : 'var(--foreground)' }}
+                      style={{ color: isActive ? alloc.color : 'white' }}
                     >
                       {alloc.percentage}%
                     </div>
@@ -392,9 +392,9 @@ export default function TokenomicsPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">
-              Allocation <span className="text-primary">Breakdown</span>
+              Allocation <span className="text-lime-500">Breakdown</span>
             </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-zinc-400 max-w-xl mx-auto">
               Every token has a purpose. Every allocation serves the ecosystem.
             </p>
           </motion.div>
@@ -413,7 +413,7 @@ export default function TokenomicsPage() {
       </section>
 
       {/* Vesting Schedule Section */}
-      <section className="py-24 border-t border-border bg-card/30">
+      <section className="py-24 border-t border-white/10 bg-zinc-900/30">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             className="text-center mb-16"
@@ -421,15 +421,15 @@ export default function TokenomicsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
-              <Clock className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-mono text-blue-500">VESTING SCHEDULE</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
+              <Clock className="w-4 h-4 text-cyan-500" />
+              <span className="text-sm font-mono text-cyan-500">VESTING SCHEDULE</span>
             </div>
 
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">
-              Team <span className="text-primary">Vesting</span>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-white">
+              Team <span className="text-cyan-500">Vesting</span>
             </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-zinc-400 max-w-xl mx-auto">
               Aligned incentives through time-locked vesting. Team tokens release gradually.
             </p>
           </motion.div>
@@ -437,51 +437,51 @@ export default function TokenomicsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Vesting Card 1 */}
             <motion.div
-              className="p-8 rounded-2xl bg-card border border-border text-center"
+              className="p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
             >
-              <div className="text-5xl font-black text-primary mb-2">6</div>
-              <div className="text-sm font-mono text-muted-foreground uppercase tracking-wider">
+              <div className="text-5xl font-black text-cyan-500 mb-2">6</div>
+              <div className="text-sm font-mono text-zinc-500 uppercase tracking-wider">
                 Month Cliff
               </div>
-              <p className="text-xs text-muted-foreground mt-4">
+              <p className="text-xs text-zinc-400 mt-4">
                 No team tokens released for first 6 months
               </p>
             </motion.div>
 
             {/* Vesting Card 2 */}
             <motion.div
-              className="p-8 rounded-2xl bg-card border border-border text-center"
+              className="p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <div className="text-5xl font-black text-primary mb-2">Bi-Weekly</div>
-              <div className="text-sm font-mono text-muted-foreground uppercase tracking-wider">
+              <div className="text-5xl font-black text-cyan-500 mb-2">Bi-Weekly</div>
+              <div className="text-sm font-mono text-zinc-500 uppercase tracking-wider">
                 Release Schedule
               </div>
-              <p className="text-xs text-muted-foreground mt-4">
+              <p className="text-xs text-zinc-400 mt-4">
                 Tokens vest every 2 weeks or monthly
               </p>
             </motion.div>
 
             {/* Vesting Card 3 */}
             <motion.div
-              className="p-8 rounded-2xl bg-card border border-border text-center"
+              className="p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
-              <div className="text-5xl font-black text-primary mb-2">24</div>
-              <div className="text-sm font-mono text-muted-foreground uppercase tracking-wider">
+              <div className="text-5xl font-black text-cyan-500 mb-2">24</div>
+              <div className="text-sm font-mono text-zinc-500 uppercase tracking-wider">
                 Month Total Vest
               </div>
-              <p className="text-xs text-muted-foreground mt-4">
+              <p className="text-xs text-zinc-400 mt-4">
                 Full vesting period for team allocation
               </p>
             </motion.div>
@@ -490,7 +490,7 @@ export default function TokenomicsPage() {
       </section>
 
       {/* Milestone Buybacks Section */}
-      <section className="py-24 border-t border-border">
+      <section className="py-24 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             className="text-center mb-16"
@@ -498,15 +498,15 @@ export default function TokenomicsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-mono text-green-500">CREATOR FEES</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-500/10 border border-lime-500/20 mb-6">
+              <TrendingUp className="w-4 h-4 text-lime-500" />
+              <span className="text-sm font-mono text-lime-500">CREATOR FEES</span>
             </div>
 
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">
-              Milestone <span className="text-primary">Buybacks</span>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-white">
+              Milestone <span className="text-lime-500">Buybacks</span>
             </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-zinc-400 max-w-xl mx-auto">
               Creator fees fund development and strategic buybacks at key market cap milestones.
             </p>
           </motion.div>
@@ -518,33 +518,33 @@ export default function TokenomicsPage() {
               return (
                 <motion.div
                   key={milestone.cap}
-                  className="relative p-8 rounded-2xl bg-card border border-border overflow-hidden group hover:border-green-500/50 transition-colors"
+                  className="relative p-8 rounded-2xl bg-zinc-900/50 border border-white/10 overflow-hidden group hover:border-lime-500/50 transition-colors"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
                 >
                   {/* Background glow */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-lime-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                   <div className="relative z-10">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center">
-                        <Icon className="w-7 h-7 text-green-500" />
+                      <div className="w-14 h-14 rounded-2xl bg-lime-500/10 flex items-center justify-center">
+                        <Icon className="w-7 h-7 text-lime-500" />
                       </div>
                       <div>
-                        <div className="text-xs font-mono text-green-500 uppercase tracking-wider">
+                        <div className="text-xs font-mono text-lime-500 uppercase tracking-wider">
                           {milestone.label}
                         </div>
-                        <div className="text-3xl font-black text-foreground">${milestone.cap}</div>
+                        <div className="text-3xl font-black text-white">${milestone.cap}</div>
                       </div>
                     </div>
 
-                    <div className="text-sm text-muted-foreground">{milestone.action}</div>
+                    <div className="text-sm text-zinc-400">{milestone.action}</div>
 
-                    <div className="mt-6 pt-6 border-t border-border">
-                      <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <div className="mt-6 pt-6 border-t border-white/10">
+                      <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+                        <div className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
                         <span>Market Cap Target</span>
                       </div>
                     </div>
@@ -561,7 +561,7 @@ export default function TokenomicsPage() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm text-zinc-500 max-w-2xl mx-auto">
               Buybacks reduce circulating supply and are executed transparently on-chain. All
               transactions are verifiable on Solana Explorer.
             </p>
@@ -570,10 +570,9 @@ export default function TokenomicsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 border-t border-border bg-card/50 relative overflow-hidden">
+      <section className="py-24 border-t border-white/10 bg-zinc-900/20 relative overflow-hidden">
         {/* Background effects */}
-        <div className="absolute inset-0 aurora-bg opacity-30" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-lime-500/10 rounded-full blur-[150px]" />
 
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <motion.div
@@ -581,13 +580,13 @@ export default function TokenomicsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <GhostIcon variant="logo" size={64} className="mx-auto mb-6 text-primary" />
+            <GhostIcon variant="logo" size={64} className="mx-auto mb-6 text-lime-500" />
 
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6">
-              Join the <span className="text-primary">Ghost Economy</span>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6 text-white">
+              Join the <span className="text-lime-500">Ghost Economy</span>
             </h2>
 
-            <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+            <p className="text-lg text-zinc-400 mb-8 max-w-xl mx-auto">
               Be part of the most community-focused AI agent protocol on Solana. 80% community
               allocation. Fair launch. No VCs.
             </p>
@@ -595,14 +594,14 @@ export default function TokenomicsPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="/"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-xl hover:opacity-90 transition-opacity"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-lime-500 text-black font-bold rounded-xl hover:opacity-90 transition-opacity"
               >
                 Explore Protocol
                 <ChevronRight className="w-5 h-5" />
               </a>
               <a
                 href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-card border border-border text-foreground font-bold rounded-xl hover:border-primary/50 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-zinc-900 border border-white/10 text-white font-bold rounded-xl hover:border-lime-500/50 transition-colors"
               >
                 Launch Dashboard
               </a>
@@ -612,8 +611,8 @@ export default function TokenomicsPage() {
       </section>
 
       {/* Footer note */}
-      <div className="py-8 border-t border-border text-center">
-        <p className="text-xs font-mono text-muted-foreground/60">
+      <div className="py-8 border-t border-white/10 text-center">
+        <p className="text-xs font-mono text-zinc-600">
           Token distribution subject to governance decisions. Not financial advice.
         </p>
       </div>

@@ -5,6 +5,8 @@ import { DashboardSidebar } from '@/components/dashboard/layout/Sidebar'
 import { GhostSpeakErrorBoundary } from '@/components/error-boundaries/GhostSpeakErrorBoundary'
 import { NetworkIndicator } from '@/components/ui/network-indicator'
 
+import { MobileSidebar } from '@/components/dashboard/layout/MobileSidebar'
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
@@ -16,7 +18,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03] dark:invert" />
       </div>
 
-      <div className="relative z-10 flex">
+      <div className="relative z-10 flex flex-col lg:flex-row">
+        <MobileSidebar />
         <DashboardSidebar />
         <main className="flex-1 p-6 lg:p-8 overflow-x-hidden">
           {/* Network Indicator */}

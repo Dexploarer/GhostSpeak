@@ -163,7 +163,7 @@ async function parseTokenExtensions(
     }
 
     return extensions
-  } catch (_e) {
+  } catch {
     return []
   }
 }

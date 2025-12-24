@@ -11,6 +11,7 @@ import {
   useAllDisputes,
   useDisputeStats,
   transformDisputeForDisplay,
+  type Dispute,
 } from '../../../lib/queries/disputes'
 
 // Helper to format time ago
@@ -35,8 +36,8 @@ export default function DisputesPage() {
   const stats = useDisputeStats()
 
   // Filter disputes
-  const filteredDisputes = allDisputes?.filter((dispute) => {
-    const transformed = transformDisputeForDisplay(dispute as any)
+  const filteredDisputes = allDisputes?.filter((dispute: Dispute) => {
+    const transformed = transformDisputeForDisplay(dispute)
     if (!transformed) return false
     if (filter === 'pending') return !transformed.isResolved
     if (filter === 'resolved') return transformed.isResolved
@@ -45,7 +46,7 @@ export default function DisputesPage() {
 
   // Transform for display
   const displayDisputes = filteredDisputes
-    ?.map((d) => transformDisputeForDisplay(d as any))
+    ?.map((d: Dispute) => transformDisputeForDisplay(d))
     .filter((d) => d !== null)
 
   return (

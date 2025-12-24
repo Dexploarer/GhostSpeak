@@ -293,7 +293,7 @@ export function useSubmitDelivery() {
       const signature = await client.workOrders.submitDelivery({
         signer,
         workOrderAddress: data.workOrderAddress as Address,
-        deliverables: deliverables as any, // Cast to SDK's Deliverable type
+        deliverables: deliverables as unknown as any, // Cast to SDK's Deliverable type (temporary workaround until types align)
         ipfsHash: 'pending_ipfs_upload', // Would upload to IPFS first
         metadataUri: 'pending_metadata_uri',
       })

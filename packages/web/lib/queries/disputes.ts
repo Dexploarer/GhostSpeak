@@ -140,7 +140,9 @@ export function useDisputeStats() {
 /**
  * Transform dispute data for UI display
  */
-export function transformDisputeForDisplay(dispute: { address: Address; data: DisputeCase }) {
+export type Dispute = { address: Address; data: DisputeCase }
+
+export function transformDisputeForDisplay(dispute: Dispute) {
   if (!dispute.data) return null
   const client = getGhostSpeakClient()
 

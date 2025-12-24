@@ -53,15 +53,16 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
   return (
     <CrossmintProvider apiKey={crossmintApiKey}>
       <CrossmintAuthProvider
-        loginMethods={['email', 'google', 'farcaster', 'web3:solana-only']}
+        loginMethods={['email', 'web3:solana-only']} // Strict business-only login
         appearance={{
           colors: {
             textPrimary: '#ffffff',
-            background: '#0a0a0a',
+            textSecondary: '#a1a1aa',
+            background: '#09090b', // zinc-950
           },
-          borderRadius: '12px',
+          borderRadius: '16px',
         }}
-        authModalTitle="Connect to GhostSpeak"
+        authModalTitle="Access GhostSpeak Protocol"
       >
         <CrossmintWalletProvider
           createOnLogin={{

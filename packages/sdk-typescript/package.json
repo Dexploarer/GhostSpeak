@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/sdk",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "TypeScript SDK for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "main": "./dist/index.js",

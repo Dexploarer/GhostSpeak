@@ -138,8 +138,8 @@ export function DashboardSidebar() {
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Network</span>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-green-500 font-mono">Mainnet</span>
+              <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
+              <span className="text-lime-500 font-mono">Devnet beta</span>
             </div>
           </div>
         </div>

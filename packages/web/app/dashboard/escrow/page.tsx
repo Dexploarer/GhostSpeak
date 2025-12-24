@@ -19,8 +19,11 @@ interface EscrowItemProps {
 }
 
 function EscrowItem({ escrow, userRole, onActionComplete }: EscrowItemProps) {
-  const { address, taskId, amount, status, client, agent } = escrow
-  const displayAmount = (Number(amount) / 1_000_000).toFixed(2)
+  const { address, taskId, amount, status, client, agent, tokenMetadata } = escrow
+  
+  const decimals = tokenMetadata?.decimals ?? 6
+  const symbol = tokenMetadata?.symbol ?? 'USDC'
+  const displayAmount = (Number(amount) / Math.pow(10, decimals)).toFixed(2)
 
   // Determine color/icon based on status
   const isCompleted = status === EscrowStatus.Completed || status === EscrowStatus.Resolved
@@ -61,7 +64,7 @@ function EscrowItem({ escrow, userRole, onActionComplete }: EscrowItemProps) {
         </div>
 
         <div className="flex-1 space-y-2">
-          {/* Progress Bar (Visual only for now) */}
+          {/* Status Progress */}
           <div className="flex justify-between text-xs text-muted-foreground mb-1">
             <span>Status</span>
             <span>{isCompleted ? '100%' : 'Active'}</span>
@@ -83,7 +86,7 @@ function EscrowItem({ escrow, userRole, onActionComplete }: EscrowItemProps) {
         </div>
 
         <div className="text-right min-w-[120px]">
-          <p className="text-lg font-bold text-foreground">{displayAmount} USDC</p>
+          <p className="text-lg font-bold text-foreground">{displayAmount} {symbol}</p>
           <Button variant="link" size="sm" className="h-auto p-0 text-primary">
             View Details
           </Button>
@@ -121,7 +124,12 @@ export default function EscrowPage() {
   const activeEscrows = escrows.filter((e) => e.status === EscrowStatus.Active)
   const disputedEscrows = escrows.filter((e) => e.status === EscrowStatus.Disputed)
 
-  const totalSecured = activeEscrows.reduce((acc, curr) => acc + Number(curr.amount) / 1_000_000, 0) // Mock dec
+  // Calculate total secured funds
+  // Use proper decimals for each token (metadata enriched in query)
+  const totalSecured = activeEscrows.reduce((acc, curr) => {
+    const decimals = curr.tokenMetadata?.decimals ?? 6
+    return acc + Number(curr.amount) / Math.pow(10, decimals)
+  }, 0)
 
   return (
     <div className="space-y-8">
@@ -191,7 +199,7 @@ export default function EscrowPage() {
               <h3 className="font-bold text-foreground">Funds Secured</h3>
             </div>
             <p className="text-3xl font-bold text-foreground">
-              {isLoading ? '...' : totalSecured.toFixed(2)} USDC
+              {isLoading ? '...' : totalSecured.toFixed(2)} USD (Est)
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               Across {activeEscrows.length} active contracts

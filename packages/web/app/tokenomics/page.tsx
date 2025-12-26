@@ -343,13 +343,20 @@ export default function TokenomicsPage() {
             </p>
 
             {/* Token Contract Address */}
-            <div className="mt-6 sm:mt-8">
+            <div className="mt-6 sm:mt-8 space-y-3">
               <div className="inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-zinc-900/80 border border-zinc-800">
                 <span className="text-xs text-zinc-500 font-mono uppercase tracking-wider">CA:</span>
                 <code className="text-xs sm:text-sm font-mono text-lime-500 break-all select-all">
                   DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump
                 </code>
+                <span className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-purple-500/20 text-purple-400 rounded-full border border-purple-500/30">
+                  Mainnet
+                </span>
               </div>
+              <p className="text-xs sm:text-sm text-zinc-500 max-w-lg mx-auto">
+                $GHOST launched on Solana mainnet to fund the GhostSpeak protocol&apos;s mainnet deployment.
+                Token governance activates when the protocol goes live on mainnet.
+              </p>
             </div>
           </motion.div>
 

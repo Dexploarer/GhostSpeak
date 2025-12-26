@@ -341,6 +341,16 @@ export default function TokenomicsPage() {
               90% to the community. Transparent vesting. Built for
               long-term value, not quick exits.
             </p>
+
+            {/* Token Contract Address */}
+            <div className="mt-6 sm:mt-8">
+              <div className="inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                <span className="text-xs text-zinc-500 font-mono uppercase tracking-wider">CA:</span>
+                <code className="text-xs sm:text-sm font-mono text-lime-500 break-all select-all">
+                  DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump
+                </code>
+              </div>
+            </div>
           </motion.div>
 
           {/* Interactive Chart Section */}

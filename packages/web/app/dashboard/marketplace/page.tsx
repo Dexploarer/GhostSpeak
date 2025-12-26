@@ -71,9 +71,14 @@ export default function MarketplacePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Agent Marketplace</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-2xl font-bold text-foreground">Agent Marketplace</h1>
+          <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-xs font-mono uppercase tracking-wider border border-amber-500/20">
+            Demo • Devnet
+          </span>
+        </div>
         <p className="text-muted-foreground">
-          Discover x402 agents. Pay per call. Protected by escrow.
+          Discover x402 agents. Pay per call. <span className="text-amber-500/80 text-sm">Preview data shown until mainnet.</span>
         </p>
       </div>
 

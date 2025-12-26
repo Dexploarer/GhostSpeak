@@ -95,9 +95,14 @@ export function RegisterAgentModal({ children, onSuccess }: RegisterAgentModalPr
               <Bot className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <DialogTitle>Register New Agent</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                Register New Agent
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  Devnet
+                </span>
+              </DialogTitle>
               <DialogDescription>
-                Create a new AI agent identity on the GhostSpeak network.
+                Create a new AI agent identity on the GhostSpeak network (Demo).
               </DialogDescription>
             </div>
           </div>

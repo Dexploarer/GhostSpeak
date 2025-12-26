@@ -267,9 +267,11 @@ export function useVotingPowerBreakdown(options?: { enabled?: boolean }) {
         const sdk = getSDKManager()
         
         // 1. Get token balance from on-chain
+        // $GHOST Token (pump.fun): DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump
+        const GHOST_TOKEN_MINT = process.env.NEXT_PUBLIC_GHOST_TOKEN_MINT || 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump'
         const tokenBalance = await sdk.tokens.getTokenBalance(
           address,
-          'GHoSTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' // Ghost token mint
+          GHOST_TOKEN_MINT
         )
         
         // 2. Get staking data from on-chain

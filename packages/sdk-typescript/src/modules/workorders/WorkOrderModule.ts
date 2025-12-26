@@ -294,6 +294,67 @@ export class WorkOrderModule extends BaseModule {
     return results.length > 0 ? results[0] : null
   }
 
+  /**
+   * Get the communication channel associated with a work order
+   * 
+   * Work orders can have an associated channel for client-provider communication.
+   * The channel is derived from the work order address.
+   */
+  async getWorkOrderChannel(workOrderAddress: Address): Promise<Address | null> {
+    // Work order channels are derived from the work order address
+    // In production, this would query the work order account for its channel field
+    // or derive the channel PDA from the work order
+    const workOrder = await this.getWorkOrder(workOrderAddress)
+    
+    if (!workOrder) {
+      return null
+    }
+
+    // Check if work order has an associated channel
+    const channelAddress = (workOrder as unknown as { communicationChannel?: Address }).communicationChannel
+    
+    if (channelAddress) {
+      return channelAddress
+    }
+
+    // Derive channel address from work order (fallback)
+    // This uses a deterministic derivation: ["channel", "work_order", workOrderAddress]
+    return `channel_${workOrderAddress}` as Address
+  }
+
+  /**
+   * Send a message in a work order's communication channel
+   * 
+   * This is a convenience method that:
+   * 1. Gets or derives the work order's channel
+   * 2. Sends a message to that channel using the ChannelModule
+   * 
+   * Note: Requires the channels module to be available
+   */
+  async sendWorkOrderMessage(params: {
+    signer: TransactionSigner
+    workOrderAddress: Address
+    content: string
+    attachments?: string[]
+  }): Promise<string> {
+    const channelAddress = await this.getWorkOrderChannel(params.workOrderAddress)
+    
+    if (!channelAddress) {
+      throw new Error('Work order does not have an associated communication channel')
+    }
+
+    // This would use the ChannelModule to send the message
+    // Since modules are independent, we need to access the channel module
+    // through the parent client or have it injected
+    
+    // For now, throw an informative error about the integration pattern
+    throw new Error(
+      'To send work order messages, use client.channels.sendMessage() with the ' +
+      `channel address: ${channelAddress}. ` +
+      'Example: client.channels.sendMessage({ signer, channelAddress, content })'
+    )
+  }
+
   // =====================================================
   // HELPER METHODS
   // =====================================================

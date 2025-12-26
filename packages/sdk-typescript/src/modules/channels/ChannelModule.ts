@@ -254,6 +254,43 @@ export class ChannelModule extends BaseModule {
     return this.getProgramAccounts<Message>('getMessageDecoder', filters)
   }
 
+  /**
+   * Edit a message
+   * 
+   * Note: This requires an editMessage instruction in the Solana program.
+   * If the program doesn't support message editing, this will throw an error.
+   */
+  async editMessage(params: {
+    signer: TransactionSigner
+    messageAddress: Address
+    newContent: string
+  }): Promise<string> {
+    // Check if editMessage instruction exists in generated code
+    // For now, throw an error indicating the feature is not yet supported by the program
+    throw new Error(
+      'Message editing is not yet supported by the Solana program. ' +
+      'The program needs an edit_message instruction to enable this feature.'
+    )
+  }
+
+  /**
+   * Delete a message
+   * 
+   * Note: This requires a deleteMessage instruction in the Solana program.
+   * If the program doesn't support message deletion, this will throw an error.
+   */
+  async deleteMessage(params: {
+    signer: TransactionSigner
+    messageAddress: Address
+  }): Promise<string> {
+    // Check if deleteMessage instruction exists in generated code
+    // For now, throw an error indicating the feature is not yet supported by the program
+    throw new Error(
+      'Message deletion is not yet supported by the Solana program. ' +
+      'The program needs a delete_message instruction to enable this feature.'
+    )
+  }
+
   // Helper methods
 
   private async deriveChannelPda(name: string): Promise<Address> {

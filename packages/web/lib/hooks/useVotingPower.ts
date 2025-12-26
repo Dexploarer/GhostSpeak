@@ -260,25 +260,73 @@ export function useVotingPowerBreakdown(options?: { enabled?: boolean }) {
       }
 
       try {
-        // In production, this would fetch from:
-        // 1. Token balance from RPC
-        // 2. Agent account for reputation
-        // 3. Staking account for locked tokens
-        // 4. Delegation accounts
-
-        // For now, use demo data that demonstrates the system
-        const demoData = {
-          tokenBalance: 50000n * 1_000_000n, // 50,000 tokens
-          reputationScore: 7500, // 75% reputation
-          isVerified: true,
-          x402Volume30d: 25000n * 1_000_000n, // $25,000 volume
-          stakedTokens: 20000n * 1_000_000n, // 20,000 staked
-          lockupDays: 180, // 6 month lockup
-          delegatedToYou: 5000n,
-          delegatedByYou: 0n,
+        const { getGhostSpeakClient } = await import('@/lib/ghostspeak/client')
+        const { getSDKManager } = await import('@/lib/ghostspeak')
+        
+        const client = getGhostSpeakClient()
+        const sdk = getSDKManager()
+        
+        // 1. Get token balance from on-chain
+        const tokenBalance = await sdk.tokens.getTokenBalance(
+          address,
+          'GHoSTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' // Ghost token mint
+        )
+        
+        // 2. Get staking data from on-chain
+        let stakedTokens = 0n
+        let lockupDays = 0
+        try {
+          const stakingAccount = await client.staking.getStakingAccount(address as Address)
+          if (stakingAccount) {
+            stakedTokens = stakingAccount.stakedAmount ?? 0n
+            // Calculate lockup from lockup end time
+            if (stakingAccount.lockupEndsAt) {
+              const now = BigInt(Math.floor(Date.now() / 1000))
+              const remaining = stakingAccount.lockupEndsAt - now
+              lockupDays = remaining > 0n ? Math.floor(Number(remaining) / (24 * 60 * 60)) : 0
+            }
+          }
+        } catch {
+          // No stakes found, use defaults
         }
+        
+        // 3. Get agent reputation (if user is an agent)
+        let reputationScore = 0
+        let isVerified = false
+        try {
+          const agents = await client.agents.getAllAgents()
+          const userAgent = agents.find(a => a.data?.owner?.toString() === address)
+          if (userAgent?.data) {
+            reputationScore = Number(userAgent.data.reputationScore || 0)
+            isVerified = userAgent.data.isActive && (userAgent.data.totalJobsCompleted || 0) > 0
+          }
+        } catch {
+          // No agent found, use defaults
+        }
+        
+        // 4. Get x402 volume from escrow history
+        let x402Volume30d = 0n
+        try {
+          const metrics = await sdk.analytics.getUserMetrics(address)
+          x402Volume30d = metrics.totalVolume
+        } catch {
+          // No volume data, use default
+        }
+        
+        // 5. Get delegation data (placeholder - SDK doesn't have delegation yet)
+        const delegatedToYou = 0n
+        const delegatedByYou = 0n
 
-        return calculateTotalVotingPower(demoData)
+        return calculateTotalVotingPower({
+          tokenBalance,
+          reputationScore,
+          isVerified,
+          x402Volume30d,
+          stakedTokens,
+          lockupDays,
+          delegatedToYou,
+          delegatedByYou,
+        })
       } catch (error) {
         console.error('Failed to fetch voting power:', error)
         return createEmptyBreakdown(true)
@@ -302,19 +350,51 @@ export function useAgentReputationForVoting(
       if (!agentAddress) return null
 
       try {
-        // const client = getGhostSpeakClient()
-
-        // Fetch agent data
-        // In production, this would call client.agents.getAgent(agentAddress)
-        // For now, return demo data
+        const { getGhostSpeakClient } = await import('@/lib/ghostspeak/client')
+        const { getSDKManager } = await import('@/lib/ghostspeak')
+        
+        const client = getGhostSpeakClient()
+        const sdk = getSDKManager()
+        
+        // Fetch agent data from on-chain
+        const agentData = await client.agents.getAgentAccount(agentAddress)
+        if (!agentData) return null
+        
+        // Get x402 earnings data
+        let x402TotalCalls = 0
+        let x402TotalPayments = 0n
+        let lastPaymentTimestamp = new Date(0)
+        try {
+          const earnings = await sdk.analytics.getAgentEarnings(agentAddress.toString())
+          x402TotalCalls = earnings.totalCalls
+          x402TotalPayments = earnings.totalEarnings
+        } catch {
+          // No earnings data
+        }
+        
+        // Get escrows to find last payment time
+        try {
+          const escrows = await client.escrow.getEscrowsBySeller(agentAddress)
+          if (escrows.length > 0) {
+            const latestEscrow = escrows.reduce((latest, e) => 
+              (e.data?.createdAt || 0n) > (latest.data?.createdAt || 0n) ? e : latest
+            )
+            if (latestEscrow.data?.createdAt) {
+              lastPaymentTimestamp = new Date(Number(latestEscrow.data.createdAt) * 1000)
+            }
+          }
+        } catch {
+          // No escrow data
+        }
+        
         return {
           agentAddress,
-          reputationScore: 8500,
-          x402TotalCalls: 1250,
-          x402TotalPayments: 75000n * 1_000_000n,
-          isVerified: true,
-          isActive: true,
-          lastPaymentTimestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+          reputationScore: Number(agentData.reputationScore || 0),
+          x402TotalCalls,
+          x402TotalPayments,
+          isVerified: agentData.isActive && (agentData.totalJobsCompleted || 0) > 0,
+          isActive: agentData.isActive,
+          lastPaymentTimestamp,
         }
       } catch (error) {
         console.error('Failed to fetch agent reputation:', error)

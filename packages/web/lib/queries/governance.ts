@@ -439,10 +439,21 @@ export function useProposalVotes(
       // In a real implementation, this would query vote accounts or events
 
       try {
-        // For now, return empty array as SDK doesn't expose vote history
-        // In production, this would query vote events or associated accounts
-        console.warn('Vote history not yet implemented in SDK')
-        return []
+        const client = getGhostSpeakClient()
+        
+        // Use new SDK method to get votes for this proposal
+        const voteData = await client.governance.getVotesByProposal(proposalAddress)
+        
+        // Map SDK response to component format
+        // Note: Individual votes require Vote accounts in the program
+        return voteData.votes.map((vote): Vote => ({
+          id: `vote_${vote.voter}_${proposalAddress}`,
+          proposalAddress: proposalAddress,
+          voter: vote.voter,
+          choice: vote.choice === 'for' ? VoteChoice.For : vote.choice === 'against' ? VoteChoice.Against : VoteChoice.Abstain,
+          votingPower: String(vote.weight),
+          timestamp: new Date(Number(vote.timestamp) * 1000),
+        }))
       } catch (error) {
         console.error('Failed to fetch proposal votes:', error)
         return []
@@ -467,20 +478,45 @@ export function useVotingPower(options?: { enabled?: boolean }) {
       // const client = getGhostSpeakClient()
 
       try {
-        // Get user's token balance and other metrics
-        // In a real implementation, this would:
-        // 1. Query token balance
-        // 2. Query staked tokens
-        // 3. Get reputation score from agent account
-        // 4. Calculate delegated voting power
-
-        // For now, return default values as SDK doesn't expose all metrics
+        const client = getGhostSpeakClient()
+        const { getSDKManager } = await import('@/lib/ghostspeak')
+        const sdk = getSDKManager()
+        
+        // 1. Get token balance
+        const tokenBalance = await sdk.tokens.getTokenBalance(
+          address!,
+          'GHoSTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' // Ghost token mint
+        )
+        
+        // 2. Get staked tokens
+        let stakedAmount = 0n
+        try {
+          const stakingAccount = await client.staking.getStakingAccount(address as Address)
+          stakedAmount = stakingAccount?.stakedAmount ?? 0n
+        } catch {
+          // No staking account
+        }
+        
+        // 3. Get reputation from agent account (if user is an agent)
+        let reputation = 0
+        try {
+          const agents = await client.agents.getAllAgents()
+          const userAgent = agents.find(a => a.data?.owner?.toString() === address)
+          reputation = Number(userAgent?.data?.reputationScore || 0) / 100 // Convert from basis points
+        } catch {
+          // No agent account
+        }
+        
+        // 4. Calculate total (delegated voting power requires dedicated accounts)
+        const delegated = 0n
+        const total = tokenBalance + stakedAmount + delegated + BigInt(reputation * 100)
+        
         return {
-          tokens: '1000',
-          staked: '500',
-          reputation: 85,
-          delegated: '200',
-          total: '1785',
+          tokens: String(tokenBalance),
+          staked: String(stakedAmount),
+          reputation,
+          delegated: String(delegated),
+          total: String(total),
         }
       } catch (error) {
         console.error('Failed to fetch voting power:', error)
@@ -505,12 +541,40 @@ export function useDelegations(options?: { enabled?: boolean }) {
       // const client = getGhostSpeakClient()
 
       try {
-        // Query delegation accounts from the SDK
-        // Note: The current SDK might not have delegation support
-        // In a real implementation, this would query delegation accounts
-
-        console.warn('Delegation queries not yet implemented in SDK')
-        return { given: [], received: [] }
+        const client = getGhostSpeakClient()
+        
+        // Use new SDK methods for delegation queries
+        const [delegationsGiven, delegationsReceived] = await Promise.all([
+          client.governance.getDelegationsFromVoter(address as Address),
+          client.governance.getDelegationsToDelegate(address as Address)
+        ])
+        
+        // Map SDK response to component format
+        const given: Delegation[] = delegationsGiven.map((d, i) => ({
+          id: `delegation_given_${i}`,
+          delegator: address as Address,
+          delegate: d.delegate,
+          amount: String(d.amount),
+          scope: d.scope.kind === 'All' ? 'All' as const : d.scope.kind === 'Proposal' ? 'SingleProposal' as const : 'Category' as const,
+          proposalId: d.scope.kind === 'Proposal' ? String(d.scope.value) : undefined,
+          expiresAt: d.expiresAt ? new Date(Number(d.expiresAt) * 1000) : undefined,
+          createdAt: new Date(),
+          isActive: true,
+        }))
+        
+        const received: Delegation[] = delegationsReceived.map((d, i) => ({
+          id: `delegation_received_${i}`,
+          delegator: d.delegator,
+          delegate: address as Address,
+          amount: String(d.amount),
+          scope: d.scope.kind === 'All' ? 'All' as const : d.scope.kind === 'Proposal' ? 'SingleProposal' as const : 'Category' as const,
+          proposalId: d.scope.kind === 'Proposal' ? String(d.scope.value) : undefined,
+          expiresAt: d.expiresAt ? new Date(Number(d.expiresAt) * 1000) : undefined,
+          createdAt: new Date(),
+          isActive: true,
+        }))
+        
+        return { given, received }
       } catch (error) {
         console.error('Failed to fetch delegations:', error)
         return { given: [], received: [] }

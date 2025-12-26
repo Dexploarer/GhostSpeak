@@ -1,5 +1,9 @@
 // Utilities for working with blockchain timestamps and slot times
-// Note: getGhostSpeakClient integration pending - using system time fallbacks
+import { createSolanaRpc } from '@solana/kit'
+import type { Signature } from '@solana/kit'
+
+const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.devnet.solana.com'
+
 /**
  * Convert Solana slot number to approximate timestamp
  * Solana produces blocks approximately every 400ms
@@ -27,9 +31,20 @@ export function unixToDate(unixTimestamp: number | bigint): Date {
  */
 export async function getCurrentBlockchainTime(): Promise<Date> {
   try {
-    // For now, return current time as placeholder until RPC is properly integrated
-    console.warn('getCurrentBlockchainTime: Using system time until RPC integration is complete')
-    return new Date()
+    const rpc = createSolanaRpc(SOLANA_RPC_URL)
+    
+    // Get the current slot
+    const slot = await rpc.getSlot().send()
+    
+    // Get the block time for current slot
+    const blockTime = await rpc.getBlockTime(slot).send()
+    
+    if (blockTime) {
+      return new Date(Number(blockTime) * 1000)
+    }
+    
+    // Fallback: estimate from slot number
+    return slotToTimestamp(Number(slot))
   } catch (error) {
     console.warn('Failed to get blockchain time, using system time:', error)
     return new Date()
@@ -42,9 +57,18 @@ export async function getCurrentBlockchainTime(): Promise<Date> {
  */
 export async function getTransactionTimestamp(signature: string): Promise<Date | null> {
   try {
-    // RPC integration to be implemented
-    console.warn('getTransactionTimestamp: RPC integration pending for signature:', signature)
-    return new Date() // Return current time as placeholder
+    const rpc = createSolanaRpc(SOLANA_RPC_URL)
+    
+    const tx = await rpc.getTransaction(signature as Signature, {
+      encoding: 'json',
+      maxSupportedTransactionVersion: 0,
+    }).send()
+    
+    if (tx?.blockTime) {
+      return new Date(Number(tx.blockTime) * 1000)
+    }
+    
+    return null
   } catch (error) {
     console.warn(`Failed to get transaction timestamp for ${signature}:`, error)
     return null

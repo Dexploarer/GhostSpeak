@@ -16,12 +16,9 @@ import {
 import { toast } from 'sonner'
 
 export function WalletConnectButton() {
-  const { login, logout, status } = useAuth()
-  const { wallet } = useWallet()
+  const { login, logout, status: authStatus, user } = useAuth()
+  const { wallet, status: walletStatus } = useWallet()
   const [copied, setCopied] = useState(false)
-
-  const isLoading = status === 'initializing'
-  const isConnected = wallet?.address
 
   const handleCopy = async () => {
     if (wallet?.address) {
@@ -32,8 +29,8 @@ export function WalletConnectButton() {
     }
   }
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - auth SDK is initializing
+  if (authStatus === 'initializing') {
     return (
       <Button variant="outline" disabled className="gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -42,8 +39,18 @@ export function WalletConnectButton() {
     )
   }
 
-  // Connected state
-  if (isConnected && wallet?.address) {
+  // Wallet creating/loading state - after auth but wallet not ready yet
+  if (authStatus === 'logged-in' && walletStatus === 'in-progress') {
+    return (
+      <Button variant="outline" disabled className="gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Creating wallet...
+      </Button>
+    )
+  }
+
+  // Connected state - wallet is fully loaded and ready
+  if (walletStatus === 'loaded' && wallet != null && wallet.address) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -57,6 +64,11 @@ export function WalletConnectButton() {
             <Wallet className="h-4 w-4 text-primary" />
             Connected Wallet
           </DropdownMenuLabel>
+          {user?.email && (
+            <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+              {user.email}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleCopy} className="gap-2">
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -73,15 +85,15 @@ export function WalletConnectButton() {
   }
 
   // Not connected - show connect button
-  // Note: Standard shadcn outline button might be problematic on dark backgrounds if not customized
-  // Forcing a solid style for high visibility
+  // Using high-visibility styling with lime background and dark text
   return (
     <Button
       onClick={login}
-      className="gap-2 bg-primary text-black hover:bg-lime-400 border-2 border-primary font-bold shadow-[0_0_20px_rgba(204,255,0,0.3)]"
+      className="gap-2 bg-[#ccff00] text-black hover:bg-[#b8e600] border-2 border-[#ccff00] font-bold shadow-[0_0_20px_rgba(204,255,0,0.3)]"
     >
       <Wallet className="h-4 w-4" />
       Connect Wallet
     </Button>
   )
 }
+

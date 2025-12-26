@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useRegisterAgent } from '@/lib/queries/agents'
+import { uploadMetadataToIPFS } from '@/lib/utils/ipfs'
 import { X, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -76,16 +77,13 @@ export function RegisterAgentForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const onSubmit = async (data: RegisterAgentForm) => {
     try {
-      // Create metadata JSON and convert to URI (in production, this would be uploaded to IPFS/Arweave)
-      const metadataJson = JSON.stringify({
+      // Upload metadata to IPFS (with fallback to data URI for development)
+      const metadataUri = await uploadMetadataToIPFS({
         name: data.name,
         description: data.description,
         category: data.category,
         avatar: data.avatar || undefined,
       })
-
-      // For now, use a data URI - in production, upload to IPFS and use the hash
-      const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
 
       // Generate a unique agent ID
       const agentId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`

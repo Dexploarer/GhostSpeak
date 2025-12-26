@@ -55,12 +55,19 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
       <CrossmintAuthProvider
         loginMethods={['email', 'web3:solana-only']} // Strict business-only login
         appearance={{
+          spacingUnit: '8px',
+          borderRadius: '12px',
           colors: {
-            textPrimary: '#ffffff',
-            textSecondary: '#a1a1aa',
             background: '#09090b', // zinc-950
+            inputBackground: '#18181b', // zinc-900
+            buttonBackground: '#ccff00', // GhostSpeak primary lime
+            border: '#27272a', // zinc-800
+            textPrimary: '#fafafa', // zinc-50
+            textSecondary: '#a1a1aa', // zinc-400
+            textLink: '#ccff00', // Primary lime
+            danger: '#ef4444', // red-500
+            accent: '#ccff00', // Primary lime
           },
-          borderRadius: '16px',
         }}
         authModalTitle="Access GhostSpeak Protocol"
       >

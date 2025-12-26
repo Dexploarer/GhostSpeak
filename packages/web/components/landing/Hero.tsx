@@ -76,8 +76,8 @@ export function Hero() {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 lg:pt-48 z-10">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 sm:pt-24 sm:pb-20 lg:pt-48 lg:pb-24 z-10">
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
           {/* Text Content */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -89,14 +89,14 @@ export function Hero() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-mono uppercase tracking-[0.2em] text-primary backdrop-blur-3xl shadow-[0_0_20px_rgba(204,255,0,0.1)]"
+              className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 sm:px-4 py-1 sm:py-1.5 text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.15em] sm:tracking-[0.2em] text-primary backdrop-blur-3xl shadow-[0_0_20px_rgba(204,255,0,0.1)]"
             >
-              <span className="flex h-1.5 w-1.5 rounded-full bg-primary mr-2 animate-ping" />
-              Infrastructure Layer v1.0.4-Stable
+              <span className="flex h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-primary mr-1.5 sm:mr-2 animate-ping" />
+              v1.0.4-Stable
             </motion.div>
 
-            <div className="space-y-4">
-              <h1 className="text-6xl sm:text-7xl lg:text-9xl font-black tracking-tighter text-foreground leading-[0.85]">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-9xl font-black tracking-tighter text-foreground leading-[0.85]">
                 The Trust <br />
                 <span className="text-primary italic relative">
                   Layer
@@ -104,7 +104,7 @@ export function Hero() {
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
                     transition={{ delay: 1, duration: 1 }}
-                    className="absolute -bottom-2 left-0 h-2 bg-primary/30 blur-[2px]"
+                    className="absolute -bottom-1 sm:-bottom-2 left-0 h-1 sm:h-2 bg-primary/30 blur-[2px]"
                   />
                 </span>
                 <br />
@@ -112,33 +112,33 @@ export function Hero() {
               </h1>
             </div>
 
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
+            <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
               The only x402 marketplace with{' '}
               <span className="text-foreground font-medium">escrow, reputation, and disputes</span>.
               Pay AI agents per call. Funds held until delivery.
             </p>
 
-            <div className="flex flex-wrap gap-6 pt-4">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 lg:gap-6 pt-3 sm:pt-4">
               <Link href="/dashboard">
                 <Button
                   size="lg"
-                  className="h-16 px-10 rounded-xl text-lg bg-primary hover:bg-primary/90 text-primary-foreground font-black transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(204,255,0,0.2)]"
+                  className="h-12 sm:h-14 lg:h-16 px-6 sm:px-8 lg:px-10 rounded-xl text-sm sm:text-base lg:text-lg bg-primary hover:bg-primary/90 text-primary-foreground font-black transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(204,255,0,0.2)] w-full sm:w-auto"
                 >
-                  Access Protocol <ArrowRight className="ml-2 w-5 h-5" />
+                  Access Protocol <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               </Link>
               <Link href="https://docs.ghostspeak.io">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="h-16 px-10 rounded-xl text-lg border-border text-foreground hover:bg-muted transition-all"
+                  className="h-12 sm:h-14 lg:h-16 px-6 sm:px-8 lg:px-10 rounded-xl text-sm sm:text-base lg:text-lg border-border text-foreground hover:bg-muted transition-all w-full sm:w-auto"
                 >
                   Documentation
                 </Button>
               </Link>
             </div>
 
-            <div className="pt-12 grid grid-cols-3 gap-8 border-t border-border">
+            <div className="pt-6 sm:pt-8 lg:pt-12 grid grid-cols-3 gap-3 sm:gap-6 lg:gap-8 border-t border-border">
               {[
                 { label: 'Escrow', val: 'Protected' },
                 { label: 'Payments', val: 'x402' },
@@ -156,7 +156,7 @@ export function Hero() {
           </motion.div>
 
           {/* Graphic Content - Parallax & 3D Effect */}
-          <motion.div style={{ y: y1 }} className="relative hidden lg:block perspective-2000">
+          <motion.div style={{ y: y1 }} className="relative hidden xl:block perspective-2000">
             {/* Deep Background Glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] animate-pulse" />
 

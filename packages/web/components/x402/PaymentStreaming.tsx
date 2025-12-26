@@ -7,7 +7,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 import {
   Play,
   Pause,
@@ -34,10 +34,12 @@ import {
 import { formatDistance } from 'date-fns'
 
 export function PaymentStreams(): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { status } = useAuth()
+  const { wallet } = useWallet()
+  const isConnected = wallet != null && status !== 'logged-out'
   const { data: streams = [], isLoading } = usePaymentStreams()
 
-  if (!publicKey) {
+  if (!isConnected) {
     return (
       <Card>
         <CardContent className="py-12 text-center">

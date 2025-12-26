@@ -7,7 +7,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 import { Loader2, CheckCircle2, XCircle, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,7 +35,8 @@ export function PaymentDialog({
   agent,
   onSuccess,
 }: PaymentDialogProps): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { status } = useAuth()
+  const { wallet } = useWallet()
   const [quantity, setQuantity] = useState(1)
   const [metadata, setMetadata] = useState('')
 
@@ -43,11 +44,13 @@ export function PaymentDialog({
 
   const pricePerCall = Number(agent.pricing?.pricePerCall ?? 0) / 1e9 // Convert lamports to SOL
   const totalAmount = pricePerCall * quantity
+  
+  const isConnected = wallet != null && status !== 'logged-out'
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
 
-    if (!publicKey) return
+    if (!isConnected || !wallet?.address) return
 
     try {
       const metadataObj = metadata ? JSON.parse(metadata) : {}
@@ -138,7 +141,7 @@ export function PaymentDialog({
           </div>
 
           {/* Total Amount */}
-          <div className="glass rounded-lg p-4 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border-2 border-cyan-500/20">
+          <div className="glass rounded-lg p-4 bg-linear-to-r from-cyan-500/10 to-blue-600/10 border-2 border-cyan-500/20">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total Amount</span>
               <span className="text-2xl font-bold gradient-text">{totalAmount.toFixed(6)} SOL</span>
@@ -178,7 +181,7 @@ export function PaymentDialog({
             <Button
               type="submit"
               variant="gradient"
-              disabled={!publicKey || createPayment.isPending || createPayment.isSuccess}
+              disabled={!isConnected || createPayment.isPending || createPayment.isSuccess}
               className="flex-1 gap-2"
             >
               {createPayment.isPending ? (

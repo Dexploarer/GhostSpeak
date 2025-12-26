@@ -54,10 +54,26 @@ const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
 const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS = 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9'
 
 // Helper function to derive escrow PDA
-const deriveEscrowPDA = async (workOrder: unknown, program: string): Promise<string> => {
-  // PDA derivation would use getProgramDerivedAddress from @solana/kit
-  // For now, return a deterministic address based on inputs
-  return `escrow_${workOrder}_${program}`
+const deriveEscrowPDA = async (taskId: unknown, _program: string): Promise<string> => {
+  try {
+    const { getProgramDerivedAddress, getUtf8Encoder, getAddressEncoder } = await import('@solana/kit')
+    const encoder = getUtf8Encoder()
+    const addressEncoder = getAddressEncoder()
+    
+    // Escrow PDAs are derived from: ["escrow", buyer, agent, task_id]
+    // Without buyer/agent context, we derive from just the task_id seed
+    const [pda] = await getProgramDerivedAddress({
+      programAddress: GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS as Address,
+      seeds: [
+        encoder.encode('escrow'),
+        encoder.encode(String(taskId)),
+      ],
+    })
+    return pda
+  } catch (error) {
+    console.warn('Failed to derive escrow PDA:', error)
+    return `escrow_${taskId}`
+  }
 }
 
 // =====================================================

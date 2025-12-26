@@ -25,6 +25,7 @@ import { getCurrentProgramId } from '../../../../config/program-ids.js'
 import { createSolanaRpc } from '@solana/kit'
 import { AgentModule, type GhostSpeakClient, type RpcClient } from '@ghostspeak/sdk'
 import { getErrorMessage } from '../utils/type-guards.js'
+import { uploadMetadataToIPFS } from '../utils/ipfs.js'
 
 /**
  * Wrap Solana RPC with additional methods required by RpcClient interface
@@ -116,7 +117,8 @@ export class AgentService implements IAgentService {
       const signer = walletSigner
       this.deps.logger.info('Using signer', { address: signer.address.toString() })
 
-      const _metadataJson = JSON.stringify({
+      // Upload metadata to IPFS via Pinata
+      const metadataUri = await uploadMetadataToIPFS({
         name: agent.name,
         description: agent.description,
         capabilities: agent.capabilities,
@@ -129,7 +131,6 @@ export class AgentService implements IAgentService {
           { trait_type: 'Capabilities', value: agent.capabilities.join(', ') },
         ],
       })
-      const metadataUri = ''
 
       const rpc = wrapRpcClient(createSolanaRpc('https://api.devnet.solana.com'))
       this.deps.logger.info('Creating AgentModule instance...')
@@ -302,15 +303,14 @@ export class AgentService implements IAgentService {
       
       console.log('🔍 Calling AgentModule.update...')
       
-      // Prepare update metadata
-      const metadataJson = JSON.stringify({
+      // Upload updated metadata to IPFS
+      const metadataUri = await uploadMetadataToIPFS({
         ...agent.metadata,
         ...updates.metadata,
         name: updates.name || agent.name,
         description: updates.description || agent.description,
         capabilities: updates.capabilities || agent.capabilities
       })
-      const metadataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
       
       // Call SDK to update agent on blockchain
       const signature = await agentModule.update(toSDKSigner(walletSigner), {

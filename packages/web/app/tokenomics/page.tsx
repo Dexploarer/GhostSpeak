@@ -1,14 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
 import {
   Users,
-  Droplets,
-  Heart,
   Sparkles,
-  Code,
   TrendingUp,
   Clock,
   Target,
@@ -31,7 +28,7 @@ const allocations: TokenAllocation[] = [
   {
     id: 'community',
     label: 'Community',
-    percentage: 80,
+    percentage: 90,
     color: '#ccff00', // Lime
     icon: Users,
     description: 'The backbone of GhostSpeak — our community drives everything.',
@@ -43,31 +40,17 @@ const allocations: TokenAllocation[] = [
     ],
   },
   {
-    id: 'creator-fees',
-    label: 'Creator Fees',
-    percentage: 10,
-    color: '#06b6d4', // Cyan
-    icon: Code,
-    description: 'Development funding and strategic buybacks at milestones.',
-    details: [
-      'Development & infrastructure',
-      'Buybacks at 500K market cap',
-      'Buybacks at 1M market cap',
-      'Continuous protocol improvements',
-    ],
-  },
-  {
-    id: 'early-contributors',
-    label: 'Early Contributors',
+    id: 'token',
+    label: 'Token',
     percentage: 4,
-    color: '#e4e4e7', // Zinc-200 (White-ish)
-    icon: Heart,
-    description: 'Rewarding those who believed in the vision from day one.',
+    color: '#06b6d4', // Cyan
+    icon: Coins,
+    description: 'Token liquidity and ecosystem development.',
     details: [
-      'Alpha testers & bug reporters',
-      'Community moderators',
-      'Content creators & advocates',
-      'Strategic advisors',
+      'DEX liquidity provision',
+      'CEX listing reserves',
+      'Market making',
+      'Ecosystem partnerships',
     ],
   },
   {
@@ -82,20 +65,6 @@ const allocations: TokenAllocation[] = [
       'Locked for 6 months cliff',
       '24-month total vesting period',
       'Aligned with long-term success',
-    ],
-  },
-  {
-    id: 'liquidity',
-    label: 'Liquidity & Marketing',
-    percentage: 3,
-    color: '#84cc16', // Lime-600 (Darker Lime)
-    icon: Droplets,
-    description: 'Ensuring deep liquidity and strategic market presence.',
-    details: [
-      'DEX liquidity provision',
-      'CEX listing reserves',
-      'Marketing campaigns',
-      'Partnership development',
     ],
   },
 ]
@@ -123,13 +92,37 @@ function TokenomicsDonut({
   activeSegment: string | null
   setActiveSegment: (id: string | null) => void
 }) {
-  const size = 320
-  const strokeWidth = 48
+  // Dynamic sizing for mobile
+  const [chartSize, setChartSize] = useState(320)
+  
+  useEffect(() => {
+    const updateSize = () => {
+      // Use smaller size on mobile screens
+      const isMobile = window.innerWidth < 640
+      setChartSize(isMobile ? 260 : 320)
+    }
+    
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
+
+  const size = chartSize
+  const strokeWidth = chartSize < 300 ? 36 : 48
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const center = size / 2
 
   let cumulativePercentage = 0
+
+  // Handle tap for mobile
+  const handleSegmentInteraction = (id: string) => {
+    if (activeSegment === id) {
+      setActiveSegment(null)
+    } else {
+      setActiveSegment(id)
+    }
+  }
 
   return (
     <div className="relative">
@@ -195,6 +188,7 @@ function TokenomicsDonut({
                 }}
                 onMouseEnter={() => setActiveSegment(alloc.id)}
                 onMouseLeave={() => setActiveSegment(null)}
+                onClick={() => handleSegmentInteraction(alloc.id)}
                 initial={{ strokeDashoffset: circumference }}
                 animate={{ strokeDashoffset: offset }}
                 transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
@@ -212,9 +206,9 @@ function TokenomicsDonut({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <GhostIcon variant="logo" size={48} className="mx-auto mb-2 text-lime-500" />
-          <div className="text-3xl font-black text-white">$GHOST</div>
-          <div className="text-xs font-mono text-zinc-500 mt-1">100% DISTRIBUTED</div>
+          <GhostIcon variant="logo" size={chartSize < 300 ? 36 : 48} className="mx-auto mb-2 text-lime-500" />
+          <div className="text-2xl sm:text-3xl font-black text-white">$GHOST</div>
+          <div className="text-[10px] sm:text-xs font-mono text-zinc-500 mt-1">100% DISTRIBUTED</div>
         </motion.div>
       </div>
     </div>
@@ -233,15 +227,25 @@ function AllocationCard({
 }) {
   const Icon = alloc.icon
 
+  // Handle tap for mobile
+  const handleTap = () => {
+    if (isActive) {
+      onHover(null)
+    } else {
+      onHover(alloc.id)
+    }
+  }
+
   return (
     <motion.div
-      className={`relative p-6 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
+      className={`relative p-4 sm:p-6 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
         isActive
           ? 'bg-zinc-900 border-lime-500/50 shadow-lg shadow-lime-500/10'
           : 'bg-zinc-900/50 border-white/10 hover:border-lime-500/30'
       }`}
       onMouseEnter={() => onHover(alloc.id)}
       onMouseLeave={() => onHover(null)}
+      onClick={handleTap}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -261,27 +265,27 @@ function AllocationCard({
       </AnimatePresence>
 
       <div className="relative z-10">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3 sm:mb-4">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center"
             style={{ backgroundColor: `${alloc.color}20` }}
           >
-            <Icon className="w-6 h-6" style={{ color: alloc.color }} />
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: alloc.color }} />
           </div>
           <div className="text-right">
-            <div className="text-3xl font-black" style={{ color: alloc.color }}>
+            <div className="text-2xl sm:text-3xl font-black" style={{ color: alloc.color }}>
               {alloc.percentage}%
             </div>
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-white mb-2">{alloc.label}</h3>
-        <p className="text-sm text-zinc-400 mb-4">{alloc.description}</p>
+        <h3 className="text-base sm:text-lg font-bold text-white mb-1 sm:mb-2">{alloc.label}</h3>
+        <p className="text-xs sm:text-sm text-zinc-400 mb-3 sm:mb-4">{alloc.description}</p>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5 sm:space-y-2">
           {alloc.details.map((detail, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-zinc-500">
-              <ChevronRight className="w-3 h-3" style={{ color: alloc.color }} />
+            <div key={i} className="flex items-center gap-2 text-[11px] sm:text-xs text-zinc-500">
+              <ChevronRight className="w-3 h-3 shrink-0" style={{ color: alloc.color }} />
               <span>{detail}</span>
             </div>
           ))}
@@ -297,36 +301,36 @@ export default function TokenomicsPage() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-lime-500/30">
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32 overflow-hidden border-b border-white/10">
+      <section className="relative py-16 sm:py-24 md:py-32 overflow-hidden border-b border-white/10">
         {/* Background effects */}
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.05]" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-lime-500/5 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-cyan-500/5 rounded-full blur-[100px]" />
+        <div className="absolute top-1/4 left-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-lime-500/5 rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-48 sm:w-64 h-48 sm:h-64 bg-cyan-500/5 rounded-full blur-[100px]" />
 
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-10 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-500/10 border border-lime-500/20 mb-6">
-              <Coins className="w-4 h-4 text-lime-500" />
-              <span className="text-sm font-mono text-lime-500">TOKENOMICS</span>
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-lime-500/10 border border-lime-500/20 mb-4 sm:mb-6">
+              <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-lime-500" />
+              <span className="text-xs sm:text-sm font-mono text-lime-500">TOKENOMICS</span>
             </div>
 
-            <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter mb-4 sm:mb-6">
               Fair Launch. <span className="text-lime-500">Community First.</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-light">
-              80% to the community. Transparent vesting. Milestone-based buybacks. Built for
+            <p className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-light px-2">
+              90% to the community. Transparent vesting. Built for
               long-term value, not quick exits.
             </p>
           </motion.div>
 
           {/* Interactive Chart Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
             {/* Donut Chart */}
             <motion.div
               className="flex justify-center"
@@ -339,7 +343,7 @@ export default function TokenomicsPage() {
 
             {/* Legend */}
             <motion.div
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
@@ -351,25 +355,26 @@ export default function TokenomicsPage() {
                 return (
                   <motion.div
                     key={alloc.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all duration-300 ${
+                    className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl cursor-pointer transition-all duration-300 ${
                       isActive ? 'bg-zinc-900 border border-lime-500/30' : 'hover:bg-zinc-900/50'
                     }`}
                     onMouseEnter={() => setActiveSegment(alloc.id)}
                     onMouseLeave={() => setActiveSegment(null)}
+                    onClick={() => setActiveSegment(isActive ? null : alloc.id)}
                     whileHover={{ x: 8 }}
                   >
                     <div
-                      className="w-4 h-4 rounded-full"
+                      className="w-3 h-3 sm:w-4 sm:h-4 rounded-full shrink-0"
                       style={{ backgroundColor: alloc.color }}
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4 text-zinc-500" />
-                        <span className="font-semibold text-white">{alloc.label}</span>
+                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-500 shrink-0" />
+                        <span className="font-semibold text-white text-sm sm:text-base truncate">{alloc.label}</span>
                       </div>
                     </div>
                     <div
-                      className="text-xl font-black font-mono"
+                      className="text-lg sm:text-xl font-black font-mono shrink-0"
                       style={{ color: isActive ? alloc.color : 'white' }}
                     >
                       {alloc.percentage}%
@@ -383,23 +388,23 @@ export default function TokenomicsPage() {
       </section>
 
       {/* Detailed Breakdown Section */}
-      <section className="py-24 relative">
+      <section className="py-16 sm:py-24 relative">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-10 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight mb-3 sm:mb-4">
               Allocation <span className="text-lime-500">Breakdown</span>
             </h2>
-            <p className="text-zinc-400 max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto px-2">
               Every token has a purpose. Every allocation serves the ecosystem.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {allocations.map((alloc) => (
               <AllocationCard
                 key={alloc.id}
@@ -413,75 +418,75 @@ export default function TokenomicsPage() {
       </section>
 
       {/* Vesting Schedule Section */}
-      <section className="py-24 border-t border-white/10 bg-zinc-900/30">
+      <section className="py-16 sm:py-24 border-t border-white/10 bg-zinc-900/30">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-10 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
-              <Clock className="w-4 h-4 text-cyan-500" />
-              <span className="text-sm font-mono text-cyan-500">VESTING SCHEDULE</span>
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-4 sm:mb-6">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500" />
+              <span className="text-xs sm:text-sm font-mono text-cyan-500">VESTING SCHEDULE</span>
             </div>
 
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-white">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight mb-3 sm:mb-4 text-white">
               Team <span className="text-cyan-500">Vesting</span>
             </h2>
-            <p className="text-zinc-400 max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto px-2">
               Aligned incentives through time-locked vesting. Team tokens release gradually.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             {/* Vesting Card 1 */}
             <motion.div
-              className="p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
+              className="p-6 sm:p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
             >
-              <div className="text-5xl font-black text-cyan-500 mb-2">6</div>
-              <div className="text-sm font-mono text-zinc-500 uppercase tracking-wider">
+              <div className="text-4xl sm:text-5xl font-black text-cyan-500 mb-2">6</div>
+              <div className="text-xs sm:text-sm font-mono text-zinc-500 uppercase tracking-wider">
                 Month Cliff
               </div>
-              <p className="text-xs text-zinc-400 mt-4">
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-3 sm:mt-4">
                 No team tokens released for first 6 months
               </p>
             </motion.div>
 
             {/* Vesting Card 2 */}
             <motion.div
-              className="p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
+              className="p-6 sm:p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <div className="text-5xl font-black text-cyan-500 mb-2">Bi-Weekly</div>
-              <div className="text-sm font-mono text-zinc-500 uppercase tracking-wider">
+              <div className="text-3xl sm:text-5xl font-black text-cyan-500 mb-2">Bi-Weekly</div>
+              <div className="text-xs sm:text-sm font-mono text-zinc-500 uppercase tracking-wider">
                 Release Schedule
               </div>
-              <p className="text-xs text-zinc-400 mt-4">
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-3 sm:mt-4">
                 Tokens vest every 2 weeks or monthly
               </p>
             </motion.div>
 
             {/* Vesting Card 3 */}
             <motion.div
-              className="p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
+              className="p-6 sm:p-8 rounded-2xl bg-zinc-900/50 border border-white/10 text-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
-              <div className="text-5xl font-black text-cyan-500 mb-2">24</div>
-              <div className="text-sm font-mono text-zinc-500 uppercase tracking-wider">
+              <div className="text-4xl sm:text-5xl font-black text-cyan-500 mb-2">24</div>
+              <div className="text-xs sm:text-sm font-mono text-zinc-500 uppercase tracking-wider">
                 Month Total Vest
               </div>
-              <p className="text-xs text-zinc-400 mt-4">
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-3 sm:mt-4">
                 Full vesting period for team allocation
               </p>
             </motion.div>
@@ -490,60 +495,60 @@ export default function TokenomicsPage() {
       </section>
 
       {/* Milestone Buybacks Section */}
-      <section className="py-24 border-t border-white/10">
+      <section className="py-16 sm:py-24 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-10 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-500/10 border border-lime-500/20 mb-6">
-              <TrendingUp className="w-4 h-4 text-lime-500" />
-              <span className="text-sm font-mono text-lime-500">CREATOR FEES</span>
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-lime-500/10 border border-lime-500/20 mb-4 sm:mb-6">
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-lime-500" />
+              <span className="text-xs sm:text-sm font-mono text-lime-500">CREATOR FEES</span>
             </div>
 
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-white">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight mb-3 sm:mb-4 text-white">
               Milestone <span className="text-lime-500">Buybacks</span>
             </h2>
-            <p className="text-zinc-400 max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto px-2">
               Creator fees fund development and strategic buybacks at key market cap milestones.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 max-w-4xl mx-auto">
             {milestones.map((milestone, index) => {
               const Icon = milestone.icon
 
               return (
                 <motion.div
                   key={milestone.cap}
-                  className="relative p-8 rounded-2xl bg-zinc-900/50 border border-white/10 overflow-hidden group hover:border-lime-500/50 transition-colors"
+                  className="relative p-6 sm:p-8 rounded-2xl bg-zinc-900/50 border border-white/10 overflow-hidden group hover:border-lime-500/50 transition-colors"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
                 >
                   {/* Background glow */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-lime-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-lime-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                   <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-lime-500/10 flex items-center justify-center">
-                        <Icon className="w-7 h-7 text-lime-500" />
+                    <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-lime-500/10 flex items-center justify-center">
+                        <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-lime-500" />
                       </div>
                       <div>
-                        <div className="text-xs font-mono text-lime-500 uppercase tracking-wider">
+                        <div className="text-[10px] sm:text-xs font-mono text-lime-500 uppercase tracking-wider">
                           {milestone.label}
                         </div>
-                        <div className="text-3xl font-black text-white">${milestone.cap}</div>
+                        <div className="text-2xl sm:text-3xl font-black text-white">${milestone.cap}</div>
                       </div>
                     </div>
 
-                    <div className="text-sm text-zinc-400">{milestone.action}</div>
+                    <div className="text-xs sm:text-sm text-zinc-400">{milestone.action}</div>
 
-                    <div className="mt-6 pt-6 border-t border-white/10">
-                      <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+                    <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
+                      <div className="flex items-center gap-2 text-[10px] sm:text-xs font-mono text-zinc-500">
                         <div className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
                         <span>Market Cap Target</span>
                       </div>
@@ -556,12 +561,12 @@ export default function TokenomicsPage() {
 
           {/* Additional info */}
           <motion.div
-            className="mt-12 text-center"
+            className="mt-8 sm:mt-12 text-center"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
-            <p className="text-sm text-zinc-500 max-w-2xl mx-auto">
+            <p className="text-xs sm:text-sm text-zinc-500 max-w-2xl mx-auto px-2">
               Buybacks reduce circulating supply and are executed transparently on-chain. All
               transactions are verifiable on Solana Explorer.
             </p>
@@ -570,9 +575,9 @@ export default function TokenomicsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 border-t border-white/10 bg-zinc-900/20 relative overflow-hidden">
+      <section className="py-16 sm:py-24 border-t border-white/10 bg-zinc-900/20 relative overflow-hidden">
         {/* Background effects */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-lime-500/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] sm:w-[600px] h-[150px] sm:h-[300px] bg-lime-500/10 rounded-full blur-[150px]" />
 
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <motion.div
@@ -580,28 +585,29 @@ export default function TokenomicsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <GhostIcon variant="logo" size={64} className="mx-auto mb-6 text-lime-500" />
+            <GhostIcon variant="logo" size={48} className="mx-auto mb-4 sm:mb-6 text-lime-500 sm:hidden" />
+            <GhostIcon variant="logo" size={64} className="mx-auto mb-6 text-lime-500 hidden sm:block" />
 
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6 text-white">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 text-white">
               Join the <span className="text-lime-500">Ghost Economy</span>
             </h2>
 
-            <p className="text-lg text-zinc-400 mb-8 max-w-xl mx-auto">
-              Be part of the most community-focused AI agent protocol on Solana. 80% community
+            <p className="text-base sm:text-lg text-zinc-400 mb-6 sm:mb-8 max-w-xl mx-auto px-2">
+              Be part of the most community-focused AI agent protocol on Solana. 90% community
               allocation. Fair launch. No VCs.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
               <a
                 href="/"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-lime-500 text-black font-bold rounded-xl hover:opacity-90 transition-opacity"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-lime-500 text-black font-bold rounded-xl hover:opacity-90 transition-opacity text-sm sm:text-base"
               >
                 Explore Protocol
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </a>
               <a
                 href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-zinc-900 border border-white/10 text-white font-bold rounded-xl hover:border-lime-500/50 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-zinc-900 border border-white/10 text-white font-bold rounded-xl hover:border-lime-500/50 transition-colors text-sm sm:text-base"
               >
                 Launch Dashboard
               </a>
@@ -611,8 +617,8 @@ export default function TokenomicsPage() {
       </section>
 
       {/* Footer note */}
-      <div className="py-8 border-t border-white/10 text-center">
-        <p className="text-xs font-mono text-zinc-600">
+      <div className="py-6 sm:py-8 border-t border-white/10 text-center">
+        <p className="text-[10px] sm:text-xs font-mono text-zinc-600 px-4">
           Token distribution subject to governance decisions. Not financial advice.
         </p>
       </div>

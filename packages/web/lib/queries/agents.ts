@@ -58,6 +58,17 @@ interface Agent {
   capabilities: string[]
   isActive: boolean
   createdAt: Date
+  // x402 Payment Protocol fields
+  x402?: {
+    enabled: boolean
+    paymentAddress: string
+    acceptedTokens: string[]
+    pricePerCall: bigint
+    serviceEndpoint: string
+    totalPayments: bigint
+    totalCalls: bigint
+    apiSpecUri?: string
+  }
 }
 
 // Query keys
@@ -83,6 +94,20 @@ interface AgentFilters {
 
 // Helper to transform SDK agent to UI agent
 function transformSDKAgent(address: string, data: SDKAgent): Agent {
+  // Extract x402 data if available
+  const x402Data = data.x402Enabled
+    ? {
+        enabled: data.x402Enabled ?? false,
+        paymentAddress: data.x402PaymentAddress?.toString() ?? '',
+        acceptedTokens: (data.x402AcceptedTokens ?? []).map((t) => t.toString()),
+        pricePerCall: data.x402PricePerCall ?? BigInt(0),
+        serviceEndpoint: data.x402ServiceEndpoint ?? '',
+        totalPayments: data.x402TotalPayments ?? BigInt(0),
+        totalCalls: data.x402TotalCalls ?? BigInt(0),
+        apiSpecUri: data.apiSpecUri ?? undefined,
+      }
+    : undefined
+
   return {
     address,
     name: data.name ?? 'Unknown Agent',
@@ -97,6 +122,7 @@ function transformSDKAgent(address: string, data: SDKAgent): Agent {
     capabilities: data.capabilities ?? [],
     isActive: data.isActive ?? false,
     createdAt: new Date(Number(data.createdAt ?? 0) * 1000),
+    x402: x402Data,
   }
 }
 

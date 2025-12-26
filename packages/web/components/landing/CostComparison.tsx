@@ -12,30 +12,30 @@ const CostVisualizer3D = dynamic(
 
 export function CostComparison() {
   return (
-    <div className="py-32 bg-zinc-950 text-white overflow-hidden relative border-t border-white/5">
+    <div className="py-16 sm:py-24 md:py-32 bg-zinc-950 text-white overflow-hidden relative border-t border-white/5">
       {/* Background radial glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] sm:w-[700px] md:w-[1000px] h-[500px] sm:h-[700px] md:h-[1000px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
           {/* Text Side */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-mono uppercase tracking-[0.2em]">
-              <Cpu className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.15em] sm:tracking-[0.2em]">
+              <Cpu className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               vs Other x402 Facilitators
             </div>
 
-            <div className="space-y-4">
-              <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-none">
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter leading-none">
                 PayAI is a <br />
                 <span className="text-primary italic">Pipe.</span>
               </h2>
-              <p className="text-xl text-gray-400 font-light leading-relaxed max-w-lg">
+              <p className="text-base sm:text-xl text-gray-400 font-light leading-relaxed max-w-lg">
                 Other x402 facilitators just verify payments. GhostSpeak is the only marketplace
                 that{' '}
                 <span className="text-white font-bold underline decoration-primary/30 underline-offset-4">
@@ -45,7 +45,7 @@ export function CostComparison() {
               </p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {[
                 {
                   icon: ShieldCheck,
@@ -67,21 +67,21 @@ export function CostComparison() {
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + i * 0.1 }}
-                  className="flex items-center gap-6 p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/20 transition-colors group"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/20 transition-colors group"
                 >
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 ${item.color}`}
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 ${item.color} shrink-0`}
                   >
-                    <item.icon className="w-6 h-6" />
+                    <item.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-1">
+                    <div className="text-[10px] sm:text-xs font-mono text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1">
                       {item.title}
                     </div>
-                    <div className={`text-2xl font-black ${item.color}`}>{item.cost}</div>
+                    <div className={`text-xl sm:text-2xl font-black ${item.color}`}>{item.cost}</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[10px] font-mono text-gray-600 uppercase tracking-widest">
+                  <div className="text-left sm:text-right">
+                    <div className="text-[9px] sm:text-[10px] font-mono text-gray-600 uppercase tracking-widest">
                       {item.sub}
                     </div>
                   </div>
@@ -95,17 +95,17 @@ export function CostComparison() {
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="relative"
+            className="relative hidden lg:block"
           >
-            <div className="aspect-square w-full bg-black/40 rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl backdrop-blur-3xl group relative">
+            <div className="aspect-square w-full bg-black/40 rounded-[2rem] sm:rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl backdrop-blur-3xl group relative">
               <CostVisualizer3D />
 
               {/* Data Overlays in Corners */}
-              <div className="absolute top-8 left-8">
+              <div className="absolute top-4 sm:top-8 left-4 sm:left-8">
                 <StatusLabel label="Network_Tier" value="Tier_01" variant="dim" />
               </div>
 
-              <div className="absolute top-8 right-8">
+              <div className="absolute top-4 sm:top-8 right-4 sm:right-8">
                 <StatusLabel
                   label="Sync_Status"
                   value="LOCKED"
@@ -115,11 +115,11 @@ export function CostComparison() {
                 />
               </div>
 
-              <div className="absolute bottom-8 left-8">
+              <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8">
                 <StatusLabel label="Efficiency_Gain" value="5000X" variant="white" />
               </div>
 
-              <div className="absolute bottom-8 right-8">
+              <div className="absolute bottom-4 sm:bottom-8 right-4 sm:right-8">
                 <StatusLabel
                   label="Network_Ready"
                   value="OPTIMIZED"

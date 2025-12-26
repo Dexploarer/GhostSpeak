@@ -12,6 +12,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import * as React from 'react'
 import dynamic from 'next/dynamic'
 import { GhostSpeakProvider } from '@/lib/hooks/useGhostSpeak'
+import { AuthQuerySyncProvider } from '@/lib/hooks/useAuthQuerySync'
 
 const WalletContextProvider = dynamic(
   () => import('@/components/wallet/WalletProvider').then((mod) => mod.WalletContextProvider),
@@ -106,7 +107,9 @@ export function Providers(props: { children: React.ReactNode }) {
       <ReactQueryStreamedHydration>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <WalletContextProvider>
-            <GhostSpeakProvider network="devnet">{props.children}</GhostSpeakProvider>
+            <AuthQuerySyncProvider>
+              <GhostSpeakProvider network="devnet">{props.children}</GhostSpeakProvider>
+            </AuthQuerySyncProvider>
           </WalletContextProvider>
         </ThemeProvider>
       </ReactQueryStreamedHydration>
@@ -114,3 +117,4 @@ export function Providers(props: { children: React.ReactNode }) {
     </QueryClientProvider>
   )
 }
+

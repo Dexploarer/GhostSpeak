@@ -20,10 +20,11 @@ import {
   Send,
   Target,
   Eye,
+  Loader2,
 } from 'lucide-react'
 import { formatAddress, formatSol } from '@/lib/utils'
 import type { WorkOrder, WorkOrderStatus } from '@/lib/queries/work-orders'
-import { useSubmitDelivery, useVerifyDelivery, useProcessPayment } from '@/lib/queries/work-orders'
+import { useSubmitDelivery, useVerifyDelivery, useProcessPayment, useSendWorkOrderMessage } from '@/lib/queries/work-orders'
 import { toast } from 'sonner'
 
 interface WorkOrderDetailProps {
@@ -73,6 +74,7 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
   const submitDelivery = useSubmitDelivery()
   const verifyDelivery = useVerifyDelivery()
   const processPayment = useProcessPayment()
+  const sendMessage = useSendWorkOrderMessage()
 
   if (!workOrder) return null
 
@@ -473,32 +475,24 @@ export function WorkOrderDetail({ workOrder, isOpen, onClose, userAddress }: Wor
                     onClick={async () => {
                       if (newMessage.trim()) {
                         try {
-                          // Send message to work order communication thread
-                          // In production, this would use SDK's channel module:
-                          // const client = getGhostSpeakClient()
-                          // await client.channels.sendMessage({
-                          //   signer: walletSigner,
-                          //   channelAddress: workOrder.communicationChannelAddress,
-                          //   content: newMessage,
-                          // })
-
-                          // For now, show success and clear input
-                          // The message will appear after the next data refresh
-                          toast.success('Message sent!', {
-                            description: 'Your message has been added to the thread.',
+                          await sendMessage.mutateAsync({
+                            workOrderAddress: workOrder.address,
+                            content: newMessage.trim(),
                           })
                           setNewMessage('')
                         } catch (error) {
                           console.error('Failed to send message:', error)
-                          toast.error('Failed to send message', {
-                            description: 'Please try again.',
-                          })
                         }
                       }
                     }}
                     className="self-end"
+                    disabled={sendMessage.isPending || !newMessage.trim()}
                   >
-                    <Send className="w-4 h-4" />
+                    {sendMessage.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>

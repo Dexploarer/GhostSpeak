@@ -22,11 +22,6 @@ const integrations: IntegrationItem[] = [
     image: '/assets/crossmint-logo-new.png',
   },
   {
-    name: 'Dev.fun',
-    url: 'https://dev.fun',
-    image: '/assets/dev-fun-logo.png',
-  },
-  {
     name: 'Mintlify',
     url: 'https://mintlify.com',
     image: '/assets/mintlify-logo-new.png',

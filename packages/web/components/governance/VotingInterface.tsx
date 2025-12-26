@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 import type { Proposal, CreateVoteData } from '@/lib/queries/governance'
 import { VoteChoice } from '@/lib/queries/governance'
 import { useCastVote, useProposalVotes, useVotingPower } from '@/lib/queries/governance'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 import { formatDistanceToNow } from 'date-fns'
 
 const voteSchema = z.object({
@@ -73,7 +73,8 @@ const voteChoiceConfig = {
 }
 
 export function VotingInterface({ proposal, className }: VotingInterfaceProps): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { status } = useAuth()
+  const { wallet } = useWallet()
   const [selectedChoice, setSelectedChoice] = React.useState<VoteChoice | null>(null)
 
   const { data: votes, isLoading: votesLoading } = useProposalVotes(proposal.address)
@@ -87,7 +88,7 @@ export function VotingInterface({ proposal, className }: VotingInterfaceProps): 
     },
   })
 
-  const userAddress = publicKey?.toString()
+  const userAddress = wallet?.address
   const canVote = proposal.status === 'Voting' && !proposal.userHasVoted && userAddress
   const hasResults = proposal.results && proposal.results.totalVotes !== '0'
 

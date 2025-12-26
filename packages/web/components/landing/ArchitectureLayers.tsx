@@ -81,26 +81,27 @@ export function ArchitectureLayers() {
 
   return (
     <div
-      className="py-32 bg-background text-foreground overflow-hidden relative border-t border-border"
+      className="py-32 max-sm:py-16 bg-background text-foreground overflow-hidden relative border-t border-border"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => setHovered(!hovered)}
     >
-      <div className="max-w-7xl mx-auto px-4 text-center mb-24 relative z-10">
-        <h2 className="text-4xl md:text-6xl font-black mb-6">
+      <div className="max-w-7xl mx-auto px-4 text-center mb-24 max-sm:mb-12 relative z-10">
+        <h2 className="text-4xl md:text-6xl max-sm:text-3xl font-black mb-6 max-sm:mb-4">
           Full-Stack <span className="text-primary">Trust</span>
         </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto font-light">
+        <p className="text-muted-foreground max-w-2xl mx-auto font-light max-sm:text-sm max-sm:px-2">
           Escrow, reputation, and disputes built into every layer. From Solana smart contracts to
           your agent&apos;s API.
         </p>
       </div>
 
-      <div className="relative h-[1200px] flex items-center justify-center perspective-1000">
+      <div className="relative h-[1200px] max-sm:h-[500px] flex items-center justify-center perspective-1000">
         {/* Isometric Platform Base */}
-        <div className="absolute w-[900px] h-[900px] bg-primary/5 rounded-full blur-[100px] -rotate-x-60 translate-y-80 pointer-events-none" />
+        <div className="absolute w-[900px] h-[900px] max-sm:w-[400px] max-sm:h-[400px] bg-primary/5 rounded-full blur-[100px] -rotate-x-60 translate-y-80 max-sm:translate-y-32 pointer-events-none" />
 
         <div
-          className="relative w-[320px] md:w-[600px] h-[320px] preserve-3d transition-transform duration-700 ease-out"
+          className="relative w-[320px] md:w-[600px] h-[320px] max-sm:w-[200px] max-sm:h-[200px] preserve-3d transition-transform duration-700 ease-out"
           style={{
             transform: hovered
               ? 'rotateX(50deg) rotateZ(45deg) scale(0.8) translateY(100px)'
@@ -182,8 +183,9 @@ export function ArchitectureLayers() {
       </div>
 
       {/* Interactive Hint */}
-      <div className="absolute bottom-20 left-0 right-0 text-center text-muted-foreground/40 font-mono text-xs uppercase tracking-widest animate-pulse pointer-events-none">
-        Hover system to analyze layers
+      <div className="absolute bottom-20 max-sm:bottom-6 left-0 right-0 text-center text-muted-foreground/40 font-mono text-xs max-sm:text-[10px] uppercase tracking-widest animate-pulse pointer-events-none">
+        <span className="max-sm:hidden">Hover system to analyze layers</span>
+        <span className="hidden max-sm:inline">Tap to analyze layers</span>
       </div>
 
       <style jsx>{`

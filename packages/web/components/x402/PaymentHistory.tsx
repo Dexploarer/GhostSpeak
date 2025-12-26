@@ -7,7 +7,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 import { History, ExternalLink, CheckCircle2, Clock, XCircle, Search } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,9 @@ import { useX402PaymentHistory } from '@/lib/hooks/useX402'
 import { formatDistance } from 'date-fns'
 
 export function PaymentHistory(): React.JSX.Element {
-  const { publicKey } = useWallet()
+  const { status } = useAuth()
+  const { wallet } = useWallet()
+  const isConnected = wallet != null && status !== 'logged-out'
   const [searchTerm, setSearchTerm] = useState('')
 
   const { data: payments = [], isLoading, isError } = useX402PaymentHistory()
@@ -28,7 +30,7 @@ export function PaymentHistory(): React.JSX.Element {
       payment.recipient.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  if (!publicKey) {
+  if (!isConnected) {
     return (
       <Card>
         <CardContent className="py-12 text-center">

@@ -319,20 +319,54 @@ body {
    ============================================ */
 
 /* Crossmint Container */
-.crossmint-wrapper {
+.crossmint-wrapper,
+[class*='crossmint'],
+[id*='crossmint'],
+[data-testid*='crossmint'] {
   --cm-primary: var(--primary);
   --cm-primary-text: var(--primary-foreground);
   --cm-background: var(--card);
   --cm-text: var(--foreground);
   --cm-border: var(--border);
   --cm-muted: var(--muted-foreground);
+  font-family:
+    var(--font-sans),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif !important;
+}
+
+/* Target Crossmint modal directly (it renders as a portal) */
+[class*='crossmint-auth'],
+[class*='cm-modal'],
+[class*='cm-dialog'],
+[class*='crossmint-embed'],
+div[style*='z-index: 2147483647'],
+div[style*='z-index: 9999'] {
+  font-family:
+    var(--font-sans),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif !important;
+}
+
+/* All text in Crossmint modals */
+[class*='crossmint'] *,
+[id*='crossmint'] * {
+  font-family: inherit !important;
 }
 
 /* Crossmint Buttons */
-.crossmint-wrapper [class*="cm-button"],
-.crossmint-wrapper button[class*="crossmint"] {
+.crossmint-wrapper [class*='cm-button'],
+.crossmint-wrapper button[class*='crossmint'],
+[class*='crossmint'] button,
+[id*='crossmint'] button,
+button[class*='wallet'],
+button[class*='continue'] {
   background: var(--primary) !important;
-  color: var(--primary-foreground) !important;
+  color: #000000 !important;
   border: none !important;
   border-radius: 0.5rem !important;
   font-weight: 600 !important;
@@ -341,8 +375,16 @@ body {
   box-shadow: 0 4px 14px 0 rgba(204, 255, 0, 0.25) !important;
 }
 
-.crossmint-wrapper [class*="cm-button"]:hover,
-.crossmint-wrapper button[class*="crossmint"]:hover {
+/* Ensure button text and spans are visible */
+[class*='crossmint'] button *,
+[id*='crossmint'] button *,
+[class*='crossmint'] button span,
+[class*='crossmint'] [class*='button'] span {
+  color: #000000 !important;
+}
+
+.crossmint-wrapper [class*='cm-button']:hover,
+.crossmint-wrapper button[class*='crossmint']:hover {
   opacity: 0.9 !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 20px 0 rgba(204, 255, 0, 0.35) !important;
@@ -350,7 +392,7 @@ body {
 
 /* Crossmint Input Fields */
 .crossmint-wrapper input,
-.crossmint-wrapper [class*="cm-input"] {
+.crossmint-wrapper [class*='cm-input'] {
   background: var(--muted) !important;
   border: 1px solid var(--border) !important;
   border-radius: 0.5rem !important;
@@ -359,36 +401,36 @@ body {
 }
 
 .crossmint-wrapper input:focus,
-.crossmint-wrapper [class*="cm-input"]:focus {
+.crossmint-wrapper [class*='cm-input']:focus {
   border-color: var(--primary) !important;
   outline: none !important;
   box-shadow: 0 0 0 2px rgba(204, 255, 0, 0.2) !important;
 }
 
 /* Crossmint Cards/Panels */
-.crossmint-wrapper [class*="cm-card"],
-.crossmint-wrapper [class*="cm-panel"] {
+.crossmint-wrapper [class*='cm-card'],
+.crossmint-wrapper [class*='cm-panel'] {
   background: var(--card) !important;
   border: 1px solid var(--border) !important;
   border-radius: 0.75rem !important;
 }
 
 /* Crossmint Text */
-.crossmint-wrapper [class*="cm-text"],
+.crossmint-wrapper [class*='cm-text'],
 .crossmint-wrapper p,
 .crossmint-wrapper span,
 .crossmint-wrapper label {
   color: var(--foreground) !important;
 }
 
-.crossmint-wrapper [class*="cm-muted"],
-.crossmint-wrapper [class*="cm-secondary"] {
+.crossmint-wrapper [class*='cm-muted'],
+.crossmint-wrapper [class*='cm-secondary'] {
   color: var(--muted-foreground) !important;
 }
 
 /* Crossmint Modal/Dialog */
-.crossmint-wrapper [class*="cm-modal"],
-.crossmint-wrapper [class*="cm-dialog"] {
+.crossmint-wrapper [class*='cm-modal'],
+.crossmint-wrapper [class*='cm-dialog'] {
   background: var(--card) !important;
   border: 1px solid var(--border) !important;
   border-radius: 1rem !important;
@@ -396,8 +438,8 @@ body {
 }
 
 /* Crossmint Payment Method Cards */
-.crossmint-wrapper [class*="payment-method"],
-.crossmint-wrapper [class*="cm-payment"] {
+.crossmint-wrapper [class*='payment-method'],
+.crossmint-wrapper [class*='cm-payment'] {
   background: var(--muted) !important;
   border: 1px solid var(--border) !important;
   border-radius: 0.75rem !important;
@@ -405,14 +447,14 @@ body {
   transition: all 0.2s ease !important;
 }
 
-.crossmint-wrapper [class*="payment-method"]:hover,
-.crossmint-wrapper [class*="cm-payment"]:hover {
+.crossmint-wrapper [class*='payment-method']:hover,
+.crossmint-wrapper [class*='cm-payment']:hover {
   border-color: var(--primary) !important;
   background: rgba(204, 255, 0, 0.05) !important;
 }
 
-.crossmint-wrapper [class*="payment-method"][class*="selected"],
-.crossmint-wrapper [class*="cm-payment"][class*="active"] {
+.crossmint-wrapper [class*='payment-method'][class*='selected'],
+.crossmint-wrapper [class*='cm-payment'][class*='active'] {
   border-color: var(--primary) !important;
   background: rgba(204, 255, 0, 0.1) !important;
 }
@@ -423,8 +465,8 @@ body {
 }
 
 /* Crossmint Loading States */
-.crossmint-wrapper [class*="cm-loading"],
-.crossmint-wrapper [class*="cm-spinner"] {
+.crossmint-wrapper [class*='cm-loading'],
+.crossmint-wrapper [class*='cm-spinner'] {
   border-color: var(--border) !important;
   border-top-color: var(--primary) !important;
 }
@@ -440,12 +482,12 @@ body {
 }
 
 /* Dark mode specific overrides */
-.dark .crossmint-wrapper [class*="cm-card"],
-.dark .crossmint-wrapper [class*="cm-panel"] {
+.dark .crossmint-wrapper [class*='cm-card'],
+.dark .crossmint-wrapper [class*='cm-panel'] {
   background: rgba(17, 17, 17, 0.8) !important;
 }
 
 .dark .crossmint-wrapper input,
-.dark .crossmint-wrapper [class*="cm-input"] {
+.dark .crossmint-wrapper [class*='cm-input'] {
   background: rgba(26, 26, 26, 0.8) !important;
 }

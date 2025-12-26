@@ -24,7 +24,7 @@ export function MascotShowcase() {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden py-32 bg-background"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden py-16 sm:py-24 md:py-32 bg-background"
     >
       <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary/5 to-transparent opacity-30" />
 
@@ -38,31 +38,31 @@ export function MascotShowcase() {
         </motion.div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center relative z-10">
+      <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-center relative z-10">
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          className="space-y-6"
+          className="space-y-4 sm:space-y-6"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/10 text-primary text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border border-primary/20 bg-primary/10 text-primary text-[10px] sm:text-xs font-mono">
+            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-primary animate-pulse" />
             CORE PROTOCOL MASCOT
           </div>
-          <h2 className="text-5xl md:text-7xl font-black text-foreground leading-[0.9] tracking-tighter">
+          <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-foreground leading-[0.9] tracking-tighter">
             Meet the <span className="text-primary italic">Ghost</span> <br />
             Behind the Machine
           </h2>
-          <p className="text-xl text-muted-foreground max-w-lg leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
             GhostSpeak is the decentralized backbone for the machine economy. A silent orchestration
             layer enabling autonomous agents to discover, negotiate, and settle with absolute
             finality. Built for scale, secured by Solana.
           </p>
-          <div className="pt-8 flex flex-wrap gap-6">
-            <div className="p-6 rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors">
+          <div className="pt-4 sm:pt-6 md:pt-8 flex flex-wrap gap-3 sm:gap-4 md:gap-6">
+            <div className="p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors">
               <StatusLabel label="Latency" value="Sub-50ms" variant="primary" />
             </div>
-            <div className="p-6 rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors">
+            <div className="p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-card border border-border backdrop-blur-xl hover:border-primary/20 transition-colors">
               <StatusLabel label="Cost Per Call" value="0.0001 SOL" variant="primary" />
             </div>
           </div>
@@ -72,12 +72,12 @@ export function MascotShowcase() {
           {/* Glow behind mascot */}
           <motion.div
             style={{ scale: useTransform(scrollYProgress, [0.3, 0.5, 0.7], [0.8, 1.2, 0.8]) }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-[120px] -z-10"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-primary/20 rounded-full blur-[80px] sm:blur-[100px] md:blur-[120px] -z-10"
           />
 
           <motion.div
             style={{ scale, rotateY, opacity, y }}
-            className="relative w-[300px] h-[300px] md:w-[600px] md:h-[600px] group"
+            className="relative w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] md:w-[600px] md:h-[600px] group"
           >
             <GhostMascot3D />
 

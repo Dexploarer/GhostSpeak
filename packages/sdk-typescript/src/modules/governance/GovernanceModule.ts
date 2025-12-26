@@ -299,6 +299,101 @@ export class GovernanceModule extends BaseModule {
     })
   }
 
+  /**
+   * Get all votes cast on a specific proposal
+   * Note: Votes are stored in the proposal account as aggregated counts.
+   * Individual vote records would require a Vote account type in the program.
+   */
+  async getVotesByProposal(proposalAddress: Address): Promise<{
+    forVotes: bigint
+    againstVotes: bigint
+    abstainVotes: bigint
+    totalVoters: number
+    votes: Array<{ voter: Address; choice: 'for' | 'against' | 'abstain'; weight: bigint; timestamp: bigint }>
+  }> {
+    const proposal = await this.getProposal(proposalAddress)
+    
+    if (!proposal) {
+      return {
+        forVotes: 0n,
+        againstVotes: 0n,
+        abstainVotes: 0n,
+        totalVoters: 0,
+        votes: []
+      }
+    }
+
+    // Extract vote counts from proposal data
+    // The actual structure depends on how GovernanceProposal is defined
+    const forVotes = (proposal as unknown as { forVotes?: bigint }).forVotes ?? 0n
+    const againstVotes = (proposal as unknown as { againstVotes?: bigint }).againstVotes ?? 0n
+    const abstainVotes = (proposal as unknown as { abstainVotes?: bigint }).abstainVotes ?? 0n
+    
+    // Individual vote records would require querying Vote accounts
+    // For now, return aggregated data from the proposal
+    return {
+      forVotes,
+      againstVotes,
+      abstainVotes,
+      totalVoters: Number(forVotes + againstVotes + abstainVotes > 0n ? 1 : 0), // Placeholder
+      votes: [] // Individual votes require Vote account type in program
+    }
+  }
+
+  /**
+   * Revoke a previously delegated vote
+   */
+  async revokeDelegation(params: {
+    signer: TransactionSigner
+    delegate: Address
+    tokenAccount: Address
+  }): Promise<string> {
+    // Revoke by delegating with 0 scope or calling a revoke instruction
+    // Using the delegate instruction with null/zero parameters to revoke
+    const instruction = this.getDelegateVoteInstruction({
+      delegator: params.signer,
+      delegate: params.delegate,
+      delegatorTokenAccount: params.tokenAccount,
+      proposalId: BigInt(0),
+      scope: { kind: 'All', value: undefined },
+      expiresAt: BigInt(0) // Immediate expiration = revoke
+    })
+
+    return this.execute('revokeDelegation', () => instruction, [params.signer])
+  }
+
+  /**
+   * Get delegations that a voter has given to others
+   * Note: This requires querying VoteDelegation accounts filtered by delegator
+   */
+  async getDelegationsFromVoter(_voter: Address): Promise<Array<{
+    delegate: Address
+    amount: bigint
+    scope: DelegationScope
+    expiresAt: bigint | null
+  }>> {
+    // VoteDelegation accounts would need to be defined in the generated code
+    // For now, return empty array as this requires program support
+    console.warn('getDelegationsFromVoter: Requires VoteDelegation account type in program')
+    return []
+  }
+
+  /**
+   * Get delegations that a delegate has received from others
+   * Note: This requires querying VoteDelegation accounts filtered by delegate
+   */
+  async getDelegationsToDelegate(_delegate: Address): Promise<Array<{
+    delegator: Address
+    amount: bigint
+    scope: DelegationScope
+    expiresAt: bigint | null
+  }>> {
+    // VoteDelegation accounts would need to be defined in the generated code
+    // For now, return empty array as this requires program support
+    console.warn('getDelegationsToDelegate: Requires VoteDelegation account type in program')
+    return []
+  }
+
   // =====================================================
   // HELPER METHODS
   // =====================================================

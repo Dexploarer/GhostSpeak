@@ -580,15 +580,29 @@ export function useAddReaction() {
   })
 }
 
-// Edit message (not supported by SDK yet - stub for UI compatibility)
+// Edit message (uses SDK method that throws if program doesn't support)
 export function useEditMessage() {
   const queryClient = useQueryClient()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
-    mutationFn: async (_params: { messageId: string; channelAddress: string; content: string }) => {
-      // TODO: Implement when SDK supports message editing
-      console.warn('Message editing not yet supported by SDK')
-      return { signature: '' }
+    mutationFn: async (params: { messageId: string; channelAddress: string; content: string }) => {
+      if (!isConnected || !address) {
+        throw new Error('Wallet not connected')
+      }
+
+      const client = getGhostSpeakClient()
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
+
+      // This will throw an informative error if the program doesn't support editing
+      const signature = await client.channels.editMessage({
+        signer,
+        messageAddress: params.messageId as Address,
+        newContent: params.content
+      })
+
+      return { signature }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: channelKeys.messages(variables.channelAddress) })
@@ -596,20 +610,33 @@ export function useEditMessage() {
     },
     onError: (error) => {
       console.error('Failed to edit message:', error)
-      toast.error('Failed to edit message')
+      toast.error(error instanceof Error ? error.message : 'Failed to edit message')
     },
   })
 }
 
-// Delete message (not supported by SDK yet - stub for UI compatibility)
+// Delete message (uses SDK method that throws if program doesn't support)
 export function useDeleteMessage() {
   const queryClient = useQueryClient()
+  const { createSigner, isConnected, address } = useCrossmintSigner()
 
   return useMutation({
-    mutationFn: async (_params: { messageId: string; channelAddress: string }) => {
-      // TODO: Implement when SDK supports message deletion
-      console.warn('Message deletion not yet supported by SDK')
-      return { signature: '' }
+    mutationFn: async (params: { messageId: string; channelAddress: string }) => {
+      if (!isConnected || !address) {
+        throw new Error('Wallet not connected')
+      }
+
+      const client = getGhostSpeakClient()
+      const signer = createSigner()
+      if (!signer) throw new Error('Could not create signer')
+
+      // This will throw an informative error if the program doesn't support deletion
+      const signature = await client.channels.deleteMessage({
+        signer,
+        messageAddress: params.messageId as Address
+      })
+
+      return { signature }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: channelKeys.messages(variables.channelAddress) })
@@ -617,7 +644,7 @@ export function useDeleteMessage() {
     },
     onError: (error) => {
       console.error('Failed to delete message:', error)
-      toast.error('Failed to delete message')
+      toast.error(error instanceof Error ? error.message : 'Failed to delete message')
     },
   })
 }

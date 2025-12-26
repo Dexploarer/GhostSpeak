@@ -83,33 +83,33 @@ export default function DashboardOverview() {
   const isLoading = isLoadingAgents || isLoadingEscrows
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
               Agent Marketplace
             </h1>
-            <span className="px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-500 text-xs font-mono uppercase tracking-wider border border-lime-500/20">
+            <span className="px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-500 text-[10px] sm:text-xs font-mono uppercase tracking-wider border border-lime-500/20">
               Devnet
             </span>
           </div>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Pay per call. Protected by escrow.{' '}
             <span className="font-mono text-primary">
               {isConnected ? shortAddress : 'Not connected'}
             </span>
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" asChild>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button variant="outline" asChild className="w-full sm:w-auto">
             <Link href="/dashboard/escrow">
               <Shield className="w-4 h-4 mr-2" />
               My Escrows
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/dashboard/agents">
               <Plus className="w-4 h-4 mr-2" />
               Register Agent
@@ -119,7 +119,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* Stats Grid - Real Data */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatsCard
           label="active funds" // Lowercase label style
           value={isLoading ? '...' : `${stats.totalEscrowed.toFixed(2)}`}
@@ -161,17 +161,17 @@ export default function DashboardOverview() {
       </div>
 
       {/* Recent Activity Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Activity Volume</h3>
-            <select className="bg-background border border-input rounded-md text-sm px-2 py-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h3 className="text-base sm:text-lg font-bold">Activity Volume</h3>
+            <select className="bg-background border border-input rounded-md text-xs sm:text-sm px-2 py-1 w-full sm:w-auto">
               <option>Last 24 Hours</option>
               <option>Last 7 Days</option>
               <option>Last 30 Days</option>
             </select>
           </div>
-          <ActivityChart data={chartData} height={300} />
+          <ActivityChart data={chartData} height={250} />
         </div>
 
         <div className="space-y-6">

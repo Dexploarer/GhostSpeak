@@ -134,8 +134,20 @@ export default function EscrowPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Escrow Management"
-        description="Secure fund holding and dispute resolution for x402 transactions"
+        title={
+          <span className="flex items-center gap-3 flex-wrap">
+            Escrow Management
+            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-xs font-mono uppercase tracking-wider border border-amber-500/20">
+              Demo • Devnet
+            </span>
+          </span>
+        }
+        description={
+          <span>
+            Secure fund holding and dispute resolution.{' '}
+            <span className="text-amber-500/80">Transactions are on Solana Devnet.</span>
+          </span>
+        }
       >
         <CreateEscrowModal onSuccess={() => refetch()}>
           <Button>

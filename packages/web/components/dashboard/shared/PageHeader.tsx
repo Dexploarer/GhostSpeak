@@ -2,8 +2,8 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 
 interface PageHeaderProps {
-  title: string
-  description?: string
+  title: React.ReactNode
+  description?: React.ReactNode
   children?: React.ReactNode
   className?: string
 }

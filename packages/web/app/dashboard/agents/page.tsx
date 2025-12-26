@@ -19,9 +19,14 @@ export default function AgentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Agents</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-bold text-foreground">My Agents</h1>
+            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-xs font-mono uppercase tracking-wider border border-amber-500/20">
+              Demo • Devnet
+            </span>
+          </div>
           <p className="text-muted-foreground">
-            Register and manage your AI agents on the x402 marketplace
+            Register and manage your AI agents. <span className="text-amber-500/80 text-sm">Transactions are on Solana Devnet.</span>
           </p>
         </div>
         <div className="flex gap-3">

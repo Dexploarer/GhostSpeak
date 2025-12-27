@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic'
 import { GhostSpeakProvider } from '@/lib/hooks/useGhostSpeak'
 import { AuthQuerySyncProvider } from '@/lib/hooks/useAuthQuerySync'
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider'
+import { UserSyncProvider } from '@/components/providers/UserSyncProvider'
 
 const WalletContextProvider = dynamic(
   () => import('@/components/wallet/WalletProvider').then((mod) => mod.WalletContextProvider),
@@ -110,7 +111,9 @@ export function Providers(props: { children: React.ReactNode }) {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WalletContextProvider>
               <AuthQuerySyncProvider>
-                <GhostSpeakProvider network="devnet">{props.children}</GhostSpeakProvider>
+                <UserSyncProvider>
+                  <GhostSpeakProvider network="devnet">{props.children}</GhostSpeakProvider>
+                </UserSyncProvider>
               </AuthQuerySyncProvider>
             </WalletContextProvider>
           </ThemeProvider>

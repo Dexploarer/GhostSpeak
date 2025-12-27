@@ -7,6 +7,7 @@ import { useEscrows, EscrowStatus } from '@/lib/queries/escrow'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { StatsCard } from '@/components/dashboard/shared/StatsCard'
 import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
+import { UserStatsCard } from '@/components/convex/UserStatsCard'
 import { Button } from '@/components/ui/button'
 import { Bot, Shield, TrendingUp, Activity, Plus, CheckCircle2, Scale } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -117,6 +118,9 @@ export default function DashboardOverview() {
           </Button>
         </div>
       </div>
+
+      {/* Convex User Activity Stats */}
+      <UserStatsCard />
 
       {/* Stats Grid - Real Data */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

@@ -2,18 +2,21 @@
  * x402 Resource Card Component
  *
  * Displays external x402 resources (from Heurist, Firecrawl, etc.)
+ * Now with Convex favorites integration
  */
 
 'use client'
 
 import React, { useState } from 'react'
-import { ExternalLink, Zap, Globe } from 'lucide-react'
+import { ExternalLink, Zap, Globe, Heart } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalServiceDialog } from './ExternalServiceDialog'
 import type { X402Resource } from '@/lib/hooks/useX402Resources'
 import { formatPrice, getCategoryIcon } from '@/lib/hooks/useX402Resources'
+import { useConvexFavorites } from '@/lib/hooks/useConvexFavorites'
+import { useConvexUser } from '@/lib/hooks/useConvexUser'
 
 interface X402ResourceCardProps {
   resource: X402Resource
@@ -21,6 +24,20 @@ interface X402ResourceCardProps {
 
 export function X402ResourceCard({ resource }: X402ResourceCardProps): React.JSX.Element {
   const [showDialog, setShowDialog] = useState(false)
+  const { isAuthenticated } = useConvexUser()
+  const { isFavorited, toggle } = useConvexFavorites()
+
+  const isFav = isFavorited(resource.id)
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    await toggle({
+      resourceId: resource.id,
+      resourceUrl: resource.url,
+      resourceName: resource.name,
+      category: resource.category,
+    })
+  }
 
   return (
     <>
@@ -39,9 +56,23 @@ export function X402ResourceCard({ resource }: X402ResourceCardProps): React.JSX
                 </p>
               </div>
             </div>
-            {resource.isExternal && (
-              <ExternalLink className="w-4 h-4 text-zinc-500 shrink-0" />
-            )}
+            <div className="flex items-center gap-1">
+              {isAuthenticated && (
+                <button
+                  onClick={handleToggleFavorite}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isFav
+                      ? 'text-red-500 bg-red-500/10'
+                      : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
+                </button>
+              )}
+              {resource.isExternal && (
+                <ExternalLink className="w-4 h-4 text-zinc-500 shrink-0" />
+              )}
+            </div>
           </div>
 
           {/* Description */}

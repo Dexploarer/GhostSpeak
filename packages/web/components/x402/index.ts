@@ -9,3 +9,6 @@ export { AnalyticsDashboard, UserAnalyticsDashboard } from './AnalyticsDashboard
 export { PaymentStreams, CreatePaymentStreamForm } from './PaymentStreaming'
 export { X402AgentCard, X402AgentGrid } from './X402AgentCard'
 export { CapabilityFilter } from './CapabilityFilter'
+export { ExternalServiceDialog } from './ExternalServiceDialog'
+export { X402ResourceCard, X402ResourceGrid } from './X402ResourceCard'
+

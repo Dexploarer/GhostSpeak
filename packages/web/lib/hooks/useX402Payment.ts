@@ -47,7 +47,7 @@ export interface X402PaymentResult {
  * Wraps the SDK's X402Client for React usage with Crossmint wallet integration.
  */
 export function useX402Payment() {
-  const { createSigner, isConnected, address } = useCrossmintSigner()
+  const { createSigner, isConnected, address, sendTokens } = useCrossmintSigner()
 
   const [state, setState] = useState<X402PaymentState>({
     isPaying: false,
@@ -79,34 +79,49 @@ export function useX402Payment() {
           throw new Error('Could not create signer')
         }
 
-        // TODO: Replace with actual SDK X402Client integration
-        // This is a placeholder for the actual payment flow
-        //
-        // const client = new X402Client(rpc, signer)
-        // const receipt = await client.pay({
-        //   recipient: params.paymentAddress as Address,
-        //   amount: params.amount,
-        //   token: params.token as Address,
-        //   description: params.description,
-        // })
+        // Convert amount to decimal string for Crossmint wallet.send()
+        // params.amount is in token base units (e.g., 1000000 = 1 USDC with 6 decimals)
+        const decimals = params.token.includes('USDC') ? 6 : 9 // USDC has 6 decimals, SOL has 9
+        const amountDecimal = (Number(params.amount) / Math.pow(10, decimals)).toString()
 
-        // Simulate payment for now
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        // Get token identifier for Crossmint (lowercase name)
+        const tokenName = params.token.includes('USDC') ? 'usdc' : 'sol'
 
-        // Mock successful payment
-        const mockSignature = `x402-${Date.now()}-${Math.random().toString(36).substring(7)}`
+        toast.info(`Sending ${amountDecimal} ${tokenName.toUpperCase()} payment...`)
+
+        // Make real payment using Crossmint wallet
+        const result = await sendTokens(
+          params.paymentAddress,
+          tokenName,
+          amountDecimal
+        )
+
+        if (!result.explorerLink) {
+          throw new Error('Payment succeeded but no transaction signature returned')
+        }
+
+        // Extract signature from explorer link
+        // Format: https://explorer.solana.com/tx/SIGNATURE?cluster=devnet
+        const signatureMatch = result.explorerLink.match(/\/tx\/([^?]+)/)
+        const signature = signatureMatch ? signatureMatch[1] : result.explorerLink
 
         setState((prev) => ({
           ...prev,
           isPaying: false,
-          lastSignature: mockSignature,
+          lastSignature: signature,
         }))
 
-        toast.success('x402 payment successful!')
+        toast.success('x402 payment successful!', {
+          description: 'View on explorer',
+          action: {
+            label: 'View',
+            onClick: () => window.open(result.explorerLink, '_blank'),
+          },
+        })
 
         return {
           success: true,
-          signature: mockSignature,
+          signature,
           receipt: {
             amount: params.amount,
             token: params.token,
@@ -127,7 +142,7 @@ export function useX402Payment() {
         return { success: false, error: errorMessage }
       }
     },
-    [isConnected, address, createSigner]
+    [isConnected, address, createSigner, sendTokens]
   )
 
   /**

@@ -4,7 +4,7 @@ import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 import { Button } from '@/components/ui/button'
 import { Wallet, LogOut, Copy, Check, Loader2 } from 'lucide-react'
 import { formatAddress } from '@/lib/utils'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,13 @@ export function WalletConnectButton() {
   const { login, logout, status: authStatus, user } = useAuth()
   const { wallet, status: walletStatus } = useWallet()
   const [copied, setCopied] = useState(false)
+
+  // Debug logging in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[WalletConnectButton] authStatus:', authStatus, 'walletStatus:', walletStatus, 'wallet:', wallet?.address)
+    }
+  }, [authStatus, walletStatus, wallet])
 
   const handleCopy = async () => {
     if (wallet?.address) {
@@ -39,18 +46,19 @@ export function WalletConnectButton() {
     )
   }
 
-  // Wallet creating/loading state - after auth but wallet not ready yet
-  if (authStatus === 'logged-in' && walletStatus === 'in-progress') {
+  // User is logged in but wallet is still loading
+  // This covers: in-progress, not-loaded, or any transitional state
+  if (authStatus === 'logged-in' && walletStatus !== 'loaded') {
     return (
       <Button variant="outline" disabled className="gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Creating wallet...
+        {walletStatus === 'in-progress' ? 'Creating wallet...' : 'Loading wallet...'}
       </Button>
     )
   }
 
-  // Connected state - wallet is fully loaded and ready
-  if (walletStatus === 'loaded' && wallet != null && wallet.address) {
+  // Connected state - user is logged in AND wallet is fully loaded with address
+  if (authStatus === 'logged-in' && wallet?.address) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -96,4 +104,3 @@ export function WalletConnectButton() {
     </Button>
   )
 }
-

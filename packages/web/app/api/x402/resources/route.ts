@@ -1,11 +1,15 @@
 /**
  * x402 Resources API Route
  *
- * GET /api/x402/resources - List resources with filters
+ * GET /api/x402/resources - List resources with filters (now includes REAL external services)
  * POST /api/x402/resources - Register a new resource
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  fetchAllExternalResources,
+  type ExternalResource,
+} from '@/lib/x402/fetchExternalResources'
 
 // =====================================================
 // TYPES
@@ -19,12 +23,14 @@ interface ResourceResponse {
   category?: string
   tags: string[]
   network: string
-  maxAmount: string
+  priceUsd?: string
+  maxAmount?: string
   facilitatorId?: string
   isActive: boolean
   isVerified: boolean
-  createdAt: string
-  updatedAt: string
+  isExternal?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 interface ListResourcesResponse {
@@ -33,6 +39,11 @@ interface ListResourcesResponse {
   page: number
   pageSize: number
   hasMore: boolean
+  sources: {
+    heurist: number
+    ghostspeak: number
+    other: number
+  }
 }
 
 interface RegisterResourceRequest {
@@ -44,47 +55,57 @@ interface RegisterResourceRequest {
 }
 
 // =====================================================
-// MOCK DATA
+// GHOSTSPEAK NATIVE RESOURCES
 // =====================================================
 
-const MOCK_RESOURCES: ResourceResponse[] = [
+const GHOSTSPEAK_RESOURCES: ResourceResponse[] = [
   {
-    id: 'res_1',
-    url: 'https://api.ghostspeak.ai/v1/generate',
+    id: 'gs_text_generation',
+    url: 'https://www.ghostspeak.io/api/v1/generate',
     name: 'GhostSpeak Text Generation',
-    description: 'Advanced AI text generation with x402 micropayments',
+    description: 'Advanced AI text generation with x402 micropayments and escrow protection',
     category: 'text-generation',
-    tags: ['ai', 'text', 'llm', 'gpt'],
+    tags: ['ai', 'text', 'llm', 'ghostspeak', 'escrow'],
     network: 'solana',
+    priceUsd: '0.001',
     maxAmount: '1000000',
     facilitatorId: 'ghostspeak',
     isActive: true,
     isVerified: true,
+    isExternal: false,
     createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-11-01T00:00:00Z',
-  },
-  {
-    id: 'res_2',
-    url: 'https://api.payai.network/image/generate',
-    name: 'PayAI Image Generator',
-    description: 'Generate images with AI using USDC payments',
-    category: 'image-processing',
-    tags: ['ai', 'image', 'art'],
-    network: 'base',
-    maxAmount: '50000000',
-    facilitatorId: 'payai',
-    isActive: true,
-    isVerified: true,
-    createdAt: '2024-03-01T00:00:00Z',
-    updatedAt: '2024-11-01T00:00:00Z',
+    updatedAt: '2024-12-01T00:00:00Z',
   },
 ]
+
+// =====================================================
+// TRANSFORM EXTERNAL TO RESPONSE
+// =====================================================
+
+function transformExternalResource(ext: ExternalResource): ResourceResponse {
+  return {
+    id: ext.id,
+    url: ext.url,
+    name: ext.name,
+    description: ext.description,
+    category: ext.category,
+    tags: ext.tags,
+    network: ext.network,
+    priceUsd: ext.priceUsd,
+    facilitatorId: ext.facilitator,
+    isActive: ext.isActive,
+    isVerified: true, // Heurist resources are verified
+    isExternal: true,
+  }
+}
 
 // =====================================================
 // GET HANDLER
 // =====================================================
 
-export async function GET(request: NextRequest): Promise<NextResponse<ListResourcesResponse>> {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<ListResourcesResponse>> {
   const searchParams = request.nextUrl.searchParams
 
   // Parse query parameters
@@ -93,15 +114,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListResour
   const category = searchParams.get('category')
   const facilitatorId = searchParams.get('facilitator')
   const isActive = searchParams.get('active')
+  const externalOnly = searchParams.get('external') === 'true'
   const page = parseInt(searchParams.get('page') ?? '1', 10)
-  const pageSize = parseInt(searchParams.get('pageSize') ?? '20', 10)
+  const pageSize = parseInt(searchParams.get('pageSize') ?? '50', 10)
 
-  // Filter resources
-  let filtered = [...MOCK_RESOURCES]
+  // Fetch external resources
+  const externalResources = await fetchAllExternalResources()
+  const transformedExternal = externalResources.map(transformExternalResource)
 
+  // Combine all resources
+  let allResources: ResourceResponse[] = externalOnly
+    ? transformedExternal
+    : [...GHOSTSPEAK_RESOURCES, ...transformedExternal]
+
+  // Apply filters
   if (query) {
     const lowerQuery = query.toLowerCase()
-    filtered = filtered.filter(
+    allResources = allResources.filter(
       (r) =>
         r.name.toLowerCase().includes(lowerQuery) ||
         r.description?.toLowerCase().includes(lowerQuery) ||
@@ -110,26 +139,35 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListResour
   }
 
   if (network) {
-    filtered = filtered.filter((r) => r.network === network)
+    allResources = allResources.filter((r) => r.network === network)
   }
 
   if (category) {
-    filtered = filtered.filter((r) => r.category === category)
+    allResources = allResources.filter((r) => r.category === category)
   }
 
   if (facilitatorId) {
-    filtered = filtered.filter((r) => r.facilitatorId === facilitatorId)
+    allResources = allResources.filter((r) => r.facilitatorId === facilitatorId)
   }
 
-  if (isActive !== null) {
+  if (isActive !== null && isActive !== undefined) {
     const activeFilter = isActive === 'true'
-    filtered = filtered.filter((r) => r.isActive === activeFilter)
+    allResources = allResources.filter((r) => r.isActive === activeFilter)
+  }
+
+  // Calculate source counts
+  const sources = {
+    heurist: allResources.filter((r) => r.facilitatorId === 'heurist').length,
+    ghostspeak: allResources.filter((r) => r.facilitatorId === 'ghostspeak').length,
+    other: allResources.filter(
+      (r) => r.facilitatorId !== 'heurist' && r.facilitatorId !== 'ghostspeak'
+    ).length,
   }
 
   // Paginate
-  const total = filtered.length
+  const total = allResources.length
   const start = (page - 1) * pageSize
-  const paginatedResources = filtered.slice(start, start + pageSize)
+  const paginatedResources = allResources.slice(start, start + pageSize)
 
   return NextResponse.json({
     resources: paginatedResources,
@@ -137,6 +175,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ListResour
     page,
     pageSize,
     hasMore: start + pageSize < total,
+    sources,
   })
 }
 

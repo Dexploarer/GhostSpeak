@@ -97,7 +97,7 @@ export function CostComparison() {
             viewport={{ once: true }}
             className="relative hidden lg:block"
           >
-            <div className="aspect-square w-full bg-black/40 rounded-[2rem] sm:rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl backdrop-blur-3xl group relative">
+            <div className="aspect-square w-full bg-black/40 rounded-4xl sm:rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl backdrop-blur-3xl group relative">
               <CostVisualizer3D />
 
               {/* Data Overlays in Corners */}

@@ -50,7 +50,27 @@ interface VerifyResponse {
 // RPC CONFIGURATION
 // =====================================================
 
-const RPC_ENDPOINT = process.env['SOLANA_RPC_URL'] ?? 'https://api.devnet.solana.com'
+const RPC_MAINNET = process.env['NEXT_PUBLIC_SOLANA_RPC_URL'] ?? 'https://api.mainnet-beta.solana.com'
+const RPC_DEVNET = 'https://api.devnet.solana.com'
+
+/**
+ * Get the appropriate RPC endpoint based on network
+ * Supports: 'solana' (mainnet), 'solana-devnet', 'solana-mainnet'
+ */
+function getRpcEndpoint(network?: string): string {
+  if (!network) return RPC_DEVNET // Default to devnet for safety
+  
+  const normalizedNetwork = network.toLowerCase()
+  if (normalizedNetwork === 'solana' || normalizedNetwork === 'solana-mainnet') {
+    return RPC_MAINNET
+  }
+  if (normalizedNetwork === 'solana-devnet' || normalizedNetwork === 'solana-testnet') {
+    return RPC_DEVNET
+  }
+  
+  // Default to mainnet for unknown networks (to support x402 USDC payments)
+  return RPC_MAINNET
+}
 
 // =====================================================
 // POST - Verify Payment
@@ -61,7 +81,7 @@ const RPC_ENDPOINT = process.env['SOLANA_RPC_URL'] ?? 'https://api.devnet.solana
  *
  * This is a REAL implementation that:
  * 1. Parses the payment header to extract the signature
- * 2. Fetches the transaction from Solana
+ * 2. Fetches the transaction from Solana (mainnet or devnet based on requirement.network)
  * 3. Validates amount, recipient, and token
  */
 export async function POST(request: NextRequest): Promise<NextResponse<VerifyResponse>> {
@@ -95,8 +115,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
       )
     }
 
-    // Create RPC client
-    const rpc = createSolanaRpc(RPC_ENDPOINT)
+    // Create RPC client based on network from requirement
+    const rpcEndpoint = getRpcEndpoint(body.requirement.network)
+    const rpc = createSolanaRpc(rpcEndpoint)
 
     // Fetch transaction from Solana
     let transaction
@@ -238,14 +259,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<VerifyRes
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
     status: 'operational',
-    network: 'solana',
-    rpcEndpoint: RPC_ENDPOINT.includes('devnet') ? 'devnet' : 'mainnet',
+    networks: ['solana', 'solana-devnet'],
+    defaultNetwork: 'solana-devnet',
+    mainnetRpc: RPC_MAINNET.includes('devnet') ? 'devnet' : 'mainnet',
     facilitator: 'GhostSpeak',
     capabilities: [
       'spl-token-verification',
       'token-2022-verification',
       'escrow-verification',
       'reputation-lookup',
+      'multi-network-support',
     ],
   })
 }
+

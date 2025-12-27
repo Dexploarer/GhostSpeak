@@ -13,6 +13,7 @@ import { ArchitectureLayers } from '@/components/landing/ArchitectureLayers'
 import { CostComparison } from '@/components/landing/CostComparison'
 import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
 import { IdentityBridge } from '@/components/landing/IdentityBridge'
+import { X402FacilitatorSection } from '@/components/landing/X402FacilitatorSection'
 
 const AgentSwarm3D = dynamic(
   () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
@@ -97,6 +98,9 @@ export default function LandingPage() {
         </div>
         <BentoGrid />
       </section>
+
+      {/* 6. x402 Facilitator - Technical Capability */}
+      <X402FacilitatorSection />
 
       {/* 6. Footer */}
       <footer className="py-12 sm:py-16 md:py-24 border-t border-border bg-card/80 relative">

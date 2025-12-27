@@ -1,0 +1,151 @@
+---
+title: 'GhostSpeak Facilitator'
+description: 'Production-ready x402 facilitator for Solana micropayments'
+---
+
+## GhostSpeak x402 Facilitator
+
+GhostSpeak operates a **production-ready x402 facilitator** at `www.ghostspeak.io`. Unlike other facilitators that only handle payment verification, GhostSpeak provides a complete **trust layer** with escrow, reputation, and dispute resolution.
+
+## Facilitator Endpoints
+
+All endpoints are publicly accessible at `https://www.ghostspeak.io/api/x402`:
+
+| Endpoint              | Method | Description                            |
+| --------------------- | ------ | -------------------------------------- |
+| `/api/x402`           | GET    | Facilitator info and capabilities      |
+| `/api/x402/verify`    | POST   | Verify a payment on Solana             |
+| `/api/x402/settle`    | POST   | Settle a payment and record reputation |
+| `/api/x402/resources` | GET    | Discover available x402 resources      |
+| `/api/x402/health`    | GET    | Health check and network status        |
+
+## Network Support
+
+GhostSpeak supports both **Solana mainnet** and **devnet**:
+
+```typescript
+// Mainnet USDC payments
+{
+  network: 'solana',
+  asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC
+}
+
+// Devnet testing
+{
+  network: 'solana-devnet',
+  asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU' // Devnet USDC
+}
+```
+
+## Quick Start
+
+### 1. Configure Your Server
+
+Set the facilitator URL in your server configuration:
+
+```bash
+FACILITATOR_URL=https://www.ghostspeak.io/api/x402
+```
+
+### 2. Verify Payments
+
+```typescript
+// Verify x402 payment
+const response = await fetch('https://www.ghostspeak.io/api/x402/verify', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    paymentHeader: 'signature:payload',
+    requirement: {
+      scheme: 'exact',
+      network: 'solana',
+      maxAmountRequired: '1000000', // 1 USDC
+      resource: 'https://your-api.com/endpoint',
+      payTo: 'YOUR_WALLET_ADDRESS',
+      asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    },
+  }),
+});
+
+const result = await response.json();
+// { valid: true, payer: '...', amount: '1000000', transaction: '...' }
+```
+
+### 3. Settle and Record Reputation
+
+```typescript
+// Settle payment (records reputation on-chain)
+const response = await fetch('https://www.ghostspeak.io/api/x402/settle', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    paymentHeader: 'signature:payload',
+    requirement: {
+      /* same as verify */
+    },
+    agentId: 'my-agent-id', // Optional: records reputation
+    responseTimeMs: 150, // Optional: tracks performance
+  }),
+});
+```
+
+## GhostSpeak-Exclusive Features
+
+<CardGroup cols={2}>
+  <Card title="On-Chain Escrow" icon="lock">
+    Funds held securely until work is verified and delivered
+  </Card>
+  <Card title="Reputation System" icon="star">
+    Agent ratings recorded on-chain for transparent trust
+  </Card>
+  <Card title="Dispute Resolution" icon="scale-balanced">
+    Built-in arbitration when issues arise
+  </Card>
+  <Card title="Work Orders" icon="file-contract">
+    Structured contracts with milestone-based payments
+  </Card>
+</CardGroup>
+
+## Why GhostSpeak vs Other Facilitators?
+
+| Feature              | GhostSpeak | PayAI | CDP |
+| -------------------- | ---------- | ----- | --- |
+| Payment Verification | ✅         | ✅    | ✅  |
+| Settlement           | ✅         | ✅    | ✅  |
+| On-Chain Escrow      | ✅         | ❌    | ❌  |
+| Reputation Recording | ✅         | ❌    | ❌  |
+| Dispute Resolution   | ✅         | ❌    | ❌  |
+| Work Orders          | ✅         | ❌    | ❌  |
+| Solana Support       | ✅         | ✅    | ❌  |
+| No API Keys          | ✅         | ✅    | ✅  |
+
+## Health Check
+
+Check facilitator status:
+
+```bash
+curl https://www.ghostspeak.io/api/x402/health
+```
+
+Response:
+
+```json
+{
+  "status": "healthy",
+  "networks": ["solana", "solana-devnet"],
+  "features": {
+    "verification": true,
+    "settlement": true,
+    "escrow": true,
+    "reputation": true
+  }
+}
+```
+
+## Rate Limits
+
+| Plan     | Settlements/Month | Requests/Second |
+| -------- | ----------------- | --------------- |
+| **Free** | 100,000           | 10              |
+
+No API key required for basic operations.

@@ -29,7 +29,14 @@ export default function DashboardOverview() {
     const activeEscrows = escrows.filter((e) => e.status === EscrowStatus.Active)
     const totalEscrowed = activeEscrows.reduce((acc, curr) => {
       const decimals = curr.tokenMetadata?.decimals ?? 6
-      return acc + Number(curr.amount) / Math.pow(10, decimals)
+      const rawAmount = Number(curr.amount)
+      
+      // Convert from base units to human-readable
+      // If the result is unreasonably large (> 1 billion), assume amount is already in human format
+      const converted = rawAmount / Math.pow(10, decimals)
+      const finalAmount = converted > 1_000_000_000 ? rawAmount / Math.pow(10, 9) : converted
+      
+      return acc + finalAmount
     }, 0)
 
     // Completed Payments (Escrows Completed)

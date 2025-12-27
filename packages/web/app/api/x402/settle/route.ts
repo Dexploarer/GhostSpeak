@@ -52,7 +52,27 @@ interface SettleResponse {
 // RPC CONFIGURATION
 // =====================================================
 
-const RPC_ENDPOINT = process.env['SOLANA_RPC_URL'] ?? 'https://api.devnet.solana.com'
+const RPC_MAINNET = process.env['NEXT_PUBLIC_SOLANA_RPC_URL'] ?? 'https://api.mainnet-beta.solana.com'
+const RPC_DEVNET = 'https://api.devnet.solana.com'
+
+/**
+ * Get the appropriate RPC endpoint based on network
+ * Supports: 'solana' (mainnet), 'solana-devnet', 'solana-mainnet'
+ */
+function getRpcEndpoint(network?: string): string {
+  if (!network) return RPC_DEVNET // Default to devnet for safety
+  
+  const normalizedNetwork = network.toLowerCase()
+  if (normalizedNetwork === 'solana' || normalizedNetwork === 'solana-mainnet') {
+    return RPC_MAINNET
+  }
+  if (normalizedNetwork === 'solana-devnet' || normalizedNetwork === 'solana-testnet') {
+    return RPC_DEVNET
+  }
+  
+  // Default to mainnet for unknown networks (to support x402 USDC payments)
+  return RPC_MAINNET
+}
 
 // =====================================================
 // POST - Settle Payment
@@ -100,8 +120,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
       )
     }
 
-    // Create RPC client
-    const rpc = createSolanaRpc(RPC_ENDPOINT)
+    // Create RPC client based on network from requirement
+    const rpcEndpoint = getRpcEndpoint(body.requirement.network)
+    const rpc = createSolanaRpc(rpcEndpoint)
+
 
     // First, verify the payment exists and is valid
     let transaction
@@ -207,14 +229,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<SettleRes
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
     status: 'operational',
-    network: 'solana',
+    networks: ['solana', 'solana-devnet'],
+    defaultNetwork: 'solana-devnet',
     facilitator: 'GhostSpeak',
     capabilities: [
       'instant-settlement',
       'reputation-recording',
       'escrow-release',
       'metrics-tracking',
+      'multi-network-support',
     ],
     note: 'For Solana, payments are already settled on-chain. This endpoint records them for reputation and releases escrows.',
   })
 }
+

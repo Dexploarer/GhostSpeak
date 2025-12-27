@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAgent } from '@/lib/queries/agents'
 import { formatAddress } from '@/lib/utils'
 import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useX402Payment, USDC_MINTS } from '@/lib/hooks/useX402Payment'
 
 interface Message {
   id: string
@@ -37,6 +38,7 @@ export default function AgentInteractPage(): React.JSX.Element {
 
   const { address: walletAddress } = useWalletAddress()
   const { data: agent, isLoading, error } = useAgent(agentId)
+  const { makePayment, isPaying: isPaymentProcessing } = useX402Payment()
 
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -102,25 +104,20 @@ export default function AgentInteractPage(): React.JSX.Element {
           )
         )
 
-        // Make the x402 payment request
-        const paymentResponse = await fetch('/api/x402/pay', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: agent.x402.serviceEndpoint,
-            amount: agent.x402.pricePerCall.toString(),
-            payTo: agent.x402.paymentAddress,
-            asset: agent.x402.acceptedTokens[0] || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-            input: { query: userMessage.content },
-          }),
+        // Make the REAL x402 payment using Crossmint wallet
+        const tokenMint = agent.x402.acceptedTokens[0] || USDC_MINTS.devnet
+        const paymentResult = await makePayment({
+          agentAddress: agent.address,
+          serviceEndpoint: agent.x402.serviceEndpoint,
+          paymentAddress: agent.x402.paymentAddress,
+          amount: BigInt(agent.x402.pricePerCall),
+          token: tokenMint,
+          description: `Payment to ${agent.name} for service`,
         })
 
-        if (!paymentResponse.ok) {
-          const errorData = await paymentResponse.json()
-          throw new Error(errorData.error || 'Payment failed')
+        if (!paymentResult.success) {
+          throw new Error(paymentResult.error || 'Payment failed')
         }
-
-        const paymentResult = await paymentResponse.json()
 
         // Now call the agent's service endpoint with the payment proof
         setMessages((prev) =>

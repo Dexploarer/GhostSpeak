@@ -3,25 +3,24 @@
  *
  * Handles payment and interaction with external x402 services (Heurist, Firecrawl, etc.)
  * Includes chat-like interaction for Human-to-Agent communication
+ * NOW with Convex persistence for chat history
  */
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Loader2,
   CheckCircle2,
-  XCircle,
-  DollarSign,
   Send,
   ExternalLink,
   Copy,
   Zap,
   MessageSquare,
+  Heart,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -34,18 +33,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { X402Resource } from '@/lib/hooks/useX402Resources'
 import { formatPrice, getCategoryIcon } from '@/lib/hooks/useX402Resources'
+import { useResourceChat } from '@/lib/hooks/useConvexConversations'
+import { useConvexFavorites } from '@/lib/hooks/useConvexFavorites'
+import { useConvexUser } from '@/lib/hooks/useConvexUser'
 
 interface ExternalServiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   resource: X402Resource
-}
-
-interface ChatMessage {
-  role: 'user' | 'agent'
-  content: string
-  timestamp: Date
-  cost?: string
 }
 
 export function ExternalServiceDialog({
@@ -54,9 +49,17 @@ export function ExternalServiceDialog({
   resource,
 }: ExternalServiceDialogProps): React.JSX.Element {
   const [inputValue, setInputValue] = useState('')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // Convex hooks
+  const { isAuthenticated } = useConvexUser()
+  const { messages, sendMessage, isLoading: messagesLoading } = useResourceChat(
+    open ? resource : null
+  )
+  const { isFavorited, toggle: toggleFavorite } = useConvexFavorites()
+
+  const isFav = isFavorited(resource.id)
 
   const copyEndpoint = () => {
     navigator.clipboard.writeText(resource.url)
@@ -64,28 +67,31 @@ export function ExternalServiceDialog({
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleToggleFavorite = async () => {
+    await toggleFavorite({
+      resourceId: resource.id,
+      resourceUrl: resource.url,
+      resourceName: resource.name,
+      category: resource.category,
+    })
+  }
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isProcessing) return
 
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content: inputValue,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
+    // Send user message
+    await sendMessage(inputValue, 'user')
     setInputValue('')
     setIsProcessing(true)
 
     // Simulate agent response (in production, this would call the actual x402 endpoint)
-    setTimeout(() => {
-      const agentResponse: ChatMessage = {
-        role: 'agent',
-        content: `This is a demo response from ${resource.name}. In production, this would call the x402 endpoint at ${resource.url} with your message and process a ${formatPrice(resource.priceUsd)} USDC payment on ${resource.network}.`,
-        timestamp: new Date(),
-        cost: resource.priceUsd,
-      }
-      setMessages((prev) => [...prev, agentResponse])
+    setTimeout(async () => {
+      const cost = parseFloat(resource.priceUsd ?? '0')
+      await sendMessage(
+        `This is a demo response from ${resource.name}. In production, this would call the x402 endpoint at ${resource.url} with your message and process a ${formatPrice(resource.priceUsd)} USDC payment on ${resource.network}.`,
+        'agent',
+        cost
+      )
       setIsProcessing(false)
     }, 1500)
   }
@@ -94,10 +100,22 @@ export function ExternalServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="text-xl">{getCategoryIcon(resource.category ?? 'other')}</span>
-            {resource.name}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-xl">{getCategoryIcon(resource.category ?? 'other')}</span>
+              {resource.name}
+            </DialogTitle>
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleToggleFavorite}
+                className={isFav ? 'text-red-500' : 'text-zinc-500'}
+              >
+                <Heart className={`w-5 h-5 ${isFav ? 'fill-current' : ''}`} />
+              </Button>
+            )}
+          </div>
           <DialogDescription>{resource.description}</DialogDescription>
         </DialogHeader>
 
@@ -132,18 +150,27 @@ export function ExternalServiceDialog({
 
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto space-y-3 min-h-[200px] max-h-[300px] p-3 rounded-lg bg-black/20 border border-white/5">
-              {messages.length === 0 ? (
+              {messagesLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="w-6 h-6 animate-spin text-lime-400" />
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center text-zinc-500">
                   <MessageSquare className="w-12 h-12 mb-3 opacity-50" />
                   <p className="text-sm">Send a message to interact with this agent</p>
                   <p className="text-xs mt-1 text-zinc-600">
                     Each response costs {formatPrice(resource.priceUsd)} USDC
                   </p>
+                  {!isAuthenticated && (
+                    <p className="text-xs mt-2 text-amber-500">
+                      Connect wallet to save chat history
+                    </p>
+                  )}
                 </div>
               ) : (
-                messages.map((msg, i) => (
+                messages.map((msg) => (
                   <div
-                    key={i}
+                    key={msg._id}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
@@ -155,9 +182,9 @@ export function ExternalServiceDialog({
                     >
                       <p>{msg.content}</p>
                       <div className="flex items-center justify-between mt-2 text-xs opacity-60">
-                        <span>{msg.timestamp.toLocaleTimeString()}</span>
-                        {msg.cost && (
-                          <span className="text-lime-400">-${msg.cost}</span>
+                        <span>{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                        {msg.cost && msg.cost > 0 && (
+                          <span className="text-lime-400">-${msg.cost.toFixed(2)}</span>
                         )}
                       </div>
                     </div>
@@ -194,7 +221,9 @@ export function ExternalServiceDialog({
             </div>
 
             <p className="text-xs text-zinc-500 text-center">
-              Demo mode - In production, this will process real x402 payments
+              {isAuthenticated
+                ? 'Chat history saved to your account'
+                : 'Demo mode - Connect wallet to save history'}
             </p>
           </TabsContent>
 

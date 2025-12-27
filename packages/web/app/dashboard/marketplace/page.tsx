@@ -167,8 +167,10 @@ export default function MarketplacePage() {
                 <span>Escrow Protected</span>
               </div>
 
-              <Button size="sm" className="w-full mt-auto">
-                Pay & Use
+              <Button size="sm" className="w-full mt-auto" asChild>
+                <Link href={`/agents/${listing.address}/interact`}>
+                  Pay & Use
+                </Link>
               </Button>
             </GlassCard>
           ))}

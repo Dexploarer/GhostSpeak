@@ -65,8 +65,9 @@ test.describe('Agent Management', () => {
     await navigateAndWait(page, '/dashboard/agents')
     
     // Click edit on first owned agent
-    await page.click('[data-testid="edit-agent-button"]').first
-()
+    const editButtons = page.locator('[data-testid="edit-agent-button"]')
+    await editButtons.first().click()
+
     
     // Update description
     await fillField(page, '[name="description"]', 'Updated description')

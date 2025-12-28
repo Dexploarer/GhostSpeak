@@ -159,12 +159,25 @@ export default function StakingPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => {
-                      // TODO: Pass actual token accounts
+                    onClick={async () => {
+                      // Get actual token accounts
+                      const ghostMint = process.env.NEXT_PUBLIC_GHOST_TOKEN_MINT! as any
+                      const { deriveAssociatedTokenAddress } = await import('@ghostspeak/sdk')
+                      
+                      if (!address) return
+                      
+                      const userTokenAccount = await deriveAssociatedTokenAddress(
+                        address as any,
+                        ghostMint
+                      )
+                      
+                      // Treasury address from config or env
+                      const rewardsTreasury = config?.rewardsTreasury as any
+                      
                       claimRewards.mutate({
-                        ghostMint: '' as any,
-                        userTokenAccount: '' as any,
-                        rewardsTreasury: '' as any,
+                        ghostMint,
+                        userTokenAccount,
+                        rewardsTreasury,
                       })
                     }}
                     disabled={claimRewards.isPending || pendingRewards === BigInt(0)}

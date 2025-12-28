@@ -153,16 +153,24 @@ export function useX402Payment() {
       setState((prev) => ({ ...prev, isVerifying: true }))
 
       try {
-        // TODO: Replace with actual SDK verification
-        // const client = new X402Client(rpc)
-        // const result = await client.verifyPayment(signature)
-        // return result.valid
-
-        // Mock verification
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
+        // Use SDK to verify payment on-chain
+        const { X402Client } = await import('@ghostspeak/sdk')
+        const { createSolanaRpc } = await import('@solana/kit')
+        
+        const rpc = createSolanaRpc(process.env.NEXT_PUBLIC_SOLANA_RPC_URL!)
+        const x402 = new X402Client(rpc)
+        
+        const result = await x402.verifyPayment(signature)
+        
         setState((prev) => ({ ...prev, isVerifying: false }))
-        return true
+        
+        if (!result.valid) {
+          toast.error('Payment verification failed', {
+            description: result.error || 'Invalid transaction signature'
+          })
+        }
+        
+        return result.valid
       } catch (error) {
         console.error('Payment verification failed:', error)
         setState((prev) => ({
@@ -170,6 +178,11 @@ export function useX402Payment() {
           isVerifying: false,
           lastError: 'Verification failed',
         }))
+        
+        toast.error('Payment verification error', {
+          description: error instanceof Error ? error.message : 'Unknown error'
+        })
+        
         return false
       }
     },

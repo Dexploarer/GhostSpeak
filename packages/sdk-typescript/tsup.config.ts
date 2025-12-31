@@ -25,6 +25,8 @@ export default defineConfig([
     platform: 'node', // Node.js for proper handling of built-ins
     esbuildOptions(options) {
       options.conditions = ['node', 'import']
+      // Tell esbuild to treat crypto as external even in dependencies
+      options.external = [...(options.external || []), 'crypto']
     },
     external: [
       // Mark all @solana packages as external for better tree-shaking
@@ -83,11 +85,17 @@ export default defineConfig([
     treeshake: true,
     minify: true,
     target: 'es2022',
-    platform: 'neutral',
+    platform: 'node',
+    esbuildOptions(options) {
+      options.conditions = ['node', 'import']
+      options.external = [...(options.external || []), 'crypto']
+    },
     external: [
       '@solana/kit',
       '@solana/addresses',
-      '@noble/curves'
+      '@noble/curves',
+      'tweetnacl',
+      'crypto'
     ],
     tsconfig: 'tsconfig.json',
     outDir: 'dist/minimal'

@@ -10,7 +10,7 @@
  * @module modules/indexer
  */
 
-import type { Address } from '@solana/addresses'
+import type { Address, Signature } from '@solana/kit'
 import type { Rpc, GetSignaturesForAddressApi, GetTransactionApi } from '@solana/rpc'
 
 // =====================================================
@@ -45,9 +45,9 @@ export interface X402PaymentData {
  * Transaction signature with metadata
  */
 export interface SignatureInfo {
-  signature: string
-  slot: number
-  blockTime: number | null
+  signature: Signature
+  slot: bigint
+  blockTime: bigint | null
   err: unknown | null
 }
 
@@ -112,7 +112,7 @@ export class X402TransactionIndexer {
    * @returns Array of parsed x402 payment data
    */
   async pollTransactions(
-    lastSignature?: string,
+    lastSignature?: Signature,
     limit?: number
   ): Promise<X402PaymentData[]> {
     try {
@@ -156,11 +156,12 @@ export class X402TransactionIndexer {
    * @param signature - Transaction signature to parse
    * @returns Parsed x402 payment data or null if not an x402 payment
    */
-  async parseTransaction(signature: string): Promise<X402PaymentData | null> {
+  async parseTransaction(sig: Signature | string): Promise<X402PaymentData | null> {
     try {
       // Fetch full transaction data
+      const txSignature = (typeof sig === 'string' ? sig : sig) as Signature
       const response = await this.rpc
-        .getTransaction(signature, {
+        .getTransaction(txSignature, {
           maxSupportedTransactionVersion: 0,
           encoding: 'jsonParsed',
         })
@@ -177,9 +178,9 @@ export class X402TransactionIndexer {
       }
 
       // Extract payment data from transaction
-      return this.extractPaymentData(response, signature)
+      return this.extractPaymentData(response, typeof sig === 'string' ? sig : String(sig))
     } catch (error) {
-      console.error(`[X402 Indexer] Failed to fetch transaction ${signature}:`, error)
+      console.error(`[X402 Indexer] Failed to fetch transaction ${sig}:`, error)
       return null
     }
   }
@@ -192,21 +193,26 @@ export class X402TransactionIndexer {
    * Fetch transaction signatures for the facilitator address
    */
   private async getSignatures(
-    before?: string,
+    before?: Signature,
     limit?: number
   ): Promise<SignatureInfo[]> {
     try {
+      const config: { limit: number; before?: Signature } = {
+        limit: limit || this.batchSize,
+      }
+
+      if (before) {
+        config.before = before
+      }
+
       const response = await this.rpc
-        .getSignaturesForAddress(this.facilitatorAddress, {
-          limit: limit || this.batchSize,
-          before: before,
-        })
+        .getSignaturesForAddress(this.facilitatorAddress, config)
         .send()
 
       return response.map((sig) => ({
         signature: sig.signature,
         slot: sig.slot,
-        blockTime: sig.blockTime ?? null,
+        blockTime: sig.blockTime,
         err: sig.err ?? null,
       }))
     } catch (error) {

@@ -1,12 +1,13 @@
 /**
  * Interactive API Documentation
  *
- * Public API documentation with try-it-out functionality powered by @scalar/nextjs-api-reference
+ * Public API documentation with try-it-out functionality powered by @scalar/api-reference-react
  */
 
 'use client'
 
-import { ApiReferenceReact } from '@scalar/nextjs-api-reference'
+import { ApiReferenceReact } from '@scalar/api-reference-react'
+import '@scalar/api-reference-react/style.css'
 import { openapiSpec } from '@/lib/api/openapi-spec'
 
 export default function ApiDocsPage() {

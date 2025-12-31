@@ -1,8 +1,8 @@
 /**
- * Authorization Module - ERC-8004 Parity for Agent Pre-Authorization
+ * Authorization Module - Agent Pre-Authorization System
  *
- * Allows agents to pre-authorize facilitators (e.g., PayAI) to update
- * their reputation a limited number of times before expiration.
+ * GhostSpeak's trustless system for agents to pre-authorize facilitators
+ * (e.g., PayAI) to update their reputation with built-in security limits.
  *
  * @module AuthorizationModule
  */
@@ -10,7 +10,7 @@
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
-import type { GhostSpeakClient } from '../../core/GhostSpeakClient.js'
+import type { GhostSpeakConfig } from '../../types/index.js'
 import {
   createSignedAuthorization,
   verifyAuthorizationSignature,
@@ -36,8 +36,8 @@ import { Keypair } from '@solana/web3.js'
  * Manages agent pre-authorizations for reputation updates.
  */
 export class AuthorizationModule extends BaseModule {
-  constructor(client: GhostSpeakClient) {
-    super(client)
+  constructor(config: GhostSpeakConfig) {
+    super(config)
   }
 
   /**
@@ -65,16 +65,8 @@ export class AuthorizationModule extends BaseModule {
       // Create signed authorization using signature verification utilities
       const authorization = await createSignedAuthorization(params, agentKeypair)
 
-      this.logger?.info('Created authorization:', {
-        agent: authorization.agentAddress,
-        source: authorization.authorizedSource,
-        limit: authorization.indexLimit,
-        expires: new Date(authorization.expiresAt * 1000).toISOString(),
-      })
-
       return authorization
     } catch (error) {
-      this.logger?.error('Failed to create authorization:', error)
       throw error
     }
   }
@@ -95,17 +87,31 @@ export class AuthorizationModule extends BaseModule {
     agentSigner: TransactionSigner
   ): Promise<string> {
     try {
-      // TODO: Implement instruction builder for create_agent_authorization
-      // This will be added once Codama generates the instruction types
+      const { getCreateAgentAuthorizationInstructionAsync } = await import(
+        '../../generated/instructions/createAgentAuthorization.js'
+      )
 
-      this.logger?.info('Storing authorization on-chain:', {
-        agent: authorization.agentAddress,
-        source: authorization.authorizedSource,
-      })
-
-      throw new Error('On-chain storage not yet implemented - pending Codama generation')
+      // Use BaseModule's execute method
+      return await this.execute(
+        'createAgentAuthorization',
+        async () => {
+          return await getCreateAgentAuthorizationInstructionAsync({
+            agent: authorization.agentAddress as Address,
+            authority: agentSigner,
+            authorizedSource: authorization.authorizedSource as Address,
+            indexLimit: BigInt(authorization.indexLimit),
+            expiresAt: BigInt(authorization.expiresAt),
+            network: authorization.network === 'mainnet-beta' ? 0 : authorization.network === 'devnet' ? 1 : 2,
+            signature: authorization.signature,
+            // FIXME: Using "default" to match Rust's unwrap_or behavior
+            // Codama generates expectSome() which requires a value, not null
+            // Rust uses .unwrap_or(&String::from("default"))
+            nonce: "default",
+          })
+        },
+        [agentSigner]
+      )
     } catch (error) {
-      this.logger?.error('Failed to store authorization on-chain:', error)
       throw error
     }
   }
@@ -191,15 +197,8 @@ export class AuthorizationModule extends BaseModule {
       // TODO: Implement PDA derivation and account fetch
       // This will be added once Codama generates the account types
 
-      this.logger?.info('Fetching authorization:', {
-        agent: agentAddress,
-        source: authorizedSource,
-        nonce,
-      })
-
       throw new Error('On-chain fetch not yet implemented - pending Codama generation')
     } catch (error) {
-      this.logger?.error('Failed to fetch authorization:', error)
       return null
     }
   }
@@ -213,6 +212,7 @@ export class AuthorizationModule extends BaseModule {
    * @param authorization - Authorization to use
    * @param reputationChange - Reputation change to apply
    * @param transactionSignature - Transaction signature for audit trail
+   * @param usageRecord - PDA for usage record (audit trail)
    * @param metadata - Optional metadata
    * @param facilitatorSigner - Facilitator's signer
    * @returns Transaction signature
@@ -221,6 +221,7 @@ export class AuthorizationModule extends BaseModule {
     authorization: ReputationAuthorization,
     reputationChange: number,
     transactionSignature: string,
+    usageRecord: Address,
     metadata: Record<string, unknown> | undefined,
     facilitatorSigner: TransactionSigner
   ): Promise<string> {
@@ -237,20 +238,27 @@ export class AuthorizationModule extends BaseModule {
         throw new Error(`Authorization is ${status.status}: ${status.reason}`)
       }
 
-      // TODO: Implement instruction builder for update_reputation_with_auth
-      // This will be added once Codama generates the instruction types
+      const { getUpdateReputationWithAuthInstructionAsync } = await import(
+        '../../generated/instructions/updateReputationWithAuth.js'
+      )
 
-      this.logger?.info('Updating reputation with authorization:', {
-        agent: authorization.agentAddress,
-        change: reputationChange,
-        remaining: status.remainingUses - 1,
-      })
-
-      throw new Error(
-        'Reputation update with auth not yet implemented - pending Codama generation'
+      // Use BaseModule's execute method
+      return await this.execute(
+        'updateReputationWithAuth',
+        async () => {
+          return await getUpdateReputationWithAuthInstructionAsync({
+            agent: authorization.agentAddress as Address,
+            authorizedSource: facilitatorSigner,
+            usageRecord,
+            reputationChange: BigInt(reputationChange),
+            transactionSignature,
+            metadata: metadata ? JSON.stringify(metadata) : null,
+            nonce: authorization.nonce ?? null,
+          })
+        },
+        [facilitatorSigner]
       )
     } catch (error) {
-      this.logger?.error('Failed to update reputation with authorization:', error)
       throw error
     }
   }
@@ -261,30 +269,36 @@ export class AuthorizationModule extends BaseModule {
    * Agent can revoke an authorization before it expires or is exhausted.
    *
    * @param agentAddress - Agent's address
-   * @param authorizedSource - Authorized source to revoke
+   * @param authorization - Authorization account PDA
    * @param nonce - Optional nonce (must match creation)
    * @param agentSigner - Agent's signer
    * @returns Transaction signature
    */
   async revokeAuthorization(
     agentAddress: Address,
-    authorizedSource: Address,
+    authorization: Address,
     nonce: string | undefined,
     agentSigner: TransactionSigner
   ): Promise<string> {
     try {
-      // TODO: Implement instruction builder for revoke_authorization
-      // This will be added once Codama generates the instruction types
+      const { getRevokeAuthorizationInstruction } = await import(
+        '../../generated/instructions/revokeAuthorization.js'
+      )
 
-      this.logger?.info('Revoking authorization:', {
-        agent: agentAddress,
-        source: authorizedSource,
-        nonce,
-      })
-
-      throw new Error('Authorization revocation not yet implemented - pending Codama generation')
+      // Use BaseModule's execute method
+      return await this.execute(
+        'revokeAuthorization',
+        () => {
+          return getRevokeAuthorizationInstruction({
+            agent: agentAddress,
+            authorization,
+            authority: agentSigner,
+            nonce: nonce ?? null,
+          })
+        },
+        [agentSigner]
+      )
     } catch (error) {
-      this.logger?.error('Failed to revoke authorization:', error)
       throw error
     }
   }
@@ -302,11 +316,8 @@ export class AuthorizationModule extends BaseModule {
       // TODO: Implement getProgramAccounts query with filters
       // This will be added once Codama generates the account types
 
-      this.logger?.info('Listing authorizations:', filter)
-
       throw new Error('Authorization listing not yet implemented - pending Codama generation')
     } catch (error) {
-      this.logger?.error('Failed to list authorizations:', error)
       return []
     }
   }

@@ -15,11 +15,14 @@ import type { TransactionResult } from '../utils/transaction-urls.js'
 export abstract class BaseModule {
   protected builder: InstructionBuilder
   protected config: GhostSpeakConfig
+  protected logger?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void }
   private _debugMode = false
 
   constructor(config: GhostSpeakConfig) {
     this.config = config
     this.builder = new InstructionBuilder(config)
+    // Optional: Set logger if provided in config
+    this.logger = config.logger
   }
 
   /**

@@ -103,6 +103,28 @@ export class GhostSpeakClient {
   }
 
   /**
+   * Reputation Tag Engine (Pillar 2: Granular Tags)
+   *
+   * Automatic tag assignment and management based on agent metrics.
+   * Features confidence scoring, evidence tracking, and tag decay.
+   */
+  tagEngine() {
+    const { ReputationTagEngine } = require('../utils/reputation-tag-engine.js')
+    return new ReputationTagEngine()
+  }
+
+  /**
+   * Multi-Source Reputation Aggregator (Pillar 3: External Sources)
+   *
+   * Aggregate reputation data from multiple sources (PayAI, GitHub, custom webhooks)
+   * with weighted scoring and conflict detection.
+   */
+  reputationAggregator() {
+    const { MultiSourceAggregator } = require('../modules/reputation/MultiSourceAggregator.js')
+    return new MultiSourceAggregator()
+  }
+
+  /**
    * Privacy operations
    */
   privacy(): PrivacyModule {
@@ -148,12 +170,10 @@ export class GhostSpeakClient {
   }
 
   /**
-   * Authorization operations (ERC-8004 parity)
-   *
-   * Allows agents to pre-authorize facilitators (e.g., PayAI) to update reputation.
+   * Direct access to Authorization Module for read operations
    */
-  authorization(): AuthorizationModule {
-    return new AuthorizationModule(this)
+  get authorization(): AuthorizationModule {
+    return new AuthorizationModule(this.config)
   }
 
   // H2A module has been removed - use A2A (Agent-to-Agent) instructions instead

@@ -46,7 +46,7 @@ const createProposalSchema = z.object({
     .string()
     .min(100, 'Description must be at least 100 characters')
     .max(5000, 'Description must be less than 5000 characters'),
-  proposalType: z.nativeEnum(ProposalType),
+  proposalType: z.enum(ProposalType),
   category: z.string().min(1, 'Category is required'),
   impactLevel: z.enum(['Low', 'Medium', 'High', 'Critical']),
   votingDuration: z

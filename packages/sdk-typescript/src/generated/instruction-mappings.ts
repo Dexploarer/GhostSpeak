@@ -3333,11 +3333,11 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       },
       {
         "name": "staking_config",
-        "pda": false
+        "pda": true
       },
       {
         "name": "staking_vault",
-        "pda": false
+        "pda": true
       },
       {
         "name": "treasury",
@@ -3385,14 +3385,63 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "writable": false,
         "signer": false,
         "optional": false,
-        "docs": []
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103,
+                95,
+                99,
+                111,
+                110,
+                102,
+                105,
+                103
+              ]
+            }
+          ]
+        }
       },
       {
         "name": "staking_vault",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": []
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103,
+                95,
+                118,
+                97,
+                117,
+                108,
+                116
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "staking_config"
+            }
+          ]
+        }
       },
       {
         "name": "treasury",
@@ -3462,10 +3511,14 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       },
       {
         "name": "staking_vault",
-        "pda": false
+        "pda": true
       },
       {
         "name": "staking_config",
+        "pda": false
+      },
+      {
+        "name": "ghost_mint",
         "pda": false
       },
       {
@@ -3478,6 +3531,10 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       },
       {
         "name": "system_program",
+        "pda": false
+      },
+      {
+        "name": "rent",
         "pda": false
       }
     ],
@@ -3521,10 +3578,46 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": []
+        "docs": [
+          "Staking vault to hold all staked GHOST tokens",
+          "Automatically initialized on first stake using init_if_needed"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103,
+                95,
+                118,
+                97,
+                117,
+                108,
+                116
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "staking_config"
+            }
+          ]
+        }
       },
       {
         "name": "staking_config",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "ghost_mint",
         "writable": false,
         "signer": false,
         "optional": false,
@@ -3552,6 +3645,14 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "optional": false,
         "docs": [],
         "address": "11111111111111111111111111111111"
+      },
+      {
+        "name": "rent",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "SysvarRent111111111111111111111111111111111"
       }
     ],
     "docs": "Stake GHOST tokens to boost agent reputation",
@@ -3785,8 +3886,12 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "pda": true
       },
       {
+        "name": "staking_config",
+        "pda": true
+      },
+      {
         "name": "staking_vault",
-        "pda": false
+        "pda": true
       },
       {
         "name": "owner_token_account",
@@ -3830,11 +3935,67 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         }
       },
       {
+        "name": "staking_config",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103,
+                95,
+                99,
+                111,
+                110,
+                102,
+                105,
+                103
+              ]
+            }
+          ]
+        }
+      },
+      {
         "name": "staking_vault",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": []
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103,
+                95,
+                118,
+                97,
+                117,
+                108,
+                116
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "staking_config"
+            }
+          ]
+        }
       },
       {
         "name": "owner_token_account",

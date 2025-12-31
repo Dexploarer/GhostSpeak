@@ -8,7 +8,6 @@
 import { v } from 'convex/values'
 import { mutation, query, internalMutation, internalQuery } from './_generated/server'
 import { Id } from './_generated/dataModel'
-import { createHmac } from 'crypto'
 
 /**
  * Queue a webhook event for delivery
@@ -77,7 +76,7 @@ export const queueWebhookEvent = mutation({
 export const getPendingWebhooks = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const _now = Date.now()
+    const now = Date.now()
     const fiveMinutesAgo = now - 5 * 60 * 1000
 
     // Get pending webhooks that haven't been tried recently
@@ -220,17 +219,11 @@ export const retryWebhook = mutation({
 })
 
 /**
- * Generate HMAC signature for webhook payload
- */
-export function generateWebhookSignature(secret: string, payload: any): string {
-  const payloadString = JSON.stringify(payload)
-  const hmac = createHmac('sha256', secret)
-  hmac.update(payloadString)
-  return hmac.digest('hex')
-}
-
-/**
  * Test webhook delivery (returns mock data without saving)
+ *
+ * Note: Signature generation should be done client-side using:
+ * const crypto = require('crypto');
+ * const signature = crypto.createHmac('sha256', secret).update(JSON.stringify(payload)).digest('hex');
  */
 export const testWebhook = mutation({
   args: {
@@ -250,16 +243,46 @@ export const testWebhook = mutation({
       timestamp: Date.now(),
     }
 
-    const signature = generateWebhookSignature(args.secret, testPayload)
-
     return {
       payload: testPayload,
-      signature,
+      signatureInstructions: 'Generate HMAC-SHA256 signature client-side using your webhook secret',
+      signatureAlgorithm: 'HMAC-SHA256',
       headers: {
-        'X-GhostSpeak-Signature': signature,
+        'X-GhostSpeak-Signature': '<generate HMAC-SHA256 of payload with your secret>',
         'X-GhostSpeak-Event': 'score.updated',
+        'X-GhostSpeak-Timestamp': testPayload.timestamp.toString(),
         'Content-Type': 'application/json',
       },
     }
+  },
+})
+
+/**
+ * Clean up old webhook delivery records
+ */
+export const cleanupOldWebhooks = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+
+    // Find old delivered/failed webhooks
+    const oldWebhooks = await ctx.db
+      .query('webhookDeliveries')
+      .filter((q) =>
+        q.and(
+          q.or(q.eq(q.field('status'), 'delivered'), q.eq(q.field('status'), 'failed')),
+          q.lt(q.field('createdAt'), thirtyDaysAgo)
+        )
+      )
+      .collect()
+
+    // Delete them
+    for (const webhook of oldWebhooks) {
+      await ctx.db.delete(webhook._id)
+    }
+
+    console.log(`[Webhook Cleanup] Deleted ${oldWebhooks.length} old webhook records`)
+
+    return { deleted: oldWebhooks.length }
   },
 })

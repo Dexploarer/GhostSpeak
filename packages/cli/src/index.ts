@@ -10,6 +10,7 @@ import { agentCommand } from './commands/agent/index.js'
 // Escrow removed - payment facilitation delegated to PayAI
 import { configCommand } from './commands/config.js'
 import { setupFaucetCommand } from './commands/faucet.js'
+import { airdropCommand } from './commands/airdrop.js'
 import { sdkCommand } from './commands/sdk.js'
 import { updateCommand } from './commands/update.js'
 import { governanceCommand } from './commands/governance.js'
@@ -159,7 +160,8 @@ async function main() {
     program.addCommand(walletCommand)      // Wallet management
     program.addCommand(configCommand)      // Manual setup option
     setupFaucetCommand(program)            // Get SOL to start
-    
+    program.addCommand(airdropCommand)     // Get devnet GHOST tokens
+
     // 2. Core features
     program.addCommand(agentCommand)       // Create and manage agents
     

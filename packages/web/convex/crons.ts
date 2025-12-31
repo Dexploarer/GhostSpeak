@@ -24,7 +24,7 @@ crons.interval('process-webhooks', { minutes: 1 }, internal.webhookProcessor.pro
 crons.daily(
   'cleanup-webhooks',
   { hourUTC: 2, minuteUTC: 0 },
-  internal.webhookProcessor.cleanupOldWebhooks
+  internal.webhookDelivery.cleanupOldWebhooks
 )
 
 export default crons

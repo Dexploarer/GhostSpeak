@@ -57,11 +57,14 @@ export type StakeGhostInstruction<
   TAccountOwnerTokenAccount extends string | AccountMeta<string> = string,
   TAccountStakingVault extends string | AccountMeta<string> = string,
   TAccountStakingConfig extends string | AccountMeta<string> = string,
+  TAccountGhostMint extends string | AccountMeta<string> = string,
   TAccountOwner extends string | AccountMeta<string> = string,
   TAccountTokenProgram extends string | AccountMeta<string> =
     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
   TAccountSystemProgram extends string | AccountMeta<string> =
     "11111111111111111111111111111111",
+  TAccountRent extends string | AccountMeta<string> =
+    "SysvarRent111111111111111111111111111111111",
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -79,6 +82,9 @@ export type StakeGhostInstruction<
       TAccountStakingConfig extends string
         ? ReadonlyAccount<TAccountStakingConfig>
         : TAccountStakingConfig,
+      TAccountGhostMint extends string
+        ? ReadonlyAccount<TAccountGhostMint>
+        : TAccountGhostMint,
       TAccountOwner extends string
         ? WritableSignerAccount<TAccountOwner> &
             AccountSignerMeta<TAccountOwner>
@@ -89,6 +95,9 @@ export type StakeGhostInstruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
+      TAccountRent extends string
+        ? ReadonlyAccount<TAccountRent>
+        : TAccountRent,
       ...TRemainingAccounts,
     ]
   >;
@@ -138,17 +147,25 @@ export type StakeGhostAsyncInput<
   TAccountOwnerTokenAccount extends string = string,
   TAccountStakingVault extends string = string,
   TAccountStakingConfig extends string = string,
+  TAccountGhostMint extends string = string,
   TAccountOwner extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
+  TAccountRent extends string = string,
 > = {
   stakingAccount?: Address<TAccountStakingAccount>;
   ownerTokenAccount: Address<TAccountOwnerTokenAccount>;
-  stakingVault: Address<TAccountStakingVault>;
+  /**
+   * Staking vault to hold all staked GHOST tokens
+   * Automatically initialized on first stake using init_if_needed
+   */
+  stakingVault?: Address<TAccountStakingVault>;
   stakingConfig: Address<TAccountStakingConfig>;
+  ghostMint: Address<TAccountGhostMint>;
   owner: TransactionSigner<TAccountOwner>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
+  rent?: Address<TAccountRent>;
   amount: StakeGhostInstructionDataArgs["amount"];
   lockDuration: StakeGhostInstructionDataArgs["lockDuration"];
 };
@@ -158,9 +175,11 @@ export async function getStakeGhostInstructionAsync<
   TAccountOwnerTokenAccount extends string,
   TAccountStakingVault extends string,
   TAccountStakingConfig extends string,
+  TAccountGhostMint extends string,
   TAccountOwner extends string,
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
+  TAccountRent extends string,
   TProgramAddress extends Address =
     typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
 >(
@@ -169,9 +188,11 @@ export async function getStakeGhostInstructionAsync<
     TAccountOwnerTokenAccount,
     TAccountStakingVault,
     TAccountStakingConfig,
+    TAccountGhostMint,
     TAccountOwner,
     TAccountTokenProgram,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountRent
   >,
   config?: { programAddress?: TProgramAddress },
 ): Promise<
@@ -181,9 +202,11 @@ export async function getStakeGhostInstructionAsync<
     TAccountOwnerTokenAccount,
     TAccountStakingVault,
     TAccountStakingConfig,
+    TAccountGhostMint,
     TAccountOwner,
     TAccountTokenProgram,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountRent
   >
 > {
   // Program address.
@@ -199,9 +222,11 @@ export async function getStakeGhostInstructionAsync<
     },
     stakingVault: { value: input.stakingVault ?? null, isWritable: true },
     stakingConfig: { value: input.stakingConfig ?? null, isWritable: false },
+    ghostMint: { value: input.ghostMint ?? null, isWritable: false },
     owner: { value: input.owner ?? null, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    rent: { value: input.rent ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -223,6 +248,19 @@ export async function getStakeGhostInstructionAsync<
       ],
     });
   }
+  if (!accounts.stakingVault.value) {
+    accounts.stakingVault.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([
+            115, 116, 97, 107, 105, 110, 103, 95, 118, 97, 117, 108, 116,
+          ]),
+        ),
+        getAddressEncoder().encode(expectAddress(accounts.stakingConfig.value)),
+      ],
+    });
+  }
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
       "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" as Address<"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA">;
@@ -230,6 +268,10 @@ export async function getStakeGhostInstructionAsync<
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
+  }
+  if (!accounts.rent.value) {
+    accounts.rent.value =
+      "SysvarRent111111111111111111111111111111111" as Address<"SysvarRent111111111111111111111111111111111">;
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
@@ -239,9 +281,11 @@ export async function getStakeGhostInstructionAsync<
       getAccountMeta(accounts.ownerTokenAccount),
       getAccountMeta(accounts.stakingVault),
       getAccountMeta(accounts.stakingConfig),
+      getAccountMeta(accounts.ghostMint),
       getAccountMeta(accounts.owner),
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.rent),
     ],
     data: getStakeGhostInstructionDataEncoder().encode(
       args as StakeGhostInstructionDataArgs,
@@ -253,9 +297,11 @@ export async function getStakeGhostInstructionAsync<
     TAccountOwnerTokenAccount,
     TAccountStakingVault,
     TAccountStakingConfig,
+    TAccountGhostMint,
     TAccountOwner,
     TAccountTokenProgram,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountRent
   >);
 }
 
@@ -264,17 +310,25 @@ export type StakeGhostInput<
   TAccountOwnerTokenAccount extends string = string,
   TAccountStakingVault extends string = string,
   TAccountStakingConfig extends string = string,
+  TAccountGhostMint extends string = string,
   TAccountOwner extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
+  TAccountRent extends string = string,
 > = {
   stakingAccount: Address<TAccountStakingAccount>;
   ownerTokenAccount: Address<TAccountOwnerTokenAccount>;
+  /**
+   * Staking vault to hold all staked GHOST tokens
+   * Automatically initialized on first stake using init_if_needed
+   */
   stakingVault: Address<TAccountStakingVault>;
   stakingConfig: Address<TAccountStakingConfig>;
+  ghostMint: Address<TAccountGhostMint>;
   owner: TransactionSigner<TAccountOwner>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
+  rent?: Address<TAccountRent>;
   amount: StakeGhostInstructionDataArgs["amount"];
   lockDuration: StakeGhostInstructionDataArgs["lockDuration"];
 };
@@ -284,9 +338,11 @@ export function getStakeGhostInstruction<
   TAccountOwnerTokenAccount extends string,
   TAccountStakingVault extends string,
   TAccountStakingConfig extends string,
+  TAccountGhostMint extends string,
   TAccountOwner extends string,
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
+  TAccountRent extends string,
   TProgramAddress extends Address =
     typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
 >(
@@ -295,9 +351,11 @@ export function getStakeGhostInstruction<
     TAccountOwnerTokenAccount,
     TAccountStakingVault,
     TAccountStakingConfig,
+    TAccountGhostMint,
     TAccountOwner,
     TAccountTokenProgram,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountRent
   >,
   config?: { programAddress?: TProgramAddress },
 ): StakeGhostInstruction<
@@ -306,9 +364,11 @@ export function getStakeGhostInstruction<
   TAccountOwnerTokenAccount,
   TAccountStakingVault,
   TAccountStakingConfig,
+  TAccountGhostMint,
   TAccountOwner,
   TAccountTokenProgram,
-  TAccountSystemProgram
+  TAccountSystemProgram,
+  TAccountRent
 > {
   // Program address.
   const programAddress =
@@ -323,9 +383,11 @@ export function getStakeGhostInstruction<
     },
     stakingVault: { value: input.stakingVault ?? null, isWritable: true },
     stakingConfig: { value: input.stakingConfig ?? null, isWritable: false },
+    ghostMint: { value: input.ghostMint ?? null, isWritable: false },
     owner: { value: input.owner ?? null, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    rent: { value: input.rent ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -344,6 +406,10 @@ export function getStakeGhostInstruction<
     accounts.systemProgram.value =
       "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
   }
+  if (!accounts.rent.value) {
+    accounts.rent.value =
+      "SysvarRent111111111111111111111111111111111" as Address<"SysvarRent111111111111111111111111111111111">;
+  }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
   return Object.freeze({
@@ -352,9 +418,11 @@ export function getStakeGhostInstruction<
       getAccountMeta(accounts.ownerTokenAccount),
       getAccountMeta(accounts.stakingVault),
       getAccountMeta(accounts.stakingConfig),
+      getAccountMeta(accounts.ghostMint),
       getAccountMeta(accounts.owner),
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.rent),
     ],
     data: getStakeGhostInstructionDataEncoder().encode(
       args as StakeGhostInstructionDataArgs,
@@ -366,9 +434,11 @@ export function getStakeGhostInstruction<
     TAccountOwnerTokenAccount,
     TAccountStakingVault,
     TAccountStakingConfig,
+    TAccountGhostMint,
     TAccountOwner,
     TAccountTokenProgram,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountRent
   >);
 }
 
@@ -380,11 +450,17 @@ export type ParsedStakeGhostInstruction<
   accounts: {
     stakingAccount: TAccountMetas[0];
     ownerTokenAccount: TAccountMetas[1];
+    /**
+     * Staking vault to hold all staked GHOST tokens
+     * Automatically initialized on first stake using init_if_needed
+     */
     stakingVault: TAccountMetas[2];
     stakingConfig: TAccountMetas[3];
-    owner: TAccountMetas[4];
-    tokenProgram: TAccountMetas[5];
-    systemProgram: TAccountMetas[6];
+    ghostMint: TAccountMetas[4];
+    owner: TAccountMetas[5];
+    tokenProgram: TAccountMetas[6];
+    systemProgram: TAccountMetas[7];
+    rent: TAccountMetas[8];
   };
   data: StakeGhostInstructionData;
 };
@@ -397,7 +473,7 @@ export function parseStakeGhostInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedStakeGhostInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 9) {
     // TODO: Coded error.
     throw new Error("Not enough accounts");
   }
@@ -414,9 +490,11 @@ export function parseStakeGhostInstruction<
       ownerTokenAccount: getNextAccount(),
       stakingVault: getNextAccount(),
       stakingConfig: getNextAccount(),
+      ghostMint: getNextAccount(),
       owner: getNextAccount(),
       tokenProgram: getNextAccount(),
       systemProgram: getNextAccount(),
+      rent: getNextAccount(),
     },
     data: getStakeGhostInstructionDataDecoder().decode(instruction.data),
   };

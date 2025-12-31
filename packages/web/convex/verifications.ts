@@ -48,54 +48,11 @@ export const getUserVerifications = query({
 })
 
 /**
- * Record a verification
- */
-export const recordVerification = mutation({
-  args: {
-    userId: v.id('users'),
-    agentAddress: v.string(),
-    ghostScore: v.number(),
-    tier: v.string(),
-    subscriptionTier: v.string(),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db.insert('verifications', {
-      userId: args.userId,
-      agentAddress: args.agentAddress,
-      ghostScore: args.ghostScore,
-      tier: args.tier,
-      subscriptionTier: args.subscriptionTier,
-      timestamp: Date.now(),
-    })
-  },
-})
-
-/**
- * Check if user can verify (within limits)
+ * Check if user can verify (free tier monthly limit)
  */
 export const canUserVerify = query({
   args: { userId: v.id('users') },
   handler: async (ctx, args) => {
-    // Get user's subscription
-    const subscription = await ctx.db
-      .query('subscriptions')
-      .withIndex('by_user', (q) => q.eq('userId', args.userId))
-      .first()
-
-    // If user has active pro/power subscription, they can verify
-    if (
-      subscription &&
-      subscription.status === 'active' &&
-      ['pro', 'power'].includes(subscription.tier)
-    ) {
-      return {
-        canVerify: true,
-        tier: subscription.tier,
-        verificationsUsed: 0,
-        verificationsLimit: -1, // Unlimited
-      }
-    }
-
     // Free tier - check monthly limit
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()

@@ -12,13 +12,13 @@ import { Id } from './_generated/dataModel'
 
 /**
  * Get team by API key (for middleware lookup)
+ * NOTE: API key should be hashed client-side before calling this query
  */
 export const getTeamByApiKey = query({
-  args: { apiKey: v.string() },
+  args: { hashedApiKey: v.string() },
   handler: async (ctx, args) => {
-    // Hash the API key
-    const crypto = await import('crypto')
-    const hashedKey = crypto.createHash('sha256').update(args.apiKey).digest('hex')
+    // Use pre-hashed key from client
+    const hashedKey = args.hashedApiKey
 
     // Find API key
     const apiKey = await ctx.db
@@ -89,7 +89,7 @@ export const getTeamAnalytics = query({
       return null
     }
 
-    const _now = Date.now()
+    const now = Date.now()
     const startDate = now - days * 24 * 60 * 60 * 1000
 
     // Get deductions
@@ -168,7 +168,7 @@ export const getEndpointBreakdown = query({
   },
   handler: async (ctx, args) => {
     const days = args.days || 30
-    const _now = Date.now()
+    const now = Date.now()
     const startDate = now - days * 24 * 60 * 60 * 1000
 
     const deductions = await ctx.db
@@ -226,7 +226,7 @@ export const incrementUsage = mutation({
     }
 
     // Check if month has reset
-    const _now = Date.now()
+    const now = Date.now()
     const lastReset = team.lastBillingAt || team.createdAt
     const daysSinceReset = (now - lastReset) / (24 * 60 * 60 * 1000)
 

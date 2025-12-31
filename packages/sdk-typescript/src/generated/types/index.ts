@@ -8,11 +8,13 @@
 
 export * from "./accessAuditConfig";
 export * from "./accessPolicy";
-export * from "./common-tuple-types"; // Shared utilities for manual stubs
 export * from "./accessTier";
 export * from "./accountLockoutPolicies";
 export * from "./activationRequirement";
 export * from "./activationRequirementType";
+export * from "./action";
+export * from "./actionConstraint";
+export * from "./actionType";
 export * from "./agentRegisteredEvent";
 export * from "./agentServiceUpdatedEvent";
 export * from "./agentStatusChangedEvent";
@@ -21,10 +23,9 @@ export * from "./agentVerificationData";
 export * from "./agingPolicy";
 export * from "./approvalLevel";
 export * from "./arbitratorDecision";
-export * from "./action"; // Manual stub
 export * from "./auditAction";
 export * from "./auditConfig";
-export * from "./auditContext"; // Manual stub
+export * from "./auditContext";
 export * from "./auditEntry";
 export * from "./auditTrailInitializedEvent";
 export * from "./authenticationLevel";
@@ -35,14 +36,14 @@ export * from "./authorizationPolicies";
 export * from "./backupFrequency";
 export * from "./biometricPolicies";
 export * from "./biometricProtection";
-export * from "./biometricQuality"; // Manual stub
 export * from "./biometricStorageMethod";
 export * from "./biometricType";
+export * from "./biometricQuality";
 export * from "./complianceFlags";
 export * from "./complianceMetrics";
 export * from "./compliancePolicies";
+export * from "./complianceStatus";
 export * from "./complianceReportGeneratedEvent";
-export * from "./complianceStatus"; // Manual stub
 export * from "./compressedAgentCreatedEvent";
 export * from "./conditionType";
 export * from "./constraintCondition";
@@ -76,11 +77,11 @@ export * from "./incidentResponsePolicies";
 export * from "./latitudeRange";
 export * from "./locationConstraints";
 export * from "./longitudeRange";
-export * from "./multisigConfig"; // Manual stub
 export * from "./multisigCreatedEvent";
 export * from "./multisigSignature";
 export * from "./multisigType";
 export * from "./multisigTypeConfig";
+export * from "./multisigConfig";
 export * from "./networkSecurityPolicies";
 export * from "./notificationMethod";
 export * from "./notificationPriority";
@@ -112,17 +113,17 @@ export * from "./quorumRequirements";
 export * from "./rbacConfigInitializedEvent";
 export * from "./reentrancyState";
 export * from "./reportData";
-export * from "./reportEntry"; // Manual stub
+export * from "./reportEntry";
 export * from "./reportingFrequency";
 export * from "./reportStatus";
 export * from "./reportSummary";
 export * from "./reportType";
+export * from "./resourceConstraints";
 export * from "./reputationMetricsInitializedEvent";
 export * from "./reputationPaymentRecordedEvent";
 export * from "./reputationRatingSubmittedEvent";
 export * from "./reputationTagsUpdatedEvent";
 export * from "./reviewSchedule";
-export * from "./resourceConstraints"; // Manual stub
 export * from "./riskAcceptance";
 export * from "./riskAssessment";
 export * from "./riskCategory";
@@ -135,7 +136,7 @@ export * from "./roleMetadata";
 export * from "./roleStatus";
 export * from "./roleType";
 export * from "./ruleEffect";
-export * from "./ruleCondition"; // Manual stub
+export * from "./ruleCondition";
 export * from "./scopeBoundaries";
 export * from "./scopeInheritance";
 export * from "./scopeType";

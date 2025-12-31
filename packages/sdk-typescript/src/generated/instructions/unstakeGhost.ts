@@ -52,6 +52,7 @@ export function getUnstakeGhostDiscriminatorBytes() {
 export type UnstakeGhostInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountStakingAccount extends string | AccountMeta<string> = string,
+  TAccountStakingConfig extends string | AccountMeta<string> = string,
   TAccountStakingVault extends string | AccountMeta<string> = string,
   TAccountOwnerTokenAccount extends string | AccountMeta<string> = string,
   TAccountOwner extends string | AccountMeta<string> = string,
@@ -65,6 +66,9 @@ export type UnstakeGhostInstruction<
       TAccountStakingAccount extends string
         ? WritableAccount<TAccountStakingAccount>
         : TAccountStakingAccount,
+      TAccountStakingConfig extends string
+        ? ReadonlyAccount<TAccountStakingConfig>
+        : TAccountStakingConfig,
       TAccountStakingVault extends string
         ? WritableAccount<TAccountStakingVault>
         : TAccountStakingVault,
@@ -111,13 +115,15 @@ export function getUnstakeGhostInstructionDataCodec(): FixedSizeCodec<
 
 export type UnstakeGhostAsyncInput<
   TAccountStakingAccount extends string = string,
+  TAccountStakingConfig extends string = string,
   TAccountStakingVault extends string = string,
   TAccountOwnerTokenAccount extends string = string,
   TAccountOwner extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   stakingAccount?: Address<TAccountStakingAccount>;
-  stakingVault: Address<TAccountStakingVault>;
+  stakingConfig?: Address<TAccountStakingConfig>;
+  stakingVault?: Address<TAccountStakingVault>;
   ownerTokenAccount: Address<TAccountOwnerTokenAccount>;
   owner: TransactionSigner<TAccountOwner>;
   tokenProgram?: Address<TAccountTokenProgram>;
@@ -125,6 +131,7 @@ export type UnstakeGhostAsyncInput<
 
 export async function getUnstakeGhostInstructionAsync<
   TAccountStakingAccount extends string,
+  TAccountStakingConfig extends string,
   TAccountStakingVault extends string,
   TAccountOwnerTokenAccount extends string,
   TAccountOwner extends string,
@@ -134,6 +141,7 @@ export async function getUnstakeGhostInstructionAsync<
 >(
   input: UnstakeGhostAsyncInput<
     TAccountStakingAccount,
+    TAccountStakingConfig,
     TAccountStakingVault,
     TAccountOwnerTokenAccount,
     TAccountOwner,
@@ -144,6 +152,7 @@ export async function getUnstakeGhostInstructionAsync<
   UnstakeGhostInstruction<
     TProgramAddress,
     TAccountStakingAccount,
+    TAccountStakingConfig,
     TAccountStakingVault,
     TAccountOwnerTokenAccount,
     TAccountOwner,
@@ -157,6 +166,7 @@ export async function getUnstakeGhostInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     stakingAccount: { value: input.stakingAccount ?? null, isWritable: true },
+    stakingConfig: { value: input.stakingConfig ?? null, isWritable: false },
     stakingVault: { value: input.stakingVault ?? null, isWritable: true },
     ownerTokenAccount: {
       value: input.ownerTokenAccount ?? null,
@@ -182,6 +192,31 @@ export async function getUnstakeGhostInstructionAsync<
       ],
     });
   }
+  if (!accounts.stakingConfig.value) {
+    accounts.stakingConfig.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([
+            115, 116, 97, 107, 105, 110, 103, 95, 99, 111, 110, 102, 105, 103,
+          ]),
+        ),
+      ],
+    });
+  }
+  if (!accounts.stakingVault.value) {
+    accounts.stakingVault.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([
+            115, 116, 97, 107, 105, 110, 103, 95, 118, 97, 117, 108, 116,
+          ]),
+        ),
+        getAddressEncoder().encode(expectAddress(accounts.stakingConfig.value)),
+      ],
+    });
+  }
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
       "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" as Address<"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA">;
@@ -191,6 +226,7 @@ export async function getUnstakeGhostInstructionAsync<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.stakingAccount),
+      getAccountMeta(accounts.stakingConfig),
       getAccountMeta(accounts.stakingVault),
       getAccountMeta(accounts.ownerTokenAccount),
       getAccountMeta(accounts.owner),
@@ -201,6 +237,7 @@ export async function getUnstakeGhostInstructionAsync<
   } as UnstakeGhostInstruction<
     TProgramAddress,
     TAccountStakingAccount,
+    TAccountStakingConfig,
     TAccountStakingVault,
     TAccountOwnerTokenAccount,
     TAccountOwner,
@@ -210,12 +247,14 @@ export async function getUnstakeGhostInstructionAsync<
 
 export type UnstakeGhostInput<
   TAccountStakingAccount extends string = string,
+  TAccountStakingConfig extends string = string,
   TAccountStakingVault extends string = string,
   TAccountOwnerTokenAccount extends string = string,
   TAccountOwner extends string = string,
   TAccountTokenProgram extends string = string,
 > = {
   stakingAccount: Address<TAccountStakingAccount>;
+  stakingConfig: Address<TAccountStakingConfig>;
   stakingVault: Address<TAccountStakingVault>;
   ownerTokenAccount: Address<TAccountOwnerTokenAccount>;
   owner: TransactionSigner<TAccountOwner>;
@@ -224,6 +263,7 @@ export type UnstakeGhostInput<
 
 export function getUnstakeGhostInstruction<
   TAccountStakingAccount extends string,
+  TAccountStakingConfig extends string,
   TAccountStakingVault extends string,
   TAccountOwnerTokenAccount extends string,
   TAccountOwner extends string,
@@ -233,6 +273,7 @@ export function getUnstakeGhostInstruction<
 >(
   input: UnstakeGhostInput<
     TAccountStakingAccount,
+    TAccountStakingConfig,
     TAccountStakingVault,
     TAccountOwnerTokenAccount,
     TAccountOwner,
@@ -242,6 +283,7 @@ export function getUnstakeGhostInstruction<
 ): UnstakeGhostInstruction<
   TProgramAddress,
   TAccountStakingAccount,
+  TAccountStakingConfig,
   TAccountStakingVault,
   TAccountOwnerTokenAccount,
   TAccountOwner,
@@ -254,6 +296,7 @@ export function getUnstakeGhostInstruction<
   // Original accounts.
   const originalAccounts = {
     stakingAccount: { value: input.stakingAccount ?? null, isWritable: true },
+    stakingConfig: { value: input.stakingConfig ?? null, isWritable: false },
     stakingVault: { value: input.stakingVault ?? null, isWritable: true },
     ownerTokenAccount: {
       value: input.ownerTokenAccount ?? null,
@@ -277,6 +320,7 @@ export function getUnstakeGhostInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.stakingAccount),
+      getAccountMeta(accounts.stakingConfig),
       getAccountMeta(accounts.stakingVault),
       getAccountMeta(accounts.ownerTokenAccount),
       getAccountMeta(accounts.owner),
@@ -287,6 +331,7 @@ export function getUnstakeGhostInstruction<
   } as UnstakeGhostInstruction<
     TProgramAddress,
     TAccountStakingAccount,
+    TAccountStakingConfig,
     TAccountStakingVault,
     TAccountOwnerTokenAccount,
     TAccountOwner,
@@ -301,10 +346,11 @@ export type ParsedUnstakeGhostInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     stakingAccount: TAccountMetas[0];
-    stakingVault: TAccountMetas[1];
-    ownerTokenAccount: TAccountMetas[2];
-    owner: TAccountMetas[3];
-    tokenProgram: TAccountMetas[4];
+    stakingConfig: TAccountMetas[1];
+    stakingVault: TAccountMetas[2];
+    ownerTokenAccount: TAccountMetas[3];
+    owner: TAccountMetas[4];
+    tokenProgram: TAccountMetas[5];
   };
   data: UnstakeGhostInstructionData;
 };
@@ -317,7 +363,7 @@ export function parseUnstakeGhostInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedUnstakeGhostInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error("Not enough accounts");
   }
@@ -331,6 +377,7 @@ export function parseUnstakeGhostInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       stakingAccount: getNextAccount(),
+      stakingConfig: getNextAccount(),
       stakingVault: getNextAccount(),
       ownerTokenAccount: getNextAccount(),
       owner: getNextAccount(),

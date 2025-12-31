@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Webhook Processor
  *
@@ -14,17 +16,17 @@ import { createHmac } from 'crypto'
  */
 export const processWebhooks = internalAction({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<{ processed: number; successful: number; failed: number }> => {
     // Get pending webhooks ready for delivery
-    const pendingWebhooks = await ctx.runQuery(internal.webhookDelivery.getPendingWebhooks)
+    const pendingWebhooks: any[] = await ctx.runQuery(internal.webhookDelivery.getPendingWebhooks)
 
     console.log(`[Webhook Processor] Found ${pendingWebhooks.length} pending webhooks`)
 
     // Process up to 50 webhooks per run to avoid timeouts
-    const webhooksToProcess = pendingWebhooks.slice(0, 50)
+    const webhooksToProcess: any[] = pendingWebhooks.slice(0, 50)
 
     const results = await Promise.allSettled(
-      webhooksToProcess.map((webhook) => deliverWebhook(ctx, webhook))
+      webhooksToProcess.map((webhook: any) => deliverWebhook(ctx, webhook))
     )
 
     const successful = results.filter((r) => r.status === 'fulfilled').length
@@ -97,32 +99,3 @@ async function deliverWebhook(ctx: any, webhook: any) {
   }
 }
 
-/**
- * Clean up old webhook delivery records
- */
-export const cleanupOldWebhooks = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
-
-    // Find old delivered/failed webhooks
-    const oldWebhooks = await ctx.db
-      .query('webhookDeliveries')
-      .filter((q) =>
-        q.and(
-          q.or(q.eq(q.field('status'), 'delivered'), q.eq(q.field('status'), 'failed')),
-          q.lt(q.field('createdAt'), thirtyDaysAgo)
-        )
-      )
-      .collect()
-
-    // Delete them
-    for (const webhook of oldWebhooks) {
-      await ctx.db.delete(webhook._id)
-    }
-
-    console.log(`[Webhook Cleanup] Deleted ${oldWebhooks.length} old webhook records`)
-
-    return { deleted: oldWebhooks.length }
-  },
-})

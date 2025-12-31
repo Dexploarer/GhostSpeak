@@ -41,7 +41,7 @@ import type { Address } from '@solana/kit'
 
 const createMultisigSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name too long'),
-  multisigType: z.nativeEnum(MultisigType),
+  multisigType: z.enum(MultisigType),
   threshold: z.number().min(1, 'At least 1 signature required').max(10, 'Maximum 10 signatures'),
   signers: z
     .array(

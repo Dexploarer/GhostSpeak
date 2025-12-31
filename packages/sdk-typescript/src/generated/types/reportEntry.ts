@@ -1,98 +1,67 @@
 /**
- * Manual stub for ReportEntry (audit.rs:557-582)
+ * Manually created to fix Codama generation issue
  */
 
 import {
-  addEncoderSizePrefix,
-  addDecoderSizePrefix,
-  getStructEncoder,
-  getStructDecoder,
-  getUtf8Encoder,
-  getUtf8Decoder,
-  getU32Encoder,
-  getU32Decoder,
-  getU64Encoder,
-  getU64Decoder,
-  getU8Encoder,
-  getU8Decoder,
-  getI64Encoder,
-  getI64Decoder,
-  getOptionEncoder,
-  getOptionDecoder,
-  getArrayEncoder,
-  getArrayDecoder,
-  getAddressEncoder,
-  getAddressDecoder,
   combineCodec,
-  type Encoder,
-  type Decoder,
-  type Codec,
+  getAddressDecoder,
+  getAddressEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
+  getI64Decoder,
+  getI64Encoder,
+  getOptionDecoder,
+  getOptionEncoder,
+  getStructDecoder,
+  getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   type Address,
+  type Codec,
+  type Decoder,
+  type Encoder,
   type Option,
   type OptionOrNullable,
-} from '@solana/kit';
-import type { DecodedStringTuple, StringTupleInput } from './common-tuple-types.js';
-import {
-  getComplianceFlagsEncoder,
-  getComplianceFlagsDecoder,
-  type ComplianceFlags,
-  type ComplianceFlagsArgs,
-} from './complianceFlags.js';
+} from '@solana/kit'
 
 export type ReportEntry = {
-  timestamp: bigint;
-  eventId: string;
-  entryType: string;
-  amount: Option<bigint>;
-  parties: Array<Address>;
-  riskScore: number;
-  complianceFlags: ComplianceFlags;
-  metadata: Array<DecodedStringTuple>;
-};
+  timestamp: bigint
+  eventId: string
+  entryType: string
+  amount: Option<bigint>
+  parties: Array<Address>
+}
 
 export type ReportEntryArgs = {
-  timestamp: number | bigint;
-  eventId: string;
-  entryType: string;
-  amount: OptionOrNullable<number | bigint>;
-  parties: Array<Address>;
-  riskScore: number;
-  complianceFlags: ComplianceFlagsArgs;
-  metadata: Array<StringTupleInput>;
-};
+  timestamp: number | bigint
+  eventId: string
+  entryType: string
+  amount: OptionOrNullable<number | bigint>
+  parties: Array<Address>
+}
 
 export function getReportEntryEncoder(): Encoder<ReportEntryArgs> {
   return getStructEncoder([
     ['timestamp', getI64Encoder()],
-    ['eventId', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ['entryType', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['eventId', getUtf8Encoder()],
+    ['entryType', getUtf8Encoder()],
     ['amount', getOptionEncoder(getU64Encoder())],
     ['parties', getArrayEncoder(getAddressEncoder())],
-    ['riskScore', getU8Encoder()],
-    ['complianceFlags', getComplianceFlagsEncoder()],
-    ['metadata', getArrayEncoder(getStructEncoder([
-      ['0', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ['1', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ]))],
-  ]);
+  ])
 }
 
 export function getReportEntryDecoder(): Decoder<ReportEntry> {
   return getStructDecoder([
     ['timestamp', getI64Decoder()],
-    ['eventId', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ['entryType', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['eventId', getUtf8Decoder()],
+    ['entryType', getUtf8Decoder()],
     ['amount', getOptionDecoder(getU64Decoder())],
     ['parties', getArrayDecoder(getAddressDecoder())],
-    ['riskScore', getU8Decoder()],
-    ['complianceFlags', getComplianceFlagsDecoder()],
-    ['metadata', getArrayDecoder(getStructDecoder([
-      ['0', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-      ['1', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ]))],
-  ]);
+  ])
 }
 
 export function getReportEntryCodec(): Codec<ReportEntryArgs, ReportEntry> {
-  return combineCodec(getReportEntryEncoder(), getReportEntryDecoder());
+  return combineCodec(getReportEntryEncoder(), getReportEntryDecoder())
 }

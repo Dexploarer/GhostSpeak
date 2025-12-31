@@ -126,12 +126,9 @@ export function getCreateAgentAuthorizationInstructionDataEncoder(): Encoder<Cre
       ["signature", fixEncoderSize(getBytesEncoder(), 64)],
       [
         "nonce",
-        // MANUAL FIX: Removed addEncoderSizePrefix to match Anchor's Borsh serialization
-        // Codama generates: Option<u8> + u32_outer + u32_inner + data (16 bytes for "default")
-        // Anchor expects: Option<u8> + u32_length + data (12 bytes for "default")
-        // getUtf8Encoder() already includes the u32 length prefix per Borsh spec
-        // See: https://deepwiki.com/search/how-does-anchor-serialize-opti_b7c2a8cd-2073-42b6-b983-60f3f3b9bf8f
-        getOptionEncoder(getUtf8Encoder()),
+        getOptionEncoder(
+          addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()),
+        ),
       ],
     ]),
     (value) => ({
@@ -151,8 +148,7 @@ export function getCreateAgentAuthorizationInstructionDataDecoder(): Decoder<Cre
     ["signature", fixDecoderSize(getBytesDecoder(), 64)],
     [
       "nonce",
-      // MANUAL FIX: Removed addDecoderSizePrefix to match Anchor's Borsh serialization
-      getOptionDecoder(getUtf8Decoder()),
+      getOptionDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())),
     ],
   ]);
 }
@@ -234,10 +230,6 @@ export async function getCreateAgentAuthorizationInstructionAsync<
 
   // Resolve default values.
   if (!accounts.authorization.value) {
-    // MANUAL FIX: Removed addEncoderSizePrefix from PDA seed derivation
-    // PDA seeds must match Rust's .as_bytes() which gives raw bytes without size prefix
-    // Codama incorrectly generates size-prefixed encoding for Option<String>
-    const nonceValue = expectSome(args.nonce) ?? "default"
     accounts.authorization.value = await getProgramDerivedAddress({
       programAddress,
       seeds: [
@@ -246,7 +238,9 @@ export async function getCreateAgentAuthorizationInstructionAsync<
         ),
         getAddressEncoder().encode(expectAddress(accounts.agent.value)),
         getAddressEncoder().encode(expectSome(args.authorizedSource)),
-        getUtf8Encoder().encode(nonceValue), // Raw bytes, no size prefix
+        getOptionEncoder(
+          addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()),
+        ).encode(expectSome(args.nonce)),
       ],
     });
   }

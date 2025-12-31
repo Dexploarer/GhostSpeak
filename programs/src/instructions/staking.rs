@@ -74,20 +74,34 @@ pub struct StakeGhost<'info> {
 
     #[account(
         mut,
-        constraint = owner_token_account.owner == owner.key()
+        constraint = owner_token_account.owner == owner.key(),
+        constraint = owner_token_account.mint == ghost_mint.key()
     )]
     pub owner_token_account: Account<'info, TokenAccount>,
 
-    #[account(mut)]
+    /// Staking vault to hold all staked GHOST tokens
+    /// Automatically initialized on first stake using init_if_needed
+    #[account(
+        init_if_needed,
+        payer = owner,
+        token::mint = ghost_mint,
+        token::authority = staking_config,
+        seeds = [b"staking_vault", staking_config.key().as_ref()],
+        bump
+    )]
     pub staking_vault: Account<'info, TokenAccount>,
 
     pub staking_config: Account<'info, StakingConfig>,
+
+    /// CHECK: GHOST token mint address
+    pub ghost_mint: AccountInfo<'info>,
 
     #[account(mut)]
     pub owner: Signer<'info>,
 
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn stake_ghost(
@@ -172,7 +186,17 @@ pub struct UnstakeGhost<'info> {
     )]
     pub staking_account: Account<'info, StakingAccount>,
 
-    #[account(mut)]
+    #[account(
+        seeds = [b"staking_config"],
+        bump
+    )]
+    pub staking_config: Account<'info, StakingConfig>,
+
+    #[account(
+        mut,
+        seeds = [b"staking_vault", staking_config.key().as_ref()],
+        bump
+    )]
     pub staking_vault: Account<'info, TokenAccount>,
 
     #[account(
@@ -255,11 +279,17 @@ pub struct SlashStake<'info> {
     pub staking_account: Account<'info, StakingAccount>,
 
     #[account(
+        seeds = [b"staking_config"],
+        bump,
         constraint = staking_config.authority == authority.key() @ GhostSpeakError::UnauthorizedAccess
     )]
     pub staking_config: Account<'info, StakingConfig>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"staking_vault", staking_config.key().as_ref()],
+        bump
+    )]
     pub staking_vault: Account<'info, TokenAccount>,
 
     #[account(mut)]

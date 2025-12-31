@@ -34,7 +34,7 @@ import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 import { formatDistanceToNow } from 'date-fns'
 
 const voteSchema = z.object({
-  choice: z.nativeEnum(VoteChoice),
+  choice: z.enum(VoteChoice),
   reasoning: z.string().max(1000, 'Reasoning must be less than 1000 characters').optional(),
 })
 

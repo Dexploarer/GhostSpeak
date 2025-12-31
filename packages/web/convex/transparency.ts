@@ -16,7 +16,7 @@ import { v } from 'convex/values'
 export const getProtocolMetrics = query({
   args: {},
   handler: async (ctx) => {
-    const _now = Date.now()
+    const now = Date.now()
     const thisMonthStart = new Date()
     thisMonthStart.setDate(1)
     thisMonthStart.setHours(0, 0, 0, 0)
@@ -186,7 +186,7 @@ export const getStakingMetrics = query({
 export const getAPYHistory = query({
   args: {},
   handler: async (ctx) => {
-    const _now = Date.now()
+    const now = Date.now()
 
     // Time periods
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000
@@ -241,7 +241,7 @@ export const getAPYHistory = query({
 
     // Calculate APY for each period (annualized)
     const calculateAPY = (poolAmount: number, days: number) => {
-      if (totalStakedValue === 0 || days === 0) return 0
+      if (days === 0) return 0
       const annualizedRevenue = (poolAmount / days) * 365
       return (annualizedRevenue / totalStakedValue) * 100
     }
@@ -351,13 +351,23 @@ export const getUserStakeDetails = query({
 
     // Calculate pending rewards
     // TODO: Get from on-chain contract
-    const thisMonthRevenueData = await ctx.runQuery(
-      (await import('./transparency')).getProtocolMetrics,
-      {}
-    )
-    const monthlyStakerPool = thisMonthRevenueData.protocol.stakerRewardsPool.thisMonth
+    // For now, calculate a rough estimate based on this month's verifications
+    const thisMonthStart = new Date()
+    thisMonthStart.setDate(1)
+    thisMonthStart.setHours(0, 0, 0, 0)
 
-    const pendingRewards = (shareOfPool / 100) * monthlyStakerPool
+    const thisMonthVerifications = await ctx.db
+      .query('verifications')
+      .filter((q) => q.gte(q.field('timestamp'), thisMonthStart.getTime()))
+      .collect()
+
+    const thisMonthB2CRevenue = thisMonthVerifications.filter(
+      (v) => v.paymentMethod === 'usdc' || v.paymentMethod === 'ghost_burned'
+    ).length
+
+    const monthlyStakerPool: number = thisMonthB2CRevenue * 0.1 // 10% to staker pool
+
+    const pendingRewards: number = (shareOfPool / 100) * monthlyStakerPool
 
     // Estimate monthly earnings (based on last 30 days)
     const estimatedMonthly = pendingRewards
@@ -391,7 +401,7 @@ export const getUserStakeDetails = query({
 export const getMonthlyRevenueHistory = query({
   args: {},
   handler: async (ctx) => {
-    const _now = Date.now()
+    const now = Date.now()
     const monthlyData = []
 
     for (let i = 11; i >= 0; i--) {
@@ -437,7 +447,7 @@ export const getMonthlyRevenueHistory = query({
 export const getStakerGrowth = query({
   args: {},
   handler: async (ctx) => {
-    const _now = Date.now()
+    const now = Date.now()
     const growthData = []
 
     for (let i = 11; i >= 0; i--) {

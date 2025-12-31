@@ -6,7 +6,6 @@
 
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
-import { randomBytes } from 'crypto'
 
 /**
  * Create a new team
@@ -51,7 +50,7 @@ export const createTeam = mutation({
     // Create team
     const teamId = await ctx.db.insert('teams', {
       name: args.name,
-      ownerUserId: user._id,
+      ownerUserId: user!._id,
       plan: args.plan,
       maxMembers: planLimits.maxMembers,
       maxApiKeys: planLimits.maxApiKeys,
@@ -63,7 +62,7 @@ export const createTeam = mutation({
     // Add owner as team member
     await ctx.db.insert('teamMembers', {
       teamId,
-      userId: user._id,
+      userId: user!._id,
       role: 'owner',
       canManageMembers: true,
       canManageApiKeys: true,
@@ -175,8 +174,10 @@ export const inviteTeamMember = mutation({
       throw new Error('Team member limit reached')
     }
 
-    // Generate invite token
-    const token = randomBytes(32).toString('hex')
+    // Generate invite token using Web Crypto (V8 compatible)
+    const tokenBytes = new Uint8Array(32)
+    crypto.getRandomValues(tokenBytes)
+    const token = Array.from(tokenBytes, byte => byte.toString(16).padStart(2, '0')).join('')
 
     // Create invite
     const inviteId = await ctx.db.insert('teamInvites', {
@@ -259,7 +260,7 @@ export const acceptTeamInvite = mutation({
     // Add user to team
     await ctx.db.insert('teamMembers', {
       teamId: invite.teamId,
-      userId: user._id,
+      userId: user!._id,
       role: invite.role,
       ...rolePermissions,
       isActive: true,

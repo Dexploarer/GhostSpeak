@@ -1,87 +1,72 @@
 /**
- * Manual stub for RuleCondition (security_governance.rs)
+ * Manually created to fix Codama generation issue
  */
 
 import {
-  addEncoderSizePrefix,
-  addDecoderSizePrefix,
-  getStructEncoder,
-  getStructDecoder,
-  getUtf8Encoder,
-  getUtf8Decoder,
-  getU32Encoder,
-  getU32Decoder,
-  getU8Encoder,
-  getU8Decoder,
-  getArrayEncoder,
-  getArrayDecoder,
   combineCodec,
-  type Encoder,
-  type Decoder,
+  getArrayDecoder,
+  getArrayEncoder,
+  getStructDecoder,
+  getStructEncoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   type Codec,
-} from '@solana/kit';
-import type { DecodedStringTuple, StringTupleInput } from './common-tuple-types.js';
+  type Decoder,
+  type Encoder,
+} from '@solana/kit'
+import {
+  getConditionTypeDecoder,
+  getConditionTypeEncoder,
+  type ConditionType,
+  type ConditionTypeArgs,
+} from '.'
 
 export type RuleCondition = {
-  conditionType: number; // ConditionType enum
-  subjectAttributes: Array<DecodedStringTuple>;
-  resourceAttributes: Array<DecodedStringTuple>;
-  actionAttributes: Array<DecodedStringTuple>;
-  environmentAttributes: Array<DecodedStringTuple>;
-};
+  conditionType: ConditionType
+  subjectAttributes: Array<{ 0: string; 1: string }>
+  resourceAttributes: Array<{ 0: string; 1: string }>
+  actionAttributes: Array<{ 0: string; 1: string }>
+  environmentAttributes: Array<{ 0: string; 1: string }>
+}
 
 export type RuleConditionArgs = {
-  conditionType: number;
-  subjectAttributes: Array<StringTupleInput>;
-  resourceAttributes: Array<StringTupleInput>;
-  actionAttributes: Array<StringTupleInput>;
-  environmentAttributes: Array<StringTupleInput>;
-};
+  conditionType: ConditionTypeArgs
+  subjectAttributes: Array<{ 0: string; 1: string }>
+  resourceAttributes: Array<{ 0: string; 1: string }>
+  actionAttributes: Array<{ 0: string; 1: string }>
+  environmentAttributes: Array<{ 0: string; 1: string }>
+}
+
+const pairEncoder = getStructEncoder([
+  ['0', getUtf8Encoder()],
+  ['1', getUtf8Encoder()],
+])
+
+const pairDecoder = getStructDecoder([
+  ['0', getUtf8Decoder()],
+  ['1', getUtf8Decoder()],
+])
 
 export function getRuleConditionEncoder(): Encoder<RuleConditionArgs> {
   return getStructEncoder([
-    ['conditionType', getU8Encoder()],
-    ['subjectAttributes', getArrayEncoder(getStructEncoder([
-      ['0', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ['1', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ]))],
-    ['resourceAttributes', getArrayEncoder(getStructEncoder([
-      ['0', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ['1', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ]))],
-    ['actionAttributes', getArrayEncoder(getStructEncoder([
-      ['0', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ['1', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ]))],
-    ['environmentAttributes', getArrayEncoder(getStructEncoder([
-      ['0', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ['1', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ]))],
-  ]);
+    ['conditionType', getConditionTypeEncoder()],
+    ['subjectAttributes', getArrayEncoder(pairEncoder)],
+    ['resourceAttributes', getArrayEncoder(pairEncoder)],
+    ['actionAttributes', getArrayEncoder(pairEncoder)],
+    ['environmentAttributes', getArrayEncoder(pairEncoder)],
+  ])
 }
 
 export function getRuleConditionDecoder(): Decoder<RuleCondition> {
   return getStructDecoder([
-    ['conditionType', getU8Decoder()],
-    ['subjectAttributes', getArrayDecoder(getStructDecoder([
-      ['0', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-      ['1', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ]))],
-    ['resourceAttributes', getArrayDecoder(getStructDecoder([
-      ['0', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-      ['1', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ]))],
-    ['actionAttributes', getArrayDecoder(getStructDecoder([
-      ['0', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-      ['1', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ]))],
-    ['environmentAttributes', getArrayDecoder(getStructDecoder([
-      ['0', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-      ['1', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ]))],
-  ]);
+    ['conditionType', getConditionTypeDecoder()],
+    ['subjectAttributes', getArrayDecoder(pairDecoder)],
+    ['resourceAttributes', getArrayDecoder(pairDecoder)],
+    ['actionAttributes', getArrayDecoder(pairDecoder)],
+    ['environmentAttributes', getArrayDecoder(pairDecoder)],
+  ])
 }
 
 export function getRuleConditionCodec(): Codec<RuleConditionArgs, RuleCondition> {
-  return combineCodec(getRuleConditionEncoder(), getRuleConditionDecoder());
+  return combineCodec(getRuleConditionEncoder(), getRuleConditionDecoder())
 }

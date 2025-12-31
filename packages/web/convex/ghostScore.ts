@@ -16,7 +16,6 @@ export const trackVerification = mutation({
     agentAddress: v.string(),
     ghostScore: v.number(),
     tier: v.string(),
-    subscriptionTier: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -36,7 +35,6 @@ export const trackVerification = mutation({
       agentAddress: args.agentAddress,
       ghostScore: args.ghostScore,
       tier: args.tier,
-      subscriptionTier: args.subscriptionTier,
       timestamp: Date.now(),
     })
   },
@@ -90,77 +88,6 @@ export const getVerificationHistory = query({
   },
 })
 
-//
-// ─── SUBSCRIPTIONS ─────────────────────────────────────────────────────────
-//
-
-export const getUserSubscription = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) return null
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_wallet', (q) => q.eq('walletAddress', identity.subject))
-      .first()
-
-    if (!user) return null
-
-    return await ctx.db
-      .query('subscriptions')
-      .withIndex('by_user', (q) => q.eq('userId', user._id))
-      .order('desc')
-      .first()
-  },
-})
-
-export const createOrUpdateSubscription = mutation({
-  args: {
-    stripeCustomerId: v.optional(v.string()),
-    stripeSubscriptionId: v.optional(v.string()),
-    tier: v.string(),
-    status: v.string(),
-    currentPeriodStart: v.number(),
-    currentPeriodEnd: v.number(),
-    cancelAtPeriodEnd: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error('Not authenticated')
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_wallet', (q) => q.eq('walletAddress', identity.subject))
-      .first()
-
-    if (!user) throw new Error('User not found')
-
-    // Check if subscription exists
-    const existing = await ctx.db
-      .query('subscriptions')
-      .withIndex('by_user', (q) => q.eq('userId', user._id))
-      .first()
-
-    const now = Date.now()
-
-    if (existing) {
-      // Update existing
-      return await ctx.db.patch(existing._id, {
-        ...args,
-        updatedAt: now,
-      })
-    } else {
-      // Create new
-      return await ctx.db.insert('subscriptions', {
-        userId: user._id,
-        ...args,
-        createdAt: now,
-        updatedAt: now,
-      })
-    }
-  },
-})
 
 //
 // ─── REVIEWS ───────────────────────────────────────────────────────────────

@@ -8,19 +8,59 @@
  * @module
  */
 
-import type * as conversations from '../conversations.js'
-import type * as favorites from '../favorites.js'
-import type * as payments from '../payments.js'
-import type * as users from '../users.js'
+import type * as agentReputationCache from "../agentReputationCache.js";
+import type * as apiKeys from "../apiKeys.js";
+import type * as apiUsage from "../apiUsage.js";
+import type * as conversations from "../conversations.js";
+import type * as crons from "../crons.js";
+import type * as favorites from "../favorites.js";
+import type * as ghostProtect from "../ghostProtect.js";
+import type * as ghostScore from "../ghostScore.js";
+import type * as payaiRetries from "../payaiRetries.js";
+import type * as payments from "../payments.js";
+import type * as reviews from "../reviews.js";
+import type * as staking from "../staking.js";
+import type * as teamBilling from "../teamBilling.js";
+import type * as teamBillingEnhanced from "../teamBillingEnhanced.js";
+import type * as teamMembers from "../teamMembers.js";
+import type * as teams from "../teams.js";
+import type * as transparency from "../transparency.js";
+import type * as users from "../users.js";
+import type * as verifications from "../verifications.js";
+import type * as webhookDelivery from "../webhookDelivery.js";
+import type * as webhookProcessor from "../webhookProcessor.js";
+import type * as webhooks from "../webhooks.js";
 
-import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server'
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  conversations: typeof conversations
-  favorites: typeof favorites
-  payments: typeof payments
-  users: typeof users
-}>
+  agentReputationCache: typeof agentReputationCache;
+  apiKeys: typeof apiKeys;
+  apiUsage: typeof apiUsage;
+  conversations: typeof conversations;
+  crons: typeof crons;
+  favorites: typeof favorites;
+  ghostProtect: typeof ghostProtect;
+  ghostScore: typeof ghostScore;
+  payaiRetries: typeof payaiRetries;
+  payments: typeof payments;
+  reviews: typeof reviews;
+  staking: typeof staking;
+  teamBilling: typeof teamBilling;
+  teamBillingEnhanced: typeof teamBillingEnhanced;
+  teamMembers: typeof teamMembers;
+  teams: typeof teams;
+  transparency: typeof transparency;
+  users: typeof users;
+  verifications: typeof verifications;
+  webhookDelivery: typeof webhookDelivery;
+  webhookProcessor: typeof webhookProcessor;
+  webhooks: typeof webhooks;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
@@ -30,7 +70,10 @@ declare const fullApi: ApiFromModules<{
  * const myFunctionReference = api.myModule.myFunction;
  * ```
  */
-export declare const api: FilterApi<typeof fullApi, FunctionReference<any, 'public'>>
+export declare const api: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "public">
+>;
 
 /**
  * A utility for referencing Convex functions in your app's internal API.
@@ -40,6 +83,9 @@ export declare const api: FilterApi<typeof fullApi, FunctionReference<any, 'publ
  * const myFunctionReference = internal.myModule.myFunction;
  * ```
  */
-export declare const internal: FilterApi<typeof fullApi, FunctionReference<any, 'internal'>>
+export declare const internal: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "internal">
+>;
 
-export declare const components: {}
+export declare const components: {};

@@ -41,6 +41,7 @@ import {
 } from "@solana/kit";
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from "../programs";
 import {
+  expectAddress,
   expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
@@ -150,8 +151,8 @@ export type SlashStakeAsyncInput<
   TAccountTokenProgram extends string = string,
 > = {
   stakingAccount?: Address<TAccountStakingAccount>;
-  stakingConfig: Address<TAccountStakingConfig>;
-  stakingVault: Address<TAccountStakingVault>;
+  stakingConfig?: Address<TAccountStakingConfig>;
+  stakingVault?: Address<TAccountStakingVault>;
   treasury: Address<TAccountTreasury>;
   authority: TransactionSigner<TAccountAuthority>;
   tokenProgram?: Address<TAccountTokenProgram>;
@@ -220,6 +221,31 @@ export async function getSlashStakeInstructionAsync<
           new Uint8Array([115, 116, 97, 107, 105, 110, 103]),
         ),
         getAddressEncoder().encode(expectSome(args.owner)),
+      ],
+    });
+  }
+  if (!accounts.stakingConfig.value) {
+    accounts.stakingConfig.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([
+            115, 116, 97, 107, 105, 110, 103, 95, 99, 111, 110, 102, 105, 103,
+          ]),
+        ),
+      ],
+    });
+  }
+  if (!accounts.stakingVault.value) {
+    accounts.stakingVault.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([
+            115, 116, 97, 107, 105, 110, 103, 95, 118, 97, 117, 108, 116,
+          ]),
+        ),
+        getAddressEncoder().encode(expectAddress(accounts.stakingConfig.value)),
       ],
     });
   }

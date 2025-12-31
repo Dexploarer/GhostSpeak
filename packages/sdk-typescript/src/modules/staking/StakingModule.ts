@@ -18,6 +18,8 @@ export interface StakeParams {
   stakingVault: Address
   /** Global staking config account */
   stakingConfig: Address
+  /** GHOST token mint address */
+  ghostMint: Address
   /** Amount of GHOST tokens to stake (in lamports) */
   amount: bigint
   /** Lock duration in seconds */
@@ -73,6 +75,7 @@ export class StakingModule extends BaseModule {
       ownerTokenAccount: params.agentTokenAccount,
       stakingVault: params.stakingVault,
       stakingConfig: params.stakingConfig,
+      ghostMint: params.ghostMint,
       owner: params.agentOwner,
       amount: params.amount,
       lockDuration: params.lockDuration,
@@ -106,7 +109,7 @@ export class StakingModule extends BaseModule {
    */
   async getStakingAccount(stakingAccountAddress: Address): Promise<StakingAccount | null> {
     try {
-      return await this.getAccount<StakingAccount>(stakingAccountAddress, 'fetchStakingAccount')
+      return await this.getAccount<StakingAccount>(stakingAccountAddress, 'getStakingAccountDecoder')
     } catch (error) {
       console.error('Error fetching staking account:', error)
       return null
@@ -121,7 +124,7 @@ export class StakingModule extends BaseModule {
    */
   async getStakingConfig(stakingConfigAddress: Address): Promise<StakingConfig | null> {
     try {
-      return await this.getAccount<StakingConfig>(stakingConfigAddress, 'fetchStakingConfig')
+      return await this.getAccount<StakingConfig>(stakingConfigAddress, 'getStakingConfigDecoder')
     } catch (error) {
       console.error('Error fetching staking config:', error)
       return null

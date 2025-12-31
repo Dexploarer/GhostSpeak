@@ -1,41 +1,53 @@
 /**
- * Manual stub for MultisigConfig (governance.rs)
+ * Manually created to fix Codama generation issue
  */
 
 import {
-  getStructEncoder,
-  getStructDecoder,
-  getU8Encoder,
-  getU8Decoder,
-  getI64Encoder,
-  getI64Decoder,
-  getBooleanEncoder,
-  getBooleanDecoder,
-  getOptionEncoder,
-  getOptionDecoder,
   combineCodec,
-  type Encoder,
-  type Decoder,
+  getArrayDecoder,
+  getArrayEncoder,
+  getBooleanDecoder,
+  getBooleanEncoder,
+  getI64Decoder,
+  getI64Encoder,
+  getOptionDecoder,
+  getOptionEncoder,
+  getStructDecoder,
+  getStructEncoder,
+  getU8Decoder,
+  getU8Encoder,
   type Codec,
+  type Decoder,
+  type Encoder,
   type Option,
   type OptionOrNullable,
-} from '@solana/kit';
+} from '@solana/kit'
+import {
+  getTransactionTypeDecoder,
+  getTransactionTypeEncoder,
+  type TransactionType,
+  type TransactionTypeArgs,
+} from '.'
 
 export type MultisigConfig = {
-  maxSigners: number;
-  defaultTimeout: bigint;
-  allowEmergencyOverride: boolean;
-  emergencyThreshold: Option<number>;
-  autoExecute: boolean;
-};
+  maxSigners: number
+  defaultTimeout: bigint
+  allowEmergencyOverride: boolean
+  emergencyThreshold: Option<number>
+  autoExecute: boolean
+  signerChangeThreshold: number
+  allowedTransactionTypes: Array<TransactionType>
+}
 
 export type MultisigConfigArgs = {
-  maxSigners: number;
-  defaultTimeout: number | bigint;
-  allowEmergencyOverride: boolean;
-  emergencyThreshold: OptionOrNullable<number>;
-  autoExecute: boolean;
-};
+  maxSigners: number
+  defaultTimeout: number | bigint
+  allowEmergencyOverride: boolean
+  emergencyThreshold: OptionOrNullable<number>
+  autoExecute: boolean
+  signerChangeThreshold: number
+  allowedTransactionTypes: Array<TransactionTypeArgs>
+}
 
 export function getMultisigConfigEncoder(): Encoder<MultisigConfigArgs> {
   return getStructEncoder([
@@ -44,7 +56,9 @@ export function getMultisigConfigEncoder(): Encoder<MultisigConfigArgs> {
     ['allowEmergencyOverride', getBooleanEncoder()],
     ['emergencyThreshold', getOptionEncoder(getU8Encoder())],
     ['autoExecute', getBooleanEncoder()],
-  ]);
+    ['signerChangeThreshold', getU8Encoder()],
+    ['allowedTransactionTypes', getArrayEncoder(getTransactionTypeEncoder())],
+  ])
 }
 
 export function getMultisigConfigDecoder(): Decoder<MultisigConfig> {
@@ -54,9 +68,11 @@ export function getMultisigConfigDecoder(): Decoder<MultisigConfig> {
     ['allowEmergencyOverride', getBooleanDecoder()],
     ['emergencyThreshold', getOptionDecoder(getU8Decoder())],
     ['autoExecute', getBooleanDecoder()],
-  ]);
+    ['signerChangeThreshold', getU8Decoder()],
+    ['allowedTransactionTypes', getArrayDecoder(getTransactionTypeDecoder())],
+  ])
 }
 
 export function getMultisigConfigCodec(): Codec<MultisigConfigArgs, MultisigConfig> {
-  return combineCodec(getMultisigConfigEncoder(), getMultisigConfigDecoder());
+  return combineCodec(getMultisigConfigEncoder(), getMultisigConfigDecoder())
 }

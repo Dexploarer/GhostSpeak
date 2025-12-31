@@ -1,66 +1,74 @@
 /**
- * Manual stub for ResourceConstraints (security_governance.rs)
- * Simplified: quotas field uses string pairs instead of ResourceQuota struct
+ * Manually created to fix Codama generation issue
+ * Simplified stub version - not used in core staking/agent flow
  */
 
 import {
-  addEncoderSizePrefix,
-  addDecoderSizePrefix,
-  getStructEncoder,
-  getStructDecoder,
-  getUtf8Encoder,
-  getUtf8Decoder,
-  getU32Encoder,
-  getU32Decoder,
-  getU64Encoder,
-  getU64Decoder,
-  getArrayEncoder,
-  getArrayDecoder,
   combineCodec,
-  type Encoder,
-  type Decoder,
+  getArrayDecoder,
+  getArrayEncoder,
+  getStructDecoder,
+  getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
   type Codec,
-} from '@solana/kit';
-import type { DecodedStringBigintTuple, StringBigintTupleInput } from './common-tuple-types.js';
+  type Decoder,
+  type Encoder,
+} from '@solana/kit'
 
 export type ResourceConstraints = {
-  allowedResourceTypes: Array<string>;
-  blockedResourceTypes: Array<string>;
-  accessLimits: Array<DecodedStringBigintTuple>;
-  compartments: Array<string>;
-};
+  allowedResourceTypes: Array<string>
+  blockedResourceTypes: Array<string>
+  accessLimits: Array<{ 0: string; 1: bigint }>
+  compartments: Array<string>
+}
 
 export type ResourceConstraintsArgs = {
-  allowedResourceTypes: Array<string>;
-  blockedResourceTypes: Array<string>;
-  accessLimits: Array<StringBigintTupleInput>;
-  compartments: Array<string>;
-};
+  allowedResourceTypes: Array<string>
+  blockedResourceTypes: Array<string>
+  accessLimits: Array<{ 0: string; 1: number | bigint }>
+  compartments: Array<string>
+}
 
 export function getResourceConstraintsEncoder(): Encoder<ResourceConstraintsArgs> {
   return getStructEncoder([
-    ['allowedResourceTypes', getArrayEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()))],
-    ['blockedResourceTypes', getArrayEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()))],
-    ['accessLimits', getArrayEncoder(getStructEncoder([
-      ['0', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ['1', getU64Encoder()],
-    ]))],
-    ['compartments', getArrayEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()))],
-  ]);
+    ['allowedResourceTypes', getArrayEncoder(getUtf8Encoder())],
+    ['blockedResourceTypes', getArrayEncoder(getUtf8Encoder())],
+    [
+      'accessLimits',
+      getArrayEncoder(
+        getStructEncoder([
+          ['0', getUtf8Encoder()],
+          ['1', getU64Encoder()],
+        ])
+      ),
+    ],
+    ['compartments', getArrayEncoder(getUtf8Encoder())],
+  ])
 }
 
 export function getResourceConstraintsDecoder(): Decoder<ResourceConstraints> {
   return getStructDecoder([
-    ['allowedResourceTypes', getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()))],
-    ['blockedResourceTypes', getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()))],
-    ['accessLimits', getArrayDecoder(getStructDecoder([
-      ['0', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-      ['1', getU64Decoder()],
-    ]))],
-    ['compartments', getArrayDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()))],
-  ]);
+    ['allowedResourceTypes', getArrayDecoder(getUtf8Decoder())],
+    ['blockedResourceTypes', getArrayDecoder(getUtf8Decoder())],
+    [
+      'accessLimits',
+      getArrayDecoder(
+        getStructDecoder([
+          ['0', getUtf8Decoder()],
+          ['1', getU64Decoder()],
+        ])
+      ),
+    ],
+    ['compartments', getArrayDecoder(getUtf8Decoder())],
+  ])
 }
 
-export function getResourceConstraintsCodec(): Codec<ResourceConstraintsArgs, ResourceConstraints> {
-  return combineCodec(getResourceConstraintsEncoder(), getResourceConstraintsDecoder());
+export function getResourceConstraintsCodec(): Codec<
+  ResourceConstraintsArgs,
+  ResourceConstraints
+> {
+  return combineCodec(getResourceConstraintsEncoder(), getResourceConstraintsDecoder())
 }

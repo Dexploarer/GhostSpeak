@@ -1,7 +1,7 @@
 /**
  * GhostSpeak Convex Schema
  *
- * Real-time database schema for the x402 marketplace
+ * Real-time database for Ghost Score, B2B API, Staking, and Revenue Share
  */
 
 import { defineSchema, defineTable } from 'convex/server'
@@ -114,65 +114,6 @@ export default defineSchema({
     .index('by_user', ['userId'])
     .index('by_resource', ['resourceId'])
     .index('by_status', ['status']),
-
-  //
-  // ─── CACHED RESOURCES ──────────────────────────────────────────────────────
-  // Cache external x402 resources for fast queries
-  //
-  cachedResources: defineTable({
-    // Resource identity
-    externalId: v.string(), // External resource ID
-    url: v.string(),
-    // Resource info
-    name: v.string(),
-    description: v.optional(v.string()),
-    category: v.string(),
-    tags: v.array(v.string()),
-    // Pricing
-    network: v.string(),
-    priceUsd: v.string(),
-    facilitatorId: v.string(),
-    // Status
-    isActive: v.boolean(),
-    isVerified: v.boolean(),
-    // Cache metadata
-    lastFetchedAt: v.number(),
-    fetchCount: v.number(),
-  })
-    .index('by_external_id', ['externalId'])
-    .index('by_category', ['category'])
-    .index('by_network', ['network'])
-    .index('by_facilitator', ['facilitatorId'])
-    .searchIndex('search_resources', {
-      searchField: 'name',
-      filterFields: ['category', 'network'],
-    }),
-
-  //
-  // ─── ANALYTICS ─────────────────────────────────────────────────────────────
-  // Platform-wide analytics
-  //
-  analytics: defineTable({
-    type: v.string(), // 'daily', 'weekly', 'monthly'
-    date: v.string(), // ISO date string
-    // Metrics
-    totalPayments: v.number(),
-    totalVolume: v.number(),
-    uniqueUsers: v.number(),
-    topCategories: v.array(
-      v.object({
-        category: v.string(),
-        count: v.number(),
-      })
-    ),
-    topResources: v.array(
-      v.object({
-        resourceId: v.string(),
-        name: v.string(),
-        count: v.number(),
-      })
-    ),
-  }).index('by_type_date', ['type', 'date']),
 
   //
   // ─── GHOST SCORE: VERIFICATIONS ────────────────────────────────────────────

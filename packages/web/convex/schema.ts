@@ -917,4 +917,19 @@ export default defineSchema({
     .index('by_wallet', ['walletAddress'])
     .index('by_wallet_timestamp', ['walletAddress', 'timestamp'])
     .index('by_timestamp', ['timestamp']),
+
+  //
+  // ─── SAS: CONFIGURATION ────────────────────────────────────────────────────
+  // Solana Attestation Service keypair configuration (workaround for env vars)
+  //
+  sasConfiguration: defineTable({
+    configKey: v.string(), // 'main' - single configuration record
+    cluster: v.string(), // 'devnet' | 'mainnet-beta'
+    payerKeypair: v.array(v.number()), // Uint8Array as number array
+    authorityKeypair: v.array(v.number()),
+    authorizedSignerKeypair: v.array(v.number()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_config_key', ['configKey']),
 })

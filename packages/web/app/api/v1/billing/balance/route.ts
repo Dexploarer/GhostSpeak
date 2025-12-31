@@ -21,7 +21,7 @@ import {
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
-import { address, type Address } from '@solana/addresses'
+import { address } from '@solana/addresses'
 
 const convexClient = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -116,7 +116,8 @@ export async function GET(request: NextRequest) {
           await calculateGhostCost(BigInt(Math.floor(avgCostPerRequestUsdc * 1_000_000)))
         )
 
-        const ghostDailyCost = (avgCostPerRequestGhost * avgDailyRequests) / Math.pow(10, GHOST_DECIMALS)
+        const ghostDailyCost =
+          (avgCostPerRequestGhost * avgDailyRequests) / Math.pow(10, GHOST_DECIMALS)
         const ghostDaysRemaining = ghostDailyCost > 0 ? ghostUiBalance / ghostDailyCost : Infinity
         const ghostNeedsRefill = ghostDaysRemaining < 7
 

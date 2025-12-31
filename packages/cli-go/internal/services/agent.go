@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ghostspeak/cli-go/internal/config"
@@ -252,4 +253,315 @@ func (s *AgentService) GetAnalytics() (*domain.Analytics, error) {
 	analytics.TotalEarningsSOL = domain.LamportsToSOL(analytics.TotalEarnings)
 
 	return analytics, nil
+}
+
+// SearchAgentsParams represents search/filter parameters
+type SearchAgentsParams struct {
+	Query      string
+	AgentType  *domain.AgentType
+	MinScore   int
+	Verified   bool
+	Tier       *domain.GhostScoreTier
+	MinJobs    uint64
+	Limit      int
+	Offset     int
+	SortBy     string // "earnings", "rating", "jobs"
+}
+
+// SearchAgents searches agents with filters
+func (s *AgentService) SearchAgents(params SearchAgentsParams) ([]*domain.Agent, error) {
+	agents, err := s.ListAgents()
+	if err != nil {
+		return nil, err
+	}
+
+	var filtered []*domain.Agent
+
+	for _, agent := range agents {
+		// Apply filters
+		if params.Query != "" {
+			if !s.fuzzyMatch(agent.Name, params.Query) &&
+			   !s.matchCapabilities(agent.Capabilities, params.Query) {
+				continue
+			}
+		}
+
+		if params.AgentType != nil && agent.AgentType != *params.AgentType {
+			continue
+		}
+
+		// Get reputation for ghost score and tier filtering
+		rep, err := s.getAgentReputation(agent.ID)
+		if err == nil {
+			if params.MinScore > 0 && rep.GhostScore < params.MinScore {
+				continue
+			}
+
+			if params.Tier != nil && rep.Tier != *params.Tier {
+				continue
+			}
+
+			if params.Verified && !rep.AdminVerified {
+				continue
+			}
+		}
+
+		if params.MinJobs > 0 && agent.CompletedJobs < params.MinJobs {
+			continue
+		}
+
+		filtered = append(filtered, agent)
+	}
+
+	// Sort agents
+	s.sortAgents(filtered, params.SortBy)
+
+	// Apply pagination
+	start := params.Offset
+	if start > len(filtered) {
+		start = len(filtered)
+	}
+
+	end := start + params.Limit
+	if params.Limit == 0 {
+		end = len(filtered)
+	} else if end > len(filtered) {
+		end = len(filtered)
+	}
+
+	return filtered[start:end], nil
+}
+
+// FilterAgents filters agents by type, score, verification, tier
+func (s *AgentService) FilterAgents(agentType *domain.AgentType, minScore int, verified bool, tier *domain.GhostScoreTier) ([]*domain.Agent, error) {
+	return s.SearchAgents(SearchAgentsParams{
+		AgentType: agentType,
+		MinScore:  minScore,
+		Verified:  verified,
+		Tier:      tier,
+	})
+}
+
+// GetTopAgents returns top agents by earnings, rating, or jobs
+func (s *AgentService) GetTopAgents(limit int, sortBy string) ([]*domain.Agent, error) {
+	if limit == 0 {
+		limit = 10
+	}
+
+	return s.SearchAgents(SearchAgentsParams{
+		Limit:  limit,
+		SortBy: sortBy,
+	})
+}
+
+// VerifyAgent marks an agent as verified (admin only)
+func (s *AgentService) VerifyAgent(agentID string, walletPassword string) error {
+	// Get active wallet
+	activeWallet, err := s.walletService.GetActiveWallet()
+	if err != nil {
+		return fmt.Errorf("no active wallet: %w", err)
+	}
+
+	// Load wallet keypair
+	_, err = s.walletService.LoadWallet(activeWallet.Name, walletPassword)
+	if err != nil {
+		return fmt.Errorf("failed to load wallet: %w", err)
+	}
+
+	// Get agent reputation
+	rep, err := s.getAgentReputation(agentID)
+	if err != nil {
+		return fmt.Errorf("failed to get agent reputation: %w", err)
+	}
+
+	// Check if caller has sufficient Ghost Score (800+) or is admin
+	callerRep, err := s.getWalletReputation(activeWallet.PublicKey)
+	if err == nil && callerRep.GhostScore < 800 {
+		return fmt.Errorf("insufficient Ghost Score to verify agents (need 800+, have %d)", callerRep.GhostScore)
+	}
+
+	config.Infof("Verifying agent: %s", agentID)
+
+	// Update verification status
+	rep.AdminVerified = true
+	now := time.Now()
+	rep.VerifiedAt = &now
+	rep.UpdateScore()
+
+	// Cache updated reputation
+	cacheKey := fmt.Sprintf("reputation:%s", agentID)
+	if err := s.storage.SetJSONWithTTL(cacheKey, rep, 24*time.Hour); err != nil {
+		config.Warnf("Failed to cache reputation: %v", err)
+	}
+
+	config.Infof("Agent verified successfully: %s", agentID)
+
+	return nil
+}
+
+// GetAgentMetrics returns detailed metrics for an agent
+func (s *AgentService) GetAgentMetrics(agentID string) (*domain.AgentMetrics, error) {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return nil, err
+	}
+
+	rep, err := s.getAgentReputation(agentID)
+	if err != nil {
+		// Create default reputation if not found
+		rep = &domain.Reputation{
+			AgentAddress:  agentID,
+			GhostScore:    0,
+			Tier:          domain.TierBronze,
+			TotalJobs:     agent.TotalJobs,
+			CompletedJobs: agent.CompletedJobs,
+			FailedJobs:    agent.TotalJobs - agent.CompletedJobs,
+			SuccessRate:   agent.SuccessRate,
+			AverageRating: agent.AverageRating,
+			TotalEarnings: agent.TotalEarnings,
+			Tags:          []domain.ReputationTag{},
+			AdminVerified: false,
+		}
+		rep.AverageEarnings = rep.CalculateAverageEarnings()
+		rep.UpdateScore()
+	}
+
+	metrics := &domain.AgentMetrics{
+		Agent:      agent,
+		Reputation: rep,
+		UpdatedAt:  time.Now(),
+	}
+
+	return metrics, nil
+}
+
+// ExportAgentData exports full agent data as JSON
+func (s *AgentService) ExportAgentData(agentID string) (string, error) {
+	metrics, err := s.GetAgentMetrics(agentID)
+	if err != nil {
+		return "", err
+	}
+
+	// Marshal to pretty JSON
+	data, err := domain.MarshalJSON(metrics)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal agent data: %w", err)
+	}
+
+	return data, nil
+}
+
+// Helper methods
+
+func (s *AgentService) fuzzyMatch(text, query string) bool {
+	text = strings.ToLower(text)
+	query = strings.ToLower(query)
+
+	// Simple fuzzy matching: check if all characters in query appear in text in order
+	textPos := 0
+	for _, char := range query {
+		found := false
+		for textPos < len(text) {
+			if rune(text[textPos]) == char {
+				found = true
+				textPos++
+				break
+			}
+			textPos++
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *AgentService) matchCapabilities(capabilities []string, query string) bool {
+	query = strings.ToLower(query)
+	for _, cap := range capabilities {
+		if strings.Contains(strings.ToLower(cap), query) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *AgentService) sortAgents(agents []*domain.Agent, sortBy string) {
+	if sortBy == "" {
+		sortBy = "earnings"
+	}
+
+	switch sortBy {
+	case "earnings":
+		// Sort by total earnings (descending)
+		for i := 0; i < len(agents); i++ {
+			for j := i + 1; j < len(agents); j++ {
+				if agents[i].TotalEarnings < agents[j].TotalEarnings {
+					agents[i], agents[j] = agents[j], agents[i]
+				}
+			}
+		}
+	case "rating":
+		// Sort by average rating (descending)
+		for i := 0; i < len(agents); i++ {
+			for j := i + 1; j < len(agents); j++ {
+				if agents[i].AverageRating < agents[j].AverageRating {
+					agents[i], agents[j] = agents[j], agents[i]
+				}
+			}
+		}
+	case "jobs":
+		// Sort by completed jobs (descending)
+		for i := 0; i < len(agents); i++ {
+			for j := i + 1; j < len(agents); j++ {
+				if agents[i].CompletedJobs < agents[j].CompletedJobs {
+					agents[i], agents[j] = agents[j], agents[i]
+				}
+			}
+		}
+	}
+}
+
+func (s *AgentService) getAgentReputation(agentID string) (*domain.Reputation, error) {
+	// Check cache first
+	cacheKey := fmt.Sprintf("reputation:%s", agentID)
+	var rep domain.Reputation
+	if err := s.storage.GetJSON(cacheKey, &rep); err == nil {
+		return &rep, nil
+	}
+
+	// If not in cache, create from agent data
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return nil, err
+	}
+
+	rep = domain.Reputation{
+		AgentAddress:  agentID,
+		TotalJobs:     agent.TotalJobs,
+		CompletedJobs: agent.CompletedJobs,
+		FailedJobs:    agent.TotalJobs - agent.CompletedJobs,
+		SuccessRate:   agent.SuccessRate,
+		AverageRating: agent.AverageRating,
+		TotalEarnings: agent.TotalEarnings,
+		AdminVerified: false,
+		Tags:          []domain.ReputationTag{},
+		UpdatedAt:     time.Now(),
+	}
+	rep.AverageEarnings = rep.CalculateAverageEarnings()
+	rep.UpdateScore()
+
+	// Cache it
+	s.storage.SetJSONWithTTL(cacheKey, &rep, 24*time.Hour)
+
+	return &rep, nil
+}
+
+func (s *AgentService) getWalletReputation(walletAddress string) (*domain.Reputation, error) {
+	cacheKey := fmt.Sprintf("wallet_reputation:%s", walletAddress)
+	var rep domain.Reputation
+	if err := s.storage.GetJSON(cacheKey, &rep); err == nil {
+		return &rep, nil
+	}
+	return nil, domain.ErrReputationNotFound
 }

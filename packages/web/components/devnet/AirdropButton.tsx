@@ -10,7 +10,7 @@
 import { useState, createElement } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Button } from '../ui/button'
-import { useToast } from '@/lib/hooks/use-toast'
+import { useToast } from '@/components/ui/use-toast'
 import { Loader2 } from 'lucide-react'
 
 // Devnet GHOST token configuration

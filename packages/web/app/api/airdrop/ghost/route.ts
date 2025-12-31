@@ -54,21 +54,15 @@ export async function POST(request: NextRequest) {
     const { recipient } = body
 
     if (!recipient) {
-      return NextResponse.json(
-        { error: 'Recipient address required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Recipient address required' }, { status: 400 })
     }
 
     // Validate recipient address
     let recipientAddress: Address
     try {
       recipientAddress = address(recipient)
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid recipient address' },
-        { status: 400 }
-      )
+    } catch {
+      return NextResponse.json({ error: 'Invalid recipient address' }, { status: 400 })
     }
 
     // Check rate limit
@@ -82,7 +76,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'Rate limit exceeded',
           message: `Please wait ${hoursRemaining} hour(s) before claiming again`,
-          nextClaimIn: hoursRemaining
+          nextClaimIn: hoursRemaining,
         },
         { status: 429 }
       )
@@ -92,10 +86,7 @@ export async function POST(request: NextRequest) {
     const faucetPrivateKeyStr = process.env.DEVNET_FAUCET_PRIVATE_KEY
     if (!faucetPrivateKeyStr) {
       console.error('DEVNET_FAUCET_PRIVATE_KEY not configured')
-      return NextResponse.json(
-        { error: 'Airdrop service not configured' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Airdrop service not configured' }, { status: 500 })
     }
 
     // Parse private key (should be array of numbers or base64)
@@ -109,12 +100,9 @@ export async function POST(request: NextRequest) {
       try {
         const decoded = Buffer.from(faucetPrivateKeyStr, 'base64')
         faucetKeypair = await createKeyPairSignerFromBytes(decoded)
-      } catch (error) {
+      } catch {
         console.error('Failed to parse faucet private key')
-        return NextResponse.json(
-          { error: 'Airdrop service misconfigured' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: 'Airdrop service misconfigured' }, { status: 500 })
       }
     }
 
@@ -141,17 +129,14 @@ export async function POST(request: NextRequest) {
           {
             error: 'Faucet balance too low',
             message: 'Please contact the GhostSpeak team to refill the faucet',
-            faucetBalance
+            faucetBalance,
           },
           { status: 503 }
         )
       }
-    } catch (error) {
-      console.error('Faucet token account not found:', error)
-      return NextResponse.json(
-        { error: 'Faucet not initialized' },
-        { status: 500 }
-      )
+    } catch {
+      console.error('Faucet token account not found')
+      return NextResponse.json({ error: 'Faucet not initialized' }, { status: 500 })
     }
 
     // Get recipient token account
@@ -207,16 +192,16 @@ export async function POST(request: NextRequest) {
       amount: AIRDROP_AMOUNT,
       balance: newBalance,
       explorer: `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-      message: `Successfully airdropped ${AIRDROP_AMOUNT.toLocaleString()} GHOST tokens`
+      message: `Successfully airdropped ${AIRDROP_AMOUNT.toLocaleString()} GHOST tokens`,
     })
-
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Airdrop error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
 
     return NextResponse.json(
       {
         error: 'Airdrop failed',
-        message: error.message || 'Unknown error occurred'
+        message: errorMessage,
       },
       { status: 500 }
     )
@@ -229,10 +214,13 @@ export async function GET() {
     const faucetPrivateKeyStr = process.env.DEVNET_FAUCET_PRIVATE_KEY
 
     if (!faucetPrivateKeyStr) {
-      return NextResponse.json({
-        status: 'error',
-        message: 'Faucet not configured'
-      }, { status: 500 })
+      return NextResponse.json(
+        {
+          status: 'error',
+          message: 'Faucet not configured',
+        },
+        { status: 500 }
+      )
     }
 
     // Parse faucet keypair
@@ -245,10 +233,13 @@ export async function GET() {
         const decoded = Buffer.from(faucetPrivateKeyStr, 'base64')
         faucetKeypair = await createKeyPairSignerFromBytes(decoded)
       } catch {
-        return NextResponse.json({
-          status: 'error',
-          message: 'Faucet misconfigured'
-        }, { status: 500 })
+        return NextResponse.json(
+          {
+            status: 'error',
+            message: 'Faucet misconfigured',
+          },
+          { status: 500 }
+        )
       }
     }
 
@@ -270,13 +261,16 @@ export async function GET() {
       faucetAddress: faucetKeypair.address,
       balance,
       airdropAmount: AIRDROP_AMOUNT,
-      claimsRemaining: Math.floor(balance / AIRDROP_AMOUNT)
+      claimsRemaining: Math.floor(balance / AIRDROP_AMOUNT),
     })
-
-  } catch (error: any) {
-    return NextResponse.json({
-      status: 'error',
-      message: error.message
-    }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json(
+      {
+        status: 'error',
+        message: errorMessage,
+      },
+      { status: 500 }
+    )
   }
 }

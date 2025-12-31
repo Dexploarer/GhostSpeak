@@ -153,7 +153,7 @@ async function handleAuthorize(body: {
   userEmail?: string
   jwt?: string
 }) {
-  const { code, webWalletAddress, userEmail, jwt } = body
+  const { code, webWalletAddress, userEmail } = body
 
   if (!code || !webWalletAddress) {
     return NextResponse.json({ error: 'Missing code or webWalletAddress' }, { status: 400 })

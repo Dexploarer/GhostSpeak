@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { api } from '@/convex/_generated/api'
+import type { Id } from '@/convex/_generated/dataModel'
 import { fetchQuery, fetchMutation } from 'convex/nextjs'
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -32,15 +33,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     // Delete webhook subscription
     await fetchMutation(api.webhooks.deleteWebhookSubscription, {
-      subscriptionId: id as any,
+      subscriptionId: id as Id<'webhookSubscriptions'>,
       apiKeyId: keyData.apiKeyId,
     })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Webhooks API] Error deleting webhook:', error)
 
-    if (error.message?.includes('not found') || error.message?.includes('Unauthorized')) {
+    if (error instanceof Error && (error.message?.includes('not found') || error.message?.includes('Unauthorized'))) {
       return NextResponse.json({ error: error.message, code: 'NOT_FOUND' }, { status: 404 })
     }
 
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Get webhook subscription details
     const subscription = await fetchQuery(api.webhooks.getWebhookSubscription, {
-      subscriptionId: id as any,
+      subscriptionId: id as Id<'webhookSubscriptions'>,
       apiKeyId: keyData.apiKeyId,
     })
 
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Get delivery history
     const deliveries = await fetchQuery(api.webhookDelivery.getWebhookHistory, {
-      subscriptionId: id as any,
+      subscriptionId: id as Id<'webhookSubscriptions'>,
       limit: 100,
     })
 
@@ -109,7 +110,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           : null,
         createdAt: new Date(subscription.createdAt).toISOString(),
       },
-      deliveries: deliveries.map((d: any) => ({
+      deliveries: deliveries.map((d) => ({
         id: d._id,
         event: d.event,
         status: d.status,
@@ -120,7 +121,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         createdAt: new Date(d.createdAt).toISOString(),
       })),
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Webhooks API] Error fetching webhook:', error)
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },

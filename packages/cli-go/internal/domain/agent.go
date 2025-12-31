@@ -33,6 +33,30 @@ func (a AgentType) String() string {
 	}
 }
 
+// ParseAgentType converts a string to an AgentType
+func ParseAgentType(s string) AgentType {
+	switch s {
+	case "general":
+		return AgentTypeGeneral
+	case "eliza":
+		return AgentTypeEliza
+	case "data_analysis":
+		return AgentTypeDataAnalysis
+	case "content_creation", "content_gen":
+		return AgentTypeContentGen
+	case "automation":
+		return AgentTypeAutomation
+	case "research":
+		return AgentTypeResearch
+	case "customer_service":
+		return AgentTypeGeneral // Map to general for now
+	case "code_assistant":
+		return AgentTypeGeneral // Map to general for now
+	default:
+		return AgentTypeGeneral
+	}
+}
+
 // AgentStatus represents the current status of an agent
 type AgentStatus string
 
@@ -141,4 +165,11 @@ func ValidateRegisterParams(params RegisterAgentParams) error {
 		return ErrTooManyCapabilities
 	}
 	return nil
+}
+
+// AgentMetrics represents combined agent and reputation metrics
+type AgentMetrics struct {
+	Agent      *Agent      `json:"agent"`
+	Reputation *Reputation `json:"reputation"`
+	UpdatedAt  time.Time   `json:"updatedAt"`
 }

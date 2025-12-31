@@ -50,9 +50,13 @@ test.describe('Multi-Source Reputation', () => {
     const conflictWarning = page.locator('[data-testid="reputation-conflict-warning"]')
 
     if (await conflictWarning.isVisible()) {
-      // Verify warning message
+      // Verify warning message contains one of the expected keywords
       const warningText = await conflictWarning.textContent()
-      expect(warningText).toContain('conflict' || 'variance' || 'discrepancy')
+      const hasExpectedKeyword =
+        warningText?.includes('conflict') ||
+        warningText?.includes('variance') ||
+        warningText?.includes('discrepancy')
+      expect(hasExpectedKeyword).toBeTruthy()
     }
   })
 

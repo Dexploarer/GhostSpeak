@@ -11,12 +11,19 @@ import (
 
 // App is the main application container
 type App struct {
-	Config        *config.Config
-	SolanaClient  *solana.Client
-	Storage       *storage.BadgerDB
-	WalletService *services.WalletService
-	IPFSService   *services.IPFSService
-	AgentService  *services.AgentService
+	Config            *config.Config
+	Client            *solana.Client // Alias for SolanaClient for backward compatibility
+	SolanaClient      *solana.Client
+	Storage           *storage.BadgerDB
+	WalletService     *services.WalletService
+	IPFSService       *services.IPFSService
+	AgentService      *services.AgentService
+	DIDService        *services.DIDService
+	CredentialService *services.CredentialService
+	ReputationService *services.ReputationService
+	EscrowService     *services.EscrowService
+	GovernanceService *services.GovernanceService
+	StakingService    *services.StakingService
 }
 
 // NewApp creates and initializes a new application
@@ -56,17 +63,50 @@ func NewApp() (*App, error) {
 	walletService := services.NewWalletService(cfg, solanaClient)
 	ipfsService := services.NewIPFSService(cfg)
 	agentService := services.NewAgentService(cfg, solanaClient, walletService, ipfsService, badgerDB)
+	didService := services.NewDIDService(cfg, solanaClient, walletService, badgerDB)
+
+	// Initialize Crossmint client (optional - requires API key)
+	var crossmintClient *services.CrossmintClient
+	if cfg.API.PinataJWT != "" { // Using PinataJWT as placeholder for Crossmint key
+		crossmintClient = services.NewCrossmintClient(cfg, cfg.API.PinataJWT)
+	}
+
+	credentialService := services.NewCredentialService(cfg, solanaClient, walletService, didService, crossmintClient, badgerDB)
+	reputationService := services.NewReputationService(cfg, solanaClient, badgerDB)
+	escrowService := services.NewEscrowService(cfg, solanaClient, walletService, badgerDB)
+	governanceService := services.NewGovernanceService(cfg, solanaClient, badgerDB, walletService)
+	stakingService := services.NewStakingService(cfg, solanaClient, badgerDB, walletService)
 
 	config.Info("Application initialized successfully")
 
 	return &App{
-		Config:        cfg,
-		SolanaClient:  solanaClient,
-		Storage:       badgerDB,
-		WalletService: walletService,
-		IPFSService:   ipfsService,
-		AgentService:  agentService,
+		Config:            cfg,
+		Client:            solanaClient, // Alias
+		SolanaClient:      solanaClient,
+		Storage:           badgerDB,
+		WalletService:     walletService,
+		IPFSService:       ipfsService,
+		AgentService:      agentService,
+		DIDService:        didService,
+		CredentialService: credentialService,
+		ReputationService: reputationService,
+		EscrowService:     escrowService,
+		GovernanceService: governanceService,
+		StakingService:    stakingService,
 	}, nil
+}
+
+// ReloadConfig reloads the configuration from disk
+func (a *App) ReloadConfig() error {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to reload config: %w", err)
+	}
+
+	a.Config = cfg
+	config.Infof("Configuration reloaded (network: %s)", cfg.Network.Current)
+
+	return nil
 }
 
 // Close closes all resources

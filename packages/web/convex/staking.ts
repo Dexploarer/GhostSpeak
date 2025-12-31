@@ -4,8 +4,9 @@
  * Real-time staking data for GHOST token reputation boosts
  */
 
-import { query, mutation } from './_generated/server'
+import { query, mutation, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
+import { internal } from './_generated/api'
 
 //
 // ─── QUERIES ───────────────────────────────────────────────────────────────
@@ -233,6 +234,15 @@ export const recordStake = mutation({
       txSignature: args.txSignature,
       lockDuration: args.lockDuration,
       tierReached: tier,
+    })
+
+    // Check for staking milestone and issue credential
+    await ctx.scheduler.runAfter(0, internal.credentialsOrchestrator.checkAndIssueStakingCredential, {
+      agentAddress: args.agentAddress,
+      amountStaked: args.amountStaked,
+      stakingTier: tier,
+      reputationBoostBps,
+      unlockAt,
     })
 
     return { success: true, tier, reputationBoostBps }

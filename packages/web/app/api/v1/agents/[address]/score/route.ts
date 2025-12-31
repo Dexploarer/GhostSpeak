@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import type { Id } from '@/convex/_generated/dataModel'
 import { authenticateApiKey } from '@/lib/api/auth'
 import { withBillingEnforcement } from '@/lib/api/billing-middleware'
 import { checkRateLimit } from '@/lib/api/rate-limiter'
@@ -131,8 +132,8 @@ export async function GET(
 
     // Track successful request
     await convexClient.mutation(api.apiUsage.track, {
-      apiKeyId: auth.apiKeyId as any,
-      userId: auth.userId as any,
+      apiKeyId: auth.apiKeyId as Id<'apiKeys'>,
+      userId: auth.userId as Id<'users'>,
       endpoint: `/agents/${agentAddress}/score`,
       method: 'GET',
       agentAddress,

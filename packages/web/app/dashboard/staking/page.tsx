@@ -26,7 +26,7 @@ import { api } from '@/convex/_generated/api'
 import Link from 'next/link'
 
 export default function StakingDashboard() {
-  const { address, isConnected } = useWalletAddress()
+  const { isConnected } = useWalletAddress()
   const { data: agents = [], isLoading: isLoadingAgents } = useAgents()
 
   const [selectedAgentAddress, setSelectedAgentAddress] = useState<string>('')

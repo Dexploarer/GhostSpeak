@@ -378,11 +378,11 @@ export default function TransparencyDashboard() {
                 <div className="grid grid-cols-3 gap-4 mt-6">
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground mb-1">7-Day</p>
-                    <p className="text-lg font-semibold">{formatPercent(apyHistory!['7day'])}</p>
+                    <p className="text-lg font-semibold">{formatPercent(apyHistory!.day7)}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground mb-1">90-Day</p>
-                    <p className="text-lg font-semibold">{formatPercent(apyHistory!['90day'])}</p>
+                    <p className="text-lg font-semibold">{formatPercent(apyHistory!.day90)}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground mb-1">All-Time</p>

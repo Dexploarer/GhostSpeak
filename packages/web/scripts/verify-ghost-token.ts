@@ -26,6 +26,7 @@ async function main() {
 
     const mintInfo = await getMint(
       rpc as any,
+      // @ts-expect-error - Address type from @solana/addresses vs PublicKey from @solana/web3.js
       mintAddress,
       'confirmed'
     )

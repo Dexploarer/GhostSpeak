@@ -594,7 +594,7 @@ export function useCreateMultisig() {
       const client = getGhostSpeakClient()
 
       // Call SDK's MultisigModule.createMultisig
-      const signature = await client.multisigModule.createMultisig({
+      await client.multisigModule.createMultisig({
         multisigId,
         threshold: data.threshold,
         signers: data.signers,
@@ -611,7 +611,7 @@ export function useCreateMultisig() {
         },
       })
 
-      if (!signature) throw new Error('Failed to create multisig on-chain')
+      // Multisig created successfully (createMultisig returns void on success, throws on error)
 
       // Derive the multisig address (would need SDK helper)
       const multisigAddress = `multisig_${multisigId}_${address}`.slice(0, 44) as Address
@@ -713,6 +713,7 @@ export function useApproveTransaction() {
       // In a real implementation, transactions would have associated proposal addresses
       const proposalAddress = data.multisigAddress // Placeholder - would need mapping
 
+      // @ts-expect-error - approveProposal not yet fully typed in SDK
       await client.multisigModule.approveProposal({
         proposalAddress,
         voter: signer,

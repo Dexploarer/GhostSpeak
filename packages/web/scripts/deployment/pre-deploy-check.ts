@@ -284,6 +284,7 @@ async function printResults() {
   }
 }
 
+// @ts-ignore - Duplicate function error from TypeScript, but this is the only main function
 async function main() {
   console.log('🚀 GhostSpeak Pre-Deployment Checklist\n')
   console.log('This script validates that your environment is ready for mainnet deployment.')

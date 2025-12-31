@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Analytics represents aggregated analytics data
 type Analytics struct {
@@ -47,4 +50,13 @@ func LamportsToSOL(lamports uint64) float64 {
 // SOLToLamports converts SOL to lamports
 func SOLToLamports(sol float64) uint64 {
 	return uint64(sol * 1_000_000_000)
+}
+
+// MarshalJSON marshals any value to pretty-printed JSON
+func MarshalJSON(v interface{}) (string, error) {
+	data, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

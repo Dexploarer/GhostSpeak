@@ -102,7 +102,7 @@ export function useConversationMessages(conversationId: Id<'conversations'> | nu
       content: string
       cost?: number
       transactionSignature?: string
-      metadata?: unknown
+      metadata?: Record<string, any>
     }) => {
       if (!conversationId) return null
       return addMessageMutation({ conversationId, ...data })

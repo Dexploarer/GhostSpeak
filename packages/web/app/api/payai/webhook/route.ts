@@ -197,7 +197,6 @@ async function recordToReputation(record: PayAIReputationRecord): Promise<void> 
     if (convexUrl) {
       const convex = new ConvexHttpClient(convexUrl)
 
-      // @ts-expect-error - x402Indexer not in generated types, run `bunx convex dev` to regenerate
       await convex.mutation(api.x402Indexer.markWebhookReceived, {
         signature: record.paymentSignature,
         merchantAddress: record.agentAddress.toString(),
@@ -209,7 +208,9 @@ async function recordToReputation(record: PayAIReputationRecord): Promise<void> 
         source: 'webhook',
       })
     } else {
-      console.warn('[PayAI Webhook] NEXT_PUBLIC_CONVEX_URL not configured - skipping dual-source tracking')
+      console.warn(
+        '[PayAI Webhook] NEXT_PUBLIC_CONVEX_URL not configured - skipping dual-source tracking'
+      )
     }
   } catch (error) {
     // Don't fail the webhook if dual-source tracking fails
@@ -234,16 +235,19 @@ async function recordToReputation(record: PayAIReputationRecord): Promise<void> 
  *
  * This function is currently unused but available for future on-chain polling.
  */
-async function verifyPaymentOnChain(paymentSignature: string): Promise<boolean> {
+async function _verifyPaymentOnChain(paymentSignature: string): Promise<boolean> {
   try {
     const { createSolanaRpc } = await import('@solana/rpc')
     const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
     const rpc = createSolanaRpc(rpcUrl)
 
     // Fetch transaction from chain
-    const transaction = await rpc.getTransaction(paymentSignature, {
-      maxSupportedTransactionVersion: 0,
-    }).send()
+    const transaction = await rpc
+      .getTransaction(paymentSignature as any, {
+        encoding: 'json',
+        maxSupportedTransactionVersion: 0,
+      })
+      .send()
 
     if (!transaction) {
       console.warn('[PayAI Verification] Transaction not found:', paymentSignature)

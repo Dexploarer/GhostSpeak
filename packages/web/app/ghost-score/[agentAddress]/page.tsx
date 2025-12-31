@@ -244,7 +244,8 @@ export default function AgentProfilePage() {
                 {/* Rating Distribution */}
                 <div className="space-y-2">
                   {[5, 4, 3, 2, 1].map((rating) => {
-                    const count = reviewStats.ratingDistribution[rating as 1 | 2 | 3 | 4 | 5] || 0
+                    const countKey = `star${rating}` as keyof typeof reviewStats.ratingDistribution
+                    const count = reviewStats.ratingDistribution[countKey] || 0
                     const percentage =
                       reviewStats.totalReviews > 0 ? (count / reviewStats.totalReviews) * 100 : 0
                     return (

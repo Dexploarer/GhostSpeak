@@ -33,6 +33,7 @@ export const getSyncState = query({
   returns: v.union(
     v.object({
       _id: v.id('x402SyncState'),
+      _creationTime: v.number(),
       facilitatorAddress: v.string(),
       lastSignature: v.string(),
       lastSyncAt: v.number(),
@@ -455,5 +456,52 @@ export const getSyncStats = query({
         verified,
       },
     }
+  },
+})
+
+// =====================================================
+// INTERNAL MUTATIONS (Called by Actions)
+// =====================================================
+
+/**
+ * Record an on-chain payment (called by action)
+ */
+export const recordOnChainPayment = internalMutation({
+  args: {
+    signature: v.string(),
+    facilitatorAddress: v.string(),
+    merchantAddress: v.string(),
+    payerAddress: v.string(),
+    amount: v.string(),
+    success: v.boolean(),
+    timestamp: v.number(),
+  },
+  returns: v.id('x402SyncEvents'),
+  handler: async (ctx, args) => {
+    return recordSyncEvent(ctx, {
+      signature: args.signature,
+      facilitatorAddress: args.facilitatorAddress,
+      merchantAddress: args.merchantAddress,
+      payerAddress: args.payerAddress,
+      amount: args.amount,
+      success: args.success,
+      sourceWebhook: false, // Check if already received via webhook
+      sourceOnChain: true,
+    })
+  },
+})
+
+/**
+ * Update sync state after action completes
+ */
+export const updateSyncStateFromAction = internalMutation({
+  args: {
+    facilitatorAddress: v.string(),
+    lastSignature: v.string(),
+    syncedCount: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await updateSyncState(ctx, args.facilitatorAddress, args.lastSignature, args.syncedCount)
   },
 })

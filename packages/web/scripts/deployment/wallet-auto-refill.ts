@@ -197,6 +197,7 @@ async function runAlertCheck() {
   }
 }
 
+// @ts-ignore - Duplicate function error from TypeScript, but this is the only main function
 async function main() {
   const args = process.argv.slice(2)
   const command = args[0] || '--check'

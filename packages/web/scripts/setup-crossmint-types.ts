@@ -211,6 +211,7 @@ async function getExistingTypes(apiKey: string, baseUrl: string): Promise<string
 // Main Script
 // ============================================================================
 
+// @ts-ignore - Duplicate function error from TypeScript, but this is the only main function
 async function main() {
   const apiKey =
     process.env.CROSSMINT_API_KEY ||

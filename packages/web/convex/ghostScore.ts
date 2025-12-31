@@ -224,11 +224,11 @@ export const getReviewStats = query({
     totalReviews: v.number(),
     averageRating: v.number(),
     ratingDistribution: v.object({
-      1: v.number(),
-      2: v.number(),
-      3: v.number(),
-      4: v.number(),
-      5: v.number(),
+      star1: v.number(),
+      star2: v.number(),
+      star3: v.number(),
+      star4: v.number(),
+      star5: v.number(),
     }),
     verifiedCount: v.number(),
   }),
@@ -242,7 +242,7 @@ export const getReviewStats = query({
       return {
         totalReviews: 0,
         averageRating: 0,
-        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        ratingDistribution: { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 },
         verifiedCount: 0,
       }
     }
@@ -250,10 +250,11 @@ export const getReviewStats = query({
     const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0)
     const averageRating = totalRating / reviews.length
 
-    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    const ratingDistribution = { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 }
     reviews.forEach((r) => {
       const rating = Math.round(r.rating) as 1 | 2 | 3 | 4 | 5
-      ratingDistribution[rating]++
+      const key = `star${rating}` as 'star1' | 'star2' | 'star3' | 'star4' | 'star5'
+      ratingDistribution[key]++
     })
 
     const verifiedCount = reviews.filter((r) => r.verifiedHire).length

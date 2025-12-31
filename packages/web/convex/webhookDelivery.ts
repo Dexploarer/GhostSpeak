@@ -293,12 +293,7 @@ export const testWebhook = mutation({
     payload: v.any(),
     signatureInstructions: v.string(),
     signatureAlgorithm: v.string(),
-    headers: v.object({
-      'X-GhostSpeak-Signature': v.string(),
-      'X-GhostSpeak-Event': v.string(),
-      'X-GhostSpeak-Timestamp': v.string(),
-      'Content-Type': v.string(),
-    }),
+    headers: v.record(v.string(), v.string()),
   }),
   handler: async (ctx, args) => {
     const testPayload = {

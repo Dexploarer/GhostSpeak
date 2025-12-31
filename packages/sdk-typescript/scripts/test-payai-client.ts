@@ -26,7 +26,7 @@ import { getAssociatedTokenAddress, createTransferInstruction } from '@solana/sp
 
 const MERCHANT_URL = process.env.MERCHANT_URL || 'http://localhost:4000'
 const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
-const USDC_MINT_DEVNET = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr' // Devnet USDC
+const USDC_MINT_DEVNET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU' // Circle USDC Devnet
 
 console.log('💳 PayAI Test Client')
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')

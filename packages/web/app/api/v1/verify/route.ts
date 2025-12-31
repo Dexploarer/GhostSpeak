@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import type { Id } from '@/convex/_generated/dataModel'
 import { authenticateApiKey } from '@/lib/api/auth'
 import { withBillingEnforcement } from '@/lib/api/billing-middleware'
 import { checkRateLimit, checkDailyQuota } from '@/lib/api/rate-limiter'
@@ -60,7 +61,10 @@ function getTierFromScore(score: number): string {
 /**
  * Calculate comprehensive Ghost Score from agent data
  */
-function calculateGhostScore(agent: any): {
+function calculateGhostScore(agent: {
+  totalJobsCompleted?: number
+  reputationScore?: number
+}): {
   score: number
   tier: string
   metrics: VerifyResponse['metrics']
@@ -144,8 +148,8 @@ export async function POST(request: NextRequest) {
     if (!body.agentAddress) {
       // Track failed request (no billing)
       await convexClient.mutation(api.apiUsage.track, {
-        apiKeyId: auth.apiKeyId as any,
-        userId: auth.userId as any,
+        apiKeyId: auth.apiKeyId as Id<'apiKeys'>,
+        userId: auth.userId as Id<'users'>,
         endpoint: '/verify',
         method: 'POST',
         statusCode: 400,
@@ -248,8 +252,8 @@ export async function POST(request: NextRequest) {
 
     // Track successful request
     await convexClient.mutation(api.apiUsage.track, {
-      apiKeyId: auth.apiKeyId as any,
-      userId: auth.userId as any,
+      apiKeyId: auth.apiKeyId as Id<'apiKeys'>,
+      userId: auth.userId as Id<'users'>,
       endpoint: '/verify',
       method: 'POST',
       agentAddress: body.agentAddress,

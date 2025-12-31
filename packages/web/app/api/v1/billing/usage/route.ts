@@ -10,12 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateApiKey } from '@/lib/api/auth'
-import {
-  calculateRequestCost,
-  calculateOverageFees,
-  PRICING_TIERS,
-  type PricingTier,
-} from '@/lib/b2b-token-accounts'
+import { calculateOverageFees, PRICING_TIERS, type PricingTier } from '@/lib/b2b-token-accounts'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
@@ -65,13 +60,15 @@ export async function GET(request: NextRequest) {
 
     // Calculate breakdown by endpoint
     // @ts-expect-error - byEndpoint not in generated types, run `bunx convex dev` to regenerate
-    const endpointBreakdown = Object.entries(usageSummary.byEndpoint).map(([endpoint, stats]: [string, any]) => ({
-      endpoint,
-      requests: stats.count,
-      billableRequests: stats.billableCount,
-      avgResponseTime: Math.round(stats.avgResponseTime),
-      cost: stats.totalCost,
-    }))
+    const endpointBreakdown = Object.entries(usageSummary.byEndpoint).map(
+      ([endpoint, stats]: [string, any]) => ({
+        endpoint,
+        requests: stats.count,
+        billableRequests: stats.billableCount,
+        avgResponseTime: Math.round(stats.avgResponseTime),
+        cost: stats.totalCost,
+      })
+    )
 
     // Daily usage chart data
     const dailyUsage = Object.entries(usageSummary.daily).map(([date, stats]) => ({

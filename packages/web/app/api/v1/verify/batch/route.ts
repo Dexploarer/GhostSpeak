@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import type { Id } from '@/convex/_generated/dataModel'
 import { authenticateApiKey } from '@/lib/api/auth'
 import { withBillingEnforcement } from '@/lib/api/billing-middleware'
 
@@ -37,7 +38,10 @@ export async function POST(req: NextRequest) {
     const auth = await authenticateApiKey(req)
 
     if (!auth) {
-      return NextResponse.json({ error: 'Invalid or missing API key', code: 'UNAUTHORIZED' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Invalid or missing API key', code: 'UNAUTHORIZED' },
+        { status: 401 }
+      )
     }
 
     // 2. Parse request body
@@ -67,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate all addresses are strings
-    if (!agents.every((addr: any) => typeof addr === 'string')) {
+    if (!agents.every((addr: unknown) => typeof addr === 'string')) {
       return NextResponse.json(
         { error: 'All agent addresses must be strings', code: 'VALIDATION_ERROR' },
         { status: 400 }
@@ -80,7 +84,9 @@ export async function POST(req: NextRequest) {
     // Calculate total cost for all agents
     const totalCostCents = uniqueAgents.length * BULK_COST_PER_AGENT
 
-    console.log(`[Batch Verify] Processing ${uniqueAgents.length} agents (cost: ${totalCostCents}¢)`)
+    console.log(
+      `[Batch Verify] Processing ${uniqueAgents.length} agents (cost: ${totalCostCents}¢)`
+    )
 
     // 4. Enforce payment and execute batch verification
     const result = await withBillingEnforcement(
@@ -122,14 +128,14 @@ export async function POST(req: NextRequest) {
                   tier: reputation.tier,
                   verified: true,
                 }
-              } catch (error: any) {
+              } catch (error: unknown) {
                 console.error(`[Batch Verify] Error verifying ${address}:`, error)
                 return {
                   address,
                   ghostScore: 0,
                   tier: 'UNKNOWN',
                   verified: false,
-                  error: error.message || 'Verification failed',
+                  error: error instanceof Error ? error.message : 'Verification failed',
                 }
               }
             })
@@ -162,8 +168,8 @@ export async function POST(req: NextRequest) {
 
     // Track successful request (usage tracking for analytics)
     await convexClient.mutation(api.apiUsage.track, {
-      apiKeyId: auth.apiKeyId as any,
-      userId: auth.userId as any,
+      apiKeyId: auth.apiKeyId as Id<'apiKeys'>,
+      userId: auth.userId as Id<'users'>,
       endpoint: '/verify/batch',
       method: 'POST',
       statusCode: 200,
@@ -179,8 +185,10 @@ export async function POST(req: NextRequest) {
         metadata: {
           requestedCount: result.data.requestedCount,
           uniqueCount: result.data.uniqueAgents.length,
-          successCount: result.data.results.filter((r: BatchVerificationResult) => r.verified).length,
-          failedCount: result.data.results.filter((r: BatchVerificationResult) => !r.verified).length,
+          successCount: result.data.results.filter((r: BatchVerificationResult) => r.verified)
+            .length,
+          failedCount: result.data.results.filter((r: BatchVerificationResult) => !r.verified)
+            .length,
           responseTime: `${responseTime}ms`,
           avgTimePerAgent: `${(responseTime / result.data.uniqueAgents.length).toFixed(2)}ms`,
         },
@@ -193,14 +201,14 @@ export async function POST(req: NextRequest) {
         },
       }
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Batch Verify API] Error:', error)
 
     return NextResponse.json(
       {
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )

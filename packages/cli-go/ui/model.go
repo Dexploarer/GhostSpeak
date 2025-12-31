@@ -13,10 +13,17 @@ type ViewState int
 
 const (
 	MenuView ViewState = iota
+	DashboardView
 	AgentListView
 	AgentRegisterView
 	AgentDetailsView
-	DashboardView
+	DIDManagerView
+	CredentialViewerView
+	GhostScoreDashboardView
+	StakingPanelView
+	GovernanceProposalsView
+	EscrowManagerView
+	SettingsView
 )
 
 // Model is the main application model
@@ -31,6 +38,12 @@ type Model struct {
 	agentForm      *AgentFormModel
 	agentList      *AgentListModel
 	dashboard      *DashboardModel
+	didManager     *DIDManagerModel
+	credentialViewer *CredentialViewerModel
+	// ghostScore     *GhostScoreModel // TODO: Implement
+	// stakingPanel   *StakingPanelModel // TODO: Implement
+	// governance     *GovernanceModel // TODO: Implement
+	// escrowManager  *EscrowManagerModel // TODO: Implement
 }
 
 // MenuItem represents a menu option
@@ -53,14 +66,44 @@ func NewModel(application *app.App) Model {
 				View:        DashboardView,
 			},
 			{
-				Title:       "🤖 List Agents",
-				Description: "Browse all registered agents",
+				Title:       "🤖 Agents",
+				Description: "Browse and manage registered agents",
 				View:        AgentListView,
 			},
 			{
-				Title:       "➕ Register Agent",
-				Description: "Register a new AI agent",
-				View:        AgentRegisterView,
+				Title:       "🆔 DID Manager",
+				Description: "Manage decentralized identities",
+				View:        DIDManagerView,
+			},
+			{
+				Title:       "📜 Credentials",
+				Description: "View and manage verifiable credentials",
+				View:        CredentialViewerView,
+			},
+			{
+				Title:       "⭐ Ghost Score",
+				Description: "View reputation and performance metrics",
+				View:        GhostScoreDashboardView,
+			},
+			{
+				Title:       "🔒 Staking",
+				Description: "Stake tokens and earn rewards",
+				View:        StakingPanelView,
+			},
+			{
+				Title:       "🗳️  Governance",
+				Description: "View and vote on proposals",
+				View:        GovernanceProposalsView,
+			},
+			{
+				Title:       "💰 Escrow",
+				Description: "Manage escrow agreements",
+				View:        EscrowManagerView,
+			},
+			{
+				Title:       "⚙️  Settings",
+				Description: "Configure CLI settings",
+				View:        SettingsView,
 			},
 		},
 	}
@@ -89,6 +132,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateAgentList(msg)
 		case DashboardView:
 			return m.updateDashboard(msg)
+		case DIDManagerView:
+			return m.updateDIDManager(msg)
+		case CredentialViewerView:
+			return m.updateCredentialViewer(msg)
+		case GhostScoreDashboardView:
+			return m.updateGhostScore(msg)
+		case StakingPanelView:
+			return m.updateStakingPanel(msg)
+		case GovernanceProposalsView:
+			return m.updateGovernance(msg)
+		case EscrowManagerView:
+			return m.updateEscrowManager(msg)
+		case SettingsView:
+			return m.updateSettings(msg)
 		}
 
 	case error:
@@ -116,6 +173,20 @@ func (m Model) View() string {
 		content = m.viewAgentList()
 	case DashboardView:
 		content = m.viewDashboard()
+	case DIDManagerView:
+		content = m.viewDIDManager()
+	case CredentialViewerView:
+		content = m.viewCredentialViewer()
+	case GhostScoreDashboardView:
+		content = m.viewGhostScore()
+	case StakingPanelView:
+		content = m.viewStakingPanel()
+	case GovernanceProposalsView:
+		content = m.viewGovernance()
+	case EscrowManagerView:
+		content = m.viewEscrowManager()
+	case SettingsView:
+		content = m.viewSettings()
 	default:
 		content = "Unknown view"
 	}
@@ -204,6 +275,18 @@ func (m Model) updateMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.agentList = NewAgentListModel(m.app)
 		case DashboardView:
 			m.dashboard = NewDashboardModel(m.app)
+		case DIDManagerView:
+			m.didManager = NewDIDManagerModel(m.app)
+		case CredentialViewerView:
+			m.credentialViewer = NewCredentialViewerModel(m.app)
+		// case GhostScoreDashboardView:
+		// 	m.ghostScore = NewGhostScoreModel(m.app)
+		// case StakingPanelView:
+		// 	m.stakingPanel = NewStakingPanelModel(m.app)
+		// case GovernanceProposalsView:
+		// 	m.governance = NewGovernanceModel(m.app)
+		// case EscrowManagerView:
+		// 	m.escrowManager = NewEscrowManagerModel(m.app)
 		}
 	}
 
@@ -323,4 +406,144 @@ func (m Model) viewDashboard() string {
 		return "Loading dashboard..."
 	}
 	return m.dashboard.View()
+}
+
+// DID Manager view methods
+func (m Model) updateDIDManager(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.state = MenuView
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+
+	if m.didManager != nil {
+		updatedManager, cmd := m.didManager.Update(msg)
+		if d, ok := updatedManager.(*DIDManagerModel); ok {
+			m.didManager = d
+			return m, cmd
+		}
+	}
+
+	return m, nil
+}
+
+func (m Model) viewDIDManager() string {
+	if m.didManager == nil {
+		return "Loading DID manager..."
+	}
+	return m.didManager.View()
+}
+
+// Credential Viewer view methods
+func (m Model) updateCredentialViewer(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.state = MenuView
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+
+	if m.credentialViewer != nil {
+		updatedViewer, cmd := m.credentialViewer.Update(msg)
+		if c, ok := updatedViewer.(*CredentialViewerModel); ok {
+			m.credentialViewer = c
+			return m, cmd
+		}
+	}
+
+	return m, nil
+}
+
+func (m Model) viewCredentialViewer() string {
+	if m.credentialViewer == nil {
+		return "Loading credentials..."
+	}
+	return m.credentialViewer.View()
+}
+
+// Ghost Score view methods - TODO: Implement
+func (m Model) updateGhostScore(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.state = MenuView
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+	return m, nil
+}
+
+func (m Model) viewGhostScore() string {
+	title := TitleStyle.Render("⭐ Ghost Score Dashboard")
+	content := BoxStyle.Render("Ghost Score dashboard coming soon...")
+	return lipgloss.JoinVertical(lipgloss.Left, title, content)
+}
+
+// Staking Panel view methods - TODO: Implement
+func (m Model) updateStakingPanel(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.state = MenuView
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+	return m, nil
+}
+
+func (m Model) viewStakingPanel() string {
+	title := TitleStyle.Render("🔒 Staking Panel")
+	content := BoxStyle.Render("Staking panel coming soon...")
+	return lipgloss.JoinVertical(lipgloss.Left, title, content)
+}
+
+// Governance view methods - TODO: Implement
+func (m Model) updateGovernance(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.state = MenuView
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+	return m, nil
+}
+
+func (m Model) viewGovernance() string {
+	title := TitleStyle.Render("🗳️ Governance")
+	content := BoxStyle.Render("Governance panel coming soon...")
+	return lipgloss.JoinVertical(lipgloss.Left, title, content)
+}
+
+// Escrow Manager view methods - TODO: Implement
+func (m Model) updateEscrowManager(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.state = MenuView
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+	return m, nil
+}
+
+func (m Model) viewEscrowManager() string {
+	title := TitleStyle.Render("💰 Escrow Manager")
+	content := BoxStyle.Render("Escrow manager coming soon...")
+	return lipgloss.JoinVertical(lipgloss.Left, title, content)
+}
+
+// Settings view methods
+func (m Model) updateSettings(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.state = MenuView
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+
+	return m, nil
+}
+
+func (m Model) viewSettings() string {
+	title := TitleStyle.Render("⚙️  Settings")
+	content := BoxStyle.Render("Settings panel coming soon...")
+	return lipgloss.JoinVertical(lipgloss.Left, title, content)
 }

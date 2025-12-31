@@ -8,12 +8,12 @@ import { StatsCard } from '@/components/dashboard/shared/StatsCard'
 import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
 import { UserStatsCard } from '@/components/convex/UserStatsCard'
 import { Button } from '@/components/ui/button'
-import { Bot, Shield as _Shield, TrendingUp, Activity, Plus, Award, Key } from 'lucide-react'
+import { Bot, Shield as _Shield, TrendingUp, Activity, Plus, Award } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function DashboardOverview() {
-  const { shortAddress, isConnected, address } = useWalletAddress()
+  const { shortAddress, isConnected } = useWalletAddress()
   const { data: agents = [], isLoading: isLoadingAgents } = useAgents()
 
   // Calculate stats from real data

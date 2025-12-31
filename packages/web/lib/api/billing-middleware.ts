@@ -47,7 +47,7 @@ export interface BillingConfig {
  */
 function getCurrentNetwork(): Network {
   const envNetwork = process.env.NEXT_PUBLIC_SOLANA_NETWORK
-  return (envNetwork === 'mainnet' || envNetwork === 'devnet') ? envNetwork : 'devnet'
+  return envNetwork === 'mainnet' || envNetwork === 'devnet' ? envNetwork : 'devnet'
 }
 
 export interface BillingResult {
@@ -207,7 +207,6 @@ export async function withBillingEnforcement<T>(
 
       if (deductionSuccess) {
         // Record deduction in database
-        // @ts-expect-error - Convex API types need regeneration (run bunx convex dev)
         await convexClient.mutation(api.userBilling.recordDeduction, {
           userId: authUser.userId as Id<'users'>,
           paymentToken: 'ghost',
@@ -229,7 +228,6 @@ export async function withBillingEnforcement<T>(
 
       if (deductionSuccess) {
         // Record deduction in database
-        // @ts-expect-error - Convex API types need regeneration (run bunx convex dev)
         await convexClient.mutation(api.userBilling.recordDeduction, {
           userId: authUser.userId as Id<'users'>,
           paymentToken: 'usdc',
@@ -244,16 +242,17 @@ export async function withBillingEnforcement<T>(
     // 6. Distribute revenue (10% staker pool, 90% protocol)
     // This will be called automatically by the revenue distribution module
     if (deductionSuccess) {
-      // @ts-expect-error - Convex API types need regeneration (run bunx convex dev)
-      await convexClient.mutation(api.revenue.recordRevenue, {
-        paymentToken: billingPath.includes('ghost') ? 'ghost' : 'usdc',
-        amountMicroUsdc: Number(costMicroUsdc),
-        amountMicroGhost: billingPath.includes('ghost') ? Number(requiredAmount) : 0,
-        endpoint: config.endpoint,
-      }).catch((error) => {
-        console.error('[Billing] Revenue distribution failed:', error)
-        // Don't fail the request if revenue tracking fails
-      })
+      await convexClient
+        .mutation(api.revenue.recordRevenue, {
+          paymentToken: billingPath.includes('ghost') ? 'ghost' : 'usdc',
+          amountMicroUsdc: Number(costMicroUsdc),
+          amountMicroGhost: billingPath.includes('ghost') ? Number(requiredAmount) : 0,
+          endpoint: config.endpoint,
+        })
+        .catch((error) => {
+          console.error('[Billing] Revenue distribution failed:', error)
+          // Don't fail the request if revenue tracking fails
+        })
     }
 
     // 7. Return success with billing info
@@ -288,9 +287,7 @@ export async function withBillingEnforcement<T>(
 /**
  * Helper: Get user's current balance (USDC or GHOST)
  */
-export async function getUserBalance(
-  userId: string
-): Promise<{
+export async function getUserBalance(userId: string): Promise<{
   usdc?: { balance: bigint; uiBalance: number; tokenAccount: string }
   ghost?: { balance: bigint; uiBalance: number; tokenAccount: string }
   preferredPaymentToken?: 'usdc' | 'ghost'

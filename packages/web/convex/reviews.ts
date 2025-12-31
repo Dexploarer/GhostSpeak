@@ -5,6 +5,7 @@
 
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import { internal } from './_generated/api'
 
 /**
  * Get all reviews for an agent
@@ -79,11 +80,11 @@ export const getAgentAverageRating = query({
     totalReviews: v.number(),
     verifiedReviews: v.number(),
     ratingDistribution: v.object({
-      1: v.number(),
-      2: v.number(),
-      3: v.number(),
-      4: v.number(),
-      5: v.number(),
+      star1: v.number(),
+      star2: v.number(),
+      star3: v.number(),
+      star4: v.number(),
+      star5: v.number(),
     }),
   }),
   handler: async (ctx, args) => {
@@ -97,7 +98,7 @@ export const getAgentAverageRating = query({
         averageRating: 0,
         totalReviews: 0,
         verifiedReviews: 0,
-        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        ratingDistribution: { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 },
       }
     }
 
@@ -108,10 +109,11 @@ export const getAgentAverageRating = query({
     // Calculate rating distribution
     const ratingDistribution = reviews.reduce(
       (dist, review) => {
-        dist[review.rating as 1 | 2 | 3 | 4 | 5]++
+        const key = `star${review.rating}` as 'star1' | 'star2' | 'star3' | 'star4' | 'star5'
+        dist[key]++
         return dist
       },
-      { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+      { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 }
     )
 
     return {
@@ -156,7 +158,7 @@ export const createReview = mutation({
 
     // Create review
     const now = Date.now()
-    return await ctx.db.insert('reviews', {
+    const reviewId = await ctx.db.insert('reviews', {
       agentAddress: args.agentAddress,
       userId: args.userId,
       rating: args.rating,
@@ -168,6 +170,29 @@ export const createReview = mutation({
       downvotes: 0,
       timestamp: now,
     })
+
+    // Issue verified hire credential if this is a verified hire
+    if (args.verifiedHire && args.transactionSignature) {
+      // Get user wallet address for the credential
+      const user = await ctx.db.get(args.userId)
+      if (user) {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.credentialsOrchestrator.issueVerifiedHireCredentialFromReview,
+          {
+            agentAddress: args.agentAddress,
+            clientAddress: user.walletAddress,
+            rating: args.rating,
+            review: args.review,
+            transactionSignature: args.transactionSignature,
+            jobCategory: args.jobCategory,
+            timestamp: now,
+          }
+        )
+      }
+    }
+
+    return reviewId
   },
 })
 

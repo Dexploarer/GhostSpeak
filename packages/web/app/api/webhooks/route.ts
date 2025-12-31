@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Webhooks API] Error creating webhook:', error)
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
     })
 
     // Don't return secrets in list
-    const sanitized = subscriptions.map((sub: any) => ({
+    const sanitized = subscriptions.map((sub) => ({
       id: sub._id,
       url: sub.url,
       events: sub.events,
@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
     }))
 
     return NextResponse.json({ webhooks: sanitized })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Webhooks API] Error listing webhooks:', error)
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },

@@ -225,9 +225,9 @@ export const getAPYHistory = query({
   args: {},
   returns: v.object({
     current: v.number(),
-    '7day': v.number(),
-    '30day': v.number(),
-    '90day': v.number(),
+    day7: v.number(),
+    day30: v.number(),
+    day90: v.number(),
     allTime: v.number(),
     historicalData: v.array(
       v.object({
@@ -337,9 +337,9 @@ export const getAPYHistory = query({
 
     return {
       current: apy30d, // Current APY is based on last 30 days
-      '7day': apy7d,
-      '30day': apy30d,
-      '90day': apy90d,
+      day7: apy7d,
+      day30: apy30d,
+      day90: apy90d,
       allTime: apyAllTime,
       historicalData: historicalAPY,
     }

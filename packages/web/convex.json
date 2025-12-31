@@ -1,5 +1,4 @@
 {
-  "functions": "convex/",
   "node": {
     "externalPackages": [
       "@solana/web3.js",

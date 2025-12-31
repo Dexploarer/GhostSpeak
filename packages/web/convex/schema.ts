@@ -424,6 +424,91 @@ export default defineSchema({
     .index('by_credential_id', ['credentialId']),
 
   //
+  // ─── AGENT IDENTITY CREDENTIALS ────────────────────────────────────────────
+  // Track agent identity credentials issued on registration
+  //
+  agentIdentityCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.string(),
+    did: v.string(), // did:sol:network:address
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_credential_id', ['credentialId']),
+
+  //
+  // ─── PAYMENT MILESTONE CREDENTIALS ─────────────────────────────────────────
+  // Track payment milestone credentials (10/100/1000 payments)
+  //
+  paymentMilestoneCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.string(),
+    milestone: v.number(), // 10, 100, 1000
+    tier: v.string(), // 'Bronze', 'Silver', 'Gold'
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_milestone', ['milestone'])
+    .index('by_credential_id', ['credentialId']),
+
+  //
+  // ─── STAKING CREDENTIALS ───────────────────────────────────────────────────
+  // Track staking verified credentials for GHOST token stakers
+  //
+  stakingCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.string(),
+    tier: v.string(), // 'Basic', 'Premium', 'Elite'
+    stakingTier: v.number(), // 1, 2, 3
+    amountStaked: v.number(),
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_tier', ['tier'])
+    .index('by_credential_id', ['credentialId']),
+
+  //
+  // ─── VERIFIED HIRE CREDENTIALS ─────────────────────────────────────────────
+  // Track verified hire credentials from reviews with payment proof
+  //
+  verifiedHireCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.string(),
+    clientAddress: v.string(),
+    rating: v.number(),
+    transactionSignature: v.string(),
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_client', ['clientAddress'])
+    .index('by_transaction', ['transactionSignature'])
+    .index('by_credential_id', ['credentialId']),
+
+  //
+  // ─── FAILED CREDENTIAL ISSUANCES ───────────────────────────────────────────
+  // Track failed credential issuances for retry
+  //
+  failedCredentialIssuances: defineTable({
+    agentAddress: v.string(),
+    credentialType: v.string(), // 'agent_identity', 'reputation_tier', etc.
+    payload: v.any(), // Full payload for retry
+    error: v.string(),
+    retryCount: v.number(),
+    maxRetries: v.number(), // Max 5 retries
+    status: v.string(), // 'pending', 'retrying', 'succeeded', 'failed'
+    lastRetryAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_status', ['status'])
+    .index('by_agent', ['agentAddress'])
+    .index('by_type', ['credentialType']),
+
+  //
   // ─── X402 INDEXER: SYNC STATE ──────────────────────────────────────────────
   // Track on-chain polling state for x402 payments
   //

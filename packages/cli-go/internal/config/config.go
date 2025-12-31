@@ -140,3 +140,8 @@ func (c *Config) EnsureWalletDir() error {
 func (c *Config) EnsureCacheDir() error {
 	return os.MkdirAll(c.Storage.CacheDir, 0755)
 }
+
+// GetEnv returns the value of an environment variable
+func (c *Config) GetEnv(key string) string {
+	return os.Getenv(key)
+}

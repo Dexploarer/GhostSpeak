@@ -12,11 +12,7 @@
  */
 
 import { address, type Address } from '@solana/addresses'
-import {
-  findAssociatedTokenPda,
-  fetchToken,
-  TOKEN_PROGRAM_ADDRESS,
-} from '@solana-program/token'
+import { findAssociatedTokenPda, fetchToken, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token'
 import { getServerWallet, getRpc } from './server-wallet'
 
 // USDC Mint addresses

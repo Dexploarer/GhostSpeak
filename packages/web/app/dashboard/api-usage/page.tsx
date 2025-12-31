@@ -191,8 +191,11 @@ export default function ApiUsagePage() {
                 <YAxis />
                 <Tooltip
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                  formatter={(value: number | undefined, name: string) =>
-                    name === 'cost' ? formatCurrency((value ?? 0) * 100) : String(value ?? 0)
+                  formatter={
+                    ((value: number | undefined, name: string) =>
+                      name === 'cost'
+                        ? formatCurrency((value ?? 0) * 100)
+                        : String(value ?? 0)) as any
                   }
                 />
                 <Bar dataKey="requests" fill="hsl(var(--primary))" name="Requests" />

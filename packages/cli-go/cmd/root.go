@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ghostspeak/cli-go/internal/app"
@@ -76,14 +77,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&flagDryRun, "dry-run", false, "Show what would be done without executing")
 	rootCmd.PersistentFlags().StringVar(&flagNetwork, "network", "", "Override network (devnet, testnet, mainnet)")
 
-	// Add version command
+	// Add version command (enhanced)
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "version",
-		Short: "Show version information",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("GhostSpeak CLI v%s\n", Version)
-			fmt.Printf("SDK v%s\n", SDKVersion)
-		},
+		Short: "Show detailed version information",
+		Run:   runVersion,
 	})
 }
 
@@ -114,4 +112,51 @@ func renderBanner() string {
 // GetApp returns the global application instance
 func GetApp() *app.App {
 	return application
+}
+
+// runVersion displays detailed version information
+func runVersion(cmd *cobra.Command, args []string) {
+	titleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00D9FF")).
+		Bold(true)
+
+	labelStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#888888")).
+		Width(20)
+
+	valueStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Bold(true)
+
+	fmt.Println(titleStyle.Render("GhostSpeak CLI"))
+	fmt.Println()
+
+	// Version information
+	fmt.Printf("%s %s\n", labelStyle.Render("CLI Version:"), valueStyle.Render("v"+Version))
+	fmt.Printf("%s %s\n", labelStyle.Render("SDK Version:"), valueStyle.Render("v"+SDKVersion))
+	fmt.Printf("%s %s\n", labelStyle.Render("Go Version:"), valueStyle.Render(runtime.Version()))
+
+	// Platform information
+	platform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("%s %s\n", labelStyle.Render("Platform:"), valueStyle.Render(platform))
+
+	// Configuration paths
+	configPath := config.GetConfigFilePath()
+	dataDir := config.GetConfigDir()
+
+	fmt.Println()
+	fmt.Printf("%s %s\n", labelStyle.Render("Config File:"), valueStyle.Render(configPath))
+	fmt.Printf("%s %s\n", labelStyle.Render("Data Directory:"), valueStyle.Render(dataDir))
+
+	// Load config to show network
+	cfg := config.GetConfig()
+	if cfg != nil {
+		fmt.Println()
+		fmt.Printf("%s %s\n", labelStyle.Render("Current Network:"), valueStyle.Render(cfg.Network.Current))
+		fmt.Printf("%s %s\n", labelStyle.Render("RPC Endpoint:"), valueStyle.Render(cfg.GetCurrentRPC()))
+
+		if cfg.Wallet.Active != "" {
+			fmt.Printf("%s %s\n", labelStyle.Render("Active Wallet:"), valueStyle.Render(cfg.Wallet.Active))
+		}
+	}
 }

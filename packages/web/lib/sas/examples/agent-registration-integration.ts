@@ -7,6 +7,7 @@
 import { createSolanaClient, type Address } from "gill";
 import { issueAttestation } from "../attestations";
 import type { AgentIdentityData } from "../schemas";
+import { serializeCapabilities } from "../schemas";
 import { SAS_CONFIG } from "../config";
 
 /**
@@ -49,7 +50,7 @@ export async function registerAgentWithCredential(params: {
 		agent: agentAddress,
 		did: agentDid,
 		name: agentName,
-		capabilities,
+		capabilities: serializeCapabilities(capabilities), // Convert array to comma-separated string
 		x402Enabled,
 		x402ServiceEndpoint: x402ServiceEndpoint || "",
 		owner: ownerAddress,

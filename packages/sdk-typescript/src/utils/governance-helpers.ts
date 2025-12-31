@@ -10,11 +10,10 @@ import { getAddressEncoder, getProgramDerivedAddress, getBytesEncoder } from '@s
 import {
   ProposalStatus,
   VoteChoice,
-  type Multisig,
+  // type Multisig, // TODO: Re-enable after multisig account is regenerated
   type GovernanceProposal,
-  type RbacConfig,
-  type Role,
-  type Permission,
+  // type RbacConfig, // TODO: Re-enable after rbacConfig account is regenerated
+  // type Role, // TODO: Re-enable after role type is regenerated
   type VotingResults,
   type QuorumRequirements
 } from '../generated/index.js'
@@ -81,78 +80,8 @@ export async function deriveRbacPda(
 // =====================================================
 // MULTISIG UTILITIES
 // =====================================================
-
-export class MultisigUtils {
-  /**
-   * Calculate if a multisig action has reached threshold
-   */
-  static hasReachedThreshold(
-    multisig: Multisig,
-    approvalCount: number
-  ): boolean {
-    return approvalCount >= multisig.threshold
-  }
-
-  /**
-   * Check if an address is a signer on the multisig
-   */
-  static isSigner(multisig: Multisig, address: Address): boolean {
-    return multisig.signers.some((signer: Address) => signer === address)
-  }
-
-  /**
-   * Calculate remaining signatures needed
-   */
-  static remainingSignatures(
-    multisig: Multisig,
-    currentApprovals: number
-  ): number {
-    const remaining = multisig.threshold - currentApprovals
-    return Math.max(0, remaining)
-  }
-
-  /**
-   * Validate multisig configuration
-   */
-  static validateConfiguration(
-    signers: Address[],
-    threshold: number
-  ): { valid: boolean; error?: string } {
-    if (signers.length === 0) {
-      return { valid: false, error: 'At least one signer required' }
-    }
-
-    if (signers.length > 10) {
-      return { valid: false, error: 'Maximum 10 signers allowed' }
-    }
-
-    if (threshold === 0) {
-      return { valid: false, error: 'Threshold must be at least 1' }
-    }
-
-    if (threshold > signers.length) {
-      return { valid: false, error: 'Threshold cannot exceed number of signers' }
-    }
-
-    // Check for duplicate signers
-    const uniqueSigners = new Set(signers)
-    if (uniqueSigners.size !== signers.length) {
-      return { valid: false, error: 'Duplicate signers not allowed' }
-    }
-
-    return { valid: true }
-  }
-
-  /**
-   * Generate multisig configuration summary
-   */
-  static generateSummary(multisig: Multisig): string {
-    const signerCount = multisig.signers.length
-    const percentage = Math.round((multisig.threshold / signerCount) * 100)
-    
-    return `${multisig.threshold}-of-${signerCount} multisig (${percentage}% approval required)`
-  }
-}
+// TODO: Re-enable after multisig account is regenerated
+// MultisigUtils class removed due to missing Multisig type dependency
 
 // =====================================================
 // PROPOSAL UTILITIES
@@ -282,94 +211,8 @@ export class ProposalUtils {
 // =====================================================
 // RBAC UTILITIES
 // =====================================================
-
-export class RbacUtils {
-  /**
-   * Check if a user has a specific permission
-   */
-  static hasPermission(
-    rbac: RbacConfig,
-    user: Address,
-    permission: string
-  ): boolean {
-    const userRole = this.getUserRole(rbac, user)
-    if (!userRole) return false
-
-    return userRole.permissions.includes(permission)
-  }
-
-  /**
-   * Get user's role
-   */
-  static getUserRole(rbac: RbacConfig, user: Address): Role | null {
-    // Find user's role assignment by checking access policies
-    // Since Role doesn't have members field, we check access policies instead
-    // We'll use the policy metadata to store user assignments
-    const userPolicy = rbac.accessPolicies.find(policy => {
-      // Check if policy metadata contains user information
-      // This is a simplified implementation - in real usage, you'd have
-      // a more structured way to associate users with policies
-      return policy.policyId.includes(user) || policy.name.includes(user)
-    })
-    
-    if (userPolicy) {
-      // Find the role associated with this policy by checking policy scope
-      // In a real implementation, you'd have a more structured relationship
-      const assignedRole = rbac.roles.find(role => 
-        role.roleId === userPolicy.policyId || 
-        role.name === userPolicy.name ||
-        userPolicy.scope.toString().includes(role.roleId)
-      )
-      
-      if (assignedRole) {
-        return assignedRole
-      }
-    }
-    
-    // If no specific role found, return default role (if exists)
-    return rbac.roles.find(role => role.name === 'default') ?? null
-  }
-
-  /**
-   * Check if permission string is valid
-   */
-  static isValidPermission(permission: string): boolean {
-    // In production, validate against known permission strings
-    return permission.length > 0 && permission.length < 100
-  }
-
-  /**
-   * Validate role configuration
-   */
-  static validateRole(role: Role): { valid: boolean; error?: string } {
-    if (!role.name || role.name.trim().length === 0) {
-      return { valid: false, error: 'Role name is required' }
-    }
-
-    if (role.name.length > 50) {
-      return { valid: false, error: 'Role name cannot exceed 50 characters' }
-    }
-
-    if (role.permissions.length === 0) {
-      return { valid: false, error: 'Role must have at least one permission' }
-    }
-
-    if (role.permissions.length > 20) {
-      return { valid: false, error: 'Role cannot have more than 20 permissions' }
-    }
-
-    return { valid: true }
-  }
-
-  /**
-   * Generate permission summary
-   */
-  static generatePermissionSummary(permissions: Permission[]): string {
-    if (permissions.length === 0) return 'No permissions'
-    if (permissions.length === 1) return '1 permission'
-    return `${permissions.length} permissions`
-  }
-}
+// TODO: Re-enable after rbacConfig account is regenerated
+// RbacUtils class removed due to missing RbacConfig type dependency
 
 // =====================================================
 // VOTING UTILITIES

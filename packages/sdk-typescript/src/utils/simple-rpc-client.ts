@@ -64,7 +64,7 @@ export class SimpleRpcClient {
         executable: result.value.executable,
         lamports: result.value.lamports,
         owner: result.value.owner,
-        rentEpoch: result.value.rentEpoch,
+        rentEpoch: (result.value as { rentEpoch?: bigint }).rentEpoch ?? 0n,
         data: Buffer.from(base64Data, 'base64'),
         space: result.value.space
       }
@@ -287,7 +287,7 @@ return result.value.map((account: unknown) =>
       executable: account.executable as boolean,
       lamports: BigInt(account.lamports as string | number) as unknown as AccountInfo['lamports'], // Cast to Lamports branded type
       owner: account.owner as Address,
-      rentEpoch: account.rentEpoch as bigint,
+      rentEpoch: (account.rentEpoch as bigint | undefined) ?? 0n,
       data: Buffer.from(base64Data, 'base64'),
       space: account.space as bigint
     }

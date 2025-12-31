@@ -46,6 +46,12 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from "../shared";
+import {
+  getPricingModelDecoder,
+  getPricingModelEncoder,
+  type PricingModel,
+  type PricingModelArgs,
+} from "../types";
 
 export const REGISTER_AGENT_COMPRESSED_DISCRIMINATOR = new Uint8Array([
   15, 6, 94, 55, 65, 80, 123, 248,
@@ -112,6 +118,7 @@ export type RegisterAgentCompressedInstructionData = {
   agentId: string;
   name: string;
   description: string;
+  pricingModel: PricingModel;
 };
 
 export type RegisterAgentCompressedInstructionDataArgs = {
@@ -120,6 +127,7 @@ export type RegisterAgentCompressedInstructionDataArgs = {
   agentId: string;
   name: string;
   description: string;
+  pricingModel: PricingModelArgs;
 };
 
 export function getRegisterAgentCompressedInstructionDataEncoder(): Encoder<RegisterAgentCompressedInstructionDataArgs> {
@@ -131,6 +139,7 @@ export function getRegisterAgentCompressedInstructionDataEncoder(): Encoder<Regi
       ["agentId", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["name", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["description", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ["pricingModel", getPricingModelEncoder()],
     ]),
     (value) => ({
       ...value,
@@ -147,6 +156,7 @@ export function getRegisterAgentCompressedInstructionDataDecoder(): Decoder<Regi
     ["agentId", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["name", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["description", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ["pricingModel", getPricingModelDecoder()],
   ]);
 }
 
@@ -191,6 +201,7 @@ export type RegisterAgentCompressedAsyncInput<
   agentId: RegisterAgentCompressedInstructionDataArgs["agentId"];
   name: RegisterAgentCompressedInstructionDataArgs["name"];
   description: RegisterAgentCompressedInstructionDataArgs["description"];
+  pricingModel: RegisterAgentCompressedInstructionDataArgs["pricingModel"];
 };
 
 export async function getRegisterAgentCompressedInstructionAsync<
@@ -360,6 +371,7 @@ export type RegisterAgentCompressedInput<
   agentId: RegisterAgentCompressedInstructionDataArgs["agentId"];
   name: RegisterAgentCompressedInstructionDataArgs["name"];
   description: RegisterAgentCompressedInstructionDataArgs["description"];
+  pricingModel: RegisterAgentCompressedInstructionDataArgs["pricingModel"];
 };
 
 export function getRegisterAgentCompressedInstruction<

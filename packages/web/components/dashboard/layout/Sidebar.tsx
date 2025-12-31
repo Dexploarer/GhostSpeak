@@ -24,21 +24,32 @@ import {
   Key,
   Link2,
   Fingerprint,
+  Code,
+  TrendingUp,
+  Star,
+  Coins,
+  BookOpen,
+  Users,
+  DollarSign,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/agents', label: 'Agents', icon: Bot },
-  { href: '/dashboard/channels', label: 'Channels', icon: MessageSquare },
-  { href: '/dashboard/marketplace', label: 'Marketplace', icon: ShoppingBag },
-  { href: '/dashboard/work-orders', label: 'Work Orders', icon: Briefcase },
-  { href: '/dashboard/escrow', label: 'Escrow', icon: Shield },
+  { href: '/dashboard/ghost-score', label: 'Ghost Score', icon: Star },
+  { href: '/dashboard/staking', label: 'Staking', icon: Coins },
+  { href: '/dashboard/revenue-share', label: 'Revenue Share', icon: TrendingUp },
+  { href: '/dashboard/transparency', label: 'Transparency', icon: DollarSign },
   { href: '/dashboard/payments', label: 'Payments', icon: CreditCard },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/dashboard/governance', label: 'Governance', icon: Gavel },
+  { href: '/dashboard/privacy', label: 'Privacy', icon: Shield },
   { href: '/dashboard/multisig', label: 'Multisig', icon: Key },
   { href: '/link', label: 'Link CLI Wallet', icon: Link2 },
   { href: '/dashboard/credentials', label: 'Credentials', icon: Fingerprint },
+  { href: '/dashboard/api-keys', label: 'API Keys', icon: Code },
+  { href: '/dashboard/api-usage', label: 'API Usage', icon: TrendingUp },
+  { href: '/api-docs', label: 'API Docs', icon: BookOpen },
+  { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/architecture', label: 'Architecture', icon: Cpu },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
@@ -111,26 +122,6 @@ export function DashboardSidebar() {
           )
         })}
       </nav>
-
-      {/* x402 Quick Access */}
-      <div className="p-3 border-t border-border">
-        <Link
-          href="/x402/discover"
-          className={cn(
-            'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200',
-            'bg-linear-to-r from-primary/10 to-cyan-500/10 border border-primary/20',
-            'text-primary hover:from-primary/20 hover:to-cyan-500/20'
-          )}
-        >
-          <Sparkles className="w-5 h-5 shrink-0" />
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span>x402 Protocol</span>
-              <span className="text-xs text-muted-foreground">Discover & Integrate</span>
-            </div>
-          )}
-        </Link>
-      </div>
 
       {/* Protocol Status */}
       {!isCollapsed && (

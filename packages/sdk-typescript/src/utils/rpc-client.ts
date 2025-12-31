@@ -63,7 +63,7 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future transaction building features
   type TransactionSigner,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future instruction building features
-  type IInstruction,
+  type Instruction,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Future transaction building features
   type TransactionMessage,
   type Base64EncodedWireTransaction
@@ -234,7 +234,7 @@ interface RawAccountData {
   executable: boolean
   lamports: bigint | number
   owner: Address | string
-  rentEpoch: bigint | number
+  rentEpoch?: bigint | number  // Made optional - not always returned by RPC
   data: string | [string, string] | { program: string; parsed: unknown; space?: number }
   space?: bigint | number
 }
@@ -681,9 +681,8 @@ return result.value.map((account: unknown) =>
    */
   private isValidAccountData(account: unknown): account is RawAccountData {
     const acc = account as Record<string, unknown>
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return acc !== null && typeof acc === 'object' && 
-           'executable' in acc && 'lamports' in acc && 'owner' in acc && 'rentEpoch' in acc && 'data' in acc
+           'executable' in acc && 'lamports' in acc && 'owner' in acc && 'data' in acc
   }
 
   /**
@@ -718,7 +717,7 @@ return result.value.map((account: unknown) =>
       executable: account.executable,
       lamports: account.lamports as Lamports,
       owner: account.owner as Address,
-      rentEpoch: BigInt(account.rentEpoch),
+      rentEpoch: account.rentEpoch !== undefined ? BigInt(account.rentEpoch) : 0n,
       data,
       space: account.space ? BigInt(account.space) : undefined
     }

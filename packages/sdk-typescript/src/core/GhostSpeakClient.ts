@@ -3,18 +3,19 @@ import type { TransactionSigner } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
 import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js'
 import { AgentModule } from './modules/AgentModule.js'
-import { EscrowModule } from '../modules/escrow/EscrowModule.js'
-import { ChannelModule } from '../modules/channels/ChannelModule.js'
-import { MarketplaceModule } from '../modules/marketplace/MarketplaceModule.js'
+
 import { GovernanceModule } from '../modules/governance/GovernanceModule.js'
 import { MultisigModule } from '../modules/multisig/MultisigModule.js'
-import { Token2022Module } from '../modules/token2022/Token2022Module.js'
+
 import { UnifiedCredentialService } from '../modules/credentials/UnifiedCredentialService.js'
-// H2A Module has been removed - use A2A (Agent-to-Agent) instructions instead
-import { ChannelType } from '../generated/types/channelType.js'
+import { PayAIClient } from '../payai/PayAIClient.js'
+import { ReputationModule } from '../modules/reputation/ReputationModule.js'
+import { DidModule } from '../modules/did/DidModule.js'
+import { PrivacyModule } from '../modules/privacy/PrivacyModule.js'
+import { AuthorizationModule } from '../modules/authorization/AuthorizationModule.js'
 import { ProposalType } from '../generated/types/proposalType.js'
 import { VoteChoice } from '../generated/types/voteChoice.js'
-import type { AccountState } from '../generated/types/accountState.js'
+
 
 /**
  * Main GhostSpeak client with fluent API design
@@ -30,13 +31,6 @@ import type { AccountState } from '../generated/types/accountState.js'
  *   .compressed()
  *   .execute()
  * 
- * // Create an escrow
- * const escrow = await ghostspeak
- *   .escrow()
- *   .between(buyer, seller)
- *   .amount(sol(10))
- *   .withMilestones([...])
- *   .execute()
  * ```
  */
 export class GhostSpeakClient {
@@ -55,31 +49,64 @@ export class GhostSpeakClient {
   }
 
   /**
+   * Direct access to Agent Module for read operations
+   */
+  get agents(): AgentModule {
+    return new AgentModule(this.config)
+  }
+
+
+
+  /**
+   * Direct access to Governance Module for read operations
+   */
+  get governanceModule(): GovernanceModule {
+     return new GovernanceModule(this.config)
+  }
+
+  /**
+   * Direct access to Multisig Module for read operations
+   */
+  get multisigModule(): MultisigModule {
+    return new MultisigModule(this.config)
+  }
+
+  /**
    * Agent operations
    */
   agent(): AgentBuilder {
     return new AgentBuilder(this.config)
   }
 
+
+
   /**
-   * Escrow operations
+   * PayAI operations (x402 payments)
    */
-  escrow(): EscrowBuilder {
-    return new EscrowBuilder(this.config)
+  payai(): PayAIClient {
+    return new PayAIClient({
+      rpcUrl: this.config.rpcEndpoint!,
+      facilitatorUrl: this.config.payai?.facilitatorUrl,
+      timeout: this.config.transactionTimeout,
+      retry: this.config.retryConfig && {
+        attempts: this.config.retryConfig.maxRetries ?? 3,
+        delayMs: this.config.retryConfig.baseDelay ?? 1000
+      }
+    })
   }
 
   /**
-   * Channel operations
+   * Reputation operations
    */
-  channel(): ChannelBuilder {
-    return new ChannelBuilder(this.config)
+  reputation(): ReputationModule {
+    return new ReputationModule(this.config)
   }
 
   /**
-   * Marketplace operations
+   * Privacy operations
    */
-  marketplace(): MarketplaceBuilder {
-    return new MarketplaceBuilder(this.config)
+  privacy(): PrivacyModule {
+    return new PrivacyModule(this.config)
   }
 
   /**
@@ -96,12 +123,7 @@ export class GhostSpeakClient {
     return new MultisigBuilder(this.config)
   }
 
-  /**
-   * Token-2022 operations
-   */
-  token2022(): Token2022Builder {
-    return new Token2022Builder(this.config)
-  }
+
 
   /**
    * Unified Credential operations (Solana + Crossmint)
@@ -116,6 +138,22 @@ export class GhostSpeakClient {
       } : undefined,
       crossmintTemplates: this.config.credentials?.templates
     })
+  }
+
+  /**
+   * DID operations (Decentralized Identifiers)
+   */
+  did(): DidModule {
+    return new DidModule(this.config)
+  }
+
+  /**
+   * Authorization operations (ERC-8004 parity)
+   *
+   * Allows agents to pre-authorize facilitators (e.g., PayAI) to update reputation.
+   */
+  authorization(): AuthorizationModule {
+    return new AuthorizationModule(this)
   }
 
   // H2A module has been removed - use A2A (Agent-to-Agent) instructions instead
@@ -318,547 +356,15 @@ class AgentBuilder {
   }
 }
 
-/**
- * Escrow builder parameters interface
- */
-interface EscrowBuilderParams {
-  buyer?: Address
-  seller?: Address
-  amount?: bigint
-  description?: string
-  milestones?: Array<{ amount: bigint; description: string }>
-  signer?: TransactionSigner
-}
 
-/**
- * Escrow builder for fluent API
- */
-class EscrowBuilder {
-  private module: EscrowModule
-  private params: EscrowBuilderParams = {}
-
-  constructor(config: GhostSpeakConfig) {
-    this.module = new EscrowModule(config)
-  }
-
-  between(buyer: Address, seller: Address): this {
-    this.params.buyer = buyer
-    this.params.seller = seller
-    return this
-  }
-
-  amount(lamports: bigint): this {
-    this.params.amount = lamports
-    return this
-  }
-
-  description(desc: string): this {
-    this.params.description = desc
-    return this
-  }
-
-  withMilestones(milestones: Array<{ amount: bigint; description: string }>): this {
-    this.params.milestones = milestones
-    return this
-  }
-
-  debug(): this {
-    this.module.debug()
-    return this
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-
-  private validateParams(): void {
-    if (!this.params.buyer) {
-      throw new Error('Escrow builder requires buyer address. Call between() first.')
-    }
-    if (!this.params.seller) {
-      throw new Error('Escrow builder requires seller address. Call between() first.')
-    }
-    if (!this.params.amount) {
-      throw new Error('Escrow builder requires amount. Call amount() first.')
-    }
-    if (!this.params.signer) {
-      throw new Error('Escrow builder requires signer.')
-    }
-  }
-
-  async getCost(): Promise<bigint> {
-    return this.module.getCost('createEscrow', () => ({
-      // Placeholder for actual instruction
-      programAddress: this.module.getProgramId(),
-      accounts: [],
-      data: new Uint8Array()
-    }))
-  }
-
-  async explain(): Promise<string> {
-    return this.module.explain('createEscrow', () => ({
-      // Placeholder for actual instruction
-      programAddress: this.module.getProgramId(),
-      accounts: [],
-      data: new Uint8Array()
-    }))
-  }
-
-  async execute(): Promise<{ address: Address; signature: string }> {
-    this.validateParams()
-    
-    const signature = await this.module.create({
-      signer: this.params.signer!,
-      amount: this.params.amount!,
-      buyer: this.params.buyer!,
-      seller: this.params.seller!,
-      description: this.params.description ?? '',
-      milestones: this.params.milestones
-    })
-    // Generate a unique escrow ID
-    const escrowId = `${Date.now()}_${Math.random().toString(36).substring(7)}`
-    const address = await this.deriveEscrowAddress(escrowId)
-    
-    return { address, signature }
-  }
-
-  private async deriveEscrowAddress(escrowId: string): Promise<Address> {
-    const { deriveEscrowPDA } = await import('../utils/pda.js')
-    const [address] = await deriveEscrowPDA({
-      client: this.params.buyer!,
-      provider: this.params.seller!,
-      escrowId,
-      programAddress: this.module.getProgramId()
-    })
-    return address
-  }
-}
 
 /**
  * Channel builder parameters interface
  */
-interface ChannelBuilderParams {
-  name?: string
-  description?: string
-  channelType?: ChannelType
-  isPrivate?: boolean
-  maxMembers?: number
-  signer?: TransactionSigner
-}
-
-/**
- * Channel builder for fluent API
- */
-class ChannelBuilder {
-  private module: ChannelModule
-  private params: ChannelBuilderParams = {}
-
-  constructor(config: GhostSpeakConfig) {
-    this.module = new ChannelModule(config)
-  }
-
-  create(name: string): this {
-    this.params.name = name
-    this.params.channelType = ChannelType.Public
-    return this
-  }
-
-  description(desc: string): this {
-    this.params.description = desc
-    return this
-  }
-
-  private(): this {
-    this.params.isPrivate = true
-    this.params.channelType = ChannelType.Private
-    return this
-  }
-
-  maxMembers(max: number): this {
-    this.params.maxMembers = max
-    return this
-  }
-
-  debug(): this {
-    this.module.debug()
-    return this
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-
-  private validateParams(): void {
-    if (!this.params.name) {
-      throw new Error('Channel builder requires name. Call create() first.')
-    }
-    if (!this.params.signer) {
-      throw new Error('Channel builder requires signer.')
-    }
-  }
-
-  async getCost(): Promise<bigint> {
-    return this.module.getCost('createChannel', () => ({
-      // Placeholder for actual instruction
-      programAddress: this.module.getProgramId(),
-      accounts: [],
-      data: new Uint8Array()
-    }))
-  }
-
-  async explain(): Promise<string> {
-    return this.module.explain('createChannel', () => ({
-      // Placeholder for actual instruction
-      programAddress: this.module.getProgramId(),
-      accounts: [],
-      data: new Uint8Array()
-    }))
-  }
-
-  async execute(): Promise<{ address: Address; signature: string }> {
-    this.validateParams()
-    
-    const signature = await this.module.create({
-      signer: this.params.signer!,
-      name: this.params.name!,
-      description: this.params.description ?? '',
-      channelType: this.params.channelType ?? ChannelType.Public,
-      isPrivate: this.params.isPrivate,
-      maxMembers: this.params.maxMembers
-    })
-    // Generate a unique channel ID
-    const channelId = `${this.params.name}_${Date.now()}`
-    const address = await this.deriveChannelAddress(channelId)
-    
-    return { address, signature }
-  }
-
-  private async deriveChannelAddress(channelId: string): Promise<Address> {
-    const { deriveChannelPda } = await import('../utils/pda.js')
-    const address = await deriveChannelPda(
-      this.module.getProgramId(),
-      channelId
-    )
-    return address
-  }
-}
 
 /**
  * Marketplace builder for fluent API
  */
-class MarketplaceBuilder {
-  private module: MarketplaceModule
-  private params: MarketplaceBuilderParams = {}
-
-  constructor(config: GhostSpeakConfig) {
-    this.module = new MarketplaceModule(config)
-  }
-
-  /**
-   * Create a service listing
-   */
-  service(): ServiceBuilder {
-    return new ServiceBuilder(this.module, this.params)
-  }
-
-  /**
-   * Create a job posting
-   */
-  job(): JobBuilder {
-    return new JobBuilder(this.module, this.params)
-  }
-
-  /**
-   * Create an auction
-   */
-  auction(): AuctionBuilder {
-    return new AuctionBuilder(this.module, this.params)
-  }
-
-  /**
-   * Get marketplace queries
-   */
-  query(): MarketplaceQuery {
-    return new MarketplaceQuery(this.module)
-  }
-
-  debug(): this {
-    this.module.debug()
-    return this
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-}
-
-/**
- * Marketplace builder parameters interface
- */
-interface MarketplaceBuilderParams {
-  signer?: TransactionSigner
-}
-
-/**
- * Service builder for fluent API
- */
-class ServiceBuilder {
-  private params: {
-    title?: string
-    description?: string
-    pricePerHour?: bigint
-    category?: string
-    capabilities?: string[]
-    agentAddress?: Address
-    signer?: TransactionSigner
-  } = {}
-
-  constructor(private module: MarketplaceModule, private builderParams: MarketplaceBuilderParams) {
-    this.params.signer = builderParams.signer
-  }
-
-  create(params: { title: string; description: string; agentAddress: Address }): this {
-    this.params.title = params.title
-    this.params.description = params.description
-    this.params.agentAddress = params.agentAddress
-    return this
-  }
-
-  pricePerHour(price: bigint): this {
-    this.params.pricePerHour = price
-    return this
-  }
-
-  category(cat: string): this {
-    this.params.category = cat
-    return this
-  }
-
-  capabilities(caps: string[]): this {
-    this.params.capabilities = caps
-    return this
-  }
-
-
-  private validateParams(): void {
-    if (!this.params.signer) throw new Error('Signer required')
-    if (!this.params.title) throw new Error('Title required')
-    if (!this.params.description) throw new Error('Description required')
-    if (!this.params.agentAddress) throw new Error('Agent address required')
-    if (!this.params.pricePerHour) throw new Error('Price per hour required')
-    if (!this.params.category) throw new Error('Category required')
-    if (!this.params.capabilities) throw new Error('Capabilities required')
-  }
-
-  async execute(): Promise<{ address: Address; signature: string }> {
-    this.validateParams()
-    
-    const signature = await this.module.createServiceListing({
-      signer: this.params.signer!,
-      agentAddress: this.params.agentAddress!,
-      title: this.params.title!,
-      description: this.params.description!,
-      pricePerHour: this.params.pricePerHour!,
-      category: this.params.category!,
-      capabilities: this.params.capabilities!
-    })
-    
-    const address = `service_${this.params.agentAddress}_${this.params.title}` as Address
-    return { address, signature }
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-}
-
-/**
- * Job builder for fluent API
- */
-class JobBuilder {
-  private params: {
-    title?: string
-    description?: string
-    budget?: bigint
-    duration?: number
-    requiredSkills?: string[]
-    category?: string
-    signer?: TransactionSigner
-  } = {}
-
-  constructor(private module: MarketplaceModule, private builderParams: MarketplaceBuilderParams) {
-    this.params.signer = builderParams.signer
-  }
-
-  create(params: { title: string; description: string }): this {
-    this.params.title = params.title
-    this.params.description = params.description
-    return this
-  }
-
-  budget(amount: bigint): this {
-    this.params.budget = amount
-    return this
-  }
-
-  duration(hours: number): this {
-    this.params.duration = hours
-    return this
-  }
-
-  skills(skillList: string[]): this {
-    this.params.requiredSkills = skillList
-    return this
-  }
-
-  category(cat: string): this {
-    this.params.category = cat
-    return this
-  }
-
-  private validateParams(): void {
-    if (!this.params.signer) throw new Error('Signer required')
-    if (!this.params.title) throw new Error('Title required')
-    if (!this.params.description) throw new Error('Description required')
-    if (!this.params.budget) throw new Error('Budget required')
-    if (!this.params.duration) throw new Error('Duration required')
-    if (!this.params.requiredSkills) throw new Error('Required skills needed')
-    if (!this.params.category) throw new Error('Category required')
-  }
-
-  async execute(): Promise<{ address: Address; signature: string }> {
-    this.validateParams()
-    
-    const signature = await this.module.createJobPosting({
-      signer: this.params.signer!,
-      title: this.params.title!,
-      description: this.params.description!,
-      budget: this.params.budget!,
-      duration: this.params.duration!,
-      requiredSkills: this.params.requiredSkills!,
-      category: this.params.category!
-    })
-    
-    const address = `job_${this.params.signer!.address}_${this.params.title}` as Address
-    return { address, signature }
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-}
-
-/**
- * Auction builder for fluent API
- */
-class AuctionBuilder {
-  private params: {
-    serviceListingAddress?: Address
-    startingPrice?: bigint
-    reservePrice?: bigint
-    duration?: number
-    auctionType?: 'english' | 'dutch'
-    signer?: TransactionSigner
-  } = {}
-
-  constructor(private module: MarketplaceModule, private builderParams: MarketplaceBuilderParams) {
-    this.params.signer = builderParams.signer
-  }
-
-  forService(serviceAddress: Address): this {
-    this.params.serviceListingAddress = serviceAddress
-    return this
-  }
-
-  startingPrice(price: bigint): this {
-    this.params.startingPrice = price
-    return this
-  }
-
-  reservePrice(price: bigint): this {
-    this.params.reservePrice = price
-    return this
-  }
-
-  duration(hours: number): this {
-    this.params.duration = hours
-    return this
-  }
-
-  english(): this {
-    this.params.auctionType = 'english'
-    return this
-  }
-
-  dutch(): this {
-    this.params.auctionType = 'dutch'
-    return this
-  }
-
-  private validateParams(): void {
-    if (!this.params.signer) throw new Error('Signer required')
-    if (!this.params.serviceListingAddress) throw new Error('Service listing address required')
-    if (!this.params.startingPrice) throw new Error('Starting price required')
-    if (!this.params.reservePrice) throw new Error('Reserve price required')
-    if (!this.params.duration) throw new Error('Duration required')
-    if (!this.params.auctionType) throw new Error('Auction type required')
-  }
-
-  async execute(): Promise<{ address: Address; signature: string }> {
-    this.validateParams()
-    
-    const signature = await this.module.createServiceAuction({
-      signer: this.params.signer!,
-      serviceListingAddress: this.params.serviceListingAddress!,
-      startingPrice: this.params.startingPrice!,
-      reservePrice: this.params.reservePrice!,
-      duration: this.params.duration!,
-      auctionType: this.params.auctionType!
-    })
-    
-    const address = `auction_${this.params.serviceListingAddress}` as Address
-    return { address, signature }
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-}
-
-/**
- * Marketplace query helper
- */
-class MarketplaceQuery {
-  constructor(private module: MarketplaceModule) {}
-
-  async serviceListings() {
-    return this.module.getAllServiceListings()
-  }
-
-  async serviceListingsByCategory(_category: string) {
-    // Filter all listings by category (placeholder implementation)
-    const allListings = await this.module.getAllServiceListings()
-    return allListings.filter(_listing => {
-      // Would check listing.data.category === category in real implementation
-      // For now, return all listings since category filtering is not implemented
-      return allListings.length > 0
-    })
-  }
-
-  async jobPostings() {
-    return this.module.getAllJobPostings()
-  }
-
-  async auctions() {
-    return this.module.getAllAuctions()
-  }
-}
 
 /**
  * Governance builder for fluent API
@@ -1178,23 +684,9 @@ class MultisigApproveBuilder {
   async execute(): Promise<{ signature: string }> {
     if (!this.params.signer) throw new Error('Signer required')
     if (!this.params.proposalAddress) throw new Error('Proposal address required')
-    
-    // Default to 'For' if token account provided but choice isn't
-    const voteChoice = this.params.voteChoice ?? VoteChoice.For
-    
-    // In a real scenario, we might need to derive the token account if not provided
-    // For now we assume it's provided or we use a dummy one if acceptable by the logic
-    if (!this.params.tokenAccount) throw new Error('Voter token account required')
 
-    return {
-      signature: await this.module.approveProposal({
-        proposalAddress: this.params.proposalAddress,
-        voter: this.params.signer,
-        voterTokenAccount: this.params.tokenAccount,
-        voteChoice,
-        reasoning: this.params.reasoning
-      })
-    }
+    // NOTE: approveProposal was removed - use protocol_config for voting
+    throw new Error('Multisig approval: Use protocol_config instructions for voting (approveProposal removed)')
   }
 
   withSigner(signer: TransactionSigner): this {
@@ -1244,205 +736,7 @@ class MultisigExecuteBuilder {
   }
 }
 
-/**
- * Token2022 builder for fluent API
- */
-class Token2022Builder {
-  private module: Token2022Module
-  private params: Token2022BuilderParams = {}
 
-  constructor(config: GhostSpeakConfig) {
-    this.module = new Token2022Module(config)
-  }
-
-  /**
-   * Create a basic mint
-   */
-  mint(): MintBuilder {
-    return new MintBuilder(this.module, this.params)
-  }
-
-  /**
-   * Get Token2022 queries
-   */
-  query(): Token2022Query {
-    return new Token2022Query(this.module)
-  }
-
-  debug(): this {
-    this.module.debug()
-    return this
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-}
-
-/**
- * Token2022 builder parameters interface
- */
-interface Token2022BuilderParams {
-  signer?: TransactionSigner
-}
-
-/**
- * Mint builder for fluent API
- */
-class MintBuilder {
-  private params: {
-    agentAddress?: Address
-    decimals?: number
-    freezeAuthority?: Address
-    enableTransferFees?: boolean
-    transferFeeBasisPoints?: number
-    maxFee?: bigint
-    enableConfidentialTransfers?: boolean
-    autoApproveConfidential?: boolean
-    enableInterestBearing?: boolean
-    interestRate?: number
-    defaultAccountState?: AccountState
-    signer?: TransactionSigner
-  } = {}
-
-  constructor(private module: Token2022Module, private builderParams: Token2022BuilderParams) {
-    this.params.signer = builderParams.signer
-  }
-
-  forAgent(agentAddress: Address): this {
-    this.params.agentAddress = agentAddress
-    return this
-  }
-
-  decimals(dec: number): this {
-    this.params.decimals = dec
-    return this
-  }
-
-  freezeAuthority(authority: Address): this {
-    this.params.freezeAuthority = authority
-    return this
-  }
-
-  withTransferFees(basisPoints: number, maxFee: bigint): this {
-    this.params.enableTransferFees = true
-    this.params.transferFeeBasisPoints = basisPoints
-    this.params.maxFee = maxFee
-    return this
-  }
-
-  withConfidentialTransfers(autoApprove = false): this {
-    this.params.enableConfidentialTransfers = true
-    this.params.autoApproveConfidential = autoApprove
-    return this
-  }
-
-  withInterestBearing(rate: number): this {
-    this.params.enableInterestBearing = true
-    this.params.interestRate = rate
-    return this
-  }
-
-  defaultAccountState(state: AccountState): this {
-    this.params.defaultAccountState = state
-    return this
-  }
-
-  private validateParams(): void {
-    if (!this.params.signer) throw new Error('Signer required')
-    if (!this.params.agentAddress) throw new Error('Agent address required')
-    if (this.params.decimals === undefined) throw new Error('Decimals required')
-    if (this.params.enableTransferFees && (!this.params.transferFeeBasisPoints || !this.params.maxFee)) {
-      throw new Error('Transfer fee parameters required when fees enabled')
-    }
-    if (this.params.enableInterestBearing && this.params.interestRate === undefined) {
-      throw new Error('Interest rate required when interest bearing enabled')
-    }
-  }
-
-  async execute(): Promise<{ address: Address; signature: string }> {
-    this.validateParams()
-    
-    // ... implementation ...
-    let signature: string
-    
-    // Determine which creation method to use based on enabled features
-    const hasMultipleFeatures = [
-      this.params.enableTransferFees,
-      this.params.enableConfidentialTransfers,
-      this.params.enableInterestBearing,
-      this.params.defaultAccountState
-    ].filter(Boolean).length > 1
-
-    if (hasMultipleFeatures) {
-      // Use advanced mint creation for multiple features
-      signature = await this.module.createAdvancedMint({
-        signer: this.params.signer!,
-        agentAddress: this.params.agentAddress!,
-        decimals: this.params.decimals!,
-        transferFeeBasisPoints: this.params.transferFeeBasisPoints ?? 0,
-        maxFee: this.params.maxFee ?? BigInt(0),
-        interestRate: this.params.interestRate ?? 0,
-        autoApproveConfidential: this.params.autoApproveConfidential,
-        defaultAccountState: this.params.defaultAccountState
-      })
-    } else if (this.params.enableTransferFees) {
-      signature = await this.module.createMintWithTransferFees({
-        signer: this.params.signer!,
-        agentAddress: this.params.agentAddress!,
-        decimals: this.params.decimals!,
-        transferFeeBasisPoints: this.params.transferFeeBasisPoints!,
-        maxFee: this.params.maxFee!
-      })
-    } else if (this.params.enableConfidentialTransfers) {
-      signature = await this.module.createMintWithConfidentialTransfers({
-        signer: this.params.signer!,
-        agentAddress: this.params.agentAddress!,
-        decimals: this.params.decimals!,
-        autoApproveNewAccounts: this.params.autoApproveConfidential
-      })
-    } else if (this.params.enableInterestBearing) {
-      signature = await this.module.createMintWithInterestBearing({
-        signer: this.params.signer!,
-        agentAddress: this.params.agentAddress!,
-        decimals: this.params.decimals!,
-        interestRate: this.params.interestRate!
-      })
-    } else {
-      // Basic mint
-      signature = await this.module.createMint({
-        signer: this.params.signer!,
-        agentAddress: this.params.agentAddress!,
-        decimals: this.params.decimals!,
-        freezeAuthority: this.params.freezeAuthority
-      })
-    }
-    
-    const address = `mint_${this.params.agentAddress}_${this.params.decimals}` as Address
-    return { address, signature }
-  }
-
-  withSigner(signer: TransactionSigner): this {
-    this.params.signer = signer
-    return this
-  }
-}
-
-/**
- * Token2022 query helper
- */
-class Token2022Query {
-  constructor(private module: Token2022Module) {}
-
-  async allMints() {
-    return this.module.getAllMints()
-  }
-
-  async mintsByAuthority(authority: Address) {
-    return this.module.getMintsByAuthority(authority)
-  }
-}
 
 // H2A Communication builders have been removed - use A2A (Agent-to-Agent) instructions instead
 

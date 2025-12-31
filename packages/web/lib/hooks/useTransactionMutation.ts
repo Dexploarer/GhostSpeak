@@ -28,7 +28,7 @@ interface TransactionMutationOptions<TData, TVariables> {
  *   transactionType: 'escrow',
  *   getDescription: (data) => `Creating escrow for ${data.amount} USDC`,
  *   mutationFn: async (data) => {
- *     const signature = await client.escrow.create(...)
+ *     const signature = await client.escrows.create(...)
  *     return { signature }
  *   },
  *   onSuccess: () => {

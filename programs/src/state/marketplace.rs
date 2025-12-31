@@ -1,267 +1,355 @@
 /*!
  * Marketplace State Module
  *
- * Contains marketplace related state structures including service listings,
- * job postings, applications, and contracts.
+ * Contains data structures for the reputation marketplace where agents
+ * can list services, be discovered by clients, and build reputation-backed
+ * service agreements.
  */
 
-use crate::{ApplicationStatus, ContractStatus, Deliverable};
 use anchor_lang::prelude::*;
+use super::{GhostSpeakError, MAX_NAME_LENGTH, MAX_GENERAL_STRING_LENGTH};
 
-// =====================================================
-// MARKETPLACE ENUMS
-// =====================================================
+// PDA Seeds
+pub const AGENT_LISTING_SEED: &[u8] = b"agent_listing";
+pub const MARKETPLACE_CONFIG_SEED: &[u8] = b"marketplace_config";
+pub const SEARCH_INDEX_SEED: &[u8] = b"search_index";
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
-pub enum PurchaseStatus {
-    Pending,
-    Confirmed,
-    Completed,
-    Cancelled,
-    Paid,
+/// Agent listing status
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
+pub enum ListingStatus {
+    /// Listing is active and accepting clients
+    Active,
+    /// Listing is paused by the agent
+    Paused,
+    /// Listing is suspended by marketplace (policy violation)
+    Suspended,
+    /// Listing is closed/archived
+    Closed,
 }
 
-// =====================================================
-// SERVICE LISTING STRUCTURES
-// =====================================================
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct ServiceListingData {
-    pub title: String,
-    pub description: String,
-    pub price: u64,
-    pub token_mint: Pubkey,
-    pub service_type: String,
-    pub payment_token: Pubkey,
-    pub estimated_delivery: i64,
-    pub tags: Vec<String>,
+/// Service category for agent capabilities
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
+pub enum ServiceCategory {
+    /// AI code generation and review
+    CodeGeneration,
+    /// Data analysis and insights
+    DataAnalysis,
+    /// Content creation (text, images, etc.)
+    ContentCreation,
+    /// Trading and financial automation
+    TradingAutomation,
+    /// Smart contract auditing
+    SecurityAudit,
+    /// General AI assistance
+    GeneralAssistance,
+    /// Research and summarization
+    Research,
+    /// Custom category
+    Custom,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct JobApplicationData {
-    pub cover_letter: String,
-    pub proposed_rate: u64,
-    pub estimated_delivery: i64,
-    pub portfolio_items: Vec<String>,
+/// Pricing tier for marketplace display
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
+pub enum PricingTier {
+    /// Free tier (may have limitations)
+    Free,
+    /// Budget tier ($0.01 - $0.10 per call)
+    Budget,
+    /// Standard tier ($0.10 - $1.00 per call)
+    Standard,
+    /// Premium tier ($1.00 - $10.00 per call)
+    Premium,
+    /// Enterprise tier ($10.00+ per call)
+    Enterprise,
 }
 
+/// Marketplace listing for an AI agent
 #[account]
-pub struct ServiceListing {
+pub struct AgentListing {
+    /// Agent account this listing represents
     pub agent: Pubkey,
+    /// Owner of the listing
     pub owner: Pubkey,
-    pub title: String,
-    pub description: String,
-    pub price: u64,
-    pub token_mint: Pubkey,
-    pub service_type: String,
-    pub payment_token: Pubkey,
-    pub estimated_delivery: i64,
+    /// Listing status
+    pub status: ListingStatus,
+    /// Service category
+    pub category: ServiceCategory,
+    /// Pricing tier
+    pub pricing_tier: PricingTier,
+    /// Price per call in smallest token unit (e.g., lamports, USDC base units)
+    pub price_per_call: u64,
+    /// Minimum Ghost Score required to use this service (0-1000)
+    pub min_client_score: u32,
+    /// Whether this listing requires escrow
+    pub requires_escrow: bool,
+    /// Featured listing (boosted in search)
+    pub is_featured: bool,
+    /// Total views on this listing
+    pub total_views: u64,
+    /// Total inquiries received
+    pub total_inquiries: u64,
+    /// Total jobs completed through this listing
+    pub total_jobs: u64,
+    /// Average client satisfaction (0-10000 basis points)
+    pub avg_satisfaction: u32,
+    /// Listing created timestamp
+    pub created_at: i64,
+    /// Last updated timestamp
+    pub updated_at: i64,
+    /// Featured until timestamp (0 if not featured)
+    pub featured_until: i64,
+    /// Tags for search (max 5 tags)
     pub tags: Vec<String>,
-    pub is_active: bool,
-    pub total_orders: u32,
-    pub rating: f64,
-    pub created_at: i64,
-    pub updated_at: i64,
-    pub transfer_hook: Option<Pubkey>, // SPL-2022 transfer hook for royalties
-    pub bump: u8,
-}
-
-#[account]
-pub struct ServicePurchase {
-    pub customer: Pubkey,
-    pub agent: Pubkey,
-    pub listing: Pubkey,
-    pub listing_id: u64,
-    pub quantity: u32,
-    pub requirements: Vec<String>,
-    pub custom_instructions: String,
-    pub deadline: i64,
-    pub payment_amount: u64,
-    pub payment_token: Pubkey,
-    pub status: PurchaseStatus,
-    pub purchased_at: i64,
-    pub updated_at: i64,
-    pub transfer_hook_applied: bool, // Track if SPL-2022 transfer hook was applied
-    pub bump: u8,
-}
-
-// =====================================================
-// JOB POSTING STRUCTURES
-// =====================================================
-
-#[account]
-pub struct JobPosting {
-    pub employer: Pubkey,
-    pub title: String,
+    /// Promotional description (short pitch)
     pub description: String,
-    pub requirements: Vec<String>,
-    pub budget: u64,
-    pub deadline: i64,
-    pub skills_needed: Vec<String>,
-    pub budget_min: u64,
-    pub budget_max: u64,
-    pub payment_token: Pubkey,
-    pub job_type: String,
-    pub experience_level: String,
-    pub is_active: bool,
-    pub applications_count: u32,
-    pub created_at: i64,
-    pub updated_at: i64,
+    /// Response time SLA in seconds
+    pub response_time_sla: u32,
+    /// Success rate requirement (0-10000 basis points)
+    pub min_success_rate: u32,
+    /// PDA bump
     pub bump: u8,
 }
 
-#[account]
-pub struct JobApplication {
-    pub job_posting: Pubkey,
-    pub agent: Pubkey,
-    pub agent_owner: Pubkey,
-    pub cover_letter: String,
-    pub proposed_rate: u64,
-    pub estimated_delivery: i64,
-    pub portfolio_items: Vec<String>,
-    pub status: ApplicationStatus,
-    pub applied_at: i64,
-    pub bump: u8,
-}
+impl AgentListing {
+    // Reduced sizes for memory optimization
+    pub const MAX_TAGS: usize = 5;
+    pub const MAX_TAG_LEN: usize = 24;
+    pub const MAX_DESC_LEN: usize = 128;
 
-#[account]
-pub struct JobContract {
-    pub job_posting: Pubkey,
-    pub application: Pubkey,
-    pub employer: Pubkey,
-    pub agent: Pubkey,
-    pub agreed_rate: u64,
-    pub deadline: i64,
-    pub payment_token: Pubkey,
-    pub status: ContractStatus,
-    pub created_at: i64,
-    pub updated_at: i64,
-    pub bump: u8,
-}
-
-#[account]
-pub struct JobCompletion {
-    pub contract: Pubkey,
-    pub agent: Pubkey,
-    pub employer: Pubkey,
-    pub deliverables: Vec<Deliverable>,
-    pub work_summary: String,
-    pub ipfs_hash: String,
-    pub metadata_uri: String,
-    pub completed_at: i64,
-    pub is_approved: bool,
-    pub bump: u8,
-}
-
-// =====================================================
-// EVENTS - These are defined in lib.rs to avoid conflicts
-// =====================================================
-
-// =====================================================
-// SIZE CONSTANTS
-// =====================================================
-
-impl ServiceListing {
-    // Reduced sizes to prevent memory allocation failures
     pub const LEN: usize = 8 + // discriminator
         32 + // agent
         32 + // owner
-        4 + 64 + // title (max 64 chars - reduced)
-        4 + 256 + // description (max 256 chars - reduced)
-        8 + // price
-        32 + // token_mint
-        4 + 32 + // service_type (max 32 chars - reduced)
-        32 + // payment_token
-        8 + // estimated_delivery
-        4 + (5 * (4 + 16)) + // tags (max 5 tags, 16 chars each - reduced)
-        1 + // is_active
-        4 + // total_orders
-        8 + // rating
+        1 + // status enum
+        1 + // category enum
+        1 + // pricing_tier enum
+        8 + // price_per_call
+        4 + // min_client_score
+        1 + // requires_escrow
+        1 + // is_featured
+        8 + // total_views
+        8 + // total_inquiries
+        8 + // total_jobs
+        4 + // avg_satisfaction
         8 + // created_at
         8 + // updated_at
-        1 + 32 + // transfer_hook Option
+        8 + // featured_until
+        4 + (4 + Self::MAX_TAG_LEN) * Self::MAX_TAGS + // tags
+        4 + Self::MAX_DESC_LEN + // description
+        4 + // response_time_sla
+        4 + // min_success_rate
         1; // bump
+
+    /// Initialize a new agent listing
+    pub fn initialize(
+        &mut self,
+        agent: Pubkey,
+        owner: Pubkey,
+        category: ServiceCategory,
+        price_per_call: u64,
+        description: String,
+        bump: u8,
+    ) -> Result<()> {
+        require!(
+            description.len() <= Self::MAX_DESC_LEN,
+            GhostSpeakError::DescriptionTooLong
+        );
+
+        let clock = Clock::get()?;
+
+        self.agent = agent;
+        self.owner = owner;
+        self.status = ListingStatus::Active;
+        self.category = category;
+        self.pricing_tier = Self::calculate_pricing_tier(price_per_call);
+        self.price_per_call = price_per_call;
+        self.min_client_score = 0; // No minimum by default
+        self.requires_escrow = false;
+        self.is_featured = false;
+        self.total_views = 0;
+        self.total_inquiries = 0;
+        self.total_jobs = 0;
+        self.avg_satisfaction = 0;
+        self.created_at = clock.unix_timestamp;
+        self.updated_at = clock.unix_timestamp;
+        self.featured_until = 0;
+        self.tags = Vec::new();
+        self.description = description;
+        self.response_time_sla = 300; // Default 5 minutes
+        self.min_success_rate = 0;
+        self.bump = bump;
+
+        Ok(())
+    }
+
+    /// Calculate pricing tier from price
+    fn calculate_pricing_tier(price: u64) -> PricingTier {
+        // Assuming USDC (6 decimals) pricing
+        let price_usdc = price as f64 / 1_000_000.0;
+
+        if price_usdc == 0.0 {
+            PricingTier::Free
+        } else if price_usdc < 0.10 {
+            PricingTier::Budget
+        } else if price_usdc < 1.0 {
+            PricingTier::Standard
+        } else if price_usdc < 10.0 {
+            PricingTier::Premium
+        } else {
+            PricingTier::Enterprise
+        }
+    }
+
+    /// Record a view on this listing
+    pub fn record_view(&mut self) -> Result<()> {
+        self.total_views = self.total_views.saturating_add(1);
+        Ok(())
+    }
+
+    /// Record an inquiry
+    pub fn record_inquiry(&mut self) -> Result<()> {
+        self.total_inquiries = self.total_inquiries.saturating_add(1);
+        Ok(())
+    }
+
+    /// Record a completed job
+    pub fn record_job(&mut self, satisfaction_score: u32) -> Result<()> {
+        self.total_jobs = self.total_jobs.saturating_add(1);
+
+        // Update average satisfaction
+        let total_satisfaction = (self.avg_satisfaction as u64) * (self.total_jobs - 1) as u64;
+        let new_total = total_satisfaction + satisfaction_score as u64;
+        self.avg_satisfaction = (new_total / self.total_jobs as u64) as u32;
+
+        self.updated_at = Clock::get()?.unix_timestamp;
+        Ok(())
+    }
+
+    /// Feature this listing
+    pub fn set_featured(&mut self, duration_seconds: i64) -> Result<()> {
+        let clock = Clock::get()?;
+        self.is_featured = true;
+        self.featured_until = clock.unix_timestamp + duration_seconds;
+        Ok(())
+    }
+
+    /// Check if listing is currently featured
+    pub fn is_currently_featured(&self, current_time: i64) -> bool {
+        self.is_featured && current_time < self.featured_until
+    }
+
+    /// Validate listing data
+    pub fn validate(&self) -> Result<()> {
+        require!(
+            self.description.len() <= Self::MAX_DESC_LEN,
+            GhostSpeakError::DescriptionTooLong
+        );
+        require!(
+            self.tags.len() <= Self::MAX_TAGS,
+            GhostSpeakError::InvalidInput
+        );
+        for tag in &self.tags {
+            require!(
+                tag.len() <= Self::MAX_TAG_LEN,
+                GhostSpeakError::InvalidInput
+            );
+        }
+        Ok(())
+    }
 }
 
-impl ServicePurchase {
-    pub const LEN: usize = 8 + // discriminator
-        32 + // customer
-        32 + // agent
-        32 + // listing
-        8 + // listing_id
-        4 + // quantity
-        4 + (10 * (4 + 100)) + // requirements (max 10 reqs, 100 chars each)
-        4 + 500 + // custom_instructions (max 500 chars)
-        8 + // deadline
-        8 + // payment_amount
-        32 + // payment_token
-        1 + // status
-        8 + // purchased_at
-        8 + // updated_at
-        1 + // transfer_hook_applied
-        1; // bump
+/// Global marketplace configuration
+#[account]
+pub struct MarketplaceConfig {
+    /// Authority that can update marketplace settings
+    pub authority: Pubkey,
+    /// Featured listing fee (in GHOST tokens)
+    pub featured_fee: u64,
+    /// Minimum Ghost Score to create listing
+    pub min_listing_score: u32,
+    /// Maximum tags per listing
+    pub max_tags: u8,
+    /// Total active listings
+    pub total_listings: u64,
+    /// Total featured listings
+    pub total_featured: u64,
+    /// Marketplace fee percentage (basis points, e.g., 250 = 2.5%)
+    pub marketplace_fee_bps: u16,
+    /// Fee collection account
+    pub fee_collector: Pubkey,
+    /// Created timestamp
+    pub created_at: i64,
+    /// PDA bump
+    pub bump: u8,
 }
 
-impl JobPosting {
+impl MarketplaceConfig {
     pub const LEN: usize = 8 + // discriminator
-        32 + // employer
-        4 + 100 + // title (max 100 chars)
-        4 + 500 + // description (max 500 chars)
-        4 + (10 * (4 + 100)) + // requirements (max 10 reqs, 100 chars each)
-        8 + // budget
-        8 + // deadline
-        4 + (20 * (4 + 20)) + // skills_needed (max 20 skills, 20 chars each)
-        8 + // budget_min
-        8 + // budget_max
-        32 + // payment_token
-        4 + 50 + // job_type (max 50 chars)
-        4 + 50 + // experience_level (max 50 chars)
-        1 + // is_active
-        4 + // applications_count
+        32 + // authority
+        8 + // featured_fee
+        4 + // min_listing_score
+        1 + // max_tags
+        8 + // total_listings
+        8 + // total_featured
+        2 + // marketplace_fee_bps
+        32 + // fee_collector
         8 + // created_at
+        1; // bump
+
+    /// Initialize marketplace configuration
+    pub fn initialize(
+        &mut self,
+        authority: Pubkey,
+        fee_collector: Pubkey,
+        bump: u8,
+    ) -> Result<()> {
+        let clock = Clock::get()?;
+
+        self.authority = authority;
+        self.featured_fee = 1_000_000_000; // 1 GHOST
+        self.min_listing_score = 250; // Bronze tier minimum
+        self.max_tags = 5;
+        self.total_listings = 0;
+        self.total_featured = 0;
+        self.marketplace_fee_bps = 250; // 2.5% marketplace fee
+        self.fee_collector = fee_collector;
+        self.created_at = clock.unix_timestamp;
+        self.bump = bump;
+
+        Ok(())
+    }
+
+    /// Calculate marketplace fee for a transaction
+    pub fn calculate_fee(&self, amount: u64) -> u64 {
+        (amount as u128 * self.marketplace_fee_bps as u128 / 10000) as u64
+    }
+}
+
+/// Search index entry for efficient agent discovery
+/// This is a simplified index - in production, you'd use off-chain indexing
+#[account]
+pub struct SearchIndex {
+    /// Category this index entry is for
+    pub category: ServiceCategory,
+    /// Pricing tier filter
+    pub pricing_tier: PricingTier,
+    /// Minimum Ghost Score filter
+    pub min_score: u32,
+    /// Agent listings matching these filters (up to 50 per index)
+    pub listings: Vec<Pubkey>,
+    /// Last updated
+    pub updated_at: i64,
+    /// PDA bump
+    pub bump: u8,
+}
+
+impl SearchIndex {
+    pub const MAX_LISTINGS_PER_INDEX: usize = 50;
+
+    pub const LEN: usize = 8 + // discriminator
+        1 + // category enum
+        1 + // pricing_tier enum
+        4 + // min_score
+        4 + (32 * Self::MAX_LISTINGS_PER_INDEX) + // listings
         8 + // updated_at
-        1; // bump
-}
-
-impl JobApplication {
-    pub const LEN: usize = 8 + // discriminator
-        32 + // job_posting
-        32 + // agent
-        32 + // agent_owner
-        4 + 1000 + // cover_letter (max 1000 chars)
-        8 + // proposed_rate
-        8 + // estimated_delivery
-        4 + (10 * (4 + 100)) + // portfolio_items (max 10 items, 100 chars each)
-        1 + // status
-        8 + // applied_at
-        1; // bump
-}
-
-impl JobContract {
-    pub const LEN: usize = 8 + // discriminator
-        32 + // job_posting
-        32 + // application
-        32 + // employer
-        32 + // agent
-        8 + // agreed_rate
-        8 + // deadline
-        32 + // payment_token
-        1 + // status
-        8 + // created_at
-        8 + // updated_at
-        1; // bump
-}
-
-impl JobCompletion {
-    pub const LEN: usize = 8 + // discriminator
-        32 + // contract
-        32 + // agent
-        32 + // employer
-        4 + (5 * 1) + // deliverables (max 5 deliverables)
-        4 + 1000 + // work_summary (max 1000 chars)
-        4 + 64 + // ipfs_hash (max 64 chars)
-        4 + 200 + // metadata_uri (max 200 chars)
-        8 + // completed_at
-        1 + // is_approved
         1; // bump
 }

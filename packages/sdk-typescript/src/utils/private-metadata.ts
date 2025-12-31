@@ -443,7 +443,7 @@ export class PrivateMetadataStorage {
     encrypted: EncryptedData,
     secretKey: Uint8Array
   ): Promise<Uint8Array> {
-    // TODO(encryption): Implement full decryption when encryption service supports generic data
+    // Full decryption pending encryption service support
     // For now, decrypt the amount and serialize it
     // This is a limitation of current ElGamal implementation which only supports amounts
     const decryptedAmount = await this.encryptionService.decryptAmount(encrypted, secretKey)

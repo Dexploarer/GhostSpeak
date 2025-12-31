@@ -1,6 +1,8 @@
 # GhostSpeak Web
 
-The GhostSpeak web application - an x402 AI agent marketplace with escrow, reputation, and dispute resolution.
+**B2C Ghost Score App & B2B API Platform for AI Agent Reputation**
+
+The official web interface for GhostSpeak Protocol - providing both a consumer-facing Ghost Score application and a comprehensive B2B API platform for AI agent verification and reputation management.
 
 ## Getting Started
 

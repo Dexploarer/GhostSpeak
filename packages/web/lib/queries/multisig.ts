@@ -592,9 +592,9 @@ export function useCreateMultisig() {
 
       // Create the multisig using SDK
       const client = getGhostSpeakClient()
-      
+
       // Call SDK's MultisigModule.createMultisig
-      const signature = await (client as { multisig?: { createMultisig: (p: unknown) => Promise<string> } }).multisig?.createMultisig({
+      const signature = await client.multisigModule.createMultisig({
         multisigId,
         threshold: data.threshold,
         signers: data.signers,
@@ -708,12 +708,12 @@ export function useApproveTransaction() {
 
       // Use SDK's MultisigModule.approveProposal for voting on pending transactions
       const client = getGhostSpeakClient()
-      
+
       // Find the proposal address from the transaction ID
       // In a real implementation, transactions would have associated proposal addresses
       const proposalAddress = data.multisigAddress // Placeholder - would need mapping
-      
-      await (client as { multisig?: { approveProposal: (p: unknown) => Promise<string> } }).multisig?.approveProposal({
+
+      await client.multisigModule.approveProposal({
         proposalAddress,
         voter: signer,
         voterTokenAccount: address as Address, // Would need actual token account
@@ -747,10 +747,10 @@ export function useExecuteTransaction() {
 
       // Use SDK's MultisigModule.executeProposal
       const client = getGhostSpeakClient()
-      
+
       const proposalAddress = data.multisigAddress // Placeholder - would need mapping
-      
-      const signature = await (client as { multisig?: { executeProposal: (p: unknown) => Promise<string> } }).multisig?.executeProposal({
+
+      const signature = await client.multisigModule.executeProposal({
         proposalAddress,
         executor: signer,
         targetProgram: data.multisigAddress, // Target varies by transaction type

@@ -1,6 +1,6 @@
 // Core types for GhostSpeak Protocol
 import type { Address } from '@solana/addresses'
-import type { Agent, ServiceListing } from '../generated/index.js'
+import type { Agent } from '../generated/index.js'
 import type { IPFSConfig } from './ipfs-types.js'
 import type { 
   Rpc,
@@ -18,6 +18,9 @@ import type {
   GetMultipleAccountsApi
 } from '@solana/kit'
 
+// Export PayAI types
+export type { PayAIClientConfig } from '../payai/PayAITypes.js'
+
 // Import generated types and re-export for convenience
 export * from '../generated/index.js'
 
@@ -27,50 +30,27 @@ export * from './ipfs-types.js'
 // Export RPC client types
 export * from './rpc-client-types.js'
 
-// Export Token-2022 types (excluding conflicting types)
-export {
-  // Mint extensions
-  type TransferFeeConfig,
-  type TransferFee,
-  type InterestBearingConfig,
-  type MintCloseAuthority,
-  type PermanentDelegate,
-  type DefaultAccountState,
-  AccountState,
-  type TransferHook,
-  type MetadataPointer,
-  type GroupPointer,
-  type GroupMemberPointer,
-  type ConfidentialTransferMint,
-  type TransferFeeAmount,
-  // Account extensions
-  type ImmutableOwner,
-  type NonTransferable,
-  type MemoTransfer,
-  type CpiGuard,
-  type ConfidentialTransferAccount,
-  type TransferHookAccount,
-  // Token metadata
-  type TokenMetadata,
-  type AdditionalMetadata,
-  // Group extensions
-  type TokenGroup,
-  type TokenGroupMember,
-  // Composite types
-  type MintExtensions,
-  type AccountExtensions,
-  type MintWithExtensions,
-  type TokenAccountWithExtensions,
-  // RPC types
-  type ParsedMintAccount,
-  type ParsedTokenAccount,
-  // Utility types
-  type ExtensionTLV,
-  type ParsedExtensions
-} from './token-2022-types.js'
+// Token-2022 types removed - not aligned with pivot
 
-// Export reputation types
-export * from './reputation-types.js'
+
+// Export reputation types (selective export to avoid conflicts)
+export type { SourceScore, VisibleMetrics } from './reputation-types.js'
+
+// Export reputation tags types
+export * from './reputation-tags.js'
+
+// Export privacy types (selective export to avoid conflicts with generated types)
+export type {
+  PrivacyMode,
+  VisibilityLevel,
+  MetricVisibility,
+  PrivacySettings,
+  PrivacyAccessGrant,
+  PrivacyPreset,
+  ScoreRange,
+  VisibleReputation
+} from './privacy-types.js'
+export { PrivacyPresets, ReputationTier as PrivacyReputationTier } from './privacy-types.js'
 
 // Export core types (selective export to avoid conflicts with generated types)
 export {
@@ -153,7 +133,10 @@ export interface GhostSpeakConfig {
   /** IPFS configuration for large content storage */
   ipfsConfig?: IPFSConfig
   /** Credential configuration for Crossmint sync */
+  /** Credential configuration for Crossmint sync */
   credentials?: CredentialConfig
+  /** PayAI configuration */
+  payai?: Partial<import('../payai/PayAITypes.js').PayAIClientConfig>
 }
 
 export interface CredentialConfig {
@@ -196,18 +179,14 @@ export interface AgentWithAddress {
   data: Agent
 }
 
-// Service listing types
-export interface ServiceListingWithAddress {
-  address: Address
-  data: ServiceListing
-}
+// Service listing types removed
 
 export interface AgentRegistrationData {
+  agentId: string
   name: string
   description: string
-  capabilities: string[]
   metadataUri: string
-  serviceEndpoint: string
+  agentType: number
 }
 
 export interface AgentAccount {
@@ -226,31 +205,7 @@ export interface AgentAccount {
   bump: number
 }
 
-// Marketplace types
-export interface ServiceListingData {
-  id: string
-  agent: Address
-  title: string
-  description: string
-  price: bigint
-  currency: Address
-  category: string
-  isActive: boolean
-  createdAt: bigint
-}
-
-export interface JobPosting {
-  id: string
-  poster: Address
-  title: string
-  description: string
-  budget: bigint
-  currency: Address
-  deadline: bigint
-  requirements: string[]
-  isActive: boolean
-  createdAt: bigint
-}
+// Marketplace and Job Posting types removed (x402 focus)
 
 // Escrow types
 export interface EscrowAccount {
@@ -314,22 +269,7 @@ export interface RegisterAgentParams {
   agentData: AgentRegistrationData
 }
 
-export interface CreateServiceListingParams {
-  title: string
-  description: string
-  price: bigint
-  currency: Address
-  category: string
-}
-
-export interface CreateJobPostingParams {
-  title: string
-  description: string
-  budget: bigint
-  currency: Address
-  deadline: bigint
-  requirements: string[]
-}
+// Marketplace instruction params removed
 
 export interface CreateEscrowParams {
   seller: Address

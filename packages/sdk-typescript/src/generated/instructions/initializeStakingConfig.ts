@@ -10,13 +10,13 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
+  getAddressDecoder,
+  getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
-  getU16Decoder,
-  getU16Encoder,
   getU64Decoder,
   getU64Encoder,
   transformEncoder,
@@ -51,8 +51,6 @@ export function getInitializeStakingConfigDiscriminatorBytes() {
 export type InitializeStakingConfigInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountStakingConfig extends string | AccountMeta<string> = string,
-  TAccountGhostTokenMint extends string | AccountMeta<string> = string,
-  TAccountRewardsTreasury extends string | AccountMeta<string> = string,
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends string | AccountMeta<string> =
     "11111111111111111111111111111111",
@@ -64,12 +62,6 @@ export type InitializeStakingConfigInstruction<
       TAccountStakingConfig extends string
         ? WritableAccount<TAccountStakingConfig>
         : TAccountStakingConfig,
-      TAccountGhostTokenMint extends string
-        ? ReadonlyAccount<TAccountGhostTokenMint>
-        : TAccountGhostTokenMint,
-      TAccountRewardsTreasury extends string
-        ? ReadonlyAccount<TAccountRewardsTreasury>
-        : TAccountRewardsTreasury,
       TAccountAuthority extends string
         ? WritableSignerAccount<TAccountAuthority> &
             AccountSignerMeta<TAccountAuthority>
@@ -83,24 +75,21 @@ export type InitializeStakingConfigInstruction<
 
 export type InitializeStakingConfigInstructionData = {
   discriminator: ReadonlyUint8Array;
-  baseApy: number;
-  minStakeAmount: bigint;
-  maxStakeAmount: bigint;
+  minStake: bigint;
+  treasury: Address;
 };
 
 export type InitializeStakingConfigInstructionDataArgs = {
-  baseApy: number;
-  minStakeAmount: number | bigint;
-  maxStakeAmount: number | bigint;
+  minStake: number | bigint;
+  treasury: Address;
 };
 
 export function getInitializeStakingConfigInstructionDataEncoder(): FixedSizeEncoder<InitializeStakingConfigInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
-      ["baseApy", getU16Encoder()],
-      ["minStakeAmount", getU64Encoder()],
-      ["maxStakeAmount", getU64Encoder()],
+      ["minStake", getU64Encoder()],
+      ["treasury", getAddressEncoder()],
     ]),
     (value) => ({
       ...value,
@@ -112,9 +101,8 @@ export function getInitializeStakingConfigInstructionDataEncoder(): FixedSizeEnc
 export function getInitializeStakingConfigInstructionDataDecoder(): FixedSizeDecoder<InitializeStakingConfigInstructionData> {
   return getStructDecoder([
     ["discriminator", fixDecoderSize(getBytesDecoder(), 8)],
-    ["baseApy", getU16Decoder()],
-    ["minStakeAmount", getU64Decoder()],
-    ["maxStakeAmount", getU64Decoder()],
+    ["minStake", getU64Decoder()],
+    ["treasury", getAddressDecoder()],
   ]);
 }
 
@@ -130,27 +118,18 @@ export function getInitializeStakingConfigInstructionDataCodec(): FixedSizeCodec
 
 export type InitializeStakingConfigAsyncInput<
   TAccountStakingConfig extends string = string,
-  TAccountGhostTokenMint extends string = string,
-  TAccountRewardsTreasury extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   stakingConfig?: Address<TAccountStakingConfig>;
-  /** GHOST token mint */
-  ghostTokenMint: Address<TAccountGhostTokenMint>;
-  /** Treasury for rewards distribution */
-  rewardsTreasury: Address<TAccountRewardsTreasury>;
   authority: TransactionSigner<TAccountAuthority>;
   systemProgram?: Address<TAccountSystemProgram>;
-  baseApy: InitializeStakingConfigInstructionDataArgs["baseApy"];
-  minStakeAmount: InitializeStakingConfigInstructionDataArgs["minStakeAmount"];
-  maxStakeAmount: InitializeStakingConfigInstructionDataArgs["maxStakeAmount"];
+  minStake: InitializeStakingConfigInstructionDataArgs["minStake"];
+  treasury: InitializeStakingConfigInstructionDataArgs["treasury"];
 };
 
 export async function getInitializeStakingConfigInstructionAsync<
   TAccountStakingConfig extends string,
-  TAccountGhostTokenMint extends string,
-  TAccountRewardsTreasury extends string,
   TAccountAuthority extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address =
@@ -158,8 +137,6 @@ export async function getInitializeStakingConfigInstructionAsync<
 >(
   input: InitializeStakingConfigAsyncInput<
     TAccountStakingConfig,
-    TAccountGhostTokenMint,
-    TAccountRewardsTreasury,
     TAccountAuthority,
     TAccountSystemProgram
   >,
@@ -168,8 +145,6 @@ export async function getInitializeStakingConfigInstructionAsync<
   InitializeStakingConfigInstruction<
     TProgramAddress,
     TAccountStakingConfig,
-    TAccountGhostTokenMint,
-    TAccountRewardsTreasury,
     TAccountAuthority,
     TAccountSystemProgram
   >
@@ -181,11 +156,6 @@ export async function getInitializeStakingConfigInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     stakingConfig: { value: input.stakingConfig ?? null, isWritable: true },
-    ghostTokenMint: { value: input.ghostTokenMint ?? null, isWritable: false },
-    rewardsTreasury: {
-      value: input.rewardsTreasury ?? null,
-      isWritable: false,
-    },
     authority: { value: input.authority ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
@@ -219,8 +189,6 @@ export async function getInitializeStakingConfigInstructionAsync<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.stakingConfig),
-      getAccountMeta(accounts.ghostTokenMint),
-      getAccountMeta(accounts.rewardsTreasury),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.systemProgram),
     ],
@@ -231,8 +199,6 @@ export async function getInitializeStakingConfigInstructionAsync<
   } as InitializeStakingConfigInstruction<
     TProgramAddress,
     TAccountStakingConfig,
-    TAccountGhostTokenMint,
-    TAccountRewardsTreasury,
     TAccountAuthority,
     TAccountSystemProgram
   >);
@@ -240,27 +206,18 @@ export async function getInitializeStakingConfigInstructionAsync<
 
 export type InitializeStakingConfigInput<
   TAccountStakingConfig extends string = string,
-  TAccountGhostTokenMint extends string = string,
-  TAccountRewardsTreasury extends string = string,
   TAccountAuthority extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   stakingConfig: Address<TAccountStakingConfig>;
-  /** GHOST token mint */
-  ghostTokenMint: Address<TAccountGhostTokenMint>;
-  /** Treasury for rewards distribution */
-  rewardsTreasury: Address<TAccountRewardsTreasury>;
   authority: TransactionSigner<TAccountAuthority>;
   systemProgram?: Address<TAccountSystemProgram>;
-  baseApy: InitializeStakingConfigInstructionDataArgs["baseApy"];
-  minStakeAmount: InitializeStakingConfigInstructionDataArgs["minStakeAmount"];
-  maxStakeAmount: InitializeStakingConfigInstructionDataArgs["maxStakeAmount"];
+  minStake: InitializeStakingConfigInstructionDataArgs["minStake"];
+  treasury: InitializeStakingConfigInstructionDataArgs["treasury"];
 };
 
 export function getInitializeStakingConfigInstruction<
   TAccountStakingConfig extends string,
-  TAccountGhostTokenMint extends string,
-  TAccountRewardsTreasury extends string,
   TAccountAuthority extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address =
@@ -268,8 +225,6 @@ export function getInitializeStakingConfigInstruction<
 >(
   input: InitializeStakingConfigInput<
     TAccountStakingConfig,
-    TAccountGhostTokenMint,
-    TAccountRewardsTreasury,
     TAccountAuthority,
     TAccountSystemProgram
   >,
@@ -277,8 +232,6 @@ export function getInitializeStakingConfigInstruction<
 ): InitializeStakingConfigInstruction<
   TProgramAddress,
   TAccountStakingConfig,
-  TAccountGhostTokenMint,
-  TAccountRewardsTreasury,
   TAccountAuthority,
   TAccountSystemProgram
 > {
@@ -289,11 +242,6 @@ export function getInitializeStakingConfigInstruction<
   // Original accounts.
   const originalAccounts = {
     stakingConfig: { value: input.stakingConfig ?? null, isWritable: true },
-    ghostTokenMint: { value: input.ghostTokenMint ?? null, isWritable: false },
-    rewardsTreasury: {
-      value: input.rewardsTreasury ?? null,
-      isWritable: false,
-    },
     authority: { value: input.authority ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
@@ -315,8 +263,6 @@ export function getInitializeStakingConfigInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.stakingConfig),
-      getAccountMeta(accounts.ghostTokenMint),
-      getAccountMeta(accounts.rewardsTreasury),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.systemProgram),
     ],
@@ -327,8 +273,6 @@ export function getInitializeStakingConfigInstruction<
   } as InitializeStakingConfigInstruction<
     TProgramAddress,
     TAccountStakingConfig,
-    TAccountGhostTokenMint,
-    TAccountRewardsTreasury,
     TAccountAuthority,
     TAccountSystemProgram
   >);
@@ -341,12 +285,8 @@ export type ParsedInitializeStakingConfigInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     stakingConfig: TAccountMetas[0];
-    /** GHOST token mint */
-    ghostTokenMint: TAccountMetas[1];
-    /** Treasury for rewards distribution */
-    rewardsTreasury: TAccountMetas[2];
-    authority: TAccountMetas[3];
-    systemProgram: TAccountMetas[4];
+    authority: TAccountMetas[1];
+    systemProgram: TAccountMetas[2];
   };
   data: InitializeStakingConfigInstructionData;
 };
@@ -359,7 +299,7 @@ export function parseInitializeStakingConfigInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInitializeStakingConfigInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+  if (instruction.accounts.length < 3) {
     // TODO: Coded error.
     throw new Error("Not enough accounts");
   }
@@ -373,8 +313,6 @@ export function parseInitializeStakingConfigInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       stakingConfig: getNextAccount(),
-      ghostTokenMint: getNextAccount(),
-      rewardsTreasury: getNextAccount(),
       authority: getNextAccount(),
       systemProgram: getNextAccount(),
     },

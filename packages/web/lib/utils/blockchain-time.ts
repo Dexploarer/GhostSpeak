@@ -32,17 +32,17 @@ export function unixToDate(unixTimestamp: number | bigint): Date {
 export async function getCurrentBlockchainTime(): Promise<Date> {
   try {
     const rpc = createSolanaRpc(SOLANA_RPC_URL)
-    
+
     // Get the current slot
     const slot = await rpc.getSlot().send()
-    
+
     // Get the block time for current slot
     const blockTime = await rpc.getBlockTime(slot).send()
-    
+
     if (blockTime) {
       return new Date(Number(blockTime) * 1000)
     }
-    
+
     // Fallback: estimate from slot number
     return slotToTimestamp(Number(slot))
   } catch (error) {
@@ -58,16 +58,18 @@ export async function getCurrentBlockchainTime(): Promise<Date> {
 export async function getTransactionTimestamp(signature: string): Promise<Date | null> {
   try {
     const rpc = createSolanaRpc(SOLANA_RPC_URL)
-    
-    const tx = await rpc.getTransaction(signature as Signature, {
-      encoding: 'json',
-      maxSupportedTransactionVersion: 0,
-    }).send()
-    
+
+    const tx = await rpc
+      .getTransaction(signature as Signature, {
+        encoding: 'json',
+        maxSupportedTransactionVersion: 0,
+      })
+      .send()
+
     if (tx?.blockTime) {
       return new Date(Number(tx.blockTime) * 1000)
     }
-    
+
     return null
   } catch (error) {
     console.warn(`Failed to get transaction timestamp for ${signature}:`, error)

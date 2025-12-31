@@ -20,7 +20,6 @@ import { Badge } from '@/components/ui/badge'
 import { useAgent } from '@/lib/queries/agents'
 import { formatAddress } from '@/lib/utils'
 import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
-import { useX402Payment, USDC_MINTS } from '@/lib/hooks/useX402Payment'
 
 interface Message {
   id: string
@@ -38,7 +37,6 @@ export default function AgentInteractPage(): React.JSX.Element {
 
   const { address: walletAddress } = useWalletAddress()
   const { data: agent, isLoading, error } = useAgent(agentId)
-  const { makePayment, isPaying: isPaymentProcessing } = useX402Payment()
 
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -67,6 +65,12 @@ export default function AgentInteractPage(): React.JSX.Element {
     }
   }, [agent, messages.length])
 
+  /*
+   * Payment Logic Placeholder
+   * In the production version, this would use the PayAI SDK to facilitate
+   * the payment and then send the proof to the agent.
+   * For now, we simulate the interaction.
+   */
   const handleSendMessage = async () => {
     if (!input.trim() || isProcessing || !agent) return
 
@@ -95,83 +99,23 @@ export default function AgentInteractPage(): React.JSX.Element {
     ])
 
     try {
-      // If x402 is enabled, make real payment and call endpoint
-      if (agent.x402?.enabled && agent.x402.serviceEndpoint) {
-        // Update to show payment pending
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === agentMessageId ? { ...m, content: 'Processing x402 payment...' } : m
-          )
+      // Simulate PayAI processing delay
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Mock response
+      const responseContent = 'I received your message. (PayAI integration pending)'
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === agentMessageId
+            ? {
+                ...m,
+                content: responseContent,
+                status: 'completed',
+              }
+            : m
         )
-
-        // Make the REAL x402 payment using Crossmint wallet
-        const tokenMint = agent.x402.acceptedTokens[0] || USDC_MINTS.devnet
-        const paymentResult = await makePayment({
-          agentAddress: agent.address,
-          serviceEndpoint: agent.x402.serviceEndpoint,
-          paymentAddress: agent.x402.paymentAddress,
-          amount: BigInt(agent.x402.pricePerCall),
-          token: tokenMint,
-          description: `Payment to ${agent.name} for service`,
-        })
-
-        if (!paymentResult.success) {
-          throw new Error(paymentResult.error || 'Payment failed')
-        }
-
-        // Now call the agent's service endpoint with the payment proof
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === agentMessageId ? { ...m, content: 'Calling agent endpoint...' } : m
-          )
-        )
-
-        const agentResponse = await fetch(agent.x402.serviceEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Payment-Signature': paymentResult.signature || '',
-            'X-Payment-Amount': agent.x402.pricePerCall.toString(),
-          },
-          body: JSON.stringify({ query: userMessage.content }),
-        })
-
-        if (!agentResponse.ok) {
-          // If endpoint call fails, still show payment was made
-          const errorText = await agentResponse.text()
-          throw new Error(`Agent returned error: ${errorText.substring(0, 200)}`)
-        }
-
-        const agentResult = await agentResponse.json()
-        const responseContent = agentResult.response || agentResult.content || agentResult.message || JSON.stringify(agentResult)
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === agentMessageId
-              ? {
-                  ...m,
-                  content: responseContent,
-                  status: 'completed',
-                  paymentSignature: paymentResult.signature,
-                }
-              : m
-          )
-        )
-      } else {
-        // No x402 - agent endpoint not configured
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === agentMessageId
-              ? {
-                  ...m,
-                  content:
-                    'This agent does not have a service endpoint configured. Please contact the agent owner to enable x402 payments.',
-                  status: 'error',
-                }
-              : m
-          )
-        )
-      }
+      )
     } catch (err) {
       console.error('Error calling agent:', err)
       setMessages((prev) =>
@@ -190,7 +134,6 @@ export default function AgentInteractPage(): React.JSX.Element {
     }
   }
 
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
@@ -206,9 +149,7 @@ export default function AgentInteractPage(): React.JSX.Element {
           <Card className="p-12 text-center">
             <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
             <h2 className="text-2xl font-bold mb-2">Agent Not Found</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Unable to load agent details.
-            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Unable to load agent details.</p>
             <Link href="/agents">
               <Button variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -300,7 +241,9 @@ export default function AgentInteractPage(): React.JSX.Element {
                   </>
                 )}
 
-                {message.role !== 'agent' && <p className="whitespace-pre-wrap">{message.content}</p>}
+                {message.role !== 'agent' && (
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                )}
 
                 <div
                   className={`text-xs mt-2 ${

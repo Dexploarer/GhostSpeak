@@ -25,6 +25,10 @@ import {
   getI64Encoder,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
+  getU32Decoder,
+  getU32Encoder,
   getU64Decoder,
   getU64Encoder,
   getU8Decoder,
@@ -42,6 +46,12 @@ import {
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
 } from "@solana/kit";
+import {
+  getAccessTierDecoder,
+  getAccessTierEncoder,
+  type AccessTier,
+  type AccessTierArgs,
+} from "../types";
 
 export const STAKING_ACCOUNT_DISCRIMINATOR = new Uint8Array([
   52, 178, 251, 157, 180, 186, 98, 234,
@@ -55,60 +65,64 @@ export function getStakingAccountDiscriminatorBytes() {
 
 export type StakingAccount = {
   discriminator: ReadonlyUint8Array;
-  /** Owner of this staking account */
+  /** Owner of this staking account (can register multiple agents) */
   owner: Address;
-  /** Token mint being staked (GHOST token) */
-  tokenMint: Address;
-  /** Amount of tokens currently staked */
-  stakedAmount: bigint;
-  /** Timestamp when tokens were staked */
+  /** Amount of GHOST tokens staked */
+  amountStaked: bigint;
+  /** Timestamp when staking started */
   stakedAt: bigint;
-  /** Lockup end timestamp (0 if no lockup) */
-  lockupEndsAt: bigint;
-  /** Lockup tier (0=none, 1=1month, 2=3months, 3=6months, 4=1year, 5=2years) */
-  lockupTier: number;
-  /** Total rewards claimed */
-  rewardsClaimed: bigint;
-  /** Last reward claim timestamp */
-  lastClaimAt: bigint;
-  /** Pending rewards (not yet claimed) */
-  pendingRewards: bigint;
-  /** Whether auto-compound is enabled */
-  autoCompound: boolean;
-  /** Account creation timestamp */
-  createdAt: bigint;
-  /** Last update timestamp */
-  updatedAt: bigint;
-  /** PDA bump */
+  /** Lock duration in seconds (minimum 30 days) */
+  lockDuration: bigint;
+  /** Timestamp when unlock is available */
+  unlockAt: bigint;
+  /** Reputation boost percentage (in basis points, e.g., 500 = 5%) */
+  reputationBoostBps: number;
+  /** Whether agent has "Verified" badge */
+  hasVerifiedBadge: boolean;
+  /** Whether agent has premium listing benefits */
+  hasPremiumBenefits: boolean;
+  /** Total slashed amount (never recoverable) */
+  totalSlashed: bigint;
+  /** Current access tier based on stake amount */
+  tier: AccessTier;
+  /** Daily API calls remaining (resets every 24h) */
+  apiCallsRemaining: number;
+  /** Last API quota reset timestamp */
+  lastQuotaReset: bigint;
+  /** Voting power for governance (equals amount_staked) */
+  votingPower: bigint;
+  /** Bump for PDA */
   bump: number;
 };
 
 export type StakingAccountArgs = {
-  /** Owner of this staking account */
+  /** Owner of this staking account (can register multiple agents) */
   owner: Address;
-  /** Token mint being staked (GHOST token) */
-  tokenMint: Address;
-  /** Amount of tokens currently staked */
-  stakedAmount: number | bigint;
-  /** Timestamp when tokens were staked */
+  /** Amount of GHOST tokens staked */
+  amountStaked: number | bigint;
+  /** Timestamp when staking started */
   stakedAt: number | bigint;
-  /** Lockup end timestamp (0 if no lockup) */
-  lockupEndsAt: number | bigint;
-  /** Lockup tier (0=none, 1=1month, 2=3months, 3=6months, 4=1year, 5=2years) */
-  lockupTier: number;
-  /** Total rewards claimed */
-  rewardsClaimed: number | bigint;
-  /** Last reward claim timestamp */
-  lastClaimAt: number | bigint;
-  /** Pending rewards (not yet claimed) */
-  pendingRewards: number | bigint;
-  /** Whether auto-compound is enabled */
-  autoCompound: boolean;
-  /** Account creation timestamp */
-  createdAt: number | bigint;
-  /** Last update timestamp */
-  updatedAt: number | bigint;
-  /** PDA bump */
+  /** Lock duration in seconds (minimum 30 days) */
+  lockDuration: number | bigint;
+  /** Timestamp when unlock is available */
+  unlockAt: number | bigint;
+  /** Reputation boost percentage (in basis points, e.g., 500 = 5%) */
+  reputationBoostBps: number;
+  /** Whether agent has "Verified" badge */
+  hasVerifiedBadge: boolean;
+  /** Whether agent has premium listing benefits */
+  hasPremiumBenefits: boolean;
+  /** Total slashed amount (never recoverable) */
+  totalSlashed: number | bigint;
+  /** Current access tier based on stake amount */
+  tier: AccessTierArgs;
+  /** Daily API calls remaining (resets every 24h) */
+  apiCallsRemaining: number;
+  /** Last API quota reset timestamp */
+  lastQuotaReset: number | bigint;
+  /** Voting power for governance (equals amount_staked) */
+  votingPower: number | bigint;
+  /** Bump for PDA */
   bump: number;
 };
 
@@ -118,17 +132,18 @@ export function getStakingAccountEncoder(): FixedSizeEncoder<StakingAccountArgs>
     getStructEncoder([
       ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
       ["owner", getAddressEncoder()],
-      ["tokenMint", getAddressEncoder()],
-      ["stakedAmount", getU64Encoder()],
+      ["amountStaked", getU64Encoder()],
       ["stakedAt", getI64Encoder()],
-      ["lockupEndsAt", getI64Encoder()],
-      ["lockupTier", getU8Encoder()],
-      ["rewardsClaimed", getU64Encoder()],
-      ["lastClaimAt", getI64Encoder()],
-      ["pendingRewards", getU64Encoder()],
-      ["autoCompound", getBooleanEncoder()],
-      ["createdAt", getI64Encoder()],
-      ["updatedAt", getI64Encoder()],
+      ["lockDuration", getI64Encoder()],
+      ["unlockAt", getI64Encoder()],
+      ["reputationBoostBps", getU16Encoder()],
+      ["hasVerifiedBadge", getBooleanEncoder()],
+      ["hasPremiumBenefits", getBooleanEncoder()],
+      ["totalSlashed", getU64Encoder()],
+      ["tier", getAccessTierEncoder()],
+      ["apiCallsRemaining", getU32Encoder()],
+      ["lastQuotaReset", getI64Encoder()],
+      ["votingPower", getU64Encoder()],
       ["bump", getU8Encoder()],
     ]),
     (value) => ({ ...value, discriminator: STAKING_ACCOUNT_DISCRIMINATOR }),
@@ -140,17 +155,18 @@ export function getStakingAccountDecoder(): FixedSizeDecoder<StakingAccount> {
   return getStructDecoder([
     ["discriminator", fixDecoderSize(getBytesDecoder(), 8)],
     ["owner", getAddressDecoder()],
-    ["tokenMint", getAddressDecoder()],
-    ["stakedAmount", getU64Decoder()],
+    ["amountStaked", getU64Decoder()],
     ["stakedAt", getI64Decoder()],
-    ["lockupEndsAt", getI64Decoder()],
-    ["lockupTier", getU8Decoder()],
-    ["rewardsClaimed", getU64Decoder()],
-    ["lastClaimAt", getI64Decoder()],
-    ["pendingRewards", getU64Decoder()],
-    ["autoCompound", getBooleanDecoder()],
-    ["createdAt", getI64Decoder()],
-    ["updatedAt", getI64Decoder()],
+    ["lockDuration", getI64Decoder()],
+    ["unlockAt", getI64Decoder()],
+    ["reputationBoostBps", getU16Decoder()],
+    ["hasVerifiedBadge", getBooleanDecoder()],
+    ["hasPremiumBenefits", getBooleanDecoder()],
+    ["totalSlashed", getU64Decoder()],
+    ["tier", getAccessTierDecoder()],
+    ["apiCallsRemaining", getU32Decoder()],
+    ["lastQuotaReset", getI64Decoder()],
+    ["votingPower", getU64Decoder()],
     ["bump", getU8Decoder()],
   ]);
 }
@@ -225,5 +241,5 @@ export async function fetchAllMaybeStakingAccount(
 }
 
 export function getStakingAccountSize(): number {
-  return 139;
+  return 106;
 }

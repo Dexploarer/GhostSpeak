@@ -35,23 +35,12 @@ export function useAvailableTokens() {
       try {
         const client = getGhostSpeakClient()
 
-        // Get all token mints from the marketplace module
-        const marketplace = client.marketplace
-        const serviceListings = await marketplace.getAllServiceListings()
-
-        // Extract unique payment tokens from listings
+        // Marketplace module removed. Manual token list addition.
         const tokenAddresses = new Set<string>()
 
         // Add common Solana tokens
         tokenAddresses.add('So11111111111111111111111111111111111111112') // SOL
         tokenAddresses.add('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') // USDC
-
-        // Add tokens from service listings
-        for (const listing of serviceListings) {
-          if (listing.data?.paymentToken) {
-            tokenAddresses.add(listing.data.paymentToken.toString())
-          }
-        }
 
         // Fetch token metadata in parallel for better performance (Kluster MCP optimization)
         const tokenPromises = Array.from(tokenAddresses).map(async (address) => {

@@ -1,44 +1,46 @@
 ---
 title: 'Quickstart'
-description: 'Get started with x402 AI agent payments in 10 minutes'
+description: 'Register agent, issue credentials, and track Ghost Score in 10 minutes'
 ---
 
 ## Prerequisites
 
 Before you begin, make sure you have:
 
-- **Node.js 18+** or **Bun 1.0+** installed
-- **Solana wallet** with some SOL for transactions
+- **Node.js 20+** or **Bun 1.0+** installed
+- **Solana wallet** with some devnet SOL ([Get from faucet](https://faucet.solana.com))
 - **Basic TypeScript knowledge**
+- **Optional**: PayAI account for automatic reputation tracking
 
 ## Step 1: Installation
 
 <CodeGroup>
 
-```bash npm
-npm install @ghostspeak/sdk @solana/kit
+```bash bun
+bun add @ghostspeak/sdk @solana/web3.js
 ```
 
-```bash bun
-bun add @ghostspeak/sdk @solana/kit
+```bash npm
+npm install @ghostspeak/sdk @solana/web3.js
 ```
 
 ```bash pnpm
-pnpm add @ghostspeak/sdk @solana/kit
+pnpm add @ghostspeak/sdk @solana/web3.js
 ```
 
 </CodeGroup>
 
-## Step 2: Create Your First Agent
+## Step 2: Register Your Agent
 
 Create `register-agent.ts`:
 
 ```typescript
-import GhostSpeak, { createKeyPairSignerFromBytes } from '@ghostspeak/sdk';
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { generateKeyPairSigner } from '@solana/signers';
 import fs from 'fs';
 
 async function main() {
-  // Load your wallet
+  // Load your wallet (or generate new one for testing)
   const keypairBytes = JSON.parse(
     fs.readFileSync(
       process.env.WALLET_PATH || '~/.config/solana/id.json',
@@ -49,25 +51,34 @@ async function main() {
     new Uint8Array(keypairBytes)
   );
 
-  console.log('👛 Wallet loaded:', wallet.address);
+  console.log('Wallet loaded:', wallet.address);
 
-  // Initialize GhostSpeak client with fluent API
-  const ghostspeak = new GhostSpeak().useNetwork('devnet').enableDevMode();
+  // Initialize GhostSpeak client
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  });
 
-  // Register your agent using fluent builder
-  const result = await ghostspeak
-    .agent()
-    .create({
-      name: 'MyFirstAgent',
-      description: 'An AI agent for data analysis',
-      capabilities: ['analysis', 'reporting'],
-    })
-    .withSigner(wallet)
-    .execute();
+  // Create agent signer
+  const agentSigner = await generateKeyPairSigner();
 
-  console.log('✅ Agent registered!');
-  console.log('📍 Agent address:', result.address);
-  console.log('🔗 Signature:', result.signature);
+  // Register your AI agent
+  const agent = await client.agents.register(agentSigner, {
+    name: 'My AI Agent',
+    description: 'Code review and analysis service',
+    capabilities: ['code-review', 'security-audit', 'documentation'],
+    model: 'gpt-4',
+  });
+
+  console.log('Agent registered successfully!');
+  console.log('Agent address:', agent.address);
+  console.log('Transaction signature:', agent.signature);
+
+  // Save agent keypair for later use
+  fs.writeFileSync(
+    'agent-keypair.json',
+    JSON.stringify(Array.from(agentSigner.keyPair.secretKey))
+  );
 }
 
 main().catch(console.error);
@@ -77,123 +88,602 @@ Run it:
 
 ```bash
 export WALLET_PATH=~/.config/solana/id.json
-npx ts-node register-agent.ts
+bun run register-agent.ts
 ```
 
-<Check>You should see "Agent registered!" with an address</Check>
+<Check>You should see "Agent registered successfully!" with an address</Check>
 
-## Step 3: Set Up x402 Payments
+<Tip>
+Save the agent address - you'll need it for the next steps!
+</Tip>
 
-Create an Express server with x402 middleware:
+## Step 3: Issue Verifiable Credential
+
+Create `issue-credential.ts`:
 
 ```typescript
-import express from 'express';
-import {
-  createX402Middleware,
-  X402Client,
-  createSolanaRpc,
-} from '@ghostspeak/sdk';
-import { createKeyPairSignerFromBytes } from '@solana/kit';
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import fs from 'fs';
 
-async function startServer() {
+async function main() {
   // Load wallet
-  const keypairBytes = JSON.parse(fs.readFileSync(WALLET_PATH, 'utf-8'));
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+  );
   const wallet = await createKeyPairSignerFromBytes(
     new Uint8Array(keypairBytes)
   );
 
-  // Create RPC and x402 client
-  const rpc = createSolanaRpc('https://api.devnet.solana.com');
-  const x402Client = new X402Client(rpc, wallet);
+  // Load agent keypair
+  const agentKeypairBytes = JSON.parse(
+    fs.readFileSync('agent-keypair.json', 'utf-8')
+  );
+  const agentSigner = await createKeyPairSignerFromBytes(
+    new Uint8Array(agentKeypairBytes)
+  );
+
+  // Initialize client with Crossmint credentials
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+    credentials: {
+      crossmintApiKey: process.env.CROSSMINT_API_KEY,
+      crossmintEnvironment: 'staging',
+    },
+  });
+
+  // Issue Agent Identity Credential
+  const result = await client.credentials.issueAgentIdentityCredential({
+    agentId: agentSigner.address,
+    owner: wallet.address,
+    name: 'My AI Agent',
+    capabilities: ['code-review', 'security-audit', 'documentation'],
+    serviceEndpoint: 'https://myagent.example.com',
+    frameworkOrigin: 'ghostspeak-sdk',
+    x402Enabled: true, // Enable PayAI compatibility
+    registeredAt: Math.floor(Date.now() / 1000),
+    verifiedAt: Math.floor(Date.now() / 1000),
+    recipientEmail: 'builder@example.com',
+    syncToCrossmint: true, // Bridge to EVM chains
+  });
+
+  console.log('Credential issued successfully!');
+  console.log('Credential ID:', result.solanaCredential.credentialId);
+  console.log('Issuer:', result.solanaCredential.issuer);
+
+  if (result.crossmintSync) {
+    console.log('Crossmint VC ID:', result.crossmintSync.credentialId);
+    console.log('Crossmint URL:', result.crossmintSync.url);
+  }
+}
+
+main().catch(console.error);
+```
+
+<Warning>
+You'll need a Crossmint API key to sync credentials to EVM chains. Get one at [crossmint.com](https://crossmint.com). For testing, you can skip cross-chain sync by setting `syncToCrossmint: false`.
+</Warning>
+
+Run it:
+
+```bash
+export CROSSMINT_API_KEY=your_api_key
+bun run issue-credential.ts
+```
+
+<Check>You should see "Credential issued successfully!" with credential details</Check>
+
+## Step 4: Track Reputation from PayAI
+
+Create a webhook handler to receive PayAI payment events:
+
+```typescript
+import express from 'express';
+import { GhostSpeakClient, PayAIWebhookHandler } from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import fs from 'fs';
+
+async function startWebhookServer() {
+  // Load wallet
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+  );
+  const wallet = await createKeyPairSignerFromBytes(
+    new Uint8Array(keypairBytes)
+  );
+
+  // Initialize GhostSpeak client
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  });
+
+  // Create webhook handler
+  const webhookHandler = new PayAIWebhookHandler({
+    ghostspeakClient: client,
+    apiSecret: process.env.PAYAI_WEBHOOK_SECRET || 'test-secret',
+    autoIssueCredentials: true, // Auto-issue credentials at milestones
+  });
 
   const app = express();
   app.use(express.json());
 
-  // Health check (free)
+  // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'healthy' });
   });
 
-  // Protected endpoint with x402 payment
-  app.post(
-    '/api/analyze',
-    createX402Middleware({
-      x402Client,
-      requiredPayment: 100_000n, // 0.1 USDC
-      token: USDC_MINT,
-      description: 'Data analysis service',
-      agentId: 'MyFirstAgent',
-    }),
-    (req, res) => {
-      // Payment verified - provide service
-      res.json({
-        success: true,
-        analysis: `Analyzed ${req.body.data.length} characters`,
-        paymentVerified: true,
-      });
+  // PayAI webhook endpoint
+  app.post('/api/payai/webhook', async (req, res) => {
+    try {
+      const result = await webhookHandler.handleWebhook(req.body);
+
+      if (result.reputationUpdated) {
+        console.log('Reputation updated for:', result.agentId);
+        console.log('New Ghost Score:', result.newScore);
+        console.log('New Tier:', result.newTier);
+      }
+
+      if (result.credentialsIssued && result.credentialsIssued.length > 0) {
+        console.log('Credentials issued:', result.credentialsIssued);
+      }
+
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('Webhook error:', error);
+      res.status(500).json({ error: error.message });
     }
-  );
+  });
 
   app.listen(3000, () => {
-    console.log('🚀 Agent API running on http://localhost:3000');
-    console.log('💰 x402 payments enabled');
+    console.log('Webhook server running on http://localhost:3000');
+    console.log('PayAI webhook endpoint: http://localhost:3000/api/payai/webhook');
   });
 }
 
-startServer().catch(console.error);
+startWebhookServer().catch(console.error);
 ```
 
-## Step 4: Test the Payment Flow
+Run it:
+
+```bash
+export PAYAI_WEBHOOK_SECRET=your_secret
+bun run webhook-server.ts
+```
+
+<Info>
+Configure this webhook URL in your PayAI dashboard to start receiving reputation updates automatically.
+</Info>
+
+## Step 5: Pay for Verification (Crypto-Native)
+
+Now let's learn how to pay for Ghost Score verifications using the crypto-native model.
+
+### Option 1: Pay with USDC
+
+Create `pay-with-usdc.ts`:
 
 ```typescript
-import { X402Client, createSolanaRpc, address } from '@ghostspeak/sdk';
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import fs from 'fs';
 
-// Make a request - will get 402 Payment Required
-const response = await fetch('http://localhost:3000/api/analyze', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ data: 'test data' }),
-});
+async function main() {
+  // Load wallet
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+  );
+  const wallet = await createKeyPairSignerFromBytes(
+    new Uint8Array(keypairBytes)
+  );
 
-if (response.status === 402) {
-  const { paymentDetails } = await response.json();
-
-  // Make payment
-  const x402Client = new X402Client(rpc, wallet);
-  const receipt = await x402Client.pay({
-    recipient: address(paymentDetails.address),
-    amount: BigInt(paymentDetails.amount),
-    token: address(paymentDetails.token),
-    description: paymentDetails.description,
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
   });
 
-  // Retry with payment proof
-  const result = await fetch('http://localhost:3000/api/analyze', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Payment-Signature': receipt.signature,
-    },
-    body: JSON.stringify({ data: 'test data' }),
+  // Pay 1 USDC for verification
+  const result = await client.payments.payForVerification({
+    agentId: 'agent_address_here',
+    paymentMethod: 'usdc',
+    amount: 1_000_000n, // 1 USDC (6 decimals)
   });
 
-  console.log('✅ Service response:', await result.json());
+  console.log('Payment successful!');
+  console.log('Transaction signature:', result.signature);
+  console.log('Verification granted for:', result.agentId);
 }
+
+main().catch(console.error);
 ```
 
-## What's Next?
+### Option 2: Burn GHOST for 25% Discount
+
+Create `pay-with-ghost.ts`:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import fs from 'fs';
+
+async function main() {
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+  );
+  const wallet = await createKeyPairSignerFromBytes(
+    new Uint8Array(keypairBytes)
+  );
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  });
+
+  // Burn 75 GHOST for verification (25% discount!)
+  const result = await client.payments.payForVerification({
+    agentId: 'agent_address_here',
+    paymentMethod: 'ghost_burn',
+    ghostAmount: 75_000_000n, // 75 GHOST (6 decimals)
+  });
+
+  console.log('Payment successful via GHOST burn!');
+  console.log('Transaction signature:', result.signature);
+  console.log('GHOST burned (deflationary):', '75 tokens removed forever');
+  console.log('Discount received:', '25% vs USDC payment');
+}
+
+main().catch(console.error);
+```
+
+### Option 3: Stake GHOST for Unlimited Access
+
+Create `stake-for-access.ts`:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import fs from 'fs';
+
+async function main() {
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+  );
+  const wallet = await createKeyPairSignerFromBytes(
+    new Uint8Array(keypairBytes)
+  );
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  });
+
+  // Stake 5,000 GHOST for unlimited verifications + revenue share
+  const result = await client.staking.stake({
+    amount: 5_000_000_000n, // 5,000 GHOST (6 decimals)
+  });
+
+  console.log('Staking successful!');
+  console.log('Transaction signature:', result.signature);
+  console.log('Tier unlocked:', result.tier); // "Verified Staker"
+  console.log('Benefits:');
+  console.log('  - Unlimited verifications');
+  console.log('  - 1.5x revenue share multiplier');
+  console.log('  - Verified Reviewer badge');
+  console.log('  - Early feature access');
+
+  // Check staking rewards
+  const rewards = await client.staking.getRewards();
+  console.log('\nPending USDC rewards:', rewards.pending);
+  console.log('Estimated monthly:', rewards.estimatedMonthly);
+  console.log('Estimated APY:', `${rewards.estimatedAPY}%`);
+}
+
+main().catch(console.error);
+```
+
+### Claim Your Revenue Share
+
+Create `claim-rewards.ts`:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import fs from 'fs';
+
+async function main() {
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+  );
+  const wallet = await createKeyPairSignerFromBytes(
+    new Uint8Array(keypairBytes)
+  );
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  });
+
+  // Claim accumulated USDC rewards
+  const result = await client.staking.claimRewards();
+
+  console.log('Rewards claimed successfully!');
+  console.log('Transaction signature:', result.signature);
+  console.log('USDC received:', result.usdcAmount);
+  console.log('Time period:', result.fromDate, '->', result.toDate);
+}
+
+main().catch(console.error);
+```
+
+<Info>
+**GHOST Token Details:**
+- Contract: `DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump`
+- Current Price: $0.00005691 (Dec 30, 2025)
+- Buy on [DEXScreener](https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb)
+</Info>
+
+## Step 6: Configure Privacy Settings
+
+Control what reputation data is publicly visible using privacy tiers.
+
+Create `setup-privacy.ts`:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { createKeyPairSignerFromBytes } from '@solana/signers';
+import fs from 'fs';
+
+async function main() {
+  // Load agent keypair
+  const agentKeypairBytes = JSON.parse(
+    fs.readFileSync('agent-keypair.json', 'utf-8')
+  );
+  const agentSigner = await createKeyPairSignerFromBytes(
+    new Uint8Array(agentKeypairBytes)
+  );
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  });
+
+  // Option 1: Use a privacy preset (recommended for beginners)
+  console.log('Applying privacy preset...');
+  await client.reputation.applyPrivacyPreset(agentSigner, {
+    preset: 'NewAgent', // Best for agents building initial reputation
+  });
+
+  // Option 2: Set a specific privacy mode
+  // await client.reputation.setPrivacyMode(agentSigner, {
+  //   mode: 'TierOnly', // Show tier only, hide exact score
+  // });
+
+  // Option 3: Use custom privacy settings
+  // await client.reputation.setPrivacyMode(agentSigner, {
+  //   mode: 'Custom',
+  //   customSettings: {
+  //     ghostScore: { visibility: 'range' }, // Show as range
+  //     successRate: { visibility: 'exact' }, // Show exact
+  //     transactionCount: { visibility: 'hidden' }, // Hide
+  //   },
+  // });
+
+  console.log('Privacy settings configured successfully!');
+
+  // Verify privacy settings
+  const config = await client.reputation.getPrivacyConfig(agentSigner.address);
+  console.log('Current privacy mode:', config.mode);
+}
+
+main().catch(console.error);
+```
+
+Run it:
+
+```bash
+bun run setup-privacy.ts
+```
+
+<Check>Privacy settings configured! Your reputation data visibility is now controlled.</Check>
+
+<Info>
+**Privacy Modes:**
+- **Public**: Full transparency (all data visible)
+- **TierOnly**: Only tier visible (Bronze/Silver/Gold/Platinum)
+- **RangeOnly**: Score shown as range (e.g., "750-799")
+- **Private**: No public data (authorized viewers only)
+- **Custom**: Fine-grained control over each metric
+
+Learn more in the [Privacy Tiers Guide](/features/privacy-tiers)
+</Info>
+
+## Step 7: Check Ghost Score
+
+Create `check-reputation.ts`:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { address } from '@solana/web3.js';
+
+async function main() {
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  });
+
+  // Replace with your agent address from Step 2
+  const agentAddress = address('YOUR_AGENT_ADDRESS_HERE');
+
+  // Get reputation data (respects privacy settings)
+  const reputation = await client.reputation.getReputationData(agentAddress);
+
+  console.log('=== Ghost Score Report ===');
+  console.log('Privacy Mode:', reputation.privacyMode);
+  console.log('Tier:', reputation.tier); // Always visible
+
+  // These may be null based on privacy settings
+  if (reputation.overallScore) {
+    console.log('Overall Score:', reputation.overallScore, '/ 1000');
+  } else if (reputation.scoreRange) {
+    console.log('Score Range:', reputation.scoreRange);
+  } else {
+    console.log('Score: Hidden (private mode)');
+  }
+
+  // Other metrics (may be null based on privacy)
+  if (reputation.successRate) {
+    console.log('Success Rate:', `${reputation.successRate}%`);
+  }
+  if (reputation.totalJobs) {
+    console.log('Total Jobs:', reputation.totalJobs);
+  }
+  if (reputation.averageQualityRating) {
+    console.log('Average Quality:', reputation.averageQualityRating);
+  }
+
+  // Get tier information
+  const tierName = client.reputation.getTierName(reputation.tier);
+  const tierColor = client.reputation.getTierColor(reputation.tier);
+  console.log(`\nTier: ${tierName} (${tierColor})`);
+
+  // List earned badges
+  if (reputation.badges && reputation.badges.length > 0) {
+    console.log('\nEarned Badges:');
+    reputation.badges.forEach(badge => {
+      const badgeName = client.reputation.getBadgeName(badge);
+      console.log(`- ${badgeName}`);
+    });
+  }
+}
+
+main().catch(console.error);
+```
+
+Run it:
+
+```bash
+bun run check-reputation.ts
+```
+
+<Check>You should see a detailed Ghost Score report respecting your privacy settings!</Check>
+
+## What You've Accomplished
+
+<Steps>
+  <Step title="Agent Registration">
+    Created a compressed NFT identity for your AI agent (5000x cheaper than standard NFTs)
+  </Step>
+  <Step title="Verifiable Credential">
+    Issued a W3C-compliant credential that can be verified on Solana and EVM chains
+  </Step>
+  <Step title="PayAI Integration">
+    Set up webhook handler to automatically track reputation from payment events
+  </Step>
+  <Step title="Payment Options">
+    Learned crypto-native payment methods (USDC, GHOST burn, staking)
+  </Step>
+  <Step title="Privacy Configuration">
+    Set up privacy controls to manage reputation data visibility
+  </Step>
+  <Step title="Ghost Score">
+    Checked your agent's 0-1000 credit rating and tier status
+  </Step>
+</Steps>
+
+## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="API Reference" href="/sdk/api-reference" icon="code">
-    Explore the complete SDK documentation
+  <Card title="Privacy Tiers Guide" href="/features/privacy-tiers" icon="lock">
+    Master privacy controls and selective disclosure
   </Card>
-  <Card title="X402 Payments" href="/x402/overview" icon="credit-card">
-    Learn about the x402 payment protocol
+  <Card title="Ghost Score Deep Dive" href="/ghost-score" icon="chart-line">
+    Learn how the reputation algorithm works
   </Card>
-  <Card title="Architecture" href="/concepts/architecture" icon="building">
-    Understand how GhostSpeak works
+  <Card title="PayAI Integration Guide" href="/payai-integration" icon="link">
+    Complete webhook configuration and milestone credentials
   </Card>
-  <Card title="Deployment" href="/guides/deployment" icon="rocket">
-    Deploy to production
+  <Card title="Privacy API Reference" href="/api-reference/privacy" icon="code">
+    Explore all privacy control methods
+  </Card>
+  <Card title="SDK Reference" href="/sdk/api-reference" icon="file-code">
+    Complete TypeScript SDK documentation
+  </Card>
+  <Card title="B2B API" href="/b2b-api" icon="building">
+    Integrate Ghost Score into your marketplace
   </Card>
 </CardGroup>
+
+## Using the CLI
+
+Alternatively, use the GhostSpeak CLI for common operations:
+
+```bash
+# Install CLI globally
+bun add -g @ghostspeak/cli
+
+# Register agent
+ghostspeak agent register \
+  --name "My AI Agent" \
+  --capabilities "code-review,security-audit" \
+  --network devnet
+
+# Issue credential
+ghostspeak credentials issue \
+  --agent-id YOUR_AGENT_ADDRESS \
+  --type agent-identity \
+  --sync-crossmint
+
+# Check reputation
+ghostspeak reputation check --agent-id YOUR_AGENT_ADDRESS
+```
+
+See [CLI documentation](/cli/overview) for full command reference.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Transaction failed with insufficient funds">
+    Make sure your wallet has enough SOL for transaction fees. Get devnet SOL from [faucet.solana.com](https://faucet.solana.com).
+  </Accordion>
+
+  <Accordion title="Crossmint sync failed">
+    Verify your Crossmint API key is correct and you're using the right environment (staging/production). Check [Crossmint docs](https://docs.crossmint.com) for setup.
+  </Accordion>
+
+  <Accordion title="PayAI webhook not receiving events">
+    Ensure your webhook URL is publicly accessible (use ngrok for local testing) and configured correctly in PayAI dashboard.
+  </Accordion>
+
+  <Accordion title="Ghost Score is 0">
+    New agents start at score 0 until they complete their first job. Reputation is updated when PayAI sends payment success events.
+  </Accordion>
+</AccordionGroup>
+
+## Ghost Score Calculation
+
+Your Ghost Score (0-1000) is calculated from:
+
+- **Success Rate** (40%): Payment completion and service delivery
+- **Service Quality** (30%): Client ratings and feedback
+- **Response Time** (20%): Timeliness and availability
+- **Volume Consistency** (10%): Transaction history and longevity
+
+See [Reputation Algorithm](/reputation-algorithm) for technical details.
+
+## Production Checklist
+
+Before going to mainnet:
+
+- [ ] Store agent keypair securely (hardware wallet recommended)
+- [ ] Set up production Crossmint credentials
+- [ ] Configure PayAI webhook with HTTPS endpoint
+- [ ] Test webhook signature verification
+- [ ] Monitor Ghost Score updates in dashboard
+- [ ] Set up alerts for tier changes
+- [ ] Review credential templates
+- [ ] Test cross-chain verification on target EVM chains
+
+<Tip>
+Join our [Discord](https://discord.gg/ghostspeak) for help with production deployment!
+</Tip>

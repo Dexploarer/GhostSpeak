@@ -1,280 +1,273 @@
 'use client'
 
-/**
- * Staking Dashboard Page
- *
- * Allows users to stake GHOST tokens, view rewards, and manage lockups.
- */
+import React, { useState } from 'react'
+import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useAgents } from '@/lib/queries/agents'
+import { StakingStatsCard } from '@/components/staking/StakingStatsCard'
+import { StakeForm } from '@/components/staking/StakeForm'
+import { TierProgressCard } from '@/components/staking/TierProgressCard'
+import { BenefitsDisplayCard } from '@/components/staking/BenefitsDisplayCard'
+import { UnstakeDialog } from '@/components/staking/UnstakeDialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Info, TrendingUp, Users, Lock } from 'lucide-react'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import Link from 'next/link'
 
-import { useState } from 'react'
-import {
-  useStakingConfig,
-  useStakingAccount,
-  useStakingStats,
-  usePendingRewards,
-  useStakingLockStatus,
-  useCreateStakingAccount,
-  useClaimStakingRewards,
-} from '../../../lib/queries/staking'
-import { useWalletAddress } from '../../../lib/hooks/useWalletAddress'
-import { LockupTier } from '@ghostspeak/sdk/browser'
-
-// Helper to format SOL amounts
-function formatAmount(amount: bigint, decimals = 9): string {
-  const divisor = BigInt(10 ** decimals)
-  const whole = amount / divisor
-  const fraction = amount % divisor
-  return `${whole}.${fraction.toString().padStart(decimals, '0').slice(0, 4)}`
-}
-
-// Helper to format duration
-function formatDuration(seconds: number): string {
-  if (seconds === 0) return 'Unlocked'
-  const days = Math.floor(seconds / (24 * 60 * 60))
-  const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60))
-  if (days > 0) return `${days}d ${hours}h`
-  return `${hours}h`
-}
-
-export default function StakingPage() {
+export default function StakingDashboard() {
   const { address, isConnected } = useWalletAddress()
+  const { data: agents = [], isLoading: isLoadingAgents } = useAgents()
 
-  const { data: config, isLoading: configLoading } = useStakingConfig()
-  const { data: stakingAccount, isLoading: accountLoading } = useStakingAccount(address as string)
-  const { totalStaked, totalStakers, baseApy, isLoading: statsLoading } = useStakingStats()
-  const { pendingRewards } = usePendingRewards(address as string)
-  const { isLocked, timeRemaining } = useStakingLockStatus(address as string)
+  const [selectedAgentAddress, setSelectedAgentAddress] = useState<string>('')
+  const [showUnstakeDialog, setShowUnstakeDialog] = useState(false)
 
-  const createStakingAccount = useCreateStakingAccount()
-  const claimRewards = useClaimStakingRewards()
+  // Get staking account for selected agent
+  const stakingAccount = useQuery(
+    api.staking.getStakingAccount,
+    selectedAgentAddress ? { agentAddress: selectedAgentAddress } : 'skip'
+  )
 
-  const isLoading = configLoading || accountLoading || statsLoading
+  // Get staking history
+  const stakingHistory = useQuery(
+    api.staking.getStakingHistory,
+    selectedAgentAddress ? { agentAddress: selectedAgentAddress } : 'skip'
+  )
 
-  // Lockup tier labels
-  const tierLabels = {
-    [LockupTier.None]: 'No Lockup',
-    [LockupTier.OneMonth]: '1 Month',
-    [LockupTier.ThreeMonths]: '3 Months',
-    [LockupTier.SixMonths]: '6 Months',
-    [LockupTier.OneYear]: '1 Year',
-    [LockupTier.TwoYears]: '2 Years',
+  // Get platform stats
+  const platformStats = useQuery(api.staking.getStakingStats)
+
+  const ghostBalance = 50000
+
+  // Set default agent when agents load
+  React.useEffect(() => {
+    if (agents.length > 0 && !selectedAgentAddress) {
+      setSelectedAgentAddress(agents[0].address)
+    }
+  }, [agents, selectedAgentAddress])
+
+  if (!isConnected) {
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Please connect your wallet to access the staking dashboard.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto p-4 sm:p-6 max-w-7xl space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Staking</h1>
-          <p className="mt-1 text-gray-400">
-            Stake GHOST tokens to earn rewards and participate in governance
+          <h1 className="text-3xl font-bold">GHOST Staking</h1>
+          <p className="text-muted-foreground">
+            Stake GHOST tokens to boost your agent's reputation and unlock premium benefits
           </p>
         </div>
+
+        {/* Platform Stats */}
+        {platformStats && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Staked</p>
+                    <p className="text-2xl font-bold">
+                      {platformStats.totalStaked.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">GHOST</p>
+                  </div>
+                  <Lock className="w-8 h-8 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Stakers</p>
+                    <p className="text-2xl font-bold">{platformStats.totalStakers}</p>
+                    <p className="text-xs text-muted-foreground">Agents</p>
+                  </div>
+                  <Users className="w-8 h-8 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Avg Boost</p>
+                    <p className="text-2xl font-bold">+12.5%</p>
+                    <p className="text-xs text-muted-foreground">Reputation</p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-          <p className="text-sm text-gray-400">Total Staked</p>
-          <p className="mt-2 text-2xl font-bold text-white">
-            {isLoading ? '...' : formatAmount(totalStaked)} GHOST
-          </p>
+      {/* Agent Selector */}
+      {isLoadingAgents ? (
+        <Skeleton className="h-12 w-full" />
+      ) : agents.length === 0 ? (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>You don't have any agents registered yet.</span>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/agents">Register Agent</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium">Select Agent:</label>
+          <Select value={selectedAgentAddress} onValueChange={setSelectedAgentAddress}>
+            <SelectTrigger className="w-full max-w-md">
+              <SelectValue placeholder="Choose an agent" />
+            </SelectTrigger>
+            <SelectContent>
+              {agents.map((agent) => (
+                <SelectItem key={agent.address} value={agent.address}>
+                  {agent.name || 'Unnamed Agent'} ({agent.address.slice(0, 8)}...)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-          <p className="text-sm text-gray-400">Total Stakers</p>
-          <p className="mt-2 text-2xl font-bold text-white">{totalStakers}</p>
-        </div>
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-          <p className="text-sm text-gray-400">Base APY</p>
-          <p className="mt-2 text-2xl font-bold text-[#ccff00]">
-            {baseApy ? (baseApy / 100).toFixed(2) : '0'}%
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-          <p className="text-sm text-gray-400">Your Pending Rewards</p>
-          <p className="mt-2 text-2xl font-bold text-[#ccff00]">
-            {formatAmount(pendingRewards)} GHOST
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Your Staking */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-          <h2 className="text-xl font-semibold text-white">Your Staking</h2>
+      {selectedAgentAddress && (
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
 
-          {!isConnected ? (
-            <div className="mt-6 rounded-lg border border-gray-700 bg-gray-800/50 p-8 text-center">
-              <p className="text-gray-400">Connect your wallet to view staking</p>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column: Stats */}
+              <div className="lg:col-span-1">
+                <StakingStatsCard
+                  agentAddress={selectedAgentAddress}
+                  onStakeMore={() => {
+                    // Scroll to stake form
+                    document.getElementById('stake-form')?.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                  onUnstake={() => setShowUnstakeDialog(true)}
+                />
+              </div>
+
+              {/* Center Column: Stake Form */}
+              <div className="lg:col-span-1" id="stake-form">
+                <StakeForm
+                  agentAddress={selectedAgentAddress}
+                  ghostBalance={ghostBalance}
+                  onSuccess={() => {
+                    // Refresh data
+                    console.log('Stake successful')
+                  }}
+                />
+              </div>
+
+              {/* Right Column: Benefits */}
+              <div className="lg:col-span-1 space-y-6">
+                {stakingAccount && (
+                  <TierProgressCard
+                    currentAmount={stakingAccount.amountStaked}
+                    currentTier={stakingAccount.tier}
+                  />
+                )}
+                <BenefitsDisplayCard
+                  currentTier={stakingAccount?.tier || 0}
+                />
+              </div>
             </div>
-          ) : !stakingAccount ? (
-            <div className="mt-6 space-y-4">
-              <p className="text-gray-400">You don&apos;t have a staking account yet.</p>
-              <button
-                onClick={() => createStakingAccount.mutate()}
-                disabled={createStakingAccount.isPending}
-                className="w-full rounded-lg bg-[#ccff00] px-4 py-3 font-semibold text-black transition-colors hover:bg-[#bbee00] disabled:opacity-50"
-              >
-                {createStakingAccount.isPending ? 'Creating...' : 'Create Staking Account'}
-              </button>
-            </div>
-          ) : (
-            <div className="mt-6 space-y-6">
-              {/* Staked Amount */}
-              <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-                <p className="text-sm text-gray-400">Staked Amount</p>
-                <p className="mt-1 text-2xl font-bold text-white">
-                  {formatAmount(stakingAccount.stakedAmount)} GHOST
-                </p>
-              </div>
+          </TabsContent>
 
-              {/* Lockup Status */}
-              <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Lockup Status</p>
-                    <p className="mt-1 font-medium text-white">
-                      {tierLabels[stakingAccount.lockupTier as LockupTier] || 'Unknown'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-400">Time Remaining</p>
-                    <p
-                      className={`mt-1 font-medium ${isLocked ? 'text-yellow-400' : 'text-green-400'}`}
-                    >
-                      {formatDuration(timeRemaining)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Rewards */}
-              <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Pending Rewards</p>
-                    <p className="mt-1 text-xl font-bold text-[#ccff00]">
-                      {formatAmount(pendingRewards)} GHOST
-                    </p>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      // Get actual token accounts
-                      const ghostMint = process.env.NEXT_PUBLIC_GHOST_TOKEN_MINT! as any
-                      const { deriveAssociatedTokenAddress } = await import('@ghostspeak/sdk')
-                      
-                      if (!address) return
-                      
-                      const userTokenAccount = await deriveAssociatedTokenAddress(
-                        address as any,
-                        ghostMint
-                      )
-                      
-                      // Treasury address from config or env
-                      const rewardsTreasury = config?.rewardsTreasury as any
-                      
-                      claimRewards.mutate({
-                        ghostMint,
-                        userTokenAccount,
-                        rewardsTreasury,
-                      })
-                    }}
-                    disabled={claimRewards.isPending || pendingRewards === BigInt(0)}
-                    className="rounded-lg bg-[#ccff00] px-4 py-2 font-semibold text-black transition-colors hover:bg-[#bbee00] disabled:opacity-50"
-                  >
-                    {claimRewards.isPending ? 'Claiming...' : 'Claim Rewards'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-                  <p className="text-sm text-gray-400">Auto-Compound</p>
-                  <p className="mt-1 font-medium text-white">
-                    {stakingAccount.autoCompound ? 'Enabled' : 'Disabled'}
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Staking History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!stakingHistory || stakingHistory.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    No staking history yet
                   </p>
-                </div>
-                <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-                  <p className="text-sm text-gray-400">Total Claimed</p>
-                  <p className="mt-1 font-medium text-white">
-                    {formatAmount(stakingAccount.rewardsClaimed)} GHOST
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Lockup Tiers Info */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-          <h2 className="text-xl font-semibold text-white">Lockup Tiers</h2>
-          <p className="mt-2 text-sm text-gray-400">Longer lockups earn higher APY bonuses</p>
-
-          <div className="mt-6 space-y-3">
-            {Object.entries(tierLabels).map(([tier, label]) => {
-              const tierNum = Number(tier)
-              const bonusApy = config?.tierBonusApy?.[tierNum] ?? 0
-
-              return (
-                <div
-                  key={tier}
-                  className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800/50 p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`h-3 w-3 rounded-full ${
-                        tierNum === 0
-                          ? 'bg-gray-500'
-                          : tierNum <= 2
-                            ? 'bg-blue-500'
-                            : tierNum <= 4
-                              ? 'bg-purple-500'
-                              : 'bg-[#ccff00]'
-                      }`}
-                    />
-                    <span className="font-medium text-white">{label}</span>
+                ) : (
+                  <div className="space-y-4">
+                    {stakingHistory.map((event) => (
+                      <div
+                        key={event._id}
+                        className="flex items-center justify-between p-4 border border-border rounded-lg"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              event.eventType === 'staked'
+                                ? 'bg-green-500/20 text-green-500'
+                                : event.eventType === 'unstaked'
+                                  ? 'bg-red-500/20 text-red-500'
+                                  : 'bg-yellow-500/20 text-yellow-500'
+                            }`}
+                          >
+                            {event.eventType === 'staked' ? '+' : event.eventType === 'unstaked' ? '-' : '!'}
+                          </div>
+                          <div>
+                            <p className="font-semibold capitalize">{event.eventType}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(event.timestamp).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">
+                            {event.amount.toLocaleString()} GHOST
+                          </p>
+                          {event.tierReached && (
+                            <p className="text-xs text-muted-foreground">
+                              Tier {event.tierReached}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="text-right">
-                    <span className="font-bold text-[#ccff00]">
-                      +{(bonusApy / 100).toFixed(1)}%
-                    </span>
-                    <span className="ml-1 text-sm text-gray-400">APY bonus</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
 
-          {/* How it works */}
-          <div className="mt-8">
-            <h3 className="font-semibold text-white">How Staking Works</h3>
-            <ul className="mt-4 space-y-2 text-sm text-gray-400">
-              <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#ccff00]" />
-                Stake GHOST tokens to earn rewards
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#ccff00]" />
-                Choose a lockup tier for bonus APY
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#ccff00]" />
-                Rewards accrue continuously
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#ccff00]" />
-                Claim anytime or enable auto-compound
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#ccff00]" />
-                Staked tokens give governance voting power
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      {/* Unstake Dialog */}
+      {stakingAccount && (
+        <UnstakeDialog
+          open={showUnstakeDialog}
+          onOpenChange={setShowUnstakeDialog}
+          agentAddress={selectedAgentAddress}
+          stakedAmount={stakingAccount.amountStaked}
+          reputationBoost={stakingAccount.reputationBoostBps / 100}
+          onSuccess={() => {
+            console.log('Unstake successful')
+          }}
+        />
+      )}
     </div>
   )
 }

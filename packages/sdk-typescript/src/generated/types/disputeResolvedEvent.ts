@@ -7,60 +7,50 @@
  */
 
 import {
-  addDecoderSizePrefix,
-  addEncoderSizePrefix,
   combineCodec,
   getAddressDecoder,
   getAddressEncoder,
-  getBooleanDecoder,
-  getBooleanEncoder,
-  getI64Decoder,
-  getI64Encoder,
   getStructDecoder,
   getStructEncoder,
-  getU32Decoder,
-  getU32Encoder,
-  getUtf8Decoder,
-  getUtf8Encoder,
+  getU64Decoder,
+  getU64Encoder,
   type Address,
   type Codec,
   type Decoder,
   type Encoder,
 } from "@solana/kit";
+import {
+  getArbitratorDecisionDecoder,
+  getArbitratorDecisionEncoder,
+  type ArbitratorDecision,
+  type ArbitratorDecisionArgs,
+} from ".";
 
 export type DisputeResolvedEvent = {
-  dispute: Address;
+  escrowId: bigint;
+  decision: ArbitratorDecision;
   arbitrator: Address;
-  awardToComplainant: boolean;
-  resolution: string;
-  timestamp: bigint;
 };
 
 export type DisputeResolvedEventArgs = {
-  dispute: Address;
+  escrowId: number | bigint;
+  decision: ArbitratorDecisionArgs;
   arbitrator: Address;
-  awardToComplainant: boolean;
-  resolution: string;
-  timestamp: number | bigint;
 };
 
 export function getDisputeResolvedEventEncoder(): Encoder<DisputeResolvedEventArgs> {
   return getStructEncoder([
-    ["dispute", getAddressEncoder()],
+    ["escrowId", getU64Encoder()],
+    ["decision", getArbitratorDecisionEncoder()],
     ["arbitrator", getAddressEncoder()],
-    ["awardToComplainant", getBooleanEncoder()],
-    ["resolution", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ["timestamp", getI64Encoder()],
   ]);
 }
 
 export function getDisputeResolvedEventDecoder(): Decoder<DisputeResolvedEvent> {
   return getStructDecoder([
-    ["dispute", getAddressDecoder()],
+    ["escrowId", getU64Decoder()],
+    ["decision", getArbitratorDecisionDecoder()],
     ["arbitrator", getAddressDecoder()],
-    ["awardToComplainant", getBooleanDecoder()],
-    ["resolution", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ["timestamp", getI64Decoder()],
   ]);
 }
 

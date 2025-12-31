@@ -23,11 +23,14 @@ import {
   address,
   lamports,
   type Address,
+  type Blockhash,
   type KeyPairSigner,
-  type IInstruction,
+  type Instruction,
   type Rpc,
-  type TransactionMessageWithBlockhashLifetime,
-  type CompilableTransactionMessage
+  type SolanaRpcApi,
+  type RpcSubscriptions,
+  type SolanaRpcSubscriptionsApi,
+  type TransactionMessageWithBlockhashLifetime
 } from '@solana/kit'
 
 export interface TransactionBuilderConfig {
@@ -51,16 +54,43 @@ export interface TransactionResult {
   signature: string
   slot?: number
   confirmationStatus: 'processed' | 'confirmed' | 'finalized'
-  err?: any
+  err?: unknown
+}
+
+/** Structure for prioritization fee data from RPC */
+interface PrioritizationFeeEntry {
+  prioritizationFee: number | bigint | string
+  slot?: bigint
+}
+
+/** Structure for blockhash response from RPC */
+interface BlockhashResponse {
+  value: { blockhash: Blockhash; lastValidBlockHeight: bigint }
+}
+
+/** Structure for signed transaction with signatures */
+interface SignedTransactionWithSignatures {
+  signatures: string[]
+  messageBytes?: Uint8Array
+}
+
+/** Structure for simulation result */
+interface SimulationResult {
+  value: {
+    err: unknown
+    logs?: string[]
+    accounts?: unknown[]
+    unitsConsumed?: bigint
+  }
 }
 
 /**
  * Modern Transaction Builder implementing July 2025 Solana standards
  */
 export class TransactionBuilder {
-  private rpc: Rpc<unknown>
-  private rpcSubscriptions: any
-  private sendAndConfirmTransaction: any
+  private rpc: Rpc<SolanaRpcApi>
+  private rpcSubscriptions?: RpcSubscriptions<SolanaRpcSubscriptionsApi>
+  private sendAndConfirmTransaction?: ReturnType<typeof sendAndConfirmTransactionFactory>
   private config: TransactionBuilderConfig
 
   constructor(config: TransactionBuilderConfig) {
@@ -72,15 +102,13 @@ export class TransactionBuilder {
       ...config
     }
 
-    this.rpc = createSolanaRpc(config.rpcEndpoint)
+    this.rpc = createSolanaRpc(config.rpcEndpoint) as Rpc<SolanaRpcApi>
 
     if (config.wsEndpoint) {
-      this.rpcSubscriptions = createSolanaRpcSubscriptions(config.wsEndpoint)
-      // Type assertion: createSolanaRpc returns an RPC with all required methods
-      // The unknown type parameter is overly restrictive here
+      this.rpcSubscriptions = createSolanaRpcSubscriptions(config.wsEndpoint) as RpcSubscriptions<SolanaRpcSubscriptionsApi>
       this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
         rpc: this.rpc as Parameters<typeof sendAndConfirmTransactionFactory>[0]['rpc'],
-        rpcSubscriptions: this.rpcSubscriptions
+        rpcSubscriptions: this.rpcSubscriptions as Parameters<typeof sendAndConfirmTransactionFactory>[0]['rpcSubscriptions']
       })
     }
   }
@@ -89,7 +117,7 @@ export class TransactionBuilder {
    * Build and send a single instruction transaction using modern patterns
    */
   async executeInstruction(
-    instruction: IInstruction,
+    instruction: Instruction,
     signer: KeyPairSigner,
     options?: TransactionOptions
   ): Promise<TransactionResult> {
@@ -101,15 +129,13 @@ export class TransactionBuilder {
    * Uses July 2025 pipe() composition patterns
    */
   async executeInstructions(
-    instructions: IInstruction[],
+    instructions: Instruction[],
     signers: KeyPairSigner[],
     options?: TransactionOptions
   ): Promise<TransactionResult> {
     try {
       // Step 1: Get latest blockhash with Agave 2.3 optimizations
-      const latestBlockhashResponse = await (this.rpc as any).getLatestBlockhash({
-        commitment: this.config.commitment
-      }).send()
+      const latestBlockhashResponse = await this.getLatestBlockhash()
       const latestBlockhash = latestBlockhashResponse.value
 
       // Step 2: Calculate dynamic priority fees (July 2025 standard)
@@ -128,28 +154,31 @@ export class TransactionBuilder {
         (tx) => setTransactionMessageFeePayerSigner(signers[0], tx),
         (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
         (tx) => appendTransactionMessageInstructions(finalInstructions, tx)
-      ) as CompilableTransactionMessage & TransactionMessageWithBlockhashLifetime
+      ) as unknown as TransactionMessageWithBlockhashLifetime
 
       // Step 5: Sign transaction using July 2025 patterns
-      const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
+      // Type assertion needed due to pipe() return type limitations
+      const signedTransaction = await signTransactionMessageWithSigners(
+        transactionMessage as unknown as Parameters<typeof signTransactionMessageWithSigners>[0]
+      )
 
       // Step 6: Send and confirm with proper error handling
       if (this.sendAndConfirmTransaction) {
-        await this.sendAndConfirmTransaction(signedTransaction, {
-          commitment: this.config.commitment,
-          skipPreflight: options?.skipPreflight ?? this.config.skipPreflight
-        })
+        // Type cast the signed transaction for sendAndConfirmTransaction
+        await this.sendAndConfirmTransaction(
+          signedTransaction as unknown as Parameters<typeof this.sendAndConfirmTransaction>[0],
+          {
+            commitment: this.config.commitment ?? 'confirmed',
+            skipPreflight: options?.skipPreflight ?? this.config.skipPreflight
+          }
+        )
       } else {
-        // Fallback for RPC-only setup
-        await (this.rpc as any).sendTransaction(signedTransaction, {
-          encoding: 'base64',
-          commitment: this.config.commitment,
-          skipPreflight: options?.skipPreflight ?? this.config.skipPreflight
-        }).send()
+        // Fallback for RPC-only setup - use type assertion for RPC method
+        await this.sendTransactionFallback(signedTransaction, options)
       }
 
       // Step 7: Extract signature and return result
-      const signature = this.extractSignatureFromTransaction(signedTransaction)
+      const signature = this.extractSignatureFromTransaction(signedTransaction as unknown as SignedTransactionWithSignatures)
       
       return {
         signature,
@@ -162,11 +191,41 @@ export class TransactionBuilder {
   }
 
   /**
+   * Get latest blockhash with proper typing
+   */
+  private async getLatestBlockhash(): Promise<BlockhashResponse> {
+    const rpc = this.rpc as unknown as {
+      getLatestBlockhash: (opts: object) => { send: () => Promise<BlockhashResponse> }
+    }
+    const response = await rpc.getLatestBlockhash({
+      commitment: this.config.commitment
+    }).send()
+    return response
+  }
+
+  /**
+   * Send transaction using fallback RPC method
+   */
+  private async sendTransactionFallback(
+    signedTransaction: unknown,
+    options?: TransactionOptions
+  ): Promise<void> {
+    const rpc = this.rpc as unknown as {
+      sendTransaction: (tx: unknown, opts: object) => { send: () => Promise<void> }
+    }
+    await rpc.sendTransaction(signedTransaction, {
+      encoding: 'base64',
+      commitment: this.config.commitment,
+      skipPreflight: options?.skipPreflight ?? this.config.skipPreflight
+    }).send()
+  }
+
+  /**
    * Calculate dynamic priority fees based on network conditions
    * Implements July 2025 local fee market optimization
    */
   private async calculatePriorityFee(
-    instructions: IInstruction[],
+    instructions: Instruction[],
     fixedFee?: bigint
   ): Promise<bigint> {
     if (fixedFee !== undefined) {
@@ -183,14 +242,11 @@ export class TransactionBuilder {
 
     // Auto strategy: calculate based on recent fee trends
     try {
-      // Get recent priority fee percentiles (July 2025 method)
-      const recentFees = await (this.rpc as any).getRecentPrioritizationFees({
-        lockedWritableAccounts: this.extractWritableAccounts(instructions)
-      }).send()
+      const recentFees = await this.getRecentPrioritizationFees(instructions)
 
       if (recentFees && recentFees.length > 0) {
         // Use 75th percentile for reliable landing
-        const fees = recentFees.map((fee: { prioritizationFee: number | bigint | string }) => BigInt(fee.prioritizationFee))
+        const fees: bigint[] = recentFees.map((fee: PrioritizationFeeEntry) => BigInt(fee.prioritizationFee))
         fees.sort((a: bigint, b: bigint) => a < b ? -1 : a > b ? 1 : 0)
         const percentile75Index = Math.floor(fees.length * 0.75)
         return fees[percentile75Index] || lamports(1000n) // 1000 microlamports minimum
@@ -204,9 +260,22 @@ export class TransactionBuilder {
   }
 
   /**
+   * Get recent prioritization fees with proper typing
+   */
+  private async getRecentPrioritizationFees(instructions: Instruction[]): Promise<readonly PrioritizationFeeEntry[]> {
+    const rpc = this.rpc as unknown as {
+      getRecentPrioritizationFees: (addresses?: Address[]) => { send: () => Promise<readonly PrioritizationFeeEntry[]> }
+    }
+    const response = await rpc.getRecentPrioritizationFees(
+      this.extractWritableAccounts(instructions)
+    ).send()
+    return response
+  }
+
+  /**
    * Create priority fee instruction using July 2025 patterns
    */
-  private createPriorityFeeInstruction(priorityFee: bigint): IInstruction {
+  private createPriorityFeeInstruction(priorityFee: bigint): Instruction {
     // Create compute budget instruction for priority fees
     const data = new Uint8Array(9)
     data[0] = 3 // SetComputeUnitPrice instruction discriminator
@@ -223,7 +292,7 @@ export class TransactionBuilder {
   /**
    * Extract writable accounts for priority fee calculation
    */
-  private extractWritableAccounts(instructions: IInstruction[]): Address[] {
+  private extractWritableAccounts(instructions: Instruction[]): Address[] {
     const writableAccounts = new Set<Address>()
     
     for (const instruction of instructions) {
@@ -240,9 +309,8 @@ export class TransactionBuilder {
   /**
    * Extract signature from signed transaction
    */
-  private extractSignatureFromTransaction(signedTransaction: any): string {
+  private extractSignatureFromTransaction(signedTransaction: SignedTransactionWithSignatures): string {
     // Implementation depends on the exact structure returned by signTransactionMessageWithSigners
-    // This is a simplified version
     if (signedTransaction.signatures && signedTransaction.signatures.length > 0) {
       return signedTransaction.signatures[0]
     }
@@ -253,12 +321,12 @@ export class TransactionBuilder {
    * Simulate transaction before sending (July 2025 pattern)
    */
   async simulateTransaction(
-    instructions: IInstruction[],
+    instructions: Instruction[],
     signer: KeyPairSigner,
     options?: { includeAccounts?: Address[] }
-  ): Promise<any> {
+  ): Promise<SimulationResult> {
     try {
-      const latestBlockhashResponse = await (this.rpc as any).getLatestBlockhash().send()
+      const latestBlockhashResponse = await this.getLatestBlockhash()
       const latestBlockhash = latestBlockhashResponse.value
 
       const transactionMessage = pipe(
@@ -270,13 +338,18 @@ export class TransactionBuilder {
 
       const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
 
-      return await (this.rpc as any).simulateTransaction(signedTransaction, {
+      const rpc = this.rpc as unknown as {
+        simulateTransaction: (tx: unknown, opts: object) => { send: () => Promise<SimulationResult> }
+      }
+      const result = await rpc.simulateTransaction(signedTransaction, {
         commitment: this.config.commitment,
         accounts: options?.includeAccounts ? {
           encoding: 'base64',
           addresses: options.includeAccounts
         } : undefined
       }).send()
+
+      return result
 
     } catch (error) {
       throw new Error(`Simulation failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -288,7 +361,7 @@ export class TransactionBuilder {
    * Implements Agave 2.3 greedy scheduler optimizations
    */
   async executeBatch(
-    batches: { instructions: IInstruction[], signers: KeyPairSigner[] }[],
+    batches: { instructions: Instruction[], signers: KeyPairSigner[] }[],
     options?: TransactionOptions
   ): Promise<TransactionResult[]> {
     const results: TransactionResult[] = []
@@ -318,7 +391,10 @@ export class TransactionBuilder {
     networkCongestion: 'low' | 'medium' | 'high'
   }> {
     try {
-      const recentFees = await (this.rpc as any).getRecentPrioritizationFees().send()
+      const rpc = this.rpc as unknown as {
+        getRecentPrioritizationFees: () => { send: () => Promise<readonly PrioritizationFeeEntry[]> }
+      }
+      const recentFees = await rpc.getRecentPrioritizationFees().send()
       
       if (!recentFees || recentFees.length === 0) {
         return {
@@ -328,11 +404,11 @@ export class TransactionBuilder {
         }
       }
 
-      const fees = recentFees.map((fee: { prioritizationFee: number | bigint | string }) => BigInt(fee.prioritizationFee))
+      const fees: bigint[] = recentFees.map((fee: PrioritizationFeeEntry) => BigInt(fee.prioritizationFee))
       const avgFee = fees.reduce((sum: bigint, fee: bigint) => sum + fee, 0n) / BigInt(fees.length)
 
       fees.sort((a: bigint, b: bigint) => a < b ? -1 : a > b ? 1 : 0)
-      const medianFee = fees[Math.floor(fees.length / 2)]
+      const medianFee: bigint = fees[Math.floor(fees.length / 2)]
       
       // Determine congestion based on fee levels
       let congestion: 'low' | 'medium' | 'high' = 'low'
@@ -367,7 +443,7 @@ export function createTransactionBuilder(config: TransactionBuilderConfig): Tran
  */
 export async function executeSimpleTransaction(
   rpcEndpoint: string,
-  instruction: IInstruction,
+  instruction: Instruction,
   signer: KeyPairSigner,
   options?: TransactionOptions
 ): Promise<string> {

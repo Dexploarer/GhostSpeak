@@ -1,110 +1,166 @@
 /*!
  * Staking State Module
  *
- * Contains staking related state structures for governance voting power
- * and lockup incentives in the x402 marketplace.
+ * Data structures for GHOST token staking with reputation boost mechanics.
  */
 
 use anchor_lang::prelude::*;
 
-/// PDA seeds for staking accounts
-pub const STAKING_ACCOUNT_SEED: &[u8] = b"staking";
-pub const STAKING_CONFIG_SEED: &[u8] = b"staking_config";
-
-/// Individual user staking account
+/// Individual owner staking account tracking their staked GHOST tokens
+/// Used for Sybil resistance (1K GHOST minimum), API quotas, and governance
 #[account]
 pub struct StakingAccount {
-    /// Owner of this staking account
+    /// Owner of this staking account (can register multiple agents)
     pub owner: Pubkey,
 
-    /// Token mint being staked (GHOST token)
-    pub token_mint: Pubkey,
+    /// Amount of GHOST tokens staked
+    pub amount_staked: u64,
 
-    /// Amount of tokens currently staked
-    pub staked_amount: u64,
-
-    /// Timestamp when tokens were staked
+    /// Timestamp when staking started
     pub staked_at: i64,
 
-    /// Lockup end timestamp (0 if no lockup)
-    pub lockup_ends_at: i64,
+    /// Lock duration in seconds (minimum 30 days)
+    pub lock_duration: i64,
 
-    /// Lockup tier (0=none, 1=1month, 2=3months, 3=6months, 4=1year, 5=2years)
-    pub lockup_tier: u8,
+    /// Timestamp when unlock is available
+    pub unlock_at: i64,
 
-    /// Total rewards claimed
-    pub rewards_claimed: u64,
+    /// Reputation boost percentage (in basis points, e.g., 500 = 5%)
+    pub reputation_boost_bps: u16,
 
-    /// Last reward claim timestamp
-    pub last_claim_at: i64,
+    /// Whether agent has "Verified" badge
+    pub has_verified_badge: bool,
 
-    /// Pending rewards (not yet claimed)
-    pub pending_rewards: u64,
+    /// Whether agent has premium listing benefits
+    pub has_premium_benefits: bool,
 
-    /// Whether auto-compound is enabled
-    pub auto_compound: bool,
+    /// Total slashed amount (never recoverable)
+    pub total_slashed: u64,
 
-    /// Account creation timestamp
-    pub created_at: i64,
+    /// Current access tier based on stake amount
+    pub tier: AccessTier,
 
-    /// Last update timestamp
-    pub updated_at: i64,
+    /// Daily API calls remaining (resets every 24h)
+    pub api_calls_remaining: u32,
 
-    /// PDA bump
+    /// Last API quota reset timestamp
+    pub last_quota_reset: i64,
+
+    /// Voting power for governance (equals amount_staked)
+    pub voting_power: u64,
+
+    /// Bump for PDA
     pub bump: u8,
 }
 
 impl StakingAccount {
     pub const LEN: usize = 8 + // discriminator
-        32 + // owner
-        32 + // token_mint
-        8 +  // staked_amount
+        32 + // agent
+        8 +  // amount_staked
         8 +  // staked_at
-        8 +  // lockup_ends_at
-        1 +  // lockup_tier
-        8 +  // rewards_claimed
-        8 +  // last_claim_at
-        8 +  // pending_rewards
-        1 +  // auto_compound
-        8 +  // created_at
-        8 +  // updated_at
+        8 +  // lock_duration
+        8 +  // unlock_at
+        2 +  // reputation_boost_bps
+        1 +  // has_verified_badge
+        1 +  // has_premium_benefits
+        8 +  // total_slashed
+        1 +  // tier (enum)
+        4 +  // api_calls_remaining
+        8 +  // last_quota_reset
+        8 +  // voting_power
         1;   // bump
 
-    /// Check if tokens are currently locked
-    pub fn is_locked(&self, current_timestamp: i64) -> bool {
-        self.lockup_ends_at > current_timestamp
-    }
+    /// Calculate reputation boost, tier, and API quota based on stake amount
+    ///
+    /// Tiers (GHOST token has 6 decimals, not 9!):
+    /// - 1,000 GHOST (1_000_000_000) → Basic: +5% boost, 100 API calls/day, Sybil-resistant
+    /// - 5,000 GHOST (5_000_000_000) → Verified: +10% boost, 1,000 API calls/day
+    /// - 50,000 GHOST (50_000_000_000) → Pro: +15% boost, 10,000 API calls/day
+    /// - 500,000 GHOST (500_000_000_000) → Whale: +20% boost, unlimited API calls
+    pub fn calculate_boost(&mut self) {
+        // Update voting power (1 GHOST staked = 1 vote)
+        self.voting_power = self.amount_staked;
 
-    /// Get remaining lockup duration in seconds
-    pub fn remaining_lockup(&self, current_timestamp: i64) -> i64 {
-        if self.lockup_ends_at > current_timestamp {
-            self.lockup_ends_at - current_timestamp
+        // Set tier and quotas (GHOST has 6 decimals!)
+        if self.amount_staked >= 500_000_000_000 { // 500K GHOST (6 decimals) - Whale
+            self.reputation_boost_bps = 2000; // 20%
+            self.has_verified_badge = true;
+            self.has_premium_benefits = true;
+            self.tier = AccessTier::Whale;
+            self.api_calls_remaining = u32::MAX; // Unlimited
+        } else if self.amount_staked >= 50_000_000_000 { // 50K GHOST - Pro
+            self.reputation_boost_bps = 1500; // 15%
+            self.has_verified_badge = true;
+            self.has_premium_benefits = true;
+            self.tier = AccessTier::Pro;
+            self.api_calls_remaining = 10_000; // 10K calls/day
+        } else if self.amount_staked >= 5_000_000_000 { // 5K GHOST - Verified
+            self.reputation_boost_bps = 1000; // 10%
+            self.has_verified_badge = true;
+            self.has_premium_benefits = false;
+            self.tier = AccessTier::Verified;
+            self.api_calls_remaining = 1_000; // 1K calls/day
+        } else if self.amount_staked >= 1_000_000_000 { // 1K GHOST - Basic (Sybil minimum)
+            self.reputation_boost_bps = 500; // 5%
+            self.has_verified_badge = false;
+            self.has_premium_benefits = false;
+            self.tier = AccessTier::Basic;
+            self.api_calls_remaining = 100; // 100 calls/day
         } else {
-            0
+            // Below minimum stake - no access
+            self.reputation_boost_bps = 0;
+            self.has_verified_badge = false;
+            self.has_premium_benefits = false;
+            self.tier = AccessTier::None;
+            self.api_calls_remaining = 0; // No API access
         }
     }
 
-    /// Get lockup duration from tier
-    pub fn lockup_duration_from_tier(tier: u8) -> i64 {
-        match tier {
-            1 => 30 * 24 * 60 * 60,      // 1 month
-            2 => 90 * 24 * 60 * 60,      // 3 months
-            3 => 180 * 24 * 60 * 60,     // 6 months
-            4 => 365 * 24 * 60 * 60,     // 1 year
-            5 => 730 * 24 * 60 * 60,     // 2 years
-            _ => 0,                       // No lockup
-        }
+    /// Check if API quota needs reset (every 24 hours)
+    pub fn should_reset_quota(&self, current_time: i64) -> bool {
+        let time_since_reset = current_time - self.last_quota_reset;
+        time_since_reset >= 86400 // 24 hours in seconds
     }
 
-    /// Get voting power multiplier for lockup tier (basis points)
-    pub fn lockup_multiplier_from_tier(tier: u8) -> u16 {
-        match tier {
-            1 => 11000,  // 1.1x
-            2 => 12500,  // 1.25x
-            3 => 15000,  // 1.5x
-            4 => 20000,  // 2.0x
-            5 => 30000,  // 3.0x
-            _ => 10000,  // 1.0x
+    /// Reset daily API quota based on tier
+    pub fn reset_daily_quota(&mut self, current_time: i64) {
+        self.last_quota_reset = current_time;
+
+        self.api_calls_remaining = match self.tier {
+            AccessTier::Basic => 100,
+            AccessTier::Verified => 1_000,
+            AccessTier::Pro => 10_000,
+            AccessTier::Whale => u32::MAX, // Unlimited
+            AccessTier::None => 0,
+        };
+    }
+
+    /// Consume 1 API call (returns false if quota exceeded)
+    pub fn consume_api_call(&mut self) -> bool {
+        if self.api_calls_remaining == 0 {
+            return false; // Quota exhausted
+        }
+
+        if self.api_calls_remaining != u32::MAX { // Don't decrement unlimited
+            self.api_calls_remaining -= 1;
+        }
+
+        true
+    }
+
+    /// Check if this account has API access (any tier with quota)
+    pub fn has_api_access(&self) -> bool {
+        !matches!(self.tier, AccessTier::None)
+    }
+
+    /// Get daily API call limit for this tier
+    pub fn get_daily_api_limit(&self) -> u32 {
+        match self.tier {
+            AccessTier::Basic => 100,
+            AccessTier::Verified => 1_000,
+            AccessTier::Pro => 10_000,
+            AccessTier::Whale => u32::MAX, // Unlimited
+            AccessTier::None => 0,
         }
     }
 }
@@ -112,128 +168,100 @@ impl StakingAccount {
 /// Global staking configuration
 #[account]
 pub struct StakingConfig {
-    /// Authority that can update config
+    /// Authority who can update staking parameters
     pub authority: Pubkey,
 
-    /// GHOST token mint address
-    pub ghost_token_mint: Pubkey,
+    /// Minimum stake amount (1,000 GHOST)
+    pub min_stake: u64,
 
-    /// Treasury account for reward distribution
-    pub rewards_treasury: Pubkey,
+    /// Minimum lock duration (30 days in seconds)
+    pub min_lock_duration: i64,
 
-    /// Base APY in basis points (e.g., 500 = 5%)
-    pub base_apy: u16,
+    /// Slash percentage for fraud (50% = 5000 bps)
+    pub fraud_slash_bps: u16,
 
-    /// Bonus APY per lockup tier (basis points)
-    pub tier_bonus_apy: [u16; 6],
+    /// Slash percentage for dispute loss (10% = 1000 bps)
+    pub dispute_slash_bps: u16,
 
-    /// Minimum stake amount
-    pub min_stake_amount: u64,
+    /// Treasury account for slashed tokens
+    pub treasury: Pubkey,
 
-    /// Maximum stake amount per account (0 = no limit)
-    pub max_stake_amount: u64,
-
-    /// Total tokens staked across all accounts
-    pub total_staked: u64,
-
-    /// Total rewards distributed
-    pub total_rewards_distributed: u64,
-
-    /// Whether staking is currently enabled
-    pub is_enabled: bool,
-
-    /// Emergency pause flag
-    pub is_paused: bool,
-
-    /// Creation timestamp
-    pub created_at: i64,
-
-    /// Last update timestamp
-    pub updated_at: i64,
-
-    /// PDA bump
     pub bump: u8,
 }
 
 impl StakingConfig {
     pub const LEN: usize = 8 + // discriminator
         32 + // authority
-        32 + // ghost_token_mint
-        32 + // rewards_treasury
-        2 +  // base_apy
-        12 + // tier_bonus_apy (6 * 2)
-        8 +  // min_stake_amount
-        8 +  // max_stake_amount
-        8 +  // total_staked
-        8 +  // total_rewards_distributed
-        1 +  // is_enabled
-        1 +  // is_paused
-        8 +  // created_at
-        8 +  // updated_at
+        8 +  // min_stake
+        8 +  // min_lock_duration
+        2 +  // fraud_slash_bps
+        2 +  // dispute_slash_bps
+        32 + // treasury
         1;   // bump
-
-    /// Calculate APY for a given lockup tier
-    pub fn calculate_apy(&self, tier: u8) -> u16 {
-        let tier_index = if tier < 6 { tier as usize } else { 0 };
-        self.base_apy + self.tier_bonus_apy[tier_index]
-    }
-
-    /// Calculate pending rewards for a staking account
-    pub fn calculate_rewards(&self, staking_account: &StakingAccount, current_timestamp: i64) -> u64 {
-        if staking_account.staked_amount == 0 {
-            return 0;
-        }
-
-        let duration = current_timestamp.saturating_sub(staking_account.last_claim_at);
-        if duration <= 0 {
-            return 0;
-        }
-
-        let apy = self.calculate_apy(staking_account.lockup_tier);
-        
-        // Calculate rewards: amount * apy * duration / (365 days * 10000 basis points)
-        let annual_reward = (staking_account.staked_amount as u128 * apy as u128) / 10000;
-        let duration_seconds = duration as u128;
-        let seconds_per_year = 365u128 * 24 * 60 * 60;
-        
-        ((annual_reward * duration_seconds) / seconds_per_year) as u64
-    }
 }
 
-/// Staking events
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct TokensStakedEvent {
-    pub owner: Pubkey,
+/// Access tiers based on GHOST token stake amount
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum AccessTier {
+    /// No stake or below minimum (< 1,000 GHOST) - No API access
+    #[default]
+    None,
+    /// Basic tier: 1,000+ GHOST → 100 API calls/day, Sybil-resistant registration
+    Basic,
+    /// Verified tier: 5,000+ GHOST → 1,000 API calls/day, verified badge
+    Verified,
+    /// Pro tier: 50,000+ GHOST → 10,000 API calls/day, premium features
+    Pro,
+    /// Whale tier: 500,000+ GHOST → Unlimited API calls, max governance power
+    Whale,
+}
+
+/// Reasons for slashing staked tokens
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SlashReason {
+    /// Proven fraud (50% slash)
+    Fraud,
+    /// Lost dispute (10% slash)
+    DisputeLoss,
+    /// Custom slash amount
+    Custom,
+}
+
+// =====================================================
+// STAKING EVENTS
+// =====================================================
+
+#[event]
+pub struct GhostStakedEvent {
+    pub agent: Pubkey,
     pub amount: u64,
-    pub lockup_tier: u8,
-    pub lockup_ends_at: i64,
+    pub unlock_at: i64,
+    pub reputation_boost_bps: u16,
+    pub tier: AccessTier,
+    pub daily_api_calls: u32,
+    pub voting_power: u64,
+}
+
+#[event]
+pub struct GhostUnstakedEvent {
+    pub agent: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
+pub struct GhostSlashedEvent {
+    pub agent: Pubkey,
+    pub amount: u64,
+    pub reason: SlashReason,
+    pub new_tier: AccessTier,
+}
+
+#[event]
+pub struct TierUpdatedEvent {
+    pub agent: Pubkey,
+    pub old_tier: AccessTier,
+    pub new_tier: AccessTier,
     pub total_staked: u64,
-    pub timestamp: i64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct TokensUnstakedEvent {
-    pub owner: Pubkey,
-    pub amount: u64,
-    pub rewards_claimed: u64,
-    pub remaining_staked: u64,
-    pub timestamp: i64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct RewardsClaimedEvent {
-    pub owner: Pubkey,
-    pub amount: u64,
-    pub total_claimed: u64,
-    pub timestamp: i64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct LockupExtendedEvent {
-    pub owner: Pubkey,
-    pub old_tier: u8,
-    pub new_tier: u8,
-    pub new_lockup_ends_at: i64,
-    pub bonus_rewards: u64,
-    pub timestamp: i64,
+    pub daily_api_calls: u32,
+    pub voting_power: u64,
 }

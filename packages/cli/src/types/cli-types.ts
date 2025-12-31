@@ -69,46 +69,7 @@ export interface ManageOptions {
   agent?: string
 }
 
-// Marketplace Command Options
-export interface CreateServiceOptions {
-  title?: string
-  description?: string
-  price?: string
-  category?: string
-  tags?: string
-  requirements?: string
-}
-
-export interface BuyServiceOptions {
-  service: string
-  agent?: string
-  requirements?: string
-}
-
-export interface ListServicesOptions {
-  category?: string
-  tags?: string
-  minPrice?: string
-  maxPrice?: string
-  limit?: string
-  sortBy?: string
-}
-
-export interface SearchServicesOptions {
-  query: string
-  category?: string
-  tags?: string
-  minPrice?: string
-  maxPrice?: string
-  limit?: string
-}
-
-export interface JobsOptions {
-  status?: string
-  agent?: string
-  client?: string
-  limit?: string
-}
+// Marketplace Command Options REMOVED
 
 // Governance Command Options
 export interface CreateMultisigOptions {
@@ -158,76 +119,7 @@ export interface DisputeEscrowOptions {
   evidence?: string
 }
 
-// Auction Command Options
-export interface CreateAuctionOptions {
-  type?: string
-  startingPrice?: string
-  reservePrice?: string
-  duration?: string
-  agent?: string
-}
-
-export interface BidAuctionOptions {
-  auction?: string
-  bid?: string
-}
-
-export interface ListAuctionsOptions {
-  type?: string
-  status?: string
-  agent?: string
-  limit?: string
-  mine?: boolean
-}
-
-// Channel Command Options
-export interface CreateChannelOptions {
-  name?: string
-  description?: string
-  type?: string
-  participants?: string[]
-}
-
-export interface SendMessageOptions {
-  channel: string
-  message: string
-  type?: string
-}
-
-export interface ListChannelsOptions {
-  type?: string
-  participant?: string
-  limit?: string
-}
-
-// Dispute Command Options
-export interface FileDisputeOptions {
-  workOrder?: string
-  reason?: string
-  description?: string
-  evidence?: string[]
-  resolution?: string
-}
-
-export interface ResolveDisputeOptions {
-  dispute: string
-  resolution?: string
-  ruling?: string
-  compensation?: string
-}
-
-export interface EscalateDisputeOptions {
-  dispute: string
-  reason?: string
-  urgency?: string
-}
-
-export interface ListDisputesOptions {
-  status?: string
-  mine?: boolean
-  asArbitrator?: boolean
-  limit?: string
-}
+// Auction, Channel, Dispute Command Options REMOVED
 
 // Faucet Command Options
 export interface FaucetOptions {
@@ -316,7 +208,7 @@ export function isValidUrl(value: string): boolean {
      
     new URL(value)
     return true
-  } catch (error) {
+  } catch {
     return false
   }
 }
@@ -358,33 +250,7 @@ export function parseFloatSafe(value: string): number | undefined {
   return isNaN(parsed) ? undefined : parsed
 }
 
-// Auction Data Types
-export interface AuctionData {
-  auction: string
-  auctionType: string | { toString(): string }
-  currentPrice: bigint | number | string
-  startingPrice: bigint | number | string
-  currentBid?: bigint | number | string
-  auctionEndTime: number | string | bigint
-  totalBids: number
-  currentWinner?: Address | string
-  currentBidder?: Address | string
-}
-
-export interface AuctionListItem {
-  address: string
-  creator: Address
-  auctionType: string
-  startingPrice: bigint
-  currentBid?: bigint
-  currentPrice: bigint
-  currentBidder?: Address
-  minimumBidIncrement: bigint
-  totalBids: number
-  status: string
-  auctionEndTime: number
-  currentWinner?: Address
-}
+// Auction Data Types REMOVED
 
 // Diagnose Command Types
 export interface DiagnoseOptions {
@@ -407,21 +273,7 @@ export interface DiagnosticReport {
   warnings: string[]
 }
 
-// Type Guards for Auction Data
-export function isValidAuctionData(data: unknown): data is AuctionData {
-  if (typeof data !== 'object' || data === null) return false
-  
-  const auction = data as Record<string, unknown>
-  return (
-    typeof auction.auction === 'string' &&
-    (typeof auction.auctionType === 'string' || 
-     (typeof auction.auctionType === 'object' && auction.auctionType !== null && 'toString' in auction.auctionType)) &&
-    (typeof auction.currentPrice === 'bigint' || typeof auction.currentPrice === 'number' || typeof auction.currentPrice === 'string') &&
-    (typeof auction.startingPrice === 'bigint' || typeof auction.startingPrice === 'number' || typeof auction.startingPrice === 'string') &&
-    (typeof auction.auctionEndTime === 'number' || typeof auction.auctionEndTime === 'string' || typeof auction.auctionEndTime === 'bigint') &&
-    typeof auction.totalBids === 'number'
-  )
-}
+// Type Guards for Auction Data REMOVED
 
 export function isValidDiagnoseOptions(options: unknown): options is DiagnoseOptions {
   if (typeof options !== 'object' || options === null) return false

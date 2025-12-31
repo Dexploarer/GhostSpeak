@@ -4,6 +4,7 @@ import prettierPlugin from 'eslint-plugin-prettier'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import pluginNext from '@next/eslint-plugin-next'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

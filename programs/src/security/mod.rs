@@ -9,7 +9,7 @@
 pub mod admin_validation;
 pub mod agent_validation;
 pub mod circuit_breaker;
-pub mod commit_reveal;
+// pub mod commit_reveal; // REMOVED - auction code
 pub mod rate_limiting;
 pub mod reentrancy;
 
@@ -25,10 +25,7 @@ pub use rate_limiting::{
     RateLimiter, UserRateLimit,
 };
 
-pub use commit_reveal::{
-    commit_bid, create_commit_reveal_auction, reveal_bid, AuctionPhase, BidCommitment, CommitBid,
-    CommitRevealAuction, CreateCommitRevealAuction, RevealBid, RevealedBid,
-};
+// pub use commit_reveal::*; // REMOVED - auction code
 
 pub use admin_validation::{
     is_system_address, is_test_address, require_valid_admin, validate_admin_configuration,

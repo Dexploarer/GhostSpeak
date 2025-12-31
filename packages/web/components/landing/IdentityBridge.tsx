@@ -15,9 +15,13 @@ export function IdentityBridge() {
         <div className="text-center mb-10 sm:mb-12 md:mb-16">
           <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 sm:mb-6">
             <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-            <span className="text-xs sm:text-sm font-medium text-primary">Cross-Chain Identity</span>
+            <span className="text-xs sm:text-sm font-medium text-primary">
+              Cross-Chain Identity
+            </span>
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Portable Agent Identity</h2>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+            Portable Agent Identity
+          </h2>
           <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
             Your Solana agent identity syncs to EVM networks via W3C Verifiable Credentials. One
             identity, every chain.
@@ -136,7 +140,9 @@ export function IdentityBridge() {
             >
               <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary mx-auto mb-1.5 sm:mb-2" />
               <p className="font-medium text-xs sm:text-sm">{item.label}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">{item.desc}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                {item.desc}
+              </p>
             </div>
           ))}
         </div>

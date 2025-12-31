@@ -6,69 +6,81 @@
 
 // Core modules (working)
 pub mod agent;
+pub mod agent_authorization; // ERC-8004 parity for PayAI
 pub mod agent_compressed;
 pub mod agent_management;
 
+// Payment modules - commented out until implemented
+// pub mod pay_with_usdc;
+// pub mod burn_ghost_for_payment;
+// pub mod pay_with_crossmint;
+
+// B2B billing module - commented out until implemented
+// pub mod b2b_billing;
+
 // Additional modules
-pub mod a2a_protocol;
-pub mod analytics;
-pub mod analytics_events;
-pub mod auction;
-pub mod bulk_deals;
-pub mod channel_operations;
+// pub mod a2a_protocol; // REMOVED - agent messaging not needed for VC/Reputation
+// pub mod analytics; // Removed
+// pub mod analytics_events; // Removed
+// pub mod auction; // Removed
+// pub mod bulk_deals; // Removed
+// pub mod channel_operations; // Removed
 pub mod compliance_governance;
+// pub mod access_control; // Temporarily commented out - missing methods on StakingAccount
 pub mod credential;
-pub mod dispute;
-pub mod escrow_operations;
-pub mod extensions;
-pub mod governance_voting;
-pub mod h2a_protocol;
-pub mod incentives;
-pub mod marketplace;
-pub mod messaging;
-pub mod negotiation;
-pub mod pricing;
+pub mod did; // Decentralized identifiers (did:sol)
+// pub mod dispute; // Removed
+pub mod ghost_protect;
+// pub mod extensions; // Removed
+// pub mod governance_voting; // Removed - simple admin authority via protocol_config
+// pub mod h2a_protocol; // REMOVED - human-agent messaging not needed for VC/Reputation
+// pub mod incentives; // Removed - payment-based incentives delegated to PayAI
+// pub mod marketplace; // Removed
+// pub mod messaging; // Removed
+// pub mod negotiation; // Removed
+// pub mod pricing; // Removed
 pub mod protocol_config;
-pub mod replication;
+// pub mod replication; // Removed
 pub mod reputation;
-pub mod royalty;
+// pub mod revenue_distribution; // Commented out until implemented
+// pub mod royalty; // Removed
+// pub mod privacy; // Temporarily commented out - has errors with owner field
 pub mod security_init;
 pub mod staking;
-pub mod token_2022_operations;
-pub mod work_orders;
-pub mod x402_operations;
+// pub mod token_2022_operations; // Removed - not aligned with VC/Reputation pivot
+// pub mod work_orders; // Removed
+// pub mod x402_operations; // Removed - payment facilitation delegated to PayAI
 
 // Re-export all instruction handlers (2025 Anchor best practice)
-pub use a2a_protocol::*;
+// pub use a2a_protocol::*; // REMOVED
 pub use agent::*;
+pub use agent_authorization::*; // ERC-8004 parity for PayAI
 pub use agent_compressed::*;
 pub use agent_management::*;
-pub use analytics::*;
-pub use analytics_events::*;
-pub use auction::*;
-pub use bulk_deals::*;
-pub use channel_operations::*;
+// pub use pay_with_usdc::*;
+// pub use burn_ghost_for_payment::*;
+// pub use pay_with_crossmint::*;
+// pub use b2b_billing::*;
+// pub mod analytics re-exports removed
 pub use compliance_governance::*;
+// pub use access_control::*; // Temporarily commented out - module has errors
 pub use credential::*;
-pub use dispute::*;
-pub use escrow_operations::*;
-pub use extensions::*;
-pub use governance_voting::*;
-pub use h2a_protocol::*;
-pub use incentives::*;
-pub use marketplace::*;
-pub use messaging::*;
-pub use negotiation::*;
-pub use pricing::*;
+pub use did::*; // DID instruction handlers
+// pub use dispute::*; // Removed
+pub use ghost_protect::*;
+// pub mod extensions re-exports removed
+// pub use governance_voting::*; // Removed - simple admin authority via protocol_config
+// pub use h2a_protocol::*; // REMOVED
+// pub use incentives::*; // Removed
 pub use protocol_config::*;
-pub use replication::*;
 pub use reputation::*;
-pub use royalty::*;
+// pub use revenue_distribution::*;
+// pub use privacy::*; // Temporarily commented out - module has errors
 pub use security_init::*;
 pub use staking::*;
-pub use token_2022_operations::*;
-pub use work_orders::*;
-pub use x402_operations::*;
+// pub use token_2022_operations::*; // Removed
+// pub use work_orders::*; // Removed
+// pub use x402_operations::*; // Removed
 
 use anchor_lang::prelude::*;
 

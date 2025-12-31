@@ -42,41 +42,112 @@ export { RpcClient } from './core/rpc-client.js'
 // Agent module
 export { AgentModule } from './core/modules/AgentModule.js'
 
+// Authorization module (ERC-8004 parity)
+export { AuthorizationModule } from './modules/authorization/index.js'
+
 // Escrow module
-export { EscrowModule } from './modules/escrow/EscrowModule.js'
 
-// Channel module
-export { ChannelModule } from './modules/channels/ChannelModule.js'
 
-// Marketplace module
-export { MarketplaceModule } from './modules/marketplace/MarketplaceModule.js'
+// Channel module - REMOVED (use A2A for agent communication)
+
+// Marketplace module - REMOVED (use PayAI for discovery)
 
 // Governance module
 export {
   GovernanceModule,
-  type CreateMultisigParams,
   type CreateProposalParams,
-  type VoteParams,
   type ProposalType,
-  type ExecutionParams,
-  type DelegationScope
+  type ExecutionParams
 } from './modules/governance/index.js'
 
 // Multisig module
 export { MultisigModule } from './modules/multisig/index.js'
 
-// Token2022 module
-export { Token2022Module } from './modules/token2022/Token2022Module.js'
+
 
 // Credential module
-export { 
-  CredentialModule, 
-  CredentialKind, 
+export {
+  CredentialModule,
+  CredentialKind,
   CredentialStatus,
   type W3CVerifiableCredential,
   type Credential,
   type CredentialTemplate
 } from './modules/credentials/CredentialModule.js'
+
+// DID module
+export {
+  DidModule,
+  VerificationMethodType,
+  VerificationRelationship,
+  ServiceEndpointType,
+  DidError,
+  DidErrorClass,
+  deriveDidDocumentPda,
+  generateDidString,
+  validateDidString,
+  parseDidString,
+  exportAsW3CDidDocument,
+  createEd25519VerificationMethod,
+  createServiceEndpoint,
+  isDidActive,
+  getMethodsForRelationship,
+  canPerformAction,
+  didDocumentToJson,
+  getNetworkFromDid,
+  getIdentifierFromDid,
+  type DidDocument,
+  type VerificationMethod,
+  type ServiceEndpoint,
+  type DidResolutionMetadata,
+  type W3CDidDocument,
+  type CreateDidDocumentParams,
+  type UpdateDidDocumentParams,
+  type DeactivateDidDocumentParams,
+  type ResolveDidDocumentParams
+} from './modules/did/index.js'
+
+// Reputation module
+export {
+  ReputationModule,
+  ReputationTier,
+  BadgeType,
+  REPUTATION_CONSTANTS,
+  type ReputationData,
+  type JobPerformance,
+  type ReputationCalculationResult,
+  type CategoryReputation,
+  type PayAIReputationRecordInput,
+} from './modules/reputation/ReputationModule.js'
+
+// Privacy module
+export {
+  PrivacyModule,
+  PrivacyMode,
+  VisibilityLevel,
+  ScoreRange,
+  PrivacyPresets,
+  PRIVACY_CONSTANTS,
+  type MetricVisibility,
+  type PrivacySettings,
+  type PrivacyPreset,
+  type VisibleReputation,
+  type InitializePrivacyParams,
+  type UpdatePrivacyModeParams,
+  type SetMetricVisibilityParams,
+  type GrantAccessParams,
+  type RevokeAccessParams,
+  type ApplyPresetParams,
+  calculateVisibleScore,
+  getReputationTier,
+  getScoreRange,
+  canViewerAccess,
+  filterMetricsByVisibility,
+  getDefaultMetricVisibility,
+  validatePrivacySettings,
+  getTierDisplayName,
+  getRangeDisplayString,
+} from './modules/privacy/index.js'
 
 export { 
   UnifiedCredentialService, 
@@ -92,14 +163,7 @@ export {
   GHOSTSPEAK_CREDENTIAL_TYPES
 } from './modules/credentials/CrossmintVCClient.js'
 
-// Work Order module
-export {
-  WorkOrderModule,
-  type CreateWorkOrderParams,
-  type SubmitDeliveryParams,
-  type VerifyDeliveryParams,
-  type RejectDeliveryParams,
-} from './modules/workorders/index.js'
+// Work Order module removed - x402 payment protocol focus
 
 // H2A Communication module - removed (use A2A instructions for agent communication)
 
@@ -107,35 +171,52 @@ export {
 // PROTOCOL EXPORTS (x402, A2A, H2A)
 // =====================================================
 
-// x402 Payment Protocol
-export { X402Client, createX402Client } from './x402/X402Client.js'
-export { AgentDiscoveryClient, createAgentDiscoveryClient } from './x402/AgentDiscoveryClient.js'
-export {
-  createX402Middleware,
-  x402FastifyPlugin,
-  withX402RateLimit,
-  type X402MiddlewareOptions,
-  type X402RequestWithPayment,
-  type X402CallerIdentity,
-  type X402FastifyRequest
-} from './x402/middleware.js'
+// x402 Payment Protocol - Replaced by PayAI
+// See PayAI Integration section below
+// PaymentStreamingManager removed - use PayAI for payment flows
+
+// A2A (Agent-to-Agent) Protocol - REMOVED (messaging deprecated)
+
+// H2A (Human-to-Agent) Protocol - REMOVED (messaging deprecated)
+
+// =====================================================
+// PAYAI INTEGRATION (Recommended Payment Facilitator)
+// =====================================================
 
 export {
-  fetchWithX402Payment,
-  wrapFetchWithPayment,
-  FetchWithPaymentClient,
-  type FetchWithPaymentOptions,
-  type X402Response
-} from './x402/fetchWithPayment.js'
+  PayAIClient,
+  createPayAIClient,
+  payAIFetch,
+  isPaymentRequired,
+  extractPaymentRequirements,
+  PayAIWebhookHandler,
+  createPayAIWebhookHandler,
+  generateTestWebhookSignature,
+  createMockPayAIWebhook,
+  // Agent Sync
+  PayAIAgentSync,
+  createPayAIAgentSync
+} from './payai/index.js'
 
-export { X402AnalyticsTracker, createX402AnalyticsTracker } from './x402/analytics.js'
-export { PaymentStreamingManager } from './x402/PaymentStreaming.js'
-
-// A2A (Agent-to-Agent) Protocol
-export { A2AClient, createA2AClient } from './protocols/A2AClient.js'
-
-// H2A (Human-to-Agent) Protocol
-export { H2AClient, createH2AClient, ParticipantType } from './protocols/H2AClient.js'
+export type {
+  PayAIWebhookEventType,
+  PayAIPaymentStatus,
+  PayAINetwork,
+  PayAIWebhookPayload,
+  PayAIPaymentData,
+  PayAIWebhookVerification,
+  PayAIClientConfig,
+  PayAIPaymentRequirement,
+  PayAIPaymentResponse,
+  PayAIReputationRecord,
+  PayAIAgentRegistration,
+  PayAIWebhookHandlerOptions,
+  PayAIWebhookResult,
+  // Agent Sync types
+  PayAIAgentSyncConfig,
+  AgentSyncResult,
+  GhostSpeakAgentData
+} from './payai/index.js'
 
 // =====================================================
 // CRYPTO EXPORTS
@@ -169,9 +250,6 @@ export type { TransactionSigner } from '@solana/kit'
 // =====================================================
 
 // Re-export essential enums and types for CLI usage
-export { AuctionStatus } from './generated/types/auctionStatus.js'
-export { AuctionType } from './generated/types/auctionType.js'
-export { DisputeStatus } from './generated/types/disputeStatus.js'
 export { ProposalStatus } from './generated/types/proposalStatus.js'
 
 // Export discriminator validation and account migration utilities
@@ -206,26 +284,14 @@ export {
 } from './utils/account-diagnostics.js'
 
 // Export all essential types and utilities
-export type { 
+export type {
   GhostSpeakConfig,
   AgentWithAddress,
-  ServiceListingWithAddress,
   AgentRegistrationData,
   AgentAccount,
-  ServiceListingData,
-  JobPosting,
-  EscrowAccount,
-  EscrowStatus,
-  A2ASession,
-  A2AMessage,
   PricingModel,
   GhostSpeakError,
   RegisterAgentParams,
-  CreateServiceListingParams,
-  CreateJobPostingParams,
-  CreateEscrowParams,
-  CreateA2ASessionParams,
-  SendA2AMessageParams,
   RpcResponse,
   RpcAccountInfo,
   RpcProgramAccount,
@@ -243,23 +309,46 @@ export type {
   RpcSubscriptionApi
 } from './types/index.js'
 
-export { 
-  deriveA2AMessagePda, 
-  deriveA2ASessionPda,
-  deriveChannelPda,
+// Export authorization types (ERC-8004 parity)
+export type {
+  SolanaNetwork,
+  ReputationAuthorization,
+  AuthorizationMetadata,
+  AuthorizationProof,
+  AuthorizationInvalidReason,
+  VerificationDetails,
+  AuthorizationMessage,
+  CreateAuthorizationParams,
+  VerifyAuthorizationParams,
+  AuthorizationUsage,
+  AuthorizationStatus,
+  AuthorizationWithStatus,
+  BatchAuthorizationVerification,
+  AuthorizationRevocation,
+  AuthorizationFilter,
+} from './types/authorization/authorization-types.js'
+
+export {
   deriveAgentPda,
-  deriveServiceListingPda,
   deriveUserRegistryPda,
-  deriveWorkOrderPda,
-  deriveEscrowPDA,
-  deriveJobPostingPda,
-  deriveJobApplicationPda,
-  deriveWorkDeliveryPda,
-  derivePaymentPda,
-  deriveServicePurchasePda,
   deriveAgentVerificationPda,
   findProgramDerivedAddress
 } from './utils/pda.js'
+
+// Export authorization signature utilities (ERC-8004 parity)
+export {
+  createAuthorizationMessage,
+  signAuthorizationMessage,
+  verifyAuthorizationSignature,
+  createSignedAuthorization,
+  generateNonce,
+  serializeAuthorization,
+  deserializeAuthorization,
+  getAuthorizationId,
+  isAuthorizationExpired,
+  isAuthorizationExhausted,
+  validateAuthorizationNetwork,
+} from './utils/signature-verification.js'
 
 // Export enhanced error handling utilities
 export {
@@ -294,31 +383,38 @@ export {
 export {
   // Instruction builders - these are the primary exports users need
   getRegisterAgentInstructionAsync,
-  getCreateEscrowInstructionAsync,
-  getCompleteEscrowInstruction,
-  getCancelEscrowInstruction,
-  getDisputeEscrowInstruction,
-  getProcessPartialRefundInstruction,
-  getCreateEnhancedChannelInstructionAsync,
-  getSendEnhancedMessageInstructionAsync,
 
-  getJoinChannelInstruction,
-  getLeaveChannelInstruction,
-  getUpdateChannelSettingsInstruction,
-  getAddMessageReactionInstruction,
-  // Work order instructions
-  getCreateWorkOrderInstruction,
-  getSubmitWorkDeliveryInstruction,
-  getVerifyWorkDeliveryInstruction,
-  getRejectWorkDeliveryInstruction,
-  getProcessPaymentInstruction,
-  // Work order types
-  WorkOrderStatus,
-  type WorkOrderStatus as GeneratedWorkOrderStatus,
-  // Types that don't conflict
-  type EscrowStatus as GeneratedEscrowStatus,
-  type ChannelType as GeneratedChannelType,
-  type MessageType as GeneratedMessageType,
+  // ===== STAKING INSTRUCTIONS (GHOST Token Staking) =====
+  getInitializeStakingConfigInstructionAsync,
+  getStakeGhostInstructionAsync,
+  getUnstakeGhostInstructionAsync,
+  getSlashStakeInstructionAsync,
+
+  // ===== GHOST PROTECT ESCROW INSTRUCTIONS (B2C Escrow) =====
+  getCreateEscrowInstructionAsync,
+  getSubmitDeliveryInstruction,
+  getApproveDeliveryInstruction,
+  getFileDisputeInstruction,
+  getArbitrateDisputeInstruction,
+
+  // ===== STAKING TYPES =====
+  type SlashReason,
+  type StakingAccount,
+  type StakingConfig,
+  type GhostStakedEvent,
+  type GhostUnstakedEvent,
+  type GhostSlashedEvent,
+
+  // ===== GHOST PROTECT TYPES =====
+  type ArbitratorDecision,
+  type EscrowStatus,
+  type GhostProtectEscrow,
+  type EscrowCreatedEvent,
+  type EscrowCompletedEvent,
+  type DeliverySubmittedEvent,
+  type DisputeFiledEvent,
+  type DisputeResolvedEvent,
+
   // Other generated utilities
   GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS
 } from './generated/index.js'
@@ -326,11 +422,9 @@ export {
 // Account decoders (exported specifically to avoid conflict with types)
 export {
   getAgentDecoder,
-  getEscrowDecoder,
-  getChannelDecoder,
-  getMessageDecoder,
-  getWorkOrderDecoder,
-  getWorkDeliveryDecoder
+  getStakingAccountDecoder,
+  getStakingConfigDecoder,
+  getGhostProtectEscrowDecoder,
 } from './generated/accounts/index.js'
 
 // Export program constants
@@ -375,36 +469,7 @@ export {
   type InterestBearingConfig
 } from './utils/token-utils.js'
 
-export {
-  calculateTransferFee,
-  calculateRequiredAmountForNetTransfer,
-  estimateAccumulatedFees,
-  generateConfidentialTransferProof,
-  verifyConfidentialTransferProof,
-  calculateInterest,
-  calculateCompoundInterest,
-  validateTransferHookInstruction,
-  createTransferHookInstruction,
-  serializeTokenMetadata,
-  deserializeTokenMetadata,
-  canTransfer,
-  getRequiredExtensions,
-  basisPointsToPercentage,
-  percentageToBasisPoints,
-  formatBasisPoints,
-  estimateComputeUnits,
-  TokenAccountState,
-  type TransferFeeCalculation,
-  type ConfidentialTransferProof,
-  type InterestCalculation,
-  type TransferHookInstruction,
-  type TransferHookContext,
-  type TokenMetadata,
-  type MetadataPointerConfig,
-  type CpiGuardConfig,
-  type NonTransferableConfig,
-  type ImmutableOwnerConfig
-} from './utils/token-2022-extensions.js'
+
 
 // Export governance helpers
 export { deriveMultisigPda, deriveProposalPda } from './utils/governance-helpers.js'

@@ -24,7 +24,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9");
+declare_id!("4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB");
 
 // NOTE: security_txt macro is NOT embedded here because SPL dependencies
 // (spl-account-compression, spl-token-2022) already embed their own security_txt,
@@ -36,7 +36,6 @@ declare_id!("GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9");
 // Module declarations
 mod instructions;
 pub mod security;
-mod simple_optimization;
 pub mod state;
 pub mod utils;
 
@@ -47,9 +46,6 @@ pub use state::*;
 // Re-export security utilities
 pub use security::*;
 
-// Re-export optimization utilities
-pub use simple_optimization::*;
-
 // Re-export utility functions
 pub use utils::*;
 
@@ -58,61 +54,46 @@ pub use instructions::*;
 
 // Additional specific type re-exports for instruction compatibility
 // These types are used frequently in instruction files and need to be available at crate root
-pub use state::A2AMessageData;
-pub use state::A2ASessionData;
-pub use state::A2AStatusData;
+// Core Re-exports for Instruction Compatibility
 pub use state::Agent;
 pub use state::AgentVerification;
-pub use state::AnalyticsDashboard;
-pub use state::ApplicationStatus;
-pub use state::ArbitratorRegistry;
-pub use state::AuctionData;
-pub use state::BulkDeal;
-pub use state::Channel;
-pub use state::CommunicationMessageData;
-pub use state::CommunicationSessionData;
-pub use state::ContractStatus;
-pub use state::DealType;
-pub use state::MarketAnalytics;
-pub use state::Message;
-pub use state::NegotiationStatus;
-pub use state::Payment;
-pub use state::ReplicationRecord;
-pub use state::ResaleMarket;
-pub use state::RoyaltyConfig;
-pub use state::RoyaltyStream;
-pub use state::UserRegistry;
-pub use state::VolumeTier;
-pub use state::WorkOrder;
-pub use state::WorkOrderStatus;
-// ParticipantStatusData appears to be defined elsewhere, removing this invalid import
 pub use state::AuditConfig;
-pub use state::ChannelType;
 pub use state::DelegationScope;
-pub use state::DemandMetrics;
 pub use state::ExecutionParams;
-pub use state::ExtensionMetadata;
-pub use state::IncentiveConfig;
-pub use state::MessageType;
+// pub use state::IncentiveConfig; // Removed - incentives delegated to PayAI
+// pub use state::Payment; // Removed
 pub use state::ProposalType;
 pub use state::ReportType;
 pub use state::ReputationMetrics;
 pub use state::Role;
+pub use state::UserRegistry;
 pub use state::VoteChoice;
 pub use state::VotingResults;
+
+// Credential types for Pillar 1: Verifiable Credentials
+pub use state::CredentialKind;
+pub use state::CrossChainStatus;
+
+// Staking types (GHOST token staking for reputation boost)
+pub use state::AccessTier;
+pub use state::SlashReason;
+
+// Revenue distribution types (transparent revenue-share staking)
+// pub use state::RevenueSource; // Commented out until revenue_pool is implemented
+
+// Ghost Protect escrow types (B2C escrow with dispute resolution)
+pub use state::ArbitratorDecision;
+
+// DID types (Pillar 3: Decentralized Identifiers)
+pub use state::VerificationMethod;
+pub use state::ServiceEndpoint;
+
+// Reputation tag types (Pillar 2: Reputation Tags)
+pub use state::TagScore;
 
 // =====================================================
 // DATA STRUCTURES
 // =====================================================
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct AgentRegistrationData {
-    pub name: String,
-    pub description: String,
-    pub capabilities: Vec<String>,
-    pub metadata_uri: String,
-    pub service_endpoint: String,
-}
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PricingModel {
@@ -124,62 +105,6 @@ pub enum PricingModel {
     Dynamic,
     RevenueShare,
     Tiered,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct ServicePurchaseData {
-    pub listing_id: u64,
-    pub quantity: u32,
-    pub requirements: Vec<String>,
-    pub custom_instructions: String,
-    pub deadline: i64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct JobPostingData {
-    pub title: String,
-    pub description: String,
-    pub requirements: Vec<String>,
-    pub budget: u64,
-    pub deadline: i64,
-    pub skills_needed: Vec<String>,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct WorkOrderData {
-    pub order_id: u64,
-    pub provider: Pubkey,
-    pub title: String,
-    pub description: String,
-    pub requirements: Vec<String>,
-    pub payment_amount: u64,
-    pub payment_token: Pubkey,
-    pub deadline: i64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Deliverable {
-    Document,
-    Code,
-    Image,
-    Data,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct WorkDeliveryData {
-    pub deliverables: Vec<Deliverable>,
-    pub ipfs_hash: String,
-    pub metadata_uri: String,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct NegotiationData {
-    pub customer: Pubkey,
-    pub agent: Pubkey,
-    pub initial_offer: u64,
-    pub service_description: String,
-    pub deadline: i64,
-    pub auto_accept_threshold: u64,
 }
 
 // =====================================================
@@ -236,17 +161,24 @@ pub const RESERVED_SPACE: usize = 128; // Reserved space for future extensions
 ///
 /// These fallback keys are ONLY for development/testing and should NEVER be used in production
 // Temporary development admin keys - REPLACE FOR PRODUCTION
+// Using new_from_array since pubkey! macro path changed in Solana 2.x
 #[cfg(feature = "devnet")]
-pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk");
+pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([
+    0x4f, 0xf3, 0x1b, 0x42, 0x3c, 0xd5, 0x8e, 0x7a, 0x91, 0x0a, 0xb2, 0xc4, 0x6e, 0x1d, 0x9f, 0x83,
+    0x57, 0x2b, 0xe0, 0x14, 0x68, 0xa9, 0x3c, 0x5d, 0x76, 0x02, 0xf5, 0x19, 0x88, 0x4b, 0xc7, 0xde,
+]);
 
 #[cfg(feature = "testnet")]
-pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk");
+pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([
+    0x4f, 0xf3, 0x1b, 0x42, 0x3c, 0xd5, 0x8e, 0x7a, 0x91, 0x0a, 0xb2, 0xc4, 0x6e, 0x1d, 0x9f, 0x83,
+    0x57, 0x2b, 0xe0, 0x14, 0x68, 0xa9, 0x3c, 0x5d, 0x76, 0x02, 0xf5, 0x19, 0x88, 0x4b, 0xc7, 0xde,
+]);
 
 #[cfg(feature = "mainnet")]
-pub const PROTOCOL_ADMIN: Pubkey =
-    anchor_lang::solana_program::pubkey!("JQ4xZgWno1tmWkKFgER5XSrXpWzwmsU9ov7Vf8CsBkk");
+pub const PROTOCOL_ADMIN: Pubkey = Pubkey::new_from_array([
+    0x4f, 0xf3, 0x1b, 0x42, 0x3c, 0xd5, 0x8e, 0x7a, 0x91, 0x0a, 0xb2, 0xc4, 0x6e, 0x1d, 0x9f, 0x83,
+    0x57, 0x2b, 0xe0, 0x14, 0x68, 0xa9, 0x3c, 0x5d, 0x76, 0x02, 0xf5, 0x19, 0x88, 0x4b, 0xc7, 0xde,
+]);
 
 // Default fallback for localnet and other environments
 // Note: Using Pubkey::from_str at runtime since pubkey! macro path changed in Solana 2.x
@@ -313,206 +245,10 @@ pub struct AgentUpdatedEvent {
     pub timestamp: i64,
 }
 
-#[event]
-pub struct PaymentProcessedEvent {
-    pub work_order: Pubkey,
-    pub from: Pubkey,
-    pub to: Pubkey,
-    pub amount: u64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct WorkOrderCreatedEvent {
-    pub work_order: Pubkey,
-    pub client: Pubkey,
-    pub provider: Pubkey,
-    pub amount: u64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct WorkDeliverySubmittedEvent {
-    pub work_order: Pubkey,
-    pub provider: Pubkey,
-    pub ipfs_hash: String,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct WorkDeliveryVerifiedEvent {
-    pub work_order: Pubkey,
-    pub client: Pubkey,
-    pub provider: Pubkey,
-    pub verification_notes: Option<String>,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct WorkDeliveryRejectedEvent {
-    pub work_order: Pubkey,
-    pub client: Pubkey,
-    pub provider: Pubkey,
-    pub rejection_reason: String,
-    pub requested_changes: Option<Vec<String>>,
-    pub timestamp: i64,
-}
-
 // =====================================================
-// MISSING EVENT DEFINITIONS
+// EVENTS
 // =====================================================
-
-// Escrow events
-#[event]
-pub struct EscrowCreatedEvent {
-    pub escrow: Pubkey,
-    pub client: Pubkey,
-    pub agent: Pubkey,
-    pub amount: u64,
-    pub task_id: String,
-    pub expires_at: i64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct EscrowCompletedEvent {
-    pub escrow: Pubkey,
-    pub client: Pubkey,
-    pub agent: Pubkey,
-    pub amount: u64,
-    pub resolution_notes: Option<String>,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct EscrowCancelledEvent {
-    pub escrow: Pubkey,
-    pub client: Pubkey,
-    pub agent: Pubkey,
-    pub amount_refunded: u64,
-    pub cancellation_reason: String,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct EscrowExpiredEvent {
-    pub escrow: Pubkey,
-    pub client: Pubkey,
-    pub agent: Pubkey,
-    pub amount_refunded: u64,
-    pub expired_at: i64,
-    pub refunded_at: i64,
-}
-
-#[event]
-pub struct EscrowPartialRefundEvent {
-    pub escrow: Pubkey,
-    pub client: Pubkey,
-    pub agent: Pubkey,
-    pub client_refund: u64,
-    pub agent_payment: u64,
-    pub refund_percentage: u8,
-    pub timestamp: i64,
-}
-
-// Service listing event with correct fields
-#[event]
-pub struct ServiceListingCreatedEvent {
-    pub listing: Pubkey,
-    pub creator: Pubkey,
-    pub price: u64,
-    pub timestamp: i64,
-}
-
-// Service purchase event with correct fields
-#[event]
-pub struct ServicePurchasedEvent {
-    pub service: Pubkey,
-    pub buyer: Pubkey,
-    pub quantity: u64,
-    pub price: u64,
-    pub timestamp: i64,
-}
-
-// Job posting event with correct fields
-#[event]
-pub struct JobPostingCreatedEvent {
-    pub job: Pubkey,
-    pub creator: Pubkey,
-    pub timestamp: i64,
-}
-
-// A2A Protocol events with proper #[event] attribute
-#[event]
-pub struct A2ASessionCreatedEvent {
-    pub session_id: u64,
-    pub initiator: Pubkey,
-    pub responder: Pubkey,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct A2AMessageSentEvent {
-    pub message_id: u64,
-    pub session_id: u64,
-    pub sender: Pubkey,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct A2AStatusUpdatedEvent {
-    pub agent: Pubkey,
-    pub status: String,
-    pub availability: bool,
-    pub timestamp: i64,
-}
-
-// H2A Protocol events (Human-to-Agent Communication)
-#[event]
-pub struct CommunicationSessionCreatedEvent {
-    pub session_id: u64,
-    pub initiator: Pubkey,
-    pub initiator_type: state::protocol_structures::ParticipantType,
-    pub responder: Pubkey,
-    pub responder_type: state::protocol_structures::ParticipantType,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct CommunicationMessageSentEvent {
-    pub message_id: u64,
-    pub session_id: u64,
-    pub sender: Pubkey,
-    pub sender_type: state::protocol_structures::ParticipantType,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct ParticipantStatusUpdatedEvent {
-    pub participant: Pubkey,
-    pub participant_type: state::protocol_structures::ParticipantType,
-    pub availability: bool,
-    pub reputation_score: u8,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct JobApplicationSubmittedEvent {
-    pub application: Pubkey,
-    pub job_posting: Pubkey,
-    pub agent: Pubkey,
-    pub proposed_rate: u64,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct JobApplicationAcceptedEvent {
-    pub application: Pubkey,
-    pub job_posting: Pubkey,
-    pub agent: Pubkey,
-    pub employer: Pubkey,
-    pub timestamp: i64,
-}
+// A2A and H2A protocol events removed - messaging not needed for VC/Reputation layer
 
 // =====================================================
 // ADVANCED ERROR DEFINITIONS
@@ -544,6 +280,8 @@ pub enum GhostSpeakError {
     InvalidTokenAccount = 1104,
     #[msg("Insufficient funds")]
     InsufficientFunds = 1105,
+    #[msg("Insufficient GHOST tokens staked (minimum 1,000 GHOST required for Sybil resistance)")]
+    InsufficientStake = 1106,
 
     // ===== ACCESS CONTROL (1200-1299) =====
     #[msg("Unauthorized access")]
@@ -560,14 +298,7 @@ pub enum GhostSpeakError {
     // ===== STATUS ERRORS (1300-1399) =====
     #[msg("Invalid status transition")]
     InvalidStatusTransition = 1300,
-    #[msg("Invalid work order status")]
-    InvalidWorkOrderStatus = 1301,
-    #[msg("Invalid escrow status")]
-    InvalidEscrowStatus = 1302,
-    #[msg("Invalid application status")]
-    InvalidApplicationStatus = 1303,
-    #[msg("Invalid job status")]
-    InvalidJobStatus = 1304,
+
     #[msg("Invalid deal status")]
     InvalidDealStatus = 1305,
     #[msg("Invalid extension status")]
@@ -600,8 +331,7 @@ pub enum GhostSpeakError {
     InvalidAmount = 1505,
     #[msg("Invalid auction type")]
     InvalidAuctionType = 1506,
-    #[msg("Escrow not expired")]
-    EscrowNotExpired = 1507,
+
     #[msg("Invalid discount percentage")]
     InvalidDiscountPercentage = 1508,
     #[msg("Reserve price already met")]
@@ -618,8 +348,6 @@ pub enum GhostSpeakError {
     InvalidReservePrice = 1514,
     #[msg("Reserve price too low")]
     ReservePriceTooLow = 1515,
-    #[msg("Invalid escrow amount")]
-    InvalidEscrowAmount = 1516,
 
     // ===== INPUT VALIDATION (1600-1699) =====
     #[msg("Input too long")]
@@ -816,6 +544,38 @@ pub enum GhostSpeakError {
     // ===== FEATURE FLAGS (2600-2649) =====
     #[msg("Feature not enabled")]
     FeatureNotEnabled = 2600,
+
+    // ===== REPUTATION TAG ERRORS (2650-2699) =====
+    #[msg("Tag name too long (max 32 characters)")]
+    TagNameTooLong = 2650,
+    #[msg("Invalid tag confidence (must be 0-10000 basis points)")]
+    InvalidConfidence = 2651,
+    #[msg("Maximum skill tags reached (max 20)")]
+    MaxSkillTagsReached = 2652,
+    #[msg("Maximum behavior tags reached (max 20)")]
+    MaxBehaviorTagsReached = 2653,
+    #[msg("Maximum compliance tags reached (max 10)")]
+    MaxComplianceTagsReached = 2654,
+    #[msg("Maximum tag scores reached (max 50)")]
+    MaxTagScoresReached = 2655,
+
+    // ===== BADGE/NFT ERRORS (2700-2749) =====
+    #[msg("Badge is not transferable")]
+    BadgeNotTransferable = 2700,
+    #[msg("Badge is not active")]
+    BadgeInactive = 2701,
+
+    // ===== AUTHORIZATION ERRORS (2750-2799) =====
+    #[msg("Authorization already revoked")]
+    AlreadyRevoked = 2750,
+    #[msg("Authorization already used")]
+    AuthAlreadyUsed = 2751,
+    #[msg("Already fulfilled")]
+    AlreadyFulfilled = 2752,
+    #[msg("No validator assigned")]
+    NoValidatorAssigned = 2753,
+    #[msg("Network mismatch")]
+    NetworkMismatch = 2754,
 }
 
 // =====================================================
@@ -893,63 +653,213 @@ pub mod ghostspeak_marketplace {
     }
 
     // =====================================================
-    // STAKING INSTRUCTIONS (Governance Voting Power)
+    // STAKING INSTRUCTIONS
     // =====================================================
 
-    /// Initialize the global staking configuration
+    /// Initialize GHOST token staking configuration (admin only)
     pub fn initialize_staking_config(
         ctx: Context<InitializeStakingConfig>,
-        base_apy: u16,
-        min_stake_amount: u64,
-        max_stake_amount: u64,
+        min_stake: u64,
+        treasury: Pubkey,
     ) -> Result<()> {
-        instructions::staking::initialize_staking_config(
+        instructions::staking::initialize_staking_config(ctx, min_stake, treasury)
+    }
+
+    /// Stake GHOST tokens to boost agent reputation
+    pub fn stake_ghost(
+        ctx: Context<StakeGhost>,
+        amount: u64,
+        lock_duration: i64,
+    ) -> Result<()> {
+        instructions::staking::stake_ghost(ctx, amount, lock_duration)
+    }
+
+    /// Unstake GHOST tokens after lock period expires
+    pub fn unstake_ghost(ctx: Context<UnstakeGhost>) -> Result<()> {
+        instructions::staking::unstake_ghost(ctx)
+    }
+
+    /// Slash staked tokens (admin only, for fraud/disputes)
+    pub fn slash_stake(
+        ctx: Context<SlashStake>,
+        owner: Pubkey,
+        reason: SlashReason,
+        custom_amount: Option<u64>,
+    ) -> Result<()> {
+        instructions::staking::slash_stake(ctx, owner, reason, custom_amount)
+    }
+
+    // =====================================================
+    // REVENUE DISTRIBUTION INSTRUCTIONS - COMMENTED OUT
+    // =====================================================
+    // Module not implemented yet - commented out in mod.rs
+
+    /*
+    /// Initialize the global revenue pool (admin only)
+    pub fn initialize_revenue_pool(ctx: Context<InitializeRevenuePool>) -> Result<()> {
+        instructions::revenue_distribution::initialize_revenue_pool(ctx)
+    }
+
+    /// Distribute protocol revenue to stakers (admin only)
+    pub fn distribute_revenue(
+        ctx: Context<DistributeRevenue>,
+        amount: u64,
+        source: RevenueSource,
+    ) -> Result<()> {
+        instructions::revenue_distribution::distribute_revenue(ctx, amount, source)
+    }
+
+    /// Claim accumulated USDC rewards
+    pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
+        instructions::revenue_distribution::claim_rewards(ctx)
+    }
+
+    /// Recalculate global weighted stake (called by staking operations)
+    pub fn recalculate_global_weighted_stake(
+        ctx: Context<UpdateGlobalWeightedStake>,
+        new_total_weighted_stake: u64,
+    ) -> Result<()> {
+        instructions::revenue_distribution::recalculate_global_weighted_stake(
             ctx,
-            base_apy,
-            min_stake_amount,
-            max_stake_amount,
+            new_total_weighted_stake,
         )
     }
 
-    /// Create a staking account for a user
-    pub fn create_staking_account(ctx: Context<CreateStakingAccount>) -> Result<()> {
-        instructions::staking::create_staking_account(ctx)
+    /// Reset period revenue counter (admin only, monthly)
+    pub fn reset_period(ctx: Context<ResetPeriod>) -> Result<()> {
+        instructions::revenue_distribution::reset_period(ctx)
     }
-
-    /// Stake tokens with optional lockup tier (0-5)
-    /// Tier 0: No lockup, Tier 1: 1 month, Tier 2: 3 months, etc.
-    pub fn stake_tokens(ctx: Context<StakeTokens>, amount: u64, lockup_tier: u8) -> Result<()> {
-        instructions::staking::stake_tokens(ctx, amount, lockup_tier)
-    }
-
-    /// Unstake tokens (must not be locked)
-    pub fn unstake_tokens(ctx: Context<UnstakeTokens>, amount: u64) -> Result<()> {
-        instructions::staking::unstake_tokens(ctx, amount)
-    }
-
-    /// Claim pending staking rewards
-    pub fn claim_staking_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
-        instructions::staking::claim_rewards(ctx)
-    }
-
-    /// Extend lockup period for bonus rewards
-    pub fn extend_lockup(ctx: Context<ExtendLockup>, new_tier: u8) -> Result<()> {
-        instructions::staking::extend_lockup(ctx, new_tier)
-    }
+    */
 
     // =====================================================
-    // ENHANCED GOVERNANCE VOTING
+    // PAYMENT INSTRUCTIONS - COMMENTED OUT
     // =====================================================
+    // Modules not implemented yet - commented out in mod.rs
 
-    /// Cast a vote with full x402 marketplace voting power
-    /// Uses token balance, staking, agent reputation, and x402 volume
-    pub fn cast_vote_enhanced(
-        ctx: Context<CastVoteEnhanced>,
-        vote_choice: VoteChoice,
-        reasoning: Option<String>,
+    /*
+    /// Pay 1 USDC for single agent verification
+    pub fn pay_with_usdc(ctx: Context<PayWithUsdc>) -> Result<()> {
+        instructions::pay_with_usdc::pay_with_usdc(ctx)
+    }
+
+    /// Burn 75 GHOST tokens for verification (25% discount)
+    pub fn burn_ghost_for_payment(ctx: Context<BurnGhostForPayment>) -> Result<()> {
+        instructions::burn_ghost_for_payment::burn_ghost_for_payment(ctx)
+    }
+
+    /// Process Crossmint fiat payment after webhook confirmation
+    pub fn pay_with_crossmint(
+        ctx: Context<PayWithCrossmint>,
+        webhook_signature: String,
+        crossmint_transaction_id: String,
     ) -> Result<()> {
-        instructions::governance_voting::cast_vote_enhanced(ctx, vote_choice, reasoning)
+        instructions::pay_with_crossmint::pay_with_crossmint(
+            ctx,
+            webhook_signature,
+            crossmint_transaction_id,
+        )
     }
+    */
+
+    // =====================================================
+    // B2B BILLING INSTRUCTIONS - COMMENTED OUT
+    // =====================================================
+    // Module not implemented yet - commented out in mod.rs
+
+    /*
+    /// Create team's USDC token account for prepaid API billing
+    pub fn create_team_account(
+        ctx: Context<CreateTeamAccount>,
+        tier: SubscriptionTier,
+    ) -> Result<()> {
+        instructions::b2b_billing::create_team_account(ctx, tier)
+    }
+
+    /// Deposit USDC to team account
+    pub fn deposit_funds(
+        ctx: Context<DepositFunds>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::b2b_billing::deposit_funds(ctx, amount)
+    }
+
+    /// Deduct usage cost from team account (called per API request)
+    pub fn deduct_usage(
+        ctx: Context<DeductUsage>,
+        endpoint: String,
+        request_count: u64,
+    ) -> Result<()> {
+        instructions::b2b_billing::deduct_usage(ctx, endpoint, request_count)
+    }
+
+    /// Withdraw unused funds from team account
+    pub fn withdraw_unused(
+        ctx: Context<WithdrawUnused>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::b2b_billing::withdraw_unused(ctx, amount)
+    }
+
+    /// Update team subscription tier (admin only)
+    pub fn update_tier(
+        ctx: Context<UpdateTier>,
+        new_tier: SubscriptionTier,
+    ) -> Result<()> {
+        instructions::b2b_billing::update_tier(ctx, new_tier)
+    }
+    */
+
+    // =====================================================
+    // GHOST PROTECT ESCROW INSTRUCTIONS
+    // =====================================================
+
+    /// Create a new escrow for agent service payment
+    pub fn create_escrow(
+        ctx: Context<CreateEscrow>,
+        escrow_id: u64,
+        amount: u64,
+        job_description: String,
+        deadline: i64,
+    ) -> Result<()> {
+        instructions::ghost_protect::create_escrow(
+            ctx,
+            escrow_id,
+            amount,
+            job_description,
+            deadline,
+        )
+    }
+
+    /// Agent submits work delivery proof
+    pub fn submit_delivery(
+        ctx: Context<SubmitDelivery>,
+        delivery_proof: String,
+    ) -> Result<()> {
+        instructions::ghost_protect::submit_delivery(ctx, delivery_proof)
+    }
+
+    /// Client approves delivery and releases payment
+    pub fn approve_delivery(ctx: Context<ApproveDelivery>) -> Result<()> {
+        instructions::ghost_protect::approve_delivery(ctx)
+    }
+
+    /// Client files a dispute on escrow
+    pub fn file_dispute(
+        ctx: Context<FileDispute>,
+        reason: String,
+    ) -> Result<()> {
+        instructions::ghost_protect::file_dispute(ctx, reason)
+    }
+
+    /// Arbitrator resolves dispute (admin only)
+    pub fn arbitrate_dispute(
+        ctx: Context<ArbitrateDispute>,
+        decision: ArbitratorDecision,
+    ) -> Result<()> {
+        instructions::ghost_protect::arbitrate_dispute(ctx, decision)
+    }
+
+    // ENHANCED GOVERNANCE VOTING REMOVED (Deprecated Staking)
 
     // =====================================================
     // AGENT MANAGEMENT INSTRUCTIONS
@@ -962,6 +872,7 @@ pub mod ghostspeak_marketplace {
         description: String,
         metadata_uri: String,
         _agent_id: String,
+        pricing_model: PricingModel,
     ) -> Result<()> {
         instructions::agent::register_agent(
             ctx,
@@ -970,6 +881,7 @@ pub mod ghostspeak_marketplace {
             description,
             metadata_uri,
             _agent_id,
+            pricing_model,
         )
     }
 
@@ -981,6 +893,7 @@ pub mod ghostspeak_marketplace {
         agent_id: String,
         name: String,
         description: String,
+        pricing_model: PricingModel,
     ) -> Result<()> {
         instructions::agent_compressed::register_agent_compressed(
             ctx,
@@ -989,6 +902,7 @@ pub mod ghostspeak_marketplace {
             agent_id,
             name,
             description,
+            pricing_model,
         )
     }
     pub fn update_agent(
@@ -998,6 +912,7 @@ pub mod ghostspeak_marketplace {
         description: Option<String>,
         metadata_uri: String,
         _agent_id: String,
+        pricing_model: Option<PricingModel>,
     ) -> Result<()> {
         instructions::agent::update_agent(
             ctx,
@@ -1006,6 +921,7 @@ pub mod ghostspeak_marketplace {
             description,
             metadata_uri,
             _agent_id,
+            pricing_model,
         )
     }
 
@@ -1052,241 +968,33 @@ pub mod ghostspeak_marketplace {
         instructions::agent_management::manage_agent_status(ctx, new_status)
     }
 
-    // =====================================================
-    // MARKETPLACE INSTRUCTIONS
-    // =====================================================
+    // MARKETPLACE INSTRUCTIONS REMOVED
 
-    pub fn create_service_listing(
-        ctx: Context<CreateServiceListing>,
-        listing_data: state::commerce::ServiceListingData,
-        _listing_id: String,
-    ) -> Result<()> {
-        instructions::marketplace::create_service_listing(ctx, listing_data, _listing_id)
-    }
+    // MESSAGING INSTRUCTIONS REMOVED
 
-    pub fn purchase_service(
-        ctx: Context<PurchaseService>,
-        purchase_data: state::commerce::ServicePurchaseData,
-    ) -> Result<()> {
-        instructions::marketplace::purchase_service(ctx, purchase_data)
-    }
+    // PROCESS PAYMENT INSTRUCTIONS REMOVED (WorkOrder Deprecated)
 
-    pub fn create_job_posting(
-        ctx: Context<CreateJobPosting>,
-        job_data: state::commerce::JobPostingData,
-    ) -> Result<()> {
-        instructions::marketplace::create_job_posting(ctx, job_data)
-    }
-
-    pub fn apply_to_job(
-        ctx: Context<ApplyToJob>,
-        application_data: state::commerce::JobApplicationData,
-    ) -> Result<()> {
-        instructions::marketplace::apply_to_job(ctx, application_data)
-    }
-
-    pub fn accept_job_application(ctx: Context<AcceptJobApplication>) -> Result<()> {
-        instructions::marketplace::accept_job_application(ctx)
-    }
+    // WORK ORDER INSTRUCTIONS REMOVED
 
     // =====================================================
-    // MESSAGING INSTRUCTIONS
+    // A2A & H2A PROTOCOL INSTRUCTIONS - REMOVED
+    // Agent/human messaging not needed for VC/Reputation layer
     // =====================================================
 
-    pub fn create_channel(
-        ctx: Context<CreateChannel>,
-        channel_data: ChannelCreationData,
-    ) -> Result<()> {
-        instructions::messaging::create_channel(ctx, channel_data)
-    }
+    /* A2A/H2A entry points removed - messaging not aligned with pivot:
+    pub fn create_a2a_session(...)
+    pub fn send_a2a_message(...)
+    pub fn update_a2a_status(...)
+    pub fn create_communication_session(...)
+    pub fn send_communication_message(...)
+    pub fn update_participant_status(...)
+    */
 
-    pub fn send_message(ctx: Context<SendMessage>, message_data: MessageData) -> Result<()> {
-        instructions::messaging::send_message(ctx, message_data)
-    }
+    // ANALYTICS INSTRUCTIONS REMOVED
 
-    // =====================================================
-    // PAYMENT INSTRUCTIONS
-    // =====================================================
+    // AUCTION INSTRUCTIONS REMOVED
 
-    pub fn process_payment(
-        ctx: Context<ProcessPayment>,
-        amount: u64,
-        use_confidential_transfer: bool,
-    ) -> Result<()> {
-        instructions::escrow_operations::process_payment(ctx, amount, use_confidential_transfer)
-    }
-
-    // =====================================================
-    // WORK ORDER INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_work_order(
-        ctx: Context<CreateWorkOrder>,
-        work_order_data: state::work_order::WorkOrderData,
-    ) -> Result<()> {
-        instructions::work_orders::create_work_order(ctx, work_order_data)
-    }
-
-    pub fn submit_work_delivery(
-        ctx: Context<SubmitWorkDelivery>,
-        delivery_data: state::work_order::WorkDeliveryData,
-    ) -> Result<()> {
-        instructions::work_orders::submit_work_delivery(ctx, delivery_data)
-    }
-
-    pub fn verify_work_delivery(
-        ctx: Context<VerifyWorkDelivery>,
-        verification_notes: Option<String>,
-    ) -> Result<()> {
-        instructions::work_orders::verify_work_delivery(ctx, verification_notes)
-    }
-
-    pub fn reject_work_delivery(
-        ctx: Context<RejectWorkDelivery>,
-        rejection_reason: String,
-        requested_changes: Option<Vec<String>>,
-    ) -> Result<()> {
-        instructions::work_orders::reject_work_delivery(ctx, rejection_reason, requested_changes)
-    }
-
-    // =====================================================
-    // A2A PROTOCOL INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_a2a_session(
-        ctx: Context<CreateA2ASession>,
-        session_data: A2ASessionData,
-    ) -> Result<()> {
-        instructions::a2a_protocol::create_a2a_session(ctx, session_data)
-    }
-
-    pub fn send_a2a_message(
-        ctx: Context<SendA2AMessage>,
-        message_data: A2AMessageData,
-    ) -> Result<()> {
-        instructions::a2a_protocol::send_a2a_message(ctx, message_data)
-    }
-
-    pub fn update_a2a_status(
-        ctx: Context<UpdateA2AStatus>,
-        status_data: A2AStatusData,
-    ) -> Result<()> {
-        instructions::a2a_protocol::update_a2a_status(ctx, status_data)
-    }
-
-    // =====================================================
-    // H2A PROTOCOL INSTRUCTIONS (Human-to-Agent Communication)
-    // =====================================================
-
-    /// Creates a unified communication session between humans and agents
-    pub fn create_communication_session(
-        ctx: Context<CreateCommunicationSession>,
-        session_data: CommunicationSessionData,
-    ) -> Result<()> {
-        instructions::h2a_protocol::create_communication_session(ctx, session_data)
-    }
-
-    /// Sends messages in communication sessions between any participant types
-    pub fn send_communication_message(
-        ctx: Context<SendCommunicationMessage>,
-        message_data: CommunicationMessageData,
-    ) -> Result<()> {
-        instructions::h2a_protocol::send_communication_message(ctx, message_data)
-    }
-
-    /// Updates participant status for service discovery and matching
-    pub fn update_participant_status(
-        ctx: Context<UpdateParticipantStatus>,
-        status_data: ParticipantStatusData,
-    ) -> Result<()> {
-        instructions::h2a_protocol::update_participant_status(ctx, status_data)
-    }
-
-    // =====================================================
-    // ANALYTICS INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_market_analytics(
-        ctx: Context<CreateMarketAnalytics>,
-        period_start: i64,
-        period_end: i64,
-    ) -> Result<()> {
-        instructions::analytics::create_market_analytics(ctx, period_start, period_end)
-    }
-
-    pub fn update_market_analytics(
-        ctx: Context<UpdateMarketAnalytics>,
-        volume: u64,
-        price: u64,
-    ) -> Result<()> {
-        instructions::analytics::update_market_analytics(ctx, volume, price)
-    }
-
-    pub fn create_analytics_dashboard(
-        ctx: Context<CreateAnalyticsDashboard>,
-        dashboard_id: u64,
-        metrics: String,
-    ) -> Result<()> {
-        instructions::analytics::create_analytics_dashboard(ctx, dashboard_id, metrics)
-    }
-
-    pub fn update_analytics_dashboard(
-        ctx: Context<UpdateAnalyticsDashboard>,
-        new_metrics: String,
-    ) -> Result<()> {
-        instructions::analytics::update_analytics_dashboard(ctx, new_metrics)
-    }
-
-    pub fn add_top_agent(ctx: Context<UpdateMarketAnalytics>, agent: Pubkey) -> Result<()> {
-        instructions::analytics::add_top_agent(ctx, agent)
-    }
-
-    // =====================================================
-    // AUCTION INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_service_auction(
-        ctx: Context<CreateServiceAuction>,
-        auction_data: AuctionData,
-    ) -> Result<()> {
-        instructions::auction::create_service_auction(ctx, auction_data)
-    }
-
-    pub fn place_auction_bid(ctx: Context<PlaceAuctionBid>, bid_amount: u64) -> Result<()> {
-        instructions::auction::place_auction_bid(ctx, bid_amount)
-    }
-
-    pub fn place_dutch_auction_bid(ctx: Context<PlaceDutchAuctionBid>) -> Result<()> {
-        instructions::auction::place_dutch_auction_bid(ctx)
-    }
-
-    pub fn finalize_auction(ctx: Context<FinalizeAuction>) -> Result<()> {
-        instructions::auction::finalize_auction(ctx)
-    }
-
-    pub fn update_auction_reserve_price(
-        ctx: Context<UpdateAuctionReservePrice>,
-        new_reserve_price: u64,
-        reveal_hidden: bool,
-    ) -> Result<()> {
-        instructions::auction::update_auction_reserve_price(ctx, new_reserve_price, reveal_hidden)
-    }
-
-    pub fn extend_auction_for_reserve(ctx: Context<ExtendAuctionForReserve>) -> Result<()> {
-        instructions::auction::extend_auction_for_reserve(ctx)
-    }
-
-    // =====================================================
-    // BULK DEALS INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_bulk_deal(ctx: Context<CreateBulkDeal>, deal_data: BulkDealData) -> Result<()> {
-        instructions::bulk_deals::create_bulk_deal(ctx, deal_data)
-    }
-
-    pub fn execute_bulk_deal_batch(ctx: Context<UpdateBulkDeal>, batch_size: u32) -> Result<()> {
-        instructions::bulk_deals::execute_bulk_deal_batch(ctx, batch_size)
-    }
+    // BULK DEALS INSTRUCTIONS REMOVED
 
     // =====================================================
     // COMPLIANCE & GOVERNANCE INSTRUCTIONS
@@ -1357,408 +1065,350 @@ pub mod ghostspeak_marketplace {
         )
     }
 
-    // =====================================================
-    // DISPUTE INSTRUCTIONS
-    // =====================================================
+    // DISPUTE INSTRUCTIONS REMOVED
 
-    pub fn file_dispute(ctx: Context<FileDispute>, reason: String) -> Result<()> {
-        instructions::dispute::file_dispute(ctx, reason)
-    }
+    // EXTENSION INSTRUCTIONS REMOVED
 
-    pub fn submit_dispute_evidence(
-        ctx: Context<SubmitDisputeEvidence>,
-        evidence_type: String,
-        evidence_data: String,
-    ) -> Result<()> {
-        instructions::dispute::submit_dispute_evidence(ctx, evidence_type, evidence_data)
-    }
+    // INCENTIVE INSTRUCTIONS REMOVED
 
-    pub fn resolve_dispute(
-        ctx: Context<ResolveDispute>,
-        resolution: String,
-        award_to_complainant: bool,
-    ) -> Result<()> {
-        instructions::dispute::resolve_dispute(ctx, resolution, award_to_complainant)
-    }
+    // NEGOTIATION INSTRUCTIONS REMOVED
 
-    pub fn submit_evidence_batch(
-        ctx: Context<SubmitDisputeEvidence>,
-        evidence_batch: Vec<EvidenceBatchItem>,
-    ) -> Result<()> {
-        instructions::dispute::submit_evidence_batch(ctx, evidence_batch)
-    }
+    // PRICING INSTRUCTIONS REMOVED
 
-    pub fn assign_arbitrator(ctx: Context<AssignArbitrator>, arbitrator: Pubkey) -> Result<()> {
-        instructions::dispute::assign_arbitrator(ctx, arbitrator)
-    }
-
-    // =====================================================
-    // EXTENSION INSTRUCTIONS
-    // =====================================================
-
-    pub fn register_extension(
-        ctx: Context<RegisterExtension>,
-        metadata: ExtensionMetadata,
-        code_hash: String,
-        revenue_share: f64,
-    ) -> Result<()> {
-        instructions::extensions::register_extension(ctx, metadata, code_hash, revenue_share)
-    }
-
-    pub fn approve_extension(ctx: Context<ApproveExtension>) -> Result<()> {
-        instructions::extensions::approve_extension(ctx)
-    }
-
-    // =====================================================
-    // INCENTIVE INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_incentive_program(
-        ctx: Context<CreateIncentiveProgram>,
-        config: IncentiveConfig,
-    ) -> Result<()> {
-        instructions::incentives::create_incentive_program(ctx, config)
-    }
-
-    pub fn distribute_incentives(
-        ctx: Context<DistributeIncentives>,
-        agent: Pubkey,
-        incentive_type: String,
-        amount: u64,
-    ) -> Result<()> {
-        instructions::incentives::distribute_incentives(ctx, agent, incentive_type, amount)
-    }
-
-    // =====================================================
-    // NEGOTIATION INSTRUCTIONS
-    // =====================================================
-
-    pub fn initiate_negotiation(
-        ctx: Context<InitiateNegotiation>,
-        initial_offer: u64,
-        auto_accept_threshold: u64,
-        negotiation_deadline: i64,
-    ) -> Result<()> {
-        instructions::negotiation::initiate_negotiation(
-            ctx,
-            initial_offer,
-            auto_accept_threshold,
-            negotiation_deadline,
-        )
-    }
-
-    pub fn make_counter_offer(
-        ctx: Context<MakeCounterOffer>,
-        counter_offer: u64,
-        message: String,
-    ) -> Result<()> {
-        instructions::negotiation::make_counter_offer(ctx, counter_offer, message)
-    }
-
-    // =====================================================
-    // PRICING INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_dynamic_pricing_engine(
-        ctx: Context<CreateDynamicPricingEngine>,
-        config: DynamicPricingConfig,
-    ) -> Result<()> {
-        instructions::pricing::create_dynamic_pricing_engine(ctx, config)
-    }
-
-    pub fn update_dynamic_pricing(
-        ctx: Context<UpdateDynamicPricing>,
-        demand_metrics: DemandMetrics,
-    ) -> Result<()> {
-        instructions::pricing::update_dynamic_pricing(ctx, demand_metrics)
-    }
-
-    // =====================================================
-    // REPLICATION INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_replication_template(
-        ctx: Context<CreateReplicationTemplate>,
-        template_data: ReplicationTemplateData,
-    ) -> Result<()> {
-        instructions::replication::create_replication_template(ctx, template_data)
-    }
-
-    pub fn replicate_agent(
-        ctx: Context<ReplicateAgent>,
-        customization: instructions::replication::AgentCustomization,
-        royalty_percentage: u32,
-    ) -> Result<()> {
-        instructions::replication::replicate_agent(ctx, customization, royalty_percentage)
-    }
-
-    pub fn batch_replicate_agents(
-        ctx: Context<BatchReplicateAgents>,
-        batch_request: instructions::replication::BatchReplicationRequest,
-    ) -> Result<()> {
-        instructions::replication::batch_replicate_agents(ctx, batch_request)
-    }
+    // REPLICATION INSTRUCTIONS REMOVED
 
     // =====================================================
     // ENHANCED ESCROW OPERATIONS WITH REENTRANCY PROTECTION
     // =====================================================
 
-    pub fn create_escrow(
-        ctx: Context<CreateEscrow>,
-        task_id: String,
-        amount: u64,
-        expires_at: i64,
-        transfer_hook: Option<Pubkey>,
-        is_confidential: bool,
-    ) -> Result<()> {
-        instructions::escrow_operations::create_escrow(
-            ctx,
-            task_id,
-            amount,
-            expires_at,
-            transfer_hook,
-            is_confidential,
-        )
-    }
-
-    /// Create escrow by depositing native SOL (auto-wraps to wSOL)
-    /// This provides a better UX by handling SOL wrapping automatically
-    pub fn create_escrow_with_sol(
-        ctx: Context<CreateEscrowWithSol>,
-        task_id: String,
-        amount: u64,
-        expires_at: i64,
-        transfer_hook: Option<Pubkey>,
-        is_confidential: bool,
-    ) -> Result<()> {
-        instructions::escrow_operations::create_escrow_with_sol(
-            ctx,
-            task_id,
-            amount,
-            expires_at,
-            transfer_hook,
-            is_confidential,
-        )
-    }
-
-    pub fn complete_escrow(
-        ctx: Context<CompleteEscrow>,
-        resolution_notes: Option<String>,
-    ) -> Result<()> {
-        instructions::escrow_operations::complete_escrow(ctx, resolution_notes)
-    }
-
-    pub fn dispute_escrow(ctx: Context<DisputeEscrow>, dispute_reason: String) -> Result<()> {
-        instructions::escrow_operations::dispute_escrow(ctx, dispute_reason)
-    }
-
-    pub fn process_escrow_payment(
-        ctx: Context<ProcessEscrowPayment>,
-        work_order: Pubkey,
-    ) -> Result<()> {
-        instructions::escrow_operations::process_escrow_payment(ctx, work_order)
-    }
-
-    pub fn cancel_escrow(ctx: Context<CancelEscrow>, cancellation_reason: String) -> Result<()> {
-        instructions::escrow_operations::cancel_escrow(ctx, cancellation_reason)
-    }
-
-    pub fn refund_expired_escrow(ctx: Context<RefundExpiredEscrow>) -> Result<()> {
-        instructions::escrow_operations::refund_expired_escrow(ctx)
-    }
-
-    pub fn process_partial_refund(
-        ctx: Context<ProcessPartialRefund>,
-        client_refund_percentage: u8,
-    ) -> Result<()> {
-        instructions::escrow_operations::process_partial_refund(ctx, client_refund_percentage)
-    }
-
     // =====================================================
     // ENHANCED CHANNEL OPERATIONS WITH REAL-TIME MESSAGING
     // =====================================================
 
-    pub fn create_enhanced_channel(
-        ctx: Context<CreateEnhancedChannel>,
-        channel_id: String,
-        participants: Vec<Pubkey>,
-        channel_type: ChannelType,
-        metadata: ChannelMetadata,
-    ) -> Result<()> {
-        instructions::channel_operations::create_enhanced_channel(
-            ctx,
-            channel_id,
-            participants,
-            channel_type,
-            metadata,
-        )
-    }
-
-    pub fn send_enhanced_message(
-        ctx: Context<SendEnhancedMessage>,
-        message_id: String,
-        content: String,
-        message_type: MessageType,
-        metadata: MessageMetadata,
-        is_encrypted: bool,
-    ) -> Result<()> {
-        instructions::channel_operations::send_enhanced_message(
-            ctx,
-            message_id,
-            content,
-            message_type,
-            metadata,
-            is_encrypted,
-        )
-    }
-
-    pub fn join_channel(ctx: Context<JoinChannel>) -> Result<()> {
-        instructions::channel_operations::join_channel(ctx)
-    }
-
-    pub fn leave_channel(ctx: Context<LeaveChannel>) -> Result<()> {
-        instructions::channel_operations::leave_channel(ctx)
-    }
-
-    pub fn update_channel_settings(
-        ctx: Context<UpdateChannelSettings>,
-        new_metadata: ChannelMetadata,
-    ) -> Result<()> {
-        instructions::channel_operations::update_channel_settings(ctx, new_metadata)
-    }
-
-    pub fn add_message_reaction(ctx: Context<AddMessageReaction>, reaction: String) -> Result<()> {
-        instructions::channel_operations::add_message_reaction(ctx, reaction)
-    }
+    // ENHANCED CHANNEL OPERATIONS REMOVED
+    // channel_operations instructions fully removed
 
     // NOTE: Reentrancy guard initialization is handled automatically by PDA creation
     // No separate instruction needed as guards are created on-demand
 
-    // =====================================================
-    // ROYALTY INSTRUCTIONS
-    // =====================================================
-
-    pub fn create_royalty_stream(
-        ctx: Context<CreateRoyaltyStream>,
-        config: RoyaltyConfig,
-    ) -> Result<()> {
-        instructions::royalty::create_royalty_stream(ctx, config)
-    }
-
-    pub fn list_agent_for_resale(
-        ctx: Context<ListAgentForResale>,
-        listing_price: u64,
-    ) -> Result<()> {
-        instructions::royalty::list_agent_for_resale(ctx, listing_price)
-    }
+    // ROYALTY INSTRUCTIONS REMOVED
 
     // =====================================================
-    // TOKEN-2022 INSTRUCTIONS
+    // TOKEN-2022 INSTRUCTIONS - REMOVED
+    // Not aligned with VC/Reputation pivot
     // =====================================================
 
-    pub fn create_token_2022_mint(
-        ctx: Context<CreateToken2022Mint>,
-        params: CreateToken2022MintParams,
-    ) -> Result<()> {
-        instructions::token_2022_operations::create_token_2022_mint(ctx, params)
-    }
-
-    pub fn update_transfer_fee_config(
-        ctx: Context<InitializeTransferFeeConfig>,
-        params: TransferFeeConfigParams,
-    ) -> Result<()> {
-        instructions::token_2022_operations::update_transfer_fee_config(ctx, params)
-    }
-
-    pub fn initialize_confidential_transfer_mint(
-        ctx: Context<InitializeConfidentialTransferMint>,
-        params: ConfidentialTransferMintParams,
-    ) -> Result<()> {
-        instructions::token_2022_operations::initialize_confidential_transfer_mint(ctx, params)
-    }
-
-    pub fn initialize_interest_bearing_config(
-        ctx: Context<InitializeInterestBearingConfig>,
-        params: InterestBearingConfigParams,
-    ) -> Result<()> {
-        instructions::token_2022_operations::initialize_interest_bearing_config(ctx, params)
-    }
-
-    pub fn initialize_mint_close_authority(
-        ctx: Context<InitializeMintCloseAuthority>,
-    ) -> Result<()> {
-        instructions::token_2022_operations::initialize_mint_close_authority(ctx)
-    }
-
-    pub fn initialize_default_account_state(
-        ctx: Context<InitializeDefaultAccountState>,
-        state: instructions::token_2022_operations::AccountState,
-    ) -> Result<()> {
-        instructions::token_2022_operations::initialize_default_account_state(ctx, state)
-    }
+    /* Token-2022 entry points removed - not aligned with pivot:
+    pub fn create_token_2022_mint(...)
+    pub fn update_transfer_fee_config(...)
+    pub fn initialize_confidential_transfer_mint(...)
+    pub fn initialize_interest_bearing_config(...)
+    pub fn initialize_mint_close_authority(...)
+    pub fn initialize_default_account_state(...)
+    */
 
     // =====================================================
-    // GOVERNANCE VOTING INSTRUCTIONS
+    // GOVERNANCE VOTING INSTRUCTIONS - REMOVED
+    // Simple admin authority via protocol_config + multisig
     // =====================================================
 
-    /// Cast a vote on a governance proposal
-    pub fn cast_vote(
-        ctx: Context<CastVote>,
-        vote_choice: VoteChoice,
-        reasoning: Option<String>,
+    /* Governance voting removed - simple admin authority instead:
+    pub fn cast_vote(...)
+    pub fn delegate_vote(...)
+    pub fn tally_votes(...)
+    pub fn execute_proposal(...)
+    */
+
+    // =====================================================
+    // X402 PAYMENT PROTOCOL INSTRUCTIONS - REMOVED
+    // Payment facilitation delegated to PayAI
+    // =====================================================
+
+    /* X402 entry points removed - payment facilitation delegated to PayAI:
+    pub fn configure_x402(...)
+    pub fn record_x402_payment(...)
+    pub fn submit_x402_rating(...)
+    */
+
+    // =====================================================
+    // VERIFIABLE CREDENTIALS INSTRUCTIONS (Pillar 1)
+    // =====================================================
+
+    /// Create a new credential type (e.g., AgentIdentity, Reputation, JobCompletion)
+    /// This is an admin-only operation typically done by governance/multisig.
+    pub fn create_credential_type(
+        ctx: Context<CreateCredentialType>,
+        name: String,
+        kind: CredentialKind,
+        schema_uri: String,
+        description: String,
     ) -> Result<()> {
-        instructions::governance_voting::cast_vote(ctx, vote_choice, reasoning)
+        instructions::credential::create_credential_type(ctx, name, kind, schema_uri, description)
     }
 
-    /// Delegate voting power to another account
-    pub fn delegate_vote(
-        ctx: Context<DelegateVote>,
-        proposal_id: u64,
-        scope: DelegationScope,
+    /// Create a credential template from a credential type for issuing credentials
+    pub fn create_credential_template(
+        ctx: Context<CreateCredentialTemplate>,
+        name: String,
+        image_uri: String,
+        crossmint_template_id: Option<String>,
+    ) -> Result<()> {
+        instructions::credential::create_credential_template(
+            ctx,
+            name,
+            image_uri,
+            crossmint_template_id,
+        )
+    }
+
+    /// Issue a new credential to a subject
+    /// The subject_data is stored off-chain; only the hash is stored on-chain.
+    pub fn issue_credential(
+        ctx: Context<IssueCredential>,
+        credential_id: String,
+        subject_data_hash: [u8; 32],
+        subject_data_uri: String,
         expires_at: Option<i64>,
+        source_account: Option<Pubkey>,
     ) -> Result<()> {
-        instructions::governance_voting::delegate_vote(ctx, proposal_id, scope, expires_at)
+        instructions::credential::issue_credential(
+            ctx,
+            credential_id,
+            subject_data_hash,
+            subject_data_uri,
+            expires_at,
+            source_account,
+        )
     }
 
-    /// Tally votes and finalize proposal voting
-    pub fn tally_votes(ctx: Context<TallyVotes>) -> Result<()> {
-        instructions::governance_voting::tally_votes(ctx)
+    /// Revoke an issued credential
+    /// Only the original issuer can revoke.
+    pub fn revoke_credential(ctx: Context<RevokeCredential>) -> Result<()> {
+        instructions::credential::revoke_credential(ctx)
     }
 
-    /// Execute a passed proposal
-    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
-        instructions::governance_voting::execute_proposal(ctx)
+    /// Update the cross-chain sync status after syncing to Crossmint
+    pub fn update_crosschain_status(
+        ctx: Context<UpdateCrossChainStatus>,
+        crossmint_credential_id: String,
+        status: CrossChainStatus,
+    ) -> Result<()> {
+        instructions::credential::update_crosschain_status(
+            ctx,
+            crossmint_credential_id,
+            status,
+        )
+    }
+
+    /// Deactivate a credential type (no new credentials can be issued)
+    pub fn deactivate_credential_type(ctx: Context<DeactivateCredentialType>) -> Result<()> {
+        instructions::credential::deactivate_credential_type(ctx)
+    }
+
+    /// Deactivate a credential template (no new credentials can be issued from it)
+    pub fn deactivate_credential_template(ctx: Context<DeactivateCredentialTemplate>) -> Result<()> {
+        instructions::credential::deactivate_credential_template(ctx)
     }
 
     // =====================================================
-    // X402 PAYMENT PROTOCOL INSTRUCTIONS
+    // DID (DECENTRALIZED IDENTIFIER) INSTRUCTIONS (Pillar 3)
     // =====================================================
+    // W3C-compliant DIDs following the did:sol specification
+    // Enables cross-chain identity verification and credential anchoring
 
-    /// Configure x402 payment settings for an agent
-    pub fn configure_x402(
-        ctx: Context<ConfigureX402>,
-        agent_id: String,
-        config: instructions::x402_operations::X402ConfigData,
+    /// Create a new DID document for an agent or user
+    ///
+    /// Initializes a W3C-compliant DID document following the did:sol method.
+    /// The DID document can contain verification methods and service endpoints.
+    ///
+    /// Parameters:
+    /// - did_string: The DID string (e.g., "did:sol:devnet:HN7c...")
+    /// - verification_methods: Initial verification methods (max 10)
+    /// - service_endpoints: Initial service endpoints (max 5)
+    pub fn create_did_document(
+        ctx: Context<CreateDidDocument>,
+        did_string: String,
+        verification_methods: Vec<VerificationMethod>,
+        service_endpoints: Vec<ServiceEndpoint>,
     ) -> Result<()> {
-        instructions::x402_operations::configure_x402(ctx, agent_id, config)
+        instructions::did::create_did_document(
+            ctx,
+            did_string,
+            verification_methods,
+            service_endpoints,
+        )
     }
 
-    /// Record an x402 payment transaction on-chain
-    pub fn record_x402_payment(
-        ctx: Context<RecordX402Payment>,
-        agent_id: String,
-        payment_data: instructions::x402_operations::X402PaymentData,
+    /// Update an existing DID document
+    ///
+    /// Add or remove verification methods and service endpoints.
+    /// Only the controller can update the DID document.
+    ///
+    /// Parameters:
+    /// - add_verification_method: Optional verification method to add
+    /// - remove_verification_method_id: Optional method ID to remove
+    /// - add_service_endpoint: Optional service endpoint to add
+    /// - remove_service_endpoint_id: Optional service ID to remove
+    pub fn update_did_document(
+        ctx: Context<UpdateDidDocument>,
+        add_verification_method: Option<VerificationMethod>,
+        remove_verification_method_id: Option<String>,
+        add_service_endpoint: Option<ServiceEndpoint>,
+        remove_service_endpoint_id: Option<String>,
     ) -> Result<()> {
-        instructions::x402_operations::record_x402_payment(ctx, agent_id, payment_data)
+        instructions::did::update_did_document(
+            ctx,
+            add_verification_method,
+            remove_verification_method_id,
+            add_service_endpoint,
+            remove_service_endpoint_id,
+        )
     }
 
-    /// Submit a reputation rating from an x402 transaction
-    pub fn submit_x402_rating(
-        ctx: Context<SubmitX402Rating>,
-        agent_id: String,
-        rating_data: instructions::x402_operations::X402RatingData,
+    /// Deactivate a DID document
+    ///
+    /// Permanently deactivates the DID document. This operation is irreversible.
+    /// Only the controller can deactivate their DID.
+    pub fn deactivate_did_document(ctx: Context<DeactivateDidDocument>) -> Result<()> {
+        instructions::did::deactivate_did_document(ctx)
+    }
+
+    /// Resolve a DID document (read-only)
+    ///
+    /// Returns the DID document data for off-chain resolution.
+    /// This instruction exists for compatibility with standard DID resolution flows.
+    pub fn resolve_did_document(ctx: Context<ResolveDidDocument>) -> Result<()> {
+        instructions::did::resolve_did_document(ctx)
+    }
+
+    // =====================================================
+    // REPUTATION LAYER INSTRUCTIONS (Pillar 2)
+    // =====================================================
+    // GhostSpeak's reputation layer consumes payment data from PayAI
+    // PayAI handles payment facilitation, GhostSpeak tracks reputation
+    //
+    // These instructions enable:
+    // - Tracking payment performance metrics
+    // - Recording service ratings from clients
+    // - Calculating reputation scores based on service quality
+    //
+    // NOTE: Internal function names still reference x402 for compatibility
+    // TODO: Rename internal functions from x402_* to payai_* in future refactor
+
+    /// Initialize reputation metrics for an agent
+    ///
+    /// Creates a new reputation tracking account that monitors:
+    /// - Payment success/failure rates
+    /// - Service ratings from clients
+    /// - Response time performance
+    /// - Dispute resolution history
+    pub fn initialize_reputation_metrics(
+        ctx: Context<InitializeReputationMetrics>,
     ) -> Result<()> {
-        instructions::x402_operations::submit_x402_rating(ctx, agent_id, rating_data)
+        instructions::reputation::initialize_reputation_metrics(ctx)
+    }
+
+    /// Record a PayAI payment transaction for reputation tracking
+    ///
+    /// Consumes payment data from PayAI protocol to update agent reputation.
+    /// This does NOT facilitate payments - it only tracks them for reputation.
+    ///
+    /// Parameters:
+    /// - payment_signature: PayAI transaction signature
+    /// - amount: Payment amount in lamports
+    /// - response_time_ms: Service response time
+    /// - success: Whether payment completed successfully
+    pub fn record_payai_payment(
+        ctx: Context<RecordX402PaymentReputation>,
+        payment_signature: String,
+        amount: u64,
+        response_time_ms: u64,
+        success: bool,
+    ) -> Result<()> {
+        // TODO: Rename internal function from record_x402_payment to record_payai_payment
+        instructions::reputation::record_x402_payment(
+            ctx,
+            payment_signature,
+            amount,
+            response_time_ms,
+            success,
+        )
+    }
+
+    /// Submit a service rating after a completed transaction
+    ///
+    /// Allows clients to rate agent service quality (1-5 scale).
+    /// Ratings are factored into the overall reputation score calculation.
+    ///
+    /// Parameters:
+    /// - rating: Service rating from 1 (poor) to 5 (excellent)
+    /// - payment_signature: Associated PayAI transaction signature
+    pub fn submit_service_rating(
+        ctx: Context<SubmitX402RatingReputation>,
+        rating: u8,
+        payment_signature: String,
+    ) -> Result<()> {
+        // TODO: Rename internal function from submit_x402_rating to submit_service_rating
+        instructions::reputation::submit_x402_rating(ctx, rating, payment_signature)
+    }
+
+    /// Update reputation from a specific source
+    ///
+    /// Updates or adds a reputation score from an external source (e.g., GitHub, custom webhook).
+    /// Automatically aggregates all sources and detects conflicts.
+    ///
+    /// Parameters:
+    /// - source_name: Source identifier (e.g., "github", "custom-webhook")
+    /// - score: Reputation score from source (0-1000)
+    /// - weight: Source weight in basis points (0-10000)
+    /// - data_points: Number of metrics contributing to score
+    /// - reliability: Source reliability in basis points (0-10000)
+    pub fn update_source_reputation(
+        ctx: Context<UpdateSourceReputation>,
+        source_name: String,
+        score: u16,
+        weight: u16,
+        data_points: u32,
+        reliability: u16,
+    ) -> Result<()> {
+        instructions::reputation::update_source_reputation(
+            ctx,
+            source_name,
+            score,
+            weight,
+            data_points,
+            reliability,
+        )
+    }
+
+    /// Update reputation tags for an agent
+    ///
+    /// Adds or updates granular reputation tags with confidence scores.
+    /// Tags are categorized into skill, behavior, and compliance tags.
+    /// Each tag has a confidence score (0-10000 basis points) and evidence count.
+    ///
+    /// Tag decay: Tags automatically decay at 10 bp/day and become stale after 90 days.
+    /// This ensures reputation data stays current and reflects recent performance.
+    ///
+    /// Parameters:
+    /// - skill_tags: Skill tags to add (e.g., "rust", "smart-contracts") - max 20
+    /// - behavior_tags: Behavior tags (e.g., "responsive", "reliable") - max 20
+    /// - compliance_tags: Compliance tags (e.g., "kyc-verified") - max 10
+    /// - tag_scores: Tag scores with confidence and evidence - max 50
+    pub fn update_reputation_tags(
+        ctx: Context<UpdateReputationTags>,
+        skill_tags: Vec<String>,
+        behavior_tags: Vec<String>,
+        compliance_tags: Vec<String>,
+        tag_scores: Vec<TagScore>,
+    ) -> Result<()> {
+        instructions::reputation::update_reputation_tags(
+            ctx,
+            skill_tags,
+            behavior_tags,
+            compliance_tags,
+            tag_scores,
+        )
     }
 
     // =====================================================
@@ -1787,14 +1437,6 @@ pub mod ghostspeak_marketplace {
     pub fn _export_compliance_status(
         _ctx: Context<DummyContext>,
         _data: crate::state::audit::ComplianceStatus,
-    ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
-    }
-
-    /// Dummy instruction to export DynamicPricingConfig type
-    pub fn _export_dynamic_pricing_config(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::pricing::DynamicPricingConfig,
     ) -> Result<()> {
         err!(GhostSpeakError::FeatureNotEnabled)
     }
@@ -1870,11 +1512,6 @@ pub struct ComplianceStatusExport {
 }
 
 #[event]
-pub struct DynamicPricingConfigExport {
-    pub data: crate::state::pricing::DynamicPricingConfig,
-}
-
-#[event]
 pub struct MultisigConfigExport {
     pub data: crate::state::governance::MultisigConfig,
 }
@@ -1913,9 +1550,6 @@ pub use crate::state::security_governance::BiometricQuality;
 
 /// Re-export ComplianceStatus for IDL
 pub use crate::state::audit::ComplianceStatus;
-
-/// Re-export DynamicPricingConfig for IDL
-pub use crate::state::pricing::DynamicPricingConfig;
 
 /// Re-export MultisigConfig for IDL
 pub use crate::state::governance::MultisigConfig;

@@ -15,7 +15,7 @@ const agent = await ghost.agent.create({
   name: 'TraderBot_v1',
   capabilities: ['defi', 'arbitrage'],
   pricing: {
-    model: 'x402',
+    model: 'PayAI',
     rate: 0.001 // SOL per request
   }
 })
@@ -74,7 +74,7 @@ export function CodePreview() {
             capabilities: [<span className="text-green-400">'defi'</span>,{' '}
             <span className="text-green-400">'arbitrage'</span>],
             {'\n  '}pricing: {'{'}
-            {'\n    '}model: <span className="text-green-400">'x402'</span>,{'\n    '}rate:{' '}
+            {'\n    '}model: <span className="text-green-400">'PayAI'</span>,{'\n    '}rate:{' '}
             <span className="text-orange-400">0.001</span>{' '}
             <span className="text-gray-500">// SOL per request</span>
             {'\n  '}

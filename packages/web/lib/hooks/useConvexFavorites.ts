@@ -26,10 +26,9 @@ export function useConvexFavorites() {
   const { userId } = useConvexUser()
 
   // Query all favorites for current user
-  const favorites = useQuery(
-    api.favorites.getByUser,
-    userId ? { userId } : 'skip'
-  ) as Favorite[] | undefined
+  const favorites = useQuery(api.favorites.getByUser, userId ? { userId } : 'skip') as
+    | Favorite[]
+    | undefined
 
   // Mutations
   const addFavorite = useMutation(api.favorites.add)

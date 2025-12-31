@@ -20,15 +20,15 @@ test.describe('Authentication', () => {
   test('should connect wallet successfully', async ({ page }) => {
     // Mock wallet connection
     await mockWalletConnection(page)
-    
+
     await navigateAndWait(page, '/')
-    
+
     // Click connect wallet
     await page.click('button:has-text("Connect Wallet")')
-    
+
     // Wait for connection
     await waitForElement(page, '[data-testid="wallet-connected"]', 15000)
-    
+
     // Verify wallet address is displayed
     const walletDisplay = page.locator('[data-testid="wallet-address"]')
     await expect(walletDisplay).toBeVisible()
@@ -37,15 +37,15 @@ test.describe('Authentication', () => {
   test('should persist session after page reload', async ({ page }) => {
     await mockWalletConnection(page)
     await navigateAndWait(page, '/')
-    
+
     // Connect wallet
     await page.click('button:has-text("Connect Wallet")')
     await waitForElement(page, '[data-testid="wallet-connected"]')
-    
+
     // Reload page
     await page.reload()
     await page.waitForLoadState('networkidle')
-    
+
     // Verify still connected
     const walletDisplay = page.locator('[data-testid="wallet-address"]')
     await expect(walletDisplay).toBeVisible()
@@ -54,15 +54,15 @@ test.describe('Authentication', () => {
   test('should logout successfully', async ({ page }) => {
     await mockWalletConnection(page)
     await navigateAndWait(page, '/')
-    
+
     // Connect wallet
     await page.click('button:has-text("Connect Wallet")')
     await waitForElement(page, '[data-testid="wallet-connected"]')
-    
+
     // Open user menu and logout
     await page.click('[data-testid="user-menu"]')
     await page.click('button:has-text("Disconnect")')
-    
+
     // Verify disconnected
     const connectButton = page.locator('button:has-text("Connect Wallet")')
     await expect(connectButton).toBeVisible()

@@ -16,18 +16,29 @@ import {
   MessageSquare,
   Globe,
   FileCode,
+  Shield,
+  Crown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAgent } from '@/lib/queries/agents'
 import { formatAddress, formatNumber, formatSol } from '@/lib/utils'
+import { TierBadge } from '@/components/staking/TierBadge'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 
 export default function AgentDetailPage(): React.JSX.Element {
   const params = useParams()
   const agentId = params.id as string
 
   const { data: agent, isLoading, error } = useAgent(agentId)
+
+  // Fetch staking account for this agent
+  const stakingAccount = useQuery(
+    api.staking.getStakingAccount,
+    agent ? { agentAddress: agent.address } : 'skip'
+  )
 
   if (isLoading) {
     return (
@@ -82,11 +93,14 @@ export default function AgentDetailPage(): React.JSX.Element {
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
               {agent.metadata.avatar ? (
-                <img
-                  src={agent.metadata.avatar}
-                  alt={agent.name}
-                  className="w-20 h-20 rounded-2xl object-cover"
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={agent.metadata.avatar}
+                    alt={agent.name}
+                    className="w-20 h-20 rounded-2xl object-cover"
+                  />
+                </>
               ) : (
                 <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
                   <Bot className="w-10 h-10 text-white" />
@@ -97,7 +111,7 @@ export default function AgentDetailPage(): React.JSX.Element {
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
                   {formatAddress(agent.address)}
                 </p>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge variant={agent.isActive ? 'success' : 'secondary'}>
                     {agent.isActive ? (
                       <>
@@ -116,6 +130,21 @@ export default function AgentDetailPage(): React.JSX.Element {
                       <Zap className="w-3 h-3 mr-1" />
                       x402 Enabled
                     </Badge>
+                  )}
+                  {stakingAccount && stakingAccount.hasVerifiedBadge && (
+                    <Badge variant="outline" className="border-blue-500 text-blue-600">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Verified
+                    </Badge>
+                  )}
+                  {stakingAccount && stakingAccount.hasPremiumBenefits && (
+                    <Badge variant="outline" className="border-yellow-500 text-yellow-600">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Premium
+                    </Badge>
+                  )}
+                  {stakingAccount && (
+                    <TierBadge tier={stakingAccount.tier} size="sm" />
                   )}
                 </div>
               </div>
@@ -150,15 +179,42 @@ export default function AgentDetailPage(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-              <div className="flex items-center gap-2 text-yellow-500 mb-1">
-                <Star className="w-4 h-4" />
-                <span className="text-sm font-medium">Reputation</span>
+          {/* Ghost Score - Hero Metric */}
+          <Card className="p-6 mb-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-6 h-6 text-purple-400" />
+                  <h3 className="text-lg font-semibold text-muted-foreground">Ghost Score</h3>
+                </div>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-5xl font-black text-purple-400">
+                    {Math.round(agent.reputation.score * 100)}
+                  </span>
+                  <div className="flex flex-col">
+                    <Badge variant="outline" className="border-purple-500 text-purple-600 mb-1">
+                      {agent.reputation.score >= 90 ? 'Platinum' :
+                       agent.reputation.score >= 75 ? 'Gold' :
+                       agent.reputation.score >= 50 ? 'Silver' :
+                       agent.reputation.score >= 20 ? 'Bronze' : 'Unranked'}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">Built on PayAI data</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-2xl font-bold">{agent.reputation.score.toFixed(1)}</p>
+              {stakingAccount && stakingAccount.reputationBoostBps > 0 && (
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground mb-1">Staking Boost</div>
+                  <div className="text-3xl font-bold text-green-500">
+                    +{stakingAccount.reputationBoostBps / 100}%
+                  </div>
+                </div>
+              )}
             </div>
+          </Card>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
               <div className="flex items-center gap-2 text-blue-500 mb-1">
                 <CheckCircle className="w-4 h-4" />

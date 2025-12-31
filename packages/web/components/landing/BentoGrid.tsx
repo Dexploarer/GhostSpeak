@@ -11,7 +11,11 @@ export function BentoGrid() {
       <div className="md:col-span-2 row-span-2 group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-5 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="absolute -top-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
           <GhostIcon variant="outline" size={200} className="text-primary rotate-12 sm:hidden" />
-          <GhostIcon variant="outline" size={300} className="text-primary rotate-12 hidden sm:block" />
+          <GhostIcon
+            variant="outline"
+            size={300}
+            className="text-primary rotate-12 hidden sm:block"
+          />
         </div>
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div>
@@ -100,7 +104,9 @@ export function BentoGrid() {
         <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
           $0.001
         </div>
-        <p className="text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2 font-mono">Per Agent Call (x402 Micropayments)</p>
+        <p className="text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2 font-mono">
+          Per Agent Call (x402 Micropayments)
+        </p>
       </div>
     </div>
   )

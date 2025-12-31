@@ -41,10 +41,9 @@ export function useConvexConversations() {
   const { userId } = useConvexUser()
 
   // Query all conversations for current user
-  const conversations = useQuery(
-    api.conversations.getByUser,
-    userId ? { userId } : 'skip'
-  ) as Conversation[] | undefined
+  const conversations = useQuery(api.conversations.getByUser, userId ? { userId } : 'skip') as
+    | Conversation[]
+    | undefined
 
   // Mutations
   const createConversation = useMutation(api.conversations.create)
@@ -125,11 +124,13 @@ export function useConversationMessages(conversationId: Id<'conversations'> | nu
  * Hook for active chat with a resource
  * Creates conversation if needed, manages messages
  */
-export function useResourceChat(resource: {
-  id: string
-  url: string
-  name: string
-} | null) {
+export function useResourceChat(
+  resource: {
+    id: string
+    url: string
+    name: string
+  } | null
+) {
   const { userId } = useConvexUser()
   const { conversations, create } = useConvexConversations()
   const [activeConversationId, setActiveConversationId] = useState<Id<'conversations'> | null>(null)
@@ -137,16 +138,18 @@ export function useResourceChat(resource: {
   // Find or create conversation for this resource
   const existingConversation = useMemo(() => {
     if (!resource || !conversations) return null
-    return conversations.find(
-      (c) => c.resourceId === resource.id && c.status === 'active'
-    ) ?? null
+    return conversations.find((c) => c.resourceId === resource.id && c.status === 'active') ?? null
   }, [conversations, resource])
 
   // Use existing or active conversation
   const conversationId = activeConversationId ?? existingConversation?._id ?? null
 
   // Get messages for current conversation
-  const { messages, addMessage, isLoading: messagesLoading } = useConversationMessages(conversationId)
+  const {
+    messages,
+    addMessage,
+    isLoading: messagesLoading,
+  } = useConversationMessages(conversationId)
 
   // Start a new conversation
   const startConversation = useCallback(async () => {

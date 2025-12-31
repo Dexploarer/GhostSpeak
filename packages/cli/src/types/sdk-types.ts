@@ -80,40 +80,7 @@ export interface AgentAnalytics {
   }
 }
 
-// ===== AUCTION TYPES =====
-
-export interface Auction {
-  id: string
-  address: Address
-  title: string
-  description: string
-  creator: Address
-  startingPrice: number
-  currentPrice: number
-  reservePrice?: number
-  currentWinner?: Address
-  totalBids: number
-  auctionType: 'standard' | 'dutch' | 'sealed'
-  status: 'active' | 'ended' | 'cancelled'
-  startTime: Date
-  endTime: Date
-  auctionEndTime: Date
-  metadata?: {
-    image?: string
-    category?: string
-    tags?: string[]
-  }
-  bids?: Bid[]
-}
-
-export interface Bid {
-  id: string
-  auctionId: string
-  bidder: Address
-  amount: number
-  timestamp: Date
-  status: 'active' | 'outbid' | 'winning' | 'refunded'
-}
+// AUCTION TYPES REMOVED
 
 // ===== GOVERNANCE TYPES =====
 
@@ -201,43 +168,7 @@ export interface WorkOrder {
   updatedAt?: Date
 }
 
-// ===== CHANNEL TYPES =====
-
-export interface Channel {
-  id: string
-  address: Address
-  name: string
-  description?: string
-  participants: Address[]
-  isPrivate: boolean
-  metadata?: {
-    image?: string
-    category?: string
-  }
-  stats?: {
-    messageCount: number
-    participantCount: number
-    lastActivity: Date
-  }
-  createdAt: Date
-}
-
-export interface ChannelMessage {
-  id: string
-  channelId: string
-  sender: Address
-  content: string
-  messageType: 'text' | 'file' | 'reaction' | 'system'
-  replyTo?: string
-  attachments?: string[]
-  reactions?: Array<{
-    emoji: string
-    users: Address[]
-    count: number
-  }>
-  timestamp: Date
-  editedAt?: Date
-}
+// CHANNEL TYPES REMOVED
 
 // ===== REPUTATION TYPES =====
 
@@ -268,30 +199,7 @@ export interface ReputationData {
   }>
 }
 
-// ===== MARKETPLACE TYPES =====
-
-export interface MarketplaceListing {
-  id: string
-  address: Address
-  seller: Address
-  title: string
-  description: string
-  price: number
-  category: string
-  tags: string[]
-  status: 'active' | 'sold' | 'cancelled' | 'expired'
-  metadata?: {
-    image?: string
-    files?: string[]
-  }
-  stats?: {
-    views: number
-    favorites: number
-    inquiries: number
-  }
-  createdAt: Date
-  updatedAt?: Date
-}
+// MARKETPLACE TYPES REMOVED
 
 // ===== TOKEN TYPES =====
 
@@ -354,16 +262,16 @@ export interface TransactionDetails {
 export interface WalletService {
   getActiveSigner(): Promise<import('@solana/kit').KeyPairSigner | null>
   getBalance(address: Address): Promise<number>
-  signTransaction(transaction: any): Promise<any>
-  sendTransaction(transaction: any): Promise<string>
+  signTransaction(transaction: unknown): Promise<unknown>
+  sendTransaction(transaction: unknown): Promise<string>
 }
 
 export interface BlockchainService {
   getAccountInfo(address: Address): Promise<AccountInfo | null>
   getBalance(address: Address): Promise<number>
   getTransaction(signature: string): Promise<TransactionDetails | null>
-  getTransactionHistory(address: Address, options?: any): Promise<TransactionSignature[]>
-  sendTransaction(transaction: any): Promise<string>
+  getTransactionHistory(address: Address, options?: Record<string, unknown>): Promise<TransactionSignature[]>
+  sendTransaction(transaction: unknown): Promise<string>
 }
 
 export interface SDKService {
@@ -374,23 +282,13 @@ export interface SDKService {
     register(data: Partial<Agent>): Promise<Agent>
     update(id: string, data: Partial<Agent>): Promise<Agent>
   }
-  auctions: {
-    list(): Promise<Auction[]>
-    get(id: string): Promise<Auction | null>
-    create(data: Partial<Auction>): Promise<Auction>
-    bid(auctionId: string, amount: number): Promise<Bid>
-  }
   governance: {
-    listMultisigs(options?: any): Promise<Multisig[]>
+    listMultisigs(options?: Record<string, unknown>): Promise<Multisig[]>
     listProposals(): Promise<Proposal[]>
-    createProposal(signer: any, data: any): Promise<string>
-    vote(signer: any, data: any): Promise<string>
-    grantRole(data: any): Promise<string>
-    revokeRole(data: any): Promise<string>
-  }
-  marketplace: {
-    list(): Promise<MarketplaceListing[]>
-    get(id: string): Promise<MarketplaceListing | null>
+    createProposal(signer: unknown, data: unknown): Promise<string>
+    vote(signer: unknown, data: unknown): Promise<string>
+    grantRole(data: unknown): Promise<string>
+    revokeRole(data: unknown): Promise<string>
   }
 }
 
@@ -411,16 +309,6 @@ export interface AgentCommandOptions extends BaseCommandOptions {
   query?: string
 }
 
-export interface AuctionCommandOptions extends BaseCommandOptions {
-  title?: string
-  description?: string
-  startingPrice?: string
-  reservePrice?: string
-  duration?: string
-  amount?: string
-  active?: boolean
-  myBids?: boolean
-}
 
 export interface GovernanceCommandOptions extends BaseCommandOptions {
   name?: string
@@ -448,12 +336,12 @@ export interface DeployCommandOptions extends BaseCommandOptions {
 
 export interface SDKError extends Error {
   code?: string
-  details?: any
+  details?: Record<string, unknown>
   transaction?: string
 }
 
 export interface ValidationError extends Error {
   field: string
-  value: any
+  value: unknown
   constraint: string
 }

@@ -92,6 +92,32 @@ pub struct SubmitX402RatingReputation<'info> {
     pub clock: Sysvar<'info, Clock>,
 }
 
+/// Context for updating reputation tags
+#[derive(Accounts)]
+pub struct UpdateReputationTags<'info> {
+    /// Reputation metrics account
+    #[account(
+        mut,
+        seeds = [
+            b"reputation_metrics",
+            agent.key().as_ref()
+        ],
+        bump = reputation_metrics.bump,
+        constraint = reputation_metrics.agent == agent.key() @ GhostSpeakError::InvalidAgent
+    )]
+    pub reputation_metrics: Account<'info, ReputationMetrics>,
+
+    /// Agent account
+    #[account(mut)]
+    pub agent: Account<'info, Agent>,
+
+    /// Authority (can be the agent owner or authorized updater)
+    pub authority: Signer<'info>,
+
+    /// Clock for timestamps
+    pub clock: Sysvar<'info, Clock>,
+}
+
 /// Initialize reputation metrics for an agent
 pub fn initialize_reputation_metrics(ctx: Context<InitializeReputationMetrics>) -> Result<()> {
     let reputation_metrics = &mut ctx.accounts.reputation_metrics;
@@ -109,6 +135,20 @@ pub fn initialize_reputation_metrics(ctx: Context<InitializeReputationMetrics>) 
     reputation_metrics.payment_history_7d = [0; 7];
     reputation_metrics.created_at = clock.unix_timestamp;
     reputation_metrics.updated_at = clock.unix_timestamp;
+
+    // Initialize tag fields
+    reputation_metrics.skill_tags = Vec::new();
+    reputation_metrics.behavior_tags = Vec::new();
+    reputation_metrics.compliance_tags = Vec::new();
+    reputation_metrics.tag_scores = Vec::new();
+    reputation_metrics.tag_updated_at = clock.unix_timestamp;
+
+    // Initialize multi-source reputation fields
+    reputation_metrics.source_scores = Vec::new();
+    reputation_metrics.primary_source = "payai".to_string();
+    reputation_metrics.last_aggregation = clock.unix_timestamp;
+    reputation_metrics.conflict_flags = Vec::new();
+
     reputation_metrics.bump = ctx.bumps.reputation_metrics;
 
     emit!(ReputationMetricsInitializedEvent {
@@ -284,6 +324,167 @@ fn calculate_x402_reputation_score(metrics: &ReputationMetrics) -> Result<u64> {
     Ok(total_score.min(10000)) // Cap at 100%
 }
 
+/// Update reputation tags
+///
+/// Adds or updates reputation tags with confidence scores.
+/// This is typically called after calculating tags off-chain using the
+/// ReputationTagEngine.
+pub fn update_reputation_tags(
+    ctx: Context<UpdateReputationTags>,
+    skill_tags: Vec<String>,
+    behavior_tags: Vec<String>,
+    compliance_tags: Vec<String>,
+    tag_scores: Vec<crate::state::TagScore>,
+) -> Result<()> {
+    let reputation_metrics = &mut ctx.accounts.reputation_metrics;
+    let clock = &ctx.accounts.clock;
+
+    // Remove stale tags first
+    reputation_metrics.remove_stale_tags(clock.unix_timestamp);
+
+    // Update skill tags
+    for tag in skill_tags {
+        reputation_metrics.add_skill_tag(tag)?;
+    }
+
+    // Update behavior tags
+    for tag in behavior_tags {
+        reputation_metrics.add_behavior_tag(tag)?;
+    }
+
+    // Update compliance tags
+    for tag in compliance_tags {
+        reputation_metrics.add_compliance_tag(tag)?;
+    }
+
+    // Update tag confidence scores
+    for tag_score in tag_scores {
+        reputation_metrics.update_tag_confidence(
+            tag_score.tag_name,
+            tag_score.confidence,
+            tag_score.evidence_count,
+            clock.unix_timestamp,
+        )?;
+    }
+
+    reputation_metrics.updated_at = clock.unix_timestamp;
+
+    emit!(ReputationTagsUpdatedEvent {
+        agent: ctx.accounts.agent.key(),
+        total_tags: reputation_metrics.total_tag_count() as u32,
+        skill_tags_count: reputation_metrics.skill_tags.len() as u32,
+        behavior_tags_count: reputation_metrics.behavior_tags.len() as u32,
+        compliance_tags_count: reputation_metrics.compliance_tags.len() as u32,
+        tag_scores_count: reputation_metrics.tag_scores.len() as u32,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+/// Apply tag decay to remove stale tags
+///
+/// This should be called periodically to clean up old tags that are
+/// no longer relevant (older than 90 days).
+pub fn apply_tag_decay(ctx: Context<UpdateReputationTags>) -> Result<()> {
+    let reputation_metrics = &mut ctx.accounts.reputation_metrics;
+    let clock = &ctx.accounts.clock;
+
+    let tags_before = reputation_metrics.total_tag_count();
+
+    reputation_metrics.remove_stale_tags(clock.unix_timestamp);
+
+    let tags_after = reputation_metrics.total_tag_count();
+    let tags_removed = tags_before.saturating_sub(tags_after);
+
+    emit!(TagDecayAppliedEvent {
+        agent: ctx.accounts.agent.key(),
+        tags_removed: tags_removed as u32,
+        remaining_tags: tags_after as u32,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+/// Context for updating source reputation
+#[derive(Accounts)]
+pub struct UpdateSourceReputation<'info> {
+    /// Reputation metrics account
+    #[account(
+        mut,
+        seeds = [
+            b"reputation_metrics",
+            agent.key().as_ref()
+        ],
+        bump = reputation_metrics.bump,
+        constraint = reputation_metrics.agent == agent.key() @ GhostSpeakError::InvalidAgent
+    )]
+    pub reputation_metrics: Account<'info, ReputationMetrics>,
+
+    /// Agent account
+    #[account(mut)]
+    pub agent: Account<'info, Agent>,
+
+    /// Authority (can be oracle, agent owner, or authorized updater)
+    pub authority: Signer<'info>,
+
+    /// Clock for timestamps
+    pub clock: Sysvar<'info, Clock>,
+}
+
+/// Update reputation from a specific source
+pub fn update_source_reputation(
+    ctx: Context<UpdateSourceReputation>,
+    source_name: String,
+    score: u16,
+    weight: u16,
+    data_points: u32,
+    reliability: u16,
+) -> Result<()> {
+    let reputation_metrics = &mut ctx.accounts.reputation_metrics;
+    let agent = &mut ctx.accounts.agent;
+    let clock = &ctx.accounts.clock;
+
+    // Update source score
+    reputation_metrics.update_source_score(
+        source_name.clone(),
+        score,
+        weight,
+        data_points,
+        reliability,
+        clock.unix_timestamp,
+    )?;
+
+    // Detect conflicts
+    let has_conflict = reputation_metrics.detect_conflicts(clock.unix_timestamp);
+
+    // Calculate new weighted aggregate score
+    let weighted_score = reputation_metrics.calculate_weighted_score();
+
+    // Update agent's overall reputation score (convert from basis points to 0-100)
+    agent.reputation_score = (weighted_score / 100) as u32;
+
+    // Update last aggregation timestamp
+    reputation_metrics.last_aggregation = clock.unix_timestamp;
+    reputation_metrics.updated_at = clock.unix_timestamp;
+
+    // Prune old conflict flags
+    reputation_metrics.prune_conflict_flags();
+
+    emit!(SourceReputationUpdatedEvent {
+        agent: agent.key(),
+        source_name,
+        source_score: score,
+        weighted_aggregate_score: weighted_score,
+        has_conflict,
+        total_sources: reputation_metrics.source_scores.len() as u32,
+        timestamp: clock.unix_timestamp,
+    });
+
+    Ok(())
+}
+
 /// Events
 #[event]
 pub struct ReputationMetricsInitializedEvent {
@@ -308,5 +509,35 @@ pub struct ReputationRatingSubmittedEvent {
     pub client: Pubkey,
     pub rating: u8,
     pub new_reputation_score: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ReputationTagsUpdatedEvent {
+    pub agent: Pubkey,
+    pub total_tags: u32,
+    pub skill_tags_count: u32,
+    pub behavior_tags_count: u32,
+    pub compliance_tags_count: u32,
+    pub tag_scores_count: u32,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct TagDecayAppliedEvent {
+    pub agent: Pubkey,
+    pub tags_removed: u32,
+    pub remaining_tags: u32,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct SourceReputationUpdatedEvent {
+    pub agent: Pubkey,
+    pub source_name: String,
+    pub source_score: u16,
+    pub weighted_aggregate_score: u64,
+    pub has_conflict: bool,
+    pub total_sources: u32,
     pub timestamp: i64,
 }

@@ -109,8 +109,7 @@ export function UserStatsInline(): React.JSX.Element | null {
         {favorites.length}
       </span>
       <span className="flex items-center gap-1">
-        <DollarSign className="w-3.5 h-3.5 text-green-400" />
-        ${stats.totalSpent.toFixed(2)}
+        <DollarSign className="w-3.5 h-3.5 text-green-400" />${stats.totalSpent.toFixed(2)}
       </span>
     </div>
   )

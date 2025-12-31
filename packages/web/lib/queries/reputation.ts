@@ -261,31 +261,9 @@ async function getAgentEscrowHistory(agentAddress: string) {
 /**
  * Get agent marketplace activity
  */
-// TODO: Integrate marketplace activity into reputation calculation
 async function _getAgentMarketplaceActivity(agentAddress: string) {
-  const client = getGhostSpeakClient()
-
-  try {
-    // const marketplaceModule = client.marketplace
-    const allListings = await client.marketplace.getAllServiceListings()
-
-    // Filter listings created by this agent - cast to any for type flexibility
-    const agentListings = (
-      allListings as unknown as Array<{
-        address: Address
-        data?: { provider?: Address; isActive?: boolean; purchaseCount?: number }
-      }>
-    ).filter((listing) => listing.data?.provider?.toString() === agentAddress)
-
-    return {
-      totalListings: agentListings.length,
-      activeListings: agentListings.filter((l) => l.data?.isActive).length,
-      totalSales: agentListings.reduce((sum, l) => sum + (l.data?.purchaseCount || 0), 0),
-    }
-  } catch (error) {
-    console.warn('Failed to fetch marketplace activity:', error)
-    return { totalListings: 0, activeListings: 0, totalSales: 0 }
-  }
+  // Marketplace module removed - return zeroed stats
+  return { totalListings: 0, activeListings: 0, totalSales: 0 }
 }
 
 /**

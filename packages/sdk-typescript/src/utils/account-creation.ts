@@ -50,80 +50,9 @@ export class AccountCreationHelper {
     }
   }
 
-  /**
-   * Helper to create a service listing account with derived PDA
-   */
-  async createServiceListingAccount(
-    creator: TransactionSigner,
-    listingId: string
-  ): Promise<Address> {
-    const { deriveServiceListingPda } = await import('./pda.js')
-    
-    return deriveServiceListingPda(this.config.programId!, creator.address, listingId)
-  }
 
-  /**
-   * Helper to create a service listing with validation
-   */
-  async createServiceListing(
-    signer: TransactionSigner,
-    agentAddress: Address,
-    serviceId: string,
-    basePrice: bigint
-  ): Promise<{
-    serviceAddress: Address
-    agentAddress: Address
-    serviceId: string
-    basePrice: bigint
-  }> {
-    // Validate service ID
-    if (!serviceId || serviceId.length === 0) {
-      throw new Error('Service ID is required')
-    }
-    
-    if (serviceId.length > 64) {
-      throw new Error('Service ID too long (max 64 characters)')
-    }
-    
-    // Validate base price
-    if (basePrice <= 0n) {
-      throw new Error('Base price must be greater than 0')
-    }
-    
-    const { deriveServiceListingPda } = await import('./pda.js')
-    const serviceAddress = await deriveServiceListingPda(this.config.programId!, agentAddress, serviceId)
-    
-    return {
-      serviceAddress,
-      agentAddress,
-      serviceId,
-      basePrice
-    }
-  }
 
-  /**
-   * Helper to create a job posting account with derived PDA
-   */
-  async createJobPostingAccount(
-    employer: TransactionSigner,
-    jobId: string
-  ): Promise<Address> {
-    const { deriveJobPostingPda } = await import('./pda.js')
-    
-    return deriveJobPostingPda(this.config.programId!, employer.address, jobId)
-  }
 
-  /**
-   * Helper to create a work order account with derived PDA
-   */
-  async createWorkOrderAccount(
-    employer: TransactionSigner,
-    orderId: bigint
-  ): Promise<Address> {
-    const { deriveWorkOrderPda } = await import('./pda.js')
-    
-    return await deriveWorkOrderPda(this.config.programId!, employer.address, orderId)
-  }
 
   /**
    * Helper to create an A2A session account with derived PDA
@@ -136,53 +65,9 @@ export class AccountCreationHelper {
     return await deriveA2ASessionPdaOriginal(this.config.programId!, creator.address)
   }
 
-  /**
-   * Helper to create service purchase account with derived PDA
-   */
-  async createServicePurchaseAccount(
-    serviceListing: Address,
-    buyer: TransactionSigner
-  ): Promise<Address> {
-    const { deriveServicePurchasePda } = await import('./pda.js')
-    
-    return deriveServicePurchasePda(this.config.programId!, serviceListing, buyer.address)
-  }
 
-  /**
-   * Helper to create job application account with derived PDA
-   */
-  async createJobApplicationAccount(
-    jobPosting: Address,
-    applicant: TransactionSigner
-  ): Promise<Address> {
-    const { deriveJobApplicationPda } = await import('./pda.js')
-    
-    return deriveJobApplicationPda(this.config.programId!, jobPosting, applicant.address)
-  }
 
-  /**
-   * Helper to create payment account with derived PDA
-   */
-  async createPaymentAccount(
-    workOrder: Address,
-    payer: TransactionSigner
-  ): Promise<Address> {
-    const { derivePaymentPda } = await import('./pda.js')
-    
-    return derivePaymentPda(this.config.programId!, workOrder, payer.address)
-  }
 
-  /**
-   * Helper to create work delivery account with derived PDA
-   */
-  async createWorkDeliveryAccount(
-    workOrder: Address,
-    provider: TransactionSigner
-  ): Promise<Address> {
-    const { deriveWorkDeliveryPda } = await import('./pda.js')
-    
-    return deriveWorkDeliveryPda(this.config.programId!, workOrder, provider.address)
-  }
 
   /**
    * Helper to create agent verification account with derived PDA

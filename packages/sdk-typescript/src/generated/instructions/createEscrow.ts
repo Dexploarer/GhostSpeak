@@ -12,16 +12,11 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
-  getAddressDecoder,
   getAddressEncoder,
-  getBooleanDecoder,
-  getBooleanEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getI64Decoder,
   getI64Encoder,
-  getOptionDecoder,
-  getOptionEncoder,
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
@@ -41,8 +36,6 @@ import {
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
-  type Option,
-  type OptionOrNullable,
   type ReadonlyAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
@@ -70,16 +63,13 @@ export function getCreateEscrowDiscriminatorBytes() {
 export type CreateEscrowInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountEscrow extends string | AccountMeta<string> = string,
-  TAccountReentrancyGuard extends string | AccountMeta<string> = string,
-  TAccountClient extends string | AccountMeta<string> = string,
   TAccountAgent extends string | AccountMeta<string> = string,
   TAccountClientTokenAccount extends string | AccountMeta<string> = string,
-  TAccountEscrowTokenAccount extends string | AccountMeta<string> = string,
-  TAccountPaymentToken extends string | AccountMeta<string> = string,
+  TAccountEscrowVault extends string | AccountMeta<string> = string,
+  TAccountTokenMint extends string | AccountMeta<string> = string,
+  TAccountClient extends string | AccountMeta<string> = string,
   TAccountTokenProgram extends string | AccountMeta<string> =
     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-  TAccountAssociatedTokenProgram extends string | AccountMeta<string> =
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
   TAccountSystemProgram extends string | AccountMeta<string> =
     "11111111111111111111111111111111",
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
@@ -90,31 +80,25 @@ export type CreateEscrowInstruction<
       TAccountEscrow extends string
         ? WritableAccount<TAccountEscrow>
         : TAccountEscrow,
-      TAccountReentrancyGuard extends string
-        ? WritableAccount<TAccountReentrancyGuard>
-        : TAccountReentrancyGuard,
-      TAccountClient extends string
-        ? WritableSignerAccount<TAccountClient> &
-            AccountSignerMeta<TAccountClient>
-        : TAccountClient,
       TAccountAgent extends string
         ? ReadonlyAccount<TAccountAgent>
         : TAccountAgent,
       TAccountClientTokenAccount extends string
         ? WritableAccount<TAccountClientTokenAccount>
         : TAccountClientTokenAccount,
-      TAccountEscrowTokenAccount extends string
-        ? WritableAccount<TAccountEscrowTokenAccount>
-        : TAccountEscrowTokenAccount,
-      TAccountPaymentToken extends string
-        ? ReadonlyAccount<TAccountPaymentToken>
-        : TAccountPaymentToken,
+      TAccountEscrowVault extends string
+        ? WritableAccount<TAccountEscrowVault>
+        : TAccountEscrowVault,
+      TAccountTokenMint extends string
+        ? ReadonlyAccount<TAccountTokenMint>
+        : TAccountTokenMint,
+      TAccountClient extends string
+        ? WritableSignerAccount<TAccountClient> &
+            AccountSignerMeta<TAccountClient>
+        : TAccountClient,
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
-      TAccountAssociatedTokenProgram extends string
-        ? ReadonlyAccount<TAccountAssociatedTokenProgram>
-        : TAccountAssociatedTokenProgram,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
@@ -124,30 +108,30 @@ export type CreateEscrowInstruction<
 
 export type CreateEscrowInstructionData = {
   discriminator: ReadonlyUint8Array;
-  taskId: string;
+  escrowId: bigint;
   amount: bigint;
-  expiresAt: bigint;
-  transferHook: Option<Address>;
-  isConfidential: boolean;
+  jobDescription: string;
+  deadline: bigint;
 };
 
 export type CreateEscrowInstructionDataArgs = {
-  taskId: string;
+  escrowId: number | bigint;
   amount: number | bigint;
-  expiresAt: number | bigint;
-  transferHook: OptionOrNullable<Address>;
-  isConfidential: boolean;
+  jobDescription: string;
+  deadline: number | bigint;
 };
 
 export function getCreateEscrowInstructionDataEncoder(): Encoder<CreateEscrowInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
-      ["taskId", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ["escrowId", getU64Encoder()],
       ["amount", getU64Encoder()],
-      ["expiresAt", getI64Encoder()],
-      ["transferHook", getOptionEncoder(getAddressEncoder())],
-      ["isConfidential", getBooleanEncoder()],
+      [
+        "jobDescription",
+        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()),
+      ],
+      ["deadline", getI64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: CREATE_ESCROW_DISCRIMINATOR }),
   );
@@ -156,11 +140,10 @@ export function getCreateEscrowInstructionDataEncoder(): Encoder<CreateEscrowIns
 export function getCreateEscrowInstructionDataDecoder(): Decoder<CreateEscrowInstructionData> {
   return getStructDecoder([
     ["discriminator", fixDecoderSize(getBytesDecoder(), 8)],
-    ["taskId", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ["escrowId", getU64Decoder()],
     ["amount", getU64Decoder()],
-    ["expiresAt", getI64Decoder()],
-    ["transferHook", getOptionDecoder(getAddressDecoder())],
-    ["isConfidential", getBooleanDecoder()],
+    ["jobDescription", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ["deadline", getI64Decoder()],
   ]);
 }
 
@@ -176,59 +159,48 @@ export function getCreateEscrowInstructionDataCodec(): Codec<
 
 export type CreateEscrowAsyncInput<
   TAccountEscrow extends string = string,
-  TAccountReentrancyGuard extends string = string,
-  TAccountClient extends string = string,
   TAccountAgent extends string = string,
   TAccountClientTokenAccount extends string = string,
-  TAccountEscrowTokenAccount extends string = string,
-  TAccountPaymentToken extends string = string,
+  TAccountEscrowVault extends string = string,
+  TAccountTokenMint extends string = string,
+  TAccountClient extends string = string,
   TAccountTokenProgram extends string = string,
-  TAccountAssociatedTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   escrow?: Address<TAccountEscrow>;
-  reentrancyGuard?: Address<TAccountReentrancyGuard>;
-  client: TransactionSigner<TAccountClient>;
   agent: Address<TAccountAgent>;
-  /** Client's token account - created if it doesn't exist */
-  clientTokenAccount?: Address<TAccountClientTokenAccount>;
-  /** Escrow's token account - always created fresh */
-  escrowTokenAccount?: Address<TAccountEscrowTokenAccount>;
-  paymentToken: Address<TAccountPaymentToken>;
+  clientTokenAccount: Address<TAccountClientTokenAccount>;
+  escrowVault: Address<TAccountEscrowVault>;
+  tokenMint: Address<TAccountTokenMint>;
+  client: TransactionSigner<TAccountClient>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
-  taskId: CreateEscrowInstructionDataArgs["taskId"];
+  escrowId: CreateEscrowInstructionDataArgs["escrowId"];
   amount: CreateEscrowInstructionDataArgs["amount"];
-  expiresAt: CreateEscrowInstructionDataArgs["expiresAt"];
-  transferHook: CreateEscrowInstructionDataArgs["transferHook"];
-  isConfidential: CreateEscrowInstructionDataArgs["isConfidential"];
+  jobDescription: CreateEscrowInstructionDataArgs["jobDescription"];
+  deadline: CreateEscrowInstructionDataArgs["deadline"];
 };
 
 export async function getCreateEscrowInstructionAsync<
   TAccountEscrow extends string,
-  TAccountReentrancyGuard extends string,
-  TAccountClient extends string,
   TAccountAgent extends string,
   TAccountClientTokenAccount extends string,
-  TAccountEscrowTokenAccount extends string,
-  TAccountPaymentToken extends string,
+  TAccountEscrowVault extends string,
+  TAccountTokenMint extends string,
+  TAccountClient extends string,
   TAccountTokenProgram extends string,
-  TAccountAssociatedTokenProgram extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address =
     typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
 >(
   input: CreateEscrowAsyncInput<
     TAccountEscrow,
-    TAccountReentrancyGuard,
-    TAccountClient,
     TAccountAgent,
     TAccountClientTokenAccount,
-    TAccountEscrowTokenAccount,
-    TAccountPaymentToken,
+    TAccountEscrowVault,
+    TAccountTokenMint,
+    TAccountClient,
     TAccountTokenProgram,
-    TAccountAssociatedTokenProgram,
     TAccountSystemProgram
   >,
   config?: { programAddress?: TProgramAddress },
@@ -236,14 +208,12 @@ export async function getCreateEscrowInstructionAsync<
   CreateEscrowInstruction<
     TProgramAddress,
     TAccountEscrow,
-    TAccountReentrancyGuard,
-    TAccountClient,
     TAccountAgent,
     TAccountClientTokenAccount,
-    TAccountEscrowTokenAccount,
-    TAccountPaymentToken,
+    TAccountEscrowVault,
+    TAccountTokenMint,
+    TAccountClient,
     TAccountTokenProgram,
-    TAccountAssociatedTokenProgram,
     TAccountSystemProgram
   >
 > {
@@ -254,23 +224,15 @@ export async function getCreateEscrowInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     escrow: { value: input.escrow ?? null, isWritable: true },
-    reentrancyGuard: { value: input.reentrancyGuard ?? null, isWritable: true },
-    client: { value: input.client ?? null, isWritable: true },
     agent: { value: input.agent ?? null, isWritable: false },
     clientTokenAccount: {
       value: input.clientTokenAccount ?? null,
       isWritable: true,
     },
-    escrowTokenAccount: {
-      value: input.escrowTokenAccount ?? null,
-      isWritable: true,
-    },
-    paymentToken: { value: input.paymentToken ?? null, isWritable: false },
+    escrowVault: { value: input.escrowVault ?? null, isWritable: true },
+    tokenMint: { value: input.tokenMint ?? null, isWritable: false },
+    client: { value: input.client ?? null, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-    associatedTokenProgram: {
-      value: input.associatedTokenProgram ?? null,
-      isWritable: false,
-    },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
@@ -286,53 +248,19 @@ export async function getCreateEscrowInstructionAsync<
     accounts.escrow.value = await getProgramDerivedAddress({
       programAddress,
       seeds: [
-        getBytesEncoder().encode(new Uint8Array([101, 115, 99, 114, 111, 119])),
-        getUtf8Encoder().encode(expectSome(args.taskId)),
-      ],
-    });
-  }
-  if (!accounts.reentrancyGuard.value) {
-    accounts.reentrancyGuard.value = await getProgramDerivedAddress({
-      programAddress,
-      seeds: [
         getBytesEncoder().encode(
           new Uint8Array([
-            114, 101, 101, 110, 116, 114, 97, 110, 99, 121, 95, 103, 117, 97,
-            114, 100,
+            103, 104, 111, 115, 116, 95, 112, 114, 111, 116, 101, 99, 116,
           ]),
         ),
+        getAddressEncoder().encode(expectAddress(accounts.client.value)),
+        getU64Encoder().encode(expectSome(args.escrowId)),
       ],
     });
   }
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
       "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" as Address<"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA">;
-  }
-  if (!accounts.clientTokenAccount.value) {
-    accounts.clientTokenAccount.value = await getProgramDerivedAddress({
-      programAddress:
-        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" as Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">,
-      seeds: [
-        getAddressEncoder().encode(expectAddress(accounts.client.value)),
-        getAddressEncoder().encode(expectAddress(accounts.tokenProgram.value)),
-        getAddressEncoder().encode(expectAddress(accounts.paymentToken.value)),
-      ],
-    });
-  }
-  if (!accounts.escrowTokenAccount.value) {
-    accounts.escrowTokenAccount.value = await getProgramDerivedAddress({
-      programAddress:
-        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" as Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">,
-      seeds: [
-        getAddressEncoder().encode(expectAddress(accounts.escrow.value)),
-        getAddressEncoder().encode(expectAddress(accounts.tokenProgram.value)),
-        getAddressEncoder().encode(expectAddress(accounts.paymentToken.value)),
-      ],
-    });
-  }
-  if (!accounts.associatedTokenProgram.value) {
-    accounts.associatedTokenProgram.value =
-      "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" as Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">;
   }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
@@ -343,14 +271,12 @@ export async function getCreateEscrowInstructionAsync<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.escrow),
-      getAccountMeta(accounts.reentrancyGuard),
-      getAccountMeta(accounts.client),
       getAccountMeta(accounts.agent),
       getAccountMeta(accounts.clientTokenAccount),
-      getAccountMeta(accounts.escrowTokenAccount),
-      getAccountMeta(accounts.paymentToken),
+      getAccountMeta(accounts.escrowVault),
+      getAccountMeta(accounts.tokenMint),
+      getAccountMeta(accounts.client),
       getAccountMeta(accounts.tokenProgram),
-      getAccountMeta(accounts.associatedTokenProgram),
       getAccountMeta(accounts.systemProgram),
     ],
     data: getCreateEscrowInstructionDataEncoder().encode(
@@ -360,87 +286,72 @@ export async function getCreateEscrowInstructionAsync<
   } as CreateEscrowInstruction<
     TProgramAddress,
     TAccountEscrow,
-    TAccountReentrancyGuard,
-    TAccountClient,
     TAccountAgent,
     TAccountClientTokenAccount,
-    TAccountEscrowTokenAccount,
-    TAccountPaymentToken,
+    TAccountEscrowVault,
+    TAccountTokenMint,
+    TAccountClient,
     TAccountTokenProgram,
-    TAccountAssociatedTokenProgram,
     TAccountSystemProgram
   >);
 }
 
 export type CreateEscrowInput<
   TAccountEscrow extends string = string,
-  TAccountReentrancyGuard extends string = string,
-  TAccountClient extends string = string,
   TAccountAgent extends string = string,
   TAccountClientTokenAccount extends string = string,
-  TAccountEscrowTokenAccount extends string = string,
-  TAccountPaymentToken extends string = string,
+  TAccountEscrowVault extends string = string,
+  TAccountTokenMint extends string = string,
+  TAccountClient extends string = string,
   TAccountTokenProgram extends string = string,
-  TAccountAssociatedTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   escrow: Address<TAccountEscrow>;
-  reentrancyGuard: Address<TAccountReentrancyGuard>;
-  client: TransactionSigner<TAccountClient>;
   agent: Address<TAccountAgent>;
-  /** Client's token account - created if it doesn't exist */
   clientTokenAccount: Address<TAccountClientTokenAccount>;
-  /** Escrow's token account - always created fresh */
-  escrowTokenAccount: Address<TAccountEscrowTokenAccount>;
-  paymentToken: Address<TAccountPaymentToken>;
+  escrowVault: Address<TAccountEscrowVault>;
+  tokenMint: Address<TAccountTokenMint>;
+  client: TransactionSigner<TAccountClient>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
-  taskId: CreateEscrowInstructionDataArgs["taskId"];
+  escrowId: CreateEscrowInstructionDataArgs["escrowId"];
   amount: CreateEscrowInstructionDataArgs["amount"];
-  expiresAt: CreateEscrowInstructionDataArgs["expiresAt"];
-  transferHook: CreateEscrowInstructionDataArgs["transferHook"];
-  isConfidential: CreateEscrowInstructionDataArgs["isConfidential"];
+  jobDescription: CreateEscrowInstructionDataArgs["jobDescription"];
+  deadline: CreateEscrowInstructionDataArgs["deadline"];
 };
 
 export function getCreateEscrowInstruction<
   TAccountEscrow extends string,
-  TAccountReentrancyGuard extends string,
-  TAccountClient extends string,
   TAccountAgent extends string,
   TAccountClientTokenAccount extends string,
-  TAccountEscrowTokenAccount extends string,
-  TAccountPaymentToken extends string,
+  TAccountEscrowVault extends string,
+  TAccountTokenMint extends string,
+  TAccountClient extends string,
   TAccountTokenProgram extends string,
-  TAccountAssociatedTokenProgram extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address =
     typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
 >(
   input: CreateEscrowInput<
     TAccountEscrow,
-    TAccountReentrancyGuard,
-    TAccountClient,
     TAccountAgent,
     TAccountClientTokenAccount,
-    TAccountEscrowTokenAccount,
-    TAccountPaymentToken,
+    TAccountEscrowVault,
+    TAccountTokenMint,
+    TAccountClient,
     TAccountTokenProgram,
-    TAccountAssociatedTokenProgram,
     TAccountSystemProgram
   >,
   config?: { programAddress?: TProgramAddress },
 ): CreateEscrowInstruction<
   TProgramAddress,
   TAccountEscrow,
-  TAccountReentrancyGuard,
-  TAccountClient,
   TAccountAgent,
   TAccountClientTokenAccount,
-  TAccountEscrowTokenAccount,
-  TAccountPaymentToken,
+  TAccountEscrowVault,
+  TAccountTokenMint,
+  TAccountClient,
   TAccountTokenProgram,
-  TAccountAssociatedTokenProgram,
   TAccountSystemProgram
 > {
   // Program address.
@@ -450,23 +361,15 @@ export function getCreateEscrowInstruction<
   // Original accounts.
   const originalAccounts = {
     escrow: { value: input.escrow ?? null, isWritable: true },
-    reentrancyGuard: { value: input.reentrancyGuard ?? null, isWritable: true },
-    client: { value: input.client ?? null, isWritable: true },
     agent: { value: input.agent ?? null, isWritable: false },
     clientTokenAccount: {
       value: input.clientTokenAccount ?? null,
       isWritable: true,
     },
-    escrowTokenAccount: {
-      value: input.escrowTokenAccount ?? null,
-      isWritable: true,
-    },
-    paymentToken: { value: input.paymentToken ?? null, isWritable: false },
+    escrowVault: { value: input.escrowVault ?? null, isWritable: true },
+    tokenMint: { value: input.tokenMint ?? null, isWritable: false },
+    client: { value: input.client ?? null, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-    associatedTokenProgram: {
-      value: input.associatedTokenProgram ?? null,
-      isWritable: false,
-    },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
@@ -482,10 +385,6 @@ export function getCreateEscrowInstruction<
     accounts.tokenProgram.value =
       "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" as Address<"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA">;
   }
-  if (!accounts.associatedTokenProgram.value) {
-    accounts.associatedTokenProgram.value =
-      "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" as Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">;
-  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
@@ -495,14 +394,12 @@ export function getCreateEscrowInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.escrow),
-      getAccountMeta(accounts.reentrancyGuard),
-      getAccountMeta(accounts.client),
       getAccountMeta(accounts.agent),
       getAccountMeta(accounts.clientTokenAccount),
-      getAccountMeta(accounts.escrowTokenAccount),
-      getAccountMeta(accounts.paymentToken),
+      getAccountMeta(accounts.escrowVault),
+      getAccountMeta(accounts.tokenMint),
+      getAccountMeta(accounts.client),
       getAccountMeta(accounts.tokenProgram),
-      getAccountMeta(accounts.associatedTokenProgram),
       getAccountMeta(accounts.systemProgram),
     ],
     data: getCreateEscrowInstructionDataEncoder().encode(
@@ -512,14 +409,12 @@ export function getCreateEscrowInstruction<
   } as CreateEscrowInstruction<
     TProgramAddress,
     TAccountEscrow,
-    TAccountReentrancyGuard,
-    TAccountClient,
     TAccountAgent,
     TAccountClientTokenAccount,
-    TAccountEscrowTokenAccount,
-    TAccountPaymentToken,
+    TAccountEscrowVault,
+    TAccountTokenMint,
+    TAccountClient,
     TAccountTokenProgram,
-    TAccountAssociatedTokenProgram,
     TAccountSystemProgram
   >);
 }
@@ -531,17 +426,13 @@ export type ParsedCreateEscrowInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     escrow: TAccountMetas[0];
-    reentrancyGuard: TAccountMetas[1];
-    client: TAccountMetas[2];
-    agent: TAccountMetas[3];
-    /** Client's token account - created if it doesn't exist */
-    clientTokenAccount: TAccountMetas[4];
-    /** Escrow's token account - always created fresh */
-    escrowTokenAccount: TAccountMetas[5];
-    paymentToken: TAccountMetas[6];
-    tokenProgram: TAccountMetas[7];
-    associatedTokenProgram: TAccountMetas[8];
-    systemProgram: TAccountMetas[9];
+    agent: TAccountMetas[1];
+    clientTokenAccount: TAccountMetas[2];
+    escrowVault: TAccountMetas[3];
+    tokenMint: TAccountMetas[4];
+    client: TAccountMetas[5];
+    tokenProgram: TAccountMetas[6];
+    systemProgram: TAccountMetas[7];
   };
   data: CreateEscrowInstructionData;
 };
@@ -554,7 +445,7 @@ export function parseCreateEscrowInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCreateEscrowInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 10) {
+  if (instruction.accounts.length < 8) {
     // TODO: Coded error.
     throw new Error("Not enough accounts");
   }
@@ -568,14 +459,12 @@ export function parseCreateEscrowInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       escrow: getNextAccount(),
-      reentrancyGuard: getNextAccount(),
-      client: getNextAccount(),
       agent: getNextAccount(),
       clientTokenAccount: getNextAccount(),
-      escrowTokenAccount: getNextAccount(),
-      paymentToken: getNextAccount(),
+      escrowVault: getNextAccount(),
+      tokenMint: getNextAccount(),
+      client: getNextAccount(),
       tokenProgram: getNextAccount(),
-      associatedTokenProgram: getNextAccount(),
       systemProgram: getNextAccount(),
     },
     data: getCreateEscrowInstructionDataDecoder().decode(instruction.data),

@@ -47,6 +47,12 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from "../shared";
+import {
+  getPricingModelDecoder,
+  getPricingModelEncoder,
+  type PricingModel,
+  type PricingModelArgs,
+} from "../types";
 
 export const REGISTER_AGENT_DISCRIMINATOR = new Uint8Array([
   135, 157, 66, 195, 2, 113, 175, 30,
@@ -61,6 +67,7 @@ export function getRegisterAgentDiscriminatorBytes() {
 export type RegisterAgentInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
   TAccountAgentAccount extends string | AccountMeta<string> = string,
+  TAccountStakingAccount extends string | AccountMeta<string> = string,
   TAccountSigner extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends string | AccountMeta<string> =
     "11111111111111111111111111111111",
@@ -74,6 +81,9 @@ export type RegisterAgentInstruction<
       TAccountAgentAccount extends string
         ? WritableAccount<TAccountAgentAccount>
         : TAccountAgentAccount,
+      TAccountStakingAccount extends string
+        ? ReadonlyAccount<TAccountStakingAccount>
+        : TAccountStakingAccount,
       TAccountSigner extends string
         ? WritableSignerAccount<TAccountSigner> &
             AccountSignerMeta<TAccountSigner>
@@ -95,6 +105,7 @@ export type RegisterAgentInstructionData = {
   description: string;
   metadataUri: string;
   agentId: string;
+  pricingModel: PricingModel;
 };
 
 export type RegisterAgentInstructionDataArgs = {
@@ -103,6 +114,7 @@ export type RegisterAgentInstructionDataArgs = {
   description: string;
   metadataUri: string;
   agentId: string;
+  pricingModel: PricingModelArgs;
 };
 
 export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentInstructionDataArgs> {
@@ -114,6 +126,7 @@ export function getRegisterAgentInstructionDataEncoder(): Encoder<RegisterAgentI
       ["description", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["metadataUri", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["agentId", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ["pricingModel", getPricingModelEncoder()],
     ]),
     (value) => ({ ...value, discriminator: REGISTER_AGENT_DISCRIMINATOR }),
   );
@@ -127,6 +140,7 @@ export function getRegisterAgentInstructionDataDecoder(): Decoder<RegisterAgentI
     ["description", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["metadataUri", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["agentId", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ["pricingModel", getPricingModelDecoder()],
   ]);
 }
 
@@ -142,12 +156,15 @@ export function getRegisterAgentInstructionDataCodec(): Codec<
 
 export type RegisterAgentAsyncInput<
   TAccountAgentAccount extends string = string,
+  TAccountStakingAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
 > = {
   /** Agent account with enhanced 2025 PDA security */
   agentAccount?: Address<TAccountAgentAccount>;
+  /** Staking account - REQUIRED for Sybil resistance (must have >= 1K GHOST staked) */
+  stakingAccount?: Address<TAccountStakingAccount>;
   /**
    * User registry with enhanced validation
    * Authority with enhanced verification
@@ -162,10 +179,12 @@ export type RegisterAgentAsyncInput<
   description: RegisterAgentInstructionDataArgs["description"];
   metadataUri: RegisterAgentInstructionDataArgs["metadataUri"];
   agentId: RegisterAgentInstructionDataArgs["agentId"];
+  pricingModel: RegisterAgentInstructionDataArgs["pricingModel"];
 };
 
 export async function getRegisterAgentInstructionAsync<
   TAccountAgentAccount extends string,
+  TAccountStakingAccount extends string,
   TAccountSigner extends string,
   TAccountSystemProgram extends string,
   TAccountClock extends string,
@@ -174,6 +193,7 @@ export async function getRegisterAgentInstructionAsync<
 >(
   input: RegisterAgentAsyncInput<
     TAccountAgentAccount,
+    TAccountStakingAccount,
     TAccountSigner,
     TAccountSystemProgram,
     TAccountClock
@@ -183,6 +203,7 @@ export async function getRegisterAgentInstructionAsync<
   RegisterAgentInstruction<
     TProgramAddress,
     TAccountAgentAccount,
+    TAccountStakingAccount,
     TAccountSigner,
     TAccountSystemProgram,
     TAccountClock
@@ -195,6 +216,7 @@ export async function getRegisterAgentInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     agentAccount: { value: input.agentAccount ?? null, isWritable: true },
+    stakingAccount: { value: input.stakingAccount ?? null, isWritable: false },
     signer: { value: input.signer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     clock: { value: input.clock ?? null, isWritable: false },
@@ -218,6 +240,17 @@ export async function getRegisterAgentInstructionAsync<
       ],
     });
   }
+  if (!accounts.stakingAccount.value) {
+    accounts.stakingAccount.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([115, 116, 97, 107, 105, 110, 103]),
+        ),
+        getAddressEncoder().encode(expectAddress(accounts.signer.value)),
+      ],
+    });
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
@@ -231,6 +264,7 @@ export async function getRegisterAgentInstructionAsync<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.agentAccount),
+      getAccountMeta(accounts.stakingAccount),
       getAccountMeta(accounts.signer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.clock),
@@ -242,6 +276,7 @@ export async function getRegisterAgentInstructionAsync<
   } as RegisterAgentInstruction<
     TProgramAddress,
     TAccountAgentAccount,
+    TAccountStakingAccount,
     TAccountSigner,
     TAccountSystemProgram,
     TAccountClock
@@ -250,12 +285,15 @@ export async function getRegisterAgentInstructionAsync<
 
 export type RegisterAgentInput<
   TAccountAgentAccount extends string = string,
+  TAccountStakingAccount extends string = string,
   TAccountSigner extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountClock extends string = string,
 > = {
   /** Agent account with enhanced 2025 PDA security */
   agentAccount: Address<TAccountAgentAccount>;
+  /** Staking account - REQUIRED for Sybil resistance (must have >= 1K GHOST staked) */
+  stakingAccount: Address<TAccountStakingAccount>;
   /**
    * User registry with enhanced validation
    * Authority with enhanced verification
@@ -270,10 +308,12 @@ export type RegisterAgentInput<
   description: RegisterAgentInstructionDataArgs["description"];
   metadataUri: RegisterAgentInstructionDataArgs["metadataUri"];
   agentId: RegisterAgentInstructionDataArgs["agentId"];
+  pricingModel: RegisterAgentInstructionDataArgs["pricingModel"];
 };
 
 export function getRegisterAgentInstruction<
   TAccountAgentAccount extends string,
+  TAccountStakingAccount extends string,
   TAccountSigner extends string,
   TAccountSystemProgram extends string,
   TAccountClock extends string,
@@ -282,6 +322,7 @@ export function getRegisterAgentInstruction<
 >(
   input: RegisterAgentInput<
     TAccountAgentAccount,
+    TAccountStakingAccount,
     TAccountSigner,
     TAccountSystemProgram,
     TAccountClock
@@ -290,6 +331,7 @@ export function getRegisterAgentInstruction<
 ): RegisterAgentInstruction<
   TProgramAddress,
   TAccountAgentAccount,
+  TAccountStakingAccount,
   TAccountSigner,
   TAccountSystemProgram,
   TAccountClock
@@ -301,6 +343,7 @@ export function getRegisterAgentInstruction<
   // Original accounts.
   const originalAccounts = {
     agentAccount: { value: input.agentAccount ?? null, isWritable: true },
+    stakingAccount: { value: input.stakingAccount ?? null, isWritable: false },
     signer: { value: input.signer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     clock: { value: input.clock ?? null, isWritable: false },
@@ -327,6 +370,7 @@ export function getRegisterAgentInstruction<
   return Object.freeze({
     accounts: [
       getAccountMeta(accounts.agentAccount),
+      getAccountMeta(accounts.stakingAccount),
       getAccountMeta(accounts.signer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.clock),
@@ -338,6 +382,7 @@ export function getRegisterAgentInstruction<
   } as RegisterAgentInstruction<
     TProgramAddress,
     TAccountAgentAccount,
+    TAccountStakingAccount,
     TAccountSigner,
     TAccountSystemProgram,
     TAccountClock
@@ -352,15 +397,17 @@ export type ParsedRegisterAgentInstruction<
   accounts: {
     /** Agent account with enhanced 2025 PDA security */
     agentAccount: TAccountMetas[0];
+    /** Staking account - REQUIRED for Sybil resistance (must have >= 1K GHOST staked) */
+    stakingAccount: TAccountMetas[1];
     /**
      * User registry with enhanced validation
      * Authority with enhanced verification
      */
-    signer: TAccountMetas[1];
+    signer: TAccountMetas[2];
     /** System program for account creation */
-    systemProgram: TAccountMetas[2];
+    systemProgram: TAccountMetas[3];
     /** Clock sysvar for timestamp validation */
-    clock: TAccountMetas[3];
+    clock: TAccountMetas[4];
   };
   data: RegisterAgentInstructionData;
 };
@@ -373,7 +420,7 @@ export function parseRegisterAgentInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedRegisterAgentInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 4) {
+  if (instruction.accounts.length < 5) {
     // TODO: Coded error.
     throw new Error("Not enough accounts");
   }
@@ -387,6 +434,7 @@ export function parseRegisterAgentInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       agentAccount: getNextAccount(),
+      stakingAccount: getNextAccount(),
       signer: getNextAccount(),
       systemProgram: getNextAccount(),
       clock: getNextAccount(),

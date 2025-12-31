@@ -1,5 +1,2 @@
-/**
- * Staking Module Index
- */
-
-export { StakingModule, LockupTier } from './StakingModule.js'
+export { StakingModule } from './StakingModule.js'
+export type { StakeParams, UnstakeParams, InitializeStakingConfigParams } from './StakingModule.js'

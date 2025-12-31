@@ -25,14 +25,18 @@ export interface CrossmintSignerResult {
   /** Create a TransactionSigner for SDK operations */
   createSigner: () => TransactionSigner | null
   /** Send tokens using Crossmint's wallet.send() method */
-  sendTokens: (recipient: string, token: string, amount: string) => Promise<{ explorerLink?: string }>
+  sendTokens: (
+    recipient: string,
+    token: string,
+    amount: string
+  ) => Promise<{ explorerLink?: string }>
 }
 
 /**
  * Hook to create a Crossmint-compatible signer for the GhostSpeak SDK
  *
  * This bridges between Crossmint's wallet API and the SDK's TransactionSigner interface.
- * 
+ *
  * Crossmint wallets use a different API than traditional Solana wallets:
  * - wallet.send(recipient, token, amount) for token transfers
  * - wallet.sendTransaction({ transaction }) for custom transactions
@@ -64,7 +68,11 @@ export function useCrossmintSigner(): CrossmintSignerResult {
    * This is the recommended way to transfer tokens with Crossmint wallets
    */
   const sendTokens = useCallback(
-    async (recipient: string, token: string, amount: string): Promise<{ explorerLink?: string }> => {
+    async (
+      recipient: string,
+      token: string,
+      amount: string
+    ): Promise<{ explorerLink?: string }> => {
       if (!wallet) {
         throw new Error('Wallet not connected')
       }

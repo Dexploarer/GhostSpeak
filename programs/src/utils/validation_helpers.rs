@@ -181,13 +181,6 @@ pub fn validate_payment_amount(amount: u64, operation: &str) -> Result<()> {
 
     // Additional validation for specific operations
     match operation {
-        "escrow" => {
-            // Escrow amounts should be reasonable for typical services
-            require!(
-                amount <= MAX_PAYMENT_AMOUNT / 10, // Max 10% of total limit for single escrow
-                GhostSpeakError::InvalidEscrowAmount
-            );
-        }
         "bid" => {
             // Bid amounts should be meaningful
             require!(

@@ -13,7 +13,6 @@ import { ArchitectureLayers } from '@/components/landing/ArchitectureLayers'
 import { CostComparison } from '@/components/landing/CostComparison'
 import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
 import { IdentityBridge } from '@/components/landing/IdentityBridge'
-import { X402FacilitatorSection } from '@/components/landing/X402FacilitatorSection'
 
 const AgentSwarm3D = dynamic(
   () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
@@ -56,7 +55,7 @@ export default function LandingPage() {
       {/* 5.5 Cross-Chain Identity Bridge */}
       <IdentityBridge />
 
-      {/* 6. Protocol Visualization - The x402 Layer */}
+      {/* 6. Protocol Visualization - The Trust Layer */}
       <section className="py-16 sm:py-24 md:py-32 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 mb-10 sm:mb-16 md:mb-20 text-center relative z-10">
           <motion.div
@@ -66,11 +65,11 @@ export default function LandingPage() {
             className="space-y-3 sm:space-y-4"
           >
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter">
-              Pay AI, <span className="text-primary">Get Results.</span>
+              The <span className="text-primary">Ghost</span> Behind Every AI.
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto font-light px-2">
-              Discover agents, pay per call, funds held in escrow. The only x402 marketplace with
-              on-chain trust and dispute resolution.
+              Track every transaction. Issue verifiable credentials. Calculate trust scores.
+              Built on top of PayAI to add the missing trust layer.
             </p>
           </motion.div>
         </div>
@@ -90,17 +89,14 @@ export default function LandingPage() {
       <section className="py-16 sm:py-24 md:py-32 relative border-t border-border">
         <div className="max-w-7xl mx-auto px-4 mb-10 sm:mb-16 md:mb-20 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight">
-            Why <span className="text-primary italic">GhostSpeak</span> vs PayAI?
+            Built on <span className="text-primary italic">PayAI</span>. Extended by GhostSpeak.
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mt-3 sm:mt-4 px-2">
-            PayAI is a payment pipe. GhostSpeak is a marketplace with protection.
+            PayAI handles payments. GhostSpeak adds credentials, scores, and on-chain trust.
           </p>
         </div>
         <BentoGrid />
       </section>
-
-      {/* 6. x402 Facilitator - Technical Capability */}
-      <X402FacilitatorSection />
 
       {/* 6. Footer */}
       <footer className="py-12 sm:py-16 md:py-24 border-t border-border bg-card/80 relative">
@@ -108,7 +104,11 @@ export default function LandingPage() {
           <div className="flex flex-col items-center gap-3 sm:gap-4">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary rounded-xl sm:rounded-2xl flex items-center justify-center rotate-3 hover:rotate-0 transition-transform cursor-pointer shadow-[0_0_30px_rgba(204,255,0,0.3)]">
               <GhostIcon variant="logo" size={28} className="text-primary-foreground sm:hidden" />
-              <GhostIcon variant="logo" size={40} className="text-primary-foreground hidden sm:block" />
+              <GhostIcon
+                variant="logo"
+                size={40}
+                className="text-primary-foreground hidden sm:block"
+              />
             </div>
             <span className="font-black text-2xl sm:text-3xl tracking-tighter">GhostSpeak</span>
           </div>
@@ -117,11 +117,19 @@ export default function LandingPage() {
             <a href="/dashboard" className="hover:text-primary transition-colors">
               PROTOCOL
             </a>
-            <a href="/x402/discover" className="hover:text-primary transition-colors">
-              DISCOVER
+            <a
+              href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              BUY GHOST
             </a>
-            <a href="/dashboard/marketplace" className="hover:text-primary transition-colors">
-              MARKETPLACE
+            <a href="/tokenomics" className="hover:text-primary transition-colors">
+              TOKENOMICS
+            </a>
+            <a href="/dashboard/staking" className="hover:text-primary transition-colors">
+              STAKING
             </a>
             <a href="/dashboard/governance" className="hover:text-primary transition-colors">
               GOVERNANCE

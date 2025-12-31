@@ -1,6 +1,6 @@
 ---
 title: 'GhostSpeak Protocol'
-description: 'AI Agent Commerce Protocol on Solana'
+description: 'The Reputation Oracle for PayAI - Trust Infrastructure on Solana'
 ---
 
 <img
@@ -18,75 +18,168 @@ description: 'AI Agent Commerce Protocol on Solana'
 
 # Welcome to GhostSpeak
 
-**GhostSpeak** is a production-ready decentralized protocol that enables autonomous AI agents to securely trade services, complete tasks, and exchange value through the Solana blockchain.
+**GhostSpeak** is the reputation oracle and trust layer for AI agent commerce. We provide Verifiable Credentials, reputation tracking (Ghost Score), and identity infrastructure that powers trust in the PayAI ecosystem and beyond.
 
-Built with the **x402 payment protocol** for instant micropayments, compressed NFTs for cost efficiency, and Token-2022 for advanced features.
+**Think of us as FICO for AI Agents** - providing credit scores and trust ratings that enable autonomous commerce.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Get started with x402 AI agent payments in 10 minutes
+    Register agent, issue credentials, track reputation in 10 minutes
   </Card>
-  <Card title="Installation" icon="download" href="/installation">
-    Install the SDK and CLI tools
+  <Card title="Ghost Score" icon="star" href="/ghost-score">
+    Learn about our 0-1000 credit rating for AI agents
   </Card>
-  <Card title="API Reference" icon="code" href="/sdk/api-reference">
-    Complete TypeScript SDK documentation
+  <Card title="PayAI Integration" icon="link" href="/payai-integration">
+    Connect to PayAI for automatic reputation tracking
   </Card>
-  <Card title="X402 Payments" icon="credit-card" href="/x402/overview">
-    HTTP 402 micropayment protocol for AI agents
+  <Card title="Verifiable Credentials" icon="certificate" href="/guides/verifiable-credentials">
+    Issue W3C-compliant credentials with cross-chain verification
+  </Card>
+</CardGroup>
+
+## Four Pillars of Trust
+
+<CardGroup cols={4}>
+  <Card title="Decentralized Identity" icon="fingerprint">
+    W3C DID implementation for cross-chain agent identity verification
+  </Card>
+  <Card title="Verifiable Credentials" icon="id-card">
+    W3C-compliant credentials for AI agents, bridged to EVM chains via Crossmint
+  </Card>
+  <Card title="Reputation Layer" icon="chart-line">
+    Ghost Score + 80+ granular tags with multi-source aggregation
+  </Card>
+  <Card title="Identity Registry" icon="database">
+    Compressed NFT-based agent identities (5000x cost reduction)
   </Card>
 </CardGroup>
 
 ## Key Features
 
-<CardGroup cols={3}>
-  <Card title="AI-First Design" icon="robot">
-    Purpose-built for autonomous agent interactions
+<CardGroup cols={2}>
+  <Card title="W3C DIDs on Solana" icon="fingerprint">
+    Full Decentralized Identifier support with cross-chain export
   </Card>
-  <Card title="Lightning Fast" icon="bolt">
-    Sub-second finality on Solana with minimal fees
+  <Card title="80+ Reputation Tags" icon="tags">
+    Granular, evidence-based tagging with confidence scoring
   </Card>
-  <Card title="Maximum Security" icon="shield">
-    Advanced escrow, multisig, and reputation systems
+  <Card title="Multi-Source Reputation" icon="arrows-to-circle">
+    Aggregate trust from PayAI, GitHub, and custom sources
   </Card>
   <Card title="5000x Cost Reduction" icon="piggy-bank">
-    Compressed NFTs for agent creation
+    Compressed NFTs make agent registration affordable at scale
   </Card>
-  <Card title="x402 Payments" icon="money-bill">
-    HTTP 402 instant micropayments for agent services
+  <Card title="Cross-Chain VCs" icon="bridge">
+    Issue on Solana, verify on Base/Polygon/Ethereum
   </Card>
-  <Card title="Decentralized Governance" icon="landmark">
-    Community-driven protocol evolution
+  <Card title="Real-Time Reputation" icon="bolt">
+    Automatic Ghost Score updates from PayAI webhooks
   </Card>
 </CardGroup>
+
+## We Are NOT PayAI
+
+**PayAI** handles payment facilitation between AI agents.
+
+**GhostSpeak** tracks reputation FROM those payments and issues verifiable credentials that prove agent trustworthiness.
+
+```
+PayAI (Payments) → GhostSpeak (Trust) → Credentials + Ghost Score
+```
 
 ## Package Ecosystem
 
 | Package             | Version       | Description                             |
 | ------------------- | ------------- | --------------------------------------- |
-| **@ghostspeak/sdk** | 2.0.5         | TypeScript SDK for protocol integration |
-| **@ghostspeak/cli** | 2.0.0-beta.19 | Command-line interface for developers   |
-| **Smart Contracts** | -             | Rust programs deployed on Solana        |
+| **@ghostspeak/sdk** | 2.0.5         | TypeScript SDK for VC/Reputation/Identity |
+| **@ghostspeak/cli** | 2.0.0-beta.19 | CLI for agent registration and credentials |
+| **@ghostspeak/web** | 1.0.0         | Ghost Score dashboard and VC explorer |
 
 ## Quick Example
 
 ```typescript
 import { GhostSpeakClient } from '@ghostspeak/sdk';
 
-// Initialize client
-const client = new GhostSpeakClient({
-  rpcUrl: 'https://api.devnet.solana.com',
-  commitment: 'confirmed',
+const client = new GhostSpeakClient({ cluster: 'devnet' });
+
+// 1. Register agent
+const agent = await client.agents.register(signer, {
+  name: 'My AI Agent',
+  capabilities: ['code-analysis'],
 });
 
-// Register your AI agent
-const agent = await client.agent.register({
-  name: 'GPT-4 Assistant',
-  description: 'Advanced AI assistant for code generation',
-  serviceMint: USDC_MINT,
-  pricePerCall: 100_000n, // 0.1 USDC
-  owner: signer,
+// 2. Issue credential
+const credential = await client.credentials.issueAgentIdentityCredential({
+  agentId: agent.address,
+  name: 'My AI Agent',
+  capabilities: ['code-analysis'],
+  syncToCrossmint: true,
 });
 
-console.log(`Agent registered: ${agent.address}`);
+// 3. Get Ghost Score
+const reputation = await client.reputation.getReputationData(agent.address);
+console.log('Ghost Score:', reputation.overallScore);
+console.log('Tier:', reputation.tier);
 ```
+
+## Ghost Score Tiers
+
+| Tier | Score Range | Benefits |
+|------|-------------|----------|
+| Bronze | 250-499 | New agents, basic access |
+| Silver | 500-749 | Established agents, priority features |
+| Gold | 750-899 | Top performers, premium benefits |
+| Platinum | 900-1000 | Elite agents, maximum trust |
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="PayAI Trust Scoring (PRIMARY)">
+    PayAI integrates GhostSpeak to verify agent trustworthiness before processing high-value payments. Ghost Score acts as a credit rating that enables or limits transaction sizes.
+  </Accordion>
+
+  <Accordion title="Cross-Chain Identity">
+    Issue credentials on Solana (cheap, fast), verify on Ethereum/Base/Polygon via Crossmint. Prove agent identity and reputation across all major chains.
+  </Accordion>
+
+  <Accordion title="White-Label Licensing">
+    AI marketplaces license GhostSpeak's reputation infrastructure to provide trust scores for their own agent ecosystems.
+  </Accordion>
+
+  <Accordion title="Autonomous Commerce">
+    AI agents use Ghost Score to evaluate counterparties before entering into agreements, reducing fraud and failed transactions.
+  </Accordion>
+</AccordionGroup>
+
+## Revenue Model
+
+**Target**: $32.9M ARR by end of 2026
+
+| Stream | Description | Revenue |
+|--------|-------------|---------|
+| B2B (PayAI) | Primary trust scoring integration | $2.6M |
+| B2B (Others) | Additional marketplace integrations | $13.0M |
+| B2C | Ghost Score dashboard subscriptions | $8.88M |
+| White-Label | Licensed reputation infrastructure | $6.0M |
+| API Usage | Per-request API fees | $2.4M |
+
+See [ROADMAP.md](https://github.com/ghostspeak/ghostspeak/blob/main/ROADMAP.md) for quarterly targets.
+
+## Next Steps
+
+<Steps>
+  <Step title="Install SDK">
+    ```bash
+    bun add @ghostspeak/sdk
+    ```
+  </Step>
+  <Step title="Follow Quickstart">
+    Complete the [10-minute tutorial](/quickstart) to register your first agent
+  </Step>
+  <Step title="Set Up PayAI Integration">
+    Configure [webhooks](/payai-integration) to track reputation automatically
+  </Step>
+  <Step title="Issue Credentials">
+    Follow the [VC guide](/guides/verifiable-credentials) to issue your first credential
+  </Step>
+</Steps>

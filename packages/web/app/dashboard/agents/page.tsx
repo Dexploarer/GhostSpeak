@@ -26,7 +26,8 @@ export default function AgentsPage() {
             </span>
           </div>
           <p className="text-muted-foreground">
-            Register and manage your AI agents. <span className="text-amber-500/80 text-sm">Transactions are on Solana Devnet.</span>
+            Register and manage your AI agents.{' '}
+            <span className="text-amber-500/80 text-sm">Transactions are on Solana Devnet.</span>
           </p>
         </div>
         <div className="flex gap-3">
@@ -42,6 +43,12 @@ export default function AgentsPage() {
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </Button>
+          <Link href="/dashboard/privacy">
+            <Button variant="outline">
+              <Shield className="w-4 h-4 mr-2" />
+              Privacy
+            </Button>
+          </Link>
           <RegisterAgentModal onSuccess={() => refetch()}>
             <Button>
               <Plus className="w-4 h-4 mr-2" />

@@ -3,12 +3,8 @@ import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
 import {
-  getCreateMultisigInstruction,
   getInitializeGovernanceProposalInstructionAsync,
-  getCastVoteInstruction,
-  getExecuteProposalInstruction,
-  type MultisigConfigArgs,
-  VoteChoice,
+  type MultisigTypeConfigArgs,
   type ProposalTypeArgs,
   type ExecutionParamsArgs
 } from '../../generated/index.js'
@@ -18,7 +14,7 @@ export interface CreateMultisigParams {
   multisigId: bigint
   threshold: number
   signers: Address[]
-  config?: Partial<MultisigConfigArgs>
+  config?: Partial<MultisigTypeConfigArgs>
   owner: TransactionSigner
 }
 
@@ -32,14 +28,6 @@ export interface MultisigProposalParams {
   proposer: TransactionSigner
 }
 
-export interface ApproveProposalParams {
-  proposalAddress: Address
-  voter: TransactionSigner
-  voterTokenAccount: Address
-  reasoning?: string
-  voteChoice?: VoteChoice
-}
-
 export interface ExecuteProposalParams {
   proposalAddress: Address
   executor: TransactionSigner
@@ -51,32 +39,8 @@ export class MultisigModule extends BaseModule {
    * Create a new multisig account
    */
   async createMultisig(params: CreateMultisigParams): Promise<string> {
-    const defaultConfig: MultisigConfigArgs = {
-      max_signers: 10,
-      default_timeout: 86400n, // 24 hours
-      allow_emergency_override: false,
-      emergency_threshold: { __option: 'None' },
-      auto_execute: true,
-      signer_change_threshold: params.threshold,
-      allowed_transaction_types: [],
-      daily_limits: []
-    }
-
-    const config = { ...defaultConfig, ...params.config }
-    
-    // Derive PDA with correct argument order: programId, authority, multisigId
-    const multisigPda = await deriveMultisigPda(this.programId, params.owner.address, params.multisigId)
-
-    const instruction = getCreateMultisigInstruction({
-      multisig: multisigPda,
-      owner: params.owner,
-      multisigId: params.multisigId,
-      threshold: params.threshold,
-      signers: params.signers,
-      config
-    })
-
-    return this.execute('createMultisig', () => instruction, [params.owner])
+    // createMultisig pending instruction regeneration
+    throw new Error('createMultisig: Instruction not available - requires IDL regeneration')
   }
 
   /**
@@ -99,30 +63,11 @@ export class MultisigModule extends BaseModule {
   }
 
   /**
-   * Approve (Vote on) a proposal
-   */
-  async approveProposal(params: ApproveProposalParams): Promise<string> {
-    const instruction = getCastVoteInstruction({
-      proposal: params.proposalAddress,
-      voter: params.voter,
-      voterTokenAccount: params.voterTokenAccount,
-      voteChoice: params.voteChoice ?? VoteChoice.For,
-      reasoning: params.reasoning ?? null
-    })
-
-    return this.execute('approveProposal', () => instruction, [params.voter])
-  }
-
-  /**
-   * Execute a proposal
+   * Execute a proposal (Note: Approval/voting removed, use protocol_config instead)
    */
   async executeProposal(params: ExecuteProposalParams): Promise<string> {
-    const instruction = getExecuteProposalInstruction({
-      proposal: params.proposalAddress,
-      executor: params.executor,
-      targetProgram: params.targetProgram
-    })
-
-    return this.execute('executeProposal', () => instruction, [params.executor])
+    // Execution logic would need to be implemented with protocol_config instructions
+    // For now, this is a placeholder that needs to be updated with protocol_config approach
+    throw new Error('executeProposal: Use protocol_config instructions for execution')
   }
 }

@@ -26,12 +26,12 @@ export async function mockWalletConnection(page: Page) {
   // Inject mock wallet into the page
   await page.addInitScript(() => {
     // Mock Crossmint wallet
-    (window as any).__mockWallet = {
+    ;(window as any).__mockWallet = {
       address: 'DemoWallet1234567890abcdefghijklmnopqrstuv',
       connected: true,
       publicKey: {
-        toString: () => 'DemoWallet1234567890abcdefghijklmnopqrstuv'
-      }
+        toString: () => 'DemoWallet1234567890abcdefghijklmnopqrstuv',
+      },
     }
   })
 }
@@ -56,17 +56,14 @@ export async function fillField(page: Page, selector: string, value: string) {
  * Click and wait for navigation
  */
 export async function clickAndNavigate(page: Page, selector: string) {
-  await Promise.all([
-    page.waitForNavigation(),
-    page.click(selector)
-  ])
+  await Promise.all([page.waitForNavigation(), page.click(selector)])
 }
 
 /**
  * Check if element exists
  */
 export async function elementExists(page: Page, selector: string): Promise<boolean> {
-  return await page.locator(selector).count() > 0
+  return (await page.locator(selector).count()) > 0
 }
 
 /**
@@ -75,7 +72,7 @@ export async function elementExists(page: Page, selector: string): Promise<boole
 export async function getTextContent(page: Page, selector: string): Promise<string> {
   const element = page.locator(selector)
   await element.waitFor({ state: 'visible' })
-  return await element.textContent() || ''
+  return (await element.textContent()) || ''
 }
 
 /**
@@ -89,11 +86,11 @@ export async function takeScreenshot(page: Page, name: string) {
  * Mock API response
  */
 export async function mockAPI(page: Page, url: string, response: any) {
-  await page.route(url, route => {
+  await page.route(url, (route) => {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(response)
+      body: JSON.stringify(response),
     })
   })
 }
@@ -102,7 +99,8 @@ export async function mockAPI(page: Page, url: string, response: any) {
  * Wait for loader to disappear
  */
 export async function waitForLoader(page: Page) {
-  await page.waitForSelector('[data-testid="loader"]', { state: 'hidden', timeout: 10000 })
+  await page
+    .waitForSelector('[data-testid="loader"]', { state: 'hidden', timeout: 10000 })
     .catch(() => {
       // Loader might not appear at all, which is fine
     })

@@ -50,7 +50,7 @@ export async function safeGetAccountInfo(
       lamports: result.value.lamports,
       data: accountData,
       executable: result.value.executable,
-      rentEpoch: result.value.rentEpoch,
+      rentEpoch: (result.value as { rentEpoch?: bigint }).rentEpoch ?? 0n,
     }
     
     // Add calculated size for convenience if available

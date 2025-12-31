@@ -27,7 +27,6 @@ import {
   useCanVote,
   formatVotingPower,
   formatTokenAmount,
-  LOCKUP_TIERS,
   type VotingPowerBreakdown,
 } from '@/lib/hooks/useVotingPower'
 
@@ -35,7 +34,6 @@ interface VotingPowerCardProps {
   className?: string
   compact?: boolean
   showActions?: boolean
-  onStake?: () => void
   onDelegate?: () => void
 }
 
@@ -43,7 +41,6 @@ export function VotingPowerCard({
   className,
   compact = false,
   showActions = true,
-  onStake,
   onDelegate,
 }: VotingPowerCardProps): React.JSX.Element {
   const { data: breakdown, isLoading } = useVotingPowerBreakdown()
@@ -165,22 +162,6 @@ export function VotingPowerCard({
           weight={breakdown.volumeWeight}
           tooltip="Voting power from x402 payment volume in the last 30 days. Rewards active marketplace participants."
         />
-
-        {/* Staking */}
-        <PowerSourceRow
-          icon={Lock}
-          iconColor="text-blue-500"
-          label="Staked Tokens"
-          sublabel={
-            breakdown.lockupDuration > 0
-              ? `${formatTokenAmount(breakdown.stakedTokens)} × ${breakdown.lockupMultiplier}x`
-              : 'No lockup'
-          }
-          power={breakdown.stakingVotingPower}
-          weight={breakdown.stakingWeight}
-          tooltip={`Voting power from staked tokens with ${breakdown.lockupMultiplier}x multiplier for ${breakdown.lockupDuration}-day lockup.`}
-          multiplier={breakdown.lockupMultiplier > 1 ? breakdown.lockupMultiplier : undefined}
-        />
       </div>
 
       {/* Requirements */}
@@ -207,12 +188,6 @@ export function VotingPowerCard({
       {/* Actions */}
       {showActions && (
         <div className="flex gap-3 mt-6">
-          {onStake && (
-            <Button variant="outline" className="flex-1" onClick={onStake}>
-              <Lock className="w-4 h-4 mr-2" />
-              Stake Tokens
-            </Button>
-          )}
           {onDelegate && (
             <Button variant="outline" className="flex-1" onClick={onDelegate}>
               <Users className="w-4 h-4 mr-2" />
@@ -320,39 +295,5 @@ function CompactVotingPower({ breakdown, canVote, className }: CompactVotingPowe
         </div>
       </div>
     </GlassCard>
-  )
-}
-
-// =====================================================
-// LOCKUP TIER SELECTOR (for staking UI)
-// =====================================================
-
-interface LockupTierSelectorProps {
-  selectedDays: number
-  onSelect: (days: number) => void
-  className?: string
-}
-
-export function LockupTierSelector({ selectedDays, onSelect, className }: LockupTierSelectorProps) {
-  return (
-    <div className={cn('grid grid-cols-2 md:grid-cols-3 gap-2', className)}>
-      {LOCKUP_TIERS.map((tier) => {
-        const isSelected = selectedDays === tier.days
-        return (
-          <button
-            key={tier.days}
-            onClick={() => onSelect(tier.days)}
-            className={cn(
-              'p-3 rounded-lg border text-left transition-all',
-              'hover:border-primary/50 hover:bg-primary/5',
-              isSelected && 'border-primary bg-primary/10'
-            )}
-          >
-            <div className="font-medium text-sm">{tier.label}</div>
-            <div className="text-xs text-muted-foreground">{tier.multiplier}x multiplier</div>
-          </button>
-        )
-      })}
-    </div>
   )
 }

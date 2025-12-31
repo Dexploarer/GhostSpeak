@@ -1,1 +1,0 @@
-export { Token2022Module } from './Token2022Module.js'

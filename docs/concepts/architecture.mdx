@@ -1,76 +1,174 @@
 ---
 title: 'Architecture'
-description: 'Technical deep dive into GhostSpeak protocol architecture'
+description: 'Technical deep dive into GhostSpeak 3-pillar trust infrastructure'
 ---
 
 ## System Overview
 
-GhostSpeak is a decentralized AI agent commerce marketplace built natively on Solana, implementing the **x402 payment protocol** for instant micropayments.
+GhostSpeak is the **reputation oracle and trust layer** for AI agent commerce on Solana. We provide three core pillars: Verifiable Credentials, Reputation Tracking (Ghost Score), and Identity Registry.
+
+**Positioning**: The trust provider for PayAI and other payment facilitators - FICO for AI agents.
 
 ```mermaid
 graph TB
     subgraph Application["Application Layer"]
+        Dashboard["Ghost Score Dashboard"]
+        B2B["B2B API"]
         WebApp["Web App"]
         CLI["CLI Tools"]
-        SDK["Agent SDKs"]
     end
 
-    subgraph Protocol["Protocol Layer"]
-        X402["x402 Client"]
-        RPC["RPC Client"]
-        Builders["Instruction Builders"]
+    subgraph Integration["Integration Layer"]
+        PayAI["PayAI Webhooks"]
+        Crossmint["Crossmint VCs"]
+        ElizaOS["ElizaOS Plugin"]
     end
 
-    subgraph Smart["Smart Contract Layer"]
-        Agent["Agent Module"]
-        Escrow["Escrow Module"]
-        X402M["x402 Module"]
-        Reputation["Reputation Module"]
+    subgraph SDK["TypeScript SDK Layer"]
+        CredModule["CredentialModule"]
+        RepModule["ReputationModule"]
+        AgentModule["AgentModule"]
+    end
+
+    subgraph Smart["Smart Contract Layer (Rust)"]
+        Agent["Agent Registry"]
+        Reputation["Reputation System"]
+        Credentials["Credential Issuance"]
+        Governance["Multisig Governance"]
     end
 
     subgraph Solana["Solana Runtime"]
         Runtime["Solana 2.3.13"]
-        Token["Token-2022"]
-        Compression["Account Compression"]
+        Compression["ZK Compression"]
+        Token["Token Programs"]
     end
 
-    Application --> Protocol
-    Protocol --> Smart
+    Application --> Integration
+    Integration --> SDK
+    SDK --> Smart
     Smart --> Solana
 ```
 
+## Three Pillars
+
+### 1. Verifiable Credentials (VCs)
+
+W3C-compliant credentials issued on Solana, bridged to EVM chains via Crossmint.
+
+**Key Features:**
+- Agent Identity Credentials
+- Tier Achievement Credentials (Bronze/Silver/Gold/Platinum)
+- Milestone Credentials (10/100/1000 payments)
+- Cross-chain verification (Ethereum, Base, Polygon)
+
+**Data Flow:**
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant GhostSpeak
+    participant Solana
+    participant Crossmint
+    participant EVM
+
+    Agent->>GhostSpeak: Request credential
+    GhostSpeak->>Solana: Issue on-chain credential
+    GhostSpeak->>Crossmint: Sync to Crossmint
+    Crossmint->>EVM: Bridge to EVM chain
+    EVM->>Agent: Credential verifiable on-chain
+```
+
+### 2. Reputation Layer (Ghost Score)
+
+0-1000 credit rating calculated from PayAI payment data.
+
+**Algorithm:**
+```
+Ghost Score = (Success Rate × 40%) + (Service Quality × 30%) +
+              (Response Time × 20%) + (Volume Consistency × 10%)
+```
+
+**Data Flow:**
+```mermaid
+sequenceDiagram
+    participant AgentA
+    participant AgentB
+    participant PayAI
+    participant GhostSpeak
+    participant Solana
+
+    AgentA->>PayAI: Payment to AgentB
+    PayAI->>AgentB: Confirm payment
+    PayAI->>GhostSpeak: Webhook: payment.completed
+    GhostSpeak->>GhostSpeak: Calculate new Ghost Score
+    GhostSpeak->>Solana: Update reputation on-chain
+    GhostSpeak->>AgentB: Notification (new score)
+```
+
+**Tiers:**
+- Bronze (250-499): New agents
+- Silver (500-749): Established agents
+- Gold (750-899): Top performers
+- Platinum (900-1000): Elite agents
+
+### 3. Identity Registry
+
+Compressed NFT-based agent identities (5000x cost reduction).
+
+**Technology:**
+- ZK Compression (Solana State Compression)
+- Merkle tree storage
+- Sub-cent registration costs
+
+**Comparison:**
+| Metric | Standard NFT | Compressed NFT |
+|--------|--------------|----------------|
+| **Cost** | ~1 SOL ($100) | ~0.0002 SOL ($0.02) |
+| **Creation Time** | 2-3 seconds | <1 second |
+| **Storage** | On-chain account | Merkle tree leaf |
+| **Verification** | Direct read | Merkle proof |
+
 ## Key Metrics
 
-| Metric                | Value                               |
-| --------------------- | ----------------------------------- |
-| **Cost Efficiency**   | 5000x reduction via compressed NFTs |
-| **Transaction Speed** | Under 400ms average confirmation    |
-| **Protocol Coverage** | 29 instruction modules              |
-| **Error Types**       | 200+ descriptive errors             |
+| Metric | Value |
+|--------|-------|
+| **Cost Efficiency** | 5000x reduction via compressed NFTs |
+| **Transaction Speed** | <400ms average confirmation |
+| **Ghost Score Update** | <5 seconds from PayAI webhook |
+| **Cross-Chain Sync** | <30 seconds to EVM chains |
+| **API Latency** | <200ms (p95) |
 
 ## Core Components
 
 <AccordionGroup>
-  <Accordion title="Agent Registry">
-    On-chain identity and capability management for AI agents. Each agent is represented as a Program Derived Address (PDA) with metadata including name, description, pricing, and reputation.
+  <Accordion title="Agent Registry (Pillar 3)">
+    Compressed NFT identities for AI agents. Each agent is a Merkle tree leaf with metadata including name, capabilities, and owner.
+
+    **Smart Contract**: `agent.rs`
+    **SDK Module**: `AgentModule`
+    **Cost**: 0.0002 SOL per registration
   </Accordion>
 
-{' '}
+  <Accordion title="Reputation System (Pillar 2)">
+    Ghost Score calculation and storage. Tracks payment history, service quality, response time, and volume consistency.
 
-<Accordion title="Escrow System">
-  Secure payment escrow with milestone support. Funds are held in
-  protocol-controlled accounts until service delivery is confirmed.
-</Accordion>
+    **Smart Contract**: `reputation.rs` (DELETED - reputation now calculated off-chain)
+    **SDK Module**: `ReputationModule`
+    **Update Frequency**: Real-time from PayAI webhooks
+  </Accordion>
 
-{' '}
+  <Accordion title="Credential Issuance (Pillar 1)">
+    W3C Verifiable Credentials with Crossmint bridging. Issues credentials for identity, tier achievements, and milestones.
 
-<Accordion title="x402 Payments">
-  HTTP 402 "Payment Required" protocol implementation enabling instant
-  micropayments between agents and clients.
-</Accordion>
+    **Smart Contract**: `credentials.rs` (DELETED - credentials now via Crossmint)
+    **SDK Module**: `CredentialModule`
+    **Cross-Chain**: Solana → Crossmint → EVM
+  </Accordion>
 
-  <Accordion title="Reputation System">
-    Performance-based trust scoring that tracks success rates, response times, and client ratings.
+  <Accordion title="PayAI Integration">
+    Webhook handlers for automatic reputation updates from payment events.
+
+    **SDK Module**: `PayAIWebhookHandler`, `PayAIClient`, `PayAIAgentSync`
+    **Events**: payment.completed, payment.failed, service.delivered, rating.submitted
   </Accordion>
 </AccordionGroup>
 

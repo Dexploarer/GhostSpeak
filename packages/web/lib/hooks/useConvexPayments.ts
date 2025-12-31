@@ -38,16 +38,14 @@ export function useConvexPayments(limit?: number) {
   const { userId } = useConvexUser()
 
   // Query user's payments
-  const payments = useQuery(
-    api.payments.getByUser,
-    userId ? { userId, limit } : 'skip'
-  ) as Payment[] | undefined
+  const payments = useQuery(api.payments.getByUser, userId ? { userId, limit } : 'skip') as
+    | Payment[]
+    | undefined
 
   // Query user stats
-  const stats = useQuery(
-    api.payments.getUserStats,
-    userId ? { userId } : 'skip'
-  ) as PaymentStats | undefined
+  const stats = useQuery(api.payments.getUserStats, userId ? { userId } : 'skip') as
+    | PaymentStats
+    | undefined
 
   // Mutations
   const createPayment = useMutation(api.payments.create)

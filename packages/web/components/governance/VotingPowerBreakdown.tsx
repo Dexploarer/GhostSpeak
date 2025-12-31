@@ -59,14 +59,10 @@ export function VotingPowerBreakdown({ className }: VotingPowerBreakdownProps): 
     100
   const volumeContribution =
     Number(breakdown.volumeVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.VOLUME * 100))) / 100
-  const stakingContribution =
-    Number(breakdown.stakingVotingPower * BigInt(Math.floor(VOTING_WEIGHTS.STAKING * 100))) / 100
-
-  const total = tokenContribution + repContribution + volumeContribution + stakingContribution
+  const total = tokenContribution + repContribution + volumeContribution
   const tokenPercent = total > 0 ? (tokenContribution / total) * 100 : 0
   const repPercent = total > 0 ? (repContribution / total) * 100 : 0
   const volumePercent = total > 0 ? (volumeContribution / total) * 100 : 0
-  const stakingPercent = total > 0 ? (stakingContribution / total) * 100 : 0
 
   return (
     <GlassCard className={cn('p-6', className)}>
@@ -95,7 +91,6 @@ export function VotingPowerBreakdown({ className }: VotingPowerBreakdownProps): 
           <div className="bg-yellow-500 transition-all" style={{ width: `${tokenPercent}%` }} />
           <div className="bg-purple-500 transition-all" style={{ width: `${repPercent}%` }} />
           <div className="bg-green-500 transition-all" style={{ width: `${volumePercent}%` }} />
-          <div className="bg-blue-500 transition-all" style={{ width: `${stakingPercent}%` }} />
         </div>
         <div className="flex justify-between mt-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -109,10 +104,6 @@ export function VotingPowerBreakdown({ className }: VotingPowerBreakdownProps): 
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-green-500" />
             x402 Volume
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
-            Staking
           </span>
         </div>
       </div>
@@ -174,24 +165,6 @@ export function VotingPowerBreakdown({ className }: VotingPowerBreakdownProps): 
         />
 
         {/* Staking */}
-        <BreakdownRow
-          icon={Lock}
-          iconColor="text-blue-500"
-          bgColor="bg-blue-500/10"
-          label="Staked Tokens"
-          value={formatTokenAmount(breakdown.stakedTokens)}
-          subvalue={`${breakdown.lockupDuration}d lock`}
-          power={breakdown.stakingVotingPower}
-          weight={VOTING_WEIGHTS.STAKING}
-          description={`${breakdown.lockupMultiplier}x multiplier for commitment`}
-          badge={
-            breakdown.lockupMultiplier > 1 ? (
-              <Badge variant="secondary" className="text-xs">
-                {breakdown.lockupMultiplier}x
-              </Badge>
-            ) : undefined
-          }
-        />
       </div>
 
       <Separator className="my-4" />

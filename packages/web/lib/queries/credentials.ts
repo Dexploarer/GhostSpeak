@@ -144,7 +144,7 @@ export function useSyncCredential() {
     },
     onSuccess: (result, variables) => {
       toast.success('Credential synced to EVM successfully!')
-      
+
       // Manually update the cache to reflect the new sync status immediately
       // This persists the status until the next full page refresh/query invalidation
       queryClient.setQueryData(

@@ -62,27 +62,6 @@ export interface Agent {
   metadata?: Record<string, unknown>
 }
 
-export interface ServiceListing {
-  id: string
-  agentId: string
-  title: string
-  description: string
-  category: string
-  priceInSol: number
-  isActive: boolean
-  createdAt: bigint
-  metadata?: Record<string, unknown>
-}
-
-export interface Purchase {
-  id: string
-  listingId: string
-  buyerAddress: Address
-  sellerAddress: Address
-  amount: bigint
-  status: 'pending' | 'completed' | 'cancelled'
-  createdAt: bigint
-}
 
 export interface WalletInfo {
   address: Address
@@ -111,14 +90,6 @@ export interface X402ConfigParams {
   serviceEndpoint: string
 }
 
-export interface IMarketplaceService {
-  createListing(params: CreateListingParams): Promise<ServiceListing>
-  getListings(params: GetListingsParams): Promise<ServiceListing[]>
-  searchListings(criteria: SearchCriteria): Promise<ServiceListing[]>
-  purchaseService(params: PurchaseParams): Promise<Purchase>
-  updateListing(listingId: string, updates: UpdateListingParams): Promise<ServiceListing>
-  deleteListing(listingId: string): Promise<void>
-}
 
 export interface IWalletService {
   createWalletInterface(name: string, network: string): Promise<{ wallet: WalletInfo; mnemonic: string }>
@@ -176,48 +147,6 @@ export interface UpdateAgentParams {
   metadata?: Record<string, unknown>
 }
 
-export interface CreateListingParams {
-  agentId: string
-  title: string
-  description: string
-  category: string
-  priceInSol: number
-  metadata?: Record<string, unknown>
-}
-
-export interface GetListingsParams {
-  category?: string
-  agentId?: string
-  isActive?: boolean
-  minPrice?: number
-  maxPrice?: number
-  limit?: number
-  offset?: number
-}
-
-export interface SearchCriteria {
-  query: string
-  category?: string
-  minPrice?: number
-  maxPrice?: number
-  sortBy?: 'price' | 'rating' | 'created'
-  sortOrder?: 'asc' | 'desc'
-}
-
-export interface PurchaseParams {
-  listingId: string
-  buyerAddress: Address
-  amount: bigint
-  escrowDuration?: number
-}
-
-export interface UpdateListingParams {
-  title?: string
-  description?: string
-  priceInSol?: number
-  isActive?: boolean
-  metadata?: Record<string, unknown>
-}
 
 export interface AgentAnalytics {
   totalJobs: number
@@ -237,12 +166,6 @@ export interface AgentServiceDependencies {
   storageService: IStorageService
 }
 
-export interface MarketplaceServiceDependencies {
-  logger: Logger
-  blockchainService: IBlockchainService
-  walletService: IWalletService
-  agentService: IAgentService
-}
 
 export interface IStorageService {
   save<T>(key: string, data: T): Promise<void>

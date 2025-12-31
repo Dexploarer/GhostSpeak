@@ -12,7 +12,6 @@ export interface AccountInfo {
   address?: string;
   pda?: {
     seeds: unknown[];
-    program?: unknown;
   };
 }
 
@@ -31,110 +30,6 @@ export interface InstructionMapping {
 }
 
 export const instructionAccountMappings: Record<string, InstructionMapping> = {
-  "accept_job_application": {
-    "name": "accept_job_application",
-    "expectedAccounts": [
-      {
-        "name": "job_contract",
-        "pda": true
-      },
-      {
-        "name": "job_posting",
-        "pda": false
-      },
-      {
-        "name": "job_application",
-        "pda": false
-      },
-      {
-        "name": "employer",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "job_contract",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                106,
-                111,
-                98,
-                95,
-                99,
-                111,
-                110,
-                116,
-                114,
-                97,
-                99,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "job_posting"
-            },
-            {
-              "kind": "account",
-              "path": "job_application"
-            }
-          ]
-        }
-      },
-      {
-        "name": "job_posting",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "job_application",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "employer",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      191,
-      161,
-      93,
-      207,
-      225,
-      58,
-      71,
-      16
-    ],
-    "args": []
-  },
   "activate_agent": {
     "name": "activate_agent",
     "expectedAccounts": [
@@ -221,43 +116,33 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
-  "add_message_reaction": {
-    "name": "add_message_reaction",
+  "approve_delivery": {
+    "name": "approve_delivery",
     "expectedAccounts": [
       {
-        "name": "channel",
-        "pda": false
-      },
-      {
-        "name": "message",
-        "pda": false
-      },
-      {
-        "name": "reentrancy_guard",
+        "name": "escrow",
         "pda": true
       },
       {
-        "name": "user",
+        "name": "escrow_vault",
+        "pda": false
+      },
+      {
+        "name": "agent_token_account",
+        "pda": false
+      },
+      {
+        "name": "client",
+        "pda": false
+      },
+      {
+        "name": "token_program",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "channel",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "message",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "reentrancy_guard",
+        "name": "escrow",
         "writable": true,
         "signer": false,
         "optional": false,
@@ -267,179 +152,112 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             {
               "kind": "const",
               "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
                 103,
-                117,
-                97,
+                104,
+                111,
+                115,
+                116,
+                95,
+                112,
                 114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "user",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      82,
-      29,
-      134,
-      149,
-      255,
-      74,
-      248,
-      210
-    ],
-    "args": [
-      {
-        "name": "reaction",
-        "type": "string"
-      }
-    ]
-  },
-  "add_top_agent": {
-    "name": "add_top_agent",
-    "expectedAccounts": [
-      {
-        "name": "market_analytics",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "market_analytics",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Market analytics account with canonical bump validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                109,
-                97,
-                114,
-                107,
+                111,
+                116,
                 101,
-                116,
-                95,
-                97,
-                110,
-                97,
-                108,
-                121,
-                116,
-                105,
                 99,
-                115
+                116
               ]
             },
             {
               "kind": "account",
-              "path": "market_analytics.period_start",
-              "account": "MarketAnalytics"
+              "path": "escrow.client",
+              "account": "GhostProtectEscrow"
             },
             {
               "kind": "account",
-              "path": "market_analytics.period_end",
-              "account": "MarketAnalytics"
+              "path": "escrow.escrow_id",
+              "account": "GhostProtectEscrow"
             }
           ]
         }
       },
       {
-        "name": "authority",
+        "name": "escrow_vault",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "agent_token_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "client",
         "writable": false,
         "signer": true,
         "optional": false,
-        "docs": [
-          "Enhanced authority verification"
-        ]
+        "docs": []
       },
       {
-        "name": "clock",
+        "name": "token_program",
         "writable": false,
         "signer": false,
         "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
+        "docs": [],
+        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
       }
     ],
-    "docs": "",
+    "docs": "Client approves delivery and releases payment",
     "discriminator": [
-      9,
-      96,
-      62,
-      59,
-      180,
-      205,
-      102,
-      11
+      28,
+      233,
+      51,
+      115,
+      33,
+      220,
+      41,
+      28
     ],
-    "args": [
-      {
-        "name": "agent",
-        "type": "pubkey"
-      }
-    ]
+    "args": []
   },
-  "apply_to_job": {
-    "name": "apply_to_job",
+  "arbitrate_dispute": {
+    "name": "arbitrate_dispute",
     "expectedAccounts": [
       {
-        "name": "job_application",
+        "name": "escrow",
         "pda": true
       },
       {
-        "name": "job_posting",
+        "name": "escrow_vault",
         "pda": false
       },
       {
-        "name": "agent",
+        "name": "agent_token_account",
         "pda": false
       },
       {
-        "name": "agent_owner",
+        "name": "client_token_account",
         "pda": false
       },
       {
-        "name": "system_program",
+        "name": "agent_staking",
+        "pda": true
+      },
+      {
+        "name": "arbitrator",
+        "pda": false
+      },
+      {
+        "name": "token_program",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "job_application",
+        "name": "escrow",
         "writable": true,
         "signer": false,
         "optional": false,
@@ -449,339 +267,196 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             {
               "kind": "const",
               "value": [
-                106,
+                103,
+                104,
                 111,
-                98,
-                95,
-                97,
-                112,
-                112,
-                108,
-                105,
-                99,
-                97,
+                115,
                 116,
-                105,
+                95,
+                112,
+                114,
                 111,
-                110
+                116,
+                101,
+                99,
+                116
               ]
             },
             {
               "kind": "account",
-              "path": "job_posting"
+              "path": "escrow.client",
+              "account": "GhostProtectEscrow"
             },
             {
               "kind": "account",
-              "path": "agent"
+              "path": "escrow.escrow_id",
+              "account": "GhostProtectEscrow"
             }
           ]
         }
       },
       {
-        "name": "job_posting",
+        "name": "escrow_vault",
         "writable": true,
         "signer": false,
         "optional": false,
         "docs": []
       },
       {
-        "name": "agent",
+        "name": "agent_token_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "client_token_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "agent_staking",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent's staking account (for potential slashing)"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "escrow.agent",
+              "account": "GhostProtectEscrow"
+            }
+          ]
+        }
+      },
+      {
+        "name": "arbitrator",
         "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "agent_owner",
-        "writable": true,
         "signer": true,
         "optional": false,
         "docs": []
       },
       {
-        "name": "system_program",
+        "name": "token_program",
         "writable": false,
         "signer": false,
         "optional": false,
         "docs": [],
-        "address": "11111111111111111111111111111111"
+        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
       }
     ],
-    "docs": "",
+    "docs": "Arbitrator resolves dispute (admin only)",
     "discriminator": [
-      0,
-      252,
-      167,
-      244,
-      145,
-      90,
-      227,
-      29
+      225,
+      89,
+      166,
+      101,
+      215,
+      40,
+      191,
+      4
     ],
     "args": [
       {
-        "name": "application_data",
+        "name": "decision",
         "type": {
           "defined": {
-            "name": "JobApplicationData"
+            "name": "ArbitratorDecision"
           }
         }
       }
     ]
   },
-  "approve_extension": {
-    "name": "approve_extension",
+  "create_credential_template": {
+    "name": "create_credential_template",
     "expectedAccounts": [
       {
-        "name": "extension",
+        "name": "credential_template",
         "pda": true
       },
       {
-        "name": "authority",
+        "name": "credential_type",
         "pda": false
       },
       {
-        "name": "clock",
+        "name": "issuer",
+        "pda": false
+      },
+      {
+        "name": "system_program",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "extension",
+        "name": "credential_template",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [
-          "Extension account with canonical validation"
-        ],
+        "docs": [],
         "pda": {
           "seeds": [
             {
               "kind": "const",
               "value": [
+                99,
+                114,
                 101,
-                120,
-                116,
+                100,
                 101,
                 110,
-                115,
+                116,
                 105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "extension.developer",
-              "account": "Extension"
-            },
-            {
-              "kind": "account",
-              "path": "extension.metadata.name",
-              "account": "Extension"
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification - only protocol admin"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      202,
-      138,
-      100,
-      241,
-      89,
-      154,
-      3,
-      53
-    ],
-    "args": []
-  },
-  "assign_arbitrator": {
-    "name": "assign_arbitrator",
-    "expectedAccounts": [
-      {
-        "name": "dispute",
-        "pda": true
-      },
-      {
-        "name": "arbitrator_registry",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "dispute",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Dispute account with canonical validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                100,
-                105,
-                115,
+                97,
+                108,
+                95,
+                116,
+                101,
+                109,
                 112,
-                117,
+                108,
+                97,
                 116,
                 101
               ]
             },
             {
               "kind": "account",
-              "path": "dispute.transaction",
-              "account": "DisputeCase"
+              "path": "credential_type"
             },
             {
-              "kind": "account",
-              "path": "dispute.complainant",
-              "account": "DisputeCase"
-            },
-            {
-              "kind": "account",
-              "path": "dispute.reason",
-              "account": "DisputeCase"
+              "kind": "arg",
+              "path": "name"
             }
           ]
         }
       },
       {
-        "name": "arbitrator_registry",
+        "name": "credential_type",
         "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Arbitrator registry for validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                114,
-                98,
-                105,
-                116,
-                114,
-                97,
-                116,
-                111,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Authority (protocol admin or governance)"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      227,
-      183,
-      153,
-      251,
-      4,
-      55,
-      13,
-      56
-    ],
-    "args": [
-      {
-        "name": "arbitrator",
-        "type": "pubkey"
-      }
-    ]
-  },
-  "batch_replicate_agents": {
-    "name": "batch_replicate_agents",
-    "expectedAccounts": [
-      {
-        "name": "replication_template",
-        "pda": false
-      },
-      {
-        "name": "buyer",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "replication_template",
-        "writable": true,
         "signer": false,
         "optional": false,
         "docs": []
       },
       {
-        "name": "buyer",
+        "name": "issuer",
         "writable": true,
         "signer": true,
         "optional": false,
@@ -794,72 +469,55 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "optional": false,
         "docs": [],
         "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
       }
     ],
-    "docs": "",
+    "docs": "Create a credential template from a credential type for issuing credentials",
     "discriminator": [
-      224,
-      241,
-      221,
-      158,
-      57,
-      55,
-      110,
-      180
+      183,
+      109,
+      12,
+      128,
+      134,
+      8,
+      139,
+      144
     ],
     "args": [
       {
-        "name": "batch_request",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "image_uri",
+        "type": "string"
+      },
+      {
+        "name": "crossmint_template_id",
         "type": {
-          "defined": {
-            "name": "BatchReplicationRequest"
-          }
+          "option": "string"
         }
       }
     ]
   },
-  "cancel_escrow": {
-    "name": "cancel_escrow",
+  "create_credential_type": {
+    "name": "create_credential_type",
     "expectedAccounts": [
       {
-        "name": "escrow",
+        "name": "credential_type",
         "pda": true
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "escrow_token_account",
-        "pda": true
-      },
-      {
-        "name": "client_refund_account",
-        "pda": true
-      },
-      {
-        "name": "payment_token",
-        "pda": false
       },
       {
         "name": "authority",
         "pda": false
       },
       {
-        "name": "token_program",
+        "name": "system_program",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "escrow",
+        "name": "credential_type",
         "writable": true,
         "signer": false,
         "optional": false,
@@ -869,251 +527,29 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             {
               "kind": "const",
               "value": [
-                101,
-                115,
                 99,
                 114,
-                111,
-                119
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.task_id",
-              "account": "Escrow"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
                 101,
+                100,
                 101,
                 110,
                 116,
-                114,
+                105,
                 97,
-                110,
-                99,
-                121,
+                108,
                 95,
-                103,
-                117,
-                97,
-                114,
-                100
+                116,
+                121,
+                112,
+                101
               ]
+            },
+            {
+              "kind": "arg",
+              "path": "name"
             }
           ]
         }
-      },
-      {
-        "name": "escrow_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.payment_token",
-              "account": "Escrow"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "client_refund_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow.client",
-              "account": "Escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.payment_token",
-              "account": "Escrow"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "payment_token",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The token mint used for payments"
-        ]
       },
       {
         "name": "authority",
@@ -1123,737 +559,61 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "docs": []
       },
       {
-        "name": "token_program",
+        "name": "system_program",
         "writable": false,
         "signer": false,
         "optional": false,
-        "docs": []
+        "docs": [],
+        "address": "11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Create a new credential type (e.g., AgentIdentity, Reputation, JobCompletion) This is an admin-only operation typically done by governance/multisig.",
     "discriminator": [
-      156,
-      203,
-      54,
-      179,
-      38,
-      72,
-      33,
-      21
+      211,
+      208,
+      67,
+      175,
+      20,
+      248,
+      8,
+      227
     ],
     "args": [
       {
-        "name": "cancellation_reason",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "kind",
+        "type": {
+          "defined": {
+            "name": "CredentialKind"
+          }
+        }
+      },
+      {
+        "name": "schema_uri",
+        "type": "string"
+      },
+      {
+        "name": "description",
         "type": "string"
       }
     ]
   },
-  "cast_vote": {
-    "name": "cast_vote",
+  "create_did_document": {
+    "name": "create_did_document",
     "expectedAccounts": [
       {
-        "name": "proposal",
-        "pda": false
-      },
-      {
-        "name": "voter",
-        "pda": false
-      },
-      {
-        "name": "voter_token_account",
-        "pda": false
-      },
-      {
-        "name": "delegate_token_account",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "proposal",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "voter",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "voter_token_account",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Voter's token account for voting power calculation"
-        ]
-      },
-      {
-        "name": "delegate_token_account",
-        "writable": false,
-        "signer": false,
-        "optional": true,
-        "docs": [
-          "Optional: Delegate's token account if voting as a delegate"
-        ]
-      }
-    ],
-    "docs": "Cast a vote on a governance proposal",
-    "discriminator": [
-      20,
-      212,
-      15,
-      189,
-      69,
-      180,
-      69,
-      151
-    ],
-    "args": [
-      {
-        "name": "vote_choice",
-        "type": {
-          "defined": {
-            "name": "VoteChoice"
-          }
-        }
-      },
-      {
-        "name": "reasoning",
-        "type": {
-          "option": "string"
-        }
-      }
-    ]
-  },
-  "cast_vote_enhanced": {
-    "name": "cast_vote_enhanced",
-    "expectedAccounts": [
-      {
-        "name": "proposal",
-        "pda": false
-      },
-      {
-        "name": "voter",
-        "pda": false
-      },
-      {
-        "name": "voter_token_account",
-        "pda": false
-      },
-      {
-        "name": "staking_account",
-        "pda": true
-      }
-    ],
-    "accounts": [
-      {
-        "name": "proposal",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "voter",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "voter_token_account",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Voter's GHOST token account for voting power calculation"
-        ]
-      },
-      {
-        "name": "staking_account",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Voter's staking account for lockup multiplier"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "voter"
-            }
-          ]
-        }
-      }
-    ],
-    "docs": "Cast a vote with full x402 marketplace voting power Uses token balance, staking, agent reputation, and x402 volume",
-    "discriminator": [
-      0,
-      241,
-      193,
-      221,
-      170,
-      112,
-      167,
-      176
-    ],
-    "args": [
-      {
-        "name": "vote_choice",
-        "type": {
-          "defined": {
-            "name": "VoteChoice"
-          }
-        }
-      },
-      {
-        "name": "reasoning",
-        "type": {
-          "option": "string"
-        }
-      }
-    ]
-  },
-  "claim_staking_rewards": {
-    "name": "claim_staking_rewards",
-    "expectedAccounts": [
-      {
-        "name": "staking_account",
+        "name": "did_document",
         "pda": true
       },
       {
-        "name": "staking_config",
-        "pda": true
-      },
-      {
-        "name": "ghost_mint",
+        "name": "controller",
         "pda": false
       },
       {
-        "name": "user_token_account",
-        "pda": false
-      },
-      {
-        "name": "rewards_treasury",
-        "pda": false
-      },
-      {
-        "name": "treasury_authority",
-        "pda": true
-      },
-      {
-        "name": "owner",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "staking_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            }
-          ]
-        }
-      },
-      {
-        "name": "staking_config",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103,
-                95,
-                99,
-                111,
-                110,
-                102,
-                105,
-                103
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "ghost_mint",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "GHOST token mint (for transfer fee calculation)"
-        ]
-      },
-      {
-        "name": "user_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User's token account for reward payout"
-        ]
-      },
-      {
-        "name": "rewards_treasury",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Rewards treasury"
-        ]
-      },
-      {
-        "name": "treasury_authority",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Treasury authority PDA"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                119,
-                97,
-                114,
-                100,
-                115,
-                95,
-                116,
-                114,
-                101,
-                97,
-                115,
-                117,
-                114,
-                121,
-                95,
-                97,
-                117,
-                116,
-                104,
-                111,
-                114,
-                105,
-                116,
-                121
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "owner",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "Claim pending staking rewards",
-    "discriminator": [
-      229,
-      141,
-      170,
-      69,
-      111,
-      94,
-      6,
-      72
-    ],
-    "args": []
-  },
-  "complete_escrow": {
-    "name": "complete_escrow",
-    "expectedAccounts": [
-      {
-        "name": "escrow",
-        "pda": true
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "escrow_token_account",
-        "pda": true
-      },
-      {
-        "name": "agent_token_account",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "escrow",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                101,
-                115,
-                99,
-                114,
-                111,
-                119
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.task_id",
-              "account": "Escrow"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "agent",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "escrow_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow_token_account.mint"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "agent_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "agent"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow_token_account.mint"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "authority",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      158,
-      211,
-      102,
-      36,
-      244,
-      24,
-      103,
-      163
-    ],
-    "args": [
-      {
-        "name": "resolution_notes",
-        "type": {
-          "option": "string"
-        }
-      }
-    ]
-  },
-  "configure_x402": {
-    "name": "configure_x402",
-    "expectedAccounts": [
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "owner",
+        "name": "system_program",
         "pda": false
       },
       {
@@ -1863,20 +623,27 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "accounts": [
       {
-        "name": "agent",
+        "name": "did_document",
         "writable": true,
         "signer": false,
         "optional": false,
         "docs": [
-          "Agent account with canonical PDA validation"
+          "DID document account with canonical PDA"
         ],
         "pda": {
           "seeds": [
             {
               "kind": "const",
               "value": [
-                97,
-                103,
+                100,
+                105,
+                100,
+                95,
+                100,
+                111,
+                99,
+                117,
+                109,
                 101,
                 110,
                 116
@@ -1884,249 +651,18 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             },
             {
               "kind": "account",
-              "path": "owner"
-            },
-            {
-              "kind": "arg",
-              "path": "agent_id"
+              "path": "controller"
             }
           ]
         }
       },
       {
-        "name": "owner",
+        "name": "controller",
         "writable": true,
         "signer": true,
         "optional": false,
         "docs": [
-          "Agent owner who can configure x402 settings"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "Configure x402 payment settings for an agent",
-    "discriminator": [
-      229,
-      129,
-      8,
-      225,
-      242,
-      160,
-      132,
-      248
-    ],
-    "args": [
-      {
-        "name": "agent_id",
-        "type": "string"
-      },
-      {
-        "name": "config",
-        "type": {
-          "defined": {
-            "name": "X402ConfigData"
-          }
-        }
-      }
-    ]
-  },
-  "create_a2a_session": {
-    "name": "create_a2a_session",
-    "expectedAccounts": [
-      {
-        "name": "session",
-        "pda": true
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "session",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                50,
-                97,
-                95,
-                115,
-                101,
-                115,
-                115,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "creator"
-            }
-          ]
-        }
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      22,
-      57,
-      77,
-      239,
-      115,
-      215,
-      61,
-      131
-    ],
-    "args": [
-      {
-        "name": "session_data",
-        "type": {
-          "defined": {
-            "name": "A2ASessionData"
-          }
-        }
-      }
-    ]
-  },
-  "create_analytics_dashboard": {
-    "name": "create_analytics_dashboard",
-    "expectedAccounts": [
-      {
-        "name": "dashboard",
-        "pda": true
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "owner",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "dashboard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Dashboard account with collision prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                110,
-                97,
-                108,
-                121,
-                116,
-                105,
-                99,
-                115
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            },
-            {
-              "kind": "arg",
-              "path": "dashboard_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting and spam prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            }
-          ]
-        }
-      },
-      {
-        "name": "owner",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification"
+          "Controller of the DID (owner)"
         ]
       },
       {
@@ -2150,608 +686,39 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "address": "SysvarC1ock11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Create a new DID document for an agent or user  Initializes a W3C-compliant DID document following the did:sol method. The DID document can contain verification methods and service endpoints.  Parameters: - did_string: The DID string (e.g., \"did:sol:devnet:HN7c...\") - verification_methods: Initial verification methods (max 10) - service_endpoints: Initial service endpoints (max 5)",
     "discriminator": [
-      160,
-      237,
-      52,
-      23,
-      118,
-      243,
-      100,
-      75
-    ],
-    "args": [
-      {
-        "name": "dashboard_id",
-        "type": "u64"
-      },
-      {
-        "name": "metrics",
-        "type": "string"
-      }
-    ]
-  },
-  "create_bulk_deal": {
-    "name": "create_bulk_deal",
-    "expectedAccounts": [
-      {
-        "name": "deal",
-        "pda": true
-      },
-      {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "customer",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "deal",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Bulk deal account with collision prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                98,
-                117,
-                108,
-                107,
-                95,
-                100,
-                101,
-                97,
-                108
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "agent"
-            },
-            {
-              "kind": "account",
-              "path": "customer"
-            },
-            {
-              "kind": "arg",
-              "path": "deal_data.deal_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Agent account with enhanced constraints"
-        ]
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting and spam prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "customer"
-            }
-          ]
-        }
-      },
-      {
-        "name": "customer",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced customer verification"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program for account creation"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      133,
-      143,
-      169,
-      255,
-      188,
-      189,
-      104,
-      216
-    ],
-    "args": [
-      {
-        "name": "deal_data",
-        "type": {
-          "defined": {
-            "name": "BulkDealData"
-          }
-        }
-      }
-    ]
-  },
-  "create_channel": {
-    "name": "create_channel",
-    "expectedAccounts": [
-      {
-        "name": "channel",
-        "pda": true
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "channel",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                99,
-                104,
-                97,
-                110,
-                110,
-                101,
-                108
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "creator"
-            },
-            {
-              "kind": "arg",
-              "path": "channel_data.channel_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      37,
-      105,
       253,
-      99,
-      87,
-      46,
-      223,
-      20
+      40,
+      200,
+      239,
+      69,
+      147,
+      82,
+      182
     ],
     "args": [
       {
-        "name": "channel_data",
-        "type": {
-          "defined": {
-            "name": "ChannelCreationData"
-          }
-        }
-      }
-    ]
-  },
-  "create_communication_session": {
-    "name": "create_communication_session",
-    "expectedAccounts": [
-      {
-        "name": "session",
-        "pda": true
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "session",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                99,
-                111,
-                109,
-                109,
-                95,
-                115,
-                101,
-                115,
-                115,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "creator"
-            }
-          ]
-        }
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "Creates a unified communication session between humans and agents",
-    "discriminator": [
-      106,
-      100,
-      248,
-      57,
-      33,
-      84,
-      188,
-      21
-    ],
-    "args": [
-      {
-        "name": "session_data",
-        "type": {
-          "defined": {
-            "name": "CommunicationSessionData"
-          }
-        }
-      }
-    ]
-  },
-  "create_dynamic_pricing_engine": {
-    "name": "create_dynamic_pricing_engine",
-    "expectedAccounts": [
-      {
-        "name": "engine",
-        "pda": true
-      },
-      {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "owner",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "engine",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                100,
-                121,
-                110,
-                97,
-                109,
-                105,
-                99,
-                95,
-                112,
-                114,
-                105,
-                99,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "agent"
-            }
-          ]
-        }
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "owner",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      251,
-      20,
-      25,
-      4,
-      140,
-      172,
-      5,
-      167
-    ],
-    "args": [
-      {
-        "name": "config",
-        "type": {
-          "defined": {
-            "name": "DynamicPricingConfig"
-          }
-        }
-      }
-    ]
-  },
-  "create_enhanced_channel": {
-    "name": "create_enhanced_channel",
-    "expectedAccounts": [
-      {
-        "name": "channel",
-        "pda": true
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "creator_agent",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "channel",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                99,
-                104,
-                97,
-                110,
-                110,
-                101,
-                108
-              ]
-            },
-            {
-              "kind": "arg",
-              "path": "channel_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "creator_agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      28,
-      188,
-      236,
-      214,
-      244,
-      184,
-      198,
-      219
-    ],
-    "args": [
-      {
-        "name": "channel_id",
+        "name": "did_string",
         "type": "string"
       },
       {
-        "name": "participants",
+        "name": "verification_methods",
         "type": {
-          "vec": "pubkey"
-        }
-      },
-      {
-        "name": "channel_type",
-        "type": {
-          "defined": {
-            "name": "ChannelType"
+          "vec": {
+            "defined": {
+              "name": "VerificationMethod"
+            }
           }
         }
       },
       {
-        "name": "metadata",
+        "name": "service_endpoints",
         "type": {
-          "defined": {
-            "name": "ChannelMetadata"
+          "vec": {
+            "defined": {
+              "name": "ServiceEndpoint"
+            }
           }
         }
       }
@@ -2765,35 +732,27 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "pda": true
       },
       {
-        "name": "reentrancy_guard",
-        "pda": true
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "client_token_account",
+        "pda": false
+      },
+      {
+        "name": "escrow_vault",
+        "pda": false
+      },
+      {
+        "name": "token_mint",
+        "pda": false
       },
       {
         "name": "client",
         "pda": false
       },
       {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "client_token_account",
-        "pda": true
-      },
-      {
-        "name": "escrow_token_account",
-        "pda": true
-      },
-      {
-        "name": "payment_token",
-        "pda": false
-      },
-      {
         "name": "token_program",
-        "pda": false
-      },
-      {
-        "name": "associated_token_program",
         "pda": false
       },
       {
@@ -2813,59 +772,31 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             {
               "kind": "const",
               "value": [
-                101,
+                103,
+                104,
+                111,
                 115,
-                99,
+                116,
+                95,
+                112,
                 114,
                 111,
-                119
+                116,
+                101,
+                99,
+                116
               ]
             },
             {
-              "kind": "arg",
-              "path": "task_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
+              "kind": "account",
+              "path": "client"
+            },
             {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
+              "kind": "arg",
+              "path": "escrow_id"
             }
           ]
         }
-      },
-      {
-        "name": "client",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
       },
       {
         "name": "agent",
@@ -2879,129 +810,26 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [
-          "Client's token account - created if it doesn't exist"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "client"
-            },
-            {
-              "kind": "account",
-              "path": "token_program"
-            },
-            {
-              "kind": "account",
-              "path": "payment_token"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
+        "docs": []
       },
       {
-        "name": "escrow_token_account",
+        "name": "escrow_vault",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [
-          "Escrow's token account - always created fresh"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow"
-            },
-            {
-              "kind": "account",
-              "path": "token_program"
-            },
-            {
-              "kind": "account",
-              "path": "payment_token"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
+        "docs": []
       },
       {
-        "name": "payment_token",
+        "name": "token_mint",
         "writable": false,
         "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "client",
+        "writable": true,
+        "signer": true,
         "optional": false,
         "docs": []
       },
@@ -3010,15 +838,8 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "writable": false,
         "signer": false,
         "optional": false,
-        "docs": []
-      },
-      {
-        "name": "associated_token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
         "docs": [],
-        "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
       },
       {
         "name": "system_program",
@@ -3029,7 +850,7 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "address": "11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Create a new escrow for agent service payment",
     "discriminator": [
       253,
       215,
@@ -3042,699 +863,19 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "args": [
       {
-        "name": "task_id",
-        "type": "string"
+        "name": "escrow_id",
+        "type": "u64"
       },
       {
         "name": "amount",
         "type": "u64"
       },
       {
-        "name": "expires_at",
-        "type": "i64"
-      },
-      {
-        "name": "transfer_hook",
-        "type": {
-          "option": "pubkey"
-        }
-      },
-      {
-        "name": "is_confidential",
-        "type": "bool"
-      }
-    ]
-  },
-  "create_escrow_with_sol": {
-    "name": "create_escrow_with_sol",
-    "expectedAccounts": [
-      {
-        "name": "escrow",
-        "pda": true
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "client",
-        "pda": false
-      },
-      {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "client_wsol_account",
-        "pda": true
-      },
-      {
-        "name": "escrow_wsol_account",
-        "pda": true
-      },
-      {
-        "name": "native_mint",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      },
-      {
-        "name": "associated_token_program",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "escrow",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                101,
-                115,
-                99,
-                114,
-                111,
-                119
-              ]
-            },
-            {
-              "kind": "arg",
-              "path": "task_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "client",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "client_wsol_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Client's wSOL token account - created if it doesn't exist",
-          "This will hold the wrapped SOL"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "client"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "native_mint"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "escrow_wsol_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Escrow's wSOL token account - always created fresh"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "native_mint"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "native_mint",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The native SOL mint (wSOL) - owned by original Token program"
-        ],
-        "address": "So11111111111111111111111111111111111111112"
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Original Token program (not Token2022) - required for native SOL wrapping"
-        ],
-        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-      },
-      {
-        "name": "associated_token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "Create escrow by depositing native SOL (auto-wraps to wSOL) This provides a better UX by handling SOL wrapping automatically",
-    "discriminator": [
-      135,
-      194,
-      171,
-      90,
-      18,
-      253,
-      103,
-      115
-    ],
-    "args": [
-      {
-        "name": "task_id",
+        "name": "job_description",
         "type": "string"
       },
       {
-        "name": "amount",
-        "type": "u64"
-      },
-      {
-        "name": "expires_at",
-        "type": "i64"
-      },
-      {
-        "name": "transfer_hook",
-        "type": {
-          "option": "pubkey"
-        }
-      },
-      {
-        "name": "is_confidential",
-        "type": "bool"
-      }
-    ]
-  },
-  "create_incentive_program": {
-    "name": "create_incentive_program",
-    "expectedAccounts": [
-      {
-        "name": "program",
-        "pda": true
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "program",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                105,
-                110,
-                99,
-                101,
-                110,
-                116,
-                105,
-                118,
-                101,
-                95,
-                112,
-                114,
-                111,
-                103,
-                114,
-                97,
-                109
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "creator"
-            }
-          ]
-        }
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      115,
-      222,
-      207,
-      231,
-      169,
-      56,
-      125,
-      153
-    ],
-    "args": [
-      {
-        "name": "config",
-        "type": {
-          "defined": {
-            "name": "IncentiveConfig"
-          }
-        }
-      }
-    ]
-  },
-  "create_job_posting": {
-    "name": "create_job_posting",
-    "expectedAccounts": [
-      {
-        "name": "job_posting",
-        "pda": true
-      },
-      {
-        "name": "employer",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "job_posting",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                106,
-                111,
-                98,
-                95,
-                112,
-                111,
-                115,
-                116,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "employer"
-            }
-          ]
-        }
-      },
-      {
-        "name": "employer",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      71,
-      93,
-      23,
-      166,
-      103,
-      210,
-      218,
-      105
-    ],
-    "args": [
-      {
-        "name": "job_data",
-        "type": {
-          "defined": {
-            "name": "JobPostingData"
-          }
-        }
-      }
-    ]
-  },
-  "create_market_analytics": {
-    "name": "create_market_analytics",
-    "expectedAccounts": [
-      {
-        "name": "market_analytics",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "market_analytics",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Market analytics account with enhanced PDA security"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                109,
-                97,
-                114,
-                107,
-                101,
-                116,
-                95,
-                97,
-                110,
-                97,
-                108,
-                121,
-                116,
-                105,
-                99,
-                115
-              ]
-            },
-            {
-              "kind": "arg",
-              "path": "period_start"
-            },
-            {
-              "kind": "arg",
-              "path": "period_end"
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification - must be protocol admin"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program for account creation"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      72,
-      76,
-      122,
-      193,
-      232,
-      239,
-      106,
-      81
-    ],
-    "args": [
-      {
-        "name": "period_start",
-        "type": "i64"
-      },
-      {
-        "name": "period_end",
+        "name": "deadline",
         "type": "i64"
       }
     ]
@@ -3840,855 +981,6 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
-  "create_replication_template": {
-    "name": "create_replication_template",
-    "expectedAccounts": [
-      {
-        "name": "replication_template",
-        "pda": true
-      },
-      {
-        "name": "source_agent",
-        "pda": false
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "replication_template",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                112,
-                108,
-                105,
-                99,
-                97,
-                116,
-                105,
-                111,
-                110,
-                95,
-                116,
-                101,
-                109,
-                112,
-                108,
-                97,
-                116,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "source_agent"
-            }
-          ]
-        }
-      },
-      {
-        "name": "source_agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      58,
-      37,
-      131,
-      238,
-      116,
-      165,
-      200,
-      193
-    ],
-    "args": [
-      {
-        "name": "template_data",
-        "type": {
-          "defined": {
-            "name": "ReplicationTemplateData"
-          }
-        }
-      }
-    ]
-  },
-  "create_royalty_stream": {
-    "name": "create_royalty_stream",
-    "expectedAccounts": [
-      {
-        "name": "stream",
-        "pda": true
-      },
-      {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "stream",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                111,
-                121,
-                97,
-                108,
-                116,
-                121,
-                95,
-                115,
-                116,
-                114,
-                101,
-                97,
-                109
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "agent"
-            }
-          ]
-        }
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      139,
-      213,
-      158,
-      201,
-      140,
-      251,
-      236,
-      89
-    ],
-    "args": [
-      {
-        "name": "config",
-        "type": {
-          "defined": {
-            "name": "RoyaltyConfig"
-          }
-        }
-      }
-    ]
-  },
-  "create_service_auction": {
-    "name": "create_service_auction",
-    "expectedAccounts": [
-      {
-        "name": "auction",
-        "pda": true
-      },
-      {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "user_registry",
-        "pda": false
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "auction",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Auction account with canonical PDA validation and collision prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                117,
-                99,
-                116,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "agent"
-            },
-            {
-              "kind": "account",
-              "path": "creator"
-            }
-          ]
-        }
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Agent account with enhanced constraints"
-        ]
-      },
-      {
-        "name": "user_registry",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting and spam prevention"
-        ]
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program for account creation"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      236,
-      178,
-      59,
-      67,
-      226,
-      82,
-      27,
-      209
-    ],
-    "args": [
-      {
-        "name": "auction_data",
-        "type": {
-          "defined": {
-            "name": "AuctionData"
-          }
-        }
-      }
-    ]
-  },
-  "create_service_listing": {
-    "name": "create_service_listing",
-    "expectedAccounts": [
-      {
-        "name": "service_listing",
-        "pda": true
-      },
-      {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "creator",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "service_listing",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Service listing account with enhanced PDA security"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                101,
-                114,
-                118,
-                105,
-                99,
-                101,
-                95,
-                108,
-                105,
-                115,
-                116,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "creator"
-            },
-            {
-              "kind": "arg",
-              "path": "listing_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Agent account with ownership validation"
-        ]
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "creator"
-            }
-          ]
-        }
-      },
-      {
-        "name": "creator",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Creator authority with enhanced verification"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program for account operations"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation and rate limiting"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      91,
-      37,
-      216,
-      26,
-      93,
-      146,
-      13,
-      182
-    ],
-    "args": [
-      {
-        "name": "listing_data",
-        "type": {
-          "defined": {
-            "name": "ServiceListingData"
-          }
-        }
-      },
-      {
-        "name": "_listing_id",
-        "type": "string"
-      }
-    ]
-  },
-  "create_staking_account": {
-    "name": "create_staking_account",
-    "expectedAccounts": [
-      {
-        "name": "staking_account",
-        "pda": true
-      },
-      {
-        "name": "staking_config",
-        "pda": true
-      },
-      {
-        "name": "owner",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "staking_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            }
-          ]
-        }
-      },
-      {
-        "name": "staking_config",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103,
-                95,
-                99,
-                111,
-                110,
-                102,
-                105,
-                103
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "owner",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "Create a staking account for a user",
-    "discriminator": [
-      245,
-      124,
-      219,
-      13,
-      173,
-      255,
-      155,
-      235
-    ],
-    "args": []
-  },
-  "create_token_2022_mint": {
-    "name": "create_token_2022_mint",
-    "expectedAccounts": [
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "mint",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "rent",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The agent creating the token"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
-                101,
-                110,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "authority"
-            }
-          ]
-        }
-      },
-      {
-        "name": "mint",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "The mint to be created with Token-2022 extensions"
-        ]
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Token-2022 program"
-        ],
-        "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "rent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "SysvarRent111111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      4,
-      45,
-      127,
-      74,
-      240,
-      104,
-      83,
-      178
-    ],
-    "args": [
-      {
-        "name": "params",
-        "type": {
-          "defined": {
-            "name": "CreateToken2022MintParams"
-          }
-        }
-      }
-    ]
-  },
-  "create_work_order": {
-    "name": "create_work_order",
-    "expectedAccounts": [
-      {
-        "name": "work_order",
-        "pda": true
-      },
-      {
-        "name": "client",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "work_order",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                119,
-                111,
-                114,
-                107,
-                95,
-                111,
-                114,
-                100,
-                101,
-                114
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "client"
-            },
-            {
-              "kind": "arg",
-              "path": "work_order_data.order_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "client",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      143,
-      17,
-      248,
-      200,
-      217,
-      85,
-      10,
-      175
-    ],
-    "args": [
-      {
-        "name": "work_order_data",
-        "type": {
-          "defined": {
-            "name": "WorkOrderData"
-          }
-        }
-      }
-    ]
-  },
   "deactivate_agent": {
     "name": "deactivate_agent",
     "expectedAccounts": [
@@ -4775,492 +1067,97 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
-  "delegate_vote": {
-    "name": "delegate_vote",
+  "deactivate_credential_template": {
+    "name": "deactivate_credential_template",
     "expectedAccounts": [
       {
-        "name": "proposal",
-        "pda": true
-      },
-      {
-        "name": "delegator",
+        "name": "credential_template",
         "pda": false
       },
       {
-        "name": "delegate",
-        "pda": false
-      },
-      {
-        "name": "delegator_token_account",
+        "name": "issuer",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "proposal",
+        "name": "credential_template",
         "writable": true,
         "signer": false,
-        "optional": true,
-        "docs": [
-          "The proposal to delegate for (or use 0 for all proposals)"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                103,
-                111,
-                118,
-                101,
-                114,
-                110,
-                97,
-                110,
-                99,
-                101,
-                95,
-                112,
-                114,
-                111,
-                112,
-                111,
-                115,
-                97,
-                108
-              ]
-            },
-            {
-              "kind": "arg",
-              "path": "proposal_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "delegator",
-        "writable": true,
-        "signer": true,
         "optional": false,
         "docs": []
       },
       {
-        "name": "delegate",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The account to delegate voting power to"
-        ]
-      },
-      {
-        "name": "delegator_token_account",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Delegator's token account"
-        ]
-      }
-    ],
-    "docs": "Delegate voting power to another account",
-    "discriminator": [
-      12,
-      116,
-      204,
-      68,
-      87,
-      205,
-      40,
-      205
-    ],
-    "args": [
-      {
-        "name": "proposal_id",
-        "type": "u64"
-      },
-      {
-        "name": "scope",
-        "type": {
-          "defined": {
-            "name": "DelegationScope"
-          }
-        }
-      },
-      {
-        "name": "expires_at",
-        "type": {
-          "option": "i64"
-        }
-      }
-    ]
-  },
-  "dispute_escrow": {
-    "name": "dispute_escrow",
-    "expectedAccounts": [
-      {
-        "name": "escrow",
-        "pda": true
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "escrow",
+        "name": "issuer",
         "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                101,
-                115,
-                99,
-                114,
-                111,
-                119
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.task_id",
-              "account": "Escrow"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": false,
         "signer": true,
         "optional": false,
         "docs": []
       }
     ],
-    "docs": "",
+    "docs": "Deactivate a credential template (no new credentials can be issued from it)",
     "discriminator": [
-      198,
-      174,
-      139,
-      70,
-      87,
-      79,
-      181,
-      139
-    ],
-    "args": [
-      {
-        "name": "dispute_reason",
-        "type": "string"
-      }
-    ]
-  },
-  "distribute_incentives": {
-    "name": "distribute_incentives",
-    "expectedAccounts": [
-      {
-        "name": "program",
-        "pda": false
-      },
-      {
-        "name": "incentives",
-        "pda": false
-      },
-      {
-        "name": "distributor",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "program",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "incentives",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "distributor",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      172,
-      97,
-      184,
-      220,
-      51,
-      131,
-      45,
-      160
-    ],
-    "args": [
-      {
-        "name": "agent",
-        "type": "pubkey"
-      },
-      {
-        "name": "incentive_type",
-        "type": "string"
-      },
-      {
-        "name": "amount",
-        "type": "u64"
-      }
-    ]
-  },
-  "execute_bulk_deal_batch": {
-    "name": "execute_bulk_deal_batch",
-    "expectedAccounts": [
-      {
-        "name": "deal",
-        "pda": true
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "deal",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Bulk deal account with canonical bump validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                98,
-                117,
-                108,
-                107,
-                95,
-                100,
-                101,
-                97,
-                108
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "deal.agent",
-              "account": "BulkDeal"
-            },
-            {
-              "kind": "account",
-              "path": "deal.customer",
-              "account": "BulkDeal"
-            },
-            {
-              "kind": "account",
-              "path": "deal.deal_id",
-              "account": "BulkDeal"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "authority"
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification - only customer or agent"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for rate limiting"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      236,
-      222,
-      159,
-      76,
-      52,
-      79,
-      235,
-      109
-    ],
-    "args": [
-      {
-        "name": "batch_size",
-        "type": "u32"
-      }
-    ]
-  },
-  "execute_proposal": {
-    "name": "execute_proposal",
-    "expectedAccounts": [
-      {
-        "name": "proposal",
-        "pda": false
-      },
-      {
-        "name": "executor",
-        "pda": false
-      },
-      {
-        "name": "target_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "proposal",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "executor",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "target_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Target program for proposal execution"
-        ]
-      }
-    ],
-    "docs": "Execute a passed proposal",
-    "discriminator": [
-      186,
-      60,
-      116,
-      133,
-      108,
-      128,
-      111,
-      28
+      177,
+      8,
+      195,
+      104,
+      56,
+      34,
+      84,
+      162
     ],
     "args": []
   },
-  "extend_auction_for_reserve": {
-    "name": "extend_auction_for_reserve",
+  "deactivate_credential_type": {
+    "name": "deactivate_credential_type",
     "expectedAccounts": [
       {
-        "name": "auction",
-        "pda": true
+        "name": "credential_type",
+        "pda": false
       },
       {
         "name": "authority",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "credential_type",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "authority",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      }
+    ],
+    "docs": "Deactivate a credential type (no new credentials can be issued)",
+    "discriminator": [
+      110,
+      174,
+      221,
+      244,
+      36,
+      206,
+      60,
+      237
+    ],
+    "args": []
+  },
+  "deactivate_did_document": {
+    "name": "deactivate_did_document",
+    "expectedAccounts": [
+      {
+        "name": "did_document",
+        "pda": true
+      },
+      {
+        "name": "controller",
         "pda": false
       },
       {
@@ -5270,47 +1167,46 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "accounts": [
       {
-        "name": "auction",
+        "name": "did_document",
         "writable": true,
         "signer": false,
         "optional": false,
         "docs": [
-          "Auction account with canonical validation"
+          "DID document account with canonical PDA validation"
         ],
         "pda": {
           "seeds": [
             {
               "kind": "const",
               "value": [
-                97,
-                117,
-                99,
-                116,
+                100,
                 105,
+                100,
+                95,
+                100,
                 111,
-                110
+                99,
+                117,
+                109,
+                101,
+                110,
+                116
               ]
             },
             {
               "kind": "account",
-              "path": "auction.agent",
-              "account": "AuctionMarketplace"
-            },
-            {
-              "kind": "account",
-              "path": "auction.creator",
-              "account": "AuctionMarketplace"
+              "path": "controller"
             }
           ]
         }
       },
       {
-        "name": "authority",
+        "name": "controller",
         "writable": true,
         "signer": true,
         "optional": false,
         "docs": [
-          "Enhanced authority verification - only creator or protocol admin can extend"
+          "Controller of the DID (must match document controller)"
         ]
       },
       {
@@ -5324,38 +1220,34 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "address": "SysvarC1ock11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Deactivate a DID document  Permanently deactivates the DID document. This operation is irreversible. Only the controller can deactivate their DID.",
     "discriminator": [
-      99,
-      201,
-      28,
-      182,
-      134,
-      0,
-      55,
-      181
+      77,
+      13,
+      56,
+      161,
+      67,
+      155,
+      206,
+      119
     ],
     "args": []
   },
-  "extend_lockup": {
-    "name": "extend_lockup",
+  "enable_protocol_fees": {
+    "name": "enable_protocol_fees",
     "expectedAccounts": [
       {
-        "name": "staking_account",
+        "name": "config",
         "pda": true
       },
       {
-        "name": "staking_config",
-        "pda": true
-      },
-      {
-        "name": "owner",
+        "name": "authority",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "staking_account",
+        "name": "config",
         "writable": true,
         "signer": false,
         "optional": false,
@@ -5365,40 +1257,14 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             {
               "kind": "const",
               "value": [
-                115,
+                112,
+                114,
+                111,
                 116,
-                97,
-                107,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            }
-          ]
-        }
-      },
-      {
-        "name": "staking_config",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103,
+                111,
+                99,
+                111,
+                108,
                 95,
                 99,
                 111,
@@ -5412,187 +1278,87 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         }
       },
       {
-        "name": "owner",
-        "writable": true,
+        "name": "authority",
+        "writable": false,
         "signer": true,
         "optional": false,
         "docs": []
       }
     ],
-    "docs": "Extend lockup period for bonus rewards",
+    "docs": "Enable production fees (authority only)  Activates the full fee structure for mainnet: - Escrow: 0.5% (80% Treasury, 20% Buyback) - Agent Registration: 0.01 SOL - Marketplace Listing: 0.001 SOL - Dispute Resolution: 1%",
     "discriminator": [
-      11,
-      43,
-      205,
+      9,
+      115,
       79,
-      196,
-      188,
-      236,
-      222
+      19,
+      158,
+      209,
+      221,
+      38
     ],
-    "args": [
-      {
-        "name": "new_tier",
-        "type": "u8"
-      }
-    ]
+    "args": []
   },
   "file_dispute": {
     "name": "file_dispute",
     "expectedAccounts": [
       {
-        "name": "dispute",
+        "name": "escrow",
         "pda": true
       },
       {
-        "name": "transaction",
-        "pda": false
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "complainant",
-        "pda": false
-      },
-      {
-        "name": "respondent",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
+        "name": "client",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "dispute",
+        "name": "escrow",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [
-          "Dispute account with collision prevention"
-        ],
+        "docs": [],
         "pda": {
           "seeds": [
             {
               "kind": "const",
               "value": [
-                100,
-                105,
-                115,
-                112,
-                117,
-                116,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "transaction"
-            },
-            {
-              "kind": "account",
-              "path": "complainant"
-            },
-            {
-              "kind": "arg",
-              "path": "reason"
-            }
-          ]
-        }
-      },
-      {
-        "name": "transaction",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Transaction account with enhanced validation",
-          "The transaction type is validated in the instruction handler",
-          "Transaction info for key reference"
-        ]
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting and spam prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
                 103,
-                105,
+                104,
+                111,
                 115,
                 116,
+                95,
+                112,
                 114,
-                121
+                111,
+                116,
+                101,
+                99,
+                116
               ]
             },
             {
               "kind": "account",
-              "path": "complainant"
+              "path": "escrow.client",
+              "account": "GhostProtectEscrow"
+            },
+            {
+              "kind": "account",
+              "path": "escrow.escrow_id",
+              "account": "GhostProtectEscrow"
             }
           ]
         }
       },
       {
-        "name": "complainant",
-        "writable": true,
+        "name": "client",
+        "writable": false,
         "signer": true,
         "optional": false,
-        "docs": [
-          "Enhanced complainant verification"
-        ]
-      },
-      {
-        "name": "respondent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Enhanced respondent validation"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program for account creation"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
+        "docs": []
       }
     ],
-    "docs": "",
+    "docs": "Client files a dispute on escrow",
     "discriminator": [
       210,
       63,
@@ -5609,91 +1375,6 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "type": "string"
       }
     ]
-  },
-  "finalize_auction": {
-    "name": "finalize_auction",
-    "expectedAccounts": [
-      {
-        "name": "auction",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "auction",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Auction account with canonical validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                117,
-                99,
-                116,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "auction.agent",
-              "account": "AuctionMarketplace"
-            },
-            {
-              "kind": "account",
-              "path": "auction.creator",
-              "account": "AuctionMarketplace"
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification - only creator or protocol admin"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      220,
-      209,
-      175,
-      193,
-      57,
-      132,
-      241,
-      168
-    ],
-    "args": []
   },
   "generate_compliance_report": {
     "name": "generate_compliance_report",
@@ -5993,200 +1674,6 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
-  "initialize_confidential_transfer_mint": {
-    "name": "initialize_confidential_transfer_mint",
-    "expectedAccounts": [
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "mint",
-        "pda": false
-      },
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "mint",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The mint to initialize confidential transfers for"
-        ]
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The agent that owns this mint"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
-                101,
-                110,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "authority"
-            }
-          ]
-        }
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Token-2022 program"
-        ],
-        "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      154,
-      47,
-      116,
-      20,
-      167,
-      57,
-      114,
-      41
-    ],
-    "args": [
-      {
-        "name": "params",
-        "type": {
-          "defined": {
-            "name": "ConfidentialTransferMintParams"
-          }
-        }
-      }
-    ]
-  },
-  "initialize_default_account_state": {
-    "name": "initialize_default_account_state",
-    "expectedAccounts": [
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "mint",
-        "pda": false
-      },
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "mint",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The mint to initialize default account state for"
-        ]
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The agent that owns this mint"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
-                101,
-                110,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "authority"
-            }
-          ]
-        }
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Token-2022 program"
-        ],
-        "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      175,
-      89,
-      119,
-      112,
-      150,
-      203,
-      202,
-      198
-    ],
-    "args": [
-      {
-        "name": "state",
-        "type": {
-          "defined": {
-            "name": "AccountState"
-          }
-        }
-      }
-    ]
-  },
   "initialize_governance_proposal": {
     "name": "initialize_governance_proposal",
     "expectedAccounts": [
@@ -6301,214 +1788,121 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
-  "initialize_interest_bearing_config": {
-    "name": "initialize_interest_bearing_config",
+  "initialize_protocol_config": {
+    "name": "initialize_protocol_config",
     "expectedAccounts": [
+      {
+        "name": "config",
+        "pda": true
+      },
       {
         "name": "authority",
         "pda": false
       },
       {
-        "name": "mint",
+        "name": "treasury",
         "pda": false
       },
       {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "rate_authority",
+        "name": "buyback_pool",
         "pda": false
       },
       {
-        "name": "token_program",
+        "name": "moderator_pool",
+        "pda": false
+      },
+      {
+        "name": "system_program",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "mint",
+        "name": "config",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [
-          "The mint to initialize interest-bearing config for"
-        ]
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The agent that owns this mint"
-        ],
+        "docs": [],
         "pda": {
           "seeds": [
             {
               "kind": "const",
               "value": [
-                97,
-                103,
-                101,
+                112,
+                114,
+                111,
+                116,
+                111,
+                99,
+                111,
+                108,
+                95,
+                99,
+                111,
                 110,
-                116
+                102,
+                105,
+                103
               ]
-            },
-            {
-              "kind": "account",
-              "path": "authority"
             }
           ]
         }
       },
       {
-        "name": "rate_authority",
-        "writable": false,
-        "signer": false,
+        "name": "authority",
+        "writable": true,
+        "signer": true,
         "optional": false,
         "docs": [
-          "The account that can update the interest rate"
+          "Authority who will control the config (typically DAO or multisig)"
         ]
       },
       {
-        "name": "token_program",
+        "name": "treasury",
         "writable": false,
         "signer": false,
         "optional": false,
         "docs": [
-          "Token-2022 program"
-        ],
-        "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+          "Treasury wallet to receive protocol fees"
+        ]
+      },
+      {
+        "name": "buyback_pool",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Buyback pool wallet for token buybacks"
+        ]
+      },
+      {
+        "name": "moderator_pool",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Moderator pool for dispute fees"
+        ]
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Initialize the global protocol configuration  Sets up fee infrastructure with all fees initially disabled (set to 0). Fees will be enabled via governance after mainnet deployment.  NOTE: Fee structure is in place but set to 0 until mainnet.",
     "discriminator": [
-      59,
-      39,
-      17,
-      210,
+      28,
+      50,
+      43,
+      233,
+      244,
+      98,
       123,
-      130,
-      101,
-      67
-    ],
-    "args": [
-      {
-        "name": "params",
-        "type": {
-          "defined": {
-            "name": "InterestBearingConfigParams"
-          }
-        }
-      }
-    ]
-  },
-  "initialize_mint_close_authority": {
-    "name": "initialize_mint_close_authority",
-    "expectedAccounts": [
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "mint",
-        "pda": false
-      },
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "close_authority",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "mint",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The mint to initialize close authority for"
-        ]
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The agent that owns this mint"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
-                101,
-                110,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "authority"
-            }
-          ]
-        }
-      },
-      {
-        "name": "close_authority",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The account that can close the mint"
-        ]
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Token-2022 program"
-        ],
-        "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      117,
-      167,
-      56,
-      158,
-      201,
-      160,
-      209,
-      109
+      118
     ],
     "args": []
   },
@@ -6600,20 +1994,129 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
+  "initialize_reputation_metrics": {
+    "name": "initialize_reputation_metrics",
+    "expectedAccounts": [
+      {
+        "name": "reputation_metrics",
+        "pda": true
+      },
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "authority",
+        "pda": false
+      },
+      {
+        "name": "system_program",
+        "pda": false
+      },
+      {
+        "name": "clock",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "reputation_metrics",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Reputation metrics account"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                114,
+                101,
+                112,
+                117,
+                116,
+                97,
+                116,
+                105,
+                111,
+                110,
+                95,
+                109,
+                101,
+                116,
+                114,
+                105,
+                99,
+                115
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            }
+          ]
+        }
+      },
+      {
+        "name": "agent",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent account"
+        ]
+      },
+      {
+        "name": "authority",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Authority (agent owner)"
+        ]
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "System program"
+        ],
+        "address": "11111111111111111111111111111111"
+      },
+      {
+        "name": "clock",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Clock for timestamps"
+        ],
+        "address": "SysvarC1ock11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Initialize reputation metrics for an agent  Creates a new reputation tracking account that monitors: - Payment success/failure rates - Service ratings from clients - Response time performance - Dispute resolution history",
+    "discriminator": [
+      228,
+      11,
+      207,
+      44,
+      52,
+      188,
+      169,
+      237
+    ],
+    "args": []
+  },
   "initialize_staking_config": {
     "name": "initialize_staking_config",
     "expectedAccounts": [
       {
         "name": "staking_config",
         "pda": true
-      },
-      {
-        "name": "ghost_token_mint",
-        "pda": false
-      },
-      {
-        "name": "rewards_treasury",
-        "pda": false
       },
       {
         "name": "authority",
@@ -6656,24 +2159,6 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         }
       },
       {
-        "name": "ghost_token_mint",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "GHOST token mint"
-        ]
-      },
-      {
-        "name": "rewards_treasury",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Treasury for rewards distribution"
-        ]
-      },
-      {
         "name": "authority",
         "writable": true,
         "signer": true,
@@ -6689,7 +2174,7 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "address": "11111111111111111111111111111111"
       }
     ],
-    "docs": "Initialize the global staking configuration",
+    "docs": "Initialize GHOST token staking configuration (admin only)",
     "discriminator": [
       78,
       164,
@@ -6702,32 +2187,36 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "args": [
       {
-        "name": "base_apy",
-        "type": "u16"
-      },
-      {
-        "name": "min_stake_amount",
+        "name": "min_stake",
         "type": "u64"
       },
       {
-        "name": "max_stake_amount",
-        "type": "u64"
+        "name": "treasury",
+        "type": "pubkey"
       }
     ]
   },
-  "initiate_negotiation": {
-    "name": "initiate_negotiation",
+  "issue_credential": {
+    "name": "issue_credential",
     "expectedAccounts": [
       {
-        "name": "negotiation",
+        "name": "credential",
         "pda": true
       },
       {
-        "name": "initiator",
+        "name": "credential_template",
         "pda": false
       },
       {
-        "name": "counterparty",
+        "name": "credential_type",
+        "pda": false
+      },
+      {
+        "name": "subject",
+        "pda": false
+      },
+      {
+        "name": "issuer",
         "pda": false
       },
       {
@@ -6737,7 +2226,7 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "accounts": [
       {
-        "name": "negotiation",
+        "name": "credential",
         "writable": true,
         "signer": false,
         "optional": false,
@@ -6747,41 +2236,58 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             {
               "kind": "const",
               "value": [
-                110,
+                99,
+                114,
                 101,
-                103,
-                111,
+                100,
+                101,
+                110,
                 116,
                 105,
                 97,
-                116,
-                105,
-                111,
-                110
+                108
               ]
             },
             {
               "kind": "account",
-              "path": "initiator"
+              "path": "credential_template"
             },
             {
               "kind": "account",
-              "path": "counterparty"
+              "path": "subject"
+            },
+            {
+              "kind": "arg",
+              "path": "credential_id"
             }
           ]
         }
       },
       {
-        "name": "initiator",
+        "name": "credential_template",
         "writable": true,
-        "signer": true,
+        "signer": false,
         "optional": false,
         "docs": []
       },
       {
-        "name": "counterparty",
+        "name": "credential_type",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "subject",
         "writable": false,
         "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "issuer",
+        "writable": true,
+        "signer": true,
         "optional": false,
         "docs": []
       },
@@ -6794,336 +2300,46 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "address": "11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Issue a new credential to a subject The subject_data is stored off-chain; only the hash is stored on-chain.",
     "discriminator": [
-      170,
-      46,
-      176,
-      41,
-      191,
       255,
-      104,
-      205
-    ],
-    "args": [
-      {
-        "name": "initial_offer",
-        "type": "u64"
-      },
-      {
-        "name": "auto_accept_threshold",
-        "type": "u64"
-      },
-      {
-        "name": "negotiation_deadline",
-        "type": "i64"
-      }
-    ]
-  },
-  "join_channel": {
-    "name": "join_channel",
-    "expectedAccounts": [
-      {
-        "name": "channel",
-        "pda": false
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "user",
-        "pda": false
-      },
-      {
-        "name": "user_agent",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "channel",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "user",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "user_agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      124,
-      39,
-      115,
-      89,
-      217,
-      26,
-      38,
-      29
-    ],
-    "args": []
-  },
-  "leave_channel": {
-    "name": "leave_channel",
-    "expectedAccounts": [
-      {
-        "name": "channel",
-        "pda": false
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "user",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "channel",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "user",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      104,
-      0,
-      75,
-      134,
-      95,
-      80,
+      193,
+      171,
+      224,
       68,
-      186
+      171,
+      194,
+      87
     ],
-    "args": []
-  },
-  "list_agent_for_resale": {
-    "name": "list_agent_for_resale",
-    "expectedAccounts": [
+    "args": [
       {
-        "name": "resale",
-        "pda": true
+        "name": "credential_id",
+        "type": "string"
       },
       {
-        "name": "agent",
-        "pda": false
-      },
-      {
-        "name": "seller",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "resale",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                115,
-                97,
-                108,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "agent"
-            },
-            {
-              "kind": "account",
-              "path": "seller"
-            }
+        "name": "subject_data_hash",
+        "type": {
+          "array": [
+            "u8",
+            32
           ]
         }
       },
       {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "seller",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      3,
-      233,
-      3,
-      123,
-      241,
-      61,
-      231,
-      238
-    ],
-    "args": [
-      {
-        "name": "listing_price",
-        "type": "u64"
-      }
-    ]
-  },
-  "make_counter_offer": {
-    "name": "make_counter_offer",
-    "expectedAccounts": [
-      {
-        "name": "negotiation",
-        "pda": false
-      },
-      {
-        "name": "sender",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "negotiation",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "sender",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      74,
-      8,
-      96,
-      55,
-      146,
-      85,
-      200,
-      152
-    ],
-    "args": [
-      {
-        "name": "counter_offer",
-        "type": "u64"
-      },
-      {
-        "name": "message",
+        "name": "subject_data_uri",
         "type": "string"
+      },
+      {
+        "name": "expires_at",
+        "type": {
+          "option": "i64"
+        }
+      },
+      {
+        "name": "source_account",
+        "type": {
+          "option": "pubkey"
+        }
       }
     ]
   },
@@ -7209,985 +2425,74 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
-  "place_auction_bid": {
-    "name": "place_auction_bid",
+  "record_payai_payment": {
+    "name": "record_payai_payment",
     "expectedAccounts": [
       {
-        "name": "auction",
+        "name": "reputation_metrics",
         "pda": true
-      },
-      {
-        "name": "user_registry",
-        "pda": false
-      },
-      {
-        "name": "bidder",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "auction",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Auction account with canonical bump validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                117,
-                99,
-                116,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "auction.agent",
-              "account": "AuctionMarketplace"
-            },
-            {
-              "kind": "account",
-              "path": "auction.creator",
-              "account": "AuctionMarketplace"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting"
-        ]
-      },
-      {
-        "name": "bidder",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced bidder verification"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for rate limiting"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      38,
-      170,
-      233,
-      87,
-      52,
-      65,
-      23,
-      128
-    ],
-    "args": [
-      {
-        "name": "bid_amount",
-        "type": "u64"
-      }
-    ]
-  },
-  "place_dutch_auction_bid": {
-    "name": "place_dutch_auction_bid",
-    "expectedAccounts": [
-      {
-        "name": "auction",
-        "pda": true
-      },
-      {
-        "name": "user_registry",
-        "pda": false
-      },
-      {
-        "name": "bidder",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "auction",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Auction account with canonical bump validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                117,
-                99,
-                116,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "auction.agent",
-              "account": "AuctionMarketplace"
-            },
-            {
-              "kind": "account",
-              "path": "auction.creator",
-              "account": "AuctionMarketplace"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting"
-        ]
-      },
-      {
-        "name": "bidder",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced bidder verification"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for price calculation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      209,
-      244,
-      155,
-      47,
-      62,
-      54,
-      119,
-      34
-    ],
-    "args": []
-  },
-  "process_escrow_payment": {
-    "name": "process_escrow_payment",
-    "expectedAccounts": [
-      {
-        "name": "payment",
-        "pda": true
-      },
-      {
-        "name": "escrow",
-        "pda": false
       },
       {
         "name": "agent",
         "pda": false
       },
       {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "escrow_token_account",
-        "pda": true
-      },
-      {
-        "name": "recipient_token_account",
-        "pda": true
-      },
-      {
-        "name": "recipient",
-        "pda": false
-      },
-      {
-        "name": "payment_token",
-        "pda": false
-      },
-      {
         "name": "authority",
         "pda": false
       },
       {
-        "name": "token_program",
-        "pda": false
-      },
-      {
-        "name": "system_program",
+        "name": "clock",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "payment",
+        "name": "reputation_metrics",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [],
+        "docs": [
+          "Reputation metrics account"
+        ],
         "pda": {
           "seeds": [
             {
               "kind": "const",
               "value": [
+                114,
+                101,
                 112,
+                117,
+                116,
                 97,
-                121,
+                116,
+                105,
+                111,
+                110,
+                95,
                 109,
                 101,
-                110,
-                116
+                116,
+                114,
+                105,
+                99,
+                115
               ]
             },
             {
               "kind": "account",
-              "path": "escrow"
+              "path": "agent"
             }
           ]
         }
-      },
-      {
-        "name": "escrow",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
       },
       {
         "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "reentrancy_guard",
         "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "escrow_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "payment_token"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "recipient_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "recipient"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "payment_token"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "recipient",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "payment_token",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      99,
-      206,
-      125,
-      26,
-      181,
-      158,
-      189,
-      238
-    ],
-    "args": [
-      {
-        "name": "work_order",
-        "type": "pubkey"
-      }
-    ]
-  },
-  "process_partial_refund": {
-    "name": "process_partial_refund",
-    "expectedAccounts": [
-      {
-        "name": "escrow",
-        "pda": true
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "escrow_token_account",
-        "pda": true
-      },
-      {
-        "name": "client_refund_account",
-        "pda": true
-      },
-      {
-        "name": "agent_payment_account",
-        "pda": true
-      },
-      {
-        "name": "payment_token",
-        "pda": false
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "escrow",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                101,
-                115,
-                99,
-                114,
-                111,
-                119
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.task_id",
-              "account": "Escrow"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "escrow_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.payment_token",
-              "account": "Escrow"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "client_refund_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow.client",
-              "account": "Escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.payment_token",
-              "account": "Escrow"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "agent_payment_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow.agent",
-              "account": "Escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.payment_token",
-              "account": "Escrow"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "payment_token",
-        "writable": false,
         "signer": false,
         "optional": false,
         "docs": [
-          "The token mint used for payments"
+          "Agent account"
         ]
       },
       {
@@ -8196,709 +2501,59 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "signer": true,
         "optional": false,
         "docs": [
-          "Authority to approve partial refunds (dispute resolver/admin)"
+          "Authority (can be the payment verifier or agent owner)"
         ]
       },
       {
-        "name": "token_program",
+        "name": "clock",
         "writable": false,
         "signer": false,
         "optional": false,
-        "docs": []
+        "docs": [
+          "Clock for timestamps"
+        ],
+        "address": "SysvarC1ock11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Record a PayAI payment transaction for reputation tracking  Consumes payment data from PayAI protocol to update agent reputation. This does NOT facilitate payments - it only tracks them for reputation.  Parameters: - payment_signature: PayAI transaction signature - amount: Payment amount in lamports - response_time_ms: Service response time - success: Whether payment completed successfully",
     "discriminator": [
-      91,
-      2,
-      45,
-      239,
-      179,
-      132,
-      197,
-      213
-    ],
-    "args": [
-      {
-        "name": "client_refund_percentage",
-        "type": "u8"
-      }
-    ]
-  },
-  "process_payment": {
-    "name": "process_payment",
-    "expectedAccounts": [
-      {
-        "name": "payment",
-        "pda": true
-      },
-      {
-        "name": "work_order",
-        "pda": false
-      },
-      {
-        "name": "provider_agent",
-        "pda": false
-      },
-      {
-        "name": "payer",
-        "pda": false
-      },
-      {
-        "name": "payer_token_account",
-        "pda": false
-      },
-      {
-        "name": "provider_token_account",
-        "pda": false
-      },
-      {
-        "name": "token_mint",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "payment",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                112,
-                97,
-                121,
-                109,
-                101,
-                110,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "work_order"
-            }
-          ]
-        }
-      },
-      {
-        "name": "work_order",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "provider_agent",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "payer",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "payer_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "provider_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "token_mint",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      189,
-      81,
-      30,
-      198,
+      165,
+      202,
+      159,
       139,
-      186,
-      115,
-      23
+      65,
+      65,
+      36,
+      163
     ],
     "args": [
+      {
+        "name": "payment_signature",
+        "type": "string"
+      },
       {
         "name": "amount",
         "type": "u64"
       },
       {
-        "name": "use_confidential_transfer",
+        "name": "response_time_ms",
+        "type": "u64"
+      },
+      {
+        "name": "success",
         "type": "bool"
       }
     ]
-  },
-  "purchase_service": {
-    "name": "purchase_service",
-    "expectedAccounts": [
-      {
-        "name": "service_purchase",
-        "pda": true
-      },
-      {
-        "name": "service_listing",
-        "pda": false
-      },
-      {
-        "name": "buyer",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "service_purchase",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                101,
-                114,
-                118,
-                105,
-                99,
-                101,
-                95,
-                112,
-                117,
-                114,
-                99,
-                104,
-                97,
-                115,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "buyer"
-            },
-            {
-              "kind": "account",
-              "path": "service_listing"
-            }
-          ]
-        }
-      },
-      {
-        "name": "service_listing",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "buyer",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      197,
-      43,
-      201,
-      158,
-      119,
-      134,
-      66,
-      7
-    ],
-    "args": [
-      {
-        "name": "purchase_data",
-        "type": {
-          "defined": {
-            "name": "ServicePurchaseData"
-          }
-        }
-      }
-    ]
-  },
-  "record_x402_payment": {
-    "name": "record_x402_payment",
-    "expectedAccounts": [
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "payer",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "agent",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Agent account receiving the payment"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
-                101,
-                110,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "agent.owner",
-              "account": "Agent"
-            },
-            {
-              "kind": "arg",
-              "path": "agent_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "payer",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Payer who made the x402 payment (optional verification)"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "Record an x402 payment transaction on-chain",
-    "discriminator": [
-      247,
-      255,
-      28,
-      60,
-      50,
-      13,
-      181,
-      137
-    ],
-    "args": [
-      {
-        "name": "agent_id",
-        "type": "string"
-      },
-      {
-        "name": "payment_data",
-        "type": {
-          "defined": {
-            "name": "X402PaymentData"
-          }
-        }
-      }
-    ]
-  },
-  "refund_expired_escrow": {
-    "name": "refund_expired_escrow",
-    "expectedAccounts": [
-      {
-        "name": "escrow",
-        "pda": true
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "escrow_token_account",
-        "pda": true
-      },
-      {
-        "name": "client_refund_account",
-        "pda": true
-      },
-      {
-        "name": "payment_token",
-        "pda": false
-      },
-      {
-        "name": "caller",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "escrow",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                101,
-                115,
-                99,
-                114,
-                111,
-                119
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.task_id",
-              "account": "Escrow"
-            }
-          ]
-        }
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "escrow_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.payment_token",
-              "account": "Escrow"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "client_refund_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "account",
-              "path": "escrow.client",
-              "account": "Escrow"
-            },
-            {
-              "kind": "const",
-              "value": [
-                6,
-                221,
-                246,
-                225,
-                215,
-                101,
-                161,
-                147,
-                217,
-                203,
-                225,
-                70,
-                206,
-                235,
-                121,
-                172,
-                28,
-                180,
-                133,
-                237,
-                95,
-                91,
-                55,
-                145,
-                58,
-                140,
-                245,
-                133,
-                126,
-                255,
-                0,
-                169
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "escrow.payment_token",
-              "account": "Escrow"
-            }
-          ],
-          "program": {
-            "kind": "const",
-            "value": [
-              140,
-              151,
-              37,
-              143,
-              78,
-              36,
-              137,
-              241,
-              187,
-              61,
-              16,
-              41,
-              20,
-              142,
-              13,
-              131,
-              11,
-              90,
-              19,
-              153,
-              218,
-              255,
-              16,
-              132,
-              4,
-              142,
-              123,
-              216,
-              219,
-              233,
-              248,
-              89
-            ]
-          }
-        }
-      },
-      {
-        "name": "payment_token",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The token mint used for payments"
-        ]
-      },
-      {
-        "name": "caller",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Can be called by anyone for expired escrows"
-        ]
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      40,
-      9,
-      115,
-      148,
-      140,
-      7,
-      157,
-      160
-    ],
-    "args": []
   },
   "register_agent": {
     "name": "register_agent",
     "expectedAccounts": [
       {
         "name": "agent_account",
+        "pda": true
+      },
+      {
+        "name": "staking_account",
         "pda": true
       },
       {
@@ -8942,6 +2597,35 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             {
               "kind": "arg",
               "path": "agent_id"
+            }
+          ]
+        }
+      },
+      {
+        "name": "staking_account",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Staking account - REQUIRED for Sybil resistance (must have >= 1K GHOST staked)"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "signer"
             }
           ]
         }
@@ -9008,6 +2692,14 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       {
         "name": "_agent_id",
         "type": "string"
+      },
+      {
+        "name": "pricing_model",
+        "type": {
+          "defined": {
+            "name": "PricingModel"
+          }
+        }
       }
     ]
   },
@@ -9212,417 +2904,14 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       {
         "name": "description",
         "type": "string"
-      }
-    ]
-  },
-  "register_extension": {
-    "name": "register_extension",
-    "expectedAccounts": [
-      {
-        "name": "extension",
-        "pda": true
       },
       {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "developer",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "extension",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Extension account with collision prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                101,
-                120,
-                116,
-                101,
-                110,
-                115,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "developer"
-            },
-            {
-              "kind": "arg",
-              "path": "metadata.name"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting and spam prevention"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "developer"
-            }
-          ]
-        }
-      },
-      {
-        "name": "developer",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced developer verification"
-        ]
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "System program for account creation"
-        ],
-        "address": "11111111111111111111111111111111"
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      158,
-      205,
-      4,
-      17,
-      6,
-      106,
-      172,
-      148
-    ],
-    "args": [
-      {
-        "name": "metadata",
+        "name": "pricing_model",
         "type": {
           "defined": {
-            "name": "ExtensionMetadata"
+            "name": "PricingModel"
           }
         }
-      },
-      {
-        "name": "code_hash",
-        "type": "string"
-      },
-      {
-        "name": "revenue_share",
-        "type": "f64"
-      }
-    ]
-  },
-  "reject_work_delivery": {
-    "name": "reject_work_delivery",
-    "expectedAccounts": [
-      {
-        "name": "work_order",
-        "pda": false
-      },
-      {
-        "name": "work_delivery",
-        "pda": false
-      },
-      {
-        "name": "client",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "work_order",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "work_delivery",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "client",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      123,
-      7,
-      32,
-      171,
-      41,
-      109,
-      58,
-      250
-    ],
-    "args": [
-      {
-        "name": "rejection_reason",
-        "type": "string"
-      },
-      {
-        "name": "requested_changes",
-        "type": {
-          "option": {
-            "vec": "string"
-          }
-        }
-      }
-    ]
-  },
-  "replicate_agent": {
-    "name": "replicate_agent",
-    "expectedAccounts": [
-      {
-        "name": "replication_template",
-        "pda": false
-      },
-      {
-        "name": "new_agent",
-        "pda": true
-      },
-      {
-        "name": "replication_record",
-        "pda": true
-      },
-      {
-        "name": "royalty_stream",
-        "pda": true
-      },
-      {
-        "name": "buyer",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "replication_template",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "new_agent",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
-                101,
-                110,
-                116
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "buyer"
-            }
-          ]
-        }
-      },
-      {
-        "name": "replication_record",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                112,
-                108,
-                105,
-                99,
-                97,
-                116,
-                105,
-                111,
-                110,
-                95,
-                114,
-                101,
-                99,
-                111,
-                114,
-                100
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "replication_template"
-            },
-            {
-              "kind": "account",
-              "path": "buyer"
-            }
-          ]
-        }
-      },
-      {
-        "name": "royalty_stream",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                111,
-                121,
-                97,
-                108,
-                116,
-                121,
-                95,
-                115,
-                116,
-                114,
-                101,
-                97,
-                109
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "new_agent"
-            }
-          ]
-        }
-      },
-      {
-        "name": "buyer",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      252,
-      210,
-      89,
-      130,
-      31,
-      43,
-      39,
-      50
-    ],
-    "args": [
-      {
-        "name": "customization",
-        "type": {
-          "defined": {
-            "name": "AgentCustomization"
-          }
-        }
-      },
-      {
-        "name": "royalty_percentage",
-        "type": "u32"
       }
     ]
   },
@@ -9692,34 +2981,26 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "args": []
   },
-  "resolve_dispute": {
-    "name": "resolve_dispute",
+  "resolve_did_document": {
+    "name": "resolve_did_document",
     "expectedAccounts": [
       {
-        "name": "dispute",
+        "name": "did_document",
         "pda": true
       },
       {
-        "name": "arbitrator_registry",
-        "pda": true
-      },
-      {
-        "name": "arbitrator",
-        "pda": false
-      },
-      {
-        "name": "clock",
+        "name": "did_controller",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "dispute",
-        "writable": true,
+        "name": "did_document",
+        "writable": false,
         "signer": false,
         "optional": false,
         "docs": [
-          "Dispute account with canonical validation"
+          "DID document account"
         ],
         "pda": {
           "seeds": [
@@ -9728,1141 +3009,13 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
               "value": [
                 100,
                 105,
-                115,
-                112,
-                117,
-                116,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "dispute.transaction",
-              "account": "DisputeCase"
-            },
-            {
-              "kind": "account",
-              "path": "dispute.complainant",
-              "account": "DisputeCase"
-            },
-            {
-              "kind": "account",
-              "path": "dispute.reason",
-              "account": "DisputeCase"
-            }
-          ]
-        }
-      },
-      {
-        "name": "arbitrator_registry",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Arbitrator registry for authority validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                114,
-                98,
-                105,
-                116,
-                114,
-                97,
-                116,
+                100,
+                95,
+                100,
                 111,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "arbitrator",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced arbitrator verification"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      231,
-      6,
-      202,
-      6,
-      96,
-      103,
-      12,
-      230
-    ],
-    "args": [
-      {
-        "name": "resolution",
-        "type": "string"
-      },
-      {
-        "name": "award_to_complainant",
-        "type": "bool"
-      }
-    ]
-  },
-  "send_a2a_message": {
-    "name": "send_a2a_message",
-    "expectedAccounts": [
-      {
-        "name": "message",
-        "pda": true
-      },
-      {
-        "name": "session",
-        "pda": false
-      },
-      {
-        "name": "sender",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "message",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                50,
-                97,
-                95,
-                109,
-                101,
-                115,
-                115,
-                97,
-                103,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "session"
-            },
-            {
-              "kind": "account",
-              "path": "session.created_at",
-              "account": "A2ASession"
-            }
-          ]
-        }
-      },
-      {
-        "name": "session",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "sender",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      84,
-      12,
-      203,
-      77,
-      36,
-      199,
-      15,
-      83
-    ],
-    "args": [
-      {
-        "name": "message_data",
-        "type": {
-          "defined": {
-            "name": "A2AMessageData"
-          }
-        }
-      }
-    ]
-  },
-  "send_communication_message": {
-    "name": "send_communication_message",
-    "expectedAccounts": [
-      {
-        "name": "message",
-        "pda": true
-      },
-      {
-        "name": "session",
-        "pda": false
-      },
-      {
-        "name": "sender",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "message",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
                 99,
-                111,
-                109,
-                109,
-                95,
-                109,
-                101,
-                115,
-                115,
-                97,
-                103,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "session"
-            },
-            {
-              "kind": "account",
-              "path": "session.created_at",
-              "account": "CommunicationSession"
-            }
-          ]
-        }
-      },
-      {
-        "name": "session",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "sender",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "Sends messages in communication sessions between any participant types",
-    "discriminator": [
-      253,
-      76,
-      105,
-      46,
-      157,
-      79,
-      116,
-      241
-    ],
-    "args": [
-      {
-        "name": "message_data",
-        "type": {
-          "defined": {
-            "name": "CommunicationMessageData"
-          }
-        }
-      }
-    ]
-  },
-  "send_enhanced_message": {
-    "name": "send_enhanced_message",
-    "expectedAccounts": [
-      {
-        "name": "message",
-        "pda": true
-      },
-      {
-        "name": "channel",
-        "pda": false
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "sender",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "message",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                109,
-                101,
-                115,
-                115,
-                97,
-                103,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "channel"
-            },
-            {
-              "kind": "arg",
-              "path": "message_id"
-            }
-          ]
-        }
-      },
-      {
-        "name": "channel",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "reentrancy_guard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
                 117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "sender",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      157,
-      174,
-      222,
-      205,
-      233,
-      240,
-      244,
-      136
-    ],
-    "args": [
-      {
-        "name": "message_id",
-        "type": "string"
-      },
-      {
-        "name": "content",
-        "type": "string"
-      },
-      {
-        "name": "message_type",
-        "type": {
-          "defined": {
-            "name": "MessageType"
-          }
-        }
-      },
-      {
-        "name": "metadata",
-        "type": {
-          "defined": {
-            "name": "MessageMetadata"
-          }
-        }
-      },
-      {
-        "name": "is_encrypted",
-        "type": "bool"
-      }
-    ]
-  },
-  "send_message": {
-    "name": "send_message",
-    "expectedAccounts": [
-      {
-        "name": "message",
-        "pda": true
-      },
-      {
-        "name": "channel",
-        "pda": false
-      },
-      {
-        "name": "sender",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "message",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
                 109,
-                101,
-                115,
-                115,
-                97,
-                103,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "channel"
-            },
-            {
-              "kind": "account",
-              "path": "channel.message_count",
-              "account": "Channel"
-            }
-          ]
-        }
-      },
-      {
-        "name": "channel",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "sender",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      57,
-      40,
-      34,
-      178,
-      189,
-      10,
-      65,
-      26
-    ],
-    "args": [
-      {
-        "name": "message_data",
-        "type": {
-          "defined": {
-            "name": "MessageData"
-          }
-        }
-      }
-    ]
-  },
-  "stake_tokens": {
-    "name": "stake_tokens",
-    "expectedAccounts": [
-      {
-        "name": "staking_account",
-        "pda": true
-      },
-      {
-        "name": "staking_config",
-        "pda": true
-      },
-      {
-        "name": "ghost_mint",
-        "pda": false
-      },
-      {
-        "name": "user_token_account",
-        "pda": false
-      },
-      {
-        "name": "staking_vault",
-        "pda": false
-      },
-      {
-        "name": "owner",
-        "pda": false
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "staking_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            }
-          ]
-        }
-      },
-      {
-        "name": "staking_config",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103,
-                95,
-                99,
-                111,
-                110,
-                102,
-                105,
-                103
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "ghost_mint",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "GHOST token mint (for transfer fee calculation)"
-        ]
-      },
-      {
-        "name": "user_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User's token account"
-        ]
-      },
-      {
-        "name": "staking_vault",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Staking vault (holds staked tokens)"
-        ]
-      },
-      {
-        "name": "owner",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "token_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "Stake tokens with optional lockup tier (0-5) Tier 0: No lockup, Tier 1: 1 month, Tier 2: 3 months, etc.",
-    "discriminator": [
-      136,
-      126,
-      91,
-      162,
-      40,
-      131,
-      13,
-      127
-    ],
-    "args": [
-      {
-        "name": "amount",
-        "type": "u64"
-      },
-      {
-        "name": "lockup_tier",
-        "type": "u8"
-      }
-    ]
-  },
-  "submit_dispute_evidence": {
-    "name": "submit_dispute_evidence",
-    "expectedAccounts": [
-      {
-        "name": "dispute",
-        "pda": true
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "submitter",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "dispute",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Dispute account with canonical bump validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                100,
-                105,
-                115,
-                112,
-                117,
-                116,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "dispute.transaction",
-              "account": "DisputeCase"
-            },
-            {
-              "kind": "account",
-              "path": "dispute.complainant",
-              "account": "DisputeCase"
-            },
-            {
-              "kind": "account",
-              "path": "dispute.reason",
-              "account": "DisputeCase"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "submitter"
-            }
-          ]
-        }
-      },
-      {
-        "name": "submitter",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced submitter verification"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for rate limiting and timing validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      177,
-      174,
-      100,
-      125,
-      106,
-      213,
-      241,
-      22
-    ],
-    "args": [
-      {
-        "name": "evidence_type",
-        "type": "string"
-      },
-      {
-        "name": "evidence_data",
-        "type": "string"
-      }
-    ]
-  },
-  "submit_evidence_batch": {
-    "name": "submit_evidence_batch",
-    "expectedAccounts": [
-      {
-        "name": "dispute",
-        "pda": true
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "submitter",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "dispute",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Dispute account with canonical bump validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                100,
-                105,
-                115,
-                112,
-                117,
-                116,
-                101
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "dispute.transaction",
-              "account": "DisputeCase"
-            },
-            {
-              "kind": "account",
-              "path": "dispute.complainant",
-              "account": "DisputeCase"
-            },
-            {
-              "kind": "account",
-              "path": "dispute.reason",
-              "account": "DisputeCase"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "submitter"
-            }
-          ]
-        }
-      },
-      {
-        "name": "submitter",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced submitter verification"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for rate limiting and timing validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      168,
-      150,
-      145,
-      75,
-      38,
-      203,
-      43,
-      9
-    ],
-    "args": [
-      {
-        "name": "evidence_batch",
-        "type": {
-          "vec": {
-            "defined": {
-              "name": "EvidenceBatchItem"
-            }
-          }
-        }
-      }
-    ]
-  },
-  "submit_work_delivery": {
-    "name": "submit_work_delivery",
-    "expectedAccounts": [
-      {
-        "name": "work_delivery",
-        "pda": true
-      },
-      {
-        "name": "work_order",
-        "pda": false
-      },
-      {
-        "name": "provider",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "work_delivery",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                119,
-                111,
-                114,
-                107,
-                95,
-                100,
-                101,
-                108,
-                105,
-                118,
-                101,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "work_order"
-            }
-          ]
-        }
-      },
-      {
-        "name": "work_order",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "provider",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      151,
-      198,
-      209,
-      252,
-      41,
-      69,
-      106,
-      93
-    ],
-    "args": [
-      {
-        "name": "delivery_data",
-        "type": {
-          "defined": {
-            "name": "WorkDeliveryData"
-          }
-        }
-      }
-    ]
-  },
-  "submit_x402_rating": {
-    "name": "submit_x402_rating",
-    "expectedAccounts": [
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "rater",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "agent",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Agent account receiving the rating"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
                 101,
                 110,
                 116
@@ -10870,23 +3023,493 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             },
             {
               "kind": "account",
-              "path": "agent.owner",
-              "account": "Agent"
-            },
-            {
-              "kind": "arg",
-              "path": "agent_id"
+              "path": "did_controller"
             }
           ]
         }
       },
       {
-        "name": "rater",
+        "name": "did_controller",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Controller public key (used for PDA derivation)"
+        ]
+      }
+    ],
+    "docs": "Resolve a DID document (read-only)  Returns the DID document data for off-chain resolution. This instruction exists for compatibility with standard DID resolution flows.",
+    "discriminator": [
+      168,
+      180,
+      218,
+      211,
+      184,
+      19,
+      102,
+      12
+    ],
+    "args": []
+  },
+  "revoke_credential": {
+    "name": "revoke_credential",
+    "expectedAccounts": [
+      {
+        "name": "credential",
+        "pda": false
+      },
+      {
+        "name": "issuer",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "credential",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "issuer",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      }
+    ],
+    "docs": "Revoke an issued credential Only the original issuer can revoke.",
+    "discriminator": [
+      38,
+      123,
+      95,
+      95,
+      223,
+      158,
+      169,
+      87
+    ],
+    "args": []
+  },
+  "slash_stake": {
+    "name": "slash_stake",
+    "expectedAccounts": [
+      {
+        "name": "staking_account",
+        "pda": true
+      },
+      {
+        "name": "staking_config",
+        "pda": false
+      },
+      {
+        "name": "staking_vault",
+        "pda": false
+      },
+      {
+        "name": "treasury",
+        "pda": false
+      },
+      {
+        "name": "authority",
+        "pda": false
+      },
+      {
+        "name": "token_program",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "staking_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103
+              ]
+            },
+            {
+              "kind": "arg",
+              "path": "owner"
+            }
+          ]
+        }
+      },
+      {
+        "name": "staking_config",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "staking_vault",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "treasury",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "authority",
+        "writable": false,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "token_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+      }
+    ],
+    "docs": "Slash staked tokens (admin only, for fraud/disputes)",
+    "discriminator": [
+      190,
+      242,
+      137,
+      27,
+      41,
+      18,
+      233,
+      37
+    ],
+    "args": [
+      {
+        "name": "owner",
+        "type": "pubkey"
+      },
+      {
+        "name": "reason",
+        "type": {
+          "defined": {
+            "name": "SlashReason"
+          }
+        }
+      },
+      {
+        "name": "custom_amount",
+        "type": {
+          "option": "u64"
+        }
+      }
+    ]
+  },
+  "stake_ghost": {
+    "name": "stake_ghost",
+    "expectedAccounts": [
+      {
+        "name": "staking_account",
+        "pda": true
+      },
+      {
+        "name": "owner_token_account",
+        "pda": false
+      },
+      {
+        "name": "staking_vault",
+        "pda": false
+      },
+      {
+        "name": "staking_config",
+        "pda": false
+      },
+      {
+        "name": "owner",
+        "pda": false
+      },
+      {
+        "name": "token_program",
+        "pda": false
+      },
+      {
+        "name": "system_program",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "staking_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                115,
+                116,
+                97,
+                107,
+                105,
+                110,
+                103
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "owner"
+            }
+          ]
+        }
+      },
+      {
+        "name": "owner_token_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "staking_vault",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "staking_config",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "owner",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "token_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Stake GHOST tokens to boost agent reputation",
+    "discriminator": [
+      5,
+      196,
+      24,
+      54,
+      196,
+      56,
+      173,
+      191
+    ],
+    "args": [
+      {
+        "name": "amount",
+        "type": "u64"
+      },
+      {
+        "name": "lock_duration",
+        "type": "i64"
+      }
+    ]
+  },
+  "submit_delivery": {
+    "name": "submit_delivery",
+    "expectedAccounts": [
+      {
+        "name": "escrow",
+        "pda": true
+      },
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "agent_owner",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "escrow",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                103,
+                104,
+                111,
+                115,
+                116,
+                95,
+                112,
+                114,
+                111,
+                116,
+                101,
+                99,
+                116
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "escrow.client",
+              "account": "GhostProtectEscrow"
+            },
+            {
+              "kind": "account",
+              "path": "escrow.escrow_id",
+              "account": "GhostProtectEscrow"
+            }
+          ]
+        }
+      },
+      {
+        "name": "agent",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "agent_owner",
+        "writable": false,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      }
+    ],
+    "docs": "Agent submits work delivery proof",
+    "discriminator": [
+      217,
+      177,
+      33,
+      54,
+      136,
+      185,
+      123,
+      96
+    ],
+    "args": [
+      {
+        "name": "delivery_proof",
+        "type": "string"
+      }
+    ]
+  },
+  "submit_service_rating": {
+    "name": "submit_service_rating",
+    "expectedAccounts": [
+      {
+        "name": "reputation_metrics",
+        "pda": true
+      },
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "client",
+        "pda": false
+      },
+      {
+        "name": "clock",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "reputation_metrics",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Reputation metrics account"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                114,
+                101,
+                112,
+                117,
+                116,
+                97,
+                116,
+                105,
+                111,
+                110,
+                95,
+                109,
+                101,
+                116,
+                114,
+                105,
+                99,
+                115
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            }
+          ]
+        }
+      },
+      {
+        "name": "agent",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent account"
+        ]
+      },
+      {
+        "name": "client",
         "writable": false,
         "signer": true,
         "optional": false,
         "docs": [
-          "User submitting the rating (must have paid via x402)"
+          "Client submitting the rating"
         ]
       },
       {
@@ -10895,104 +3518,47 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "signer": false,
         "optional": false,
         "docs": [
-          "Clock sysvar for timestamp validation"
+          "Clock for timestamps"
         ],
         "address": "SysvarC1ock11111111111111111111111111111111"
       }
     ],
-    "docs": "Submit a reputation rating from an x402 transaction",
+    "docs": "Submit a service rating after a completed transaction  Allows clients to rate agent service quality (1-5 scale). Ratings are factored into the overall reputation score calculation.  Parameters: - rating: Service rating from 1 (poor) to 5 (excellent) - payment_signature: Associated PayAI transaction signature",
     "discriminator": [
-      207,
-      232,
-      84,
-      144,
-      125,
-      143,
-      137,
-      30
+      23,
+      160,
+      228,
+      88,
+      168,
+      145,
+      129,
+      19
     ],
     "args": [
       {
-        "name": "agent_id",
-        "type": "string"
+        "name": "rating",
+        "type": "u8"
       },
       {
-        "name": "rating_data",
-        "type": {
-          "defined": {
-            "name": "X402RatingData"
-          }
-        }
+        "name": "payment_signature",
+        "type": "string"
       }
     ]
   },
-  "tally_votes": {
-    "name": "tally_votes",
-    "expectedAccounts": [
-      {
-        "name": "proposal",
-        "pda": false
-      },
-      {
-        "name": "authority",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "proposal",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "Tally votes and finalize proposal voting",
-    "discriminator": [
-      144,
-      82,
-      0,
-      72,
-      160,
-      132,
-      35,
-      121
-    ],
-    "args": []
-  },
-  "unstake_tokens": {
-    "name": "unstake_tokens",
+  "unstake_ghost": {
+    "name": "unstake_ghost",
     "expectedAccounts": [
       {
         "name": "staking_account",
         "pda": true
       },
       {
-        "name": "staking_config",
-        "pda": true
-      },
-      {
-        "name": "ghost_mint",
-        "pda": false
-      },
-      {
-        "name": "user_token_account",
-        "pda": false
-      },
-      {
         "name": "staking_vault",
         "pda": false
       },
       {
-        "name": "vault_authority",
-        "pda": true
+        "name": "owner_token_account",
+        "pda": false
       },
       {
         "name": "owner",
@@ -11032,102 +3598,18 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         }
       },
       {
-        "name": "staking_config",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103,
-                95,
-                99,
-                111,
-                110,
-                102,
-                105,
-                103
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "ghost_mint",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "GHOST token mint (for transfer fee calculation)"
-        ]
-      },
-      {
-        "name": "user_token_account",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User's token account"
-        ]
-      },
-      {
         "name": "staking_vault",
         "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [
-          "Staking vault"
-        ]
+        "docs": []
       },
       {
-        "name": "vault_authority",
-        "writable": false,
+        "name": "owner_token_account",
+        "writable": true,
         "signer": false,
         "optional": false,
-        "docs": [
-          "Vault authority PDA"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                115,
-                116,
-                97,
-                107,
-                105,
-                110,
-                103,
-                95,
-                118,
-                97,
-                117,
-                108,
-                116,
-                95,
-                97,
-                117,
-                116,
-                104,
-                111,
-                114,
-                105,
-                116,
-                121
-              ]
-            }
-          ]
-        }
+        "docs": []
       },
       {
         "name": "owner",
@@ -11141,122 +3623,22 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "writable": false,
         "signer": false,
         "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "Unstake tokens (must not be locked)",
-    "discriminator": [
-      58,
-      119,
-      215,
-      143,
-      203,
-      223,
-      32,
-      86
-    ],
-    "args": [
-      {
-        "name": "amount",
-        "type": "u64"
-      }
-    ]
-  },
-  "update_a2a_status": {
-    "name": "update_a2a_status",
-    "expectedAccounts": [
-      {
-        "name": "status",
-        "pda": true
-      },
-      {
-        "name": "session",
-        "pda": false
-      },
-      {
-        "name": "updater",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "status",
-        "writable": true,
-        "signer": false,
-        "optional": false,
         "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                50,
-                97,
-                95,
-                115,
-                116,
-                97,
-                116,
-                117,
-                115
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "session"
-            }
-          ]
-        }
-      },
-      {
-        "name": "session",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "updater",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
+        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
       }
     ],
-    "docs": "",
+    "docs": "Unstake GHOST tokens after lock period expires",
     "discriminator": [
-      10,
-      122,
-      84,
-      103,
-      225,
-      186,
-      125,
-      183
+      252,
+      101,
+      172,
+      252,
+      1,
+      4,
+      12,
+      116
     ],
-    "args": [
-      {
-        "name": "status_data",
-        "type": {
-          "defined": {
-            "name": "A2AStatusData"
-          }
-        }
-      }
-    ]
+    "args": []
   },
   "update_agent": {
     "name": "update_agent",
@@ -11361,6 +3743,16 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       {
         "name": "_agent_id",
         "type": "string"
+      },
+      {
+        "name": "pricing_model",
+        "type": {
+          "option": {
+            "defined": {
+              "name": "PricingModel"
+            }
+          }
+        }
       }
     ]
   },
@@ -11540,375 +3932,69 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
-  "update_analytics_dashboard": {
-    "name": "update_analytics_dashboard",
+  "update_crosschain_status": {
+    "name": "update_crosschain_status",
     "expectedAccounts": [
       {
-        "name": "dashboard",
-        "pda": true
-      },
-      {
-        "name": "user_registry",
-        "pda": true
-      },
-      {
-        "name": "owner",
+        "name": "credential",
         "pda": false
       },
       {
-        "name": "clock",
+        "name": "issuer",
         "pda": false
       }
     ],
     "accounts": [
       {
-        "name": "dashboard",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Dashboard account with canonical validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                110,
-                97,
-                108,
-                121,
-                116,
-                105,
-                99,
-                115
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            },
-            {
-              "kind": "account",
-              "path": "dashboard.dashboard_id",
-              "account": "AnalyticsDashboard"
-            }
-          ]
-        }
-      },
-      {
-        "name": "user_registry",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "User registry for rate limiting"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                117,
-                115,
-                101,
-                114,
-                95,
-                114,
-                101,
-                103,
-                105,
-                115,
-                116,
-                114,
-                121
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "owner"
-            }
-          ]
-        }
-      },
-      {
-        "name": "owner",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced owner verification"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for rate limiting"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      184,
-      35,
-      106,
-      114,
-      27,
-      86,
-      233,
-      32
-    ],
-    "args": [
-      {
-        "name": "new_metrics",
-        "type": "string"
-      }
-    ]
-  },
-  "update_auction_reserve_price": {
-    "name": "update_auction_reserve_price",
-    "expectedAccounts": [
-      {
-        "name": "auction",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "auction",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Auction account with canonical validation"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                117,
-                99,
-                116,
-                105,
-                111,
-                110
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "auction.agent",
-              "account": "AuctionMarketplace"
-            },
-            {
-              "kind": "account",
-              "path": "auction.creator",
-              "account": "AuctionMarketplace"
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification - only creator can update reserve"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      97,
-      2,
-      209,
-      24,
-      27,
-      236,
-      50,
-      174
-    ],
-    "args": [
-      {
-        "name": "new_reserve_price",
-        "type": "u64"
-      },
-      {
-        "name": "reveal_hidden",
-        "type": "bool"
-      }
-    ]
-  },
-  "update_channel_settings": {
-    "name": "update_channel_settings",
-    "expectedAccounts": [
-      {
-        "name": "channel",
-        "pda": false
-      },
-      {
-        "name": "reentrancy_guard",
-        "pda": true
-      },
-      {
-        "name": "authority",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "channel",
+        "name": "credential",
         "writable": true,
         "signer": false,
         "optional": false,
         "docs": []
       },
       {
-        "name": "reentrancy_guard",
+        "name": "issuer",
         "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                114,
-                101,
-                101,
-                110,
-                116,
-                114,
-                97,
-                110,
-                99,
-                121,
-                95,
-                103,
-                117,
-                97,
-                114,
-                100
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": false,
         "signer": true,
         "optional": false,
         "docs": []
       }
     ],
-    "docs": "",
-    "discriminator": [
-      149,
-      67,
-      63,
-      108,
-      132,
-      122,
-      95,
-      128
-    ],
-    "args": [
-      {
-        "name": "new_metadata",
-        "type": {
-          "defined": {
-            "name": "ChannelMetadata"
-          }
-        }
-      }
-    ]
-  },
-  "update_dynamic_pricing": {
-    "name": "update_dynamic_pricing",
-    "expectedAccounts": [
-      {
-        "name": "engine",
-        "pda": false
-      },
-      {
-        "name": "updater",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "engine",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "updater",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      }
-    ],
-    "docs": "",
+    "docs": "Update the cross-chain sync status after syncing to Crossmint",
     "discriminator": [
       22,
-      97,
-      198,
-      34,
-      14,
-      133,
-      83,
-      168
+      167,
+      59,
+      238,
+      22,
+      231,
+      239,
+      146
     ],
     "args": [
       {
-        "name": "demand_metrics",
+        "name": "crossmint_credential_id",
+        "type": "string"
+      },
+      {
+        "name": "status",
         "type": {
           "defined": {
-            "name": "DemandMetrics"
+            "name": "CrossChainStatus"
           }
         }
       }
     ]
   },
-  "update_market_analytics": {
-    "name": "update_market_analytics",
+  "update_did_document": {
+    "name": "update_did_document",
     "expectedAccounts": [
       {
-        "name": "market_analytics",
+        "name": "did_document",
         "pda": true
       },
       {
-        "name": "authority",
+        "name": "controller",
         "pda": false
       },
       {
@@ -11918,236 +4004,27 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "accounts": [
       {
-        "name": "market_analytics",
+        "name": "did_document",
         "writable": true,
         "signer": false,
         "optional": false,
         "docs": [
-          "Market analytics account with canonical bump validation"
+          "DID document account with canonical PDA validation"
         ],
         "pda": {
           "seeds": [
             {
               "kind": "const",
               "value": [
-                109,
-                97,
-                114,
-                107,
-                101,
-                116,
+                100,
+                105,
+                100,
                 95,
-                97,
-                110,
-                97,
-                108,
-                121,
-                116,
-                105,
+                100,
+                111,
                 99,
-                115
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "market_analytics.period_start",
-              "account": "MarketAnalytics"
-            },
-            {
-              "kind": "account",
-              "path": "market_analytics.period_end",
-              "account": "MarketAnalytics"
-            }
-          ]
-        }
-      },
-      {
-        "name": "authority",
-        "writable": false,
-        "signer": true,
-        "optional": false,
-        "docs": [
-          "Enhanced authority verification"
-        ]
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "Clock sysvar for timestamp validation"
-        ],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      156,
-      13,
-      81,
-      78,
-      11,
-      3,
-      54,
-      178
-    ],
-    "args": [
-      {
-        "name": "volume",
-        "type": "u64"
-      },
-      {
-        "name": "price",
-        "type": "u64"
-      }
-    ]
-  },
-  "update_participant_status": {
-    "name": "update_participant_status",
-    "expectedAccounts": [
-      {
-        "name": "status",
-        "pda": true
-      },
-      {
-        "name": "participant",
-        "pda": false
-      },
-      {
-        "name": "system_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "status",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                112,
-                97,
-                114,
-                116,
-                105,
-                99,
-                105,
-                112,
-                97,
-                110,
-                116,
-                95,
-                115,
-                116,
-                97,
-                116,
                 117,
-                115
-              ]
-            },
-            {
-              "kind": "account",
-              "path": "participant"
-            }
-          ]
-        }
-      },
-      {
-        "name": "participant",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "system_program",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "11111111111111111111111111111111"
-      }
-    ],
-    "docs": "Updates participant status for service discovery and matching",
-    "discriminator": [
-      209,
-      212,
-      168,
-      98,
-      6,
-      160,
-      241,
-      123
-    ],
-    "args": [
-      {
-        "name": "status_data",
-        "type": {
-          "defined": {
-            "name": "ParticipantStatusData"
-          }
-        }
-      }
-    ]
-  },
-  "update_transfer_fee_config": {
-    "name": "update_transfer_fee_config",
-    "expectedAccounts": [
-      {
-        "name": "authority",
-        "pda": false
-      },
-      {
-        "name": "mint",
-        "pda": false
-      },
-      {
-        "name": "agent",
-        "pda": true
-      },
-      {
-        "name": "token_program",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "authority",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "mint",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The mint to initialize transfer fees for"
-        ]
-      },
-      {
-        "name": "agent",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [
-          "The agent that owns this mint"
-        ],
-        "pda": {
-          "seeds": [
-            {
-              "kind": "const",
-              "value": [
-                97,
-                103,
+                109,
                 101,
                 110,
                 116
@@ -12155,41 +4032,444 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
             },
             {
               "kind": "account",
-              "path": "authority"
+              "path": "controller"
             }
           ]
         }
       },
       {
-        "name": "token_program",
+        "name": "controller",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Controller of the DID (must match document controller)"
+        ]
+      },
+      {
+        "name": "clock",
         "writable": false,
         "signer": false,
         "optional": false,
         "docs": [
-          "Token-2022 program"
+          "Clock sysvar for timestamp validation"
         ],
-        "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        "address": "SysvarC1ock11111111111111111111111111111111"
       }
     ],
-    "docs": "",
+    "docs": "Update an existing DID document  Add or remove verification methods and service endpoints. Only the controller can update the DID document.  Parameters: - add_verification_method: Optional verification method to add - remove_verification_method_id: Optional method ID to remove - add_service_endpoint: Optional service endpoint to add - remove_service_endpoint_id: Optional service ID to remove",
     "discriminator": [
-      167,
-      83,
-      107,
-      237,
-      1,
-      210,
-      249,
-      1
+      64,
+      216,
+      17,
+      91,
+      205,
+      94,
+      45,
+      57
     ],
     "args": [
       {
-        "name": "params",
+        "name": "add_verification_method",
         "type": {
-          "defined": {
-            "name": "TransferFeeConfigParams"
+          "option": {
+            "defined": {
+              "name": "VerificationMethod"
+            }
           }
         }
+      },
+      {
+        "name": "remove_verification_method_id",
+        "type": {
+          "option": "string"
+        }
+      },
+      {
+        "name": "add_service_endpoint",
+        "type": {
+          "option": {
+            "defined": {
+              "name": "ServiceEndpoint"
+            }
+          }
+        }
+      },
+      {
+        "name": "remove_service_endpoint_id",
+        "type": {
+          "option": "string"
+        }
+      }
+    ]
+  },
+  "update_protocol_config": {
+    "name": "update_protocol_config",
+    "expectedAccounts": [
+      {
+        "name": "config",
+        "pda": true
+      },
+      {
+        "name": "authority",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "config",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                112,
+                114,
+                111,
+                116,
+                111,
+                99,
+                111,
+                108,
+                95,
+                99,
+                111,
+                110,
+                102,
+                105,
+                103
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "name": "authority",
+        "writable": false,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      }
+    ],
+    "docs": "Update protocol configuration parameters",
+    "discriminator": [
+      197,
+      97,
+      123,
+      54,
+      221,
+      168,
+      11,
+      135
+    ],
+    "args": [
+      {
+        "name": "escrow_fee_bps",
+        "type": {
+          "option": "u16"
+        }
+      },
+      {
+        "name": "agent_registration_fee",
+        "type": {
+          "option": "u64"
+        }
+      },
+      {
+        "name": "listing_fee",
+        "type": {
+          "option": "u64"
+        }
+      },
+      {
+        "name": "dispute_fee_bps",
+        "type": {
+          "option": "u16"
+        }
+      },
+      {
+        "name": "fees_enabled",
+        "type": {
+          "option": "bool"
+        }
+      },
+      {
+        "name": "treasury",
+        "type": {
+          "option": "pubkey"
+        }
+      },
+      {
+        "name": "buyback_pool",
+        "type": {
+          "option": "pubkey"
+        }
+      },
+      {
+        "name": "moderator_pool",
+        "type": {
+          "option": "pubkey"
+        }
+      }
+    ]
+  },
+  "update_reputation_tags": {
+    "name": "update_reputation_tags",
+    "expectedAccounts": [
+      {
+        "name": "reputation_metrics",
+        "pda": true
+      },
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "authority",
+        "pda": false
+      },
+      {
+        "name": "clock",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "reputation_metrics",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Reputation metrics account"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                114,
+                101,
+                112,
+                117,
+                116,
+                97,
+                116,
+                105,
+                111,
+                110,
+                95,
+                109,
+                101,
+                116,
+                114,
+                105,
+                99,
+                115
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            }
+          ]
+        }
+      },
+      {
+        "name": "agent",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent account"
+        ]
+      },
+      {
+        "name": "authority",
+        "writable": false,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Authority (can be the agent owner or authorized updater)"
+        ]
+      },
+      {
+        "name": "clock",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Clock for timestamps"
+        ],
+        "address": "SysvarC1ock11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Update reputation tags for an agent  Adds or updates granular reputation tags with confidence scores. Tags are categorized into skill, behavior, and compliance tags. Each tag has a confidence score (0-10000 basis points) and evidence count.  Tag decay: Tags automatically decay at 10 bp/day and become stale after 90 days. This ensures reputation data stays current and reflects recent performance.  Parameters: - skill_tags: Skill tags to add (e.g., \"rust\", \"smart-contracts\") - max 20 - behavior_tags: Behavior tags (e.g., \"responsive\", \"reliable\") - max 20 - compliance_tags: Compliance tags (e.g., \"kyc-verified\") - max 10 - tag_scores: Tag scores with confidence and evidence - max 50",
+    "discriminator": [
+      206,
+      96,
+      254,
+      186,
+      129,
+      180,
+      103,
+      198
+    ],
+    "args": [
+      {
+        "name": "skill_tags",
+        "type": {
+          "vec": "string"
+        }
+      },
+      {
+        "name": "behavior_tags",
+        "type": {
+          "vec": "string"
+        }
+      },
+      {
+        "name": "compliance_tags",
+        "type": {
+          "vec": "string"
+        }
+      },
+      {
+        "name": "tag_scores",
+        "type": {
+          "vec": {
+            "defined": {
+              "name": "TagScore"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "update_source_reputation": {
+    "name": "update_source_reputation",
+    "expectedAccounts": [
+      {
+        "name": "reputation_metrics",
+        "pda": true
+      },
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "authority",
+        "pda": false
+      },
+      {
+        "name": "clock",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "reputation_metrics",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Reputation metrics account"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                114,
+                101,
+                112,
+                117,
+                116,
+                97,
+                116,
+                105,
+                111,
+                110,
+                95,
+                109,
+                101,
+                116,
+                114,
+                105,
+                99,
+                115
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            }
+          ]
+        }
+      },
+      {
+        "name": "agent",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent account"
+        ]
+      },
+      {
+        "name": "authority",
+        "writable": false,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Authority (can be oracle, agent owner, or authorized updater)"
+        ]
+      },
+      {
+        "name": "clock",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Clock for timestamps"
+        ],
+        "address": "SysvarC1ock11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Update reputation from a specific source  Updates or adds a reputation score from an external source (e.g., GitHub, custom webhook). Automatically aggregates all sources and detects conflicts.  Parameters: - source_name: Source identifier (e.g., \"github\", \"custom-webhook\") - score: Reputation score from source (0-1000) - weight: Source weight in basis points (0-10000) - data_points: Number of metrics contributing to score - reliability: Source reliability in basis points (0-10000)",
+    "discriminator": [
+      161,
+      240,
+      255,
+      69,
+      130,
+      227,
+      71,
+      123
+    ],
+    "args": [
+      {
+        "name": "source_name",
+        "type": "string"
+      },
+      {
+        "name": "score",
+        "type": "u16"
+      },
+      {
+        "name": "weight",
+        "type": "u16"
+      },
+      {
+        "name": "data_points",
+        "type": "u32"
+      },
+      {
+        "name": "reliability",
+        "type": "u16"
       }
     ]
   },
@@ -12330,77 +4610,6 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       {
         "name": "verified_at",
         "type": "i64"
-      }
-    ]
-  },
-  "verify_work_delivery": {
-    "name": "verify_work_delivery",
-    "expectedAccounts": [
-      {
-        "name": "work_order",
-        "pda": false
-      },
-      {
-        "name": "work_delivery",
-        "pda": false
-      },
-      {
-        "name": "client",
-        "pda": false
-      },
-      {
-        "name": "clock",
-        "pda": false
-      }
-    ],
-    "accounts": [
-      {
-        "name": "work_order",
-        "writable": true,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "work_delivery",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "client",
-        "writable": true,
-        "signer": true,
-        "optional": false,
-        "docs": []
-      },
-      {
-        "name": "clock",
-        "writable": false,
-        "signer": false,
-        "optional": false,
-        "docs": [],
-        "address": "SysvarC1ock11111111111111111111111111111111"
-      }
-    ],
-    "docs": "",
-    "discriminator": [
-      51,
-      21,
-      40,
-      11,
-      225,
-      15,
-      184,
-      230
-    ],
-    "args": [
-      {
-        "name": "verification_notes",
-        "type": {
-          "option": "string"
-        }
       }
     ]
   }

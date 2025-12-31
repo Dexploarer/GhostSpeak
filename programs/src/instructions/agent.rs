@@ -27,9 +27,11 @@ pub fn validate_agent_registration_inputs(
 /// Enhanced agent registration with 2025 security patterns
 ///
 /// Implements canonical PDA validation, anti-collision measures,
-/// and comprehensive security constraints following 2025 best practices
+/// and comprehensive security constraints following 2025 best practices.
+///
+/// **Sybil Resistance:** Requires minimum 1,000 GHOST staked (Basic tier) to register
 #[derive(Accounts)]
-#[instruction(agent_type: u8, name: String, description: String, metadata_uri: String, agent_id: String)]
+#[instruction(agent_type: u8, name: String, description: String, metadata_uri: String, agent_id: String, pricing_model: PricingModel)]
 pub struct RegisterAgent<'info> {
     /// Agent account with enhanced 2025 PDA security
     #[account(
@@ -44,6 +46,18 @@ pub struct RegisterAgent<'info> {
         bump
     )]
     pub agent_account: Box<Account<'info, Agent>>,
+
+    /// Staking account - REQUIRED for Sybil resistance (must have >= 1K GHOST staked)
+    #[account(
+        seeds = [
+            b"staking",
+            signer.key().as_ref()
+        ],
+        bump = staking_account.bump,
+        constraint = staking_account.owner == signer.key() @ GhostSpeakError::InvalidAgentOwner,
+        constraint = staking_account.has_api_access() @ GhostSpeakError::InsufficientStake
+    )]
+    pub staking_account: Account<'info, crate::state::staking::StakingAccount>,
 
     /// User registry with enhanced validation
     // #[account(
@@ -70,7 +84,7 @@ pub struct RegisterAgent<'info> {
 ///
 /// Implements canonical bump validation and comprehensive authority checks
 #[derive(Accounts)]
-#[instruction(agent_type: u8, name: Option<String>, description: Option<String>, metadata_uri: String, agent_id: String)]
+#[instruction(agent_type: u8, name: Option<String>, description: Option<String>, metadata_uri: String, agent_id: String, pricing_model: Option<PricingModel>)]
 pub struct UpdateAgent<'info> {
     /// Agent account with canonical PDA validation
     #[account(
@@ -204,6 +218,7 @@ pub fn register_agent(
     description: String,
     metadata_uri: String,
     _agent_id: String,
+    pricing_model: PricingModel,
 ) -> Result<()> {
     // Initialize agent registration
     let agent = &mut ctx.accounts.agent_account;
@@ -233,7 +248,7 @@ pub fn register_agent(
     agent.name = name.clone();
     agent.description = description.clone();
     agent.capabilities = vec!["general".to_string()]; // Single capability to avoid empty vec
-    agent.pricing_model = crate::PricingModel::Fixed;
+    agent.pricing_model = pricing_model;
     agent.reputation_score = 0;
     agent.total_jobs_completed = 0;
     agent.total_earnings = 0;
@@ -292,6 +307,7 @@ pub fn update_agent(
     description: Option<String>,
     metadata_uri: String,
     _agent_id: String,
+    pricing_model: Option<PricingModel>,
 ) -> Result<()> {
     // Process agent update
     {
@@ -332,6 +348,10 @@ pub fn update_agent(
 
         if let Some(desc_val) = description {
             agent.description = desc_val;
+        }
+
+        if let Some(pricing_val) = pricing_model {
+            agent.pricing_model = pricing_val;
         }
 
         agent.updated_at = clock.unix_timestamp;

@@ -13,6 +13,7 @@ import {
   Briefcase,
   Shield,
   Gavel,
+  Star,
   Menu,
   X,
   Moon,
@@ -33,16 +34,13 @@ const WalletConnectButton = dynamic(
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/agents', label: 'Agents', icon: Bot },
-  { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
-  { href: '/work-orders', label: 'Orders', icon: Briefcase }, // Shortened label
-  { href: '/escrow', label: 'Escrow', icon: Shield },
-  { href: '/governance', label: 'Gov', icon: Gavel }, // Shortened label
+  { href: '/ghost-score', label: 'Ghost Score', icon: Star },
 ]
 
 const marketingNavItems = [
+  { href: '/ghost-score', label: 'Ghost Score', icon: Star },
   { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText },
   { href: '/tokenomics', label: '$GHOST', icon: Coins },
-  { href: '/x402/discover', label: 'Discover', icon: Sparkles },
 ]
 
 export const Navigation: React.FC = () => {
@@ -63,8 +61,7 @@ export const Navigation: React.FC = () => {
   }, [])
 
   // Check if we're on a marketing/landing page where we shouldn't show the main app nav
-  const isMarketingPage =
-    pathname === '/' || pathname === '/tokenomics' || pathname?.startsWith('/x402/discover')
+  const isMarketingPage = pathname === '/' || pathname === '/tokenomics' || pathname?.startsWith('/ghost-score')
 
   // Hide navigation on dashboard routes - dashboard has its own sidebar
   const isDashboardPage = pathname?.startsWith('/dashboard') ?? false
@@ -121,9 +118,7 @@ export const Navigation: React.FC = () => {
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <div className="absolute inset-0 bg-lime-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <BrandLogo 
-                    className="relative z-10 w-8 h-8 object-contain transition-transform group-hover:scale-110 duration-300"
-                  />
+                  <BrandLogo className="relative z-10 w-8 h-8 object-contain transition-transform group-hover:scale-110 duration-300" />
                 </div>
                 <span
                   className={cn(

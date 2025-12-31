@@ -1,17 +1,10 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
-import {
-  Users,
-  Sparkles,
-  TrendingUp,
-  Clock,
-  Target,
-  ChevronRight,
-  Coins,
-} from 'lucide-react'
+import { Users, Sparkles, TrendingUp, Clock, Target, ChevronRight, Coins } from 'lucide-react'
 import { GhostIcon } from '@/components/shared/GhostIcon'
 
 interface TokenAllocation {
@@ -108,14 +101,14 @@ function TokenomicsDonut({
 }) {
   // Dynamic sizing for mobile
   const [chartSize, setChartSize] = useState(320)
-  
+
   useEffect(() => {
     const updateSize = () => {
       // Use smaller size on mobile screens
       const isMobile = window.innerWidth < 640
       setChartSize(isMobile ? 260 : 320)
     }
-    
+
     updateSize()
     window.addEventListener('resize', updateSize)
     return () => window.removeEventListener('resize', updateSize)
@@ -220,9 +213,15 @@ function TokenomicsDonut({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <GhostIcon variant="logo" size={chartSize < 300 ? 36 : 48} className="mx-auto mb-2 text-lime-500" />
+          <GhostIcon
+            variant="logo"
+            size={chartSize < 300 ? 36 : 48}
+            className="mx-auto mb-2 text-lime-500"
+          />
           <div className="text-2xl sm:text-3xl font-black text-white">$GHOST</div>
-          <div className="text-[10px] sm:text-xs font-mono text-zinc-500 mt-1">100% DISTRIBUTED</div>
+          <div className="text-[10px] sm:text-xs font-mono text-zinc-500 mt-1">
+            100% DISTRIBUTED
+          </div>
         </motion.div>
       </div>
     </div>
@@ -338,14 +337,15 @@ export default function TokenomicsPage() {
             </h1>
 
             <p className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-light px-2">
-              90% to the community. Transparent vesting. Built for
-              long-term value, not quick exits.
+              90% to the community. Transparent vesting. Built for long-term value, not quick exits.
             </p>
 
             {/* Token Contract Address */}
             <div className="mt-6 sm:mt-8 space-y-3">
               <div className="inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-zinc-900/80 border border-zinc-800">
-                <span className="text-xs text-zinc-500 font-mono uppercase tracking-wider">CA:</span>
+                <span className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
+                  CA:
+                </span>
                 <code className="text-xs sm:text-sm font-mono text-lime-500 break-all select-all">
                   DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump
                 </code>
@@ -354,8 +354,8 @@ export default function TokenomicsPage() {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-zinc-500 max-w-lg mx-auto">
-                $GHOST launched on Solana mainnet to fund the GhostSpeak protocol&apos;s mainnet deployment.
-                Token governance activates when the protocol goes live on mainnet.
+                $GHOST launched on Solana mainnet to fund the GhostSpeak protocol&apos;s mainnet
+                deployment. Token governance activates when the protocol goes live on mainnet.
               </p>
             </div>
           </motion.div>
@@ -401,7 +401,9 @@ export default function TokenomicsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-500 shrink-0" />
-                        <span className="font-semibold text-white text-sm sm:text-base truncate">{alloc.label}</span>
+                        <span className="font-semibold text-white text-sm sm:text-base truncate">
+                          {alloc.label}
+                        </span>
                       </div>
                     </div>
                     <div
@@ -572,7 +574,9 @@ export default function TokenomicsPage() {
                         <div className="text-[10px] sm:text-xs font-mono text-lime-500 uppercase tracking-wider">
                           {milestone.label}
                         </div>
-                        <div className="text-2xl sm:text-3xl font-black text-white">${milestone.cap}</div>
+                        <div className="text-2xl sm:text-3xl font-black text-white">
+                          ${milestone.cap}
+                        </div>
                       </div>
                     </div>
 
@@ -616,8 +620,16 @@ export default function TokenomicsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <GhostIcon variant="logo" size={48} className="mx-auto mb-4 sm:mb-6 text-lime-500 sm:hidden" />
-            <GhostIcon variant="logo" size={64} className="mx-auto mb-6 text-lime-500 hidden sm:block" />
+            <GhostIcon
+              variant="logo"
+              size={48}
+              className="mx-auto mb-4 sm:mb-6 text-lime-500 sm:hidden"
+            />
+            <GhostIcon
+              variant="logo"
+              size={64}
+              className="mx-auto mb-6 text-lime-500 hidden sm:block"
+            />
 
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 text-white">
               Join the <span className="text-lime-500">Ghost Economy</span>
@@ -629,13 +641,13 @@ export default function TokenomicsPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
-              <a
+              <Link
                 href="/"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-lime-500 text-black font-bold rounded-xl hover:opacity-90 transition-opacity text-sm sm:text-base"
               >
                 Explore Protocol
                 <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-              </a>
+              </Link>
               <a
                 href="/dashboard"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-zinc-900 border border-white/10 text-white font-bold rounded-xl hover:border-lime-500/50 transition-colors text-sm sm:text-base"

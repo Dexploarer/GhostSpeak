@@ -5,15 +5,13 @@ import chalk from 'chalk'
 import figlet from 'figlet'
 import { intro, outro } from '@clack/prompts'
 import { agentCommand } from './commands/agent/index.js'
-import { marketplaceCommand } from './commands/marketplace/index.js'
-import { escrowCommand } from './commands/escrow.js'
-import { channelCommand } from './commands/channel.js'
+// marketplace, escrow, channel, config, faucet, sdk, update, auction, dispute were here
+// Retain:
+// Escrow removed - payment facilitation delegated to PayAI
 import { configCommand } from './commands/config.js'
 import { setupFaucetCommand } from './commands/faucet.js'
 import { sdkCommand } from './commands/sdk.js'
 import { updateCommand } from './commands/update.js'
-import { auctionCommand } from './commands/auction.js'
-import { disputeCommand } from './commands/dispute.js'
 import { governanceCommand } from './commands/governance.js'
 import { quickstartCommand } from './commands/quickstart.js'
 import { walletCommand } from './commands/wallet.js'
@@ -164,15 +162,10 @@ async function main() {
     
     // 2. Core features
     program.addCommand(agentCommand)       // Create and manage agents
-    program.addCommand(marketplaceCommand) // Use agents in marketplace
     
-    // 3. Transaction and payment features
-    program.addCommand(escrowCommand)      // Secure payments
-    program.addCommand(channelCommand)     // Agent communication
-    program.addCommand(auctionCommand)     // Advanced marketplace feature
+    // Note: Escrow command removed - payment facilitation delegated to PayAI
     
     // 4. Support and advanced features
-    program.addCommand(disputeCommand)     // Conflict resolution
     program.addCommand(governanceCommand)  // Protocol governance
     
     // 5. Developer and maintenance tools

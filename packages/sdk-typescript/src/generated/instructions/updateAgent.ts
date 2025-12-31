@@ -51,6 +51,12 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from "../shared";
+import {
+  getPricingModelDecoder,
+  getPricingModelEncoder,
+  type PricingModel,
+  type PricingModelArgs,
+} from "../types";
 
 export const UPDATE_AGENT_DISCRIMINATOR = new Uint8Array([
   85, 2, 178, 9, 119, 139, 102, 164,
@@ -94,6 +100,7 @@ export type UpdateAgentInstructionData = {
   description: Option<string>;
   metadataUri: string;
   agentId: string;
+  pricingModel: Option<PricingModel>;
 };
 
 export type UpdateAgentInstructionDataArgs = {
@@ -102,6 +109,7 @@ export type UpdateAgentInstructionDataArgs = {
   description: OptionOrNullable<string>;
   metadataUri: string;
   agentId: string;
+  pricingModel: OptionOrNullable<PricingModelArgs>;
 };
 
 export function getUpdateAgentInstructionDataEncoder(): Encoder<UpdateAgentInstructionDataArgs> {
@@ -123,6 +131,7 @@ export function getUpdateAgentInstructionDataEncoder(): Encoder<UpdateAgentInstr
       ],
       ["metadataUri", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["agentId", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ["pricingModel", getOptionEncoder(getPricingModelEncoder())],
     ]),
     (value) => ({ ...value, discriminator: UPDATE_AGENT_DISCRIMINATOR }),
   );
@@ -142,6 +151,7 @@ export function getUpdateAgentInstructionDataDecoder(): Decoder<UpdateAgentInstr
     ],
     ["metadataUri", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["agentId", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ["pricingModel", getOptionDecoder(getPricingModelDecoder())],
   ]);
 }
 
@@ -171,6 +181,7 @@ export type UpdateAgentAsyncInput<
   description: UpdateAgentInstructionDataArgs["description"];
   metadataUri: UpdateAgentInstructionDataArgs["metadataUri"];
   agentId: UpdateAgentInstructionDataArgs["agentId"];
+  pricingModel: UpdateAgentInstructionDataArgs["pricingModel"];
 };
 
 export async function getUpdateAgentInstructionAsync<
@@ -263,6 +274,7 @@ export type UpdateAgentInput<
   description: UpdateAgentInstructionDataArgs["description"];
   metadataUri: UpdateAgentInstructionDataArgs["metadataUri"];
   agentId: UpdateAgentInstructionDataArgs["agentId"];
+  pricingModel: UpdateAgentInstructionDataArgs["pricingModel"];
 };
 
 export function getUpdateAgentInstruction<

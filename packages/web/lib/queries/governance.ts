@@ -287,7 +287,7 @@ export function useProposals(filters?: GovernanceFilters, options?: { enabled?: 
 
       // Fetch proposals from the SDK
       const proposals =
-        (await client.governance.getActiveProposals()) as unknown as ProposalAccountData[]
+        (await client.governanceModule.getActiveProposals()) as unknown as ProposalAccountData[]
 
       // Transform SDK data to match our Proposal interface
       let filteredProposals = proposals.map((proposalAccount: ProposalAccountData): Proposal => {
@@ -376,7 +376,7 @@ export function useProposal(address: Address | undefined, options?: { enabled?: 
       if (!address) return null
 
       const client = getGhostSpeakClient()
-      const proposal = await client.governance.getProposal(address)
+      const proposal = await client.governanceModule.getProposal(address)
 
       if (!proposal) return null
 
@@ -440,20 +440,27 @@ export function useProposalVotes(
 
       try {
         const client = getGhostSpeakClient()
-        
+
         // Use new SDK method to get votes for this proposal
-        const voteData = await client.governance.getVotesByProposal(proposalAddress)
-        
+        const voteData = await client.governanceModule.getVotesByProposal(proposalAddress)
+
         // Map SDK response to component format
         // Note: Individual votes require Vote accounts in the program
-        return voteData.votes.map((vote): Vote => ({
-          id: `vote_${vote.voter}_${proposalAddress}`,
-          proposalAddress: proposalAddress,
-          voter: vote.voter,
-          choice: vote.choice === 'for' ? VoteChoice.For : vote.choice === 'against' ? VoteChoice.Against : VoteChoice.Abstain,
-          votingPower: String(vote.weight),
-          timestamp: new Date(Number(vote.timestamp) * 1000),
-        }))
+        return voteData.votes.map(
+          (vote: any): Vote => ({
+            id: `vote_${vote.voter}_${proposalAddress}`,
+            proposalAddress: proposalAddress,
+            voter: vote.voter,
+            choice:
+              vote.choice === 'for'
+                ? VoteChoice.For
+                : vote.choice === 'against'
+                  ? VoteChoice.Against
+                  : VoteChoice.Abstain,
+            votingPower: String(vote.weight),
+            timestamp: new Date(Number(vote.timestamp) * 1000),
+          })
+        )
       } catch (error) {
         console.error('Failed to fetch proposal votes:', error)
         return []
@@ -481,36 +488,30 @@ export function useVotingPower(options?: { enabled?: boolean }) {
         const client = getGhostSpeakClient()
         const { getSDKManager } = await import('@/lib/ghostspeak')
         const sdk = getSDKManager()
-        
+
         // 1. Get token balance
         const tokenBalance = await sdk.tokens.getTokenBalance(
           address!,
           'GHoSTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' // Ghost token mint
         )
-        
-        // 2. Get staked tokens
-        let stakedAmount = 0n
-        try {
-          const stakingAccount = await client.staking.getStakingAccount(address as Address)
-          stakedAmount = stakingAccount?.stakedAmount ?? 0n
-        } catch {
-          // No staking account
-        }
-        
+
+        // 2. Get staked tokens (REMOVED - Staking Module deprecated)
+        const stakedAmount = 0n
+
         // 3. Get reputation from agent account (if user is an agent)
         let reputation = 0
         try {
           const agents = await client.agents.getAllAgents()
-          const userAgent = agents.find(a => a.data?.owner?.toString() === address)
+          const userAgent = agents.find((a) => a.data?.owner?.toString() === address)
           reputation = Number(userAgent?.data?.reputationScore || 0) / 100 // Convert from basis points
         } catch {
           // No agent account
         }
-        
+
         // 4. Calculate total (delegated voting power requires dedicated accounts)
         const delegated = 0n
         const total = tokenBalance + stakedAmount + delegated + BigInt(reputation * 100)
-        
+
         return {
           tokens: String(tokenBalance),
           staked: String(stakedAmount),
@@ -542,38 +543,48 @@ export function useDelegations(options?: { enabled?: boolean }) {
 
       try {
         const client = getGhostSpeakClient()
-        
+
         // Use new SDK methods for delegation queries
         const [delegationsGiven, delegationsReceived] = await Promise.all([
-          client.governance.getDelegationsFromVoter(address as Address),
-          client.governance.getDelegationsToDelegate(address as Address)
+          client.governanceModule.getDelegationsFromVoter(address as Address),
+          client.governanceModule.getDelegationsToDelegate(address as Address),
         ])
-        
+
         // Map SDK response to component format
-        const given: Delegation[] = delegationsGiven.map((d, i) => ({
+        const given: Delegation[] = delegationsGiven.map((d: any, i: number) => ({
           id: `delegation_given_${i}`,
           delegator: address as Address,
           delegate: d.delegate,
           amount: String(d.amount),
-          scope: d.scope.kind === 'All' ? 'All' as const : d.scope.kind === 'Proposal' ? 'SingleProposal' as const : 'Category' as const,
+          scope:
+            d.scope.kind === 'All'
+              ? ('All' as const)
+              : d.scope.kind === 'Proposal'
+                ? ('SingleProposal' as const)
+                : ('Category' as const),
           proposalId: d.scope.kind === 'Proposal' ? String(d.scope.value) : undefined,
           expiresAt: d.expiresAt ? new Date(Number(d.expiresAt) * 1000) : undefined,
           createdAt: new Date(),
           isActive: true,
         }))
-        
-        const received: Delegation[] = delegationsReceived.map((d, i) => ({
+
+        const received: Delegation[] = delegationsReceived.map((d: any, i: number) => ({
           id: `delegation_received_${i}`,
           delegator: d.delegator,
           delegate: address as Address,
           amount: String(d.amount),
-          scope: d.scope.kind === 'All' ? 'All' as const : d.scope.kind === 'Proposal' ? 'SingleProposal' as const : 'Category' as const,
+          scope:
+            d.scope.kind === 'All'
+              ? ('All' as const)
+              : d.scope.kind === 'Proposal'
+                ? ('SingleProposal' as const)
+                : ('Category' as const),
           proposalId: d.scope.kind === 'Proposal' ? String(d.scope.value) : undefined,
           expiresAt: d.expiresAt ? new Date(Number(d.expiresAt) * 1000) : undefined,
           createdAt: new Date(),
           isActive: true,
         }))
-        
+
         return { given, received }
       } catch (error) {
         console.error('Failed to fetch delegations:', error)
@@ -600,7 +611,7 @@ export function useCreateProposal() {
       if (!signer) throw new Error('Could not create signer')
 
       // Create the proposal using SDK
-      const result = await client.governance.createProposal({
+      const result = await client.governanceModule.createProposal({
         signer,
         title: data.title,
         description: data.description,
@@ -615,7 +626,7 @@ export function useCreateProposal() {
       // Fetch the created proposal to get full data
       const proposalAddress =
         typeof result === 'string' ? result : (result as { address: string }).address
-      const _proposalData = await client.governance.getProposal(proposalAddress as Address)
+      const _proposalData = await client.governanceModule.getProposal(proposalAddress as Address)
 
       // Transform to UI format
       const newProposal: Proposal = {
@@ -683,7 +694,7 @@ export function useCastVote() {
       }
 
       // Cast vote using SDK - use empty string for tokenAccount as placeholder
-      await client.governance.vote({
+      await client.governanceModule.vote({
         signer,
         proposalAddress: data.proposalAddress,
         choice: voteChoiceMap[data.choice],
@@ -779,7 +790,7 @@ export function useExecuteProposal() {
       if (!signer) throw new Error('Could not create signer')
 
       // Execute the proposal using SDK
-      const result = await client.governance.executeProposal({
+      const result = await client.governanceModule.executeProposal({
         signer,
         proposalAddress,
         proposalId: proposalAddress, // Use address as ID for now

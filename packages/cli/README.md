@@ -1,6 +1,8 @@
 # @ghostspeak/cli
 
-**Production-ready command-line interface for the GhostSpeak AI Agent Commerce Protocol**
+**Command-line interface for GhostSpeak Protocol - Verifiable Credentials, Reputation & Identity for AI Agents**
+
+> Note: The CLI currently supports full agent management. Marketplace, escrow, and auction features are being deprecated in favor of focusing on our core VC/Reputation/Identity layer.
 
 [![npm version](https://badge.fury.io/js/@ghostspeak%2Fcli.svg)](https://badge.fury.io/js/@ghostspeak%2Fcli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

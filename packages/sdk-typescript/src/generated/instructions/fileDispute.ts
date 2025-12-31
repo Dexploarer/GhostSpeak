@@ -12,10 +12,8 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
-  getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
-  getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
   getU32Decoder,
@@ -32,19 +30,13 @@ import {
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
-  type ReadonlyAccount,
+  type ReadonlySignerAccount,
   type ReadonlyUint8Array,
   type TransactionSigner,
   type WritableAccount,
-  type WritableSignerAccount,
 } from "@solana/kit";
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from "../programs";
-import {
-  expectAddress,
-  expectSome,
-  getAccountMetaFactory,
-  type ResolvedAccount,
-} from "../shared";
+import { getAccountMetaFactory, type ResolvedAccount } from "../shared";
 
 export const FILE_DISPUTE_DISCRIMINATOR = new Uint8Array([
   210, 63, 221, 114, 212, 97, 195, 156,
@@ -58,42 +50,20 @@ export function getFileDisputeDiscriminatorBytes() {
 
 export type FileDisputeInstruction<
   TProgram extends string = typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
-  TAccountDispute extends string | AccountMeta<string> = string,
-  TAccountTransaction extends string | AccountMeta<string> = string,
-  TAccountUserRegistry extends string | AccountMeta<string> = string,
-  TAccountComplainant extends string | AccountMeta<string> = string,
-  TAccountRespondent extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends string | AccountMeta<string> =
-    "11111111111111111111111111111111",
-  TAccountClock extends string | AccountMeta<string> =
-    "SysvarC1ock11111111111111111111111111111111",
+  TAccountEscrow extends string | AccountMeta<string> = string,
+  TAccountClient extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
   InstructionWithAccounts<
     [
-      TAccountDispute extends string
-        ? WritableAccount<TAccountDispute>
-        : TAccountDispute,
-      TAccountTransaction extends string
-        ? ReadonlyAccount<TAccountTransaction>
-        : TAccountTransaction,
-      TAccountUserRegistry extends string
-        ? WritableAccount<TAccountUserRegistry>
-        : TAccountUserRegistry,
-      TAccountComplainant extends string
-        ? WritableSignerAccount<TAccountComplainant> &
-            AccountSignerMeta<TAccountComplainant>
-        : TAccountComplainant,
-      TAccountRespondent extends string
-        ? ReadonlyAccount<TAccountRespondent>
-        : TAccountRespondent,
-      TAccountSystemProgram extends string
-        ? ReadonlyAccount<TAccountSystemProgram>
-        : TAccountSystemProgram,
-      TAccountClock extends string
-        ? ReadonlyAccount<TAccountClock>
-        : TAccountClock,
+      TAccountEscrow extends string
+        ? WritableAccount<TAccountEscrow>
+        : TAccountEscrow,
+      TAccountClient extends string
+        ? ReadonlySignerAccount<TAccountClient> &
+            AccountSignerMeta<TAccountClient>
+        : TAccountClient,
       ...TRemainingAccounts,
     ]
   >;
@@ -132,228 +102,32 @@ export function getFileDisputeInstructionDataCodec(): Codec<
   );
 }
 
-export type FileDisputeAsyncInput<
-  TAccountDispute extends string = string,
-  TAccountTransaction extends string = string,
-  TAccountUserRegistry extends string = string,
-  TAccountComplainant extends string = string,
-  TAccountRespondent extends string = string,
-  TAccountSystemProgram extends string = string,
-  TAccountClock extends string = string,
-> = {
-  /** Dispute account with collision prevention */
-  dispute?: Address<TAccountDispute>;
-  /**
-   * Transaction account with enhanced validation
-   * The transaction type is validated in the instruction handler
-   * Transaction info for key reference
-   */
-  transaction: Address<TAccountTransaction>;
-  /** User registry for rate limiting and spam prevention */
-  userRegistry?: Address<TAccountUserRegistry>;
-  /** Enhanced complainant verification */
-  complainant: TransactionSigner<TAccountComplainant>;
-  /** Enhanced respondent validation */
-  respondent: Address<TAccountRespondent>;
-  /** System program for account creation */
-  systemProgram?: Address<TAccountSystemProgram>;
-  /** Clock sysvar for timestamp validation */
-  clock?: Address<TAccountClock>;
-  reason: FileDisputeInstructionDataArgs["reason"];
-};
-
-export async function getFileDisputeInstructionAsync<
-  TAccountDispute extends string,
-  TAccountTransaction extends string,
-  TAccountUserRegistry extends string,
-  TAccountComplainant extends string,
-  TAccountRespondent extends string,
-  TAccountSystemProgram extends string,
-  TAccountClock extends string,
-  TProgramAddress extends Address =
-    typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
->(
-  input: FileDisputeAsyncInput<
-    TAccountDispute,
-    TAccountTransaction,
-    TAccountUserRegistry,
-    TAccountComplainant,
-    TAccountRespondent,
-    TAccountSystemProgram,
-    TAccountClock
-  >,
-  config?: { programAddress?: TProgramAddress },
-): Promise<
-  FileDisputeInstruction<
-    TProgramAddress,
-    TAccountDispute,
-    TAccountTransaction,
-    TAccountUserRegistry,
-    TAccountComplainant,
-    TAccountRespondent,
-    TAccountSystemProgram,
-    TAccountClock
-  >
-> {
-  // Program address.
-  const programAddress =
-    config?.programAddress ?? GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS;
-
-  // Original accounts.
-  const originalAccounts = {
-    dispute: { value: input.dispute ?? null, isWritable: true },
-    transaction: { value: input.transaction ?? null, isWritable: false },
-    userRegistry: { value: input.userRegistry ?? null, isWritable: true },
-    complainant: { value: input.complainant ?? null, isWritable: true },
-    respondent: { value: input.respondent ?? null, isWritable: false },
-    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-    clock: { value: input.clock ?? null, isWritable: false },
-  };
-  const accounts = originalAccounts as Record<
-    keyof typeof originalAccounts,
-    ResolvedAccount
-  >;
-
-  // Original args.
-  const args = { ...input };
-
-  // Resolve default values.
-  if (!accounts.dispute.value) {
-    accounts.dispute.value = await getProgramDerivedAddress({
-      programAddress,
-      seeds: [
-        getBytesEncoder().encode(
-          new Uint8Array([100, 105, 115, 112, 117, 116, 101]),
-        ),
-        getAddressEncoder().encode(expectAddress(accounts.transaction.value)),
-        getAddressEncoder().encode(expectAddress(accounts.complainant.value)),
-        getUtf8Encoder().encode(expectSome(args.reason)),
-      ],
-    });
-  }
-  if (!accounts.userRegistry.value) {
-    accounts.userRegistry.value = await getProgramDerivedAddress({
-      programAddress,
-      seeds: [
-        getBytesEncoder().encode(
-          new Uint8Array([
-            117, 115, 101, 114, 95, 114, 101, 103, 105, 115, 116, 114, 121,
-          ]),
-        ),
-        getAddressEncoder().encode(expectAddress(accounts.complainant.value)),
-      ],
-    });
-  }
-  if (!accounts.systemProgram.value) {
-    accounts.systemProgram.value =
-      "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
-  }
-  if (!accounts.clock.value) {
-    accounts.clock.value =
-      "SysvarC1ock11111111111111111111111111111111" as Address<"SysvarC1ock11111111111111111111111111111111">;
-  }
-
-  const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
-  return Object.freeze({
-    accounts: [
-      getAccountMeta(accounts.dispute),
-      getAccountMeta(accounts.transaction),
-      getAccountMeta(accounts.userRegistry),
-      getAccountMeta(accounts.complainant),
-      getAccountMeta(accounts.respondent),
-      getAccountMeta(accounts.systemProgram),
-      getAccountMeta(accounts.clock),
-    ],
-    data: getFileDisputeInstructionDataEncoder().encode(
-      args as FileDisputeInstructionDataArgs,
-    ),
-    programAddress,
-  } as FileDisputeInstruction<
-    TProgramAddress,
-    TAccountDispute,
-    TAccountTransaction,
-    TAccountUserRegistry,
-    TAccountComplainant,
-    TAccountRespondent,
-    TAccountSystemProgram,
-    TAccountClock
-  >);
-}
-
 export type FileDisputeInput<
-  TAccountDispute extends string = string,
-  TAccountTransaction extends string = string,
-  TAccountUserRegistry extends string = string,
-  TAccountComplainant extends string = string,
-  TAccountRespondent extends string = string,
-  TAccountSystemProgram extends string = string,
-  TAccountClock extends string = string,
+  TAccountEscrow extends string = string,
+  TAccountClient extends string = string,
 > = {
-  /** Dispute account with collision prevention */
-  dispute: Address<TAccountDispute>;
-  /**
-   * Transaction account with enhanced validation
-   * The transaction type is validated in the instruction handler
-   * Transaction info for key reference
-   */
-  transaction: Address<TAccountTransaction>;
-  /** User registry for rate limiting and spam prevention */
-  userRegistry: Address<TAccountUserRegistry>;
-  /** Enhanced complainant verification */
-  complainant: TransactionSigner<TAccountComplainant>;
-  /** Enhanced respondent validation */
-  respondent: Address<TAccountRespondent>;
-  /** System program for account creation */
-  systemProgram?: Address<TAccountSystemProgram>;
-  /** Clock sysvar for timestamp validation */
-  clock?: Address<TAccountClock>;
+  escrow: Address<TAccountEscrow>;
+  client: TransactionSigner<TAccountClient>;
   reason: FileDisputeInstructionDataArgs["reason"];
 };
 
 export function getFileDisputeInstruction<
-  TAccountDispute extends string,
-  TAccountTransaction extends string,
-  TAccountUserRegistry extends string,
-  TAccountComplainant extends string,
-  TAccountRespondent extends string,
-  TAccountSystemProgram extends string,
-  TAccountClock extends string,
+  TAccountEscrow extends string,
+  TAccountClient extends string,
   TProgramAddress extends Address =
     typeof GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS,
 >(
-  input: FileDisputeInput<
-    TAccountDispute,
-    TAccountTransaction,
-    TAccountUserRegistry,
-    TAccountComplainant,
-    TAccountRespondent,
-    TAccountSystemProgram,
-    TAccountClock
-  >,
+  input: FileDisputeInput<TAccountEscrow, TAccountClient>,
   config?: { programAddress?: TProgramAddress },
-): FileDisputeInstruction<
-  TProgramAddress,
-  TAccountDispute,
-  TAccountTransaction,
-  TAccountUserRegistry,
-  TAccountComplainant,
-  TAccountRespondent,
-  TAccountSystemProgram,
-  TAccountClock
-> {
+): FileDisputeInstruction<TProgramAddress, TAccountEscrow, TAccountClient> {
   // Program address.
   const programAddress =
     config?.programAddress ?? GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS;
 
   // Original accounts.
   const originalAccounts = {
-    dispute: { value: input.dispute ?? null, isWritable: true },
-    transaction: { value: input.transaction ?? null, isWritable: false },
-    userRegistry: { value: input.userRegistry ?? null, isWritable: true },
-    complainant: { value: input.complainant ?? null, isWritable: true },
-    respondent: { value: input.respondent ?? null, isWritable: false },
-    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-    clock: { value: input.clock ?? null, isWritable: false },
+    escrow: { value: input.escrow ?? null, isWritable: true },
+    client: { value: input.client ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -363,41 +137,17 @@ export function getFileDisputeInstruction<
   // Original args.
   const args = { ...input };
 
-  // Resolve default values.
-  if (!accounts.systemProgram.value) {
-    accounts.systemProgram.value =
-      "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
-  }
-  if (!accounts.clock.value) {
-    accounts.clock.value =
-      "SysvarC1ock11111111111111111111111111111111" as Address<"SysvarC1ock11111111111111111111111111111111">;
-  }
-
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
   return Object.freeze({
     accounts: [
-      getAccountMeta(accounts.dispute),
-      getAccountMeta(accounts.transaction),
-      getAccountMeta(accounts.userRegistry),
-      getAccountMeta(accounts.complainant),
-      getAccountMeta(accounts.respondent),
-      getAccountMeta(accounts.systemProgram),
-      getAccountMeta(accounts.clock),
+      getAccountMeta(accounts.escrow),
+      getAccountMeta(accounts.client),
     ],
     data: getFileDisputeInstructionDataEncoder().encode(
       args as FileDisputeInstructionDataArgs,
     ),
     programAddress,
-  } as FileDisputeInstruction<
-    TProgramAddress,
-    TAccountDispute,
-    TAccountTransaction,
-    TAccountUserRegistry,
-    TAccountComplainant,
-    TAccountRespondent,
-    TAccountSystemProgram,
-    TAccountClock
-  >);
+  } as FileDisputeInstruction<TProgramAddress, TAccountEscrow, TAccountClient>);
 }
 
 export type ParsedFileDisputeInstruction<
@@ -406,24 +156,8 @@ export type ParsedFileDisputeInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    /** Dispute account with collision prevention */
-    dispute: TAccountMetas[0];
-    /**
-     * Transaction account with enhanced validation
-     * The transaction type is validated in the instruction handler
-     * Transaction info for key reference
-     */
-    transaction: TAccountMetas[1];
-    /** User registry for rate limiting and spam prevention */
-    userRegistry: TAccountMetas[2];
-    /** Enhanced complainant verification */
-    complainant: TAccountMetas[3];
-    /** Enhanced respondent validation */
-    respondent: TAccountMetas[4];
-    /** System program for account creation */
-    systemProgram: TAccountMetas[5];
-    /** Clock sysvar for timestamp validation */
-    clock: TAccountMetas[6];
+    escrow: TAccountMetas[0];
+    client: TAccountMetas[1];
   };
   data: FileDisputeInstructionData;
 };
@@ -436,7 +170,7 @@ export function parseFileDisputeInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedFileDisputeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 2) {
     // TODO: Coded error.
     throw new Error("Not enough accounts");
   }
@@ -448,15 +182,7 @@ export function parseFileDisputeInstruction<
   };
   return {
     programAddress: instruction.programAddress,
-    accounts: {
-      dispute: getNextAccount(),
-      transaction: getNextAccount(),
-      userRegistry: getNextAccount(),
-      complainant: getNextAccount(),
-      respondent: getNextAccount(),
-      systemProgram: getNextAccount(),
-      clock: getNextAccount(),
-    },
+    accounts: { escrow: getNextAccount(), client: getNextAccount() },
     data: getFileDisputeInstructionDataDecoder().decode(instruction.data),
   };
 }

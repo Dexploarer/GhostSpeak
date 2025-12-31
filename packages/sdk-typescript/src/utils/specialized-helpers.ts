@@ -322,7 +322,6 @@ export class GhostSpeakHelpers {
       }
 
       // Schedule next poll
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (isMonitoring) {
         setTimeout(poll, currentInterval)
       }
@@ -584,11 +583,7 @@ const accountKeys = transaction.transaction.message.accountKeys
       
       // Status filters
       byStatus: <T extends { status: string }>(status: string) => 
-        (item: T) => item.status === status,
-      
-      // Complex filters
-      disputesByParticipant: <T extends { complainant: Address; respondent: Address }>(participant: Address) =>
-        (item: T) => item.complainant === participant || item.respondent === participant
+        (item: T) => item.status === status
     }
   }
 

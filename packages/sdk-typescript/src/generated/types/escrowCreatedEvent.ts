@@ -7,8 +7,6 @@
  */
 
 import {
-  addDecoderSizePrefix,
-  addEncoderSizePrefix,
   combineCodec,
   getAddressDecoder,
   getAddressEncoder,
@@ -16,63 +14,51 @@ import {
   getI64Encoder,
   getStructDecoder,
   getStructEncoder,
-  getU32Decoder,
-  getU32Encoder,
   getU64Decoder,
   getU64Encoder,
-  getUtf8Decoder,
-  getUtf8Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from "@solana/kit";
 
 export type EscrowCreatedEvent = {
-  escrow: Address;
+  escrowId: bigint;
   client: Address;
   agent: Address;
   amount: bigint;
-  taskId: string;
-  expiresAt: bigint;
-  timestamp: bigint;
+  deadline: bigint;
 };
 
 export type EscrowCreatedEventArgs = {
-  escrow: Address;
+  escrowId: number | bigint;
   client: Address;
   agent: Address;
   amount: number | bigint;
-  taskId: string;
-  expiresAt: number | bigint;
-  timestamp: number | bigint;
+  deadline: number | bigint;
 };
 
-export function getEscrowCreatedEventEncoder(): Encoder<EscrowCreatedEventArgs> {
+export function getEscrowCreatedEventEncoder(): FixedSizeEncoder<EscrowCreatedEventArgs> {
   return getStructEncoder([
-    ["escrow", getAddressEncoder()],
+    ["escrowId", getU64Encoder()],
     ["client", getAddressEncoder()],
     ["agent", getAddressEncoder()],
     ["amount", getU64Encoder()],
-    ["taskId", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ["expiresAt", getI64Encoder()],
-    ["timestamp", getI64Encoder()],
+    ["deadline", getI64Encoder()],
   ]);
 }
 
-export function getEscrowCreatedEventDecoder(): Decoder<EscrowCreatedEvent> {
+export function getEscrowCreatedEventDecoder(): FixedSizeDecoder<EscrowCreatedEvent> {
   return getStructDecoder([
-    ["escrow", getAddressDecoder()],
+    ["escrowId", getU64Decoder()],
     ["client", getAddressDecoder()],
     ["agent", getAddressDecoder()],
     ["amount", getU64Decoder()],
-    ["taskId", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ["expiresAt", getI64Decoder()],
-    ["timestamp", getI64Decoder()],
+    ["deadline", getI64Decoder()],
   ]);
 }
 
-export function getEscrowCreatedEventCodec(): Codec<
+export function getEscrowCreatedEventCodec(): FixedSizeCodec<
   EscrowCreatedEventArgs,
   EscrowCreatedEvent
 > {

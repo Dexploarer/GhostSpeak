@@ -99,7 +99,7 @@ function transformSDKAgent(address: string, data: SDKAgent): Agent {
     ? {
         enabled: data.x402Enabled ?? false,
         paymentAddress: data.x402PaymentAddress?.toString() ?? '',
-        acceptedTokens: (data.x402AcceptedTokens ?? []).map((t) => t.toString()),
+        acceptedTokens: (data.x402AcceptedTokens ?? []).map((t: any) => t.toString()),
         pricePerCall: data.x402PricePerCall ?? BigInt(0),
         serviceEndpoint: data.x402ServiceEndpoint ?? '',
         totalPayments: data.x402TotalPayments ?? BigInt(0),

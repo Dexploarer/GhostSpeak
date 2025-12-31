@@ -17,18 +17,6 @@ test = false
 doc = false
 
 [[bin]]
-name = "fuzz_create_escrow"
-path = "fuzz_targets/fuzz_create_escrow.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "fuzz_x402_config"
-path = "fuzz_targets/fuzz_x402_config.rs"
-test = false
-doc = false
-
-[[bin]]
 name = "fuzz_reputation_calc"
 path = "fuzz_targets/fuzz_reputation_calc.rs"
 test = false

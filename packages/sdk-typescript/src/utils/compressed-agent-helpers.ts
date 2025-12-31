@@ -408,6 +408,7 @@ export async function createCompressedAgentBatch(
     // Create instruction for each agent in the batch
     for (const agent of batch) {
       const { getRegisterAgentCompressedInstructionAsync } = await import('../generated/instructions/registerAgentCompressed.js')
+      const { PricingModel } = await import('../generated/types/pricingModel.js')
       
       const instruction = await getRegisterAgentCompressedInstructionAsync({
         merkleTree,
@@ -415,8 +416,11 @@ export async function createCompressedAgentBatch(
         userRegistry,
         signer: signer as unknown as TransactionSigner,
         agentType: agent.agentType,
+        name: agent.name,
+        description: agent.description,
         metadataUri: agent.metadataUri,
-        agentId: agent.agentId
+        agentId: agent.agentId,
+        pricingModel: PricingModel.Fixed
       }, { programAddress: programId })
       
       instructions.push(instruction as unknown as Instruction)

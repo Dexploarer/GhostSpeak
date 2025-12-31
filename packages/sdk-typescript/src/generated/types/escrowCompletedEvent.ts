@@ -7,78 +7,48 @@
  */
 
 import {
-  addDecoderSizePrefix,
-  addEncoderSizePrefix,
   combineCodec,
   getAddressDecoder,
   getAddressEncoder,
-  getI64Decoder,
-  getI64Encoder,
-  getOptionDecoder,
-  getOptionEncoder,
   getStructDecoder,
   getStructEncoder,
-  getU32Decoder,
-  getU32Encoder,
   getU64Decoder,
   getU64Encoder,
-  getUtf8Decoder,
-  getUtf8Encoder,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
-  type Option,
-  type OptionOrNullable,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
 } from "@solana/kit";
 
 export type EscrowCompletedEvent = {
-  escrow: Address;
-  client: Address;
+  escrowId: bigint;
   agent: Address;
   amount: bigint;
-  resolutionNotes: Option<string>;
-  timestamp: bigint;
 };
 
 export type EscrowCompletedEventArgs = {
-  escrow: Address;
-  client: Address;
+  escrowId: number | bigint;
   agent: Address;
   amount: number | bigint;
-  resolutionNotes: OptionOrNullable<string>;
-  timestamp: number | bigint;
 };
 
-export function getEscrowCompletedEventEncoder(): Encoder<EscrowCompletedEventArgs> {
+export function getEscrowCompletedEventEncoder(): FixedSizeEncoder<EscrowCompletedEventArgs> {
   return getStructEncoder([
-    ["escrow", getAddressEncoder()],
-    ["client", getAddressEncoder()],
+    ["escrowId", getU64Encoder()],
     ["agent", getAddressEncoder()],
     ["amount", getU64Encoder()],
-    [
-      "resolutionNotes",
-      getOptionEncoder(addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())),
-    ],
-    ["timestamp", getI64Encoder()],
   ]);
 }
 
-export function getEscrowCompletedEventDecoder(): Decoder<EscrowCompletedEvent> {
+export function getEscrowCompletedEventDecoder(): FixedSizeDecoder<EscrowCompletedEvent> {
   return getStructDecoder([
-    ["escrow", getAddressDecoder()],
-    ["client", getAddressDecoder()],
+    ["escrowId", getU64Decoder()],
     ["agent", getAddressDecoder()],
     ["amount", getU64Decoder()],
-    [
-      "resolutionNotes",
-      getOptionDecoder(addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())),
-    ],
-    ["timestamp", getI64Decoder()],
   ]);
 }
 
-export function getEscrowCompletedEventCodec(): Codec<
+export function getEscrowCompletedEventCodec(): FixedSizeCodec<
   EscrowCompletedEventArgs,
   EscrowCompletedEvent
 > {

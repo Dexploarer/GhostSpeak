@@ -335,85 +335,15 @@ export async function getTokenProgramType(mint: Address): Promise<TokenProgram> 
 export async function checkToken2022Extensions(
   mint: Address,
   extensions: TokenExtension[],
-  rpcEndpoint = 'https://api.devnet.solana.com'
+  _rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<Record<TokenExtension, boolean>> {
-  try {
-    // Import the Token-2022 RPC functions
-    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
-    const { createSolanaRpc } = await import('@solana/kit')
-    
-    const rpc = createSolanaRpc(rpcEndpoint)
-    
-    // Get mint data with extensions
-    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
-    
-    if (!mintData) {
-      // Mint not found, return all false
-      const result = {} as Record<TokenExtension, boolean>
-      for (const extension of extensions) {
-        result[extension] = false
-      }
-      return result
-    }
-    
-    // Check each requested extension based on TokenExtension enum values
-    const result = {} as Record<TokenExtension, boolean>
-    for (const extension of extensions) {
-      // Check if the extension exists in the mint data based on enum value
-      switch (extension) {
-        case TokenExtension.TRANSFER_FEE_CONFIG:
-          result[extension] = Boolean(mintData.extensions.transferFeeConfig)
-          break
-        case TokenExtension.MINT_CLOSE_AUTHORITY:
-          result[extension] = Boolean(mintData.extensions.mintCloseAuthority)
-          break
-        case TokenExtension.CONFIDENTIAL_TRANSFER_MINT:
-          result[extension] = Boolean(mintData.extensions.confidentialTransferMint)
-          break
-        case TokenExtension.DEFAULT_ACCOUNT_STATE:
-          result[extension] = Boolean(mintData.extensions.defaultAccountState)
-          break
-        case TokenExtension.NON_TRANSFERABLE:
-          result[extension] = Boolean(mintData.extensions.nonTransferable)
-          break
-        case TokenExtension.INTEREST_BEARING_MINT:
-          result[extension] = Boolean(mintData.extensions.interestBearingConfig)
-          break
-        case TokenExtension.PERMANENT_DELEGATE:
-          result[extension] = Boolean(mintData.extensions.permanentDelegate)
-          break
-        case TokenExtension.TRANSFER_HOOK:
-          result[extension] = Boolean(mintData.extensions.transferHook)
-          break
-        case TokenExtension.METADATA_POINTER:
-          result[extension] = Boolean(mintData.extensions.metadataPointer)
-          break
-        case TokenExtension.TOKEN_METADATA:
-          result[extension] = Boolean(mintData.extensions.tokenMetadata)
-          break
-        case TokenExtension.GROUP_POINTER:
-          result[extension] = Boolean(mintData.extensions.groupPointer)
-          break
-        case TokenExtension.TOKEN_GROUP:
-          result[extension] = Boolean(mintData.extensions.tokenGroup)
-          break
-        default:
-          // Extensions that don't apply to mints or are account-specific
-          result[extension] = false
-      }
-    }
-    
-    return result
-  } catch (error) {
-    console.error(`Failed to check Token-2022 extensions for mint ${mint}:`, error)
-    
-    // Return all false on error
-    const result = {} as Record<TokenExtension, boolean>
-    for (const extension of extensions) {
-      result[extension] = false
-    }
-    return result
+  // Token-2022 extension checking removed - not aligned with VC/Reputation pivot
+  console.warn(`Token-2022 extension checking is deprecated: mint ${mint}`)
+  const result = {} as Record<TokenExtension, boolean>
+  for (const extension of extensions) {
+    result[extension] = false
   }
+  return result
 }
 
 /**
@@ -481,45 +411,11 @@ export async function hasInterestBearingExtension(
  */
 export async function getTransferFeeConfig(
   mint: Address,
-  rpcEndpoint = 'https://api.devnet.solana.com'
+  _rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<TransferFeeConfig | null> {
-  try {
-    // Import the Token-2022 RPC functions
-    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
-    const { createSolanaRpc } = await import('@solana/kit')
-    
-    const rpc = createSolanaRpc(rpcEndpoint)
-    
-    // Get mint data with extensions
-    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
-    
-    if (!mintData?.extensions.transferFeeConfig) {
-      return null
-    }
-    
-    // Convert from RPC type to our local type
-    const config = mintData.extensions.transferFeeConfig
-    return {
-      transferFeeBasisPoints: config.newerTransferFee.transferFeeBasisPoints,
-      maximumFee: config.newerTransferFee.maximumFee,
-      transferFeeConfigAuthority: config.transferFeeConfigAuthority,
-      withdrawWithheldAuthority: config.withdrawWithheldAuthority,
-      withheldAmount: BigInt(0),
-      olderTransferFee: {
-        epoch: config.olderTransferFee.epoch || BigInt(0),
-        transferFeeBasisPoints: config.olderTransferFee.transferFeeBasisPoints || 0,
-        maximumFee: config.olderTransferFee.maximumFee || BigInt(0)
-      },
-      newerTransferFee: {
-        epoch: config.newerTransferFee.epoch,
-        transferFeeBasisPoints: config.newerTransferFee.transferFeeBasisPoints,
-        maximumFee: config.newerTransferFee.maximumFee
-      }
-    }
-  } catch (error) {
-    console.error(`Failed to get transfer fee config for mint ${mint}:`, error)
-    return null
-  }
+  // Token-2022 extension functions removed - not aligned with VC/Reputation pivot
+  console.warn(`Token-2022 getTransferFeeConfig is deprecated: mint ${mint}`)
+  return null
 }
 
 /**
@@ -530,33 +426,11 @@ export async function getTransferFeeConfig(
  */
 export async function getConfidentialTransferConfig(
   mint: Address,
-  rpcEndpoint = 'https://api.devnet.solana.com'
+  _rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<ConfidentialTransferConfig | null> {
-  try {
-    // Import the Token-2022 RPC functions
-    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
-    const { createSolanaRpc } = await import('@solana/kit')
-    
-    const rpc = createSolanaRpc(rpcEndpoint)
-    
-    // Get mint data with extensions
-    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
-    
-    if (!mintData?.extensions.confidentialTransferMint) {
-      return null
-    }
-    
-    // Convert from RPC type to our local type
-    const config = mintData.extensions.confidentialTransferMint
-    return {
-      authority: config.authority,
-      autoApproveNewAccounts: config.autoApproveNewAccounts,
-      auditorElgamalPubkey: config.auditorElgamalPubkey
-    }
-  } catch (error) {
-    console.error(`Failed to get confidential transfer config for mint ${mint}:`, error)
-    return null
-  }
+  // Token-2022 extension functions removed - not aligned with VC/Reputation pivot
+  console.warn(`Token-2022 getConfidentialTransferConfig is deprecated: mint ${mint}`)
+  return null
 }
 
 /**
@@ -567,35 +441,11 @@ export async function getConfidentialTransferConfig(
  */
 export async function getInterestBearingConfig(
   mint: Address,
-  rpcEndpoint = 'https://api.devnet.solana.com'
+  _rpcEndpoint = 'https://api.devnet.solana.com'
 ): Promise<InterestBearingConfig | null> {
-  try {
-    // Import the Token-2022 RPC functions
-    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
-    const { createSolanaRpc } = await import('@solana/kit')
-    
-    const rpc = createSolanaRpc(rpcEndpoint)
-    
-    // Get mint data with extensions
-    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
-    
-    if (!mintData?.extensions.interestBearingConfig) {
-      return null
-    }
-    
-    // Convert from RPC type to our local type
-    const config = mintData.extensions.interestBearingConfig
-    return {
-      rateAuthority: config.rateAuthority,
-      currentRate: config.currentRate,
-      initializationTimestamp: config.initializationTimestamp || BigInt(Math.floor(Date.now() / 1000)),
-      lastUpdateTimestamp: config.lastUpdateTimestamp,
-      preUpdateAverageRate: config.preUpdateAverageRate
-    }
-  } catch (error) {
-    console.error(`Failed to get interest-bearing config for mint ${mint}:`, error)
-    return null
-  }
+  // Token-2022 extension functions removed - not aligned with VC/Reputation pivot
+  console.warn(`Token-2022 getInterestBearingConfig is deprecated: mint ${mint}`)
+  return null
 }
 
 // =====================================================
@@ -901,44 +751,31 @@ export function parseTransferFeeConfig(
 /**
  * Fetch transfer fee configuration for a Token-2022 mint via RPC
  * 
- * @param rpc - RPC client for making requests
+ * @deprecated Token-2022 extension functions removed - not aligned with VC/Reputation pivot
+ * @param _rpc - RPC client for making requests
  * @param mint - The mint address to query
- * @returns Promise<TransferFeeConfig | null> - Transfer fee config or null if not found
+ * @returns Promise<TransferFeeConfig | null> - Always returns null (deprecated)
  */
 export async function fetchTransferFeeConfig(
-  rpc: unknown,
+  _rpc: unknown,
   mint: Address
 ): Promise<TransferFeeConfig | null> {
-  try {
-    // Dynamically import to avoid circular dependencies
-    const { getMintWithExtensions } = await import('./token-2022-rpc.js')
-    
-    // Fetch mint data with extensions
-    const mintData = await getMintWithExtensions(rpc, mint, 'confirmed')
-    
-    if (!mintData?.extensions.transferFeeConfig) {
-      return null
-    }
-
-    // Parse the transfer fee config from the mint extensions
-    return parseTransferFeeConfig(mintData.extensions.transferFeeConfig)
-  } catch (error) {
-    console.warn(`Failed to fetch transfer fee config for mint ${mint}:`, error)
-    return null
-  }
+  console.warn(`Token-2022 fetchTransferFeeConfig is deprecated: mint ${mint}`)
+  return null
 }
 
 /**
  * Check if a mint has transfer fees enabled
  * 
- * @param rpc - RPC client for making requests  
+ * @deprecated Token-2022 extension functions removed - not aligned with VC/Reputation pivot
+ * @param _rpc - RPC client for making requests  
  * @param mint - The mint address to check
- * @returns Promise<boolean> - True if transfer fees are enabled
+ * @returns Promise<boolean> - Always returns false (deprecated)
  */
 export async function hasTransferFees(
-  rpc: unknown,
+  _rpc: unknown,
   mint: Address
 ): Promise<boolean> {
-  const feeConfig = await fetchTransferFeeConfig(rpc, mint)
-  return feeConfig !== null && feeConfig.transferFeeBasisPoints > 0
+  console.warn(`Token-2022 hasTransferFees is deprecated: mint ${mint}`)
+  return false
 }

@@ -8,13 +8,14 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-ghostspeak_marketplace = "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9"
+ghostspeak_marketplace = "4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB"
 
 [programs.localnet]
-ghostspeak_marketplace = "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9"
+ghostspeak_marketplace = "4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB"
 
-[programs.mainnet]
-ghostspeak_marketplace = "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9"
+# [programs.mainnet]
+# # TODO: Update this with actual mainnet program ID after deployment
+# ghostspeak_marketplace = "MAINNET_PROGRAM_ID_HERE"
 
 [registry]
 url = "https://api.apr.dev"
@@ -22,6 +23,11 @@ url = "https://api.apr.dev"
 [provider]
 cluster = "devnet"
 wallet = "~/.config/solana/id.json"
+
+# Mainnet provider configuration (use when deploying to mainnet)
+# [provider.mainnet]
+# cluster = "mainnet"
+# wallet = "~/.config/solana/mainnet-deployer.json"
 
 [workspace]
 members = ["programs"]

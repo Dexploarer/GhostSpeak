@@ -34,10 +34,10 @@ export function useConvexUser() {
   const { address, isConnected } = useWalletAddress()
 
   // Query user by wallet address
-  const user = useQuery(
-    api.users.getByWallet,
-    address ? { walletAddress: address } : 'skip'
-  ) as ConvexUser | null | undefined
+  const user = useQuery(api.users.getByWallet, address ? { walletAddress: address } : 'skip') as
+    | ConvexUser
+    | null
+    | undefined
 
   // Mutation to create/update user
   const upsertUser = useMutation(api.users.upsert)
@@ -54,9 +54,12 @@ export function useConvexUser() {
   // Record activity periodically (every 5 minutes)
   useEffect(() => {
     if (user?._id) {
-      const interval = setInterval(() => {
-        recordActivity({ userId: user._id }).catch(console.error)
-      }, 5 * 60 * 1000)
+      const interval = setInterval(
+        () => {
+          recordActivity({ userId: user._id }).catch(console.error)
+        },
+        5 * 60 * 1000
+      )
 
       return () => clearInterval(interval)
     }

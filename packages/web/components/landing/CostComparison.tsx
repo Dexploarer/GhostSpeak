@@ -27,21 +27,20 @@ export function CostComparison() {
           >
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.15em] sm:tracking-[0.2em]">
               <Cpu className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              vs Other x402 Facilitators
+              Crypto-Native Pricing
             </div>
 
             <div className="space-y-3 sm:space-y-4">
               <h2 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter leading-none">
-                PayAI is a <br />
-                <span className="text-primary italic">Pipe.</span>
+                Stake GHOST, <br />
+                <span className="text-primary italic">Earn Revenue.</span>
               </h2>
               <p className="text-base sm:text-xl text-gray-400 font-light leading-relaxed max-w-lg">
-                Other x402 facilitators just verify payments. GhostSpeak is the only marketplace
-                that{' '}
+                Crypto-native pricing:{' '}
                 <span className="text-white font-bold underline decoration-primary/30 underline-offset-4">
-                  protects both parties
-                </span>{' '}
-                with escrow, reputation, and dispute resolution.
+                  Stake once, verify unlimited
+                </span>
+                . Plus earn USDC from protocol revenue. No subscriptions, no credit cards.
               </p>
             </div>
 
@@ -49,16 +48,16 @@ export function CostComparison() {
               {[
                 {
                   icon: ShieldCheck,
-                  title: 'PayAI / Coinbase',
-                  cost: 'Verify + Settle',
-                  sub: 'No Protection',
+                  title: 'Centralized (Stripe)',
+                  cost: '$10-99/month',
+                  sub: 'Recurring billing, KYC required',
                   color: 'text-gray-500',
                 },
                 {
                   icon: Zap,
-                  title: 'GhostSpeak',
-                  cost: 'Full Trust Layer',
-                  sub: 'Escrow + Reputation + Disputes',
+                  title: 'GhostSpeak (Crypto)',
+                  cost: '1 USDC or 75 GHOST',
+                  sub: 'Pay per check OR stake for unlimited',
                   color: 'text-primary',
                 },
               ].map((item, i) => (
@@ -78,7 +77,9 @@ export function CostComparison() {
                     <div className="text-[10px] sm:text-xs font-mono text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1">
                       {item.title}
                     </div>
-                    <div className={`text-xl sm:text-2xl font-black ${item.color}`}>{item.cost}</div>
+                    <div className={`text-xl sm:text-2xl font-black ${item.color}`}>
+                      {item.cost}
+                    </div>
                   </div>
                   <div className="text-left sm:text-right">
                     <div className="text-[9px] sm:text-[10px] font-mono text-gray-600 uppercase tracking-widest">
@@ -97,7 +98,7 @@ export function CostComparison() {
             viewport={{ once: true }}
             className="relative hidden lg:block"
           >
-            <div className="aspect-square w-full bg-black/40 rounded-4xl sm:rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl backdrop-blur-3xl group relative">
+            <div className="aspect-square w-full bg-black/40 research what it takes to be a solana x402 validator, do we meet all the requirments? sm:rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl backdrop-blur-3xl group relative">
               <CostVisualizer3D />
 
               {/* Data Overlays in Corners */}

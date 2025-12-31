@@ -15,11 +15,11 @@ import {
   type FixedSizeEncoder,
 } from "@solana/kit";
 
+/** Escrow lifecycle states */
 export enum EscrowStatus {
   Active,
   Completed,
   Disputed,
-  Resolved,
   Cancelled,
 }
 

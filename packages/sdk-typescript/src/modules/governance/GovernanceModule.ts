@@ -3,12 +3,7 @@ import type { TransactionSigner } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
 import {
   getInitializeGovernanceProposalInstructionAsync,
-  getCastVoteInstruction,
-  getDelegateVoteInstruction,
-  getExecuteProposalInstruction,
-  getTallyVotesInstruction,
   type GovernanceProposal,
-  VoteChoice
 } from '../../generated/index.js'
 
 // =====================================================
@@ -58,15 +53,14 @@ export interface VoteParams {
 
 /**
  * Governance management module
- * 
+ *
  * Provides high-level access to governance operations including:
  * - Proposal creation and management
- * - Voting and delegation
- * - Proposal execution
- * - Vote tallying and results
+ *
+ * NOTE: Voting, delegation, and execution are handled through protocol_config + multisig
  */
 export class GovernanceModule extends BaseModule {
-  
+
   // =====================================================
   // DIRECT INSTRUCTION ACCESS
   // These methods provide direct access to generated instructions
@@ -88,56 +82,6 @@ export class GovernanceModule extends BaseModule {
     return getInitializeGovernanceProposalInstructionAsync(params)
   }
 
-  /**
-   * Get cast vote instruction
-   */
-  getCastVoteInstruction(params: {
-    proposal: Address
-    voter: TransactionSigner
-    voterTokenAccount: Address
-    delegateTokenAccount?: Address
-    voteChoice: VoteChoice
-    reasoning: string | null
-  }) {
-    return getCastVoteInstruction(params)
-  }
-
-  /**
-   * Get delegate vote instruction
-   */
-  getDelegateVoteInstruction(params: {
-    proposal?: Address
-    delegator: TransactionSigner
-    delegate: Address
-    delegatorTokenAccount: Address
-    proposalId: number | bigint
-    scope: any // eslint-disable-line @typescript-eslint/no-explicit-any
-    expiresAt: number | bigint | null
-  }) {
-    return getDelegateVoteInstruction(params)
-  }
-
-  /**
-   * Get execute proposal instruction
-   */
-  getExecuteProposalInstruction(params: {
-    proposal: Address
-    executor: TransactionSigner
-    targetProgram: Address
-  }) {
-    return getExecuteProposalInstruction(params)
-  }
-
-  /**
-   * Get tally votes instruction
-   */
-  getTallyVotesInstruction(params: {
-    proposal: Address
-    authority: TransactionSigner
-  }) {
-    return getTallyVotesInstruction(params)
-  }
-
   // =====================================================
   // CONVENIENCE METHODS
   // These methods provide simplified access to common operations
@@ -155,7 +99,7 @@ export class GovernanceModule extends BaseModule {
     executionDelay?: number
   }): Promise<string> {
     const proposalAddress = this.deriveProposalPda(params.signer.address, params.title)
-    
+
     const instruction = await this.getInitializeGovernanceProposalInstruction({
       proposal: proposalAddress,
       proposer: params.signer,
@@ -172,82 +116,6 @@ export class GovernanceModule extends BaseModule {
     })
 
     return this.execute('createProposal', () => instruction, [params.signer])
-  }
-
-  /**
-   * Cast a vote on a proposal
-   */
-  async vote(params: {
-    signer: TransactionSigner
-    proposalAddress: Address
-    choice: 'yes' | 'no' | 'abstain'
-    reasoning?: string
-    tokenAccount: Address
-  }): Promise<string> {
-    const voteChoice = this.mapVoteChoice(params.choice)
-    
-    const instruction = this.getCastVoteInstruction({
-      proposal: params.proposalAddress,
-      voter: params.signer,
-      voterTokenAccount: params.tokenAccount,
-      voteChoice,
-      reasoning: params.reasoning ?? null
-    })
-
-    return this.execute('castVote', () => instruction, [params.signer])
-  }
-
-  /**
-   * Delegate voting power to another address
-   */
-  async delegateVotingPower(params: {
-    signer: TransactionSigner
-    delegate: Address
-    amount: bigint
-    tokenAccount: Address
-  }): Promise<string> {
-    const instruction = this.getDelegateVoteInstruction({
-      delegator: params.signer,
-      delegate: params.delegate,
-      delegatorTokenAccount: params.tokenAccount,
-      proposalId: BigInt(0), // 0 for all proposals
-      scope: { kind: 'All', value: undefined }, // Delegate for all proposals
-      expiresAt: null
-    })
-
-    return this.execute('delegateVote', () => instruction, [params.signer])
-  }
-
-  /**
-   * Execute a passed proposal
-   */
-  async executeProposal(params: {
-    signer: TransactionSigner
-    proposalAddress: Address
-    proposalId: string
-  }): Promise<string> {
-    const instruction = this.getExecuteProposalInstruction({
-      proposal: params.proposalAddress,
-      executor: params.signer,
-      targetProgram: this.getProgramId()
-    })
-
-    return this.execute('executeProposal', () => instruction, [params.signer])
-  }
-
-  /**
-   * Tally votes for a proposal
-   */
-  async tallyVotes(params: {
-    signer: TransactionSigner
-    proposalAddress: Address
-  }): Promise<string> {
-    const instruction = this.getTallyVotesInstruction({
-      proposal: params.proposalAddress,
-      authority: params.signer
-    })
-
-    return this.execute('tallyVotes', () => instruction, [params.signer])
   }
 
   // =====================================================
@@ -299,100 +167,6 @@ export class GovernanceModule extends BaseModule {
     })
   }
 
-  /**
-   * Get all votes cast on a specific proposal
-   * Note: Votes are stored in the proposal account as aggregated counts.
-   * Individual vote records would require a Vote account type in the program.
-   */
-  async getVotesByProposal(proposalAddress: Address): Promise<{
-    forVotes: bigint
-    againstVotes: bigint
-    abstainVotes: bigint
-    totalVoters: number
-    votes: Array<{ voter: Address; choice: 'for' | 'against' | 'abstain'; weight: bigint; timestamp: bigint }>
-  }> {
-    const proposal = await this.getProposal(proposalAddress)
-    
-    if (!proposal) {
-      return {
-        forVotes: 0n,
-        againstVotes: 0n,
-        abstainVotes: 0n,
-        totalVoters: 0,
-        votes: []
-      }
-    }
-
-    // Extract vote counts from proposal data
-    // The actual structure depends on how GovernanceProposal is defined
-    const forVotes = (proposal as unknown as { forVotes?: bigint }).forVotes ?? 0n
-    const againstVotes = (proposal as unknown as { againstVotes?: bigint }).againstVotes ?? 0n
-    const abstainVotes = (proposal as unknown as { abstainVotes?: bigint }).abstainVotes ?? 0n
-    
-    // Individual vote records would require querying Vote accounts
-    // For now, return aggregated data from the proposal
-    return {
-      forVotes,
-      againstVotes,
-      abstainVotes,
-      totalVoters: Number(forVotes + againstVotes + abstainVotes > 0n ? 1 : 0), // Placeholder
-      votes: [] // Individual votes require Vote account type in program
-    }
-  }
-
-  /**
-   * Revoke a previously delegated vote
-   */
-  async revokeDelegation(params: {
-    signer: TransactionSigner
-    delegate: Address
-    tokenAccount: Address
-  }): Promise<string> {
-    // Revoke by delegating with 0 scope or calling a revoke instruction
-    // Using the delegate instruction with null/zero parameters to revoke
-    const instruction = this.getDelegateVoteInstruction({
-      delegator: params.signer,
-      delegate: params.delegate,
-      delegatorTokenAccount: params.tokenAccount,
-      proposalId: BigInt(0),
-      scope: { kind: 'All', value: undefined },
-      expiresAt: BigInt(0) // Immediate expiration = revoke
-    })
-
-    return this.execute('revokeDelegation', () => instruction, [params.signer])
-  }
-
-  /**
-   * Get delegations that a voter has given to others
-   * Note: This requires querying VoteDelegation accounts filtered by delegator
-   */
-  async getDelegationsFromVoter(_voter: Address): Promise<Array<{
-    delegate: Address
-    amount: bigint
-    scope: DelegationScope
-    expiresAt: bigint | null
-  }>> {
-    // VoteDelegation accounts would need to be defined in the generated code
-    // For now, return empty array as this requires program support
-    console.warn('getDelegationsFromVoter: Requires VoteDelegation account type in program')
-    return []
-  }
-
-  /**
-   * Get delegations that a delegate has received from others
-   * Note: This requires querying VoteDelegation accounts filtered by delegate
-   */
-  async getDelegationsToDelegate(_delegate: Address): Promise<Array<{
-    delegator: Address
-    amount: bigint
-    scope: DelegationScope
-    expiresAt: bigint | null
-  }>> {
-    // VoteDelegation accounts would need to be defined in the generated code
-    // For now, return empty array as this requires program support
-    console.warn('getDelegationsToDelegate: Requires VoteDelegation account type in program')
-    return []
-  }
 
   // =====================================================
   // HELPER METHODS
@@ -401,18 +175,5 @@ export class GovernanceModule extends BaseModule {
   private deriveProposalPda(proposer: Address, title: string): Address {
     // Implementation would derive PDA using findProgramAddressSync
     return `proposal_${proposer}_${title}` as Address
-  }
-
-  private mapVoteChoice(choice: 'yes' | 'no' | 'abstain'): VoteChoice {
-    switch (choice) {
-      case 'yes':
-        return VoteChoice.For
-      case 'no':
-        return VoteChoice.Against
-      case 'abstain':
-        return VoteChoice.Abstain
-      default:
-        throw new Error(`Invalid vote choice: ${choice}`)
-    }
   }
 }

@@ -123,4 +123,3 @@ export function Providers(props: { children: React.ReactNode }) {
     </QueryClientProvider>
   )
 }
-

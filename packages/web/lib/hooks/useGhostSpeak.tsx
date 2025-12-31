@@ -5,6 +5,11 @@
  *
  * Provides React context and hooks for accessing GhostSpeak SDK functionality
  * with Crossmint wallet adapter integration.
+ * 
+ * Core Pillars:
+ * - Identity Registry (Agents)
+ * - Verifiable Credentials
+ * - Reputation Layer
  */
 
 import React, { createContext, useContext, useMemo, useCallback } from 'react'
@@ -90,7 +95,7 @@ export function useGhostSpeakClient(): GhostSpeakClient | null {
 }
 
 /**
- * Hook for agent operations
+ * Hook for agent operations (Identity Registry)
  */
 export function useAgents() {
   const { client, publicKey, isConnected } = useGhostSpeak()
@@ -123,62 +128,38 @@ export function useAgents() {
 }
 
 /**
- * Hook for escrow operations
+ * Hook for credentials operations (Verifiable Credentials)
  */
-export function useEscrows() {
-  const { client, publicKey, isConnected } = useGhostSpeak()
-
-  const getAllEscrows = useCallback(async () => {
-    if (!client) return []
-    return client.escrow.getAllEscrows()
-  }, [client])
-
-  const getEscrowsByBuyer = useCallback(async () => {
-    if (!client || !publicKey) return []
-    return client.escrow.getEscrowsByBuyer(publicKey as Address)
-  }, [client, publicKey])
-
-  const getEscrowsBySeller = useCallback(async () => {
-    if (!client || !publicKey) return []
-    return client.escrow.getEscrowsBySeller(publicKey as Address)
-  }, [client, publicKey])
+export function useCredentials() {
+  const { client, isConnected } = useGhostSpeak()
 
   return {
-    getAllEscrows,
-    getEscrowsByBuyer,
-    getEscrowsBySeller,
+    client: client?.credentials ?? null,
     isConnected,
-    client: client?.escrow ?? null,
   }
 }
 
 /**
- * Hook for marketplace operations
+ * Hook for reputation operations (Reputation Layer)
  */
-export function useMarketplace() {
+export function useReputation() {
   const { client, isConnected } = useGhostSpeak()
 
-  const getServiceListing = useCallback(
-    async (address: string) => {
-      if (!client) return null
-      return client.marketplace.getServiceListing(address as Address)
-    },
-    [client]
-  )
+  return {
+    client: client?.reputation ?? null,
+    isConnected,
+  }
+}
 
-  const getJobPosting = useCallback(
-    async (address: string) => {
-      if (!client) return null
-      return client.marketplace.getJobPosting(address as Address)
-    },
-    [client]
-  )
+/**
+ * Hook for PayAI operations (Payment Events)
+ */
+export function usePayAI() {
+  const { client, isConnected } = useGhostSpeak()
 
   return {
-    getServiceListing,
-    getJobPosting,
+    client: client?.payai ?? null,
     isConnected,
-    client: client?.marketplace ?? null,
   }
 }
 
@@ -190,18 +171,18 @@ export function useGovernance() {
 
   const getActiveProposals = useCallback(async () => {
     if (!client) return []
-    return client.governance.getActiveProposals()
+    return client.governanceModule.getActiveProposals()
   }, [client])
 
   const getProposalsByProposer = useCallback(async () => {
     if (!client || !publicKey) return []
-    return client.governance.getProposalsByProposer(publicKey as Address)
+    return client.governanceModule.getProposalsByProposer(publicKey as Address)
   }, [client, publicKey])
 
   const getProposal = useCallback(
     async (address: string) => {
       if (!client) return null
-      return client.governance.getProposal(address as Address)
+      return client.governanceModule.getProposal(address as Address)
     },
     [client]
   )
@@ -211,45 +192,18 @@ export function useGovernance() {
     getProposalsByProposer,
     getProposal,
     isConnected,
-    client: client?.governance ?? null,
+    client: client?.governanceModule ?? null,
   }
 }
 
 /**
- * Hook for channel operations
+ * Hook for staking operations
  */
-export function useChannels() {
-  const { client, publicKey, isConnected } = useGhostSpeak()
-
-  const getAllChannels = useCallback(async () => {
-    if (!client) return []
-    return client.channels.getAllChannels()
-  }, [client])
-
-  const getPublicChannels = useCallback(async () => {
-    if (!client) return []
-    return client.channels.getPublicChannels()
-  }, [client])
-
-  const getChannelsByCreator = useCallback(async () => {
-    if (!client || !publicKey) return []
-    return client.channels.getChannelsByCreator(publicKey as Address)
-  }, [client, publicKey])
-
-  const getChannelMessages = useCallback(
-    async (channelAddress: string) => {
-      if (!client) return []
-      return client.channels.getChannelMessages(channelAddress as Address)
-    },
-    [client]
-  )
+export function useStaking() {
+  const { client, isConnected } = useGhostSpeak()
 
   return {
-    getAllChannels,
-    getPublicChannels,
-    getChannelsByCreator,
-    getChannelMessages,
+    client: client?.staking ?? null,
     isConnected,
-    client: client?.channels ?? null,
   }
 }

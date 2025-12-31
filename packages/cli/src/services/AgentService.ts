@@ -379,101 +379,16 @@ export class AgentService implements IAgentService {
       throw new NotFoundError('Agent', agentId)
     }
 
-    // Query blockchain for real analytics data
-    try {
-      const programId = getCurrentProgramId()
-      
-      // Query work orders for this agent
-      const workOrderFilters = [
-        {
-          memcmp: {
-            offset: 8 + 32, // After discriminator and client, provider is at offset 40
-            bytes: agent.address.toString()
-          }
-        }
-      ]
-      
-      // Use blockchain service to get client and fetch work orders
-      const client = await this.deps.blockchainService.getClient('devnet') as GhostSpeakClient
-      const workOrders = await client.config.rpc.getProgramAccounts(
-        programId,
-        {
-          filters: workOrderFilters,
-          commitment: 'confirmed'
-        }
-      )
-      
-      console.log(`📊 Found ${workOrders.length} work orders for agent`)
-      
-      // Parse work order data to calculate analytics
-      let totalJobs = 0
-      let completedJobs = 0
-      let totalEarnings = BigInt(0)
-      let totalRating = 0
-      let ratedJobs = 0
-      
-      for (const workOrder of workOrders) {
-        totalJobs++
-        
-        // Parse work order account data (simplified - in production use proper Borsh deserialization)
-        const data = workOrder.account.data
-        if (data.length > 100) {
-          // Check status byte at expected offset (this is simplified)
-          const statusOffset = 8 + 32 + 32 + 32 // discriminator + client + provider + orderId
-          const status = data[statusOffset]
-          
-          if (status === 3 || status === 4) { // Completed or Delivered
-            completedJobs++
-            
-            // Extract amount (8 bytes at offset after status)
-            const amountOffset = statusOffset + 1
-            const amountBytes = data.slice(amountOffset, amountOffset + 8)
-            const amount = Buffer.from(amountBytes).readBigUInt64LE()
-            totalEarnings += amount
-            
-            // Extract rating if available (simplified)
-            const ratingOffset = amountOffset + 8 + 8 // amount + timestamp
-            if (data.length > ratingOffset) {
-              const rating = data[ratingOffset]
-              if (rating > 0 && rating <= 5) {
-                totalRating += rating
-                ratedJobs++
-              }
-            }
-          }
-        }
-      }
-      
-      // Calculate derived metrics
-      const averageRating = ratedJobs > 0 ? totalRating / ratedJobs : 0
-      const successRate = totalJobs > 0 ? (completedJobs / totalJobs) * 100 : 0
-      
-      // For response time, we would need to query additional event data
-      // For now, return a placeholder that's more realistic
-      const responseTime = completedJobs > 0 ? 3600 : 0 // 1 hour average
-      
-      return {
-        totalJobs,
-        completedJobs,
-        averageRating,
-        totalEarnings,
-        responseTime,
-        successRate,
-        categories: agent.capabilities
-      }
-      
-    } catch (error) {
-      console.error('Error fetching agent analytics:', getErrorMessage(error))
-      // Return default values on error but log the issue
-      return {
-        totalJobs: 0,
-        completedJobs: 0,
-        averageRating: 0,
-        totalEarnings: BigInt(0),
-        responseTime: 0,
-        successRate: 0,
-        categories: agent.capabilities
-      }
+    // In the new architecture, analytics are derived from the Reputation Module
+    // which aggregates PayAI webhook events.
+    return {
+      totalJobs: 0,
+      completedJobs: 0,
+      averageRating: 0,
+      totalEarnings: BigInt(0),
+      responseTime: 0,
+      successRate: 0,
+      categories: agent.capabilities
     }
   }
 

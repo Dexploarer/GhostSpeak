@@ -1,222 +1,132 @@
-/**
- * Staking Module
- *
- * Manages GHOST token staking operations including:
- * - Creating staking accounts
- * - Staking tokens with lockup tiers
- * - Claiming rewards
- * - Auto-compounding
- */
-
 import type { Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import { getProgramDerivedAddress, getAddressEncoder, getBytesEncoder } from '@solana/kit'
 import { BaseModule } from '../../core/BaseModule.js'
 import {
-  getCreateStakingAccountInstructionAsync,
-  getClaimStakingRewardsInstructionAsync,
+  getStakeGhostInstructionAsync,
+  getUnstakeGhostInstructionAsync,
   getInitializeStakingConfigInstructionAsync,
+  type StakingAccount,
+  type StakingConfig,
 } from '../../generated/index.js'
-import type { StakingAccount, StakingConfig } from '../../generated/index.js'
 
-/**
- * Lockup tier enum for staking
- */
-export enum LockupTier {
-  None = 0,
-  OneMonth = 1,
-  ThreeMonths = 2,
-  SixMonths = 3,
-  OneYear = 4,
-  TwoYears = 5,
+export interface StakeParams {
+  /** Agent address to stake for */
+  agent: Address
+  /** Agent's token account holding GHOST tokens */
+  agentTokenAccount: Address
+  /** Staking vault to receive tokens */
+  stakingVault: Address
+  /** Global staking config account */
+  stakingConfig: Address
+  /** Amount of GHOST tokens to stake (in lamports) */
+  amount: bigint
+  /** Lock duration in seconds */
+  lockDuration: bigint
+  /** The agent owner's transaction signer */
+  agentOwner: TransactionSigner
 }
 
-/**
- * Staking module for GHOST token staking operations
- */
+export interface UnstakeParams {
+  /** Staking account to unstake from */
+  stakingAccount: Address
+  /** Agent address */
+  agent: Address
+  /** Staking vault holding the tokens */
+  stakingVault: Address
+  /** Agent's token account to receive tokens */
+  agentTokenAccount: Address
+  /** The agent owner's transaction signer */
+  agentOwner: TransactionSigner
+}
+
+export interface InitializeStakingConfigParams {
+  /** Admin who can modify staking config */
+  authority: TransactionSigner
+  /** Minimum stake amount */
+  minStake: bigint
+  /** Treasury address to receive fees */
+  treasury: Address
+}
+
 export class StakingModule extends BaseModule {
   /**
-   * Derive staking account PDA for a user
-   * Seeds: ["staking", owner]
+   * Initialize the global staking configuration (admin only)
    */
-  async deriveStakingAccountPda(owner: Address): Promise<Address> {
-    const [pda] = await getProgramDerivedAddress({
-      programAddress: this.programId,
-      seeds: [
-        getBytesEncoder().encode(new TextEncoder().encode('staking')),
-        getAddressEncoder().encode(owner),
-      ],
-    })
-    return pda
+  async initializeStakingConfig(params: InitializeStakingConfigParams): Promise<string> {
+    const instruction = await getInitializeStakingConfigInstructionAsync({
+      authority: params.authority,
+      minStake: params.minStake,
+      treasury: params.treasury,
+    }, { programAddress: this.programId })
+
+    return this.execute('initializeStakingConfig', () => instruction, [params.authority])
   }
 
   /**
-   * Derive staking config PDA
-   * Seeds: ["staking_config"]
+   * Stake GHOST tokens for an agent
+   *
+   * @param params - Staking parameters
+   * @returns Transaction signature
    */
-  async deriveStakingConfigPda(): Promise<Address> {
-    const [pda] = await getProgramDerivedAddress({
-      programAddress: this.programId,
-      seeds: [
-        getBytesEncoder().encode(new TextEncoder().encode('staking_config')),
-      ],
-    })
-    return pda
+  async stake(params: StakeParams): Promise<string> {
+    const instruction = await getStakeGhostInstructionAsync({
+      agent: params.agent,
+      agentTokenAccount: params.agentTokenAccount,
+      stakingVault: params.stakingVault,
+      stakingConfig: params.stakingConfig,
+      agentOwner: params.agentOwner,
+      amount: params.amount,
+      lockDuration: params.lockDuration,
+    }, { programAddress: this.programId })
+
+    return this.execute('stakeGhost', () => instruction, [params.agentOwner])
   }
 
   /**
-   * Initialize staking configuration (admin only)
+   * Unstake GHOST tokens from an agent
+   *
+   * @param params - Unstaking parameters
+   * @returns Transaction signature
    */
-  async initializeConfig(params: {
-    signer: TransactionSigner
-    ghostTokenMint: Address
-    rewardsTreasury: Address
-    baseApy: number
-    minStakeAmount: bigint
-    maxStakeAmount: bigint
-  }): Promise<string> {
-    const instructionGetter = async () => {
-      return getInitializeStakingConfigInstructionAsync({
-        authority: params.signer,
-        ghostTokenMint: params.ghostTokenMint,
-        rewardsTreasury: params.rewardsTreasury,
-        baseApy: params.baseApy,
-        minStakeAmount: params.minStakeAmount,
-        maxStakeAmount: params.maxStakeAmount,
-      })
+  async unstake(params: UnstakeParams): Promise<string> {
+    const instruction = await getUnstakeGhostInstructionAsync({
+      stakingAccount: params.stakingAccount,
+      agent: params.agent,
+      stakingVault: params.stakingVault,
+      agentTokenAccount: params.agentTokenAccount,
+      agentOwner: params.agentOwner,
+    }, { programAddress: this.programId })
+
+    return this.execute('unstakeGhost', () => instruction, [params.agentOwner])
+  }
+
+  /**
+   * Get staking account for an agent
+   *
+   * @param stakingAccountAddress - The staking account address
+   * @returns Staking account data or null if not found
+   */
+  async getStakingAccount(stakingAccountAddress: Address): Promise<StakingAccount | null> {
+    try {
+      return await this.getAccount<StakingAccount>(stakingAccountAddress, 'fetchStakingAccount')
+    } catch (error) {
+      console.error('Error fetching staking account:', error)
+      return null
     }
-
-    return this.execute('initializeStakingConfig', instructionGetter, [params.signer])
   }
 
   /**
-   * Create a staking account for a user
+   * Get the global staking configuration
+   *
+   * @param stakingConfigAddress - The staking config account address
+   * @returns Staking config data or null if not initialized
    */
-  async createStakingAccount(params: {
-    signer: TransactionSigner
-  }): Promise<string> {
-    const instructionGetter = async () => {
-      return getCreateStakingAccountInstructionAsync({
-        owner: params.signer,
-      })
+  async getStakingConfig(stakingConfigAddress: Address): Promise<StakingConfig | null> {
+    try {
+      return await this.getAccount<StakingConfig>(stakingConfigAddress, 'fetchStakingConfig')
+    } catch (error) {
+      console.error('Error fetching staking config:', error)
+      return null
     }
-
-    return this.execute('createStakingAccount', instructionGetter, [params.signer])
-  }
-
-  /**
-   * Claim staking rewards
-   */
-  async claimRewards(params: {
-    signer: TransactionSigner
-    ghostMint: Address
-    userTokenAccount: Address
-    rewardsTreasury: Address
-  }): Promise<string> {
-    const instructionGetter = async () => {
-      return getClaimStakingRewardsInstructionAsync({
-        owner: params.signer,
-        ghostMint: params.ghostMint,
-        userTokenAccount: params.userTokenAccount,
-        rewardsTreasury: params.rewardsTreasury,
-      })
-    }
-
-    return this.execute('claimStakingRewards', instructionGetter, [params.signer])
-  }
-
-  /**
-   * Get staking account for a user
-   */
-  async getStakingAccount(owner: Address): Promise<StakingAccount | null> {
-    const stakingAccountAddress = await this.deriveStakingAccountPda(owner)
-    return this.getAccount<StakingAccount>(stakingAccountAddress, 'StakingAccount')
-  }
-
-  /**
-   * Get staking account by address
-   */
-  async getStakingAccountByAddress(address: Address): Promise<StakingAccount | null> {
-    return this.getAccount<StakingAccount>(address, 'StakingAccount')
-  }
-
-  /**
-   * Get all staking accounts
-   */
-  async getAllStakingAccounts(): Promise<{ address: Address; data: StakingAccount }[]> {
-    return this.getProgramAccounts<StakingAccount>('StakingAccount')
-  }
-
-  /**
-   * Get staking config
-   */
-  async getStakingConfig(): Promise<StakingConfig | null> {
-    const configAddress = await this.deriveStakingConfigPda()
-    return this.getAccount<StakingConfig>(configAddress, 'StakingConfig')
-  }
-
-  /**
-   * Calculate pending rewards for a staking account
-   */
-  calculatePendingRewards(stakingAccount: StakingAccount, config: StakingConfig): bigint {
-    const now = BigInt(Math.floor(Date.now() / 1000))
-    const timeSinceLastClaim = now - stakingAccount.lastClaimAt
-
-    // Base reward = staked * baseApy * time / (365 days * 10000 for bps)
-    const baseReward =
-      (stakingAccount.stakedAmount * BigInt(config.baseApy) * timeSinceLastClaim) /
-      BigInt(365 * 24 * 60 * 60 * 10000)
-
-    // Apply lockup tier bonus
-    const tierBonus = this.getTierBonusApy(stakingAccount.lockupTier, config)
-    const bonusReward =
-      (stakingAccount.stakedAmount * BigInt(tierBonus) * timeSinceLastClaim) /
-      BigInt(365 * 24 * 60 * 60 * 10000)
-
-    return baseReward + bonusReward + stakingAccount.pendingRewards
-  }
-
-  /**
-   * Get tier bonus APY in basis points
-   */
-  getTierBonusApy(tier: number, config: StakingConfig): number {
-    if (config.tierBonusApy && tier < config.tierBonusApy.length) {
-      return config.tierBonusApy[tier]
-    }
-    return 0
-  }
-
-  /**
-   * Get lockup duration in seconds for a tier
-   */
-  getLockupDuration(tier: LockupTier): number {
-    const durations: Record<LockupTier, number> = {
-      [LockupTier.None]: 0,
-      [LockupTier.OneMonth]: 30 * 24 * 60 * 60,
-      [LockupTier.ThreeMonths]: 90 * 24 * 60 * 60,
-      [LockupTier.SixMonths]: 180 * 24 * 60 * 60,
-      [LockupTier.OneYear]: 365 * 24 * 60 * 60,
-      [LockupTier.TwoYears]: 730 * 24 * 60 * 60,
-    }
-    return durations[tier] || 0
-  }
-
-  /**
-   * Check if a staking account is locked
-   */
-  isLocked(stakingAccount: StakingAccount): boolean {
-    const now = BigInt(Math.floor(Date.now() / 1000))
-    return stakingAccount.lockupEndsAt > now
-  }
-
-  /**
-   * Get time remaining on lockup in seconds
-   */
-  getLockupTimeRemaining(stakingAccount: StakingAccount): number {
-    const now = BigInt(Math.floor(Date.now() / 1000))
-    if (stakingAccount.lockupEndsAt <= now) {
-      return 0
-    }
-    return Number(stakingAccount.lockupEndsAt - now)
   }
 }

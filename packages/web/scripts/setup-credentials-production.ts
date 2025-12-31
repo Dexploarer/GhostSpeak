@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 /**
  * Setup Crossmint Verifiable Credentials for Production
- * 
+ *
  * This script creates all GhostSpeak credential types and templates
  * in the Crossmint production environment.
- * 
+ *
  * Usage:
  *   bun run scripts/setup-credentials-production.ts
  */
@@ -31,14 +31,14 @@ async function setupCredentials() {
   const vcClient = new CrossmintVCClient({
     apiKey: PRODUCTION_SERVER_KEY!,
     environment: 'production',
-    chain: 'base' // Using Base for production
+    chain: 'base', // Using Base for production
   })
 
   try {
     // Step 1: Create credential types
     console.log('📝 Creating credential types...')
     const types = await vcClient.initializeAllTypes()
-    
+
     console.log('✅ Credential types created:')
     console.log(`   - Agent Identity: ${types.agentIdentity.id}`)
     console.log(`   - Reputation: ${types.reputation.id}`)
@@ -47,7 +47,7 @@ async function setupCredentials() {
     // Step 2: Create templates
     console.log('🎨 Creating credential templates...')
     const templates = await vcClient.createAllTemplates(types)
-    
+
     console.log('✅ Credential templates created:')
     console.log(`   - Agent Identity Template: ${templates.agentIdentityTemplate.id}`)
     console.log(`   - Reputation Template: ${templates.reputationTemplate.id}`)

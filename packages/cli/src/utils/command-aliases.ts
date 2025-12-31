@@ -44,27 +44,7 @@ export const COMMAND_ALIASES: CommandAlias[] = [
     description: 'Create new wallet'
   },
   
-  // Marketplace commands
-  {
-    aliases: ['m', 'market', 'browse'],
-    command: 'marketplace list',
-    description: 'Browse marketplace'
-  },
-  {
-    aliases: ['m s', 'ms', 'search'],
-    command: 'marketplace search',
-    description: 'Search marketplace'
-  },
-  {
-    aliases: ['m c', 'mc', 'list-service'],
-    command: 'marketplace create',
-    description: 'Create service listing'
-  },
-  {
-    aliases: ['buy', 'purchase'],
-    command: 'marketplace purchase',
-    description: 'Purchase a service'
-  },
+  // Marketplace commands REMOVED
   
   // Escrow commands
   {
@@ -116,16 +96,7 @@ export const COMMAND_ALIASES: CommandAlias[] = [
     command: 'quickstart new',
     description: 'Complete agent setup'
   },
-  {
-    aliases: ['my-services'],
-    command: 'marketplace list --mine',
-    description: 'View your services'
-  },
-  {
-    aliases: ['my-jobs'],
-    command: 'marketplace jobs list --my-jobs',
-    description: 'View your job postinghost'
-  },
+  // my-services, my-jobs REMOVED
   {
     aliases: ['transactions'],
     command: 'tx',
@@ -187,33 +158,7 @@ export const NATURAL_LANGUAGE_PATTERNS: Array<{
     command: 'wallet create'
   },
   
-  // Marketplace operations
-  {
-    patterns: [
-      /browse.*market/i,
-      /show.*services?/i,
-      /list.*services?/i,
-      /marketplace/i
-    ],
-    command: 'marketplace list'
-  },
-  {
-    patterns: [
-      /search.*(?:for|service).*(.+)/i,
-      /find.*service.*(.+)/i,
-      /look.*for.*(.+)/i
-    ],
-    command: 'marketplace search',
-    extractor: (match) => ({ query: match[1].trim() || '' })
-  },
-  {
-    patterns: [
-      /buy.*service/i,
-      /purchase.*service/i,
-      /hire.*agent/i
-    ],
-    command: 'marketplace purchase'
-  },
+  // Marketplace operations REMOVED
   
   // Escrow operations
   {
@@ -278,8 +223,8 @@ export function resolveAlias(input: string): string | null {
   // Don't resolve aliases when the input already contains proper commands
   // This prevents "agent register --help" from being resolved to "--help"
   const firstWord = normalized.split(' ')[0]
-  const knownCommands = ['agent', 'marketplace', 'escrow', 'channel', 'auction', 
-                         'dispute', 'governance', 'wallet', 'config', 'faucet', 
+  const knownCommands = ['agent', 'escrow', 
+                         'governance', 'wallet', 'config', 'faucet', 
                          'sdk', 'update', 'quickstart', 'onboard', 'help', 'aliases', 'tx']
   
   if (knownCommands.includes(firstWord)) {
@@ -333,7 +278,6 @@ export function showAliases(): void {
   const categories = [
     { name: 'Agent', filter: (cmd: CommandAlias) => cmd.command.startsWith('agent') },
     { name: 'Wallet', filter: (cmd: CommandAlias) => cmd.command.startsWith('wallet') },
-    { name: 'Marketplace', filter: (cmd: CommandAlias) => cmd.command.startsWith('marketplace') },
     { name: 'Escrow', filter: (cmd: CommandAlias) => cmd.command.startsWith('escrow') },
     { name: 'Quick Actions', filter: (cmd: CommandAlias) => !cmd.command.includes(' ') || cmd.aliases.includes('f') }
   ]

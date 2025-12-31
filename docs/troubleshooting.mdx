@@ -1,0 +1,665 @@
+---
+title: Troubleshooting Guide
+description: Common issues and solutions for GhostSpeak Protocol
+---
+
+# Troubleshooting Guide
+
+This guide covers common issues you might encounter when using GhostSpeak and how to resolve them.
+
+## Quick Diagnostic Checklist
+
+Before diving into specific issues, run through this checklist:
+
+- [ ] Wallet has sufficient SOL balance (check with `solana balance`)
+- [ ] Connected to the correct network (devnet/mainnet)
+- [ ] RPC endpoint is responding (check at `/api/health`)
+- [ ] Environment variables are properly set
+- [ ] Using latest version of SDK/CLI
+
+---
+
+## Wallet & Connection Issues
+
+### "Transaction failed: Wallet not connected"
+
+**Symptoms:** Unable to execute transactions, wallet appears disconnected
+
+**Causes:**
+- Wallet extension not installed or locked
+- Website not connected to wallet
+- Wallet on wrong network
+
+**Solutions:**
+
+```typescript
+// 1. Check wallet connection
+const { connected, publicKey } = useWallet()
+if (!connected) {
+  console.error('Wallet not connected')
+}
+
+// 2. Request connection
+await wallet.connect()
+
+// 3. Verify network
+const network = await connection.getGenesisHash()
+console.log('Connected to:', network)
+```
+
+**CLI:**
+```bash
+# Check wallet balance (confirms connection)
+solana balance
+
+# Airdrop SOL on devnet
+solana airdrop 2
+
+# Set correct network
+solana config set --url https://api.devnet.solana.com
+```
+
+---
+
+### "User rejected the request"
+
+**Symptoms:** Transaction fails immediately after wallet popup
+
+**Cause:** User cancelled the transaction in their wallet
+
+**Solution:** This is expected behavior. Retry the transaction or provide clear instructions to users:
+
+```typescript
+try {
+  await client.agents.register(signer, params)
+} catch (error) {
+  if (error.message.includes('User rejected')) {
+    toast.error('Transaction cancelled. Please try again.')
+    return
+  }
+  throw error
+}
+```
+
+---
+
+### "Insufficient funds for transaction"
+
+**Symptoms:** Transaction fails with insufficient funds error
+
+**Causes:**
+- Wallet balance too low
+- Transaction requires more SOL than available
+- Rent-exempt minimum not met
+
+**Solutions:**
+
+**Check Balance:**
+```bash
+solana balance
+```
+
+**Airdrop (Devnet Only):**
+```bash
+solana airdrop 2
+```
+
+**Estimate Transaction Cost:**
+```typescript
+const { value: recentBlockhash } = await connection.getRecentBlockhash()
+const estimatedFee = await transaction.getEstimatedFee(connection)
+console.log(`Estimated fee: ${estimatedFee / LAMPORTS_PER_SOL} SOL`)
+```
+
+**Minimum SOL Needed:**
+- Basic transaction: ~0.000005 SOL
+- Agent registration: ~0.002 SOL (including rent)
+- Complex operations: ~0.005-0.01 SOL
+
+---
+
+## Agent Registration Issues
+
+### "Agent address already in use"
+
+**Symptoms:** Registration fails with "account already exists" error
+
+**Cause:** Attempting to register an agent at an address that's already registered
+
+**Solution:**
+
+```typescript
+// 1. Check if agent exists
+const agentAccount = await client.agents.getAgent(agentAddress)
+if (agentAccount) {
+  console.log('Agent already registered')
+  // Option A: Update existing agent instead
+  await client.agents.update(signer, agentAddress, newParams)
+  return
+}
+
+// 2. Use a new address
+const newAgent = await generateKeyPairSigner()
+await client.agents.register(newAgent, params)
+```
+
+**CLI:**
+```bash
+# Check if agent exists
+ghostspeak agent get <AGENT_ADDRESS>
+
+# Register with new address
+ghostspeak agent register --name "New Agent"
+```
+
+---
+
+### "Invalid agent name or description"
+
+**Symptoms:** Registration fails with validation error
+
+**Cause:** Name or description exceeds maximum length or contains invalid characters
+
+**Constraints:**
+- Name: Max 64 characters, alphanumeric + spaces
+- Description: Max 256 characters
+- Capabilities: Max 10 items, each max 32 characters
+- Service endpoint: Valid URL format
+
+**Solution:**
+
+```typescript
+// Validate before submitting
+function validateAgentParams(params) {
+  if (params.name.length > 64) {
+    throw new Error('Name too long (max 64 characters)')
+  }
+  if (params.description.length > 256) {
+    throw new Error('Description too long (max 256 characters)')
+  }
+  if (params.capabilities.length > 10) {
+    throw new Error('Too many capabilities (max 10)')
+  }
+  // URL validation
+  try {
+    new URL(params.serviceEndpoint)
+  } catch {
+    throw new Error('Invalid service endpoint URL')
+  }
+}
+```
+
+---
+
+## API Issues
+
+### "Rate limit exceeded"
+
+**Symptoms:** API returns 429 status code with "Too Many Requests"
+
+**Cause:** Exceeded rate limit for your API tier
+
+**Rate Limits:**
+- Freemium: 10 requests/hour
+- Starter: 100 requests/hour
+- Professional: 1,000 requests/hour
+- Enterprise: 10,000 requests/hour
+
+**Solutions:**
+
+```typescript
+// 1. Check rate limit headers
+const response = await fetch('/api/v1/agents', {
+  headers: { 'x-api-key': apiKey }
+})
+
+console.log('Rate limit:', response.headers.get('X-RateLimit-Limit'))
+console.log('Remaining:', response.headers.get('X-RateLimit-Remaining'))
+console.log('Reset:', response.headers.get('X-RateLimit-Reset'))
+
+// 2. Implement retry with exponential backoff
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch(url, options)
+
+    if (response.status !== 429) {
+      return response
+    }
+
+    const retryAfter = response.headers.get('Retry-After') || 60
+    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000))
+  }
+  throw new Error('Max retries exceeded')
+}
+```
+
+**Upgrade Tier:**
+```bash
+# Visit dashboard to upgrade
+open https://ghostspeak.io/dashboard/api-usage
+```
+
+---
+
+### "API key invalid"
+
+**Symptoms:** 401 Unauthorized error
+
+**Causes:**
+- API key incorrect or malformed
+- API key revoked
+- API key for wrong environment (dev vs prod)
+
+**Solutions:**
+
+```typescript
+// 1. Verify API key format
+const API_KEY_REGEX = /^gs_[a-zA-Z0-9]{32}$/
+if (!API_KEY_REGEX.test(apiKey)) {
+  console.error('Invalid API key format')
+}
+
+// 2. Test with basic request
+const response = await fetch('/api/v1/health', {
+  headers: { 'x-api-key': apiKey }
+})
+if (response.status === 401) {
+  console.error('API key authentication failed')
+}
+```
+
+**Generate New Key:**
+```bash
+# Visit dashboard
+open https://ghostspeak.io/dashboard/api-keys
+
+# Or via API (if you have valid credentials)
+curl -X POST https://ghostspeak.io/api/v1/keys \
+  -H "Authorization: Bearer $AUTH_TOKEN"
+```
+
+---
+
+## Ghost Score Issues
+
+### "Ghost Score calculation failed"
+
+**Symptoms:** Score shows as 0 or error when calculating
+
+**Causes:**
+- Agent newly registered (no reputation data yet)
+- Insufficient on-chain data
+- Temporary RPC issues
+
+**Solutions:**
+
+```typescript
+// 1. Check agent data availability
+const agent = await client.agents.getAgent(agentAddress)
+console.log('Registration time:', agent.createdAt)
+console.log('Verification status:', agent.verificationStatus)
+console.log('Credentials:', agent.credentials.length)
+
+// 2. Wait for data to propagate (new agents)
+if (Date.now() - agent.createdAt < 60000) {
+  console.log('Agent recently registered, scores updating...')
+  // Retry after delay
+  await new Promise(resolve => setTimeout(resolve, 30000))
+  const score = await client.reputation.getAgentReputation(agentAddress)
+}
+
+// 3. Verify RPC connection
+const health = await fetch('/api/health')
+const status = await health.json()
+if (!status.healthy) {
+  console.error('System health check failed:', status)
+}
+```
+
+---
+
+### "Credential verification failed"
+
+**Symptoms:** Unable to verify credentials, verification shows as invalid
+
+**Causes:**
+- Credential expired
+- Credential revoked
+- Invalid issuer signature
+- Wrong credential type
+
+**Solutions:**
+
+```typescript
+// 1. Check credential validity
+const credential = await client.credentials.getCredential(
+  agentAddress,
+  credentialType
+)
+
+if (Date.now() > credential.expirationDate) {
+  console.error('Credential expired')
+  // Request new credential
+  await requestCredentialRenewal(agentAddress, credentialType)
+}
+
+if (credential.revoked) {
+  console.error('Credential was revoked')
+  // Cannot be used, must obtain new one
+}
+
+// 2. Verify issuer signature
+const isValid = await client.credentials.verifyCredential(
+  credential,
+  credential.issuer
+)
+if (!isValid) {
+  console.error('Invalid issuer signature')
+}
+```
+
+---
+
+## Payment Issues
+
+### "PayAI webhook not delivering"
+
+**Symptoms:** Payments succeed but webhook never received
+
+**Causes:**
+- Incorrect webhook URL
+- HMAC signature validation failing
+- Firewall blocking requests
+- Server not responding in time
+
+**Solutions:**
+
+**1. Verify Webhook URL:**
+```bash
+# Check PayAI dashboard
+# URL should be: https://your-domain.com/api/payai/webhook
+```
+
+**2. Test Webhook Endpoint:**
+```bash
+curl -X POST https://your-domain.com/api/payai/webhook \
+  -H "Content-Type: application/json" \
+  -H "X-PayAI-Signature: test_signature" \
+  -d '{"type":"test","data":{}}'
+```
+
+**3. Check Signature Validation:**
+```typescript
+// Verify HMAC signature
+import crypto from 'crypto'
+
+function verifyWebhookSignature(payload, signature, secret) {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  )
+}
+```
+
+**4. Enable Webhook Logging:**
+```typescript
+// In webhook handler
+export async function POST(request: Request) {
+  const body = await request.text()
+  console.log('[PayAI Webhook] Received:', body.substring(0, 200))
+
+  // ... process webhook
+
+  console.log('[PayAI Webhook] Processed successfully')
+  return new Response(JSON.stringify({ received: true }))
+}
+```
+
+---
+
+### "Stripe payment failed"
+
+**Symptoms:** Payment processing fails, user charged but transaction not recorded
+
+**Causes:**
+- Test keys used in production
+- Webhook secret mismatch
+- Currency mismatch
+- Card declined
+
+**Solutions:**
+
+**1. Verify Environment:**
+```bash
+# Check if using correct keys
+echo $STRIPE_SECRET_KEY | grep "sk_live"  # Production
+echo $STRIPE_SECRET_KEY | grep "sk_test"  # Test
+```
+
+**2. Test Webhook:**
+```bash
+# Install Stripe CLI
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+
+# Trigger test event
+stripe trigger payment_intent.succeeded
+```
+
+**3. Handle Errors:**
+```typescript
+try {
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: 1000,
+    currency: 'usd',
+    metadata: {
+      agentAddress: agent.address
+    }
+  })
+} catch (error) {
+  if (error.type === 'StripeCardError') {
+    // Card declined
+    toast.error('Payment declined. Please try a different card.')
+  } else if (error.type === 'StripeInvalidRequestError') {
+    // Invalid parameters
+    console.error('Invalid Stripe request:', error.message)
+  }
+}
+```
+
+---
+
+## Performance Issues
+
+### "Slow page load times"
+
+**Symptoms:** Pages take >3 seconds to load
+
+**Causes:**
+- Large bundle size
+- Unoptimized images
+- Slow RPC endpoint
+- Too many API calls
+
+**Solutions:**
+
+**1. Analyze Bundle:**
+```bash
+# Build with bundle analyzer
+ANALYZE=true bun run build
+```
+
+**2. Optimize Images:**
+```typescript
+// Use Next.js Image component
+import Image from 'next/image'
+
+<Image
+  src="/agent-avatar.png"
+  width={200}
+  height={200}
+  priority={false}  // Lazy load
+/>
+```
+
+**3. Use Faster RPC:**
+```bash
+# Use dedicated RPC provider
+NEXT_PUBLIC_SOLANA_RPC_URL=https://your-dedicated-rpc.com
+```
+
+**4. Implement Caching:**
+```typescript
+// Cache agent data
+import { cache } from 'react'
+
+export const getAgent = cache(async (address: string) => {
+  return await client.agents.getAgent(address)
+})
+```
+
+---
+
+### "High memory usage"
+
+**Symptoms:** Application crashes or becomes unresponsive
+
+**Cause:** Memory leaks in subscription or WebSocket connections
+
+**Solution:**
+
+```typescript
+// Always cleanup subscriptions
+useEffect(() => {
+  const subscription = connection.onAccountChange(
+    accountPubkey,
+    (accountInfo) => {
+      // Handle update
+    }
+  )
+
+  // Cleanup on unmount
+  return () => {
+    connection.removeAccountChangeListener(subscription)
+  }
+}, [connection, accountPubkey])
+```
+
+---
+
+## Build & Deployment Issues
+
+### "Build fails with type errors"
+
+**Symptoms:** `bun run build` fails with TypeScript errors
+
+**Solution:**
+
+```bash
+# 1. Clear cache
+rm -rf .next node_modules
+bun install
+
+# 2. Check TypeScript version
+bun typescript --version
+
+# 3. Run type check separately
+bun run type-check
+
+# 4. Fix errors or temporarily disable
+# (NOT recommended for production)
+# In next.config.ts:
+# typescript: { ignoreBuildErrors: true }
+```
+
+---
+
+### "Vercel deployment fails"
+
+**Symptoms:** Build succeeds locally but fails on Vercel
+
+**Common Causes:**
+
+**1. Missing Environment Variables:**
+```bash
+# Check all required variables are set in Vercel dashboard
+- NEXT_PUBLIC_CONVEX_URL
+- NEXT_PUBLIC_SOLANA_RPC_URL
+- SERVER_WALLET_PRIVATE_KEY
+- STRIPE_SECRET_KEY
+# etc.
+```
+
+**2. Build Command:**
+```json
+// In package.json, ensure:
+{
+  "scripts": {
+    "build": "next build"
+  }
+}
+```
+
+**3. Node Version:**
+```json
+// In package.json:
+{
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
+```
+
+---
+
+## Getting Help
+
+If you're still experiencing issues:
+
+1. **Check Documentation**: https://docs.ghostspeak.io
+2. **Search Issues**: https://github.com/ghostspeak/ghostspeak/issues
+3. **Discord Community**: https://discord.gg/ghostspeak
+4. **Email Support**: support@ghostspeak.io
+
+### When Reporting Issues
+
+Please include:
+
+- GhostSpeak version (SDK, CLI, Web)
+- Network (devnet/mainnet)
+- Error message (full stack trace)
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment (OS, Node version, browser)
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+# CLI
+ghostspeak --debug agent register
+
+# Environment variable
+DEBUG=ghostspeak:* bun run dev
+
+# SDK
+const client = new GhostSpeakClient({
+  //... config
+  logLevel: 'debug'
+})
+```
+
+---
+
+## Emergency Contacts
+
+**Production Outage:** emergency@ghostspeak.io
+
+**Security Issue:** security@ghostspeak.io
+
+**Status Page:** https://status.ghostspeak.io

@@ -7,35 +7,44 @@
 
 // Core modules (working)
 pub mod agent;
+// pub mod b2b_billing; // Commented out until implemented
+
+// Advanced features (2025)
+pub mod marketplace;
+pub mod reputation_nft;
+pub mod privacy;
+pub mod erc8004;
 
 // Additional modules
-pub mod analytics;
-pub mod auction;
+// pub mod analytics; // Removed
 pub mod audit;
-pub mod bulk_deals;
-pub mod channel;
-pub mod commerce;
+pub mod did; // Decentralized identifiers (did:sol)
+// pub mod bulk_deals; // Removed
+// pub mod channel; // Removed
+// pub mod commerce; // Removed
 // pub mod compliance; // REMOVED: Unused - saves ~2100 lines
 pub mod credential;
-pub mod dispute;
-pub mod escrow;
-pub mod extensions;
-pub mod governance;
-pub mod incentives;
-pub mod marketplace;
-pub mod message;
-pub mod negotiation;
-pub mod pricing;
+// pub mod dispute; // Removed
+// pub mod escrow; // Removed
+pub mod ghost_protect;
+// pub mod extensions; // Removed
+pub mod governance; // Contains multisig types - pending extraction to separate module
+// pub mod incentives; // Removed - payment-based incentives delegated to PayAI
+// pub mod marketplace; // Removed
+// pub mod message; // Removed
+// pub mod negotiation; // Removed
+// pub mod pricing; // Removed
 pub mod protocol_config;
-pub mod protocol_structures;
-pub mod replication;
+// pub mod protocol_structures; // REMOVED - messaging state not needed
+// pub mod replication; // Removed
 pub mod reputation;
+// pub mod revenue_pool; // Commented out until implemented
 // pub mod risk_management; // REMOVED: Unused - saves ~1950 lines
-pub mod royalty;
+// pub mod royalty; // Removed
 pub mod security_governance;
 pub mod staking;
 pub mod user_registry;
-pub mod work_order;
+// pub mod work_order; // Removed
 
 // Re-export all types with selective imports to avoid conflicts
 // Import from agent with conflict resolution
@@ -47,18 +56,32 @@ pub use agent::{
     AgentVerification,
     AgentVerificationData,
 };
+// Import B2B billing types - commented out until implemented
+// pub use b2b_billing::{
+//     FundsDeposited, FundsWithdrawn, LowBalanceAlert, SubscriptionTier, TeamAccountCreated,
+//     TeamBillingAccount, TierUpdated, UsageDeducted, UsageRecord,
+// };
 // Import compressed agent types
 pub use crate::instructions::agent_compressed::{
     AgentTreeConfig, CompressedAgentCreatedEvent, CompressedAgentMetadata,
 };
-// Import from analytics with conflict resolution
-pub use analytics::{
-    AgentAnalytics as AnalyticsAgentAnalytics, // Rename to avoid conflict
-    AnalyticsDashboard,
-    MarketAnalytics,
-    MarketAnalyticsData,
+// Import staking types
+pub use staking::{
+    AccessTier, GhostSlashedEvent, GhostStakedEvent, GhostUnstakedEvent, SlashReason,
+    StakingAccount, StakingConfig, TierUpdatedEvent,
 };
-pub use auction::*;
+// Import revenue pool types - commented out until implemented
+// pub use revenue_pool::{
+//     RevenueDistributed, RevenuePool, RevenuePoolUpdated, RevenueSource, RewardsClaimed,
+//     UserRewards, UserWeightedStakeUpdated,
+// };
+// Import Ghost Protect escrow types
+pub use ghost_protect::{
+    ArbitratorDecision, DeliverySubmittedEvent, DisputeFiledEvent, DisputeResolvedEvent,
+    EscrowCompletedEvent, EscrowCreatedEvent, EscrowStatus, GhostProtectEscrow,
+};
+// Analytics re-exports removed
+// pub use auction::*; // Removed
 // Selective imports from audit to avoid conflicts
 pub use audit::{
     ApprovalLevel,
@@ -91,38 +114,36 @@ pub use audit::{
     TrendDirection as AuditTrendDirection,
     ViolationSeverity,
     ViolationType,
+    // WorkOrder, // REMOVED: Deleted state struct
 };
-pub use bulk_deals::*;
-pub use channel::*;
-// Selective imports from commerce to avoid conflicts
-pub use commerce::{
-    JobApplicationData as CommerceJobApplicationData,
-    ServiceListingData as CommerceServiceListingData,
-};
+// pub use bulk_deals::*; // Removed
+// pub use channel::*; // Removed
+// Commerce re-exports removed
 // REMOVED: compliance module exports - unused, saves ~2100 lines
-pub use dispute::*;
-pub use escrow::*;
-pub use extensions::*;
-pub use governance::*;
-// Selective imports from incentives
-pub use incentives::{AgentIncentives, IncentiveConfig, IncentiveProgram};
+// pub use dispute::*; // Removed
+// pub use escrow::*; // Removed
+// Extensions re-exports removed
+pub use governance::*; // Multisig types needed - pending extraction to separate module
+// Incentives removed - payment-based incentives delegated to PayAI
+// pub use incentives::{AgentIncentives, IncentiveConfig, IncentiveProgram};
 // Selective imports from marketplace to avoid conflicts
 pub use credential::*;
-pub use marketplace::{
-    JobApplication, JobApplicationData as MarketplaceJobApplicationData, JobCompletion,
-    JobContract, JobPosting, PurchaseStatus, ServiceListing,
-    ServiceListingData as MarketplaceServiceListingData, ServicePurchase,
-};
-pub use message::*;
-pub use negotiation::*;
-pub use pricing::*;
-pub use replication::*;
-pub use reputation::ReputationMetrics;
+// DID module exports
+pub use did::*;
+// pub use marketplace::{ // Removed
+//     JobApplication, JobApplicationData as MarketplaceJobApplicationData, JobCompletion,
+//     JobContract, JobPosting, PurchaseStatus, ServiceListing,
+//     ServiceListingData as MarketplaceServiceListingData, ServicePurchase,
+// };
+// pub use message::*; // Removed
+// pub use negotiation::*; // Removed
+// Pricing and Replication re-exports removed
+pub use reputation::{ReputationMetrics, TagScore};
 // REMOVED: risk_management exports - unused, saves ~1950 lines
-pub use royalty::*;
+// Royalty re-exports removed
 // Selective imports from security_governance to avoid conflicts
 pub use protocol_config::*;
-pub use protocol_structures::*;
+// pub use protocol_structures::*; // REMOVED - messaging state not needed
 pub use security_governance::{
     AccessAuditConfig, AccessPolicy, AccountLockoutPolicies, Action, ActionConstraint, ActionType,
     ActivationRequirement, ActivationRequirementType, AgingPolicy, ApprovalRequirement,
@@ -145,12 +166,10 @@ pub use security_governance::{
     TimeConstraints, UnlockMethod, ValueType,
 };
 pub use user_registry::*;
-pub use work_order::*;
+// pub use work_order::*; // Removed
 
 // Re-export error types from main lib
 pub use crate::GhostSpeakError;
-
-use anchor_lang::prelude::*;
 
 // Security constants
 pub const MAX_NAME_LENGTH: usize = 64;
@@ -160,58 +179,12 @@ pub const MAX_PARTICIPANTS_COUNT: usize = 50;
 pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
 pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
 
-// Additional constants for various operations
-pub const MAX_TITLE_LENGTH: usize = 100;
-pub const MAX_DESCRIPTION_LENGTH: usize = 512;
-pub const MAX_REQUIREMENTS_ITEMS: usize = 10;
-pub const MAX_MESSAGE_LENGTH: usize = 1024;
-pub const MAX_TAGS_COUNT: usize = 10;
-pub const MAX_TAG_LENGTH: usize = 20;
-pub const MAX_SKILLS_COUNT: usize = 20;
-pub const MAX_SKILL_LENGTH: usize = 50;
-pub const MAX_COVER_LETTER_LENGTH: usize = 1000;
-pub const MAX_PORTFOLIO_ITEMS: usize = 10;
-pub const MAX_URL_LENGTH: usize = 256;
-pub const MIN_BID_INCREMENT: u64 = 100;
-pub const MIN_AUCTION_DURATION: i64 = 3600; // 1 hour
-pub const MAX_AUCTION_DURATION: i64 = 2592000; // 30 days
-pub const MAX_BIDS_PER_AUCTION_PER_USER: usize = 50;
+// Export new advanced feature modules
+pub use marketplace::*;
+pub use reputation_nft::*;
+pub use privacy::*;
+pub use erc8004::*;
 
-// Reserve price extension constants
-pub const MAX_RESERVE_EXTENSIONS: u8 = 3; // Maximum number of extensions when reserve not met
-pub const RESERVE_EXTENSION_DURATION: i64 = 3600; // 1 hour extension each time
-pub const RESERVE_SHORTFALL_THRESHOLD: i64 = 300; // Notify bidders if < 5 minutes left without reserve
+// Legacy constants removed
 
-// Common enums used across modules
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
-pub enum ChannelType {
-    Direct,
-    Group,
-    Public,
-    Private,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
-pub enum MessageType {
-    Text,
-    File,
-    Image,
-    Audio,
-    System,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
-pub enum ApplicationStatus {
-    Submitted,
-    Accepted,
-    Rejected,
-    Withdrawn,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
-pub enum ContractStatus {
-    Active,
-    Completed,
-    Cancelled,
-    Disputed,
-}
+// Legacy enums removed

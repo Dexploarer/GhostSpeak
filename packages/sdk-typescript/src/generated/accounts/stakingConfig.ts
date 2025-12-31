@@ -17,10 +17,6 @@ import {
   fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
-  getArrayDecoder,
-  getArrayEncoder,
-  getBooleanDecoder,
-  getBooleanEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getI64Decoder,
@@ -59,64 +55,34 @@ export function getStakingConfigDiscriminatorBytes() {
 
 export type StakingConfig = {
   discriminator: ReadonlyUint8Array;
-  /** Authority that can update config */
+  /** Authority who can update staking parameters */
   authority: Address;
-  /** GHOST token mint address */
-  ghostTokenMint: Address;
-  /** Treasury account for reward distribution */
-  rewardsTreasury: Address;
-  /** Base APY in basis points (e.g., 500 = 5%) */
-  baseApy: number;
-  /** Bonus APY per lockup tier (basis points) */
-  tierBonusApy: Array<number>;
-  /** Minimum stake amount */
-  minStakeAmount: bigint;
-  /** Maximum stake amount per account (0 = no limit) */
-  maxStakeAmount: bigint;
-  /** Total tokens staked across all accounts */
-  totalStaked: bigint;
-  /** Total rewards distributed */
-  totalRewardsDistributed: bigint;
-  /** Whether staking is currently enabled */
-  isEnabled: boolean;
-  /** Emergency pause flag */
-  isPaused: boolean;
-  /** Creation timestamp */
-  createdAt: bigint;
-  /** Last update timestamp */
-  updatedAt: bigint;
-  /** PDA bump */
+  /** Minimum stake amount (1,000 GHOST) */
+  minStake: bigint;
+  /** Minimum lock duration (30 days in seconds) */
+  minLockDuration: bigint;
+  /** Slash percentage for fraud (50% = 5000 bps) */
+  fraudSlashBps: number;
+  /** Slash percentage for dispute loss (10% = 1000 bps) */
+  disputeSlashBps: number;
+  /** Treasury account for slashed tokens */
+  treasury: Address;
   bump: number;
 };
 
 export type StakingConfigArgs = {
-  /** Authority that can update config */
+  /** Authority who can update staking parameters */
   authority: Address;
-  /** GHOST token mint address */
-  ghostTokenMint: Address;
-  /** Treasury account for reward distribution */
-  rewardsTreasury: Address;
-  /** Base APY in basis points (e.g., 500 = 5%) */
-  baseApy: number;
-  /** Bonus APY per lockup tier (basis points) */
-  tierBonusApy: Array<number>;
-  /** Minimum stake amount */
-  minStakeAmount: number | bigint;
-  /** Maximum stake amount per account (0 = no limit) */
-  maxStakeAmount: number | bigint;
-  /** Total tokens staked across all accounts */
-  totalStaked: number | bigint;
-  /** Total rewards distributed */
-  totalRewardsDistributed: number | bigint;
-  /** Whether staking is currently enabled */
-  isEnabled: boolean;
-  /** Emergency pause flag */
-  isPaused: boolean;
-  /** Creation timestamp */
-  createdAt: number | bigint;
-  /** Last update timestamp */
-  updatedAt: number | bigint;
-  /** PDA bump */
+  /** Minimum stake amount (1,000 GHOST) */
+  minStake: number | bigint;
+  /** Minimum lock duration (30 days in seconds) */
+  minLockDuration: number | bigint;
+  /** Slash percentage for fraud (50% = 5000 bps) */
+  fraudSlashBps: number;
+  /** Slash percentage for dispute loss (10% = 1000 bps) */
+  disputeSlashBps: number;
+  /** Treasury account for slashed tokens */
+  treasury: Address;
   bump: number;
 };
 
@@ -126,18 +92,11 @@ export function getStakingConfigEncoder(): FixedSizeEncoder<StakingConfigArgs> {
     getStructEncoder([
       ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
       ["authority", getAddressEncoder()],
-      ["ghostTokenMint", getAddressEncoder()],
-      ["rewardsTreasury", getAddressEncoder()],
-      ["baseApy", getU16Encoder()],
-      ["tierBonusApy", getArrayEncoder(getU16Encoder(), { size: 6 })],
-      ["minStakeAmount", getU64Encoder()],
-      ["maxStakeAmount", getU64Encoder()],
-      ["totalStaked", getU64Encoder()],
-      ["totalRewardsDistributed", getU64Encoder()],
-      ["isEnabled", getBooleanEncoder()],
-      ["isPaused", getBooleanEncoder()],
-      ["createdAt", getI64Encoder()],
-      ["updatedAt", getI64Encoder()],
+      ["minStake", getU64Encoder()],
+      ["minLockDuration", getI64Encoder()],
+      ["fraudSlashBps", getU16Encoder()],
+      ["disputeSlashBps", getU16Encoder()],
+      ["treasury", getAddressEncoder()],
       ["bump", getU8Encoder()],
     ]),
     (value) => ({ ...value, discriminator: STAKING_CONFIG_DISCRIMINATOR }),
@@ -149,18 +108,11 @@ export function getStakingConfigDecoder(): FixedSizeDecoder<StakingConfig> {
   return getStructDecoder([
     ["discriminator", fixDecoderSize(getBytesDecoder(), 8)],
     ["authority", getAddressDecoder()],
-    ["ghostTokenMint", getAddressDecoder()],
-    ["rewardsTreasury", getAddressDecoder()],
-    ["baseApy", getU16Decoder()],
-    ["tierBonusApy", getArrayDecoder(getU16Decoder(), { size: 6 })],
-    ["minStakeAmount", getU64Decoder()],
-    ["maxStakeAmount", getU64Decoder()],
-    ["totalStaked", getU64Decoder()],
-    ["totalRewardsDistributed", getU64Decoder()],
-    ["isEnabled", getBooleanDecoder()],
-    ["isPaused", getBooleanDecoder()],
-    ["createdAt", getI64Decoder()],
-    ["updatedAt", getI64Decoder()],
+    ["minStake", getU64Decoder()],
+    ["minLockDuration", getI64Decoder()],
+    ["fraudSlashBps", getU16Decoder()],
+    ["disputeSlashBps", getU16Decoder()],
+    ["treasury", getAddressDecoder()],
     ["bump", getU8Decoder()],
   ]);
 }
@@ -231,5 +183,5 @@ export async function fetchAllMaybeStakingConfig(
 }
 
 export function getStakingConfigSize(): number {
-  return 169;
+  return 93;
 }

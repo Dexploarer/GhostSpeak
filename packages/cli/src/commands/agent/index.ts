@@ -20,7 +20,6 @@ import { registerVerifyCommand } from './verify.js'
 import { registerAnalyticsCommand } from './analytics.js'
 import { registerCredentialsCommand } from './credentials.js'
 import { registerUuidCommand } from './uuid.js'
-import { registerX402Command } from './x402.js'
 
 // Register all subcommands
 registerRegisterCommand(agentCommand)
@@ -32,7 +31,6 @@ registerVerifyCommand(agentCommand)
 registerAnalyticsCommand(agentCommand)
 registerCredentialsCommand(agentCommand)
 registerUuidCommand(agentCommand)
-registerX402Command(agentCommand)
 
 // Set up help formatting
 agentCommand.configureHelp({
@@ -72,8 +70,8 @@ ${chalk.gray('💡 Tips:')}
   ${chalk.gray('• Keep your agent credentials secure - they cannot be recovered if lost')}
 
 ${chalk.blue('🔗 Related Commands:')}
-  $ ghost marketplace create                # List your agent in the marketplace
   $ ghost wallet list                       # Manage agent owner wallets
+  $ ghost credentials                       # Issue/manage verifiable credentials
 `)
 
 export default agentCommand

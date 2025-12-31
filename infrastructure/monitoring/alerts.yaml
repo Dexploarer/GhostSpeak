@@ -1,0 +1,468 @@
+# GhostSpeak Mainnet Alerting Configuration
+# Compatible with Prometheus Alertmanager, Datadog, or similar
+
+---
+# CRITICAL ALERTS (PagerDuty - Wake up engineers)
+critical_alerts:
+
+  - name: HighErrorRate
+    description: Error rate exceeds 5% over 5 minutes
+    severity: critical
+    condition: |
+      (sum(rate(ghostspeak_errors_total[5m])) / sum(rate(ghostspeak_transactions_total[5m]))) > 0.05
+    duration: 5m
+    notification_channels:
+      - pagerduty
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/high-error-rate
+
+  - name: TransactionSuccessRateLow
+    description: Transaction success rate drops below 95%
+    severity: critical
+    condition: |
+      (sum(ghostspeak_transactions_successful) / sum(ghostspeak_transactions_total)) < 0.95
+    duration: 5m
+    notification_channels:
+      - pagerduty
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/low-success-rate
+
+  - name: RPCNodeDown
+    description: Primary RPC node is unreachable
+    severity: critical
+    condition: |
+      up{job="solana-rpc-primary"} == 0
+    duration: 2m
+    notification_channels:
+      - pagerduty
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/rpc-outage
+
+  - name: DatabaseConnectionFailure
+    description: Database is unreachable
+    severity: critical
+    condition: |
+      up{job="ghostspeak-db"} == 0
+    duration: 1m
+    notification_channels:
+      - pagerduty
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/database-outage
+
+  - name: HighRPCLatency
+    description: RPC latency exceeds 5 seconds (p95)
+    severity: critical
+    condition: |
+      histogram_quantile(0.95, rate(ghostspeak_rpc_latency_seconds_bucket[5m])) > 5
+    duration: 5m
+    notification_channels:
+      - pagerduty
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/high-rpc-latency
+
+  - name: ProtocolFeeDistributionFailure
+    description: Protocol fees not being distributed correctly
+    severity: critical
+    condition: |
+      increase(ghostspeak_fee_distribution_failures_total[10m]) > 0
+    duration: 1m
+    notification_channels:
+      - pagerduty
+      - slack_alerts
+      - email_founders
+    runbook: https://docs.ghostspeak.io/runbooks/fee-distribution-failure
+
+  - name: MultisigUnauthorizedTransaction
+    description: Unauthorized transaction attempt on multisig
+    severity: critical
+    condition: |
+      increase(ghostspeak_multisig_unauthorized_attempts_total[5m]) > 0
+    duration: 0m
+    notification_channels:
+      - pagerduty
+      - slack_security
+      - email_security_team
+    runbook: https://docs.ghostspeak.io/runbooks/security-incident
+
+---
+# HIGH PRIORITY ALERTS (Slack - Notify team immediately)
+high_priority_alerts:
+
+  - name: EscrowDisputeSpike
+    description: More than 10 disputes filed in 1 hour
+    severity: high
+    condition: |
+      increase(ghostspeak_disputes_filed_total[1h]) > 10
+    duration: 5m
+    notification_channels:
+      - slack_alerts
+      - email_support
+    runbook: https://docs.ghostspeak.io/runbooks/dispute-spike
+
+  - name: LowEscrowCompletionRate
+    description: Escrow completion rate drops below 70%
+    severity: high
+    condition: |
+      (sum(ghostspeak_escrows_completed_total) / sum(ghostspeak_escrows_created_total)) < 0.7
+    duration: 1h
+    notification_channels:
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/low-completion-rate
+
+  - name: HighAPIErrorRate
+    description: API error rate exceeds 2%
+    severity: high
+    condition: |
+      (sum(rate(ghostspeak_api_errors_total[5m])) / sum(rate(ghostspeak_api_requests_total[5m]))) > 0.02
+    duration: 10m
+    notification_channels:
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/api-errors
+
+  - name: CacheFailure
+    description: Redis cache is down
+    severity: high
+    condition: |
+      up{job="ghostspeak-cache"} == 0
+    duration: 5m
+    notification_channels:
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/cache-failure
+
+  - name: HighDatabaseLatency
+    description: Database query latency exceeds 1 second (p95)
+    severity: high
+    condition: |
+      histogram_quantile(0.95, rate(ghostspeak_db_query_duration_seconds_bucket[5m])) > 1
+    duration: 10m
+    notification_channels:
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/database-slow
+
+  - name: AgentRegistrationFailures
+    description: Agent registration failure rate exceeds 5%
+    severity: high
+    condition: |
+      (sum(rate(ghostspeak_agent_registration_failures_total[5m])) / sum(rate(ghostspeak_agent_registration_attempts_total[5m]))) > 0.05
+    duration: 10m
+    notification_channels:
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/registration-failures
+
+  - name: CredentialIssuanceFailures
+    description: Credential issuance failures exceed threshold
+    severity: high
+    condition: |
+      increase(ghostspeak_credential_issuance_failures_total[15m]) > 5
+    duration: 5m
+    notification_channels:
+      - slack_alerts
+    runbook: https://docs.ghostspeak.io/runbooks/credential-failures
+
+  - name: RateLimitExceeded
+    description: Excessive rate limiting indicates potential attack
+    severity: high
+    condition: |
+      increase(ghostspeak_rate_limit_exceeded_total[5m]) > 100
+    duration: 5m
+    notification_channels:
+      - slack_alerts
+      - slack_security
+    runbook: https://docs.ghostspeak.io/runbooks/rate-limit-attack
+
+---
+# MEDIUM PRIORITY ALERTS (Slack - Review within hours)
+medium_priority_alerts:
+
+  - name: ModerateRPCLatency
+    description: RPC latency higher than usual (p95 > 1s)
+    severity: medium
+    condition: |
+      histogram_quantile(0.95, rate(ghostspeak_rpc_latency_seconds_bucket[5m])) > 1
+    duration: 15m
+    notification_channels:
+      - slack_monitoring
+    runbook: https://docs.ghostspeak.io/runbooks/moderate-rpc-latency
+
+  - name: LowCacheHitRate
+    description: Cache hit rate drops below 70%
+    severity: medium
+    condition: |
+      (sum(ghostspeak_cache_hits) / sum(ghostspeak_cache_requests)) < 0.7
+    duration: 30m
+    notification_channels:
+      - slack_monitoring
+    runbook: https://docs.ghostspeak.io/runbooks/cache-optimization
+
+  - name: HighDatabaseConnectionUsage
+    description: Database connection pool exceeds 80% capacity
+    severity: medium
+    condition: |
+      (ghostspeak_db_connections_active / ghostspeak_db_connections_max) > 0.8
+    duration: 15m
+    notification_channels:
+      - slack_monitoring
+    runbook: https://docs.ghostspeak.io/runbooks/database-connections
+
+  - name: DailyActiveUsersDropping
+    description: DAU decreased by more than 20% compared to yesterday
+    severity: medium
+    condition: |
+      (count(count_over_time(ghostspeak_user_activity[24h])) / count(count_over_time(ghostspeak_user_activity[24h] offset 24h))) < 0.8
+    duration: 1h
+    notification_channels:
+      - slack_product
+    runbook: https://docs.ghostspeak.io/runbooks/user-drop
+
+  - name: AgentRegistrationSlowdown
+    description: Agent registration rate dropped by more than 30%
+    severity: medium
+    condition: |
+      (rate(ghostspeak_agents_registered_total[1h]) / rate(ghostspeak_agents_registered_total[1h] offset 24h)) < 0.7
+    duration: 2h
+    notification_channels:
+      - slack_product
+    runbook: https://docs.ghostspeak.io/runbooks/registration-slowdown
+
+  - name: APIResponseTimeSlow
+    description: API response time exceeds 2 seconds (p95)
+    severity: medium
+    condition: |
+      histogram_quantile(0.95, rate(ghostspeak_api_response_time_seconds_bucket[5m])) > 2
+    duration: 15m
+    notification_channels:
+      - slack_monitoring
+    runbook: https://docs.ghostspeak.io/runbooks/slow-api
+
+  - name: DiskSpaceRunningLow
+    description: Disk usage exceeds 80%
+    severity: medium
+    condition: |
+      (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.2
+    duration: 10m
+    notification_channels:
+      - slack_monitoring
+    runbook: https://docs.ghostspeak.io/runbooks/disk-space
+
+---
+# LOW PRIORITY ALERTS (Slack - Review daily)
+low_priority_alerts:
+
+  - name: ProtocolFeeRevenueAnomaly
+    description: Protocol fee revenue significantly different from average
+    severity: low
+    condition: |
+      abs((rate(ghostspeak_protocol_fees_collected_lamports[1h]) - avg_over_time(ghostspeak_protocol_fees_collected_lamports[24h])) / avg_over_time(ghostspeak_protocol_fees_collected_lamports[24h])) > 0.5
+    duration: 6h
+    notification_channels:
+      - slack_analytics
+    runbook: https://docs.ghostspeak.io/runbooks/revenue-anomaly
+
+  - name: UnusualTransactionPattern
+    description: Transaction volume differs significantly from baseline
+    severity: low
+    condition: |
+      abs((rate(ghostspeak_transactions_total[1h]) - avg_over_time(ghostspeak_transactions_total[24h])) / avg_over_time(ghostspeak_transactions_total[24h])) > 0.4
+    duration: 3h
+    notification_channels:
+      - slack_analytics
+    runbook: https://docs.ghostspeak.io/runbooks/transaction-anomaly
+
+  - name: CertificateExpiringSoon
+    description: SSL certificate expires within 7 days
+    severity: low
+    condition: |
+      (ssl_certificate_expiry_seconds - time()) < (7 * 24 * 60 * 60)
+    duration: 1h
+    notification_channels:
+      - slack_monitoring
+      - email_devops
+    runbook: https://docs.ghostspeak.io/runbooks/certificate-renewal
+
+  - name: BackupFailure
+    description: Database backup failed
+    severity: low
+    condition: |
+      increase(ghostspeak_backup_failures_total[24h]) > 0
+    duration: 1h
+    notification_channels:
+      - slack_monitoring
+    runbook: https://docs.ghostspeak.io/runbooks/backup-failure
+
+---
+# NOTIFICATION CHANNELS
+notification_channels:
+
+  pagerduty:
+    type: pagerduty
+    integration_key: "${PAGERDUTY_INTEGRATION_KEY}"
+    escalation_policy: "GhostSpeak On-Call"
+
+  slack_alerts:
+    type: slack
+    webhook_url: "${SLACK_WEBHOOK_ALERTS}"
+    channel: "#alerts"
+    username: "GhostSpeak Alerts"
+    icon_emoji: ":rotating_light:"
+
+  slack_security:
+    type: slack
+    webhook_url: "${SLACK_WEBHOOK_SECURITY}"
+    channel: "#security-alerts"
+    username: "Security Alert"
+    icon_emoji: ":shield:"
+    mentions: "@security-team"
+
+  slack_monitoring:
+    type: slack
+    webhook_url: "${SLACK_WEBHOOK_MONITORING}"
+    channel: "#monitoring"
+    username: "Monitoring"
+    icon_emoji: ":chart_with_upwards_trend:"
+
+  slack_product:
+    type: slack
+    webhook_url: "${SLACK_WEBHOOK_PRODUCT}"
+    channel: "#product-analytics"
+    username: "Product Metrics"
+    icon_emoji: ":bar_chart:"
+
+  slack_analytics:
+    type: slack
+    webhook_url: "${SLACK_WEBHOOK_ANALYTICS}"
+    channel: "#analytics"
+    username: "Analytics"
+    icon_emoji: ":mag:"
+
+  email_founders:
+    type: email
+    recipients:
+      - "founder@ghostspeak.io"
+      - "cto@ghostspeak.io"
+    subject_prefix: "[CRITICAL]"
+
+  email_security_team:
+    type: email
+    recipients:
+      - "security@ghostspeak.io"
+    subject_prefix: "[SECURITY]"
+
+  email_support:
+    type: email
+    recipients:
+      - "support@ghostspeak.io"
+    subject_prefix: "[ALERT]"
+
+  email_devops:
+    type: email
+    recipients:
+      - "devops@ghostspeak.io"
+    subject_prefix: "[INFRA]"
+
+---
+# ALERT ROUTING RULES
+routing_rules:
+
+  # Route critical alerts to PagerDuty during business hours
+  - match:
+      severity: critical
+    receiver: pagerduty
+    group_wait: 10s
+    group_interval: 5m
+    repeat_interval: 4h
+
+  # Route high priority to Slack immediately
+  - match:
+      severity: high
+    receiver: slack_alerts
+    group_wait: 30s
+    group_interval: 10m
+    repeat_interval: 12h
+
+  # Route medium priority to Slack with grouping
+  - match:
+      severity: medium
+    receiver: slack_monitoring
+    group_wait: 5m
+    group_interval: 30m
+    repeat_interval: 24h
+
+  # Route low priority to daily digest
+  - match:
+      severity: low
+    receiver: slack_analytics
+    group_wait: 1h
+    group_interval: 24h
+    repeat_interval: 168h
+
+---
+# MAINTENANCE WINDOWS
+maintenance_windows:
+
+  # Scheduled maintenance (alerts suppressed)
+  - name: "Weekly Maintenance"
+    schedule: "0 3 * * 0" # Every Sunday at 3 AM UTC
+    duration: 2h
+    suppress_alerts:
+      - ModerateRPCLatency
+      - APIResponseTimeSlow
+      - HighDatabaseConnectionUsage
+
+---
+# ESCALATION POLICIES
+escalation_policies:
+
+  - name: "Critical Incident"
+    steps:
+      - delay: 0m
+        notify:
+          - on_call_engineer_primary
+      - delay: 5m
+        notify:
+          - on_call_engineer_secondary
+      - delay: 15m
+        notify:
+          - engineering_manager
+          - cto
+
+  - name: "Security Incident"
+    steps:
+      - delay: 0m
+        notify:
+          - security_team
+          - cto
+      - delay: 10m
+        notify:
+          - founder
+
+---
+# METRIC COLLECTION ENDPOINTS
+metrics_endpoints:
+
+  - name: ghostspeak-api
+    url: https://api.ghostspeak.io/metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  - name: ghostspeak-db
+    url: ${DATABASE_METRICS_URL}
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  - name: ghostspeak-cache
+    url: ${REDIS_METRICS_URL}
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  - name: solana-rpc-primary
+    url: ${SOLANA_RPC_METRICS_URL}
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+---
+# NOTES
+# 1. Replace ${VARIABLE} placeholders with actual values in deployment
+# 2. Adjust thresholds based on baseline performance after launch
+# 3. Review and update alerts monthly
+# 4. Test each alert channel before mainnet launch
+# 5. Ensure runbook URLs are accessible to on-call engineers

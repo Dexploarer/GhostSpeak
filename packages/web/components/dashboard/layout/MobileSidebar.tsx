@@ -22,6 +22,11 @@ import {
   Link2,
   Fingerprint,
   Menu,
+  Code,
+  TrendingUp,
+  Star,
+  Coins,
+  DollarSign,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -29,16 +34,18 @@ import { Button } from '@/components/ui/button'
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/agents', label: 'Agents', icon: Bot },
-  { href: '/dashboard/channels', label: 'Channels', icon: MessageSquare },
-  { href: '/dashboard/marketplace', label: 'Marketplace', icon: ShoppingBag },
-  { href: '/dashboard/work-orders', label: 'Work Orders', icon: Briefcase },
-  { href: '/dashboard/escrow', label: 'Escrow', icon: Shield },
+  { href: '/dashboard/ghost-score', label: 'Ghost Score', icon: Star },
+  { href: '/dashboard/staking', label: 'Staking', icon: Coins },
+  { href: '/dashboard/revenue-share', label: 'Revenue Share', icon: TrendingUp },
+  { href: '/dashboard/transparency', label: 'Transparency', icon: DollarSign },
   { href: '/dashboard/payments', label: 'Payments', icon: CreditCard },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/dashboard/governance', label: 'Governance', icon: Gavel },
+  { href: '/dashboard/privacy', label: 'Privacy', icon: Shield },
   { href: '/dashboard/multisig', label: 'Multisig', icon: Key },
   { href: '/link', label: 'Link CLI Wallet', icon: Link2 },
   { href: '/dashboard/credentials', label: 'Credentials', icon: Fingerprint },
+  { href: '/dashboard/api-keys', label: 'API Keys', icon: Code },
+  { href: '/dashboard/api-usage', label: 'API Usage', icon: TrendingUp },
   { href: '/dashboard/architecture', label: 'Architecture', icon: Cpu },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
@@ -67,7 +74,10 @@ export function MobileSidebar() {
             <Menu className="w-5 h-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[300px] p-0 flex flex-col bg-background/95 backdrop-blur-xl border-r border-border">
+        <SheetContent
+          side="left"
+          className="w-[300px] p-0 flex flex-col bg-background/95 backdrop-blur-xl border-r border-border"
+        >
           {/* Header */}
           <div className="flex items-center gap-3 p-6 border-b border-border">
             <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -105,25 +115,6 @@ export function MobileSidebar() {
               )
             })}
           </nav>
-
-          {/* x402 Quick Access */}
-          <div className="p-4 border-t border-border">
-            <Link
-              href="/x402/discover"
-              onClick={() => setOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200',
-                'bg-linear-to-r from-primary/10 to-cyan-500/10 border border-primary/20',
-                'text-primary hover:from-primary/20 hover:to-cyan-500/20'
-              )}
-            >
-              <Sparkles className="w-5 h-5 shrink-0" />
-              <div className="flex flex-col">
-                <span>x402 Protocol</span>
-                <span className="text-xs text-muted-foreground">Discover & Integrate</span>
-              </div>
-            </Link>
-          </div>
 
           {/* Status */}
           <div className="p-4 border-t border-border bg-background/50">

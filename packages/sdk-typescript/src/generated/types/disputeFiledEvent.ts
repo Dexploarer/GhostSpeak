@@ -16,6 +16,8 @@ import {
   getStructEncoder,
   getU32Decoder,
   getU32Encoder,
+  getU64Decoder,
+  getU64Encoder,
   getUtf8Decoder,
   getUtf8Encoder,
   type Address,
@@ -25,28 +27,29 @@ import {
 } from "@solana/kit";
 
 export type DisputeFiledEvent = {
-  dispute: Address;
-  complainant: Address;
-  respondent: Address;
+  escrowId: bigint;
+  client: Address;
   reason: string;
 };
 
-export type DisputeFiledEventArgs = DisputeFiledEvent;
+export type DisputeFiledEventArgs = {
+  escrowId: number | bigint;
+  client: Address;
+  reason: string;
+};
 
 export function getDisputeFiledEventEncoder(): Encoder<DisputeFiledEventArgs> {
   return getStructEncoder([
-    ["dispute", getAddressEncoder()],
-    ["complainant", getAddressEncoder()],
-    ["respondent", getAddressEncoder()],
+    ["escrowId", getU64Encoder()],
+    ["client", getAddressEncoder()],
     ["reason", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
   ]);
 }
 
 export function getDisputeFiledEventDecoder(): Decoder<DisputeFiledEvent> {
   return getStructDecoder([
-    ["dispute", getAddressDecoder()],
-    ["complainant", getAddressDecoder()],
-    ["respondent", getAddressDecoder()],
+    ["escrowId", getU64Decoder()],
+    ["client", getAddressDecoder()],
     ["reason", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
   ]);
 }

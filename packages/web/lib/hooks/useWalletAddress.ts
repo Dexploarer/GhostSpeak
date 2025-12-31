@@ -5,7 +5,7 @@ import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
 /**
  * Hook to get the current wallet address from Crossmint
  * Provides a consistent interface across all dashboard pages
- * 
+ *
  * - isConnected: true if wallet is loaded AND has address
  * - isAuthenticated: true if user is logged in (may not have wallet yet)
  * - isLoading: true if SDK or wallet is still initializing
@@ -20,10 +20,10 @@ export function useWalletAddress() {
   const isAuthLoading = authStatus === 'initializing'
   const isWalletLoaded = walletStatus === 'loaded'
   const isWalletLoading = walletStatus === 'in-progress'
-  
+
   // Consider connected only when wallet is fully loaded and has an address
   const isConnected = isWalletLoaded && hasWallet
-  
+
   // Overall loading state - either auth or wallet is still loading
   const isLoading = isAuthLoading || isWalletLoading
 

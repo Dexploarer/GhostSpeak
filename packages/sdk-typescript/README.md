@@ -6,28 +6,32 @@
 [![Solana](https://img.shields.io/badge/Solana-v2.3.13-9945FF.svg)](https://solana.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-The official TypeScript SDK for [GhostSpeak Protocol](https://github.com/ghostspeak/ghostspeak) - a production-ready decentralized AI agent commerce protocol built on Solana. This SDK provides a comprehensive, type-safe interface for interacting with GhostSpeak smart contracts using modern Web3.js v2 patterns.
+The official TypeScript SDK for [GhostSpeak Protocol](https://github.com/ghostspeak/ghostspeak) - a decentralized **Verifiable Credentials (VC)**, **Reputation**, and **Identity Layer** for AI agents on Solana. Build trust in AI interactions with on-chain credentials, verifiable reputation scores, and tamper-proof identity management.
 
 ## 🌟 **Features**
 
-### **🤖 AI Agent Management**
-- **Registration & Identity** - Secure on-chain agent registration with verification
-- **Service Listings** - Monetize AI capabilities through the marketplace
-- **Reputation System** - Build trust through successful transactions
-- **Compressed NFT Creation** - 5000x cost reduction for agent assets
+### **🔐 Identity & Credentials**
+- **On-Chain Agent Identity** - Immutable agent registration on Solana
+- **Verifiable Credentials** - Issue W3C-compliant credentials for AI agents
+- **Credential Verification** - Cryptographically verify agent credentials
+- **Multi-Level Verification** - Basic, Verified, and Elite trust levels
+- **W3C DID Support** - Full Decentralized Identifier (DID) implementation 🆕
+- **Cross-Chain DIDs** - Export DIDs to W3C format for multi-chain verification 🆕
 
-### **💼 Commerce & Marketplace**
-- **Service Discovery** - Find and hire AI agents for any task
-- **Advanced Escrow** - Secure payments with milestone support and dispute resolution
-- **Dutch Auctions** - Time-based price decay for competitive bidding
-- **Work Order Management** - Complete project lifecycle with automated payments
+### **⭐ Reputation System**
+- **Ghost Score** - Comprehensive reputation algorithm (0-1000)
+- **On-Chain Reputation** - Tamper-proof reputation tracking
+- **Multi-Factor Scoring** - Credentials, transactions, verification, staking
+- **Reputation Decay** - Time-based decay for inactive agents
+- **Granular Tags** - 80+ automatic tags with confidence scoring 🆕
+- **Multi-Source Aggregation** - Combine reputation from PayAI, GitHub, and custom sources 🆕
+- **Conflict Detection** - Automatic detection of conflicting reputation data 🆕
 
-### **🔐 Advanced Features**
-- **x402 Payment Protocol** - HTTP 402 instant micropayments for agent services
-- **Token-2022 Integration** - Advanced token features with stablecoin support
-- **Multi-signature Wallets** - Enhanced security for organizations
-- **Governance Participation** - Vote on protocol improvements
-- **Real-time Analytics** - Monitor performance and generate insights
+### **🎫 Credential Management**
+- **Issue Credentials** - Grant verifiable credentials to agents
+- **Revoke Credentials** - Remove invalid or expired credentials
+- **Credential Types** - KYC, service-specific, performance-based
+- **Batch Operations** - Issue multiple credentials efficiently
 
 ### **🛠️ Developer Experience**
 - **Full Type Safety** - 100% TypeScript with comprehensive types
@@ -76,16 +80,57 @@ import { generateKeyPairSigner } from '@solana/signers'
 // Create agent signer
 const agent = await generateKeyPairSigner()
 
-// Register agent on-chain
+// Register agent on-chain with identity
 const signature = await client.agents.register(agent, {
-  agentId: 1n,
   name: "My AI Assistant",
   description: "Specialized in data analysis and report generation",
   capabilities: ["data-analysis", "report-generation", "text-processing"],
-  serviceEndpoint: "https://my-agent.example.com/api"
+  serviceEndpoint: "https://my-agent.example.com/api",
+  metadata: {
+    version: "1.0.0",
+    model: "GPT-4",
+    provider: "OpenAI"
+  }
 })
 
 console.log(`Agent registered! Signature: ${signature}`)
+```
+
+### **Issue a Verifiable Credential**
+```typescript
+// Issue a credential to an agent
+const credentialSignature = await client.credentials.issueCredential(issuer, {
+  agentAddress: agent.address,
+  credentialType: "KYC_VERIFIED",
+  issuer: issuer.address,
+  issuanceDate: Date.now(),
+  expirationDate: Date.now() + (365 * 24 * 60 * 60 * 1000), // 1 year
+  metadata: {
+    verificationType: "identity",
+    verificationLevel: "advanced"
+  }
+})
+
+console.log(`Credential issued! Signature: ${credentialSignature}`)
+```
+
+### **Calculate Ghost Score (Reputation)**
+```typescript
+// Get comprehensive reputation score
+const reputation = await client.reputation.getAgentReputation(agent.address)
+
+console.log(`Ghost Score: ${reputation.ghostScore}/1000`)
+console.log(`Breakdown:`)
+console.log(`- Credentials: ${reputation.components.credentialScore}`)
+console.log(`- Transactions: ${reputation.components.transactionScore}`)
+console.log(`- Verification: ${reputation.components.verificationScore}`)
+console.log(`- Staking: ${reputation.components.stakingScore}`)
+
+// Get automatic reputation tags
+const metrics = await client.reputation.convertMetricsForTagging(onChainMetrics)
+const tags = await client.reputation.calculateTagsForAgent(metrics)
+
+console.log(`Tags: ${tags.map(t => t.tagName).join(', ')}`)
 ```
 
 ### **Create a Service Listing**
@@ -128,21 +173,30 @@ await client.escrow.completeMilestone(agent, escrowSignature, 0)
 
 ## 📚 **Core SDK Components**
 
-### **1. Agent Management**
+### **1. Agent Management & DIDs**
 ```typescript
 // Register new agent
 await client.agents.register(signer, params)
 
-// Update agent information  
+// Create DID for agent (W3C-compliant)
+await client.did.create(signer, {
+  controller: signer.address,
+  network: 'devnet'
+})
+
+// Export DID to W3C format for cross-chain use
+const w3cDid = await client.did.exportW3C(signer.address)
+
+// Update agent information
 await client.agents.update(signer, agentPda, updateParams)
 
 // Get agent details
 const agent = await client.agents.getAgent(agentAddress)
 
 // List all agents with filtering
-const agents = await client.agents.listAgents({ 
+const agents = await client.agents.listAgents({
   verificationStatus: 'verified',
-  category: 'ai-assistant' 
+  category: 'ai-assistant'
 })
 ```
 
@@ -525,7 +579,9 @@ const client = new GhostSpeakClient({
 ### **Core Classes**
 - **`GhostSpeakClient`** - Main SDK client
 - **`AgentInstructions`** - Agent management operations
-- **`MarketplaceInstructions`** - Marketplace operations  
+- **`DidModule`** - W3C DID document management 🆕
+- **`ReputationModule`** - Reputation calculation and tag management 🆕
+- **`MarketplaceInstructions`** - Marketplace operations
 - **`EscrowInstructions`** - Escrow and payment operations
 - **`GovernanceInstructions`** - Governance and multisig operations
 - **`Token2022Instructions`** - Token-2022 operations
@@ -536,6 +592,11 @@ The SDK exports comprehensive TypeScript types for all operations:
 ```typescript
 import type {
   Agent,
+  DidDocument,
+  VerificationMethod,
+  ServiceEndpoint,
+  TagScore,
+  ReputationMetrics,
   ServiceListing,
   EscrowAccount,
   GovernanceProposal,

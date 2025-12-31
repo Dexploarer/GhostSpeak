@@ -22,9 +22,9 @@ export default defineConfig([
     treeshake: true,
     minify: process.env.NODE_ENV === 'production',
     target: 'es2022',
-    platform: 'neutral', // Better for both node and browser
+    platform: 'node', // Node.js for proper handling of built-ins
     esbuildOptions(options) {
-      options.conditions = ['edge-light', 'node', 'import']
+      options.conditions = ['node', 'import']
     },
     external: [
       // Mark all @solana packages as external for better tree-shaking
@@ -57,6 +57,7 @@ export default defineConfig([
       'bs58',
       'kubo-rpc-client',
       // Node.js built-ins
+      'crypto',
       'util',
       'fs',
       'http',

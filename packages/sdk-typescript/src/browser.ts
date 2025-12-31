@@ -7,16 +7,15 @@
 
 // Core modules - browser safe
 export { AgentModule } from './core/modules/AgentModule.js'
-export { EscrowModule } from './modules/escrow/EscrowModule.js'
-export { MarketplaceModule } from './modules/marketplace/MarketplaceModule.js'
-export { GovernanceModule } from './modules/governance/GovernanceModule.js'
-export { ChannelModule } from './modules/channels/ChannelModule.js'
-export { WorkOrderModule } from './modules/workorders/WorkOrderModule.js'
-export { Token2022Module } from './modules/token2022/Token2022Module.js'
 
-// New modules - browser safe
-export { StakingModule, LockupTier } from './modules/staking/index.js'
-export { DisputeModule, DisputeResolution, type EvidenceSubmission } from './modules/dispute/index.js'
+export { GovernanceModule } from './modules/governance/GovernanceModule.js'
+export { MultisigModule } from './modules/multisig/MultisigModule.js'
+export { StakingModule } from './modules/staking/StakingModule.js'
+
+export { CredentialModule as CredentialsModule } from './modules/credentials/CredentialModule.js'
+export { PayAIClient } from './payai/PayAIClient.js'
+
+// Reputation module - browser safe (core module)
 export {
   ReputationModule,
   ReputationTier,
@@ -27,7 +26,6 @@ export {
   type ReputationCalculationResult,
   type CategoryReputation,
 } from './modules/reputation/index.js'
-export { AuctionModule, AuctionType } from './modules/auction/index.js'
 
 // Constants - browser safe
 export { GHOSTSPEAK_PROGRAM_ID, NETWORK_CONFIG } from './constants/ghostspeak.js'
@@ -41,45 +39,15 @@ export {
 // Types - browser safe
 export type { GhostSpeakConfig } from './types/index.js'
 
-// PDA utilities - browser safe (only export what exists in pda.js)
+// PDA utilities - browser safe
 export {
   deriveAgentPda,
-  deriveAgentPdaOriginal,
-  deriveEscrowPda,
-  deriveChannelPda,
-  deriveMessagePda,
-  deriveServiceListingPda,
-  deriveJobPostingPda,
   deriveUserRegistryPda
 } from './utils/pda.js'
 
 // Generated types - browser safe (type only exports)
 export type {
   Agent,
-  Escrow,
-  EscrowStatus,
-  ServiceListing,
-  JobPosting,
-  JobApplication,
+
   GovernanceProposal,
-  Channel,
-  Message,
-  ChannelType,
-  MessageType,
-  WorkOrder,
-  WorkDelivery,
-  WorkOrderStatus,
-  Deliverable,
-  // Staking types
-  StakingAccount,
-  StakingConfig,
-  // Dispute types
-  DisputeCase,
-  DisputeStatus,
-  DisputeEvidence,
-  // Auction types
-  AuctionMarketplace,
-  AuctionBid,
 } from './generated/index.js'
-
-

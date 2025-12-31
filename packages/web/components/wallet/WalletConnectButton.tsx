@@ -23,7 +23,14 @@ export function WalletConnectButton() {
   // Debug logging in development
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[WalletConnectButton] authStatus:', authStatus, 'walletStatus:', walletStatus, 'wallet:', wallet?.address)
+      console.log(
+        '[WalletConnectButton] authStatus:',
+        authStatus,
+        'walletStatus:',
+        walletStatus,
+        'wallet:',
+        wallet?.address
+      )
     }
   }, [authStatus, walletStatus, wallet])
 

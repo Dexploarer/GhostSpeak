@@ -3,8 +3,10 @@
 /**
  * GhostSpeak SDK Client - Real blockchain integration
  *
- * Provides access to SDK modules for agent, escrow, marketplace,
- * governance, channel, work order, staking, dispute, reputation, and auction operations.
+ * Provides access to SDK modules for agent, credentials, reputation,
+ * governance, and multisig operations.
+ * 
+ * Payment facilitation is delegated to PayAI via PayAIClient.
  *
  * Uses the browser-safe SDK entry point to avoid server-only dependencies.
  */
@@ -15,15 +17,12 @@ import type { TransactionSigner } from '@solana/kit'
 // Import from browser-safe SDK entry point
 import {
   AgentModule,
-  EscrowModule,
-  MarketplaceModule,
   GovernanceModule,
-  ChannelModule,
-  WorkOrderModule,
-  StakingModule,
-  DisputeModule,
   ReputationModule,
-  AuctionModule,
+  MultisigModule,
+  CredentialsModule,
+  StakingModule,
+  PayAIClient,
   GHOSTSPEAK_PROGRAM_ID,
   type GhostSpeakConfig,
 } from '@ghostspeak/sdk/browser'
@@ -39,20 +38,24 @@ export type NetworkType = keyof typeof NETWORK_ENDPOINTS
 
 /**
  * GhostSpeak client interface with all SDK modules
+ *
+ * Core Pillars:
+ * - agents: Identity Registry for AI agents
+ * - credentials: Verifiable Credentials (VCs) module
+ * - reputation: Performance-based trust layer
+ * - staking: GHOST token staking for reputation boost
+ * - payai: PayAI integration for payment events
  */
 export interface GhostSpeakClient {
   programId: Address
   rpcUrl: string
   agents: AgentModule
-  escrow: EscrowModule
-  marketplace: MarketplaceModule
-  governance: GovernanceModule
-  channels: ChannelModule
-  workOrders: WorkOrderModule
-  staking: StakingModule
-  disputes: DisputeModule
+  credentials: typeof CredentialsModule
   reputation: ReputationModule
-  auctions: AuctionModule
+  staking: StakingModule
+  governanceModule: GovernanceModule
+  multisigModule: MultisigModule
+  payai: PayAIClient
 }
 
 // Client singleton cache
@@ -82,16 +85,16 @@ export function createGhostSpeakClient(
   const client: GhostSpeakClient = {
     programId: GHOSTSPEAK_PROGRAM_ID,
     rpcUrl,
+    // Core Pillars
     agents: new AgentModule(config),
-    escrow: new EscrowModule(config),
-    marketplace: new MarketplaceModule(config),
-    governance: new GovernanceModule(config),
-    channels: new ChannelModule(config),
-    workOrders: new WorkOrderModule(config),
-    staking: new StakingModule(config),
-    disputes: new DisputeModule(config),
+    credentials: CredentialsModule,
     reputation: new ReputationModule(config),
-    auctions: new AuctionModule(config),
+    staking: new StakingModule(config),
+    // Governance
+    governanceModule: new GovernanceModule(config),
+    multisigModule: new MultisigModule(config),
+    // PayAI Integration
+    payai: new PayAIClient({ rpcUrl }),
   }
 
   // Cache the client

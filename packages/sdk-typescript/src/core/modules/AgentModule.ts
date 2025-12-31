@@ -12,8 +12,14 @@ import {
   getDeactivateAgentInstruction,
   getActivateAgentInstruction,
   getRegisterAgentCompressedInstructionAsync,
-  type Agent
+  type Agent,
+  PricingModel
 } from '../../generated/index.js'
+
+// External x402 agent types removed - use PayAI integration
+
+/** Agent type for external x402 agents */
+export const EXTERNAL_X402_AGENT_TYPE = 10
 
 /**
  * Simplified agent management using unified instruction pattern
@@ -37,8 +43,10 @@ export class AgentModule extends BaseModule {
     description: string
     metadataUri: string
     agentId: string
+    pricingModel?: PricingModel
     skipSimulation?: boolean
   }): Promise<string> {
+    const pricingModel = params.pricingModel ?? PricingModel.Fixed;
     const registerGetter = async () => {
       const agentAccount = await this.deriveAgentPda(params.agentId, signer.address)
       const ix = await getRegisterAgentInstructionAsync({
@@ -49,7 +57,8 @@ export class AgentModule extends BaseModule {
         name: params.name,
         description: params.description,
         metadataUri: params.metadataUri,
-        agentId: params.agentId
+        agentId: params.agentId,
+        pricingModel
       })
       
       return ix;
@@ -74,7 +83,7 @@ export class AgentModule extends BaseModule {
     
     // If skipSimulation is true, call builder directly to bypass simulation
     if (params.skipSimulation) {
-      console.log('🚀 SKIPPING SIMULATION - Sending transaction directly')
+      console.log('\uD83D\uDE80 SKIPPING SIMULATION - Sending transaction directly')
       return this.builder.executeBatch(
         'registerAgent',
         [heapGetter, registerGetter],
@@ -90,6 +99,8 @@ export class AgentModule extends BaseModule {
     ) as Promise<string>
   }
 
+  // registerX402Agent method removed - use PayAI integration
+
   /**
    * Register a compressed agent (5000x cheaper)
    */
@@ -101,6 +112,7 @@ export class AgentModule extends BaseModule {
     agentId: string
     merkleTree: Address
     treeConfig?: Address
+    pricingModel?: PricingModel
   }): Promise<string> {
     const instructionGetter = async () => {
       // Derive treeConfig if not provided
@@ -117,6 +129,7 @@ export class AgentModule extends BaseModule {
         description: params.description,
         metadataUri: params.metadataUri,
         agentId: params.agentId,
+        pricingModel: params.pricingModel ?? PricingModel.Fixed,
         logWrapper: 'noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV' as Address // Explicitly provide Noop program
       })
       return result
@@ -139,6 +152,7 @@ export class AgentModule extends BaseModule {
     agentId: string
     name?: string | null
     description?: string | null
+    pricingModel?: PricingModel
   }): Promise<string> {
     const instructionGetter = () => {
       const result = getUpdateAgentInstruction({
@@ -148,7 +162,8 @@ export class AgentModule extends BaseModule {
         agentType: params.agentType,
         agentId: params.agentId,
         name: params.name ?? null,
-        description: params.description ?? null
+        description: params.description ?? null,
+        pricingModel: params.pricingModel ?? PricingModel.Fixed
       })
       return result
     }
@@ -286,8 +301,9 @@ export class AgentModule extends BaseModule {
 
   private async deriveAgentPda(agentId: string, owner: Address): Promise<Address> {
     // Use the standard PDA utility function that matches Rust implementation
-    const { deriveAgentPdaOriginal } = await import('../../utils/pda.js')
-    return deriveAgentPdaOriginal(this.programId, owner, agentId)
+    const { deriveAgentPda } = await import('../../utils/pda.js')
+    const [address] = await deriveAgentPda({ programAddress: this.programId, owner, agentId })
+    return address
   }
 
   private async deriveUserRegistryPda(owner: Address): Promise<Address> {

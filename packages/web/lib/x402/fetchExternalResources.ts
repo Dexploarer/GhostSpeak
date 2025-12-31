@@ -149,9 +149,7 @@ export async function fetchHeuristResources(): Promise<ExternalResource[]> {
 }
 
 function formatToolName(name: string): string {
-  return name
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  return name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 // =====================================================

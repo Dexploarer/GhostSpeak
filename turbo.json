@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "telemetry": false,
   "globalEnv": [
     "NODE_ENV",
     "CROSSMINT_SECRET_KEY",
@@ -45,7 +46,13 @@
     "GHOSTSPEAK_MONITORING_ENABLED",
     "GHOSTSPEAK_MONITORING_ENDPOINT",
     "GHOSTSPEAK_DEBUG",
-    "GHOSTSPEAK_LOG_LEVEL"
+    "GHOSTSPEAK_LOG_LEVEL",
+    "SAS_PAYER_KEYPAIR",
+    "SAS_AUTHORITY_KEYPAIR",
+    "SAS_AUTHORIZED_SIGNER_KEYPAIR",
+    "SAS_API_KEY",
+    "SOLANA_CLUSTER",
+    "SKIP_ENV_VALIDATION"
   ],
   "tasks": {
     "build": {

@@ -17,6 +17,7 @@ export const trackVerification = mutation({
     ghostScore: v.number(),
     tier: v.string(),
   },
+  returns: v.id('verifications'),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Not authenticated')
@@ -44,6 +45,7 @@ export const getVerificationCount = query({
   args: {
     startTime: v.number(),
   },
+  returns: v.number(),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) return 0
@@ -69,6 +71,19 @@ export const getVerificationCount = query({
 
 export const getVerificationHistory = query({
   args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id('verifications'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      agentAddress: v.string(),
+      ghostScore: v.number(),
+      tier: v.string(),
+      paymentMethod: v.optional(v.string()),
+      paymentSignature: v.optional(v.string()),
+      timestamp: v.number(),
+    })
+  ),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) return []
@@ -102,6 +117,7 @@ export const submitReview = mutation({
     jobCategory: v.optional(v.string()),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.id('reviews'),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Not authenticated')
@@ -145,6 +161,31 @@ export const getAgentReviews = query({
     agentAddress: v.string(),
     limit: v.optional(v.number()),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('reviews'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      agentAddress: v.string(),
+      rating: v.number(),
+      review: v.string(),
+      verifiedHire: v.boolean(),
+      upvotes: v.number(),
+      downvotes: v.number(),
+      jobCategory: v.optional(v.string()),
+      transactionSignature: v.optional(v.string()),
+      timestamp: v.number(),
+      updatedAt: v.optional(v.number()),
+      user: v.union(
+        v.object({
+          name: v.string(),
+          avatarUrl: v.optional(v.string()),
+          walletAddress: v.string(),
+        }),
+        v.null()
+      ),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 20
 
@@ -179,6 +220,18 @@ export const getReviewStats = query({
   args: {
     agentAddress: v.string(),
   },
+  returns: v.object({
+    totalReviews: v.number(),
+    averageRating: v.number(),
+    ratingDistribution: v.object({
+      1: v.number(),
+      2: v.number(),
+      3: v.number(),
+      4: v.number(),
+      5: v.number(),
+    }),
+    verifiedCount: v.number(),
+  }),
   handler: async (ctx, args) => {
     const reviews = await ctx.db
       .query('reviews')
@@ -219,6 +272,7 @@ export const voteOnReview = mutation({
     reviewId: v.id('reviews'),
     vote: v.number(), // 1 or -1
   },
+  returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Not authenticated')
@@ -292,6 +346,7 @@ export const getUserVotes = query({
   args: {
     agentAddress: v.string(),
   },
+  returns: v.record(v.string(), v.number()),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) return {}

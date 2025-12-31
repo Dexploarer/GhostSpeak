@@ -67,25 +67,26 @@ export function useAvailableTokens() {
   })
 }
 
-import { Connection, PublicKey } from '@solana/web3.js'
+import { createSolanaRpc } from '@solana/rpc'
+import { address as createAddress } from '@solana/addresses'
 
 /**
  * Fetch real token information from the blockchain
  */
 async function fetchTokenInfo(address: string): Promise<Token> {
   const client = getGhostSpeakClient()
-  const connection = new Connection(client.rpcUrl)
+  const rpc = createSolanaRpc(client.rpcUrl)
 
   try {
-    const mintPubkey = new PublicKey(address)
-    const accountInfo = await connection.getParsedAccountInfo(mintPubkey)
+    const mintAddress = createAddress(address)
+    const accountInfo = await rpc.getAccountInfo(mintAddress, { encoding: 'jsonParsed' }).send()
 
     if (!accountInfo.value) {
       throw new Error(`Token mint not found: ${address}`)
     }
 
-    const data = accountInfo.value.data
-    if (!('parsed' in data)) {
+    const data = accountInfo.value.data as any
+    if (!data || !('parsed' in data)) {
       throw new Error('Invalid token data')
     }
 
@@ -104,18 +105,18 @@ async function fetchTokenInfo(address: string): Promise<Token> {
 
     // Check for Token-2022 extensions
     if (data.program === 'spl-token-2022') {
-      token.extensions = await parseTokenExtensions(connection, mintPubkey)
+      token.extensions = await parseTokenExtensions(rpc, address)
 
       // Get transfer fee config if applicable
       if (token.extensions.some((ext) => ext.type === 'TransferFee' && ext.enabled)) {
-        token.transferFeeConfig = await parseTransferFeeConfig(connection, mintPubkey)
+        token.transferFeeConfig = await parseTransferFeeConfig(rpc, address)
       }
 
       // Get confidential transfer config if applicable
       if (token.extensions.some((ext) => ext.type === 'ConfidentialTransfer' && ext.enabled)) {
         token.confidentialTransferConfig = await parseConfidentialTransferConfig(
-          connection,
-          mintPubkey
+          rpc,
+          address
         )
       }
     }
@@ -131,11 +132,13 @@ async function fetchTokenInfo(address: string): Promise<Token> {
  * Parse Token-2022 extensions from mint account
  */
 async function parseTokenExtensions(
-  connection: Connection,
-  mint: PublicKey
+  rpc: ReturnType<typeof createSolanaRpc>,
+  mintAddr: string
 ): Promise<Array<{ type: string; enabled: boolean }>> {
   try {
-    const info = await connection.getAccountInfo(mint)
+    const mintAddress = createAddress(mintAddr)
+    const accountInfo = await rpc.getAccountInfo(mintAddress).send()
+    const info = accountInfo.value
     if (!info) return []
 
     // This is a simplified check. In a full implementation we would parse the TLV data
@@ -157,10 +160,10 @@ async function parseTokenExtensions(
 /**
  * Parse transfer fee configuration
  */
-async function parseTransferFeeConfig(_connection: Connection, address: PublicKey) {
+async function parseTransferFeeConfig(_rpc: ReturnType<typeof createSolanaRpc>, address: string) {
   // This would use real SDK utilities to parse transfer fee config
   // For now, return default config for known tokens
-  if (address.toString() === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
+  if (address === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
     return {
       transferFeeBasisPoints: 50, // 0.5%
       maximumFee: BigInt(5000), // 0.005 USDC max
@@ -174,7 +177,7 @@ async function parseTransferFeeConfig(_connection: Connection, address: PublicKe
 /**
  * Parse confidential transfer configuration
  */
-async function parseConfidentialTransferConfig(_connection: Connection, _address: PublicKey) {
+async function parseConfidentialTransferConfig(_rpc: ReturnType<typeof createSolanaRpc>, _address: string) {
   // This would use real SDK utilities to parse confidential transfer config
   return undefined // Not implemented for current tokens
 }

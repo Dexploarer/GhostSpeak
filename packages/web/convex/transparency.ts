@@ -15,6 +15,33 @@ import { v } from 'convex/values'
  */
 export const getProtocolMetrics = query({
   args: {},
+  returns: v.object({
+    protocol: v.object({
+      totalRevenue: v.object({
+        thisMonth: v.number(),
+        lastMonth: v.number(),
+        allTime: v.number(),
+      }),
+      stakerRewardsPool: v.object({
+        thisMonth: v.number(),
+        pending: v.number(),
+        distributed: v.number(),
+      }),
+      revenueSources: v.object({
+        b2c: v.object({
+          thisMonth: v.number(),
+          lastMonth: v.number(),
+          allTime: v.number(),
+        }),
+        b2b: v.object({
+          thisMonth: v.number(),
+          lastMonth: v.number(),
+          allTime: v.number(),
+        }),
+      }),
+    }),
+    timestamp: v.number(),
+  }),
   handler: async (ctx) => {
     const now = Date.now()
     const thisMonthStart = new Date()
@@ -140,6 +167,17 @@ export const getProtocolMetrics = query({
  */
 export const getStakingMetrics = query({
   args: {},
+  returns: v.object({
+    totalStaked: v.number(),
+    totalStakers: v.number(),
+    weightedStake: v.number(),
+    avgStake: v.number(),
+    tierDistribution: v.object({
+      tier1: v.number(),
+      tier2: v.number(),
+      tier3: v.number(),
+    }),
+  }),
   handler: async (ctx) => {
     // TODO: Get actual staking data from on-chain contract
     // For now, return mock data for UI development
@@ -185,6 +223,19 @@ export const getStakingMetrics = query({
  */
 export const getAPYHistory = query({
   args: {},
+  returns: v.object({
+    current: v.number(),
+    '7day': v.number(),
+    '30day': v.number(),
+    '90day': v.number(),
+    allTime: v.number(),
+    historicalData: v.array(
+      v.object({
+        date: v.string(),
+        apy: v.number(),
+      })
+    ),
+  }),
   handler: async (ctx) => {
     const now = Date.now()
 
@@ -304,6 +355,21 @@ export const getUserStakeDetails = query({
   args: {
     walletAddress: v.optional(v.string()),
   },
+  returns: v.union(
+    v.object({
+      amount: v.number(),
+      tier: v.string(),
+      multiplier: v.number(),
+      weightedStake: v.number(),
+      shareOfPool: v.number(),
+      pendingRewards: v.number(),
+      estimatedMonthly: v.number(),
+      estimatedAPY: v.number(),
+      stakedAt: v.number(),
+      unlockAt: v.number(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, { walletAddress }) => {
     if (!walletAddress) {
       return null
@@ -400,6 +466,13 @@ export const getUserStakeDetails = query({
  */
 export const getMonthlyRevenueHistory = query({
   args: {},
+  returns: v.array(
+    v.object({
+      month: v.string(),
+      revenue: v.number(),
+      stakerPool: v.number(),
+    })
+  ),
   handler: async (ctx) => {
     const now = Date.now()
     const monthlyData = []
@@ -446,6 +519,12 @@ export const getMonthlyRevenueHistory = query({
  */
 export const getStakerGrowth = query({
   args: {},
+  returns: v.array(
+    v.object({
+      month: v.string(),
+      stakers: v.number(),
+    })
+  ),
   handler: async (ctx) => {
     const now = Date.now()
     const growthData = []

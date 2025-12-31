@@ -1,4 +1,4 @@
-import { Connection } from '@solana/web3.js'
+import { createSolanaRpc } from '@solana/rpc'
 
 export interface HealthCheckResult {
   healthy: boolean
@@ -81,13 +81,10 @@ async function checkSolana(): Promise<{
 
     const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
 
-    const connection = new Connection(rpcUrl, {
-      commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 5000,
-    })
+    const rpc = createSolanaRpc(rpcUrl)
 
     // Try to get the latest blockhash
-    await connection.getLatestBlockhash()
+    await rpc.getLatestBlockhash().send()
 
     const latency = Date.now() - startTime
 

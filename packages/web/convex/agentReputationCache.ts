@@ -13,6 +13,33 @@ import { query, mutation } from './_generated/server'
  */
 export const getByAddress = query({
   args: { agentAddress: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id('agentReputationCache'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      ghostScore: v.number(),
+      tier: v.string(),
+      successRate: v.number(),
+      avgResponseTime: v.optional(v.number()),
+      totalJobs: v.number(),
+      disputes: v.number(),
+      disputeResolution: v.string(),
+      payaiData: v.optional(
+        v.object({
+          last30Days: v.object({
+            transactions: v.number(),
+            volume: v.string(),
+            avgAmount: v.string(),
+          }),
+        })
+      ),
+      credentialId: v.optional(v.string()),
+      lastUpdated: v.number(),
+      cacheHits: v.number(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('agentReputationCache')
@@ -26,6 +53,32 @@ export const getByAddress = query({
  */
 export const getByTier = query({
   args: { tier: v.string() },
+  returns: v.array(
+    v.object({
+      _id: v.id('agentReputationCache'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      ghostScore: v.number(),
+      tier: v.string(),
+      successRate: v.number(),
+      avgResponseTime: v.optional(v.number()),
+      totalJobs: v.number(),
+      disputes: v.number(),
+      disputeResolution: v.string(),
+      payaiData: v.optional(
+        v.object({
+          last30Days: v.object({
+            transactions: v.number(),
+            volume: v.string(),
+            avgAmount: v.string(),
+          }),
+        })
+      ),
+      credentialId: v.optional(v.string()),
+      lastUpdated: v.number(),
+      cacheHits: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('agentReputationCache')
@@ -39,6 +92,32 @@ export const getByTier = query({
  */
 export const getTopByScore = query({
   args: { limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id('agentReputationCache'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      ghostScore: v.number(),
+      tier: v.string(),
+      successRate: v.number(),
+      avgResponseTime: v.optional(v.number()),
+      totalJobs: v.number(),
+      disputes: v.number(),
+      disputeResolution: v.string(),
+      payaiData: v.optional(
+        v.object({
+          last30Days: v.object({
+            transactions: v.number(),
+            volume: v.string(),
+            avgAmount: v.string(),
+          }),
+        })
+      ),
+      credentialId: v.optional(v.string()),
+      lastUpdated: v.number(),
+      cacheHits: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit || 10
     return await ctx.db
@@ -75,6 +154,7 @@ export const upsert = mutation({
     ),
     credentialId: v.optional(v.string()),
   },
+  returns: v.id('agentReputationCache'),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('agentReputationCache')
@@ -122,6 +202,7 @@ export const upsert = mutation({
  */
 export const invalidate = mutation({
   args: { agentAddress: v.string() },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('agentReputationCache')

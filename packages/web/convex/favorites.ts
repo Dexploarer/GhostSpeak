@@ -9,6 +9,18 @@ import { query, mutation } from './_generated/server'
 
 export const getByUser = query({
   args: { userId: v.id('users') },
+  returns: v.array(
+    v.object({
+      _id: v.id('favorites'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      resourceId: v.string(),
+      resourceUrl: v.string(),
+      resourceName: v.string(),
+      category: v.optional(v.string()),
+      addedAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('favorites')
@@ -23,6 +35,7 @@ export const isFavorite = query({
     userId: v.id('users'),
     resourceId: v.string(),
   },
+  returns: v.boolean(),
   handler: async (ctx, args) => {
     const favorite = await ctx.db
       .query('favorites')
@@ -44,6 +57,7 @@ export const add = mutation({
     resourceName: v.string(),
     category: v.optional(v.string()),
   },
+  returns: v.id('favorites'),
   handler: async (ctx, args) => {
     // Check if already favorited
     const existing = await ctx.db
@@ -72,6 +86,7 @@ export const remove = mutation({
     userId: v.id('users'),
     resourceId: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const favorite = await ctx.db
       .query('favorites')
@@ -93,6 +108,7 @@ export const toggle = mutation({
     resourceName: v.string(),
     category: v.optional(v.string()),
   },
+  returns: v.object({ favorited: v.boolean() }),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('favorites')

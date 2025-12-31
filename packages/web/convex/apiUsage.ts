@@ -17,6 +17,12 @@ export const getSummaryByKey = query({
     startDate: v.number(),
     endDate: v.number(),
   },
+  returns: v.object({
+    totalRequests: v.number(),
+    billableRequests: v.number(),
+    totalCost: v.number(),
+    byEndpoint: v.any(),
+  }),
   handler: async (ctx, args) => {
     const records = await ctx.db
       .query('apiUsage')
@@ -74,6 +80,12 @@ export const getSummaryByUser = query({
     startDate: v.number(),
     endDate: v.number(),
   },
+  returns: v.object({
+    totalRequests: v.number(),
+    billableRequests: v.number(),
+    totalCost: v.number(),
+    daily: v.any(),
+  }),
   handler: async (ctx, args) => {
     const records = await ctx.db
       .query('apiUsage')
@@ -113,6 +125,22 @@ export const getRecent = query({
     apiKeyId: v.id('apiKeys'),
     limit: v.optional(v.number()),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('apiUsage'),
+      _creationTime: v.number(),
+      apiKeyId: v.id('apiKeys'),
+      userId: v.id('users'),
+      endpoint: v.string(),
+      method: v.string(),
+      agentAddress: v.optional(v.string()),
+      statusCode: v.number(),
+      responseTime: v.number(),
+      billable: v.boolean(),
+      cost: v.optional(v.number()),
+      timestamp: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit || 100
     const records = await ctx.db
@@ -142,6 +170,7 @@ export const track = mutation({
     billable: v.boolean(),
     cost: v.optional(v.number()),
   },
+  returns: v.id('apiUsage'),
   handler: async (ctx, args) => {
     return await ctx.db.insert('apiUsage', {
       apiKeyId: args.apiKeyId,
@@ -177,6 +206,7 @@ export const trackBatch = mutation({
       })
     ),
   },
+  returns: v.array(v.id('apiUsage')),
   handler: async (ctx, args) => {
     const timestamp = Date.now()
     const results = []

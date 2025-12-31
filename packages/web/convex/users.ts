@@ -9,6 +9,28 @@ import { query, mutation } from './_generated/server'
 
 export const getByWallet = query({
   args: { walletAddress: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id('users'),
+      _creationTime: v.number(),
+      walletAddress: v.string(),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      avatarUrl: v.optional(v.string()),
+      createdAt: v.number(),
+      lastActiveAt: v.number(),
+      preferences: v.optional(
+        v.object({
+          theme: v.optional(v.string()),
+          notifications: v.optional(v.boolean()),
+          favoriteCategories: v.optional(v.array(v.string())),
+        })
+      ),
+      totalSpent: v.optional(v.number()),
+      totalTransactions: v.optional(v.number()),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('users')
@@ -19,6 +41,28 @@ export const getByWallet = query({
 
 export const getById = query({
   args: { userId: v.id('users') },
+  returns: v.union(
+    v.object({
+      _id: v.id('users'),
+      _creationTime: v.number(),
+      walletAddress: v.string(),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      avatarUrl: v.optional(v.string()),
+      createdAt: v.number(),
+      lastActiveAt: v.number(),
+      preferences: v.optional(
+        v.object({
+          theme: v.optional(v.string()),
+          notifications: v.optional(v.boolean()),
+          favoriteCategories: v.optional(v.array(v.string())),
+        })
+      ),
+      totalSpent: v.optional(v.number()),
+      totalTransactions: v.optional(v.number()),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     return await ctx.db.get(args.userId)
   },
@@ -33,6 +77,7 @@ export const upsert = mutation({
     name: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
   },
+  returns: v.id('users'),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('users')
@@ -71,6 +116,7 @@ export const updatePreferences = mutation({
       favoriteCategories: v.optional(v.array(v.string())),
     }),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.userId, {
       preferences: args.preferences,
@@ -81,6 +127,7 @@ export const updatePreferences = mutation({
 
 export const recordActivity = mutation({
   args: { userId: v.id('users') },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.userId, {
       lastActiveAt: Date.now(),

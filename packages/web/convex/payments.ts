@@ -10,6 +10,24 @@ import { query, mutation } from './_generated/server'
 
 export const getByUser = query({
   args: { userId: v.id('users'), limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id('payments'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      resourceId: v.string(),
+      resourceUrl: v.string(),
+      resourceName: v.string(),
+      amount: v.number(),
+      network: v.string(),
+      status: v.string(),
+      conversationId: v.optional(v.id('conversations')),
+      messageId: v.optional(v.id('messages')),
+      transactionSignature: v.optional(v.string()),
+      createdAt: v.number(),
+      completedAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('payments')
@@ -21,6 +39,24 @@ export const getByUser = query({
 
 export const getByResource = query({
   args: { resourceId: v.string(), limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id('payments'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      resourceId: v.string(),
+      resourceUrl: v.string(),
+      resourceName: v.string(),
+      amount: v.number(),
+      network: v.string(),
+      status: v.string(),
+      conversationId: v.optional(v.id('conversations')),
+      messageId: v.optional(v.id('messages')),
+      transactionSignature: v.optional(v.string()),
+      createdAt: v.number(),
+      completedAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('payments')
@@ -32,6 +68,11 @@ export const getByResource = query({
 
 export const getUserStats = query({
   args: { userId: v.id('users') },
+  returns: v.object({
+    totalPayments: v.number(),
+    totalSpent: v.number(),
+    lastPaymentAt: v.union(v.number(), v.null()),
+  }),
   handler: async (ctx, args) => {
     const payments = await ctx.db
       .query('payments')
@@ -61,6 +102,7 @@ export const create = mutation({
     conversationId: v.optional(v.id('conversations')),
     messageId: v.optional(v.id('messages')),
   },
+  returns: v.id('payments'),
   handler: async (ctx, args) => {
     return await ctx.db.insert('payments', {
       userId: args.userId,
@@ -82,6 +124,7 @@ export const complete = mutation({
     paymentId: v.id('payments'),
     transactionSignature: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.paymentId, {
       status: 'completed',
@@ -105,6 +148,7 @@ export const complete = mutation({
 
 export const fail = mutation({
   args: { paymentId: v.id('payments') },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.paymentId, {
       status: 'failed',

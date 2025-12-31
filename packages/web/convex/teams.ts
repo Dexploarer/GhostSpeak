@@ -15,6 +15,7 @@ export const createTeam = mutation({
     name: v.string(),
     plan: v.string(), // 'startup', 'growth', 'enterprise'
   },
+  returns: v.id('teams'),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) {
@@ -80,6 +81,25 @@ export const createTeam = mutation({
  */
 export const getUserTeams = query({
   args: {},
+  returns: v.array(
+    v.union(
+      v.object({
+        _id: v.id('teams'),
+        _creationTime: v.number(),
+        name: v.string(),
+        ownerUserId: v.id('users'),
+        plan: v.string(),
+        maxMembers: v.number(),
+        maxApiKeys: v.number(),
+        isActive: v.boolean(),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        role: v.string(),
+        memberCount: v.number(),
+      }),
+      v.null()
+    )
+  ),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) {
@@ -134,6 +154,10 @@ export const inviteTeamMember = mutation({
     email: v.string(),
     role: v.string(), // 'admin', 'developer', 'viewer'
   },
+  returns: v.object({
+    inviteId: v.id('teamInvites'),
+    token: v.string(),
+  }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) {
@@ -205,6 +229,10 @@ export const acceptTeamInvite = mutation({
   args: {
     token: v.string(),
   },
+  returns: v.object({
+    success: v.boolean(),
+    teamId: v.id('teams'),
+  }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) {
@@ -284,6 +312,23 @@ export const getTeamMembers = query({
   args: {
     teamId: v.id('teams'),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('teamMembers'),
+      _creationTime: v.number(),
+      teamId: v.id('teams'),
+      userId: v.id('users'),
+      role: v.string(),
+      canManageMembers: v.boolean(),
+      canManageApiKeys: v.boolean(),
+      canViewBilling: v.boolean(),
+      isActive: v.boolean(),
+      joinedAt: v.number(),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      walletAddress: v.optional(v.string()),
+    })
+  ),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) {
@@ -338,6 +383,7 @@ export const removeTeamMember = mutation({
     teamId: v.id('teams'),
     memberId: v.id('teamMembers'),
   },
+  returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) {

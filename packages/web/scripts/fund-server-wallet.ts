@@ -13,7 +13,7 @@
  */
 
 import { generateKeyPairSigner } from '@solana/signers'
-import { createSolanaRpc } from '@solana/web3.js'
+import { createSolanaRpc } from '@solana/rpc'
 import bs58 from 'bs58'
 
 // =====================================================

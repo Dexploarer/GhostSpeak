@@ -12,7 +12,8 @@
  */
 
 import { address, type Address } from '@solana/addresses'
-import { createSolanaRpc, createSolanaRpcSubscriptions as _createSolanaRpcSubscriptions, type Rpc, lamports } from '@solana/web3.js'
+import { createSolanaRpc, type Rpc } from '@solana/rpc'
+import { lamports } from '@solana/rpc'
 import {
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,

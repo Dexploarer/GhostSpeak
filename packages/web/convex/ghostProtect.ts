@@ -17,6 +17,31 @@ import { Doc, Id } from './_generated/dataModel'
  */
 export const getEscrow = query({
   args: { escrowId: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id('escrows'),
+      _creationTime: v.number(),
+      escrowId: v.string(),
+      escrowIdNumber: v.string(),
+      clientAddress: v.string(),
+      agentAddress: v.string(),
+      amount: v.string(),
+      tokenMint: v.string(),
+      tokenSymbol: v.optional(v.string()),
+      tokenDecimals: v.optional(v.number()),
+      jobDescription: v.string(),
+      deadline: v.number(),
+      status: v.string(),
+      createdAt: v.number(),
+      transactionSignature: v.optional(v.string()),
+      lastUpdated: v.number(),
+      deliveryProof: v.optional(v.string()),
+      disputeReason: v.optional(v.string()),
+      arbitratorDecision: v.optional(v.string()),
+      completedAt: v.optional(v.number()),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const escrow = await ctx.db
       .query('escrows')
@@ -36,6 +61,30 @@ export const getUserEscrows = query({
     role: v.optional(v.union(v.literal('client'), v.literal('agent'))),
     status: v.optional(v.string()),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('escrows'),
+      _creationTime: v.number(),
+      escrowId: v.string(),
+      escrowIdNumber: v.string(),
+      clientAddress: v.string(),
+      agentAddress: v.string(),
+      amount: v.string(),
+      tokenMint: v.string(),
+      tokenSymbol: v.optional(v.string()),
+      tokenDecimals: v.optional(v.number()),
+      jobDescription: v.string(),
+      deadline: v.number(),
+      status: v.string(),
+      createdAt: v.number(),
+      transactionSignature: v.optional(v.string()),
+      lastUpdated: v.number(),
+      deliveryProof: v.optional(v.string()),
+      disputeReason: v.optional(v.string()),
+      arbitratorDecision: v.optional(v.string()),
+      completedAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     let escrows: Doc<'escrows'>[] = []
 
@@ -72,6 +121,30 @@ export const getUserEscrows = query({
  */
 export const getRecentEscrows = query({
   args: { limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id('escrows'),
+      _creationTime: v.number(),
+      escrowId: v.string(),
+      escrowIdNumber: v.string(),
+      clientAddress: v.string(),
+      agentAddress: v.string(),
+      amount: v.string(),
+      tokenMint: v.string(),
+      tokenSymbol: v.optional(v.string()),
+      tokenDecimals: v.optional(v.number()),
+      jobDescription: v.string(),
+      deadline: v.number(),
+      status: v.string(),
+      createdAt: v.number(),
+      transactionSignature: v.optional(v.string()),
+      lastUpdated: v.number(),
+      deliveryProof: v.optional(v.string()),
+      disputeReason: v.optional(v.string()),
+      arbitratorDecision: v.optional(v.string()),
+      completedAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 20
     const escrows = await ctx.db.query('escrows').order('desc').take(limit)
@@ -85,6 +158,30 @@ export const getRecentEscrows = query({
  */
 export const getEscrowsByStatus = query({
   args: { status: v.string(), limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id('escrows'),
+      _creationTime: v.number(),
+      escrowId: v.string(),
+      escrowIdNumber: v.string(),
+      clientAddress: v.string(),
+      agentAddress: v.string(),
+      amount: v.string(),
+      tokenMint: v.string(),
+      tokenSymbol: v.optional(v.string()),
+      tokenDecimals: v.optional(v.number()),
+      jobDescription: v.string(),
+      deadline: v.number(),
+      status: v.string(),
+      createdAt: v.number(),
+      transactionSignature: v.optional(v.string()),
+      lastUpdated: v.number(),
+      deliveryProof: v.optional(v.string()),
+      disputeReason: v.optional(v.string()),
+      arbitratorDecision: v.optional(v.string()),
+      completedAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50
     const escrows = await ctx.db
@@ -102,6 +199,24 @@ export const getEscrowsByStatus = query({
  */
 export const getEscrowTimeline = query({
   args: { escrowId: v.string() },
+  returns: v.array(
+    v.object({
+      _id: v.id('escrowEvents'),
+      _creationTime: v.number(),
+      escrowId: v.string(),
+      eventType: v.string(),
+      actor: v.string(),
+      data: v.optional(
+        v.object({
+          deliveryProof: v.optional(v.string()),
+          disputeReason: v.optional(v.string()),
+          arbitratorDecision: v.optional(v.string()),
+          transactionSignature: v.optional(v.string()),
+        })
+      ),
+      timestamp: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const events = await ctx.db
       .query('escrowEvents')
@@ -120,6 +235,20 @@ export const getEscrowTimeline = query({
  */
 export const getUserEscrowStats = query({
   args: { walletAddress: v.string() },
+  returns: v.object({
+    asClient: v.object({
+      total: v.number(),
+      active: v.number(),
+      completed: v.number(),
+      disputed: v.number(),
+    }),
+    asAgent: v.object({
+      total: v.number(),
+      active: v.number(),
+      completed: v.number(),
+      disputed: v.number(),
+    }),
+  }),
   handler: async (ctx, args) => {
     const asClient = await ctx.db
       .query('escrows')
@@ -169,6 +298,7 @@ export const recordEscrowCreated = mutation({
     deadline: v.number(),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.id('escrows'),
   handler: async (ctx, args) => {
     const now = Date.now()
 
@@ -214,6 +344,7 @@ export const updateEscrowStatus = mutation({
     status: v.string(),
     completedAt: v.optional(v.number()),
   },
+  returns: v.id('escrows'),
   handler: async (ctx, args) => {
     const escrow = await ctx.db
       .query('escrows')
@@ -251,6 +382,7 @@ export const addTimelineEvent = mutation({
       })
     ),
   },
+  returns: v.id('escrowEvents'),
   handler: async (ctx, args) => {
     const eventId = await ctx.db.insert('escrowEvents', {
       escrowId: args.escrowId,
@@ -274,6 +406,7 @@ export const recordDeliverySubmitted = mutation({
     agentAddress: v.string(),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.id('escrows'),
   handler: async (ctx, args) => {
     const escrow = await ctx.db
       .query('escrows')
@@ -315,6 +448,7 @@ export const recordDeliveryApproved = mutation({
     clientAddress: v.string(),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.id('escrows'),
   handler: async (ctx, args) => {
     const escrow = await ctx.db
       .query('escrows')
@@ -359,6 +493,7 @@ export const recordDisputeFiled = mutation({
     clientAddress: v.string(),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.id('escrows'),
   handler: async (ctx, args) => {
     const escrow = await ctx.db
       .query('escrows')
@@ -404,6 +539,7 @@ export const recordDisputeResolved = mutation({
     arbitratorAddress: v.string(),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.id('escrows'),
   handler: async (ctx, args) => {
     const escrow = await ctx.db
       .query('escrows')

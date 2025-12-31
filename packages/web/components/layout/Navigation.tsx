@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image as _Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'

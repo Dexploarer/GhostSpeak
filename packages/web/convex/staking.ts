@@ -16,6 +16,23 @@ import { v } from 'convex/values'
  */
 export const getStakingAccount = query({
   args: { agentAddress: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id('stakingAccounts'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      amountStaked: v.number(),
+      stakedAt: v.number(),
+      unlockAt: v.number(),
+      lockDuration: v.number(),
+      reputationBoostBps: v.number(),
+      hasVerifiedBadge: v.boolean(),
+      hasPremiumBenefits: v.boolean(),
+      tier: v.number(),
+      isActive: v.boolean(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const stakingAccount = await ctx.db
       .query('stakingAccounts')
@@ -32,6 +49,22 @@ export const getStakingAccount = query({
  */
 export const getStakingLeaderboard = query({
   args: { limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id('stakingAccounts'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      amountStaked: v.number(),
+      stakedAt: v.number(),
+      unlockAt: v.number(),
+      lockDuration: v.number(),
+      reputationBoostBps: v.number(),
+      hasVerifiedBadge: v.boolean(),
+      hasPremiumBenefits: v.boolean(),
+      tier: v.number(),
+      isActive: v.boolean(),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 10
 
@@ -52,6 +85,19 @@ export const getStakingLeaderboard = query({
  */
 export const getStakingHistory = query({
   args: { agentAddress: v.string() },
+  returns: v.array(
+    v.object({
+      _id: v.id('stakingEvents'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      eventType: v.string(),
+      amount: v.number(),
+      timestamp: v.number(),
+      txSignature: v.string(),
+      lockDuration: v.optional(v.number()),
+      tierReached: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     const events = await ctx.db
       .query('stakingEvents')
@@ -67,6 +113,16 @@ export const getStakingHistory = query({
  * Get platform-wide staking stats
  */
 export const getStakingStats = query({
+  args: {},
+  returns: v.object({
+    totalStaked: v.number(),
+    totalStakers: v.number(),
+    tierDistribution: v.object({
+      tier1: v.number(),
+      tier2: v.number(),
+      tier3: v.number(),
+    }),
+  }),
   handler: async (ctx) => {
     const allStakingAccounts = await ctx.db
       .query('stakingAccounts')
@@ -107,6 +163,11 @@ export const recordStake = mutation({
     lockDuration: v.number(), // seconds
     txSignature: v.string(),
   },
+  returns: v.object({
+    success: v.boolean(),
+    tier: v.number(),
+    reputationBoostBps: v.number(),
+  }),
   handler: async (ctx, args) => {
     const now = Date.now()
     const unlockAt = now + args.lockDuration * 1000
@@ -186,6 +247,7 @@ export const recordUnstake = mutation({
     agentAddress: v.string(),
     txSignature: v.string(),
   },
+  returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
     const stakingAccount = await ctx.db
       .query('stakingAccounts')
@@ -224,6 +286,10 @@ export const recordSlash = mutation({
     slashedAmount: v.number(),
     txSignature: v.string(),
   },
+  returns: v.object({
+    success: v.boolean(),
+    newAmount: v.number(),
+  }),
   handler: async (ctx, args) => {
     const stakingAccount = await ctx.db
       .query('stakingAccounts')

@@ -16,6 +16,17 @@ import { Id } from './_generated/dataModel'
  */
 export const getTeamByApiKey = query({
   args: { hashedApiKey: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id('teams'),
+      name: v.string(),
+      plan: v.string(),
+      usdcTokenAccount: v.optional(v.string()),
+      currentBalance: v.optional(v.number()),
+      currentUsage: v.number(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     // Use pre-hashed key from client
     const hashedKey = args.hashedApiKey
@@ -81,6 +92,35 @@ export const getTeamAnalytics = query({
     teamId: v.id('teams'),
     days: v.optional(v.number()), // Default 30 days
   },
+  returns: v.union(
+    v.object({
+      team: v.object({
+        id: v.id('teams'),
+        name: v.string(),
+        plan: v.string(),
+        currentBalance: v.number(),
+      }),
+      period: v.object({
+        days: v.number(),
+        startDate: v.number(),
+        endDate: v.number(),
+      }),
+      totals: v.object({
+        requests: v.number(),
+        cost: v.number(),
+        deposits: v.number(),
+        avgDailyRequests: v.number(),
+      }),
+      dailyData: v.array(
+        v.object({
+          date: v.string(),
+          requests: v.number(),
+          cost: v.number(),
+        })
+      ),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const days = args.days || 30
     const team = await ctx.db.get(args.teamId)
@@ -166,6 +206,14 @@ export const getEndpointBreakdown = query({
     teamId: v.id('teams'),
     days: v.optional(v.number()),
   },
+  returns: v.array(
+    v.object({
+      endpoint: v.string(),
+      requests: v.number(),
+      cost: v.number(),
+      avgCostPerRequest: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const days = args.days || 30
     const now = Date.now()
@@ -218,6 +266,9 @@ export const incrementUsage = mutation({
     teamId: v.id('teams'),
     requestCount: v.number(),
   },
+  returns: v.object({
+    success: v.boolean(),
+  }),
   handler: async (ctx, args) => {
     const team = await ctx.db.get(args.teamId)
 
@@ -250,6 +301,9 @@ export const setUsdcTokenAccount = mutation({
     usdcTokenAccount: v.string(),
     initialBalance: v.optional(v.number()),
   },
+  returns: v.object({
+    success: v.boolean(),
+  }),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.teamId, {
       usdcTokenAccount: args.usdcTokenAccount,
@@ -269,11 +323,19 @@ export const syncBalanceFromChain = internalMutation({
     teamId: v.id('teams'),
     balanceMicroUsdc: v.number(),
   },
+  returns: v.union(
+    v.object({
+      oldBalance: v.number(),
+      newBalance: v.number(),
+      difference: v.number(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const team = await ctx.db.get(args.teamId)
 
     if (!team) {
-      return
+      return null
     }
 
     const oldBalance = team.currentBalance || 0

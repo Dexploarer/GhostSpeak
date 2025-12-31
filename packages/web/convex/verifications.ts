@@ -11,6 +11,7 @@ import { mutation, query } from './_generated/server'
  */
 export const getUserVerificationCount = query({
   args: { userId: v.id('users') },
+  returns: v.number(),
   handler: async (ctx, args) => {
     // Get start of current month
     const now = new Date()
@@ -36,6 +37,19 @@ export const getUserVerifications = query({
     userId: v.id('users'),
     limit: v.optional(v.number()),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('verifications'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      agentAddress: v.string(),
+      ghostScore: v.number(),
+      tier: v.string(),
+      paymentMethod: v.optional(v.string()),
+      paymentSignature: v.optional(v.string()),
+      timestamp: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit || 10
 
@@ -52,6 +66,12 @@ export const getUserVerifications = query({
  */
 export const canUserVerify = query({
   args: { userId: v.id('users') },
+  returns: v.object({
+    canVerify: v.boolean(),
+    tier: v.string(),
+    verificationsUsed: v.number(),
+    verificationsLimit: v.number(),
+  }),
   handler: async (ctx, args) => {
     // Free tier - check monthly limit
     const now = new Date()
@@ -81,6 +101,11 @@ export const canUserVerify = query({
  */
 export const getVerificationStats = query({
   args: { userId: v.id('users') },
+  returns: v.object({
+    totalVerifications: v.number(),
+    thisMonth: v.number(),
+    uniqueAgents: v.number(),
+  }),
   handler: async (ctx, args) => {
     const allVerifications = await ctx.db
       .query('verifications')
@@ -112,6 +137,7 @@ export const creditVerification = mutation({
     paymentSignature: v.string(),
     amount: v.optional(v.string()), // Payment amount for record keeping
   },
+  returns: v.id('verifications'),
   handler: async (ctx, args) => {
     // Check if verification already exists with this payment signature (idempotency)
     const existing = await ctx.db
@@ -159,6 +185,7 @@ export const createVerification = mutation({
     paymentSignature: v.optional(v.string()),
     timestamp: v.number(),
   },
+  returns: v.id('verifications'),
   handler: async (ctx, args) => {
     return await ctx.db.insert('verifications', {
       userId: args.userId,

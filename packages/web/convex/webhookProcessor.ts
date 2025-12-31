@@ -7,26 +7,38 @@
  * Called by cron jobs every 1 minute.
  */
 
-import { internalAction, internalMutation } from './_generated/server'
+import { internalAction } from './_generated/server'
+import type { ActionCtx } from './_generated/server'
+import type { Doc } from './_generated/dataModel'
 import { internal } from './_generated/api'
 import { createHmac } from 'crypto'
+import { v } from 'convex/values'
 
 /**
  * Process pending webhooks
  */
 export const processWebhooks = internalAction({
   args: {},
+  returns: v.object({
+    processed: v.number(),
+    successful: v.number(),
+    failed: v.number(),
+  }),
   handler: async (ctx): Promise<{ processed: number; successful: number; failed: number }> => {
     // Get pending webhooks ready for delivery
-    const pendingWebhooks: any[] = await ctx.runQuery(internal.webhookDelivery.getPendingWebhooks)
+    const pendingWebhooks: Doc<"webhookDeliveries">[] = await ctx.runQuery(
+      internal.webhookDelivery.getPendingWebhooks
+    )
 
     console.log(`[Webhook Processor] Found ${pendingWebhooks.length} pending webhooks`)
 
     // Process up to 50 webhooks per run to avoid timeouts
-    const webhooksToProcess: any[] = pendingWebhooks.slice(0, 50)
+    const webhooksToProcess: Doc<"webhookDeliveries">[] = pendingWebhooks.slice(0, 50)
 
     const results = await Promise.allSettled(
-      webhooksToProcess.map((webhook: any) => deliverWebhook(ctx, webhook))
+      webhooksToProcess.map((webhook: Doc<"webhookDeliveries">) =>
+        deliverWebhook(ctx, webhook)
+      )
     )
 
     const successful = results.filter((r) => r.status === 'fulfilled').length
@@ -43,7 +55,10 @@ export const processWebhooks = internalAction({
 /**
  * Deliver a single webhook
  */
-async function deliverWebhook(ctx: any, webhook: any) {
+async function deliverWebhook(
+  ctx: ActionCtx,
+  webhook: Doc<"webhookDeliveries">
+): Promise<void> {
   const { _id, url, secret, payload } = webhook
 
   try {
@@ -88,14 +103,16 @@ async function deliverWebhook(ctx: any, webhook: any) {
 
       console.error(`[Webhook Delivery] Failed: ${url} (${response.status})`)
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Network error or timeout - mark as failed
+    const errorMessage = error instanceof Error ? error.message : 'Network error'
+
     await ctx.runMutation(internal.webhookDelivery.markWebhookFailed, {
       webhookId: _id,
-      error: error.message || 'Network error',
+      error: errorMessage,
     })
 
-    console.error(`[Webhook Delivery] Error: ${url} - ${error.message}`)
+    console.error(`[Webhook Delivery] Error: ${url} - ${errorMessage}`)
   }
 }
 

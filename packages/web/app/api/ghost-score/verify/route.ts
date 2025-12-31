@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     let agentData
     try {
       agentData = await client.agents.getAgentAccount(agentAddress as Address)
-    } catch () {
+    } catch {
       return NextResponse.json({ error: 'Agent not found on blockchain' }, { status: 404 })
     }
 

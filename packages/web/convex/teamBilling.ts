@@ -16,6 +16,26 @@ import { Id } from './_generated/dataModel'
  */
 export const getTeamBilling = query({
   args: { teamId: v.id('teams') },
+  returns: v.union(
+    v.object({
+      team: v.object({
+        id: v.id('teams'),
+        name: v.string(),
+        plan: v.string(),
+        usdcTokenAccount: v.optional(v.string()),
+        currentBalance: v.number(),
+        monthlyBudget: v.number(),
+        lastBillingAt: v.optional(v.number()),
+      }),
+      usage: v.object({
+        thisMonth: v.number(),
+        totalCost: v.number(),
+        startOfMonth: v.number(),
+      }),
+      members: v.number(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const team = await ctx.db.get(args.teamId)
 
@@ -81,6 +101,19 @@ export const getBillingHistory = query({
     teamId: v.id('teams'),
     limit: v.optional(v.number()),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('billingDeductions'),
+      _creationTime: v.number(),
+      teamId: v.id('teams'),
+      amountMicroUsdc: v.number(),
+      amountUsdc: v.number(),
+      requestCount: v.number(),
+      endpoint: v.string(),
+      transactionSignature: v.optional(v.string()),
+      timestamp: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit || 30
 
@@ -102,6 +135,16 @@ export const getMonthlyAggregate = query({
     teamId: v.id('teams'),
     month: v.string(), // 'YYYY-MM'
   },
+  returns: v.union(
+    v.object({
+      month: v.string(),
+      totalDeducted: v.number(),
+      totalRequests: v.number(),
+      avgCostPerRequest: v.number(),
+      deductionCount: v.number(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     // Parse month
     const [year, month] = args.month.split('-').map(Number)
@@ -139,6 +182,12 @@ export const getMonthlyAggregate = query({
  */
 export const checkRefillStatus = query({
   args: { teamId: v.id('teams') },
+  returns: v.object({
+    needsRefill: v.boolean(),
+    critical: v.optional(v.boolean()),
+    currentBalance: v.optional(v.number()),
+    threshold: v.optional(v.number()),
+  }),
   handler: async (ctx, args) => {
     const team = await ctx.db.get(args.teamId)
 
@@ -173,6 +222,7 @@ export const recordDeduction = mutation({
     endpoint: v.string(),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.id('billingDeductions'),
   handler: async (ctx, args) => {
     const team = await ctx.db.get(args.teamId)
 
@@ -218,6 +268,11 @@ export const updateBalance = mutation({
     depositAmount: v.optional(v.number()),
     transactionSignature: v.optional(v.string()),
   },
+  returns: v.object({
+    previousBalance: v.number(),
+    newBalance: v.number(),
+    balanceUsdc: v.number(),
+  }),
   handler: async (ctx, args) => {
     const team = await ctx.db.get(args.teamId)
 
@@ -252,6 +307,18 @@ export const updateBalance = mutation({
  * Internal mutation to trigger refill notifications (called by cron)
  */
 export const triggerRefillNotifications = internalMutation({
+  returns: v.object({
+    teamsChecked: v.number(),
+    alertsTriggered: v.number(),
+    alerts: v.array(
+      v.object({
+        teamId: v.id('teams'),
+        teamName: v.string(),
+        balance: v.number(),
+        ownerUserId: v.id('users'),
+      })
+    ),
+  }),
   handler: async (ctx) => {
     const LOW_BALANCE_THRESHOLD = 10_000_000 // 10 USDC in micro units
 

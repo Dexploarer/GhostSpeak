@@ -18,6 +18,7 @@ export const createWebhookSubscription = mutation({
     events: v.array(v.string()),
     agentAddresses: v.optional(v.array(v.string())),
   },
+  returns: v.id('webhookSubscriptions'),
   handler: async (ctx, args) => {
     // Get API key to verify it exists and get userId
     const apiKey = await ctx.db.get(args.apiKeyId)
@@ -50,6 +51,23 @@ export const listWebhookSubscriptions = query({
   args: {
     apiKeyId: v.id('apiKeys'),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('webhookSubscriptions'),
+      _creationTime: v.number(),
+      apiKeyId: v.id('apiKeys'),
+      userId: v.id('users'),
+      url: v.string(),
+      secret: v.string(),
+      events: v.array(v.string()),
+      agentAddresses: v.optional(v.array(v.string())),
+      isActive: v.boolean(),
+      totalDeliveries: v.number(),
+      failedDeliveries: v.number(),
+      createdAt: v.number(),
+      lastDeliveryAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('webhookSubscriptions')
@@ -66,6 +84,24 @@ export const getWebhookSubscription = query({
     subscriptionId: v.id('webhookSubscriptions'),
     apiKeyId: v.id('apiKeys'),
   },
+  returns: v.union(
+    v.object({
+      _id: v.id('webhookSubscriptions'),
+      _creationTime: v.number(),
+      apiKeyId: v.id('apiKeys'),
+      userId: v.id('users'),
+      url: v.string(),
+      secret: v.string(),
+      events: v.array(v.string()),
+      agentAddresses: v.optional(v.array(v.string())),
+      isActive: v.boolean(),
+      totalDeliveries: v.number(),
+      failedDeliveries: v.number(),
+      createdAt: v.number(),
+      lastDeliveryAt: v.optional(v.number()),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const subscription = await ctx.db.get(args.subscriptionId)
 
@@ -86,6 +122,7 @@ export const deleteWebhookSubscription = mutation({
     subscriptionId: v.id('webhookSubscriptions'),
     apiKeyId: v.id('apiKeys'),
   },
+  returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
     const subscription = await ctx.db.get(args.subscriptionId)
 

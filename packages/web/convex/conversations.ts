@@ -10,6 +10,22 @@ import { query, mutation } from './_generated/server'
 
 export const getByUser = query({
   args: { userId: v.id('users') },
+  returns: v.array(
+    v.object({
+      _id: v.id('conversations'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      resourceId: v.string(),
+      resourceUrl: v.string(),
+      resourceName: v.string(),
+      title: v.string(),
+      status: v.string(),
+      totalCost: v.number(),
+      messageCount: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('conversations')
@@ -21,6 +37,23 @@ export const getByUser = query({
 
 export const getById = query({
   args: { conversationId: v.id('conversations') },
+  returns: v.union(
+    v.object({
+      _id: v.id('conversations'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      resourceId: v.string(),
+      resourceUrl: v.string(),
+      resourceName: v.string(),
+      title: v.string(),
+      status: v.string(),
+      totalCost: v.number(),
+      messageCount: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     return await ctx.db.get(args.conversationId)
   },
@@ -28,6 +61,19 @@ export const getById = query({
 
 export const getMessages = query({
   args: { conversationId: v.id('conversations') },
+  returns: v.array(
+    v.object({
+      _id: v.id('messages'),
+      _creationTime: v.number(),
+      conversationId: v.id('conversations'),
+      role: v.string(),
+      content: v.string(),
+      cost: v.optional(v.number()),
+      transactionSignature: v.optional(v.string()),
+      metadata: v.optional(v.any()),
+      createdAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('messages')
@@ -47,6 +93,7 @@ export const create = mutation({
     resourceName: v.string(),
     title: v.optional(v.string()),
   },
+  returns: v.id('conversations'),
   handler: async (ctx, args) => {
     const now = Date.now()
 
@@ -74,6 +121,7 @@ export const addMessage = mutation({
     transactionSignature: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
+  returns: v.id('messages'),
   handler: async (ctx, args) => {
     const now = Date.now()
 
@@ -104,6 +152,7 @@ export const addMessage = mutation({
 
 export const archive = mutation({
   args: { conversationId: v.id('conversations') },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.conversationId, {
       status: 'archived',

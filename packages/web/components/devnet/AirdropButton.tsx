@@ -9,7 +9,7 @@
 
 import { useState } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { PublicKey } from '@solana/web3.js'
+import { address, type Address } from '@solana/addresses'
 import {
   getAssociatedTokenAddress,
   getOrCreateAssociatedTokenAccount,
@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 
 // Devnet GHOST token configuration
-const DEVNET_GHOST_MINT = new PublicKey('BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh')
+const DEVNET_GHOST_MINT: Address = address('BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh')
 const DECIMALS = 6
 const AIRDROP_AMOUNT = 10000 // 10,000 GHOST per request
 const RATE_LIMIT_HOURS = 24
@@ -152,7 +152,7 @@ export function AirdropButton({
 
       // Get or create recipient token account
       const recipientTokenAccount = await getAssociatedTokenAddress(
-        DEVNET_GHOST_MINT,
+        DEVNET_GHOST_MINT as any,
         publicKey
       )
 

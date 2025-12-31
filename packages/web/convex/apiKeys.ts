@@ -13,6 +13,22 @@ import { query, mutation } from './_generated/server'
  */
 export const getByUser = query({
   args: { userId: v.id('users') },
+  returns: v.array(
+    v.object({
+      _id: v.id('apiKeys'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      hashedKey: v.string(),
+      keyPrefix: v.string(),
+      tier: v.string(),
+      rateLimit: v.number(),
+      isActive: v.boolean(),
+      name: v.optional(v.string()),
+      createdAt: v.number(),
+      lastUsedAt: v.optional(v.number()),
+      revokedAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('apiKeys')
@@ -26,6 +42,22 @@ export const getByUser = query({
  */
 export const getActiveByUser = query({
   args: { userId: v.id('users') },
+  returns: v.array(
+    v.object({
+      _id: v.id('apiKeys'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      hashedKey: v.string(),
+      keyPrefix: v.string(),
+      tier: v.string(),
+      rateLimit: v.number(),
+      isActive: v.boolean(),
+      name: v.optional(v.string()),
+      createdAt: v.number(),
+      lastUsedAt: v.optional(v.number()),
+      revokedAt: v.optional(v.number()),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('apiKeys')
@@ -39,6 +71,23 @@ export const getActiveByUser = query({
  */
 export const getByHashedKey = query({
   args: { hashedKey: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id('apiKeys'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      hashedKey: v.string(),
+      keyPrefix: v.string(),
+      tier: v.string(),
+      rateLimit: v.number(),
+      isActive: v.boolean(),
+      name: v.optional(v.string()),
+      createdAt: v.number(),
+      lastUsedAt: v.optional(v.number()),
+      revokedAt: v.optional(v.number()),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('apiKeys')
@@ -52,6 +101,30 @@ export const getByHashedKey = query({
  */
 export const getKeyStats = query({
   args: { apiKeyId: v.id('apiKeys') },
+  returns: v.union(
+    v.object({
+      _id: v.id('apiKeys'),
+      _creationTime: v.number(),
+      userId: v.id('users'),
+      hashedKey: v.string(),
+      keyPrefix: v.string(),
+      tier: v.string(),
+      rateLimit: v.number(),
+      isActive: v.boolean(),
+      name: v.optional(v.string()),
+      createdAt: v.number(),
+      lastUsedAt: v.optional(v.number()),
+      revokedAt: v.optional(v.number()),
+      stats: v.object({
+        totalRequests: v.number(),
+        billableRequests: v.number(),
+        totalCost: v.number(),
+        avgResponseTime: v.number(),
+        todayRequests: v.number(),
+      }),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const apiKey = await ctx.db.get(args.apiKeyId)
     if (!apiKey) {
@@ -105,6 +178,7 @@ export const create = mutation({
     rateLimit: v.number(),
     name: v.optional(v.string()),
   },
+  returns: v.id('apiKeys'),
   handler: async (ctx, args) => {
     const now = Date.now()
 
@@ -129,6 +203,7 @@ export const revoke = mutation({
     apiKeyId: v.id('apiKeys'),
     userId: v.id('users'),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const apiKey = await ctx.db.get(args.apiKeyId)
 
@@ -155,6 +230,7 @@ export const update = mutation({
     tier: v.optional(v.string()),
     rateLimit: v.optional(v.number()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const apiKey = await ctx.db.get(args.apiKeyId)
 
@@ -176,6 +252,7 @@ export const update = mutation({
  */
 export const updateLastUsed = mutation({
   args: { apiKeyId: v.id('apiKeys') },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.apiKeyId, {
       lastUsedAt: Date.now(),

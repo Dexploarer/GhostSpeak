@@ -27,6 +27,7 @@ export const storeFailedRecording = mutation({
     error: v.string(),
     timestamp: v.number(),
   },
+  returns: v.id('payaiFailedRecordings'),
   handler: async (ctx, args) => {
     // Check if this payment signature already exists
     const existing = await ctx.db
@@ -76,6 +77,7 @@ export const markRecordingSucceeded = mutation({
     paymentSignature: v.string(),
     transactionSignature: v.string(),
   },
+  returns: v.union(v.id('payaiFailedRecordings'), v.null()),
   handler: async (ctx, args) => {
     const recording = await ctx.db
       .query('payaiFailedRecordings')
@@ -109,6 +111,22 @@ export const retryFailedRecording = internalMutation({
   args: {
     recordingId: v.id('payaiFailedRecordings'),
   },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    recording: v.optional(
+      v.object({
+        agentAddress: v.string(),
+        paymentSignature: v.string(),
+        amount: v.string(),
+        responseTimeMs: v.number(),
+        success: v.boolean(),
+        payerAddress: v.string(),
+        network: v.string(),
+        timestamp: v.any(),
+      })
+    ),
+  }),
   handler: async (ctx, args) => {
     const recording = await ctx.db.get(args.recordingId)
 
@@ -172,6 +190,27 @@ export const retryFailedRecording = internalMutation({
  * Get all pending failed recordings (for retry cron job)
  */
 export const getPendingRecordings = query({
+  returns: v.array(
+    v.object({
+      _id: v.id('payaiFailedRecordings'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      paymentSignature: v.string(),
+      amount: v.string(),
+      responseTimeMs: v.number(),
+      success: v.boolean(),
+      payerAddress: v.string(),
+      network: v.string(),
+      error: v.string(),
+      retryCount: v.number(),
+      lastRetryAt: v.optional(v.number()),
+      maxRetries: v.number(),
+      status: v.string(),
+      timestamp: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+  ),
   handler: async (ctx) => {
     const recordings = await ctx.db
       .query('payaiFailedRecordings')
@@ -186,6 +225,14 @@ export const getPendingRecordings = query({
  * Get retry statistics
  */
 export const getRetryStats = query({
+  returns: v.object({
+    total: v.number(),
+    pending: v.number(),
+    retrying: v.number(),
+    succeeded: v.number(),
+    failed: v.number(),
+    successRate: v.string(),
+  }),
   handler: async (ctx) => {
     const all = await ctx.db.query('payaiFailedRecordings').collect()
 
@@ -212,6 +259,27 @@ export const getAgentFailedRecordings = query({
   args: {
     agentAddress: v.string(),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('payaiFailedRecordings'),
+      _creationTime: v.number(),
+      agentAddress: v.string(),
+      paymentSignature: v.string(),
+      amount: v.string(),
+      responseTimeMs: v.number(),
+      success: v.boolean(),
+      payerAddress: v.string(),
+      network: v.string(),
+      error: v.string(),
+      retryCount: v.number(),
+      lastRetryAt: v.optional(v.number()),
+      maxRetries: v.number(),
+      status: v.string(),
+      timestamp: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const recordings = await ctx.db
       .query('payaiFailedRecordings')

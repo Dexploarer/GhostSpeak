@@ -4,16 +4,10 @@
  */
 
 import { createSolanaRpc, createSolanaRpcSubscriptions, createKeyPairSignerFromBytes, address, type TransactionSigner, type KeyPairSigner } from '@solana/kit'
-import { 
-  GhostSpeakClient, 
+import {
+  GhostSpeakClient,
   GHOSTSPEAK_PROGRAM_ID,
   AgentModule,
-  MarketplaceModule,
-  // @ts-ignore - Modules exist at runtime but missing from type definitions
-  EscrowModule,
-  // @ts-ignore
-  ChannelModule,
-  // @ts-ignore
   GovernanceModule
 } from '@ghostspeak/sdk'
 import { homedir } from 'os'
@@ -273,18 +267,6 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   // Force instantiation if module is missing or is just a class constructor (function)
   if (!client.agent || typeof client.agent === 'function') {
     clientAny.agent = new AgentModule(moduleConfig)
-  }
-  
-  if (!clientAny.marketplace || typeof clientAny.marketplace === 'function') {
-    clientAny.marketplace = new MarketplaceModule(moduleConfig)
-  }
-  
-  if (!clientAny.escrow || typeof clientAny.escrow === 'function') {
-    clientAny.escrow = new EscrowModule(moduleConfig)
-  }
-
-  if (!clientAny.channel || typeof clientAny.channel === 'function') {
-    clientAny.channel = new ChannelModule(moduleConfig)
   }
 
   if (!clientAny.governance || typeof clientAny.governance === 'function') {

@@ -45,7 +45,7 @@ export function VerificationPaymentDialog({
   agentAddress,
   onSuccess,
 }: VerificationPaymentDialogProps) {
-  const walletAddress = useWalletAddress()
+  const { address: walletAddress } = useWalletAddress()
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null)
   const [userEmail, setUserEmail] = useState('')
   const [loading, setLoading] = useState(false)

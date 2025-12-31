@@ -1,8 +1,19 @@
 /**
  * PayAI Failed Recording Retry Mechanism
  *
- * Stores failed on-chain payment recordings and retries them automatically.
- * This ensures that even if the RPC fails temporarily, we don't lose payment data.
+ * ⚠️ **DEPRECATED** - No longer needed since x402 payments are already on-chain!
+ *
+ * This module was originally designed to retry failed on-chain memo transactions.
+ * However, we discovered that x402 payments are ALREADY recorded on-chain as SPL
+ * token transfers, making our custom memo transactions redundant.
+ *
+ * **Current status:** Preserved for historical reference and potential future use
+ * with on-chain polling (Phase 2 of PayAI integration improvements).
+ *
+ * **Migration path:**
+ * - Phase 1 ✅ (Current): Removed redundant on-chain recording
+ * - Phase 2 (Future): Add on-chain transaction polling
+ * - Phase 3 (Future): Repurpose this for failed webhook event polling
  */
 
 import { v } from 'convex/values'

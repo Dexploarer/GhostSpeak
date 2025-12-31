@@ -101,7 +101,7 @@ export async function deriveJobApplicationPda(
 }
 
 /**
- * Derive work order PDA (used for escrow functionality)
+ * Derive work order PDA (used for payment tracking)
  * Pattern: ['work_order', client, orderId] (little-endian bytes)
  */
 export async function deriveWorkOrderPda(

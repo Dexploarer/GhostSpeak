@@ -5,12 +5,10 @@ import chalk from 'chalk'
 import figlet from 'figlet'
 import { intro, outro } from '@clack/prompts'
 import { agentCommand } from './commands/agent/index.js'
-// marketplace, escrow, channel, config, faucet, sdk, update, auction, dispute were here
-// Retain:
-// Escrow removed - payment facilitation delegated to PayAI
 import { configCommand } from './commands/config.js'
 import { setupFaucetCommand } from './commands/faucet.js'
 import { airdropCommand } from './commands/airdrop.js'
+import { airdropUICommand } from './commands/airdrop-ui.js'
 import { sdkCommand } from './commands/sdk.js'
 import { updateCommand } from './commands/update.js'
 import { governanceCommand } from './commands/governance.js'
@@ -160,14 +158,13 @@ async function main() {
     program.addCommand(walletCommand)      // Wallet management
     program.addCommand(configCommand)      // Manual setup option
     setupFaucetCommand(program)            // Get SOL to start
-    program.addCommand(airdropCommand)     // Get devnet GHOST tokens
+    program.addCommand(airdropCommand)     // Get devnet GHOST tokens (CLI)
+    program.addCommand(airdropUICommand)   // Get devnet GHOST tokens (Interactive UI)
 
     // 2. Core features
     program.addCommand(agentCommand)       // Create and manage agents
-    
-    // Note: Escrow command removed - payment facilitation delegated to PayAI
-    
-    // 4. Support and advanced features
+
+    // 3. Support and advanced features
     program.addCommand(governanceCommand)  // Protocol governance
     
     // 5. Developer and maintenance tools

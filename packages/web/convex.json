@@ -1,0 +1,11 @@
+{
+  "functions": "convex/",
+  "node": {
+    "externalPackages": [
+      "@solana/web3.js",
+      "@solana/spl-token",
+      "@solana/addresses",
+      "@solana/rpc"
+    ]
+  }
+}

@@ -79,15 +79,14 @@ export interface IAgentService {
   update(agentId: string, updates: UpdateAgentParams): Promise<Agent>
   deactivate(agentId: string): Promise<void>
   getAnalytics(agentId: string): Promise<AgentAnalytics>
-  configureX402(agentId: string, params: X402ConfigParams): Promise<Agent>
+  configurePayAI(agentId: string, params: PayAIConfigParams): Promise<Agent>
 }
 
-export interface X402ConfigParams {
+export interface PayAIConfigParams {
   enabled: boolean
-  pricePerCall: bigint
-  acceptedTokens: Address[]
-  paymentAddress: Address
-  serviceEndpoint: string
+  pricePerCall: number
+  apiKey: string
+  webhookUrl?: string
 }
 
 

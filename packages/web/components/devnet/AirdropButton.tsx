@@ -7,21 +7,13 @@
  * For testing and development purposes only.
  */
 
-import { useState } from 'react'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { address, type Address } from '@solana/addresses'
-import {
-  getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  transfer,
-  getAccount,
-} from '@solana/spl-token'
+import { useState, createElement } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { Button } from '../ui/button'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/lib/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 
 // Devnet GHOST token configuration
-const DEVNET_GHOST_MINT: Address = address('BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh')
 const DECIMALS = 6
 const AIRDROP_AMOUNT = 10000 // 10,000 GHOST per request
 const RATE_LIMIT_HOURS = 24
@@ -39,8 +31,7 @@ export function AirdropButton({
   className,
   onSuccess
 }: AirdropButtonProps) {
-  const { connection } = useConnection()
-  const { publicKey, signTransaction, sendTransaction } = useWallet()
+  const { publicKey } = useWallet()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [lastClaim, setLastClaim] = useState<number | null>(null)
@@ -98,15 +89,6 @@ export function AirdropButton({
       return
     }
 
-    if (!sendTransaction) {
-      toast({
-        title: 'Wallet not ready',
-        description: 'Please ensure your wallet is properly connected',
-        variant: 'destructive'
-      })
-      return
-    }
-
     // Check rate limit
     if (!checkRateLimit()) {
       const timeRemaining = getTimeUntilNextClaim()
@@ -126,51 +108,7 @@ export function AirdropButton({
         description: `Claiming ${AIRDROP_AMOUNT.toLocaleString()} devnet GHOST tokens`
       })
 
-      // Load faucet wallet from environment
-      const faucetPrivateKey = process.env.NEXT_PUBLIC_DEVNET_FAUCET_KEY
-      if (!faucetPrivateKey) {
-        throw new Error('Devnet faucet not configured')
-      }
-
-      // Get faucet token account
-      const faucetTokenAccount = await getAssociatedTokenAddress(
-        DEVNET_GHOST_MINT,
-        publicKey
-      )
-
-      // Check faucet balance
-      try {
-        const faucetAccount = await getAccount(connection, faucetTokenAccount)
-        const faucetBalance = Number(faucetAccount.amount) / 10 ** DECIMALS
-
-        if (faucetBalance < AIRDROP_AMOUNT) {
-          throw new Error(`Faucet has insufficient balance (${faucetBalance.toLocaleString()} GHOST)`)
-        }
-      } catch (error) {
-        throw new Error('Devnet faucet not initialized. Please contact the team.')
-      }
-
-      // Get or create recipient token account
-      const recipientTokenAccount = await getAssociatedTokenAddress(
-        DEVNET_GHOST_MINT as any,
-        publicKey
-      )
-
-      // Create account if needed (this requires signing)
-      let recipientAccount
-      try {
-        recipientAccount = await getAccount(connection, recipientTokenAccount)
-      } catch {
-        // Account doesn't exist, user needs to create it
-        // This will be done automatically by the wallet adapter
-        toast({
-          title: 'Creating token account...',
-          description: 'Please approve the transaction to create your GHOST token account'
-        })
-      }
-
-      // For webapp, we use an API route to handle the transfer
-      // because we can't expose the faucet private key in the browser
+      // Call server-side airdrop API (handles faucet key and transaction)
       const response = await fetch('/api/airdrop/ghost', {
         method: 'POST',
         headers: {
@@ -193,11 +131,11 @@ export function AirdropButton({
 
       toast({
         title: 'Airdrop successful!',
-        description: `Received ${AIRDROP_AMOUNT.toLocaleString()} GHOST. New balance: ${balance.toLocaleString()} GHOST`,
-        action: {
-          label: 'View Transaction',
-          onClick: () => window.open(`https://explorer.solana.com/tx/${signature}?cluster=devnet`, '_blank')
-        }
+        description: `Received ${AIRDROP_AMOUNT.toLocaleString()} GHOST. New balance: ${balance.toLocaleString()} GHOST. Click to view transaction.`,
+        action: createElement('button', {
+          onClick: () => window.open(`https://explorer.solana.com/tx/${signature}?cluster=devnet`, '_blank'),
+          className: 'text-sm underline',
+        }, 'View Transaction') as any
       })
 
       // Callback with success data

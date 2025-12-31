@@ -130,7 +130,6 @@ export const container = new Container()
 export const ServiceTokens = {
   LOGGER_SERVICE: 'LoggerService',
   AGENT_SERVICE: 'AgentService',
-  MARKETPLACE_SERVICE: 'MarketplaceService', 
   WALLET_SERVICE: 'WalletService',
   BLOCKCHAIN_SERVICE: 'BlockchainService',
   STORAGE_SERVICE: 'StorageService'

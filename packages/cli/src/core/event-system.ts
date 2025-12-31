@@ -500,7 +500,6 @@ export class BlockchainEventListener {
     const events = [
       'transaction:confirmed',
       'agent:registered',
-      'escrow:created',
       'auction:bid_placed'
     ]
 

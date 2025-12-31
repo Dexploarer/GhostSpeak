@@ -43,26 +43,7 @@ export const COMMAND_ALIASES: CommandAlias[] = [
     command: 'wallet create',
     description: 'Create new wallet'
   },
-  
-  // Marketplace commands REMOVED
-  
-  // Escrow commands
-  {
-    aliases: ['e', 'escrows'],
-    command: 'escrow list',
-    description: 'List escrow payments'
-  },
-  {
-    aliases: ['e c', 'ec', 'create-escrow'],
-    command: 'escrow create',
-    description: 'Create escrow payment'
-  },
-  {
-    aliases: ['e r', 'er', 'release'],
-    command: 'escrow release',
-    description: 'Release escrow funds'
-  },
-  
+
   // Quick actions
   {
     aliases: ['f', 'fund', 'airdrop'],
@@ -157,36 +138,7 @@ export const NATURAL_LANGUAGE_PATTERNS: Array<{
     ],
     command: 'wallet create'
   },
-  
-  // Marketplace operations REMOVED
-  
-  // Escrow operations
-  {
-    patterns: [
-      /create.*escrow.*(\d+(?:\.\d+)?)/i,
-      /escrow.*(\d+(?:\.\d+)?)\s*sol/i,
-      /pay.*(\d+(?:\.\d+)?)\s*sol/i
-    ],
-    command: 'escrow create',
-    extractor: (match) => ({ amount: match[1] })
-  },
-  {
-    patterns: [
-      /release.*escrow/i,
-      /approve.*payment/i,
-      /complete.*escrow/i
-    ],
-    command: 'escrow release'
-  },
-  {
-    patterns: [
-      /list.*escrows?/i,
-      /show.*escrows?/i,
-      /my.*escrows?/i
-    ],
-    command: 'escrow list'
-  },
-  
+
   // General operations
   {
     patterns: [
@@ -223,8 +175,7 @@ export function resolveAlias(input: string): string | null {
   // Don't resolve aliases when the input already contains proper commands
   // This prevents "agent register --help" from being resolved to "--help"
   const firstWord = normalized.split(' ')[0]
-  const knownCommands = ['agent', 'escrow', 
-                         'governance', 'wallet', 'config', 'faucet', 
+  const knownCommands = ['agent', 'governance', 'wallet', 'config', 'faucet',
                          'sdk', 'update', 'quickstart', 'onboard', 'help', 'aliases', 'tx']
   
   if (knownCommands.includes(firstWord)) {
@@ -278,7 +229,6 @@ export function showAliases(): void {
   const categories = [
     { name: 'Agent', filter: (cmd: CommandAlias) => cmd.command.startsWith('agent') },
     { name: 'Wallet', filter: (cmd: CommandAlias) => cmd.command.startsWith('wallet') },
-    { name: 'Escrow', filter: (cmd: CommandAlias) => cmd.command.startsWith('escrow') },
     { name: 'Quick Actions', filter: (cmd: CommandAlias) => !cmd.command.includes(' ') || cmd.aliases.includes('f') }
   ]
   

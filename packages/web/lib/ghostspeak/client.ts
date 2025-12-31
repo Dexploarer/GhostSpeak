@@ -24,8 +24,14 @@ import {
   StakingModule,
   PayAIClient,
   GHOSTSPEAK_PROGRAM_ID,
-  type GhostSpeakConfig,
 } from '@ghostspeak/sdk/browser'
+
+// SDK doesn't export GhostSpeakConfig, define locally
+interface GhostSpeakConfig {
+  programId: Address
+  rpcEndpoint: string
+  cluster: 'mainnet-beta' | 'testnet' | 'devnet'
+}
 
 // Network configurations
 export const NETWORK_ENDPOINTS = {
@@ -49,13 +55,13 @@ export type NetworkType = keyof typeof NETWORK_ENDPOINTS
 export interface GhostSpeakClient {
   programId: Address
   rpcUrl: string
-  agents: AgentModule
-  credentials: typeof CredentialsModule
-  reputation: ReputationModule
-  staking: StakingModule
-  governanceModule: GovernanceModule
-  multisigModule: MultisigModule
-  payai: PayAIClient
+  agents: InstanceType<typeof AgentModule>
+  credentials: InstanceType<typeof CredentialsModule>
+  reputation: InstanceType<typeof ReputationModule>
+  staking: InstanceType<typeof StakingModule>
+  governanceModule: InstanceType<typeof GovernanceModule>
+  multisigModule: InstanceType<typeof MultisigModule>
+  payai: InstanceType<typeof PayAIClient>
 }
 
 // Client singleton cache
@@ -87,7 +93,7 @@ export function createGhostSpeakClient(
     rpcUrl,
     // Core Pillars
     agents: new AgentModule(config),
-    credentials: CredentialsModule,
+    credentials: new CredentialsModule(rpcUrl), // CredentialsModule expects rpcUrl string, not config
     reputation: new ReputationModule(config),
     staking: new StakingModule(config),
     // Governance

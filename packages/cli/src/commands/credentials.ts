@@ -83,7 +83,6 @@ credentialsCommand
         capabilities: ['ghostspeak:agent'],
         serviceEndpoint: 'https://ghostspeak.io/agents/' + agentId,
         frameworkOrigin: 'ghostspeak-cli',
-        x402Enabled: true,
         registeredAt: Math.floor(Date.now() / 1000),
         verifiedAt: Math.floor(Date.now() / 1000)
       })
@@ -151,7 +150,6 @@ credentialsCommand
         capabilities: ['ghostspeak:agent'],
         serviceEndpoint: 'https://ghostspeak.io',
         frameworkOrigin: 'cli',
-        x402Enabled: true,
         registeredAt: Math.floor(Date.now() / 1000),
         verifiedAt: Math.floor(Date.now() / 1000),
         recipientEmail: recipient as string,

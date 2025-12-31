@@ -22,7 +22,7 @@ export default function ApiDocsPage() {
           theme: 'default',
           layout: 'modern',
           defaultHttpClient: {
-            targetKey: 'javascript',
+            targetKey: 'js',
             clientKey: 'fetch',
           },
           // Features
@@ -31,6 +31,7 @@ export default function ApiDocsPage() {
           // Authentication
           authentication: {
             preferredSecurityScheme: 'ApiKeyAuth',
+            // @ts-expect-error - apiKey exists in runtime but not in types
             apiKey: {
               token: '',
             },

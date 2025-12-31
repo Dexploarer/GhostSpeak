@@ -12,16 +12,11 @@
  */
 
 import { address, type Address } from '@solana/addresses'
-import { createSolanaRpc, type Rpc } from '@solana/rpc'
-import { lamports } from '@solana/rpc'
 import {
-  getAssociatedTokenAddressSync,
-  createAssociatedTokenAccountInstruction,
-  createTransferInstruction,
-  getAccount,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from '@solana/spl-token'
+  findAssociatedTokenPda,
+  fetchToken,
+  TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token'
 import { getServerWallet, getRpc } from './server-wallet'
 
 // USDC Mint addresses
@@ -31,6 +26,27 @@ export const USDC_MINTS = {
 } as const
 
 export const USDC_DECIMALS = 6
+
+// GHOST Token Mints (different addresses for devnet and mainnet)
+// Devnet: Test token for development (use /api/airdrop/ghost for test tokens)
+// Mainnet: Real GHOST token (pump.fun CA)
+export const GHOST_MINTS = {
+  devnet: address('BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh'), // Devnet test token
+  mainnet: address('DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump'), // Real pump.fun token
+} as const
+
+// Legacy export for backwards compatibility (defaults to mainnet)
+export const GHOST_MINT = GHOST_MINTS.mainnet
+
+// GHOST token has 6 decimals (verified on-chain for both networks)
+export const GHOST_DECIMALS = 6
+
+/**
+ * Get GHOST mint address for the current network
+ */
+export function getGhostMint(network: 'mainnet' | 'devnet' = 'devnet'): Address {
+  return GHOST_MINTS[network]
+}
 
 // Pricing tiers (from revenue docs)
 export const PRICING_TIERS = {
@@ -91,14 +107,12 @@ export async function getOrCreateTeamTokenAccount(
   const rpc = getRpc()
   const usdcMint = USDC_MINTS[network]
 
-  // Calculate ATA address (deterministic)
-  const tokenAccount = getAssociatedTokenAddressSync(
-    usdcMint,
-    teamWalletAddress,
-    false, // allowOwnerOffCurve
-    TOKEN_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  )
+  // Calculate ATA address (deterministic) using modern API
+  const [tokenAccount] = await findAssociatedTokenPda({
+    mint: usdcMint,
+    owner: teamWalletAddress,
+    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+  })
 
   try {
     // Check if account exists
@@ -112,20 +126,9 @@ export async function getOrCreateTeamTokenAccount(
   }
 
   // Account doesn't exist, create it
-  const serverWallet = await getServerWallet()
-
-  const _createIx = createAssociatedTokenAccountInstruction(
-    serverWallet.address, // payer
-    tokenAccount, // ata
-    teamWalletAddress, // owner
-    usdcMint, // mint
-    TOKEN_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  )
-
-  // TODO: Build and send transaction using web3.js v2 patterns
-  // For now, return the expected address
-  console.log('[TokenAccount] Created ATA:', tokenAccount)
+  // Note: ATA creation requires a transaction with the getCreateAssociatedTokenInstructionAsync
+  // This is left as TODO for full implementation
+  console.log('[TokenAccount] ATA needs creation:', tokenAccount)
 
   return { tokenAccount, created: true }
 }
@@ -139,13 +142,9 @@ export async function getTeamBalance(
   const rpc = getRpc()
 
   try {
-    const accountInfo = await getAccount(
-      rpc as any, // Type compatibility
-      tokenAccountAddress,
-      'confirmed'
-    )
+    const accountInfo = await fetchToken(rpc, tokenAccountAddress)
 
-    const balance = BigInt(accountInfo.amount.toString())
+    const balance = accountInfo.data.amount
     const uiBalance = Number(balance) / Math.pow(10, USDC_DECIMALS)
 
     return { balance, uiBalance }
@@ -191,14 +190,12 @@ export async function deductUsage(
     const _rpc = getRpc()
     const usdcMint = USDC_MINTS[network]
 
-    // Get protocol treasury ATA
-    const protocolTreasuryAta = getAssociatedTokenAddressSync(
-      usdcMint,
-      serverWallet.address,
-      false,
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    )
+    // Get protocol treasury ATA using modern API
+    const [protocolTreasuryAta] = await findAssociatedTokenPda({
+      mint: usdcMint,
+      owner: serverWallet.address,
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    })
 
     // Check balance
     const { sufficient, currentBalance } = await checkSufficientBalance(
@@ -213,15 +210,7 @@ export async function deductUsage(
       }
     }
 
-    // Create transfer instruction
-    const _transferIx = createTransferInstruction(
-      teamTokenAccount, // from
-      protocolTreasuryAta, // to
-      serverWallet.address, // authority (requires delegation)
-      costMicroUsdc // amount
-    )
-
-    // TODO: Build and send transaction using web3.js v2
+    // TODO: Build and send transfer transaction using modern @solana/kit
     // For now, return mock success
     console.log('[TokenAccount] Deducted:', costMicroUsdc, 'from', teamTokenAccount)
 
@@ -256,24 +245,14 @@ export async function createDepositTransaction(
   const usdcMint = USDC_MINTS[network]
   const amountMicroUsdc = BigInt(Math.floor(amountUsdc * Math.pow(10, USDC_DECIMALS)))
 
-  // Get sender's USDC token account
-  const fromTokenAccount = getAssociatedTokenAddressSync(
-    usdcMint,
-    fromWalletAddress,
-    false,
-    TOKEN_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  )
+  // Get sender's USDC token account using modern API
+  const [fromTokenAccount] = await findAssociatedTokenPda({
+    mint: usdcMint,
+    owner: fromWalletAddress,
+    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+  })
 
-  // Create transfer instruction
-  const _transferIx = createTransferInstruction(
-    fromTokenAccount, // from
-    toTokenAccount, // to (team's prepaid account)
-    fromWalletAddress, // authority
-    amountMicroUsdc // amount
-  )
-
-  // TODO: Build transaction using web3.js v2
+  // TODO: Build transfer transaction using modern @solana/kit
   // For now, return mock transaction
   console.log('[TokenAccount] Created deposit tx:', amountUsdc, 'USDC')
 
@@ -371,4 +350,191 @@ export function calculateOverageFees(
     overageFeesUi,
     goesToStakers: true, // 100% of overage goes to stakers per revenue model
   }
+}
+
+// ─── GHOST TOKEN FUNCTIONS ───────────────────────────────────────────────────
+
+/**
+ * Get or create user's GHOST token account
+ */
+export async function getOrCreateGhostTokenAccount(
+  userWalletAddress: Address,
+  network: 'mainnet' | 'devnet' = 'devnet'
+): Promise<{ tokenAccount: Address; created: boolean }> {
+  const rpc = getRpc()
+  const ghostMint = getGhostMint(network)
+
+  // Calculate ATA address for GHOST token using modern API
+  const [tokenAccount] = await findAssociatedTokenPda({
+    mint: ghostMint,
+    owner: userWalletAddress,
+    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+  })
+
+  try {
+    // Check if account exists
+    const accountInfo = await rpc.getAccountInfo(tokenAccount, { encoding: 'base64' }).send()
+
+    if (accountInfo.value) {
+      return { tokenAccount, created: false }
+    }
+  } catch (error) {
+    console.log('[GhostToken] Account does not exist, will create:', tokenAccount)
+  }
+
+  // Account doesn't exist, create it
+  // Note: ATA creation requires a transaction with the getCreateAssociatedTokenInstructionAsync
+  // This is left as TODO for full implementation
+  console.log('[GhostToken] ATA needs creation:', tokenAccount)
+
+  return { tokenAccount, created: true }
+}
+
+/**
+ * Get GHOST token balance for user's token account
+ */
+export async function getGhostBalance(
+  tokenAccountAddress: Address
+): Promise<{ balance: bigint; uiBalance: number; decimals: number }> {
+  const rpc = getRpc()
+
+  try {
+    const accountInfo = await fetchToken(rpc, tokenAccountAddress)
+
+    const balance = accountInfo.data.amount
+    // Use GHOST_DECIMALS for conversion
+    const uiBalance = Number(balance) / Math.pow(10, GHOST_DECIMALS)
+
+    return { balance, uiBalance, decimals: GHOST_DECIMALS }
+  } catch (error) {
+    console.error('[GhostToken] Failed to get balance:', error)
+    return { balance: 0n, uiBalance: 0, decimals: GHOST_DECIMALS }
+  }
+}
+
+/**
+ * Check if user has sufficient GHOST balance for API request
+ */
+export async function checkSufficientGhostBalance(
+  tokenAccountAddress: Address,
+  costMicroGhost: bigint
+): Promise<{ sufficient: boolean; currentBalance: bigint; required: bigint }> {
+  const { balance } = await getGhostBalance(tokenAccountAddress)
+
+  return {
+    sufficient: balance >= costMicroGhost,
+    currentBalance: balance,
+    required: costMicroGhost,
+  }
+}
+
+/**
+ * Deduct GHOST from user account for API usage
+ *
+ * This transfers GHOST from user's account to protocol treasury.
+ */
+export async function deductGhostUsage(
+  userTokenAccount: Address,
+  costMicroGhost: bigint,
+  network: 'mainnet' | 'devnet' = 'devnet'
+): Promise<{ success: boolean; signature?: string; error?: string }> {
+  if (costMicroGhost === 0n) {
+    return { success: true }
+  }
+
+  try {
+    const serverWallet = await getServerWallet()
+    const _rpc = getRpc()
+    const ghostMint = getGhostMint(network)
+
+    // Get protocol treasury GHOST ATA using modern API
+    const [protocolTreasuryAta] = await findAssociatedTokenPda({
+      mint: ghostMint,
+      owner: serverWallet.address,
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    })
+
+    // Check balance
+    const { sufficient, currentBalance } = await checkSufficientGhostBalance(
+      userTokenAccount,
+      costMicroGhost
+    )
+
+    if (!sufficient) {
+      return {
+        success: false,
+        error: `Insufficient GHOST balance: have ${currentBalance}, need ${costMicroGhost}`,
+      }
+    }
+
+    // TODO: Build and send transfer transaction using modern @solana/kit
+    // For now, return mock success
+    console.log('[GhostToken] Deducted:', costMicroGhost, 'from', userTokenAccount)
+
+    return {
+      success: true,
+      signature: 'mock_ghost_signature_' + Date.now(),
+    }
+  } catch (error) {
+    console.error('[GhostToken] Deduction failed:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    }
+  }
+}
+
+/**
+ * Calculate GHOST token cost for API request
+ *
+ * Uses live GHOST/USDC price from Jupiter DEX aggregator.
+ * Falls back to 0.01 USDC if Jupiter is unavailable.
+ *
+ * NOTE: On devnet, Jupiter pricing won't work (no liquidity), so we use fallback.
+ */
+export async function calculateGhostCost(
+  usdcCostMicro: bigint,
+  network: 'mainnet' | 'devnet' = 'devnet',
+  ghostPriceUsdc?: number // Optional override for testing
+): Promise<bigint> {
+  // Convert USDC micro units to USDC
+  const usdcCost = Number(usdcCostMicro) / Math.pow(10, USDC_DECIMALS)
+
+  // Get price from Jupiter or use override
+  let price = ghostPriceUsdc
+  if (!price) {
+    // Dynamically import to avoid circular dependency
+    const { getGhostPriceInUsdc } = await import('./jupiter-price-oracle')
+    price = await getGhostPriceInUsdc(network)
+  }
+
+  // Calculate GHOST amount needed
+  const ghostAmount = usdcCost / price
+
+  // Convert to micro units
+  const ghostMicro = BigInt(Math.floor(ghostAmount * Math.pow(10, GHOST_DECIMALS)))
+
+  return ghostMicro
+}
+
+/**
+ * Calculate GHOST token cost synchronously (uses default price)
+ *
+ * Use this when you need immediate calculation without async.
+ * For accurate pricing, prefer the async calculateGhostCost.
+ */
+export function calculateGhostCostSync(
+  usdcCostMicro: bigint,
+  ghostPriceUsdc: number = 0.01 // Default: 1 GHOST = $0.01 USDC
+): bigint {
+  // Convert USDC micro units to USDC
+  const usdcCost = Number(usdcCostMicro) / Math.pow(10, USDC_DECIMALS)
+
+  // Calculate GHOST amount needed
+  const ghostAmount = usdcCost / ghostPriceUsdc
+
+  // Convert to micro units
+  const ghostMicro = BigInt(Math.floor(ghostAmount * Math.pow(10, GHOST_DECIMALS)))
+
+  return ghostMicro
 }

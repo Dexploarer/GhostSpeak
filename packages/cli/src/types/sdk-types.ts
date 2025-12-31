@@ -1,6 +1,7 @@
 /**
+ * SDK Type Definitions for GhostSpeak - Regenerated for Current Architecture
  * Comprehensive TypeScript interfaces for GhostSpeak SDK responses
- * Used to eliminate unsafe member access and assignment warnings
+ * Only includes types for modules that actually exist in the codebase
  */
 
 import type { Address } from '@solana/addresses'
@@ -80,8 +81,6 @@ export interface AgentAnalytics {
   }
 }
 
-// AUCTION TYPES REMOVED
-
 // ===== GOVERNANCE TYPES =====
 
 export interface Multisig {
@@ -112,63 +111,67 @@ export interface Proposal {
   executedAt?: Date
 }
 
-// ===== ESCROW TYPES =====
+// ===== AUCTION TYPES =====
 
-export interface Escrow {
+export interface Auction {
   id: string
   address: Address
-  payer: Address
-  payee: Address
-  amount: number
-  status: 'pending' | 'funded' | 'completed' | 'disputed' | 'refunded'
-  workOrder?: Address
-  milestones?: EscrowMilestone[]
-  dispute?: EscrowDispute
-  createdAt: Date
-  updatedAt?: Date
-}
-
-export interface EscrowMilestone {
-  id: string
-  title: string
+  item: string
   description: string
-  amount: number
-  status: 'pending' | 'in_progress' | 'completed' | 'disputed'
-  dueDate?: Date
-  completedAt?: Date
+  seller: Address
+  startingPrice: number
+  currentBid?: number
+  highestBidder?: Address
+  type: 'english' | 'dutch' | 'sealed'
+  status: 'active' | 'ended' | 'cancelled'
+  endTime: Date
+  createdAt: Date
 }
 
-export interface EscrowDispute {
+export interface Bid {
+  bidder: Address
+  amount: number
+  timestamp: Date
+}
+
+// ===== DISPUTE TYPES =====
+
+export interface Dispute {
   id: string
-  initiator: Address
+  address: Address
+  claimant: Address
+  respondent: Address
   reason: string
-  status: 'open' | 'in_review' | 'resolved'
+  severity: 'low' | 'medium' | 'high'
+  status: 'open' | 'in_review' | 'resolved' | 'escalated'
   arbitrator?: Address
   resolution?: string
   createdAt: Date
   resolvedAt?: Date
 }
 
-// ===== WORK ORDER TYPES =====
-
-export interface WorkOrder {
+export interface Evidence {
   id: string
-  address: Address
-  title: string
-  description: string
-  client: Address
-  agent?: Address
-  budget: number
-  status: 'open' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
-  requirements: string[]
-  deliverables: string[]
-  deadline?: Date
-  escrow?: Address
-  createdAt: Date
-  updatedAt?: Date
+  dispute: Address
+  submitter: Address
+  type: string
+  data: string
+  description?: string
+  timestamp: Date
 }
 
-// CHANNEL TYPES REMOVED
+// ===== A2A (AGENT-TO-AGENT) TYPES =====
+
+export interface A2AConnection {
+  id: string
+  address: Address
+  initiator: Address
+  target: Address
+  connectionType: string
+  status: 'pending' | 'accepted' | 'rejected'
+  metadata?: Record<string, unknown>
+  createdAt: Date
+}
 
 // ===== REPUTATION TYPES =====
 
@@ -198,8 +201,6 @@ export interface ReputationData {
     reason?: string
   }>
 }
-
-// MARKETPLACE TYPES REMOVED
 
 // ===== TOKEN TYPES =====
 
@@ -290,6 +291,23 @@ export interface SDKService {
     grantRole(data: unknown): Promise<string>
     revokeRole(data: unknown): Promise<string>
   }
+  auctions: {
+    list(): Promise<Auction[]>
+    get(id: string): Promise<Auction | null>
+    create(data: Partial<Auction>): Promise<Auction>
+    bid(auctionId: string, amount: number): Promise<Bid>
+  }
+  disputes: {
+    list(): Promise<Dispute[]>
+    get(id: string): Promise<Dispute | null>
+    file(data: Partial<Dispute>): Promise<Dispute>
+    submitEvidence(disputeId: string, evidence: Partial<Evidence>): Promise<Evidence>
+  }
+  a2a: {
+    connect(targetAgent: Address, type: string): Promise<A2AConnection>
+    listConnections(): Promise<A2AConnection[]>
+    acceptConnection(connectionId: string): Promise<A2AConnection>
+  }
 }
 
 // ===== COMMAND OPTION TYPES =====
@@ -309,7 +327,6 @@ export interface AgentCommandOptions extends BaseCommandOptions {
   query?: string
 }
 
-
 export interface GovernanceCommandOptions extends BaseCommandOptions {
   name?: string
   members?: string
@@ -322,6 +339,19 @@ export interface GovernanceCommandOptions extends BaseCommandOptions {
   user?: string
   role?: string
   action?: 'grant' | 'revoke'
+}
+
+export interface AuctionCommandOptions extends BaseCommandOptions {
+  item?: string
+  startingPrice?: string
+  type?: 'english' | 'dutch' | 'sealed'
+  duration?: string
+}
+
+export interface DisputeCommandOptions extends BaseCommandOptions {
+  reason?: string
+  severity?: 'low' | 'medium' | 'high'
+  evidenceType?: string
 }
 
 export interface DeployCommandOptions extends BaseCommandOptions {

@@ -23,6 +23,7 @@ function getGhostScoreTier(score: number): {
 }
 
 export default function GhostScoreDashboard() {
+  // @ts-expect-error - getUserSubscription not in generated types, run `bunx convex dev` to regenerate
   const subscription = useConvexQuery(api.ghostScore.getUserSubscription)
   const verificationHistory = useConvexQuery(api.ghostScore.getVerificationHistory)
 

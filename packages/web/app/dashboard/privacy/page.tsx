@@ -18,7 +18,7 @@ import { Button as _Button } from '@/components/ui/button'
  * - Real-time preview of privacy settings
  */
 export default function PrivacySettingsPage() {
-  const { walletAddress, isConnected } = useWalletAddress()
+  const { address: walletAddress, isConnected } = useWalletAddress()
 
   // TODO: Fetch actual privacy settings from SDK/blockchain
   // const { data: privacySettings, isLoading } = usePrivacySettings(walletAddress)
@@ -88,7 +88,7 @@ export default function PrivacySettingsPage() {
       </div>
 
       <PrivacySettingsPanel
-        agentAddress={walletAddress}
+        agentAddress={walletAddress || undefined}
         onSave={handleSaveSettings}
         // initialSettings={privacySettings}
         // reputationData={reputationData}

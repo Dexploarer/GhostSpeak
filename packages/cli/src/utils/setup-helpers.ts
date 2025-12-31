@@ -368,8 +368,8 @@ export function showSetupSummary(result: SetupResult): void {
     console.log(chalk.gray('  1. Create your first agent:'))
     console.log(chalk.cyan('     ghost agent register'))
   }
-  console.log(chalk.gray('  2. Browse the marketplace:'))
-  console.log(chalk.cyan('     ghost marketplace list'))
+  console.log(chalk.gray('  2. Get devnet GHOST tokens:'))
+  console.log(chalk.cyan('     ghost airdrop'))
   console.log(chalk.gray('  3. View your setup:'))
   console.log(chalk.cyan('     ghost config show'))
   

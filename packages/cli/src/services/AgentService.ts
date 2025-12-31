@@ -393,14 +393,13 @@ export class AgentService implements IAgentService {
   }
 
   /**
-   * Configure x402 payment settings
+   * Configure PayAI integration for agent payments
    */
-  async configureX402(agentId: string, params: {
+  async configurePayAI(agentId: string, params: {
     enabled: boolean
-    pricePerCall: bigint
-    acceptedTokens: Address[]
-    paymentAddress: Address
-    serviceEndpoint: string
+    pricePerCall: number
+    apiKey: string
+    webhookUrl?: string
   }): Promise<Agent> {
     const agent = await this.getById(agentId)
     if (!agent) {
@@ -413,59 +412,36 @@ export class AgentService implements IAgentService {
     }
 
     try {
-      this.deps.logger.info('Configuring x402 settings...', { agentId, enabled: params.enabled })
-      
-      const client = await this.deps.blockchainService.getClient('devnet')
-      const walletSigner = await this.deps.walletService.getActiveSigner()
-      
-      if (!walletSigner) {
-        throw new UnauthorizedError('No active wallet signer available')
-      }
+      this.deps.logger.info('Configuring PayAI integration...', { agentId, enabled: params.enabled })
 
-      const typedClient = client as GhostSpeakClient
-      const agentModule = new AgentModule({
-        programId: typedClient.config.programId,
-        rpc: typedClient.config.rpc,
-        commitment: 'confirmed'
-      })
-
-      // Assuming AgentModule now has configureX402 (after SDK update)
-      // We cast to any because TS might complain until SDK is rebuilt/reinstalled
-      // In a real monorepo setup we'd link them.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const signature = await (agentModule as any).configureX402(toSDKSigner(walletSigner), {
-        agentAddress: agent.address,
-        agentId: agent.id,
-        ...params
-      })
-
-      this.deps.logger.info('x402 configuration updated on blockchain', { signature })
-
-      // Update local cache/storage
+      // Update local cache/storage with PayAI configuration
+      // PayAI is managed externally via PayAI API, not on-chain
       const updatedAgent = {
         ...agent,
         updatedAt: BigInt(Date.now()),
         metadata: {
           ...agent.metadata,
-          x402: {
+          payai: {
             enabled: params.enabled,
-            price: params.pricePerCall.toString(),
-            tokens: params.acceptedTokens,
-            paymentAddress: params.paymentAddress,
-            endpoint: params.serviceEndpoint
+            pricePerCall: params.pricePerCall,
+            apiKey: params.apiKey, // Store encrypted in production!
+            webhookUrl: params.webhookUrl,
+            lastConfigured: Date.now()
           }
         }
       }
 
       await this.deps.storageService.save(`agent:${agentId}`, updatedAgent)
       this.agentCache.set(agentId, { data: updatedAgent, timestamp: Date.now() })
-      
+
+      this.deps.logger.info('PayAI configuration saved', { agentId })
+
       return updatedAgent
     } catch (error) {
-      this.deps.logger.error('Failed to configure x402', error instanceof Error ? error : undefined)
+      this.deps.logger.error('Failed to configure PayAI', error instanceof Error ? error : undefined)
       throw new NetworkError(
-        `Failed to configure x402: ${getErrorMessage(error)}`,
-        'Check your network connection and try again'
+        `Failed to configure PayAI: ${getErrorMessage(error)}`,
+        'Check your configuration and try again'
       )
     }
   }

@@ -32,11 +32,9 @@ const OPERATION_COSTS = {
   
   // Account creation costs
   AGENT_ACCOUNT_RENT: BigInt(2400000), // ~0.0024 SOL
-  ESCROW_ACCOUNT_RENT: BigInt(1600000), // ~0.0016 SOL
-  
+
   // Program-specific fees
   AGENT_REGISTRATION_FEE: BigInt(100000), // ~0.0001 SOL
-  ESCROW_PROCESSING_FEE: BigInt(25000), // ~0.000025 SOL
   
   // Buffer for network congestion
   CONGESTION_BUFFER: BigInt(10000) // Extra fee for busy periods
@@ -94,54 +92,7 @@ export class CostEstimator {
       requiredBalance: totalCost
     }
   }
-  
-  /**
-   * Estimate cost for escrow creation
-   */
-  estimateEscrowCreation(amount: bigint): CostEstimate {
-    const breakdown = [
-      {
-        item: 'Transaction fee',
-        cost: OPERATION_COSTS.SIGNATURE_FEE,
-        description: 'Network fee for processing transaction'
-      },
-      {
-        item: 'Escrow account rent',
-        cost: OPERATION_COSTS.ESCROW_ACCOUNT_RENT,
-        description: 'Storage rent for escrow account data'
-      },
-      {
-        item: 'Escrow amount',
-        cost: amount,
-        description: 'Amount to be held in escrow'
-      },
-      {
-        item: 'Processing fee',
-        cost: OPERATION_COSTS.ESCROW_PROCESSING_FEE,
-        description: 'Protocol fee for escrow processing'
-      },
-      {
-        item: 'Network buffer',
-        cost: OPERATION_COSTS.CONGESTION_BUFFER,
-        description: 'Buffer for network congestion'
-      }
-    ]
-    
-    const totalCost = breakdown.reduce((sum, item) => sum + item.cost, BigInt(0))
-    
-    return {
-      operation: 'Escrow Creation',
-      baseFee: OPERATION_COSTS.SIGNATURE_FEE,
-      programFee: OPERATION_COSTS.ESCROW_PROCESSING_FEE,
-      accountRent: OPERATION_COSTS.ESCROW_ACCOUNT_RENT,
-      totalCost,
-      breakdown,
-      isAffordable: false,
-      requiredBalance: totalCost
-    }
-  }
-  
-  
+
   /**
    * Get current wallet balance
    */
@@ -251,9 +202,6 @@ export class CostEstimator {
         case 'agent-register':
           opEstimate = this.estimateAgentRegistration()
           break
-        case 'escrow-create':
-          opEstimate = this.estimateEscrowCreation(op.params?.amount as bigint || BigInt(0))
-          break
         default:
           // Default to basic transaction
           opEstimate = {
@@ -301,9 +249,6 @@ export async function estimateAndDisplay(
   switch (operation) {
     case 'agent-register':
       estimate = estimator.estimateAgentRegistration()
-      break
-    case 'escrow-create':
-      estimate = estimator.estimateEscrowCreation(params?.amount as bigint || BigInt(0))
       break
     default:
       throw new Error(`Unknown operation: ${operation}`)

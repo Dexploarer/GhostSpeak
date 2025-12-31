@@ -135,6 +135,14 @@ export {
 // Reputation Tag Engine (Pillar 2: Granular Tags)
 export { ReputationTagEngine } from './utils/reputation-tag-engine.js'
 
+// Indexer module - On-chain transaction polling for x402 payments
+export {
+  X402TransactionIndexer,
+  type X402PaymentData,
+  type SignatureInfo,
+  type X402IndexerConfig,
+} from './modules/indexer/index.js'
+
 // Reputation tag types and enums
 export {
   TagCategory,

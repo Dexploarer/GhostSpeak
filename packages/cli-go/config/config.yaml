@@ -1,0 +1,48 @@
+# GhostSpeak CLI Configuration
+# This is a reference configuration file. The actual config will be created at ~/.ghostspeak/config.yaml
+# Configuration precedence: CLI flags > Environment variables > Config file > Defaults
+
+# Network configuration
+network:
+  # Current network: devnet, testnet, or mainnet
+  current: devnet
+  # Commitment level: processed, confirmed, or finalized
+  commitment: confirmed
+  # RPC endpoints for each network
+  rpc:
+    devnet: https://api.devnet.solana.com
+    testnet: https://api.testnet.solana.com
+    mainnet: https://api.mainnet-beta.solana.com
+
+# Wallet configuration
+wallet:
+  # Directory where encrypted wallets are stored
+  directory: ~/.ghostspeak/wallets
+  # Active wallet name (leave empty to prompt)
+  active: ""
+
+# Storage configuration
+storage:
+  # Cache directory for agent data and metadata
+  cache_dir: ~/.ghostspeak/cache
+
+# External API configuration
+# Best practice: Set these via environment variables
+# GHOSTSPEAK_API_PINATA_JWT=your_jwt_here
+api:
+  pinata_api_key: ""
+  pinata_secret_key: ""
+  pinata_jwt: ""
+
+# Logging configuration
+logging:
+  # Log level: debug, info, warn, error
+  level: info
+  # Log format: text or json
+  format: text
+
+# GhostSpeak program addresses
+program:
+  devnet_id: GhostjQedvXgWr1RSfXaHbPz3kGM8HQE9Jq4nQWvr1YE
+  testnet_id: ""
+  mainnet_id: ""

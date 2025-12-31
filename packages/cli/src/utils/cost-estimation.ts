@@ -44,25 +44,7 @@ export function estimateCosts(operations: string[], options: EstimationOptions =
           isRequired: false
         })
         break
-        
-      case 'marketplace-create':
-        estimates.push({
-          operation: 'Marketplace Listing',
-          estimatedCost: baseTransactionCost * 1.5,
-          description: 'Create service listing',
-          isRequired: false
-        })
-        break
-        
-      case 'escrow-create':
-        estimates.push({
-          operation: 'Escrow Creation',
-          estimatedCost: baseTransactionCost * 2,
-          description: 'Create escrow account for secure payments',
-          isRequired: false
-        })
-        break
-        
+
       case 'token-mint':
         estimates.push({
           operation: 'Token Minting',

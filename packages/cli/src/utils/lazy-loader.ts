@@ -60,12 +60,6 @@ export class CommandLoader {
             'agent-commands'
           )
           break
-        case 'marketplace':
-          await lazyLoad(
-            () => import('../commands/marketplace/index.js'),
-            'marketplace-commands'
-          )
-          break
         // Add more command modules as needed
       }
       

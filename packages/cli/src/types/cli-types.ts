@@ -1,12 +1,11 @@
 /**
- * CLI Type Definitions for GhostSpeak
- * Comprehensive type safety for all CLI commands and operations
+ * CLI Type Definitions for GhostSpeak - Regenerated for Current Architecture
+ * Only includes types for commands that actually exist in the codebase
  */
 
 import type { Address } from '@solana/addresses'
 
-
-// Address validation helper
+// ===== ADDRESS VALIDATION =====
 export function assertValidAddress(value: unknown): Address {
   if (typeof value === 'string' && value.length >= 32) {
     return value as Address
@@ -14,7 +13,7 @@ export function assertValidAddress(value: unknown): Address {
   throw new Error(`Invalid address: expected string with length >= 32, got ${typeof value}`)
 }
 
-// Command Option Interfaces
+// ===== AGENT COMMAND OPTIONS =====
 export interface RegisterOptions {
   name?: string
   description?: string
@@ -44,8 +43,8 @@ export interface StatusOptions {
 }
 
 export interface UpdateOptions {
-  agentId?: string  // Added missing agentId field
-  agent?: string    // Made optional since we can select interactively
+  agentId?: string
+  agent?: string
   name?: string
   description?: string
   endpoint?: string
@@ -53,13 +52,13 @@ export interface UpdateOptions {
 }
 
 export interface VerifyOptions {
-  agent?: string  // Made optional since can be selected interactively
+  agent?: string
   auto?: boolean
 }
 
 export interface AnalyticsOptions {
   agent?: string
-  mine?: boolean  // Added missing mine field
+  mine?: boolean
   period?: string
   format?: string
 }
@@ -69,9 +68,32 @@ export interface ManageOptions {
   agent?: string
 }
 
-// Marketplace Command Options REMOVED
+// ===== WALLET COMMAND OPTIONS =====
+export interface WalletCreateOptions {
+  name?: string
+  network?: 'devnet' | 'testnet' | 'mainnet-beta'
+}
 
-// Governance Command Options
+export interface WalletImportOptions {
+  name: string
+  network?: 'devnet' | 'testnet' | 'mainnet-beta'
+}
+
+export interface WalletUseOptions {
+  name?: string
+}
+
+export interface WalletRenameOptions {
+  name: string
+  newName: string
+}
+
+export interface WalletDeleteOptions {
+  name: string
+  confirm?: boolean
+}
+
+// ===== GOVERNANCE COMMAND OPTIONS =====
 export interface CreateMultisigOptions {
   name?: string
   description?: string
@@ -99,29 +121,45 @@ export interface ListProposalsOptions {
   limit?: string
 }
 
-// Escrow Command Options
-export interface CreateEscrowOptions {
-  amount?: string
-  recipient?: string
+// ===== AUCTION COMMAND OPTIONS =====
+export interface CreateAuctionOptions {
+  item?: string
   description?: string
+  startingPrice?: string
+  type?: 'english' | 'dutch' | 'sealed'
   duration?: string
 }
 
-export interface ReleaseEscrowOptions {
-  escrow: string
-  rating?: string
-  review?: string
+export interface BidOptions {
+  auction: string
+  amount: string
 }
 
-export interface DisputeEscrowOptions {
-  escrow: string
-  reason?: string
-  evidence?: string
+export interface ListAuctionsOptions {
+  status?: 'active' | 'ended'
+  limit?: string
 }
 
-// Auction, Channel, Dispute Command Options REMOVED
+// ===== DISPUTE COMMAND OPTIONS =====
+export interface FileDisputeOptions {
+  reason: string
+  severity?: 'low' | 'medium' | 'high'
+  description?: string
+}
 
-// Faucet Command Options
+export interface SubmitEvidenceOptions {
+  dispute: string
+  type: string
+  data: string
+  description?: string
+}
+
+export interface ListDisputesOptions {
+  status?: string
+  limit?: string
+}
+
+// ===== FAUCET & AIRDROP OPTIONS =====
 export interface FaucetOptions {
   amount?: string
   network?: string
@@ -133,12 +171,17 @@ export interface FaucetStatusOptions {
   wallet?: string
 }
 
+export interface AirdropOptions {
+  recipient?: string
+  amount?: string
+}
+
 export interface GenerateWalletOptions {
   save?: boolean
   name?: string
 }
 
-// Config Command Options
+// ===== CONFIG COMMAND OPTIONS =====
 export interface ConfigSetOptions {
   key: string
   value: string
@@ -152,7 +195,38 @@ export interface ConfigResetOptions {
   confirm?: boolean
 }
 
-// Common Response Types
+// ===== DIAGNOSE COMMAND OPTIONS =====
+export interface DiagnoseOptions {
+  network?: 'devnet' | 'testnet' | 'mainnet-beta'
+  verbose?: boolean
+  export?: string
+  dryRun?: boolean
+}
+
+export interface DiagnosticReport {
+  account: string
+  network: string
+  exists: boolean
+  owner?: string
+  lamports?: number
+  data?: Uint8Array
+  executable?: boolean
+  rentEpoch?: number
+  errors: string[]
+  warnings: string[]
+}
+
+// ===== SDK COMMAND OPTIONS =====
+export interface SDKInstallOptions {
+  version?: string
+  global?: boolean
+}
+
+export interface SDKInfoOptions {
+  verbose?: boolean
+}
+
+// ===== COMMON RESPONSE TYPES =====
 export interface CommandResponse {
   success: boolean
   message?: string
@@ -171,7 +245,7 @@ export interface SuccessResponse<T = unknown> {
   message?: string
 }
 
-// Type Guards
+// ===== TYPE GUARDS =====
 export function isString(value: unknown): value is string {
   return typeof value === 'string'
 }
@@ -192,7 +266,19 @@ export function isError(value: unknown): value is Error {
   return value instanceof Error
 }
 
-// Utility Types
+export function isValidDiagnoseOptions(options: unknown): options is DiagnoseOptions {
+  if (typeof options !== 'object' || options === null) return false
+
+  const opts = options as Record<string, unknown>
+  return (
+    (opts.network === undefined || ['devnet', 'testnet', 'mainnet-beta'].includes(opts.network as string)) &&
+    (opts.verbose === undefined || typeof opts.verbose === 'boolean') &&
+    (opts.export === undefined || typeof opts.export === 'string') &&
+    (opts.dryRun === undefined || typeof opts.dryRun === 'boolean')
+  )
+}
+
+// ===== UTILITY TYPES =====
 export type StringOrUndefined = string | undefined
 export type NumberOrUndefined = number | undefined
 export type BooleanOrUndefined = boolean | undefined
@@ -202,10 +288,9 @@ export type RequireAtLeastOne<T> = {
   [K in keyof T]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<keyof T, K>>>
 }[keyof T]
 
-// URL validation helper
+// ===== VALIDATION HELPERS =====
 export function isValidUrl(value: string): boolean {
   try {
-     
     new URL(value)
     return true
   } catch {
@@ -213,7 +298,6 @@ export function isValidUrl(value: string): boolean {
   }
 }
 
-// Validation Helpers
 export function validateString(value: unknown, name: string): string {
   if (!isString(value)) {
     throw new Error(`${name} must be a string`)
@@ -248,41 +332,4 @@ export function parseIntSafe(value: string): number | undefined {
 export function parseFloatSafe(value: string): number | undefined {
   const parsed = parseFloat(value)
   return isNaN(parsed) ? undefined : parsed
-}
-
-// Auction Data Types REMOVED
-
-// Diagnose Command Types
-export interface DiagnoseOptions {
-  network?: 'devnet' | 'testnet' | 'mainnet-beta'
-  verbose?: boolean
-  export?: string
-  dryRun?: boolean
-}
-
-export interface DiagnosticReport {
-  account: string
-  network: string
-  exists: boolean
-  owner?: string
-  lamports?: number
-  data?: Uint8Array
-  executable?: boolean
-  rentEpoch?: number
-  errors: string[]
-  warnings: string[]
-}
-
-// Type Guards for Auction Data REMOVED
-
-export function isValidDiagnoseOptions(options: unknown): options is DiagnoseOptions {
-  if (typeof options !== 'object' || options === null) return false
-  
-  const opts = options as Record<string, unknown>
-  return (
-    (opts.network === undefined || ['devnet', 'testnet', 'mainnet-beta'].includes(opts.network as string)) &&
-    (opts.verbose === undefined || typeof opts.verbose === 'boolean') &&
-    (opts.export === undefined || typeof opts.export === 'string') &&
-    (opts.dryRun === undefined || typeof opts.dryRun === 'boolean')
-  )
 }

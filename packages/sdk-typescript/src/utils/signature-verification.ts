@@ -7,6 +7,7 @@
  * Enables verifiable delegation of reputation update authority.
  */
 
+import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
 import type {
   ReputationAuthorization,
@@ -14,8 +15,19 @@ import type {
   CreateAuthorizationParams,
   SolanaNetwork,
 } from '../types/authorization/authorization-types'
-import { Keypair, PublicKey } from '@solana/web3.js'
 import bs58 from 'bs58'
+
+/**
+ * Keypair interface for Ed25519 signing operations
+ * Compatible with both legacy and modern Solana key formats
+ */
+export interface SigningKeypair {
+  publicKey: {
+    toBase58(): string
+    toBytes(): Uint8Array
+  }
+  secretKey: Uint8Array
+}
 
 /**
  * Authorization message domain separator
@@ -45,12 +57,12 @@ export function createAuthorizationMessage(message: AuthorizationMessage): Buffe
   components.push(Buffer.from(DOMAIN_SEPARATOR, 'utf8'))
 
   // 2. Agent address (32 bytes)
-  const agentPubkey = new PublicKey(message.agentAddress)
-  components.push(Buffer.from(agentPubkey.toBytes()))
+  const agentBytes = bs58.decode(message.agentAddress)
+  components.push(Buffer.from(agentBytes))
 
   // 3. Authorized source (32 bytes)
-  const sourcePubkey = new PublicKey(message.authorizedSource)
-  components.push(Buffer.from(sourcePubkey.toBytes()))
+  const sourceBytes = bs58.decode(message.authorizedSource)
+  components.push(Buffer.from(sourceBytes))
 
   // 4. Index limit (8 bytes, u64 big-endian)
   const indexLimitBuffer = Buffer.allocUnsafe(8)
@@ -77,18 +89,18 @@ export function createAuthorizationMessage(message: AuthorizationMessage): Buffe
  * Sign authorization message with agent's private key
  *
  * @param message - Authorization message to sign
- * @param agentKeypair - Agent's Solana keypair (must match message.agentAddress)
+ * @param agentKeypair - Agent's keypair (must match message.agentAddress)
  * @returns Ed25519 signature (64 bytes)
  */
 export async function signAuthorizationMessage(
   message: AuthorizationMessage,
-  agentKeypair: Keypair
+  agentKeypair: SigningKeypair
 ): Promise<Uint8Array> {
   // Verify keypair matches agent address
-  const agentPubkey = new PublicKey(message.agentAddress)
-  if (!agentKeypair.publicKey.equals(agentPubkey)) {
+  const keypairAddress = agentKeypair.publicKey.toBase58()
+  if (keypairAddress !== message.agentAddress) {
     throw new Error(
-      `Keypair public key ${agentKeypair.publicKey.toBase58()} does not match agent address ${agentPubkey.toBase58()}`
+      `Keypair public key ${keypairAddress} does not match agent address ${message.agentAddress}`
     )
   }
 
@@ -126,11 +138,11 @@ export async function verifyAuthorizationSignature(
 
     // Verify signature
     const nacl = await import('tweetnacl')
-    const agentPubkey = new PublicKey(authorization.agentAddress)
+    const agentPubkeyBytes = bs58.decode(authorization.agentAddress)
     const isValid = nacl.sign.detached.verify(
       messageBuffer,
       authorization.signature,
-      agentPubkey.toBytes()
+      agentPubkeyBytes
     )
 
     return isValid
@@ -149,10 +161,10 @@ export async function verifyAuthorizationSignature(
  */
 export async function createSignedAuthorization(
   params: CreateAuthorizationParams,
-  agentKeypair: Keypair
+  agentKeypair: SigningKeypair
 ): Promise<ReputationAuthorization> {
   // Get agent address from keypair
-  const agentAddress = agentKeypair.publicKey.toBase58() as Address
+  const agentAddress = address(agentKeypair.publicKey.toBase58())
 
   // Calculate expiration
   const now = Math.floor(Date.now() / 1000)

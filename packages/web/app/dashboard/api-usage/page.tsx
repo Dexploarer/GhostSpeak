@@ -191,8 +191,8 @@ export default function ApiUsagePage() {
                 <YAxis />
                 <Tooltip
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                  formatter={(value: number, name: string) =>
-                    name === 'cost' ? formatCurrency(value * 100) : value
+                  formatter={(value: number | undefined, name: string) =>
+                    name === 'cost' ? formatCurrency((value ?? 0) * 100) : String(value ?? 0)
                   }
                 />
                 <Bar dataKey="requests" fill="hsl(var(--primary))" name="Requests" />
@@ -207,6 +207,7 @@ export default function ApiUsagePage() {
       </Card>
 
       {/* Endpoint Breakdown */}
+      {/* @ts-expect-error - byEndpoint not in generated types, run `bunx convex dev` to regenerate */}
       {usageSummary?.byEndpoint && Object.keys(usageSummary.byEndpoint).length > 0 && (
         <Card>
           <CardHeader>
@@ -215,7 +216,8 @@ export default function ApiUsagePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(usageSummary.byEndpoint).map(([endpoint, data]) => (
+              {/* @ts-expect-error - byEndpoint not in generated types, run `bunx convex dev` to regenerate */}
+              {Object.entries(usageSummary.byEndpoint).map(([endpoint, data]: [string, any]) => (
                 <div key={endpoint} className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="font-medium font-mono text-sm">{endpoint}</p>

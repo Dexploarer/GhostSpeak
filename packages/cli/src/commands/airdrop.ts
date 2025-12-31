@@ -3,16 +3,31 @@
  *
  * Airdrops 10,000 devnet GHOST tokens to the connected wallet.
  * For testing and development purposes only.
+ *
+ * Fully migrated to Solana v5 with @solana-program/token
  */
 
 import { Command } from 'commander'
-import { Connection, PublicKey, Keypair } from '@solana/web3.js'
+import { createSolanaRpc, type Rpc } from '@solana/rpc'
+import { address, type Address } from '@solana/addresses'
 import {
-  getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  transfer,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token'
+  getCreateAssociatedTokenInstructionAsync,
+  getTransferInstruction,
+  fetchToken,
+  findAssociatedTokenPda,
+  TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token'
+import {
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstruction,
+  pipe,
+  signTransaction,
+  compileTransaction,
+  sendAndConfirmTransaction,
+} from '@solana/kit'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
 import fs from 'fs'
 import path from 'path'
 import ora from 'ora'
@@ -81,8 +96,7 @@ function recordClaim(wallet: string) {
 }
 
 export const airdropCommand = new Command('airdrop')
-  .alias('faucet')
-  .description('Airdrop devnet GHOST tokens for testing (10,000 GHOST per request)')
+  .description('Airdrop devnet GHOST tokens for testing (10,000 GHOST per request - CLI version)')
   .option('-r, --recipient <address>', 'Recipient wallet address (defaults to your wallet)')
   .action(async (options) => {
     const spinner = ora()
@@ -99,23 +113,23 @@ export const airdropCommand = new Command('airdrop')
         process.exit(1)
       }
 
-      const walletKeypair = Keypair.fromSecretKey(
-        new Uint8Array(JSON.parse(fs.readFileSync(walletPath, 'utf-8')))
-      )
+      // Load keypair from file
+      const secretKeyBytes = new Uint8Array(JSON.parse(fs.readFileSync(walletPath, 'utf-8')))
+      const walletKeypair = await createKeyPairSignerFromBytes(secretKeyBytes)
 
-      const recipientPubkey = options.recipient
-        ? new PublicKey(options.recipient)
-        : walletKeypair.publicKey
+      const recipientAddress = options.recipient
+        ? address(options.recipient)
+        : walletKeypair.address
 
       console.log(chalk.blue('🪂 GhostSpeak Devnet GHOST Airdrop'))
       console.log(chalk.gray('='.repeat(60)))
-      console.log(chalk.gray(`  Recipient: ${recipientPubkey.toBase58()}`))
+      console.log(chalk.gray(`  Recipient: ${recipientAddress}`))
       console.log(chalk.gray(`  Amount: ${AIRDROP_AMOUNT.toLocaleString()} GHOST`))
       console.log(chalk.gray(`  Network: devnet`))
 
       // Check rate limit
-      if (!canClaim(recipientPubkey.toBase58())) {
-        const timeRemaining = getTimeUntilNextClaim(recipientPubkey.toBase58())
+      if (!canClaim(recipientAddress)) {
+        const timeRemaining = getTimeUntilNextClaim(recipientAddress)
         console.log(chalk.yellow(`\n⏰ Rate limit: Already claimed within last 24 hours`))
         console.log(chalk.gray(`   Next claim available in: ${timeRemaining}`))
         process.exit(1)
@@ -123,23 +137,23 @@ export const airdropCommand = new Command('airdrop')
 
       // Connect to devnet
       spinner.start('Connecting to devnet...')
-      const connection = new Connection(
-        process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-        'confirmed'
+      const rpc = createSolanaRpc(
+        process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com'
       )
 
-      const ghostMint = new PublicKey(DEVNET_GHOST_MINT)
+      const ghostMintAddress = address(DEVNET_GHOST_MINT)
 
-      // Check if airdrop faucet has GHOST tokens
-      const faucetTokenAccount = await getAssociatedTokenAddress(
-        ghostMint,
-        walletKeypair.publicKey
-      )
+      // Get faucet token account (wallet's ATA)
+      const [faucetTokenAccount] = await findAssociatedTokenPda({
+        mint: ghostMintAddress,
+        owner: walletKeypair.address,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      })
 
+      // Check faucet balance
       try {
-        const { getAccount } = await import('@solana/spl-token')
-        const faucetAccount = await getAccount(connection, faucetTokenAccount)
-        const faucetBalance = Number(faucetAccount.amount) / 10 ** DECIMALS
+        const faucetAccountData = await fetchToken(rpc, faucetTokenAccount)
+        const faucetBalance = Number(faucetAccountData.data.amount) / 10 ** DECIMALS
 
         if (faucetBalance < AIRDROP_AMOUNT) {
           spinner.fail('Insufficient faucet balance')
@@ -158,37 +172,62 @@ export const airdropCommand = new Command('airdrop')
 
       // Get or create recipient token account
       spinner.start('Setting up recipient token account...')
-      const recipientTokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,
-        walletKeypair,
-        ghostMint,
-        recipientPubkey
-      )
-      spinner.succeed('Token account ready')
+      const [recipientTokenAccount] = await findAssociatedTokenPda({
+        mint: ghostMintAddress,
+        owner: recipientAddress,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      })
 
-      // Transfer tokens
-      spinner.start(`Transferring ${AIRDROP_AMOUNT.toLocaleString()} GHOST...`)
+      // Build transaction
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send()
 
+      // Create ATA instruction (idempotent - will do nothing if already exists)
+      const createAtaInstruction = await getCreateAssociatedTokenInstructionAsync({
+        payer: walletKeypair,
+        mint: ghostMintAddress,
+        owner: recipientAddress,
+        ata: recipientTokenAccount,
+      })
+
+      // Create transfer instruction
       const amountWithDecimals = BigInt(AIRDROP_AMOUNT) * BigInt(10 ** DECIMALS)
+      const transferInstruction = getTransferInstruction({
+        source: faucetTokenAccount,
+        destination: recipientTokenAccount,
+        authority: walletKeypair,
+        amount: amountWithDecimals,
+      })
 
-      const signature = await transfer(
-        connection,
-        walletKeypair,
-        faucetTokenAccount,
-        recipientTokenAccount.address,
-        walletKeypair.publicKey,
-        amountWithDecimals
+      spinner.text = 'Building transaction...'
+
+      // Build and sign transaction
+      const transactionMessage = await pipe(
+        createTransactionMessage({ version: 0 }),
+        (tx) => setTransactionMessageFeePayerSigner(walletKeypair, tx),
+        (tx) =>
+          setTransactionMessageLifetimeUsingBlockhash(
+            latestBlockhash,
+            tx
+          ),
+        (tx) => appendTransactionMessageInstruction(createAtaInstruction, tx),
+        (tx) => appendTransactionMessageInstruction(transferInstruction, tx)
       )
+
+      spinner.text = `Transferring ${AIRDROP_AMOUNT.toLocaleString()} GHOST...`
+
+      // Sign and send
+      const signedTransaction = await signTransaction([walletKeypair], transactionMessage)
+      const compiledTransaction = compileTransaction(signedTransaction)
+      const signature = await sendAndConfirmTransaction(rpc, compiledTransaction, { commitment: 'confirmed' })
 
       spinner.succeed('Transfer complete!')
 
       // Record claim
-      recordClaim(recipientPubkey.toBase58())
+      recordClaim(recipientAddress)
 
       // Get new balance
-      const { getAccount } = await import('@solana/spl-token')
-      const updatedAccount = await getAccount(connection, recipientTokenAccount.address)
-      const newBalance = Number(updatedAccount.amount) / 10 ** DECIMALS
+      const updatedAccount = await fetchToken(rpc, recipientTokenAccount)
+      const newBalance = Number(updatedAccount.data.amount) / 10 ** DECIMALS
 
       console.log(chalk.green('\n✅ Airdrop successful!'))
       console.log(chalk.gray('  Transaction:'), chalk.cyan(signature))

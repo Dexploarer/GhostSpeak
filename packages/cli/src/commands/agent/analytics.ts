@@ -149,9 +149,9 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           console.log(chalk.bold('What you can do instead:'))
           console.log(chalk.cyan('• ghost agent status') + chalk.gray(' - View basic agent information'))
           console.log(chalk.cyan('• ghost agent list') + chalk.gray(' - See all registered agents'))
-          console.log(chalk.cyan('• ghost marketplace list') + chalk.gray(' - Browse marketplace activity'))
+          console.log(chalk.cyan('• ghost airdrop') + chalk.gray(' - Get devnet GHOST tokens for testing'))
           console.log('')
-          console.log(chalk.gray('Analytics will be available in a future SDK update.'))
+          console.log(chalk.gray('Analytics coming soon via PayAI integration.'))
           
           outro('Analytics feature coming soon')
           return
@@ -200,13 +200,13 @@ export function registerAnalyticsCommand(parentCommand: Command): void {
           }
 
         } else {
-          // Marketplace-wide analytics
+          // Protocol-wide analytics
           log.info(
             `${chalk.gray('Total Agents:')} ${analytics.totalAgents}\n` +
             `${chalk.gray('Verified Agents:')} ${analytics.verifiedAgents} (${((analytics.verifiedAgents / analytics.totalAgents) * 100).toFixed(1)}%)\n` +
             `${chalk.gray('Active Agents:')} ${analytics.activeAgents}\n` +
             `${chalk.gray('Total Jobs:')} ${analytics.totalJobs}\n` +
-            `${chalk.gray('Marketplace Volume:')} ${(Number(analytics.totalVolume) / 1_000_000_000).toFixed(3)} SOL\n`
+            `${chalk.gray('Protocol Volume:')} ${(Number(analytics.totalVolume) / 1_000_000_000).toFixed(3)} SOL\n`
           )
 
           if (analytics.topCategories.length > 0) {

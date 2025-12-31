@@ -11,12 +11,11 @@
  */
 
 import { createKeyPairSignerFromBytes } from '@solana/signers'
-import { createSolanaRpc, type Rpc } from '@solana/rpc'
-import type { Address } from '@solana/addresses'
+import { createSolanaRpc } from '@solana/rpc'
 import bs58 from 'bs58'
 
 let _serverWallet: Awaited<ReturnType<typeof createKeyPairSignerFromBytes>> | null = null
-let _rpc: Rpc | null = null
+let _rpc: ReturnType<typeof createSolanaRpc> | null = null
 let _currentRpcIndex = 0
 
 // RPC fallback URLs (try in order if one fails)
@@ -82,7 +81,7 @@ export async function getServerWallet() {
  *
  * Uses fallback RPC endpoints if primary fails
  */
-export function getRpc(): Rpc {
+export function getRpc(): ReturnType<typeof createSolanaRpc> {
   if (_rpc) return _rpc
 
   const rpcUrl = RPC_ENDPOINTS[_currentRpcIndex] || 'https://api.devnet.solana.com'

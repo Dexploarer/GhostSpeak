@@ -31,12 +31,23 @@ export default defineSchema({
     // Stats
     totalSpent: v.optional(v.number()),
     totalTransactions: v.optional(v.number()),
+    // Individual B2B API billing - USDC token account
+    usdcTokenAccount: v.optional(v.string()), // User's USDC token account for API payments
+    monthlyBudget: v.optional(v.number()), // Monthly USDC budget (optional limit)
+    currentBalance: v.optional(v.number()), // Current USDC balance (in micro USDC, 6 decimals)
+    lastBillingAt: v.optional(v.number()), // Last billing/sync timestamp
+    // Individual B2B API billing - GHOST token account (alternative payment)
+    ghostTokenAccount: v.optional(v.string()), // User's GHOST token account for API payments
+    currentGhostBalance: v.optional(v.number()), // Current GHOST balance (in micro GHOST, 9 decimals)
+    preferredPaymentToken: v.optional(v.string()), // 'usdc' | 'ghost' - user's preferred payment method
     // Timestamps
     createdAt: v.number(),
     lastActiveAt: v.number(),
   })
     .index('by_wallet', ['walletAddress'])
-    .index('by_email', ['email']),
+    .index('by_email', ['email'])
+    .index('by_usdc_account', ['usdcTokenAccount'])
+    .index('by_ghost_account', ['ghostTokenAccount']),
 
   //
   // ─── FAVORITE RESOURCES ────────────────────────────────────────────────────
@@ -83,8 +94,8 @@ export default defineSchema({
     // Payment info (for agent responses)
     cost: v.optional(v.number()),
     transactionSignature: v.optional(v.string()),
-    // Metadata
-    metadata: v.optional(v.any()),
+    // Metadata (flexible key-value pairs for extensibility)
+    metadata: v.optional(v.record(v.string(), v.any())),
     // Timestamp
     createdAt: v.number(),
   }).index('by_conversation', ['conversationId']),
@@ -257,7 +268,54 @@ export default defineSchema({
     userId: v.id('users'),
     // Event details
     event: v.string(),
-    payload: v.any(),
+    payload: v.object({
+      event: v.union(
+        v.literal('score.updated'),
+        v.literal('tier.changed'),
+        v.literal('credential.issued'),
+        v.literal('staking.created'),
+        v.literal('staking.updated')
+      ),
+      agentAddress: v.string(),
+      data: v.union(
+        v.object({
+          kind: v.literal('score.updated'),
+          ghostScore: v.number(),
+          tier: v.string(),
+          previousScore: v.number(),
+          previousTier: v.optional(v.string()),
+        }),
+        v.object({
+          kind: v.literal('tier.changed'),
+          tier: v.string(),
+          ghostScore: v.number(),
+          previousTier: v.string(),
+        }),
+        v.object({
+          kind: v.literal('credential.issued'),
+          credentialId: v.string(),
+          tier: v.string(),
+          milestone: v.number(),
+        }),
+        v.object({
+          kind: v.literal('staking.created'),
+          agentAddress: v.string(),
+          amountStaked: v.number(),
+          stakingTier: v.number(),
+          reputationBoostBps: v.number(),
+          lockDuration: v.number(),
+        }),
+        v.object({
+          kind: v.literal('staking.updated'),
+          agentAddress: v.string(),
+          amountStaked: v.number(),
+          stakingTier: v.number(),
+          reputationBoostBps: v.number(),
+          isActive: v.boolean(),
+        })
+      ),
+      timestamp: v.number(),
+    }),
     // Delivery details
     url: v.string(),
     secret: v.string(),
@@ -364,6 +422,38 @@ export default defineSchema({
     .index('by_agent', ['agentAddress'])
     .index('by_tier', ['tier'])
     .index('by_credential_id', ['credentialId']),
+
+  //
+  // ─── X402 INDEXER: SYNC STATE ──────────────────────────────────────────────
+  // Track on-chain polling state for x402 payments
+  //
+  x402SyncState: defineTable({
+    facilitatorAddress: v.string(), // PayAI facilitator address
+    lastSignature: v.string(), // Last synced transaction signature
+    lastSyncAt: v.number(), // Last sync timestamp
+    totalSynced: v.number(), // Total payments synced
+    errors: v.optional(v.number()), // Sync error count
+  }).index('by_facilitator', ['facilitatorAddress']),
+
+  //
+  // ─── X402 INDEXER: SYNC EVENTS ─────────────────────────────────────────────
+  // Track x402 payment events from dual sources (webhook + on-chain)
+  //
+  x402SyncEvents: defineTable({
+    signature: v.string(), // Transaction signature (on-chain proof)
+    facilitatorAddress: v.string(), // PayAI facilitator
+    merchantAddress: v.string(), // Agent receiving payment
+    payerAddress: v.string(), // User sending payment
+    amount: v.string(), // Payment amount (BigInt as string)
+    success: v.boolean(), // Payment success status
+    syncedAt: v.number(), // When event was recorded
+    // Dual-source tracking
+    sourceWebhook: v.boolean(), // Received via PayAI webhook
+    sourceOnChain: v.boolean(), // Discovered via on-chain polling
+  })
+    .index('by_signature', ['signature'])
+    .index('by_facilitator', ['facilitatorAddress'])
+    .index('by_merchant', ['merchantAddress']),
 
   //
   // ─── GHOST STAKING: STAKING ACCOUNTS ───────────────────────────────────────
@@ -578,27 +668,105 @@ export default defineSchema({
     .index('by_timestamp', ['timestamp']),
 
   //
+  // ─── INDIVIDUAL BILLING: DEDUCTIONS ────────────────────────────────────────
+  // Track token deductions from individual user accounts (USDC or GHOST)
+  //
+  userBillingDeductions: defineTable({
+    userId: v.id('users'),
+    // Payment token type
+    paymentToken: v.string(), // 'usdc' | 'ghost'
+    // Amount deducted (in respective token)
+    amountMicroUsdc: v.number(), // Amount in micro USDC (6 decimals) - 0 if paid with GHOST
+    amountUsdc: v.number(), // Amount in USDC (for display)
+    amountMicroGhost: v.optional(v.number()), // Amount in micro GHOST (9 decimals)
+    amountGhost: v.optional(v.number()), // Amount in GHOST (for display)
+    // Usage info
+    requestCount: v.number(),
+    endpoint: v.string(),
+    // Transaction
+    transactionSignature: v.optional(v.string()),
+    // Timestamp
+    timestamp: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_timestamp', ['userId', 'timestamp'])
+    .index('by_timestamp', ['timestamp'])
+    .index('by_payment_token', ['paymentToken']),
+
+  //
+  // ─── INDIVIDUAL BILLING: DEPOSITS ──────────────────────────────────────────
+  // Track token deposits to individual user accounts (USDC or GHOST)
+  //
+  userBillingDeposits: defineTable({
+    userId: v.id('users'),
+    // Payment token type
+    paymentToken: v.string(), // 'usdc' | 'ghost'
+    // Amount deposited (in respective token)
+    amountMicroUsdc: v.number(), // Amount in micro USDC (6 decimals) - 0 if depositing GHOST
+    amountUsdc: v.number(), // Amount in USDC (for display)
+    amountMicroGhost: v.optional(v.number()), // Amount in micro GHOST (9 decimals)
+    amountGhost: v.optional(v.number()), // Amount in GHOST (for display)
+    // Transaction
+    transactionSignature: v.optional(v.string()),
+    // Timestamp
+    timestamp: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_timestamp', ['userId', 'timestamp'])
+    .index('by_timestamp', ['timestamp'])
+    .index('by_payment_token', ['paymentToken']),
+
+  //
   // ─── REVENUE SHARE: DAILY REVENUE ──────────────────────────────────────────
-  // Track daily protocol revenue for APY calculations
+  // Track daily protocol revenue for APY calculations and distribution
   //
   dailyRevenue: defineTable({
     date: v.string(), // ISO date string (YYYY-MM-DD)
-    // Revenue by source (in USDC)
-    b2cRevenue: v.number(),
-    b2bRevenue: v.number(),
-    payaiRevenue: v.number(),
-    otherRevenue: v.number(),
-    totalRevenue: v.number(),
-    // Distribution
-    stakerPoolRevenue: v.number(), // Amount allocated to stakers (10% of most sources)
-    treasuryRevenue: v.number(), // Amount allocated to treasury
+    // USDC Revenue (micro units, 6 decimals)
+    usdcRevenueMicro: v.optional(v.number()), // Total USDC revenue in micro units
+    usdcStakerPoolMicro: v.optional(v.number()), // 10% for stakers
+    usdcProtocolMicro: v.optional(v.number()), // 90% for protocol
+    // GHOST Revenue (micro units, 6 decimals)
+    ghostRevenueMicro: v.optional(v.number()), // Total GHOST revenue in micro units
+    ghostStakerPoolMicro: v.optional(v.number()), // 10% for stakers
+    ghostProtocolMicro: v.optional(v.number()), // 90% for protocol
+    // Legacy fields (for backward compatibility)
+    b2cRevenue: v.optional(v.number()),
+    b2bRevenue: v.optional(v.number()),
+    payaiRevenue: v.optional(v.number()),
+    otherRevenue: v.optional(v.number()),
+    totalRevenue: v.optional(v.number()),
+    stakerPoolRevenue: v.optional(v.number()),
+    treasuryRevenue: v.optional(v.number()),
+    verificationCount: v.optional(v.number()),
+    b2bApiCalls: v.optional(v.number()),
     // Metadata
-    verificationCount: v.number(), // Number of paid verifications
-    b2bApiCalls: v.number(), // Number of B2B API calls
+    requestCount: v.optional(v.number()), // Number of billable requests
+    lastUpdated: v.optional(v.number()), // Last update timestamp
     timestamp: v.number(),
   })
     .index('by_date', ['date'])
     .index('by_timestamp', ['timestamp']),
+
+  //
+  // ─── REVENUE SHARE: ENDPOINT REVENUE ───────────────────────────────────────
+  // Track revenue by API endpoint for analytics
+  //
+  revenueByEndpoint: defineTable({
+    endpoint: v.string(), // API endpoint path
+    date: v.string(), // ISO date string (YYYY-MM-DD)
+    // USDC Revenue (micro units)
+    usdcRevenueMicro: v.optional(v.number()),
+    // GHOST Revenue (micro units)
+    ghostRevenueMicro: v.optional(v.number()),
+    // Metadata
+    requestCount: v.number(),
+    lastUpdated: v.number(),
+    timestamp: v.number(),
+  })
+    .index('by_endpoint', ['endpoint'])
+    .index('by_endpoint_date', ['endpoint', 'date'])
+    .index('by_date', ['date']),
 
   //
   // ─── REVENUE SHARE: APY SNAPSHOTS ──────────────────────────────────────────

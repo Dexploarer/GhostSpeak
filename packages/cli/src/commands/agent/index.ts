@@ -66,7 +66,7 @@ ${chalk.cyan('Quick Shortcuts:')}
 ${chalk.gray('💡 Tips:')}
   ${chalk.gray('• Start with')} ghost agent register ${chalk.gray('to create your first agent')}
   ${chalk.gray('• Use')} ghost agent status ${chalk.gray('to monitor agent health and activity')}
-  ${chalk.gray('• Agents can have multiple capabilities for broader marketplace appeal')}
+  ${chalk.gray('• Agents can have multiple capabilities to serve diverse client needs')}
   ${chalk.gray('• Keep your agent credentials secure - they cannot be recovered if lost')}
 
 ${chalk.blue('🔗 Related Commands:')}

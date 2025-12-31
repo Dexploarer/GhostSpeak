@@ -14,10 +14,20 @@ import { Id } from './_generated/dataModel'
  */
 export const queueWebhookEvent = mutation({
   args: {
-    event: v.string(), // 'score.updated', 'tier.changed', 'credential.issued'
+    event: v.union(
+      v.literal('score.updated'),
+      v.literal('tier.changed'),
+      v.literal('credential.issued'),
+      v.literal('staking.created'),
+      v.literal('staking.updated')
+    ),
     agentAddress: v.string(),
     data: v.any(),
   },
+  returns: v.object({
+    queued: v.number(),
+    webhookIds: v.array(v.id('webhookDeliveries')),
+  }),
   handler: async (ctx, args) => {
     const { event, agentAddress, data } = args
 
@@ -75,6 +85,28 @@ export const queueWebhookEvent = mutation({
  */
 export const getPendingWebhooks = internalQuery({
   args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id('webhookDeliveries'),
+      _creationTime: v.number(),
+      subscriptionId: v.id('webhookSubscriptions'),
+      userId: v.string(),
+      event: v.string(),
+      payload: v.any(),
+      url: v.string(),
+      secret: v.string(),
+      status: v.string(),
+      attemptCount: v.number(),
+      maxAttempts: v.number(),
+      lastAttemptAt: v.optional(v.number()),
+      lastError: v.optional(v.string()),
+      lastResponseStatus: v.optional(v.number()),
+      lastResponseBody: v.optional(v.string()),
+      deliveredAt: v.optional(v.number()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+  ),
   handler: async (ctx) => {
     const now = Date.now()
     const fiveMinutesAgo = now - 5 * 60 * 1000
@@ -106,6 +138,7 @@ export const markWebhookDelivered = internalMutation({
     responseStatus: v.number(),
     responseBody: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const webhook = await ctx.db.get(args.webhookId)
     if (!webhook) return
@@ -138,6 +171,7 @@ export const markWebhookFailed = internalMutation({
     error: v.string(),
     responseStatus: v.optional(v.number()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const webhook = await ctx.db.get(args.webhookId)
     if (!webhook) return
@@ -175,6 +209,28 @@ export const getWebhookHistory = query({
     subscriptionId: v.id('webhookSubscriptions'),
     limit: v.optional(v.number()),
   },
+  returns: v.array(
+    v.object({
+      _id: v.id('webhookDeliveries'),
+      _creationTime: v.number(),
+      subscriptionId: v.id('webhookSubscriptions'),
+      userId: v.string(),
+      event: v.string(),
+      payload: v.any(),
+      url: v.string(),
+      secret: v.string(),
+      status: v.string(),
+      attemptCount: v.number(),
+      maxAttempts: v.number(),
+      lastAttemptAt: v.optional(v.number()),
+      lastError: v.optional(v.string()),
+      lastResponseStatus: v.optional(v.number()),
+      lastResponseBody: v.optional(v.string()),
+      deliveredAt: v.optional(v.number()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit || 50
 
@@ -195,6 +251,9 @@ export const retryWebhook = mutation({
   args: {
     webhookId: v.id('webhookDeliveries'),
   },
+  returns: v.object({
+    success: v.boolean(),
+  }),
   handler: async (ctx, args) => {
     const webhook = await ctx.db.get(args.webhookId)
     if (!webhook) {
@@ -230,6 +289,17 @@ export const testWebhook = mutation({
     url: v.string(),
     secret: v.string(),
   },
+  returns: v.object({
+    payload: v.any(),
+    signatureInstructions: v.string(),
+    signatureAlgorithm: v.string(),
+    headers: v.object({
+      'X-GhostSpeak-Signature': v.string(),
+      'X-GhostSpeak-Event': v.string(),
+      'X-GhostSpeak-Timestamp': v.string(),
+      'Content-Type': v.string(),
+    }),
+  }),
   handler: async (ctx, args) => {
     const testPayload = {
       event: 'score.updated',
@@ -262,6 +332,9 @@ export const testWebhook = mutation({
  */
 export const cleanupOldWebhooks = internalMutation({
   args: {},
+  returns: v.object({
+    deleted: v.number(),
+  }),
   handler: async (ctx) => {
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
 

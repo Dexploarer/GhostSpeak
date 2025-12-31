@@ -12,14 +12,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  _DollarSign,
+  DollarSign,
   TrendingUp,
   Users,
   Percent,
   Coins,
   Award,
   ArrowDownToLine,
-  _AlertTriangle,
+  AlertTriangle,
   BarChart3,
   PieChart,
   LineChart,
@@ -237,7 +237,7 @@ export default function TransparencyDashboard() {
                           ))}
                         </Pie>
                         <Tooltip
-                          formatter={(value: number) => formatCurrency(value)}
+                          formatter={(value: number | undefined) => formatCurrency(value ?? 0)}
                           contentStyle={{
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
                             border: 'none',
@@ -406,7 +406,7 @@ export default function TransparencyDashboard() {
                       <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} />
                       <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} />
                       <Tooltip
-                        formatter={(value: number) => formatPercent(value)}
+                        formatter={(value: number | undefined) => formatPercent(value ?? 0)}
                         contentStyle={{
                           backgroundColor: 'rgba(0, 0, 0, 0.8)',
                           border: 'none',
@@ -544,7 +544,7 @@ export default function TransparencyDashboard() {
                       <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} />
                       <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} />
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value: number | undefined) => formatCurrency(value ?? 0)}
                         contentStyle={{
                           backgroundColor: 'rgba(0, 0, 0, 0.8)',
                           border: 'none',

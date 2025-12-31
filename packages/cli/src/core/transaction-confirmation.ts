@@ -29,14 +29,10 @@ import { EventBus } from './event-system'
 /**
  * Transaction types for different confirmation flows
  */
-export type TransactionType = 
+export type TransactionType =
   | 'agent_register'
   | 'agent_update'
-  | 'escrow_create'
-  | 'escrow_release'
-  | 'marketplace_purchase'
   | 'auction_bid'
-  | 'channel_create'
   | 'governance_vote'
   | 'token_transfer'
   | 'custom'
@@ -506,11 +502,7 @@ export class TransactionConfirmationSystem extends EventEmitter {
     const titles: Record<TransactionType, string> = {
       agent_register: 'Register Agent',
       agent_update: 'Update Agent',
-      escrow_create: 'Create Escrow',
-      escrow_release: 'Release Escrow',
-      marketplace_purchase: 'Purchase from Marketplace',
       auction_bid: 'Place Auction Bid',
-      channel_create: 'Create Channel',
       governance_vote: 'Cast Governance Vote',
       token_transfer: 'Transfer Tokens',
       custom: 'Custom Transaction'
@@ -646,36 +638,6 @@ export class QuickConfirmations {
       }
     }, {
       requirePassword: true
-    })
-
-    return result.confirmed
-  }
-
-  /**
-   * Confirm escrow creation
-   */
-  async confirmEscrowCreation(escrowData: {
-    amount: number
-    recipient: string
-    description: string
-    duration: number
-  }): Promise<boolean> {
-    const result = await this.confirmationSystem.confirmTransaction({
-      type: 'escrow_create',
-      title: 'Create Escrow',
-      description: escrowData.description,
-      data: escrowData,
-      estimatedCost: {
-        sol: 0.002,
-        usd: 0.20
-      },
-      addresses: {
-        to: escrowData.recipient
-      },
-      warnings: [
-        'Escrowed funds will be locked until conditions are met',
-        'Ensure you trust the recipient and conditions'
-      ]
     })
 
     return result.confirmed

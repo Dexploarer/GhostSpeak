@@ -591,7 +591,7 @@ export function useCreateMultisig() {
       const multisigId = BigInt(Date.now())
 
       // Create the multisig using SDK
-      const _client = getGhostSpeakClient()
+      const client = getGhostSpeakClient()
 
       // Call SDK's MultisigModule.createMultisig
       const signature = await client.multisigModule.createMultisig({
@@ -707,7 +707,7 @@ export function useApproveTransaction() {
       if (!signer) throw new Error('Could not create signer')
 
       // Use SDK's MultisigModule.approveProposal for voting on pending transactions
-      const _client = getGhostSpeakClient()
+      const client = getGhostSpeakClient()
 
       // Find the proposal address from the transaction ID
       // In a real implementation, transactions would have associated proposal addresses
@@ -746,7 +746,7 @@ export function useExecuteTransaction() {
       if (!signer) throw new Error('Could not create signer')
 
       // Use SDK's MultisigModule.executeProposal
-      const _client = getGhostSpeakClient()
+      const client = getGhostSpeakClient()
 
       const proposalAddress = data.multisigAddress // Placeholder - would need mapping
 

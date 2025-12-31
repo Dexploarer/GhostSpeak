@@ -28,6 +28,15 @@ export const getByWallet = query({
       ),
       totalSpent: v.optional(v.number()),
       totalTransactions: v.optional(v.number()),
+      // Individual billing fields - USDC
+      usdcTokenAccount: v.optional(v.string()),
+      monthlyBudget: v.optional(v.number()),
+      currentBalance: v.optional(v.number()),
+      lastBillingAt: v.optional(v.number()),
+      // Individual billing fields - GHOST
+      ghostTokenAccount: v.optional(v.string()),
+      currentGhostBalance: v.optional(v.number()),
+      preferredPaymentToken: v.optional(v.string()),
     }),
     v.null()
   ),
@@ -60,6 +69,15 @@ export const getById = query({
       ),
       totalSpent: v.optional(v.number()),
       totalTransactions: v.optional(v.number()),
+      // Individual billing fields - USDC
+      usdcTokenAccount: v.optional(v.string()),
+      monthlyBudget: v.optional(v.number()),
+      currentBalance: v.optional(v.number()),
+      lastBillingAt: v.optional(v.number()),
+      // Individual billing fields - GHOST
+      ghostTokenAccount: v.optional(v.string()),
+      currentGhostBalance: v.optional(v.number()),
+      preferredPaymentToken: v.optional(v.string()),
     }),
     v.null()
   ),

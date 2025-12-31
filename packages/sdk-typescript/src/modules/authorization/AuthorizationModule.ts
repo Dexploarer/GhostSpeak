@@ -19,6 +19,7 @@ import {
   getAuthorizationId,
   isAuthorizationExpired,
   isAuthorizationExhausted,
+  type SigningKeypair,
 } from '../../utils/signature-verification.js'
 import type {
   ReputationAuthorization,
@@ -29,7 +30,6 @@ import type {
   SolanaNetwork,
   OnChainStorageConfig,
 } from '../../types/authorization/authorization-types.js'
-import { Keypair } from '@solana/web3.js'
 
 /**
  * Default on-chain storage fee (2000000 lamports = 0.002 SOL)
@@ -66,7 +66,7 @@ export class AuthorizationModule extends BaseModule {
    */
   async createAuthorization(
     params: CreateAuthorizationParams,
-    agentKeypair: Keypair
+    agentKeypair: SigningKeypair
   ): Promise<ReputationAuthorization> {
     // Create signed authorization using signature verification utilities
     return await createSignedAuthorization(params, agentKeypair)
@@ -397,7 +397,7 @@ export class AuthorizationModule extends BaseModule {
    */
   async createPayAIAuthorization(
     payAIFacilitatorAddress: Address,
-    agentKeypair: Keypair,
+    agentKeypair: SigningKeypair,
     options?: Partial<CreateAuthorizationParams>
   ): Promise<ReputationAuthorization> {
     const defaultParams: CreateAuthorizationParams = {

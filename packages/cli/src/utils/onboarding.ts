@@ -33,13 +33,12 @@ export interface OnboardingConfig {
   skipSteps?: OnboardingStep[]
 }
 
-export type OnboardingStep = 
+export type OnboardingStep =
   | 'welcome'
-  | 'network-selection' 
+  | 'network-selection'
   | 'wallet-setup'
   | 'funding'
   | 'first-agent'
-  | 'marketplace-tour'
   | 'completion'
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -48,7 +47,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   'wallet-setup',
   'funding',
   'first-agent',
-  'marketplace-tour',
   'completion'
 ]
 
@@ -89,7 +87,6 @@ export class OnboardingService {
       await this.walletSetupStep()
       await this.fundingStep()
       await this.firstAgentStep()
-      await this.marketplaceTourStep()
       await this.completionStep()
     } catch (error) {
       if (error instanceof Error && error.message === 'cancelled') {
@@ -141,18 +138,18 @@ export class OnboardingService {
       'The decentralized AI agent economy on Solana',
       '',
       '🤖 Create and deploy AI agents that earn SOL',
-      '🛒 Trade services in the decentralized marketplace',
-      '🔐 Secure escrow payments with built-in reputation',
+      '🔗 Connect agents through A2A communication',
+      '⚖️  Govern the protocol through decentralized governance',
       '⚡ Ultra-fast transactions with minimal fees'
     ]))
-    
+
     console.log('')
     console.log(chalk.bold('This quick setup will help you:'))
     console.log(chalk.gray('• Configure your Solana network'))
     console.log(chalk.gray('• Set up a secure wallet'))
     console.log(chalk.gray('• Get some SOL for transactions'))
     console.log(chalk.gray('• Create your first AI agent'))
-    console.log(chalk.gray('• Explore the marketplace'))
+    console.log(chalk.gray('• Learn about the protocol features'))
     
     const shouldContinue = await confirm({
       message: 'Ready to get started?',
@@ -479,9 +476,9 @@ export class OnboardingService {
     
     console.log(infoBox('AI Agents in GhostSpeak', [
       'Agents are AI entities that can:',
-      '• Provide services in the marketplace',
-      '• Complete tasks and earn payments',
-      '• Communicate with other agents',
+      '• Provide services and earn payments through PayAI',
+      '• Complete tasks autonomously',
+      '• Communicate with other agents via A2A',
       '• Participate in the decentralized economy'
     ]))
     
@@ -494,7 +491,7 @@ export class OnboardingService {
     if (isCancel(createAgent) || !createAgent) {
       console.log(infoBox('Agent Creation Skipped', [
         'You can create an agent anytime with: ghost agent register',
-        'Agents are required to provide services in the marketplace'
+        'Agents are the core participants in the GhostSpeak economy'
       ]))
       this.markStepSkipped('first-agent')
       return
@@ -572,8 +569,8 @@ export class OnboardingService {
       console.log(successBox('Your First Agent is Ready!', [
         `Name: ${agentName}`,
         `Type: ${agentType}`,
-        'Your agent can now provide services in the marketplace',
-        'Create service listinghost with: ghost marketplace create'
+        'Your agent is ready to participate in the economy',
+        'Configure PayAI integration to start earning'
       ]))
       
     } catch (error) {
@@ -584,56 +581,7 @@ export class OnboardingService {
     
     this.markStepCompleted('first-agent')
   }
-  
-  /**
-   * Marketplace tour step
-   */
-  private async marketplaceTourStep(): Promise<void> {
-    console.log('')
-    console.log(stepIndicator(6, this.progress.totalSteps, 'Marketplace Overview'))
-    
-    console.log(infoBox('The GhostSpeak Marketplace', [
-      'This is where the magic happens:',
-      '• Browse services offered by AI agents',
-      '• Purchase services with secure escrow payments',
-      '• List your own agent\'s services',
-      '• Post jobs for agents to apply to'
-    ]))
-    
-    const takeTour = await confirm({
-      message: 'Would you like a quick tour of available commands?',
-      active: 'Yes, show me around',
-      inactive: 'No, I\'ll explore myself'
-    })
-    
-    if (!isCancel(takeTour) && takeTour) {
-      console.log('')
-      console.log(chalk.bold('🗺️  Quick Command Reference:'))
-      console.log('')
-      
-      const commands = [
-        { cmd: 'ghost marketplace list', desc: 'Browse available services' },
-        { cmd: 'ghost marketplace search', desc: 'Search for specific services' },
-        { cmd: 'ghost marketplace create', desc: 'List your agent\'s services' },
-        { cmd: 'ghost escrow create', desc: 'Create secure payments' },
-        { cmd: 'ghost wallet balance', desc: 'Check your SOL balance' },
-        { cmd: 'ghost --interactive', desc: 'Interactive menu mode' }
-      ]
-      
-      commands.forEach(({ cmd, desc }) => {
-        console.log(`  ${chalk.cyan(cmd.padEnd(25))} ${chalk.gray(desc)}`)
-      })
-      
-      console.log('')
-      console.log(chalk.bold('💡 Pro Tips:'))
-      console.log(chalk.gray('  • Use shortcuts like "ghost m" for marketplace'))
-      console.log(chalk.gray('  • Add --help to any command for more info'))
-      console.log(chalk.gray('  • Check transaction history with "ghost tx"'))
-    }
-    
-    this.markStepCompleted('marketplace-tour')
-  }
-  
+
   /**
    * Completion step
    */
@@ -655,9 +603,9 @@ export class OnboardingService {
     console.log('')
     
     const nextSteps = [
-      '1. Browse the marketplace: ghost marketplace list',
-      '2. Create a service listing: ghost marketplace create',
-      '3. Check your agent status: ghost agent list',
+      '1. Check your agent status: ghost agent list',
+      '2. Get devnet GHOST tokens: ghost airdrop',
+      '3. Explore governance: ghost governance',
       '4. Join our community: https://discord.gg/ghostspeak'
     ]
     

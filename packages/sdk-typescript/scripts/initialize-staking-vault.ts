@@ -12,13 +12,9 @@
 
 import { GhostSpeakClient } from '../src/core/GhostSpeakClient.js'
 import { loadDevnetWallet, loadDevnetKeypair } from '../tests/utils/test-signers.js'
-import { Connection, PublicKey, SystemProgram } from '@solana/web3.js'
-import {
-  getAssociatedTokenAddress,
-  createAccount,
-  TOKEN_PROGRAM_ID,
-  getMinimumBalanceForRentExemptAccount,
-} from '@solana/spl-token'
+import { createSolanaRpc } from '@solana/rpc'
+import { address } from '@solana/addresses'
+import { TOKEN_PROGRAM_ADDRESS } from '@solana-program/token'
 import fs from 'fs'
 import path from 'path'
 
@@ -31,7 +27,7 @@ async function main() {
   const keypair = loadDevnetKeypair()
 
   console.log('\n📍 Configuration:')
-  console.log('  Payer:', keypair.publicKey.toBase58())
+  console.log('  Payer:', wallet.address)
   console.log('  Network: devnet')
 
   // Load devnet GHOST token config
@@ -43,9 +39,9 @@ async function main() {
   }
 
   const ghostConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
-  const ghostMint = new PublicKey(ghostConfig.mint)
+  const ghostMint = address(ghostConfig.mint)
 
-  console.log('  GHOST Mint:', ghostMint.toBase58())
+  console.log('  GHOST Mint:', ghostMint)
 
   // Initialize client
   const client = new GhostSpeakClient({
@@ -53,16 +49,16 @@ async function main() {
     rpcEndpoint: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com'
   })
 
-  const connection = new Connection(
-    process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-    'confirmed'
+  // Create modern RPC client
+  const rpc = createSolanaRpc(
+    process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com'
   )
 
   // Check SOL balance
-  const balance = await connection.getBalance(keypair.publicKey)
-  console.log(`  SOL Balance: ${balance / 1e9} SOL`)
+  const { value: balance } = await rpc.getBalance(wallet.address).send()
+  console.log(`  SOL Balance: ${Number(balance) / 1e9} SOL`)
 
-  if (balance < 0.1e9) {
+  if (Number(balance) < 0.1e9) {
     console.error('\n❌ Insufficient SOL! Need at least 0.1 SOL.')
     console.log('   Airdrop: solana airdrop 2 --url devnet')
     process.exit(1)
@@ -109,19 +105,19 @@ async function main() {
 
   // Check if vault already exists
   try {
-    const vaultInfo = await connection.getAccountInfo(new PublicKey(stakingVaultPda))
-    if (vaultInfo) {
+    const vaultInfo = await rpc.getAccountInfo(stakingVaultPda, { encoding: 'base64' }).send()
+    if (vaultInfo.value) {
       console.log('\n✅ Staking vault already exists!')
-      console.log('  Owner:', vaultInfo.owner.toBase58())
-      console.log('  Data Length:', vaultInfo.data.length, 'bytes')
+      console.log('  Owner:', vaultInfo.value.owner)
+      console.log('  Data Length:', vaultInfo.value.data[0].length, 'bytes')
 
       // Try to parse as token account
       try {
-        const { getAccount } = await import('@solana/spl-token')
-        const vaultAccount = await getAccount(connection, new PublicKey(stakingVaultPda))
-        console.log('  Mint:', vaultAccount.mint.toBase58())
-        console.log('  Authority:', vaultAccount.owner.toBase58())
-        console.log('  Balance:', Number(vaultAccount.amount) / 10 ** ghostConfig.decimals, 'GHOST')
+        const { fetchToken } = await import('@solana-program/token')
+        const vaultAccount = await fetchToken(rpc, stakingVaultPda)
+        console.log('  Mint:', vaultAccount.data.mint)
+        console.log('  Authority:', vaultAccount.data.owner)
+        console.log('  Balance:', Number(vaultAccount.data.amount) / 10 ** ghostConfig.decimals, 'GHOST')
       } catch (parseError) {
         console.log('  ⚠️  Account exists but could not parse as token account')
       }
@@ -138,12 +134,7 @@ async function main() {
   console.log('\n🏭 Creating staking vault token account...')
 
   try {
-    // Get rent-exempt balance for token account
-    const rentExemptBalance = await getMinimumBalanceForRentExemptAccount(connection)
-
-    console.log('  Rent-exempt balance:', rentExemptBalance / 1e9, 'SOL')
-
-    // Import web3.js v2 primitives for transaction building
+    // Import modern Solana primitives
     const {
       createTransactionMessage,
       setTransactionMessageFeePayerSigner,
@@ -152,39 +143,37 @@ async function main() {
       compileTransaction,
       signTransaction,
       sendAndConfirmTransaction,
-    } = await import('@solana/web3.js')
+      pipe,
+    } = await import('@solana/kit')
 
     const { getCreateAccountInstruction } = await import('@solana-program/system')
-    const { getInitializeAccountInstruction } = await import('@solana-program/token')
+    const { getInitializeAccountInstruction, ACCOUNT_SIZE } = await import('@solana-program/token')
 
-    // Create vault account owned by Token Program
+    // Get rent-exempt balance for token account
+    const rentExemptBalance = await rpc.getMinimumBalanceForRentExemption(BigInt(ACCOUNT_SIZE)).send()
+
+    console.log('  Rent-exempt balance:', Number(rentExemptBalance) / 1e9, 'SOL')
+
+    // Note: The below approach won't work because we need to create at a PDA address
+    // PDAs cannot be created with createAccount - we need an Anchor instruction
+    // This code is left here as documentation of what would be needed if manual creation were possible
+
+    // Create vault account owned by Token Program (won't work for PDAs)
     const createAccountIx = getCreateAccountInstruction({
       payer: wallet,
-      newAccount: wallet, // Temporary, will be overridden by PDA derivation
-      lamports: BigInt(rentExemptBalance),
-      space: 165n, // TokenAccount size
-      programAddress: TOKEN_PROGRAM_ID.toBase58() as any,
+      newAccount: wallet, // Cannot use PDA here - createAccount doesn't support PDA creation
+      lamports: rentExemptBalance,
+      space: BigInt(ACCOUNT_SIZE),
+      programAddress: TOKEN_PROGRAM_ADDRESS,
     })
 
     // Initialize as token account
     const initializeAccountIx = getInitializeAccountInstruction({
-      account: stakingVaultPda as any,
-      mint: ghostMint.toBase58() as any,
-      owner: client.staking.getProgramId(), // Program owns the vault
-      tokenProgram: TOKEN_PROGRAM_ID.toBase58() as any,
+      account: stakingVaultPda,
+      mint: ghostMint,
+      owner: client.staking.getProgramId(),
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
     })
-
-    // Build transaction
-    const { value: latestBlockhash } = await connection.getLatestBlockhash()
-
-    const txMessage = await createTransactionMessage({
-      version: 0
-    })
-      |> setTransactionMessageFeePayerSigner(wallet)
-      |> setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, BigInt(latestBlockhash.lastValidBlockHeight))
-
-    // Note: The above approach won't work because we need to create at a PDA address
-    // PDAs cannot be created with createAccount - we need an Anchor instruction
 
     console.error('\n⚠️  Cannot create PDA token account directly from TypeScript!')
     console.log('\n📋 Solutions:')

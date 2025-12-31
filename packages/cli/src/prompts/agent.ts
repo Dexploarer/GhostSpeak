@@ -106,7 +106,7 @@ export async function registerAgentPrompts(options: { name?: string; description
     message: 'Select Agent Type:',
     options: [
       { value: 'standard', label: 'Standard Agent', hint: 'Best for most use cases (Mutable, On-chain Reputation)' },
-      { value: 'compressed', label: 'Compressed Agent', hint: 'Lower cost, requires Merkle Tree (x402 Optimized)' }
+      { value: 'compressed', label: 'Compressed Agent', hint: 'Lower cost, requires Merkle Tree (Optimized)' }
     ]
   })
 

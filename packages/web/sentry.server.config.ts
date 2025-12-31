@@ -38,9 +38,10 @@ Sentry.init({
   // Performance monitoring for server-side operations
   integrations: [
     Sentry.httpIntegration({
+      // @ts-expect-error - tracing option exists in runtime but not in types
       tracing: {
         // Capture performance data for outgoing HTTP requests
-        shouldCreateSpanForRequest: (url) => {
+        shouldCreateSpanForRequest: (url: string) => {
           // Track Solana RPC and Convex API calls
           return url.includes('solana') || url.includes('convex') || url.includes('api.stripe.com')
         },

@@ -1,12 +1,15 @@
 /**
  * GET /api/v1/agents/:address/score
  * Lightweight endpoint to get agent's Ghost Score
+ *
+ * Requires payment: 0.5¢ (USDC or GHOST) per lookup
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { authenticateApiKey } from '@/lib/api/auth'
+import { withBillingEnforcement } from '@/lib/api/billing-middleware'
 import { checkRateLimit } from '@/lib/api/rate-limiter'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import type { Address } from '@solana/addresses'
@@ -72,71 +75,61 @@ export async function GET(
       )
     }
 
-    // 3. Check cache first
-    const cached = await convexClient
-      .query(api.agentReputationCache?.getByAddress, {
-        agentAddress,
-      })
-      .catch(() => null)
+    // 3. Enforce payment and fetch score
+    const result = await withBillingEnforcement(
+      auth,
+      { costCents: 0.5, endpoint: `/agents/${agentAddress}/score` },
+      async () => {
+        // Check cache first
+        const cached = await convexClient
+          .query(api.agentReputationCache?.getByAddress, {
+            agentAddress,
+          })
+          .catch(() => null)
 
-    if (cached && Date.now() - cached.lastUpdated < 5 * 60 * 1000) {
-      // Cache hit (< 5 minutes old)
-      await convexClient.mutation(api.apiUsage.track, {
-        apiKeyId: auth.apiKeyId as any,
-        userId: auth.userId as any,
-        endpoint: `/agents/${agentAddress}/score`,
-        method: 'GET',
-        agentAddress,
-        statusCode: 200,
-        responseTime: Date.now() - startTime,
-        billable: true,
-        cost: 0.5, // 0.5 cents per score lookup (cheaper than full verify)
-      })
+        if (cached && Date.now() - cached.lastUpdated < 5 * 60 * 1000) {
+          // Cache hit (< 5 minutes old)
+          const response: ScoreResponse = {
+            ghostScore: cached.ghostScore,
+            tier: cached.tier,
+            lastUpdated: new Date(cached.lastUpdated).toISOString(),
+          }
 
-      const response: ScoreResponse = {
-        ghostScore: cached.ghostScore,
-        tier: cached.tier,
-        lastUpdated: new Date(cached.lastUpdated).toISOString(),
+          return { response, cacheHit: true }
+        }
+
+        // Fetch from blockchain
+        const client = getGhostSpeakClient()
+        const agent = await client.agents.getAgentAccount(agentAddress as Address)
+
+        if (!agent) {
+          throw new Error('Agent not found')
+        }
+
+        // Calculate score
+        const reputationScore = agent.reputationScore ?? 0
+        const ghostScore = Math.min(10000, Math.round(reputationScore / 100))
+        const tier = getTierFromScore(ghostScore)
+
+        const response: ScoreResponse = {
+          ghostScore,
+          tier,
+          lastUpdated: new Date().toISOString(),
+        }
+
+        return { response, cacheHit: false }
       }
+    )
 
-      return NextResponse.json(response, {
-        headers: {
-          'X-Cache': 'HIT',
-          'X-RateLimit-Limit': rateLimit.limit.toString(),
-          'X-RateLimit-Remaining': (rateLimit.remaining - 1).toString(),
-          'X-RateLimit-Reset': rateLimit.reset.toString(),
-        },
-      })
-    }
-
-    // 4. Fetch from blockchain
-    const client = getGhostSpeakClient()
-    const agent = await client.agents.getAgentAccount(agentAddress as Address)
-
-    if (!agent) {
-      await convexClient.mutation(api.apiUsage.track, {
-        apiKeyId: auth.apiKeyId as any,
-        userId: auth.userId as any,
-        endpoint: `/agents/${agentAddress}/score`,
-        method: 'GET',
-        agentAddress,
-        statusCode: 404,
-        responseTime: Date.now() - startTime,
-        billable: false,
-      })
-
+    // Handle billing failure (402 Payment Required)
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Agent not found', code: 'AGENT_NOT_FOUND' },
-        { status: 404 }
+        { error: result.error, code: 'PAYMENT_REQUIRED' },
+        { status: result.status || 402 }
       )
     }
 
-    // 5. Calculate score
-    const reputationScore = agent.reputationScore ?? 0
-    const ghostScore = Math.min(10000, Math.round(reputationScore / 100))
-    const tier = getTierFromScore(ghostScore)
-
-    // 6. Track request
+    // Track successful request
     await convexClient.mutation(api.apiUsage.track, {
       apiKeyId: auth.apiKeyId as any,
       userId: auth.userId as any,
@@ -149,19 +142,15 @@ export async function GET(
       cost: 0.5,
     })
 
-    // 7. Return response
-    const response: ScoreResponse = {
-      ghostScore,
-      tier,
-      lastUpdated: new Date().toISOString(),
-    }
-
-    return NextResponse.json(response, {
+    // Return response
+    return NextResponse.json(result.data.response, {
       headers: {
-        'X-Cache': 'MISS',
+        'X-Cache': result.data.cacheHit ? 'HIT' : 'MISS',
         'X-RateLimit-Limit': rateLimit.limit.toString(),
         'X-RateLimit-Remaining': (rateLimit.remaining - 1).toString(),
         'X-RateLimit-Reset': rateLimit.reset.toString(),
+        'X-Payment-Token': result.billing.paymentToken?.toUpperCase() || 'UNKNOWN',
+        'X-Payment-Amount': result.billing.amountCharged?.usdc?.toString() || '0',
       },
     })
   } catch (error) {

@@ -1,12 +1,15 @@
 /**
  * POST /api/v1/verify
  * Core B2B API endpoint for agent reputation verification
+ *
+ * Requires payment: 1¢ (USDC or GHOST) per verification
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { authenticateApiKey } from '@/lib/api/auth'
+import { withBillingEnforcement } from '@/lib/api/billing-middleware'
 import { checkRateLimit, checkDailyQuota } from '@/lib/api/rate-limiter'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import type { Address } from '@solana/addresses'
@@ -139,7 +142,7 @@ export async function POST(request: NextRequest) {
     const body: VerifyRequest = await request.json()
 
     if (!body.agentAddress) {
-      // Track failed request
+      // Track failed request (no billing)
       await convexClient.mutation(api.apiUsage.track, {
         apiKeyId: auth.apiKeyId as any,
         userId: auth.userId as any,
@@ -156,99 +159,94 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 5. Check cache first
-    const cached = await convexClient
-      .query(api.agentReputationCache?.getByAddress, {
-        agentAddress: body.agentAddress,
-      })
-      .catch(() => null)
+    // 5. Enforce payment and execute verification
+    const result = await withBillingEnforcement(
+      auth,
+      { costCents: 1, endpoint: '/verify' },
+      async () => {
+        // Check cache first
+        const cached = await convexClient
+          .query(api.agentReputationCache?.getByAddress, {
+            agentAddress: body.agentAddress,
+          })
+          .catch(() => null)
 
-    if (cached && Date.now() - cached.lastUpdated < 5 * 60 * 1000) {
-      // Cache hit (< 5 minutes old)
-      await convexClient.mutation(api.apiUsage.track, {
-        apiKeyId: auth.apiKeyId as any,
-        userId: auth.userId as any,
-        endpoint: '/verify',
-        method: 'POST',
-        agentAddress: body.agentAddress,
-        statusCode: 200,
-        responseTime: Date.now() - startTime,
-        billable: true,
-        cost: 1, // 1 cent per verification
-      })
+        if (cached && Date.now() - cached.lastUpdated < 5 * 60 * 1000) {
+          // Cache hit (< 5 minutes old)
+          const response: VerifyResponse = {
+            verified: true,
+            ghostScore: cached.ghostScore,
+            tier: cached.tier,
+            meetsRequirement: body.requiredScore ? cached.ghostScore >= body.requiredScore : true,
+            metrics: body.returnMetrics
+              ? {
+                  successRate: cached.successRate,
+                  avgResponseTime: cached.avgResponseTime,
+                  totalJobs: cached.totalJobs,
+                  disputes: cached.disputes,
+                  disputeResolution: cached.disputeResolution,
+                }
+              : undefined,
+            payaiData: body.returnMetrics ? cached.payaiData : undefined,
+            credentialId: cached.credentialId,
+            verifiedAt: new Date().toISOString(),
+          }
 
-      const response: VerifyResponse = {
-        verified: true,
-        ghostScore: cached.ghostScore,
-        tier: cached.tier,
-        meetsRequirement: body.requiredScore ? cached.ghostScore >= body.requiredScore : true,
-        metrics: body.returnMetrics
-          ? {
-              successRate: cached.successRate,
-              avgResponseTime: cached.avgResponseTime,
-              totalJobs: cached.totalJobs,
-              disputes: cached.disputes,
-              disputeResolution: cached.disputeResolution,
-            }
-          : undefined,
-        payaiData: body.returnMetrics ? cached.payaiData : undefined,
-        credentialId: cached.credentialId,
-        verifiedAt: new Date().toISOString(),
+          return { response, cacheHit: true }
+        }
+
+        // Fetch agent data from blockchain
+        const client = getGhostSpeakClient()
+        const agent = await client.agents.getAgentAccount(body.agentAddress as Address)
+
+        if (!agent) {
+          throw new Error('Agent not found')
+        }
+
+        // Calculate Ghost Score
+        const { score, tier, metrics } = calculateGhostScore(agent)
+
+        // Update cache (fire and forget)
+        if (metrics) {
+          convexClient
+            .mutation(api.agentReputationCache?.upsert, {
+              agentAddress: body.agentAddress,
+              ghostScore: score,
+              tier,
+              successRate: metrics.successRate,
+              avgResponseTime: metrics.avgResponseTime,
+              totalJobs: metrics.totalJobs,
+              disputes: metrics.disputes,
+              disputeResolution: metrics.disputeResolution,
+            })
+            .catch(() => {
+              // Ignore cache errors
+            })
+        }
+
+        const response: VerifyResponse = {
+          verified: true,
+          ghostScore: score,
+          tier,
+          meetsRequirement: body.requiredScore ? score >= body.requiredScore : true,
+          metrics: body.returnMetrics ? metrics : undefined,
+          credentialId: undefined,
+          verifiedAt: new Date().toISOString(),
+        }
+
+        return { response, cacheHit: false }
       }
+    )
 
-      return NextResponse.json(response, {
-        headers: {
-          'X-Cache': 'HIT',
-          'X-RateLimit-Limit': rateLimit.limit.toString(),
-          'X-RateLimit-Remaining': (rateLimit.remaining - 1).toString(),
-          'X-RateLimit-Reset': rateLimit.reset.toString(),
-        },
-      })
-    }
-
-    // 6. Fetch agent data from blockchain
-    const client = getGhostSpeakClient()
-    const agent = await client.agents.getAgentAccount(body.agentAddress as Address)
-
-    if (!agent) {
-      // Track failed request
-      await convexClient.mutation(api.apiUsage.track, {
-        apiKeyId: auth.apiKeyId as any,
-        userId: auth.userId as any,
-        endpoint: '/verify',
-        method: 'POST',
-        agentAddress: body.agentAddress,
-        statusCode: 404,
-        responseTime: Date.now() - startTime,
-        billable: false,
-      })
-
+    // Handle billing failure (402 Payment Required)
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Agent not found', code: 'AGENT_NOT_FOUND' },
-        { status: 404 }
+        { error: result.error, code: 'PAYMENT_REQUIRED' },
+        { status: result.status || 402 }
       )
     }
 
-    // 7. Calculate Ghost Score
-    const { score, tier, metrics } = calculateGhostScore(agent)
-
-    // 8. Update cache (fire and forget)
-    convexClient
-      .mutation(api.agentReputationCache?.upsert, {
-        agentAddress: body.agentAddress,
-        ghostScore: score,
-        tier,
-        successRate: metrics.successRate,
-        avgResponseTime: metrics.avgResponseTime,
-        totalJobs: metrics.totalJobs,
-        disputes: metrics.disputes,
-        disputeResolution: metrics.disputeResolution,
-      })
-      .catch(() => {
-        // Ignore cache errors
-      })
-
-    // 9. Track successful request
+    // Track successful request
     await convexClient.mutation(api.apiUsage.track, {
       apiKeyId: auth.apiKeyId as any,
       userId: auth.userId as any,
@@ -261,23 +259,15 @@ export async function POST(request: NextRequest) {
       cost: 1, // 1 cent per verification
     })
 
-    // 10. Return response
-    const response: VerifyResponse = {
-      verified: true,
-      ghostScore: score,
-      tier,
-      meetsRequirement: body.requiredScore ? score >= body.requiredScore : true,
-      metrics: body.returnMetrics ? metrics : undefined,
-      credentialId: undefined,
-      verifiedAt: new Date().toISOString(),
-    }
-
-    return NextResponse.json(response, {
+    // Return response
+    return NextResponse.json(result.data.response, {
       headers: {
-        'X-Cache': 'MISS',
+        'X-Cache': result.data.cacheHit ? 'HIT' : 'MISS',
         'X-RateLimit-Limit': rateLimit.limit.toString(),
         'X-RateLimit-Remaining': (rateLimit.remaining - 1).toString(),
         'X-RateLimit-Reset': rateLimit.reset.toString(),
+        'X-Payment-Token': result.billing.paymentToken?.toUpperCase() || 'UNKNOWN',
+        'X-Payment-Amount': result.billing.amountCharged?.usdc?.toString() || '0',
       },
     })
   } catch (error) {

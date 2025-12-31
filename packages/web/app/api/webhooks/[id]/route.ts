@@ -21,6 +21,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
 
     // Validate API key and get user
+    // @ts-expect-error - validateApiKey not in generated types, run `bunx convex dev` to regenerate
     const keyData = await fetchQuery(api.apiKeys.validateApiKey, {
       apiKey,
     })
@@ -66,6 +67,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     // Validate API key and get user
+    // @ts-expect-error - validateApiKey not in generated types, run `bunx convex dev` to regenerate
     const keyData = await fetchQuery(api.apiKeys.validateApiKey, {
       apiKey,
     })

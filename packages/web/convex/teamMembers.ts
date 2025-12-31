@@ -14,6 +14,16 @@ import { query, mutation } from './_generated/server'
  */
 export const getByUser = query({
   args: { userId: v.id('users') },
+  returns: v.array(
+    v.object({
+      _id: v.id('teamMembers'),
+      _creationTime: v.number(),
+      teamId: v.id('teams'),
+      userId: v.id('users'),
+      role: v.string(),
+      joinedAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('teamMembers')
@@ -27,6 +37,16 @@ export const getByUser = query({
  */
 export const getByTeam = query({
   args: { teamId: v.id('teams') },
+  returns: v.array(
+    v.object({
+      _id: v.id('teamMembers'),
+      _creationTime: v.number(),
+      teamId: v.id('teams'),
+      userId: v.id('users'),
+      role: v.string(),
+      joinedAt: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query('teamMembers')

@@ -96,6 +96,25 @@ export default tseslint.config(
     },
   },
   {
+    // Prevent legacy Solana package imports (use modern v5 packages instead)
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          {
+            name: '@solana/web3.js',
+            message: 'Use @solana/rpc, @solana/addresses, @solana/signers, or @solana/kit instead. Legacy @solana/web3.js is deprecated.',
+          },
+          {
+            name: '@solana/spl-token',
+            message: 'Use @solana-program/token (for standard SPL tokens) or @solana-program/token-2022 (for Token Extensions) instead. Legacy @solana/spl-token is for web3.js v1.x only.',
+          },
+        ],
+      }],
+    },
+    // Apply to all TypeScript files except tests and scripts
+    files: ['!**/*.test.ts', '!**/*.spec.ts', '!**/tests/**', '!**/scripts/**'],
+  },
+  {
     // Disable type-aware linting for JavaScript files
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     ...tseslint.configs.disableTypeChecked,

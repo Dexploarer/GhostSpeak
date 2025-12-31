@@ -3,19 +3,32 @@
  *
  * Server-side endpoint to handle GHOST token airdrops.
  * Keeps the faucet private key secure on the server.
+ *
+ * Fully migrated to Solana v5 with @solana-program/token
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { Connection, PublicKey, Keypair } from '@solana/web3.js'
+import { createSolanaRpc } from '@solana/rpc'
+import { address, type Address } from '@solana/addresses'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
 import {
-  getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  transfer,
-  getAccount,
-} from '@solana/spl-token'
+  getCreateAssociatedTokenInstructionAsync,
+  getTransferInstruction,
+  fetchToken,
+  findAssociatedTokenPda,
+  TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token'
+import {
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstruction,
+  pipe,
+} from '@solana/kit'
+import { signAndSendTransactionMessageWithSigners } from '@solana/signers'
 
 // Devnet configuration
-const DEVNET_GHOST_MINT = new PublicKey('BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh')
+const DEVNET_GHOST_MINT = address('BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh')
 const DECIMALS = 6
 const AIRDROP_AMOUNT = 10000 // 10,000 GHOST per request
 const RATE_LIMIT_HOURS = 24
@@ -48,9 +61,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate recipient address
-    let recipientPubkey: PublicKey
+    let recipientAddress: Address
     try {
-      recipientPubkey = new PublicKey(recipient)
+      recipientAddress = address(recipient)
     } catch (error) {
       return NextResponse.json(
         { error: 'Invalid recipient address' },
@@ -85,17 +98,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse private key (should be array of numbers or base58)
-    let faucetKeypair: Keypair
+    // Parse private key (should be array of numbers or base64)
+    let faucetKeypair
     try {
       // Try parsing as JSON array
       const keyArray = JSON.parse(faucetPrivateKeyStr)
-      faucetKeypair = Keypair.fromSecretKey(new Uint8Array(keyArray))
+      faucetKeypair = await createKeyPairSignerFromBytes(new Uint8Array(keyArray))
     } catch {
-      // Try parsing as base58
+      // Try parsing as base64
       try {
         const decoded = Buffer.from(faucetPrivateKeyStr, 'base64')
-        faucetKeypair = Keypair.fromSecretKey(decoded)
+        faucetKeypair = await createKeyPairSignerFromBytes(decoded)
       } catch (error) {
         console.error('Failed to parse faucet private key')
         return NextResponse.json(
@@ -106,21 +119,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Connect to devnet
-    const connection = new Connection(
-      process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-      'confirmed'
+    const rpc = createSolanaRpc(
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
     )
 
     // Get faucet token account
-    const faucetTokenAccount = await getAssociatedTokenAddress(
-      DEVNET_GHOST_MINT,
-      faucetKeypair.publicKey
-    )
+    const [faucetTokenAccount] = await findAssociatedTokenPda({
+      mint: DEVNET_GHOST_MINT,
+      owner: faucetKeypair.address,
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    })
 
     // Check faucet balance
     try {
-      const faucetAccount = await getAccount(connection, faucetTokenAccount)
-      const faucetBalance = Number(faucetAccount.amount) / 10 ** DECIMALS
+      const faucetAccount = await fetchToken(rpc, faucetTokenAccount)
+      const faucetBalance = Number(faucetAccount.data.amount) / 10 ** DECIMALS
 
       if (faucetBalance < AIRDROP_AMOUNT) {
         console.error(`Faucet balance too low: ${faucetBalance} GHOST`)
@@ -141,32 +154,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get or create recipient token account
-    const recipientTokenAccount = await getOrCreateAssociatedTokenAccount(
-      connection,
-      faucetKeypair,
-      DEVNET_GHOST_MINT,
-      recipientPubkey
-    )
+    // Get recipient token account
+    const [recipientTokenAccount] = await findAssociatedTokenPda({
+      mint: DEVNET_GHOST_MINT,
+      owner: recipientAddress,
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    })
 
-    // Transfer tokens
+    // Build transaction
+    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send()
+
+    // Create ATA instruction (idempotent - no-op if already exists)
+    const createAtaInstruction = await getCreateAssociatedTokenInstructionAsync({
+      payer: faucetKeypair,
+      mint: DEVNET_GHOST_MINT,
+      owner: recipientAddress,
+      ata: recipientTokenAccount,
+    })
+
+    // Create transfer instruction
     const amountWithDecimals = BigInt(AIRDROP_AMOUNT) * BigInt(10 ** DECIMALS)
+    const transferInstruction = getTransferInstruction({
+      source: faucetTokenAccount,
+      destination: recipientTokenAccount,
+      authority: faucetKeypair,
+      amount: amountWithDecimals,
+    })
 
-    const signature = await transfer(
-      connection,
-      faucetKeypair,
-      faucetTokenAccount,
-      recipientTokenAccount.address,
-      faucetKeypair.publicKey,
-      amountWithDecimals
+    // Build, sign, and send transaction
+    const transactionMessage = await pipe(
+      createTransactionMessage({ version: 0 }),
+      (tx) => setTransactionMessageFeePayerSigner(faucetKeypair, tx),
+      (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+      (tx) => appendTransactionMessageInstruction(createAtaInstruction, tx),
+      (tx) => appendTransactionMessageInstruction(transferInstruction, tx)
     )
+
+    // Sign and send transaction
+    const signature = await signAndSendTransactionMessageWithSigners(transactionMessage)
+    console.log('[Airdrop] Transaction sent:', signature)
 
     // Record claim
     recordClaim(recipient)
 
     // Get new balance
-    const updatedAccount = await getAccount(connection, recipientTokenAccount.address)
-    const newBalance = Number(updatedAccount.amount) / 10 ** DECIMALS
+    const updatedAccount = await fetchToken(rpc, recipientTokenAccount)
+    const newBalance = Number(updatedAccount.data.amount) / 10 ** DECIMALS
 
     return NextResponse.json({
       success: true,
@@ -203,14 +236,14 @@ export async function GET() {
     }
 
     // Parse faucet keypair
-    let faucetKeypair: Keypair
+    let faucetKeypair
     try {
       const keyArray = JSON.parse(faucetPrivateKeyStr)
-      faucetKeypair = Keypair.fromSecretKey(new Uint8Array(keyArray))
+      faucetKeypair = await createKeyPairSignerFromBytes(new Uint8Array(keyArray))
     } catch {
       try {
         const decoded = Buffer.from(faucetPrivateKeyStr, 'base64')
-        faucetKeypair = Keypair.fromSecretKey(decoded)
+        faucetKeypair = await createKeyPairSignerFromBytes(decoded)
       } catch {
         return NextResponse.json({
           status: 'error',
@@ -219,22 +252,22 @@ export async function GET() {
       }
     }
 
-    const connection = new Connection(
-      process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-      'confirmed'
+    const rpc = createSolanaRpc(
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
     )
 
-    const faucetTokenAccount = await getAssociatedTokenAddress(
-      DEVNET_GHOST_MINT,
-      faucetKeypair.publicKey
-    )
+    const [faucetTokenAccount] = await findAssociatedTokenPda({
+      mint: DEVNET_GHOST_MINT,
+      owner: faucetKeypair.address,
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    })
 
-    const faucetAccount = await getAccount(connection, faucetTokenAccount)
-    const balance = Number(faucetAccount.amount) / 10 ** DECIMALS
+    const faucetAccount = await fetchToken(rpc, faucetTokenAccount)
+    const balance = Number(faucetAccount.data.amount) / 10 ** DECIMALS
 
     return NextResponse.json({
       status: 'ok',
-      faucetAddress: faucetKeypair.publicKey.toBase58(),
+      faucetAddress: faucetKeypair.address,
       balance,
       airdropAmount: AIRDROP_AMOUNT,
       claimsRemaining: Math.floor(balance / AIRDROP_AMOUNT)

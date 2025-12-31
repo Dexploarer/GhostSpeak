@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateApiKey } from '@/lib/api/auth'
 import {
-  _calculateRequestCost,
+  calculateRequestCost,
   calculateOverageFees,
   PRICING_TIERS,
   type PricingTier,
@@ -64,7 +64,8 @@ export async function GET(request: NextRequest) {
     const totalCost = monthlyCost + overageInfo.overageFeesUi
 
     // Calculate breakdown by endpoint
-    const endpointBreakdown = Object.entries(usageSummary.byEndpoint).map(([endpoint, stats]) => ({
+    // @ts-expect-error - byEndpoint not in generated types, run `bunx convex dev` to regenerate
+    const endpointBreakdown = Object.entries(usageSummary.byEndpoint).map(([endpoint, stats]: [string, any]) => ({
       endpoint,
       requests: stats.count,
       billableRequests: stats.billableCount,

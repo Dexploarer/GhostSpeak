@@ -132,79 +132,9 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
       'Agents need to be registered before providing services',
       'Choose descriptive names and clear capability descriptions',
       'Monitor your agent performance with status commands',
-      'Agents can communicate with each other via channels'
+      'Agents can earn fees by completing tasks'
     ],
-    relatedTopics: ['marketplace', 'channels']
-  },
-  
-  'marketplace': {
-    title: '🛍️ Marketplace',
-    description: 'Browse, purchase, and list services',
-    commands: [
-      {
-        command: 'ghost marketplace list',
-        description: 'Browse available services',
-        example: 'ghost marketplace list --category development',
-        aliases: ['m', 'market', 'browse']
-      },
-      {
-        command: 'ghost marketplace search',
-        description: 'Search for services',
-        example: 'ghost marketplace search "data analysis"',
-        aliases: ['m s', 'ms', 'search']
-      },
-      {
-        command: 'ghost marketplace create',
-        description: 'Create a service listing',
-        example: 'ghost marketplace create',
-        aliases: ['m c', 'mc', 'list-service']
-      },
-      {
-        command: 'ghost marketplace purchase',
-        description: 'Purchase a service',
-        example: 'ghost marketplace purchase <listing-id>',
-        aliases: ['buy', 'purchase']
-      }
-    ],
-    tips: [
-      'Filter services by category to find what you need',
-      'Read service descriptions carefully before purchasing',
-      'Use escrow payments for secure transactions',
-      'Rate services after completion to help other users'
-    ],
-    relatedTopics: ['escrow', 'agent']
-  },
-  
-  'escrow': {
-    title: '🔒 Escrow Payments',
-    description: 'Secure payment management',
-    commands: [
-      {
-        command: 'ghost escrow create',
-        description: 'Create an escrow payment',
-        example: 'ghost escrow create',
-        aliases: ['e c', 'ec', 'create-escrow']
-      },
-      {
-        command: 'ghost escrow list',
-        description: 'List your escrow payments',
-        example: 'ghost escrow list',
-        aliases: ['e', 'escrows']
-      },
-      {
-        command: 'ghost escrow release',
-        description: 'Release funds from escrow',
-        example: 'ghost escrow release <escrow-id>',
-        aliases: ['e r', 'er', 'release']
-      }
-    ],
-    tips: [
-      'Escrow protects both buyers and sellers',
-      'Only release funds after verifying completed work',
-      'Disputes can be opened if work is unsatisfactory',
-      'Keep communication records for dispute resolution'
-    ],
-    relatedTopics: ['marketplace', 'disputes']
+    relatedTopics: ['payai']
   },
   
   'transactions': {
@@ -230,7 +160,7 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
       'Failed transactions still consume some fees',
       'Check transaction status on Solana Explorer'
     ],
-    relatedTopics: ['wallet', 'escrow']
+    relatedTopics: ['wallet']
   },
   
   'shortcuts': {
@@ -502,19 +432,19 @@ export class HelpSystem {
   private showGeneralHelp(): void {
     console.log(chalk.bold('📋 Common Commands:'))
     console.log('')
-    
+
     const commonCommands = [
-      { cmd: 'ghost marketplace list', desc: 'Browse services' },
-      { cmd: 'ghost escrow create', desc: 'Create secure payment' },
       { cmd: 'ghost agent status', desc: 'Check agent performance' },
+      { cmd: 'ghost agent list', desc: 'List your agents' },
       { cmd: 'ghost wallet balance', desc: 'Check SOL balance' },
+      { cmd: 'ghost airdrop', desc: 'Get devnet GHOST tokens' },
       { cmd: 'ghost --interactive', desc: 'Interactive menu' }
     ]
-    
+
     commonCommands.forEach(({ cmd, desc }) => {
       console.log(`  ${chalk.cyan(cmd.padEnd(25))} ${desc}`)
     })
-    
+
     console.log('')
   }
   
@@ -594,24 +524,24 @@ export class HelpSystem {
    */
   private getContextualSuggestions(): string[] {
     const suggestions = []
-    
+
     if (this.context.recentCommands.includes('agent register')) {
-      suggestions.push('Create a service listing: ghost marketplace create')
+      suggestions.push('Check your agent status: ghost agent status')
     }
-    
-    if (this.context.recentCommands.includes('marketplace create')) {
-      suggestions.push('Check your listings: ghost marketplace list --mine')
+
+    if (this.context.recentCommands.includes('wallet create')) {
+      suggestions.push('Fund your wallet: ghost airdrop')
     }
-    
-    if (this.context.recentCommands.includes('escrow create')) {
-      suggestions.push('Monitor escrow status: ghost escrow list')
+
+    if (this.context.recentCommands.includes('airdrop')) {
+      suggestions.push('Register an agent: ghost agent register')
     }
-    
+
     if (suggestions.length === 0) {
-      suggestions.push('Explore the marketplace: ghost marketplace list')
-      suggestions.push('Check your agent status: ghost agent list')
+      suggestions.push('List your agents: ghost agent list')
+      suggestions.push('Check your wallet balance: ghost wallet balance')
     }
-    
+
     return suggestions
   }
   

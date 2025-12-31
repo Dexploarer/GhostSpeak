@@ -31,13 +31,6 @@ export interface ValidatedAgent {
   owner: Address
 }
 
-export interface ValidatedChannel {
-  address: Address
-  name: string
-  participants: Address[]
-  visibility: 'public' | 'private'
-}
-
 export interface ValidatedDisputeSummary {
   dispute: Address
   claimant: Address
@@ -45,41 +38,6 @@ export interface ValidatedDisputeSummary {
   status: string
   evidenceCount: number
   createdAt: bigint
-}
-
-export interface ValidatedWorkOrder {
-  address: Address
-  client: Address
-  provider: Address  
-  title: string
-  paymentAmount: bigint
-  status: string
-}
-
-// Marketplace types for jobs and items
-export interface ValidatedJobPosting {
-  id: string
-  title: string
-  description: string
-  category: string
-  budget: number
-  deadline?: Date | null
-  poster: Address
-  status: string
-  applicationsCount: number
-  skills: string[]
-}
-
-export interface ValidatedMarketplaceItem {
-  id: string
-  title: string
-  description: string
-  category: string
-  price: number
-  seller: Address
-  available: boolean
-  rating?: number
-  tags: string[]
 }
 
 // Type guard functions with runtime validation
@@ -112,19 +70,6 @@ export function isValidAgent(value: unknown): value is ValidatedAgent {
   )
 }
 
-export function isValidChannel(value: unknown): value is ValidatedChannel {
-  if (!value || typeof value !== 'object') return false
-  
-  const obj = value as Record<string, unknown>
-  
-  return (
-    typeof obj.address === 'string' &&
-    typeof obj.name === 'string' &&
-    Array.isArray(obj.participants) &&
-    (obj.visibility === 'public' || obj.visibility === 'private')
-  )
-}
-
 export function isValidDisputeSummary(value: unknown): value is ValidatedDisputeSummary {
   if (!value || typeof value !== 'object') return false
   
@@ -136,21 +81,6 @@ export function isValidDisputeSummary(value: unknown): value is ValidatedDispute
     typeof obj.respondent === 'string' &&
     typeof obj.status === 'string' &&
     typeof obj.evidenceCount === 'number'
-  )
-}
-
-export function isValidWorkOrder(value: unknown): value is ValidatedWorkOrder {
-  if (!value || typeof value !== 'object') return false
-  
-  const obj = value as Record<string, unknown>
-  
-  return (
-    typeof obj.address === 'string' &&
-    typeof obj.client === 'string' &&
-    typeof obj.provider === 'string' &&
-    typeof obj.title === 'string' &&
-    (typeof obj.paymentAmount === 'bigint' || typeof obj.paymentAmount === 'string' || typeof obj.paymentAmount === 'number') &&
-    typeof obj.status === 'string'
   )
 }
 
@@ -199,15 +129,6 @@ export function validateAndConvertAuction(value: unknown): ValidatedAuctionData 
   }
 }
 
-export function validateAndConvertWorkOrder(value: unknown): ValidatedWorkOrder | null {
-  if (!isValidWorkOrder(value)) return null
-  
-  return {
-    ...value,
-    paymentAmount: typeof value.paymentAmount === 'bigint' ? value.paymentAmount : BigInt(value.paymentAmount)
-  }
-}
-
 // Array validation functions
 export function validateAuctionArray(value: unknown): ValidatedAuctionData[] {
   if (!Array.isArray(value)) return []
@@ -223,72 +144,10 @@ export function validateAgentArray(value: unknown): ValidatedAgent[] {
   return value.filter(isValidAgent)
 }
 
-export function validateChannelArray(value: unknown): ValidatedChannel[] {
-  if (!Array.isArray(value)) return []
-  
-  return value.filter(isValidChannel)
-}
-
 export function validateDisputeArray(value: unknown): ValidatedDisputeSummary[] {
   if (!Array.isArray(value)) return []
   
   return value.filter(isValidDisputeSummary)
-}
-
-export function validateWorkOrderArray(value: unknown): ValidatedWorkOrder[] {
-  if (!Array.isArray(value)) return []
-  
-  return value
-    .map(validateAndConvertWorkOrder)
-    .filter((item): item is ValidatedWorkOrder => item !== null)
-}
-
-// Marketplace validation functions
-export function isValidJobPosting(value: unknown): value is ValidatedJobPosting {
-  if (!value || typeof value !== 'object') return false
-  
-  const obj = value as Record<string, unknown>
-  
-  return (
-    typeof obj.id === 'string' &&
-    typeof obj.title === 'string' &&
-    typeof obj.description === 'string' &&
-    typeof obj.category === 'string' &&
-    typeof obj.budget === 'number' &&
-    typeof obj.poster === 'string' &&
-    typeof obj.status === 'string' &&
-    typeof obj.applicationsCount === 'number' &&
-    Array.isArray(obj.skills)
-  )
-}
-
-export function isValidMarketplaceItem(value: unknown): value is ValidatedMarketplaceItem {
-  if (!value || typeof value !== 'object') return false
-  
-  const obj = value as Record<string, unknown>
-  
-  return (
-    typeof obj.id === 'string' &&
-    typeof obj.title === 'string' &&
-    typeof obj.description === 'string' &&
-    typeof obj.category === 'string' &&
-    typeof obj.price === 'number' &&
-    typeof obj.seller === 'string' &&
-    typeof obj.available === 'boolean' &&
-    Array.isArray(obj.tags)
-  )
-}
-
-export function validateJobPostingArray(value: unknown): ValidatedJobPosting[] {
-  if (!Array.isArray(value)) return []
-  
-  return value.filter(isValidJobPosting)
-}
-
-export function validateMarketplaceItemArray(value: unknown): ValidatedMarketplaceItem[] {
-  if (!Array.isArray(value)) return []
-  
-  return value.filter(isValidMarketplaceItem)
 }
 
 // Error type guards for safe error handling

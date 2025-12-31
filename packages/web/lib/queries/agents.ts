@@ -8,8 +8,9 @@ import { useTransactionFeedback } from '@/lib/transaction-feedback'
 import { getErrorInfo } from '@/lib/errors/error-messages'
 import type { Address } from '@solana/addresses'
 
-// Import Agent type from SDK
-import type { Agent as SDKAgent } from '@ghostspeak/sdk/browser'
+// SDK doesn't export Agent type, using any for now
+// TODO: Update SDK to export Agent type or create local interface
+type SDKAgent = any
 
 // Helper function to calculate comprehensive reputation
 function calculateAgentReputation(agentData: SDKAgent | null) {

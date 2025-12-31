@@ -188,5 +188,6 @@ export function setup() {
  */
 export function teardown(data) {
   console.log('PayAI webhook load test completed!')
-  console.log(`Note: Check that all successful webhooks were written to blockchain`)
+  console.log(`Note: x402 payments are already on-chain - no additional blockchain writes needed`)
+  console.log(`Check reputation cache was updated correctly via webhooks`)
 }

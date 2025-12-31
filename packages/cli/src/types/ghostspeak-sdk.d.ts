@@ -19,13 +19,9 @@ declare module '@ghostspeak/sdk' {
       programId: Address
     }
     agent: AgentClient
-    marketplace: MarketplaceClient
-    escrow: EscrowClient
     auction: AuctionClient
     dispute: DisputeClient
     governance: GovernanceClient
-    channel: ChannelClient
-    workOrder: WorkOrderClient
     reputation: ReputationClient
     compliance: ComplianceClient
     analytics: AnalyticsClient
@@ -68,7 +64,6 @@ declare module '@ghostspeak/sdk' {
   export function deriveUserRegistryPda(programId: Address, owner: Address): Promise<Address>
   export function deriveMultisigPda(programId: Address, creator: Address, multisigId: string): Promise<Address>
   export function deriveProposalPda(programId: Address, multisig: Address, proposalId: string): Promise<Address>
-  export function deriveEscrowPda(programId: Address, creator: Address, escrowId: string): Promise<Address>
   
   // Utility functions
   export function generateUniqueId(prefix: string): string
@@ -85,25 +80,6 @@ declare module '@ghostspeak/sdk' {
     getById(agentId: string): Promise<Agent | null>
     getAnalytics(agentAddress: Address): Promise<AgentAnalytics>
     verifyOwnership(agentId: string, owner: Address): Promise<boolean>
-  }
-  
-  export interface MarketplaceClient {
-    createServiceListing(signer: TransactionSigner, params: CreateServiceParams): Promise<TransactionResult>
-    updateServiceListing(signer: TransactionSigner, params: UpdateServiceParams): Promise<TransactionResult>
-    getServiceListings(): Promise<ServiceListingWithAddress[]>
-    getServiceById(listingId: string): Promise<ServiceListing | null>
-    purchase(signer: TransactionSigner, params: PurchaseParams): Promise<TransactionResult>
-    createJob(signer: TransactionSigner, params: CreateJobParams): Promise<TransactionResult>
-    listJobs(params?: ListJobsParams): Promise<JobPosting[]>
-    applyToJob(signer: TransactionSigner, params: ApplyToJobParams): Promise<TransactionResult>
-  }
-  
-  export interface EscrowClient {
-    create(signer: TransactionSigner, params: CreateEscrowParams): Promise<TransactionResult>
-    release(signer: TransactionSigner, escrowId: string): Promise<TransactionResult>
-    cancel(signer: TransactionSigner, escrowId: string): Promise<TransactionResult>
-    getById(escrowId: string): Promise<Escrow | null>
-    listByUser(userAddress: Address): Promise<Escrow[]>
   }
   
   export interface AuctionClient {
@@ -131,20 +107,6 @@ declare module '@ghostspeak/sdk' {
     executeProposal(signer: TransactionSigner, proposalId: string): Promise<TransactionResult>
     listMultisigs(): Promise<Multisig[]>
     listProposals(multisigAddress?: Address): Promise<Proposal[]>
-  }
-  
-  export interface ChannelClient {
-    create(signer: TransactionSigner, params: CreateChannelParams): Promise<TransactionResult>
-    sendMessage(signer: TransactionSigner, channelId: Address, params: SendMessageParams): Promise<TransactionResult>
-    listByParticipant(params: { participant: Address }): Promise<Channel[]>
-    getMessages(channelId: Address): Promise<Message[]>
-  }
-  
-  export interface WorkOrderClient {
-    create(signer: TransactionSigner, params: CreateWorkOrderParams): Promise<TransactionResult>
-    update(signer: TransactionSigner, params: UpdateWorkOrderParams): Promise<TransactionResult>
-    complete(signer: TransactionSigner, workOrderId: string): Promise<TransactionResult>
-    listByUser(userAddress: Address): Promise<WorkOrder[]>
   }
   
   export interface ReputationClient {
@@ -176,7 +138,6 @@ declare module '@ghostspeak/sdk' {
   export interface DisputeSummary {
     id: string
     dispute: Address
-    escrowAddress: Address
     status: DisputeStatus
     claimant: string
     respondent: string
@@ -366,14 +327,7 @@ declare module '@ghostspeak/sdk' {
     proposedPrice?: bigint
     message?: string
   }
-  
-  export interface CreateEscrowParams {
-    provider: Address
-    amount: bigint
-    description?: string
-    paymentToken?: Address
-  }
-  
+
   export interface CreateAuctionParams {
     item: string
     description: string
@@ -389,7 +343,6 @@ declare module '@ghostspeak/sdk' {
   }
   
   export interface FileDisputeParams {
-    escrowAddress: Address
     reason: string
     severity: 'low' | 'medium' | 'high'
     description?: string
@@ -410,7 +363,6 @@ declare module '@ghostspeak/sdk' {
   
   export interface ListDisputesParams {
     status?: string
-    escrowAddress?: Address
   }
   
   export interface CreateMultisigParams {
@@ -434,20 +386,7 @@ declare module '@ghostspeak/sdk' {
     proposal: Address
     vote: 'yes' | 'no' | 'abstain'
   }
-  
-  export interface CreateChannelParams {
-    name: string
-    description?: string
-    visibility: 'public' | 'private'
-    participants: Address[]
-  }
-  
-  export interface SendMessageParams {
-    channelId: string
-    content: string
-    messageType?: string
-  }
-  
+
   export interface CreateWorkOrderParams {
     title: string
     description: string
@@ -502,18 +441,7 @@ declare module '@ghostspeak/sdk' {
     disputes: number
     disputesWon: number
   }
-  
-  export interface Escrow {
-    id: string
-    address: Address
-    client: Address
-    provider: Address
-    amount: bigint
-    status: string
-    createdAt: number
-    description?: string
-  }
-  
+
   export interface Auction {
     id: string
     address: Address
@@ -560,30 +488,7 @@ declare module '@ghostspeak/sdk' {
     totalVotes: number
     eligibleVoters?: number
   }
-  
-  export interface Channel {
-    id: { toString(): string }
-    channelId?: Address
-    name: string
-    creator?: Address
-    participants?: Address[]
-    channelType?: string
-    visibility?: string
-    isPrivate?: boolean
-    messageCount?: number
-    createdAt?: bigint
-    lastActivity?: bigint
-    isActive?: boolean
-  }
-  
-  export interface Message {
-    id: string
-    sender: Address
-    content: string
-    timestamp: number
-    messageType?: string
-  }
-  
+
   export interface WorkOrder {
     id: string
     address: Address
@@ -653,14 +558,14 @@ declare module '@ghostspeak/sdk' {
       cluster?: string
       rpcEndpoint?: string
     })
-    
+
     register(signer: TransactionSigner, params: {
       agentType: number
       metadataUri: string
       agentId: string
       skipSimulation?: boolean
     }): Promise<string>
-    
+
     update(signer: TransactionSigner, params: {
       agentId: string
       name?: string
@@ -668,32 +573,6 @@ declare module '@ghostspeak/sdk' {
       capabilities?: string[]
       isActive?: boolean
       metadataUri?: string
-    }): Promise<string>
-  }
-  
-  // MarketplaceModule - standalone marketplace operations
-  export class MarketplaceModule {
-    constructor(config: {
-      programId: Address
-      rpc: RpcClient
-      commitment?: string
-    })
-    
-    createServiceListing(signer: TransactionSigner, params: {
-      agentAddress: Address
-      title: string
-      description: string
-      price: bigint
-      serviceType?: string
-      paymentToken?: Address
-    }): Promise<string>
-    
-    updateServiceListing(signer: TransactionSigner, params: {
-      listingId: string
-      title?: string
-      description?: string
-      price?: bigint
-      isActive?: boolean
     }): Promise<string>
   }
 }

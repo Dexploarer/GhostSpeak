@@ -77,6 +77,35 @@ export const createTeam = mutation({
 })
 
 /**
+ * Get team by ID
+ */
+export const getById = query({
+  args: { teamId: v.id('teams') },
+  returns: v.union(
+    v.object({
+      _id: v.id('teams'),
+      _creationTime: v.number(),
+      name: v.string(),
+      ownerUserId: v.id('users'),
+      plan: v.string(),
+      usdcTokenAccount: v.optional(v.string()),
+      monthlyBudget: v.optional(v.number()),
+      currentBalance: v.optional(v.number()),
+      lastBillingAt: v.optional(v.number()),
+      maxMembers: v.number(),
+      maxApiKeys: v.number(),
+      isActive: v.boolean(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.teamId)
+  },
+})
+
+/**
  * Get user's teams
  */
 export const getUserTeams = query({

@@ -1,0 +1,18 @@
+{
+  "cluster": "devnet",
+  "credentialName": "GhostSpeak",
+  "authority": "GjXvPNkpcztKUSs3uCCQ5dtU1j4zCr2SqyqRNohvawgM",
+  "authorizedSigners": [
+    "EDHZKmbXupsp5NnuFLVb2n3K6JRfAiu8LvojtwdA8mn8",
+    "CMNZEMQjdqbRMBGEa1k9jW83YTD5JXmAeJ2iXwEjek9P"
+  ],
+  "credentialPda": "A2qsFuNvPQLa6YEFXbQW9PMWicvtrBnzLWP2sEMJRuCj",
+  "schemas": {
+    "AGENT_IDENTITY": "2Axuj7n5jYbdSiqjLecYXLtCy6CykzVet67yNwj1cauK",
+    "REPUTATION_TIER": "9xfzTS8XPiACZcfirKtormmJhScJgtqNMdTUVqC6KqG2",
+    "PAYMENT_MILESTONE": "H5LhhMhPiBrr4sBuhAjk3o9YnuQCoVLv2Ghai2hoUBmS",
+    "VERIFIED_STAKER": "FjJsSi6ydoQGFT8CGdkS3g666cTUXgbq2ZgvviVpEBLY",
+    "VERIFIED_HIRE": "ChA2PvpqxmFQxQ5APFrMygQXhmKGroEiipyHFqPQkhKk"
+  },
+  "setupDate": "2025-12-31T13:46:12.260Z"
+}

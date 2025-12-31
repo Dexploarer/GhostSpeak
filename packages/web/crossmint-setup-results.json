@@ -1,0 +1,27 @@
+{
+  "createdAt": "2025-12-31T11:56:49.143Z",
+  "chain": "base",
+  "projectId": "ghostspeak",
+  "results": {
+    "GhostSpeakAgentIdentity": {
+      "typeId": "crossmint:ghostspeak:GhostSpeakAgentIdentity",
+      "templateId": null
+    },
+    "GhostSpeakReputationTier": {
+      "typeId": "crossmint:ghostspeak:GhostSpeakReputationTier",
+      "templateId": null
+    },
+    "GhostSpeakPaymentMilestone": {
+      "typeId": "crossmint:ghostspeak:GhostSpeakPaymentMilestone",
+      "templateId": null
+    },
+    "GhostSpeakVerifiedStaker": {
+      "typeId": "crossmint:ghostspeak:GhostSpeakVerifiedStaker",
+      "templateId": null
+    },
+    "GhostSpeakVerifiedHire": {
+      "typeId": "crossmint:ghostspeak:GhostSpeakVerifiedHire",
+      "templateId": null
+    }
+  }
+}

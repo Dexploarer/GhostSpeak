@@ -8,7 +8,8 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server'
-import { createPayAIWebhookHandler } from '@ghostspeak/sdk'
+// TODO: Implement createPayAIWebhookHandler in SDK
+// import { createPayAIWebhookHandler } from '@ghostspeak/sdk'
 import type { Address } from '@solana/addresses'
 
 // PayAIReputationRecord is not exported from SDK, define locally
@@ -454,20 +455,21 @@ function getReputationTier(score: number): string {
 // WEBHOOK HANDLER
 // =====================================================
 
-const handler = createPayAIWebhookHandler({
-  webhookSecret: WEBHOOK_SECRET,
-  verifySignatures: process.env.NODE_ENV === 'production',
-  onRecordReputation: recordToReputation,
-  onPaymentVerified: async (data: any) => {
-    console.log('[PayAI Webhook] Payment verified:', data.paymentId)
-  },
-  onPaymentSettled: async (data: any) => {
-    console.log('[PayAI Webhook] Payment settled:', data.paymentId)
-  },
-  onPaymentFailed: async (data: any) => {
-    console.warn('[PayAI Webhook] Payment failed:', data.paymentId)
-  },
-})
+// TODO: Implement webhook handler once SDK supports it
+// const handler = createPayAIWebhookHandler({
+//   webhookSecret: WEBHOOK_SECRET,
+//   verifySignatures: process.env.NODE_ENV === 'production',
+//   onRecordReputation: recordToReputation,
+//   onPaymentVerified: async (data: any) => {
+//     console.log('[PayAI Webhook] Payment verified:', data.paymentId)
+//   },
+//   onPaymentSettled: async (data: any) => {
+//     console.log('[PayAI Webhook] Payment settled:', data.paymentId)
+//   },
+//   onPaymentFailed: async (data: any) => {
+//     console.warn('[PayAI Webhook] Payment failed:', data.paymentId)
+//   },
+// })
 
 // =====================================================
 // API ROUTE HANDLERS
@@ -477,37 +479,43 @@ const handler = createPayAIWebhookHandler({
  * Handle POST requests from PayAI webhooks
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Get the raw body
-    const body = await request.text()
+  // TODO: Implement webhook handler once SDK supports createPayAIWebhookHandler
+  return NextResponse.json(
+    { error: 'PayAI webhook handler not yet implemented' },
+    { status: 501 }
+  )
 
-    // Process the webhook
-    const result = await handler.handleWebhook({
-      headers: request.headers,
-      body,
-    })
+  // try {
+  //   // Get the raw body
+  //   const body = await request.text()
 
-    if (!result.success) {
-      console.error('[PayAI Webhook] Processing failed:', result.error)
-      return NextResponse.json({ error: result.error }, { status: 400 })
-    }
+  //   // Process the webhook
+  //   const result = await handler.handleWebhook({
+  //     headers: request.headers,
+  //     body,
+  //   })
 
-    // Log successful processing (result is guaranteed to be success case here)
-    console.log('[PayAI Webhook] Processed successfully:', {
-      eventType: (result as any).eventType,
-      paymentId: (result as any).paymentId,
-      reputationRecorded: (result as any).reputationRecorded,
-    })
+  //   if (!result.success) {
+  //     console.error('[PayAI Webhook] Processing failed:', result.error)
+  //     return NextResponse.json({ error: result.error }, { status: 400 })
+  //   }
 
-    return NextResponse.json({
-      success: true,
-      eventType: (result as any).eventType,
-      reputationRecorded: (result as any).reputationRecorded,
-    })
-  } catch (error) {
-    console.error('[PayAI Webhook] Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  //   // Log successful processing (result is guaranteed to be success case here)
+  //   console.log('[PayAI Webhook] Processed successfully:', {
+  //     eventType: (result as any).eventType,
+  //     paymentId: (result as any).paymentId,
+  //     reputationRecorded: (result as any).reputationRecorded,
+  //   })
+
+  //   return NextResponse.json({
+  //     success: true,
+  //     eventType: (result as any).eventType,
+  //     reputationRecorded: (result as any).reputationRecorded,
+  //   })
+  // } catch (error) {
+  //   console.error('[PayAI Webhook] Error:', error)
+  //   return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  // }
 }
 
 /**

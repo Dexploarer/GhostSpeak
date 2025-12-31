@@ -8,14 +8,6 @@
 import { internalAction } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
-import {
-	createSolanaClient,
-	createKeyPairSignerFromBytes,
-	createTransaction,
-	type TransactionSigner,
-	type SolanaClient,
-} from 'gill'
-import { issueAttestation } from '../lib/sas/attestations'
 import { serializeCapabilities } from '../lib/sas/schemas'
 import type {
 	AgentIdentityData,
@@ -49,45 +41,12 @@ export const STAKING_TIERS = [
 ] as const
 
 /**
- * SAS Client Configuration
- * Loads keypairs and creates Solana client
- */
-interface SASClientConfig {
-	client: SolanaClient
-	payer: TransactionSigner
-	authority: TransactionSigner
-	authorizedSigner: TransactionSigner
-}
-
-async function getSASClient(ctx: any): Promise<SASClientConfig> {
-	// Load configuration from database
-	const config = await ctx.runQuery(internal.sasConfig.getSasConfiguration)
-
-	if (!config) {
-		throw new Error('SAS configuration not found in database')
-	}
-
-	const client = createSolanaClient({ urlOrMoniker: config.cluster as 'devnet' | 'mainnet-beta' })
-
-	// Create keypair signers from stored arrays
-	const payer = await createKeyPairSignerFromBytes(
-		new Uint8Array(config.payerKeypair)
-	)
-	const authority = await createKeyPairSignerFromBytes(
-		new Uint8Array(config.authorityKeypair)
-	)
-	const authorizedSigner = await createKeyPairSignerFromBytes(
-		new Uint8Array(config.authorizedSignerKeypair)
-	)
-
-	return { client, payer, authority, authorizedSigner }
-}
-
-/**
- * Issue a SAS attestation on-chain
+ * Call SAS Edge API to issue attestation
+ *
+ * Calls the Vercel Edge API instead of using gill/sas-lib directly
+ * because Convex doesn't support Web Crypto API required by Solana v5
  */
 async function issueSASAttestation(
-	config: SASClientConfig,
 	schemaType:
 		| 'AGENT_IDENTITY'
 		| 'REPUTATION_TIER'
@@ -98,39 +57,46 @@ async function issueSASAttestation(
 	nonce: string,
 	expiryDays?: number
 ): Promise<{ attestationPda: string; signature: string; expiry: number }> {
-	const { client, payer, authority, authorizedSigner } = config
+	// Support localhost for local development
+	const sasApiUrl = process.env.SAS_API_URL ||
+		(process.env.NODE_ENV === 'development'
+			? 'http://localhost:3000/api/sas/issue'
+			: 'https://ghostspeak.io/api/sas/issue')
+	const sasApiKey = process.env.SAS_API_KEY
 
-	// Create attestation instruction
-	const { instruction, attestationPda, expiryTimestamp } = await issueAttestation({
-		client,
-		payer,
-		authority,
-		authorizedSigner,
-		schemaType,
-		data: data as any,
-		nonce: nonce as any,
-		expiryDays,
+	if (!sasApiKey) {
+		throw new Error('SAS_API_KEY not configured in Convex environment')
+	}
+
+	const response = await fetch(sasApiUrl, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'x-api-key': sasApiKey,
+		},
+		body: JSON.stringify({
+			schemaType,
+			data,
+			nonce,
+			expiryDays,
+		}),
 	})
 
-	// Get latest blockhash
-	const { value: latestBlockhash } = await client.rpc.getLatestBlockhash().send()
+	if (!response.ok) {
+		const error = await response.json()
+		throw new Error(`SAS API error: ${error.error || response.statusText}`)
+	}
 
-	// Build and send transaction
-	const tx = createTransaction({
-		version: 'legacy',
-		feePayer: payer,
-		instructions: [instruction],
-		latestBlockhash,
-		computeUnitLimit: 300_000,
-		computeUnitPrice: 1,
-	})
+	const result = await response.json()
 
-	const signature = await client.sendAndConfirmTransaction(tx)
+	if (!result.success) {
+		throw new Error(`SAS API failed: ${result.error}`)
+	}
 
 	return {
-		attestationPda,
-		signature,
-		expiry: expiryTimestamp,
+		attestationPda: result.attestationPda,
+		signature: result.signature,
+		expiry: result.expiry,
 	}
 }
 
@@ -160,9 +126,6 @@ export const issueReputationTierCredential = internalAction({
 				score: args.ghostScore,
 			})
 
-			// Get SAS client
-			const sasClient = await getSASClient(ctx)
-
 			// Build credential data
 			const credentialData: ReputationTierData = {
 				agent: args.agentAddress,
@@ -173,9 +136,8 @@ export const issueReputationTierCredential = internalAction({
 				lastUpdated: Math.floor(Date.now() / 1000),
 			}
 
-			// Issue attestation on-chain
+			// Issue attestation via Edge API
 			const result = await issueSASAttestation(
-				sasClient,
 				'REPUTATION_TIER',
 				credentialData as unknown as Record<string, unknown>,
 				args.agentAddress, // Use agent address as nonce
@@ -244,9 +206,6 @@ export const issueAgentIdentityCredential = internalAction({
 				x402: args.x402Enabled,
 			})
 
-			// Get SAS client
-			const sasClient = await getSASClient(ctx)
-
 			// Build credential data (convert capabilities array to comma-separated string)
 			const credentialData: AgentIdentityData = {
 				agent: args.agentAddress,
@@ -260,9 +219,8 @@ export const issueAgentIdentityCredential = internalAction({
 				issuedAt: Math.floor(Date.now() / 1000),
 			}
 
-			// Issue attestation on-chain
+			// Issue attestation via Edge API
 			const result = await issueSASAttestation(
-				sasClient,
 				'AGENT_IDENTITY',
 				credentialData as unknown as Record<string, unknown>,
 				args.agentAddress, // Use agent address as nonce
@@ -324,9 +282,6 @@ export const issuePaymentMilestoneCredential = internalAction({
 				tier: args.tier,
 			})
 
-			// Get SAS client
-			const sasClient = await getSASClient(ctx)
-
 			// Build credential data
 			const credentialData: PaymentMilestoneData = {
 				jobId: `milestone-${args.milestone}-${args.agentAddress.slice(0, 8)}`,
@@ -338,9 +293,8 @@ export const issuePaymentMilestoneCredential = internalAction({
 				txSignature: '', // Will be filled with attestation tx
 			}
 
-			// Issue attestation on-chain
+			// Issue attestation via Edge API
 			const result = await issueSASAttestation(
-				sasClient,
 				'PAYMENT_MILESTONE',
 				credentialData as unknown as Record<string, unknown>,
 				`${args.agentAddress}-milestone-${args.milestone}`, // Unique nonce per milestone
@@ -404,9 +358,6 @@ export const issueStakingCredential = internalAction({
 				amount: args.amountStaked,
 			})
 
-			// Get SAS client
-			const sasClient = await getSASClient(ctx)
-
 			// Build credential data
 			const credentialData: VerifiedStakerData = {
 				agent: args.agentAddress,
@@ -416,9 +367,8 @@ export const issueStakingCredential = internalAction({
 				isActive: true,
 			}
 
-			// Issue attestation on-chain
+			// Issue attestation via Edge API
 			const result = await issueSASAttestation(
-				sasClient,
 				'VERIFIED_STAKER',
 				credentialData as unknown as Record<string, unknown>,
 				args.agentAddress, // Use agent address as nonce
@@ -483,9 +433,6 @@ export const issueVerifiedHireCredential = internalAction({
 				rating: args.rating,
 			})
 
-			// Get SAS client
-			const sasClient = await getSASClient(ctx)
-
 			// Build credential data
 			const credentialData: VerifiedHireData = {
 				jobId: args.transactionSignature.slice(0, 16), // Use first 16 chars of tx signature
@@ -496,9 +443,8 @@ export const issueVerifiedHireCredential = internalAction({
 				terms: args.review,
 			}
 
-			// Issue attestation on-chain
+			// Issue attestation via Edge API
 			const result = await issueSASAttestation(
-				sasClient,
 				'VERIFIED_HIRE',
 				credentialData as unknown as Record<string, unknown>,
 				`${args.agentAddress}-${args.transactionSignature}`, // Unique nonce per review

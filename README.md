@@ -269,7 +269,7 @@ await agentSync.checkAndIssueMilestoneCredentials(agentAddress);
 |---------|---------|-------------|
 | **[@ghostspeak/sdk](./packages/sdk-typescript)** | `2.0.5` | TypeScript SDK for VC/Reputation/Identity |
 | **[@ghostspeak/cli](./packages/cli)** | `2.0.0-beta.19` | TypeScript CLI for agent registration and credentials |
-| **[ghost-go](https://github.com/Ghostspeak/ghost-go)** | `1.0.0` | **Go CLI** - Standalone CLI with wallet ops, DID, staking, governance |
+| **[Boo 👻](https://github.com/Ghostspeak/boo)** | `1.0.0` | **Go TUI** - Beautiful terminal interface built with Charm (Bubbletea, Lipgloss, Bubbles, Huh) |
 | **[@ghostspeak/web](./packages/web)** | `1.0.0` | Ghost Score dashboard and VC explorer |
 | **Smart Contracts** | `2.0.0` | Rust programs on Solana devnet |
 
